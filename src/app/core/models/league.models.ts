@@ -46,6 +46,10 @@ export interface RegularSeasonTeam {
   PointsAgainst?: number;
   Record?: string | null;
   Streak?: string | null;
+  /** Current season only: place after the preceding completed week; null if no comparison exists. */
+  PreviousWeekPlace?: number | null;
+  /** Current season only: PreviousWeekPlace - Place (positive = moved up); null if no comparison exists. */
+  PlaceDelta?: number | null;
   WinPercentage?: number;
   WinPercentageDisplay?: string;
   WinPercentageDiffLeagueAvg?: number;
@@ -156,6 +160,10 @@ export interface PlacementRegularSeason extends Placement {
   WinPercentageDisplay: string;
   Record: string | null;
   Streak: string | null;
+  /** Current season only: place after the preceding completed week; null if no comparison exists. */
+  PreviousWeekPlace?: number | null;
+  /** Current season only: PreviousWeekPlace - Place (positive = moved up); null if no comparison exists. */
+  PlaceDelta?: number | null;
 }
 
 export interface PlacementRegularSeasonAllTime extends Omit<PlacementRegularSeason, 'Record' | 'Streak'> {

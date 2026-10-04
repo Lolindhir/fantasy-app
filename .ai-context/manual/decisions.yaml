@@ -1244,3 +1244,31 @@ decisions:
         - After a real audit failure raw data keeps refreshing while canonical data stays stale until fixed.
         - PR CI can stay red while main is stale until the next sync heals it.
         - The pre-gate and the post-materialization step must stay in sync; the workflow contract test test_repo_state_audit_runs_after_materialization_not_in_pre_gate guards the ordering.
+
+  - id: ADR-040
+    title: Weekly standings movement is a generated canonical field
+    status: accepted
+    context: >
+      The Weekly Overview standings need an up/down/unchanged movement signal.
+      Issue #686 proposed reconstructing the previous week's table in Angular from
+      Matchups facts, Issue #565 asked for a canonical generated field. Placements.Previous
+      is the previous season and cannot serve as a weekly delta source.
+    decision: >
+      The standings generator owns the movement (Robert, 2026-10-04, Issue #565).
+      Get-PreviousWeekRegularSeasonPlaces rebuilds the table after the immediately
+      preceding completed week from canonical per-week matchups with the existing
+      ranking/tiebreak function and publishes PreviousWeekPlace and PlaceDelta
+      (PreviousWeekPlace - Place, positive = moved up) on current-season
+      RegularSeason rows. Values are null when no trustworthy comparison exists.
+      Angular only displays the value.
+    rationale: >
+      Ranking and tiebreak semantics stay in one place, the league size stays
+      dynamic and consumers need no historical standings machinery. Rejecting
+      inconsistent weekly facts (results must match Record) is preferred over
+      publishing a wrong arrow.
+    consequences:
+      positive:
+        - One canonical value for every consumer, no frontend recomputation.
+      negative:
+        - Standings.json and Teams.json gain two fields for the current season.
+        - Issue #686 / PR #714 must switch from frontend reconstruction to this field.

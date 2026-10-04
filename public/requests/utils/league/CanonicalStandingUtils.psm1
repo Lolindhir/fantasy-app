@@ -336,6 +336,43 @@ function Get-CanonicalStandingSourceForSeason {
     }
 }
 
+function Get-CanonicalStandingWeeklyMatchups {
+    param(
+        [Parameter(Mandatory = $true)][string]$CanonicalLeagueID,
+        [Parameter(Mandatory = $true)][string]$Season,
+        [Parameter(Mandatory = $true)][int]$MaxWeek
+    )
+
+    # Completed weeks are read from the canonical per-week matchup facts. Missing weeks are
+    # simply omitted; the consumer then reports the weekly movement as unavailable.
+    $matchupDirectory = Join-Path (Get-CanonicalStandingSeasonDirectory -CanonicalLeagueID $CanonicalLeagueID -Season $Season) "matchups"
+    $weeks = @()
+
+    for ($week = 1; $week -le $MaxWeek; $week++) {
+        $path = Join-Path $matchupDirectory "week-$week.json"
+        if (-not (Test-Path $path)) { continue }
+
+        $entries = @()
+        foreach ($matchup in @(ConvertTo-SafeArray -value (Get-Content $path -Raw | ConvertFrom-Json))) {
+            $mapping = @($matchup.ProviderMappings | Where-Object { $_.Provider -eq "Sleeper" }) | Select-Object -First 1
+            if ($null -eq $mapping) { continue }
+
+            $entries += [PSCustomObject][ordered]@{
+                TeamID    = [int]$mapping.ProviderRosterID
+                MatchupID = $mapping.ProviderMatchupID
+                Points    = $matchup.Points
+            }
+        }
+
+        $weeks += [PSCustomObject][ordered]@{
+            Week    = $week
+            Entries = @($entries)
+        }
+    }
+
+    return @($weeks)
+}
+
 function Get-CanonicalCurrentSeasonData {
     param(
         [string]$CanonicalLeagueID = "nfl-reise",
@@ -344,7 +381,17 @@ function Get-CanonicalCurrentSeasonData {
 
     $currentSeason = [string](Get-Config).LeagueYear
     $source = Get-CanonicalStandingSourceForSeason -CanonicalLeagueID $CanonicalLeagueID -Season $currentSeason -AllowActiveSeason
-    $standings = Get-StandingsRemote -playoffs $source.Playoffs -teamData @($source.TeamData) -regularSeasonGames ([int]$source.RegularSeasonGames) -previousSeasonStandings $PreviousSeasonStandings
+    $weeklyMatchups = Get-CanonicalStandingWeeklyMatchups `
+        -CanonicalLeagueID $CanonicalLeagueID `
+        -Season $currentSeason `
+        -MaxWeek ([int]$source.RegularSeasonGames)
+    $standings = Get-StandingsRemote `
+        -playoffs $source.Playoffs `
+        -teamData @($source.TeamData) `
+        -regularSeasonGames ([int]$source.RegularSeasonGames) `
+        -previousSeasonStandings $PreviousSeasonStandings `
+        -weeklyMatchups $weeklyMatchups `
+        -includeWeeklyMovement
     $output = Get-OutputStandingsForSeason `
         -season $currentSeason `
         -standingsPlayoffs @($standings.Playoffs) `
