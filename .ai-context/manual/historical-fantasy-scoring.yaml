@@ -127,6 +127,7 @@ scoringContract:
     fieldGoalMadeDistance: fg_made_distance
   derivedRules:
     - Sleeper fum_rec is not reconstructed from offensive own/opponent recovery counters for an individual player; player fum_rec uses the defensive/IDP recovery fact def_fumbles.
+    - Offensive and kicking positions (QB, RB, FB, WR, TE, K, P) do not score ff or fum_rec because nflverse credits them with def_fumbles_forced/def_fumbles on change-of-possession plays after their own fumble, and Sleeper does not score these (#347 D2a; all 11 affected rostered player-weeks 2024-2026 matched Sleeper only without the credit). Individual-defense positions keep both keys. Assumption (not verified against Sleeper data) is that IDP positions are unaffected, because no IDP player is rostered in the league.
     - Sleeper st_td is an individual Special Teams Player TD and maps to special_teams_tds.
     - Sleeper st_ff counts canonical SpecialTeams forced-fumble events for the individual player.
     - Sleeper st_fum_rec counts canonical SpecialTeams fumble-recovery events only when RecoveryTeam is the opponent of the single unambiguous FumbledTeams value; own-team recoveries do not score and ambiguous recovery relations fail closed.
