@@ -1,6 +1,26 @@
 
 @use '@angular/material' as mat;
 
+/* #592 Lifecycle visual semantics (FDS-005). Single owner of lifecycle state colors:
+   neutral = quiet/future, active = active/locked/live, final = authoritative Final,
+   problem = objective problem, review = unknown/fail-closed. Components consume these tokens. */
+:root {
+  --lifecycle-neutral: #cbd5e1;
+  --lifecycle-neutral-fg: #475569;
+  --lifecycle-neutral-bg: #f1f5f9;
+  --lifecycle-active: #2563eb;
+  --lifecycle-active-fg: #1d4ed8;
+  --lifecycle-active-bg: #dbeafe;
+  --lifecycle-active-border: rgba(37, 99, 235, 0.34);
+  --lifecycle-final: #16a34a;
+  --lifecycle-final-fg: #15803d;
+  --lifecycle-final-bg: #dcfce7;
+  --lifecycle-final-border: rgba(22, 163, 74, 0.34);
+  --lifecycle-problem: #dc2626;
+  --lifecycle-review: #d97706;
+  --lifecycle-review-fg: #b45309;
+}
+
 html {
   @include mat.theme((
     color: (
