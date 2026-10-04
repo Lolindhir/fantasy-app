@@ -23,6 +23,7 @@ classes:
   rebuild-and-retry:
     helper: tools/rebuild_and_publish.py or workflow-local/delegated equivalent with the same semantics
     meaning: The generator is rerun from the latest target branch after every recognized publication race.
+    exception: sync-nfl-source-data.yml may rebase its validated canonical commit when the race touched no declared materialization input path (materialize_input_pathspecs); any input change, rebase conflict or exhausted rebase attempts still force a full rebuild or fail closed.
   isolated-branch:
     meaning: State is intentionally published to a dedicated non-main branch and must not compete with main writers.
   non-branch-writer:

@@ -25,6 +25,25 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("--force-with-lease", source)
         self.assertNotIn("git push --force", source)
 
+    def test_canonical_publish_rebases_only_when_materialization_inputs_unchanged(self) -> None:
+        source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        self.assertIn("publish_canonical_commit()", source)
+        self.assertIn("materialize_input_pathspecs=(", source)
+        for path in (
+            "source-data/providers",
+            "source-data/nfl",
+            "public/data/Players.json",
+            "public/data/Metadata.json",
+            "public/data/League.json",
+            "tools",
+        ):
+            self.assertIn(f"            {path}\n", source)
+        self.assertIn('git diff --quiet "$base_sha" origin/main -- "${materialize_input_pathspecs[@]}"', source)
+        self.assertIn("git rebase origin/main", source)
+        self.assertIn("if publish_canonical_commit; then", source)
+        self.assertNotIn("--force-with-lease", source)
+        self.assertNotIn("git push --force", source)
+
     def test_scoped_workflow_has_explicit_write_guard_and_no_full_audit(self) -> None:
         source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
         self.assertIn("assert_scoped_canonical_write_set", source)

@@ -267,6 +267,49 @@ jobs:
             git clean -fd -- source-data
           }
 
+          # Materialization reads only these inputs. Pushes by other writers to any
+          # other path (league source, fantasy operations, matchups) cannot change the
+          # canonical result, so the validated commit may be rebased instead of rebuilt.
+          materialize_input_pathspecs=(
+            source-data/providers
+            source-data/nfl
+            source-data/audits
+            source-data/historical-identity-backfill.json
+            public/data/Players.json
+            public/data/Players_Relevant.json
+            public/data/Metadata.json
+            public/data/League.json
+            public/data/past_seasons
+            tools
+            .github/workflows/sync-nfl-source-data.yml
+          )
+
+          # Returns 0 after a successful push. Returns 1 when a materialization input
+          # changed on main (caller must rebuild). Fails closed on rebase conflicts.
+          publish_canonical_commit() {
+            local base_sha rebase_attempt
+            base_sha="$(git rev-parse HEAD~1)"
+            for rebase_attempt in 1 2 3 4 5; do
+              if git push "$push_url" HEAD:main; then
+                return 0
+              fi
+              git fetch origin main
+              if ! git diff --quiet "$base_sha" origin/main -- "${materialize_input_pathspecs[@]}"; then
+                echo "Materialization inputs changed on main; rebuild required."
+                return 1
+              fi
+              echo "main advanced outside materialization inputs; rebasing validated commit (rebase attempt $rebase_attempt)."
+              if ! git rebase origin/main; then
+                git rebase --abort || true
+                echo "Rebase of validated canonical commit failed; failing closed." >&2
+                exit 1
+              fi
+              base_sha="$(git rev-parse HEAD~1)"
+            done
+            echo "main kept advancing outside materialization inputs; rebuild required."
+            return 1
+          }
+
           assert_source_data_only() {
             mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
             unexpected=()
@@ -575,7 +618,7 @@ jobs:
             timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
             git commit -m "data(nfl-source): materialize canonical NFL sources • $timestamp"
             publish_start="$(date +%s)"
-            if git push "$push_url" HEAD:main; then
+            if publish_canonical_commit; then
               publication_seconds=$(( publication_seconds + $(date +%s) - publish_start ))
               echo "NFL source-data publish succeeded."
               echo "- Publication (attempt $attempt): ${publication_seconds}s" >> "$GITHUB_STEP_SUMMARY"
