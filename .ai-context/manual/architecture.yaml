@@ -77,8 +77,8 @@ layers:
     responsibility: >
       Fetches, transforms and enriches source data into generated JSON files
       consumed by the Angular app. During the transition some generators still
-      read providers directly. Phase 1B is accepted; Phase 2 is the next migration
-      step and moves them to the stable canonical NFL and League source-data
+      read providers directly. Phase 1B is accepted; Phase 2 is in progress and
+      moves them step by step to the stable canonical NFL and League source-data
       contracts while preserving existing public/data contracts unless separately
       approved.
     owns:
@@ -156,7 +156,7 @@ sourceDataTarget:
       contract: .ai-context/manual/league-source-data.yaml
     phase2:
       name: Consumer Migration
-      status: next
+      status: in-progress
 
   targetFlow: |
     nflverse / Sleeper NFL ------> source-data/providers/** ----> source-data/nfl/**
