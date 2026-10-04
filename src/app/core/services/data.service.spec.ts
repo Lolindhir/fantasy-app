@@ -3,6 +3,7 @@ import { firstValueFrom, of, throwError } from 'rxjs';
 
 import type { FantasyGameContextReadModel } from '../models/fantasy-game-context.models';
 import type { RawLeague } from '../models/league.models';
+import type { MatchupProjectionsReadModel } from '../models/matchup-projections.models';
 import type {
   PlayerWeekFantasyProjectionStatus,
   PlayerWeekFantasyReadModel,
@@ -23,7 +24,8 @@ describe('DataService', () => {
       'getMovesData',
       'getTimestamps',
       'getFantasyGameContextRaw',
-      'getPlayerWeekFantasyRaw'
+      'getPlayerWeekFantasyRaw',
+      'getMatchupProjectionsRaw'
     ]);
     freeAgentMarketService = jasmine.createSpyObj<FreeAgentMarketService>(
       'FreeAgentMarketService',
@@ -78,171 +80,112 @@ describe('DataService', () => {
   });
 
 
-  it('joins PlayerWeekFantasy into FantasyGameContext and aggregates complete team predictions', async () => {
-    const context = createFantasyGameContext();
-    dataApiService.getFantasyGameContextRaw.and.returnValue(of(context));
-    dataApiService.getPlayerWeekFantasyRaw.and.returnValue(of(createPlayerWeekFantasy()));
-
-    const result = await firstValueFrom(service.getFantasyGameContext());
-    const matchup = result.FantasyMatchups[0];
-    const team1 = matchup.TeamPredictions?.find(team => String(team.FantasyTeamID) === '1');
-    const team2 = matchup.TeamPredictions?.find(team => String(team.FantasyTeamID) === '2');
-
-    expect(result.Games[0].FantasyTeams[0].Players[0].Prediction?.Points).toBe(10);
-    expect(result.Games[0].FantasyTeams[0].Players[1].Prediction?.Points).toBe(99);
-
-    expect(team1).toEqual(jasmine.objectContaining({
-      State: 'available',
-      StarterCount: 2,
-      ProjectedStarterCount: 2,
-      ProjectedStarterPoints: 15,
-      PredictedEndScore: 15,
-      UnavailableStarterPlayerIDs: []
-    }));
-
-    expect(team2).toEqual(jasmine.objectContaining({
-      State: 'partial',
-      StarterCount: 2,
-      ProjectedStarterCount: 1,
-      ProjectedStarterPoints: 20,
-      PredictedEndScore: null,
-      UnavailableStarterPlayerIDs: ['p5']
-    }));
-  });
-
-  describe('bye starters', () => {
-    async function teamTwoPrediction(kind: string, isStarter = true) {
-      const context = createFantasyGameContext();
-      context.NonGameAssociations[0].Kind = kind;
-      context.NonGameAssociations[0].IsStarter = isStarter;
-      dataApiService.getFantasyGameContextRaw.and.returnValue(of(context));
-      dataApiService.getPlayerWeekFantasyRaw.and.returnValue(of(createPlayerWeekFantasy()));
-      const result = await firstValueFrom(service.getFantasyGameContext());
-      return result.FantasyMatchups[0].TeamPredictions?.find(team => String(team.FantasyTeamID) === '2');
-    }
-
-    it('counts a starter on an explicit bye as a resolved zero in both team values', async () => {
-      const team = await teamTwoPrediction('bye');
-
-      expect(team).toEqual(jasmine.objectContaining({
-        State: 'available',
-        StarterCount: 2,
-        ProjectedStarterCount: 2,
-        ProjectedStarterPoints: 20,
-        PredictedEndScore: 20,
-        ProjectedFinalScore: 20,
-        ByeStarterPlayerIDs: ['p5'],
-        UnavailableStarterPlayerIDs: []
-      }));
-    });
-
-    it('keeps starters with an unknown or team-less association unresolved', async () => {
-      for (const kind of ['unknown', 'no-team']) {
-        const team = await teamTwoPrediction(kind);
-
-        expect(team?.State).toBe('partial');
-        expect(team?.PredictedEndScore).toBeNull();
-        expect(team?.ProjectedFinalScore).toBeNull();
-        expect(team?.ByeStarterPlayerIDs).toEqual([]);
-        expect(team?.UnavailableStarterPlayerIDs).toEqual(['p5']);
-      }
-    });
-
-    it('ignores a bench player on a bye', async () => {
-      const team = await teamTwoPrediction('bye', false);
-
-      expect(team?.StarterCount).toBe(1);
-      expect(team?.ByeStarterPlayerIDs).toEqual([]);
-      expect(team?.PredictedEndScore).toBe(20);
-    });
-  });
-
-  describe('ProjectedFinalScore', () => {
-    async function projectedFinalByTeam(
+  describe('published projections', () => {
+    function stub(
       context: FantasyGameContextReadModel,
-      playerWeekFantasy = createPlayerWeekFantasy()
-    ): Promise<Record<string, number | null | undefined>> {
+      playerWeekFantasy: PlayerWeekFantasyReadModel | null,
+      matchupProjections: MatchupProjectionsReadModel | null
+    ): void {
       dataApiService.getFantasyGameContextRaw.and.returnValue(of(context));
-      dataApiService.getPlayerWeekFantasyRaw.and.returnValue(of(playerWeekFantasy));
-      const result = await firstValueFrom(service.getFantasyGameContext());
-      const teams = result.FantasyMatchups[0].TeamPredictions ?? [];
-      return Object.fromEntries(teams.map(team => [String(team.FantasyTeamID), team.ProjectedFinalScore]));
+      dataApiService.getPlayerWeekFantasyRaw.and.returnValue(
+        playerWeekFantasy ? of(playerWeekFantasy) : throwError(() => new Error('unavailable'))
+      );
+      dataApiService.getMatchupProjectionsRaw.and.returnValue(
+        matchupProjections ? of(matchupProjections) : throwError(() => new Error('unavailable'))
+      );
     }
 
-    it('equals the pregame prediction while no starter game has been played', async () => {
-      const scores = await projectedFinalByTeam(createFantasyGameContext());
+    it('joins player projections, display settings and matchup projections by id', async () => {
+      stub(createFantasyGameContext(), createPlayerWeekFantasy(), createMatchupProjections());
 
-      expect(scores['1']).toBe(15);
-      expect(scores['2']).toBeNull();
+      const result = await firstValueFrom(service.getFantasyGameContext());
+
+      expect(result.Games[0].FantasyTeams[0].Players[0].Prediction?.Points).toBe(10);
+      expect(result.Games[0].FantasyTeams[0].Players[1].Prediction?.Points).toBe(99);
+      expect(result.Games[1].FantasyTeams[0].Players[0].Prediction?.PredictionRanges.length).toBe(1);
+      expect(result.ProjectionDisplay).toEqual({
+        PlayerRangeLevel: 0.9,
+        PlayerRangeAxis: { Min: -5, Max: 45 },
+        TeamRangeLevel: 0.8
+      });
+      expect(result.FantasyMatchups[0].Projection?.Teams.length).toBe(2);
+      expect(result.FantasyMatchups[0].Projection?.Axis).toEqual({ Min: 120, Max: 260, Step: 20 });
     });
 
-    it('uses actual points for starters of final games and projections for the rest', async () => {
+    it('passes published team values through without calculating anything', async () => {
+      const projections = createMatchupProjections();
+      projections.Matchups[0].Teams[0].ProjectedFinalScore = 123.45;
+      projections.Matchups[0].Teams[0].Ranges = [{ Level: 0.8, Lower: 100.5, Upper: 150.25 }];
+      stub(createFantasyGameContext(), createPlayerWeekFantasy(), projections);
+
+      const result = await firstValueFrom(service.getFantasyGameContext());
+      const team = result.FantasyMatchups[0].Projection?.Teams[0];
+
+      // The starters' projections in the player snapshot sum to something else (15).
+      expect(team?.ProjectedFinalScore).toBe(123.45);
+      expect(team?.Ranges).toEqual([{ Level: 0.8, Lower: 100.5, Upper: 150.25 }]);
+    });
+
+    it('marks matchups the publication does not know with a null projection', async () => {
+      const projections = createMatchupProjections();
+      projections.Matchups[0].FantasyMatchupID = 'other';
+      stub(createFantasyGameContext(), createPlayerWeekFantasy(), projections);
+
+      const result = await firstValueFrom(service.getFantasyGameContext());
+
+      expect(result.FantasyMatchups[0].Projection).toBeNull();
+    });
+
+    it('joins each snapshot independently by Season and Week', async () => {
+      const staleMatchups = createMatchupProjections();
+      staleMatchups.Week = 2;
+      stub(createFantasyGameContext(), createPlayerWeekFantasy(), staleMatchups);
+      const playersOnly = await firstValueFrom(service.getFantasyGameContext());
+      expect(playersOnly.Games[0].FantasyTeams[0].Players[0].Prediction?.Points).toBe(10);
+      expect(playersOnly.FantasyMatchups[0].Projection).toBeUndefined();
+      expect(playersOnly.ProjectionDisplay?.TeamRangeLevel).toBeNull();
+
+      const stalePlayers = createPlayerWeekFantasy();
+      stalePlayers.Week = 4;
+      stub(createFantasyGameContext(), stalePlayers, createMatchupProjections());
+      const matchupsOnly = await firstValueFrom(service.getFantasyGameContext());
+      expect(matchupsOnly.Games[0].FantasyTeams[0].Players[0].Prediction).toBeUndefined();
+      expect(matchupsOnly.FantasyMatchups[0].Projection?.Teams.length).toBe(2);
+      expect(matchupsOnly.ProjectionDisplay?.PlayerRangeLevel).toBeNull();
+    });
+
+    it('keeps raw FantasyGameContext when both snapshots target another week', async () => {
       const context = createFantasyGameContext();
-      context.Games[0].Status = 'Final';
-      context.Games[0].FantasyTeams[0].Players[0].Points = 18;
+      const players = createPlayerWeekFantasy();
+      const matchups = createMatchupProjections();
+      players.Week = 4;
+      matchups.Week = 4;
+      stub(context, players, matchups);
 
-      const scores = await projectedFinalByTeam(context);
+      const result = await firstValueFrom(service.getFantasyGameContext());
 
-      expect(scores['1']).toBe(23);
+      expect(result).toBe(context);
     });
 
-    it('never counts less than the points already scored in a game that is still running', async () => {
-      const ahead = createFantasyGameContext();
-      ahead.Games[0].Status = 'In Progress';
-      ahead.Games[0].FantasyTeams[0].Players[0].Points = 12;
-      const behind = createFantasyGameContext();
-      behind.Games[0].Status = 'In Progress';
-      behind.Games[0].FantasyTeams[0].Players[0].Points = 3;
+    it('does not join players when the snapshot has duplicate App PlayerIDs', async () => {
+      const players = createPlayerWeekFantasy();
+      players.Records.push(createPlayerWeekRecord('p1', 'available', 7));
+      stub(createFantasyGameContext(), players, createMatchupProjections());
 
-      expect((await projectedFinalByTeam(ahead))['1']).toBe(17);
-      expect((await projectedFinalByTeam(behind))['1']).toBe(15);
+      const result = await firstValueFrom(service.getFantasyGameContext());
+
+      expect(result.Games[0].FantasyTeams[0].Players[0].Prediction).toBeUndefined();
+      expect(result.FantasyMatchups[0].Projection?.Teams.length).toBe(2);
     });
 
-    it('does not need a projection for starters of final games', async () => {
+    it('keeps raw FantasyGameContext when no publication can be loaded', async () => {
       const context = createFantasyGameContext();
-      context.Games[0].Status = 'Final';
-      context.Games[0].FantasyTeams[0].Players[0].Points = 18;
-      const snapshot = createPlayerWeekFantasy();
-      snapshot.Records[0] = createPlayerWeekRecord('p1', 'insufficient-history', null);
+      stub(context, null, null);
 
-      const scores = await projectedFinalByTeam(context, snapshot);
+      const result = await firstValueFrom(service.getFantasyGameContext());
 
-      expect(scores['1']).toBe(23);
+      expect(result).toBe(context);
     });
-
-    it('stays unavailable when a final-game starter has no points', async () => {
-      const context = createFantasyGameContext();
-      context.Games[0].Status = 'Final';
-
-      const scores = await projectedFinalByTeam(context);
-
-      expect(scores['1']).toBeNull();
-    });
-  });
-
-  it('keeps raw FantasyGameContext when the prediction snapshot targets another week', async () => {
-    const context = createFantasyGameContext();
-    const playerWeekFantasy = createPlayerWeekFantasy();
-    playerWeekFantasy.Week = 4;
-    dataApiService.getFantasyGameContextRaw.and.returnValue(of(context));
-    dataApiService.getPlayerWeekFantasyRaw.and.returnValue(of(playerWeekFantasy));
-
-    const result = await firstValueFrom(service.getFantasyGameContext());
-
-    expect(result).toBe(context);
-    expect(result.FantasyMatchups[0].TeamPredictions).toBeUndefined();
-  });
-
-  it('keeps raw FantasyGameContext when PlayerWeekFantasy cannot be loaded', async () => {
-    const context = createFantasyGameContext();
-    dataApiService.getFantasyGameContextRaw.and.returnValue(of(context));
-    dataApiService.getPlayerWeekFantasyRaw.and.returnValue(
-      throwError(() => new Error('prediction publication unavailable'))
-    );
-
-    const result = await firstValueFrom(service.getFantasyGameContext());
-
-    expect(result).toBe(context);
   });
 
   function createRawTransaction(): RawTransaction {
@@ -390,12 +333,51 @@ describe('DataService', () => {
         ResolvedRecordCount: 5,
         UnavailableRecordCount: 0
       },
+      Display: { RangeLevel: 0.9, RangeAxis: { Min: -5, Max: 45 } },
       Records: [
         createPlayerWeekRecord('p1', 'available', 10),
         createPlayerWeekRecord('p2', 'available', 99),
         createPlayerWeekRecord('p3', 'available', 20),
         createPlayerWeekRecord('p4', 'available', 5),
         createPlayerWeekRecord('p5', 'no-game', null)
+      ]
+    };
+  }
+
+  function createMatchupProjections(): MatchupProjectionsReadModel {
+    const team = (id: number, finalScore: number) => ({
+      FantasyTeamID: id,
+      State: 'available' as const,
+      StarterCount: 2,
+      ResolvedStarterCount: 2,
+      FinalStarterCount: 0,
+      ScoredPoints: 0,
+      PregameProjectedScore: finalScore,
+      ProjectedFinalScore: finalScore,
+      StandardDeviation: 20,
+      Ranges: [{ Level: 0.8, Lower: finalScore - 26, Upper: finalScore + 26 }],
+      ByeStarterPlayerIDs: [],
+      UnavailableStarterPlayerIDs: []
+    });
+    return {
+      SchemaVersion: 1,
+      CanonicalLeagueID: 'nfl-reise',
+      Season: 2026,
+      Week: 3,
+      DisplayLevel: 0.8,
+      Method: {
+        Id: 'normal-independent-v1',
+        Levels: [0.5, 0.8, 0.9],
+        SigmaBasisLevel: 0.9,
+        Assumption: 'starters score independently; player variances add',
+        ParticipationCondition: 'conditional-on-participation'
+      },
+      Matchups: [
+        {
+          FantasyMatchupID: 'm1',
+          Teams: [team(1, 180), team(2, 200)],
+          Axis: { Min: 120, Max: 260, Step: 20 }
+        }
       ]
     };
   }
@@ -418,6 +400,9 @@ describe('DataService', () => {
         PredictionRange: status === 'available'
           ? { Level: 0.9, Lower: Math.max(-2, (points ?? 0) - 5), Upper: (points ?? 0) + 8 }
           : null,
+        PredictionRanges: status === 'available'
+          ? [{ Level: 0.9, Lower: Math.max(-2, (points ?? 0) - 5), Upper: (points ?? 0) + 8 }]
+          : [],
         RangeQuality: status === 'available' ? 'player-volatility' : 'unavailable',
         Status: status
       },

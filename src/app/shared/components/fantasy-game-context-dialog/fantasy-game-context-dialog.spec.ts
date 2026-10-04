@@ -7,6 +7,7 @@ import {
   orientMatchupScore,
   resolveMatchupDisplayTeamIDs,
   starterProjectedPoints,
+  starterProjectedRange,
   teamProjectedFinalScore
 } from './fantasy-game-context-dialog';
 
@@ -98,12 +99,27 @@ describe('FantasyGameContext matchup display orientation', () => {
   });
 
   it('reads the projected final score of the requested team only', () => {
+    const team = (id: number, score: number | null) => ({
+      FantasyTeamID: id,
+      State: score === null ? 'partial' as const : 'available' as const,
+      StarterCount: 1,
+      ResolvedStarterCount: 1,
+      FinalStarterCount: 0,
+      ScoredPoints: 0,
+      PregameProjectedScore: score,
+      ProjectedFinalScore: score,
+      StandardDeviation: score === null ? null : 10,
+      Ranges: [],
+      ByeStarterPlayerIDs: [],
+      UnavailableStarterPlayerIDs: []
+    });
     const projected = {
       ...matchup,
-      TeamPredictions: [
-        { FantasyTeamID: 2, State: 'available', StarterCount: 1, ProjectedStarterCount: 1, ProjectedStarterPoints: 90, PredictedEndScore: 90, ProjectedFinalScore: 95.5, ByeStarterPlayerIDs: [], UnavailableStarterPlayerIDs: [] },
-        { FantasyTeamID: 10, State: 'partial', StarterCount: 2, ProjectedStarterCount: 1, ProjectedStarterPoints: 40, PredictedEndScore: null, ProjectedFinalScore: null, ByeStarterPlayerIDs: [], UnavailableStarterPlayerIDs: ['p9'] }
-      ]
+      Projection: {
+        FantasyMatchupID: 'm-1',
+        Teams: [team(2, 95.5), team(10, null)],
+        Axis: { Min: 40, Max: 140, Step: 20 }
+      }
     } satisfies FantasyGameContextMatchup;
 
     expect(teamProjectedFinalScore(projected, 2)).toBe(95.5);
@@ -111,6 +127,37 @@ describe('FantasyGameContext matchup display orientation', () => {
     expect(teamProjectedFinalScore(projected, 10)).toBeNull();
     expect(teamProjectedFinalScore(projected, 99)).toBeNull();
     expect(teamProjectedFinalScore(matchup, 2)).toBeNull();
+  });
+
+  it('exposes the starter range of the display level only', () => {
+    const base = {
+      AvailabilityAdjustmentApplied: false,
+      HistoryGames: 4,
+      IntervalModel: 'V4-C-PI1',
+      ParticipationCondition: 'conditional-on-participation',
+      PointModel: 'V4-C',
+      Points: 12.5,
+      PredictionRange: null,
+      RangeQuality: 'player-volatility',
+      Status: 'available' as const
+    };
+    const player = {
+      PlayerID: 'p1',
+      IsStarter: true,
+      Points: null,
+      Prediction: {
+        ...base,
+        PredictionRanges: [
+          { Level: 0.8, Lower: 6, Upper: 20 },
+          { Level: 0.9, Lower: 4, Upper: 24 }
+        ]
+      }
+    };
+
+    expect(starterProjectedRange(player, 0.8)).toEqual({ Lower: 6, Upper: 20 });
+    expect(starterProjectedRange(player, 0.5)).toBeNull();
+    expect(starterProjectedRange(player, null)).toBeNull();
+    expect(starterProjectedRange({ ...player, Prediction: null }, 0.8)).toBeNull();
   });
 
   it('exposes a starter projection only when the published projection is available', () => {
@@ -122,6 +169,7 @@ describe('FantasyGameContext matchup display orientation', () => {
       PointModel: 'V4-C',
       Points: 12.5,
       PredictionRange: null,
+      PredictionRanges: [],
       RangeQuality: 'player-volatility'
     };
 

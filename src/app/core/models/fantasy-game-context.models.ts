@@ -1,8 +1,11 @@
-import type { PlayerWeekFantasyProjection } from './player-week-fantasy.models';
+import type { MatchupProjectionMatchup } from './matchup-projections.models';
+import type {
+  PlayerWeekFantasyProjection,
+  PlayerWeekFantasyRangeAxis
+} from './player-week-fantasy.models';
 
 export type FantasyGameContextScoringState = 'pending' | 'partial' | 'final';
 export type FantasyGameImpactState = 'unavailable' | 'partial' | 'final';
-export type FantasyGameContextTeamPredictionState = 'available' | 'partial' | 'unavailable';
 
 export interface FantasyGameContextDecisionWindow {
   DecisionWindowID: string;
@@ -78,24 +81,6 @@ export interface FantasyGameContextCounterfactualScore {
   Right: number;
 }
 
-export interface FantasyGameContextTeamPrediction {
-  FantasyTeamID: string | number;
-  State: FantasyGameContextTeamPredictionState;
-  StarterCount: number;
-  ProjectedStarterCount: number;
-  ProjectedStarterPoints: number;
-  PredictedEndScore: number | null;
-  /**
-   * Pregame expectation that converges on the real score: starters of final games count their
-   * actual points, all other starters count max(points so far, projection). Null unless every
-   * current starter is resolved.
-   */
-  ProjectedFinalScore: number | null;
-  /** Starters on an explicit bye; they count as resolved zero points in both team values. */
-  ByeStarterPlayerIDs: string[];
-  UnavailableStarterPlayerIDs: string[];
-}
-
 export interface FantasyGameContextMatchupGame {
   GameID: string;
   DecisionWindowID: string;
@@ -144,7 +129,7 @@ export interface FantasyMatchupRemainingRelevance {
 export interface FantasyGameContextMatchup {
   FantasyMatchupID: string;
   TeamIDs: Array<string | number>;
-  TeamPredictions?: FantasyGameContextTeamPrediction[];
+  Projection?: MatchupProjectionMatchup | null;
   FinalScores: FantasyGameContextCounterfactualScore | null;
   CounterfactualState:
     | 'available'
@@ -181,6 +166,13 @@ export interface FantasyMustWatchGame {
   EligibleBenchCandidateCount: number;
 }
 
+export interface FantasyGameContextProjectionDisplay {
+  /** Prediction-range levels the published data wants shown; null when that snapshot did not join. */
+  PlayerRangeLevel: number | null;
+  PlayerRangeAxis: PlayerWeekFantasyRangeAxis | null;
+  TeamRangeLevel: number | null;
+}
+
 export interface FantasyGameContextReadModel {
   SchemaVersion: number;
   LeagueID: string | number;
@@ -192,6 +184,7 @@ export interface FantasyGameContextReadModel {
   FantasyMatchups: FantasyGameContextMatchup[];
   NonGameAssociations: FantasyGameContextNonGameAssociation[];
   MustWatchGames?: FantasyMustWatchGame[];
+  ProjectionDisplay?: FantasyGameContextProjectionDisplay | null;
 }
 
 export interface HistoricalFantasyGameContextSeason {

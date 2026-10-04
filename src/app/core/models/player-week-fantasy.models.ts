@@ -20,6 +20,7 @@ export interface PlayerWeekFantasyProjection {
   PointModel: string;
   Points: number | null;
   PredictionRange: PlayerWeekFantasyPredictionRange | null;
+  PredictionRanges: PlayerWeekFantasyPredictionRange[];
   RangeQuality: string;
   Status: PlayerWeekFantasyProjectionStatus;
 }
@@ -49,6 +50,16 @@ export interface PlayerWeekFantasyIdentityCoverage {
   UnavailableRecordCount: number;
 }
 
+export interface PlayerWeekFantasyRangeAxis {
+  Min: number;
+  Max: number;
+}
+
+export interface PlayerWeekFantasyDisplay {
+  RangeLevel: number;
+  RangeAxis: PlayerWeekFantasyRangeAxis | null;
+}
+
 export interface PlayerWeekFantasyReadModel {
   SchemaVersion: number;
   CanonicalLeagueID: string;
@@ -56,5 +67,6 @@ export interface PlayerWeekFantasyReadModel {
   Week: number;
   ScoringProfile: PlayerWeekFantasyScoringProfile;
   IdentityCoverage: PlayerWeekFantasyIdentityCoverage;
+  Display?: PlayerWeekFantasyDisplay;
   Records: PlayerWeekFantasyRecord[];
 }

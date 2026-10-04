@@ -1,0 +1,19 @@
+:host { display: block; margin-block: 12px; }
+.card { display: grid; gap: 8px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 14px; }
+.head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.head h3 { margin: 0; font-size: 0.92rem; }
+.head span, .note { margin: 0; color: #64748b; font-size: 0.7rem; }
+.chart { display: grid; gap: 10px; padding-top: 6px; }
+.row { display: grid; grid-template-columns: 38px 1fr; align-items: center; gap: 8px; }
+.team { color: #334155; font-size: 0.74rem; font-weight: 800; }
+.track { position: relative; height: 34px; }
+.track::before { content: ""; position: absolute; inset-inline: 0; top: 50%; height: 1px; background: #e2e8f0; }
+.bar { position: absolute; top: 9px; height: 16px; border: 1px solid #8b5cf6; border-radius: 8px; background: #c4b5fd; }
+.marker { position: absolute; top: 3px; bottom: 3px; width: 3px; border-radius: 2px; background: #172033; text-decoration: none; transform: translateX(-1.5px); }
+.value, .end { position: absolute; font-size: 0.64rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.value { top: -9px; color: #172033; font-weight: 700; transform: translateX(-50%); }
+.end { top: 11px; color: #64748b; }
+.end--low { transform: translateX(calc(-100% - 5px)); }
+.end--high { transform: translateX(5px); }
+.ticks { position: relative; height: 14px; margin-left: 46px; }
+.ticks span { position: absolute; color: #94a3b8; font-size: 0.6rem; font-variant-numeric: tabular-nums; transform: translateX(-50%); }

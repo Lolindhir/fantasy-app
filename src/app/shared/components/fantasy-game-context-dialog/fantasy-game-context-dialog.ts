@@ -20,14 +20,25 @@ import type {
   FantasyMatchupRemainingState
 } from '../../../core/models/fantasy-game-context.models';
 import type { FantasyTeam, League } from '../../../core/models/league.models';
+import type { MatchupProjectionTeam } from '../../../core/models/matchup-projections.models';
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
+import { MatchupRangeChartComponent } from '../projection-range/matchup-range-chart';
+import { RangeWhiskerComponent } from '../projection-range/range-whisker';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import {
   isFantasyGameImpactVisible,
   isFantasyMatchupFinalWindowGame
 } from '../../utils/fantasy-game-context.util';
 import { orderOverviewCurrentMatchups } from '../../utils/overview-weekly-dashboard.util';
+import {
+  axisPosition,
+  rangeAtLevel,
+  rangeBarGeometry,
+  type MatchupRangeTeamView,
+  type MatchupRangeView,
+  type PlayerRangeBarView
+} from '../../utils/projection-range.util';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
@@ -40,6 +51,7 @@ interface FantasyGamePlayerDisplay {
   EligibleUnlockedSlotIDs: string[];
   Points: number | null;
   ProjectedPoints: number | null;
+  ProjectedRange: { Lower: number; Upper: number } | null;
 }
 
 export function starterProjectedPoints(player: FantasyGameContextPlayer | null | undefined): number | null {
@@ -49,13 +61,27 @@ export function starterProjectedPoints(player: FantasyGameContextPlayer | null |
     : null;
 }
 
+export function starterProjectedRange(
+  player: FantasyGameContextPlayer | null | undefined,
+  level: number | null | undefined
+): { Lower: number; Upper: number } | null {
+  const range = rangeAtLevel(player?.Prediction?.PredictionRanges, level);
+  return range ? { Lower: range.Lower, Upper: range.Upper } : null;
+}
+
+export function matchupProjectionTeam(
+  matchup: FantasyGameContextMatchup,
+  teamID: string | number
+): MatchupProjectionTeam | null {
+  return matchup.Projection?.Teams
+    .find(team => String(team.FantasyTeamID) === String(teamID)) ?? null;
+}
+
 export function teamProjectedFinalScore(
   matchup: FantasyGameContextMatchup,
   teamID: string | number
 ): number | null {
-  return matchup.TeamPredictions
-    ?.find(prediction => String(prediction.FantasyTeamID) === String(teamID))
-    ?.ProjectedFinalScore ?? null;
+  return matchupProjectionTeam(matchup, teamID)?.ProjectedFinalScore ?? null;
 }
 
 export type MatchupDisplaySide = 'left' | 'right';
@@ -155,7 +181,15 @@ export interface FantasyGameContextDialogData {
 @Component({
   selector: 'app-fantasy-game-context-dialog',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatIconModule, PositionStylePipe],
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
+    PositionStylePipe,
+    MatchupRangeChartComponent,
+    RangeWhiskerComponent
+  ],
   templateUrl: './fantasy-game-context-dialog.html',
   styleUrls: ['./fantasy-game-context-dialog.scss', './fantasy-game-context-dialog-refinements.scss']
 })
@@ -360,7 +394,8 @@ export class FantasyGameContextDialogComponent {
         LineupSlotType: null,
         EligibleUnlockedSlotIDs: [],
         Points: player.Points,
-        ProjectedPoints: starterProjectedPoints(player)
+        ProjectedPoints: starterProjectedPoints(player),
+        ProjectedRange: starterProjectedRange(player, this.data.context.ProjectionDisplay?.PlayerRangeLevel)
       }));
   }
 
@@ -410,6 +445,53 @@ export class FantasyGameContextDialogComponent {
     const right = teamProjectedFinalScore(matchup, this.matchupTeamID(matchup, 'right'));
     if (left === null && right === null) return null;
     return { left: this.formatFantasyPoints(left), right: this.formatFantasyPoints(right) };
+  }
+
+  matchupRange(matchup: FantasyGameContextMatchup): MatchupRangeView | null {
+    if (matchup.CounterfactualState !== 'unavailable-not-final') return null;
+    const axis = matchup.Projection?.Axis;
+    const level = this.data.context.ProjectionDisplay?.TeamRangeLevel;
+    if (!axis || level === null || level === undefined) return null;
+
+    const sides: MatchupDisplaySide[] = ['left', 'right'];
+    const teams: MatchupRangeTeamView[] = [];
+    const scored: string[] = [];
+    for (const side of sides) {
+      const teamID = this.matchupTeamID(matchup, side);
+      const team = matchupProjectionTeam(matchup, teamID);
+      const range = rangeAtLevel(team?.Ranges, level);
+      if (!team || !range || team.ProjectedFinalScore === null) return null;
+      const projected = this.formatFantasyPoints(team.ProjectedFinalScore);
+      teams.push({
+        label: this.teamShortName(teamID),
+        bar: rangeBarGeometry(range, axis),
+        marker: axisPosition(team.ProjectedFinalScore, axis),
+        projected,
+        lower: String(Math.round(range.Lower)),
+        upper: String(Math.round(range.Upper)),
+        ariaLabel: `${this.teamName(teamID)} projected ${projected}, ${Math.round(level * 100)}% range ${Math.round(range.Lower)} to ${Math.round(range.Upper)}`
+      });
+      scored.push(this.formatFantasyPoints(team.ScoredPoints));
+    }
+
+    const ticks: Array<{ value: number; position: number }> = [];
+    for (let value = axis.Min; value <= axis.Max; value += axis.Step) {
+      ticks.push({ value, position: axisPosition(value, axis) });
+    }
+    return { levelLabel: `${Math.round(level * 100)}% range`, teams, ticks, scored: { left: scored[0], right: scored[1] } };
+  }
+
+  playerRangeBar(row: FantasyGameContextMatchupGame, player: FantasyGamePlayerDisplay): PlayerRangeBarView | null {
+    const axis = this.data.context.ProjectionDisplay?.PlayerRangeAxis;
+    if (!axis || !player.ProjectedRange || player.ProjectedPoints === null) return null;
+    if (!this.showPlayerProjection(row, player)) return null;
+    const bar = rangeBarGeometry(player.ProjectedRange, axis);
+    return {
+      left: bar.left,
+      width: bar.width,
+      marker: axisPosition(player.ProjectedPoints, axis),
+      ariaLabel: `Projected ${this.formatFantasyPoints(player.ProjectedPoints)}, range ${this.formatFantasyPoints(player.ProjectedRange.Lower)} to ${this.formatFantasyPoints(player.ProjectedRange.Upper)}`
+    };
   }
 
   showPlayerProjection(row: FantasyGameContextMatchupGame, player: FantasyGamePlayerDisplay): boolean {
@@ -566,7 +648,8 @@ export class FantasyGameContextDialogComponent {
       LineupSlotType: state.LineupSlotType,
       EligibleUnlockedSlotIDs: [...state.EligibleUnlockedSlotIDs],
       Points: legacy?.Points ?? null,
-      ProjectedPoints: starterProjectedPoints(legacy)
+      ProjectedPoints: starterProjectedPoints(legacy),
+      ProjectedRange: starterProjectedRange(legacy, this.data.context.ProjectionDisplay?.PlayerRangeLevel)
     };
   }
 

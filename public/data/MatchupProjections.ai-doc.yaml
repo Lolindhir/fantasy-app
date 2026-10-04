@@ -53,6 +53,10 @@ contract:
 
 semantics: .ai-context/manual/player-week-fantasy.yaml
 
+consumer:
+  - src/app/core/services/data.service.ts joins it onto FantasyGameContext matchups (Projection) by FantasyMatchupID and exposes DisplayLevel as ProjectionDisplay.TeamRangeLevel.
+  - Overview matchup cards and the fantasy matchup dialog only format and lay out the published values.
+
 boundaries:
   - A week mismatch between FantasyGameContext and PlayerWeekFantasy skips publication; consumers must ignore a snapshot that targets another Season or Week.
   - Starters without a game association other than a bye (unknown, no team) stay unresolved.

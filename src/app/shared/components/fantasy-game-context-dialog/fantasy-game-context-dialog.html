@@ -192,6 +192,8 @@
         </button>
       </section>
 
+      <app-matchup-range-chart *ngIf="matchupRange(selectedMatchup) as range" [view]="range"></app-matchup-range-chart>
+
       <section *ngIf="selectedMatchup.RemainingRelevance as remaining" class="fgc-signal-strip fgc-matchup-signal-strip">
         <span *ngIf="remaining.LockedActiveStarterCount > 0" class="fgc-signal fgc-signal--live">
           {{ remaining.LockedActiveStarterCount }} locked live
@@ -267,6 +269,7 @@
                         [class.fgc-player-state--option]="player.IsBenchCandidate"
                       >{{ playerStateLabel(player) }}</span>
                     </span>
+                    <app-range-whisker *ngIf="playerRangeBar(row, player) as bar" [bar]="bar"></app-range-whisker>
                   </span>
                   <span *ngIf="hasMatchupGameScoring(row) && player.Points != null" class="fgc-mini-player-points">
                     {{ formatFantasyPoints(player.Points) }}
@@ -309,6 +312,7 @@
                         [class.fgc-player-state--option]="player.IsBenchCandidate"
                       >{{ playerStateLabel(player) }}</span>
                     </span>
+                    <app-range-whisker *ngIf="playerRangeBar(row, player) as bar" [bar]="bar"></app-range-whisker>
                   </span>
                   <span *ngIf="hasMatchupGameScoring(row) && player.Points != null" class="fgc-mini-player-points">
                     {{ formatFantasyPoints(player.Points) }}
