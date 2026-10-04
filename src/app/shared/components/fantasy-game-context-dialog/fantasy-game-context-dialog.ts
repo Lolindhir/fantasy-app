@@ -39,6 +39,23 @@ interface FantasyGamePlayerDisplay {
   LineupSlotType: string | null;
   EligibleUnlockedSlotIDs: string[];
   Points: number | null;
+  ProjectedPoints: number | null;
+}
+
+export function starterProjectedPoints(player: FantasyGameContextPlayer | null | undefined): number | null {
+  const prediction = player?.Prediction;
+  return prediction?.Status === 'available' && Number.isFinite(prediction.Points)
+    ? prediction.Points
+    : null;
+}
+
+export function teamProjectedFinalScore(
+  matchup: FantasyGameContextMatchup,
+  teamID: string | number
+): number | null {
+  return matchup.TeamPredictions
+    ?.find(prediction => String(prediction.FantasyTeamID) === String(teamID))
+    ?.ProjectedFinalScore ?? null;
 }
 
 export type MatchupDisplaySide = 'left' | 'right';
@@ -342,7 +359,8 @@ export class FantasyGameContextDialogComponent {
         GameState: null,
         LineupSlotType: null,
         EligibleUnlockedSlotIDs: [],
-        Points: player.Points
+        Points: player.Points,
+        ProjectedPoints: starterProjectedPoints(player)
       }));
   }
 
@@ -384,6 +402,20 @@ export class FantasyGameContextDialogComponent {
       .filter(player => player.GameID === row.GameID)
       .filter(player => player.HasDirectScoringPath || player.HasAlternativePath || (player.Placement === 'starter' && player.GameState === 'completed'))
       .map(player => this.toPlayerDisplay(player, null));
+  }
+
+  matchupProjection(matchup: FantasyGameContextMatchup): { left: string; right: string } | null {
+    if (matchup.CounterfactualState !== 'unavailable-not-final') return null;
+    const left = teamProjectedFinalScore(matchup, this.matchupTeamID(matchup, 'left'));
+    const right = teamProjectedFinalScore(matchup, this.matchupTeamID(matchup, 'right'));
+    if (left === null && right === null) return null;
+    return { left: this.formatFantasyPoints(left), right: this.formatFantasyPoints(right) };
+  }
+
+  showPlayerProjection(row: FantasyGameContextMatchupGame, player: FantasyGamePlayerDisplay): boolean {
+    return player.IsStarter
+      && player.ProjectedPoints !== null
+      && !(this.hasMatchupGameScoring(row) && player.Points != null);
   }
 
   matchupStateLabel(matchup: FantasyGameContextMatchup): string {
@@ -533,7 +565,8 @@ export class FantasyGameContextDialogComponent {
       GameState: state.GameState,
       LineupSlotType: state.LineupSlotType,
       EligibleUnlockedSlotIDs: [...state.EligibleUnlockedSlotIDs],
-      Points: legacy?.Points ?? null
+      Points: legacy?.Points ?? null,
+      ProjectedPoints: starterProjectedPoints(legacy)
     };
   }
 
