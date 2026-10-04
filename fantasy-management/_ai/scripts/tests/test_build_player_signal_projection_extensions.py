@@ -66,9 +66,10 @@ class ProjectionExtensionTests(unittest.TestCase):
         self.assertIsNone(view["core_points"])
         self.assertIn("receiving_touchdowns", view["missing_core_stats"])
 
-    def test_projection_extension_uses_league_display_config_contract(self):
+    def test_projection_extension_reads_scoring_from_canonical_league(self):
         source = Path(module.__file__).read_text(encoding="utf-8")
-        self.assertIn('config["sources"]["league_display"]', source)
+        self.assertIn("load_canonical_league_scoring_settings", source)
+        self.assertNotIn('"ScoringType"', source)
         self.assertNotIn('config["sources"]["league"]', source)
 
     def test_unlisted_provider_never_gets_inferred_points(self):

@@ -14,6 +14,7 @@ from canonical_league_ownership import (  # noqa: E402
     CanonicalOwnershipError,
     build_canonical_ownership_snapshot,
     compare_to_app_league,
+    load_canonical_league_scoring_settings,
     resolve_current_canonical_season,
 )
 
@@ -45,6 +46,31 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
                     root,
                     canonical_league_id="test-league",
                 )
+
+    def test_scoring_settings_load_from_current_canonical_season_and_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            league_path = root / "source-data/leagues/test-league/seasons/2026/league.json"
+            league = self._read_json(league_path)
+
+            league["ScoringSettings"] = {"pass_td": 4.0}
+            self._write_json(league_path, league)
+            self.assertEqual(
+                {"pass_td": 4.0},
+                load_canonical_league_scoring_settings(root, canonical_league_id="test-league"),
+            )
+
+            del league["ScoringSettings"]
+            self._write_json(league_path, league)
+            with self.assertRaisesRegex(CanonicalOwnershipError, "ScoringSettings"):
+                load_canonical_league_scoring_settings(root, canonical_league_id="test-league")
+
+            league["ScoringSettings"] = {"pass_td": 4.0}
+            league["Season"] = 2025
+            self._write_json(league_path, league)
+            with self.assertRaisesRegex(CanonicalOwnershipError, "season mismatch"):
+                load_canonical_league_scoring_settings(root, canonical_league_id="test-league")
 
     def test_team_id_is_bridged_by_canonical_member_not_provider_roster_id(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -28,6 +28,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import build_fantasy_operations_inputs as ops  # noqa: E402
 import build_managed_roster_overview as roster_overview  # noqa: E402
 import build_player_signal_dataset as base  # noqa: E402
+import canonical_league_ownership as canonical_ownership  # noqa: E402
 
 
 CORE_COMPONENTS: dict[str, list[tuple[str, str]]] = {
@@ -215,12 +216,18 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                 )
     ops.validate_catalog(merged_catalog)
 
-    league_display = real_load_json(root / config["sources"]["league_display"])
-    scoring = (
-        league_display.get("ScoringType")
-        if isinstance(league_display.get("ScoringType"), dict)
-        else {}
-    )
+    canonical_league_id = ops.optional_text((config.get("canonical_league") or {}).get("canonical_league_id"))
+    if not canonical_league_id:
+        raise ops.MaterializationError(
+            "canonical_league.canonical_league_id is required for projection scoring"
+        )
+    try:
+        scoring = canonical_ownership.load_canonical_league_scoring_settings(
+            root,
+            canonical_league_id=canonical_league_id,
+        )
+    except canonical_ownership.CanonicalOwnershipError as exc:
+        raise ops.MaterializationError(str(exc)) from exc
 
     def load_json_with_merged_catalog(path: Path) -> Any:
         if Path(path).resolve() == base_catalog_path.resolve():

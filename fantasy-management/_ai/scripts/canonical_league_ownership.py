@@ -139,6 +139,35 @@ def resolve_current_canonical_season(
     return season
 
 
+def load_canonical_league_scoring_settings(
+    repo_root: Path,
+    *,
+    canonical_league_id: str,
+) -> dict[str, Any]:
+    """Return the current season's league ScoringSettings from Canonical League data."""
+
+    root = repo_root.resolve()
+    season = resolve_current_canonical_season(root, canonical_league_id=canonical_league_id)
+    league_path = (
+        root / "source-data" / "leagues" / canonical_league_id / "seasons" / str(season) / "league.json"
+    )
+    league = _require_object(_read_json(league_path), "league.json")
+    if league.get("CanonicalLeagueID") != canonical_league_id:
+        raise CanonicalOwnershipError(
+            "Canonical league scoring source identity mismatch: "
+            f"expected {canonical_league_id!r}, found {league.get('CanonicalLeagueID')!r}."
+        )
+    try:
+        source_season = int(league.get("Season"))
+    except (TypeError, ValueError) as exc:
+        raise CanonicalOwnershipError("Canonical league scoring source has invalid Season.") from exc
+    if source_season != season:
+        raise CanonicalOwnershipError(
+            f"Canonical league scoring season mismatch: expected {season}, found {league.get('Season')!r}."
+        )
+    return _require_object(league.get("ScoringSettings"), "league.json.ScoringSettings")
+
+
 def build_canonical_ownership_snapshot(
     repo_root: Path,
     *,
