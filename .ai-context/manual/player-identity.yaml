@@ -138,16 +138,102 @@ identityModel:
         only; productive identity materialization does not consume this source yet.
       requirements:
         - Status must be confirmed; unresolved review candidates do not belong in the canonical current-adjudication source.
-        - ResolutionKind must be current-provider-reassignment and ConflictPolicy must be reject-active-conflict.
+        - ResolutionKind is either current-provider-reassignment with ConflictPolicy reject-active-conflict, or upstream-claim-override with ConflictPolicy override-named-upstream-claim (see currentIdentityGapResolution.classes.wrongUpstreamClaim).
         - Every decision requires a stable AdjudicationID, exact Season, DecisionAuthority, DecisionDate, rationale and non-empty evidence references.
         - TargetCanonicalPlayerID and every SourceCanonicalPlayerID must already exist in the persisted canonical identity graph, and the target must not also be listed as a source.
         - ProviderAssignments enumerate the only Provider plus ExternalID tokens the decision may reassign; no unlisted provider value transfers implicitly.
         - A decision is active only for its exact observation season and must not silently carry into a later season.
-        - The target must not already carry a different active value for an assigned provider.
+        - For current-provider-reassignment, the target must not already carry a different active value for an assigned provider.
         - An assigned provider token must not be owned by an undeclared third CanonicalPlayerID.
-        - An adjudication must fail closed rather than override an active provider conflict.
+        - A current-provider-reassignment must fail closed rather than override an active provider conflict; only upstream-claim-override may resolve a conflict, and only the exact upstream claim it names.
         - Future productive materialization must retain manual.current-identity-adjudication:<AdjudicationID> provenance and must be replay-idempotent.
         - Any future reversal or correction must be explicit and versioned; generated canonical identity or provider-mapping output must never be hand-edited as the source of truth.
+    currentIdentityGapResolution:
+      status: accepted-contract-not-yet-implemented
+      trackingIssue: 347
+      decidedAt: 2026-10-04
+      purpose: >
+        A current identity gap is a current-season player whose provisional
+        CanonicalPlayerID differs from a durable CanonicalPlayerID that current
+        canonical NFL data attributes to the same real person. Gaps are found by the
+        player-signal population audit through an exact normalized name plus
+        fantasy position diagnostic; that diagnostic only detects candidates and is
+        never merge evidence. This contract classifies every gap, assigns one
+        resolution mechanism per class and defines how an open gap behaves until it
+        is resolved, so that a single case can neither block the whole Phase 2
+        migration nor be silently removed or merged.
+      classes:
+        placeholderGsisUpgrade:
+          resolution: automatic
+          pattern: >
+            One record carries a placeholder GSIS value (not matching ^00-\d{7}$; in
+            nflverse this is the player's ESB value repeated in the GSIS field) or no
+            GSIS, while the other record carries a valid GSIS. Both records carry the
+            same ESB value.
+          rule: >
+            The identity builder may treat the shared ESB value as the bridge between
+            the two records only in this pattern, only when the ESB value occurs on
+            exactly these two records, and only when no other provider ID present on
+            both records disagrees. The provider tokens of the placeholder record
+            transfer to the record with the valid GSIS for the current season, with
+            provenance auto.placeholder-gsis-upgrade:<ESB>. Neither CanonicalPlayerID
+            is renamed, regenerated or deleted. Placeholder GSIS values in general
+            stay untouched; this rule does not reinterpret them as conflicts.
+          observedOn2026-10-04: 8 ESB pairs repository-wide, among them current gap Layne Pryor
+        splitIdentity:
+          resolution: human-reviewed adjudication (ResolutionKind current-provider-reassignment)
+          pattern: >
+            Two partial records of the same person share no provider ID. Typically
+            nflverse.players or rosters know GSIS/PFR/NFL IDs while the app/Sleeper
+            record knows Sleeper/Tank01/ESPN IDs, because the external crosswalk has
+            not yet caught up with a young or newly signed player.
+          rule: >
+            Use the existing current adjudication. Evidence must go beyond name and
+            position (for example matching team in current canonical rosters, matching
+            ESPN/Tank01 token, birth date). An adjudication whose assignments the
+            automatic rules later reproduce on their own is reported as
+            superseded-by-upstream and may then be retired by an explicit versioned
+            change.
+          observedOn2026-10-04: Grant Finley, Gregory Desrosiers, Roydell Williams
+        wrongUpstreamClaim:
+          resolution: human-reviewed adjudication (ResolutionKind upstream-claim-override)
+          pattern: >
+            An upstream crosswalk assigns a provider token to the durable record that
+            the provider's own platform data contradicts, which creates an active
+            provider conflict.
+          rule: >
+            An upstream-claim-override names exactly one upstream claim (Source,
+            Provider, ExternalID, TargetCanonicalPlayerID) that is declared wrong for
+            one Season, and the replacement token for the same provider. It requires
+            at least one independent strong anchor (GSIS, ESPN, PFR or PFF) that ties
+            the replacement token's record to the durable record, plus platform-data
+            consistency of the replacement token (position and current team) and
+            documented inconsistency of the overridden token. Raw upstream evidence is
+            never rewritten; the overridden claim stays visible in conflict
+            diagnostics with provenance manual.current-identity-adjudication:<AdjudicationID>.
+            If the upstream claim changes or disappears, the override is reported as
+            obsolete instead of being applied silently.
+          observedOn2026-10-04: >
+            Sam Hartman. nflverse ff-player-ids assigns Sleeper 11376 to the durable
+            record; Sleeper lists 11376 as an OL without team. Sleeper 11558 is the QB
+            at WAS, and its Tank01 ID 4361994 equals the durable record's ESPN ID.
+      openGapHold:
+        rule: >
+          A gap that matches one of the classes but is not yet resolved is
+          classified-open. A classified-open player keeps the population membership
+          it had before the cutover (status identity_hold) and does not block a
+          consumer cutover. Only unclassified gaps block, and they keep blocking
+          until they are classified. A hold never merges, never removes and never
+          grants new canonical facts.
+        reporting: >
+          The population audit reports classified-open and unclassified gaps
+          separately, with class and age in days, so a long-standing hold stays
+          visible.
+      implementationOrder:
+        - placeholderGsisUpgrade rule in the identity builder with an identity diff limited to the observed ESB pairs
+        - upstream-claim-override loader/validator and the openGapHold rule in the population audit
+        - reviewed adjudication entries for the open splitIdentity and wrongUpstreamClaim cases
+        - productive consumption in the identity builder (current adjudication integration steps 1-7)
     historicalAdjudication:
       source: source-data/nfl/identities/historical-identity-adjudications.json
       provenancePrefix: manual.identity-adjudication
