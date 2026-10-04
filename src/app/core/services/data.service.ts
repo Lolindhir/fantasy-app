@@ -132,9 +132,18 @@ function enrichFantasyGameContextWithPredictions(
     }))
   }));
 
+  const byeStarterIDsByTeam = new Map<string, Set<string>>();
   for (const association of context.NonGameAssociations) {
     if (association.IsStarter) {
       addStarter(association.FantasyMatchupID, association.FantasyTeamID, association.PlayerID);
+      // Only an explicit bye (known NFL team without a game this week) is a certain zero.
+      // Unknown or team-less starters stay unresolved.
+      if (association.Kind === 'bye' && association.FantasyMatchupID) {
+        const key = predictionTeamKey(association.FantasyMatchupID, association.FantasyTeamID);
+        const current = byeStarterIDsByTeam.get(key) ?? new Set<string>();
+        current.add(String(association.PlayerID));
+        byeStarterIDsByTeam.set(key, current);
+      }
     }
   }
 
@@ -144,6 +153,8 @@ function enrichFantasyGameContextWithPredictions(
       const teamKey = predictionTeamKey(matchup.FantasyMatchupID, teamID);
       const starterIDs = Array.from(starterIDsByTeam.get(teamKey) ?? []);
       const outcomes = outcomesByTeam.get(teamKey);
+      const byeStarterIDs = byeStarterIDsByTeam.get(teamKey);
+      const byeStarterPlayerIDs: string[] = [];
       const unavailableStarterPlayerIDs: string[] = [];
       let projectedStarterPoints = 0;
       let projectedStarterCount = 0;
@@ -151,6 +162,12 @@ function enrichFantasyGameContextWithPredictions(
       let projectedFinalComplete = starterIDs.length > 0;
 
       for (const playerID of starterIDs) {
+        if (byeStarterIDs?.has(playerID)) {
+          byeStarterPlayerIDs.push(playerID);
+          projectedStarterCount += 1;
+          continue;
+        }
+
         const projection = projectionByPlayerID.get(playerID);
         const outcome = outcomes?.get(playerID);
         const projectedPoints = projection?.Status === 'available' && isFiniteNumber(projection.Points)
@@ -193,6 +210,7 @@ function enrichFantasyGameContextWithPredictions(
         ProjectedStarterPoints: roundedProjectedStarterPoints,
         PredictedEndScore: state === 'available' ? roundedProjectedStarterPoints : null,
         ProjectedFinalScore: projectedFinalComplete ? roundPredictionPoints(projectedFinalPoints) : null,
+        ByeStarterPlayerIDs: byeStarterPlayerIDs.sort(),
         UnavailableStarterPlayerIDs: unavailableStarterPlayerIDs.sort()
       };
     })
