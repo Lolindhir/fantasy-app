@@ -123,7 +123,7 @@ describe('fantasy game context utilities', () => {
 
   it('keeps unknown-only future games visible and matches fantasy pairings independently from provider matchup ids', () => {
     const unknown = game({ Relevance: { RosteredPlayerCount: 0, StarterCount: 0, FantasyTeamCount: 0, FantasyMatchupCount: 0, UnknownAssociationCount: 1 } });
-    expect(getUpcomingRelevantGames({ ...baseContext, Games: [unknown] }, new Date('2026-09-09T00:00:00Z'))).toHaveLength(1);
+    expect(getUpcomingRelevantGames({ ...baseContext, Games: [unknown] }, new Date('2026-09-09T00:00:00Z'))).toHaveSize(1);
     expect(getFantasyMatchupContext(baseContext, ['2', '1'])?.FantasyMatchupID).toBe('fgm-1');
   });
 

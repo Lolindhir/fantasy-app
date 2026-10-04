@@ -9,6 +9,19 @@ import { APP_BUILD_INFO } from '../build-info.generated';
 import { jsonDataCacheBustingInterceptor } from './json-data-cache-busting.interceptor';
 
 describe('jsonDataCacheBustingInterceptor', () => {
+  // Karma serves the test page from /context.html; the interceptor resolves data paths against the document base.
+  let baseElement: HTMLBaseElement;
+
+  beforeAll(() => {
+    baseElement = document.createElement('base');
+    baseElement.href = `${window.location.origin}/`;
+    document.head.prepend(baseElement);
+  });
+
+  afterAll(() => {
+    baseElement.remove();
+  });
+
   it('adds the build commit to a JSON file in the data root', () => {
     expect(intercept('data/Drafts.json').urlWithParams).toBe(
       `data/Drafts.json?build=${APP_BUILD_INFO.commit}`
@@ -67,7 +80,7 @@ function intercept(url: string, method = 'GET'): HttpRequest<unknown> {
   };
 
   jsonDataCacheBustingInterceptor(
-    new HttpRequest(method, url),
+    new HttpRequest(method as 'GET', url),
     next
   ).subscribe();
 
