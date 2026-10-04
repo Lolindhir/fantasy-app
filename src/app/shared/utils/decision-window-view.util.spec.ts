@@ -170,7 +170,7 @@ describe('decision-window-view util', () => {
           ]
         }
       ]
-    } as DecisionWindowsReadModel['FantasyRelevance'];
+    } as unknown as DecisionWindowsReadModel['FantasyRelevance'];
 
     const rows = buildDecisionWindowTeamRows(model, window, teams);
 

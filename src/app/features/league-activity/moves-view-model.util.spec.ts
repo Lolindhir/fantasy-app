@@ -52,11 +52,10 @@ describe('moves-view-model.util', () => {
     expect(viewModel.TotalCount).toBe(4);
     expect(viewModel.VisibleCount).toBe(4);
     expect(viewModel.TradeCount).toBe(1);
-    expect(viewModel.RosterMoveCount).toBe(1);
-    expect(viewModel.PlayerMoveCount).toBe(6);
+        expect(viewModel.PlayerMoveCount).toBe(6);
     expect(viewModel.DraftPickCount).toBe(2);
-    expect(viewModel.CutCount).toBe(2);
-    expect(viewModel.WaiverAddCount).toBe(2);
+    expect(viewModel.CutCount).toBe(1);
+    expect(viewModel.AddCount).toBe(2);
   });
 
   it('filters the visible feed without changing the season summary', () => {
@@ -67,13 +66,13 @@ describe('moves-view-model.util', () => {
     ];
 
     const tradeViewModel = buildMovesViewModel(transactions, 'trade');
-    const rosterViewModel = buildMovesViewModel(transactions, 'roster');
+    const cutViewModel = buildMovesViewModel(transactions, 'cut');
 
     expect(tradeViewModel.TotalCount).toBe(3);
     expect(tradeViewModel.VisibleCount).toBe(1);
     expect(tradeViewModel.Groups[0].Transactions[0].TransactionID).toBe('trade-1');
-    expect(rosterViewModel.VisibleCount).toBe(1);
-    expect(rosterViewModel.Groups[0].Transactions[0].TransactionID).toBe('cut-1');
+    expect(cutViewModel.VisibleCount).toBe(1);
+    expect(cutViewModel.Groups[0].Transactions[0].TransactionID).toBe('cut-1');
   });
 
   it('provides filter counts for all activity types', () => {
@@ -87,8 +86,8 @@ describe('moves-view-model.util', () => {
     expect(viewModel.Filters.map(filter => [filter.Id, filter.Count])).toEqual([
       ['all', 4],
       ['trade', 1],
-      ['waiver', 1],
-      ['roster', 2]
+      ['add', 2],
+      ['cut', 1]
     ]);
   });
 

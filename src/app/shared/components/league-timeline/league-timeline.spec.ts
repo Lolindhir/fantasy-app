@@ -25,6 +25,7 @@ describe('LeagueTimelineComponent', () => {
     const getDecisionWindows = jasmine.createSpy('getDecisionWindows').and.returnValue(of(createModel([])));
     const getDecisionWindowsTimestamp = jasmine.createSpy('getDecisionWindowsTimestamp').and.returnValue(of(undefined));
     component = new LeagueTimelineComponent({
+      getNflTeams: () => of([]),
       getDecisionWindows,
       getDecisionWindowsTimestamp
     } as unknown as DataService, createDialog());
@@ -54,6 +55,7 @@ describe('LeagueTimelineComponent', () => {
 
   it('isolates a DecisionWindows load failure from the rest of the timeline', () => {
     const dataService = {
+      getNflTeams: () => of([]),
       getDecisionWindows: () => throwError(() => new Error('DecisionWindows unavailable')),
       getDecisionWindowsTimestamp: () => throwError(() => new Error('timestamps unavailable'))
     } as unknown as DataService;
@@ -79,6 +81,7 @@ describe('LeagueTimelineComponent', () => {
 
   it('keeps a missing DecisionWindows timestamp non-fatal', () => {
     const dataService = {
+      getNflTeams: () => of([]),
       getDecisionWindows: () => of(createModel([createWindow('2026-09-04T12:00:00Z')])),
       getDecisionWindowsTimestamp: () => throwError(() => new Error('timestamp unavailable'))
     } as unknown as DataService;
@@ -118,6 +121,7 @@ function createDialog(): MatDialog {
 
 function createDataService(model: DecisionWindowsReadModel): DataService {
   return {
+    getNflTeams: () => of([]),
     getDecisionWindows: () => of(model),
     getDecisionWindowsTimestamp: () => of('2026-09-04T09:58:00Z')
   } as unknown as DataService;
