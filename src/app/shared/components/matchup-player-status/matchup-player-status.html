@@ -33,26 +33,10 @@
               <span class="mps-chip mps-chip--status">{{ player.kind === 'out' ? 'OUT' : 'Q' }}</span>
               {{ player.name }}
             </strong>
-            <span class="mps-why">
-              <ng-container *ngIf="player.position">{{ player.position }}<ng-container *ngIf="player.slot">, {{ player.slot }}</ng-container> · </ng-container>
-              <ng-container *ngIf="player.gameLabel">{{ player.gameLabel }} · </ng-container>
-              <ng-container *ngIf="player.kind === 'out'">counts 0 in the projection<ng-container *ngIf="player.benchOptionCount"> · {{ benchOptionsLabel(player.benchOptionCount) }}</ng-container></ng-container>
-              <ng-container *ngIf="player.kind === 'questionable'">questionable, projection assumes the player is active</ng-container>
-            </span>
+            <span *ngIf="player.gameLabel as label" class="mps-why">{{ label }}</span>
           </span>
         </button>
       </div>
-
-      <footer class="mps-open">
-        <span *ngIf="team.nextWindow as next">
-          <b>Next window:</b> {{ next.playerName }}<ng-container *ngIf="next.extraPlayerCount > 0"> +{{ next.extraPlayerCount }}</ng-container> ({{ next.gameLabel }})
-        </span>
-        <span class="mps-open-count">{{ team.openCount }} open</span>
-      </footer>
     </article>
   </div>
-
-  <p class="mps-legend">
-    Red: ESPN lists the starter as out but still in the lineup. Amber: questionable.
-  </p>
 </section>

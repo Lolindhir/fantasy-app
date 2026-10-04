@@ -635,11 +635,9 @@ export class FantasyGameContextDialogComponent {
     return buildMatchupPlayerStatus(matchup, displayTeamIDs, this.data.context, {
       teamName: teamID => this.teamName(teamID),
       teamAvatar: teamID => this.teamAvatar(teamID),
-      decisionTeam: teamID => this.decisionTeamState(teamID),
       player: playerID => ({
         name: this.playerName(playerID),
         picture: this.playerPicture(playerID),
-        position: this.playerPosition(playerID),
         nflLogo: this.playerNflLogo(playerID)
       })
     });
