@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Refresh the App PlayerWeekFantasy publication for the current App week.
+"""Refresh the App PlayerWeekFantasy and MatchupProjections publications for the current App week.
 
 The target league/season/week is read from the published FantasyGameContext, so
 the PlayerWeekFantasy snapshot always matches the week the Angular consumer
@@ -23,6 +23,7 @@ TOOLS = Path(__file__).resolve().parent
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+from matchup_projection import publish_matchup_projections  # noqa: E402
 from player_week_fantasy_app_publish import materialize_app_player_week_fantasy  # noqa: E402
 from player_week_fantasy_materialize import (  # noqa: E402
     build_player_week_fantasy_dataset,
@@ -103,12 +104,14 @@ def refresh(repo_root: Path) -> dict[str, Any]:
         output_path(root, league_id=league_id, season=season, week=week), payload
     )
     published, app_changed = materialize_app_player_week_fantasy(root, league_id, season, week)
+    matchup_projections = publish_matchup_projections(root)
     return {
         **target,
         "Status": "published",
         "DerivedChanged": derived_changed,
         "AppChanged": app_changed,
         "RecordCount": len(published["Records"]),
+        "MatchupProjections": matchup_projections,
     }
 
 

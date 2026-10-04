@@ -116,12 +116,20 @@ class RefreshTests(unittest.TestCase):
                 self.assertEqual((league_id, season, week), ("league-a", 2026, 4))
                 return {"Records": [1, 2, 3]}, False
 
+            def fake_matchups(repo_root):
+                calls.append("matchups")
+                self.assertEqual(repo_root, root.resolve())
+                return {"Status": "published", "Changed": True}
+
             with mock.patch.object(refresh, "build_player_week_fantasy_dataset", fake_build), mock.patch.object(
                 refresh, "write_dataset", fake_write
-            ), mock.patch.object(refresh, "materialize_app_player_week_fantasy", fake_publish):
+            ), mock.patch.object(refresh, "materialize_app_player_week_fantasy", fake_publish), mock.patch.object(
+                refresh, "publish_matchup_projections", fake_matchups
+            ):
                 result = refresh.refresh(root)
 
-            self.assertEqual(calls, ["build", "write", "publish"])
+            self.assertEqual(calls, ["build", "write", "publish", "matchups"])
+            self.assertEqual(result["MatchupProjections"], {"Status": "published", "Changed": True})
             self.assertEqual(result["Status"], "published")
             self.assertTrue(result["DerivedChanged"])
             self.assertFalse(result["AppChanged"])

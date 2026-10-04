@@ -58,6 +58,8 @@ from historical_projection_v4_calibration import (
 )
 from player_week_fantasy import (
     PARTICIPATION_CONDITION,
+    PRIMARY_INTERVAL_LEVEL,
+    PUBLISHED_INTERVAL_LEVELS,
     build_player_week_fantasy_contract,
     build_scoring_profile_identity,
     derive_actual_points,
@@ -67,7 +69,7 @@ POINT_MODEL = "V4-C"
 INTERVAL_MODEL = "V4-C-PI1"
 V4_C_RIDGE = 64.0
 V4_C_CLIP = 4.0
-INTERVAL_LEVEL = 0.90
+INTERVAL_LEVEL = PRIMARY_INTERVAL_LEVEL
 EXCLUDED_WEEKLY_ROSTER_STATUSES = {"RET"}
 
 
@@ -818,6 +820,7 @@ def _projection_for_player(
             "Status": "no-game",
             "Points": None,
             "PredictionRange": None,
+            "PredictionRanges": [],
             "RangeQuality": "unavailable",
             "HistoryGames": history_games,
             "ParticipationCondition": PARTICIPATION_CONDITION,
@@ -838,6 +841,7 @@ def _projection_for_player(
             "Status": status,
             "Points": None,
             "PredictionRange": None,
+            "PredictionRanges": [],
             "RangeQuality": "unavailable",
             "HistoryGames": history_games,
             "ParticipationCondition": PARTICIPATION_CONDITION,
@@ -866,14 +870,18 @@ def _projection_for_player(
         "Projection": projection,
         "PriorScoreVolatility": volatility,
     }
-    interval = _interval_for_row(
-        interval_row,
-        level=INTERVAL_LEVEL,
-        strategy=STRATEGY_POSITION_PROJECTION_VOLATILITY,
-        groups=model_state["ResidualGroups"],
-        projection_thresholds=model_state["ProjectionThresholds"],
-        volatility_thresholds=model_state["VolatilityThresholds"],
-    )
+    intervals = {
+        level: _interval_for_row(
+            interval_row,
+            level=level,
+            strategy=STRATEGY_POSITION_PROJECTION_VOLATILITY,
+            groups=model_state["ResidualGroups"],
+            projection_thresholds=model_state["ProjectionThresholds"],
+            volatility_thresholds=model_state["VolatilityThresholds"],
+        )
+        for level in PUBLISHED_INTERVAL_LEVELS
+    }
+    interval = intervals[INTERVAL_LEVEL]
     selected_group = str(interval["Group"])
     range_quality = (
         "player-volatility"
@@ -889,6 +897,14 @@ def _projection_for_player(
             "Lower": round(float(interval["Lower"]), 4),
             "Upper": round(float(interval["Upper"]), 4),
         },
+        "PredictionRanges": [
+            {
+                "Level": level,
+                "Lower": round(float(intervals[level]["Lower"]), 4),
+                "Upper": round(float(intervals[level]["Upper"]), 4),
+            }
+            for level in PUBLISHED_INTERVAL_LEVELS
+        ],
         "RangeQuality": range_quality,
         "HistoryGames": history_games,
         "ParticipationCondition": PARTICIPATION_CONDITION,
@@ -1058,6 +1074,7 @@ def build_player_week_fantasy_dataset(
         "IntervalCalibrationPointFitSeasons": model_state["IntervalFitSeasons"],
         "IntervalCalibrationRows": model_state["IntervalCalibrationRows"],
         "IntervalLevel": INTERVAL_LEVEL,
+        "IntervalLevels": list(PUBLISHED_INTERVAL_LEVELS),
         "MinimumConditionalGroupSize": MIN_GROUP_SIZE,
         "ParticipationCondition": PARTICIPATION_CONDITION,
     }

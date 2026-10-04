@@ -609,7 +609,7 @@ sharedDerivedData:
       outputSemantics:
         - scoring-specific Actual
         - V4-C pregame Projection
-        - V4-C-PI1 90-percent PredictionRange
+        - V4-C-PI1 PredictionRange (primary 90-percent) and PredictionRanges at 50/80/90 percent
       invalidation:
         - target weekly-roster or schedule changes
         - historical scoring/stat/snap/usage changes used by calibration
@@ -625,4 +625,15 @@ sharedDerivedData:
         semantics: adapt-only-no-recompute
         currentConsumer: src/app/core/services/data.service.ts::getFantasyGameContext
         consumerJoin: Season+Week match and unique non-null App/Sleeper PlayerID; otherwise raw FantasyGameContext is preserved
-      schedulingState: explicit-materializer-only
+      schedulingState: refreshed for the current App week by tools/player_week_fantasy_refresh.py inside the APP Data League workflow
+      matchupProjections:
+        output: public/data/MatchupProjections.json
+        implementation: tools/matchup_projection.py
+        inputs:
+          - public/data/FantasyGameContext.json
+          - public/data/PlayerWeekFantasy.json
+        semantics: >
+          Team ProjectedFinalScore plus 50/80/90 percent team ranges (normal approximation,
+          starters independent) per FantasyMatchupID and team; DisplayLevel and Axis are data.
+        publicationRule: week mismatch between the two inputs skips publication and keeps the existing file
+        backtest: tools/historical_team_range_backtest.py

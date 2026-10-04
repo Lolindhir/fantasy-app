@@ -655,6 +655,11 @@ playerWeekFantasy:
   targetConsumers:
     - App Players/Free Agents
     - Fantasy Operations
+  matchupProjections:
+    output: public/data/MatchupProjections.json
+    owner: tools/matchup_projection.py
+    inputs: App read models FantasyGameContext.json and PlayerWeekFantasy.json (same Season+Week)
+    rule: team projection and range arithmetic lives in published data, not in Angular
   migrationRule: >
     Existing provider/current consumer score paths remain productive until a later
     materialization/publication checkpoint explicitly migrates them. The new shared
