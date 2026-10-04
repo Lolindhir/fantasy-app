@@ -25,7 +25,7 @@ phasePlan:
       und Fantasy Management materialisieren.
   phase2:
     name: Consumer Migration
-    status: next
+    status: in-progress
     goal: >
       App-Generatoren und Fantasy-Management-Basisableitungen auf source-data
       umstellen, ohne bestehende public/data-Contracts unbeabsichtigt zu aendern.
@@ -92,10 +92,13 @@ boundaries:
   appReadModels:
     path: public/data/**
     currentState: >
-      Auch nach produktiver Phase-1B-Abnahme lesen die bestehenden App-Generatoren
-      League-Daten bis zur Phase-2-Migration weiterhin ueber ihre heutigen
-      Provider-Pfade und erzeugen public/data Readmodels. Der akzeptierte Source-
-      Layer laeuft parallel und verdrahtet die produktiven Generatoren noch nicht um.
+      Phase 2 laeuft. Die unter consumerMigrationNotes als canonical-active
+      gefuehrten App-Consumer (historische und aktuelle Standings, Transactions
+      und Drafts sowie League Core, Playoff-Brackets und aktuelle Matchups in
+      RequestLeague) lesen ihre League-Fakten bereits aus source-data/leagues.
+      Noch nicht migrierte App-Generatoren lesen League-Daten bis zu ihrem eigenen
+      Cutover weiterhin ueber ihre heutigen Provider-Pfade. Alle erzeugen
+      unveraendert public/data Readmodels.
     targetState: >
       public/data bleibt App-Ausgabe. Phase 2 migriert die Generatoren auf die
       akzeptierten NFL- und League-Source-Vertraege, ohne die bestehenden
@@ -806,4 +809,4 @@ acceptanceOrder:
   - Phase 1B persists raw league provider data with provenance and no-op semantics
   - Phase 1B materializes normalized league facts and validates historical season linkage
   - unchanged Phase 1B sync/materialization has proven semantic total no-op productively
-  - Phase 2 may now migrate App and Fantasy Management consumers under separate authorization; that migration has not started
+  - Phase 2 may now migrate App and Fantasy Management consumers under separate authorization; that migration is in progress and tracked in Issue 347
