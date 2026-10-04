@@ -239,10 +239,10 @@ describe('matchups overview view utility', () => {
     const right = buildMatchupStarterProgress(team(slots), 'next', 'right');
 
     expect(left?.groups.map(group => group.kind)).toEqual([
-      'locked', 'final', 'repairable', 'next', 'irreparable', 'future', 'unknown'
+      'locked', 'final', 'next', 'future', 'repairable', 'irreparable', 'unknown'
     ]);
     expect(right?.groups.map(group => group.kind)).toEqual([
-      'unknown', 'future', 'irreparable', 'next', 'repairable', 'final', 'locked'
+      'unknown', 'irreparable', 'repairable', 'future', 'next', 'final', 'locked'
     ]);
     expect(left?.groups.find(group => group.kind === 'next')?.outline).toBe('next');
     expect(left?.groups.find(group => group.kind === 'repairable')?.outline).toBe('repairable');
@@ -260,12 +260,12 @@ describe('matchups overview view utility', () => {
 
     const view = buildMatchupStarterProgress(team(slots), 'next', 'left');
 
-    expect(view?.groups.map(group => group.kind)).toEqual(['locked', 'questionable', 'next', 'unknown']);
+    expect(view?.groups.map(group => group.kind)).toEqual(['locked', 'next', 'questionable', 'unknown']);
     expect(view?.groups.find(group => group.kind === 'questionable')?.outline).toBe('questionable');
     expect(view?.groups.find(group => group.kind === 'questionable')?.segments.map(item => item.slotID)).toEqual(['WR-1']);
   });
 
-  it('orders by time phase first (started outermost, then next window, then open) and by color within a phase', () => {
+  it('puts outlined problems innermost (yellow, red, unknown) and orders plain segments by time phase', () => {
     const uncertain = { State: 'uncertain' as const, ProviderStatus: 'Questionable', Source: 'ESPN', ObservedAtUtc: null };
     const slots = [
       slot('WR-1', 'unlocked', { DecisionWindowID: 'later', ScoringAvailability: uncertain }),
@@ -278,8 +278,8 @@ describe('matchups overview view utility', () => {
     const left = buildMatchupStarterProgress(team(slots), 'next', 'left');
     const right = buildMatchupStarterProgress(team(slots), 'next', 'right');
 
-    expect(left?.groups.map(group => group.kind)).toEqual(['irreparable', 'final', 'next', 'questionable', 'future']);
-    expect(right?.groups.map(group => group.kind)).toEqual(['future', 'questionable', 'next', 'final', 'irreparable']);
+    expect(left?.groups.map(group => group.kind)).toEqual(['final', 'next', 'future', 'questionable', 'irreparable']);
+    expect(right?.groups.map(group => group.kind)).toEqual(['irreparable', 'questionable', 'future', 'next', 'final']);
   });
 
   it('keeps missing lifecycle states out of the group list so styling adds only one inter-group gap', () => {
