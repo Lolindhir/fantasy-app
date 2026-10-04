@@ -134,6 +134,71 @@ class PlayerWeekFantasyContractTests(unittest.TestCase):
                 actual={"Points": None, "State": "pending"},
             )
 
+    def _available_projection(self, **overrides):
+        projection = {
+            "Status": "available",
+            "Points": 16.8,
+            "PredictionRange": {"Level": 0.90, "Lower": 8.4, "Upper": 29.7},
+            "RangeQuality": "player-volatility",
+            "HistoryGames": 27,
+            "ParticipationCondition": "conditional-on-participation",
+            "AvailabilityAdjustmentApplied": False,
+            "PointModel": "V4-C",
+            "IntervalModel": "V4-C-PI1",
+        }
+        projection.update(overrides)
+        return projection
+
+    def _record(self, projection):
+        return build_player_week_fantasy_record(
+            "NFLP-test",
+            projection=projection,
+            actual={"Points": None, "State": "pending"},
+        )["Projection"]
+
+    def test_missing_prediction_ranges_default_to_the_primary_range(self) -> None:
+        normalized = self._record(self._available_projection())
+
+        self.assertEqual(
+            normalized["PredictionRanges"],
+            [{"Level": 0.90, "Lower": 8.4, "Upper": 29.7}],
+        )
+
+    def test_multi_level_prediction_ranges_are_kept_and_must_contain_the_primary(self) -> None:
+        ranges = [
+            {"Level": 0.5, "Lower": 13.0, "Upper": 20.0},
+            {"Level": 0.8, "Lower": 10.0, "Upper": 25.0},
+            {"Level": 0.9, "Lower": 8.4, "Upper": 29.7},
+        ]
+        normalized = self._record(self._available_projection(PredictionRanges=ranges))
+        self.assertEqual(normalized["PredictionRanges"], ranges)
+
+        with self.assertRaisesRegex(ValueError, "contain the primary"):
+            self._record(self._available_projection(PredictionRanges=ranges[:2]))
+
+    def test_prediction_ranges_must_be_ascending_and_nested(self) -> None:
+        primary = {"Level": 0.90, "Lower": 8.4, "Upper": 29.7}
+        with self.assertRaisesRegex(ValueError, "strictly ascending"):
+            self._record(self._available_projection(PredictionRanges=[
+                primary, {"Level": 0.5, "Lower": 13.0, "Upper": 20.0},
+            ]))
+        with self.assertRaisesRegex(ValueError, "nested"):
+            self._record(self._available_projection(PredictionRanges=[
+                {"Level": 0.5, "Lower": 5.0, "Upper": 20.0}, primary,
+            ]))
+        with self.assertRaisesRegex(ValueError, "non-empty list"):
+            self._record(self._available_projection(PredictionRanges=[]))
+
+    def test_unavailable_projection_has_no_prediction_ranges(self) -> None:
+        unavailable = self._available_projection(
+            Status="insufficient-history", Points=None, PredictionRange=None, RangeQuality="unavailable",
+        )
+        self.assertEqual(self._record(unavailable)["PredictionRanges"], [])
+        with self.assertRaisesRegex(ValueError, "must be empty"):
+            self._record({**unavailable, "PredictionRanges": [
+                {"Level": 0.9, "Lower": 1.0, "Upper": 2.0},
+            ]})
+
     def test_contract_sorts_records_and_rejects_duplicates(self) -> None:
         scoring_profile = build_scoring_profile_identity(
             "league-a",

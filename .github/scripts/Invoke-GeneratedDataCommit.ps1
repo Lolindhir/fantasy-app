@@ -44,6 +44,7 @@ function Get-GeneratedDataLabel {
         "^fantasy-management/sources/external-signals/roster-activity/sleeper/" { return "Sleeper trending" }
         "^derived-data/player-week-fantasy/" { return "PlayerWeekFantasy derived" }
         "/PlayerWeekFantasy\.json$" { return "PlayerWeekFantasy" }
+        "/MatchupProjections\.json$" { return "MatchupProjections" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }
         "/League\.json$" { return "League" }
         "/Players\.json$" { return "Players" }

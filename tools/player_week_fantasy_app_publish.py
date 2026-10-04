@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any, Mapping
 
 from player_week_fantasy import (
     CONTRACT_VERSION,
+    DISPLAY_INTERVAL_LEVEL,
     build_player_week_fantasy_contract,
 )
 
@@ -179,6 +181,27 @@ def _build_identity_bridge(
     return canonical_to_sleeper
 
 
+RANGE_AXIS_STEP = 5
+
+
+def _range_axis(records: list[dict[str, Any]], level: float) -> dict[str, int] | None:
+    """Shared player-range scale at the display level, snapped outward to the step."""
+
+    lowers: list[float] = []
+    uppers: list[float] = []
+    for record in records:
+        for item in record["Projection"].get("PredictionRanges", []):
+            if item["Level"] == level:
+                lowers.append(item["Lower"])
+                uppers.append(item["Upper"])
+    if not lowers:
+        return None
+    return {
+        "Min": math.floor(min(lowers) / RANGE_AXIS_STEP) * RANGE_AXIS_STEP,
+        "Max": math.ceil(max(uppers) / RANGE_AXIS_STEP) * RANGE_AXIS_STEP,
+    }
+
+
 def build_app_player_week_fantasy_read_model(
     source: Mapping[str, Any],
     identity_payload: Mapping[str, Any],
@@ -218,6 +241,10 @@ def build_app_player_week_fantasy_read_model(
             "Provider": IDENTITY_PROVIDER,
             "ResolvedRecordCount": resolved,
             "UnavailableRecordCount": unavailable,
+        },
+        "Display": {
+            "RangeLevel": DISPLAY_INTERVAL_LEVEL,
+            "RangeAxis": _range_axis(records, DISPLAY_INTERVAL_LEVEL),
         },
         "Records": records,
     }

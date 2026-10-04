@@ -1,0 +1,60 @@
+schemaVersion: 1
+
+artifact: public/data/MatchupProjections.json
+
+role: >
+  Generated App delivery read model with the team-level projection and prediction
+  ranges for every current fantasy matchup. Consumers join it by FantasyMatchupID
+  and FantasyTeamID and display it; they do not calculate projections or ranges.
+
+source:
+  publisher: tools/matchup_projection.py
+  inputs:
+    - public/data/FantasyGameContext.json
+    - public/data/PlayerWeekFantasy.json
+  scheduling: tools/player_week_fantasy_refresh.py inside the APP Data League workflow (about every 10 minutes)
+  backtest: tools/historical_team_range_backtest.py
+
+contract:
+  schemaVersion: 1
+  rootFields:
+    - CanonicalLeagueID
+    - Season
+    - Week
+    - DisplayLevel
+    - Method
+    - Matchups
+  displayLevel: >
+    The range level UIs show. One of Method.Levels; set once in
+    tools/player_week_fantasy.py::DISPLAY_INTERVAL_LEVEL together with the player ranges.
+  methodFields:
+    Id: normal-independent-v1
+    Levels: published range levels
+    SigmaBasisLevel: player range level used to derive each starter's standard deviation
+    Assumption: starters score independently; player variances add
+    ParticipationCondition: ranges are conditional on participation
+  matchupFields:
+    FantasyMatchupID: join key
+    Teams: one entry per team of the matchup
+    Axis: shared Min/Max/Step scale covering both teams' ranges at DisplayLevel; null when a team has no range
+  teamFields:
+    FantasyTeamID: join key
+    State: available when every starter is resolved, partial when some are, unavailable when none or no starters
+    StarterCount: current starters
+    ResolvedStarterCount: starters with a final result, a usable projection or an explicit bye
+    FinalStarterCount: starters whose game is final
+    ScoredPoints: points of starters in final games
+    PregameProjectedScore: sum of starter projections (byes count zero); null unless every starter has one
+    ProjectedFinalScore: final-game starters count actual points, other starters max(points so far, projection), byes zero; null unless State is available
+    StandardDeviation: square root of the summed variances of starters in games that are not final
+    Ranges: central ranges per level (Level, Lower, Upper); empty unless State is available
+    ByeStarterPlayerIDs: starters on an explicit bye (counted zero)
+    UnavailableStarterPlayerIDs: starters that block the team value
+
+semantics: .ai-context/manual/player-week-fantasy.yaml
+
+boundaries:
+  - A week mismatch between FantasyGameContext and PlayerWeekFantasy skips publication; consumers must ignore a snapshot that targets another Season or Week.
+  - Starters without a game association other than a bye (unknown, no team) stay unresolved.
+  - The live-game rule max(points so far, projection) is interim until the live remaining-points model exists.
+  - Ranges are estimates under an independence assumption; the backtest documents the observed coverage.
