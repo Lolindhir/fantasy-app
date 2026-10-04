@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-10-04T17:03:41Z",
-  "input_fingerprint": "da75c9ebd88bd5c24aa6f311551690287e4bd2d24b9f884c58ef99fe4c74f0dc",
+  "generated_at": "2026-10-04T17:36:12Z",
+  "input_fingerprint": "7d411a3a9b5a9b7879b81d9aeca4252c7ffdb58c04666a79759f9949042f0adf",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "fc508f7a4ee5b3de5060369279a672eca330fc0f38e25d9e00181110fae6ad8c",
-      "source_timestamp": "2026-10-04T14:35:22Z"
+      "content_sha256": "eddc0932cf92a47a0dd32d30e5102f2ddab086f68ad9fad21dc9228990cb13f5",
+      "source_timestamp": "2026-10-04T17:36:12Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "e9625011a97576a80d7bd684463cb5543f3133ed1c94f851f1b8dae494b441ec",
-      "source_timestamp": "2026-10-04T17:03:41Z"
+      "content_sha256": "9d48ddbc15919014b7f8651af6db5079f3b586d0d5d4064b35bb3471920e893b",
+      "source_timestamp": "2026-10-04T17:36:12Z"
     },
     {
       "id": "operations_source_catalog",
@@ -917,13 +917,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Oct 4: Barkley (lower body) made his way to the sideline slowly and then entered the medical tent during the first quarter of Sunday's game against the Rams, Olivia Reiner of the Philadelphia Inquirer reports.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20261004",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -1139,9 +1139,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -2651,7 +2652,7 @@
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Out",
-        "description": "Oct 2: Hall (quadriceps) is out for Sunday's game at Chicago, according to Zack Rosenblatt of The Athletic.",
+        "description": null,
         "reported_date": null,
         "return_date": "20261011",
         "external_verification_priority": "high",
@@ -4413,7 +4414,7 @@
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Out",
-        "description": "Oct 2: Mitchell (finger) is out for Sunday's game against the Bears, Zack Rosenblatt reports.",
+        "description": null,
         "reported_date": null,
         "return_date": "20261011",
         "external_verification_priority": "high",
@@ -9395,7 +9396,7 @@
     "coverage": {
       "managed_roster_ids": 37,
       "resolved_players": 37,
-      "players_with_current_injury_signal": 13,
+      "players_with_current_injury_signal": 14,
       "primary_adp_applicable": 5,
       "primary_adp_listed": 5,
       "sources": {
