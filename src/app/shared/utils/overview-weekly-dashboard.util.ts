@@ -31,6 +31,11 @@ export interface OverviewStandingRow {
   pointsAgainst: number;
   record: string;
   streak: string | null;
+  /**
+   * Canonical weekly place movement (generator-owned `PlaceDelta`, positive = moved up).
+   * `null` when no comparable value exists for the displayed standings snapshot.
+   */
+  placeDelta: number | null;
 }
 
 export interface OverviewLastMatchupParticipant {
@@ -353,17 +358,41 @@ function buildOverviewStandingsSnapshot(
     return String(a.team.TeamID).localeCompare(String(b.team.TeamID), undefined, { numeric: true });
   });
 
-  return ranked.map((row, index) => ({
-    team: row.team,
-    displayPlace: index + 1,
-    wins: row.wins,
-    losses: row.losses,
-    ties: row.ties,
-    points: roundStandingPoints(row.points),
-    pointsAgainst: roundStandingPoints(row.pointsAgainst),
-    record: formatStandingRecord(row.wins, row.losses, row.ties),
-    streak: formatStandingStreak(row.results)
-  }));
+  return ranked.map((row, index) => {
+    const displayPlace = index + 1;
+    return {
+      team: row.team,
+      displayPlace,
+      wins: row.wins,
+      losses: row.losses,
+      ties: row.ties,
+      points: roundStandingPoints(row.points),
+      pointsAgainst: roundStandingPoints(row.pointsAgainst),
+      record: formatStandingRecord(row.wins, row.losses, row.ties),
+      streak: formatStandingStreak(row.results),
+      placeDelta: resolveCanonicalPlaceDelta(row.team, displayPlace, row.wins + row.losses + row.ties)
+    };
+  });
+}
+
+// The generator's PlaceDelta describes the current table. It is only shown for a snapshot that
+// is that same table (same games played and same place); otherwise no movement is claimed, so a
+// retained display week during rollover never leaks the next week's movement.
+function resolveCanonicalPlaceDelta(
+  team: FantasyTeam,
+  displayPlace: number,
+  gamesInSnapshot: number
+): number | null {
+  const placement = team.Placements?.Current?.Regular;
+  if (!placement) return null;
+
+  const delta = placement.PlaceDelta;
+  if (typeof delta !== 'number' || !Number.isFinite(delta)) return null;
+
+  const currentGames = Number(placement.Wins ?? 0) + Number(placement.Losses ?? 0) + Number(placement.Ties ?? 0);
+  if (currentGames !== gamesInSnapshot || Number(placement.Place) !== displayPlace) return null;
+
+  return delta;
 }
 
 function buildCurrentOverviewStandingRows(league: League): OverviewStandingRow[] {
@@ -381,7 +410,10 @@ function buildCurrentOverviewStandingRows(league: League): OverviewStandingRow[]
       points: Number(placement?.Points ?? team.Points ?? 0),
       pointsAgainst: Number(placement?.PointsAgainst ?? team.PointsAgainst ?? 0),
       record: formatStandingRecord(wins, losses, ties),
-      streak: placement?.Streak?.trim() || null
+      streak: placement?.Streak?.trim() || null,
+      placeDelta: typeof placement?.PlaceDelta === 'number' && Number.isFinite(placement.PlaceDelta)
+        ? placement.PlaceDelta
+        : null
     };
   });
 }

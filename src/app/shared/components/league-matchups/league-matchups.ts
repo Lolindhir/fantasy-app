@@ -336,6 +336,20 @@ export class LeagueMatchupsComponent {
     return team.TeamAbbr?.trim() || team.Team?.trim() || team.Owner;
   }
 
+  standingMovementText(placeDelta: number | null): string {
+    if (placeDelta === null || placeDelta === 0) return '—';
+    return placeDelta > 0 ? `↑${placeDelta}` : `↓${Math.abs(placeDelta)}`;
+  }
+
+  standingMovementLabel(placeDelta: number | null): string {
+    if (placeDelta === null) return 'No previous week available';
+    if (placeDelta === 0) return 'No change since last week';
+
+    const places = Math.abs(placeDelta);
+    const unit = places === 1 ? 'place' : 'places';
+    return `Moved ${placeDelta > 0 ? 'up' : 'down'} ${places} ${unit} since last week`;
+  }
+
   teamDisplayName(team: FantasyTeam): string {
     return team.Team?.trim() || team.Owner || `Team ${team.TeamID}`;
   }

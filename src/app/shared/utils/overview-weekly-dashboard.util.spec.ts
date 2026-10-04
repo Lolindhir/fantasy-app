@@ -427,6 +427,67 @@ describe('Overview weekly dashboard presentation', () => {
     )).toBeTrue();
   });
 
+  describe('canonical weekly place movement', () => {
+    function movementLeague(): League {
+      const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+      // Standings after week 1: 3 (1st), 1 (2nd), 4 (3rd), 2 (4th).
+      const placeByTeam = new Map([[3, 1], [1, 2], [4, 3], [2, 4]]);
+      const deltaByTeam = new Map<number, number | null>([[3, 2], [1, 0], [4, -1], [2, null]]);
+      for (const team of teams) {
+        const regular = team.Placements.Current.Regular;
+        regular.Place = placeByTeam.get(Number(team.TeamID)) as number;
+        regular.Wins = [1, 3].includes(Number(team.TeamID)) ? 1 : 0;
+        regular.Losses = [2, 4].includes(Number(team.TeamID)) ? 1 : 0;
+        regular.Ties = 0;
+        regular.PlaceDelta = deltaByTeam.get(Number(team.TeamID)) ?? null;
+      }
+      const league = makeLeague(teams, 1);
+      league.PlayoffStartWeek = 14;
+      return league;
+    }
+
+    it('shows the generator PlaceDelta for the snapshot that is the current table', () => {
+      const context = buildOverviewTopContext(movementLeague(), readModel(1, 2), 2);
+
+      expect(context.standings.map(row => [row.team.TeamID, row.displayPlace, row.placeDelta])).toEqual([
+        [3, 1, 2],
+        [1, 2, 0],
+        [4, 3, -1],
+        [2, 4, null]
+      ]);
+    });
+
+    it('does not leak movement into a retained display week that is older than the current table', () => {
+      // Current table already has two games, the Overview still displays Week 2 (standings after Week 1).
+      const league = movementLeague();
+      for (const team of league.Teams) {
+        team.Placements.Current.Regular.Wins = 2;
+        team.Placements.Current.Regular.Losses = 0;
+      }
+
+      const context = buildOverviewTopContext(league, readModel(1, 2), 2);
+
+      expect(context.standings.map(row => row.placeDelta)).toEqual([null, null, null, null]);
+    });
+
+    it('falls back to null when the snapshot place differs from the current table place', () => {
+      const league = movementLeague();
+      league.Teams.find(team => team.TeamID === 3)!.Placements.Current.Regular.Place = 2;
+
+      const context = buildOverviewTopContext(league, readModel(1, 2), 2);
+
+      expect(context.standings.find(row => row.team.TeamID === 3)?.placeDelta).toBeNull();
+    });
+
+    it('passes PlaceDelta through the current-table fallback without recomputing it', () => {
+      const context = buildOverviewTopContext(movementLeague(), null, null);
+
+      expect(context.standings.map(row => [row.team.TeamID, row.placeDelta])).toEqual(
+        jasmine.arrayContaining([[3, 2], [1, 0], [4, -1], [2, null]])
+      );
+    });
+  });
+
   it('caps standings coverage at the end of the regular season during playoffs', () => {
     const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
     for (const team of teams) {
