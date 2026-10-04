@@ -665,3 +665,236 @@ playerWeekFantasy:
     materialization/publication checkpoint explicitly migrates them. The new shared
     contract is the target owner; no consumer may create a second independent
     scoring/projection truth once the shared value is productively available.
+
+
+playersReadModelFieldInventory:
+  status: accepted-inventory-no-runtime-change
+  inventoriedAt: 2026-10-04
+  trackingIssue: 347
+  planStep: D1
+  evidenceSnapshot: main f280a1d2, public/data/Players.json with 1268 rows
+  purpose: >
+    Field-level inventory of the generated App read model public/data/Players.json
+    as required by the #613 guardrail before any Players cutover. Every field is
+    classified by #613 logical layer, current producer, target owner (matrix key)
+    and consumers. This section documents the current state; it does not approve
+    any contract change. Migration of each field group remains a separate
+    shadow -> parity -> cutover step under #347.
+  layerLegend:
+    sourceFact: provider/platform fact or observation (Source Evidence or Canonical/Normalized under #613)
+    sharedDerived: deterministic league-owned derivation (Shared Derived under #613); must not move into source-data/nfl/**
+    consumerOnly: App delivery shape or display convenience (Consumer Data under #613)
+
+  producer:
+    script: public/requests/RequestPlayers.ps1
+    population: >
+      Tank01 getNFLPlayerList rows with sleeperBotID, joined to Sleeper /players/nfl
+      by that claim, restricted to app fantasy positions (Get-AppFantasyPosition)
+      and to rows with a parseable Sleeper birth_date. The Sleeper<->Tank01 pairing
+      is therefore a Tank01 provider claim, not a canonical identity decision.
+    inputs:
+      - Sleeper /players/nfl (live API call)
+      - Tank01 getNFLPlayerList (live API call, RapidAPI keys)
+      - public/data/Games.json (Tank01 boxscores incl. fantasyPointsDefault.PPR and snapCounts)
+      - public/data/League.json (LastLeagueWeek, PlayoffStartWeek, FinalScoredWeek)
+      - public/data/past_seasons/Players_<season-1..season-3>.json keyed by TankID
+      - config.ps1 WeightTotal/WeightGame
+    historyArchives:
+      producer: public/requests/RequestPlayersSeason.ps1 (manual, no workflow) from past_seasons/Games_<year>.json
+      shape: TankID, Name, TeamIDs, Games[] with FantasyPoints = Tank01 fantasyPointsDefault.PPR
+      note: archives carry no Sleeper ID and no canonical ID; they are a Tank01-keyed legacy read model used as input
+
+  fieldGroups:
+    appIdentity:
+      fields: [ID, TankID]
+      layer: sourceFact
+      currentProducer: ID = Sleeper player_id; TankID = Tank01 playerID
+      matrixKey: nflPersonIdentity
+      targetOwner: ID stays Sleeper player_id (App contract); provider mappings resolve through CanonicalPlayerID
+      consumers:
+        - App join key for rosters, transactions, drafts, FantasyGameContext (ID); TankID not read by Angular
+        - tools/nfl_source_data_lib identity.py, audit.py, mapping_history.py (ID, TankID as identity evidence)
+        - FM build_player_signal_dataset.py and build_fantasy_operations_inputs.py (ID join)
+        - RequestLeague.ps1 DecisionWindows and scoring-availability filters (ID)
+    profile:
+      fields: [Name, NameFirst, NameLast, NameShort, Position, Age, Year, College, HighSchool, Number]
+      layer: sourceFact
+      currentProducer: Sleeper (names, position via Get-AppFantasyPosition, birth_date -> Age, years_exp + 1 -> Year, college, high_school); Tank01 (cbsShortName -> NameShort, jerseyNum -> Number)
+      matrixKey: nflPlayerProfile
+      targetOwner: field-level-consolidation-not-yet-approved (unchanged)
+      consumers:
+        - App display, search and sort (Name, NameFirst, NameLast, NameShort, Age, Year, College, Number); HighSchool declared but unused
+        - Position drives App filters, grouping and rankings, and RequestLeague.ps1 fantasy relevance and lineup repairability
+        - FM app_data (Age, Year)
+      notes:
+        - Age is computed at generation time from birth_date; it is not a stored fact
+    nflTeamAndAvailability:
+      fields: [TeamID, TeamAbbr, IsFreeAgent, Status]
+      layer: sourceFact
+      currentProducer: Tank01 team/teamID/isFreeAgent; Sleeper status
+      matrixKey: [nflWeeklyRosterMembership, nflFreeAgentAndAvailabilityStatus, sleeperPlayerPlatformFacts]
+      targetOwner: canonical weekly roster membership for team; free-agent definition still unresolved
+      consumers:
+        - App TeamID -> TeamNFL display; IsFreeAgent only maps TeamNFL to FA and blanks Number; TeamAbbr and Status not read
+        - FM build_player_signal_dataset.py reads TeamAbbr only as the legacy has_nfl_team population bridge (plan block C)
+        - FM build_fantasy_operations_inputs.py reads legacy Status and IsFreeAgent
+        - RequestLeague.ps1 DecisionWindows and lineup repairability read TeamID
+      observations:
+        - For free agents TeamAbbr/TeamID hold the last Tank01 team, not a current NFL team
+        - IsFreeAgent agrees with absence from the canonical 2026 week-4 weekly roster for 439 of 452 true values (sleeper-mapped rows); 70 rows with IsFreeAgent=false are not on that roster
+    convenienceLinks:
+      fields: [Picture, FantasyPros, ESPN, ESPNID]
+      layer: consumerOnly
+      currentProducer: Tank01 espnHeadshot, fantasyProsLink, espnLink; Sleeper espn_id
+      matrixKey: nflPlayerConvenienceMetadata
+      targetOwner: none-required; convenience enrichment
+      consumers:
+        - App display/links (Picture, FantasyPros, ESPN); ESPNID declared but unused
+        - identity.py uses ESPNID/ESPN only as a corroborated ESPN bridge (_app_player_espn_bridge)
+    depthChart:
+      fields: [SleeperDepthChartPosition, SleeperDepthChartOrder]
+      layer: sourceFact
+      currentProducer: Sleeper depth_chart_position/order
+      matrixKey: sleeperPlayerPlatformFacts
+      targetOwner: unchanged; canonical depth-chart source waits for #189
+      consumers:
+        - App depth label and depth sort (SleeperDepthChartOrder); SleeperDepthChartPosition declared but unused
+    injury:
+      fields: [Injured, InjuryDetails.Designation, InjuryDetails.Description, InjuryDetails.ReturnDate, InjuryDetails.Date]
+      layer: sourceFact
+      currentProducer: Tank01 injury object (Injured = designation present)
+      matrixKey: nflInjuriesCurrent
+      targetOwner: Sleeper for current core status; richer narrative unresolved
+      consumers:
+        - App injury chip and injury tab (Date normalized but not displayed)
+        - FM derive_injury_signal in player-signals and ops inputs
+    byeWeek:
+      fields: [ByeWeek]
+      layer: sharedDerived
+      currentProducer: RequestPlayers.ps1 derives the first week 1..18 in which the team has no game in Games.json
+      matrixKey: byeWeek
+      targetOwner: derivation from canonical source-data/nfl/schedules/<season>.json
+      consumers:
+        - not read by Angular; used inside RequestPlayers.ps1 for GamesPotential
+    seasonStatsAndPoints:
+      fields: [GamesPlayed, GamesPotential, SnapsTotal, AttemptsTotal, TouchdownsTotal, TouchdownsPassing, TouchdownsReceiving, TouchdownsRushing, FantasyPointsTotal, FantasyPointsAvgGame, FantasyPointsAvgPotentialGame, FantasyPointsAvgSnap, FantasyPointsAvgAttempt]
+      layer: sharedDerived
+      currentProducer: aggregation of Tank01 playerStats in Games.json over weeks that are final and scored, games with SnapCount > 0; points = Tank01 fantasyPointsDefault.PPR
+      matrixKey: [nflPlayerWeeklyStats, nflSnapCounts, fantasyPointsLeagueScoring]
+      targetOwner: league-scored points from the PlayerWeekFantasy derivation (CanonicalPlayerID + league ScoringSettings); stats/snaps from canonical player-stats and snap-counts
+      consumers:
+        - App Players page sort/columns and player dialog (Total, AvgGame, GamesPlayed, GamesPotential, Snaps, Attempts, TDs); AvgSnap, AvgAttempt and AvgPotentialGame effectively unused in the UI
+        - internal inputs to Ranking and Salary (AvgGame, AvgPotentialGame)
+      notes:
+        - Kicker SnapCount is synthetic (FG + PAT attempts), see nflSnapCounts guard
+        - Scoring switch to league ScoringSettings is approved by Robert (2026-10-04, #347 block D); validation reference is Sleeper's own player points
+    pointHistory:
+      fields: [PointHistory.SeasonMinus1, PointHistory.SeasonMinus2, PointHistory.SeasonMinus3]
+      layer: sharedDerived
+      currentProducer: Get-SeasonPointStats over past_seasons/Players_<year>.json (Tank01 PPR, keyed by TankID); PotentialGames = LastLeagueWeek - 1
+      matrixKey: fantasyPointsLeagueScoring
+      targetOwner: league-scored historical points from canonical player stats per season and CanonicalPlayerID
+      consumers:
+        - App last-season sort/columns, history table and chart
+        - input to Salary, SalaryProjected and Ranking Combined_Previous
+    gameHistory:
+      fields: [GameHistory]
+      layer: consumerOnly
+      currentProducer: per-game rows from Games.json (Tank01 boxscore incl. PPR points, snaps, Passing/Receiving/Rushing/Kicking objects)
+      matrixKey: [nflPlayerWeeklyStats, fantasyPointsLeagueScoring, nflSchedule]
+      targetOwner: App delivery shape over canonical weekly stats and league-scored weekly points
+      consumers:
+        - App game log only (Week, WeekScored, WeekPlayoff, Home/Away, FantasyPoints, TD sub-fields, Kicking FG/XP); most other sub-fields unused
+    salary:
+      fields: [Salary, SalaryProjected]
+      layer: sharedDerived
+      currentProducer: Get-FantasySalaryWithFloor over weighted per-season points (Salary uses seasons -1..-3; SalaryProjected blends the current season with -1 and -2) mapped non-linearly to dollars
+      matrixKey: fantasyLeagueSettings (league rule) plus fantasyPointsLeagueScoring (input)
+      targetOwner: Shared Derived league rule; must not move into source-data/nfl/**
+      consumers:
+        - App cap, free-agent market and salary displays
+        - RequestLeague.ps1 league salary cap (average of top SalaryRelevantTeamSize x team count by Salary/SalaryProjected)
+        - FM player-signals and ops inputs app_data.salary/salary_projected
+      notes:
+        - Any change to the points basis changes Salary, SalaryProjected and the published league salary cap together
+    ranking:
+      fields: [Ranking]
+      layer: sharedDerived
+      currentProducer: Add-Rankings (Total, PerGame, Combined and _Pos variants from AvgPotentialGame/AvgGame); Add-PreviousSeasonCombinedRanking in PlayerUtils.psm1 (Combined_Previous)
+      matrixKey: fantasyPointsLeagueScoring (input)
+      targetOwner: Shared Derived
+      consumers:
+        - App Combined, Combined_Pos and Combined_Previous; Total, PerGame, Total_Pos and PerGame_Pos are not displayed
+    grading:
+      fields: [Grading]
+      layer: sharedDerived
+      currentProducer: Form (last four final scored games) and Rank (letter grade from Combined_Pos)
+      targetOwner: Shared Derived
+      consumers:
+        - none found (not read by Angular, FM or tools)
+
+  dependencyCycles:
+    identityEvidence: >
+      tools/nfl_source_data_lib/identity.py reads Players.json ID (Sleeper), TankID
+      (Tank01) and ESPNID/ESPN as identity evidence (source app.Players, priority 30),
+      and app rows may establish provisional current people. mapping_history.py also
+      uses git snapshots of Players.json as historical Sleeper<->Tank01 evidence.
+      There is no closed cycle today because RequestPlayers.ps1 reads the providers
+      directly. If Players.json population or IDs are later fed from canonical
+      identities, that would close the loop Players.json -> identities -> Players.json
+      and re-assert Players.json's own pairings as evidence. Before such a cutover,
+      identity.py and mapping_history.py must stop treating canonically fed
+      Players.json rows as independent evidence (separate decision).
+    salaryCap: >
+      RequestLeague.ps1 derives the league salary cap from Players.json Salary and
+      SalaryProjected, so Players salary changes propagate into League.json.
+    historyArchives: >
+      Players.json history inputs come from Tank01-keyed past_seasons archives, i.e.
+      a legacy read model is used as input. A league-scoring migration must
+      re-score seasons -1..-3 from canonical player stats rather than reuse
+      archive points.
+
+  observedDefects:
+    - id: bye-week-derived-from-played-games
+      verified: true
+      evidence: >
+        2026-10-04: ByeWeek is 4 for 1104 rows and 5 for 164 rows; none of the 1268
+        rows matches the team's actual bye week in source-data/nfl/schedules/2026.json.
+        Games.json only holds games already fetched, so the first week without a
+        fetched game is taken as bye.
+      effect: >
+        Inferred from code: the bye week is never subtracted from GamesPotential, so
+        after a team's real bye GamesPotential is one too high and
+        FantasyPointsAvgPotentialGame, Ranking Total and SalaryProjected are biased
+        down for that team's players.
+    - id: grading-form-depth-truncation
+      verified: true
+      evidence: >
+        Grading[].Value[].GameDetails is serialized as the string
+        System.Collections.Specialized.OrderedDictionary (ConvertTo-Json -Depth 5).
+        No consumer reads Grading.
+    - id: qb-rating-uses-previous-passing-row
+      verified: code-reading-only
+      evidence: >
+        RequestPlayers.ps1 parses $pass.qbr before $pass = $p.Passing is assigned, so
+        GameHistory Passing.QBRating carries the previous passing row's value or null.
+        Not read by Angular.
+    - id: historical-fgc-player-fallback-unmatched
+      verified: code-reading-only
+      evidence: >
+        FantasyGameContextCore.ps1 keys the legacy past-season player map by
+        PlayerID/ID/SleeperID, but past_seasons/Players_<year>.json carries only
+        TankID, so the fallback never matches.
+    - id: ops-inputs-legacy-status
+      verified: code-reading-only
+      evidence: >
+        build_fantasy_operations_inputs.py still reads Players.json Status while
+        player-signals uses canonical Sleeper status.
+
+  migrationGuidance:
+    - Migrate by field group, never Players.json as a whole (#613 guardrail).
+    - byeWeek is the smallest independent cutover candidate (canonical schedule, fixes a verified defect, only internal consumer GamesPotential); its parity diff is expected to be non-empty and must be approved as a correction.
+    - seasonStatsAndPoints, pointHistory, ranking, salary and the League.json salary cap move together in #347 block D (D2 design, D3 shadow, D4 cutover).
+    - nflTeamAndAvailability needs an explicit free-agent definition before cutover (nflFreeAgentAndAvailabilityStatus is unresolved).
+    - appIdentity and population changes require the identityEvidence cycle decision first.
+    - convenienceLinks and grading need no source migration; grading has no consumer and may be repaired or retired separately.
