@@ -91,6 +91,8 @@ export interface FantasyGameContextTeamPrediction {
    * current starter is resolved.
    */
   ProjectedFinalScore: number | null;
+  /** Starters on an explicit bye; they count as resolved zero points in both team values. */
+  ByeStarterPlayerIDs: string[];
   UnavailableStarterPlayerIDs: string[];
 }
 

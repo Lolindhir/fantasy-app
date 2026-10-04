@@ -110,6 +110,53 @@ describe('DataService', () => {
     }));
   });
 
+  describe('bye starters', () => {
+    async function teamTwoPrediction(kind: string, isStarter = true) {
+      const context = createFantasyGameContext();
+      context.NonGameAssociations[0].Kind = kind;
+      context.NonGameAssociations[0].IsStarter = isStarter;
+      dataApiService.getFantasyGameContextRaw.and.returnValue(of(context));
+      dataApiService.getPlayerWeekFantasyRaw.and.returnValue(of(createPlayerWeekFantasy()));
+      const result = await firstValueFrom(service.getFantasyGameContext());
+      return result.FantasyMatchups[0].TeamPredictions?.find(team => String(team.FantasyTeamID) === '2');
+    }
+
+    it('counts a starter on an explicit bye as a resolved zero in both team values', async () => {
+      const team = await teamTwoPrediction('bye');
+
+      expect(team).toEqual(jasmine.objectContaining({
+        State: 'available',
+        StarterCount: 2,
+        ProjectedStarterCount: 2,
+        ProjectedStarterPoints: 20,
+        PredictedEndScore: 20,
+        ProjectedFinalScore: 20,
+        ByeStarterPlayerIDs: ['p5'],
+        UnavailableStarterPlayerIDs: []
+      }));
+    });
+
+    it('keeps starters with an unknown or team-less association unresolved', async () => {
+      for (const kind of ['unknown', 'no-team']) {
+        const team = await teamTwoPrediction(kind);
+
+        expect(team?.State).toBe('partial');
+        expect(team?.PredictedEndScore).toBeNull();
+        expect(team?.ProjectedFinalScore).toBeNull();
+        expect(team?.ByeStarterPlayerIDs).toEqual([]);
+        expect(team?.UnavailableStarterPlayerIDs).toEqual(['p5']);
+      }
+    });
+
+    it('ignores a bench player on a bye', async () => {
+      const team = await teamTwoPrediction('bye', false);
+
+      expect(team?.StarterCount).toBe(1);
+      expect(team?.ByeStarterPlayerIDs).toEqual([]);
+      expect(team?.PredictedEndScore).toBe(20);
+    });
+  });
+
   describe('ProjectedFinalScore', () => {
     async function projectedFinalByTeam(
       context: FantasyGameContextReadModel,

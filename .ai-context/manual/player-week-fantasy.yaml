@@ -216,8 +216,12 @@ consumerBoundary:
     appAggregation:
       owner: src/app/core/services/data.service.ts
       sourceLineup: current FantasyGameContext starters plus starter NonGameAssociations
+      byeRule: >
+        A starter whose NonGameAssociation Kind is bye (known NFL team without a game this week)
+        counts as a resolved zero in predictedEndScore and ProjectedFinalScore and is listed in
+        ByeStarterPlayerIDs. Kinds unknown and no-team stay unresolved.
       coverageState:
-        available: every current starter has Projection.Status=available and finite Points
+        available: every current starter has Projection.Status=available and finite Points, or is a bye starter
         partial: at least one but not every current starter has an available finite projection
         unavailable: no current starter has an available finite projection
       projectedStarterPoints: sum of all available current-starter Projection.Points
@@ -234,7 +238,7 @@ consumerBoundary:
       starterRule:
         finalGame: actual FantasyGameContext starter Points; no projection required
         otherGame: max(points scored so far, pregame Projection.Points) as a deliberate interim rule until the live remaining-points model exists
-      completeness: numeric only when every current starter is resolved (non-game starters stay unresolved); otherwise null
+      completeness: numeric only when every current starter is resolved (bye starters count as zero; other non-game starters stay unresolved); otherwise null
       pregameEquivalence: equals predictedEndScore while no starter game has started
     ui:
       owner: src/app/shared/components/league-matchups
