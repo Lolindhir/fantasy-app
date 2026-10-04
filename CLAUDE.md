@@ -12,3 +12,9 @@
   - Nächste Schritte
 - Der User liest den langen Text darüber nur, wenn die Zusammenfassung nicht reicht.
 - Bei kurzen Antworten entfällt der Block.
+
+## Verhalten
+
+- Unsicherheit kennzeichnen: Ausdrücklich markieren, was geprüft ist und was nur Annahme ist.
+- Abschlussbericht: Am Ende kurz nennen, was geändert wurde, was verifiziert ist und was nicht (inklusive übersprungener Schritte).
+- Entscheidungen mit Empfehlung: Wenn der User entscheiden muss, eine klare Empfehlung nennen statt nur Optionen aufzulisten.
