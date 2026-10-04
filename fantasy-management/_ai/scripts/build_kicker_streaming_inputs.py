@@ -13,8 +13,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 from typing import Any
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import canonical_league_ownership as canonical_ownership  # noqa: E402
 
 SCHEMA_VERSION = 1
 CONFIG_SCHEMA_VERSION = 1
@@ -79,6 +86,10 @@ def validate_config(config: dict[str, Any]) -> None:
         raise KickerStreamingInputError("Held kicker selector must use managed_team")
     if population.get("free_agent_ownership_status") != "fantasy_free_agent":
         raise KickerStreamingInputError("Free-agent kicker ownership must be fantasy_free_agent")
+    canonical_league = config.get("canonical_league") if isinstance(config.get("canonical_league"), dict) else {}
+    canonical_league_id = canonical_league.get("canonical_league_id")
+    if not isinstance(canonical_league_id, str) or not canonical_league_id:
+        raise KickerStreamingInputError("canonical_league.canonical_league_id is required")
 
 
 def validate_source(document: dict[str, Any], dataset_id: str) -> None:
@@ -109,15 +120,42 @@ def owned_by_team(player: dict[str, Any], team_id: str) -> bool:
     )
 
 
-def kicker_scoring(league: dict[str, Any]) -> dict[str, float]:
-    scoring = league.get("ScoringType") if isinstance(league.get("ScoringType"), dict) else None
-    if scoring is None:
-        raise KickerStreamingInputError("League ScoringType is missing")
+def load_canonical_league_scoring(root: Path, config: dict[str, Any]) -> dict[str, Any]:
+    canonical_league_id = str(config["canonical_league"]["canonical_league_id"])
+    try:
+        season = canonical_ownership.resolve_current_canonical_season(
+            root,
+            canonical_league_id=canonical_league_id,
+        )
+    except canonical_ownership.CanonicalOwnershipError as exc:
+        raise KickerStreamingInputError(str(exc)) from exc
+
+    relative_path = Path("source-data") / "leagues" / canonical_league_id / "seasons" / str(season) / "league.json"
+    league = load_json(root / relative_path)
+    if not isinstance(league, dict):
+        raise KickerStreamingInputError("Canonical league scoring source must be a JSON object")
+    if league.get("CanonicalLeagueID") != canonical_league_id:
+        raise KickerStreamingInputError("Canonical league scoring source identity mismatch")
+    try:
+        source_season = int(league.get("Season"))
+    except (TypeError, ValueError) as exc:
+        raise KickerStreamingInputError("Canonical league scoring source has invalid Season") from exc
+    if source_season != season:
+        raise KickerStreamingInputError(
+            f"Canonical league scoring season mismatch: expected {season}, found {league.get('Season')!r}"
+        )
+    scoring = league.get("ScoringSettings")
+    if not isinstance(scoring, dict):
+        raise KickerStreamingInputError("Canonical league ScoringSettings is missing")
+    return scoring
+
+
+def kicker_scoring(scoring_settings: dict[str, Any]) -> dict[str, float]:
     result: dict[str, float] = {}
     for key in KICKER_SCORING_KEYS:
-        if key not in scoring:
+        if key not in scoring_settings:
             raise KickerStreamingInputError(f"League kicker scoring key is missing: {key}")
-        result[key] = number(scoring[key], f"ScoringType.{key}")
+        result[key] = number(scoring_settings[key], f"ScoringSettings.{key}")
     return result
 
 
@@ -353,7 +391,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     if not isinstance(managed_team, dict):
         raise KickerStreamingInputError(f"Managed team {managed_team_id} not found")
 
-    scoring = kicker_scoring(league)
+    scoring = kicker_scoring(load_canonical_league_scoring(root, config))
     held_players = [
         player
         for player in player_signals["players"]
