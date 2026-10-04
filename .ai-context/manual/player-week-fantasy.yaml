@@ -262,48 +262,6 @@ matchupProjections:
     DISPLAY_INTERVAL_LEVEL in tools/player_week_fantasy.py selects the level every surface shows;
     players and teams switch together and the frontend only reads the published Level.
   publicationRule: week mismatch between the two inputs skips publication and keeps the existing file
-  backtest:
-    tool: tools/historical_team_range_backtest.py
-    command: python3 tools/historical_team_range_backtest.py --seasons 2024 2025
-    protocol: >
-      Production PlayerWeekFantasy model rebuilt walk-forward per team-week, actual starters from
-      the canonical league matchup partitions, weeks after FinalLeagueWeek excluded (NFL week 18
-      was never a fantasy week), weeks whose weekly roster has rows without CanonicalPlayerID
-      excluded (2024 W1, W2, 2025 W1), team-weeks with an unprojectable starter skipped.
-    result_2026_10_04:
-      teamWeeks: {"2024": 90, "2025": 94, "all": 184}
-      coverageAt90Percent: {"2024": 0.8778, "2025": 0.8723, "all": 0.875}
-      coverageAt80Percent: {"2024": 0.8, "2025": 0.7553, "all": 0.7772}
-      coverageAt50Percent: {"2024": 0.4556, "2025": 0.4787, "all": 0.4674}
-      tailMissesAt90Percent: {"low": 12, "high": 11}
-      residualStdVsPredictedStd: {"2024": [27.2, 27.66], "2025": [29.76, 28.24]}
-      calibrationScaleFrom2024: 1.0031
-      holdout2025CoverageAt90PercentWithScale: 0.883
-    interpretation: >
-      Slightly narrow (about 2.5 points below the nominal level at every level) but balanced
-      between both tails; no inflation applied. The sample is small (184 correlated team-weeks,
-      about +/-2.5 points). Byes and running games are not covered by the backtest.
-
-matchupProjections:
-  output: public/data/MatchupProjections.json
-  owner: tools/matchup_projection.py
-  inputs:
-    - public/data/FantasyGameContext.json
-    - public/data/PlayerWeekFantasy.json
-  scheduling: tools/player_week_fantasy_refresh.py inside the APP Data League workflow (second rebuild-and-retry step)
-  method:
-    id: normal-independent-v1
-    teamValue: ProjectedFinalScore as defined under teamProjection.liveProjectedFinal; byes count zero
-    teamVariance: >
-      sum over current starters in games that are not final of sigma squared, with
-      sigma = (Upper - Lower) / (2 * z(0.9)) from the starter's 90 percent PredictionRange;
-      final-game starters and byes carry no variance
-    range: mean +/- z(level) * sqrt(variance) for the published levels 0.5, 0.8 and 0.9
-    neverDo: sum player lower/upper bounds (50 to 358 points for a normal team instead of about 151 to 241)
-  displayLevel: >
-    DISPLAY_INTERVAL_LEVEL in tools/player_week_fantasy.py selects the level every surface shows;
-    players and teams switch together and the frontend only reads the published Level.
-  publicationRule: week mismatch between the two inputs skips publication and keeps the existing file
   transitional: >
     Angular DataService still aggregates TeamPredictions in the browser until the frontend
     checkpoint switches to this file and removes that arithmetic.
