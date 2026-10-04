@@ -18,8 +18,9 @@ export type MatchupProgressKind =
   | 'next'
   | 'future'
   | 'repairable'
+  | 'questionable'
   | 'unknown';
-export type MatchupProgressOutline = 'next' | 'repairable' | 'unknown' | null;
+export type MatchupProgressOutline = 'next' | 'repairable' | 'questionable' | 'unknown' | null;
 export type MatchupScoringWindowDensity = 'rich' | 'compact' | 'dense';
 export type MatchupScoreboardState = 'neutral' | 'active' | 'final' | 'unknown';
 
@@ -68,7 +69,8 @@ const kindOrder: Record<MatchupProgressKind, number> = {
   next: 3,
   future: 4,
   repairable: 5,
-  unknown: 6
+  questionable: 6,
+  unknown: 7
 };
 
 const kindLabel: Record<MatchupProgressKind, string> = {
@@ -78,6 +80,7 @@ const kindLabel: Record<MatchupProgressKind, string> = {
   next: 'starter in the next scoring window',
   future: 'later unlocked starter',
   repairable: 'repairable starter problem',
+  questionable: 'questionable starter',
   unknown: 'starter state requiring review'
 };
 
@@ -268,6 +271,8 @@ function classifySlot(
   if (slot.State === 'locked-active') return 'locked';
   if (slot.Repairability?.State === 'repairable') return 'repairable';
   if (slot.Repairability?.State === 'unknown' || slot.State === 'unknown') return 'unknown';
+  // Known status: ESPN lists the starter as questionable. Distinct from the unknown-state review marker.
+  if (slot.ScoringAvailability?.State === 'uncertain') return 'questionable';
   if (slot.State === 'unlocked' && nextScoringWindowID && slot.DecisionWindowID === nextScoringWindowID) {
     return 'next';
   }
@@ -277,6 +282,7 @@ function classifySlot(
 function outlineFor(kind: MatchupProgressKind): MatchupProgressOutline {
   if (kind === 'next') return 'next';
   if (kind === 'repairable') return 'repairable';
+  if (kind === 'questionable') return 'questionable';
   if (kind === 'unknown') return 'unknown';
   return null;
 }
