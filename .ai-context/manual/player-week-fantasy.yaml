@@ -235,9 +235,10 @@ consumerBoundary:
       matchupDialog:
         owner: src/app/shared/components/fantasy-game-context-dialog
         hero: neutral "Proj. left – right" line under the matchup state label, only while the matchup is not final; oriented by the displayed team order
-        playerRows: muted "PROJ." value for current starters whose game is not scored yet and whose published projection is available; final or scored games keep showing actual points
-        rangeChart: app-matchup-range-chart under the hero while the matchup is not final; both teams on the published Axis, range at the published TeamRangeLevel, marker at ProjectedFinalScore
-        playerRangeBar: app-range-whisker under the starter chips on the published PlayerRangeAxis at the published PlayerRangeLevel
+        playerRows: app-player-projection under the starter chips for current starters whose game is not scored yet and whose published projection is available - "PROJ." number, range bar on the published PlayerRangeAxis at the published PlayerRangeLevel, and the range as text under the bar; final or scored games keep showing actual points
+        rangeChart: app-matchup-range-chart under the hero while the matchup is not final; both teams (avatar, abbreviation as fallback) on the published Axis, range at the published TeamRangeLevel, marker at ProjectedFinalScore; the "Scored so far" sentence appears only once a team has scored
+        precision: projections, markers and ranges show one decimal in the UI (formatProjectionPoints); real scores keep their own precision
+        axisRoom: the data pads the shared team Axis by 10 points (tools/matchup_projection.py AXIS_PADDING) so the end labels never touch the card edge
         levelRule: the shown level and all axes are published data (DISPLAY_INTERVAL_LEVEL); the UI only maps values to percentages (src/app/shared/utils/projection-range.util.ts)
 
 matchupProjections:
