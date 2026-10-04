@@ -265,7 +265,7 @@ describe('matchups overview view utility', () => {
     expect(view?.groups.find(group => group.kind === 'questionable')?.segments.map(item => item.slotID)).toEqual(['WR-1']);
   });
 
-  it('puts outlined problems innermost (yellow, red, unknown) and orders plain segments by time phase', () => {
+  it('orders started starters red, yellow, blue, green outermost and puts open problems innermost', () => {
     const uncertain = { State: 'uncertain' as const, ProviderStatus: 'Questionable', Source: 'ESPN', ObservedAtUtc: null };
     const slots = [
       slot('WR-1', 'unlocked', { DecisionWindowID: 'later', ScoringAvailability: uncertain }),
@@ -278,8 +278,8 @@ describe('matchups overview view utility', () => {
     const left = buildMatchupStarterProgress(team(slots), 'next', 'left');
     const right = buildMatchupStarterProgress(team(slots), 'next', 'right');
 
-    expect(left?.groups.map(group => group.kind)).toEqual(['final', 'next', 'future', 'questionable', 'irreparable']);
-    expect(right?.groups.map(group => group.kind)).toEqual(['irreparable', 'questionable', 'future', 'next', 'final']);
+    expect(left?.groups.map(group => group.kind)).toEqual(['irreparable', 'final', 'next', 'future', 'questionable']);
+    expect(right?.groups.map(group => group.kind)).toEqual(['questionable', 'future', 'next', 'final', 'irreparable']);
   });
 
   it('keeps missing lifecycle states out of the group list so styling adds only one inter-group gap', () => {

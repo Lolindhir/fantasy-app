@@ -62,31 +62,33 @@ export interface MatchupScoringWindowView extends MatchupScoringWindowHorizonVie
   isLive: boolean;
 }
 
-// Plain lifecycle segments come first (outer edge), grouped by time phase; within a phase blue (locked, next), then green (final).
-// Outlined segments (yellow, red, unknown) form the innermost block: yellow outermost, then red, unknown innermost.
-const kindOrder: Record<MatchupProgressKind, number> = {
-  locked: 0,
-  next: 1,
-  final: 2,
-  future: 3,
-  questionable: 4,
-  repairable: 5,
-  irreparable: 6,
-  unknown: 7
+// Outer edge first. Started starters (locked or final) form the outermost block: red, yellow, blue, green.
+// Open starters follow: plain next-window and later segments, then the always-outlined problems
+// (yellow, red) with unknown innermost.
+const startedOrder: Partial<Record<MatchupProgressKind, number>> = {
+  irreparable: 0,
+  repairable: 0.5,
+  questionable: 1,
+  locked: 2,
+  final: 3
+};
+const openOrder: Partial<Record<MatchupProgressKind, number>> = {
+  next: 0,
+  future: 1,
+  questionable: 2,
+  repairable: 3,
+  irreparable: 4,
+  unknown: 5
 };
 
-function isOutlinedProblem(kind: MatchupProgressKind): boolean {
-  return kindOrder[kind] >= kindOrder.questionable;
+function sortRank(segment: MatchupProgressSegmentView, started: boolean): number {
+  return started
+    ? startedOrder[segment.kind] ?? 0
+    : 10 + (openOrder[segment.kind] ?? 0);
 }
 
-// Time phase of plain lifecycle segments, outer edge first: started (locked or final), next window, still open.
-function timePhase(
-  slot: FantasyRelevanceSlotState,
-  nextScoringWindowID: string | null | undefined
-): number {
-  if (slot.State === 'completed' || slot.State === 'locked-active') return 0;
-  if (slot.State === 'unlocked' && nextScoringWindowID && slot.DecisionWindowID === nextScoringWindowID) return 1;
-  return 2;
+function hasStarted(slot: FantasyRelevanceSlotState): boolean {
+  return slot.State === 'completed' || slot.State === 'locked-active';
 }
 
 const kindLabel: Record<MatchupProgressKind, string> = {
@@ -131,10 +133,11 @@ export function buildMatchupStarterProgress(
   if (!team?.Slots?.length) return null;
 
   const sorted = team.Slots
-    .map(slot => ({ segment: toSegment(slot, nextScoringWindowID), phase: timePhase(slot, nextScoringWindowID) }))
-    .sort((left, right) => Number(isOutlinedProblem(left.segment.kind)) - Number(isOutlinedProblem(right.segment.kind))
-      || (isOutlinedProblem(left.segment.kind) ? 0 : left.phase - right.phase)
-      || kindOrder[left.segment.kind] - kindOrder[right.segment.kind]
+    .map(slot => {
+      const segment = toSegment(slot, nextScoringWindowID);
+      return { segment, rank: sortRank(segment, hasStarted(slot)) };
+    })
+    .sort((left, right) => left.rank - right.rank
       || slotIndex(team.Slots, left.segment.slotID) - slotIndex(team.Slots, right.segment.slotID))
     .map(item => item.segment);
 
