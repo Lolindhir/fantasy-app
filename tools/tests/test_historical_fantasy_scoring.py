@@ -81,6 +81,24 @@ class HistoricalFantasyScoringTests(unittest.TestCase):
         self.assertEqual(result["FantasyPoints"], 0.0)
         self.assertEqual(result["UnsupportedNonZeroSettings"], [])
 
+    def test_offensive_positions_do_not_score_defensive_fumble_credits(self) -> None:
+        stats = {"def_fumbles": 1, "def_fumbles_forced": 1, "def_tackles_solo": 1}
+        scoring = {"fum_rec": 2.0, "ff": 1.0, "tkl_solo": 0.5}
+        for position in ("QB", "RB", "WR", "TE", "K"):
+            with self.subTest(position=position):
+                result = score_record({"Position": position, "Stats": stats}, scoring)
+                self.assertEqual(result["FantasyPoints"], 0.5)
+                self.assertEqual(
+                    [c["ScoringKey"] for c in result["Contributions"]], ["tkl_solo"]
+                )
+
+    def test_defensive_positions_still_score_forced_fumbles(self) -> None:
+        stats = {"def_fumbles": 1, "def_fumbles_forced": 1}
+        result = score_record(
+            {"Position": "LB", "Stats": stats}, {"fum_rec": 2.0, "ff": 1.0}
+        )
+        self.assertEqual(result["FantasyPoints"], 3.0)
+
     def test_individual_defensive_fumble_recovery_can_score_fum_rec(self) -> None:
         record = {
             "Position": "LB",

@@ -137,20 +137,20 @@ class ProjectionIntervalCalibrationTests(unittest.TestCase):
         # interval, while the volatility-conditioned strategy trades a small
         # amount of width for player-specific floor/ceiling differentiation.
         projection_aware = report["Strategies"]["position-projection"]["Levels"]
-        self.assertEqual(51.6422, projection_aware["50"]["CoveragePercent"])
-        self.assertEqual(79.7694, projection_aware["80"]["CoveragePercent"])
-        self.assertEqual(90.4263, projection_aware["90"]["CoveragePercent"])
-        self.assertEqual(95.0734, projection_aware["95"]["CoveragePercent"])
-        self.assertEqual(19.2381, projection_aware["90"]["MeanWidth"])
+        self.assertEqual(51.7296, projection_aware["50"]["CoveragePercent"])
+        self.assertEqual(79.8043, projection_aware["80"]["CoveragePercent"])
+        self.assertEqual(90.3739, projection_aware["90"]["CoveragePercent"])
+        self.assertEqual(95.1258, projection_aware["95"]["CoveragePercent"])
+        self.assertEqual(19.2163, projection_aware["90"]["MeanWidth"])
 
         volatility_strategy = report["Strategies"][
             STRATEGY_POSITION_PROJECTION_VOLATILITY
         ]
         expected_volatility_levels = {
-            "50": (51.8169, 7.4409),
-            "80": (80.2411, 14.7877),
-            "90": (90.3739, 19.6189),
-            "95": (95.0734, 24.0096),
+            "50": (51.6247, 7.4161),
+            "80": (80.2236, 14.7934),
+            "90": (90.601, 19.6548),
+            "95": (95.283, 24.0524),
         }
         for level, (coverage, width) in expected_volatility_levels.items():
             self.assertEqual(
@@ -163,21 +163,21 @@ class ProjectionIntervalCalibrationTests(unittest.TestCase):
             )
 
         self.assertEqual(
-            7.6048,
+            7.6222,
             volatility_strategy["Levels"]["90"]["MeanLowerDistance"],
         )
         self.assertEqual(
-            12.0141,
+            12.0325,
             volatility_strategy["Levels"]["90"]["MeanUpperDistance"],
         )
 
         volatility = volatility_strategy["Width90ByVolatilityClass"]
-        self.assertEqual(2654, volatility["high"]["Count"])
-        self.assertEqual(2717, volatility["low"]["Count"])
-        self.assertEqual(90.731, volatility["high"]["CoveragePercent"])
-        self.assertEqual(90.4306, volatility["low"]["CoveragePercent"])
-        self.assertEqual(21.0521, volatility["high"]["MeanWidth"])
-        self.assertEqual(18.565, volatility["low"]["MeanWidth"])
+        self.assertEqual(2652, volatility["high"]["Count"])
+        self.assertEqual(2719, volatility["low"]["Count"])
+        self.assertEqual(90.8371, volatility["high"]["CoveragePercent"])
+        self.assertEqual(90.879, volatility["low"]["CoveragePercent"])
+        self.assertEqual(21.064, volatility["high"]["MeanWidth"])
+        self.assertEqual(18.6309, volatility["low"]["MeanWidth"])
         self.assertGreater(
             volatility["high"]["MeanWidth"],
             volatility["low"]["MeanWidth"],
@@ -187,7 +187,7 @@ class ProjectionIntervalCalibrationTests(unittest.TestCase):
         # estimate fall back to broader groups; this early-history subset remains
         # a known weaker calibration pocket and is kept visible rather than hidden.
         self.assertEqual(353, volatility["unavailable"]["Count"])
-        self.assertEqual(87.2521, volatility["unavailable"]["CoveragePercent"])
+        self.assertEqual(86.6856, volatility["unavailable"]["CoveragePercent"])
 
 
 if __name__ == "__main__":

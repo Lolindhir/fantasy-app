@@ -153,11 +153,11 @@ class ProjectionV2CalibrationTests(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 11297,
-                "MAE": 4.5917,
-                "RMSE": 6.2722,
-                "Bias": -0.1955,
-                "MeanProjection": 8.0903,
-                "MeanActual": 8.2858,
+                "MAE": 4.5914,
+                "RMSE": 6.2743,
+                "Bias": -0.1932,
+                "MeanProjection": 8.0762,
+                "MeanActual": 8.2694,
             },
             selected["Metrics"],
         )
@@ -166,33 +166,33 @@ class ProjectionV2CalibrationTests(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 5724,
-                "MAE": 4.6282,
-                "RMSE": 6.4603,
-                "Bias": -0.1902,
-                "MeanProjection": 7.8769,
-                "MeanActual": 8.0671,
+                "MAE": 4.626,
+                "RMSE": 6.4598,
+                "Bias": -0.1901,
+                "MeanProjection": 7.8697,
+                "MeanActual": 8.0598,
             },
             comparable["V1"],
         )
         self.assertEqual(
             {
                 "Count": 5724,
-                "MAE": 4.5948,
-                "RMSE": 6.3162,
-                "Bias": -0.0628,
-                "MeanProjection": 8.0043,
-                "MeanActual": 8.0671,
+                "MAE": 4.593,
+                "RMSE": 6.3156,
+                "Bias": -0.0633,
+                "MeanProjection": 7.9965,
+                "MeanActual": 8.0598,
             },
             comparable["V2"],
         )
-        self.assertEqual(0.0334, comparable["MAEImprovementPoints"])
-        self.assertEqual(0.7217, comparable["MAEImprovementPercent"])
-        self.assertEqual(0.1441, comparable["RMSEImprovementPoints"])
-        self.assertEqual(2.2305, comparable["RMSEImprovementPercent"])
-        self.assertEqual(5.595, comparable["V1Breakdowns"]["ByWeek"]["2"]["MAE"])
-        self.assertEqual(5.0683, comparable["V2Breakdowns"]["ByWeek"]["2"]["MAE"])
-        self.assertEqual(6.691, comparable["V1Breakdowns"]["ByPosition"]["QB"]["MAE"])
-        self.assertEqual(6.5573, comparable["V2Breakdowns"]["ByPosition"]["QB"]["MAE"])
+        self.assertEqual(0.033, comparable["MAEImprovementPoints"])
+        self.assertEqual(0.7134, comparable["MAEImprovementPercent"])
+        self.assertEqual(0.1442, comparable["RMSEImprovementPoints"])
+        self.assertEqual(2.2323, comparable["RMSEImprovementPercent"])
+        self.assertEqual(5.5937, comparable["V1Breakdowns"]["ByWeek"]["2"]["MAE"])
+        self.assertEqual(5.0662, comparable["V2Breakdowns"]["ByWeek"]["2"]["MAE"])
+        self.assertEqual(6.6926, comparable["V1Breakdowns"]["ByPosition"]["QB"]["MAE"])
+        self.assertEqual(6.5589, comparable["V2Breakdowns"]["ByPosition"]["QB"]["MAE"])
 
         expanded = report["Holdout"]["ExpandedCoverage"]
         self.assertEqual(641, expanded["AdditionalColdStartPredictions"])
@@ -200,11 +200,11 @@ class ProjectionV2CalibrationTests(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 641,
-                "MAE": 5.9516,
-                "RMSE": 7.0246,
-                "Bias": 2.6506,
-                "MeanProjection": 8.1993,
-                "MeanActual": 5.5487,
+                "MAE": 5.9592,
+                "RMSE": 7.0318,
+                "Bias": 2.6514,
+                "MeanProjection": 8.1861,
+                "MeanActual": 5.5347,
             },
             expanded["ColdStartMetrics"],
         )
