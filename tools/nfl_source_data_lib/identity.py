@@ -34,6 +34,8 @@ _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS = 3
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_MIXED_ANCHORS = 2
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SECONDARY_IDS = 2
 _ESPN_PLAYER_LINK_RE = re.compile(r"(?:/player/_/id/|/id/)(\d+)(?:/|$)")
+_VALID_GSIS_RE = re.compile(r"^00-\d{7}$")
+PLACEHOLDER_GSIS_UPGRADE_PROVENANCE = "auto.placeholder-gsis-upgrade"
 
 
 def _current_external_anchor_candidates(
@@ -450,6 +452,255 @@ def _build_components(candidates: list[IdentityCandidate]) -> UnionFind:
     return uf
 
 
+def _component_provider_values(
+    candidates: list[IdentityCandidate],
+    indexes: list[int],
+) -> dict[str, set[str]]:
+    values: dict[str, set[str]] = defaultdict(set)
+    for idx in indexes:
+        for key, value in candidates[idx].ids.items():
+            if value:
+                values[key].add(value)
+    return values
+
+
+def _placeholder_pair_valid_side(
+    esb: str,
+    left_values: dict[str, set[str]],
+    left_dates: set[str],
+    right_values: dict[str, set[str]],
+    right_dates: set[str],
+) -> int | None:
+    """Apply the ``placeholderGsisUpgrade`` pair conditions.
+
+    Returns 0 if the left record is the valid-GSIS side, 1 if the right one is,
+    and None when the pair does not satisfy the rule.
+    """
+    left_valid = any(_VALID_GSIS_RE.match(value) for value in left_values.get("GSIS", ()))
+    right_valid = any(_VALID_GSIS_RE.match(value) for value in right_values.get("GSIS", ()))
+    if left_valid == right_valid:
+        return None
+    if left_values.get("ESB") != {esb} or right_values.get("ESB") != {esb}:
+        return None
+    if any(
+        left_values[key]
+        and right_values[key]
+        and not (left_values[key] & right_values[key])
+        for key in (set(left_values) & set(right_values)) - {"GSIS"}
+    ):
+        return None
+    if left_dates and right_dates and not (left_dates & right_dates):
+        return None
+    return 0 if left_valid else 1
+
+
+def _placeholder_gsis_upgrades(
+    uf: UnionFind,
+    candidates: list[IdentityCandidate],
+) -> dict[int, tuple[int, str]]:
+    """Find placeholder-GSIS components that a shared ESB bridges to a valid GSIS.
+
+    Rule ``placeholderGsisUpgrade`` of ``currentIdentityGapResolution`` in
+    ``.ai-context/manual/player-identity.yaml``. nflverse repeats a player's ESB
+    value in the GSIS field when no real GSIS is known yet, so the same person can
+    exist as two components: one with a placeholder (or missing) GSIS and one with
+    a valid ``00-NNNNNNN`` GSIS. The shared ESB value is the bridge only when
+
+    - exactly one of the two components carries a valid GSIS,
+    - the ESB value occurs on exactly these two components,
+    - no other provider ID present on both components disagrees, and
+    - the birth dates do not contradict each other.
+
+    Returns ``{placeholder_root: (valid_root, esb)}``. Nothing is merged: both
+    components keep their CanonicalPlayerID.
+    """
+    components = _component_members(uf, candidates)
+    values_by_root = {
+        root: _component_provider_values(candidates, indexes)
+        for root, indexes in components.items()
+    }
+    roots_by_esb: dict[str, set[int]] = defaultdict(set)
+    for root, values in values_by_root.items():
+        for esb in values.get("ESB", ()):
+            roots_by_esb[esb].add(root)
+
+    def birth_dates(root: int) -> set[str]:
+        return {
+            candidates[idx].birth_date
+            for idx in components[root]
+            if candidates[idx].birth_date
+        }
+
+    upgrades: dict[int, tuple[int, str]] = {}
+    for esb, roots in sorted(roots_by_esb.items()):
+        if len(roots) != 2:
+            continue
+        left, right = sorted(roots)
+        side = _placeholder_pair_valid_side(
+            esb,
+            values_by_root[left],
+            birth_dates(left),
+            values_by_root[right],
+            birth_dates(right),
+        )
+        if side is None:
+            continue
+        valid_root, placeholder_root = (left, right) if side == 0 else (right, left)
+        if placeholder_root in upgrades or valid_root in upgrades:
+            continue
+        upgrades[placeholder_root] = (valid_root, esb)
+    return upgrades
+
+
+def _flatten_groups(uf: UnionFind, groups: dict[int, list[int]]) -> None:
+    """Rewrite the union-find as flat groups.
+
+    Re-parenting a member in place could leave it as an intermediate parent of a
+    member that did not move, so every group is rewritten explicitly.
+    """
+    for indexes in groups.values():
+        if not indexes:
+            continue
+        root = min(indexes)
+        for idx in indexes:
+            uf.parent[idx] = root
+
+
+def _split_merged_placeholder_components(
+    uf: UnionFind,
+    candidates: list[IdentityCandidate],
+) -> dict[int, tuple[str, str | None]]:
+    """Undo the transitive merge of an already transferred placeholder pair.
+
+    After a first run the valid record carries the transferred ESPN/PFR/Sleeper
+    tokens, and the current nflverse and app candidates (placeholder GSIS, same
+    ESPN/PFR/Sleeper) then link both persisted records into one component. When
+    that component holds exactly two persisted CanonicalPlayerIDs and the pair
+    satisfies the ``placeholderGsisUpgrade`` rule on the persisted evidence alone,
+    the component is split again: each persisted record keeps its own
+    ``canonical-existing`` candidates and all current candidates belong to the
+    valid record. Any other multi-record component stays merged and fails closed
+    in ``build_identities``.
+    """
+    components = _component_members(uf, candidates)
+    esb_keys: dict[str, set[str]] = defaultdict(set)
+    for root, indexes in components.items():
+        existing = {
+            candidates[idx].existing_internal_id
+            for idx in indexes
+            if candidates[idx].existing_internal_id
+        }
+        for idx in indexes:
+            esb = candidates[idx].ids.get("ESB")
+            if not esb:
+                continue
+            candidate = candidates[idx]
+            if candidate.existing_internal_id:
+                esb_keys[esb].add(candidate.existing_internal_id)
+            elif len(existing) <= 1:
+                esb_keys[esb].add(next(iter(existing)) if existing else f"component:{root}")
+
+    groups = {root: list(indexes) for root, indexes in components.items()}
+    moved: dict[int, tuple[str, str | None]] = {}
+    for root, indexes in components.items():
+        persisted_ids = sorted(
+            {
+                candidates[idx].existing_internal_id
+                for idx in indexes
+                if candidates[idx].existing_internal_id
+            }
+        )
+        if len(persisted_ids) != 2:
+            continue
+        per_id = {
+            record_id: [
+                idx for idx in indexes if candidates[idx].existing_internal_id == record_id
+            ]
+            for record_id in persisted_ids
+        }
+        values = {
+            record_id: _component_provider_values(candidates, per_id[record_id])
+            for record_id in persisted_ids
+        }
+        dates = {
+            record_id: {
+                candidates[idx].birth_date
+                for idx in per_id[record_id]
+                if candidates[idx].birth_date
+            }
+            for record_id in persisted_ids
+        }
+        esb_values = values[persisted_ids[0]].get("ESB", set())
+        if len(esb_values) != 1:
+            continue
+        esb = next(iter(esb_values))
+        if esb_keys.get(esb) != set(persisted_ids):
+            continue
+        side = _placeholder_pair_valid_side(
+            esb,
+            values[persisted_ids[0]],
+            dates[persisted_ids[0]],
+            values[persisted_ids[1]],
+            dates[persisted_ids[1]],
+        )
+        if side is None:
+            continue
+        valid_id, placeholder_id = persisted_ids[side], persisted_ids[1 - side]
+        current = [idx for idx in indexes if not candidates[idx].existing_internal_id]
+        for idx in current:
+            candidate = candidates[idx]
+            if candidate.ids.get("GSIS") and not _VALID_GSIS_RE.match(candidate.ids["GSIS"]):
+                candidate.ids = {k: v for k, v in candidate.ids.items() if k != "GSIS"}
+            moved[idx] = (esb, placeholder_id)
+        groups[root] = per_id[placeholder_id]
+        groups[-(root + 1)] = per_id[valid_id] + current
+    _flatten_groups(uf, groups)
+    return moved
+
+
+def _apply_placeholder_gsis_upgrades(
+    uf: UnionFind,
+    candidates: list[IdentityCandidate],
+) -> dict[int, tuple[str, str | None]]:
+    """Move current provider evidence of placeholder components to the valid record.
+
+    Persisted ``canonical-existing`` candidates stay where they are, so neither
+    CanonicalPlayerID is renamed, regenerated or deleted. Current candidates of the
+    placeholder component are re-parented to the valid component; their placeholder
+    GSIS value is not transferred. Returns ``{candidate_index: (esb, previous
+    CanonicalPlayerID or None)}`` for moved candidates so claims can carry the
+    rule's provenance and the provider-mapping builder can retire the previous
+    owner's current-season mapping.
+    """
+    moved: dict[int, tuple[str, str | None]] = _split_merged_placeholder_components(
+        uf, candidates
+    )
+    upgrades = _placeholder_gsis_upgrades(uf, candidates)
+    if not upgrades:
+        return moved
+    groups = {
+        root: list(indexes) for root, indexes in _component_members(uf, candidates).items()
+    }
+    for placeholder_root, (valid_root, esb) in upgrades.items():
+        previous_ids = {
+            candidates[idx].existing_internal_id
+            for idx in groups[placeholder_root]
+            if candidates[idx].existing_internal_id
+        }
+        previous_id = next(iter(previous_ids)) if len(previous_ids) == 1 else None
+        for idx in list(groups[placeholder_root]):
+            candidate = candidates[idx]
+            if candidate.source == "canonical-existing":
+                continue
+            if candidate.ids.get("GSIS") and not _VALID_GSIS_RE.match(candidate.ids["GSIS"]):
+                candidate.ids = {k: v for k, v in candidate.ids.items() if k != "GSIS"}
+            groups[placeholder_root].remove(idx)
+            groups[valid_root].append(idx)
+            moved[idx] = (esb, previous_id)
+    _flatten_groups(uf, groups)
+    return moved
+
+
 def _select_primary_provider_id(key: str, values: set[str], members: list[IdentityCandidate]) -> str:
     for source in PRIMARY_SOURCE_PREFERENCE:
         selected = sorted(
@@ -515,6 +766,7 @@ def build_identities(
     candidates = existing_candidates + raw_candidates + app_candidates
     candidate_index = {id(candidate): idx for idx, candidate in enumerate(candidates)}
     uf = _build_components(candidates)
+    upgraded_candidates = _apply_placeholder_gsis_upgrades(uf, candidates)
     components = _component_members(uf, candidates)
 
     root_internal: dict[int, str] = {}
@@ -533,6 +785,7 @@ def build_identities(
 
     current_claim_owners: dict[tuple[str, str], set[str]] = defaultdict(set)
     current_claim_sources: dict[tuple[str, str, str], set[str]] = defaultdict(set)
+    current_claim_transfers: dict[tuple[str, str, str], set[str]] = defaultdict(set)
     current_values_by_internal_provider: dict[tuple[str, str], set[str]] = defaultdict(set)
     for idx, candidate in enumerate(candidates):
         if candidate.source == "canonical-existing":
@@ -542,6 +795,13 @@ def build_identities(
             token = (key, value)
             current_claim_owners[token].add(internal_id)
             current_claim_sources[(key, value, internal_id)].add(candidate.source)
+            if idx in upgraded_candidates:
+                esb, previous_id = upgraded_candidates[idx]
+                current_claim_sources[(key, value, internal_id)].add(
+                    f"{PLACEHOLDER_GSIS_UPGRADE_PROVENANCE}:{esb}"
+                )
+                if previous_id and previous_id != internal_id:
+                    current_claim_transfers[(key, value, internal_id)].add(previous_id)
             current_values_by_internal_provider[(internal_id, key)].add(value)
 
     lookup_conflicts: list[dict[str, Any]] = []
@@ -662,14 +922,15 @@ def build_identities(
         if len(owners) != 1:
             continue
         internal_id = next(iter(owners))
-        provider_claims.append(
-            {
-                "Provider": key,
-                "ExternalID": value,
-                CANONICAL_PLAYER_ID_FIELD: internal_id,
-                "Sources": sorted(current_claim_sources[(key, value, internal_id)]),
-            }
-        )
+        claim = {
+            "Provider": key,
+            "ExternalID": value,
+            CANONICAL_PLAYER_ID_FIELD: internal_id,
+            "Sources": sorted(current_claim_sources[(key, value, internal_id)]),
+        }
+        if transferred_from := current_claim_transfers.get((key, value, internal_id)):
+            claim["TransferredFromCanonicalPlayerIDs"] = sorted(transferred_from)
+        provider_claims.append(claim)
 
     resolved_ff_rows: list[dict[str, str]] = []
     for row, candidate in zip(ff_rows, ff_candidates):

@@ -10,6 +10,84 @@ from .identity_adjudications import (
     load_identity_adjudication_claims,
 )
 from .identity_model import ANCHOR_ID_KEYS
+from .provisional_reconciliation import _without_season
+
+PLACEHOLDER_GSIS_UPGRADE_REASON = "placeholder_gsis_upgrade_transfers_current_claim"
+
+
+def _transfer_reconciliation_key(item: dict[str, Any]) -> tuple[Any, ...]:
+    return (
+        str(item.get("Provider") or ""),
+        str(item.get("ExternalID") or ""),
+        int(item.get("ObservedSeason") or 0),
+        str(item.get("CanonicalPlayerID") or ""),
+        tuple(sorted(str(value) for value in item.get("RetiredCanonicalPlayerIDs") or [])),
+        str(item.get("Reason") or ""),
+    )
+
+
+def _retire_transferred_claims(
+    provider_claims: list[dict[str, Any]],
+    mappings: list[dict[str, Any]],
+    conflicts: list[dict[str, Any]],
+    observation_season: int,
+) -> list[dict[str, Any]]:
+    reconciliations: list[dict[str, Any]] = []
+    for claim in provider_claims:
+        provider = str(claim["Provider"])
+        external_id = str(claim["ExternalID"])
+        new_owner = str(claim["CanonicalPlayerID"])
+        for previous_owner in claim.get("TransferredFromCanonicalPlayerIDs") or []:
+            previous_owner = str(previous_owner)
+            retired_sources: set[str] = set()
+            changed = False
+            rebuilt: list[dict[str, Any]] = []
+            for item in mappings:
+                if (
+                    str(item.get("Provider")) == provider
+                    and str(item.get("ExternalID")) == external_id
+                    and str(item.get("CanonicalPlayerID")) == previous_owner
+                ):
+                    rest = _without_season(item, observation_season)
+                    if rest != [item]:
+                        changed = True
+                        retired_sources.update(str(v) for v in item.get("Sources") or [])
+                    rebuilt.extend(rest)
+                else:
+                    rebuilt.append(item)
+            mappings[:] = rebuilt
+            rebuilt_conflicts: list[dict[str, Any]] = []
+            for conflict in conflicts:
+                owners = {str(v) for v in conflict.get("CanonicalPlayerIDs") or []}
+                if (
+                    str(conflict.get("Provider")) == provider
+                    and str(conflict.get("ExternalID")) == external_id
+                    and previous_owner in owners
+                ):
+                    rest = _without_season(conflict, observation_season)
+                    if rest != [conflict]:
+                        changed = True
+                    rebuilt_conflicts.extend(rest)
+                else:
+                    rebuilt_conflicts.append(conflict)
+            conflicts[:] = rebuilt_conflicts
+            if changed:
+                reconciliations.append(
+                    {
+                        "Provider": provider,
+                        "ExternalID": external_id,
+                        "ObservedSeason": observation_season,
+                        "CanonicalPlayerID": new_owner,
+                        "RetiredCanonicalPlayerIDs": [previous_owner],
+                        "RetiredSourcesByCanonicalPlayerID": {
+                            previous_owner: sorted(retired_sources)
+                        },
+                        "Sources": sorted(claim.get("Sources") or []),
+                        "Status": "reconciled",
+                        "Reason": PLACEHOLDER_GSIS_UPGRADE_REASON,
+                    }
+                )
+    return reconciliations
 
 
 def build_provider_mapping_payload(
@@ -77,6 +155,27 @@ def build_provider_mapping_payload(
         # must not pretend it remained valid for the whole season.
 
     mappings = reconciled_mappings
+
+    # Rule ``placeholderGsisUpgrade``: a current claim that moved from a
+    # placeholder-GSIS record to the valid-GSIS record retires the previous
+    # owner's current-season mapping and conflicts for that token, so the token
+    # does not turn into an ambiguous two-owner claim. Earlier seasons stay.
+    transfer_reconciliations = _retire_transferred_claims(
+        provider_claims, mappings, conflicts, observation_season
+    )
+    if transfer_reconciliations:
+        known = {
+            _transfer_reconciliation_key(item)
+            for item in persisted_history.get("HistoricalMappingReconciliations", [])
+        }
+        persisted_history["HistoricalMappingReconciliations"] = [
+            *persisted_history.get("HistoricalMappingReconciliations", []),
+            *(
+                item
+                for item in transfer_reconciliations
+                if _transfer_reconciliation_key(item) not in known
+            ),
+        ]
 
     def mapping_key(item: dict[str, Any]) -> tuple[str, str, str]:
         return (
