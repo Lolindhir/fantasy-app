@@ -111,6 +111,8 @@ describe('FantasyGameContext matchup display orientation', () => {
       StandardDeviation: score === null ? null : 10,
       Ranges: [],
       ByeStarterPlayerIDs: [],
+      OutStarterPlayerIDs: [],
+      UncertainStarterPlayerIDs: [],
       UnavailableStarterPlayerIDs: []
     });
     const projected = {

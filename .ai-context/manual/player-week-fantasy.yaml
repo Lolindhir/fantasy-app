@@ -225,7 +225,8 @@ consumerBoundary:
       field: MatchupProjections.json::Matchups[].Teams[].ProjectedFinalScore
       starterRule:
         finalGame: actual FantasyGameContext starter Points; no projection required
-        otherGame: max(points scored so far, pregame Projection.Points) as a deliberate interim rule until the live remaining-points model exists
+        otherGame: pregame Projection.Points; live points are never used (provider scoring is delayed and corrected, game Status has no live state)
+        outStarter: ScoringAvailability out (DecisionWindows.ScoringAvailabilityObservations, same Season/LineupWeek) counts as a resolved zero without variance, like a bye; uncertain starters keep the participation-conditional projection and are only listed
       completeness: numeric only when every current starter is resolved (bye starters count as zero; other non-game starters stay unresolved); otherwise null
       pregameEquivalence: equals PregameProjectedScore while no starter game has started
     ui:
@@ -353,7 +354,7 @@ currentCheckpoint:
     - Sleeper/app publication bridge via public/data/PlayerWeekFantasy.json
     - Angular FantasyGameContext consumer join by published App/Sleeper PlayerID
     - current-starter team PredictedEndScore aggregation with explicit complete/partial/unavailable coverage
-    - team ProjectedFinalScore (final starters actual, other starters max(points so far, projection)) shown as PROJ. row on the Overview matchup card and in the matchup dialog
+    - team ProjectedFinalScore (final starters actual, other starters projection, out starters and byes zero) shown as PROJ. row on the Overview matchup card and in the matchup dialog
     - scheduled refresh of the current App week inside the existing APP Data League workflow (tools/player_week_fantasy_refresh.py)
   deferred:
     - Players/Free Agents migration

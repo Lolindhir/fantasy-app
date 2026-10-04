@@ -357,6 +357,8 @@ describe('DataService', () => {
       StandardDeviation: 20,
       Ranges: [{ Level: 0.8, Lower: finalScore - 26, Upper: finalScore + 26 }],
       ByeStarterPlayerIDs: [],
+      OutStarterPlayerIDs: [],
+      UncertainStarterPlayerIDs: [],
       UnavailableStarterPlayerIDs: []
     });
     return {

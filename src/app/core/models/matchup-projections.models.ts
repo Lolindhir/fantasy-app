@@ -24,6 +24,8 @@ export interface MatchupProjectionTeam {
   StandardDeviation: number | null;
   Ranges: MatchupProjectionRange[];
   ByeStarterPlayerIDs: string[];
+  OutStarterPlayerIDs: string[];
+  UncertainStarterPlayerIDs: string[];
   UnavailableStarterPlayerIDs: string[];
 }
 

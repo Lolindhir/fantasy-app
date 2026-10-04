@@ -162,19 +162,45 @@ class MatchupProjectionTests(unittest.TestCase):
         self.assertAlmostEqual(team1["StandardDeviation"], 5.0, places=3)
         self.assertEqual(team1["PregameProjectedScore"], 15.0)
 
-    def test_running_game_never_counts_less_than_points_already_scored(self) -> None:
-        ahead = default_context()
-        ahead["Games"][0]["Status"] = "In Progress"
-        ahead["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 12.0
-        behind = copy.deepcopy(ahead)
-        behind["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 3.0
+    def test_live_points_of_a_game_that_is_not_final_are_ignored(self) -> None:
+        baseline = default_context()
+        running = copy.deepcopy(baseline)
+        running["Games"][0]["Status"] = "In Progress"
+        running["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 40.0
 
         self.assertEqual(
-            team_of(build_matchup_projections(ahead, default_model()), 1)["ProjectedFinalScore"], 17.0
+            team_of(build_matchup_projections(running, default_model()), 1)["ProjectedFinalScore"], 15.0
         )
-        self.assertEqual(
-            team_of(build_matchup_projections(behind, default_model()), 1)["ProjectedFinalScore"], 15.0
+
+    def test_out_starter_counts_zero_without_variance_and_is_listed(self) -> None:
+        team1 = team_of(
+            build_matchup_projections(default_context(), default_model(), availability={"p1": "out"}), 1
         )
+
+        self.assertEqual(team1["State"], "available")
+        self.assertEqual(team1["ProjectedFinalScore"], 5.0)
+        self.assertEqual(team1["PregameProjectedScore"], 5.0)
+        self.assertEqual(team1["OutStarterPlayerIDs"], ["p1"])
+        self.assertAlmostEqual(team1["StandardDeviation"], 5.0, places=3)
+
+    def test_uncertain_starter_keeps_its_projection_and_is_listed(self) -> None:
+        team1 = team_of(
+            build_matchup_projections(default_context(), default_model(), availability={"p1": "uncertain"}), 1
+        )
+
+        self.assertEqual(team1["ProjectedFinalScore"], 15.0)
+        self.assertEqual(team1["UncertainStarterPlayerIDs"], ["p1"])
+        self.assertEqual(team1["OutStarterPlayerIDs"], [])
+
+    def test_availability_never_overrides_the_result_of_a_final_game(self) -> None:
+        context = default_context()
+        context["Games"][0]["Status"] = "Final"
+        context["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 18.0
+
+        team1 = team_of(build_matchup_projections(context, default_model(), availability={"p1": "out"}), 1)
+
+        self.assertEqual(team1["ProjectedFinalScore"], 23.0)
+        self.assertEqual(team1["OutStarterPlayerIDs"], [])
 
     def test_final_game_starter_needs_no_projection_but_needs_points(self) -> None:
         context = default_context()
@@ -323,6 +349,36 @@ class PublicationTests(unittest.TestCase):
 
         self.assertEqual(result["Status"], "skipped-week-mismatch")
         self.assertEqual(existing.read_text(encoding="utf-8"), "previous")
+
+    def _windows(self, root: Path, *, week: int, state: str) -> None:
+        (root / "public/data/DecisionWindows.json").write_text(
+            json.dumps(
+                {
+                    "Season": 2026,
+                    "LineupWeek": week,
+                    "ScoringAvailabilityObservations": [{"PlayerID": "p1", "State": state}],
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    def test_publication_applies_availability_of_the_same_week(self) -> None:
+        root = self._repo(default_context(), default_model())
+        self._windows(root, week=3, state="out")
+
+        publish_matchup_projections(root)
+
+        payload = json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
+        self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], ["p1"])
+
+    def test_publication_ignores_availability_of_another_week(self) -> None:
+        root = self._repo(default_context(), default_model())
+        self._windows(root, week=2, state="out")
+
+        publish_matchup_projections(root)
+
+        payload = json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
+        self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
 
     def test_missing_input_fails_closed(self) -> None:
         with self.assertRaisesRegex(ValueError, "missing"):
