@@ -1,15 +1,22 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import { mapRawLeagueData } from '../mappers/league.mapper';
 import { mapRawPlayerToPlayer } from '../mappers/player.mapper';
 import { mapRawTransactions } from '../mappers/transaction.mapper';
 import type { DecisionWindowsReadModel } from '../models/decision-window.models';
 import type { RawDraft } from '../models/draft.models';
-import type { FantasyGameContextReadModel } from '../models/fantasy-game-context.models';
+import type {
+  FantasyGameContextReadModel,
+  FantasyGameContextTeamPrediction
+} from '../models/fantasy-game-context.models';
 import type { FantasyTeam, League, RawLeague } from '../models/league.models';
 import type { MatchupsReadModel } from '../models/matchup.models';
+import type {
+  PlayerWeekFantasyProjection,
+  PlayerWeekFantasyReadModel
+} from '../models/player-week-fantasy.models';
 import type {
   NFLTeam,
   Player,
@@ -40,6 +47,128 @@ export interface LeagueWithPlayers {
 
 export interface LeagueWithPlayersAndTransactions extends LeagueWithPlayers {
   transactions: Transaction[];
+}
+
+function predictionTeamKey(fantasyMatchupID: string, fantasyTeamID: string | number): string {
+  return `${fantasyMatchupID}::${String(fantasyTeamID)}`;
+}
+
+function roundPredictionPoints(value: number): number {
+  return Math.round(value * 10_000) / 10_000;
+}
+
+function buildProjectionByPlayerID(
+  playerWeekFantasy: PlayerWeekFantasyReadModel
+): Map<string, PlayerWeekFantasyProjection> | null {
+  const result = new Map<string, PlayerWeekFantasyProjection>();
+
+  for (const record of playerWeekFantasy.Records ?? []) {
+    if (record.PlayerID === null || record.PlayerID === undefined || String(record.PlayerID).trim() === '') continue;
+    const playerID = String(record.PlayerID);
+    if (result.has(playerID)) return null;
+    result.set(playerID, record.Projection);
+  }
+
+  return result;
+}
+
+function enrichFantasyGameContextWithPredictions(
+  context: FantasyGameContextReadModel,
+  playerWeekFantasy: PlayerWeekFantasyReadModel
+): FantasyGameContextReadModel {
+  if (
+    String(context.Season) !== String(playerWeekFantasy.Season)
+    || Number(context.Week) !== Number(playerWeekFantasy.Week)
+  ) {
+    return context;
+  }
+
+  const projectionByPlayerID = buildProjectionByPlayerID(playerWeekFantasy);
+  if (!projectionByPlayerID) return context;
+
+  const starterIDsByTeam = new Map<string, Set<string>>();
+  const addStarter = (
+    fantasyMatchupID: string | null | undefined,
+    fantasyTeamID: string | number,
+    playerID: string
+  ): void => {
+    if (!fantasyMatchupID) return;
+    const key = predictionTeamKey(fantasyMatchupID, fantasyTeamID);
+    const current = starterIDsByTeam.get(key) ?? new Set<string>();
+    current.add(String(playerID));
+    starterIDsByTeam.set(key, current);
+  };
+
+  const games = context.Games.map(game => ({
+    ...game,
+    FantasyTeams: game.FantasyTeams.map(team => ({
+      ...team,
+      Players: team.Players.map(player => {
+        if (player.IsStarter) addStarter(team.FantasyMatchupID, team.FantasyTeamID, player.PlayerID);
+        return {
+          ...player,
+          Prediction: projectionByPlayerID.get(String(player.PlayerID)) ?? null
+        };
+      })
+    }))
+  }));
+
+  for (const association of context.NonGameAssociations) {
+    if (association.IsStarter) {
+      addStarter(association.FantasyMatchupID, association.FantasyTeamID, association.PlayerID);
+    }
+  }
+
+  const fantasyMatchups = context.FantasyMatchups.map(matchup => ({
+    ...matchup,
+    TeamPredictions: matchup.TeamIDs.map(teamID => {
+      const starterIDs = Array.from(
+        starterIDsByTeam.get(predictionTeamKey(matchup.FantasyMatchupID, teamID)) ?? []
+      );
+      const unavailableStarterPlayerIDs: string[] = [];
+      let projectedStarterPoints = 0;
+      let projectedStarterCount = 0;
+
+      for (const playerID of starterIDs) {
+        const projection = projectionByPlayerID.get(playerID);
+        if (
+          projection?.Status === 'available'
+          && typeof projection.Points === 'number'
+          && Number.isFinite(projection.Points)
+        ) {
+          projectedStarterCount += 1;
+          projectedStarterPoints += projection.Points;
+        } else {
+          unavailableStarterPlayerIDs.push(playerID);
+        }
+      }
+
+      const starterCount = starterIDs.length;
+      const state: FantasyGameContextTeamPrediction['State'] =
+        starterCount > 0 && projectedStarterCount === starterCount
+          ? 'available'
+          : projectedStarterCount > 0
+            ? 'partial'
+            : 'unavailable';
+      const roundedProjectedStarterPoints = roundPredictionPoints(projectedStarterPoints);
+
+      return {
+        FantasyTeamID: teamID,
+        State: state,
+        StarterCount: starterCount,
+        ProjectedStarterCount: projectedStarterCount,
+        ProjectedStarterPoints: roundedProjectedStarterPoints,
+        PredictedEndScore: state === 'available' ? roundedProjectedStarterPoints : null,
+        UnavailableStarterPlayerIDs: unavailableStarterPlayerIDs.sort()
+      };
+    })
+  }));
+
+  return {
+    ...context,
+    Games: games,
+    FantasyMatchups: fantasyMatchups
+  };
 }
 
 @Injectable({
@@ -123,8 +252,19 @@ export class DataService {
     return this.dataApiService.getMatchupsRaw();
   }
 
+  getPlayerWeekFantasy(): Observable<PlayerWeekFantasyReadModel> {
+    return this.dataApiService.getPlayerWeekFantasyRaw();
+  }
+
   getFantasyGameContext(): Observable<FantasyGameContextReadModel> {
-    return this.dataApiService.getFantasyGameContextRaw();
+    return forkJoin({
+      context: this.dataApiService.getFantasyGameContextRaw(),
+      playerWeekFantasy: this.getPlayerWeekFantasy().pipe(catchError(() => of(null)))
+    }).pipe(
+      map(({ context, playerWeekFantasy }) => playerWeekFantasy
+        ? enrichFantasyGameContextWithPredictions(context, playerWeekFantasy)
+        : context)
+    );
   }
 
   getWeeklyRecaps(): Observable<WeeklyRecapsReadModel> {
