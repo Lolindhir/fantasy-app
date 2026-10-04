@@ -45,10 +45,12 @@ contract:
     FinalStarterCount: starters whose game is final
     ScoredPoints: points of starters in final games
     PregameProjectedScore: sum of starter projections (byes count zero); null unless every starter has one
-    ProjectedFinalScore: final-game starters count actual points, other starters max(points so far, projection), byes zero; null unless State is available
+    ProjectedFinalScore: final-game starters count actual points, other starters their projection, byes and out starters zero; null unless State is available
     StandardDeviation: square root of the summed variances of starters in games that are not final
     Ranges: central ranges per level (Level, Lower, Upper); empty unless State is available
     ByeStarterPlayerIDs: starters on an explicit bye (counted zero)
+    OutStarterPlayerIDs: starters in games that are not final whose scoring availability is out (counted zero, no variance)
+    UncertainStarterPlayerIDs: starters in games that are not final whose scoring availability is uncertain (projection kept)
     UnavailableStarterPlayerIDs: starters that block the team value
 
 semantics: .ai-context/manual/player-week-fantasy.yaml
@@ -60,5 +62,6 @@ consumer:
 boundaries:
   - A week mismatch between FantasyGameContext and PlayerWeekFantasy skips publication; consumers must ignore a snapshot that targets another Season or Week.
   - Starters without a game association other than a bye (unknown, no team) stay unresolved.
-  - The live-game rule max(points so far, projection) is interim until the live remaining-points model exists.
+  - Live points are never used; a game that is not final counts its projection until Final.
+  - Availability comes from DecisionWindows.json and is ignored when that file targets another Season or LineupWeek.
   - Ranges are estimates under an independence assumption; the backtest documents the observed coverage.

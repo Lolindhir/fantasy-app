@@ -2,8 +2,13 @@
 """Publish team-level matchup projections and ranges into the App delivery layer.
 
 Inputs are the App read models FantasyGameContext.json (current starters, game
-status, points so far) and PlayerWeekFantasy.json (published player projections
-and ranges). The team projection is a sum; the team range is a normal
+status, final points), PlayerWeekFantasy.json (published player projections and
+ranges) and, optionally, DecisionWindows.json (scoring availability per player).
+Points of games that are not final are never used: live points are delayed and
+corrected by the provider, so a running game counts its projection until Final.
+A starter whose scoring availability is "out" counts as a resolved zero with no
+variance (like a bye) and is listed; "uncertain" starters keep their
+participation-conditional projection and are listed. The team projection is a sum; the team range is a normal
 approximation that adds player variances (independent players), calibrated by
 tools/historical_team_range_backtest.py. No arithmetic belongs in the frontend.
 """
@@ -20,7 +25,7 @@ from typing import Any, Mapping
 
 from player_week_fantasy import DISPLAY_INTERVAL_LEVEL, PUBLISHED_INTERVAL_LEVELS
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 METHOD_ID = "normal-independent-v1"
 SIGMA_BASIS_LEVEL = 0.9
 AXIS_STEP = 20
@@ -28,6 +33,9 @@ AXIS_PADDING = 10
 OUTPUT_PATH = Path("public/data/MatchupProjections.json")
 CONTEXT_PATH = Path("public/data/FantasyGameContext.json")
 PLAYER_PATH = Path("public/data/PlayerWeekFantasy.json")
+DECISION_WINDOWS_PATH = Path("public/data/DecisionWindows.json")
+AVAILABILITY_OUT = "out"
+AVAILABILITY_UNCERTAIN = "uncertain"
 
 
 def z_for_level(level: float) -> float:
@@ -137,7 +145,9 @@ def build_team_projection(
     team_id: Any,
     starters: Mapping[str, Mapping[str, Any]],
     projections: Mapping[str, Mapping[str, Any]],
+    availability: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
+    availability = availability or {}
     scored = 0.0
     mean = 0.0
     variance = 0.0
@@ -146,6 +156,8 @@ def build_team_projection(
     final_count = 0
     resolved = 0
     byes: list[str] = []
+    out: list[str] = []
+    uncertain: list[str] = []
     unavailable: list[str] = []
 
     for player_id in sorted(starters):
@@ -156,6 +168,14 @@ def build_team_projection(
             byes.append(player_id)
             resolved += 1
             continue
+
+        state = availability.get(player_id)
+        if not starter["final"] and state == AVAILABILITY_OUT:
+            out.append(player_id)
+            resolved += 1
+            continue
+        if not starter["final"] and state == AVAILABILITY_UNCERTAIN:
+            uncertain.append(player_id)
 
         if values is None:
             pregame_complete = False
@@ -174,10 +194,7 @@ def build_team_projection(
             unavailable.append(player_id)
         else:
             points, sigma = values
-            # A game that is not final counts its projection but never less than the points
-            # already scored, so live scoring is not counted twice. Interim rule until the
-            # live remaining-points model exists.
-            mean += max(starter["points"] or 0.0, points)
+            mean += points
             variance += sigma * sigma
             resolved += 1
 
@@ -197,6 +214,8 @@ def build_team_projection(
         "StandardDeviation": round(math.sqrt(variance), 4) if complete else None,
         "Ranges": team_ranges(mean, variance) if complete else [],
         "ByeStarterPlayerIDs": byes,
+        "OutStarterPlayerIDs": out,
+        "UncertainStarterPlayerIDs": uncertain,
         "UnavailableStarterPlayerIDs": unavailable,
     }
 
@@ -222,6 +241,7 @@ def build_matchup_projections(
     player_model: Mapping[str, Any],
     *,
     display_level: float = DISPLAY_INTERVAL_LEVEL,
+    availability: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     """Pure builder. Raises ValueError when the two inputs do not describe the same week."""
 
@@ -246,6 +266,7 @@ def build_matchup_projections(
                 team_id,
                 starters_by_team.get(_team_key(matchup["FantasyMatchupID"], team_id), {}),
                 projections,
+                availability,
             )
             for team_id in matchup["TeamIDs"]
         ]
@@ -268,6 +289,8 @@ def build_matchup_projections(
             "Levels": list(PUBLISHED_INTERVAL_LEVELS),
             "SigmaBasisLevel": SIGMA_BASIS_LEVEL,
             "Assumption": "starters score independently; player variances add",
+            "LivePoints": "not-used",
+            "OutStarters": "zero-without-variance",
             "ParticipationCondition": "conditional-on-participation",
         },
         "Matchups": matchups,
@@ -295,6 +318,24 @@ def _read_object(path: Path) -> dict[str, Any]:
     return payload
 
 
+def _availability_by_player(root: Path, context: Mapping[str, Any]) -> dict[str, str]:
+    """Scoring availability per App PlayerID; empty when the file is missing or targets another week."""
+
+    try:
+        windows = _read_object(root / DECISION_WINDOWS_PATH)
+    except ValueError:
+        return {}
+    if str(windows.get("Season")) != str(context.get("Season")) or str(windows.get("LineupWeek")) != str(
+        context.get("Week")
+    ):
+        return {}
+    return {
+        str(item["PlayerID"]): item["State"]
+        for item in windows.get("ScoringAvailabilityObservations") or []
+        if item.get("PlayerID") is not None and isinstance(item.get("State"), str)
+    }
+
+
 def publish_matchup_projections(repo_root: Path) -> dict[str, Any]:
     """Build from the published App read models and write when the content changed.
 
@@ -306,7 +347,9 @@ def publish_matchup_projections(repo_root: Path) -> dict[str, Any]:
     context = _read_object(root / CONTEXT_PATH)
     player_model = _read_object(root / PLAYER_PATH)
     try:
-        payload = build_matchup_projections(context, player_model)
+        payload = build_matchup_projections(
+            context, player_model, availability=_availability_by_player(root, context)
+        )
     except ValueError as exc:
         if "target different weeks" in str(exc):
             return {"Status": "skipped-week-mismatch", "Detail": str(exc)}
