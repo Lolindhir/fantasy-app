@@ -47,7 +47,7 @@ The canonical rule set is `currentIdentityGapResolution` in `.ai-context/manual/
 
 | Class | Resolution | Cases on 2026-10-04 |
 |---|---|---|
-| `placeholderGsisUpgrade` | automatic in the identity builder (shared ESB, placeholder or missing GSIS on one side, valid GSIS on the other) | Layne Pryor |
+| `placeholderGsisUpgrade` | automatic in the identity builder (shared ESB, placeholder or missing GSIS on one side, valid GSIS on the other); implemented in Issue #347 B2 | Layne Pryor |
 | `splitIdentity` | this file, `current-provider-reassignment` | Grant Finley, Gregory Desrosiers, Roydell Williams |
 | `wrongUpstreamClaim` | this file, `upstream-claim-override` | Sam Hartman |
 

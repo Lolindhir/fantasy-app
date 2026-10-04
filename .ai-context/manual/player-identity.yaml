@@ -182,7 +182,24 @@ identityModel:
             provenance auto.placeholder-gsis-upgrade:<ESB>. Neither CanonicalPlayerID
             is renamed, regenerated or deleted. Placeholder GSIS values in general
             stay untouched; this rule does not reinterpret them as conflicts.
+          implementation: >
+            Implemented in tools/nfl_source_data_lib/identity.py
+            (_placeholder_gsis_upgrades, _apply_placeholder_gsis_upgrades). Components
+            are matched after ordinary merging. In addition to the rule above, both
+            components must carry exactly the shared ESB value and no contradicting
+            birth date. Only current candidates move; persisted canonical-existing
+            candidates stay, so no CanonicalPlayerID is merged. The placeholder GSIS
+            value itself is not transferred. Moved claims carry the source
+            auto.placeholder-gsis-upgrade:<ESB>. provider_mappings.py retires the
+            previous owner's current-season mapping and conflicts for each moved token
+            and records a HistoricalMappingReconciliations entry with reason
+            placeholder_gsis_upgrade_transfers_current_claim; earlier seasons stay.
+            The rule is re-evaluated on every materialization and is idempotent.
           observedOn2026-10-04: 8 ESB pairs repository-wide, among them current gap Layne Pryor
+          effectOn2026-10-04: >
+            Only two of the eight pairs carry current evidence on the placeholder
+            record (Layne Pryor, Paschal Ekeji); for the other six the persisted
+            identities do not change.
         splitIdentity:
           resolution: human-reviewed adjudication (ResolutionKind current-provider-reassignment)
           pattern: >
@@ -258,7 +275,7 @@ identityModel:
             platform consistency itself are reviewed evidence and are verified by the
             productive integration step, not by this validator.
       implementationOrder:
-        - placeholderGsisUpgrade rule in the identity builder with an identity diff limited to the observed ESB pairs
+        - placeholderGsisUpgrade rule in the identity builder with an identity diff limited to the observed ESB pairs (implemented, Issue #347 B2)
         - upstream-claim-override loader/validator and the openGapHold rule in the population audit
         - reviewed adjudication entries for the open splitIdentity and wrongUpstreamClaim cases
         - productive consumption in the identity builder (current adjudication integration steps 1-7)
