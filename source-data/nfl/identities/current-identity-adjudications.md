@@ -27,9 +27,9 @@ This source is intentionally separate from `historical-identity-adjudications.js
 
 ## Current implementation boundary
 
-Checkpoint 6Z.7 establishes the contract, canonical empty source and fail-closed loader/state validator only. Issue #347 step B3 extends the loader and state validator to `upstream-claim-override` (including the `active`/`obsolete`/`superseded-by-upstream` status report) and adds the open-gap hold to the population audit; the source still contains no entries.
+Checkpoint 6Z.7 establishes the contract, canonical empty source and fail-closed loader/state validator only. Issue #347 step B3 extends the loader and state validator to `upstream-claim-override` (including the `active`/`obsolete`/`superseded-by-upstream` status report) and adds the open-gap hold to the population audit; the source received its first reviewed entries in step B4 (2026-10-04).
 
-The source is **not yet consumed by the productive identity builder**, and it currently contains no adjudications. Therefore this checkpoint has no productive identity or population effect.
+The source is **not yet consumed by the productive identity builder**. Since #347 B4 it contains 12 confirmed entries (Robert, 2026-10-04): `current-provider-reassignment` for Grant Finley, Gregory Desrosiers and Roydell Williams (RB, born 2001-12-08) and for the eight cases where an empty persisted provisional record and the full nflverse record both claim the Sleeper token (Charlie Smyth, Ben Sauls, Dominic Zvada, Trey Smack, Drew Stevens, Matt Hibner, Jack Strand, Malik McClain), and `upstream-claim-override` for Sam Hartman. Therefore the entries have no productive identity or population effect until step B5 consumes them. The evidence per case is in the entry's `Evidence`.
 
 A later explicitly authorized checkpoint may add reviewed decisions and integrate them into the identity builder. That integration must prove:
 
