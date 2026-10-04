@@ -62,27 +62,34 @@ export interface MatchupScoringWindowView extends MatchupScoringWindowHorizonVie
   isLive: boolean;
 }
 
-// Within one time phase: red (problems), yellow (questionable), blue (live/next), green (final), then neutral/unknown.
-const kindOrder: Record<MatchupProgressKind, number> = {
+// Outer edge first. Started starters (locked or final) form the outermost block: red, green, blue, yellow, unknown.
+// Open starters follow: plain next-window and later segments, then the always-outlined problems
+// (yellow, red) with unknown innermost.
+const startedOrder: Partial<Record<MatchupProgressKind, number>> = {
   irreparable: 0,
-  repairable: 1,
+  repairable: 0.5,
+  final: 1,
+  locked: 2,
+  questionable: 3,
+  unknown: 4
+};
+const openOrder: Partial<Record<MatchupProgressKind, number>> = {
+  next: 0,
+  future: 1,
   questionable: 2,
-  locked: 3,
-  next: 4,
-  final: 5,
-  future: 6,
-  unknown: 7
+  repairable: 3,
+  irreparable: 4,
+  unknown: 5
 };
 
-// Time phase, outer edge first: final starters, then live/next-window starters, then still-open ones.
-function timePhase(
-  slot: FantasyRelevanceSlotState,
-  nextScoringWindowID: string | null | undefined
-): number {
-  if (slot.State === 'completed') return 0;
-  if (slot.State === 'locked-active') return 1;
-  if (slot.State === 'unlocked' && nextScoringWindowID && slot.DecisionWindowID === nextScoringWindowID) return 1;
-  return 2;
+function sortRank(segment: MatchupProgressSegmentView, started: boolean): number {
+  return started
+    ? startedOrder[segment.kind] ?? 0
+    : 10 + (openOrder[segment.kind] ?? 0);
+}
+
+function hasStarted(slot: FantasyRelevanceSlotState): boolean {
+  return slot.State === 'completed' || slot.State === 'locked-active';
 }
 
 const kindLabel: Record<MatchupProgressKind, string> = {
@@ -127,9 +134,11 @@ export function buildMatchupStarterProgress(
   if (!team?.Slots?.length) return null;
 
   const sorted = team.Slots
-    .map(slot => ({ segment: toSegment(slot, nextScoringWindowID), phase: timePhase(slot, nextScoringWindowID) }))
-    .sort((left, right) => left.phase - right.phase
-      || kindOrder[left.segment.kind] - kindOrder[right.segment.kind]
+    .map(slot => {
+      const segment = toSegment(slot, nextScoringWindowID);
+      return { segment, rank: sortRank(segment, hasStarted(slot)) };
+    })
+    .sort((left, right) => left.rank - right.rank
       || slotIndex(team.Slots, left.segment.slotID) - slotIndex(team.Slots, right.segment.slotID))
     .map(item => item.segment);
 

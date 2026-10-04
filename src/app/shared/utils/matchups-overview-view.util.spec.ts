@@ -239,10 +239,10 @@ describe('matchups overview view utility', () => {
     const right = buildMatchupStarterProgress(team(slots), 'next', 'right');
 
     expect(left?.groups.map(group => group.kind)).toEqual([
-      'final', 'repairable', 'locked', 'next', 'irreparable', 'future', 'unknown'
+      'final', 'locked', 'next', 'future', 'repairable', 'irreparable', 'unknown'
     ]);
     expect(right?.groups.map(group => group.kind)).toEqual([
-      'unknown', 'future', 'irreparable', 'next', 'locked', 'repairable', 'final'
+      'unknown', 'irreparable', 'repairable', 'future', 'next', 'locked', 'final'
     ]);
     expect(left?.groups.find(group => group.kind === 'next')?.outline).toBe('next');
     expect(left?.groups.find(group => group.kind === 'repairable')?.outline).toBe('repairable');
@@ -260,25 +260,26 @@ describe('matchups overview view utility', () => {
 
     const view = buildMatchupStarterProgress(team(slots), 'next', 'left');
 
-    expect(view?.groups.map(group => group.kind)).toEqual(['questionable', 'locked', 'next', 'unknown']);
+    expect(view?.groups.map(group => group.kind)).toEqual(['locked', 'next', 'questionable', 'unknown']);
     expect(view?.groups.find(group => group.kind === 'questionable')?.outline).toBe('questionable');
     expect(view?.groups.find(group => group.kind === 'questionable')?.segments.map(item => item.slotID)).toEqual(['WR-1']);
   });
 
-  it('orders by time phase first (final outermost, then next window, then open) and by color within a phase', () => {
+  it('orders started starters red, green, blue outermost and puts open problems innermost', () => {
     const uncertain = { State: 'uncertain' as const, ProviderStatus: 'Questionable', Source: 'ESPN', ObservedAtUtc: null };
     const slots = [
       slot('WR-1', 'unlocked', { DecisionWindowID: 'later', ScoringAvailability: uncertain }),
       slot('WR-2', 'unlocked', { DecisionWindowID: 'next' }),
       slot('QB-3', 'completed'),
-      slot('RB-4', 'unlocked', { DecisionWindowID: 'later' })
+      slot('RB-4', 'unlocked', { DecisionWindowID: 'later' }),
+      slot('TE-5', 'locked-active', { Repairability: { ProblemCode: 'OPEN_STARTER_SLOT', State: 'irreparable', Path: null, ReasonCode: 'NO_LEGAL_REPAIR_PATH', InternalCandidateCount: 0, ExternalCandidateCount: 0 } })
     ];
 
     const left = buildMatchupStarterProgress(team(slots), 'next', 'left');
     const right = buildMatchupStarterProgress(team(slots), 'next', 'right');
 
-    expect(left?.groups.map(group => group.kind)).toEqual(['final', 'next', 'questionable', 'future']);
-    expect(right?.groups.map(group => group.kind)).toEqual(['future', 'questionable', 'next', 'final']);
+    expect(left?.groups.map(group => group.kind)).toEqual(['irreparable', 'final', 'next', 'future', 'questionable']);
+    expect(right?.groups.map(group => group.kind)).toEqual(['questionable', 'future', 'next', 'final', 'irreparable']);
   });
 
   it('keeps missing lifecycle states out of the group list so styling adds only one inter-group gap', () => {
