@@ -25,7 +25,7 @@
           </ng-container>
           <ng-template #gameAt><span class="fgc-game-at">@</span></ng-template>
           <span>{{ selectedGame.StartsAtUtc | date:'EEE, MMM d · HH:mm' }}</span>
-          <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(selectedGame) === 'Live'">
+          <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(selectedGame) === 'Live'" [class.fgc-status--final]="gameStageLabel(selectedGame) === 'Final'">
             {{ gameStageLabel(selectedGame) }}
           </span>
         </div>
@@ -241,7 +241,7 @@
 
               <div class="fgc-timeline-meta">
                 <span>{{ row.StartsAtUtc | date:'EEE · HH:mm' }}</span>
-                <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(linkedGame) === 'Live'">{{ gameStageLabel(linkedGame) }}</span>
+                <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(linkedGame) === 'Live'" [class.fgc-status--final]="gameStageLabel(linkedGame) === 'Final'">{{ gameStageLabel(linkedGame) }}</span>
                 <span *ngIf="isFinalWindow(selectedMatchup, row.GameID)" class="fgc-final-window-chip">Final window</span>
               </div>
             </div>

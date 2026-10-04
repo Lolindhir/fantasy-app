@@ -87,3 +87,20 @@ decisions:
       - Design audits flag the missing team identity or missing constrained fallback, not the absence of an overlay on roomy layouts.
       - Shared PlayerIdentity work should support both separate and integrated density variants.
     references: ["#436"]
+  - id: FD-005
+    status: accepted
+    title: Lifecycle state colors are owned by shared CSS custom properties
+    decision: >
+      FDS-005 lifecycle colors live as `--lifecycle-*` CSS custom properties on `:root`
+      in `src/styles.scss` (neutral, active, final, problem, review, each with fg/bg/border
+      variants where needed). Components own geometry and composition and consume these
+      tokens instead of hard-coding lifecycle hex values. Domain-state derivation stays unchanged.
+    rationale: >
+      Older game/player surfaces encoded lifecycle colors locally and drifted from the
+      canonical mapping (green Live, purple/neutral Final).
+    consequences:
+      - New or changed lifecycle-bearing styles use `--lifecycle-*` tokens (blue = Live/Locked, green = Final, amber = unknown/review, red = problem, gray = quiet/future).
+      - Position colors, OUT/Questionable/Unknown player-availability colors and the Matchup starter strip remain independent channels.
+      - Purple remains the app brand/lineup-role color (e.g. starter chips), not a lifecycle color.
+      - Draft-status pills in overview/drafts are a separate draft lifecycle and were not migrated here.
+    references: ["#436", "#497", "#592"]

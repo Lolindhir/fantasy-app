@@ -73,7 +73,7 @@
 }
 
 .fantasy-pulse-card--remaining:hover { background: rgba(255, 255, 255, 0.94); }
-.fantasy-pulse-card--remaining.fantasy-pulse-card--final-window:hover { background: linear-gradient(135deg, #fff 0%, #faf7ff 100%); }
+.fantasy-pulse-card--remaining.fantasy-pulse-card--final-window:hover { background: linear-gradient(135deg, #fff 0%, #f4fbf6 100%); }
 
 .fantasy-pulse-card-main {
   position: relative;
@@ -121,7 +121,6 @@
 }
 
 .fantasy-pulse-metric-chip--starter { border: 1px solid #ddd6fe; background: #f5f3ff; color: #6d28d9; }
-.fantasy-pulse-metric-chip--final { border: 1px solid #c4b5fd; background: #ede9fe; color: #6d28d9; }
 .fantasy-pulse-metric-chip--option { border: 1px solid #cbd5e1; background: transparent; color: #64748b; }
 
 .fantasy-pulse-team-strip {
@@ -213,11 +212,11 @@
 
 /* #488 Matchups Overview: matchup-first scoreboard and starter-scoring progress. */
 .matchup-card {
-  --matchup-final: #16a34a;
-  --matchup-locked: #2563eb;
-  --matchup-future: #cbd5e1;
-  --matchup-problem: #dc2626;
-  --matchup-review: #d97706;
+  --matchup-final: var(--lifecycle-final);
+  --matchup-locked: var(--lifecycle-active);
+  --matchup-future: var(--lifecycle-neutral);
+  --matchup-problem: var(--lifecycle-problem);
+  --matchup-review: var(--lifecycle-review);
   display: block;
   min-height: 0;
   padding: 7px 0 8px;
@@ -399,7 +398,6 @@
 
 .matchup-window-title-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .matchup-window-kicker { color: #7c8799; font-size: 0.52rem; font-weight: 850; letter-spacing: 0.045em; text-transform: uppercase; }
-.matchup-window-live { color: #047857; font-size: 0.5rem; font-weight: 950; letter-spacing: 0.035em; }
 .matchup-window-time { color: #64748b; font-size: 0.61rem; font-weight: 800; white-space: nowrap; }
 
 .matchup-window-summary {
