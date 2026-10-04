@@ -81,7 +81,7 @@ function mapRawFantasyTeamToFantasyTeam(
   return {
     ...team,
     Team: team.Team || `Team ${team.Owner}`,
-    Avatar: team.TeamAvatar || team.OwnerAvatar || 'assets/default-team-avatar.png',
+    Avatar: team.TeamAvatar || 'assets/default-team-avatar.png',
     Roster: [],
     Reserve: [],
     Taxi: [],

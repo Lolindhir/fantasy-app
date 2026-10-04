@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-09-29T03:40:39.503528Z",
-  "input_fingerprint": "3ec8dd9191721ede28cfd7c6dd0645b1a7ca002cfbbda430674a67c4d70f93a5",
+  "generated_at": "2026-10-04T05:20:26Z",
+  "input_fingerprint": "e2f58e53689b614cc865ec60187e0f1de23f886fb5b184706840d4640d0e86d0",
   "sources": [
     {
       "id": "league_enrichment",
       "path": "public/data/League.json",
-      "content_sha256": "f22c8768f07714165ef08f8bb8932919753f2bf3203a51276fca44e09fedd4af"
+      "content_sha256": "cf2574ce0c905973971b02574ecc3e8c5ee5d945dacf58488e10ddc009943a1b"
     },
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "95f33d9ee0ab45584bcbeba65a0c3777e08f0466fa6d9bd6bd1adbcc12c691de"
+      "content_sha256": "60eac665f0ad3f7a485976aa8f0ceb3809c6204f809bd43fc8a08c24a336cf31"
     },
     {
       "id": "roster_evaluation_state",
@@ -23,7 +23,7 @@
   "evaluation": {
     "mode": "hybrid_manual_v1",
     "seed_as_of": "2026-09-19",
-    "classification_age_days": 10,
+    "classification_age_days": 15,
     "automatic_fields": [
       "roster_membership",
       "roster_area",
@@ -42,7 +42,7 @@
       "boundary_priority"
     ],
     "user_override_count": 0,
-    "unclassified_count": 2,
+    "unclassified_count": 3,
     "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
   },
   "team": {
@@ -246,7 +246,7 @@
       "target_general_slots": 2,
       "assignment_status": "current_locked_roster",
       "decision_readiness": "review_required",
-      "active_unclassified_count": 2,
+      "active_unclassified_count": 3,
       "current_active_candidate_count": 2,
       "current_active_general_churn_count": 0,
       "candidate_pool_count": 2,
@@ -276,10 +276,10 @@
   },
   "players": [
     {
-      "player_id": "11539",
-      "name": "Jake Bates",
+      "player_id": "3451",
+      "name": "Ka'imi Fairbairn",
       "position": "K",
-      "nfl_team": "DET",
+      "nfl_team": "HOU",
       "roster_area": "active",
       "roster_sections": [
         "roster"
@@ -287,29 +287,27 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": "specialist",
-      "roster_security": "churn",
-      "structural_function": "specialist",
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
       "classification": {
-        "roster_role": "specialist",
-        "roster_security": "churn",
+        "roster_role": null,
+        "roster_security": null,
         "boundary_priority": null,
-        "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
         "user_override": false,
-        "notes": [
-          "Specialist churn only; required kicker slot does not count as a general churn slot."
-        ],
+        "notes": [],
         "evidence": [],
-        "review_status": "seeded_manual"
+        "review_status": "needs_classification"
       },
       "app_data": {
         "status": "Active",
-        "age": 27.6,
-        "years_experience": 4,
-        "salary": 4420256,
-        "salary_projected": 6880813,
+        "age": 32.7,
+        "years_experience": 11,
+        "salary": 8587059,
+        "salary_projected": 8602606,
         "is_free_agent": false
       },
       "injury": {
@@ -331,7 +329,7 @@
         "fantasycalc_overall_rank": null,
         "fantasycalc_value": null
       },
-      "coverage_role": "specialist",
+      "coverage_role": "unclassified",
       "coverage_protected": true,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -371,14 +369,14 @@
         "age": 23.4,
         "years_experience": 2,
         "salary": 14053835,
-        "salary_projected": 18288043,
+        "salary_projected": 16833198,
         "is_free_agent": false
       },
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Injured Reserve",
-        "description": "Sep 24: The Giants officially placed Dart (knee) on injured reserve Thursday, Mike Garafolo of NFL Network reports.",
+        "description": "Sep 30: Dart recently underwent surgery to repair the meniscus and MCL in his left knee, Dan Duggan of The Athletic reports.",
         "reported_date": null,
         "return_date": "20270117",
         "external_verification_priority": "high",
@@ -388,10 +386,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 30,
+        "fantasypros_overall_rank": 26,
         "fantasypros_position_rank": "QB13",
-        "fantasycalc_overall_rank": 39,
-        "fantasycalc_value": 4083
+        "fantasycalc_overall_rank": 38,
+        "fantasycalc_value": 4058
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
@@ -432,16 +430,16 @@
         "age": 25.8,
         "years_experience": 3,
         "salary": 24766957,
-        "salary_projected": 32565813,
+        "salary_projected": 31554892,
         "is_free_agent": false
       },
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Out",
-        "description": "Sep 28: Head coach Dan Quinn said that Daniels (elbow) will join the team in London and practice in some form this week ahead of Sunday's game against the Colts, Zach Selby of the Commanders' official site reports.",
+        "description": "Oct 2: Daniels (elbow), per head coach Dan Quinn, has been ruled out for Sunday's game against the Colts in London, Nicki Jhabvala of The Athletic reports.",
         "reported_date": null,
-        "return_date": "20261004",
+        "return_date": "20261011",
         "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
@@ -449,10 +447,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 16,
-        "fantasypros_position_rank": "QB8",
-        "fantasycalc_overall_rank": 25,
-        "fantasycalc_value": 5165
+        "fantasypros_overall_rank": 11,
+        "fantasypros_position_rank": "QB6",
+        "fantasycalc_overall_rank": 29,
+        "fantasycalc_value": 4653
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -493,7 +491,7 @@
         "age": 26.4,
         "years_experience": 3,
         "salary": 6570312,
-        "salary_projected": 6439563,
+        "salary_projected": 8620763,
         "is_free_agent": false
       },
       "injury": {
@@ -510,10 +508,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 123,
+        "fantasypros_overall_rank": 105,
         "fantasypros_position_rank": "QB28",
-        "fantasycalc_overall_rank": 117,
-        "fantasycalc_value": 1801
+        "fantasycalc_overall_rank": 115,
+        "fantasycalc_value": 1840
       },
       "coverage_role": "unclassified",
       "coverage_protected": false,
@@ -554,7 +552,7 @@
         "age": 31,
         "years_experience": 10,
         "salary": 44848342,
-        "salary_projected": 50323750,
+        "salary_projected": 49347973,
         "is_free_agent": false
       },
       "injury": {
@@ -571,10 +569,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 13,
-        "fantasypros_position_rank": "QB6",
-        "fantasycalc_overall_rank": 21,
-        "fantasycalc_value": 5568
+        "fantasypros_overall_rank": 12,
+        "fantasypros_position_rank": "QB7",
+        "fantasycalc_overall_rank": 20,
+        "fantasycalc_value": 5408
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -615,7 +613,7 @@
         "age": 27,
         "years_experience": 2,
         "salary": 7520735,
-        "salary_projected": 17732377,
+        "salary_projected": 21351751,
         "is_free_agent": false
       },
       "injury": {
@@ -632,10 +630,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 50,
-        "fantasypros_position_rank": "QB17",
-        "fantasycalc_overall_rank": 37,
-        "fantasycalc_value": 4108
+        "fantasypros_overall_rank": 32,
+        "fantasypros_position_rank": "QB14",
+        "fantasycalc_overall_rank": 34,
+        "fantasycalc_value": 4254
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
@@ -676,16 +674,16 @@
         "age": 25.3,
         "years_experience": 5,
         "salary": 26827813,
-        "salary_projected": 24587578,
+        "salary_projected": 23627084,
         "is_free_agent": false
       },
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Questionable",
-        "description": "Sep 28: Hall is considered week-to-week after an MRI on Monday revealed that his thigh injury isn't significant as feared, Ian Rapoport and Adam Schefter of ESPN report.",
+        "designation": "Out",
+        "description": "Oct 2: Hall (quadriceps) is out for Sunday's game at Chicago, according to Zack Rosenblatt of The Athletic.",
         "reported_date": null,
-        "return_date": "20261004",
+        "return_date": "20261011",
         "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
@@ -693,10 +691,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 43,
+        "fantasypros_overall_rank": 46,
         "fantasypros_position_rank": "RB10",
-        "fantasycalc_overall_rank": 47,
-        "fantasycalc_value": 3756
+        "fantasycalc_overall_rank": 48,
+        "fantasycalc_value": 3639
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -734,10 +732,10 @@
       },
       "app_data": {
         "status": "Active",
-        "age": 24.6,
+        "age": 24.7,
         "years_experience": 2,
         "salary": 8086901,
-        "salary_projected": 10903438,
+        "salary_projected": 12720758,
         "is_free_agent": false
       },
       "injury": {
@@ -754,10 +752,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 97,
-        "fantasypros_position_rank": "RB24",
-        "fantasycalc_overall_rank": 73,
-        "fantasycalc_value": 2916
+        "fantasypros_overall_rank": 83,
+        "fantasypros_position_rank": "RB19",
+        "fantasycalc_overall_rank": 66,
+        "fantasycalc_value": 2979
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -798,7 +796,7 @@
         "age": 26.5,
         "years_experience": 4,
         "salary": 22344612,
-        "salary_projected": 31776392,
+        "salary_projected": 30154084,
         "is_free_agent": false
       },
       "injury": {
@@ -815,10 +813,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 48,
+        "fantasypros_overall_rank": 50,
         "fantasypros_position_rank": "RB11",
-        "fantasycalc_overall_rank": 34,
-        "fantasycalc_value": 4272
+        "fantasycalc_overall_rank": 39,
+        "fantasycalc_value": 4039
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -859,10 +857,10 @@
       },
       "app_data": {
         "status": "Inactive",
-        "age": 22,
+        "age": 22.1,
         "years_experience": 2,
         "salary": 1132512,
-        "salary_projected": 1109976,
+        "salary_projected": 948168,
         "is_free_agent": false
       },
       "injury": {
@@ -879,10 +877,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 180,
+        "fantasypros_overall_rank": 184,
         "fantasypros_position_rank": "RB51",
-        "fantasycalc_overall_rank": 249,
-        "fantasycalc_value": 712
+        "fantasycalc_overall_rank": 248,
+        "fantasycalc_value": 675
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -923,7 +921,7 @@
         "age": 21.3,
         "years_experience": 1,
         "salary": 0,
-        "salary_projected": 715009,
+        "salary_projected": 2773012,
         "is_free_agent": false
       },
       "injury": {
@@ -940,10 +938,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 24,
-        "fantasypros_position_rank": "RB5",
-        "fantasycalc_overall_rank": 16,
-        "fantasycalc_value": 6155
+        "fantasypros_overall_rank": 18,
+        "fantasypros_position_rank": "RB3",
+        "fantasycalc_overall_rank": 13,
+        "fantasycalc_value": 6422
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -987,7 +985,7 @@
         "age": 23.2,
         "years_experience": 3,
         "salary": 84399,
-        "salary_projected": 214103,
+        "salary_projected": 267821,
         "is_free_agent": false
       },
       "injury": {
@@ -1004,10 +1002,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 153,
-        "fantasypros_position_rank": "RB40",
-        "fantasycalc_overall_rank": 177,
-        "fantasycalc_value": 1304
+        "fantasypros_overall_rank": 151,
+        "fantasypros_position_rank": "RB37",
+        "fantasycalc_overall_rank": 161,
+        "fantasycalc_value": 1319
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -1045,10 +1043,10 @@
       },
       "app_data": {
         "status": "Active",
-        "age": 25.9,
+        "age": 26,
         "years_experience": 5,
         "salary": 19578153,
-        "salary_projected": 24533845,
+        "salary_projected": 26232939,
         "is_free_agent": false
       },
       "injury": {
@@ -1065,10 +1063,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 32,
-        "fantasypros_position_rank": "RB8",
+        "fantasypros_overall_rank": 28,
+        "fantasypros_position_rank": "RB5",
         "fantasycalc_overall_rank": 12,
-        "fantasycalc_value": 6363
+        "fantasycalc_value": 6464
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1111,7 +1109,7 @@
         "age": 24.3,
         "years_experience": 2,
         "salary": 4302222,
-        "salary_projected": 8530171,
+        "salary_projected": 7490063,
         "is_free_agent": false
       },
       "injury": {
@@ -1128,10 +1126,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 126,
-        "fantasypros_position_rank": "RB29",
-        "fantasycalc_overall_rank": 134,
-        "fantasycalc_value": 1601
+        "fantasypros_overall_rank": 131,
+        "fantasypros_position_rank": "RB31",
+        "fantasycalc_overall_rank": 128,
+        "fantasycalc_value": 1644
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
@@ -1172,7 +1170,7 @@
         "age": 29.6,
         "years_experience": 9,
         "salary": 35976403,
-        "salary_projected": 32571866,
+        "salary_projected": 31521800,
         "is_free_agent": false
       },
       "injury": {
@@ -1189,10 +1187,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 64,
-        "fantasypros_position_rank": "RB13",
-        "fantasycalc_overall_rank": 56,
-        "fantasycalc_value": 3454
+        "fantasypros_overall_rank": 74,
+        "fantasypros_position_rank": "RB16",
+        "fantasycalc_overall_rank": 54,
+        "fantasycalc_value": 3364
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1233,7 +1231,7 @@
         "age": 22.5,
         "years_experience": 2,
         "salary": 4540089,
-        "salary_projected": 4563573,
+        "salary_projected": 4471645,
         "is_free_agent": false
       },
       "injury": {
@@ -1250,10 +1248,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 54,
-        "fantasypros_position_rank": "TE4",
-        "fantasycalc_overall_rank": 45,
-        "fantasycalc_value": 3841
+        "fantasypros_overall_rank": 51,
+        "fantasypros_position_rank": "TE3",
+        "fantasycalc_overall_rank": 47,
+        "fantasycalc_value": 3644
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1294,7 +1292,7 @@
         "age": 22.2,
         "years_experience": 2,
         "salary": 7618006,
-        "salary_projected": 9190113,
+        "salary_projected": 12621125,
         "is_free_agent": false
       },
       "injury": {
@@ -1311,10 +1309,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 90,
-        "fantasypros_position_rank": "TE11",
-        "fantasycalc_overall_rank": 80,
-        "fantasycalc_value": 2691
+        "fantasypros_overall_rank": 64,
+        "fantasypros_position_rank": "TE5",
+        "fantasycalc_overall_rank": 71,
+        "fantasycalc_value": 2886
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
@@ -1355,7 +1353,7 @@
         "age": 26.9,
         "years_experience": 5,
         "salary": 27306050,
-        "salary_projected": 39768335,
+        "salary_projected": 39117012,
         "is_free_agent": false
       },
       "injury": {
@@ -1372,10 +1370,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 34,
+        "fantasypros_overall_rank": 27,
         "fantasypros_position_rank": "TE2",
-        "fantasycalc_overall_rank": 8,
-        "fantasycalc_value": 7033
+        "fantasycalc_overall_rank": 10,
+        "fantasycalc_value": 6625
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1416,7 +1414,7 @@
         "age": 24.4,
         "years_experience": 2,
         "salary": 7106450,
-        "salary_projected": 11536806,
+        "salary_projected": 12201800,
         "is_free_agent": false
       },
       "injury": {
@@ -1433,10 +1431,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 49,
-        "fantasypros_position_rank": "TE3",
-        "fantasycalc_overall_rank": 41,
-        "fantasycalc_value": 3946
+        "fantasypros_overall_rank": 53,
+        "fantasypros_position_rank": "TE4",
+        "fantasycalc_overall_rank": 36,
+        "fantasycalc_value": 4092
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1477,16 +1475,16 @@
         "age": 24,
         "years_experience": 3,
         "salary": 2012520,
-        "salary_projected": 3984488,
+        "salary_projected": 3878113,
         "is_free_agent": false
       },
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Out",
-        "description": null,
+        "description": "Oct 2: Mitchell (finger) is out for Sunday's game against the Bears, Zack Rosenblatt reports.",
         "reported_date": null,
-        "return_date": "20261004",
+        "return_date": "20261011",
         "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
@@ -1494,10 +1492,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 173,
-        "fantasypros_position_rank": "WR66",
-        "fantasycalc_overall_rank": 163,
-        "fantasycalc_value": 1354
+        "fantasypros_overall_rank": 168,
+        "fantasypros_position_rank": "WR65",
+        "fantasycalc_overall_rank": 175,
+        "fantasycalc_value": 1237
       },
       "coverage_role": "unclassified",
       "coverage_protected": false,
@@ -1538,7 +1536,7 @@
         "age": 26.4,
         "years_experience": 5,
         "salary": 9259339,
-        "salary_projected": 11442531,
+        "salary_projected": 10551270,
         "is_free_agent": false
       },
       "injury": {
@@ -1555,10 +1553,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 96,
-        "fantasypros_position_rank": "WR35",
-        "fantasycalc_overall_rank": 122,
-        "fantasycalc_value": 1708
+        "fantasypros_overall_rank": 100,
+        "fantasypros_position_rank": "WR38",
+        "fantasycalc_overall_rank": 119,
+        "fantasycalc_value": 1733
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
@@ -1602,7 +1600,7 @@
         "age": 22.2,
         "years_experience": 1,
         "salary": 0,
-        "salary_projected": 808568,
+        "salary_projected": 987013,
         "is_free_agent": false
       },
       "injury": {
@@ -1619,10 +1617,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 135,
-        "fantasypros_position_rank": "WR57",
+        "fantasypros_overall_rank": 119,
+        "fantasypros_position_rank": "WR47",
         "fantasycalc_overall_rank": 139,
-        "fantasycalc_value": 1502
+        "fantasycalc_value": 1466
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -1665,16 +1663,16 @@
         "age": 23.1,
         "years_experience": 1,
         "salary": 0,
-        "salary_projected": 569778,
+        "salary_projected": 807509,
         "is_free_agent": false
       },
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
         "designation": "Out",
-        "description": "Sep 28: Dolphins head coach Jeff Hafley said Douglas (ankle) is day-to-day and could practice Wednesday, Travis Wingfield of the team's official site reports.",
+        "description": "Oct 2: Douglas (ankle) has been ruled out for Sunday's game against the Vikings, Marcel Louis-Jacques of ESPN.com reports.",
         "reported_date": null,
-        "return_date": "20261004",
+        "return_date": "20261011",
         "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
@@ -1682,10 +1680,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 186,
-        "fantasypros_position_rank": "WR71",
-        "fantasycalc_overall_rank": 178,
-        "fantasycalc_value": 1303
+        "fantasypros_overall_rank": 163,
+        "fantasypros_position_rank": "WR64",
+        "fantasycalc_overall_rank": 171,
+        "fantasycalc_value": 1264
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -1729,7 +1727,7 @@
         "age": 22.3,
         "years_experience": 1,
         "salary": 0,
-        "salary_projected": 20842,
+        "salary_projected": 310735,
         "is_free_agent": false
       },
       "injury": {
@@ -1746,10 +1744,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 144,
-        "fantasypros_position_rank": "WR59",
-        "fantasycalc_overall_rank": 162,
-        "fantasycalc_value": 1360
+        "fantasypros_overall_rank": 130,
+        "fantasypros_position_rank": "WR55",
+        "fantasycalc_overall_rank": 140,
+        "fantasycalc_value": 1455
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -1792,7 +1790,7 @@
         "age": 33.8,
         "years_experience": 13,
         "salary": 29267625,
-        "salary_projected": 31851839,
+        "salary_projected": 32970583,
         "is_free_agent": false
       },
       "injury": {
@@ -1809,10 +1807,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 99,
-        "fantasypros_position_rank": "WR37",
+        "fantasypros_overall_rank": 108,
+        "fantasypros_position_rank": "WR43",
         "fantasycalc_overall_rank": 95,
-        "fantasycalc_value": 2295
+        "fantasycalc_value": 2328
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1873,10 +1871,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 131,
-        "fantasypros_position_rank": "WR56",
-        "fantasycalc_overall_rank": 127,
-        "fantasycalc_value": 1675
+        "fantasypros_overall_rank": 135,
+        "fantasypros_position_rank": "WR58",
+        "fantasycalc_overall_rank": 122,
+        "fantasycalc_value": 1685
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -1919,7 +1917,7 @@
         "age": 25.3,
         "years_experience": 4,
         "salary": 4417878,
-        "salary_projected": 5287346,
+        "salary_projected": 5220488,
         "is_free_agent": false
       },
       "injury": {
@@ -1936,10 +1934,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 187,
-        "fantasypros_position_rank": "WR72",
-        "fantasycalc_overall_rank": 172,
-        "fantasycalc_value": 1324
+        "fantasypros_overall_rank": 199,
+        "fantasypros_position_rank": "WR78",
+        "fantasycalc_overall_rank": 169,
+        "fantasycalc_value": 1269
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
@@ -1980,7 +1978,7 @@
         "age": 25.6,
         "years_experience": 5,
         "salary": 25063200,
-        "salary_projected": 27045561,
+        "salary_projected": 26657168,
         "is_free_agent": false
       },
       "injury": {
@@ -1997,10 +1995,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 38,
-        "fantasypros_position_rank": "WR12",
-        "fantasycalc_overall_rank": 42,
-        "fantasycalc_value": 3931
+        "fantasypros_overall_rank": 34,
+        "fantasypros_position_rank": "WR11",
+        "fantasycalc_overall_rank": 40,
+        "fantasycalc_value": 3967
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2041,7 +2039,7 @@
         "age": 29.9,
         "years_experience": 8,
         "salary": 18301250,
-        "salary_projected": 15499920,
+        "salary_projected": 16902267,
         "is_free_agent": false
       },
       "injury": {
@@ -2058,10 +2056,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 130,
-        "fantasypros_position_rank": "WR55",
-        "fantasycalc_overall_rank": 182,
-        "fantasycalc_value": 1265
+        "fantasypros_overall_rank": 121,
+        "fantasypros_position_rank": "WR48",
+        "fantasycalc_overall_rank": 145,
+        "fantasycalc_value": 1426
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
@@ -2099,10 +2097,10 @@
       },
       "app_data": {
         "status": "Active",
-        "age": 27.8,
+        "age": 27.9,
         "years_experience": 6,
         "salary": 16863528,
-        "salary_projected": 15544494,
+        "salary_projected": 14679168,
         "is_free_agent": false
       },
       "injury": {
@@ -2119,10 +2117,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 51,
-        "fantasypros_position_rank": "WR20",
-        "fantasycalc_overall_rank": 67,
-        "fantasycalc_value": 3036
+        "fantasypros_overall_rank": 56,
+        "fantasypros_position_rank": "WR22",
+        "fantasycalc_overall_rank": 82,
+        "fantasycalc_value": 2589
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2163,27 +2161,27 @@
         "age": 24.9,
         "years_experience": 3,
         "salary": 12989450,
-        "salary_projected": 19686767,
+        "salary_projected": 19536459,
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Oct 2: McConkey (foot) is questionable for Sunday's game against Seattle, Kris Rhim of ESPN.com reports.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20261004",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 46,
-        "fantasypros_position_rank": "WR18",
-        "fantasycalc_overall_rank": 48,
-        "fantasycalc_value": 3628
+        "fantasypros_overall_rank": 49,
+        "fantasypros_position_rank": "WR19",
+        "fantasycalc_overall_rank": 62,
+        "fantasycalc_value": 3099
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2226,7 +2224,7 @@
         "age": 23.1,
         "years_experience": 1,
         "salary": 0,
-        "salary_projected": 153550,
+        "salary_projected": 277512,
         "is_free_agent": false
       },
       "injury": {
@@ -2243,10 +2241,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 231,
-        "fantasypros_position_rank": "WR96",
-        "fantasycalc_overall_rank": 168,
-        "fantasycalc_value": 1329
+        "fantasypros_overall_rank": 194,
+        "fantasypros_position_rank": "WR75",
+        "fantasycalc_overall_rank": 183,
+        "fantasycalc_value": 1225
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -2287,7 +2285,7 @@
         "age": 23.2,
         "years_experience": 3,
         "salary": 13993064,
-        "salary_projected": 16369927,
+        "salary_projected": 16190421,
         "is_free_agent": false
       },
       "injury": {
@@ -2304,10 +2302,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 18,
-        "fantasypros_position_rank": "WR7",
-        "fantasycalc_overall_rank": 20,
-        "fantasycalc_value": 5586
+        "fantasypros_overall_rank": 19,
+        "fantasypros_position_rank": "WR6",
+        "fantasycalc_overall_rank": 24,
+        "fantasycalc_value": 5151
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2348,7 +2346,7 @@
         "age": 24.1,
         "years_experience": 3,
         "salary": 8198415,
-        "salary_projected": 10419993,
+        "salary_projected": 10218967,
         "is_free_agent": false
       },
       "injury": {
@@ -2365,10 +2363,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 82,
-        "fantasypros_position_rank": "WR32",
-        "fantasycalc_overall_rank": 97,
-        "fantasycalc_value": 2287
+        "fantasypros_overall_rank": 94,
+        "fantasypros_position_rank": "WR34",
+        "fantasycalc_overall_rank": 103,
+        "fantasycalc_value": 2067
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2406,30 +2404,30 @@
       },
       "app_data": {
         "status": "Active",
-        "age": 25.3,
+        "age": 25.4,
         "years_experience": 4,
         "salary": 43898450,
-        "salary_projected": 44177258,
+        "salary_projected": 40327684,
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Out",
-        "description": "Sep 28: Head coach Sean McVay said Monday that the Rams are \"hopeful\" Nacua (hip) will return to action for Sunday's game at Philadelphia, Adam Grosbard of The Orange County Register reports.",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
-        "return_date": "20261004",
-        "external_verification_priority": "high",
+        "return_date": null,
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 8,
+        "fantasypros_overall_rank": 10,
         "fantasypros_position_rank": "WR3",
-        "fantasycalc_overall_rank": 7,
-        "fantasycalc_value": 7371
+        "fantasycalc_overall_rank": 6,
+        "fantasycalc_value": 7634
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2473,7 +2471,7 @@
         "age": 26.1,
         "years_experience": 3,
         "salary": 4299778,
-        "salary_projected": 4882031,
+        "salary_projected": 4299778,
         "is_free_agent": false
       },
       "injury": {
@@ -2490,10 +2488,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 145,
+        "fantasypros_overall_rank": 142,
         "fantasypros_position_rank": "WR60",
-        "fantasycalc_overall_rank": 193,
-        "fantasycalc_value": 1198
+        "fantasycalc_overall_rank": 182,
+        "fantasycalc_value": 1226
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -2536,7 +2534,7 @@
         "age": 23.5,
         "years_experience": 2,
         "salary": 8764089,
-        "salary_projected": 14034844,
+        "salary_projected": 10915972,
         "is_free_agent": false
       },
       "injury": {
@@ -2553,10 +2551,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 27,
+        "fantasypros_overall_rank": 29,
         "fantasypros_position_rank": "WR9",
-        "fantasycalc_overall_rank": 35,
-        "fantasycalc_value": 4254
+        "fantasycalc_overall_rank": 41,
+        "fantasycalc_value": 3945
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2568,8 +2566,20 @@
   ],
   "quality": {
     "status": "warning",
-    "issue_count": 4,
+    "issue_count": 6,
     "issues": [
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "3451",
+        "name": "Ka'imi Fairbairn"
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "3451",
+        "name": "Ka'imi Fairbairn"
+      },
       {
         "severity": "warning",
         "kind": "unclassified_managed_player",

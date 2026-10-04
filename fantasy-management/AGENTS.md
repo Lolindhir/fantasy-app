@@ -59,6 +59,8 @@ For any roster audit, cut/drop, Free-Agent Draft, waiver/add/drop, weekly lineup
 
 For any Rookie Draft, Free-Agent Draft, draft strategy, draft postmortem, draft-market or owner-draft-tendency task, `fantasy-management/_ai/DRAFT_STRATEGY_RULES.md` is additionally mandatory and must be read before applying generic position-scarcity assumptions or historical owner behavior. When opponent draft behavior matters, `fantasy-management/league-context/owner-draft-behavior.md` is also mandatory and must be combined with current roster/need context rather than used as a deterministic pick model.
 
+For any league-economy redesign, Salary/Dead-Cap cross-system analysis, team-window, Reload/Rebuild/Hybrid, long-term franchise-economy or shared Offseason redesign task, `fantasy-management/league-economy/AGENTS.md` is additionally mandatory and defines the reading order, comparison framework and synthesis boundary for that research area.
+
 1. `fantasy-management/AGENTS.md`
 2. `.ai-context/manual/work-tracking.yaml` when planning, prioritizing, recording or resuming repository work
 3. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
@@ -224,6 +226,10 @@ fantasy-management/
     owner-profiles.md
     trade-negotiation-history.md
     league-format-notes.md
+  league-economy/
+    AGENTS.md
+    team-window-strategy-concept.md
+    league-economy-redesign-options.md
   sources/
     podcasts/
       stoned-lack/

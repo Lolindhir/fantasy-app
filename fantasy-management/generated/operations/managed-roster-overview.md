@@ -1,6 +1,6 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-09-29T03:40:39.503528Z`  
+Generated: `2026-10-04T05:20:26Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
@@ -27,7 +27,7 @@ Taxi phase: `locked`
 
 | Pos | Player | Area | Role | Security | Structural function | Coverage role | Boundary | Churn |
 |---|---|---|---|---|---|---|---|---|
-| K | Jake Bates | active | specialist | churn | specialist | specialist | no | no |
+| K | Ka'imi Fairbairn | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | QB | Jaxson Dart | reserve | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | QB | Jayden Daniels | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | QB | Michael Penix Jr. | active | unclassified | unclassified | unclassified | unclassified | no | no |

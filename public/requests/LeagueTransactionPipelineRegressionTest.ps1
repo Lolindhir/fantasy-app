@@ -85,6 +85,31 @@ foreach ($canonicalStandingPath in @(
 )) {
     Assert-True -Condition $updateStandingsWorkflow.Contains($canonicalStandingPath) -Message "APP Standings workflow does not rebuild when canonical standing source '$canonicalStandingPath' changes."
 }
+
+# Historical playoff identity must be snapshotted from the same season's canonical
+# Sleeper member data. Never resolve historical logos from the current League team.
+$historicalIdentitySource = Get-CanonicalStandingSourceForSeason -CanonicalLeagueID "nfl-reise" -Season "2025"
+$historicalFloSource = @($historicalIdentitySource.TeamData | Where-Object { [int]$_.TeamID -eq 3 }) | Select-Object -First 1
+$historicalMarcelSource = @($historicalIdentitySource.TeamData | Where-Object { [int]$_.TeamID -eq 2 }) | Select-Object -First 1
+Assert-True -Condition ($null -ne $historicalFloSource) -Message "2025 historical identity regression could not resolve Flo's canonical team."
+Assert-Equal -Actual $historicalFloSource.OwnerAvatar -Expected "https://sleepercdn.com/avatars/530057c108a2b40e9260d681e125c5f4" -Message "Historical owner avatar is not sourced from the 2025 canonical member snapshot."
+Assert-Equal -Actual $historicalFloSource.TeamAvatar -Expected "https://sleepercdn.com/uploads/448710a86b985d823dfa45fa287c6c35.jpg" -Message "Historical team avatar is not sourced from the 2025 canonical member metadata."
+Assert-Equal -Actual $historicalMarcelSource.TeamAvatar -Expected $null -Message "Missing historical team avatar must remain null in canonical standings source data."
+
+$historicalIdentityStandings = Get-CanonicalHistoricalStandings -CanonicalLeagueID "nfl-reise" -Seasons @("2025")
+$historicalFloPlayoff = @($historicalIdentityStandings.Seasons[0].Playoffs | Where-Object { [int]$_.TeamID -eq 3 }) | Select-Object -First 1
+$historicalMarcelPlayoff = @($historicalIdentityStandings.Seasons[0].Playoffs | Where-Object { [int]$_.TeamID -eq 2 }) | Select-Object -First 1
+Assert-Equal -Actual $historicalFloPlayoff.OwnerAvatar -Expected $historicalFloSource.OwnerAvatar -Message "Historical playoff output dropped the season-specific owner avatar."
+Assert-Equal -Actual $historicalFloPlayoff.TeamAvatar -Expected $historicalFloSource.TeamAvatar -Message "Historical playoff output dropped the season-specific team avatar."
+Assert-Equal -Actual $historicalMarcelPlayoff.TeamAvatar -Expected $null -Message "Historical playoff output must not invent a team avatar when the source season has none."
+
+$avatarCompareOld = [PSCustomObject]@{
+    Place = 1; TeamID = 3; Owner = "FloDHL99"; OwnerAvatar = "owner.png"; TeamName = "Just Bill"; TeamAvatar = "historical.png";
+    PlaceType = "Winner"; PlaceOrdinal = "1st"; PlaceCumulative = $null; PlaceAverage = $null; Championships = $null; RunnerUps = $null; Thirds = $null
+}
+$avatarCompareNew = $avatarCompareOld.PSObject.Copy()
+$avatarCompareNew.TeamAvatar = "changed.png"
+Assert-True -Condition (Compare-PlayoffStandings -oldPlayoffs @($avatarCompareOld) -newPlayoffs @($avatarCompareNew)) -Message "Playoff change detection ignores historical TeamAvatar changes."
 Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "RequestLeague change detection does not track LeagueIDPrevious."
 Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType','Playoffs')") -Message "RequestLeague change detection does not track canonical Settings, ScoringType and Playoffs structurally."
 Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical structured comparison is not structural."

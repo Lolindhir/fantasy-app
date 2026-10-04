@@ -12,6 +12,7 @@
 }
 
 .rest {
+  width: min(352px, calc(100vw - 32px));
   margin: 1rem 0;
   display: flex;
   flex-direction: column;
@@ -20,8 +21,10 @@
 
 .team-row {
   display: grid;
-  grid-template-columns: 40px 1fr 40px;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
   align-items: center;
+  column-gap: 0.6rem;
+  box-sizing: border-box;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
   background: linear-gradient(to right, #eff2f5, #e2e8f0);
@@ -29,6 +32,74 @@
 
 .place {
   font-size: 1.25rem;
+}
+
+.team-row__identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.team-row__avatar-stack {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+}
+
+.team-row__primary-avatar {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  color: #2f3742;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.team-row__primary-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.team-row__secondary-avatar {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.96);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+}
+
+.team-row__secondary-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.team-row__name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 1.08rem;
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .placement-icon {
@@ -99,7 +170,10 @@
 }
 
 .owner-awards {
-  font-size: smaller;
+  min-width: 2rem;
+  display: flex;
+  justify-content: flex-end;
+  font-size: 0.9rem;
 }
 
 .result-awards {

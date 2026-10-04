@@ -69,6 +69,13 @@ dataSources:
       generation steps that need the full player universe. Players[].ID is the
       canonical Sleeper player_id resolved through the Tank01 sleeperBotID join;
       Players[].TankID preserves the Tank01 playerID for provider provenance.
+    retiredProviderInputs:
+      - input: Tank01 getNFLDFS DraftKings salaries
+        status: not used
+        note: >
+          Confirmed by the owner as no longer used. The only former consumer was the
+          removed legacy copy public/requests/RequestPlayers_old.ps1 (#246); do not
+          reintroduce DraftKings salary data as a player input without a new decision.
     identityContract:
       canonicalField: ID
       canonicalSource: Sleeper player_id
@@ -206,12 +213,20 @@ dataSources:
       source-data/leagues/<CanonicalLeagueID>/seasons/<season> using league, member,
       roster and playoff-bracket facts. Current inputs are kept fresh by the bounded
       League Core producer before app consumers run. Existing StandingUtils
-      derivation owns Regular Season standings, Playoffs, Awards and AllTime; the
-      public Standings.json contract is unchanged.
+      derivation owns Regular Season standings, Playoffs, Awards and AllTime.
+      Season-specific Playoff rows additionally retain OwnerAvatar and TeamAvatar
+      from the same season's canonical members.json snapshot so archive consumers
+      never resolve historical identity from the current team.
     historicalSource:
       canonicalLeagueID: nfl-reise
       consumer: public/requests/utils/league/CanonicalStandingUtils.psm1
       seasonDiscovery: completed canonical seasons strictly before Metadata.LeagueYear
+      identitySnapshot: >
+        Playoff OwnerAvatar is derived from that season's canonical Sleeper member
+        Avatar; TeamAvatar is copied from that season's member Metadata.avatar when
+        present. Missing TeamAvatar remains null in generated standings and is a
+        presentation-fallback concern, never a reason to substitute a later/current
+        season team avatar.
       providerFallback: none
     currentSource:
       mode: canonical-active

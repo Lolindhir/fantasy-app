@@ -78,9 +78,9 @@
           [season]="bannerSeason"
           achievementLabel="Runner Up"
           accent="silver"
-          [subjectName]="runnerUp.team.Owner"
-          [subjectAvatar]="runnerUp.ownerAvatar"
-          [secondaryAvatar]="runnerUp.teamAvatar"
+          [subjectName]="runnerUp.teamName || runnerUp.team.Owner"
+          [subjectAvatar]="runnerUp.teamAvatar"
+          [secondaryAvatar]="runnerUp.ownerAvatar"
           emblemSrc="assets/awards/ui/award-runner-up.png"
         ></app-achievement-banner>
 
@@ -89,9 +89,9 @@
           [season]="bannerSeason"
           achievementLabel="Champion"
           accent="gold"
-          [subjectName]="champion.team.Owner"
-          [subjectAvatar]="champion.ownerAvatar"
-          [secondaryAvatar]="champion.teamAvatar"
+          [subjectName]="champion.teamName || champion.team.Owner"
+          [subjectAvatar]="champion.teamAvatar"
+          [secondaryAvatar]="champion.ownerAvatar"
           emblemSrc="assets/awards/ui/award-championship-ring.png"
         ></app-achievement-banner>
 
@@ -100,9 +100,9 @@
           [season]="bannerSeason"
           achievementLabel="3rd Place"
           accent="bronze"
-          [subjectName]="thirdPlace.team.Owner"
-          [subjectAvatar]="thirdPlace.ownerAvatar"
-          [secondaryAvatar]="thirdPlace.teamAvatar"
+          [subjectName]="thirdPlace.teamName || thirdPlace.team.Owner"
+          [subjectAvatar]="thirdPlace.teamAvatar"
+          [secondaryAvatar]="thirdPlace.ownerAvatar"
           emblemSrc="assets/awards/ui/award-third-place.png"
         ></app-achievement-banner>
       </div>
@@ -111,13 +111,33 @@
     <div class="rest">
       <div *ngFor="let result of resultsVm.remainingTeams" class="team-row">
         <div class="place">{{ placeEmoji(result.place) }}</div>
-        <div class="owner">
-          {{ result.team.Owner }}
-          <span class="owner-awards">
-            <ng-container
-              *ngTemplateOutlet="resultAwards; context: { $implicit: result }"
-            ></ng-container>
+
+        <div class="team-row__identity">
+          <span class="team-row__avatar-stack">
+            <span class="team-row__primary-avatar">
+              <img
+                *ngIf="result.teamAvatar; else teamAvatarFallback"
+                [src]="result.teamAvatar"
+                alt=""
+                aria-hidden="true"
+              />
+              <ng-template #teamAvatarFallback>
+                <span>{{ (result.teamName || result.team.Owner).charAt(0) || '?' }}</span>
+              </ng-template>
+            </span>
+
+            <span *ngIf="result.ownerAvatar" class="team-row__secondary-avatar">
+              <img [src]="result.ownerAvatar" alt="" aria-hidden="true" />
+            </span>
           </span>
+
+          <div class="team-row__name">{{ result.teamName || result.team.Owner }}</div>
+        </div>
+
+        <div class="owner-awards">
+          <ng-container
+            *ngTemplateOutlet="resultAwards; context: { $implicit: result }"
+          ></ng-container>
         </div>
       </div>
     </div>

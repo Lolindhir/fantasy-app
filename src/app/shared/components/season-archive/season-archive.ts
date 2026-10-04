@@ -34,6 +34,7 @@ export class SeasonArchiveComponent {
 
         return {
           team: { Owner: row.owner },
+          teamName: row.teamName,
           place: row.place,
           awardsDisplay: awards
             .map(award => award.icon)

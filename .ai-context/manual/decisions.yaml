@@ -1196,3 +1196,51 @@ decisions:
         - The repository gains a new top-level data namespace.
         - Existing transitional shared derivations remain mixed until separately migrated.
         - Each new shared-derived product still needs explicit contract and invalidation semantics.
+
+
+  - id: ADR-039
+    title: NFL source sync runs the repo-state identity audit after materialization
+    status: accepted
+    context: >
+      The workflow "Data • NFL Source Sync" runs the NFL source-data regression tests before it
+      materializes and publishes source-data/**. The test
+      test_rebuilt_identities_do_not_regress_current_population_identity_gap compares
+      persisted canonical identities with public/data/Players.json, which
+      update-players.yml writes independently. When Players.json gains a player that
+      the persisted identities do not cover yet, the test fails, the sync is skipped
+      and the identities stay stale. CI of every PR runs the same suite and turns
+      red (Issue #814, resolved once by PR #815).
+    decision: >
+      Run the repo-state identity audit (test_rebuilt_identities_do_not_regress_current_population_identity_gap)
+      after canonical materialization instead of in the pre-materialization test
+      gate. The pre-gate sets NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT=1 for the full
+      scope only; inside the rebuild loop, after the second idempotency check and
+      before the canonical commit, the workflow runs the audit against the freshly
+      materialized state. PR CI does not set the variable and still runs the test.
+      The remaining test_nfl_source*.py suite stays in the pre-gate, and the
+      game-finality scope is unchanged. If the audit fails after materialization, no
+      canonical data is published and a failure diagnostic is written. The raw
+      evidence is already on main by design, so canonical data stays stale and every
+      scheduled run fails until the cause is fixed; this is a permanent property of
+      the design, not a transition effect. The one-time recovery for the earlier
+      deadlock was an official re-materialization
+      (python tools/nfl_source_data.py materialize) merged through a normal PR
+      (#815), never hand-edited source-data/**.
+    rationale: >
+      The audit is a guard on the materialized result, not on the state before the
+      job that repairs it. Verified on the stale pre-fix state (e31113c):
+      materialize ran cleanly, the audit then passed, and a second materialize was a
+      semantic no-op. Decoupling the test from Players.json would weaken a real
+      fail-closed guard, and a dedicated recovery path or one-off workflow adds
+      machinery for a recurring event. Publishing raw evidence while canonical data
+      lags is no regression: before this change the same condition blocked the whole
+      run including raw data.
+    consequences:
+      positive:
+        - The self-blocking deadlock between the test gate and the sync is removed.
+        - The guard keeps its fail-closed meaning for published canonical data.
+        - PR CI still runs the audit unchanged.
+      negative:
+        - After a real audit failure raw data keeps refreshing while canonical data stays stale until fixed.
+        - PR CI can stay red while main is stale until the next sync heals it.
+        - The pre-gate and the post-materialization step must stay in sync; the workflow contract test test_repo_state_audit_runs_after_materialization_not_in_pre_gate guards the ordering.

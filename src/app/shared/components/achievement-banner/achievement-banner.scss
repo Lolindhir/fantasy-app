@@ -7,10 +7,11 @@
   --banner-top: #eef1f4;
   --banner-bottom: #b8c0c8;
   --banner-edge: rgba(55, 65, 81, 0.2);
-  --banner-height: 208px;
+  --banner-height: 240px;
   --subject-name-size: 0.96rem;
-  --primary-avatar-size: 2.75rem;
-  --secondary-avatar-size: 1.35rem;
+  --primary-avatar-size: 3.25rem;
+  --secondary-avatar-size: 1.125rem;
+  --emblem-size: 2.5rem;
 
   position: relative;
   width: 100%;
@@ -70,20 +71,15 @@
   --banner-top: #f8e8aa;
   --banner-bottom: #d4a62f;
   --banner-edge: rgba(126, 87, 8, 0.24);
-  --banner-height: 216px;
-  --subject-name-size: 1.05rem;
-  --primary-avatar-size: 3rem;
-  --secondary-avatar-size: 1.45rem;
+  --banner-height: 250px;
+  --emblem-size: 2.75rem;
 }
 
 .achievement-banner--bronze {
   --banner-top: #f2c59e;
   --banner-bottom: #c9783f;
   --banner-edge: rgba(117, 61, 24, 0.24);
-  --banner-height: 204px;
-  --subject-name-size: 0.92rem;
-  --primary-avatar-size: 2.625rem;
-  --secondary-avatar-size: 1.3rem;
+  --banner-height: 230px;
 }
 
 .achievement-banner__header {
@@ -131,7 +127,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.38rem;
-  transform: translateY(0.6rem);
+  transform: translateY(0.85rem);
 }
 
 .achievement-banner__name {
@@ -204,9 +200,9 @@
 .achievement-banner__emblem {
   position: absolute;
   left: 50%;
-  bottom: 0;
-  width: 2.5rem;
-  height: 2.5rem;
+  bottom: -1.7rem;
+  width: var(--emblem-size);
+  height: var(--emblem-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -217,6 +213,7 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
+  opacity: 0.75;
   filter:
     drop-shadow(0 1px 1px rgba(255, 255, 255, 0.42))
     drop-shadow(0 2px 2px rgba(15, 23, 42, 0.18));

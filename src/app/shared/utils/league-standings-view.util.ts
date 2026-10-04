@@ -14,6 +14,7 @@ export interface SeasonResultAwardVisual {
 
 export interface SeasonResultTeam {
   team: Pick<FantasyTeam, 'Owner'>;
+  teamName: string | null;
   place: number;
   awardsDisplay: string;
   awardVisuals?: SeasonResultAwardVisual[];
@@ -155,8 +156,11 @@ export function buildSeasonResults(teams: FantasyTeam[]): SeasonResultsViewModel
   const allResults = teams
     .map(team => ({
       team,
+      teamName: team.Team,
       place: team.Placements.Previous.Playoffs?.Place ?? 999,
-      awardsDisplay: formatAwardsDisplay(team.Placements.Previous.Awards)
+      awardsDisplay: formatAwardsDisplay(team.Placements.Previous.Awards),
+      ownerAvatar: team.OwnerAvatar?.trim() || null,
+      teamAvatar: team.Avatar?.trim() || 'assets/default-team-avatar.png'
     }))
     .sort((a, b) => a.place - b.place);
 
@@ -254,38 +258,18 @@ export function buildLeagueLegacy(league: League, teams: FantasyTeam[]): LeagueL
 }
 
 export function buildSeasonHistory(league: League): SeasonHistoryViewModel {
-  const currentTeamById = new Map(
-    league.Teams.map(team => [String(team.TeamID), team])
-  );
-
   const seasons = [...(league.Standings ?? [])]
     .map(standing => {
       const playoffResults = [...(standing.Playoffs ?? [])]
         .sort((a, b) => a.Place - b.Place)
-        .map(row => {
-          const currentTeam = currentTeamById.get(String(row.TeamID));
-          const ownerMatchesCurrentTeam = currentTeam?.Owner === row.Owner;
-          const ownerAvatar = ownerMatchesCurrentTeam
-            ? currentTeam.OwnerAvatar?.trim() || null
-            : null;
-          const mappedTeamAvatar = ownerMatchesCurrentTeam
-            ? currentTeam.Avatar?.trim() || null
-            : null;
-          const teamAvatar = mappedTeamAvatar
-            && mappedTeamAvatar !== ownerAvatar
-            && mappedTeamAvatar !== 'assets/default-team-avatar.png'
-              ? mappedTeamAvatar
-              : null;
-
-          return {
-            place: row.Place,
-            placeOrdinal: row.PlaceOrdinal,
-            owner: row.Owner,
-            teamName: row.TeamName,
-            ownerAvatar,
-            teamAvatar
-          };
-        });
+        .map(row => ({
+          place: row.Place,
+          placeOrdinal: row.PlaceOrdinal,
+          owner: row.Owner,
+          teamName: row.TeamName,
+          ownerAvatar: row.OwnerAvatar?.trim() || null,
+          teamAvatar: row.TeamAvatar?.trim() || 'assets/default-team-avatar.png'
+        }));
 
       const regularSeasonStandings = [...(standing.RegularSeason ?? [])]
         .sort((a, b) => a.Place - b.Place)

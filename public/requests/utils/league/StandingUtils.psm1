@@ -183,7 +183,9 @@ function Get-PlayoffStandings{
                 Place        = $placeNum
                 TeamID       = $teamID
                 Owner        = $teamInfo.Owner
+                OwnerAvatar  = $teamInfo.OwnerAvatar
                 TeamName     = $teamInfo.Team
+                TeamAvatar   = $teamInfo.TeamAvatar
                 PlaceType    = if ($placeNum -le $winnerPlacements.Count) { "Winner" } else { "Loser" }
                 PlaceOrdinal = switch ($placeNum) {
                     1 { "1st" }
@@ -198,7 +200,9 @@ function Get-PlayoffStandings{
                 Place        = $placeNum
                 TeamID       = $teamID
                 Owner        = "Unknown Owner"
+                OwnerAvatar  = $null
                 TeamName     = "Unknown Team (ID: $teamID)"
+                TeamAvatar   = $null
                 PlaceType    = if ($placeNum -le $winnerPlacements.Count) { "Winner" } else { "Loser" }
                 PlaceOrdinal = switch ($placeNum) {
                     1 { "1st" }
@@ -214,7 +218,7 @@ function Get-PlayoffStandings{
 }
 
 function Get-PlayoffProperties{
-    return @('Place','TeamID','Owner','TeamName','PlaceType','PlaceOrdinal', 'PlaceCumulative', 'PlaceAverage', 'Championships', 'RunnerUps', 'Thirds')
+    return @('Place','TeamID','Owner','OwnerAvatar','TeamName','TeamAvatar','PlaceType','PlaceOrdinal', 'PlaceCumulative', 'PlaceAverage', 'Championships', 'RunnerUps', 'Thirds')
 }
 
 function Compare-PlayoffStandings{
