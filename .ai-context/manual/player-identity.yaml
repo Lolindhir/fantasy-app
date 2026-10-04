@@ -149,7 +149,10 @@ identityModel:
         - Future productive materialization must retain manual.current-identity-adjudication:<AdjudicationID> provenance and must be replay-idempotent.
         - Any future reversal or correction must be explicit and versioned; generated canonical identity or provider-mapping output must never be hand-edited as the source of truth.
     currentIdentityGapResolution:
-      status: accepted-contract-not-yet-implemented
+      status: accepted-partially-implemented
+      implementedSteps:
+        - upstream-claim-override loader and state validator (tools/nfl_source_data_lib/current_identity_adjudications.py), no entries yet, not consumed by the productive identity builder (#347 B3)
+        - openGapHold and gap classification in the population audit (fantasy-management/_ai/scripts/audit_player_signal_population_policy.py with identity_gap_classification.py), analysis only (#347 B3)
       trackingIssue: 347
       decidedAt: 2026-10-04
       purpose: >
@@ -228,7 +231,32 @@ identityModel:
         reporting: >
           The population audit reports classified-open and unclassified gaps
           separately, with class and age in days, so a long-standing hold stays
-          visible.
+          visible. Age counts days since the class contract was accepted
+          (2026-10-04) until a persisted first-seen state exists. The audit
+          decision_status is blocked_on_current_canonical_identity_coverage only
+          while an unclassified gap exists, and
+          policy_ready_for_runtime_cutover_design_with_identity_hold while only
+          classified-open gaps remain. Classification is structural (provider ID
+          tokens of the provisional and the durable record, never names); a gap
+          that matches no class stays unclassified and keeps blocking.
+        upstreamClaimOverrideEntryShape:
+          requiredFields:
+            - ResolutionKind upstream-claim-override with ConflictPolicy override-named-upstream-claim
+            - ProviderAssignments with exactly one replacement token
+            - OverriddenUpstreamClaim (Source, Provider, ExternalID); Provider equals the replacement provider, ExternalID differs from the replacement
+            - IndependentAnchors (non-empty); Provider is one of GSIS, ESPN, PFR, PFF and differs from the overridden provider; optional SourceProvider names the provider key under which the replacement record carries the same value (for example ESPN on the target equals Tank01 on the source)
+            - ReplacementTokenConsistency (Position, Team, Summary)
+            - OverriddenTokenInconsistency (Summary)
+          stateValidation: >
+            Reports each decision as active, obsolete (the named upstream claim
+            changed or disappeared) or superseded-by-upstream (the target already
+            carries the replacement token). For an active override it fails closed on
+            an active conflict or undeclared owner of the replacement token, a
+            replacement token not carried by a declared source record, an anchor not
+            carried by the target (or its value missing on the source), and a
+            declared position that differs from the target. Declared team and the
+            platform consistency itself are reviewed evidence and are verified by the
+            productive integration step, not by this validator.
       implementationOrder:
         - placeholderGsisUpgrade rule in the identity builder with an identity diff limited to the observed ESB pairs
         - upstream-claim-override loader/validator and the openGapHold rule in the population audit

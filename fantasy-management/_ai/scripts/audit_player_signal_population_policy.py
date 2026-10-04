@@ -14,6 +14,7 @@ import argparse
 import json
 import sys
 from collections import Counter, defaultdict
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import audit_player_signal_population_relevance as population_audit  # noqa: E402
 import build_fantasy_operations_inputs as ops  # noqa: E402
+import identity_gap_classification as gap_classification  # noqa: E402
 
 SCHEMA_VERSION = 1
 AUDIT_ID = "player-signal-population-policy-adjudication"
@@ -326,7 +328,8 @@ def _brief_player(row: dict[str, Any], *, cohort: str) -> dict[str, Any]:
     }
 
 
-def build(root: Path, config_path: Path) -> dict[str, Any]:
+def build(root: Path, config_path: Path, *, as_of: date | None = None) -> dict[str, Any]:
+    as_of = as_of or datetime.now(timezone.utc).date()
     shadow = population_audit.build(root, config_path, include_details=True)
     rows = shadow.get("details")
     if not isinstance(rows, list):
@@ -488,23 +491,73 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         cohorts["current_season_identity_gap_candidate"]
         + cohorts["ambiguous_current_identity_diagnostic"]
     )
-    decision_status = (
-        "blocked_on_current_canonical_identity_coverage"
-        if identity_gap_rows
-        else "policy_ready_for_runtime_cutover_design"
-    )
+    identity_records = {
+        str(record.get("CanonicalPlayerID")): record
+        for record in canonical_identities.get("Players", [])
+        if record.get("CanonicalPlayerID")
+    }
+    esb_occurrences = gap_classification.esb_occurrence_counter(identity_records.values())
+    gap_age_days = gap_classification.age_in_days(as_of)
+
+    def gap_classification_for(row: dict[str, Any]) -> str | None:
+        other_id = row["identity_diagnostic"]["current_season"]["unique_other_canonical_id"]
+        gap_record = identity_records.get(str(row["canonical_player_id"]))
+        other_record = identity_records.get(str(other_id)) if other_id else None
+        if gap_record is None or other_record is None:
+            return None
+        return gap_classification.classify_identity_gap(
+            gap_record, other_record, esb_occurrences=esb_occurrences
+        )
+
+    identity_gap_classes = {
+        str(row["player_id"]): gap_classification_for(row) for row in identity_gap_rows
+    }
+    unclassified_gap_rows = [
+        row for row in identity_gap_rows if identity_gap_classes[str(row["player_id"])] is None
+    ]
+    held_gap_rows = [
+        row for row in identity_gap_rows if identity_gap_classes[str(row["player_id"])] is not None
+    ]
+    if unclassified_gap_rows:
+        decision_status = "blocked_on_current_canonical_identity_coverage"
+    elif held_gap_rows:
+        decision_status = "policy_ready_for_runtime_cutover_design_with_identity_hold"
+    else:
+        decision_status = "policy_ready_for_runtime_cutover_design"
 
     provider_exception_players = sorted(
         (_brief_player(row, cohort="provider_context_exception") for row in cohorts["provider_context_exception"]),
         key=lambda row: (row["position"], row["name"] or "", row["player_id"]),
     )
+    def gap_player(row: dict[str, Any]) -> dict[str, Any]:
+        gap_class = identity_gap_classes[str(row["player_id"])]
+        brief = _brief_player(row, cohort=cohort_for_row(row))
+        brief["identity_gap_class"] = gap_class
+        brief["identity_gap_state"] = (
+            "classified_open" if gap_class else "unclassified"
+        )
+        brief["identity_gap_age_days"] = gap_age_days
+        return brief
+
+    def player_sort_key(row: dict[str, Any]) -> tuple[Any, ...]:
+        return (row["position"], row["name"] or "", row["player_id"])
+
     current_identity_gap_players = sorted(
-        (
-            _brief_player(row, cohort=cohort_for_row(row))
-            for row in identity_gap_rows
-        ),
-        key=lambda row: (row["position"], row["name"] or "", row["player_id"]),
+        (gap_player(row) for row in identity_gap_rows), key=player_sort_key
     )
+    identity_hold_players = [
+        player
+        for player in current_identity_gap_players
+        if player["identity_gap_state"] == "classified_open"
+    ]
+    unclassified_gap_players = [
+        player
+        for player in current_identity_gap_players
+        if player["identity_gap_state"] == "unclassified"
+    ]
+    held_player_ids = sorted(str(player["player_id"]) for player in identity_hold_players)
+    held_in_baseline = set(held_player_ids) & baseline_ids
+    projected_variant = variants["current_canonical"]
     removed_kicker_players = sorted(
         (
             _brief_player(row, cohort=cohort_for_row(row))
@@ -585,6 +638,11 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             "pre_identity_repair_projected_player_count": variants[recommended_name]["player_count"],
             "pre_identity_repair_projected_delta": variants[recommended_name]["delta"],
             "pre_identity_repair_projected_removed_count": variants[recommended_name]["removed_count"],
+            "identity_hold_adjusted_projection": {
+                "held_player_count": len(held_in_baseline),
+                "player_count": projected_variant["player_count"] + len(held_in_baseline),
+                "removed_count": projected_variant["removed_count"] - len(held_in_baseline),
+            },
             "cutover_readiness": decision_status,
         },
         "recommended_removal_cohorts": {
@@ -606,6 +664,23 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             "count": len(current_identity_gap_players),
             "players": current_identity_gap_players,
         },
+        "identity_hold": {
+            "rule": (
+                "A classified-open identity gap keeps the population membership it had before "
+                "the cutover (status identity_hold) and does not block a consumer cutover. "
+                "It never merges, removes or grants canonical facts."
+            ),
+            "classified_open_count": len(identity_hold_players),
+            "unclassified_count": len(unclassified_gap_players),
+            "held_player_ids": held_player_ids,
+            "classified_open_players": identity_hold_players,
+            "unclassified_players": unclassified_gap_players,
+            "age_basis": (
+                "days since the gap class contract was accepted "
+                f"({gap_classification.CLASSIFICATION_DECIDED_AT.isoformat()}); as_of="
+                f"{as_of.isoformat()}"
+            ),
+        },
         "provider_context_exceptions": {
             "count": len(provider_exception_players),
             "players": provider_exception_players,
@@ -621,9 +696,11 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                 "is an identity diagnostic, not membership."
             ),
             "identity_gap": (
-                "Any current-season exact-name/position match under a different CanonicalPlayerID "
-                "blocks the productive cutover until the identity mapping is repaired or explicitly "
-                "adjudicated. Name matching must never be used as the runtime fix."
+                "A current-season exact-name/position match under a different CanonicalPlayerID "
+                "blocks the productive cutover while the gap is unclassified. A gap that matches a "
+                "currentIdentityGapResolution class is classified-open: the player stays in the "
+                "population as identity_hold and does not block. Name matching must never be used "
+                "as the runtime fix."
             ),
             "previous_season_history": (
                 "Resolved previous-season-only history does not justify a permanent in-season include "
@@ -672,6 +749,7 @@ def compact_summary(result: dict[str, Any]) -> dict[str, Any]:
         "candidate_policy": result["candidate_policy"],
         "recommended_removal_cohorts": result["recommended_removal_cohorts"],
         "current_identity_gap_candidates": result["current_identity_gap_candidates"],
+        "identity_hold": result["identity_hold"],
         "provider_context_exceptions": result["provider_context_exceptions"],
         "removed_kicker_adjudication": result["removed_kicker_adjudication"],
         "decision_findings": result["decision_findings"],
@@ -687,11 +765,17 @@ def main() -> int:
         default=Path("fantasy-management/automation/player-signal-materialization.json"),
     )
     parser.add_argument("--compact", action="store_true")
+    parser.add_argument(
+        "--as-of",
+        type=date.fromisoformat,
+        default=None,
+        help="Reference date (YYYY-MM-DD) for identity-hold ages; defaults to today (UTC).",
+    )
     args = parser.parse_args()
 
     root = args.root.resolve()
     config_path = args.config if args.config.is_absolute() else root / args.config
-    result = build(root, config_path)
+    result = build(root, config_path, as_of=args.as_of)
     if args.compact:
         result = compact_summary(result)
     print(json.dumps(result, ensure_ascii=False, indent=2))
