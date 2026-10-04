@@ -450,9 +450,9 @@ class ProjectionV4Team2025Backtest(unittest.TestCase):
             {
                 "Count": 97,
                 "MAE": 24.4566,
-                "RMSE": 30.3191,
-                "Bias": 4.5837,
-                "MeanProjection": 189.1744,
+                "RMSE": 30.3207,
+                "Bias": 4.573,
+                "MeanProjection": 189.1637,
                 "MeanActual": 184.5907,
             },
             metrics["V3"]["AllLeagueWeeks"],
@@ -460,10 +460,10 @@ class ProjectionV4Team2025Backtest(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 97,
-                "MAE": 24.5217,
-                "RMSE": 30.4656,
-                "Bias": 5.4946,
-                "MeanProjection": 190.0853,
+                "MAE": 24.5213,
+                "RMSE": 30.4666,
+                "Bias": 5.479,
+                "MeanProjection": 190.0697,
                 "MeanActual": 184.5907,
             },
             metrics["V4A"]["AllLeagueWeeks"],
@@ -471,10 +471,10 @@ class ProjectionV4Team2025Backtest(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 97,
-                "MAE": 24.3656,
-                "RMSE": 30.2257,
-                "Bias": 5.0239,
-                "MeanProjection": 189.6146,
+                "MAE": 24.3641,
+                "RMSE": 30.2253,
+                "Bias": 5.0115,
+                "MeanProjection": 189.6022,
                 "MeanActual": 184.5907,
             },
             metrics["V4C"]["AllLeagueWeeks"],

@@ -123,11 +123,11 @@ class ProjectionWalkForwardContractTests(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 11361,
-                "MAE": 4.6471,
-                "RMSE": 6.4724,
-                "Bias": -0.2951,
-                "MeanProjection": 7.9338,
-                "MeanActual": 8.2289,
+                "MAE": 4.6461,
+                "RMSE": 6.4736,
+                "Bias": -0.2941,
+                "MeanProjection": 7.9246,
+                "MeanActual": 8.2187,
             },
             report["Combined"]["Metrics"],
         )
@@ -144,11 +144,11 @@ class ProjectionWalkForwardContractTests(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 5637,
-                "MAE": 4.6664,
-                "RMSE": 6.4847,
-                "Bias": -0.4016,
-                "MeanProjection": 7.9915,
-                "MeanActual": 8.3931,
+                "MAE": 4.6665,
+                "RMSE": 6.4875,
+                "Bias": -0.3997,
+                "MeanProjection": 7.9805,
+                "MeanActual": 8.3802,
             },
             season_2024["Metrics"],
         )
@@ -159,19 +159,19 @@ class ProjectionWalkForwardContractTests(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 5724,
-                "MAE": 4.6282,
-                "RMSE": 6.4603,
-                "Bias": -0.1902,
-                "MeanProjection": 7.8769,
-                "MeanActual": 8.0671,
+                "MAE": 4.626,
+                "RMSE": 6.4598,
+                "Bias": -0.1901,
+                "MeanProjection": 7.8697,
+                "MeanActual": 8.0598,
             },
             season_2025["Metrics"],
         )
 
-        self.assertEqual(5.5087, report["Combined"]["ByWeek"]["2"]["MAE"])
-        self.assertEqual(4.4089, report["Combined"]["ByWeek"]["9"]["MAE"])
-        self.assertEqual(6.4903, report["Combined"]["ByPosition"]["QB"]["MAE"])
-        self.assertEqual(3.7171, report["Combined"]["ByPosition"]["TE"]["MAE"])
+        self.assertEqual(5.5119, report["Combined"]["ByWeek"]["2"]["MAE"])
+        self.assertEqual(4.3986, report["Combined"]["ByWeek"]["9"]["MAE"])
+        self.assertEqual(6.4911, report["Combined"]["ByPosition"]["QB"]["MAE"])
+        self.assertEqual(3.7179, report["Combined"]["ByPosition"]["TE"]["MAE"])
 
 
 if __name__ == "__main__":

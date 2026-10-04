@@ -142,11 +142,11 @@ class ProjectionV3CalibrationTests(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 987,
-                "MAE": 4.3682,
-                "RMSE": 5.8518,
-                "Bias": 1.3454,
-                "MeanProjection": 7.5422,
-                "MeanActual": 6.1968,
+                "MAE": 4.3678,
+                "RMSE": 5.8519,
+                "Bias": 1.3412,
+                "MeanProjection": 7.5238,
+                "MeanActual": 6.1826,
             },
             baseline["HistoryBackedColdStartMetrics"],
         )
@@ -157,11 +157,11 @@ class ProjectionV3CalibrationTests(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 11297,
-                "MAE": 4.5425,
-                "RMSE": 6.1972,
-                "Bias": -0.1029,
-                "MeanProjection": 8.1829,
-                "MeanActual": 8.2858,
+                "MAE": 4.5415,
+                "RMSE": 6.1991,
+                "Bias": -0.1009,
+                "MeanProjection": 8.1685,
+                "MeanActual": 8.2694,
             },
             current["Metrics"],
         )
@@ -170,33 +170,33 @@ class ProjectionV3CalibrationTests(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 5724,
-                "MAE": 4.5948,
-                "RMSE": 6.3162,
-                "Bias": -0.0628,
-                "MeanProjection": 8.0043,
-                "MeanActual": 8.0671,
+                "MAE": 4.593,
+                "RMSE": 6.3156,
+                "Bias": -0.0633,
+                "MeanProjection": 7.9965,
+                "MeanActual": 8.0598,
             },
             comparable["V2"],
         )
         self.assertEqual(
             {
                 "Count": 5724,
-                "MAE": 4.5461,
-                "RMSE": 6.2445,
-                "Bias": 0.0197,
-                "MeanProjection": 8.0868,
-                "MeanActual": 8.0671,
+                "MAE": 4.5438,
+                "RMSE": 6.2441,
+                "Bias": 0.0186,
+                "MeanProjection": 8.0784,
+                "MeanActual": 8.0598,
             },
             comparable["V3"],
         )
-        self.assertEqual(0.0487, comparable["MAEImprovementPoints"])
-        self.assertEqual(1.0599, comparable["MAEImprovementPercent"])
-        self.assertEqual(0.0717, comparable["RMSEImprovementPoints"])
-        self.assertEqual(1.1352, comparable["RMSEImprovementPercent"])
-        self.assertEqual(5.0683, comparable["V2Breakdowns"]["ByWeek"]["2"]["MAE"])
-        self.assertEqual(4.7838, comparable["V3Breakdowns"]["ByWeek"]["2"]["MAE"])
-        self.assertEqual(4.3241, comparable["V2Breakdowns"]["ByPriorGames"]["1"]["MAE"])
-        self.assertEqual(4.0746, comparable["V3Breakdowns"]["ByPriorGames"]["1"]["MAE"])
+        self.assertEqual(0.0492, comparable["MAEImprovementPoints"])
+        self.assertEqual(1.0712, comparable["MAEImprovementPercent"])
+        self.assertEqual(0.0715, comparable["RMSEImprovementPoints"])
+        self.assertEqual(1.1321, comparable["RMSEImprovementPercent"])
+        self.assertEqual(5.0662, comparable["V2Breakdowns"]["ByWeek"]["2"]["MAE"])
+        self.assertEqual(4.7852, comparable["V3Breakdowns"]["ByWeek"]["2"]["MAE"])
+        self.assertEqual(4.3233, comparable["V2Breakdowns"]["ByPriorGames"]["1"]["MAE"])
+        self.assertEqual(4.0747, comparable["V3Breakdowns"]["ByPriorGames"]["1"]["MAE"])
 
         cold = report["Holdout"]["ColdStart"]
         self.assertEqual(641, cold["V3All"]["Count"])
@@ -205,22 +205,22 @@ class ProjectionV3CalibrationTests(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 508,
-                "MAE": 4.1137,
-                "RMSE": 5.5433,
-                "Bias": 1.1729,
-                "MeanProjection": 7.2799,
-                "MeanActual": 6.107,
+                "MAE": 4.1106,
+                "RMSE": 5.5459,
+                "Bias": 1.1752,
+                "MeanProjection": 7.2645,
+                "MeanActual": 6.0893,
             },
             cold["V3HistoryBacked"],
         )
-        self.assertEqual(1.7912, cold["HistoryBackedMAEImprovementPoints"])
+        self.assertEqual(1.807, cold["HistoryBackedMAEImprovementPoints"])
         self.assertEqual(
             {
                 "Count": 133,
-                "MAE": 6.1296,
-                "RMSE": 6.9152,
-                "Bias": 4.8093,
-                "MeanProjection": 8.2256,
+                "MAE": 6.1184,
+                "RMSE": 6.9054,
+                "Bias": 4.7955,
+                "MeanProjection": 8.2117,
                 "MeanActual": 3.4162,
             },
             cold["V3NoHistory"],
