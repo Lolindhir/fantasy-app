@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-10-04T08:27:42Z",
-  "input_fingerprint": "cc7076bfb565a4768e51e90ac609fed16cde2ed17e5795c7d6c6aaf7421e1529",
+  "generated_at": "2026-10-04T10:06:47Z",
+  "input_fingerprint": "77ed7b3aff7da3361b3d0ef59c7b09f60425c2fce881d147750cf2222f567265",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "cacc0a930de8f11a416a1ce4a4747ce6963ecb67cd4f7f4ffa1d4c3646f61fe7"
+      "input_fingerprint": "a01c35596d7a1eb3794f6f1de663072646626a3ae52adadc36aa774cf515c3ed"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "fea914442c9b57b5c049d36fcf460fb56b27edcb5b5a37d6f0cb5f795a3380dd"
+      "input_fingerprint": "cacc0a930de8f11a416a1ce4a4747ce6963ecb67cd4f7f4ffa1d4c3646f61fe7"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,26 +23,64 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 312,
+    "current_discovery_count": 313,
     "previous_discovery_count": 312,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 1,
+    "event_type_counts": {
+      "new": 1
+    },
+    "event_priority_counts": {
+      "medium": 1
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "e0004eb570842941e01a26df8afca99558dee9d8d0984c96d6c269519d49c6b3",
-    "previous_evidence_fingerprint": "c507b83bbd3720918d957123c24d93ac73b6d54e3a0d470d362c13a6163c9634",
+    "current_evidence_fingerprint": "362e283578230f06242f8e776f56a049afc06e061bfeb311160efb3853823f06",
+    "previous_evidence_fingerprint": "e0004eb570842941e01a26df8afca99558dee9d8d0984c96d6c269519d49c6b3",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 0,
+    "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "7039",
+      "name": "Cody White",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "role_opportunity"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_position_change",
+          "severity": "medium",
+          "from": "LWR",
+          "to": "SWR"
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
