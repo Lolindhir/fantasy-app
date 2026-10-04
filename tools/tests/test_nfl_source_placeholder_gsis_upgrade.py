@@ -154,6 +154,47 @@ class PlaceholderGsisUpgradeApplyTests(unittest.TestCase):
         self.assertEqual({}, _apply_placeholder_gsis_upgrades(uf, candidates))
 
 
+class PlaceholderGsisUpgradeReplayTests(unittest.TestCase):
+    """After a first run the transferred tokens link both persisted records."""
+
+    def merged_component(self, valid_gsis="00-0012345", placeholder_gsis="ABC123456"):
+        persisted_placeholder = candidate(
+            {"GSIS": placeholder_gsis, "ESB": "ABC123456"}, existing="NFLP-placeholder"
+        )
+        persisted_valid = candidate(
+            {"GSIS": valid_gsis, "ESB": "ABC123456", "ESPN": "77", "PFR": "Abcd00"},
+            existing="NFLP-valid",
+        )
+        nflverse = candidate({"GSIS": placeholder_gsis, "ESB": "ABC123456", "ESPN": "77", "PFR": "Abcd00"})
+        app = candidate({"Sleeper": "900", "ESPN": "77"}, source="app.Players")
+        group = [persisted_placeholder, persisted_valid, nflverse, app]
+        uf, candidates = components([group])
+        return uf, candidates
+
+    def test_split_restores_the_two_persisted_records(self):
+        uf, candidates = self.merged_component()
+        moved = _apply_placeholder_gsis_upgrades(uf, candidates)
+
+        self.assertNotEqual(uf.find(0), uf.find(1))
+        self.assertEqual(uf.find(1), uf.find(2))
+        self.assertEqual(uf.find(1), uf.find(3))
+        self.assertNotIn("GSIS", candidates[2].ids)
+        self.assertEqual({2, 3}, set(moved))
+        self.assertEqual({("ABC123456", "NFLP-placeholder")}, set(moved.values()))
+
+    def test_split_is_stable_when_applied_again(self):
+        uf, candidates = self.merged_component()
+        _apply_placeholder_gsis_upgrades(uf, candidates)
+        groups = [uf.find(idx) for idx in range(len(candidates))]
+        self.assertEqual({}, _apply_placeholder_gsis_upgrades(uf, candidates))
+        self.assertEqual(groups, [uf.find(idx) for idx in range(len(candidates))])
+
+    def test_two_persisted_records_without_the_pattern_stay_merged(self):
+        uf, candidates = self.merged_component(placeholder_gsis="00-0099999")
+        self.assertEqual({}, _apply_placeholder_gsis_upgrades(uf, candidates))
+        self.assertEqual(1, len({uf.find(idx) for idx in range(len(candidates))}))
+
+
 class TransferredClaimRetirementTests(unittest.TestCase):
     def claim(self):
         return {

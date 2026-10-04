@@ -194,7 +194,11 @@ identityModel:
             previous owner's current-season mapping and conflicts for each moved token
             and records a HistoricalMappingReconciliations entry with reason
             placeholder_gsis_upgrade_transfers_current_claim; earlier seasons stay.
-            The rule is re-evaluated on every materialization and is idempotent.
+            The rule is re-evaluated on every materialization and is idempotent: once
+            the transferred ESPN/PFR/Sleeper tokens link both persisted records into one
+            component again, _split_merged_placeholder_components splits it back along
+            the two persisted CanonicalPlayerIDs when the pair still satisfies the rule;
+            any other component with two persisted IDs keeps failing closed.
           observedOn2026-10-04: 8 ESB pairs repository-wide, among them current gap Layne Pryor
           effectOn2026-10-04: >
             Only two of the eight pairs carry current evidence on the placeholder
