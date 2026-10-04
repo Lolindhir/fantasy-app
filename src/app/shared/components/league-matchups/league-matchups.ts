@@ -279,12 +279,11 @@ export class LeagueMatchupsComponent {
     context: FantasyGameContextReadModel | null
   ): { left: string; right: string } | null {
     if (matchup.completionState === 'final') return null;
-    const predictions = this.matchupContext(matchup, context)?.TeamPredictions;
-    if (!predictions) return null;
+    const teams = this.matchupContext(matchup, context)?.Projection?.Teams;
+    if (!teams) return null;
 
     const scoreOf = (teamID: string | number): number | null =>
-      predictions.find(prediction => String(prediction.FantasyTeamID) === String(teamID))
-        ?.ProjectedFinalScore ?? null;
+      teams.find(team => String(team.FantasyTeamID) === String(teamID))?.ProjectedFinalScore ?? null;
     const left = scoreOf(matchup.left.team.TeamID);
     const right = scoreOf(matchup.right.team.TeamID);
     if (left === null && right === null) return null;

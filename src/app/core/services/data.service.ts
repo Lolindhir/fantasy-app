@@ -8,10 +8,11 @@ import { mapRawTransactions } from '../mappers/transaction.mapper';
 import type { DecisionWindowsReadModel } from '../models/decision-window.models';
 import type { RawDraft } from '../models/draft.models';
 import type {
-  FantasyGameContextReadModel,
-  FantasyGameContextTeamPrediction
+  FantasyGameContextProjectionDisplay,
+  FantasyGameContextReadModel
 } from '../models/fantasy-game-context.models';
 import type { FantasyTeam, League, RawLeague } from '../models/league.models';
+import type { MatchupProjectionsReadModel } from '../models/matchup-projections.models';
 import type { MatchupsReadModel } from '../models/matchup.models';
 import type {
   PlayerWeekFantasyProjection,
@@ -49,23 +50,6 @@ export interface LeagueWithPlayersAndTransactions extends LeagueWithPlayers {
   transactions: Transaction[];
 }
 
-function predictionTeamKey(fantasyMatchupID: string, fantasyTeamID: string | number): string {
-  return `${fantasyMatchupID}::${String(fantasyTeamID)}`;
-}
-
-function roundPredictionPoints(value: number): number {
-  return Math.round(value * 10_000) / 10_000;
-}
-
-interface StarterGameOutcome {
-  isFinal: boolean;
-  points: number | null;
-}
-
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value);
-}
-
 function buildProjectionByPlayerID(
   playerWeekFantasy: PlayerWeekFantasyReadModel
 ): Map<string, PlayerWeekFantasyProjection> | null {
@@ -81,146 +65,67 @@ function buildProjectionByPlayerID(
   return result;
 }
 
-function enrichFantasyGameContextWithPredictions(
+function sameTarget(
   context: FantasyGameContextReadModel,
-  playerWeekFantasy: PlayerWeekFantasyReadModel
+  snapshot: { Season: string | number; Week: number }
+): boolean {
+  return String(context.Season) === String(snapshot.Season)
+    && Number(context.Week) === Number(snapshot.Week);
+}
+
+/**
+ * Joins published projection data onto the current FantasyGameContext. This is a pure join:
+ * projections, ranges, display level and axes are published data and are never calculated here.
+ * Each snapshot joins only when its Season and Week match; otherwise the context is left as is.
+ */
+function enrichFantasyGameContextWithProjections(
+  context: FantasyGameContextReadModel,
+  playerWeekFantasy: PlayerWeekFantasyReadModel | null,
+  matchupProjections: MatchupProjectionsReadModel | null
 ): FantasyGameContextReadModel {
-  if (
-    String(context.Season) !== String(playerWeekFantasy.Season)
-    || Number(context.Week) !== Number(playerWeekFantasy.Week)
-  ) {
-    return context;
-  }
-
-  const projectionByPlayerID = buildProjectionByPlayerID(playerWeekFantasy);
-  if (!projectionByPlayerID) return context;
-
-  const starterIDsByTeam = new Map<string, Set<string>>();
-  const addStarter = (
-    fantasyMatchupID: string | null | undefined,
-    fantasyTeamID: string | number,
-    playerID: string
-  ): void => {
-    if (!fantasyMatchupID) return;
-    const key = predictionTeamKey(fantasyMatchupID, fantasyTeamID);
-    const current = starterIDsByTeam.get(key) ?? new Set<string>();
-    current.add(String(playerID));
-    starterIDsByTeam.set(key, current);
+  let result = context;
+  const display: FantasyGameContextProjectionDisplay = {
+    PlayerRangeLevel: null,
+    PlayerRangeAxis: null,
+    TeamRangeLevel: null
   };
 
-  const outcomesByTeam = new Map<string, Map<string, StarterGameOutcome>>();
-  const games = context.Games.map(game => ({
-    ...game,
-    FantasyTeams: game.FantasyTeams.map(team => ({
-      ...team,
-      Players: team.Players.map(player => {
-        if (player.IsStarter) {
-          addStarter(team.FantasyMatchupID, team.FantasyTeamID, player.PlayerID);
-          const key = predictionTeamKey(team.FantasyMatchupID, team.FantasyTeamID);
-          const outcomes = outcomesByTeam.get(key) ?? new Map<string, StarterGameOutcome>();
-          outcomes.set(String(player.PlayerID), {
-            isFinal: /^Final/i.test(game.Status ?? ''),
-            points: isFiniteNumber(player.Points) ? player.Points : null
-          });
-          outcomesByTeam.set(key, outcomes);
-        }
-        return {
-          ...player,
-          Prediction: projectionByPlayerID.get(String(player.PlayerID)) ?? null
-        };
-      })
-    }))
-  }));
-
-  const byeStarterIDsByTeam = new Map<string, Set<string>>();
-  for (const association of context.NonGameAssociations) {
-    if (association.IsStarter) {
-      addStarter(association.FantasyMatchupID, association.FantasyTeamID, association.PlayerID);
-      // Only an explicit bye (known NFL team without a game this week) is a certain zero.
-      // Unknown or team-less starters stay unresolved.
-      if (association.Kind === 'bye' && association.FantasyMatchupID) {
-        const key = predictionTeamKey(association.FantasyMatchupID, association.FantasyTeamID);
-        const current = byeStarterIDsByTeam.get(key) ?? new Set<string>();
-        current.add(String(association.PlayerID));
-        byeStarterIDsByTeam.set(key, current);
-      }
-    }
+  const projectionByPlayerID = playerWeekFantasy && sameTarget(context, playerWeekFantasy)
+    ? buildProjectionByPlayerID(playerWeekFantasy)
+    : null;
+  if (projectionByPlayerID && playerWeekFantasy) {
+    display.PlayerRangeLevel = playerWeekFantasy.Display?.RangeLevel ?? null;
+    display.PlayerRangeAxis = playerWeekFantasy.Display?.RangeAxis ?? null;
+    result = {
+      ...result,
+      Games: result.Games.map(game => ({
+        ...game,
+        FantasyTeams: game.FantasyTeams.map(team => ({
+          ...team,
+          Players: team.Players.map(player => ({
+            ...player,
+            Prediction: projectionByPlayerID.get(String(player.PlayerID)) ?? null
+          }))
+        }))
+      }))
+    };
   }
 
-  const fantasyMatchups = context.FantasyMatchups.map(matchup => ({
-    ...matchup,
-    TeamPredictions: matchup.TeamIDs.map(teamID => {
-      const teamKey = predictionTeamKey(matchup.FantasyMatchupID, teamID);
-      const starterIDs = Array.from(starterIDsByTeam.get(teamKey) ?? []);
-      const outcomes = outcomesByTeam.get(teamKey);
-      const byeStarterIDs = byeStarterIDsByTeam.get(teamKey);
-      const byeStarterPlayerIDs: string[] = [];
-      const unavailableStarterPlayerIDs: string[] = [];
-      let projectedStarterPoints = 0;
-      let projectedStarterCount = 0;
-      let projectedFinalPoints = 0;
-      let projectedFinalComplete = starterIDs.length > 0;
+  if (matchupProjections && sameTarget(context, matchupProjections)) {
+    const projectionByMatchupID = new Map(
+      matchupProjections.Matchups.map(matchup => [matchup.FantasyMatchupID, matchup])
+    );
+    display.TeamRangeLevel = matchupProjections.DisplayLevel;
+    result = {
+      ...result,
+      FantasyMatchups: result.FantasyMatchups.map(matchup => ({
+        ...matchup,
+        Projection: projectionByMatchupID.get(matchup.FantasyMatchupID) ?? null
+      }))
+    };
+  }
 
-      for (const playerID of starterIDs) {
-        if (byeStarterIDs?.has(playerID)) {
-          byeStarterPlayerIDs.push(playerID);
-          projectedStarterCount += 1;
-          continue;
-        }
-
-        const projection = projectionByPlayerID.get(playerID);
-        const outcome = outcomes?.get(playerID);
-        const projectedPoints = projection?.Status === 'available' && isFiniteNumber(projection.Points)
-          ? projection.Points
-          : null;
-
-        // Final games contribute their actual points. A game that has not finished contributes its
-        // projection but never less than the points already scored, so live scoring is not counted twice.
-        if (outcome?.isFinal) {
-          if (outcome.points === null) projectedFinalComplete = false;
-          else projectedFinalPoints += outcome.points;
-        } else if (projectedPoints === null) {
-          projectedFinalComplete = false;
-        } else {
-          projectedFinalPoints += Math.max(outcome?.points ?? 0, projectedPoints);
-        }
-
-        if (projectedPoints !== null) {
-          projectedStarterCount += 1;
-          projectedStarterPoints += projectedPoints;
-        } else {
-          unavailableStarterPlayerIDs.push(playerID);
-        }
-      }
-
-      const starterCount = starterIDs.length;
-      const state: FantasyGameContextTeamPrediction['State'] =
-        starterCount > 0 && projectedStarterCount === starterCount
-          ? 'available'
-          : projectedStarterCount > 0
-            ? 'partial'
-            : 'unavailable';
-      const roundedProjectedStarterPoints = roundPredictionPoints(projectedStarterPoints);
-
-      return {
-        FantasyTeamID: teamID,
-        State: state,
-        StarterCount: starterCount,
-        ProjectedStarterCount: projectedStarterCount,
-        ProjectedStarterPoints: roundedProjectedStarterPoints,
-        PredictedEndScore: state === 'available' ? roundedProjectedStarterPoints : null,
-        ProjectedFinalScore: projectedFinalComplete ? roundPredictionPoints(projectedFinalPoints) : null,
-        ByeStarterPlayerIDs: byeStarterPlayerIDs.sort(),
-        UnavailableStarterPlayerIDs: unavailableStarterPlayerIDs.sort()
-      };
-    })
-  }));
-
-  return {
-    ...context,
-    Games: games,
-    FantasyMatchups: fantasyMatchups
-  };
+  return result === context ? context : { ...result, ProjectionDisplay: display };
 }
 
 @Injectable({
@@ -308,14 +213,18 @@ export class DataService {
     return this.dataApiService.getPlayerWeekFantasyRaw();
   }
 
+  getMatchupProjections(): Observable<MatchupProjectionsReadModel> {
+    return this.dataApiService.getMatchupProjectionsRaw();
+  }
+
   getFantasyGameContext(): Observable<FantasyGameContextReadModel> {
     return forkJoin({
       context: this.dataApiService.getFantasyGameContextRaw(),
-      playerWeekFantasy: this.getPlayerWeekFantasy().pipe(catchError(() => of(null)))
+      playerWeekFantasy: this.getPlayerWeekFantasy().pipe(catchError(() => of(null))),
+      matchupProjections: this.getMatchupProjections().pipe(catchError(() => of(null)))
     }).pipe(
-      map(({ context, playerWeekFantasy }) => playerWeekFantasy
-        ? enrichFantasyGameContextWithPredictions(context, playerWeekFantasy)
-        : context)
+      map(({ context, playerWeekFantasy, matchupProjections }) =>
+        enrichFantasyGameContextWithProjections(context, playerWeekFantasy, matchupProjections))
     );
   }
 
