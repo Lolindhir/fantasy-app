@@ -5,7 +5,9 @@ import {
   matchupSportsStateLabel,
   matchupDisplaySideValue,
   orientMatchupScore,
-  resolveMatchupDisplayTeamIDs
+  resolveMatchupDisplayTeamIDs,
+  starterProjectedPoints,
+  teamProjectedFinalScore
 } from './fantasy-game-context-dialog';
 
 describe('FantasyGameContext matchup display orientation', () => {
@@ -93,5 +95,39 @@ describe('FantasyGameContext matchup display orientation', () => {
     expect(matchupSportsStateLabel('left-only', 'Flo', 'Tampa Bay')).toBe('Only Flo can still score');
     expect(matchupSportsStateLabel('right-only', 'Flo', 'Tampa Bay')).toBe('Only Tampa Bay can still score');
     expect(matchupSportsStateLabel('none', 'Flo', 'Tampa Bay')).toBe('No more points can be scored');
+  });
+
+  it('reads the projected final score of the requested team only', () => {
+    const projected = {
+      ...matchup,
+      TeamPredictions: [
+        { FantasyTeamID: 2, State: 'available', StarterCount: 1, ProjectedStarterCount: 1, ProjectedStarterPoints: 90, PredictedEndScore: 90, ProjectedFinalScore: 95.5, ByeStarterPlayerIDs: [], UnavailableStarterPlayerIDs: [] },
+        { FantasyTeamID: 10, State: 'partial', StarterCount: 2, ProjectedStarterCount: 1, ProjectedStarterPoints: 40, PredictedEndScore: null, ProjectedFinalScore: null, ByeStarterPlayerIDs: [], UnavailableStarterPlayerIDs: ['p9'] }
+      ]
+    } satisfies FantasyGameContextMatchup;
+
+    expect(teamProjectedFinalScore(projected, 2)).toBe(95.5);
+    expect(teamProjectedFinalScore(projected, '2')).toBe(95.5);
+    expect(teamProjectedFinalScore(projected, 10)).toBeNull();
+    expect(teamProjectedFinalScore(projected, 99)).toBeNull();
+    expect(teamProjectedFinalScore(matchup, 2)).toBeNull();
+  });
+
+  it('exposes a starter projection only when the published projection is available', () => {
+    const projection = {
+      AvailabilityAdjustmentApplied: false,
+      HistoryGames: 4,
+      IntervalModel: 'V4-C-PI1',
+      ParticipationCondition: 'conditional-on-participation',
+      PointModel: 'V4-C',
+      Points: 12.5,
+      PredictionRange: null,
+      RangeQuality: 'player-volatility'
+    };
+
+    expect(starterProjectedPoints({ PlayerID: 'p1', IsStarter: true, Points: null, Prediction: { ...projection, Status: 'available' } })).toBe(12.5);
+    expect(starterProjectedPoints({ PlayerID: 'p1', IsStarter: true, Points: null, Prediction: { ...projection, Status: 'insufficient-history', Points: null } })).toBeNull();
+    expect(starterProjectedPoints({ PlayerID: 'p1', IsStarter: true, Points: null })).toBeNull();
+    expect(starterProjectedPoints(null)).toBeNull();
   });
 });

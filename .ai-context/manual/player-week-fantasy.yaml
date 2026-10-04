@@ -244,6 +244,10 @@ consumerBoundary:
       owner: src/app/shared/components/league-matchups
       surface: Overview Week Matchups card score plate, secondary row labelled PROJ. below the actual score
       rule: neutral secondary typography, never recolors the score or implies a winner; hidden when the matchup is final or no side has a value
+      matchupDialog:
+        owner: src/app/shared/components/fantasy-game-context-dialog
+        hero: neutral "Proj. left – right" line under the matchup state label, only while the matchup is not final; oriented by the displayed team order
+        playerRows: muted "PROJ." value for current starters whose game is not scored yet and whose published projection is available; final or scored games keep showing actual points
 
 failClosed:
   - duplicate CanonicalPlayerID within one PlayerWeekFantasy contract
@@ -270,13 +274,13 @@ currentCheckpoint:
     - Sleeper/app publication bridge via public/data/PlayerWeekFantasy.json
     - Angular FantasyGameContext consumer join by published App/Sleeper PlayerID
     - current-starter team PredictedEndScore aggregation with explicit complete/partial/unavailable coverage
-    - team ProjectedFinalScore (final starters actual, other starters max(points so far, projection)) shown as PROJ. row on the Overview matchup card
+    - team ProjectedFinalScore (final starters actual, other starters max(points so far, projection)) shown as PROJ. row on the Overview matchup card and in the matchup dialog
     - scheduled refresh of the current App week inside the existing APP Data League workflow (tools/player_week_fantasy_refresh.py)
   deferred:
     - Players/Free Agents migration
     - team range simulation
     - live remaining-points model
-    - UI beyond the Overview matchup card (matchup dialog, Players/Free Agents)
+    - UI beyond the Overview matchup card and the matchup dialog (Players/Free Agents)
 
 
 productionMaterialization:

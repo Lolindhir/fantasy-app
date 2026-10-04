@@ -181,6 +181,9 @@
           </ng-container>
           <ng-template #matchupVsOnly><span>VS</span></ng-template>
           <strong>{{ matchupStateLabel(selectedMatchup) }}</strong>
+          <small *ngIf="matchupProjection(selectedMatchup) as projection" class="fgc-matchup-projection" aria-label="Projected final score">
+            Proj. {{ projection.left }} – {{ projection.right }}
+          </small>
         </div>
 
         <button type="button" class="fgc-matchup-team" (click)="openTeam(matchupTeamID(selectedMatchup, 'right'))">
@@ -244,7 +247,7 @@
                   *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'left'))"
                   type="button"
                   class="fgc-mini-player"
-                  [class.fgc-mini-player--with-points]="hasMatchupGameScoring(row) && player.Points != null"
+                  [class.fgc-mini-player--with-points]="(hasMatchupGameScoring(row) && player.Points != null) || showPlayerProjection(row, player)"
                   (click)="openPlayer(player.PlayerID)"
                 >
                   <span class="fgc-mini-player-photo-wrap">
@@ -268,6 +271,11 @@
                   <span *ngIf="hasMatchupGameScoring(row) && player.Points != null" class="fgc-mini-player-points">
                     {{ formatFantasyPoints(player.Points) }}
                   </span>
+                  <span
+                    *ngIf="showPlayerProjection(row, player)"
+                    class="fgc-mini-player-points fgc-mini-player-points--projected"
+                    aria-label="Projected points"
+                  >{{ formatFantasyPoints(player.ProjectedPoints) }}</span>
                 </button>
                 <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'left')).length === 0" class="fgc-no-exposure">No lineup exposure in this game</span>
               </div>
@@ -281,7 +289,7 @@
                   *ngFor="let player of matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'right'))"
                   type="button"
                   class="fgc-mini-player"
-                  [class.fgc-mini-player--with-points]="hasMatchupGameScoring(row) && player.Points != null"
+                  [class.fgc-mini-player--with-points]="(hasMatchupGameScoring(row) && player.Points != null) || showPlayerProjection(row, player)"
                   (click)="openPlayer(player.PlayerID)"
                 >
                   <span class="fgc-mini-player-photo-wrap">
@@ -305,6 +313,11 @@
                   <span *ngIf="hasMatchupGameScoring(row) && player.Points != null" class="fgc-mini-player-points">
                     {{ formatFantasyPoints(player.Points) }}
                   </span>
+                  <span
+                    *ngIf="showPlayerProjection(row, player)"
+                    class="fgc-mini-player-points fgc-mini-player-points--projected"
+                    aria-label="Projected points"
+                  >{{ formatFantasyPoints(player.ProjectedPoints) }}</span>
                 </button>
                 <span *ngIf="matchupGameTeamPlayers(selectedMatchup, row, matchupTeamID(selectedMatchup, 'right')).length === 0" class="fgc-no-exposure">No lineup exposure in this game</span>
               </div>
