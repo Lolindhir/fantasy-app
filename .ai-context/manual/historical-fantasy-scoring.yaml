@@ -436,6 +436,41 @@ operations:
     - require ReadyForHistoricalScoring=true before declaring historical coverage complete
     - validate historical scoring against persisted nflverse raw fields and an explicit nfl-reise scoring profile
 
+playersLeagueScoringShadow:
+  issue: 347
+  step: D3
+  state: shadow-only-players-json-unchanged
+  implementation: tools/players_league_scoring_shadow.py
+  tests: tools/tests/test_players_league_scoring_shadow.py
+  purpose: >
+    Re-derive the Tank01-PPR based Players.json fields from canonical player-stats, snap-counts
+    and the canonical league ScoringSettings and report the field-level difference. Writes nothing
+    to public/data; the cutover is step D4.
+  recomputedFields:
+    - FantasyPoints* (Total, AvgGame, AvgPotentialGame, AvgSnap, AvgAttempt)
+    - GamesPlayed, SnapsTotal, AttemptsTotal, Touchdowns*
+    - PointHistory, Ranking, Grading.Rank
+    - GameHistory[].FantasyPoints
+    - Salary, SalaryProjected, League salary cap
+  rules:
+    - Players.json row -> CanonicalPlayerID only through the unique current Sleeper provider mapping; ambiguous or unmapped rows are identity_hold, keep legacy values and are listed.
+    - Played game = offense snaps > 0 from canonical snap-counts (snap-only games count with 0 points); kickers FG + PAT attempts > 0.
+    - Current season = REG weeks with canonical WeekFinal up to LastLeagueWeek; historical partitions must be Finalized (fail closed).
+    - Salary formula, weights and cap formula are the unchanged PowerShell model (ported; the port must reproduce the committed Players.json and the published cap exactly, otherwise the shadow is not trustworthy).
+    - GameHistory rows of non-final weeks keep their legacy FantasyPoints and are counted.
+    - Rows whose legacy history had games but whose canonical history has none are listed (historyLoss), with a league-owned flag.
+  sleeperGate:
+    command: python tools/players_league_scoring_shadow.py gate
+    reference: League PlayerPoints (Sleeper) of canonical final weeks, all league seasons present
+    failsWhen:
+      - exact rate below 0.995
+      - any absolute difference above 2.0
+      - any residual not in a known class
+      - a non-zero applicable scoring setting without canonical mapping
+    knownResidualClasses:
+      yardage-correction: residual smaller than the smallest discrete scoring weight and an exact multiple of a fractional yardage weight (provider stat correction)
+    ciWiring: not wired into a workflow (workflow changes need Robert's explicit approval)
+
 validationEvidence:
   namespaceAndWeekStructure: cd4f935cffe53692300cca4936a8eee576adc3e4
   monitoringPolicy: 48143c0042a7c32d58046f98800f4088ffc6bd0e
