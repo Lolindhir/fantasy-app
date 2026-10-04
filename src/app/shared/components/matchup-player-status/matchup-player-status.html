@@ -1,0 +1,90 @@
+<section class="mps" aria-label="Starter status">
+  <div class="mps-heading">
+    <span class="mps-label">Starter status</span>
+    <h3>Played, out and questionable starters</h3>
+  </div>
+
+  <div class="mps-columns">
+    <article *ngFor="let team of teams" class="mps-team">
+      <header class="mps-team-header">
+        <button type="button" class="mps-team-identity" (click)="teamSelected.emit(team.teamID)">
+          <img *ngIf="team.avatar as avatar" [src]="avatar" alt="" />
+          <strong>{{ team.name }}</strong>
+        </button>
+        <span class="mps-team-progress">{{ team.finalCount }} of {{ team.starterCount }} starters final</span>
+      </header>
+
+      <div *ngIf="team.games.length > 0" class="mps-group">
+        <span class="mps-label">Played</span>
+        <div *ngFor="let game of team.games" class="mps-game">
+          <button type="button" class="mps-game-label" (click)="gameSelected.emit(game.gameID)">
+            {{ game.label }} <span class="mps-final">Final</span>
+          </button>
+          <button
+            *ngFor="let player of game.players"
+            type="button"
+            class="mps-player"
+            (click)="playerSelected.emit(player.playerID)"
+          >
+            <span class="mps-photo-wrap">
+              <img *ngIf="player.picture as picture" [src]="picture" alt="" class="mps-photo" />
+              <img *ngIf="player.nflLogo as logo" [src]="logo" alt="" class="mps-nfl-logo" />
+            </span>
+            <span class="mps-player-copy">
+              <strong>{{ player.name }}</strong>
+              <span class="mps-meta">
+                <span
+                  *ngIf="player.position as position"
+                  class="mps-chip mps-chip--position"
+                  [ngStyle]="position | positionStyle"
+                >{{ position }}</span>
+                <span *ngIf="player.projectedPoints !== null">Projected {{ formatPoints(player.projectedPoints) }}</span>
+              </span>
+            </span>
+            <span class="mps-points">{{ formatPoints(player.points) }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="team.problems.length > 0" class="mps-group">
+        <span class="mps-label">Problem players</span>
+        <button
+          *ngFor="let player of team.problems"
+          type="button"
+          class="mps-problem"
+          [class.mps-problem--out]="player.kind === 'out'"
+          [class.mps-problem--questionable]="player.kind === 'questionable'"
+          (click)="playerSelected.emit(player.playerID)"
+        >
+          <span class="mps-photo-wrap">
+            <img *ngIf="player.picture as picture" [src]="picture" alt="" class="mps-photo" />
+            <img *ngIf="player.nflLogo as logo" [src]="logo" alt="" class="mps-nfl-logo" />
+          </span>
+          <span class="mps-player-copy">
+            <strong>
+              <span class="mps-chip mps-chip--status">{{ player.kind === 'out' ? 'OUT' : 'Q' }}</span>
+              {{ player.name }}
+            </strong>
+            <span class="mps-why">
+              <ng-container *ngIf="player.position">{{ player.position }}<ng-container *ngIf="player.slot">, {{ player.slot }}</ng-container> · </ng-container>
+              <ng-container *ngIf="player.gameLabel">{{ player.gameLabel }} · </ng-container>
+              <ng-container *ngIf="player.kind === 'out'">counts 0 in the projection<ng-container *ngIf="player.benchOptionCount"> · {{ benchOptionsLabel(player.benchOptionCount) }}</ng-container></ng-container>
+              <ng-container *ngIf="player.kind === 'questionable'">questionable, projection assumes the player is active</ng-container>
+            </span>
+          </span>
+        </button>
+      </div>
+
+      <footer class="mps-open">
+        <span *ngIf="team.nextWindow as next">
+          <b>Next window:</b> {{ next.playerName }}<ng-container *ngIf="next.extraPlayerCount > 0"> +{{ next.extraPlayerCount }}</ng-container> ({{ next.gameLabel }})
+        </span>
+        <span class="mps-open-count">{{ team.openCount }} more open</span>
+      </footer>
+    </article>
+  </div>
+
+  <p class="mps-legend">
+    Red: ESPN lists the starter as out but still in the lineup. Amber: questionable.
+  </p>
+</section>

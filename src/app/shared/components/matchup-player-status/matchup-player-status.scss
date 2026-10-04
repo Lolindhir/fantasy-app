@@ -1,0 +1,289 @@
+.mps {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #edf0f5;
+}
+
+.mps-label {
+  color: #7c8799;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.mps-heading {
+  margin-bottom: 9px;
+
+  h3 {
+    margin: 2px 0 0;
+    color: #1e293b;
+    font-size: 0.93rem;
+    font-weight: 900;
+  }
+}
+
+.mps-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mps-team {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e6e2ee;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.mps-team-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+button.mps-team-identity,
+button.mps-game-label,
+button.mps-player,
+button.mps-problem {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.mps-team-identity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px;
+  border-radius: 7px;
+
+  img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  strong {
+    overflow: hidden;
+    color: #1e293b;
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.mps-team-progress {
+  flex: none;
+  color: #7c8799;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.mps-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mps-game {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border: 1px solid #edf0f5;
+  border-radius: 10px;
+}
+
+button.mps-game-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px;
+  border-radius: 6px;
+  color: #475569;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.mps-final {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+button.mps-player,
+button.mps-problem {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 3px;
+  border-radius: 8px;
+}
+
+button.mps-player:hover,
+button.mps-game-label:hover,
+button.mps-team-identity:hover {
+  background: rgba(124, 58, 237, 0.045);
+}
+
+.mps-photo-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+}
+
+.mps-photo {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #eef2f7;
+}
+
+.mps-nfl-logo {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 12px;
+  height: 12px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.2));
+}
+
+.mps-player-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  strong {
+    color: #263247;
+    font-size: 0.74rem;
+    font-weight: 850;
+    overflow-wrap: anywhere;
+  }
+}
+
+.mps-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #7c8799;
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.mps-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 0.5rem;
+  font-weight: 900;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.mps-chip--position {
+  color: #0f172a;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.mps-chip--status {
+  height: 15px;
+  margin-right: 4px;
+  color: #fff;
+  vertical-align: 1px;
+}
+
+/* Score is primary sports information, so it stays neutral and large. */
+.mps-points {
+  color: #1e293b;
+  font-size: 0.92rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+button.mps-problem {
+  grid-template-columns: 28px minmax(0, 1fr);
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+
+.mps-problem--out {
+  border-color: #fecaca;
+  background: #fef2f2;
+
+  .mps-photo { box-shadow: 0 0 0 2px #ef4444; }
+  .mps-chip--status { background: #dc2626; }
+}
+
+.mps-problem--questionable {
+  border-color: #fde68a;
+  background: #fffbeb;
+
+  .mps-photo { box-shadow: 0 0 0 2px #f59e0b; }
+  .mps-chip--status { background: #b45309; }
+}
+
+.mps-why {
+  color: #64748b;
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+.mps-open {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #dbe2ea;
+  color: #64748b;
+  font-size: 0.64rem;
+  font-variant-numeric: tabular-nums;
+
+  b { color: #1d4ed8; }
+}
+
+.mps-open-count {
+  flex: none;
+  margin-left: auto;
+  font-weight: 800;
+}
+
+.mps-legend {
+  margin: 8px 0 0;
+  color: #7c8799;
+  font-size: 0.62rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 520px) {
+  .mps-columns { grid-template-columns: minmax(0, 1fr); }
+}

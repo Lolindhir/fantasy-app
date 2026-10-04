@@ -206,6 +206,14 @@
         </span>
       </section>
 
+      <app-matchup-player-status
+        *ngIf="hasPlayerStatus"
+        [teams]="playerStatusTeams"
+        (playerSelected)="openPlayer($event)"
+        (teamSelected)="openTeam($event)"
+        (gameSelected)="openGame($event)"
+      ></app-matchup-player-status>
+
       <section class="fgc-section fgc-timeline-section">
         <div class="fgc-section-heading">
           <div>
