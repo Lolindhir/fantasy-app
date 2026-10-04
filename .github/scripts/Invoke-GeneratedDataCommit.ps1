@@ -16,7 +16,8 @@ param(
         "ffc-adp-rankings",
         "fftoday-projections",
         "cbs-projections",
-        "sleeper-trending"
+        "sleeper-trending",
+        "player-week-fantasy"
     )]
     [string]$Scope
 )
@@ -41,6 +42,8 @@ function Get-GeneratedDataLabel {
         "^fantasy-management/sources/external-rankings/projections/fftoday/" { return "FFToday projections" }
         "^fantasy-management/sources/external-rankings/projections/cbs-sports/" { return "CBS Sports projections" }
         "^fantasy-management/sources/external-signals/roster-activity/sleeper/" { return "Sleeper trending" }
+        "^derived-data/player-week-fantasy/" { return "PlayerWeekFantasy derived" }
+        "/PlayerWeekFantasy\.json$" { return "PlayerWeekFantasy" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }
         "/League\.json$" { return "League" }
         "/Players\.json$" { return "Players" }

@@ -45,3 +45,12 @@ jobs:
           --path public/data
           --
           pwsh ./public/requests/RequestLeaguePublication.ps1
+
+      - name: Rebuild and publish PlayerWeekFantasy
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope player-week-fantasy
+          --path derived-data/player-week-fantasy
+          --path public/data/PlayerWeekFantasy.json
+          --
+          python3 tools/player_week_fantasy_refresh.py
