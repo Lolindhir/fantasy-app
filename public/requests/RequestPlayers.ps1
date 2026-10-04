@@ -499,6 +499,7 @@ function Get-SeasonPointStats {
 # --- Konfiguration ---
 . "$PSScriptRoot\config.ps1"
 Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\utils\general\NflScheduleUtils.psm1" -ErrorAction Stop -Force
 $apiKeys = @(
     $Global:RapidAPIKey,
     $Global:RapidAPIKeyAlt1,
@@ -652,8 +653,9 @@ if (Test-Path $targetFile) {
 # --- Load Games.json (alle Saisonspiele mit Stats) ---
 $playerHistory = @{}
 
-# Team → ByeWeek mapping vorbereiten
-$teamByeWeek = @{}
+# Team → ByeWeek mapping aus dem kanonischen NFL-Spielplan (nicht aus bereits gespielten Games)
+$teamByeWeek = Get-CanonicalNflTeamByeWeeks -Season ([int]$seasonYear) -RepoRoot (Split-Path -Parent (Split-Path -Parent $scriptDir))
+Write-Host "Loaded bye weeks for $($teamByeWeek.Count) teams from canonical NFL schedule..." -ForegroundColor Yellow
 
 if (Test-Path $gamesFile) {
     try {
@@ -663,29 +665,6 @@ if (Test-Path $gamesFile) {
 
         # Sortiere Games nach GameID (neueste oben)
         $games = $games | Sort-Object -Property gameID -Descending
-
-        # Alle Weeks der Saison durchgehen
-        for ($week = 1; $week -le 18; $week++) {
-            # Alle Teams in dieser Woche
-            $teamsPlaying = @()
-            foreach ($game in $games | Where-Object { $_.gameWeek -match "Week $week" }) {
-                $teamsPlaying += $game.home
-                $teamsPlaying += $game.away
-            }
-            
-            # Alle Teams der Liga
-            $allTeams = ($games | ForEach-Object { $_.home; $_.away } | Sort-Object -Unique)
-            
-            # Teams, die nicht gespielt haben -> ByeWeek
-            $teamsNotPlaying = $allTeams | Where-Object { $teamsPlaying -notcontains $_ }
-            
-            foreach ($team in $teamsNotPlaying) {
-                # Sollte nur eine Woche pro Team sein
-                if (-not $teamByeWeek.ContainsKey($team)) {
-                    $teamByeWeek[$team] = $week
-                }
-            }
-        }
 
         foreach ($game in $games) {
             if (-not $game.playerStats) { continue }
@@ -905,7 +884,8 @@ foreach ($tankEntry in $tankPlayers) {
     }
 
     # --- Bye-Week bestimmen
-    $byeWeek = if ($teamByeWeek.ContainsKey($team)) { $teamByeWeek[$team] } else { 0 }
+    $canonicalTeam = ConvertTo-CanonicalNflScheduleTeam -Team $team
+    $byeWeek = if ($canonicalTeam -and $teamByeWeek.ContainsKey($canonicalTeam)) { $teamByeWeek[$canonicalTeam] } else { 0 }
 
     # --- Free Agency Status bestimmen ---
     $freeAgent = $false
