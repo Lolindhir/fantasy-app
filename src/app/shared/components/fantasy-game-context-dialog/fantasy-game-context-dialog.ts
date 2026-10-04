@@ -44,6 +44,12 @@ import {
 } from '../../utils/projection-range.util';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
+import { MatchupPlayerStatusComponent } from '../matchup-player-status/matchup-player-status';
+import {
+  buildMatchupPlayerStatus,
+  hasMatchupPlayerStatus,
+  type MatchupPlayerStatusTeamView
+} from '../matchup-player-status/matchup-player-status.util';
 
 interface FantasyGamePlayerDisplay {
   PlayerID: string;
@@ -191,6 +197,7 @@ export interface FantasyGameContextDialogData {
     MatIconModule,
     PositionStylePipe,
     MatchupRangeChartComponent,
+    MatchupPlayerStatusComponent,
     PlayerProjectionComponent
   ],
   templateUrl: './fantasy-game-context-dialog.html',
@@ -211,6 +218,7 @@ export class FantasyGameContextDialogComponent {
   readonly game: FantasyGameContextGame | null;
   readonly matchup: FantasyGameContextMatchup | null;
   readonly matchupTeamIDs: MatchupDisplayTeamIDs | null;
+  readonly playerStatusTeams: readonly MatchupPlayerStatusTeamView[];
 
   constructor(@Inject(MAT_DIALOG_DATA) readonly data: FantasyGameContextDialogData) {
     this.game = data.gameId
@@ -228,6 +236,13 @@ export class FantasyGameContextDialogComponent {
           this.matchup
         )
       : null;
+    this.playerStatusTeams = this.matchup && this.matchupTeamIDs
+      ? this.buildPlayerStatus(this.matchup, this.matchupTeamIDs)
+      : [];
+  }
+
+  get hasPlayerStatus(): boolean {
+    return hasMatchupPlayerStatus(this.playerStatusTeams);
   }
 
   teamName(teamID: string | number): string {
@@ -610,6 +625,23 @@ export class FantasyGameContextDialogComponent {
       autoFocus: false,
       restoreFocus: true,
       panelClass: 'fantasy-context-dialog-panel'
+    });
+  }
+
+  private buildPlayerStatus(
+    matchup: FantasyGameContextMatchup,
+    displayTeamIDs: MatchupDisplayTeamIDs
+  ): MatchupPlayerStatusTeamView[] {
+    return buildMatchupPlayerStatus(matchup, displayTeamIDs, this.data.context, {
+      teamName: teamID => this.teamName(teamID),
+      teamAvatar: teamID => this.teamAvatar(teamID),
+      decisionTeam: teamID => this.decisionTeamState(teamID),
+      player: playerID => ({
+        name: this.playerName(playerID),
+        picture: this.playerPicture(playerID),
+        position: this.playerPosition(playerID),
+        nflLogo: this.playerNflLogo(playerID)
+      })
     });
   }
 
