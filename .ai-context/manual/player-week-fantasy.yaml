@@ -254,11 +254,11 @@ currentCheckpoint:
     - Sleeper/app publication bridge via public/data/PlayerWeekFantasy.json
     - Angular FantasyGameContext consumer join by published App/Sleeper PlayerID
     - current-starter team PredictedEndScore aggregation with explicit complete/partial/unavailable coverage
+    - scheduled refresh of the current App week inside the existing APP Data League workflow (tools/player_week_fantasy_refresh.py)
   deferred:
     - Players/Free Agents migration
     - team range simulation
     - live remaining-points model
-    - workflows/scheduling
     - UI
 
 
@@ -293,5 +293,21 @@ productionMaterialization:
       Actual becomes final only when the whole target REG week is canonically
       WeekFinal. Otherwise it remains unavailable; live remaining-points semantics
       are deliberately deferred.
-  scheduling: explicit-tool-only
+  scheduling:
+    owner: .github/workflows/update-league.yml (second rebuild-and-retry step, scope player-week-fantasy)
+    entrypoint: tools/player_week_fantasy_refresh.py
+    targetResolution: >
+      League/Season/Week are read from public/data/FantasyGameContext.json so the published
+      snapshot always matches the week the Angular join requires. The Sleeper league is mapped to
+      the canonical league through source-data/leagues/*/seasons/<season>/league.json ProviderMappings.
+    publicationScope:
+      - derived-data/player-week-fantasy
+      - public/data/PlayerWeekFantasy.json
+    notReadyRule: >
+      A target week without a synced canonical weekly-roster partition is skipped and the existing
+      publication stays untouched. Every other failure fails closed.
+    idempotence: Unchanged inputs produce no commit (deterministic semantic no-op).
+    projectionStability: >
+      The player Projection depends only on canonically final weeks < target week, so reruns during
+      the week do not change it; it can only improve when an earlier week becomes canonically final.
   publication: shared-derived-plus-app-publication-bridge-consumed-by-fantasy-game-context

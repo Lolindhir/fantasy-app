@@ -341,7 +341,7 @@ workflows:
     - repository_dispatch
     - push
     staleAfterMinutes: 45
-    rationale: Ten-minute league refreshes from the central scheduler plus narrow main-push refreshes for Schedule, published Standings, the League workflow, its direct canonical generator adapters (League Core, Playoffs and Current Matchups), and canonical nfl-reise current-matchup partition changes provide production health evidence. A Standings publication therefore re-enriches League team placement/record context promptly; two consecutive failures or roughly 45 minutes without a successful production run are actionable.
+    rationale: Ten-minute league refreshes from the central scheduler plus narrow main-push refreshes for Schedule, published Standings, the League workflow, its direct canonical generator adapters (League Core, Playoffs and Current Matchups), and canonical nfl-reise current-matchup partition changes provide production health evidence. A Standings publication therefore re-enriches League team placement/record context promptly; two consecutive failures or roughly 45 minutes without a successful production run are actionable; the same run also refreshes PlayerWeekFantasy for the current App week in a second rebuild-and-retry step, where a missing weekly-roster partition is skipped but any other failure marks the run failed.
   .github/workflows/update-players.yml:
     category: important
     relevantEvents:
