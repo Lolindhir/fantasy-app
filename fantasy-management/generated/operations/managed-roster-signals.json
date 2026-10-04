@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-10-04T22:46:05Z",
-  "input_fingerprint": "2a93c28a2b585a3bc843f485aa7207d5140adca6324bb19f0bf939f25d8ce0b4",
+  "generated_at": "2026-10-04T23:06:32Z",
+  "input_fingerprint": "f4316ae48ac441ccea351cf084415c72bfacb7cb9a09c7878746c78865c7a6bb",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "eba3c5f2e17c33b0d1ac6cda0748c2bcea550672e6e6cf0c2988df02ac789e4c",
-      "source_timestamp": "2026-10-04T19:37:28Z"
+      "content_sha256": "447ab3d0d89c9aee3abba023850434b2766b82e3f860f46387d4187e796eaaed",
+      "source_timestamp": "2026-10-04T23:06:32Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "d233817bed531bec5792b2791878711eb951e41d47f7a7b0bff23cfe6a956f21",
-      "source_timestamp": "2026-10-04T22:46:05Z"
+      "content_sha256": "bb0c96ef84e095c306063ae7ddd258b9b016d8dd009dc08e9261abd3a85624f0",
+      "source_timestamp": "2026-10-04T23:06:32Z"
     },
     {
       "id": "operations_source_catalog",
@@ -919,7 +919,7 @@
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Out",
+        "designation": "Questionable",
         "description": "Oct 4: Barkley (hamstring) has been ruled out for the rest of Sunday's game against the Rams, Zach Berman of The Athletic reports.",
         "reported_date": null,
         "return_date": "20261011",
@@ -5153,13 +5153,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Oct 4: McConkey won't return to Sunday's contest at Seattle due to a foot injury.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20261011",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -5375,9 +5375,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -7396,13 +7397,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Oct 4: Coach Ben Johnson said after Sunday's 23-12 win against the Jets that Monangai suffered a thumb injury during the contest, Kevin Fishbain of The Athletic reports.",
         "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
+        "return_date": "20261011",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -7618,9 +7619,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -9395,7 +9397,7 @@
     "coverage": {
       "managed_roster_ids": 37,
       "resolved_players": 37,
-      "players_with_current_injury_signal": 13,
+      "players_with_current_injury_signal": 15,
       "primary_adp_applicable": 5,
       "primary_adp_listed": 5,
       "sources": {
