@@ -110,6 +110,69 @@ describe('DataService', () => {
     }));
   });
 
+  describe('ProjectedFinalScore', () => {
+    async function projectedFinalByTeam(
+      context: FantasyGameContextReadModel,
+      playerWeekFantasy = createPlayerWeekFantasy()
+    ): Promise<Record<string, number | null | undefined>> {
+      dataApiService.getFantasyGameContextRaw.and.returnValue(of(context));
+      dataApiService.getPlayerWeekFantasyRaw.and.returnValue(of(playerWeekFantasy));
+      const result = await firstValueFrom(service.getFantasyGameContext());
+      const teams = result.FantasyMatchups[0].TeamPredictions ?? [];
+      return Object.fromEntries(teams.map(team => [String(team.FantasyTeamID), team.ProjectedFinalScore]));
+    }
+
+    it('equals the pregame prediction while no starter game has been played', async () => {
+      const scores = await projectedFinalByTeam(createFantasyGameContext());
+
+      expect(scores['1']).toBe(15);
+      expect(scores['2']).toBeNull();
+    });
+
+    it('uses actual points for starters of final games and projections for the rest', async () => {
+      const context = createFantasyGameContext();
+      context.Games[0].Status = 'Final';
+      context.Games[0].FantasyTeams[0].Players[0].Points = 18;
+
+      const scores = await projectedFinalByTeam(context);
+
+      expect(scores['1']).toBe(23);
+    });
+
+    it('never counts less than the points already scored in a game that is still running', async () => {
+      const ahead = createFantasyGameContext();
+      ahead.Games[0].Status = 'In Progress';
+      ahead.Games[0].FantasyTeams[0].Players[0].Points = 12;
+      const behind = createFantasyGameContext();
+      behind.Games[0].Status = 'In Progress';
+      behind.Games[0].FantasyTeams[0].Players[0].Points = 3;
+
+      expect((await projectedFinalByTeam(ahead))['1']).toBe(17);
+      expect((await projectedFinalByTeam(behind))['1']).toBe(15);
+    });
+
+    it('does not need a projection for starters of final games', async () => {
+      const context = createFantasyGameContext();
+      context.Games[0].Status = 'Final';
+      context.Games[0].FantasyTeams[0].Players[0].Points = 18;
+      const snapshot = createPlayerWeekFantasy();
+      snapshot.Records[0] = createPlayerWeekRecord('p1', 'insufficient-history', null);
+
+      const scores = await projectedFinalByTeam(context, snapshot);
+
+      expect(scores['1']).toBe(23);
+    });
+
+    it('stays unavailable when a final-game starter has no points', async () => {
+      const context = createFantasyGameContext();
+      context.Games[0].Status = 'Final';
+
+      const scores = await projectedFinalByTeam(context);
+
+      expect(scores['1']).toBeNull();
+    });
+  });
+
   it('keeps raw FantasyGameContext when the prediction snapshot targets another week', async () => {
     const context = createFantasyGameContext();
     const playerWeekFantasy = createPlayerWeekFantasy();
