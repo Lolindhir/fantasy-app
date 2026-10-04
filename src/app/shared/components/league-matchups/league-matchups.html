@@ -116,6 +116,19 @@
                 <strong class="matchup-score-value matchup-score-value--left">{{ matchup.left.pointsDisplay }}</strong>
                 <span class="matchup-vs" aria-hidden="true">VS</span>
                 <strong class="matchup-score-value matchup-score-value--right">{{ matchup.right.pointsDisplay }}</strong>
+                <ng-container *ngIf="fantasyContextState$ | async as projectionState">
+                  <ng-container *ngIf="matchupProjection(matchup, projectionState.context) as projection">
+                    <span
+                      class="matchup-projection-value matchup-score-value--left"
+                      [attr.aria-label]="'Projected final score ' + projection.left"
+                    >{{ projection.left }}</span>
+                    <span class="matchup-vs">PROJ.</span>
+                    <span
+                      class="matchup-projection-value matchup-projection-value--right"
+                      [attr.aria-label]="'Projected final score ' + projection.right"
+                    >{{ projection.right }}</span>
+                  </ng-container>
+                </ng-container>
               </div>
 
               <div class="matchup-team matchup-team--right">

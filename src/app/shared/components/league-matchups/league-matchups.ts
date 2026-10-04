@@ -274,6 +274,24 @@ export class LeagueMatchupsComponent {
     return current.FantasyMatchups.find(candidate => candidate.FantasyMatchupID === matchup.matchupID) ?? null;
   }
 
+  matchupProjection(
+    matchup: LeagueMatchupView,
+    context: FantasyGameContextReadModel | null
+  ): { left: string; right: string } | null {
+    if (matchup.completionState === 'final') return null;
+    const predictions = this.matchupContext(matchup, context)?.TeamPredictions;
+    if (!predictions) return null;
+
+    const scoreOf = (teamID: string | number): number | null =>
+      predictions.find(prediction => String(prediction.FantasyTeamID) === String(teamID))
+        ?.ProjectedFinalScore ?? null;
+    const left = scoreOf(matchup.left.team.TeamID);
+    const right = scoreOf(matchup.right.team.TeamID);
+    if (left === null && right === null) return null;
+
+    return { left: this.formatFantasyPoints(left), right: this.formatFantasyPoints(right) };
+  }
+
   scoreboardState(matchup: LeagueMatchupView): MatchupScoreboardState {
     const decisionWindows = this.currentDecisionWindows();
     return buildMatchupScoreboardState(matchup.completionState, [

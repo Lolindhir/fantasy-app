@@ -85,6 +85,12 @@ export interface FantasyGameContextTeamPrediction {
   ProjectedStarterCount: number;
   ProjectedStarterPoints: number;
   PredictedEndScore: number | null;
+  /**
+   * Pregame expectation that converges on the real score: starters of final games count their
+   * actual points, all other starters count max(points so far, projection). Null unless every
+   * current starter is resolved.
+   */
+  ProjectedFinalScore: number | null;
   UnavailableStarterPlayerIDs: string[];
 }
 

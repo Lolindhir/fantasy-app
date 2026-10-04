@@ -57,6 +57,15 @@ function roundPredictionPoints(value: number): number {
   return Math.round(value * 10_000) / 10_000;
 }
 
+interface StarterGameOutcome {
+  isFinal: boolean;
+  points: number | null;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
 function buildProjectionByPlayerID(
   playerWeekFantasy: PlayerWeekFantasyReadModel
 ): Map<string, PlayerWeekFantasyProjection> | null {
@@ -99,12 +108,22 @@ function enrichFantasyGameContextWithPredictions(
     starterIDsByTeam.set(key, current);
   };
 
+  const outcomesByTeam = new Map<string, Map<string, StarterGameOutcome>>();
   const games = context.Games.map(game => ({
     ...game,
     FantasyTeams: game.FantasyTeams.map(team => ({
       ...team,
       Players: team.Players.map(player => {
-        if (player.IsStarter) addStarter(team.FantasyMatchupID, team.FantasyTeamID, player.PlayerID);
+        if (player.IsStarter) {
+          addStarter(team.FantasyMatchupID, team.FantasyTeamID, player.PlayerID);
+          const key = predictionTeamKey(team.FantasyMatchupID, team.FantasyTeamID);
+          const outcomes = outcomesByTeam.get(key) ?? new Map<string, StarterGameOutcome>();
+          outcomes.set(String(player.PlayerID), {
+            isFinal: /^Final/i.test(game.Status ?? ''),
+            points: isFiniteNumber(player.Points) ? player.Points : null
+          });
+          outcomesByTeam.set(key, outcomes);
+        }
         return {
           ...player,
           Prediction: projectionByPlayerID.get(String(player.PlayerID)) ?? null
@@ -122,22 +141,36 @@ function enrichFantasyGameContextWithPredictions(
   const fantasyMatchups = context.FantasyMatchups.map(matchup => ({
     ...matchup,
     TeamPredictions: matchup.TeamIDs.map(teamID => {
-      const starterIDs = Array.from(
-        starterIDsByTeam.get(predictionTeamKey(matchup.FantasyMatchupID, teamID)) ?? []
-      );
+      const teamKey = predictionTeamKey(matchup.FantasyMatchupID, teamID);
+      const starterIDs = Array.from(starterIDsByTeam.get(teamKey) ?? []);
+      const outcomes = outcomesByTeam.get(teamKey);
       const unavailableStarterPlayerIDs: string[] = [];
       let projectedStarterPoints = 0;
       let projectedStarterCount = 0;
+      let projectedFinalPoints = 0;
+      let projectedFinalComplete = starterIDs.length > 0;
 
       for (const playerID of starterIDs) {
         const projection = projectionByPlayerID.get(playerID);
-        if (
-          projection?.Status === 'available'
-          && typeof projection.Points === 'number'
-          && Number.isFinite(projection.Points)
-        ) {
+        const outcome = outcomes?.get(playerID);
+        const projectedPoints = projection?.Status === 'available' && isFiniteNumber(projection.Points)
+          ? projection.Points
+          : null;
+
+        // Final games contribute their actual points. A game that has not finished contributes its
+        // projection but never less than the points already scored, so live scoring is not counted twice.
+        if (outcome?.isFinal) {
+          if (outcome.points === null) projectedFinalComplete = false;
+          else projectedFinalPoints += outcome.points;
+        } else if (projectedPoints === null) {
+          projectedFinalComplete = false;
+        } else {
+          projectedFinalPoints += Math.max(outcome?.points ?? 0, projectedPoints);
+        }
+
+        if (projectedPoints !== null) {
           projectedStarterCount += 1;
-          projectedStarterPoints += projection.Points;
+          projectedStarterPoints += projectedPoints;
         } else {
           unavailableStarterPlayerIDs.push(playerID);
         }
@@ -159,6 +192,7 @@ function enrichFantasyGameContextWithPredictions(
         ProjectedStarterCount: projectedStarterCount,
         ProjectedStarterPoints: roundedProjectedStarterPoints,
         PredictedEndScore: state === 'available' ? roundedProjectedStarterPoints : null,
+        ProjectedFinalScore: projectedFinalComplete ? roundPredictionPoints(projectedFinalPoints) : null,
         UnavailableStarterPlayerIDs: unavailableStarterPlayerIDs.sort()
       };
     })
