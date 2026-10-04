@@ -79,6 +79,9 @@ jobs:
       - name: Run Overview weekly-dashboard regression tests
         run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=overview-weekly-dashboard --include=src/app/testing/overview-weekly-dashboard.karma.spec.ts
 
+      - name: Run full Angular unit test suite
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+
       - name: Build Angular app
         shell: pwsh
         run: ./deploy_action.ps1
