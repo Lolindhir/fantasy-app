@@ -14,11 +14,12 @@ This source is intentionally separate from `historical-identity-adjudications.js
 - Display name, normalized name, position, team, age or other descriptive fields may support human review but are never sufficient automated merge keys.
 - Only `Status=confirmed` belongs in the canonical source. Proposals or unresolved candidates remain outside this file.
 - Every decision requires a stable `AdjudicationID`, decision authority/date, rationale and non-empty evidence references.
-- `ResolutionKind` is fixed to `current-provider-reassignment`.
-- `ConflictPolicy` is fixed to `reject-active-conflict`.
-- A target may not already carry a different active value for an assigned provider.
+- `ResolutionKind` is one of:
+  - `current-provider-reassignment` with `ConflictPolicy` `reject-active-conflict` (split identities);
+  - `upstream-claim-override` with `ConflictPolicy` `override-named-upstream-claim` (a wrong upstream crosswalk claim).
+- For `current-provider-reassignment`, a target may not already carry a different active value for an assigned provider, and the decision may not override an active provider conflict.
+- An `upstream-claim-override` names exactly one upstream claim (`Source`, `Provider`, `ExternalID`, target) that is declared wrong for one season, plus the replacement token. It requires at least one independent strong anchor (GSIS, ESPN, PFR or PFF) tying the replacement token's record to the target, platform-data consistency of the replacement token (position, current team) and documented inconsistency of the overridden token. If the named upstream claim changes or disappears, the decision is reported as obsolete instead of being applied.
 - An assigned provider token may not be owned by an undeclared third CanonicalPlayerID.
-- An adjudication may not override an active provider conflict.
 - Decisions are active only for their exact observation season; they do not silently carry into a later season.
 - Raw provider evidence is never rewritten.
 - Future materialized provenance must retain `manual.current-identity-adjudication:<AdjudicationID>`.
@@ -40,8 +41,16 @@ A later explicitly authorized checkpoint may add reviewed decisions and integrat
 6. the resulting identity/provider-mapping materialization is replay-idempotent;
 7. the 6Z.4 population audit is rerun against the persisted result.
 
-## Residual Issue #347 implication
+## Gap classes and open-gap hold (Issue #347, 2026-10-04)
 
-The four non-conflict residuals from Checkpoint 6Z.6 may be evaluated for this contract in a later decision checkpoint.
+The canonical rule set is `currentIdentityGapResolution` in `.ai-context/manual/player-identity.yaml`. In short:
 
-Sam Hartman's current Sleeper disagreement is intentionally excluded by the fail-closed rules: a current adjudication cannot assign Sleeper `11558` to a target that already carries a different active Sleeper value (`11376`) unless a separate provider-conflict resolution changes the underlying evidence first.
+| Class | Resolution | Cases on 2026-10-04 |
+|---|---|---|
+| `placeholderGsisUpgrade` | automatic in the identity builder (shared ESB, placeholder or missing GSIS on one side, valid GSIS on the other) | Layne Pryor |
+| `splitIdentity` | this file, `current-provider-reassignment` | Grant Finley, Gregory Desrosiers, Roydell Williams |
+| `wrongUpstreamClaim` | this file, `upstream-claim-override` | Sam Hartman |
+
+A classified gap that is not yet resolved stays in the player population with status `identity_hold` and does not block a consumer cutover. Only unclassified gaps block.
+
+Sam Hartman: nflverse ff-player-ids assigns Sleeper `11376` to the durable record; Sleeper lists `11376` as an OL without team. Sleeper `11558` is the QB at WAS, and its Tank01 ID `4361994` equals the durable record's ESPN ID. This case is resolved by an `upstream-claim-override`, not by a reassignment.
