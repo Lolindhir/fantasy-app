@@ -517,23 +517,39 @@ class CurrentIdentityAdjudicationTests(unittest.TestCase):
                 decisions, wrong_position, [], 2026
             )
 
-    def test_repository_source_is_valid_and_currently_empty(self) -> None:
-        path = ROOT / "source-data/nfl/identities/current-identity-adjudications.json"
-        payload = json.loads(path.read_text(encoding="utf-8"))
+    def test_repository_source_is_valid_against_current_identity_state(self) -> None:
+        players = json.loads(
+            (ROOT / "source-data/nfl/identities/players.json").read_text(encoding="utf-8-sig")
+        ).get("Players", [])
+        conflicts = json.loads(
+            (ROOT / "source-data/nfl/identities/provider-mappings.json").read_text(
+                encoding="utf-8-sig"
+            )
+        ).get("Conflicts", [])
         known_ids = {
             str(item.get("CanonicalPlayerID") or "")
-            for item in json.loads(
-                (ROOT / "source-data/nfl/identities/players.json").read_text(
-                    encoding="utf-8-sig"
-                )
-            ).get("Players", [])
+            for item in players
             if str(item.get("CanonicalPlayerID") or "")
         }
+        payload = json.loads(
+            (ROOT / "source-data/nfl/identities/current-identity-adjudications.json").read_text(
+                encoding="utf-8"
+            )
+        )
 
-        self.assertEqual([], payload["Adjudications"])
-        self.assertEqual(
-            [],
-            load_current_identity_adjudications(ROOT, known_ids, 2026),
+        decisions = load_current_identity_adjudications(ROOT, known_ids, 2026)
+        self.assertEqual(len(payload["Adjudications"]), len(decisions))
+        self.assertEqual([], load_current_identity_adjudications(ROOT, known_ids, 2027))
+
+        statuses = validate_current_identity_adjudications_against_state(
+            decisions, players, conflicts, 2026
+        )
+        self.assertEqual(len(decisions), len(statuses))
+        # Not yet consumed by the identity builder; once it is, an override may
+        # report superseded-by-upstream, but none may be obsolete.
+        self.assertTrue(
+            {row["Status"] for row in statuses} <= {"active", "superseded-by-upstream"},
+            statuses,
         )
 
 
