@@ -120,9 +120,23 @@ class KickerStreamingInputTests(unittest.TestCase):
                 "Season": "2026",
                 "Phase": "Pre Draft",
                 "CurrentWeek": 1,
-                "ScoringType": self.scoring(),
+                "ScoringType": {key: 999 for key in self.scoring()},
                 "Teams": [{"TeamID": 1, "Team": "Mighty Giants"}],
             },
+        )
+        self.write_json(
+            root,
+            "source-data/leagues/test/manifest.json",
+            {
+                "CanonicalLeagueID": "test",
+                "CurrentCanonicalLeagueSeasonID": "test-2026",
+                "Seasons": [{"CanonicalLeagueSeasonID": "test-2026", "Season": 2026}],
+            },
+        )
+        self.write_json(
+            root,
+            "source-data/leagues/test/seasons/2026/league.json",
+            {"CanonicalLeagueID": "test", "Season": 2026, "ScoringSettings": self.scoring()},
         )
         self.write_json(
             root,
@@ -166,6 +180,7 @@ class KickerStreamingInputTests(unittest.TestCase):
                     "player_signals": "fantasy-management/generated/operations/player-signals.json",
                     "free_agent_signals": "fantasy-management/generated/operations/free-agent-signals.json",
                 },
+                "canonical_league": {"canonical_league_id": "test"},
                 "population": {
                     "position": "K",
                     "held_selector": "managed_team",
@@ -210,6 +225,39 @@ class KickerStreamingInputTests(unittest.TestCase):
             self.assertEqual(fftoday["points_min"], 128)
             self.assertEqual(fftoday["points_max"], 218)
             self.assertEqual(fftoday["provider_projected_fantasy_points"], 150)
+
+    def test_reads_scoring_from_canonical_league_not_legacy_scoring_type(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            result = MODULE.build(root, self.prepare_root(root))
+
+            self.assertEqual(result["league"]["kicker_scoring"], {key: float(value) for key, value in self.scoring().items()})
+
+    def test_rejects_missing_canonical_scoring_key(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            scoring = self.scoring()
+            del scoring["xpmiss"]
+            self.write_json(
+                root,
+                "source-data/leagues/test/seasons/2026/league.json",
+                {"CanonicalLeagueID": "test", "Season": 2026, "ScoringSettings": scoring},
+            )
+            with self.assertRaisesRegex(MODULE.KickerStreamingInputError, "xpmiss"):
+                MODULE.build(root, config_path)
+
+    def test_rejects_canonical_league_season_mismatch(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            self.write_json(
+                root,
+                "source-data/leagues/test/seasons/2026/league.json",
+                {"CanonicalLeagueID": "test", "Season": 2025, "ScoringSettings": self.scoring()},
+            )
+            with self.assertRaisesRegex(MODULE.KickerStreamingInputError, "season mismatch"):
+                MODULE.build(root, config_path)
 
     def test_rejects_free_agent_dataset_from_different_player_signal_fingerprint(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

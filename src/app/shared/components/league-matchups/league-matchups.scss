@@ -300,12 +300,12 @@
 .fantasy-pulse-card:hover { background: #fbf9ff; }
 
 .fantasy-pulse-card--live {
-  border-color: rgba(16, 185, 129, 0.34);
-  box-shadow: inset 3px 0 0 #10b981;
+  border-color: var(--lifecycle-active-border);
+  box-shadow: inset 3px 0 0 var(--lifecycle-active);
 }
 
 .fantasy-pulse-card--final-window {
-  background: linear-gradient(135deg, #fff 0%, #faf7ff 100%);
+  background: linear-gradient(135deg, #fff 0%, #f4fbf6 100%);
 }
 
 .fantasy-pulse-card > mat-icon {
@@ -373,7 +373,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #047857;
+  color: var(--lifecycle-active-fg);
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -382,7 +382,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #10b981;
+  background: var(--lifecycle-active);
   content: '';
 }
 
@@ -397,9 +397,11 @@
 }
 
 .fantasy-pulse-metrics strong { color: #334155; }
-.fantasy-pulse-final-window { color: #6d28d9; font-weight: 850; }
+.fantasy-pulse-metric-chip--final { border: 1px solid var(--lifecycle-final-border); background: var(--lifecycle-final-bg); color: var(--lifecycle-final-fg); }
+.matchup-window-live { color: var(--lifecycle-final-fg); font-size: 0.5rem; font-weight: 950; letter-spacing: 0.035em; }
+.fantasy-pulse-final-window { color: var(--lifecycle-final-fg); font-weight: 850; }
 .fantasy-pulse-secondary { color: #7c8799; }
-.fantasy-pulse-unknown { color: #b45309; font-weight: 800; }
+.fantasy-pulse-unknown { color: var(--lifecycle-review-fg); font-weight: 800; }
 .fantasy-pulse-empty { padding: 9px 4px; color: #94a3b8; font-size: 0.78rem; }
 
 @media (max-width: 430px) {

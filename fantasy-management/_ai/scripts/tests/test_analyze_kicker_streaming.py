@@ -303,7 +303,12 @@ class KickerStreamingAnalysisTests(unittest.TestCase):
         self.assertGreater(result["quality"]["comparable_candidate_count"], 1)
         held = [row for row in result["ranking"] if row["availability"] == "held"]
         self.assertEqual(len(held), 1)
-        self.assertEqual(held[0]["name"], "Jake Bates")
+        inputs = json.loads(
+            (root / "fantasy-management/generated/operations/kicker-streaming-inputs.json").read_text(encoding="utf-8")
+        )
+        expected_held = [item for item in inputs["candidates"] if item["availability"] == "held"]
+        self.assertEqual(len(expected_held), 1)
+        self.assertEqual(held[0]["player_id"], expected_held[0]["player_id"])
         self.assertGreater(len(result["research_shortlist_ids"]), 1)
 
 
