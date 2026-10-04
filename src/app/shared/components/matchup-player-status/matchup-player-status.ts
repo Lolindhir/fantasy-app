@@ -15,8 +15,4 @@ export class MatchupPlayerStatusComponent {
 
   @Output() readonly playerSelected = new EventEmitter<string>();
   @Output() readonly teamSelected = new EventEmitter<string | number>();
-
-  benchOptionsLabel(count: number): string {
-    return `${count} bench player${count === 1 ? '' : 's'} could take the slot`;
-  }
 }
