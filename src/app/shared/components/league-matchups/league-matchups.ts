@@ -338,7 +338,7 @@ export class LeagueMatchupsComponent {
 
   standingMovementText(placeDelta: number | null): string {
     if (placeDelta === null || placeDelta === 0) return '—';
-    return placeDelta > 0 ? `↑${placeDelta}` : `↓${Math.abs(placeDelta)}`;
+    return placeDelta > 0 ? `▲${placeDelta}` : `▼${Math.abs(placeDelta)}`;
   }
 
   standingMovementLabel(placeDelta: number | null): string {
