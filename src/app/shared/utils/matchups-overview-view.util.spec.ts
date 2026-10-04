@@ -249,6 +249,22 @@ describe('matchups overview view utility', () => {
     expect(left?.groups.find(group => group.kind === 'unknown')?.outline).toBe('unknown');
   });
 
+  it('marks questionable starters with their own outline, separate from unknown review states', () => {
+    const uncertain = { State: 'uncertain' as const, ProviderStatus: 'Questionable', Source: 'ESPN', ObservedAtUtc: null };
+    const slots = [
+      slot('WR-1', 'unlocked', { DecisionWindowID: 'next', ScoringAvailability: uncertain }),
+      slot('WR-2', 'unlocked', { DecisionWindowID: 'next' }),
+      slot('RB-3', 'locked-active', { ScoringAvailability: uncertain }),
+      slot('TE-4', 'unknown', { ScoringAvailability: uncertain })
+    ];
+
+    const view = buildMatchupStarterProgress(team(slots), 'next', 'left');
+
+    expect(view?.groups.map(group => group.kind)).toEqual(['locked', 'next', 'questionable', 'unknown']);
+    expect(view?.groups.find(group => group.kind === 'questionable')?.outline).toBe('questionable');
+    expect(view?.groups.find(group => group.kind === 'questionable')?.segments.map(item => item.slotID)).toEqual(['WR-1']);
+  });
+
   it('keeps missing lifecycle states out of the group list so styling adds only one inter-group gap', () => {
     const view = buildMatchupStarterProgress(team([
       slot('QB-1', 'completed'),
