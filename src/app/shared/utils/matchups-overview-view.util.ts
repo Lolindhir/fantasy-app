@@ -74,13 +74,12 @@ const kindOrder: Record<MatchupProgressKind, number> = {
   unknown: 7
 };
 
-// Time phase, outer edge first: final starters, then live/next-window starters, then still-open ones.
+// Time phase, outer edge first: started starters (locked or final), then next-window starters, then still-open ones.
 function timePhase(
   slot: FantasyRelevanceSlotState,
   nextScoringWindowID: string | null | undefined
 ): number {
-  if (slot.State === 'completed') return 0;
-  if (slot.State === 'locked-active') return 1;
+  if (slot.State === 'completed' || slot.State === 'locked-active') return 0;
   if (slot.State === 'unlocked' && nextScoringWindowID && slot.DecisionWindowID === nextScoringWindowID) return 1;
   return 2;
 }
