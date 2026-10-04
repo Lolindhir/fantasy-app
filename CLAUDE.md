@@ -18,3 +18,4 @@
 - Unsicherheit kennzeichnen: Ausdrücklich markieren, was geprüft ist und was nur Annahme ist.
 - Abschlussbericht: Am Ende kurz nennen, was geändert wurde, was verifiziert ist und was nicht (inklusive übersprungener Schritte).
 - Entscheidungen mit Empfehlung: Wenn der User entscheiden muss, eine klare Empfehlung nennen statt nur Optionen aufzulisten.
+- Issues nennen: Nie nur die Nummer nennen. Beim ersten Nennen eines Issues immer Titel und eine kurze Beschreibung dazu angeben, damit klar ist, worum es geht. Gilt sinngemäß auch für PRs.
