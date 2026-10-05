@@ -128,6 +128,8 @@ lifecycle:
     - Reference the relevant Issue from the PR.
     - Use a closing reference only if the PR completes the entire Issue.
     - Keep the Issue open when the PR is only partial.
+    - 'For a partial PR, write only a non-closing reference such as `Refs #N` or `Part of #N` in the PR description and in commit messages; closing keywords (`Fixes`, `Closes`, `Resolves`) must not appear there, because GitHub closes the Issue automatically on merge into the default branch and no repository setting disables this.'
+    - Long-running multi-PR Issues (for example #347) are closed only after their acceptance criteria are complete; an Issue closed by an accidental closing reference is reopened (state reason `reopened`) and its labels and body are reconciled.
     - After creating or materially updating a Pull Request, add or refresh the PR reference and resulting validation/status information in the Issue body before treating that transition as complete.
   postMerge:
     - Treat post-merge Issue reconciliation as a mandatory lifecycle gate after every authorized successful merge associated with Issue-tracked work.
