@@ -84,6 +84,27 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             "format_context": {"position_scope": "K"},
         }
 
+    def canonical_roster_document(
+        self, canonical_ids: list[str], *, week: int | None = None
+    ) -> dict[str, object]:
+        document: dict[str, object] = {
+            "SchemaVersion": 1,
+            "Season": 2026,
+            "Records": [
+                {
+                    "CanonicalPlayerID": canonical_id,
+                    "SourceIDs": {"Sleeper": canonical_id.rsplit("-", 1)[1]},
+                    "Team": "AAA",
+                    "Position": "K",
+                    "PlayerName": canonical_id,
+                }
+                for canonical_id in canonical_ids
+            ],
+        }
+        if week is not None:
+            document["Week"] = week
+        return document
+
     def prepare_root(self, root: Path) -> Path:
         self.write_json(
             root,
@@ -306,6 +327,21 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         )
         self.write_json(
             root,
+            "source-data/nfl/rosters/2026.json",
+            self.canonical_roster_document(["canonical-1", "canonical-2"]),
+        )
+        self.write_json(
+            root,
+            "source-data/nfl/weekly-rosters/2026/01.json",
+            self.canonical_roster_document(["canonical-1", "canonical-2"], week=1),
+        )
+        self.write_json(
+            root,
+            "source-data/nfl/weekly-rosters/2026/02.json",
+            self.canonical_roster_document(["canonical-1"], week=2),
+        )
+        self.write_json(
+            root,
             "public/data/Timestamps.json",
             {"League": "2026-08-08T06:00:00Z", "Players": "2026-08-08T05:50:00Z"},
         )
@@ -513,18 +549,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         self.assertTrue(current["would_preserve_without_legacy_bridge"])
         self.assertTrue(history_only["would_preserve_without_legacy_bridge"])
         self.assertFalse(absent["would_preserve_without_legacy_bridge"])
-        self.assertEqual("shadow_only_not_published", absent["runtime_effect"])
-
-    def test_canonical_nfl_shadow_reasons_are_not_published_by_runtime_builder(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            config_path = self.prepare_root(root)
-            result = MODULE.build(root, config_path)
-
-            for player in result["players"]:
-                self.assertFalse(
-                    any(reason.startswith("canonical_nfl_") for reason in player["population_reasons"])
-                )
+        self.assertEqual("audit_projection_only", absent["runtime_effect"])
 
     def test_builds_free_agent_kicker_signals_without_averaging_provider_points(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -632,7 +657,27 @@ class PlayerSignalDatasetTests(unittest.TestCase):
                 player["source_signals"]["ffc-k"]["join_method"],
             )
 
-    def test_legacy_team_population_bridge_is_independent_from_canonical_team(self) -> None:
+    def test_population_reasons_come_from_canonical_nfl_rosters(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+
+            result = MODULE.build(root, config_path)
+            by_id = {item["player_id"]: item for item in result["players"]}
+
+            # Latest weekly roster (week 2) holds only canonical-1; the season roster
+            # and week 1 additionally hold canonical-2 (history only).
+            self.assertIn("canonical_nfl_membership", by_id["1"]["population_reasons"])
+            self.assertIn("canonical_nfl_recent_history", by_id["1"]["population_reasons"])
+            self.assertNotIn("canonical_nfl_membership", by_id["2"]["population_reasons"])
+            self.assertIn("canonical_nfl_recent_history", by_id["2"]["population_reasons"])
+            self.assertNotIn("3", by_id)
+            self.assertEqual(2, result["population"]["canonical_nfl_population_contract"]["latest_week"])
+            self.assertTrue(
+                all("has_nfl_team" not in item["population_reasons"] for item in result["players"])
+            )
+
+    def test_provider_team_fields_do_not_create_population_membership(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             config_path = self.prepare_root(root)
@@ -640,24 +685,45 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             players_path = root / "public/data/Players.json"
             players = json.loads(players_path.read_text(encoding="utf-8"))
             players[2]["TeamAbbr"] = "LEG"
+            players[2]["IsFreeAgent"] = False
             players_path.write_text(json.dumps(players, indent=2) + "\n", encoding="utf-8")
+            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
+            sleeper["Records"][2]["Team"] = "CAN"
+            sleeper_path.write_text(json.dumps(sleeper, indent=2) + "\n", encoding="utf-8")
+
+            result = MODULE.build(root, config_path)
+            self.assertNotIn("3", {item["player_id"] for item in result["players"]})
+
+    def test_latest_weekly_roster_membership_adds_player_to_population(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            self.write_json(
+                root,
+                "source-data/nfl/weekly-rosters/2026/02.json",
+                self.canonical_roster_document(["canonical-1", "canonical-3"], week=2),
+            )
 
             result = MODULE.build(root, config_path)
             player = next(item for item in result["players"] if item["player_id"] == "3")
-
-            self.assertIsNone(player["nfl_team"])
-            self.assertEqual("canonical_sleeper_team", player["nfl_team_source"])
-            self.assertEqual(["has_nfl_team"], player["population_reasons"])
             self.assertEqual(
-                {
-                    "reason": "has_nfl_team",
-                    "source": "public/data/Players.json -> TeamAbbr",
-                    "semantics": "legacy_population_compatibility_bridge_not_current_nfl_roster_truth",
-                },
-                result["population"]["team_presence_reason_contract"],
+                ["canonical_nfl_membership", "canonical_nfl_recent_history"],
+                player["population_reasons"],
             )
+            self.assertIsNone(player["nfl_team"])
 
-    def test_canonical_team_drives_output_without_changing_legacy_population_reason(self) -> None:
+    def test_missing_canonical_nfl_rosters_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            (root / "source-data/nfl/rosters/2026.json").unlink()
+            with self.assertRaisesRegex(
+                MODULE.PlayerSignalMaterializationError, "Canonical NFL roster membership"
+            ):
+                MODULE.build(root, config_path)
+
+    def test_canonical_team_output_is_independent_from_population_membership(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             config_path = self.prepare_root(root)
@@ -670,7 +736,8 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             result = MODULE.build(root, config_path)
             player = next(item for item in result["players"] if item["player_id"] == "2")
             self.assertEqual("CAN", player["nfl_team"])
-            self.assertIn("has_nfl_team", player["population_reasons"])
+            self.assertIn("canonical_nfl_recent_history", player["population_reasons"])
+            self.assertNotIn("canonical_nfl_membership", player["population_reasons"])
 
     def test_canonical_first_last_name_alias_preserves_external_source_join(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -799,9 +866,12 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             any(player["projections"]["summary"]["listed_provider_count"] >= 1 for player in kickers)
         )
         self.assertTrue(all(player["nfl_team_source"] == "canonical_sleeper_team" for player in result["players"]))
-        self.assertEqual(
-            result["population"]["team_presence_reason_contract"]["source"],
-            "public/data/Players.json -> TeamAbbr",
+        self.assertNotIn("has_nfl_team", result["population"]["reason_counts"])
+        self.assertTrue(
+            all(
+                set(player["population_reasons"]).isdisjoint({"has_nfl_team"})
+                for player in result["players"]
+            )
         )
 
     def test_current_repository_ownership_and_population_reasons_match_published_state(self) -> None:

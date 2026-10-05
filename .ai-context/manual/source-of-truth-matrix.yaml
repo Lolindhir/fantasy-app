@@ -737,7 +737,7 @@ playersReadModelFieldInventory:
       targetOwner: canonical weekly roster membership for team; free-agent definition still unresolved
       consumers:
         - App TeamID -> TeamNFL display; IsFreeAgent only maps TeamNFL to FA and blanks Number; TeamAbbr and Status not read
-        - FM build_player_signal_dataset.py reads TeamAbbr only as the legacy has_nfl_team population bridge (plan block C)
+        - FM build_player_signal_dataset.py no longer reads TeamAbbr (C2, 2026-10-05: the has_nfl_team population bridge was replaced by canonical_nfl_membership / canonical_nfl_recent_history from canonical NFL roster membership)
         - FM build_fantasy_operations_inputs.py reads legacy Status and IsFreeAgent
         - RequestLeague.ps1 DecisionWindows and lineup repairability read TeamID
       observations:

@@ -13,8 +13,10 @@ The audit deliberately separates:
 * canonical nflverse latest-week and current-season roster membership;
 * previous-season roster history as diagnostic recent-history evidence.
 
-No candidate contract or shadow reason emitted here is applied by the productive
-player-signal builder. The result exists to make a later population cutover
+Since Checkpoint C2 (Issue #347) the productive builder uses Canonical NFL roster
+evidence instead of ``has_nfl_team``; this audit reconstructs the former bridge
+baseline from the legacy ``TeamAbbr`` so the removed cohort stays explainable.
+No candidate contract emitted here is applied by the productive player-signal builder. The result exists to make a later population cutover
 reproducible and explicitly adjudicable.
 """
 
@@ -33,6 +35,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_fantasy_operations_inputs as ops  # noqa: E402
 import build_player_signal_dataset as player_signals  # noqa: E402
+import canonical_nfl_membership as nfl_membership  # noqa: E402
 import materialize_external_signals as external_signals  # noqa: E402
 from canonical_league_ownership import (  # noqa: E402
     CanonicalOwnershipError,
@@ -77,18 +80,10 @@ class PopulationRelevanceAuditError(RuntimeError):
 
 
 def _records(document: Any, *, source_name: str) -> list[dict[str, Any]]:
-    if not isinstance(document, dict):
-        raise PopulationRelevanceAuditError(f"{source_name} must be a JSON object")
-    records = document.get("Records")
-    if not isinstance(records, list):
-        raise PopulationRelevanceAuditError(f"{source_name} must contain Records[]")
-    if any(not isinstance(row, dict) for row in records):
-        raise PopulationRelevanceAuditError(f"{source_name} Records must contain objects")
-    return records
-
-
-def _canonical_id(identity: dict[str, Any]) -> str | None:
-    return ops.optional_text(identity.get("CanonicalPlayerID"))
+    try:
+        return nfl_membership.roster_records(document, source_name=source_name)
+    except nfl_membership.CanonicalNflMembershipError as exc:
+        raise PopulationRelevanceAuditError(str(exc)) from exc
 
 
 def build_roster_membership_index(
@@ -97,75 +92,22 @@ def build_roster_membership_index(
     *,
     source_name: str,
 ) -> dict[str, Any]:
-    sleeper_ids: set[str] = set()
-    canonical_ids: set[str] = set()
-    current_sleeper_mapping_mismatch_count = 0
-    unresolved_record_count = 0
-    records = _records(document, source_name=source_name)
-
-    for row in records:
-        canonical_id = ops.optional_text(row.get("CanonicalPlayerID"))
-        source_ids = row.get("SourceIDs") if isinstance(row.get("SourceIDs"), dict) else {}
-        sleeper_id = ops.optional_text(source_ids.get("Sleeper"))
-
-        # Canonical roster history is sticky. A SourceIDs.Sleeper value on the
-        # roster row is evidence captured with that canonical row; a later/current
-        # Sleeper mapping must not reinterpret CanonicalPlayerID.
-        if canonical_id:
-            canonical_ids.add(canonical_id)
-            if sleeper_id:
-                identity = identity_by_sleeper.get(sleeper_id)
-                identity_canonical_id = _canonical_id(identity) if identity else None
-                if identity_canonical_id == canonical_id:
-                    sleeper_ids.add(sleeper_id)
-                elif identity_canonical_id and identity_canonical_id != canonical_id:
-                    current_sleeper_mapping_mismatch_count += 1
-            continue
-
-        # Do not manufacture canonical NFL-membership evidence for unresolved
-        # canonical rows from a current provider mapping alone.
-        unresolved_record_count += 1
-
-    return {
-        "sleeper_ids": sleeper_ids,
-        "canonical_ids": canonical_ids,
-        "record_count": len(records),
-        "current_sleeper_mapping_mismatch_count": current_sleeper_mapping_mismatch_count,
-        "unresolved_record_count": unresolved_record_count,
-    }
+    try:
+        return nfl_membership.build_roster_membership_index(
+            document, identity_by_sleeper, source_name=source_name
+        )
+    except nfl_membership.CanonicalNflMembershipError as exc:
+        raise PopulationRelevanceAuditError(str(exc)) from exc
 
 
-def in_roster_membership(
-    player_id: str,
-    identity: dict[str, Any],
-    membership: dict[str, Any],
-) -> bool:
-    canonical_id = _canonical_id(identity)
-    return (
-        player_id in membership["sleeper_ids"]
-        or bool(canonical_id and canonical_id in membership["canonical_ids"])
-    )
+in_roster_membership = nfl_membership.in_roster_membership
 
 
 def resolve_latest_weekly_roster_path(root: Path, season: int) -> tuple[int, Path]:
-    directory = root / "source-data" / "nfl" / "weekly-rosters" / str(season)
-    if not directory.is_dir():
-        raise PopulationRelevanceAuditError(
-            f"Canonical weekly-roster directory is missing for season {season}: {directory}"
-        )
-
-    candidates: list[tuple[int, Path]] = []
-    for path in directory.glob("*.json"):
-        try:
-            week = int(path.stem)
-        except ValueError:
-            continue
-        candidates.append((week, path))
-    if not candidates:
-        raise PopulationRelevanceAuditError(
-            f"No canonical weekly-roster partitions found for season {season}"
-        )
-    return max(candidates, key=lambda item: item[0])
+    try:
+        return nfl_membership.resolve_latest_weekly_roster_path(root, season)
+    except nfl_membership.CanonicalNflMembershipError as exc:
+        raise PopulationRelevanceAuditError(str(exc)) from exc
 
 
 def evaluate_contracts(
@@ -233,6 +175,54 @@ def _load_optional_generated(root: Path, relative_path: str, *, list_key: str) -
         for row in rows
         if isinstance(row, dict) and row.get("player_id") is not None
     }
+
+
+def reconstruct_legacy_bridge_baseline(
+    runtime_players: list[dict[str, Any]],
+    legacy_players: list[Any],
+    identity_by_sleeper: dict[str, dict[str, Any]],
+    sleeper_player_lookup: dict[str, dict[str, Any]],
+    allowed_positions: set[str],
+    ownership: Any,
+    managed_team_id: str,
+) -> dict[str, dict[str, Any]]:
+    """Rebuild the population as it was while ``has_nfl_team`` was a reason.
+
+    Since Checkpoint C2 the productive builder no longer publishes the legacy
+    ``has_nfl_team`` bridge. The population audits keep explaining the removed
+    cohort (and therefore silently dropped identity gaps), so they reconstruct
+    that former population: every eligible player whose legacy ``TeamAbbr`` is
+    set, plus every player with a non-bridge reason in the current runtime
+    population.
+    """
+    runtime_by_id = {str(player["player_id"]): player for player in runtime_players}
+    baseline: dict[str, dict[str, Any]] = {}
+    for legacy_player in legacy_players:
+        if not isinstance(legacy_player, dict) or legacy_player.get("ID") is None:
+            continue
+        player_id = str(legacy_player["ID"])
+        player, _identity, _sleeper = player_signals.canonical_player_context(
+            player_id, legacy_player, identity_by_sleeper, sleeper_player_lookup
+        )
+        if str(player.get("Position") or "").upper() not in allowed_positions:
+            continue
+        runtime = runtime_by_id.get(player_id)
+        reasons = [
+            reason
+            for reason in ((runtime or {}).get("population_reasons") or [])
+            if reason in FANTASY_RELEVANCE_REASONS
+        ]
+        if ops.optional_text(legacy_player.get("TeamAbbr")):
+            reasons.insert(0, BRIDGE_REASON)
+        if not reasons:
+            continue
+        baseline[player_id] = {
+            "player_id": player_id,
+            "population_reasons": reasons,
+            "ownership": (runtime or {}).get("ownership")
+            or external_signals.ownership_for(player_id, ownership, managed_team_id),
+        }
+    return baseline
 
 
 def build(root: Path, config_path: Path, *, include_details: bool = False) -> dict[str, Any]:
@@ -322,10 +312,15 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
         source_name=str(previous_season_roster_path.relative_to(root)),
     )
 
-    baseline_by_id = {
-        str(player["player_id"]): player
-        for player in baseline["players"]
-    }
+    baseline_by_id = reconstruct_legacy_bridge_baseline(
+        baseline["players"],
+        legacy_players,
+        identity_by_sleeper,
+        sleeper_player_lookup,
+        {str(value).upper() for value in config["population"]["positions"]},
+        ownership,
+        managed_team_id,
+    )
     baseline_ids = set(baseline_by_id)
     allowed_positions = {str(value).upper() for value in config["population"]["positions"]}
 
@@ -613,7 +608,7 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
         "audit_id": AUDIT_ID,
         "baseline": {
             "main_population_contract": (
-                "configured fantasy position AND at least one of has_nfl_team, league_owned, "
+                "reconstructed pre-C2 baseline: configured fantasy position AND at least one of has_nfl_team, league_owned, "
                 "listed_in_external_source, present_in_external_signal"
             ),
             "player_count": len(baseline_ids),
