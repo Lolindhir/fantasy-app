@@ -32,7 +32,7 @@
     "population": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["player_count", "positions", "inclusion_rule", "reason_counts", "team_presence_reason_contract"],
+      "required": ["player_count", "positions", "inclusion_rule", "reason_counts", "canonical_nfl_population_contract"],
       "properties": {
         "player_count": {"type": "integer", "minimum": 0},
         "positions": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
@@ -41,14 +41,24 @@
           "type": "object",
           "additionalProperties": {"type": "integer", "minimum": 0}
         },
-        "team_presence_reason_contract": {
+        "canonical_nfl_population_contract": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["reason", "source", "semantics"],
+          "required": ["season", "latest_week", "reasons", "sources", "semantics"],
           "properties": {
-            "reason": {"const": "has_nfl_team"},
-            "source": {"const": "public/data/Players.json -> TeamAbbr"},
-            "semantics": {"const": "legacy_population_compatibility_bridge_not_current_nfl_roster_truth"}
+            "season": {"type": "integer"},
+            "latest_week": {"type": "integer"},
+            "reasons": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["canonical_nfl_membership", "canonical_nfl_recent_history"],
+              "properties": {
+                "canonical_nfl_membership": {"type": "string"},
+                "canonical_nfl_recent_history": {"type": "string"}
+              }
+            },
+            "sources": {"type": "array", "items": {"type": "string"}},
+            "semantics": {"const": "canonical_nfl_roster_evidence_by_canonical_player_id_provider_team_fields_are_not_membership"}
           }
         }
       }
@@ -202,7 +212,7 @@
         "nfl_team_source": {"const": "canonical_sleeper_team"},
         "population_reasons": {
           "type": "array",
-          "items": {"enum": ["has_nfl_team", "league_owned", "listed_in_external_source", "present_in_external_signal"]},
+          "items": {"enum": ["canonical_nfl_membership", "canonical_nfl_recent_history", "league_owned", "listed_in_external_source", "present_in_external_signal"]},
           "minItems": 1,
           "uniqueItems": true
         },

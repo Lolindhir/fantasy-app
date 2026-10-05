@@ -134,9 +134,12 @@ boundaries:
       Reconciliation und Kicker Streaming behalten ihre eigenen Scoring-Enrichment-
       Grenzen bis zu separaten Checkpoints. Checkpoint 6Z.1 entkoppelt ausserdem den
       Player-Signal-Team-Fakt von der Population: nfl_team stammt aus Canonical
-      Sleeper Team, waehrend public/data/Players.json -> TeamAbbr vorerst nur den
-      bestehenden has_nfl_team Population-Compatibility-Reason erhaelt. Dieser
-      Legacy-Reason ist kein NFL-Roster-/Vertragsbeweis. Drafts-, Transactions- und weitere nicht
+      Sleeper Team. Checkpoint C2 (Issue #347, 2026-10-05) ersetzt den Legacy-
+      Population-Reason has_nfl_team durch Canonical-NFL-Roster-Evidenz
+      (canonical_nfl_membership = letztes materialisiertes Weekly Roster,
+      canonical_nfl_recent_history = Season- oder Weekly-Roster der aktuellen
+      Saison, jeweils per CanonicalPlayerID); public/data/Players.json -> TeamAbbr
+      wird von player-signals nicht mehr gelesen. Drafts-, Transactions- und weitere nicht
       migrierte FM-Pfade behalten
       bis zu eigenen Checkpoints ihre bisherigen public/data-Vertraege.
       Sleeper roster_id bleibt reine Provenienz.

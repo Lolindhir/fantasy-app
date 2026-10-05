@@ -24,6 +24,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import audit_player_signal_population_relevance as population_audit  # noqa: E402
 import build_fantasy_operations_inputs as ops  # noqa: E402
+import canonical_nfl_membership as nfl_membership  # noqa: E402
 import identity_gap_classification as gap_classification  # noqa: E402
 
 SCHEMA_VERSION = 1
@@ -135,41 +136,14 @@ def build_weekly_history_membership(
     season: int,
     identity_by_sleeper: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
-    directory = root / "source-data" / "nfl" / "weekly-rosters" / str(season)
-    if not directory.is_dir():
-        raise PopulationPolicyAuditError(
-            f"Canonical weekly-roster directory missing for season {season}: {directory}"
+    try:
+        history = nfl_membership.build_weekly_history_membership(
+            root, season, identity_by_sleeper, include_documents=True
         )
-
-    partitions: list[tuple[int, Path]] = []
-    for path in directory.glob("*.json"):
-        try:
-            week = int(path.stem)
-        except ValueError:
-            continue
-        partitions.append((week, path))
-    partitions.sort(key=lambda item: item[0])
-    if not partitions:
-        raise PopulationPolicyAuditError(
-            f"No Canonical weekly-roster partitions found for season {season}"
-        )
-
-    sleeper_ids: set[str] = set()
-    canonical_ids: set[str] = set()
+    except nfl_membership.CanonicalNflMembershipError as exc:
+        raise PopulationPolicyAuditError(str(exc)) from exc
     diagnostic_records: list[dict[str, Any]] = []
-    record_count = mismatch_count = unresolved_count = 0
-    for week, path in partitions:
-        document = ops.load_json(path)
-        membership = population_audit.build_roster_membership_index(
-            document,
-            identity_by_sleeper,
-            source_name=str(path.relative_to(root)),
-        )
-        sleeper_ids.update(membership["sleeper_ids"])
-        canonical_ids.update(membership["canonical_ids"])
-        record_count += int(membership["record_count"])
-        mismatch_count += int(membership["current_sleeper_mapping_mismatch_count"])
-        unresolved_count += int(membership["unresolved_record_count"])
+    for week, document in history.pop("documents"):
         diagnostic_records.extend(
             roster_diagnostic_records(
                 document,
@@ -178,17 +152,8 @@ def build_weekly_history_membership(
                 week=week,
             )
         )
-
-    return {
-        "sleeper_ids": sleeper_ids,
-        "canonical_ids": canonical_ids,
-        "weeks": [week for week, _ in partitions],
-        "partition_count": len(partitions),
-        "record_count": record_count,
-        "current_sleeper_mapping_mismatch_count": mismatch_count,
-        "unresolved_record_count": unresolved_count,
-        "diagnostic_records": diagnostic_records,
-    }
+    history["diagnostic_records"] = diagnostic_records
+    return history
 
 
 def build_name_position_index(
