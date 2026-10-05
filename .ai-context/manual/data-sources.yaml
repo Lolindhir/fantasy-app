@@ -75,6 +75,12 @@ dataSources:
       Tank01 PPR and the past_seasons/Players_<year>.json archives; Salary,
       SalaryProjected, Ranking, Grading.Rank and the League salary cap follow
       through the unchanged formulas.
+    weekBounds: >
+      Since #347 I1 RequestPlayers.ps1 and players_league_scoring_shadow.py take LastLeagueWeek and
+      PlayoffStartWeek from the canonical League-season WeekStructure and FinalScoredWeek from the
+      uninterrupted run of final regular-season weeks in canonical NFL game finality (capped at
+      LastLeagueWeek), via tools/players_league_scoring.py::resolve_league_week_bounds. Players no longer
+      reads these from League.json; a missing structure or finality fails closed.
     retiredProviderInputs:
       - input: Tank01 getNFLDFS DraftKings salaries
         status: not used

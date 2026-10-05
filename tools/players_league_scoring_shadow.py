@@ -38,6 +38,7 @@ from players_league_scoring import (  # noqa: E402,F401
     league_owned_sleeper_ids,
     league_scoring_settings,
     net_round,
+    resolve_league_week_bounds,
     played_weeks,
     season_view,
 )
@@ -324,8 +325,9 @@ def build_shadow(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
     players: list[dict[str, Any]] = read_json_bom(repo_root / "public/data/Players.json")
     league = read_json_bom(repo_root / "public/data/League.json")
     season = int(league["Season"])
-    last_week = int(league["LastLeagueWeek"])
-    final_week = int(league["FinalScoredWeek"])
+    bounds = resolve_league_week_bounds(repo_root, league_id, season)
+    last_week = bounds["LastLeagueWeek"]
+    final_week = bounds["FinalScoredWeek"]
     team_size = int(league["SalaryRelevantTeamSize"])
     team_count = len(league.get("Teams") or [])
     weight_total, weight_game = read_ps_config_weights(repo_root)
@@ -353,7 +355,7 @@ def build_shadow(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
         repo_root, seasons, season, final_weeks_current, wanted, scoring,
     )
 
-    port = validate_legacy_port(players, league, weight_total, weight_game)
+    port = validate_legacy_port(players, league, weight_total, weight_game, final_week)
 
     shadow_players: list[dict[str, Any]] = []
     counters: Counter = Counter()
@@ -420,9 +422,8 @@ def read_json_bom(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def validate_legacy_port(players: list[dict[str, Any]], league: dict[str, Any], weight_total: float, weight_game: float) -> dict[str, Any]:
+def validate_legacy_port(players: list[dict[str, Any]], league: dict[str, Any], weight_total: float, weight_game: float, final_week: int) -> dict[str, Any]:
     """Re-derive Salary/SalaryProjected/Ranking/Avg* from the committed legacy inputs."""
-    final_week = int(league["FinalScoredWeek"])
     mismatches: Counter = Counter()
     recomputed: list[dict[str, Any]] = []
     for p in players:
