@@ -288,6 +288,10 @@ activeDatasets:
     lifecycle: seasonal-finalizable
     sourceMode: season-partitioned
     materialize: true
+  - id: nflverse.espn-qbr-week
+    lifecycle: seasonal-finalizable
+    sourceMode: fixed
+    materialize: true
   - id: sleeper.players
     lifecycle: dynamic
     sourceMode: fixed
@@ -299,6 +303,33 @@ plannedDatasets:
   - id: nflverse.contracts
     lifecycle: snapshot
 
+qbrWeekContract:
+  issue: 347
+  step: F4a
+  providerDataset: nflverse.espn-qbr-week
+  upstream: nflverse-data release espn_data, file qbr_week_level.csv (ESPN Total QBR per quarterback and game, all seasons since 2006 in one file)
+  providerRawPath: source-data/providers/nflverse/espn-qbr-week/raw-latest.csv
+  canonicalPath: source-data/nfl/qbr-week/<season>.json
+  acquisition: >
+    Fixed source (like nflverse.game-finality), refreshed by the existing NFL Source Sync; no
+    workflow change. The registry lifecycle is seasonal-finalizable/partitionKey=season because the
+    registry validator reserves refreshPolicy=periodic for dynamic datasets.
+  scope: >
+    Only the current source season is materialized, plus any season whose canonical partition
+    already exists (frozen by freeze-prior-seasons, repairable with --force). Older seasons are never
+    materialized speculatively; the raw file itself keeps all seasons.
+  join:
+    player: upstream player_id is the ESPN athlete id and resolves through IDs.ESPN to CanonicalPlayerID. An unmapped id keeps CanonicalPlayerID null with IdentityResolution=unresolved and is counted in the audit (phase1Datasets.qbrWeek.unresolvedIdentityCount); it is never guessed by name.
+    game: upstream game_id is the ESPN game id and must match exactly one ProviderGameIDs.ESPN in the canonical schedule. An unknown game id, a game from another season or a duplicate game/player pair fails the materialization closed.
+  semantics:
+    coverage: ESPN publishes QBR only for quarterbacks with at least 20 plays; Qualified is TRUE for every row.
+    notYetAvailable: A schedule game without a single QBR row has Games[].QBRStatus=not-yet-available (ESPN publishes with a delay of days). Consumers must show null, never 0.
+    notRated: A game with QBRStatus=published but without a row for a quarterback means that quarterback was not rated in that game. Consumers must show null, never 0.
+    missingMetric: An empty or NA metric stays null.
+    sourceTeam: SourceTeam/SourceOpponentTeam are ESPN abbreviations verbatim. ESPN can label a quarterback with a later team after a trade, so they are evidence only and not a join key; team resolution belongs to the F3 team registry and the game.
+  audit: phase1Datasets.qbrWeek (partitionCount, recordCount, resolvedIdentityCount, unresolvedIdentityCount, publishedGameCount, notYetAvailableGameCount)
+  consumer: G3 (GameHistory). G1 fixes the Passer Rating and average formulas there. Parity for the legacy Tank01 QBRating is not meaningful (qb-rating-uses-previous-passing-row in source-of-truth-matrix.yaml).
+
 canonicalOutputs:
   schedules: source-data/nfl/schedules/<season>.json
   gameFinality: source-data/nfl/game-finality/<season>.json
@@ -307,6 +338,7 @@ canonicalOutputs:
   playerStats: source-data/nfl/player-stats/<season>/<week>.json
   specialTeamsFumbleEvents: source-data/nfl/special-teams-fumble-events/<season>/<week>.json
   snapCounts: source-data/nfl/snap-counts/<season>/<week>.json
+  qbrWeek: source-data/nfl/qbr-week/<season>.json
   sleeperPlayers: source-data/nfl/platform/sleeper/players.json
   audit: source-data/audits/nfl-source-data-audit.json
 
