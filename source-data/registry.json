@@ -223,6 +223,26 @@
       "attribution": "nflverse snap-count data via Pro Football Reference"
     },
     {
+      "id": "nflverse.espn-qbr-week",
+      "provider": "nflverse",
+      "upstream": "nflverse/nflverse-data",
+      "sourceMode": "fixed",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/espn_data/qbr_week_level.csv",
+      "sourceFormat": "csv",
+      "rawPath": "providers/nflverse/espn-qbr-week/raw-latest.csv",
+      "metadataPath": "providers/nflverse/espn-qbr-week/metadata.json",
+      "requiredColumns": ["season", "season_type", "game_id", "week_num", "player_id", "name_display", "team_abb", "opp_abb", "rank", "qbr_total", "qbr_raw", "pts_added", "qb_plays", "epa_total", "pass", "run", "exp_sack", "penalty", "sack", "qualified"],
+      "minimumRows": 10000,
+      "availabilityPolicy": "required",
+      "materialize": true,
+      "kind": "weekly-qbr",
+      "refreshPolicy": "current-season",
+      "retentionPolicy": "permanent-by-season",
+      "lifecycle": {"class": "seasonal-finalizable", "partitionKey": "season", "finalization": "freeze-prior-seasons", "repairPolicy": "explicit-force"},
+      "license": "See upstream data terms",
+      "attribution": "ESPN QBR via nflverse espn_data"
+    },
+    {
       "id": "sleeper.players",
       "provider": "sleeper",
       "upstream": "Sleeper API /players/nfl",
