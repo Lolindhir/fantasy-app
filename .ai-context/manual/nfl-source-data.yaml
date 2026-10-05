@@ -292,6 +292,10 @@ activeDatasets:
     lifecycle: dynamic
     sourceMode: fixed
     materialize: true
+  - id: nflverse.teams
+    lifecycle: dynamic
+    sourceMode: fixed
+    materialize: true
 
 plannedDatasets:
   - id: nflverse.depth-charts
@@ -308,7 +312,35 @@ canonicalOutputs:
   specialTeamsFumbleEvents: source-data/nfl/special-teams-fumble-events/<season>/<week>.json
   snapCounts: source-data/nfl/snap-counts/<season>/<week>.json
   sleeperPlayers: source-data/nfl/platform/sleeper/players.json
+  teams: source-data/nfl/teams.json
   audit: source-data/audits/nfl-source-data-audit.json
+
+teamRegistryContract:
+  issue: 347
+  step: F3a
+  providerDataset: nflverse.teams
+  upstream: nflverse-data release teams/teams_colors_logos.csv
+  canonicalPath: source-data/nfl/teams.json
+  implementation: tools/nfl_source_data_lib/teams.py
+  resolvers:
+    python: tools/nfl_source_data_lib/teams.py::NflTeamRegistry
+    powershell: public/requests/utils/general/NflTeamRegistryUtils.psm1
+  identity: >
+    TeamAbbr is the canonical app team key (nflverse abbreviation, LA and WAS for Rams
+    and Commanders). FranchiseID is the nflverse team_id and stays stable across relocations.
+  fields:
+    - TeamAbbr, FranchiseID, FullName, Name, City, Conference, ConferenceAbv, Division, DivisionName, Logo (ESPN)
+    - Aliases (provider spellings LAR and WSH; historical OAK until 2019, SD until 2016, STL until 2015)
+    - LegacyAppTeamID (numeric Tank01-era app key, frozen static history for old archives)
+  rules:
+    - Exactly 32 current teams; the abbreviations equal the canonical schedule abbreviations.
+    - Historical aliases require a season and fail closed outside their seasons; unknown or empty keys fail closed.
+    - LegacyAppTeamID is frozen in code (LEGACY_APP_TEAM_IDS) from the published Teams.json and is never fetched from a provider.
+    - Alias rows from nflverse must share the franchise ID of their target team, otherwise materialization fails.
+  consumerStatus: >
+    F3a only provides the registry and resolvers. No generator or Angular consumer changes yet;
+    tolerant lookup (F3b), Teams.json from the registry (F3c) and producer switches (F3d) follow
+    in the #347 plan. NflScheduleUtils.psm1 keeps its LAR/WSH map until F3b.
 
 specialTeamsFumbleEventContract:
   issue: 709

@@ -9,6 +9,7 @@ from typing import Any, Iterable
 from .canonical_identity import identity_lookup
 from .common import CANONICAL_SCHEMA_VERSION, Dataset, as_float, as_int, clean, load_json
 from .lifecycle import effective_partition_payload
+from .teams import TEAMS_DATASET_ID, TEAMS_RELATIVE_PATH, build_teams_payload
 
 
 _PHASE1_DATASET_IDS = {
@@ -20,6 +21,7 @@ _PHASE1_DATASET_IDS = {
     "nflverse.special-teams-fumble-events",
     "nflverse.snap-counts",
     "sleeper.players",
+    TEAMS_DATASET_ID,
 }
 
 _ROSTER_SOURCE_ID_ORDER = (
@@ -1038,6 +1040,12 @@ def build_phase1_outputs(
         outputs.extend(built)
         audit["sleeperPlayers"] = coverage
         preserved += count
+
+    teams_dataset = datasets.get(TEAMS_DATASET_ID)
+    if teams_dataset is not None:
+        teams_payload, coverage = build_teams_payload(teams_dataset)
+        outputs.append((repo_root / TEAMS_RELATIVE_PATH, teams_payload))
+        audit["teams"] = coverage
 
     duplicate_paths = [path for path, count in Counter(path for path, _ in outputs).items() if count > 1]
     if duplicate_paths:

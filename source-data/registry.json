@@ -241,6 +241,26 @@
       "lifecycle": {"class": "dynamic", "partitionKey": "none", "finalization": "never", "repairPolicy": "normal"},
       "license": "See Sleeper API terms",
       "attribution": "Sleeper API"
+    },
+    {
+      "id": "nflverse.teams",
+      "provider": "nflverse",
+      "upstream": "nflverse/nflverse-data",
+      "sourceMode": "fixed",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/teams/teams_colors_logos.csv",
+      "sourceFormat": "csv",
+      "rawPath": "providers/nflverse/teams/raw-latest.csv",
+      "metadataPath": "providers/nflverse/teams/metadata.json",
+      "requiredColumns": ["team_abbr", "team_name", "team_id", "team_nick", "team_conf", "team_division", "team_logo_espn"],
+      "minimumRows": 32,
+      "availabilityPolicy": "required",
+      "materialize": true,
+      "kind": "team-registry",
+      "refreshPolicy": "periodic",
+      "retentionPolicy": "latest-with-git-history",
+      "lifecycle": {"class": "dynamic", "partitionKey": "none", "finalization": "never", "repairPolicy": "normal"},
+      "license": "See upstream data terms",
+      "attribution": "nflverse team colors and logos"
     }
   ],
   "plannedDatasets": [
