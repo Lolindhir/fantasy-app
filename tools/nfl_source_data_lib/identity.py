@@ -26,18 +26,19 @@ from .identity_model import (
     ATTACH_ID_KEYS,
     LINK_ID_KEYS,
     PRIMARY_SOURCE_PREFERENCE,
+    SLEEPER_ATTRIBUTE_BRIDGE_PROVENANCE,
+    SLEEPER_PLAYERS_SOURCE,
     WEAK_ID_KEYS,
     IdentityCandidate,
     ids_from_ff,
     ids_from_players,
 )
-from .identity_sources import raw_identity_candidates
+from .identity_sources import raw_identity_candidates, sleeper_player_candidates
 
 
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS = 3
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_MIXED_ANCHORS = 2
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SECONDARY_IDS = 2
-_ESPN_PLAYER_LINK_RE = re.compile(r"(?:/player/_/id/|/id/)(\d+)(?:/|$)")
 _VALID_GSIS_RE = re.compile(r"^00-\d{7}$")
 PLACEHOLDER_GSIS_UPGRADE_PROVENANCE = "auto.placeholder-gsis-upgrade"
 CURRENT_ADJUDICATION_PROVENANCE = "manual.current-identity-adjudication"
@@ -48,7 +49,7 @@ _APPLICABLE_ADJUDICATION_STATUSES = frozenset({"active", "superseded-by-upstream
 def _current_external_anchor_candidates(
     candidates: list[IdentityCandidate],
 ) -> dict[tuple[str, str], list[IdentityCandidate]]:
-    """Index independently corroborated strong anchors usable by the app bridge.
+    """Index independently corroborated strong anchors usable by the Sleeper ESPN bridge.
 
     Current external candidates are always eligible. Persisted canonical candidates
     are eligible only when ESPN is accompanied by at least one other strong
@@ -71,58 +72,6 @@ def _current_external_anchor_candidates(
             if key in ANCHOR_ID_KEYS and value:
                 result[(key, value)].append(candidate)
     return dict(result)
-
-
-def _app_player_espn_bridge(
-    row: dict[str, Any],
-    external_anchor_candidates: dict[tuple[str, str], list[IdentityCandidate]],
-) -> str | None:
-    """Use app-side ESPN evidence only when current external evidence corroborates it.
-
-    Players.ESPNID comes from Sleeper espn_id, while Players.ESPN comes from
-    Tank01 espnLink. If both exist and disagree, fail closed. A single value is
-    used only to bridge to an ESPN token already present in current external
-    identity candidates, so app data cannot seed a new CanonicalPlayerID via ESPN.
-
-    The bridge also refuses an ESPN anchor whose current external candidates carry
-    a conflicting Sleeper or Tank01 claim. This prevents a corroborated ESPN token
-    from collapsing known provider conflicts into a new ambiguous active mapping.
-    """
-    sleeper_espn = clean(row.get("ESPNID"))
-    tank_link = clean(row.get("ESPN"))
-    tank_espn = None
-    if tank_link:
-        match = _ESPN_PLAYER_LINK_RE.search(tank_link)
-        if match:
-            tank_espn = match.group(1)
-
-    if sleeper_espn and tank_espn and sleeper_espn != tank_espn:
-        return None
-
-    value = sleeper_espn or tank_espn
-    if not value:
-        return None
-
-    external_candidates = external_anchor_candidates.get(("ESPN", value), [])
-    if not external_candidates:
-        return None
-
-    app_claims = {
-        "Sleeper": clean(row.get("ID")),
-        "Tank01": clean(row.get("TankID")),
-    }
-    for provider, app_value in app_claims.items():
-        if not app_value:
-            continue
-        external_values = {
-            external_value
-            for candidate in external_candidates
-            if (external_value := clean(candidate.ids.get(provider)))
-        }
-        if any(external_value != app_value for external_value in external_values):
-            return None
-
-    return value
 
 
 class UnionFind:
@@ -151,42 +100,6 @@ class UnionFind:
         self.parent[right_root] = left_root
         if self.rank[left_root] == self.rank[right_root]:
             self.rank[left_root] += 1
-
-
-def app_player_candidates(
-    repo_root: Path,
-    *,
-    external_anchor_candidates: dict[tuple[str, str], list[IdentityCandidate]] | None = None,
-) -> tuple[list[IdentityCandidate], list[dict[str, Any]]]:
-    players = load_json(repo_root / "public/data/Players.json", []) or []
-    relevant = load_json(repo_root / "public/data/Players_Relevant.json", []) or []
-    candidates: list[IdentityCandidate] = []
-    for row in players:
-        ids: dict[str, str] = {}
-        if sleeper := clean(row.get("ID")):
-            ids["Sleeper"] = sleeper
-        if tank := clean(row.get("TankID")):
-            ids["Tank01"] = tank
-        if external_anchor_candidates is not None:
-            espn = _app_player_espn_bridge(row, external_anchor_candidates)
-            if espn:
-                ids["ESPN"] = espn
-        if not ids:
-            continue
-        candidates.append(
-            IdentityCandidate(
-                ids=ids,
-                name=clean(row.get("Name")) or clean(row.get("FullName")),
-                first_name=clean(row.get("FirstName")),
-                last_name=clean(row.get("LastName")),
-                birth_date=clean(row.get("BirthDate")),
-                position=clean(row.get("Position")),
-                latest_team=clean(row.get("Team")) or clean(row.get("TeamID")),
-                source="app.Players",
-                priority=30,
-            )
-        )
-    return candidates, relevant
 
 
 def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
@@ -369,6 +282,29 @@ def _build_components(candidates: list[IdentityCandidate]) -> UnionFind:
                     uf.union(idx, previous)
             anchor_owners[token].append(idx)
 
+    # Rule ``sleeperCurrentRosterAttributeBridge``: a Sleeper record with a new
+    # Sleeper ID that matched exactly one current roster record by birth date,
+    # team and position attaches to the component holding that roster GSIS. Any
+    # contradicting provider ID or birth date keeps it provisional.
+    for idx, candidate in enumerate(candidates):
+        if not candidate.bridge_gsis:
+            continue
+        roots = {uf.find(owner) for owner in anchor_owners.get(("GSIS", candidate.bridge_gsis), [])}
+        if len(roots) != 1:
+            continue
+        root = next(iter(roots))
+        members = _component_members(uf, candidates).get(root, [])
+        if not _component_compatible(candidate, members, candidates):
+            continue
+        values = _component_provider_values(candidates, members)
+        if any(
+            values.get(key) and value not in values[key]
+            for key, value in candidate.ids.items()
+        ):
+            continue
+        uf.union(idx, members[0])
+        candidate.bridge_applied = True
+
     # Provider-only current rows prefer current anchored evidence. Historical
     # canonical mappings are a fallback only when no current stable component
     # claims that provider ID. This preserves stable existing identities while
@@ -422,30 +358,30 @@ def _build_components(candidates: list[IdentityCandidate]) -> UnionFind:
         if not changed:
             break
 
-    # Remaining app rows may establish provisional current people because
-    # Sleeper is the current application identity contract. A provider-only row
-    # may attach only when it points to exactly one such app component and no
-    # competing provider row proposes the same target.
+    # Remaining Sleeper snapshot rows may establish provisional current people
+    # because Sleeper is the current application identity contract. A
+    # provider-only row may attach only when it points to exactly one such
+    # Sleeper component and no competing provider row proposes the same target.
     components = _component_members(uf, candidates)
-    app_token_roots: dict[tuple[str, str], set[int]] = defaultdict(set)
+    sleeper_token_roots: dict[tuple[str, str], set[int]] = defaultdict(set)
     for idx, candidate in enumerate(candidates):
-        if candidate.source != "app.Players":
+        if candidate.source != SLEEPER_PLAYERS_SOURCE:
             continue
         root = uf.find(idx)
         for key in ATTACH_ID_KEYS:
             if value := candidate.ids.get(key):
-                app_token_roots[(key, value)].add(root)
+                sleeper_token_roots[(key, value)].add(root)
 
     proposals: dict[int, list[int]] = defaultdict(list)
     for idx, candidate in enumerate(candidates):
-        if candidate.source in {"app.Players", "canonical-existing"}:
+        if candidate.source in {SLEEPER_PLAYERS_SOURCE, "canonical-existing"}:
             continue
         if _component_is_stable(components.get(uf.find(idx), []), candidates):
             continue
         targets: set[int] = set()
         for key in ATTACH_ID_KEYS:
             if value := candidate.ids.get(key):
-                targets.update(app_token_roots.get((key, value), set()))
+                targets.update(sleeper_token_roots.get((key, value), set()))
         if len(targets) == 1:
             proposals[next(iter(targets))].append(idx)
 
@@ -913,13 +849,28 @@ def build_identities(
         ),
     )
     source_conflicts.extend(overridden_claims)
-    app_candidates, _ = app_player_candidates(
+    persisted_sleeper_ids = {
+        value
+        for candidate in existing_candidates
+        if (value := candidate.ids.get("Sleeper"))
+    }
+    other_sleeper_ids = {
+        value
+        for candidate in [*raw_candidates, *(item for item in ff_candidates if item is not None)]
+        if (value := candidate.ids.get("Sleeper"))
+    }
+    sleeper_candidates, sleeper_diagnostics = sleeper_player_candidates(
         repo_root,
+        datasets,
+        observation_season,
         external_anchor_candidates=_current_external_anchor_candidates(
             raw_candidates + existing_candidates
         ),
+        persisted_sleeper_ids=persisted_sleeper_ids,
+        other_sleeper_ids=other_sleeper_ids,
     )
-    candidates = existing_candidates + raw_candidates + app_candidates
+    source_conflicts.extend(sleeper_diagnostics)
+    candidates = existing_candidates + raw_candidates + sleeper_candidates
     candidate_index = {id(candidate): idx for idx, candidate in enumerate(candidates)}
     uf = _build_components(candidates)
     upgraded_candidates = _apply_placeholder_gsis_upgrades(uf, candidates)
@@ -951,6 +902,10 @@ def build_identities(
             token = (key, value)
             current_claim_owners[token].add(internal_id)
             current_claim_sources[(key, value, internal_id)].add(candidate.source)
+            if candidate.bridge_applied and key == "Sleeper":
+                current_claim_sources[(key, value, internal_id)].add(
+                    f"{SLEEPER_ATTRIBUTE_BRIDGE_PROVENANCE}:{candidate.bridge_gsis}"
+                )
             if idx in upgraded_candidates:
                 esb, previous_id = upgraded_candidates[idx]
                 current_claim_sources[(key, value, internal_id)].add(
@@ -1046,6 +1001,13 @@ def build_identities(
                 )
                 if authoritative:
                     return authoritative
+                ranked_date = next((item.birth_date for item in ranked if item.birth_date), None)
+                if ranked_date:
+                    return ranked_date
+                return next(
+                    (item.descriptive_birth_date for item in ranked if item.descriptive_birth_date),
+                    None,
+                )
             return next((getattr(item, field) for item in ranked if getattr(item, field)), None)
 
         canonical.append(

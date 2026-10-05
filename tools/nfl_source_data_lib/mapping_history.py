@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json
 import re
-import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +11,6 @@ from .identity_model import LINK_ID_KEYS, ids_from_ff
 
 _SEASON_FILE = re.compile(r"Players_(\d{4})\.json$")
 _MIN_HISTORICAL_CORROBORATORS = 2
-_GIT_PLAYER_SNAPSHOT_PATH = "public/data/Players.json"
 
 
 def _snapshot_rows(payload: Any) -> list[dict[str, Any]]:
@@ -153,56 +150,6 @@ def _resolve_historical_crosswalk_row(
     return claims, None, "resolved"
 
 
-def _git_snapshot_commits(repo_root: Path, season: int) -> list[str]:
-    """Return bounded contemporaneous Players.json snapshots for one NFL season.
-
-    Git history is evidence only. Missing/shallow history must not make ordinary
-    materialization fail; it simply means no historical claim can be made from
-    this source. The first and last snapshot in the season window are enough to
-    cover stable veterans plus in-season additions without parsing every large
-    generated Players.json revision.
-    """
-
-    try:
-        result = subprocess.run(
-            [
-                "git",
-                "log",
-                "--format=%H",
-                "--reverse",
-                f"--since={season}-09-01T00:00:00Z",
-                f"--until={season + 1}-03-01T00:00:00Z",
-                "--",
-                _GIT_PLAYER_SNAPSHOT_PATH,
-            ],
-            cwd=repo_root,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-    except (OSError, subprocess.CalledProcessError):
-        return []
-
-    commits = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    if len(commits) <= 2:
-        return commits
-    return [commits[0], commits[-1]]
-
-
-def _git_snapshot_rows(repo_root: Path, commit: str) -> list[dict[str, Any]]:
-    try:
-        result = subprocess.run(
-            ["git", "show", f"{commit}:{_GIT_PLAYER_SNAPSHOT_PATH}"],
-            cwd=repo_root,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return _snapshot_rows(json.loads(result.stdout))
-    except (OSError, subprocess.CalledProcessError, json.JSONDecodeError):
-        return []
-
-
 def _dedupe_claims(claims: list[dict[str, Any]]) -> list[dict[str, Any]]:
     merged: dict[tuple[str, str, str, int], dict[str, Any]] = {}
     for claim in claims:
@@ -237,13 +184,6 @@ def build_historical_app_mapping_claims(
         "unresolvedPlayerCount": 0,
         "insufficientCorroborationCount": 0,
         "conflictingPlayerCount": 0,
-        "gitSnapshotSeasonCount": 0,
-        "gitSnapshotCommitCount": 0,
-        "gitSnapshotPlayerCount": 0,
-        "gitResolvedPlayerCount": 0,
-        "gitUnresolvedPlayerCount": 0,
-        "gitInsufficientCorroborationCount": 0,
-        "gitConflictingPlayerCount": 0,
         "externalSnapshotSeasonCount": 0,
         "externalSnapshotCount": 0,
         "externalSnapshotPlayerCount": 0,
@@ -257,13 +197,11 @@ def build_historical_app_mapping_claims(
     }
 
     archive_root = repo_root / "public/data/past_seasons"
-    archive_seasons: list[int] = []
     for path in sorted(archive_root.glob("Players_*.json")):
         match = _SEASON_FILE.search(path.name)
         if not match:
             continue
         season = int(match.group(1))
-        archive_seasons.append(season)
         rows = _snapshot_rows(load_json(path, []) or [])
         stats["snapshotSeasonCount"] += 1
         stats["snapshotPlayerCount"] += len(rows)
@@ -285,40 +223,6 @@ def build_historical_app_mapping_claims(
             else:
                 stats["unresolvedPlayerCount"] += 1
                 stats["insufficientCorroborationCount"] += 1
-
-    # The archived Players_<season>.json files are derived from historical
-    # Tank01 boxscores and therefore normally contain only TankID. Git history
-    # of the contemporaneous generated Players.json is a stronger bridge: that
-    # read model was built by joining Sleeper.player_id with Tank01.playerID.
-    # Reuse the exact same two-provider corroboration rule before extending any
-    # historical temporal mapping. No Git evidence means no claim.
-    for season in sorted(set(archive_seasons)):
-        commits = _git_snapshot_commits(repo_root, season)
-        if not commits:
-            continue
-        stats["gitSnapshotSeasonCount"] += 1
-        stats["gitSnapshotCommitCount"] += len(commits)
-        for commit in commits:
-            rows = _git_snapshot_rows(repo_root, commit)
-            stats["gitSnapshotPlayerCount"] += len(rows)
-            source = f"app.Players.git.{season}@{commit[:12]}"
-            for row in rows:
-                row_claims, conflict, status = _resolve_snapshot_row(
-                    row,
-                    season=season,
-                    lookup=lookup,
-                    source=source,
-                )
-                if status == "resolved":
-                    stats["gitResolvedPlayerCount"] += 1
-                    claims.extend(row_claims)
-                elif status == "conflict":
-                    stats["gitConflictingPlayerCount"] += 1
-                    if conflict is not None:
-                        conflicts.append(conflict)
-                else:
-                    stats["gitUnresolvedPlayerCount"] += 1
-                    stats["gitInsufficientCorroborationCount"] += 1
 
     external_claims: list[dict[str, Any]] = []
     external_seasons: set[int] = set()

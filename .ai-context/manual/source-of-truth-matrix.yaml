@@ -836,16 +836,14 @@ playersReadModelFieldInventory:
 
   dependencyCycles:
     identityEvidence: >
-      tools/nfl_source_data_lib/identity.py reads Players.json ID (Sleeper), TankID
-      (Tank01) and ESPNID/ESPN as identity evidence (source app.Players, priority 30),
-      and app rows may establish provisional current people. mapping_history.py also
-      uses git snapshots of Players.json as historical Sleeper<->Tank01 evidence.
-      There is no closed cycle today because RequestPlayers.ps1 reads the providers
-      directly. If Players.json population or IDs are later fed from canonical
-      identities, that would close the loop Players.json -> identities -> Players.json
-      and re-assert Players.json's own pairings as evidence. Before such a cutover,
-      identity.py and mapping_history.py must stop treating canonically fed
-      Players.json rows as independent evidence (separate decision).
+      Resolved by #347 H1a. tools/nfl_source_data_lib/identity.py no longer reads
+      Players.json or its git history; Sleeper identity evidence comes from the
+      persisted Sleeper snapshot (source sleeper.players, see player-identity.yaml
+      sleeperPlatformEvidence). audit.py and coverage.py still read Players.json,
+      but only as an object under test, never as evidence. Persisted
+      app.Players provenance in provider mappings stays as history. Population and
+      field migration of Players.json (#347 H1b) can therefore be fed from canonical
+      identities without re-asserting its own pairings.
     salaryCap: >
       RequestLeague.ps1 derives the league salary cap from Players.json Salary and
       SalaryProjected, so Players salary changes propagate into League.json.

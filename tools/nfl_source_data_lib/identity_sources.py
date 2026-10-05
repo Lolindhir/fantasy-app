@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,7 @@ from .common import Dataset, canonical_player_id, clean, iter_csv, load_json
 from .identity_model import (
     ANCHOR_ID_KEYS,
     ATTACH_ID_KEYS,
+    SLEEPER_PLAYERS_SOURCE,
     IdentityCandidate,
     ids_from_ff,
     ids_from_players,
@@ -345,3 +347,201 @@ def raw_identity_candidates(
             )
 
     return candidates, ff_rows, ff_candidates, source_conflicts
+
+
+# Fantasy positions of the app population (same set as Get-AppFantasyPosition).
+_APP_FANTASY_POSITIONS = ("QB", "RB", "WR", "TE", "K")
+# Provider spellings of the same NFL franchise that differ between Sleeper and
+# nflverse. Interim table until the F3a team registry owns these aliases.
+_TEAM_ALIASES = {"LAR": "LA", "WSH": "WAS"}
+
+
+def normalize_nfl_team(team: str | None) -> str | None:
+    value = clean(team)
+    if value is None:
+        return None
+    value = value.upper()
+    return _TEAM_ALIASES.get(value, value)
+
+
+def _sleeper_fantasy_position(row: dict[str, Any]) -> str | None:
+    primary = (clean(row.get("position")) or "").upper()
+    if primary in _APP_FANTASY_POSITIONS:
+        return primary
+    for value in row.get("fantasy_positions") or []:
+        candidate = (clean(value) or "").upper()
+        if candidate in _APP_FANTASY_POSITIONS:
+            return candidate
+    return None
+
+
+def _valid_iso_date(value: str | None) -> bool:
+    if not value:
+        return False
+    try:
+        date.fromisoformat(value)
+    except ValueError:
+        return False
+    return True
+
+
+def _current_roster_rows(
+    datasets: dict[str, Dataset],
+    observation_season: int,
+) -> list[dict[str, str]]:
+    """Latest weekly row per GSIS from the persisted current-season nflverse roster.
+
+    Returns an empty list when the dataset or the current-season partition is not
+    available (for example before the season roster is published); the attribute
+    bridge is then simply inactive and unmatched Sleeper players stay provisional.
+    """
+    dataset = datasets.get("nflverse.rosters")
+    if dataset is None or not dataset.is_season_partitioned:
+        return []
+    path = dataset.raw_path.parent / dataset.raw_path.name.replace(
+        "{season}", str(observation_season)
+    )
+    if not path.is_file():
+        return []
+    latest: dict[str, tuple[int, dict[str, str]]] = {}
+    for row in iter_csv(path):
+        gsis = clean(row.get("gsis_id"))
+        if not gsis or not clean(row.get("team")):
+            continue
+        try:
+            week = int(clean(row.get("week")) or 0)
+        except ValueError:
+            week = 0
+        previous = latest.get(gsis)
+        if previous is None or week >= previous[0]:
+            latest[gsis] = (week, row)
+    return [row for _, (_, row) in sorted(latest.items())]
+
+
+def sleeper_player_candidates(
+    repo_root: Path,
+    datasets: dict[str, Dataset],
+    observation_season: int,
+    *,
+    external_anchor_candidates: dict[tuple[str, str], list[IdentityCandidate]],
+    persisted_sleeper_ids: set[str],
+    other_sleeper_ids: set[str],
+) -> tuple[list[IdentityCandidate], list[dict[str, Any]]]:
+    """Identity candidates from the persisted Sleeper platform snapshot.
+
+    Replaces the former ``app.Players`` evidence (#347 H1a). The snapshot is
+    provider evidence, not an app output, so the identity builder no longer
+    depends on ``public/data/Players.json``.
+
+    Population: Sleeper records with an app fantasy position and a valid birth
+    date that either carry a current NFL team or already have a persisted Sleeper
+    mapping. Records outside that population neither create nor attach identities.
+
+    Sleeper's birth date is descriptive only: it never vetoes or enables a merge
+    except through the bridge below, because it can differ from nflverse.
+
+    Evidence: the Sleeper ID, plus Sleeper's ``espn_id`` only for a new Sleeper ID
+    and only when current external evidence corroborates it without contradicting
+    the Sleeper ID (same rule as the former app bridge).
+    Provider IDs such as Sleeper's ``gsis_id`` are deliberately not used.
+
+    Rule ``sleeperCurrentRosterAttributeBridge``: a record whose Sleeper ID is new
+    (no other source and no persisted identity holds it) may attach to exactly one
+    current nflverse roster record when exact birth date, current team and
+    position match, the match is unique on both sides and no provider ID
+    contradicts it. Names play no role. Anything else stays provisional.
+    """
+    dataset = datasets.get("sleeper.players")
+    if dataset is None or not dataset.raw_path.exists():
+        return [], []
+    raw = load_json(dataset.raw_path)
+    if not isinstance(raw, dict):
+        raise ValueError("Sleeper players source must be an object keyed by player_id")
+
+    candidates: list[IdentityCandidate] = []
+    for object_key, row in sorted(raw.items(), key=lambda item: str(item[0])):
+        if not isinstance(row, dict):
+            continue
+        sleeper_id = clean(row.get("player_id")) or clean(object_key)
+        if not sleeper_id:
+            continue
+        position = _sleeper_fantasy_position(row)
+        birth_date = clean(row.get("birth_date"))
+        if position is None or not _valid_iso_date(birth_date):
+            continue
+        team = normalize_nfl_team(row.get("team"))
+        if team is None and sleeper_id not in persisted_sleeper_ids:
+            continue
+        ids = {"Sleeper": sleeper_id}
+        espn = clean(row.get("espn_id"))
+        known_sleeper_id = sleeper_id in persisted_sleeper_ids or sleeper_id in other_sleeper_ids
+        # A Sleeper ID that other evidence already holds identifies the person on
+        # its own; Sleeper's ESPN claim may contradict that holder and must not
+        # create a second owner of the Sleeper ID. It only bridges new Sleeper IDs.
+        if espn and not known_sleeper_id and external_anchor_candidates.get(("ESPN", espn)):
+            external_values = {
+                value
+                for candidate in external_anchor_candidates[("ESPN", espn)]
+                if (value := clean(candidate.ids.get("Sleeper")))
+            }
+            if not external_values - {sleeper_id}:
+                ids["ESPN"] = espn
+        candidates.append(
+            IdentityCandidate(
+                ids=ids,
+                name=clean(row.get("full_name")),
+                first_name=clean(row.get("first_name")),
+                last_name=clean(row.get("last_name")),
+                birth_date=None,
+                descriptive_birth_date=birth_date,
+                position=position,
+                latest_team=team,
+                source=SLEEPER_PLAYERS_SOURCE,
+                priority=30,
+            )
+        )
+
+    diagnostics: list[dict[str, Any]] = []
+    roster_rows = _current_roster_rows(datasets, observation_season)
+    roster_by_key: dict[tuple[str, str, str], list[str]] = defaultdict(list)
+    for row in roster_rows:
+        birth_date = clean(row.get("birth_date"))
+        team = normalize_nfl_team(row.get("team"))
+        position = (clean(row.get("position")) or "").upper()
+        if birth_date and team and position:
+            roster_by_key[(birth_date, team, position)].append(clean(row.get("gsis_id")) or "")
+
+    sleeper_by_key: dict[tuple[str, str, str], list[IdentityCandidate]] = defaultdict(list)
+    for candidate in candidates:
+        if (
+            candidate.ids["Sleeper"] in other_sleeper_ids
+            or candidate.ids["Sleeper"] in persisted_sleeper_ids
+            or "ESPN" in candidate.ids
+            or not candidate.latest_team
+        ):
+            continue
+        sleeper_by_key[
+            (
+                candidate.descriptive_birth_date or "",
+                candidate.latest_team,
+                candidate.position or "",
+            )
+        ].append(candidate)
+
+    for key, bridged in sorted(sleeper_by_key.items()):
+        gsis_values = roster_by_key.get(key, [])
+        if len(gsis_values) == 1 and len(bridged) == 1:
+            bridged[0].bridge_gsis = gsis_values[0]
+        elif gsis_values:
+            diagnostics.append(
+                {
+                    "Source": "identity-resolution",
+                    "Reason": "sleeper_attribute_bridge_not_unique",
+                    "BirthDate": key[0],
+                    "Team": key[1],
+                    "Position": key[2],
+                    "SleeperIDs": sorted(item.ids["Sleeper"] for item in bridged),
+                    "RosterGSISIDs": sorted(gsis_values),
+                }
+            )
+    return candidates, diagnostics
