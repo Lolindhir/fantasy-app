@@ -511,7 +511,6 @@ $targetFile = Join-Path $scriptDir "..\data\Players.json"
 $backupDir = Join-Path $scriptDir "..\data\backup"
 if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
 $gamesFile = Join-Path $scriptDir "..\data\Games.json"
-$leagueFile = Join-Path $scriptDir "..\data\League.json"
 $errorsFile = Join-Path $scriptDir "..\data\Errors.json"
 
 # --- Season aus config.ps1 ---
@@ -529,26 +528,18 @@ if (-not $Global:WeightTotal -or -not $Global:WeightGame) {
 $weightTotal = $Global:WeightTotal
 $weightGame = $Global:WeightGame
 
-$finalWeek = 0
-$lastWeek = 0
-$playoffStartWeek = 0
-if (Test-Path $leagueFile) {
-    try {
-        $leagueRaw = Get-Content $leagueFile -Raw
-        $league = $leagueRaw | ConvertFrom-Json
-        if($league){
-            $lastWeek = $league.LastLeagueWeek
-            $playoffStartWeek = $league.PlayoffStartWeek
-            $finalWeek = $league.FinalScoredWeek
-        }
-        Write-Host "Loaded last week (Week $($lastWeek)) from League.json..." -ForegroundColor Yellow
-        Write-Host "Loaded playoff start week (Week $($playoffStartWeek)) from League.json..." -ForegroundColor Yellow
-        Write-Host "Loaded final week (Week $($finalWeek)) from League.json..." -ForegroundColor Yellow
-    } catch {
-        Write-Error "Error fetching league: $_"
-        exit 1
-    }
+try {
+    $weekBounds = Get-PlayerLeagueWeekBounds -Season ([int]$seasonYear)
+} catch {
+    Write-Error "Error resolving canonical league week bounds: $_"
+    exit 1
 }
+$lastWeek = [int]$weekBounds.LastLeagueWeek
+$playoffStartWeek = [int]$weekBounds.PlayoffStartWeek
+$finalWeek = [int]$weekBounds.FinalScoredWeek
+Write-Host "Loaded last week (Week $($lastWeek)) from canonical WeekStructure..." -ForegroundColor Yellow
+Write-Host "Loaded playoff start week (Week $($playoffStartWeek)) from canonical WeekStructure..." -ForegroundColor Yellow
+Write-Host "Loaded final week (Week $($finalWeek)) from canonical game finality..." -ForegroundColor Yellow
 
 # --- Sleeper Spieler abrufen ---
 Write-Host "Fetch Sleeper players..." -ForegroundColor Yellow
