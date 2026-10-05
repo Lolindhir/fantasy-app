@@ -268,10 +268,13 @@ jobs:
           }
 
           # Materialization reads only these inputs. Pushes by other writers to any
-          # other path (league source, fantasy operations, matchups) cannot change the
-          # canonical result, so the validated commit may be rebased instead of rebuilt.
+          # other path (league source incl. source-data/providers/sleeper/leagues,
+          # fantasy operations, matchups) cannot change the canonical result, so the validated commit may be rebased instead of rebuilt.
           materialize_input_pathspecs=(
-            source-data/providers
+            source-data/registry.json
+            source-data/providers/dynastyprocess
+            source-data/providers/nflverse
+            source-data/providers/sleeper/players
             source-data/nfl
             source-data/audits
             source-data/historical-identity-backfill.json

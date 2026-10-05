@@ -30,7 +30,10 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertIn("publish_canonical_commit()", source)
         self.assertIn("materialize_input_pathspecs=(", source)
         for path in (
-            "source-data/providers",
+            "source-data/registry.json",
+            "source-data/providers/dynastyprocess",
+            "source-data/providers/nflverse",
+            "source-data/providers/sleeper/players",
             "source-data/nfl",
             "public/data/Players.json",
             "public/data/Metadata.json",
@@ -40,6 +43,8 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"            {path}\n", source)
         self.assertIn('git diff --quiet "$base_sha" origin/main -- "${materialize_input_pathspecs[@]}"', source)
         self.assertIn("git rebase origin/main", source)
+        self.assertNotIn("            source-data/providers\n", source)
+        self.assertNotIn("sleeper/leagues\n", source.split("materialize_input_pathspecs=(")[1].split(")")[0])
         self.assertIn("if publish_canonical_commit; then", source)
         self.assertNotIn("--force-with-lease", source)
         self.assertNotIn("git push --force", source)
