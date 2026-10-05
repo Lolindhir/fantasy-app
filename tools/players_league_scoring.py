@@ -146,6 +146,10 @@ class SleeperIdentityResolver:
         return None, self.UNMAPPED
 
 
+EVIDENCE_HOLD_STATUS = "ambiguous-evidence"
+AMBIGUOUS_FUMBLE_MESSAGE = "ambiguous fumble-team relation"
+
+
 def _partition_files(repo_root: Path, dataset: str, season: int) -> list[Path]:
     directory = repo_root / "source-data/nfl" / dataset / str(season)
     if not directory.is_dir():
@@ -160,11 +164,15 @@ def build_weekly_scores(
     final_weeks_current: set[int],
     wanted: set[str],
     scoring: dict[str, Any],
+    ambiguous_evidence: dict[str, list[tuple[int, int]]] | None = None,
 ) -> tuple[dict[int, dict[str, dict[int, dict[str, float]]]], Counter, Counter]:
     """weekly[season][cid][week] = {points, snaps, kick_attempts, attempts, td_*}.
 
     Fail-closed: historical partitions must be Finalized, current partitions are
-    limited to canonical WeekFinal REG weeks.
+    limited to canonical WeekFinal REG weeks. With an `ambiguous_evidence` collector a record whose
+    special-teams fumble evidence is ambiguous is not scored; it is listed there as
+    {CanonicalPlayerID: [(season, week)]} and the caller decides (Players: identity-style hold).
+    Without the collector the ambiguity raises.
     """
     weekly: dict[int, dict[str, dict[int, dict[str, float]]]] = {s: defaultdict(dict) for s in seasons}
     unsupported: Counter = Counter()
@@ -197,7 +205,13 @@ def build_weekly_scores(
                 cid = record.get("CanonicalPlayerID")
                 if cid not in wanted or record.get("SeasonType", "REG") != "REG":
                     continue
-                result = score_record(record, scoring, special_teams_fumble_events=events[cid] if events_ok else None)
+                try:
+                    result = score_record(record, scoring, special_teams_fumble_events=events[cid] if events_ok else None)
+                except ValueError as error:
+                    if ambiguous_evidence is None or AMBIGUOUS_FUMBLE_MESSAGE not in str(error):
+                        raise
+                    ambiguous_evidence.setdefault(cid, []).append((season, week))
+                    continue
                 for key in result["UnsupportedNonZeroSettings"]:
                     unsupported[(season, key)] += 1
                 stats = record["Stats"]
@@ -312,7 +326,21 @@ def build_export(
         for cid, status in entry["SeasonIdentities"].values()
         if cid is not None and status == resolver.RESOLVED
     }
-    weekly, unsupported, counts = build_weekly_scores(repo_root, seasons, season, final_weeks, wanted, scoring)
+    ambiguous_evidence: dict[str, list[tuple[int, int]]] = {}
+    weekly, unsupported, counts = build_weekly_scores(
+        repo_root, seasons, season, final_weeks, wanted, scoring, ambiguous_evidence
+    )
+    evidence_hold = {
+        sleeper_id
+        for sleeper_id, entry in resolved.items()
+        if any(cid in ambiguous_evidence for cid, _ in entry["SeasonIdentities"].values())
+    }
+    owned_evidence_hold = sorted(evidence_hold & owned)
+    if owned_evidence_hold:
+        raise ValueError(
+            "League-owned players with ambiguous special-teams fumble evidence cannot be scored: "
+            + ", ".join(owned_evidence_hold)
+        )
     if unsupported:
         raise ValueError(
             "ScoringSettings with a non-zero weight that the scorer does not map: "
@@ -323,6 +351,9 @@ def build_export(
     unresolved_history: list[dict[str, Any]] = []
     for sleeper_id in ids:
         entry = resolved[sleeper_id]
+        if sleeper_id in evidence_hold:
+            players[sleeper_id] = {"Status": EVIDENCE_HOLD_STATUS, "CanonicalPlayerID": None, "Seasons": {}}
+            continue
         if entry["Status"] != resolver.RESOLVED:
             players[sleeper_id] = {"Status": entry["Status"], "CanonicalPlayerID": None, "Seasons": {}}
             continue
@@ -353,6 +384,9 @@ def build_export(
         "HistorySeasons": [s for s in seasons if s != season],
         "Counts": dict(counts),
         "UnresolvedHistory": unresolved_history,
+        "AmbiguousEvidence": [
+            {"SleeperID": sid, "Reason": "special-teams-fumble-relation"} for sid in sorted(evidence_hold)
+        ],
         "Players": players,
     }
 
@@ -379,7 +413,7 @@ def main() -> int:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
     held = sum(1 for p in payload["Players"].values() if p["Status"] != SleeperIdentityResolver.RESOLVED)
-    print(f"Exported {len(payload['Players'])} players ({held} identity hold) for season {args.season}.")
+    print(f"Exported {len(payload['Players'])} players ({held} hold: identity or ambiguous evidence) for season {args.season}.")
     return 0
 
 
