@@ -214,6 +214,26 @@ def download(url: str, target: Path) -> None:
         shutil.copyfileobj(response, output)
 
 
+class UpstreamDownloadCache:
+    """Reuses one upstream download per URL within a sync run.
+
+    Several datasets may project different facts out of the same upstream artifact
+    (for example nflverse play-by-play); the artifact is downloaded only once.
+    """
+
+    def __init__(self, directory: Path) -> None:
+        self._directory = directory
+        self._files: dict[str, Path] = {}
+
+    def fetch(self, url: str, target: Path) -> None:
+        cached = self._files.get(url)
+        if cached is None:
+            cached = self._directory / f"upstream-{len(self._files)}"
+            download(url, cached)
+            self._files[url] = cached
+        shutil.copyfile(cached, target)
+
+
 def _validate_lifecycle(value: dict[str, Any], dataset_id: str) -> dict[str, str]:
     lifecycle = value.get("lifecycle")
     if not isinstance(lifecycle, dict):
@@ -551,6 +571,7 @@ def sync_dataset(
     offline: bool = False,
     season: int | None = None,
     current_season: int | None = None,
+    upstream_cache: UpstreamDownloadCache | None = None,
 ) -> dict[str, Any]:
     raw_path = dataset.raw_path_for(season)
     metadata_path = dataset.metadata_path_for(season)
@@ -618,7 +639,10 @@ def sync_dataset(
                 download(source_url, candidate)
             else:
                 upstream_candidate = Path(temp_dir) / "upstream-source"
-                download(source_url, upstream_candidate)
+                if upstream_cache is None:
+                    download(source_url, upstream_candidate)
+                else:
+                    upstream_cache.fetch(source_url, upstream_candidate)
                 upstream_hash = sha256_file(upstream_candidate)
                 upstream_size = upstream_candidate.stat().st_size
                 projection_stats = project_source(

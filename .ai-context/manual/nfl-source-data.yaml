@@ -284,6 +284,11 @@ activeDatasets:
     sourceMode: season-partitioned
     sourceProjection: nflverse-special-teams-fumble-events@1
     materialize: true
+  - id: nflverse.player-game-long-gains
+    lifecycle: seasonal-finalizable
+    sourceMode: season-partitioned
+    sourceProjection: nflverse-player-game-long-gains@1
+    materialize: true
   - id: nflverse.snap-counts
     lifecycle: seasonal-finalizable
     sourceMode: season-partitioned
@@ -337,6 +342,7 @@ canonicalOutputs:
   weeklyRosters: source-data/nfl/weekly-rosters/<season>/<week>.json
   playerStats: source-data/nfl/player-stats/<season>/<week>.json
   specialTeamsFumbleEvents: source-data/nfl/special-teams-fumble-events/<season>/<week>.json
+  playerGameLongGains: source-data/nfl/player-game-long-gains/<season>.json
   snapCounts: source-data/nfl/snap-counts/<season>/<week>.json
   qbrWeek: source-data/nfl/qbr-week/<season>.json
   sleeperPlayers: source-data/nfl/platform/sleeper/players.json
@@ -401,6 +407,51 @@ specialTeamsFumbleEventContract:
       The dataset participates in the normal bounded newest-first historical
       backfill selector. Checkpoint B1 activates the support/readiness contract;
       production persistence of the remaining 1999-2024 seasons is Checkpoint B2.
+
+playerGameLongGainsContract:
+  issue: 347
+  step: F4b
+  providerDataset: nflverse.player-game-long-gains
+  upstream: nflverse play-by-play csv.gz (same URL as nflverse.special-teams-fumble-events)
+  upstreamRetention: transient
+  upstreamDownload: >
+    A sync run downloads one play-by-play URL once and reuses it for every projection
+    that declares it (UpstreamDownloadCache); no extra workflow, schedule or timeout
+    is needed.
+  providerProjectionPath: source-data/providers/nflverse/player-game-long-gains/raw-<season>.json
+  canonicalPath: source-data/nfl/player-game-long-gains/<season>.json
+  projectionRule: >
+    Per game, player and gain type keep only the provider play row with the maximum
+    yards (lowest play_id on ties) as evidence; full play-by-play is not retained.
+    rush = rusher_player_id with rushing_yards; reception = receiver_player_id with
+    complete_pass=1 and receiving_yards. Two-point attempts are excluded. Negative
+    maxima are kept as they are. The projection additionally lists every game found
+    in the upstream file (Games) so that "no record" is distinguishable from "game
+    not published".
+  canonicalIdentity: GameID + GainType + CanonicalPlayerID (SourceIDs.GSIS while unresolved)
+  gainTypes:
+    - LongRush
+    - LongReception
+  record: CanonicalPlayerID, SourceIDs.GSIS, GameID, SeasonType, Week, Team, GainType, Yards, PlayID
+  playerIdentity: >
+    PBP player IDs are GSIS provider IDs resolved through the CanonicalPlayerID
+    lookup. Unresolved current-season IDs stay null and are listed in the audit;
+    unresolved IDs in a finalized prior season fail closed.
+  missingSemantics: >
+    A game missing from Games is unknown (play-by-play not yet published), never zero.
+    A player without a record in a covered game has no qualifying play of that type.
+    A zero for a player with targets but no catch is a consumer rule that combines
+    this dataset with player-stats; it is not materialized here. The partition's
+    Finalized flag follows the season; per-game completeness comes from the
+    canonical game-finality dataset.
+  backfill: >
+    Only the current season is acquired in normal sync (GameHistory shows only the
+    current season). The dataset is deliberately not part of HISTORICAL_BANDS; older
+    seasons can be acquired on demand with --season (frozen unless --force).
+  parity:
+    reference: Tank01 Games.json longRush/longRec, 2026 weeks 1-4
+    result: 1328 of 1329 compared player-games equal; the one deviation is in week 4 (play-by-play not yet final)
+  consumer: G3 (GameHistory); G1 fixes the formulas for passer rating and the averages
 
 operationalDatasetEvaluation:
   evaluatedAt: 2026-08-30

@@ -18,6 +18,7 @@ _PHASE1_DATASET_IDS = {
     "nflverse.weekly-rosters",
     "nflverse.player-stats",
     "nflverse.special-teams-fumble-events",
+    "nflverse.player-game-long-gains",
     "nflverse.snap-counts",
     "nflverse.espn-qbr-week",
     "sleeper.players",
@@ -611,6 +612,154 @@ def _historical_week_finality(repo_root: Path, season: int) -> dict[int, bool]:
     return week_finality
 
 
+def _build_player_game_long_gains(
+    repo_root: Path,
+    dataset: Dataset,
+    canonical: list[dict[str, Any]],
+    observation_season: int,
+    *,
+    force: bool,
+) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
+    lookup = identity_lookup(canonical)
+    gain_types = {"rush": "LongRush", "reception": "LongReception"}
+    outputs: list[tuple[Path, dict[str, Any]]] = []
+    preserved = 0
+    record_count = 0
+    game_count = 0
+    resolved_count = 0
+    unresolved_count = 0
+    unresolved_ids: set[str] = set()
+    type_counts: Counter[str] = Counter()
+
+    for season, raw_path in _persisted_season_paths(dataset):
+        payload = load_json(raw_path)
+        if (
+            not isinstance(payload, dict)
+            or not isinstance(payload.get("Records"), list)
+            or not isinstance(payload.get("Games"), list)
+        ):
+            raise ValueError(f"{dataset.id} raw projection must be an object with Games and Records: {raw_path}")
+
+        games: dict[str, dict[str, Any]] = {}
+        for row in payload["Games"]:
+            game_id = clean(row.get("game_id")) if isinstance(row, dict) else None
+            week = as_int(row.get("week")) if isinstance(row, dict) else None
+            season_type = clean(row.get("season_type")) if isinstance(row, dict) else None
+            if not game_id or week is None or not season_type:
+                raise ValueError(f"{dataset.id} projection game is missing game/week/season type")
+            if game_id in games:
+                raise ValueError(f"Duplicate {dataset.id} projection game: {game_id}")
+            games[game_id] = {
+                "GameID": game_id,
+                "SeasonType": season_type,
+                "Week": week,
+                "HomeTeam": clean(row.get("home_team")),
+                "AwayTeam": clean(row.get("away_team")),
+            }
+
+        records: list[dict[str, Any]] = []
+        seen: set[tuple[str, str, str]] = set()
+        for row in payload["Records"]:
+            if not isinstance(row, dict):
+                raise ValueError(f"{dataset.id} projection contains a non-object record")
+            row_season = as_int(row.get("season"))
+            week = as_int(row.get("week"))
+            play_id = as_int(row.get("play_id"))
+            yards = as_int(row.get("yards"))
+            game_id = clean(row.get("game_id"))
+            gsis = clean(row.get("player_id"))
+            gain_type = clean(row.get("gain_type"))
+            season_type = clean(row.get("season_type"))
+            if row_season != season:
+                raise ValueError(f"{dataset.id} partition {season} contains row for season {row_season}")
+            if (
+                week is None
+                or play_id is None
+                or yards is None
+                or not game_id
+                or not gsis
+                or not season_type
+                or gain_type not in gain_types
+            ):
+                raise ValueError(
+                    f"{dataset.id} row is missing game/player/play/yards identity: game={game_id} player={gsis}"
+                )
+            game = games.get(game_id)
+            if game is None or game["Week"] != week:
+                raise ValueError(f"{dataset.id} record references a game outside the covered games: {game_id}")
+            key = (game_id, gain_type, gsis)
+            if key in seen:
+                raise ValueError(
+                    f"Duplicate {dataset.id} identity: game={game_id} type={gain_type} player={gsis}"
+                )
+            seen.add(key)
+            canonical_player_id = lookup.get(("GSIS", gsis))
+            if canonical_player_id is None:
+                unresolved_count += 1
+                unresolved_ids.add(gsis)
+                if season < observation_season:
+                    raise ValueError(
+                        f"{dataset.id} historical record cannot resolve GSIS {gsis}: "
+                        f"season={season} game={game_id}"
+                    )
+            else:
+                resolved_count += 1
+            records.append(
+                {
+                    "CanonicalPlayerID": canonical_player_id,
+                    "SourceIDs": {"GSIS": gsis},
+                    "GameID": game_id,
+                    "SeasonType": season_type,
+                    "Week": week,
+                    "Team": clean(row.get("team")),
+                    "GainType": gain_types[gain_type],
+                    "Yards": yards,
+                    "PlayID": play_id,
+                }
+            )
+            type_counts[gain_types[gain_type]] += 1
+
+        records.sort(
+            key=lambda item: (
+                item["GameID"],
+                item["GainType"],
+                item["CanonicalPlayerID"] or item["SourceIDs"]["GSIS"],
+            )
+        )
+        record_count += len(records)
+        game_count += len(games)
+        candidate = {
+            "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+            "Season": season,
+            "SourceDataset": dataset.id,
+            "Finalized": _finalized_for_season(season, observation_season),
+            "Games": sorted(games.values(), key=lambda item: item["GameID"]),
+            "Records": records,
+        }
+        path, effective, was_preserved = _canonical_partition(
+            repo_root,
+            dataset,
+            relative_path=f"player-game-long-gains/{season}.json",
+            season=season,
+            observation_season=observation_season,
+            payload=candidate,
+            force=force,
+        )
+        outputs.append((path, effective))
+        preserved += int(was_preserved)
+
+    audit = {
+        "partitionCount": len(outputs),
+        "coveredGameCount": game_count,
+        "recordCount": record_count,
+        "recordTypeCounts": dict(sorted(type_counts.items())),
+        "resolvedIdentityCount": resolved_count,
+        "unresolvedIdentityCount": unresolved_count,
+        "unresolvedGSISIDs": sorted(unresolved_ids),
+    }
+    return outputs, audit, preserved
+
+
 def _build_special_teams_fumble_events(
     repo_root: Path,
     dataset: Dataset,
@@ -1202,6 +1351,19 @@ def build_phase1_outputs(
         )
         outputs.extend(built)
         audit["specialTeamsFumbleEvents"] = coverage
+        preserved += count
+
+    long_gains_dataset = datasets.get("nflverse.player-game-long-gains")
+    if long_gains_dataset is not None:
+        built, coverage, count = _build_player_game_long_gains(
+            repo_root,
+            long_gains_dataset,
+            canonical,
+            observation_season,
+            force=force,
+        )
+        outputs.extend(built)
+        audit["playerGameLongGains"] = coverage
         preserved += count
 
     snaps_dataset = datasets.get("nflverse.snap-counts")
