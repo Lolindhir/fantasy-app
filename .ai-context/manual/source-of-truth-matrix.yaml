@@ -275,15 +275,15 @@ matrix:
     facts:
       - league-specific fantasy points derived from canonical NFL player statistics
     durableCanonicalPrimary: deterministic derivation from canonical NFL player stats plus Sleeper league scoring_settings
-    currentRuntimePrimary: Tank01 fantasyPointsDefault.PPR in the current Games/Players pipeline
+    currentRuntimePrimary: league-scored points exported by tools/players_league_scoring.py for Players.json (#347 D4, 2026-10-05); Tank01 fantasyPointsDefault.PPR remains only the provider value of GameHistory games that are not final or are playoff games, and in Games.json
     secondary:
       - nflverse/provider fantasy-point values may be used as validation/corroboration only
-    fallback: Tank01 only for the legacy runtime contract until scoring is migrated
+    fallback: none for Players.json points; an identity hold keeps the last published values
     identityKey: CanonicalPlayerID + season + week/game
     lifecycle: derived-seasonal
     historyCoverage: follows canonical player-stats coverage
     derivationOwner: playerWeekFantasy (productively-materialized-v1, contract .ai-context/manual/player-week-fantasy.yaml; derives league-scoring points from canonical stats plus canonical league ScoringSettings)
-    migrationState: derivation-materialized-as-playerWeekFantasy-players-consumer-not-migrated
+    migrationState: players-consumer-migrated-d4-via-players-league-scoring-export (PlayerWeekFantasy shares the scorer tools/historical_fantasy_scoring.py)
     guards:
       - scoring definition comes from the league settings rather than a provider-default fantasy-point field
       - canonical source stat corrections must propagate deterministically
@@ -772,7 +772,7 @@ playersReadModelFieldInventory:
     byeWeek:
       fields: [ByeWeek]
       layer: sharedDerived
-      currentProducer: RequestPlayers.ps1 derives the first week 1..18 in which the team has no game in Games.json
+      currentProducer: RequestPlayers.ps1 through NflScheduleUtils.psm1 from canonical source-data/nfl/schedules/<season>.json (#347 E1)
       matrixKey: byeWeek
       targetOwner: derivation from canonical source-data/nfl/schedules/<season>.json
       consumers:
@@ -780,7 +780,7 @@ playersReadModelFieldInventory:
     seasonStatsAndPoints:
       fields: [GamesPlayed, GamesPotential, SnapsTotal, AttemptsTotal, TouchdownsTotal, TouchdownsPassing, TouchdownsReceiving, TouchdownsRushing, FantasyPointsTotal, FantasyPointsAvgGame, FantasyPointsAvgPotentialGame, FantasyPointsAvgSnap, FantasyPointsAvgAttempt]
       layer: sharedDerived
-      currentProducer: aggregation of Tank01 playerStats in Games.json over weeks that are final and scored, games with SnapCount > 0; points = Tank01 fantasyPointsDefault.PPR
+      currentProducer: PlayerLeagueScoringUtils.psm1 over the tools/players_league_scoring.py export (canonical player-stats and snap-counts scored with the league ScoringSettings, final REG weeks up to LastLeagueWeek, played game = offense snaps > 0, kickers FG + PAT attempts > 0); GamesPotential still follows Games.json presence and the canonical bye week (#347 D4)
       matrixKey: [nflPlayerWeeklyStats, nflSnapCounts, fantasyPointsLeagueScoring]
       targetOwner: league-scored points from the PlayerWeekFantasy derivation (CanonicalPlayerID + league ScoringSettings); stats/snaps from canonical player-stats and snap-counts
       consumers:
@@ -792,7 +792,7 @@ playersReadModelFieldInventory:
     pointHistory:
       fields: [PointHistory.SeasonMinus1, PointHistory.SeasonMinus2, PointHistory.SeasonMinus3]
       layer: sharedDerived
-      currentProducer: Get-SeasonPointStats over past_seasons/Players_<year>.json (Tank01 PPR, keyed by TankID); PotentialGames = LastLeagueWeek - 1
+      currentProducer: PlayerLeagueScoringUtils.psm1::Get-PlayerLeagueScoringSeasonStats over the tools/players_league_scoring.py export (league-scored, season-aware Sleeper identity); PotentialGames = LastLeagueWeek - 1 (#347 D4; the past_seasons/Players_<year>.json archives are no longer read)
       matrixKey: fantasyPointsLeagueScoring
       targetOwner: league-scored historical points from canonical player stats per season and CanonicalPlayerID
       consumers:
@@ -801,7 +801,7 @@ playersReadModelFieldInventory:
     gameHistory:
       fields: [GameHistory]
       layer: consumerOnly
-      currentProducer: per-game rows from Games.json (Tank01 boxscore incl. PPR points, snaps, Passing/Receiving/Rushing/Kicking objects)
+      currentProducer: per-game rows from Games.json (Tank01 boxscore, snaps, Passing/Receiving/Rushing/Kicking objects); FantasyPoints of final regular-season games are replaced by league-scored points (#347 D4), playoff and not yet final games keep the Tank01 PPR value
       matrixKey: [nflPlayerWeeklyStats, fantasyPointsLeagueScoring, nflSchedule]
       targetOwner: App delivery shape over canonical weekly stats and league-scored weekly points
       consumers:

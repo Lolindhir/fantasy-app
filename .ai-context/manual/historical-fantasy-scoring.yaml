@@ -453,7 +453,7 @@ playersLeagueScoringShadow:
     - GameHistory[].FantasyPoints
     - Salary, SalaryProjected, League salary cap
   rules:
-    - Players.json row -> CanonicalPlayerID only through the unique current Sleeper provider mapping; ambiguous or unmapped rows are identity_hold, keep legacy values and are listed.
+    - Players.json row -> CanonicalPlayerID through the season-aware Sleeper identity resolver of tools/players_league_scoring.py (same resolver as the D4 export); ambiguous or unmapped rows are identity_hold, keep legacy values and are listed.
     - Played game = offense snaps > 0 from canonical snap-counts (snap-only games count with 0 points); kickers FG + PAT attempts > 0.
     - Current season = REG weeks with canonical WeekFinal up to LastLeagueWeek; historical partitions must be Finalized (fail closed).
     - Salary formula, weights and cap formula are the unchanged PowerShell model (ported; the port must reproduce the committed Players.json and the published cap exactly, otherwise the shadow is not trustworthy).
@@ -470,6 +470,47 @@ playersLeagueScoringShadow:
     knownResidualClasses:
       yardage-correction: residual smaller than the smallest discrete scoring weight and an exact multiple of a fractional yardage weight (provider stat correction)
     ciWiring: .github/workflows/build.yml step 'Run Players league-scoring shadow and Sleeper gate' (unit tests plus the gate command; approved by Robert 2026-10-04)
+
+playersLeagueScoring:
+  issue: 347
+  step: D4
+  state: productive-cutover-2026-10-05
+  rollbackReference: rollback/347-pre-d4-players-league-scoring
+  implementation:
+    export: tools/players_league_scoring.py
+    consumer: public/requests/utils/player/PlayerLeagueScoringUtils.psm1
+    generator: public/requests/RequestPlayers.ps1
+  tests:
+    - tools/tests/test_players_league_scoring_shadow.py
+    - public/requests/PlayerLeagueScoringRegressionTest.ps1 (via DecisionWindowRegressionTest.ps1)
+  purpose: >
+    Players.json points, played games, snaps, attempts, touchdowns, PointHistory and the per-game
+    points of final regular-season games come from canonical NFL stats scored with the league
+    ScoringSettings (robert, 2026-10-04: points, history, ranking and salary switch together).
+    Salary, SalaryProjected, Ranking, Grading.Rank and the League salary cap are unchanged
+    PowerShell formulas over the new inputs; the salary redesign concept is not part of this step.
+  flow: >
+    RequestPlayers.ps1 passes the Sleeper IDs of the current player universe to the export; the
+    export resolves each ID per season, scores the canonical weekly stats with the ScoringSettings of
+    the current season (all four seasons use one profile) and returns weekly rows; PowerShell
+    aggregates them with the same played-game and rounding rules as the D3 shadow.
+  rules:
+    - Identity is resolved per season. Candidates are the persisted Sleeper mappings and the parties of covering mapping conflicts; a record without any provider ID cannot own NFL stats and is dropped; exactly one remaining record resolves the ID, several are ambiguous. A season before the earliest persisted observation uses the earliest mapping, a gap between observations is unmapped.
+    - Identity hold (no unique record for the current season) keeps the last published scoring values; a player that was never published starts at zero. A league-owned player with an ambiguous identity aborts the export, so Players.json stays at its last known good state.
+    - A non-zero ScoringSettings weight that the scorer does not map aborts the export (fail closed).
+    - Current season = final regular-season weeks (game-finality WeekFinal) up to LastLeagueWeek; historical partitions must be Finalized.
+    - GamesPotential keeps its legacy rule (present only when Tank01 games exist, minus the canonical bye week); the games themselves and the points are canonical.
+    - Playoff games and games of not yet final weeks keep the Tank01 PPR value in GameHistory.
+  persistence: >
+    The export is rebuilt on every Players run in a temporary file and is not committed. A committed
+    derived-data product would need the Players workflow publish scope extended, which requires
+    Robert's explicit workflow approval.
+  evidence: >
+    Offline run of RequestPlayers.ps1 with mocked provider responses built from the committed
+    Players.json: every compared field of all 1268 rows equals the approved D3 shadow
+    (Salary, SalaryProjected, Ranking, Grading.Rank, PointHistory, FantasyPoints*, GamesPlayed,
+    SnapsTotal, AttemptsTotal, Touchdowns*, GameHistory points, Grading.Form points).
+    Cap 434,255,984 -> 432,611,104 and projected 452,436,562 -> 451,127,758.
 
 validationEvidence:
   namespaceAndWeekStructure: cd4f935cffe53692300cca4936a8eee576adc3e4

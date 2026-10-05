@@ -9,6 +9,7 @@ TOOLS = ROOT / "tools"
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+import players_league_scoring as scoring_export  # noqa: E402
 import players_league_scoring_shadow as shadow  # noqa: E402
 
 
@@ -84,6 +85,56 @@ class PureFunctionTests(unittest.TestCase):
         self.assertFalse(shadow.evaluate_gate(1000, 1000, [], {}, {(2026, "some_key"): 1})["passed"])
 
 
+def _resolver(mappings: list[tuple[str, int, int, str]], conflicts: list[tuple[str, int, int, list[str]]] = (),
+              empty: tuple[str, ...] = ()) -> scoring_export.SleeperIdentityResolver:
+    return scoring_export.SleeperIdentityResolver(
+        {
+            "Mappings": [
+                {"Provider": "Sleeper", "ExternalID": sid, "CanonicalPlayerID": cid,
+                 "FirstObservedSeason": first, "LastObservedSeason": last}
+                for sid, first, last, cid in mappings
+            ],
+            "Conflicts": [
+                {"Provider": "Sleeper", "ExternalID": sid, "CanonicalPlayerIDs": parties,
+                 "FirstObservedSeason": first, "LastObservedSeason": last}
+                for sid, first, last, parties in conflicts
+            ],
+        },
+        {"Players": [{"CanonicalPlayerID": cid, "IDs": {}} for cid in empty]
+         + [{"CanonicalPlayerID": cid, "IDs": {"GSIS": "x"}} for cid in ("A", "B", "C")]},
+    )
+
+
+class SleeperIdentityResolverTests(unittest.TestCase):
+    def test_a_mapping_covers_the_seasons_it_was_observed_in(self) -> None:
+        resolver = _resolver([("1", 2025, 2025, "A"), ("1", 2026, 2026, "B")])
+        self.assertEqual(("A", "resolved"), resolver.resolve("1", 2025))
+        self.assertEqual(("B", "resolved"), resolver.resolve("1", 2026))
+
+    def test_seasons_before_the_first_observation_use_the_earliest_mapping(self) -> None:
+        resolver = _resolver([("1", 2025, 2025, "A"), ("1", 2026, 2026, "B")])
+        self.assertEqual(("A", "resolved"), resolver.resolve("1", 2023))
+        # a gap between observations stays unmapped; later seasons without any mapping too
+        gap = _resolver([("1", 2023, 2023, "A"), ("1", 2026, 2026, "B")])
+        self.assertEqual((None, "unmapped"), gap.resolve("1", 2025))
+        self.assertEqual((None, "unmapped"), resolver.resolve("1", 2027))
+
+    def test_an_unknown_id_is_unmapped(self) -> None:
+        self.assertEqual((None, "unmapped"), _resolver([]).resolve("9", 2026))
+
+    def test_conflict_parties_are_candidates_and_an_empty_record_cannot_own_stats(self) -> None:
+        resolver = _resolver([("1", 2026, 2026, "EMPTY")], [("1", 2026, 2026, ["A", "EMPTY"])], empty=("EMPTY",))
+        self.assertEqual(("A", "resolved"), resolver.resolve("1", 2026))
+
+    def test_two_records_with_identifiers_stay_ambiguous(self) -> None:
+        resolver = _resolver([("1", 2026, 2026, "A")], [("1", 2026, 2026, ["A", "B"])])
+        self.assertEqual((None, "ambiguous"), resolver.resolve("1", 2026))
+
+    def test_a_record_without_identifiers_alone_is_unmapped(self) -> None:
+        resolver = _resolver([("1", 2026, 2026, "EMPTY")], empty=("EMPTY",))
+        self.assertEqual((None, "unmapped"), resolver.resolve("1", 2026))
+
+
 class RepositoryDataTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -145,6 +196,61 @@ class RepositoryDataTests(unittest.TestCase):
             ) or (old["GamesPlayed"] > 0 and new["GamesPlayed"] == 0)
             if lost:
                 self.assertIn(old["ID"], reported)
+
+
+class ExportTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        import json
+
+        cls.players = json.loads((ROOT / "public/data/Players.json").read_text(encoding="utf-8-sig"))
+        cls.league = json.loads((ROOT / "public/data/League.json").read_text(encoding="utf-8-sig"))
+        cls.season = int(cls.league["Season"])
+        cls.export = scoring_export.build_export(
+            ROOT, scoring_export.LEAGUE_ID, cls.season, [str(p["ID"]) for p in cls.players],
+        )
+
+    def test_export_is_deterministic_and_identified_by_the_scoring_profile(self) -> None:
+        again = scoring_export.build_export(
+            ROOT, scoring_export.LEAGUE_ID, self.season, [str(p["ID"]) for p in reversed(self.players)],
+        )
+        self.assertEqual(self.export, again)
+        profile = self.export["ScoringProfile"]
+        self.assertEqual(scoring_export.LEAGUE_ID, profile["CanonicalLeagueID"])
+        self.assertEqual(self.season, profile["Season"])
+        self.assertTrue(profile["SettingsHash"])
+
+    def test_every_league_owned_player_resolves_and_current_rows_are_final_weeks_only(self) -> None:
+        owned = scoring_export.league_owned_sleeper_ids(ROOT, scoring_export.LEAGUE_ID, self.season)
+        final_weeks = set(self.export["FinalRegularWeeksCurrent"])
+        self.assertTrue(final_weeks)
+        for sleeper_id, entry in self.export["Players"].items():
+            if sleeper_id in owned:
+                self.assertEqual("resolved", entry["Status"], sleeper_id)
+            if entry["Status"] != "resolved":
+                self.assertEqual({}, entry["Seasons"])
+                continue
+            self.assertLessEqual({int(w) for w in entry["Seasons"][str(self.season)]}, final_weeks)
+
+    def test_export_aggregates_to_the_shadow(self) -> None:
+        # the shadow (approved D3 diff) is the expectation; the export rows must aggregate to it
+        result = shadow.build_shadow(ROOT)
+        last_week = result["lastWeek"]
+        checked = 0
+        for player in result["shadow"]:
+            entry = self.export["Players"][str(player["ID"])]
+            if entry["Status"] != "resolved":
+                continue
+            seasons = entry["Seasons"]
+            for offset, key in enumerate(shadow.HISTORY_SEASONS, start=1):
+                rows = {int(w): {
+                    "points": r["Points"], "snaps": r["Snaps"], "kick_attempts": r["KickAttempts"],
+                    "attempts": r["Attempts"], "td_pass": r["TdPass"], "td_rec": r["TdRec"], "td_rush": r["TdRush"],
+                } for w, r in seasons[str(self.season - offset)].items()}
+                expected = scoring_export.season_view(rows, player["Position"], last_week, last_week - 1)
+                self.assertEqual(expected, player["PointHistory"][key], (player["ID"], key))
+            checked += 1
+        self.assertGreater(checked, 0)
 
 
 if __name__ == "__main__":

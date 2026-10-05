@@ -500,6 +500,7 @@ function Get-SeasonPointStats {
 . "$PSScriptRoot\config.ps1"
 Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\general\NflScheduleUtils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\utils\player\PlayerLeagueScoringUtils.psm1" -ErrorAction Stop -Force
 $apiKeys = @(
     $Global:RapidAPIKey,
     $Global:RapidAPIKeyAlt1,
@@ -519,63 +520,6 @@ if (-not $Global:LeagueYear) {
     exit 1
 }
 $seasonYear = $Global:LeagueYear
-
-# --- Lookup-Tabelle für Spielerstatistiken des letzten Jahres holen
-$seasonLast = $seasonYear - 1
-$seasonLastFile = Join-Path $scriptDir "..\data\past_seasons\Players_$seasonLast.json"
-$playersLookupLastSeason = @{}
-try {
-    $seasonLastRaw = Get-Content $seasonLastFile -Raw
-    $playersLastSeason = $seasonLastRaw | ConvertFrom-Json
-    if(-not $playersLastSeason){
-        Write-Host "Couldn't load old player stats for year: $seasonLast" -ForegroundColor Red
-        exit 1
-    } else {
-        foreach ($player in $playersLastSeason) { $playersLookupLastSeason[$player.TankID] = $player }
-        Write-Host "Loaded old player stats for year: $seasonLast..." -ForegroundColor Yellow
-    }
-} catch {
-    Write-Error "Error fetching old player stats: $_"
-    exit 1
-}
-
-# --- Lookup-Tabelle für Spielerstatistiken des vorletzten Jahres holen
-$seasonBeforeLast = $seasonYear - 2
-$seasonBeforeLastFile = Join-Path $scriptDir "..\data\past_seasons\Players_$seasonBeforeLast.json"
-$playersLookupBeforeLastSeason = @{}
-try {
-    $seasonBeforeLastRaw = Get-Content $seasonBeforeLastFile -Raw
-    $playersBeforeLastSeason = $seasonBeforeLastRaw | ConvertFrom-Json
-    if(-not $playersBeforeLastSeason){
-        Write-Host "Couldn't load old player stats for year: $seasonBeforeLast" -ForegroundColor Red
-        exit 1
-    } else {
-        foreach ($player in $playersBeforeLastSeason) { $playersLookupBeforeLastSeason[$player.TankID] = $player }
-        Write-Host "Loaded old player stats for year: $seasonBeforeLast..." -ForegroundColor Yellow
-    }
-} catch {
-    Write-Error "Error fetching old player stats: $_"
-    exit 1
-}
-
-# --- Lookup-Tabelle für Spielerstatistiken des vorvorletzten Jahres holen
-$seasonBeforeBeforeLast = $seasonYear - 3
-$seasonBeforeBeforeLastFile = Join-Path $scriptDir "..\data\past_seasons\Players_$seasonBeforeBeforeLast.json"
-$playersLookupBeforeBeforeLastSeason = @{}
-try {
-    $seasonBeforeBeforeLastRaw = Get-Content $seasonBeforeBeforeLastFile -Raw
-    $playersBeforeBeforeLastSeason = $seasonBeforeBeforeLastRaw | ConvertFrom-Json
-    if(-not $playersBeforeBeforeLastSeason){
-        Write-Host "Couldn't load old player stats for year: $seasonBeforeBeforeLast" -ForegroundColor Red
-        exit 1
-    } else {
-        foreach ($player in $playersBeforeBeforeLastSeason) { $playersLookupBeforeBeforeLastSeason[$player.TankID] = $player }
-        Write-Host "Loaded old player stats for year: $seasonBeforeBeforeLast..." -ForegroundColor Yellow
-    }
-} catch {
-    Write-Error "Error fetching old player stats: $_"
-    exit 1
-}
 
 # --- Gewichtungen aus config.ps1 ---
 if (-not $Global:WeightTotal -or -not $Global:WeightGame) {
@@ -677,14 +621,6 @@ if (Test-Path $gamesFile) {
                 if (-not $playerHistory.ContainsKey($playerID)) {
                     $playerHistory[$playerID] = [ordered]@{
                         TankID                 = $playerID
-                        GamesPlayed            = 0
-                        FantasyPointsTotalPPR  = 0.0
-                        TouchdownsTotal        = 0
-                        TouchdownsPassing      = 0
-                        TouchdownsReceiving    = 0
-                        TouchdownsRushing      = 0
-                        SnapsTotal             = 0
-                        AttemptsTotal          = 0
                         GameHistory            = @()
                     }
                 }
@@ -806,30 +742,6 @@ if (Test-Path $gamesFile) {
                 # Game zur Historie hinzufügen (vorne)
                 $playerHistory[$playerID].GameHistory += @($gameStats)
 
-                # Summenwerte berechnen, wenn Snap-Count vorhanden ist (dann sollten alle Daten vorhanden sein) und die Woche final ist und die Woche gescored wird
-                if($gameStats.SnapCount -gt 0 -and $gameStats.GameDetails.WeekFinal -and $gameStats.GameDetails.WeekScored) { 
-
-                    $playerHistory[$playerID].GamesPlayed++ 
-                
-                    $ppr = 0.0
-                    if ($p.fantasyPointsDefault.PPR) { $ppr = [double]$p.fantasyPointsDefault.PPR }
-                    $playerHistory[$playerID].FantasyPointsTotalPPR += $ppr
-
-                    $rushTD = 0
-                    if ($p.Rushing.rushTD) { $rushTD = [int]$p.Rushing.rushTD }
-                    $recTD = 0
-                    if ($p.Receiving.recTD) { $recTD = [int]$p.Receiving.recTD }
-                    $passTD = 0
-                    if ($p.Passing.passTD) { $passTD = [int]$p.Passing.passTD }
-
-                    $playerHistory[$playerID].TouchdownsRushing += $rushTD
-                    $playerHistory[$playerID].TouchdownsReceiving += $recTD
-                    $playerHistory[$playerID].TouchdownsPassing += $passTD
-                    $playerHistory[$playerID].TouchdownsTotal += ($rushTD + $recTD + $passTD)
-                    $playerHistory[$playerID].SnapsTotal += $gameStats.SnapCount
-                    $playerHistory[$playerID].AttemptsTotal += $gameStats.Attempts
-                }
-
             }             
         }
 
@@ -842,6 +754,20 @@ if (Test-Path $gamesFile) {
     return 1
 }
 
+
+# --- League scoring (#347 D4): canonical NFL stats scored with the league ScoringSettings ---
+# Replaces Tank01 PPR points and the Tank01 past_seasons archives. The export is keyed by Sleeper player ID.
+$leagueScoringSleeperIDs = @(
+    $tankPlayers |
+        Where-Object { $_.sleeperBotID -and $sleeperLookup.ContainsKey([string]$_.sleeperBotID) } |
+        ForEach-Object { [string]$_.sleeperBotID }
+)
+$leagueScoringExport = Invoke-PlayerLeagueScoringExport -SleeperIDs $leagueScoringSleeperIDs -Season ([int]$seasonYear)
+if ([int]$leagueScoringExport.Season -ne [int]$seasonYear) {
+    throw "League scoring export season $($leagueScoringExport.Season) does not match LeagueYear $seasonYear."
+}
+$finalWeeksCurrent = [int[]]@($leagueScoringExport.FinalRegularWeeksCurrent)
+$identityHoldPlayers = @()
 
 $playerData = @()
 foreach ($tankEntry in $tankPlayers) {
@@ -917,74 +843,56 @@ foreach ($tankEntry in $tankPlayers) {
     }
 
 
-    # --- Player Stats (aus Games.json) ---
+    # --- Player Stats: Spiele aus Games.json (Tank01), Punkte und Spielzahlen aus dem Liga-Scoring ---
     $stats = $playerHistory[$tankEntry.playerID]
-    if ($stats) {
-        
-        $gamesPlayed = $stats.GamesPlayed
 
-        # --- Potentielle Spiele berechnen (ByeWeek berücksichtigen) ---
+    # --- Potentielle Spiele berechnen (ByeWeek berücksichtigen) ---
+    $gamesPotential = 0
+    $gameHistory = @()
+    if ($stats) {
         $gamesPotential = $finalWeek
         if($byeWeek -le $finalWeek){
             $gamesPotential--
         }
-
-        $fantasyPointsTotalPPR = [math]::Round($stats.FantasyPointsTotalPPR,2)
-        $fantasyPointsAvgPPR = 0
-        if($stats.GamesPlayed -gt 0){
-            $fantasyPointsAvgPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.GamesPlayed),2)
-        }
-        $fantasyPointsAvgPotentialPPR = 0
-        if($gamesPotential -gt 0){
-            $fantasyPointsAvgPotentialPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$gamesPotential),2)
-        }
-        $fantasyPointsAvgSnapPPR = 0
-        if($stats.SnapsTotal -gt 0){
-            $fantasyPointsAvgSnapPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.SnapsTotal),5)
-        }
-        $fantasyPointsAvgAttemptPPR = 0
-        if($stats.AttemptsTotal -gt 0){
-            $fantasyPointsAvgAttemptPPR = [math]::Round($($stats.FantasyPointsTotalPPR/$stats.AttemptsTotal),5)
-        }
-        $snaps = $stats.SnapsTotal
-        $attempts = $stats.AttemptsTotal
-        $tdTotal = $stats.TouchdownsTotal
-        $tdRush = $stats.TouchdownsRushing
-        $tdRec = $stats.TouchdownsReceiving
-        $tdPass = $stats.TouchdownsPassing
         $gameHistory = $stats.GameHistory
-    } else {
-        $gamesPlayed = 0
-        $gamesPotential = 0
-        $snaps = 0
-        $attempts = 0
-        $fantasyPointsTotalPPR = 0
-        $fantasyPointsAvgPPR = 0
-        $fantasyPointsAvgPotentialPPR = 0
-        $fantasyPointsAvgSnapPPR = 0
-        $fantasyPointsAvgAttemptPPR = 0
-        $tdTotal = 0
-        $tdRush = 0
-        $tdRec = 0
-        $tdPass = 0
-        $gameHistory = @()
     }
 
-    # --- Daten der Vorjahre laden und abspeichern
-    $playerLastSeason = $playersLookupLastSeason[$tankEntry.playerID]
-    $playerBeforeLastSeason = $playersLookupBeforeLastSeason[$tankEntry.playerID]
-    $playerBeforeBeforeLastSeason = $playersLookupBeforeBeforeLastSeason[$tankEntry.playerID]
-    $pointHistory = [ordered]@{
-    SeasonMinus1 = Get-SeasonPointStats $playerLastSeason $lastWeek
-    SeasonMinus2 = Get-SeasonPointStats $playerBeforeLastSeason $lastWeek
-    SeasonMinus3 = Get-SeasonPointStats $playerBeforeBeforeLastSeason $lastWeek
-}
+    $leagueScoring = $leagueScoringExport.Players[[string]$playerID]
+    if ($leagueScoring -and $leagueScoring.Status -eq 'resolved') {
+        $currentRows = $leagueScoring.Seasons[[string]$seasonYear]
+        $current = Get-PlayerLeagueScoringCurrentStats -SeasonRows $currentRows -Position $position -LastWeek $lastWeek -GamesPotential $gamesPotential
+        Update-PlayerGameHistoryLeaguePoints -GameHistory $gameHistory -SeasonRows $currentRows -FinalWeeks $finalWeeksCurrent | Out-Null
+        $pointHistory = [ordered]@{
+            SeasonMinus1 = Get-PlayerLeagueScoringSeasonStats -SeasonRows $leagueScoring.Seasons[[string]($seasonYear - 1)] -Position $position -LastWeek $lastWeek
+            SeasonMinus2 = Get-PlayerLeagueScoringSeasonStats -SeasonRows $leagueScoring.Seasons[[string]($seasonYear - 2)] -Position $position -LastWeek $lastWeek
+            SeasonMinus3 = Get-PlayerLeagueScoringSeasonStats -SeasonRows $leagueScoring.Seasons[[string]($seasonYear - 3)] -Position $position -LastWeek $lastWeek
+        }
+    } else {
+        # Identity hold (no unique canonical identity for the current season): keep the last published values.
+        $identityHoldPlayers += "$($sleeperEntry.full_name) ($playerID)"
+        $held = Get-PlayerLeagueScoringHeldStats -OldPlayer $oldPlayersLookup[[string]$playerID]
+        $current = $held.Current
+        $pointHistory = $held.PointHistory
+    }
+
+    $gamesPlayed = $current.GamesPlayed
+    $snaps = $current.SnapsTotal
+    $attempts = $current.AttemptsTotal
+    $fantasyPointsTotal = $current.FantasyPointsTotal
+    $fantasyPointsAvgGame = $current.FantasyPointsAvgGame
+    $fantasyPointsAvgPotentialGame = $current.FantasyPointsAvgPotentialGame
+    $fantasyPointsAvgSnap = $current.FantasyPointsAvgSnap
+    $fantasyPointsAvgAttempt = $current.FantasyPointsAvgAttempt
+    $tdTotal = $current.TouchdownsTotal
+    $tdRush = $current.TouchdownsRushing
+    $tdRec = $current.TouchdownsReceiving
+    $tdPass = $current.TouchdownsPassing
 
     # --------------------------------------
     # --- Salaries aus Fantasy berechnen ---
     # --------------------------------------
     # Jahrespunkte berechnen
-    $ptsCurrent = $fantasyPointsAvgPotentialPPR * $weightTotal + $fantasyPointsAvgPPR * $weightGame
+    $ptsCurrent = $fantasyPointsAvgPotentialGame * $weightTotal + $fantasyPointsAvgGame * $weightGame
     $ptsSeasonMinus1 = $pointHistory.SeasonMinus1.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus1.AvgGame * $weightGame
     $ptsSeasonMinus2 = $pointHistory.SeasonMinus2.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus2.AvgGame * $weightGame
     $ptsSeasonMinus3 = $pointHistory.SeasonMinus3.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus3.AvgGame * $weightGame
@@ -1063,11 +971,11 @@ foreach ($tankEntry in $tankPlayers) {
         GamesPotential               = $gamesPotential
         SnapsTotal                   = $snaps
         AttemptsTotal                = $attempts
-        FantasyPointsTotal           = $fantasyPointsTotalPPR
-        FantasyPointsAvgGame         = $fantasyPointsAvgPPR
-        FantasyPointsAvgPotentialGame = $fantasyPointsAvgPotentialPPR
-        FantasyPointsAvgSnap         = $fantasyPointsAvgSnapPPR
-        FantasyPointsAvgAttempt      = $fantasyPointsAvgAttemptPPR
+        FantasyPointsTotal           = $fantasyPointsTotal
+        FantasyPointsAvgGame         = $fantasyPointsAvgGame
+        FantasyPointsAvgPotentialGame = $fantasyPointsAvgPotentialGame
+        FantasyPointsAvgSnap         = $fantasyPointsAvgSnap
+        FantasyPointsAvgAttempt      = $fantasyPointsAvgAttempt
         Ranking                      = @()
         Grading                      = $grading
         PointHistory                 = $pointHistory
@@ -1077,6 +985,10 @@ foreach ($tankEntry in $tankPlayers) {
         TouchdownsRushing            = $tdRush
         GameHistory                  = $gameHistory
     }
+}
+
+if ($identityHoldPlayers.Count -gt 0) {
+    Write-Warning "League scoring identity hold: kept the last published scoring values for $($identityHoldPlayers.Count) players: $($identityHoldPlayers -join ', ')"
 }
 
 # Spieler nach ID aufsteigend sortieren

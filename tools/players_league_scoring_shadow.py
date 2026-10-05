@@ -31,6 +31,16 @@ from historical_fantasy_scoring import (  # noqa: E402
     read_json,
     score_record,
 )
+from players_league_scoring import (  # noqa: E402,F401
+    SleeperIdentityResolver,
+    build_weekly_scores,
+    final_regular_weeks,
+    league_owned_sleeper_ids,
+    league_scoring_settings,
+    net_round,
+    played_weeks,
+    season_view,
+)
 
 LEAGUE_ID = "nfl-reise"
 HISTORY_SEASONS = ("SeasonMinus1", "SeasonMinus2", "SeasonMinus3")
@@ -64,12 +74,6 @@ POINT_HISTORY_FIELDS = ("Total", "AvgGame", "AvgPotentialGame", "GamesPlayed", "
 def ps_round(value: float) -> float:
     """[math]::Round default (banker's rounding)."""
     return float(round(value))
-
-
-def net_round(value: float, digits: int) -> float:
-    """[math]::Round(value, digits): scales, then rounds half to even (differs from Python round)."""
-    factor = 10.0 ** digits
-    return round(value * factor) / factor
 
 
 def map_salary_nonlinear(points: float, source_max: float = 20.0, target_max: float = 50_000_000.0) -> float:
@@ -238,133 +242,6 @@ def read_ps_config_weights(repo_root: Path) -> tuple[float, float]:
     return weights[0], weights[1]
 
 
-def final_regular_weeks(repo_root: Path, season: int) -> set[int]:
-    path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
-    payload = read_json(path)
-    return {
-        int(w["Week"])
-        for w in payload["Weeks"]
-        if w.get("WeekFinal") is True and w.get("GameType", "REG") == "REG"
-    }
-
-
-def league_scoring_settings(repo_root: Path, league_id: str, season: int) -> dict[str, Any]:
-    path = repo_root / "source-data/leagues" / league_id / "seasons" / str(season) / "league.json"
-    settings = read_json(path).get("ScoringSettings")
-    if not isinstance(settings, dict) or not settings:
-        raise ValueError(f"No ScoringSettings in {path}")
-    return settings
-
-
-def unique_sleeper_mapping(repo_root: Path) -> dict[str, set[str]]:
-    mappings = read_json(repo_root / "source-data/nfl/identities/provider-mappings.json")["Mappings"]
-    by_sleeper: dict[str, set[str]] = defaultdict(set)
-    for mapping in mappings:
-        if mapping["Provider"] == "Sleeper":
-            by_sleeper[str(mapping["ExternalID"])].add(mapping["CanonicalPlayerID"])
-    return by_sleeper
-
-
-def _partition_files(repo_root: Path, dataset: str, season: int) -> list[Path]:
-    directory = repo_root / "source-data/nfl" / dataset / str(season)
-    if not directory.is_dir():
-        raise FileNotFoundError(f"Canonical partition directory missing: {directory}")
-    return sorted(directory.glob("*.json"))
-
-
-def build_weekly_scores(
-    repo_root: Path,
-    seasons: tuple[int, ...],
-    current_season: int,
-    final_weeks_current: set[int],
-    wanted: set[str],
-    scoring: dict[str, Any],
-) -> tuple[dict[int, dict[str, dict[int, dict[str, float]]]], Counter, Counter]:
-    """weekly[season][cid][week] = {points, snaps, kick_attempts, attempts, td_*}.
-
-    Fail-closed: historical partitions must be Finalized, current partitions are
-    limited to canonical WeekFinal REG weeks.
-    """
-    weekly: dict[int, dict[str, dict[int, dict[str, float]]]] = {s: defaultdict(dict) for s in seasons}
-    unsupported: Counter = Counter()
-    counts: Counter = Counter()
-    for season in seasons:
-        for stats_file in _partition_files(repo_root, "player-stats", season):
-            payload = read_json(stats_file)
-            week = int(payload["Week"])
-            if season == current_season:
-                if week not in final_weeks_current:
-                    continue
-            elif payload.get("Finalized") is not True:
-                raise ValueError(f"Historical player-stats partition is not finalized: {stats_file}")
-            snaps: dict[str, int] = defaultdict(int)
-            snap_path = repo_root / "source-data/nfl/snap-counts" / str(season) / stats_file.name
-            if snap_path.exists():
-                for record in read_json(snap_path)["Records"]:
-                    if record.get("CanonicalPlayerID") in wanted:
-                        snaps[record["CanonicalPlayerID"]] += int(record.get("OffenseSnaps") or 0)
-            events: dict[str, list[dict[str, Any]]] = defaultdict(list)
-            events_path = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season) / stats_file.name
-            events_ok = False
-            if events_path.exists():
-                events_payload = read_json(events_path)
-                events_ok = season == current_season or events_payload.get("Finalized") is True
-                if events_ok:
-                    for event in events_payload["Records"]:
-                        events[event.get("CanonicalPlayerID")].append(event)
-            for record in payload["Records"]:
-                cid = record.get("CanonicalPlayerID")
-                if cid not in wanted or record.get("SeasonType", "REG") != "REG":
-                    continue
-                result = score_record(record, scoring, special_teams_fumble_events=events[cid] if events_ok else None)
-                for key in result["UnsupportedNonZeroSettings"]:
-                    unsupported[(season, key)] += 1
-                stats = record["Stats"]
-                weekly[season][cid][week] = {
-                    "points": result["FantasyPoints"],
-                    "snaps": snaps.get(cid, 0),
-                    "kick_attempts": number(stats.get("fg_att")) + number(stats.get("pat_att")),
-                    "attempts": number(stats.get("attempts")) + number(stats.get("targets")) + number(stats.get("carries"))
-                    + number(stats.get("fg_att")) + number(stats.get("pat_att")),
-                    "td_pass": number(stats.get("passing_tds")),
-                    "td_rec": number(stats.get("receiving_tds")),
-                    "td_rush": number(stats.get("rushing_tds")),
-                }
-            # snap-only games: nflverse omits all-zero stat lines
-            for cid, snap_total in snaps.items():
-                if snap_total > 0 and week not in weekly[season][cid]:
-                    weekly[season][cid][week] = {
-                        "points": 0.0, "snaps": snap_total, "kick_attempts": 0.0, "attempts": 0.0,
-                        "td_pass": 0.0, "td_rec": 0.0, "td_rush": 0.0,
-                    }
-                    counts[f"snap_only_games_{season}"] += 1
-    return weekly, unsupported, counts
-
-
-def played_weeks(weeks: dict[int, dict[str, float]], position: str, max_week: int) -> dict[int, dict[str, float]]:
-    out = {}
-    for week, row in weeks.items():
-        if week > max_week:
-            continue
-        played = row["kick_attempts"] > 0 if position == "K" else row["snaps"] > 0
-        if played:
-            out[week] = row
-    return out
-
-
-def season_view(weeks: dict[int, dict[str, float]], position: str, max_week: int, potential: int) -> dict[str, Any]:
-    games = played_weeks(weeks, position, max_week)
-    total = net_round(sum(g["points"] for g in games.values()), 2)
-    count = len(games)
-    return {
-        "Total": total,
-        "AvgGame": net_round(total / count, 2) if count else 0.0,
-        "AvgPotentialGame": net_round(total / potential, 2) if potential else 0.0,
-        "GamesPlayed": count,
-        "PotentialGames": potential,
-    }
-
-
 # --------------------------------------------------------------------------- #
 # Shadow
 # --------------------------------------------------------------------------- #
@@ -455,23 +332,23 @@ def build_shadow(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
     scoring = league_scoring_settings(repo_root, league_id, season)
     final_weeks_current = final_regular_weeks(repo_root, season)
 
-    mapping = unique_sleeper_mapping(repo_root)
+    resolver = SleeperIdentityResolver.from_repo(repo_root)
     owned = league_owned_sleeper_ids(repo_root, league_id, season)
-    cid_of: dict[str, str] = {}
+    seasons = tuple(season - offset for offset in (3, 2, 1, 0))
+    identity_of: dict[str, dict[int, str | None]] = {}
     identity_hold: list[dict[str, Any]] = []
     for player in players:
-        candidates = mapping.get(str(player["ID"]), set())
-        if len(candidates) == 1:
-            cid_of[player["ID"]] = next(iter(candidates))
-        else:
+        # Season-aware, as the D4 export: the Sleeper ID may belong to another person in an earlier season.
+        current, status = resolver.resolve(str(player["ID"]), season)
+        if current is None:
             identity_hold.append({
                 "SleeperID": player["ID"], "Name": player["Name"], "Position": player["Position"],
-                "Reason": "ambiguous" if candidates else "unmapped", "Candidates": sorted(candidates),
-                "LeagueOwned": str(player["ID"]) in owned,
+                "Reason": status, "LeagueOwned": str(player["ID"]) in owned,
             })
-    wanted = set(cid_of.values())
+            continue
+        identity_of[player["ID"]] = {s: resolver.resolve(str(player["ID"]), s)[0] for s in seasons}
+    wanted = {cid for per_season in identity_of.values() for cid in per_season.values() if cid}
 
-    seasons = tuple(season - offset for offset in (3, 2, 1, 0))
     weekly, unsupported, scan_counts = build_weekly_scores(
         repo_root, seasons, season, final_weeks_current, wanted, scoring,
     )
@@ -486,8 +363,9 @@ def build_shadow(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
         if legacy["ID"] in held_ids:
             shadow_players.append(apply_identity_hold(legacy, legacy))
             continue
-        cid = cid_of[legacy["ID"]]
-        weeks_by_season = {s: weekly[s].get(cid, {}) for s in seasons}
+        per_season = identity_of[legacy["ID"]]
+        cid = per_season[season]
+        weeks_by_season = {s: weekly[s].get(per_season[s], {}) if per_season[s] else {} for s in seasons}
         new, row_counts = derive_player(
             legacy, weeks_by_season, season=season, last_week=last_week, final_week=final_week,
             final_weeks_current=final_weeks_current, weight_total=weight_total, weight_game=weight_game,
@@ -535,17 +413,6 @@ def build_shadow(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
             "recomputedLegacy": port["cap"],
             "shadow": [cap_new, cap_projected_new],
         },
-    }
-
-
-def league_owned_sleeper_ids(repo_root: Path, league_id: str, season: int) -> set[str]:
-    rosters = read_json(repo_root / "source-data/leagues" / league_id / "seasons" / str(season) / "rosters.json")
-    return {
-        str(mapping["ProviderPlayerID"])
-        for team in rosters
-        for player in team.get("Players") or []
-        for mapping in player.get("ProviderMappings") or []
-        if mapping.get("Provider") == "Sleeper"
     }
 
 

@@ -332,7 +332,6 @@ function Compare-Players {
     )
 
     Add-PreviousSeasonCombinedRanking -Players @($NewPlayers) | Out-Null
-    Test-RequiredHistoricalPlayerTankIds | Out-Null
     Test-UniquePlayerIds -Players @($NewPlayers) | Out-Null
 
     if (-not $OldPlayers) {

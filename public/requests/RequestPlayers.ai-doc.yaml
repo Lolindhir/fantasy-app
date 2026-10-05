@@ -34,6 +34,28 @@ identityContract:
       Preserves the Tank01 source identity so collisions in the canonical Sleeper
       identity can be diagnosed without losing provider provenance.
 
+scoringContract:
+  issue: 347
+  step: D4
+  source: tools/players_league_scoring.py export, consumed by public/requests/utils/player/PlayerLeagueScoringUtils.psm1
+  meaning: >
+    Points, played games, snaps, attempts, touchdowns and the three prior seasons
+    (PointHistory) are canonical NFL player stats scored with the league ScoringSettings,
+    not Tank01 PPR. Per-game FantasyPoints of final regular-season games in GameHistory use the
+    same points; playoff and not yet final games keep the Tank01 value. Salary, SalaryProjected,
+    Ranking, Grading.Rank and the League salary cap follow from these inputs through the unchanged
+    PowerShell formulas.
+  identity: >
+    Players.json[].ID (Sleeper player_id) is resolved to a CanonicalPlayerID per season. A Sleeper ID
+    without exactly one owning record for the current season is an identity hold: the last published
+    scoring values are kept and the run logs a warning. A league-owned player with an ambiguous
+    identity aborts the export (fail closed, last known good Players.json stays).
+  persistence: >
+    The export is rebuilt on every run from canonical source-data in a temporary file and is not
+    committed; persisting it as a derived-data product needs a publish-scope change of the Players
+    workflow and is a separate approved step.
+  validation: tools/players_league_scoring_shadow.py gate (Sleeper PlayerPoints reference, wired in build.yml)
+
 rankingContract:
   currentCombined:
     field: Players[].Ranking[Type=Combined]

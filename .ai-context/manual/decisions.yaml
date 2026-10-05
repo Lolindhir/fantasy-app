@@ -1272,3 +1272,34 @@ decisions:
       negative:
         - Standings.json and Teams.json gain two fields for the current season.
         - Issue #686 / PR #714 must switch from frontend reconstruction to this field.
+
+  - id: ADR-041
+    title: Players points and salary come from canonical stats scored with the league ScoringSettings
+    status: accepted
+    context: >
+      Players.json fantasy points, played games and the three prior seasons were Tank01 PPR sums over
+      Games.json and Tank01 past_seasons archives. Tank01 does not know the league scoring, drops games
+      with missing snap counts and has ID collisions (Issue #347 D2/D3). Salary, ranking and the League
+      salary cap are derived from these points.
+    decision: >
+      Robert decided on 2026-10-04 to switch points, history, ranking and salary together (Issue #347
+      step D4). RequestPlayers.ps1 reads league-scored weekly rows from tools/players_league_scoring.py,
+      which scores canonical player-stats and snap-counts with the canonical league ScoringSettings and
+      resolves Players.json[].ID (Sleeper) to a CanonicalPlayerID per season. The salary formula, weights,
+      ranking and cap formulas stay unchanged in PowerShell; the salary redesign concept is not part of
+      this decision. The export is rebuilt per run and not committed; persisting it as a derived-data
+      product needs a separate workflow approval. The Sleeper PlayerPoints gate in build.yml is the
+      permanent validation of the scorer.
+    rationale: >
+      One scorer (tools/historical_fantasy_scoring.py) serves PlayerWeekFantasy and Players, the points
+      follow the league rules instead of a provider default, and fixed Tank01 defects (missing games, ID
+      collisions) stop distorting salaries. Keeping the formulas in PowerShell keeps the change a pure
+      input switch with an exact shadow parity.
+    consequences:
+      positive:
+        - Points, history, ranking and salary follow the league ScoringSettings; the Sleeper gate guards the scorer.
+        - Kicker history is complete; Tank01 snap-count gaps no longer drop games.
+      negative:
+        - League-owned kicker salaries rise by about 41 percent and the salary cap moves by about -0.4 percent.
+        - A Sleeper ID without a unique current canonical identity keeps stale published values until the identity is resolved.
+        - Playoff and not yet final GameHistory games still show Tank01 PPR points.
