@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-10-05T01:25:00Z",
-  "input_fingerprint": "b33210976b23c03428284a37a12320fb6b6bdbebf0f631b7461a38171b345281",
+  "generated_at": "2026-10-05T01:56:02Z",
+  "input_fingerprint": "3ab2db4f71f8180834eb8cf5c5ecb798d77fca5512131c1f7f5f613211de3421",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "e61a03e1c2cddaa64587c587dd57b2d41ac7ae8239edf93c2e9a2a632d9757c3"
+      "input_fingerprint": "5ea92e9d02e617ba256fa803a8902155f7eb595cb01d4a73569216d1c9a03189"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "aa13d4c479dec4d87b7e7258b8ca00f9a1a9433ae1dcf1015ba84601c61b72fe"
+      "input_fingerprint": "e61a03e1c2cddaa64587c587dd57b2d41ac7ae8239edf93c2e9a2a632d9757c3"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,26 +23,420 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 309,
+    "current_discovery_count": 312,
     "previous_discovery_count": 309,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 7,
+    "event_type_counts": {
+      "changed": 2,
+      "new": 3,
+      "structural_change": 2
+    },
+    "event_priority_counts": {
+      "high": 7
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "1438d26bd9a3c455906d8137ca063c74a40d8dd7cec58608b10be5755f72bcee",
+    "current_evidence_fingerprint": "c7b905ac59c7edb78459d29e083e97f0f68e1f1c629ab68483372a5264350992",
     "previous_evidence_fingerprint": "1438d26bd9a3c455906d8137ca063c74a40d8dd7cec58608b10be5755f72bcee",
     "contract_changed": false,
-    "evidence_changed": false,
-    "comparison_event_count_before_suppression": 0,
+    "evidence_changed": true,
+    "comparison_event_count_before_suppression": 7,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "13415",
+      "name": "Haynes King",
+      "position": "QB",
+      "event_type": "new",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": null,
+      "current_state_hash": "b8f824968e173adbe736ecc9c8a8297214cc421586184903cd469905f48cbb84",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "injury_availability"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_flag_change",
+          "severity": "high",
+          "from": false,
+          "to": true
+        },
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": null,
+          "to": "Out"
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": null,
+          "to": "20261018"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "1379",
+      "name": "Kyle Juszczyk",
+      "position": "RB",
+      "event_type": "new",
+      "event_priority": "high",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "ed3de4cebe4236ba2353903b6c17b2160e6254a6242679e646ab60bc04a824ff",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "injury_availability"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_flag_change",
+          "severity": "high",
+          "from": false,
+          "to": true
+        },
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": null,
+          "to": "Questionable"
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": null,
+          "to": "20261011"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "7535",
+      "name": "Hunter Long",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "29437aec18f2d8f73e663b23286130dcc3a04af47af66708812ce5f7f05428e9",
+      "previous_state_hash": "ae1214909787544fcc15196ef432e598dcfa292fafe61d1cc8bc891d5b681f88",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "injury_availability",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "season_projection"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "down"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": "20261004",
+          "to": "20261011"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11600",
+      "name": "Ja'Tavion Sanders",
+      "position": "TE",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "55d9c12184386bcb0f496a7e2b23a72dc14969f18280d3aaa6144e808fec3b51",
+      "previous_state_hash": "bba52266fef15b21342b3dfd02b8b9a21b2f005cea088d8488fcf5777e47a222",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "down"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_flag_change",
+          "severity": "high",
+          "from": false,
+          "to": true
+        },
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": null,
+          "to": "Out"
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": null,
+          "to": "20261018"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "5094",
+      "name": "Ryan Izzo",
+      "position": "TE",
+      "event_type": "new",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": null,
+      "current_state_hash": "b8f824968e173adbe736ecc9c8a8297214cc421586184903cd469905f48cbb84",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "injury_availability"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_flag_change",
+          "severity": "high",
+          "from": false,
+          "to": true
+        },
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": null,
+          "to": "Out"
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": null,
+          "to": "20261011"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "12492",
+      "name": "Pat Bryant",
+      "position": "WR",
+      "event_type": "structural_change",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "6ea026f8da3bb19a03a6f7f2d49c1e4e7751051d34ce88594644ca5a3017a1a4",
+      "previous_state_hash": "6ea026f8da3bb19a03a6f7f2d49c1e4e7751051d34ce88594644ca5a3017a1a4",
+      "changed_dimensions": [
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "at_or_above_rostered_boundary",
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        },
+        {
+          "family": "season_projection",
+          "kind": "consensus_percentile_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_up",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
+      ],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": "20261004",
+          "to": "20261011"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "8188",
+      "name": "Tyquan Thornton",
+      "position": "WR",
+      "event_type": "structural_change",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "79ca01fb79e61cf7cf7e81f3afc5611d1cf50c76c6e4602398461ece85d838a9",
+      "previous_state_hash": "79ca01fb79e61cf7cf7e81f3afc5611d1cf50c76c6e4602398461ece85d838a9",
+      "changed_dimensions": [
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "injury_availability"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "position_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_flag_change",
+          "severity": "high",
+          "from": false,
+          "to": true
+        },
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": null,
+          "to": "Doubtful"
+        },
+        {
+          "family": "injury_availability",
+          "kind": "return_timeline_change",
+          "severity": "medium",
+          "from": null,
+          "to": "20261018"
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
