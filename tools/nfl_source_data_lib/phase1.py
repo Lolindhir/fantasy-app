@@ -20,6 +20,7 @@ _PHASE1_DATASET_IDS = {
     "nflverse.special-teams-fumble-events",
     "nflverse.player-game-long-gains",
     "nflverse.snap-counts",
+    "nflverse.espn-qbr-week",
     "sleeper.players",
 }
 
@@ -1030,6 +1031,186 @@ def _build_snap_counts(
     return outputs, audit, preserved
 
 
+def _qbr_materialized_seasons(
+    repo_root: Path,
+    observation_season: int,
+    available_seasons: Iterable[int],
+) -> list[int]:
+    """Seasons the QBR materializer owns: the current one plus already persisted partitions.
+
+    The upstream file spans every season since 2006, but the app only needs the current
+    season. Older seasons are materialized only when a canonical partition already exists
+    (frozen or explicitly repaired), never speculatively.
+    """
+    seasons = {observation_season}
+    directory = repo_root / "source-data/nfl/qbr-week"
+    if directory.is_dir():
+        for path in directory.glob("*.json"):
+            if re.fullmatch(r"\d{4}", path.stem):
+                seasons.add(int(path.stem))
+    return sorted(seasons & (set(available_seasons) | {observation_season}))
+
+
+def _build_qbr_week(
+    repo_root: Path,
+    dataset: Dataset,
+    schedule_index: dict[str, dict[str, Any]],
+    canonical: list[dict[str, Any]],
+    observation_season: int,
+    *,
+    force: bool,
+) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
+    if not schedule_index:
+        raise ValueError("nflverse.espn-qbr-week materialization requires nflverse.schedules")
+    lookup = identity_lookup(canonical)
+
+    rows_by_season: dict[int, list[dict[str, str]]] = defaultdict(list)
+    for row in _iter_csv_path(dataset.raw_path):
+        season = as_int(row.get("season"))
+        if season is None:
+            raise ValueError(f"{dataset.id} row is missing season")
+        rows_by_season[season].append(row)
+
+    seasons = _qbr_materialized_seasons(repo_root, observation_season, rows_by_season)
+    # The ESPN game id is only required to be unique inside a materialized season.
+    espn_to_schedule: dict[str, dict[str, Any]] = {}
+    for schedule in schedule_index.values():
+        if schedule["Season"] not in seasons:
+            continue
+        espn_game_id = (schedule.get("ProviderGameIDs") or {}).get("ESPN")
+        if not espn_game_id:
+            continue
+        if espn_game_id in espn_to_schedule:
+            raise ValueError(f"Duplicate ESPN game id in canonical schedule: {espn_game_id}")
+        espn_to_schedule[espn_game_id] = schedule
+
+    outputs: list[tuple[Path, dict[str, Any]]] = []
+    preserved = 0
+    record_count = 0
+    resolved_count = 0
+    unresolved_count = 0
+    published_game_count = 0
+    not_yet_available_game_count = 0
+
+    for season in seasons:
+        season_games = sorted(
+            (game for game in schedule_index.values() if game["Season"] == season),
+            key=lambda item: (item["Week"], item["GameType"], item["GameDay"] or "", item["GameID"]),
+        )
+        if not season_games:
+            continue
+
+        records: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+        rated_by_game: Counter[str] = Counter()
+        for row in rows_by_season.get(season, []):
+            espn_game_id = clean(row.get("game_id"))
+            espn_player_id = clean(row.get("player_id"))
+            if not espn_game_id or not espn_player_id:
+                raise ValueError(f"{dataset.id} row is missing game_id/player_id")
+            schedule = espn_to_schedule.get(espn_game_id)
+            if schedule is None:
+                raise ValueError(
+                    f"{dataset.id} references ESPN game {espn_game_id} that is unknown to the canonical schedule"
+                )
+            if schedule["Season"] != season:
+                raise ValueError(
+                    f"{dataset.id} ESPN game {espn_game_id} belongs to season {schedule['Season']}, not {season}"
+                )
+            key = (espn_game_id, espn_player_id)
+            if key in seen:
+                raise ValueError(f"Duplicate {dataset.id} game/player identity: game={espn_game_id} espn={espn_player_id}")
+            seen.add(key)
+
+            canonical_player_id = lookup.get(("ESPN", espn_player_id))
+            resolved_count += int(canonical_player_id is not None)
+            unresolved_count += int(canonical_player_id is None)
+            rated_by_game[schedule["GameID"]] += 1
+            identity_resolution: dict[str, Any] = {
+                "Status": "resolved" if canonical_player_id else "unresolved",
+                "Provider": "ESPN",
+                "ExternalID": espn_player_id,
+            }
+            if not canonical_player_id:
+                identity_resolution["Reason"] = "unmapped-provider-id"
+            records.append({
+                "CanonicalPlayerID": canonical_player_id,
+                "IdentityResolution": identity_resolution,
+                "SourceIDs": {"ESPN": espn_player_id},
+                "GameID": schedule["GameID"],
+                "ProviderGameIDs": {"ESPN": espn_game_id},
+                "GameType": schedule["GameType"],
+                "Week": schedule["Week"],
+                "PlayerName": clean(row.get("name_display")),
+                "SourceTeam": clean(row.get("team_abb")),
+                "SourceOpponentTeam": clean(row.get("opp_abb")),
+                "SourceSeasonType": clean(row.get("season_type")),
+                "SourceWeek": as_int(row.get("week_num")),
+                "Qualified": (clean(row.get("qualified")) or "").upper() == "TRUE",
+                "Rank": as_int(row.get("rank")),
+                "QBRTotal": as_float(row.get("qbr_total")),
+                "QBRRaw": as_float(row.get("qbr_raw")),
+                "PointsAdded": as_float(row.get("pts_added")),
+                "QBPlays": as_int(row.get("qb_plays")),
+                "EPATotal": as_float(row.get("epa_total")),
+                "Components": {
+                    "Pass": as_float(row.get("pass")),
+                    "Run": as_float(row.get("run")),
+                    "ExpSack": as_float(row.get("exp_sack")),
+                    "Penalty": as_float(row.get("penalty")),
+                    "Sack": as_float(row.get("sack")),
+                },
+            })
+        records.sort(key=lambda item: (item["GameID"], item["SourceIDs"]["ESPN"]))
+
+        games: list[dict[str, Any]] = []
+        for game in season_games:
+            rated = rated_by_game.get(game["GameID"], 0)
+            published = rated > 0
+            published_game_count += int(published)
+            not_yet_available_game_count += int(not published)
+            games.append({
+                "GameID": game["GameID"],
+                "GameType": game["GameType"],
+                "Week": game["Week"],
+                "ProviderGameIDs": {"ESPN": (game.get("ProviderGameIDs") or {}).get("ESPN")},
+                "QBRStatus": "published" if published else "not-yet-available",
+                "RatedRecordCount": rated,
+            })
+        record_count += len(records)
+
+        payload = {
+            "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+            "Season": season,
+            "SourceDataset": dataset.id,
+            "ScheduleDataset": "nflverse.schedules",
+            "Finalized": _finalized_for_season(season, observation_season),
+            "Games": games,
+            "Records": records,
+        }
+        path, effective, was_preserved = _canonical_partition(
+            repo_root,
+            dataset,
+            relative_path=f"qbr-week/{season}.json",
+            season=season,
+            observation_season=observation_season,
+            payload=payload,
+            force=force,
+        )
+        outputs.append((path, effective))
+        preserved += int(was_preserved)
+
+    audit = {
+        "partitionCount": len(outputs),
+        "recordCount": record_count,
+        "resolvedIdentityCount": resolved_count,
+        "unresolvedIdentityCount": unresolved_count,
+        "publishedGameCount": published_game_count,
+        "notYetAvailableGameCount": not_yet_available_game_count,
+    }
+    return outputs, audit, preserved
+
+
 def _build_sleeper_players(
     repo_root: Path,
     dataset: Dataset,
@@ -1192,6 +1373,15 @@ def build_phase1_outputs(
         )
         outputs.extend(built)
         audit["snapCounts"] = coverage
+        preserved += count
+
+    qbr_dataset = datasets.get("nflverse.espn-qbr-week")
+    if qbr_dataset is not None:
+        built, coverage, count = _build_qbr_week(
+            repo_root, qbr_dataset, schedule_index, canonical, observation_season, force=force
+        )
+        outputs.extend(built)
+        audit["qbrWeek"] = coverage
         preserved += count
 
     sleeper_dataset = datasets.get("sleeper.players")
