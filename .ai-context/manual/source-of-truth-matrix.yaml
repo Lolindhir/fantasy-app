@@ -395,7 +395,7 @@ matrix:
     facts:
       - NFL depth-chart role/order snapshots
     durableCanonicalPrimary: unresolved
-    currentRuntimePrimary: Sleeper depth_chart_position/order for the current app fields
+    currentRuntimePrimary: canonical Sleeper platform snapshot (source-data/nfl/platform/sleeper/players.json DepthChartPosition/DepthChartOrder) read by RequestPlayers.ps1 through utils/player/SleeperPlatformUtils.psm1 for the current app fields (#347 H4); a player missing from the snapshot stays null
     secondary:
       - nflverse depth-charts is a candidate snapshot source pending separate evaluation
       - other depth-chart providers may be evaluated separately
@@ -404,7 +404,7 @@ matrix:
     lifecycle: snapshot when canonicalized
     historyCoverage: not-consolidated
     freshness: nflverse candidate updates daily and uses timestamped snapshots from 2025 onward
-    migrationState: explicit-depth-chart-evaluation-still-open
+    migrationState: sleeper-fields-canonical-active-additional-source-evaluation-still-open
     guards:
       - depth-chart rank is a role/roster signal, not direct fantasy opportunity
       - preserve timestamped historical snapshots rather than overwriting only latest state if nflverse is adopted
