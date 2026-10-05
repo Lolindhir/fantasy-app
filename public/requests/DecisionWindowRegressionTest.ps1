@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 
 & "$PSScriptRoot\NflTeamRegistryRegressionTest.ps1"
 & "$PSScriptRoot\NflTeamKeyJoinRegressionTest.ps1"
+& "$PSScriptRoot\NflTeamsReadModelRegressionTest.ps1"
 & "$PSScriptRoot\DecisionWindowRegressionLegacyTest.ps1"
 & "$PSScriptRoot\LeagueWeekBoundaryRegressionTest.ps1"
 & "$PSScriptRoot\FantasyGameContextRegressionTest.ps1"

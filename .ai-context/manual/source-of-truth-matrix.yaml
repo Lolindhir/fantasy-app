@@ -743,7 +743,7 @@ playersReadModelFieldInventory:
       observations:
         - For free agents TeamAbbr/TeamID hold the last Tank01 team, not a current NFL team
         - IsFreeAgent agrees with absence from the canonical 2026 week-4 weekly roster for 439 of 452 true values (sleeper-mapped rows); 70 rows with IsFreeAgent=false are not on that roster
-        - Team key identity: source-data/nfl/teams.json (nflverse.teams, #347 F3a, ADR-042) is the canonical registry with aliases and LegacyAppTeamID; read since #347 F3b by the PowerShell team-key join helper (Get-NflTeamJoinKey) and NflScheduleUtils/WeeklyRecapUtils; Angular resolves via Teams.json ID/LegacyIDs (F3c delivers LegacyIDs); producers switch from F3d
+        - Team key identity: source-data/nfl/teams.json (nflverse.teams, #347 F3a, ADR-042) is the canonical registry with aliases and LegacyAppTeamID; read since #347 F3b by the PowerShell team-key join helper (Get-NflTeamJoinKey) and NflScheduleUtils/WeeklyRecapUtils; Angular resolves via Teams.json ID/LegacyIDs; since F3c Teams.json is generated from this registry (RequestTeams.ps1, no Tank01 call, ID = abbreviation, LegacyIDs = former numeric ID); other producers switch from F3d
     convenienceLinks:
       fields: [Picture, FantasyPros, ESPN, ESPNID]
       layer: consumerOnly

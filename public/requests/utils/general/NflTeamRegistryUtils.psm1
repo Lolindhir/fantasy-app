@@ -111,4 +111,44 @@ function Get-NflTeamJoinKey {
     }
 }
 
-Export-ModuleMember -Function Get-NflTeamRegistry, Resolve-NflTeamKey, Get-NflTeamJoinKey
+# App Teams.json read model (#347 F3c): one entry per registry team, keyed by the canonical abbreviation.
+# LegacyIDs keeps the former numeric app team IDs so archives and not yet switched producers still resolve.
+function New-NflTeamsReadModel {
+    param([Parameter(Mandatory = $true)][object]$Registry)
+
+    $teams = foreach ($team in @($Registry.Teams.Values | Sort-Object { [string]$_.TeamAbbr })) {
+        $legacyIds = @()
+        if (-not [string]::IsNullOrWhiteSpace([string]$team.LegacyAppTeamID)) { $legacyIds = @([string]$team.LegacyAppTeamID) }
+        [PSCustomObject]@{
+            ID            = [string]$team.TeamAbbr
+            Name          = [string]$team.Name
+            Abv           = [string]$team.TeamAbbr
+            City          = [string]$team.City
+            Logo          = [string]$team.Logo
+            Conference    = [string]$team.Conference
+            ConferenceAbv = [string]$team.ConferenceAbv
+            Division      = [string]$team.Division
+            LegacyIDs     = $legacyIds
+        }
+    }
+    return @($teams)
+}
+
+function Test-NflTeamsReadModelChanged {
+    param([AllowNull()][object[]]$OldTeams, [Parameter(Mandatory = $true)][object[]]$NewTeams)
+
+    if (-not $OldTeams -or $OldTeams.Count -ne $NewTeams.Count) { return $true }
+
+    $props = @('ID', 'Name', 'Abv', 'City', 'Logo', 'Conference', 'ConferenceAbv', 'Division')
+    for ($i = 0; $i -lt $OldTeams.Count; $i++) {
+        foreach ($prop in $props) {
+            if ([string]$OldTeams[$i].$prop -ne [string]$NewTeams[$i].$prop) { return $true }
+        }
+        $oldLegacy = (@($OldTeams[$i].LegacyIDs) | ForEach-Object { [string]$_ }) -join ','
+        $newLegacy = (@($NewTeams[$i].LegacyIDs) | ForEach-Object { [string]$_ }) -join ','
+        if ($oldLegacy -ne $newLegacy) { return $true }
+    }
+    return $false
+}
+
+Export-ModuleMember -Function Get-NflTeamRegistry, Resolve-NflTeamKey, Get-NflTeamJoinKey, New-NflTeamsReadModel, Test-NflTeamsReadModelChanged
