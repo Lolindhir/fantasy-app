@@ -150,8 +150,8 @@ Die Evidenzstufe wird zusätzlich auf `one_season_validated` oder später `multi
 Der geplante Review wird als neue Datei unter folgendem Pfad gespeichert; die Baseline bleibt unverändert:
 
 ```text
-fantasy-management/analyses/2026/league-meta/salary-efficiency/reviews/2027-postseason-validation.md
-fantasy-management/analyses/2026/league-meta/salary-efficiency/reviews/2027-postseason-validation.json
+fantasy-management/league-economy/salary/analyses/reviews/2027-postseason-validation.md
+fantasy-management/league-economy/salary/analyses/reviews/2027-postseason-validation.json
 ```
 
 ## Überführung in Knowledge oder Regeln

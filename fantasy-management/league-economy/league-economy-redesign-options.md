@@ -87,7 +87,7 @@ Die Liga muss zuerst entscheiden, **welches strategische Verhalten sie überhaup
 
 Detailpapier:
 
-`fantasy-management/league-context/salary-dead-cap-concept.md`
+`fantasy-management/league-economy/salary/salary-dead-cap-concept.md`
 
 ### Bereits geklärte Konzeptbausteine
 
@@ -156,7 +156,7 @@ Es kann Reloads und einen Hybrid sehr gut unterstützen und liefert gleichzeitig
 
 Detailpapier:
 
-`fantasy-management/league-context/salary-system-redesign-concept.md`
+`fantasy-management/league-economy/salary/salary-system-redesign-concept.md`
 
 ### Ausgangsproblem
 

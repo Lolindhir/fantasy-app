@@ -228,6 +228,11 @@ fantasy-management/
     league-format-notes.md
   league-economy/
     AGENTS.md
+    salary/
+      README.md
+      salary-dead-cap-concept.md
+      salary-system-redesign-concept.md
+      analyses/
     team-window-strategy-concept.md
     league-economy-redesign-options.md
   sources/

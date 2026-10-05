@@ -9,7 +9,7 @@ Es ist **keine beschlossene neue Salary-Regel**.
 
 Das bestehende Konzept für Rookie Salary, Minimum Salary und Dead Cap bleibt separat unter:
 
-`fantasy-management/league-context/salary-dead-cap-concept.md`
+`fantasy-management/league-economy/salary/salary-dead-cap-concept.md`
 
 Die hier dokumentierte Arbeit betrifft primär das normale Performance Salary ab dem Zeitpunkt, an dem ein Spieler nach dem regulären Mehrjahres-Performance-Modell bewertet wird, sowie die daraus entstehende Salary-Cap-Dynamik.
 
@@ -1746,8 +1746,8 @@ Der vollständige Test wurde mit der aktuellen `public/data/Players.json`-Popula
 
 Vollständige reproduzierbare Detailanalyse:
 
-- `fantasy-management/analyses/2026/league-meta/salary-efficiency/2026-10-02-criticality-normalization-k15.md`
-- `fantasy-management/analyses/2026/league-meta/salary-efficiency/2026-10-02-criticality-normalization-k15.json`
+- `fantasy-management/league-economy/salary/analyses/2026-10-02-criticality-normalization-k15.md`
+- `fantasy-management/league-economy/salary/analyses/2026-10-02-criticality-normalization-k15.json`
 
 Das JSON enthält zusätzlich die vollständige Top-120-Tabelle mit:
 

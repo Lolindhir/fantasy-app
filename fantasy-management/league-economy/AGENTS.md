@@ -17,8 +17,8 @@ For any task about league-economy redesign, long-term roster economics, franchis
 1. `fantasy-management/AGENTS.md`
 2. this file
 3. `fantasy-management/league-context/league-format-notes.md`
-4. `fantasy-management/league-context/salary-dead-cap-concept.md`
-5. `fantasy-management/league-context/salary-system-redesign-concept.md`
+4. `fantasy-management/league-economy/salary/salary-dead-cap-concept.md`
+5. `fantasy-management/league-economy/salary/salary-system-redesign-concept.md`
 6. `fantasy-management/league-economy/team-window-strategy-concept.md`
 7. `fantasy-management/league-economy/league-economy-redesign-options.md` when cross-topic synthesis or league-facing presentation matters
 8. current `public/data/League.json` when any conclusion depends on current team count, playoff settings, roster structure, scoring, trade deadline or other dynamic league settings
@@ -104,7 +104,7 @@ Do not call an option better merely because it increases realism in one dimensio
 
 Canonical source:
 
-`fantasy-management/league-context/salary-dead-cap-concept.md`
+`fantasy-management/league-economy/salary/salary-dead-cap-concept.md`
 
 Owns detailed Rookie Salary, Rookie Contract, Minimum Salary and Dead-Cap concepts.
 
@@ -112,7 +112,7 @@ Owns detailed Rookie Salary, Rookie Contract, Minimum Salary and Dead-Cap concep
 
 Canonical source:
 
-`fantasy-management/league-context/salary-system-redesign-concept.md`
+`fantasy-management/league-economy/salary/salary-system-redesign-concept.md`
 
 Owns detailed Performance Salary research, Positional Criticality, empirical salary-market checks and future salary-formula design.
 
