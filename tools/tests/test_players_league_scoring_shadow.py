@@ -198,6 +198,42 @@ class RepositoryDataTests(unittest.TestCase):
                 self.assertIn(old["ID"], reported)
 
 
+class AmbiguousEvidenceTests(unittest.TestCase):
+    def _run(self, collector):
+        import json
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+
+        def fake_score(record, scoring, special_teams_fumble_events=None):
+            if record["CanonicalPlayerID"] == "A":
+                raise ValueError("Special-teams fumble recovery has ambiguous fumble-team relation: x")
+            return {"FantasyPoints": 1.5, "UnsupportedNonZeroSettings": []}
+
+        with tempfile.TemporaryDirectory() as tmp:
+            partition = Path(tmp) / "source-data/nfl/player-stats/2026"
+            partition.mkdir(parents=True)
+            records = [
+                {"CanonicalPlayerID": cid, "SeasonType": "REG", "Stats": {}, "Position": "CB"} for cid in ("A", "B")
+            ]
+            (partition / "01.json").write_text(json.dumps({"Week": 1, "Records": records}), encoding="utf-8")
+            with mock.patch.object(scoring_export, "score_record", fake_score):
+                return scoring_export.build_weekly_scores(
+                    Path(tmp), (2026,), 2026, {1}, {"A", "B"}, {}, collector,
+                )
+
+    def test_the_collector_lists_the_ambiguous_player_and_scores_the_others(self) -> None:
+        collected: dict = {}
+        weekly, _, _ = self._run(collected)
+        self.assertEqual({"A": [(2026, 1)]}, collected)
+        self.assertNotIn("A", weekly[2026])
+        self.assertEqual(1.5, weekly[2026]["B"][1]["points"])
+
+    def test_without_a_collector_the_ambiguity_still_fails_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "ambiguous fumble-team relation"):
+            self._run(None)
+
+
 class ExportTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
