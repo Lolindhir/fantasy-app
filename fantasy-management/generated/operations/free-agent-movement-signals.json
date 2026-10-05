@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-signals",
-  "generated_at": "2026-10-05T04:25:39.180721Z",
-  "input_fingerprint": "f3930fba14c193338557a5f4c692d53c447d80533f554502d79ce7baa3546ccb",
+  "generated_at": "2026-10-05T05:22:03Z",
+  "input_fingerprint": "a3549760109a809e8cc21185cb74abe07928c948edea34e768efaedb4a92a83e",
   "source": {
     "free_agent_signals": {
       "path": "fantasy-management/generated/operations/free-agent-signals.json",
       "dataset_id": "free-agent-signals",
-      "input_fingerprint": "b251d6af57633fb34ed16b5d846ef18922717f88e77e36856ebf6f771fbf41ac"
+      "input_fingerprint": "3f910245634a16079124d2ba8ce81fa52b006c23e70b9b611241a3f391c2da79"
     },
     "player_signals": {
       "path": "fantasy-management/generated/operations/player-signals.json",
       "dataset_id": "player-signals",
-      "input_fingerprint": "d369969d77ef2caf65e94e1138387b8f9f459f30a50a00a5430c8cb3b26bdccb"
+      "input_fingerprint": "af8e7b52b33fb62250af37ef15bea1d0c7f6f7929ee85887f6f99605c72f1c2c"
     },
     "canonical_league_scoring": {
       "canonical_league_id": "nfl-reise",
@@ -507,6 +507,7 @@
     },
     "material_family_counts": {
       "dynasty_market": 289,
+      "injury_availability": 4,
       "redraft_adp": 1,
       "season_projection": 80
     },
@@ -10937,7 +10938,16 @@
           "team_comparison_status": "compared",
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
+          "changes": [
+            {
+              "family": "injury_availability",
+              "kind": "return_timeline_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": "20261004",
+              "to": "20261011"
+            }
+          ],
           "activity_changes": []
         }
       },
@@ -10952,7 +10962,8 @@
       "materiality": {
         "research_priority": "high",
         "material_families": [
-          "dynasty_market"
+          "dynasty_market",
+          "injury_availability"
         ],
         "thresholds_crossed": [
           {
@@ -11007,6 +11018,14 @@
               "absolute_percent_change": 20.0
             },
             "source_id": "fantasycalc-dynasty-superflex-ppr-8-team"
+          },
+          {
+            "family": "injury_availability",
+            "kind": "return_timeline_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": "20261004",
+            "to": "20261011"
           }
         ],
         "coverage_changes": [],
@@ -24187,7 +24206,16 @@
           "team_comparison_status": "compared",
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
+          "changes": [
+            {
+              "family": "injury_availability",
+              "kind": "injury_designation_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": "Out",
+              "to": "Questionable"
+            }
+          ],
           "activity_changes": []
         }
       },
@@ -24203,6 +24231,7 @@
         "research_priority": "high",
         "material_families": [
           "dynasty_market",
+          "injury_availability",
           "season_projection"
         ],
         "thresholds_crossed": [
@@ -24223,6 +24252,14 @@
             "delta": 13.13,
             "threshold": 10,
             "provider_count": 2
+          },
+          {
+            "family": "injury_availability",
+            "kind": "injury_designation_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": "Out",
+            "to": "Questionable"
           }
         ],
         "coverage_changes": [
@@ -46112,7 +46149,16 @@
           "team_comparison_status": "compared",
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
+          "changes": [
+            {
+              "family": "injury_availability",
+              "kind": "return_timeline_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": "20261004",
+              "to": "20261011"
+            }
+          ],
           "activity_changes": []
         }
       },
@@ -46128,6 +46174,7 @@
         "research_priority": "high",
         "material_families": [
           "dynasty_market",
+          "injury_availability",
           "season_projection"
         ],
         "thresholds_crossed": [
@@ -46170,6 +46217,14 @@
             "delta": 12.4,
             "threshold": 10,
             "provider_count": 2
+          },
+          {
+            "family": "injury_availability",
+            "kind": "return_timeline_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": "20261004",
+            "to": "20261011"
           }
         ],
         "coverage_changes": [
@@ -52960,7 +53015,16 @@
           "team_comparison_status": "compared",
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
+          "changes": [
+            {
+              "family": "injury_availability",
+              "kind": "injury_designation_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": "Doubtful",
+              "to": "Out"
+            }
+          ],
           "activity_changes": []
         }
       },
@@ -52976,6 +53040,7 @@
         "research_priority": "high",
         "material_families": [
           "dynasty_market",
+          "injury_availability",
           "season_projection"
         ],
         "thresholds_crossed": [
@@ -53032,6 +53097,14 @@
             "delta": -10.11,
             "threshold": 10,
             "provider_count": 2
+          },
+          {
+            "family": "injury_availability",
+            "kind": "injury_designation_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": "Doubtful",
+            "to": "Out"
           }
         ],
         "coverage_changes": [],
@@ -141626,6 +141699,6 @@
     "fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db"
   },
   "evidence": {
-    "input_fingerprint": "61a8ea4a3c13f0725c5b35233122c6f754641c12f1176efe64ece501c0b5f3b2"
+    "input_fingerprint": "8cd617a1402f2bdc8266e528529f9bb30e95591116701b0068a2c9db0d9ede36"
   }
 }
