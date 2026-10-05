@@ -1746,8 +1746,8 @@ Der vollständige Test wurde mit der aktuellen `public/data/Players.json`-Popula
 
 Vollständige reproduzierbare Detailanalyse:
 
-- `fantasy-management/analyses/2026/league-meta/salary-efficiency/2026-10-02-criticality-normalization-k15.md`
-- `fantasy-management/analyses/2026/league-meta/salary-efficiency/2026-10-02-criticality-normalization-k15.json`
+- `fantasy-management/league-economy/salary/analyses/2026-10-02-criticality-normalization-k15.md`
+- `fantasy-management/league-economy/salary/analyses/2026-10-02-criticality-normalization-k15.json`
 
 Das JSON enthält zusätzlich die vollständige Top-120-Tabelle mit:
 

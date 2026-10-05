@@ -15,12 +15,12 @@
 | 4 | [`../league-economy-redesign-options.md`](../league-economy-redesign-options.md) | Synthese der drei Themen Salary/Dead Cap, Performance Salary, Team-Window | frühes Diskussionspapier, keine Gesamtvariante beschlossen |
 | 5 | [`../team-window-strategy-concept.md`](../team-window-strategy-concept.md) | Reload, Rebuild oder Hybrid | Konzeptpapier |
 
-## Quantitative Analysen (bleiben am Ablageort)
+## Quantitative Analysen (`analyses/`)
 
-Datierte Analysen folgen der Analysis-Ablage unter `fantasy-management/analyses/` und werden deshalb hier nur verlinkt:
+Datierte Salary-Berechnungen liegen unter derselben Root (jeweils `.md` und `.json`):
 
-- [`2026-07-31-three-year-history-baseline.md`](../../analyses/2026/league-meta/salary-efficiency/2026-07-31-three-year-history-baseline.md): Salary-Effizienz-Baseline mit Drei-Jahres-Historie.
-- [`2026-10-02-criticality-normalization-k15.md`](../../analyses/2026/league-meta/salary-efficiency/2026-10-02-criticality-normalization-k15.md): Kritikalitäts-Normalisierung (Centered-25, Top-10%-Referenz, k=1,5), führendes Arbeitsmodell.
+- [`2026-07-31-three-year-history-baseline.md`](analyses/2026-07-31-three-year-history-baseline.md): Salary-Effizienz-Baseline mit Drei-Jahres-Historie.
+- [`2026-10-02-criticality-normalization-k15.md`](analyses/2026-10-02-criticality-normalization-k15.md): Kritikalitäts-Normalisierung (Centered-25, Top-10%-Referenz, k=1,5), führendes Arbeitsmodell.
 
 ## Abgrenzung zur Technik
 
@@ -29,6 +29,6 @@ Datierte Analysen folgen der Analysis-Ablage unter `fantasy-management/analyses/
 
 ## Arbeitsregeln
 
-- Neue Salary-Überlegungen kommen in diesen Ordner; datierte Berechnungen weiter unter `analyses/`.
+- Neue Salary-Überlegungen und datierte Salary-Analysen kommen in diesen Ordner (Analysen nach `analyses/`).
 - Vor Änderungen `fantasy-management/league-economy/AGENTS.md` lesen (Lesereihenfolge und Synthesegrenze).
 - Teilbare Fassung (PDF oder Doc) wird erst erstellt, wenn die Ausarbeitung des Vorschlags abgeschlossen ist.
