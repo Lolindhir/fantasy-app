@@ -21,6 +21,11 @@ Datierte Salary-Berechnungen liegen unter derselben Root (jeweils `.md` und `.js
 
 - [`2026-07-31-three-year-history-baseline.md`](analyses/2026-07-31-three-year-history-baseline.md): Salary-Effizienz-Baseline mit Drei-Jahres-Historie.
 - [`2026-10-02-criticality-normalization-k15.md`](analyses/2026-10-02-criticality-normalization-k15.md): Kritikalitäts-Normalisierung (Centered-25, Top-10%-Referenz, k=1,5), führendes Arbeitsmodell.
+- [`2026-10-05-salary-simulation.md`](analyses/2026-10-05-salary-simulation.md): Simulationspaket auf Liga-Scoring (Issue #879): Criticality-Kurven neu, Szenarien für Bandbreite, k, Rang-Population, Base Minimum und Rookie-Verträge, Cap-Rückkopplung, Zeitpunkt der Salary-Umstellung, Dead Cap aus echten Cuts. Dazu JSON und Spielertabelle als CSV.
+
+## Simulation (`simulation/`)
+
+- [`salary_simulation.py`](simulation/salary_simulation.py) rechnet die Simulation reproduzierbar aus Repo-Daten nach und schreibt JSON, CSV und Markdown nach `analyses/`. Aufruf aus dem Repo-Root: `python3 fantasy-management/league-economy/salary/simulation/salary_simulation.py`.
 
 ## Abgrenzung zur Technik
 

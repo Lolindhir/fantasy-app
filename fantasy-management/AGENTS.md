@@ -233,6 +233,7 @@ fantasy-management/
       salary-dead-cap-concept.md
       salary-system-redesign-concept.md
       analyses/
+      simulation/
     team-window-strategy-concept.md
     league-economy-redesign-options.md
   sources/
