@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+import re
 from datetime import datetime
 
 SOURCE_INPUT_PREFIXES = (
@@ -13,9 +14,11 @@ GENERATED_OPERATIONS_PREFIX = "fantasy-management/generated/operations/"
 CORE_INPUT_PATHS = {
     "public/data/League.json",
     "public/data/Players.json",
-    "public/data/Drafts.json",
     "public/data/Timestamps.json",
+    "public/data/Metadata.json",
 }
+# Current-season Canonical League drafts feed the FA board (build_fa_board_readmodel.py).
+CANONICAL_LEAGUE_DRAFTS_PATTERN = re.compile(r"^source-data/leagues/[^/]+/seasons/[^/]+/drafts\.json$")
 MATERIALIZATION_DEFINITION_PREFIXES = (
     "fantasy-management/automation/",
     "fantasy-management/_ai/scripts/",
@@ -90,7 +93,7 @@ def decide(
     if any(_is_source_input(path) for path in files):
         return TriggerDecision(True, "relevant_source_or_heartbeat_change")
 
-    if any(path in CORE_INPUT_PATHS for path in files):
+    if any(path in CORE_INPUT_PATHS or CANONICAL_LEAGUE_DRAFTS_PATTERN.match(path) for path in files):
         return TriggerDecision(True, "relevant_league_or_player_input_change")
 
     if any(_is_materialization_definition(path) for path in files):
