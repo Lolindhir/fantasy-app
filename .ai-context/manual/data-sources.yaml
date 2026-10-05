@@ -69,6 +69,12 @@ dataSources:
       generation steps that need the full player universe. Players[].ID is the
       canonical Sleeper player_id resolved through the Tank01 sleeperBotID join;
       Players[].TankID preserves the Tank01 playerID for provider provenance.
+      Since #347 D4 (2026-10-05) points, played games and the three prior seasons are
+      canonical NFL stats scored with the league ScoringSettings
+      (tools/players_league_scoring.py via PlayerLeagueScoringUtils.psm1) instead of
+      Tank01 PPR and the past_seasons/Players_<year>.json archives; Salary,
+      SalaryProjected, Ranking, Grading.Rank and the League salary cap follow
+      through the unchanged formulas.
     retiredProviderInputs:
       - input: Tank01 getNFLDFS DraftKings salaries
         status: not used

@@ -51,6 +51,9 @@ joinAudit:
         Every historical Players_<season>.json used for current player calculations
         must contain at most one record per non-empty TankID. Historical lookup
         construction must fail instead of overwriting a previous record.
+        Since #347 D4 RequestPlayers.ps1 no longer reads these archives (points history
+        comes from the canonical league-scoring export keyed by Sleeper ID and season);
+        the helper remains for the archive generators.
     historicalGameAggregation:
       providerKey: Tank01 playerID
       rule: >
