@@ -565,9 +565,13 @@ dataFlow:
     to: src/app/core/services/data.service.ts
     purpose: Frontend Player model.
 
+  - from: source-data/nfl/teams.json
+    to: public/data/Teams.json
+    purpose: RequestTeams.ps1 generates the app NFL team list from the canonical registry (#347 F3c, ADR-042); ID = canonical abbreviation, LegacyIDs = former numeric app IDs.
+
   - from: public/data/Teams.json
     to: src/app/core/services/data.service.ts
-    purpose: Frontend NFL team model.
+    purpose: Frontend NFL team model; teams resolve by ID or LegacyIDs.
 
   - from: public/data/Timestamps.json
     to: src/app/core/services/data.service.ts
