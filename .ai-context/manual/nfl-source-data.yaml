@@ -506,6 +506,14 @@ operationalDatasetEvaluation:
       - injury_start_date
       - practice_participation
       - Sleeper depth-chart fields as platform facts
+      - 'profile fields (#347 F1): FirstName, LastName, FullName, YearsExp, College, HighSchool, Number, ESPNID, BirthDate'
+      - 'injury detail fields (#347 F1): InjuryBodyPart, InjuryNotes, PracticeDescription'
+    fieldProjection: >
+      The exposed field set is a single contract-driven table
+      (_SLEEPER_PLAYER_FIELDS in tools/nfl_source_data_lib/phase1.py) over the
+      already persisted raw snapshot; acquisition is unchanged and existing fields
+      keep name and order. Missing raw values stay null, never zero or empty string.
+      Sleeper stays a platform fact source here and does not become identity owner.
     injuryRule: >
       Sleeper liefert den benoetigten aktuellen Injury-/Practice-State. Tank01-
       spezifische Rich-Fields wie ReturnDate oder Description sind kein

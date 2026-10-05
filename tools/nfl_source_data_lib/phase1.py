@@ -881,6 +881,33 @@ def _build_snap_counts(
     return outputs, audit, preserved
 
 
+# Contract-driven projection of the persisted raw Sleeper player snapshot (#347 F1).
+# Output field -> (raw key, coercion). Adding a persisted raw field to the canonical
+# platform snapshot is a one-line change here; consumers decide what to read.
+_SLEEPER_PLAYER_FIELDS: tuple[tuple[str, str, Any], ...] = (
+    ("Status", "status", clean),
+    ("Team", "team", clean),
+    ("Position", "position", clean),
+    ("InjuryStatus", "injury_status", clean),
+    ("InjuryStartDate", "injury_start_date", clean),
+    ("PracticeParticipation", "practice_participation", clean),
+    ("DepthChartPosition", "depth_chart_position", clean),
+    ("DepthChartOrder", "depth_chart_order", as_int),
+    ("FirstName", "first_name", clean),
+    ("LastName", "last_name", clean),
+    ("FullName", "full_name", clean),
+    ("YearsExp", "years_exp", as_int),
+    ("College", "college", clean),
+    ("HighSchool", "high_school", clean),
+    ("Number", "number", as_int),
+    ("ESPNID", "espn_id", clean),
+    ("BirthDate", "birth_date", clean),
+    ("InjuryBodyPart", "injury_body_part", clean),
+    ("InjuryNotes", "injury_notes", clean),
+    ("PracticeDescription", "practice_description", clean),
+)
+
+
 def _build_sleeper_players(
     repo_root: Path,
     dataset: Dataset,
@@ -912,19 +939,17 @@ def _build_sleeper_players(
         canonical_player_id = lookup.get(("Sleeper", sleeper_id))
         resolved_count += int(canonical_player_id is not None)
         unresolved_count += int(canonical_player_id is None)
-        records.append({
+        record: dict[str, Any] = {
             "CanonicalPlayerID": canonical_player_id,
             "SleeperPlayerID": sleeper_id,
-            "Status": clean(row.get("status")),
-            "Team": clean(row.get("team")),
-            "Position": clean(row.get("position")),
-            "FantasyPositions": row.get("fantasy_positions") if isinstance(row.get("fantasy_positions"), list) else [],
-            "InjuryStatus": clean(row.get("injury_status")),
-            "InjuryStartDate": clean(row.get("injury_start_date")),
-            "PracticeParticipation": clean(row.get("practice_participation")),
-            "DepthChartPosition": clean(row.get("depth_chart_position")),
-            "DepthChartOrder": as_int(row.get("depth_chart_order")),
-        })
+        }
+        for output_name, raw_key, coerce in _SLEEPER_PLAYER_FIELDS:
+            record[output_name] = coerce(row.get(raw_key))
+            if output_name == "Position":
+                record["FantasyPositions"] = (
+                    row.get("fantasy_positions") if isinstance(row.get("fantasy_positions"), list) else []
+                )
+        records.append(record)
     records.sort(key=lambda item: item["SleeperPlayerID"])
     payload = {
         "SchemaVersion": CANONICAL_SCHEMA_VERSION,
