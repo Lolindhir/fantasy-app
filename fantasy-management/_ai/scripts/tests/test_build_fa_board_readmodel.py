@@ -118,6 +118,27 @@ def draft(picks: list[dict] | None = None) -> list[dict]:
     return [{"DraftKey": "2026_Free_Agent", "Season": "2026", "DraftType": "Free_Agent", "Status": "Drafting", "SleeperStatus": "drafting", "Picks": list(picks or [])}]
 
 
+def canonical_draft(legacy: dict, *, teams: int = 2, draft_format: str = "linear", name: str = "Free Agent Draft") -> dict:
+    """Canonical-shaped draft from the legacy test shape (owner N sits in slot N)."""
+    picks = []
+    for p in legacy.get("Picks") or []:
+        picks.append({
+            "CanonicalLeagueRosterID": f"roster-{p['CurrentOwnerRosterID']}",
+            "PickNo": p["OverallPick"],
+            "Player": Fixture.canonical_player(p["PlayerID"]),
+        })
+    return {
+        "Season": 2026,
+        "Status": legacy.get("SleeperStatus") or "drafting",
+        "Type": draft_format,
+        "Metadata": {"name": name},
+        "Settings": {"teams": teams, "reversal_round": 0},
+        "ProviderMappings": [{"Provider": "Sleeper", "ProviderDraftID": "fa-1"}],
+        "SlotToRoster": [{"CanonicalLeagueRosterID": f"roster-{i}", "Slot": str(i)} for i in range(1, teams + 1)],
+        "Picks": picks,
+    }
+
+
 class Fixture:
     def __init__(
         self,
@@ -127,17 +148,29 @@ class Fixture:
         draft_data: list[dict],
         *,
         canonical_membership: dict | None = None,
+        draft_binding: dict | None = None,
+        canonical_drafts: list | None = None,
     ):
         self.root = root
         self.config = root / "fantasy-management/automation/fa-board-materialization.json"
         self.write("public/data/League.json", league_data)
-        self.write("public/data/Drafts.json", draft_data)
-        self.write("public/data/Timestamps.json", {"League": NOW, "Drafts": NOW, "Players": NOW})
+        self.write(
+            "public/data/Metadata.json",
+            {"Drafts": {"Types": [
+                {"DraftType": "Rookie", "DraftInstance": 1, "DraftNo": 1, "Rounds": 5},
+                {"DraftType": "Free_Agent", "DraftInstance": 1, "DraftNo": 2, "Rounds": 5, **(draft_binding or {})},
+            ]}},
+        )
+        self.write("public/data/Timestamps.json", {"League": NOW, "Players": NOW})
         self.write(
             "fantasy-management/generated/operations/player-signals.json",
             {"schema_version": 1, "dataset_id": "player-signals", "generated_at": NOW, "input_fingerprint": "a" * 64, "players": players, "quality": {"status": "ok"}},
         )
         self.write_canonical_league(canonical_membership or league_data)
+        self.write(
+            "source-data/leagues/test-league/seasons/2026/drafts.json",
+            canonical_drafts if canonical_drafts is not None else [canonical_draft(d) for d in draft_data],
+        )
         self.write(
             "fantasy-management/automation/fa-board-materialization.json",
             {
@@ -148,7 +181,7 @@ class Fixture:
                 "sources": {
                     "player_signals": "fantasy-management/generated/operations/player-signals.json",
                     "league_enrichment": "public/data/League.json",
-                    "drafts": "public/data/Drafts.json",
+                    "league_metadata": "public/data/Metadata.json",
                     "timestamps": "public/data/Timestamps.json",
                 },
                 "output": {"fa_board_readmodel": "fantasy-management/generated/operations/fa-board-readmodel.json"},
@@ -269,6 +302,7 @@ class FaBoardReadmodelTests(unittest.TestCase):
         draft_data: list[dict],
         *,
         canonical_membership: dict | None = None,
+        **fixture_kwargs,
     ) -> dict:
         with tempfile.TemporaryDirectory() as tmp:
             return Fixture(
@@ -277,6 +311,7 @@ class FaBoardReadmodelTests(unittest.TestCase):
                 league_data,
                 draft_data,
                 canonical_membership=canonical_membership,
+                **fixture_kwargs,
             ).build()
 
     def test_opponent_rostered_and_taxi_buckets_block_availability(self) -> None:
@@ -403,6 +438,50 @@ class FaBoardReadmodelTests(unittest.TestCase):
         result = self.run_fixture([player("unknown", "Unknown")], league(), [])
         self.assertEqual("unknown", row(result, "unknown")["availability_status"])
         self.assertEqual("unknown", result["current_fa_draft"]["resolution_status"])
+
+    def test_unbound_draft_is_classified_by_name_and_binding_is_authoritative(self) -> None:
+        picks = [pick("picked", 2)]
+        result = self.run_fixture([player("picked", "Picked")], league(), draft(picks))
+        self.assertEqual("2026_Free_Agent", result["current_fa_draft"]["draft_key"])
+        self.assertEqual("drafted", row(result, "picked")["availability_status"])
+        bound = self.run_fixture(
+            [player("picked", "Picked")], league(), draft(picks),
+            draft_binding={"SleeperDraftIDs": {"2026": "fa-1"}},
+            canonical_drafts=[canonical_draft(draft(picks)[0], name="NFL Reise")],
+        )
+        self.assertEqual("2026_Free_Agent", bound["current_fa_draft"]["draft_key"])
+        self.assertEqual("drafted", row(bound, "picked")["availability_status"])
+
+    def test_unclassifiable_open_draft_fails_closed(self) -> None:
+        result = self.run_fixture(
+            [player("free", "Free")], league(), draft(),
+            canonical_drafts=[canonical_draft(draft()[0], name="NFL Reise")],
+        )
+        self.assertEqual("unknown", result["current_fa_draft"]["resolution_status"])
+        self.assertEqual("unknown", row(result, "free")["availability_status"])
+
+    def test_missing_canonical_drafts_file_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Fixture(Path(tmp), [player("free", "Free")], league(), draft())
+            (Path(tmp) / "source-data/leagues/test-league/seasons/2026/drafts.json").unlink()
+            result = fixture.build()
+        self.assertEqual("unknown", result["current_fa_draft"]["resolution_status"])
+        self.assertEqual("unknown", row(result, "free")["availability_status"])
+
+    def test_unmapped_pick_roster_fails_closed(self) -> None:
+        bad = canonical_draft(draft([pick("picked", 2)])[0])
+        bad["Picks"][0]["CanonicalLeagueRosterID"] = "roster-unknown"
+        result = self.run_fixture([player("picked", "Picked")], league(), [], canonical_drafts=[bad])
+        self.assertEqual("unknown", result["current_fa_draft"]["resolution_status"])
+
+    def test_snake_order_reverses_original_owner_in_even_rounds(self) -> None:
+        legacy = draft([pick("a", 2, 3)])[0]  # overall 3 = round 2, position 1 in a 2-team draft
+        result = self.run_fixture(
+            [player("a", "A")], league(), [],
+            canonical_drafts=[canonical_draft(legacy, draft_format="snake")],
+        )
+        self.assertEqual("2026_Free_Agent_R2_OO2", row(result, "a")["current_fa_draft_pick"]["pick_key"])
+        self.assertEqual("2.01", row(result, "a")["current_fa_draft_pick"]["display_pick"])
 
     def test_repository_current_fa_board_semantics_match_canonical_cutover(self) -> None:
         root = Path(__file__).resolve().parents[4]

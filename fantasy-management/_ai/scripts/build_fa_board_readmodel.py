@@ -35,6 +35,11 @@ from canonical_league_ownership import (
     enrich_canonical_ownership_with_display,
     resolve_current_canonical_season,
 )
+from canonical_league_drafts import (
+    CanonicalDraftError,
+    drafts_path as canonical_drafts_path,
+    load_canonical_current_drafts,
+)
 
 SCHEMA_VERSION = 1
 CONFIG_SCHEMA_VERSION = 1
@@ -314,6 +319,15 @@ def resolve_active_fa_draft(drafts: Any, league_state: dict[str, Any]) -> dict[s
     for draft in drafts:
         if not isinstance(draft, dict):
             continue
+        if draft.get("DraftType") is None and normalize_status(draft.get("SleeperStatus")) != "COMPLETE":
+            issues.append(
+                {
+                    "severity": "error",
+                    "kind": "unclassified_open_canonical_draft",
+                    "sleeper_draft_id": optional_text(draft.get("SleeperDraftID")),
+                }
+            )
+            continue
         if normalize_status(draft.get("DraftType")) not in {"FREE_AGENT", "FREEAGENT"}:
             continue
         season = optional_text(draft.get("Season"))
@@ -323,6 +337,9 @@ def resolve_active_fa_draft(drafts: Any, league_state: dict[str, Any]) -> dict[s
         priority = 2 if status in {"DRAFTING", "LIVE"} else 1 if status in {"PREDRAFT", "PRE_DRAFT", "UPCOMING"} else 0
         if priority:
             candidates.append((priority, draft))
+
+    if any(issue.get("kind") == "unclassified_open_canonical_draft" for issue in issues):
+        return {"resolution_status": UNKNOWN, "draft": None, "picked_by_player": {}, "issues": issues}
 
     if not candidates:
         phase = normalize_status(league_state.get("league_phase"))
@@ -641,12 +658,12 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     sources = config.get("sources") or {}
     player_signals_path = root / sources["player_signals"]
     league_enrichment_path = root / sources["league_enrichment"]
-    drafts_path = root / sources["drafts"]
+    metadata_path = root / sources["league_metadata"]
     timestamps_path = root / sources["timestamps"]
 
     player_signals = validate_player_signals(load_json(player_signals_path))
     league_enrichment = load_json(league_enrichment_path)
-    drafts = load_json(drafts_path)
+    metadata = load_json(metadata_path)
     timestamps = load_json(timestamps_path)
     if not isinstance(timestamps, dict):
         timestamps = {}
@@ -683,13 +700,27 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         managed_team_id,
         canonical_season,
     )
+    drafts_path = canonical_drafts_path(root, canonical_league_id, canonical_season)
+    try:
+        drafts: Any = load_canonical_current_drafts(
+            root,
+            canonical_league_id=canonical_league_id,
+            season=canonical_season,
+            ownership_teams=ownership_teams,
+            metadata=metadata,
+        )
+        draft_load_issue = None
+    except CanonicalDraftError as exc:
+        drafts = None
+        draft_load_issue = {"severity": "error", "kind": "canonical_drafts_unavailable", "detail": str(exc)}
     draft_state = resolve_active_fa_draft(drafts, league_state)
+    if draft_load_issue:
+        draft_state["issues"] = [draft_load_issue]
 
     generated_at = max_timestamp(
         [
             player_signals.get("generated_at"),
             timestamps.get("League"),
-            timestamps.get("Drafts"),
             timestamps.get("Players"),
         ]
     ) or optional_text(player_signals.get("generated_at"))
@@ -892,10 +923,15 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                 league_state.get("ownership_complete")
             ),
         },
+        "league_metadata": {
+            "path": sources["league_metadata"],
+            "content_sha256": source_hash(metadata_path),
+            "source_timestamp": None,
+        },
         "drafts": {
-            "path": sources["drafts"],
-            "content_sha256": source_hash(drafts_path),
-            "source_timestamp": optional_text(timestamps.get("Drafts")),
+            "path": drafts_path.relative_to(root).as_posix(),
+            "content_sha256": source_hash(drafts_path) if drafts_path.is_file() else sha256_text(""),
+            "source_timestamp": None,
             "resolution_status": draft_state.get("resolution_status"),
         },
         "player_signals": {
