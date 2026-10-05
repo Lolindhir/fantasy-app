@@ -1303,3 +1303,29 @@ decisions:
         - League-owned kicker salaries rise by about 41 percent and the salary cap moves by about -0.4 percent.
         - A Sleeper ID without a unique current canonical identity keeps stale published values until the identity is resolved.
         - Playoff and not yet final GameHistory games still show Tank01 PPR points.
+
+  - id: ADR-042
+    title: NFL team identity is a canonical registry keyed by abbreviation
+    status: accepted
+    context: >
+      The app keys NFL teams by a numeric Tank01 ID in Teams.json, Players, Schedule, GameHistory,
+      DecisionWindows, FantasyGameContext and WeeklyRecaps, while canonical NFL source data uses
+      nflverse abbreviations. Tank01 must be removed (Issue #347), and alias handling such as LAR
+      to LA was hard-wired in individual scripts.
+    decision: >
+      Robert decided on 2026-10-05 (Issue #347 F3, decision D) to use the canonical abbreviation as
+      the app team key and to keep the old numeric IDs permanently as LegacyIDs. source-data/nfl/teams.json,
+      materialized from the nflverse dataset nflverse.teams, is the registry (FranchiseID, names,
+      division, ESPN logo, aliases, LegacyAppTeamID). One fail-closed resolver per language reads it.
+      Cutover is staged: registry and resolvers (F3a), tolerant lookup of both key forms in Angular and the
+      PowerShell joins (F3b), Teams.json from the registry (F3c), then producers one by one (F3d).
+    rationale: >
+      Players.json and Schedule.json are written by different workflows at different times, so a
+      single-commit key switch is not possible; tolerant reading first keeps every intermediate state
+      consistent. Keeping LegacyIDs avoids rewriting browser-cached archives.
+    consequences:
+      positive:
+        - One team identity for all consumers, no provider-specific alias maps.
+        - Archives with numeric IDs keep resolving.
+      negative:
+        - Teams.json gains LegacyIDs and the visible Rams and Commanders abbreviations change in F3c.
