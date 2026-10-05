@@ -465,7 +465,7 @@ function New-FantasyGameContextReadModel {
 
         $unknownForGame = @($nonGameAssociations | Where-Object {
             -not [string]::IsNullOrWhiteSpace([string]$_.NFLTeamID) -and
-            ([string]$_.NFLTeamID -eq [string]$meta.AwayTeamID -or [string]$_.NFLTeamID -eq [string]$meta.HomeTeamID)
+            ((Get-NflTeamJoinKey -Value $_.NFLTeamID) -eq (Get-NflTeamJoinKey -Value $meta.AwayTeamID) -or (Get-NflTeamJoinKey -Value $_.NFLTeamID) -eq (Get-NflTeamJoinKey -Value $meta.HomeTeamID))
         }).Count
         $hasPoints = @($associations | Where-Object HasPoints).Count -gt 0
         $isFinalGame = ([string]$meta.Status) -match '^Final'
@@ -690,7 +690,7 @@ function New-FgcHistoricalDecisionFacts {
                 if (-not [string]::IsNullOrWhiteSpace($canonicalID) -and $weeklyByCanonical.ContainsKey($canonicalID)) {
                     foreach ($assignment in @($weeklyByCanonical[$canonicalID])) {
                         $candidateGames += @($normalizedGames | Where-Object {
-                            (-not [string]::IsNullOrWhiteSpace([string]$assignment.TeamID) -and ([string]$_.AwayTeamID -eq [string]$assignment.TeamID -or [string]$_.HomeTeamID -eq [string]$assignment.TeamID)) -or
+                            (-not [string]::IsNullOrWhiteSpace([string]$assignment.TeamID) -and ((Get-NflTeamJoinKey -Value $_.AwayTeamID) -eq (Get-NflTeamJoinKey -Value $assignment.TeamID) -or (Get-NflTeamJoinKey -Value $_.HomeTeamID) -eq (Get-NflTeamJoinKey -Value $assignment.TeamID))) -or
                             (-not [string]::IsNullOrWhiteSpace([string]$assignment.TeamAbbr) -and ([string]$_.AwayTeamAbbr -eq [string]$assignment.TeamAbbr -or [string]$_.HomeTeamAbbr -eq [string]$assignment.TeamAbbr))
                         })
                     }

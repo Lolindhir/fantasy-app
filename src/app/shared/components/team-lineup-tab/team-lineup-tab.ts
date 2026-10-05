@@ -68,7 +68,7 @@ export class TeamLineupTabComponent implements OnInit, OnDestroy {
 
   get upcomingWindows(): TeamUpcomingLockView[] {
     if (!this.model) return [];
-    return buildTeamUpcomingLockViews(this.model, this.fantasyTeamId, this.now);
+    return buildTeamUpcomingLockViews(this.model, this.fantasyTeamId, this.now, this.nflTeams);
   }
 
   get weekSummary(): TeamLineupWeekSummaryView {
