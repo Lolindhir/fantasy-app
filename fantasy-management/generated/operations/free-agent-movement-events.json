@@ -2,16 +2,16 @@
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
   "generated_at": "2026-10-05T14:12:09Z",
-  "input_fingerprint": "cf3f8b3a351d6b68c9cf960030b1a0a48be84897490193a6f6f7f9e330559143",
+  "input_fingerprint": "c7484555c4fd123e9fda1171cbf311ee216ea960e6b7c3b9f69a4efbf4ab14a7",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "393b1a8f60aef7d4555b3d41e757e62449862db352210e987538071840e2116b"
+      "input_fingerprint": "3ed91abd375529f1e6eac88dafad3f091be156718046958e37e08901b7a72fb8"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "aec8ead0a11939a86d4604ec77e519900732eb36061bb0c9b8bea6985b0ea765"
+      "input_fingerprint": "393b1a8f60aef7d4555b3d41e757e62449862db352210e987538071840e2116b"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,16 +23,14 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 313,
-    "previous_discovery_count": 312,
-    "event_count": 2,
+    "current_discovery_count": 312,
+    "previous_discovery_count": 313,
+    "event_count": 1,
     "event_type_counts": {
-      "new": 1,
-      "structural_change": 1
+      "resolved": 1
     },
     "event_priority_counts": {
-      "high": 1,
-      "medium": 1
+      "low": 1
     },
     "baseline_mode": "comparison"
   },
@@ -41,121 +39,36 @@
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "current_evidence_fingerprint": "6dd0e2618c44afb9c14c7403869f58359ed7fc596e6c7efb84b2b953c12118b2",
-    "previous_evidence_fingerprint": "cd136e144338074ab1cb010fafa6acb57de2409cff217a84daa16e15e61e958d",
+    "previous_evidence_fingerprint": "6dd0e2618c44afb9c14c7403869f58359ed7fc596e6c7efb84b2b953c12118b2",
     "contract_changed": false,
-    "evidence_changed": true,
-    "comparison_event_count_before_suppression": 2,
+    "evidence_changed": false,
+    "comparison_event_count_before_suppression": 1,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
   "events": [
     {
-      "player_id": "8188",
-      "name": "Tyquan Thornton",
-      "position": "WR",
-      "event_type": "structural_change",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "high",
-      "current_state_hash": "d0fc4deec4e3c5fba08d0e1c2f7c62eca98c4580c474b5dfba6dee93f5166eba",
-      "previous_state_hash": "d0fc4deec4e3c5fba08d0e1c2f7c62eca98c4580c474b5dfba6dee93f5166eba",
-      "changed_dimensions": [
-        "structural_change"
-      ],
-      "current_material_families": [
-        "dynasty_market",
-        "injury_availability"
-      ],
-      "previous_material_families": [
-        "dynasty_market"
-      ],
-      "current_replacement_classification": "near_rostered_boundary",
-      "previous_replacement_classification": "near_rostered_boundary",
-      "threshold_summary": [
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "high",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "medium",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "overall_rank_movement",
-          "severity": "medium",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "position_rank_movement",
-          "severity": "medium",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "tier_change",
-          "severity": "high",
-          "direction": null
-        }
-      ],
-      "cross_signal_summary": [
-        {
-          "kind": "confirmation_up",
-          "families": [
-            "dynasty_market",
-            "season_projection"
-          ],
-          "up_families": [],
-          "down_families": []
-        }
-      ],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "return_timeline_change",
-          "severity": "medium",
-          "from": "20261018",
-          "to": "20261115"
-        }
-      ],
-      "final_roster_recommendation": null
-    },
-    {
       "player_id": "1379",
       "name": "Kyle Juszczyk",
       "position": "RB",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "ed3de4cebe4236ba2353903b6c17b2160e6254a6242679e646ab60bc04a824ff",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "ed3de4cebe4236ba2353903b6c17b2160e6254a6242679e646ab60bc04a824ff",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "injury_availability"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "below_rostered_boundary",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "injury_availability",
-          "kind": "injury_designation_change",
-          "severity": "medium",
-          "from": "Questionable",
-          "to": "Doubtful"
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     }
   ],
