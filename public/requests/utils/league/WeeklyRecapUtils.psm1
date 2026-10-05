@@ -1,4 +1,5 @@
 try {
+    Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\MatchupReadModelUtils.psm1" -ErrorAction Stop -Force
 }
@@ -41,11 +42,8 @@ function Get-WrScheduleWeekNumber {
 function ConvertTo-WrCanonicalTeamAbbr {
     param([AllowNull()][object]$TeamAbbr)
     $value = ([string]$TeamAbbr).Trim().ToUpperInvariant()
-    switch ($value) {
-        'LAR' { return 'LA' }
-        'WSH' { return 'WAS' }
-        default { return $value }
-    }
+    if ([string]::IsNullOrWhiteSpace($value)) { return $value }
+    return (Get-NflTeamJoinKey -Value $value).ToUpperInvariant()
 }
 
 function Get-WrAwayAbbr {
@@ -129,6 +127,8 @@ function Get-WrNFLTeamID {
         if ($home -eq $teamKey) { $ids += [string](Get-WrValue -Object $game -Names @('teamIDHome','HomeTeamID')) }
     }
     $ids = @($ids | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
+    # Differing key forms of the same team (abbreviation, provider spelling, legacy numeric ID) are one stable team.
+    if (@($ids | ForEach-Object { Get-NflTeamJoinKey -Value $_ } | Sort-Object -Unique).Count -eq 1) { $ids = @($ids[0]) }
     if ($ids.Count -ne 1) { throw "WeeklyRecaps cannot resolve one stable NFLTeamID for '$TeamAbbr'." }
     return [string]$ids[0]
 }

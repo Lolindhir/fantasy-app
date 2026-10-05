@@ -376,9 +376,15 @@ teamRegistryContract:
     - LegacyAppTeamID is frozen in code (LEGACY_APP_TEAM_IDS) from the published Teams.json and is never fetched from a provider.
     - Alias rows from nflverse must share the franchise ID of their target team, otherwise materialization fails.
   consumerStatus: >
-    F3a only provides the registry and resolvers. No generator or Angular consumer changes yet;
-    tolerant lookup (F3b), Teams.json from the registry (F3c) and producer switches (F3d) follow
-    in the #347 plan. NflScheduleUtils.psm1 keeps its LAR/WSH map until F3b.
+    F3a provided the registry and resolvers. F3b (tolerant reads) is in place: PowerShell joins
+    between NFL team references (DecisionWindows, Lineup Repairability evidence, FantasyGameContext,
+    WeeklyRecaps) compare canonical keys through Get-NflTeamJoinKey, which accepts abbreviations,
+    provider spellings and legacy numeric IDs on either side and returns unresolvable values
+    unchanged; emitted team IDs are never rewritten. NflScheduleUtils and WeeklyRecapUtils resolve
+    LAR/WSH through the registry instead of local maps. Angular resolves NFL teams by ID or
+    Teams.json LegacyIDs through shared/utils/nfl-team-key.util.ts and falls back to a neutral team
+    for unknown references. Teams.json from the registry (F3c) and producer switches (F3d) follow
+    in the #347 plan.
 
 specialTeamsFumbleEventContract:
   issue: 709

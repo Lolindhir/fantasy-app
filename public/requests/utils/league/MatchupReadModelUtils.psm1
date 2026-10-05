@@ -10,6 +10,7 @@ function Export-ModuleMember {
     )
 }
 
+Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 . "$PSScriptRoot\MatchupReadModelCore.ps1"
 Remove-Item Function:\Export-ModuleMember -Force
 

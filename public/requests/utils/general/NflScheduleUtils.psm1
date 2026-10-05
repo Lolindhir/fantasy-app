@@ -1,16 +1,13 @@
-# Team abbreviations that differ between Tank01 (Players.json team) and the canonical NFL schedule (nflverse).
-$script:NflScheduleTeamAliases = @{
-    'LAR' = 'LA'
-    'WSH' = 'WAS'
-}
+Import-Module "$PSScriptRoot\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 
+# Maps provider spellings that differ from the canonical NFL schedule (for example LAR, WSH) to the canonical
+# team abbreviation through the canonical team registry (source-data/nfl/teams.json). Unknown values stay
+# unchanged (upper-cased) so callers keep failing closed on them.
 function ConvertTo-CanonicalNflScheduleTeam {
     param([AllowNull()][string]$Team)
 
     if ([string]::IsNullOrWhiteSpace($Team)) { return $null }
-    $value = $Team.Trim().ToUpperInvariant()
-    if ($script:NflScheduleTeamAliases.ContainsKey($value)) { return $script:NflScheduleTeamAliases[$value] }
-    return $value
+    return (Get-NflTeamJoinKey -Value $Team).ToUpperInvariant()
 }
 
 # Returns a hashtable canonical team -> bye week (the single REG week without a game for that team).

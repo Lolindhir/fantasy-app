@@ -78,4 +78,37 @@ function Resolve-NflTeamKey {
     throw "Unknown NFL team key '$text'."
 }
 
-Export-ModuleMember -Function Get-NflTeamRegistry, Resolve-NflTeamKey
+$script:DefaultNflTeamRegistry = $null
+
+function Get-DefaultNflTeamRegistry {
+    if ($null -eq $script:DefaultNflTeamRegistry) {
+        $repoRoot = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)))
+        $script:DefaultNflTeamRegistry = Get-NflTeamRegistry -RepoRoot $repoRoot
+    }
+    return $script:DefaultNflTeamRegistry
+}
+
+# Join key for matching NFL team references that may still use different key forms (canonical abbreviation,
+# provider spelling or legacy numeric app ID). Tolerant on purpose: a value the registry cannot resolve is
+# returned trimmed and unchanged, so an unknown team stays an unknown team in the caller's existing fail-closed
+# handling instead of aborting the whole generation. Empty input returns $null. Emitted data is never rewritten.
+function Get-NflTeamJoinKey {
+    param(
+        [AllowNull()][object]$Value,
+        [Nullable[int]]$Season = $null
+    )
+
+    if ($null -eq $Value) { return $null }
+    $text = ([string]$Value).Trim()
+    if ([string]::IsNullOrWhiteSpace($text)) { return $null }
+
+    $registry = Get-DefaultNflTeamRegistry
+    try {
+        return Resolve-NflTeamKey -Registry $registry -Value $text -Season $Season
+    }
+    catch {
+        return $text
+    }
+}
+
+Export-ModuleMember -Function Get-NflTeamRegistry, Resolve-NflTeamKey, Get-NflTeamJoinKey
