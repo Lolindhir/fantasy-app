@@ -28,16 +28,16 @@
   "appPlayerCount": 1268,
   "identityCoverage": {
     "matched": 1268,
-    "withGSIS": 1202,
-    "withoutGSIS": 66
+    "withGSIS": 1206,
+    "withoutGSIS": 62
   },
   "identityCoverageByProvider": {
     "Sleeper": 1268
   },
   "draftStatusCoverage": {
     "drafted": 685,
-    "undrafted": 421,
-    "unknown": 162
+    "undrafted": 422,
+    "unknown": 161
   },
   "draftStatusByPosition": {
     "K": {
@@ -47,8 +47,8 @@
     },
     "QB": {
       "drafted": 106,
-      "undrafted": 35,
-      "unknown": 16
+      "undrafted": 36,
+      "unknown": 15
     },
     "RB": {
       "drafted": 154,
@@ -134,8 +134,8 @@
     "withoutPfrIdCount": 1531,
     "canonicalDraftLinkedCount": 5571,
     "currentAppResolvedPlayerCount": 1268,
-    "currentAppPlayersWithCombine": 715,
-    "currentAppPlayersWithoutCombine": 553,
+    "currentAppPlayersWithCombine": 716,
+    "currentAppPlayersWithoutCombine": 552,
     "draftLinkConflictCount": 0,
     "draftLinkConflicts": [],
     "bySeason": {
@@ -798,9 +798,10 @@
     "Rotowire": 7,
     "Sportradar": 1
   },
-  "identitySourceMappingConflictCount": 473,
+  "identitySourceMappingConflictCount": 474,
   "identitySourceMappingConflictsByReason": {
     "birthdate_conflict_with_nflverse_players": 472,
+    "upstream_claim_overridden_by_current_adjudication": 1,
     "provider_id_maps_to_multiple_people": 1
   },
   "identitySourceMappingConflicts": [
@@ -20094,6 +20095,15 @@
     },
     {
       "Source": "identity-resolution",
+      "Reason": "upstream_claim_overridden_by_current_adjudication",
+      "Provider": "Sleeper",
+      "ExternalID": "11376",
+      "UpstreamSource": "nflverse.ff-player-ids",
+      "CanonicalPlayerID": "NFLP-4b3c97f8876389e5541c",
+      "Provenance": "manual.current-identity-adjudication:2026-sleeper-11558-sam-hartman"
+    },
+    {
+      "Source": "identity-resolution",
       "Reason": "provider_id_maps_to_multiple_people",
       "Provider": "Sleeper",
       "ExternalID": "133",
@@ -20111,7 +20121,7 @@
       }
     }
   ],
-  "providerMappingConflictCount": 964,
+  "providerMappingConflictCount": 958,
   "providerMappingConflictsByProvider": {
     "CBS": 14,
     "CFBRef": 2,
@@ -20129,9 +20139,9 @@
     "PFF": 7,
     "PFR": 4,
     "Rotowire": 9,
-    "Sleeper": 210,
+    "Sleeper": 203,
     "Sportradar": 4,
-    "Tank01": 292
+    "Tank01": 293
   },
   "providerMappingConflicts": [
     {
@@ -27757,6 +27767,23 @@
     },
     {
       "Provider": "Sleeper",
+      "ExternalID": "11558",
+      "CanonicalPlayerIDs": [
+        "NFLP-4b3c97f8876389e5541c",
+        "NFLP-d15e6f4152f34c0f177c"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-4b3c97f8876389e5541c": [
+          "app.Players.git.2025@a89f51032231"
+        ]
+      }
+    },
+    {
+      "Provider": "Sleeper",
       "ExternalID": "11653",
       "CanonicalPlayerIDs": [
         "NFLP-2f3e05e6adc84150ba60",
@@ -27769,22 +27796,6 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-89a8039f89293cf247a0": [
           "app.Players.git.2025@a89f51032231"
-        ]
-      }
-    },
-    {
-      "Provider": "Sleeper",
-      "ExternalID": "11653",
-      "CanonicalPlayerIDs": [
-        "NFLP-2f3e05e6adc84150ba60",
-        "NFLP-89a8039f89293cf247a0"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-89a8039f89293cf247a0": [
-          "app.Players"
         ]
       }
     },
@@ -29243,22 +29254,6 @@
     },
     {
       "Provider": "Sleeper",
-      "ExternalID": "13066",
-      "CanonicalPlayerIDs": [
-        "NFLP-4f55a1019e93c7b03fc0",
-        "NFLP-8d596f4f500986e0b5d0"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-4f55a1019e93c7b03fc0": [
-          "app.Players"
-        ]
-      }
-    },
-    {
-      "Provider": "Sleeper",
       "ExternalID": "13080",
       "CanonicalPlayerIDs": [
         "NFLP-236a44fe995b220fbb4e",
@@ -29857,22 +29852,6 @@
     },
     {
       "Provider": "Sleeper",
-      "ExternalID": "13324",
-      "CanonicalPlayerIDs": [
-        "NFLP-1c1ed9651237ae0b8655",
-        "NFLP-9a09b3e690302898927b"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-1c1ed9651237ae0b8655": [
-          "app.Players"
-        ]
-      }
-    },
-    {
-      "Provider": "Sleeper",
       "ExternalID": "13326",
       "CanonicalPlayerIDs": [
         "NFLP-a46a935e15e258126ab5",
@@ -29985,22 +29964,6 @@
     },
     {
       "Provider": "Sleeper",
-      "ExternalID": "13545",
-      "CanonicalPlayerIDs": [
-        "NFLP-16dac04ece1a68dbdcf0",
-        "NFLP-6c4a426f871a5fd21513"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-6c4a426f871a5fd21513": [
-          "app.Players"
-        ]
-      }
-    },
-    {
-      "Provider": "Sleeper",
       "ExternalID": "13597",
       "CanonicalPlayerIDs": [
         "NFLP-117b7f99f9e4c2d9ffba",
@@ -30027,22 +29990,6 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-c93092c44a78a90bb7a8": [
-          "app.Players"
-        ]
-      }
-    },
-    {
-      "Provider": "Sleeper",
-      "ExternalID": "13602",
-      "CanonicalPlayerIDs": [
-        "NFLP-19b0f95dc200fc5072bc",
-        "NFLP-22e10ea7eb07644a0234"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-22e10ea7eb07644a0234": [
           "app.Players"
         ]
       }
@@ -30353,22 +30300,6 @@
     },
     {
       "Provider": "Sleeper",
-      "ExternalID": "13825",
-      "CanonicalPlayerIDs": [
-        "NFLP-2b087861ead871ec2445",
-        "NFLP-905eb01dcca8c0d49276"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-905eb01dcca8c0d49276": [
-          "app.Players"
-        ]
-      }
-    },
-    {
-      "Provider": "Sleeper",
       "ExternalID": "13828",
       "CanonicalPlayerIDs": [
         "NFLP-11ea2439d902c7abf806",
@@ -30395,22 +30326,6 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-32b1c415a1c5d3713e29": [
-          "app.Players"
-        ]
-      }
-    },
-    {
-      "Provider": "Sleeper",
-      "ExternalID": "13833",
-      "CanonicalPlayerIDs": [
-        "NFLP-29bab0b054cd26024044",
-        "NFLP-c5fb09ceded45d24fa2c"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-c5fb09ceded45d24fa2c": [
           "app.Players"
         ]
       }
@@ -30651,22 +30566,6 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-32739e77f597e651150e": [
-          "app.Players"
-        ]
-      }
-    },
-    {
-      "Provider": "Sleeper",
-      "ExternalID": "13968",
-      "CanonicalPlayerIDs": [
-        "NFLP-5e74aee1f33b14d6febc",
-        "NFLP-f39c8e3afc64775d6c04"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-5e74aee1f33b14d6febc": [
           "app.Players"
         ]
       }
@@ -31783,6 +31682,23 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-dec98197c3e7e11a62af": [
           "app.Players"
+        ]
+      }
+    },
+    {
+      "Provider": "Tank01",
+      "ExternalID": "4361994",
+      "CanonicalPlayerIDs": [
+        "NFLP-4b3c97f8876389e5541c",
+        "NFLP-d15e6f4152f34c0f177c"
+      ],
+      "FirstObservedSeason": 2025,
+      "LastObservedSeason": 2025,
+      "Status": "ambiguous",
+      "Reason": "historical_mapping_overlap",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-4b3c97f8876389e5541c": [
+          "app.Players.git.2025@a89f51032231"
         ]
       }
     },
@@ -39142,14 +39058,6 @@
       "DraftYear": null
     },
     {
-      "SleeperID": "11558",
-      "Tank01ID": "4361994",
-      "CanonicalPlayerID": "NFLP-d15e6f4152f34c0f177c",
-      "Name": "Sam Hartman",
-      "Position": "QB",
-      "DraftYear": null
-    },
-    {
       "SleeperID": "11859",
       "Tank01ID": "4426494",
       "CanonicalPlayerID": "NFLP-39c3c61deadb730cbb0e",
@@ -39944,7 +39852,7 @@
     {
       "SleeperID": "13603",
       "Tank01ID": "4691889",
-      "CanonicalPlayerID": "NFLP-03e167d31cc790f1d775",
+      "CanonicalPlayerID": "NFLP-b13fe7848e3b3cc094ed",
       "Name": "Gregory Desrosiers",
       "Position": "RB",
       "DraftYear": null
@@ -40328,7 +40236,7 @@
     {
       "SleeperID": "14071",
       "Tank01ID": "5393270",
-      "CanonicalPlayerID": "NFLP-b704edf5303f840b02fa",
+      "CanonicalPlayerID": "NFLP-01832c33a09422ce0fe3",
       "Name": "Grant Finley",
       "Position": "RB",
       "DraftYear": null
@@ -40405,9 +40313,9 @@
       "latestSeason": 2026
     },
     "gameFinality": {
-      "releasedEvidenceCount": 7336,
+      "releasedEvidenceCount": 7337,
       "scheduleGameCount": 7548,
-      "finalGameCount": 7336,
+      "finalGameCount": 7337,
       "weekFinalCount": 573,
       "unknownReleasedGameIDs": []
     },
@@ -40431,8 +40339,8 @@
     },
     "playerStats": {
       "partitionCount": 576,
-      "recordCount": 479927,
-      "resolvedIdentityCount": 479885,
+      "recordCount": 480004,
+      "resolvedIdentityCount": 479962,
       "unresolvedIdentityCount": 42,
       "missingProviderIDRowCount": 534
     },
@@ -40458,8 +40366,8 @@
     },
     "sleeperPlayers": {
       "recordCount": 12229,
-      "resolvedIdentityCount": 6571,
-      "unresolvedIdentityCount": 5658
+      "resolvedIdentityCount": 6570,
+      "unresolvedIdentityCount": 5659
     },
     "activeDatasetIDs": [
       "nflverse.game-finality",
