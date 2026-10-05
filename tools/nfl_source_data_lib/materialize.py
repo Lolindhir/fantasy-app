@@ -113,10 +113,10 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
         if not dataset.raw_path.exists():
             raise FileNotFoundError(f"Cannot materialize without raw dataset: {dataset.raw_path}")
 
-    canonical, ff_rows, identity_source_conflicts, provider_claims, mapping_conflicts = (
-        build_identities(repo_root, datasets)
-    )
     observation_season = _observation_season(repo_root)
+    canonical, ff_rows, identity_source_conflicts, provider_claims, mapping_conflicts = (
+        build_identities(repo_root, datasets, observation_season)
+    )
 
     draft_dataset = datasets["nflverse.draft-picks"]
     draft_grouped, _ = build_draft_files(draft_dataset, canonical)

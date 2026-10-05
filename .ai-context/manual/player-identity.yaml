@@ -124,7 +124,7 @@ identityModel:
       documentation: source-data/nfl/identities/current-identity-adjudications.md
       provenancePrefix: manual.current-identity-adjudication
       role: bounded-human-reviewed-current-provider-reassignment
-      runtimeStatus: contract-only-not-yet-consumed
+      runtimeStatus: consumed-by-identity-builder
       rule: >
         Rare current-season provider identity gaps that remain unresolved after the
         ordinary automated corroboration rules may be represented by an explicit,
@@ -134,8 +134,44 @@ identityModel:
         tokens may be reassigned for one NFL season. It never creates or renames a
         CanonicalPlayerID, never bulk-merges two identity records, never turns
         display names into merge evidence and never rewrites raw provider evidence.
-        Checkpoint 6Z.7 establishes the source contract and fail-closed validator
-        only; productive identity materialization does not consume this source yet.
+        Checkpoint 6Z.7 established the source contract and fail-closed validator;
+        Issue #347 B5 integrates the confirmed decisions into the productive
+        identity builder (see integration below).
+      integration:
+        status: implemented-347-b5
+        implementation: >
+          tools/nfl_source_data_lib/identity.py (current_identity_adjudication_state,
+          _apply_current_adjudications, called from build_identities before the app
+          candidates and components are built) and provider_mappings.py
+          (_retire_transferred_claims with reason
+          current_identity_adjudication_transfers_current_claim).
+        rule: >
+          Before components are built the builder loads the confirmed decisions for
+          the observation season and validates them against the persisted pre-build
+          identity graph and provider mappings (any contradiction raises and fails
+          the materialization closed). Decisions reported obsolete are not applied.
+          An applicable decision is applied to the candidate evidence, not by an
+          ad-hoc merge: the declared source records give up the assigned provider
+          tokens, the target's persisted record carries them (an existing different
+          value is never replaced), and for upstream-claim-override the named
+          upstream claim is removed from the named upstream source and from the
+          target. The ordinary component builder then attaches the current provider
+          evidence to the target. No CanonicalPlayerID is created, renamed, merged
+          or deleted, and raw provider evidence is not rewritten.
+        movableTokens: >
+          The decision's ProviderAssignments. For upstream-claim-override
+          additionally the token under an independent anchor's SourceProvider (the
+          link between the two records, for example Tank01 on the replacement record
+          equal to ESPN on the target); no other unlisted token transfers.
+        provenanceAndDiagnostics:
+          - Every moved provider claim carries manual.current-identity-adjudication:<AdjudicationID> in its Sources and TransferredFromCanonicalPlayerIDs.
+          - The previous owner's current-season mapping and conflict for a moved token are retired with a HistoricalMappingReconciliations entry (reason current_identity_adjudication_transfers_current_claim); earlier seasons stay.
+          - An overridden upstream claim stays visible as an identity source conflict with reason upstream_claim_overridden_by_current_adjudication. The historical mapping interval of that claim is not rewritten.
+        replay: >
+          A replay finds the tokens already on the target; the result is identical.
+          A decision whose replacement token the target already carries is reported
+          superseded-by-upstream and keeps suppressing the overridden upstream claim
+          for as long as the upstream still makes it.
       requirements:
         - Status must be confirmed; unresolved review candidates do not belong in the canonical current-adjudication source.
         - ResolutionKind is either current-provider-reassignment with ConflictPolicy reject-active-conflict, or upstream-claim-override with ConflictPolicy override-named-upstream-claim (see currentIdentityGapResolution.classes.wrongUpstreamClaim).
@@ -146,12 +182,13 @@ identityModel:
         - For current-provider-reassignment, the target must not already carry a different active value for an assigned provider.
         - An assigned provider token must not be owned by an undeclared third CanonicalPlayerID.
         - A current-provider-reassignment must fail closed rather than override an active provider conflict, with one exception: a conflict whose parties are exactly the declared target and declared sources is the split the decision resolves (a persisted empty provisional record and the full record both claiming the token). Any third party in an active conflict for the token keeps it fail-closed. Otherwise only upstream-claim-override may resolve a conflict, and only the exact upstream claim it names.
-        - Future productive materialization must retain manual.current-identity-adjudication:<AdjudicationID> provenance and must be replay-idempotent.
+        - Productive materialization retains manual.current-identity-adjudication:<AdjudicationID> provenance on every moved provider claim and is replay-idempotent.
         - Any future reversal or correction must be explicit and versioned; generated canonical identity or provider-mapping output must never be hand-edited as the source of truth.
     currentIdentityGapResolution:
       status: accepted-partially-implemented
       implementedSteps:
-        - upstream-claim-override loader and state validator (tools/nfl_source_data_lib/current_identity_adjudications.py), no entries yet, not consumed by the productive identity builder (#347 B3)
+        - upstream-claim-override loader and state validator (tools/nfl_source_data_lib/current_identity_adjudications.py) (#347 B3)
+        - productive consumption of the confirmed adjudication entries in the identity builder (#347 B5)
         - openGapHold and gap classification in the population audit (fantasy-management/_ai/scripts/audit_player_signal_population_policy.py with identity_gap_classification.py), analysis only (#347 B3)
       trackingIssue: 347
       decidedAt: 2026-10-04
@@ -282,7 +319,7 @@ identityModel:
         - placeholderGsisUpgrade rule in the identity builder with an identity diff limited to the observed ESB pairs (implemented, Issue #347 B2)
         - upstream-claim-override loader/validator and the openGapHold rule in the population audit
         - reviewed adjudication entries for the open splitIdentity and wrongUpstreamClaim cases
-        - productive consumption in the identity builder (current adjudication integration steps 1-7)
+        - productive consumption in the identity builder (current adjudication integration steps 1-7; implemented, Issue #347 B5)
     historicalAdjudication:
       source: source-data/nfl/identities/historical-identity-adjudications.json
       provenancePrefix: manual.identity-adjudication

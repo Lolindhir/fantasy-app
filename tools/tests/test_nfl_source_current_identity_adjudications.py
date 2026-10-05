@@ -545,8 +545,9 @@ class CurrentIdentityAdjudicationTests(unittest.TestCase):
             decisions, players, conflicts, 2026
         )
         self.assertEqual(len(decisions), len(statuses))
-        # Not yet consumed by the identity builder; once it is, an override may
-        # report superseded-by-upstream, but none may be obsolete.
+        # Consumed by the identity builder since #347 B5: after the first
+        # materialization an override reports superseded-by-upstream (the target
+        # already carries the replacement token), but none may be obsolete.
         self.assertTrue(
             {row["Status"] for row in statuses} <= {"active", "superseded-by-upstream"},
             statuses,

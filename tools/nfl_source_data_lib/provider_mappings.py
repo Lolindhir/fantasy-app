@@ -13,6 +13,17 @@ from .identity_model import ANCHOR_ID_KEYS
 from .provisional_reconciliation import _without_season
 
 PLACEHOLDER_GSIS_UPGRADE_REASON = "placeholder_gsis_upgrade_transfers_current_claim"
+CURRENT_ADJUDICATION_REASON = "current_identity_adjudication_transfers_current_claim"
+CURRENT_ADJUDICATION_SOURCE_PREFIX = "manual.current-identity-adjudication:"
+
+
+def _transfer_reason(claim: dict[str, Any]) -> str:
+    if any(
+        str(source).startswith(CURRENT_ADJUDICATION_SOURCE_PREFIX)
+        for source in claim.get("Sources") or []
+    ):
+        return CURRENT_ADJUDICATION_REASON
+    return PLACEHOLDER_GSIS_UPGRADE_REASON
 
 
 def _transfer_reconciliation_key(item: dict[str, Any]) -> tuple[Any, ...]:
@@ -84,7 +95,7 @@ def _retire_transferred_claims(
                         },
                         "Sources": sorted(claim.get("Sources") or []),
                         "Status": "reconciled",
-                        "Reason": PLACEHOLDER_GSIS_UPGRADE_REASON,
+                        "Reason": _transfer_reason(claim),
                     }
                 )
     return reconciliations

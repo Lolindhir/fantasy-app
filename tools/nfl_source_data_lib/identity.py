@@ -6,6 +6,10 @@ from pathlib import Path
 from typing import Any
 
 from .canonical_identity import identity_lookup
+from .current_identity_adjudications import (
+    load_current_identity_adjudications,
+    validate_current_identity_adjudications_against_state,
+)
 from .common import (
     CANONICAL_PLAYER_ID_FIELD,
     CANONICAL_PLAYER_IDS_FIELD,
@@ -36,6 +40,9 @@ _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SECONDARY_IDS = 2
 _ESPN_PLAYER_LINK_RE = re.compile(r"(?:/player/_/id/|/id/)(\d+)(?:/|$)")
 _VALID_GSIS_RE = re.compile(r"^00-\d{7}$")
 PLACEHOLDER_GSIS_UPGRADE_PROVENANCE = "auto.placeholder-gsis-upgrade"
+CURRENT_ADJUDICATION_PROVENANCE = "manual.current-identity-adjudication"
+UPSTREAM_CLAIM_OVERRIDDEN_REASON = "upstream_claim_overridden_by_current_adjudication"
+_APPLICABLE_ADJUDICATION_STATUSES = frozenset({"active", "superseded-by-upstream"})
 
 
 def _current_external_anchor_candidates(
@@ -744,10 +751,140 @@ def _seed_for_component(members: list[IdentityCandidate]) -> str:
         seed_parts.append("names=" + ",".join(names))
     return "|".join(seed_parts)
 
+def current_identity_adjudication_state(
+    repo_root: Path,
+    observation_season: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    """Load and validate the confirmed current adjudications against persisted state.
+
+    Integration steps 1-5 of ``current-identity-adjudications.md``: target and
+    source CanonicalPlayerIDs must exist in the persisted pre-build identity graph,
+    assigned tokens must not sit in an active conflict beyond the declared parties,
+    the target must not carry a different active value and no undeclared current
+    owner may exist. Any contradiction raises and fails the materialization closed.
+
+    Returns ``(applicable_decisions, statuses)``. ``obsolete`` decisions (the named
+    upstream claim changed or disappeared) are reported but not applied.
+    ``superseded-by-upstream`` decisions stay applicable: on a replay the persisted
+    target already carries the replacement token, and the override must keep
+    suppressing the upstream claim for as long as the upstream still makes it.
+    """
+    persisted = normalize_legacy_canonical_player_fields(
+        load_json(repo_root / "source-data/nfl/identities/players.json", {}) or {}
+    )
+    players = [row for row in persisted.get("Players", []) if isinstance(row, dict)]
+    known_ids = {
+        clean(row.get(CANONICAL_PLAYER_ID_FIELD))
+        for row in players
+        if clean(row.get(CANONICAL_PLAYER_ID_FIELD))
+    }
+    decisions = load_current_identity_adjudications(repo_root, known_ids, observation_season)
+    if not decisions:
+        return [], []
+    mappings = load_json(repo_root / "source-data/nfl/identities/provider-mappings.json", {}) or {}
+    statuses = validate_current_identity_adjudications_against_state(
+        decisions,
+        players,
+        list(mappings.get("Conflicts") or []),
+        observation_season,
+    )
+    status_by_id = {item["AdjudicationID"]: item["Status"] for item in statuses}
+    applicable = [
+        decision
+        for decision in decisions
+        if status_by_id.get(decision["AdjudicationID"]) in _APPLICABLE_ADJUDICATION_STATUSES
+    ]
+    return applicable, statuses
+
+
+def _adjudicated_tokens(decision: dict[str, Any]) -> set[tuple[str, str]]:
+    """Provider tokens a decision may move: its assignments plus the override anchor link.
+
+    For ``upstream-claim-override`` the independent anchor names the provider key
+    (``SourceProvider``) under which the replacement record carries the value the
+    target holds as its anchor (for example ESPN on the target equals Tank01 on the
+    source). That token is the link between the two records and moves with the
+    replacement token; no other unlisted token transfers implicitly.
+    """
+    tokens = {
+        (str(item["Provider"]), str(item["ExternalID"]))
+        for item in decision["ProviderAssignments"]
+    }
+    for anchor in decision.get("IndependentAnchors") or []:
+        source_provider = str(anchor.get("SourceProvider") or "").strip()
+        if source_provider:
+            tokens.add((source_provider, str(anchor["ExternalID"])))
+    return tokens
+
+
+def _apply_current_adjudications(
+    decisions: list[dict[str, Any]],
+    existing_candidates: list[IdentityCandidate],
+    current_candidates: list[IdentityCandidate],
+) -> tuple[dict[tuple[str, str], tuple[str, tuple[str, ...], str]], list[dict[str, Any]]]:
+    """Apply confirmed current adjudications to the candidate evidence.
+
+    The ordinary component builder then yields the decided identity without any
+    ad-hoc merge: the declared source records give up the assigned tokens, the
+    target's persisted record carries them, and an overridden upstream claim is
+    removed from the target and from the named upstream source. Nothing is created,
+    renamed or merged; raw provider evidence is not rewritten. The operation is
+    idempotent because a replay finds the tokens already on the target.
+
+    Returns the token transfers (``{(Provider, ExternalID): (target, sources,
+    provenance)}``) for claim provenance and mapping reconciliation, and one
+    diagnostic conflict per overridden upstream claim.
+    """
+    transfers: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {}
+    overridden: list[dict[str, Any]] = []
+    for decision in decisions:
+        target_id = str(decision["TargetCanonicalPlayerID"])
+        source_ids = {str(value) for value in decision["SourceCanonicalPlayerIDs"]}
+        provenance = str(decision["Provenance"])
+        claim = decision.get("OverriddenUpstreamClaim")
+        if claim:
+            provider = str(claim["Provider"])
+            external_id = str(claim["ExternalID"])
+            upstream = str(claim["Source"])
+            for candidate in existing_candidates:
+                if (
+                    candidate.existing_internal_id == target_id
+                    and candidate.ids.get(provider) == external_id
+                ):
+                    del candidate.ids[provider]
+            for candidate in current_candidates:
+                if candidate.source == upstream and candidate.ids.get(provider) == external_id:
+                    del candidate.ids[provider]
+            overridden.append(
+                {
+                    "Source": "identity-resolution",
+                    "Reason": UPSTREAM_CLAIM_OVERRIDDEN_REASON,
+                    "Provider": provider,
+                    "ExternalID": external_id,
+                    "UpstreamSource": upstream,
+                    CANONICAL_PLAYER_ID_FIELD: target_id,
+                    "Provenance": provenance,
+                }
+            )
+        for provider, external_id in sorted(_adjudicated_tokens(decision)):
+            for candidate in existing_candidates:
+                if candidate.existing_internal_id in source_ids:
+                    if candidate.ids.get(provider) == external_id:
+                        del candidate.ids[provider]
+                elif candidate.existing_internal_id == target_id:
+                    candidate.ids.setdefault(provider, external_id)
+            transfers[(provider, external_id)] = (
+                target_id,
+                tuple(sorted(source_ids)),
+                provenance,
+            )
+    return transfers, overridden
+
 
 def build_identities(
     repo_root: Path,
     datasets: dict[str, Dataset],
+    observation_season: int | None = None,
 ) -> tuple[
     list[dict[str, Any]],
     list[dict[str, str]],
@@ -757,6 +894,25 @@ def build_identities(
 ]:
     raw_candidates, ff_rows, ff_candidates, source_conflicts = raw_identity_candidates(repo_root, datasets)
     existing_candidates = existing_identity_candidates(repo_root)
+    if observation_season is None:
+        from .materialize import _observation_season
+
+        observation_season = _observation_season(repo_root)
+    adjudications, _ = current_identity_adjudication_state(repo_root, observation_season)
+    adjudicated_transfers, overridden_claims = _apply_current_adjudications(
+        adjudications,
+        existing_candidates,
+        list(
+            {
+                id(candidate): candidate
+                for candidate in [
+                    *raw_candidates,
+                    *(item for item in ff_candidates if item is not None),
+                ]
+            }.values()
+        ),
+    )
+    source_conflicts.extend(overridden_claims)
     app_candidates, _ = app_player_candidates(
         repo_root,
         external_anchor_candidates=_current_external_anchor_candidates(
@@ -803,6 +959,12 @@ def build_identities(
                 if previous_id and previous_id != internal_id:
                     current_claim_transfers[(key, value, internal_id)].add(previous_id)
             current_values_by_internal_provider[(internal_id, key)].add(value)
+    for (key, value), (target_id, source_ids, provenance) in adjudicated_transfers.items():
+        owners = current_claim_owners.get((key, value), set())
+        if owners != {target_id}:
+            continue
+        current_claim_sources[(key, value, target_id)].add(provenance)
+        current_claim_transfers[(key, value, target_id)].update(source_ids)
 
     lookup_conflicts: list[dict[str, Any]] = []
     mapping_conflicts: list[dict[str, Any]] = []

@@ -29,9 +29,9 @@ This source is intentionally separate from `historical-identity-adjudications.js
 
 Checkpoint 6Z.7 establishes the contract, canonical empty source and fail-closed loader/state validator only. Issue #347 step B3 extends the loader and state validator to `upstream-claim-override` (including the `active`/`obsolete`/`superseded-by-upstream` status report) and adds the open-gap hold to the population audit; the source received its first reviewed entries in step B4 (2026-10-04).
 
-The source is **not yet consumed by the productive identity builder**. Since #347 B4 it contains 12 confirmed entries (Robert, 2026-10-04): `current-provider-reassignment` for Grant Finley, Gregory Desrosiers and Roydell Williams (RB, born 2001-12-08) and for the eight cases where an empty persisted provisional record and the full nflverse record both claim the Sleeper token (Charlie Smyth, Ben Sauls, Dominic Zvada, Trey Smack, Drew Stevens, Matt Hibner, Jack Strand, Malik McClain), and `upstream-claim-override` for Sam Hartman. Therefore the entries have no productive identity or population effect until step B5 consumes them. The evidence per case is in the entry's `Evidence`.
+The source is **consumed by the productive identity builder since #347 B5** (`tools/nfl_source_data_lib/identity.py`, `current_identity_adjudication_state` and `_apply_current_adjudications`). Since #347 B4 it contains 12 confirmed entries (Robert, 2026-10-04): `current-provider-reassignment` for Grant Finley, Gregory Desrosiers and Roydell Williams (RB, born 2001-12-08) and for the eight cases where an empty persisted provisional record and the full nflverse record both claim the Sleeper token (Charlie Smyth, Ben Sauls, Dominic Zvada, Trey Smack, Drew Stevens, Matt Hibner, Jack Strand, Malik McClain), and `upstream-claim-override` for Sam Hartman. The evidence per case is in the entry's `Evidence`.
 
-A later explicitly authorized checkpoint may add reviewed decisions and integrate them into the identity builder. That integration must prove:
+The builder integration proves the following on every materialization (steps 1-5 as a fail-closed check before the build, steps 6-7 as the replay and population-audit evidence):
 
 1. target/source CanonicalPlayerIDs still exist in the persisted pre-build identity graph;
 2. exact assigned provider tokens still match the reviewed evidence;
@@ -40,6 +40,8 @@ A later explicitly authorized checkpoint may add reviewed decisions and integrat
 5. no undeclared current owner exists;
 6. the resulting identity/provider-mapping materialization is replay-idempotent;
 7. the 6Z.4 population audit is rerun against the persisted result.
+
+How a decision is applied: the declared source records give up the assigned provider tokens, the target's persisted record carries them (an existing different value is never replaced) and, for `upstream-claim-override`, the named upstream claim is removed from the named upstream source and from the target. The ordinary component builder then attaches the current provider evidence to the target; no CanonicalPlayerID is created, renamed, merged or deleted. Movable tokens are the `ProviderAssignments` plus, for an override, the token under an anchor's `SourceProvider` (the link between the two records); nothing else transfers. Moved provider claims carry `manual.current-identity-adjudication:<AdjudicationID>`; the previous owner's current-season mapping and conflict for a moved token are retired with a `HistoricalMappingReconciliations` entry (reason `current_identity_adjudication_transfers_current_claim`, earlier seasons stay). An overridden upstream claim stays visible as an identity source conflict with reason `upstream_claim_overridden_by_current_adjudication`; its historical mapping interval is not rewritten. A decision reported `obsolete` is not applied; `superseded-by-upstream` (the target already carries the replacement token, which is the normal state after the first materialization) keeps suppressing the overridden claim while the upstream still makes it.
 
 ## Gap classes and open-gap hold (Issue #347, 2026-10-04)
 
