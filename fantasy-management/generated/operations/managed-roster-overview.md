@@ -1,6 +1,6 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-10-05T13:27:27Z`  
+Generated: `2026-10-05T13:31:41.613998Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
