@@ -17,7 +17,7 @@ Source refreshers own acquisition and source-local normalization. They do not ma
 The productive morning refresh path uses independent source-triggered materialization around the 07:00 Europe/Berlin monitoring window:
 
 - every successful relevant external ranking, projection, activity or Success-Heartbeat push on `main` may materialize immediately, including pushes between 05:00 and 06:45 Europe/Berlin;
-- relevant `League.json`, `Drafts.json`, `Players.json` and `Timestamps.json` input changes remain immediate materialization triggers;
+- relevant `League.json`, `Metadata.json`, `Players.json`, `Timestamps.json` and current-season Canonical League `drafts.json` (`source-data/leagues/*/seasons/*/drafts.json`) input changes remain immediate materialization triggers; the App read model `Drafts.json` no longer is one;
 - materialization code, configuration, schema and workflow changes remain immediate triggers;
 - the DST-safe scheduled 06:45 Europe/Berlin materializer remains only as an additional catch-up and is never the sole normal morning consolidation path;
 - a manual `workflow_dispatch` of the materializer always runs immediately;
