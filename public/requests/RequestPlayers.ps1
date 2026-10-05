@@ -501,6 +501,7 @@ function Get-SeasonPointStats {
 Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\general\NflScheduleUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\player\PlayerLeagueScoringUtils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\utils\player\SleeperPlatformUtils.psm1" -ErrorAction Stop -Force
 $apiKeys = @(
     $Global:RapidAPIKey,
     $Global:RapidAPIKeyAlt1,
@@ -552,6 +553,11 @@ try {
     exit 1
 }
 Write-Host "Sleeper players found: $($sleeperPlayers.Count)" -ForegroundColor Yellow
+
+# --- Sleeper Depth Charts aus dem kanonischen Plattform-Snapshot (#347 H4) ---
+$sleeperDepthCharts = Get-CanonicalSleeperDepthCharts -RepoRoot (Split-Path -Parent (Split-Path -Parent $scriptDir))
+Write-Host "Canonical Sleeper depth chart records: $($sleeperDepthCharts.Count)" -ForegroundColor Yellow
+$depthChartMissingPlayers = @()
 
 # --- Tank01 Spieler ---
 Write-Host "Fetch Tank01 players..." -ForegroundColor Yellow
@@ -929,6 +935,13 @@ foreach ($tankEntry in $tankPlayers) {
     $grading += $form
 
 
+    # Depth chart: canonical snapshot; a player not yet in the snapshot stays unknown (null), never guessed.
+    $depthChart = $sleeperDepthCharts[[string]$playerID]
+    if (-not $depthChart) {
+        $depthChart = @{ Position = $null; Order = $null }
+        $depthChartMissingPlayers += "$($sleeperEntry.full_name) ($playerID)"
+    }
+
     # --- Player Objekt bauen ---
     $playerData += [PSCustomObject]@{
         ID                           = $playerID
@@ -952,8 +965,8 @@ foreach ($tankEntry in $tankPlayers) {
         FantasyPros                  = $tankEntry.fantasyProsLink
         ESPN                         = $tankEntry.espnLink
         ESPNID                       = $sleeperEntry.espn_id
-        SleeperDepthChartPosition    = $sleeperEntry.depth_chart_position
-        SleeperDepthChartOrder       = $sleeperEntry.depth_chart_order
+        SleeperDepthChartPosition    = $depthChart.Position
+        SleeperDepthChartOrder       = $depthChart.Order
         College                      = $sleeperEntry.college
         HighSchool                   = $sleeperEntry.high_school
         Injured                      = $injured
@@ -978,6 +991,9 @@ foreach ($tankEntry in $tankPlayers) {
     }
 }
 
+if ($depthChartMissingPlayers.Count -gt 0) {
+    Write-Warning "Depth chart unknown (player not yet in the canonical Sleeper snapshot) for $($depthChartMissingPlayers.Count) players: $($depthChartMissingPlayers -join ', ')"
+}
 if ($identityHoldPlayers.Count -gt 0) {
     Write-Warning "League scoring identity hold: kept the last published scoring values for $($identityHoldPlayers.Count) players: $($identityHoldPlayers -join ', ')"
 }
