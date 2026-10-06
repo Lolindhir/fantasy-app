@@ -5,7 +5,7 @@
   }
   @if (selectedPlayer; as player) {
     <button class="picked-player-card" type="button" (click)="openPlayerDetail(player, $event)">
-      <img class="picked-player-picture" [src]="player.Picture" alt="" />
+      <img loading="lazy" decoding="async" class="picked-player-picture" [src]="player.Picture" alt="" />
       <span class="picked-player-main">
         <strong>{{ player.NameShort || player.Name }}</strong>
         <span class="picked-player-meta">

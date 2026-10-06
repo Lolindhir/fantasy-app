@@ -368,10 +368,15 @@ productiveAcceptance:
       by tools/tests/test_consumer_read_classification.py. Intentional overlays:
       Fantasy Management League.json display/scoring enrichment (6P-6V) and Metadata.json
       manual league rules (ADR-002). Open items stay visible there as
-      legacy-read-model-pending (Players.json declared
-      inputs, kicker Schedule.json, weekly-league-review Transactions.json) and
-      legacy-provider-path (direct Sleeper client callers in TeamUtils, LeagueUtils,
-      PlayoffUtils, TransactionUtils, FantasyGameContextCore).
+      legacy-read-model-pending (only the two Players.json declared
+      inputs of the Fantasy Management player-signal and operations materializations,
+      bounded to the league-derived Salary fields, Age, Year and the population; the
+      kicker research plan and the weekly-league-review job read canonical source-data
+      since the #347 FM-read step) and
+      legacy-provider-path (no entries left: the dead direct Sleeper client callers
+      in TeamUtils, LeagueUtils, PlayoffUtils, TransactionUtils and FantasyGameContextCore
+      were removed together with the Sleeper client SleeperUtils.psm1 in the #347 K1
+      follow-up; draft-history season discovery reads the canonical league seasons).
 
 phase2TargetedFreshnessScopes:
   currentLeagueCore:
@@ -511,6 +516,8 @@ phase1BInventory:
     League.json nachinventarisiert.
 
   centralProviderAdapter:
+    # Retired in the #347 K1 follow-up: the module and its remaining callers are gone; this
+    # block is the historical 2026-09-03 inventory.
     path: public/requests/utils/invoke/SleeperUtils.psm1
     endpoints:
       - dataset: league
@@ -589,13 +596,11 @@ phase1BInventory:
       - public/requests/RequestLeague.ps1
       - public/requests/utils/league/LeagueUtils.psm1
       - public/requests/utils/league/TeamUtils.psm1
-      - public/requests/utils/league/PlayoffUtils.psm1
       - public/requests/utils/league/LeagueOverviewUtils.psm1
     standingsAndHistory:
       - public/requests/RequestStandings.ps1
       - public/requests/utils/league/CanonicalStandingUtils.psm1
       - public/requests/utils/league/StandingUtils.psm1
-      - current season still uses public/requests/utils/league/LeagueUtils.psm1 and TeamUtils.psm1 live
     transactions:
       - public/requests/RequestTransactions.ps1
       - public/requests/utils/league/TransactionUtils.psm1
@@ -678,8 +683,10 @@ phase1BInventory:
 
   historicalLeagueDiscovery:
     currentMechanism: >
-      Der Legacy-App-Pfad Get-LeaguesRecursive laedt weiterhin das aktuelle Sleeper-
-      League-Objekt und folgt previous_league_id rekursiv. Der akzeptierte Source-
+      Der Legacy-App-Pfad Get-LeaguesRecursive (Sleeper-Rekursion ueber previous_league_id)
+      wurde im #347-K1-Folgeschritt entfernt; die Draft-Historie liest die Saisonliste jetzt
+      aus Get-CanonicalLeagueSeasonLeagues (source-data/leagues/<CanonicalLeagueID>/seasons).
+      Der akzeptierte Source-
       Layer nutzt dieselbe Provider-Evidenz unabhaengig davon fuer persistente
       Lineage-Discovery und Canonical-Mappings.
     persistenceState: >

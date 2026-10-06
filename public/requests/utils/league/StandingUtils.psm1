@@ -6,7 +6,6 @@
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\LeagueUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\..\league\PlayoffUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -891,7 +890,7 @@ function Compare-Awards{
 function Get-StandingsRemote {
     param (
         [string]$leagueID = (Get-Config).LeagueID,
-        [array]$playoffs = (Get-Playoffs -leagueID $leagueID),
+        [Parameter(Mandatory=$true)][AllowNull()][array]$playoffs,
         [Parameter(Mandatory=$true)][array]$teamData,
         [Parameter(Mandatory=$true)][int]$regularSeasonGames,
         [Parameter(Mandatory=$true)][AllowNull()]$previousSeasonStandings,

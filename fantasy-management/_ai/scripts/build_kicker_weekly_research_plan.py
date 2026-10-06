@@ -12,8 +12,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO_ROOT / "tools"))
+from nfl_source_data_lib.teams import NflTeamRegistry, NflTeamRegistryError  # noqa: E402
 
 from analyze_kicker_streaming import (
     KickerStreamingAnalysisError,
@@ -30,8 +37,91 @@ SCHEMA_VERSION = 1
 DATASET_ID = "kicker-weekly-research-plan"
 
 
+NFL_TIME_ZONE = ZoneInfo("America/New_York")
+SEASON_TYPES = {"REG": "Regular Season", "WC": "Post Season", "DIV": "Post Season", "CON": "Post Season", "SB": "Post Season"}
+CBS_SPELLING = {"JAX": "JAC", "WSH": "WAS"}
+
+
 class KickerWeeklyResearchPlanError(RuntimeError):
     """Raised when a weekly research plan cannot be built safely."""
+
+
+def _provider_spelling(registry: NflTeamRegistry, team: str) -> str:
+    """Provider spelling of a canonical team (LA -> LAR, WAS -> WSH); the canonical key when none exists."""
+    for key, (abbr, last_season) in registry._alias.items():
+        if abbr == team and last_season is None and key != team:
+            return key
+    return team
+
+
+def _kickoff_epoch(game_day: str, game_time: str | None) -> str:
+    """UTC epoch seconds as text for a canonical GameDay plus Eastern GameTime; empty when the time is unknown."""
+    if not game_time:
+        return ""
+    local = datetime.strptime(f"{game_day} {game_time}", "%Y-%m-%d %H:%M")
+    first = local.replace(tzinfo=NFL_TIME_ZONE, fold=0)
+    second = local.replace(tzinfo=NFL_TIME_ZONE, fold=1)
+    roundtrip = datetime.fromtimestamp(first.timestamp(), NFL_TIME_ZONE).replace(tzinfo=None)
+    if first.utcoffset() != second.utcoffset() or roundtrip != local:
+        raise KickerWeeklyResearchPlanError(f"Canonical kickoff {game_day} {game_time} is not unambiguous in Eastern time")
+    zoned = first
+    return f"{zoned.timestamp()}"
+
+
+def load_canonical_schedule(repo_root: Path, season: int, registry: NflTeamRegistry) -> list[dict[str, Any]]:
+    """Build the schedule rows this script joins on from canonical NFL schedule and game-finality facts."""
+    schedule = load_json(repo_root / f"source-data/nfl/schedules/{season}.json")
+    finality = load_json(repo_root / f"source-data/nfl/game-finality/{season}.json")
+    for label, payload, dataset in (("schedule", schedule, "nflverse.schedules"), ("game finality", finality, "nflverse.game-finality")):
+        if not isinstance(payload, dict) or int(payload.get("Season", -1)) != season or payload.get("SourceDataset") != dataset:
+            raise KickerWeeklyResearchPlanError(f"Canonical NFL {label} for season {season} is missing or inconsistent")
+    final_by_id = {row["GameID"]: bool(row.get("Final")) for row in finality.get("Games", [])}
+
+    rows: list[dict[str, Any]] = []
+    for game in schedule.get("Games", []):
+        game_id = game.get("GameID")
+        if game_id not in final_by_id:
+            raise KickerWeeklyResearchPlanError(f"Canonical NFL finality is missing schedule game {game_id}")
+        game_type = str(game.get("GameType", "")).upper()
+        if game_type not in SEASON_TYPES:
+            raise KickerWeeklyResearchPlanError(f"Unsupported canonical NFL GameType {game_type}")
+        try:
+            away = registry.resolve(game.get("AwayTeam"), season)
+            home = registry.resolve(game.get("HomeTeam"), season)
+        except NflTeamRegistryError as exc:
+            raise KickerWeeklyResearchPlanError(str(exc)) from exc
+        day = str(game["GameDay"])
+        date_key = day.replace("-", "")
+        espn_id = str((game.get("ProviderGameIDs") or {}).get("ESPN") or "").strip() or None
+        away_p, home_p = _provider_spelling(registry, away), _provider_spelling(registry, home)
+        away_c, home_c = CBS_SPELLING.get(away_p, away_p), CBS_SPELLING.get(home_p, home_p)
+        game_time = game.get("GameTime") or None
+        hour_text = ""
+        if game_time:
+            hour, minute = (int(part) for part in game_time.split(":"))
+            hour_text = f"{hour % 12 or 12}:{minute:02d}{'p' if hour >= 12 else 'a'}"
+        rows.append(
+            {
+                "gameID": f"{date_key}_{away_p}@{home_p}",
+                "espnID": espn_id,
+                "season": str(season),
+                "seasonType": SEASON_TYPES[game_type],
+                "gameWeek": f"Week {int(game['Week'])}",
+                "gameDate": date_key,
+                "gameTime": hour_text or "TBD",
+                "gameTime_epoch": _kickoff_epoch(day, game_time),
+                "away": away,
+                "home": home,
+                "neutralSite": "True" if game.get("Location") == "Neutral" else "False",
+                "gameStatus": ("Final/OT" if str(game.get("Overtime") or "0") not in ("", "0") else "Final") if final_by_id[game_id] else "Scheduled",
+                "gameStatusCode": "2" if final_by_id[game_id] else "0",
+                "espnLink": f"https://www.espn.com/nfl/boxscore/_/gameId/{espn_id}" if espn_id else None,
+                "cbsLink": f"https://www.cbssports.com/nfl/gametracker/boxscore/NFL_{date_key}_{away_c}@{home_c}",
+            }
+        )
+    if not rows:
+        raise KickerWeeklyResearchPlanError(f"Canonical NFL schedule {season} contains no games")
+    return rows
 
 
 def parse_bool(value: Any, label: str) -> bool:
@@ -191,9 +281,16 @@ def resolve_team_schedule(
     team: str | None,
     games: list[dict[str, Any]],
     known_schedule_teams: set[str],
+    registry: NflTeamRegistry | None = None,
+    season: int | None = None,
 ) -> dict[str, Any]:
     if not team:
         raise KickerWeeklyResearchPlanError("Shortlisted Kicker is missing nfl_team")
+    if registry is not None:
+        try:
+            team = registry.resolve(team, season)
+        except NflTeamRegistryError as exc:
+            raise KickerWeeklyResearchPlanError(str(exc)) from exc
     if team not in known_schedule_teams:
         raise KickerWeeklyResearchPlanError(
             f"Shortlisted Kicker nfl_team {team} is not schedule-resolvable"
@@ -244,6 +341,7 @@ def build_research_plan(
     research_config: dict[str, Any],
     schedule: Any,
     week: int | None = None,
+    registry: NflTeamRegistry | None = None,
 ) -> dict[str, Any]:
     validate_source(source)
     validate_analysis_config(analysis_config)
@@ -282,6 +380,8 @@ def build_research_plan(
             row.get("nfl_team"),
             games,
             known_schedule_teams,
+            registry,
+            int(season),
         )
         neutral = bool(schedule_view["neutral_site"])
         expected_home = schedule_view["home"] if schedule_view["status"] == "scheduled" and not neutral else None
@@ -290,7 +390,7 @@ def build_research_plan(
         elif neutral:
             venue_reason = "Neutral-site game: verify the actual venue and roof; home-team stadium assumptions are invalid."
         else:
-            venue_reason = "Verify the current game venue and roof before weather scoring; Schedule.json does not carry venue metadata."
+            venue_reason = "Verify the current game venue and roof before weather scoring; the canonical schedule venue is not a verified fact for this research."
 
         candidates.append(
             {
@@ -378,7 +478,7 @@ def main() -> None:
     parser.add_argument("--input", default="fantasy-management/generated/operations/kicker-streaming-inputs.json")
     parser.add_argument("--analysis-config", default="fantasy-management/_ai/kicker-streaming-analysis-config.json")
     parser.add_argument("--research-config", default="fantasy-management/_ai/kicker-weekly-research-config.json")
-    parser.add_argument("--schedule", default="public/data/Schedule.json")
+    parser.add_argument("--repo-root", default=str(REPO_ROOT), help="Repository root holding the canonical source-data.")
     parser.add_argument("--schema", default="fantasy-management/_ai/schemas/kicker-weekly-research-plan.schema.json")
     parser.add_argument("--week", type=int, default=None)
     parser.add_argument("--output", default=None, help="Optional output path. Default is stdout only.")
@@ -387,8 +487,9 @@ def main() -> None:
     source = load_json(Path(args.input))
     analysis_config = load_json(Path(args.analysis_config))
     research_config = load_json(Path(args.research_config))
-    schedule = load_json(Path(args.schedule))
-    payload = build_research_plan(source, analysis_config, research_config, schedule, args.week)
+    registry = NflTeamRegistry.load(Path(args.repo_root))
+    schedule = load_canonical_schedule(Path(args.repo_root), int(source["league"]["season"]), registry)
+    payload = build_research_plan(source, analysis_config, research_config, schedule, args.week, registry)
     validate_against_schema(payload, Path(args.schema))
     rendered = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
     if args.output:

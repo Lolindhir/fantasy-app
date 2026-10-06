@@ -56,6 +56,9 @@ SNAPSHOT_PATH = "source-data/nfl/platform/sleeper/players.json"
 PROFILES_PATH = "source-data/nfl/player-profiles/nflverse.json"
 FANTASYPROS_URL = "https://www.fantasypros.com/nfl/players/{slug}.php"
 ESPN_PLAYER_URL = "https://www.espn.com/nfl/player/_/id/{espn_id}/{slug}"
+# The NFL image CDN serves the original (3400x2450 px, 1 to 5 MB); the app shows 34 to 60 px, so request 160 px (about 6 KB).
+HEADSHOT_WIDTH = 160
+HEADSHOT_LARGE_WIDTH = 480  # detail and desktop portraits (about 20 to 30 KB)
 ESPN_HEADSHOT_URL = "https://a.espncdn.com/i/headshots/nfl/players/full/{espn_id}.png"
 REQUIRED_SNAPSHOT_FIELDS = (
     "Status", "Team", "Position", "FantasyPositions", "BirthDate", "FullName", "FirstName", "LastName",
@@ -196,18 +199,32 @@ def short_name(display_name: str) -> str | None:
     return f"{parts[0][0]}. {parts[1]}"
 
 
+def sized_headshot(url: str | None, width: int = HEADSHOT_WIDTH) -> str | None:
+    """Add a width transformation to an NFL image CDN link; other links and already sized links stay unchanged."""
+    if not url or "static.www.nfl.com/image/upload/" not in url:
+        return url
+    head, _, tail = url.partition("/image/upload/")
+    transform, sep, rest = tail.partition("/")
+    if not sep or any(part.startswith("w_") for part in transform.split(",")):
+        return url
+    return f"{head}/image/upload/{transform},w_{width}/{rest}"
+
+
 def derive_profile(display_name: str | None, headshot: str | None, espn_id: str | None) -> dict[str, Any]:
     """Name short, picture and profile links from canonical facts; nothing is taken from the published file.
 
-    Picture is the nflverse headshot, falling back to the ESPN headshot of the canonical ESPN athlete ID.
+    Picture is a small (list) and PictureLarge a large (detail) rendition of the nflverse headshot, falling back to the ESPN headshot of the canonical ESPN athlete ID.
     Links are null when the name slug or the ESPN athlete ID is missing (never a link with an empty part).
     """
     name = (display_name or "").strip()
     slug = profile_slug(name) if name else ""
-    picture = headshot or (ESPN_HEADSHOT_URL.format(espn_id=espn_id) if espn_id else None)
+    espn_headshot = ESPN_HEADSHOT_URL.format(espn_id=espn_id) if espn_id else None
+    picture = sized_headshot(headshot) or espn_headshot
+    picture_large = sized_headshot(headshot, HEADSHOT_LARGE_WIDTH) or espn_headshot
     return {
         "NameShort": short_name(name) if name else None,
         "Picture": picture,
+        "PictureLarge": picture_large,
         "FantasyPros": FANTASYPROS_URL.format(slug=slug) if slug else None,
         "ESPN": ESPN_PLAYER_URL.format(espn_id=espn_id, slug=slug) if slug and espn_id else None,
     }
@@ -286,6 +303,7 @@ def build_population(repo_root: Path, league_id: str, season: int) -> dict[str, 
             "Number": row.get("Number"),
             "NameShort": derived["NameShort"],
             "Picture": derived["Picture"],
+            "PictureLarge": derived["PictureLarge"],
             "FantasyPros": derived["FantasyPros"],
             "ESPN": derived["ESPN"],
             "BirthDate": row["BirthDate"],

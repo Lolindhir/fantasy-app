@@ -19,10 +19,12 @@ The research plan reads only versioned/current repository inputs:
 fantasy-management/generated/operations/kicker-streaming-inputs.json
 fantasy-management/_ai/kicker-streaming-analysis-config.json
 fantasy-management/_ai/kicker-weekly-research-config.json
-public/data/Schedule.json
+source-data/nfl/schedules/<season>.json
+source-data/nfl/game-finality/<season>.json
+source-data/nfl/teams.json
 ```
 
-`public/data/Schedule.json` is the canonical repository schedule input. Do not fetch a second schedule feed merely to rebuild the same matchup mapping.
+The canonical NFL schedule (`source-data/nfl/schedules/<season>.json`, with `game-finality` and the team registry for spelling) is the schedule input; `public/data/Schedule.json` is no longer read. Do not fetch a second schedule feed merely to rebuild the same matchup mapping.
 
 The builder is:
 
@@ -60,7 +62,7 @@ Fantasy availability comes from the upstream Kicker Streaming input contract and
 
 ## Schedule mapping
 
-For the target season/week, a shortlisted Kicker is matched by `nfl_team` against `Schedule.json -> home/away`.
+For the target season/week, a shortlisted Kicker is matched by `nfl_team` against the canonical schedule `HomeTeam`/`AwayTeam`, resolved through the canonical team registry (for example `LAR` -> `LA`).
 
 Exactly one game means `scheduled`.
 
@@ -85,7 +87,7 @@ If no verified eligible scheduled free-agent alternative is available, the recom
 
 ## Venue and roof
 
-`Schedule.json` currently does not carry game-venue or roof metadata. Do not infer a venue only from the home team and store it as fact.
+The schedule join does not verify game venue or roof. Do not infer a venue only from the home team and store it as fact.
 
 Every scheduled shortlisted candidate therefore receives an explicit venue-research requirement.
 

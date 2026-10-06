@@ -10,6 +10,7 @@ try {
     Import-Module "$PSScriptRoot\DraftPickResultUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\DraftCompareUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\FileUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\CanonicalLeagueCoreUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -415,7 +416,7 @@ function Update-DraftsHistoricalSeasonsSafeOrderAware {
 
     $draftTypeConfigs = Get-DraftHistoryTypeConfigs
     $transactions = Get-DraftHistoryTransactionsAllLocal
-    $leagues = Get-LeaguesRecursive -leagueID $leagueID
+    $leagues = Get-CanonicalLeagueSeasonLeagues
     $draftsBySeason = @{}
 
     foreach ($league in $leagues) {
