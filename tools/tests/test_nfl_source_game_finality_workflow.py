@@ -35,12 +35,15 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
             "source-data/providers/nflverse",
             "source-data/providers/sleeper/players",
             "source-data/nfl",
-            "public/data/Players.json",
-            "public/data/Metadata.json",
-            "public/data/League.json",
+            "'source-data/leagues/*/manifest.json'",
             "tools",
         ):
             self.assertIn(f"            {path}\n", source)
+        inputs = source.split("materialize_input_pathspecs=(")[1].split(")")[0]
+        self.assertNotIn("public/data/Players.json", inputs)
+        self.assertNotIn("public/data/Players_Relevant.json", inputs)
+        self.assertNotIn("public/data/Metadata.json", inputs)
+        self.assertNotIn("public/data/League.json", inputs)
         self.assertIn('git diff --quiet "$base_sha" origin/main -- "${materialize_input_pathspecs[@]}"', source)
         self.assertIn("git rebase origin/main", source)
         self.assertNotIn("            source-data/providers\n", source)
