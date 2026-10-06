@@ -67,8 +67,9 @@ dataSources:
     description: >
       Complete generated player output used by Angular and by downstream
       generation steps that need the full player universe. Players[].ID is the
-      canonical Sleeper player_id resolved through the Tank01 sleeperBotID join;
-      Players[].TankID preserves the Tank01 playerID for provider provenance.
+      Sleeper player_id taken from the canonical Sleeper snapshot. Since #347 H1b
+      Players[].TankID is gone and no Tank01 or live Sleeper call feeds the
+      population (see populationContract).
       Since #347 D4 (2026-10-05) points, played games and the three prior seasons are
       canonical NFL stats scored with the league ScoringSettings
       (tools/players_league_scoring.py via PlayerLeagueScoringUtils.psm1) instead of
@@ -84,7 +85,45 @@ dataSources:
       FinalScoredWeek is the minimum of schedule finality and the league provider's last_scored_leg
       (LeagueWeekUtils.psm1::Resolve-LeagueFinalScoredWeek), so a week is not shown as scored before standings include it. Players no longer
       reads these from League.json; a missing structure or finality fails closed.
+    populationContract:
+      issue: 347
+      step: H1b
+      architectureDecision: ADR-043
+      producer: tools/players_population.py via PlayerPopulationUtils.psm1::Invoke-PlayerPopulationExport
+      rule: >
+        A Sleeper player from the canonical snapshot
+        (source-data/nfl/platform/sleeper/players.json) belongs in Players.json when it has an
+        app fantasy position (Get-AppFantasyPosition), a valid birth date and at least one
+        reason: nfl_roster_current_season (canonical season roster or any weekly roster of the
+        season), nfl_draft_current_season (canonical NFL draft of the season) or league_owned
+        (current fantasy roster incl. Taxi and IR). The two NFL reasons need exactly one
+        CanonicalPlayerID; league_owned also applies without a unique identity (identity hold,
+        last published scoring values are kept). This is the Fantasy Management population rule.
+      offSeason: >
+        While the season roster is not yet published, the previous season roster is used and the
+        export marks it (RosterBasis.UsedPreviousSeasonRoster). Without both rosters the run
+        fails closed; an empty Players.json is never published.
+      platformFields:
+        TeamAbbr: canonical team abbreviation of the Sleeper snapshot Team via source-data/nfl/teams.json (LAR -> LA, WSH -> WAS); null without a Sleeper team
+        TeamID: equals TeamAbbr (canonical app team key, ADR-042); null for a free agent
+        IsFreeAgent: true exactly when Sleeper holds no current team; this is NFL free agency, not fantasy availability
+        Status: Sleeper status from the snapshot
+        ByeWeek: canonical NFL schedule; 0 without a team
+      failClosed:
+        - missing or incomplete Sleeper snapshot
+        - team abbreviation unknown to the registry
+        - no reason set for any player or no usable roster basis
+      exportPersistence: rebuilt on every run, deterministic, not committed
+      remainingTank01: >
+        GameHistory still reads public/data/Games.json through the Tank01 playerID that the
+        canonical identity carries (transitional until #347 G3). Profile, Picture and link fields
+        are interim published values until #347 H2; Injury follows in H3.
     retiredProviderInputs:
+      - input: Tank01 getNFLPlayerList and live Sleeper /players/nfl
+        status: replaced by the canonical population export (#347 H1b)
+        note: >
+          Tank01 sleeperBotID is no longer an identity or population claim. Do not
+          reintroduce either call as a Players input.
       - input: Tank01 getNFLDFS DraftKings salaries
         status: not used
         note: >
@@ -93,9 +132,9 @@ dataSources:
           reintroduce DraftKings salary data as a player input without a new decision.
     identityContract:
       canonicalField: ID
-      canonicalSource: Sleeper player_id
-      providerField: TankID
-      providerSource: Tank01 playerID
+      canonicalSource: Sleeper player_id (canonical Sleeper snapshot)
+      providerField: none (TankID removed with #347 H1b)
+      crossProviderKey: CanonicalPlayerID resolved per season through source-data/nfl/identities (player-identity.yaml)
       requirements:
         - every generated player record has a non-empty canonical ID
         - canonical ID values are globally unique within Players.json
@@ -103,7 +142,7 @@ dataSources:
       failureBehavior: >
         Fail closed before change comparison, timestamp, backup and write. The
         existing last-known-good Players.json remains untouched. Diagnostics list
-        every duplicate ID together with TankID, Name, TeamID and Position for all
+        every duplicate ID together with Name, TeamID and Position for all
         conflicting records.
     timestamped: true
     backup: true
