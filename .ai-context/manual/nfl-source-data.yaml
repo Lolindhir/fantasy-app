@@ -116,9 +116,12 @@ registry:
 
   sourceSeason:
     resolutionOrder:
-      - public/data/League.json -> Season
-      - public/data/Metadata.json -> LeagueYear
-      - UTC calendar year as final technical fallback
+      - source-data/leagues/*/manifest.json -> CurrentCanonicalLeagueSeasonID (latest current season across leagues; unresolvable manifest fails closed)
+      - UTC calendar year as final technical fallback when no league manifest exists
+    independenceRule: >
+      Die NFL-Source-Schicht liest weder public/data/League.json noch
+      public/data/Metadata.json (App-Delivery bzw. manuelle Liga-Regeln); die
+      aktuelle Season stammt aus kanonischen League-Fakten (Issue #347 I2).
     explicitSelection: >
       `python tools/nfl_source_data.py sync --season <year>` ist wiederholbar und
       nur fuer sync mit mindestens einem ausgewaehlten season-partitioned Dataset
