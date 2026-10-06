@@ -183,31 +183,33 @@ matrix:
       - game identity
       - final scores when published by schedule dataset
     durableCanonicalPrimary: nflverse schedules
-    currentRuntimePrimary: Tank01 getNFLGamesForWeek remains the legacy Schedule.json shape; RequestGames overlays canonical finality before publication
+    currentRuntimePrimary: source-data/nfl/schedules/<season>.json plus game-finality/<season>.json consumed by CanonicalScheduleUtils.psm1::Get-CanonicalAppSchedule in RequestGames.ps1 (#347 G2); kickoff is Eastern local time converted with the IANA zone America/New_York
     secondary: none-required
     fallback:
-      - Tank01 for legacy Schedule.json shape compatibility during migration
+      - none; a missing or inconsistent canonical schedule fails closed and the last published Schedule.json stays
     identityKey: nflverse game_id for canonical schedule; current bridge uses explicit ESPN provider ID
     lifecycle: seasonal-finalizable
     historyCoverage: 1999-present
     freshness: current Schedule keeps its normal APP Data Games fallback cadence and additionally republishes on main changes to canonical NFL game-finality; canonical full-source refresh remains separate
-    migrationState: canonical-finality-migrated-schedule-shape-legacy
+    migrationState: canonical-active-schedule-and-finality-tank01-free
     guards:
       - game_type must be explicit; postseason must not silently enter the current REG-only app contract
       - canonical game identity must be unique before materialization
       - the current Tank01 Schedule row must resolve uniquely to canonical schedule identity by ESPN ID before Final can be published
-      - migrating the remaining Schedule.json fields is separate from the focused #447 finality cutover
+      - Schedule.json keeps the Tank01-compatible field shape; home/away and teamIDHome/teamIDAway carry the canonical team abbreviation (F3d), gameID keeps the provider spelling (LAR/WSH), CanonicalGameID is additive
+      - an empty canonical GameTime is an unknown kickoff (empty epoch), never 0; nflverse flex placeholders (13:00 in weeks 16-18) are taken over unchanged until the flex decision
+      - a non-existent or ambiguous Eastern local time fails closed
 
   nflGameFinality:
     facts:
       - explicit Final state
       - derived all-games-final week closure
     durableCanonicalPrimary: nflverse released-games evidence normalized by canonical game_id
-    currentRuntimePrimary: source-data/nfl/game-finality/<season>.json consumed by GameFinalityUtils.psm1 in RequestGames.ps1
+    currentRuntimePrimary: source-data/nfl/game-finality/<season>.json consumed by CanonicalScheduleUtils.psm1 in RequestGames.ps1
     secondary:
       - nflverse schedules own canonical game identity, game type and final score fields
     fallback:
-      - none for Final truth; Tank01 remains only a legacy Schedule-shape/boxscore provider and cannot override conflicting canonical finality
+      - none for Final truth; Tank01 remains only the legacy boxscore provider (retired with #347 G3/G4)
     identityKey: nflverse game_id / canonical game identity; transitional Schedule bridge uses ESPN provider ID
     lifecycle: seasonal-finalizable
     historyCoverage: follows validated released-games evidence; backfill coverage must be audited when activated
@@ -216,8 +218,8 @@ matrix:
     guards:
       - do not infer Final merely from score or fantasy-point presence
       - Final requires membership in the validated released-games evidence for the same canonical game_id
-      - RequestGames may promote stale non-Final Tank01 status when canonical Final=true, but a contradictory Tank01 Final while canonical Final=false fails closed
-      - missing/duplicate/mismatched ESPN provider joins fail closed before Schedule publication
+      - Schedule status is derived directly from canonical finality; schedule/finality rows must match one to one or generation fails closed before Schedule publication
+      - missing/duplicate ESPN provider IDs fail closed before Schedule publication
       - targeted game-day polling changes freshness only and must not introduce an elapsed-time or score-based terminal-state heuristic
       - the abandoned BUF-CIN Week 17/2022 game must not be treated as Final merely because schedule/score evidence exists
       - postponed/cancelled/no-contest semantics remain distinct terminal-state work if encountered
@@ -636,10 +638,11 @@ repositoryEvidence:
   - public/requests/RequestPlayers.ps1
   - public/requests/RequestGames.ps1
   - public/requests/utils/general/GameFinalityUtils.psm1
+  - public/requests/utils/general/CanonicalScheduleUtils.psm1
 
 nextArchitectureStep: >
-  Phase 1 source-data is accepted and #447 migrated current Final truth plus live
-  game-day refresh behind the legacy Schedule.json shape. Continue the App-Generator-DAG
+  Phase 1 source-data is accepted, #447 migrated current Final truth plus live
+  game-day refresh and #347 G2 builds Schedule.json entirely from canonical facts. Continue the App-Generator-DAG
   and remaining consumer migration while preserving public contracts unless a separate
   contract change is explicitly approved.
 

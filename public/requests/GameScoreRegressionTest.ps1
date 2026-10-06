@@ -61,8 +61,7 @@ $existingGameIDs = @($existingGames | ForEach-Object { $_.gameID })
 Assert-True ([array]::IndexOf($existingGameIDs, '20260910_SF@LAR') -eq 1) 'Populated Games lookup must keep the existing update index semantics.'
 
 $requestGamesSource = Get-Content (Join-Path $PSScriptRoot 'RequestGames.ps1') -Raw
-Assert-True ($requestGamesSource -match 'getNFLScoresOnly\?gameWeek=\$scoreWeek&season=\$year') 'Weekly score enrichment must use Tank01 gameWeek.'
-Assert-True (-not ($requestGamesSource -match 'getNFLScoresOnly\?week=\$scoreWeek')) 'Legacy Tank01 week parameter must not be used for getNFLScoresOnly.'
+Assert-True (-not $requestGamesSource.Contains('getNFLScoresOnly')) 'Scores come from canonical NFL facts (#347 G2); RequestGames must not fetch Tank01 scores.'
 Assert-True ($requestGamesSource.Contains('$gameIDs = @($games | ForEach-Object { $_.gameID })')) 'RequestGames must materialize the game-ID projection as an array before IndexOf.'
 Assert-True ($requestGamesSource.Contains('$index = [array]::IndexOf($gameIDs, $gameID)')) 'RequestGames must use the materialized game-ID array for lookup.'
 Assert-True (-not $requestGamesSource.Contains('[array]::IndexOf(($games | ForEach-Object { $_.gameID }), $gameID)')) 'The null-prone empty pipeline IndexOf expression must not return.'

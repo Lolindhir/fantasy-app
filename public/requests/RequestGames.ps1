@@ -5,8 +5,7 @@
 try {
     Import-Module "$PSScriptRoot\utils\ConfigUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\general\GameFinalityUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\general\GameScoreUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\general\CanonicalScheduleUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -93,55 +92,8 @@ function ObjectsAreEqualByJson {
     }
 }
 
-function Get-MissingFinalScoreGamesForWeek {
-    param(
-        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Schedule,
-        [Parameter(Mandatory = $true)][int]$Week
-    )
-
-    return @(
-        $Schedule | Where-Object {
-            $weekMatch = [regex]::Match([string]$_.gameWeek, 'Week\s+(\d+)')
-            $_.gameStatus -match '^Final' -and
-                -not (Test-GameHasScorePair -Game $_) -and
-                $weekMatch.Success -and
-                [int]$weekMatch.Groups[1].Value -eq $Week
-        }
-    )
-}
-
-function Test-GameEligibleForScoreRetry {
-    param(
-        [AllowNull()][object]$Game,
-        [Parameter(Mandatory = $true)][datetime]$NowUtc,
-        [Parameter(Mandatory = $true)][double]$WindowHours
-    )
-
-    if ($null -eq $Game -or -not $Game.gameTime_epoch) { return $false }
-
-    $epochSeconds = 0.0
-    if (-not [double]::TryParse(
-        ([string]$Game.gameTime_epoch),
-        [System.Globalization.NumberStyles]::Float,
-        [System.Globalization.CultureInfo]::InvariantCulture,
-        [ref]$epochSeconds
-    )) {
-        return $false
-    }
-
-    try {
-        $kickoffUtc = [DateTimeOffset]::FromUnixTimeSeconds([long]$epochSeconds).UtcDateTime
-        $ageHours = ($NowUtc - $kickoffUtc).TotalHours
-        return ($ageHours -ge 0 -and $ageHours -le $WindowHours)
-    }
-    catch {
-        return $false
-    }
-}
-
-
 # ===================================================================
-# Fetch Schedule + BoxScores (uses Invoke-Tank01-With-Fallback from your example)
+# Build Schedule from canonical NFL facts, fetch BoxScores (Tank01, retired with #347 G3/G4)
 # Saves: Schedule.json, Games.json, Timestamps.json
 # ===================================================================
 
@@ -176,14 +128,6 @@ if (-not (Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir
 
 $timestampFile = Join-Path $dataDir "Timestamps.json"
 $boxScoreWaitSeconds = 1  # Wartezeit zwischen BoxScore-Requests (anpassbar)
-
-# A Finality transition can arrive a few minutes before Tank01's weekly score feed
-# exposes the completed score. Keep the event-driven Games run alive for a small,
-# bounded recovery window instead of waiting for the next twice-daily fallback.
-# Attempt times are approximately t+0, t+1m, t+3m and t+6m.
-$scoreRetryDelaysSeconds = @(0, 60, 120, 180)
-$scoreRetryWindowHours = 12
-
 
 # --- Load old schedule if present ---
 $oldSchedule = $null
@@ -228,100 +172,24 @@ if ($oldSchedule -and $oldSchedule.Count -gt 0) {
 }
 
 
-# --- Fetch schedule from Tank01 ---
-Write-Host "Fetching full schedule (week=all, seasonType=reg)..." -ForegroundColor Yellow
-$scheduleUrl = "https://$apiHost/getNFLGamesForWeek?week=all&seasonType=reg&season=$year"
+# --- Build schedule from canonical NFL facts (#347 G2) ---
+# source-data/nfl/schedules + game-finality own kickoff, teams, week, status and final scores. A missing or
+# inconsistent canonical schedule aborts here and leaves the last published Schedule.json untouched.
+Write-Host "Building schedule from canonical NFL source data (season $year)..." -ForegroundColor Yellow
 try {
-    $scheduleResp = Invoke-Tank01-With-Fallback -Url $scheduleUrl -Keys $apiKeys
-    $schedule = $scheduleResp.body
-} catch {
-    Write-Error "Error fetching schedule: $_"
-    exit 1
-}
-if (-not $schedule) {
-    Write-Warning "No schedule returned."
-    exit 0
-}
-
-try {
-    $schedule = @(Resolve-CanonicalGameFinalitySchedule -Schedule @($schedule) -Season ([int]$year) -RepoRoot $repoRoot)
+    $schedule = @(Get-CanonicalAppSchedule -Season ([int]$year) -RepoRoot $repoRoot)
 }
 catch {
-    Write-Error "Error resolving canonical NFL game finality: $_"
+    Write-Error "Error building schedule from canonical NFL source data: $_"
     exit 1
 }
 
-# Preserve already materialized final-score pairs as a cache when the full
-# schedule endpoint omits them. The score-only endpoint below remains the source
-# for new score facts; neither path is allowed to promote a game to Final.
-if ($oldSchedule) {
-    try {
-        $schedule = @(Merge-GameScoresIntoSchedule -Schedule @($schedule) -ScoreRows @($oldSchedule))
-    }
-    catch {
-        Write-Error "Error carrying forward previously materialized NFL scores: $_"
-        exit 1
-    }
+$finalWithoutScore = @($schedule | Where-Object { $_.gameStatus -match '^Final' -and -not ($_.PSObject.Properties.Name -contains 'awayPts' -and $_.PSObject.Properties.Name -contains 'homePts') })
+foreach ($noScore in $finalWithoutScore) {
+    Write-Warning "Canonical NFL schedule has no score pair for Final game $($noScore.gameID); score stays unknown."
 }
 
-# Fetch lightweight score evidence only for canonical-Final games whose complete
-# score pair is still missing. Group by NFL week to keep API usage bounded.
-$scoreWeeks = @(
-    $schedule |
-        Where-Object { $_.gameStatus -match '^Final' -and -not (Test-GameHasScorePair -Game $_) } |
-        ForEach-Object {
-            if ([string]$_.gameWeek -match 'Week\s+(\d+)') { [int]$matches[1] }
-        } |
-        Sort-Object -Unique
-)
-
-foreach ($scoreWeek in $scoreWeeks) {
-    $scoresUrl = "https://$apiHost/getNFLScoresOnly?gameWeek=$scoreWeek&season=$year"
-
-    for ($attemptIndex = 0; $attemptIndex -lt $scoreRetryDelaysSeconds.Count; $attemptIndex++) {
-        $pendingWeekGames = @(Get-MissingFinalScoreGamesForWeek -Schedule @($schedule) -Week $scoreWeek)
-        if ($pendingWeekGames.Count -eq 0) { break }
-
-        if ($attemptIndex -gt 0) {
-            $retryablePending = @(
-                $pendingWeekGames | Where-Object {
-                    Test-GameEligibleForScoreRetry -Game $_ -NowUtc $currentTime -WindowHours $scoreRetryWindowHours
-                }
-            )
-            if ($retryablePending.Count -eq 0) {
-                Write-Host "Remaining missing Week $scoreWeek scores are outside the bounded post-game retry window; deferring to a later Games run." -ForegroundColor DarkGray
-                break
-            }
-
-            $retryDelay = [int]$scoreRetryDelaysSeconds[$attemptIndex]
-            $retryIDs = @($retryablePending | ForEach-Object { [string]$_.gameID }) -join ', '
-            Write-Host "Final scores still missing for $retryIDs. Retrying Week $scoreWeek in $retryDelay second(s) (attempt $($attemptIndex + 1)/$($scoreRetryDelaysSeconds.Count))..." -ForegroundColor Yellow
-            Start-Sleep -Seconds $retryDelay
-        }
-
-        try {
-            Write-Host "Fetching final NFL scores for Week $scoreWeek..." -ForegroundColor Yellow
-            $scoresResponse = Invoke-Tank01-With-Fallback -Url $scoresUrl -Keys $apiKeys
-            $scoreRows = @(Get-Tank01ScoreRows -Value $scoresResponse.body)
-            if ($scoreRows.Count -eq 0) {
-                Write-Warning "No score rows returned for Week $scoreWeek on attempt $($attemptIndex + 1). Finality remains valid; NFL score stays unknown."
-                continue
-            }
-            $schedule = @(Merge-GameScoresIntoSchedule -Schedule @($schedule) -ScoreRows $scoreRows)
-        }
-        catch {
-            Write-Warning "Could not enrich final NFL scores for Week $scoreWeek on attempt $($attemptIndex + 1). Finality remains canonical and score stays unknown. $_"
-        }
-    }
-
-    $stillMissing = @(Get-MissingFinalScoreGamesForWeek -Schedule @($schedule) -Week $scoreWeek)
-    if ($stillMissing.Count -gt 0) {
-        $missingIDs = @($stillMissing | ForEach-Object { [string]$_.gameID }) -join ', '
-        Write-Warning "Final NFL score still unavailable after bounded recovery for: $missingIDs"
-    }
-}
-
-Write-Host "Schedule retrieved, total games: $($schedule.Count)" -ForegroundColor Green
+Write-Host "Schedule built, total games: $($schedule.Count)" -ForegroundColor Green
 
 
 
