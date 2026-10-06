@@ -14,9 +14,21 @@ _RECONCILIATION_REASONS = {
 }
 
 
+_SLEEPER_PLAYERS_SOURCE = "sleeper.players"
+
+
 def _is_provisional_app_source(source: object) -> bool:
+    """Evidence that can bootstrap a person without any anchored provider.
+
+    ``app.Players`` and its git snapshots are retained only as persisted
+    provenance (#347 H1a); the live bootstrap evidence is the Sleeper snapshot.
+    """
     value = str(source or "")
-    return value == "app.Players" or value.startswith("app.Players.git.")
+    return (
+        value == "app.Players"
+        or value.startswith("app.Players.git.")
+        or value == _SLEEPER_PLAYERS_SOURCE
+    )
 
 
 def _is_provisional_app_mapping(item: dict[str, Any]) -> bool:
@@ -25,7 +37,10 @@ def _is_provisional_app_mapping(item: dict[str, Any]) -> bool:
 
 
 def _has_external_historical_source(sources: set[str]) -> bool:
-    return any(source and not source.startswith("app.") for source in sources)
+    return any(
+        source and not source.startswith("app.") and source != _SLEEPER_PLAYERS_SOURCE
+        for source in sources
+    )
 
 
 def _interval(item: dict[str, Any], default_season: int) -> tuple[int, int]:
@@ -90,7 +105,11 @@ def _current_conflict_claims(conflicts: list[dict[str, Any]]) -> list[dict[str, 
             conflict.get("SourcesByCanonicalPlayerID") or {}
         ).items():
             sources = {str(value) for value in raw_sources or [] if str(value)}
-            if "app.Players" not in sources:
+            if not any(
+                _is_provisional_app_source(source)
+                and not str(source).startswith("app.Players.git.")
+                for source in sources
+            ):
                 continue
             if not _has_external_historical_source(sources):
                 continue
