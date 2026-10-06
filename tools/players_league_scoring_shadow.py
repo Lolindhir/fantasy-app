@@ -35,6 +35,7 @@ from players_league_scoring import (  # noqa: E402,F401
     SleeperIdentityResolver,
     build_weekly_scores,
     final_regular_weeks,
+    game_final_regular_weeks,
     league_owned_sleeper_ids,
     league_scoring_settings,
     net_round,
@@ -422,10 +423,8 @@ def read_json_bom(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
-def validate_legacy_port(players: list[dict[str, Any]], league: dict[str, Any], weight_total: float, weight_game: float, final_week: int) -> dict[str, Any]:
-    """Re-derive Salary/SalaryProjected/Ranking/Avg* from the committed legacy inputs."""
+def _salary_mismatches(players: list[dict[str, Any]], weight_total: float, weight_game: float, final_week: int) -> Counter:
     mismatches: Counter = Counter()
-    recomputed: list[dict[str, Any]] = []
     for p in players:
         sal, proj = salaries(
             p["FantasyPointsAvgPotentialGame"], p["FantasyPointsAvgGame"], p["PointHistory"],
@@ -435,6 +434,21 @@ def validate_legacy_port(players: list[dict[str, Any]], league: dict[str, Any], 
             mismatches["Salary"] += 1
         if proj != p["SalaryProjected"]:
             mismatches["SalaryProjected"] += 1
+    return mismatches
+
+
+def validate_legacy_port(players: list[dict[str, Any]], league: dict[str, Any], weight_total: float, weight_game: float, final_week: int) -> dict[str, Any]:
+    """Re-derive Salary/SalaryProjected/Ranking/Avg* from the committed legacy inputs.
+
+    The committed Players.json is rebuilt only a few times a day, so it can legitimately have been
+    produced at an earlier final week than the canonical bounds report now. The salary blend is
+    validated against the newest final week up to the canonical one that reproduces the file.
+    """
+    candidates = [(_salary_mismatches(players, weight_total, weight_game, week), week) for week in range(final_week, -1, -1)]
+    salary_mismatches, produced_at = min(candidates, key=lambda c: (sum(c[0].values()), -c[1]))
+    mismatches: Counter = Counter(salary_mismatches)
+    recomputed: list[dict[str, Any]] = []
+    for p in players:
         if p["GamesPlayed"] > 0 and net_round(p["FantasyPointsTotal"] / p["GamesPlayed"], 2) != p["FantasyPointsAvgGame"]:
             mismatches["FantasyPointsAvgGame"] += 1
         if p["SnapsTotal"] > 0 and net_round(p["FantasyPointsTotal"] / p["SnapsTotal"], 5) != p["FantasyPointsAvgSnap"]:
@@ -458,6 +472,7 @@ def validate_legacy_port(players: list[dict[str, Any]], league: dict[str, Any], 
         "mismatches": dict(mismatches),
         "cap": cap,
         "capMatchesPublished": cap == [league["SalaryCap"], league["SalaryCapProjected"]],
+        "producedAtFinalWeek": produced_at,
     }
 
 
@@ -606,10 +621,19 @@ def sleeper_gate(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
         season = int(season_dir.name)
         scoring = league_scoring_settings(repo_root, league_id, season)
         final_weeks = final_regular_weeks(repo_root, season)
+        game_final_weeks = game_final_regular_weeks(repo_root, season)
         for matchup_file in sorted((season_dir / "matchups").glob("week-*.json")):
             week = int(matchup_file.stem.split("-")[1])
             if week not in final_weeks:
-                skipped[f"{season}:week-not-final"] += 1
+                # Games final but stats not completely published yet is a legitimate pending state
+                # for the newest week only; an older week with a hole stays a hard failure.
+                if week in game_final_weeks and week > max(final_weeks, default=0):
+                    skipped[f"{season}:week-stats-pending"] += 1
+                elif week in game_final_weeks:
+                    raise FileNotFoundError(
+                        f"Final week {season}:{week} lacks a complete canonical player-stats partition")
+                else:
+                    skipped[f"{season}:week-not-final"] += 1
                 continue
             stats_path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
             if not stats_path.exists():
