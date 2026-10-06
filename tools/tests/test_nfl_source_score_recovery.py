@@ -6,10 +6,10 @@ import unittest
 
 
 ROOT = Path(__file__).resolve().parents[2]
-REQUEST_GAMES = ROOT / "public" / "requests" / "RequestGames.ps1"
+REQUEST_GAMES = ROOT / "public" / "requests" / "RequestSchedule.ps1"
 
 
-class RequestGamesScoreRecoveryTests(unittest.TestCase):
+class RequestScheduleScoreRecoveryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.source = REQUEST_GAMES.read_text(encoding="utf-8")
@@ -21,6 +21,30 @@ class RequestGamesScoreRecoveryTests(unittest.TestCase):
         self.assertNotIn("getNFLGamesForWeek", self.source)
         self.assertNotIn("$scoreRetryDelaysSeconds", self.source)
         self.assertNotIn("Merge-GameScoresIntoSchedule", self.source)
+
+    def test_no_provider_call_key_or_games_artifact_remains(self):
+        # #347 G4: Tank01 pipeline, keys and Games.json are retired.
+        self.assertNotIn("Tank01", self.source)
+        self.assertNotIn("RapidAPI", self.source)
+        for base in ("public/requests", "public/data/examples", ".github"):
+            for path in (ROOT / base).rglob("*"):
+                if path.is_file() and path.suffix in {".ps1", ".psm1", ".yml", ".json"} and "RegressionTest" not in path.name:
+                    text = path.read_text(encoding="utf-8", errors="ignore").lower()
+                    self.assertNotIn("rapidapi", text, str(path))
+        for retired in (
+            "public/requests/RequestGames.ps1",
+            "public/requests/RequestGamesSeason.ps1",
+            "public/requests/RequestPlayersSeason.ps1",
+            "public/requests/utils/general/GameScoreUtils.psm1",
+            "public/data/Games.json",
+        ):
+            self.assertFalse((ROOT / retired).exists(), retired)
+        self.assertEqual(list((ROOT / "public" / "data" / "past_seasons").glob("Games_*.json")), [])
+
+    def test_workflow_calls_request_schedule(self):
+        workflow = (ROOT / ".github" / "workflows" / "update-games.yml").read_text(encoding="utf-8")
+        self.assertIn("pwsh ./public/requests/RequestSchedule.ps1", workflow)
+        self.assertNotIn("RequestGames.ps1", workflow)
 
     def test_missing_canonical_score_stays_unknown(self):
         self.assertIn("score stays unknown", self.source)

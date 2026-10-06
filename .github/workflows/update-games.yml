@@ -30,10 +30,10 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Rebuild and publish Games data
+      - name: Rebuild and publish Schedule data
         run: >-
           python3 tools/rebuild_and_publish.py
           --scope games
           --path public/data
           --
-          pwsh ./public/requests/RequestGames.ps1
+          pwsh ./public/requests/RequestSchedule.ps1

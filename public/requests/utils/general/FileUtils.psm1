@@ -31,7 +31,7 @@ function Save-JsonFile {
     param(
         [string]$TargetFile,
 
-        [ValidateSet("League","DecisionWindows","FantasyGameContext","Matchups","WeeklyRecaps","Players","Teams","Schedule","Games","Standings","Transactions", "Drafts")]
+        [ValidateSet("League","DecisionWindows","FantasyGameContext","Matchups","WeeklyRecaps","Players","Teams","Schedule","Standings","Transactions", "Drafts")]
         [string]$Type,
 
         [Parameter(Mandatory=$true)]
@@ -57,7 +57,6 @@ function Save-JsonFile {
             Players         = $config.PlayersFile
             Teams           = $config.TeamsFile
             Schedule        = $config.ScheduleFile
-            Games           = $config.GamesFile
             Standings       = $config.StandingsFile
             Transactions    = $config.TransactionsFile
             Drafts          = $config.DraftsFile

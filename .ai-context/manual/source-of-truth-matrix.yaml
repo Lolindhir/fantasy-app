@@ -183,7 +183,7 @@ matrix:
       - game identity
       - final scores when published by schedule dataset
     durableCanonicalPrimary: nflverse schedules
-    currentRuntimePrimary: source-data/nfl/schedules/<season>.json plus game-finality/<season>.json consumed by CanonicalScheduleUtils.psm1::Get-CanonicalAppSchedule in RequestGames.ps1 (#347 G2); kickoff is Eastern local time converted with the IANA zone America/New_York
+    currentRuntimePrimary: source-data/nfl/schedules/<season>.json plus game-finality/<season>.json consumed by CanonicalScheduleUtils.psm1::Get-CanonicalAppSchedule in RequestSchedule.ps1 (#347 G2, renamed in G4); kickoff is Eastern local time converted with the IANA zone America/New_York
     secondary: none-required
     fallback:
       - none; a missing or inconsistent canonical schedule fails closed and the last published Schedule.json stays
@@ -205,7 +205,7 @@ matrix:
       - explicit Final state
       - derived all-games-final week closure
     durableCanonicalPrimary: nflverse released-games evidence normalized by canonical game_id
-    currentRuntimePrimary: source-data/nfl/game-finality/<season>.json consumed by CanonicalScheduleUtils.psm1 in RequestGames.ps1
+    currentRuntimePrimary: source-data/nfl/game-finality/<season>.json consumed by CanonicalScheduleUtils.psm1 in RequestSchedule.ps1
     secondary:
       - nflverse schedules own canonical game identity, game type and final score fields
     fallback:
@@ -227,23 +227,19 @@ matrix:
 
   nflGameBoxscoreLegacy:
     facts:
-      - current provider-shaped full Games.json game object
-      - provider-specific playerStats boxscore payload
+      - former provider-shaped full Games.json game object (Tank01 getNFLBoxScore)
     durableCanonicalPrimary: no-single-provider-object
-    currentRuntimePrimary: Tank01 getNFLBoxScore in RequestGames.ps1
+    currentRuntimePrimary: none; Games.json, RequestGames.ps1, RequestGamesSeason.ps1 and the past_seasons/Games_<year>.json archives were retired with #347 G4
     secondary:
       - canonical schedule
       - canonical player stats
       - canonical snap counts
-    fallback: Tank01 remains legacy full-object provider until Games.json is intentionally redesigned
-    identityKey: current Tank01 gameID; future canonical join must map to canonical game identity
-    lifecycle: generated-app-readmodel
-    historyCoverage: current app archives 2022-2025; provider history is not the preferred future backfill path
-    migrationState: legacy-contract-retained
+    fallback: none
+    lifecycle: retired
+    migrationState: retired-347-g4
     guards:
-      - boxscore fetch eligibility for completed games follows the finality-resolved Schedule status rather than raw Tank01 finality
-      - do not declare nflverse Player Stats a 1:1 replacement for the whole Tank01 boxscore object
-      - future Games.json redesign belongs with the app-generator DAG/read-model migration
+      - no consumer reads a Tank01 boxscore object; GameHistory and points come from canonical player-stats/snap-counts (#347 D4, G3)
+      - the retired Games_<year>.json archives stay recoverable from git history only
 
   nflPlayerWeeklyStats:
     facts:
@@ -256,10 +252,10 @@ matrix:
       - weekly player stat totals
       - team/opponent/game references
     durableCanonicalPrimary: nflverse player-stats
-    currentRuntimePrimary: canonical player-stats consumed by RequestPlayers.ps1 for points and GameHistory (#347 D4, G3); Tank01 playerStats remain only in the legacy Games.json until G4
+    currentRuntimePrimary: canonical player-stats consumed by RequestPlayers.ps1 for points and GameHistory (#347 D4, G3)
     secondary: none-required for finalized history
     fallback:
-      - Tank01 for legacy Games.json until that read model is redesigned
+      - none
     identityKey: GSIS -> CanonicalPlayerID
     gameKey: nflverse game_id
     lifecycle: seasonal-finalizable
@@ -277,7 +273,7 @@ matrix:
     facts:
       - league-specific fantasy points derived from canonical NFL player statistics
     durableCanonicalPrimary: deterministic derivation from canonical NFL player stats plus Sleeper league scoring_settings
-    currentRuntimePrimary: league-scored points exported by tools/players_league_scoring.py for Players.json (#347 D4, 2026-10-05); GameHistory points of every game follow the same scorer since #347 G3; Tank01 fantasyPointsDefault.PPR remains only in the legacy Games.json until G4
+    currentRuntimePrimary: league-scored points exported by tools/players_league_scoring.py for Players.json (#347 D4, 2026-10-05); GameHistory points of every game follow the same scorer since #347 G3; no Tank01 value remains since #347 G4
     secondary:
       - nflverse/provider fantasy-point values may be used as validation/corroboration only
     fallback: none for Players.json points; an identity hold keeps the last published values
@@ -300,10 +296,10 @@ matrix:
       - st_snaps
       - st_pct
     durableCanonicalPrimary: nflverse PFR snap-count dataset
-    currentRuntimePrimary: canonical snap-counts consumed by RequestPlayers.ps1 GameHistory (#347 G3); Tank01 snapCounts remain only in the legacy Games.json until G4
+    currentRuntimePrimary: canonical snap-counts consumed by RequestPlayers.ps1 GameHistory (#347 G3)
     secondary: none-required
     fallback:
-      - Tank01 for legacy Games.json during migration
+      - none
     identityKey: PFR ID -> CanonicalPlayerID
     gameKey: nflverse game_id / PFR game mapping
     lifecycle: seasonal-finalizable
@@ -568,7 +564,6 @@ matrix:
 unresolvedDecisionsBeforeAppGeneratorDag:
   blocking:
     - migrate the remaining app consumers from direct/legacy provider reads to the accepted canonical source-data layer without changing public contracts unintentionally
-    - define exact Games.json replacement/compatibility strategy instead of assuming canonical stat datasets reproduce the Tank01 boxscore object
     - validate how canonical source availability states are exposed to downstream generators so missing/not-yet-available/fetch-failed do not collapse into zero
     - regression-test league-settings-based fantasy scoring against current outputs before replacing provider point values
   nonBlockingForInitialDagDesign:
@@ -636,7 +631,7 @@ repositoryEvidence:
   - .github/workflows/sync-nfl-game-finality.yml
   - .github/workflows/update-games.yml
   - public/requests/RequestPlayers.ps1
-  - public/requests/RequestGames.ps1
+  - public/requests/RequestSchedule.ps1
   - public/requests/utils/general/GameFinalityUtils.psm1
   - public/requests/utils/general/CanonicalScheduleUtils.psm1
 
@@ -712,9 +707,9 @@ playersReadModelFieldInventory:
       - public/data/past_seasons/Players_<season-1..season-3>.json keyed by TankID
       - config.ps1 WeightTotal/WeightGame
     historyArchives:
-      producer: public/requests/RequestPlayersSeason.ps1 (manual, no workflow) from past_seasons/Games_<year>.json
+      producer: none; RequestPlayersSeason.ps1 and its Games_<year>.json input were retired with #347 G4
       shape: TankID, Name, TeamIDs, Games[] with FantasyPoints = Tank01 fantasyPointsDefault.PPR
-      note: archives carry no Sleeper ID and no canonical ID; they are a Tank01-keyed legacy read model used as input
+      note: the existing past_seasons/Players_<year>.json files stay as static, Tank01-keyed archives; no producer or consumer in the repository reads them
 
   fieldGroups:
     appIdentity:
@@ -792,7 +787,7 @@ playersReadModelFieldInventory:
     seasonStatsAndPoints:
       fields: [GamesPlayed, GamesPotential, SnapsTotal, AttemptsTotal, TouchdownsTotal, TouchdownsPassing, TouchdownsReceiving, TouchdownsRushing, FantasyPointsTotal, FantasyPointsAvgGame, FantasyPointsAvgPotentialGame, FantasyPointsAvgSnap, FantasyPointsAvgAttempt]
       layer: sharedDerived
-      currentProducer: PlayerLeagueScoringUtils.psm1 over the tools/players_league_scoring.py export (canonical player-stats and snap-counts scored with the league ScoringSettings, final REG weeks up to LastLeagueWeek, played game = offense snaps > 0, kickers FG + PAT attempts > 0); GamesPotential still follows Games.json presence and the canonical bye week (#347 D4)
+      currentProducer: PlayerLeagueScoringUtils.psm1 over the tools/players_league_scoring.py export (canonical player-stats and snap-counts scored with the league ScoringSettings, final REG weeks up to LastLeagueWeek, played game = offense snaps > 0, kickers FG + PAT attempts > 0); GamesPotential follows the final scored week minus the canonical bye week (#347 D4)
       matrixKey: [nflPlayerWeeklyStats, nflSnapCounts, fantasyPointsLeagueScoring]
       targetOwner: league-scored points from the PlayerWeekFantasy derivation (CanonicalPlayerID + league ScoringSettings); stats/snaps from canonical player-stats and snap-counts
       consumers:
@@ -813,7 +808,7 @@ playersReadModelFieldInventory:
     gameHistory:
       fields: [GameHistory]
       layer: consumerOnly
-      currentProducer: per-game rows from Games.json (Tank01 boxscore, snaps, Passing/Receiving/Rushing/Kicking objects); FantasyPoints of final regular-season games are replaced by league-scored points (#347 D4), playoff and not yet final games keep the Tank01 PPR value
+      currentProducer: tools/players_game_history.py inside the players_league_scoring.py export (canonical player-stats, snap-counts, qbr-week, player-game-long-gains, schedules and game-finality; league-scored points for every game, #347 G3); Games.json no longer exists
       matrixKey: [nflPlayerWeeklyStats, fantasyPointsLeagueScoring, nflSchedule]
       targetOwner: App delivery shape over canonical weekly stats and league-scored weekly points
       consumers:

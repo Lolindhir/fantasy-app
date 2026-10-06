@@ -1404,4 +1404,34 @@ decisions:
       negative:
         - Published GameHistory team keys change from numeric Tank01 IDs and LAR/WSH spellings to canonical abbreviations (LA, WAS).
         - Rating differs by 0.1 from Tank01 on exact rounding ties.
-        - Games.json, RequestGames.ps1 and RequestPlayersSeason.ps1 stay until G4.
+        - Games.json, RequestGames.ps1 and RequestPlayersSeason.ps1 stayed until #347 G4 and were retired there (ADR-045).
+
+  - id: ADR-045
+    title: The Tank01 game pipeline is retired; Schedule.json is the only Games-workflow output
+    status: accepted
+    context: >
+      After G2 (Schedule.json from canonical schedule and finality) and G3 (GameHistory and points from canonical
+      player-stats and snap-counts) the only remaining Tank01 use was the boxscore fetch that fed public/data/Games.json,
+      which neither Angular nor Fantasy Management reads, plus the manual archive generators RequestGamesSeason.ps1 and
+      RequestPlayersSeason.ps1 (Issue #347, hard rule: no Tank01 dependency may remain).
+    decision: >
+      Robert approved the workflow change on 2026-10-06 (decision card, G4). RequestGames.ps1 becomes
+      RequestSchedule.ps1 and builds only Schedule.json from canonical facts; update-games.yml keeps its name, triggers
+      (scheduler event, main push on source-data/nfl/game-finality/**) and publication class (rebuild-and-retry) and only
+      calls the renamed script. Games.json, RequestGamesSeason.ps1, RequestPlayersSeason.ps1, GameScoreUtils.psm1, the
+      Tank01 example payloads, the Tank01 join helpers in PlayerUtils.psm1 and all RapidAPI keys (ConfigUtils.psm1,
+      config.ps1, examples) are removed. The static past_seasons/Games_<year>.json archives (about 255 MB of Tank01
+      boxscores without a consumer) are removed from the tree and from the Games resource of PastSeasonsIndex.json; they
+      remain recoverable from git history. past_seasons/Players_<year>.json and Schedule_<year>.json stay as static
+      archives. update-teams.yml needs no change (no Tank01 call since #347 F3c). workflow-monitoring.yaml and
+      workflow-publication.yaml classifications stay valid because workflow names, triggers and publication class are unchanged.
+    rationale: >
+      A dead provider pipeline that needs API keys is a maintenance and security liability; keeping the workflow and its
+      scheduler contract avoids a monitoring/scheduler migration for no functional gain.
+    consequences:
+      positive:
+        - No Tank01 call, key or boxscore remains in the repository code.
+        - The Games workflow no longer needs provider credentials and no longer writes Games.json or its timestamp.
+      negative:
+        - The leaked RapidAPI keys stay valid in git history until Robert rotates them at RapidAPI (rest of Issue #186).
+        - The workflow name still says Games although it only publishes the Schedule.

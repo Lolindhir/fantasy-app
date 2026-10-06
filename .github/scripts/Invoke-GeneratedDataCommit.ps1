@@ -52,7 +52,6 @@ function Get-GeneratedDataLabel {
         "/Drafts\.json$" { return "Drafts" }
         "/Standings\.json$" { return "Standings" }
         "/Teams\.json$" { return "Teams" }
-        "/Games\.json$" { return "Games" }
         "/Schedule\.json$" { return "Schedule" }
         "/Timestamps?\.json$" { return "Timestamps" }
         default {

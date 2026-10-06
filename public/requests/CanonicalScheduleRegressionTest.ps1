@@ -221,10 +221,11 @@ finally {
     if (Test-Path $tempRoot) { Remove-Item $tempRoot -Recurse -Force }
 }
 
-# --- 5. RequestGames no longer calls Tank01 for the schedule or the scores ---
-$requestGamesSource = Get-Content (Join-Path $PSScriptRoot 'RequestGames.ps1') -Raw
-Assert-CsrTrue ($requestGamesSource.Contains('Get-CanonicalAppSchedule')) 'RequestGames must build the schedule from canonical facts.'
-Assert-CsrTrue (-not $requestGamesSource.Contains('getNFLGamesForWeek')) 'RequestGames must not fetch the Tank01 schedule.'
-Assert-CsrTrue (-not $requestGamesSource.Contains('getNFLScoresOnly')) 'RequestGames must not fetch Tank01 scores.'
+# --- 5. RequestSchedule builds the schedule from canonical facts only (#347 G2/G4) ---
+$requestScheduleSource = Get-Content (Join-Path $PSScriptRoot 'RequestSchedule.ps1') -Raw
+Assert-CsrTrue ($requestScheduleSource.Contains('Get-CanonicalAppSchedule')) 'RequestSchedule must build the schedule from canonical facts.'
+Assert-CsrTrue (-not $requestScheduleSource.Contains('Tank01')) 'RequestSchedule must not call Tank01.'
+Assert-CsrTrue (-not $requestScheduleSource.Contains('RapidAPI')) 'RequestSchedule must not use API keys.'
+Assert-CsrTrue (-not (Test-Path (Join-Path $PSScriptRoot 'RequestGames.ps1'))) 'RequestGames.ps1 is retired (#347 G4).'
 
 Write-Host 'Canonical schedule regression test passed.' -ForegroundColor Green
