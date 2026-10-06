@@ -381,6 +381,12 @@ try {
         }
     }
 
+    $scheduleFinalWeek = $finalWeek
+    $finalWeek = Resolve-LeagueFinalScoredWeek -ScheduleFinalWeek $scheduleFinalWeek -LastScoredLeg $lastScoredLeg
+    if ($finalWeek -ne $scheduleFinalWeek) {
+        Write-Host "Schedule reports Week $scheduleFinalWeek final, but the league has scored through Week $lastScoredLeg; using Week $finalWeek." -ForegroundColor DarkGray
+    }
+
     if ($finalWeek -ge 0) {
         Write-Host "Final active week detected: Week $finalWeek" -ForegroundColor Yellow
     } else {

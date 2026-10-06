@@ -18,4 +18,5 @@
 - Unsicherheit kennzeichnen: Ausdrücklich markieren, was geprüft ist und was nur Annahme ist.
 - Abschlussbericht: Am Ende kurz nennen, was geändert wurde, was verifiziert ist und was nicht (inklusive übersprungener Schritte).
 - Entscheidungen mit Empfehlung: Wenn der User entscheiden muss, eine klare Empfehlung nennen statt nur Optionen aufzulisten.
+- Wartende Threads (Claude-Projekte mit Koordinator und Threads): Wartet ein Thread auf etwas (CI, Merge-Voraussetzung, User), den Wartegrund an den Thread-Titel hängen, z. B. „… · wartet auf CI“, und den Zusatz entfernen, sobald es weitergeht. Grund: Die Statusanzeige zeigt solche Threads sonst als inaktiv.
 - Issues nennen: Nie nur die Nummer nennen. Beim ersten Nennen eines Issues immer Titel und eine kurze Beschreibung dazu angeben, damit klar ist, worum es geht. Gilt sinngemäß auch für PRs.

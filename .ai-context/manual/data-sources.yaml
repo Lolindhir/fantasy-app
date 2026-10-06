@@ -78,8 +78,11 @@ dataSources:
     weekBounds: >
       Since #347 I1 RequestPlayers.ps1 and players_league_scoring_shadow.py take LastLeagueWeek and
       PlayoffStartWeek from the canonical League-season WeekStructure and FinalScoredWeek from the
-      uninterrupted run of final regular-season weeks in canonical NFL game finality (capped at
-      LastLeagueWeek), via tools/players_league_scoring.py::resolve_league_week_bounds. Players no longer
+      uninterrupted run of final regular-season weeks in canonical NFL game finality whose canonical
+      player-stats partition also covers every playing team (nflverse stats lag game results; #895), capped at
+      LastLeagueWeek, via tools/players_league_scoring.py::resolve_league_week_bounds. League.json
+      FinalScoredWeek is the minimum of schedule finality and the league provider's last_scored_leg
+      (LeagueWeekUtils.psm1::Resolve-LeagueFinalScoredWeek), so a week is not shown as scored before standings include it. Players no longer
       reads these from League.json; a missing structure or finality fails closed.
     retiredProviderInputs:
       - input: Tank01 getNFLDFS DraftKings salaries
