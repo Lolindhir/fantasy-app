@@ -1,6 +1,11 @@
 <h2 mat-dialog-title class="player-dialog-title">
   <div class="dialog-header">
-    <img loading="lazy" decoding="async" class="dialog-player-logo" [src]="player.Picture" alt="{{ player.TeamNFL.Name }}" />
+    <picture>
+      @if (player.PictureLarge) {
+        <source media="(min-width: 601px)" [srcset]="player.PictureLarge" />
+      }
+      <img loading="lazy" decoding="async" class="dialog-player-logo" [src]="player.Picture" alt="{{ player.TeamNFL.Name }}" />
+    </picture>
 
     <div class="dialog-player-info">
       <span class="dialog-player-name">{{ player.Name }}</span>

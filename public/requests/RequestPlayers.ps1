@@ -572,6 +572,7 @@ foreach ($entry in $population.Players) {
         Salary                       = [math]::Round($salaryDollarsFantasy)
         SalaryProjected              = [math]::Round($salaryDollarsProjectedFantasy)
         Picture                      = $entry.Picture
+        PictureLarge                 = $entry.PictureLarge
         FantasyPros                  = $entry.FantasyPros
         ESPN                         = $entry.ESPN
         SleeperDepthChartPosition    = $depthChart.Position

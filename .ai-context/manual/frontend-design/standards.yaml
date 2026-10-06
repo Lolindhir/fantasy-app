@@ -140,3 +140,12 @@ standards:
       method: Inspect hero/summary copy on sports surfaces.
       evidence: Primary copy describes user-facing sports meaning rather than internal path counts or diagnostic state.
     references: ["#436"]
+  - id: FDS-011
+    level: SHOULD
+    scope: player portraits (Players.json Picture and PictureLarge)
+    rule: Lists, rows and compact tiles use the small `Picture`; `PictureLarge` is used only where Robert has adopted it, currently the desktop (viewport wider than 600 px) player detail dialog, via a picture source with `Picture` as the img fallback; mobile and every other surface keep `Picture`. Further surfaces are added to this rule explicitly. Image widths are chosen only in the data generator, never in Angular.
+    rationale: The NFL image CDN serves a 3400 px original of 1 to 5 MB; requesting a size matched to the display keeps loading fast (small about 6 KB, large about 25 KB) while detail views stay sharp.
+    review:
+      method: Inspect player image usage in templates.
+      evidence: Only the listed large-portrait surfaces use PictureLarge with a Picture fallback; all other surfaces bind Picture; no template builds or rewrites image URLs.
+    references: ["#436", "#913", "#917"]
