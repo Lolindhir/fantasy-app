@@ -14,32 +14,21 @@ class RequestGamesScoreRecoveryTests(unittest.TestCase):
     def setUpClass(cls):
         cls.source = REQUEST_GAMES.read_text(encoding="utf-8")
 
-    def test_weekly_score_endpoint_uses_game_week(self):
-        self.assertIn(
-            "getNFLScoresOnly?gameWeek=$scoreWeek&season=$year",
-            self.source,
-        )
-        self.assertNotIn("getNFLScoresOnly?week=$scoreWeek", self.source)
+    def test_scores_come_from_canonical_schedule_not_tank01(self):
+        # #347 G2: the Tank01 score endpoint and its post-game retry loop are retired.
+        self.assertIn("Get-CanonicalAppSchedule", self.source)
+        self.assertNotIn("getNFLScoresOnly", self.source)
+        self.assertNotIn("getNFLGamesForWeek", self.source)
+        self.assertNotIn("$scoreRetryDelaysSeconds", self.source)
+        self.assertNotIn("Merge-GameScoresIntoSchedule", self.source)
 
-    def test_postgame_retry_is_bounded_and_recent_only(self):
-        self.assertRegex(
-            self.source,
-            re.compile(r"\$scoreRetryDelaysSeconds\s*=\s*@\(0,\s*60,\s*120,\s*180\)"),
-        )
-        self.assertRegex(self.source, re.compile(r"\$scoreRetryWindowHours\s*=\s*12"))
-        self.assertIn("function Test-GameEligibleForScoreRetry", self.source)
-        self.assertIn("function Get-MissingFinalScoreGamesForWeek", self.source)
-        self.assertIn("Start-Sleep -Seconds $retryDelay", self.source)
-        self.assertIn("outside the bounded post-game retry window", self.source)
+    def test_missing_canonical_score_stays_unknown(self):
+        self.assertIn("score stays unknown", self.source)
+        self.assertNotRegex(self.source, re.compile(r"awayPts\s*=\s*0"))
 
-    def test_retries_never_promote_finality(self):
-        retry_section = self.source.split(
-            "# Fetch lightweight score evidence only for canonical-Final games",
-            1,
-        )[1].split("Write-Host \"Schedule retrieved", 1)[0]
-        self.assertIn("gameStatus -match '^Final'", self.source)
-        self.assertNotRegex(retry_section, re.compile(r"gameStatus\s*="))
-        self.assertNotRegex(retry_section, re.compile(r"gameStatusCode\s*="))
+    def test_schedule_failure_aborts_before_publication(self):
+        build = self.source.split("Get-CanonicalAppSchedule", 1)[1].split("Schedule built", 1)[0]
+        self.assertIn("exit 1", build)
 
     def test_request_games_has_valid_powershell_syntax(self):
         env = dict(os.environ)
