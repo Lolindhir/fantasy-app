@@ -1329,3 +1329,47 @@ decisions:
         - Archives with numeric IDs keep resolving.
       negative:
         - Teams.json gains LegacyIDs and the visible Rams and Commanders abbreviations change in F3c.
+
+  - id: ADR-043
+    title: Players population follows the Fantasy Management rule and identity evidence no longer comes from Players.json
+    status: accepted
+    context: >
+      RequestPlayers.ps1 took its population from Tank01 getNFLPlayerList rows with
+      sleeperBotID and the identity builder read public/data/Players.json (and its git
+      history) as evidence, so Players.json fed the identities that fed Players.json
+      (Issue #347 H1; 182 of 184 historical_mapping_overlap conflicts cited
+      app.Players.git). Without Tank01, new players that only the persisted identity
+      record links to a Sleeper ID would have had no automatic bridge. Sleeper's current
+      team alone is not a population criterion because retired players keep stale teams.
+    decision: >
+      Robert decided on 2026-10-05 (A to C) to use one population rule for the App and
+      Fantasy Management: a canonical Sleeper snapshot player with an app fantasy position
+      (QB, RB, WR, TE, K) and a valid birth date belongs in Players.json when it has a
+      reason: nfl_roster_current_season, nfl_draft_current_season (both need exactly one
+      CanonicalPlayerID) or league_owned (incl. Taxi and IR; identity hold without a unique
+      identity). While the season roster is unpublished the previous season roster is used
+      and marked; without a roster the run fails closed. Team, free-agent and status fields
+      come from the canonical Sleeper snapshot through the canonical team registry (ADR-042):
+      TeamAbbr = TeamID = canonical abbreviation (null without a team), IsFreeAgent = no
+      Sleeper team (NFL free agency, not fantasy availability), TankID removed. app.Players
+      and app.Players.git.* stop being identity evidence (persisted provenance stays as
+      history); the Sleeper snapshot (source sleeper.players) replaces them, and Tank01 is
+      no attach key. A bounded sleeperCurrentRosterAttributeBridge attaches a new Sleeper ID
+      to exactly one current nflverse roster record on exact birth date, team and position
+      when unique and uncontradicted; ambiguity stays provisional or goes to adjudication.
+      Implemented in #347 H1a (identity) and H1b (population, PR 887 and 891); documented in
+      #347 H1c.
+    rationale: >
+      One rule avoids two competing definitions of a relevant player, the snapshot is fresh
+      daily and matches what managers see in Sleeper, and removing Players.json from the
+      evidence closes the cycle without weakening fail-closed identity handling. The
+      attribute bridge is the narrow replacement for the lost Tank01 pairing.
+    consequences:
+      positive:
+        - Players.json carries no Tank01 population claim and no provider ID.
+        - Identity evidence is acyclic; new app-driven identity conflicts no longer arise.
+        - Free-agent and team semantics are explicit and registry-keyed.
+      negative:
+        - Players without a current-season roster, draft or league reason leave Players.json (1,268 to 937 on the 2026-10-05 data, 336 removed, 5 added, none league-owned); they return automatically through a roster entry.
+        - GameHistory still depends on Games.json via the canonical Tank01 ID until G3.
+        - A new Sleeper player that neither nflverse nor the bridge can resolve needs adjudication.
