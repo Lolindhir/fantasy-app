@@ -115,9 +115,31 @@ dataSources:
         - no reason set for any player or no usable roster basis
       exportPersistence: rebuilt on every run, deterministic, not committed
       remainingTank01: >
-        GameHistory still reads public/data/Games.json through the Tank01 playerID that the
-        canonical identity carries (transitional until #347 G3). Profile, Picture and link fields
-        are interim published values until #347 H2; Injury follows in H3.
+        None for GameHistory since #347 G3. Profile, Picture and link fields are interim published
+        values until #347 H2; Injury follows in H3.
+    gameHistoryContract:
+      issue: 347
+      step: G3
+      architectureDecision: ADR-044
+      producer: tools/players_game_history.py via the players_league_scoring.py export, converted by PlayerLeagueScoringUtils.psm1::ConvertTo-PlayerGameHistory
+      rule: >
+        Players.json[].GameHistory lists, newest game first, every current-season game for which canonical
+        player-stats holds a row or snap-counts a row for the player. Game data (teams, date, scores) comes
+        from the canonical schedule, WeekFinal from canonical game finality, points from the league
+        ScoringSettings for every game (final or not, regular or postseason). Passing, Rushing, Receiving and
+        Kicking blocks exist when their counting stats are non-zero. Rating and the *Avg fields are exact
+        fractions rounded half up to one decimal; QBRating is ESPN QBRTotal from qbr-week (null without a
+        row); LongRush and LongReceptions are the maximum of player-game-long-gains (0 for a covered game
+        without a record, null for a game the dataset does not cover yet, negative values kept).
+      teamKeys: >
+        Home, HomeID, Away, AwayID, TeamID and TeamAbv carry the canonical abbreviation (ADR-042);
+        GameID keeps the legacy provider spelling (LAR, WSH) so existing joins stay stable.
+      hold: >
+        A player in identity hold keeps the last published GameHistory together with the other held values;
+        a game whose special-teams fumble evidence is ambiguous gets no entry instead of a wrong zero.
+      failClosed:
+        - a stat or snap row naming a game missing in the canonical schedule
+        - a stat row without scored points
     retiredProviderInputs:
       - input: Tank01 getNFLPlayerList and live Sleeper /players/nfl
         status: replaced by the canonical population export (#347 H1b)

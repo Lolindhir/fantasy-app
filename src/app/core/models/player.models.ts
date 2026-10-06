@@ -75,7 +75,7 @@ export interface GameDetails {
 }
 
 export interface PassingStats {
-  QBRating: number;
+  QBRating: number | null;
   Rating: number;
   PassAttempts: number;
   PassAvg: number;
@@ -89,14 +89,14 @@ export interface RushingStats {
   RushAvg: number;
   RushYards: number;
   Carries: number;
-  LongRush: number;
+  LongRush: number | null;
   RushTDs: number;
 }
 
 export interface ReceivingStats {
   Receptions: number;
   ReceptionTDs: number;
-  LongReceptions: number;
+  LongReceptions: number | null;
   Targets: number;
   ReceptionYards: number;
   ReceptionAvg: number;

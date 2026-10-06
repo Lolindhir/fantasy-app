@@ -34,9 +34,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from historical_fantasy_scoring import number, read_json, score_record  # noqa: E402
 from player_week_fantasy import build_scoring_profile_identity  # noqa: E402
+from players_game_history import GAME_HISTORY_SEASON_TYPES, build_game_histories  # noqa: E402
 
 LEAGUE_ID = "nfl-reise"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 HISTORY_DEPTH = 3
 EXPORT_ROW_FIELDS = ("Points", "Snaps", "KickAttempts", "Attempts", "TdPass", "TdRec", "TdRush")
 
@@ -242,6 +243,7 @@ def build_weekly_scores(
     wanted: set[str],
     scoring: dict[str, Any],
     ambiguous_evidence: dict[str, list[tuple[int, int]]] | None = None,
+    season_types: tuple[str, ...] = ("REG",),
 ) -> tuple[dict[int, dict[str, dict[int, dict[str, float]]]], Counter, Counter]:
     """weekly[season][cid][week] = {points, snaps, kick_attempts, attempts, td_*}.
 
@@ -280,7 +282,7 @@ def build_weekly_scores(
                         events[event.get("CanonicalPlayerID")].append(event)
             for record in payload["Records"]:
                 cid = record.get("CanonicalPlayerID")
-                if cid not in wanted or record.get("SeasonType", "REG") != "REG":
+                if cid not in wanted or record.get("SeasonType", "REG") not in season_types:
                     continue
                 try:
                     result = score_record(record, scoring, special_teams_fumble_events=events[cid] if events_ok else None)
@@ -424,6 +426,24 @@ def build_export(
             + ", ".join(f"{s}:{k}" for (s, k) in sorted(unsupported))
         )
 
+    # GameHistory (#347 G3): every current-season game with a stat or snap row, scored with the same
+    # league ScoringSettings. Unlike the aggregates above it also covers not yet final and postseason games.
+    stats_weeks = {int(path.stem) for path in _partition_files(repo_root, "player-stats", season)}
+    history_cids = {
+        entry["CanonicalPlayerID"]
+        for sleeper_id, entry in resolved.items()
+        if entry["Status"] == resolver.RESOLVED and sleeper_id not in evidence_hold
+    }
+    history_unavailable: dict[str, list[tuple[int, int]]] = {}
+    history_weekly, _, history_counts = build_weekly_scores(
+        repo_root, (season,), season, stats_weeks, history_cids, scoring, history_unavailable,
+        season_types=GAME_HISTORY_SEASON_TYPES,
+    )
+    game_histories, history_entry_counts = build_game_histories(
+        repo_root, season, history_cids, history_weekly[season], history_unavailable
+    )
+    counts.update({f"game_history_{key}": value for key, value in history_entry_counts.items()})
+
     players: dict[str, Any] = {}
     unresolved_history: list[dict[str, Any]] = []
     for sleeper_id in ids:
@@ -450,7 +470,12 @@ def build_export(
                 # feeds per-game points for games without a played snap
                 if season_value == season or row["snaps"] > 0 or row["kick_attempts"] > 0
             }
-        players[sleeper_id] = {"Status": entry["Status"], "CanonicalPlayerID": entry["CanonicalPlayerID"], "Seasons": seasons_out}
+        players[sleeper_id] = {
+            "Status": entry["Status"],
+            "CanonicalPlayerID": entry["CanonicalPlayerID"],
+            "Seasons": seasons_out,
+            "GameHistory": game_histories.get(entry["CanonicalPlayerID"], []),
+        }
 
     return {
         "SchemaVersion": SCHEMA_VERSION,

@@ -57,20 +57,35 @@ Assert-PlsEqual $noPotential.FantasyPointsAvgPotentialGame 0 'No potential games
 $kicker = Get-PlayerLeagueScoringCurrentStats -SeasonRows $kickRows -Position 'K' -LastWeek 17 -GamesPotential 2
 Assert-PlsEqual $kicker.SnapsTotal 3 'Kickers count kick attempts as snaps.'
 
-# 4. Per-game points: only final regular-season weeks are rescored, a final week without a row scores 0.
-function New-PlsGame { param([int]$Week, [double]$Points, [bool]$Playoff = $false)
-    return [ordered]@{ GameID = "g$Week"; GameDetails = [ordered]@{ Week = $Week; WeekPlayoff = $Playoff }; FantasyPoints = $Points }
-}
-$games = @((New-PlsGame 1 99), (New-PlsGame 2 99), (New-PlsGame 3 99), (New-PlsGame 4 99), (New-PlsGame 3 99 $true))
-$count = Update-PlayerGameHistoryLeaguePoints -GameHistory $games -SeasonRows $rows -FinalWeeks @(1, 2, 3)
-Assert-PlsEqual $count 3 'Only final regular-season games are rescored.'
-Assert-PlsEqual $games[0].FantasyPoints 10.01 'Week 1 takes the league points rounded to two decimals.'
-Assert-PlsEqual $games[1].FantasyPoints 3 'Week 2 keeps a zero-snap game with its points.'
-Assert-PlsEqual $games[3].FantasyPoints 99 'A non-final week keeps the provider points.'
-Assert-PlsEqual $games[4].FantasyPoints 99 'A playoff game keeps the provider points.'
-$missing = @((New-PlsGame 2 99))
-Update-PlayerGameHistoryLeaguePoints -GameHistory $missing -SeasonRows @{} -FinalWeeks @(2) | Out-Null
-Assert-PlsEqual $missing[0].FantasyPoints 0 'A final week without a stat row scores zero.'
+# 4. GameHistory conversion: published shape, League-week formulas, null for unknown long gains and QBR.
+$entries = @(
+    @{
+        GameID = '20260913_SF@LAR'; Week = 1; WeekFinal = $true; Date = '20260913'; Home = 'LA'; Away = 'SF'
+        HomePoints = 7; AwayPoints = $null; TeamID = 'LA'; TeamAbv = 'LA'; FantasyPoints = 10.005; Touchdowns = 1
+        SnapCount = 40; SnapPercentage = 0.61; Attempts = 12
+        Passing = @{ QBRating = $null; Rating = 75.7; PassAttempts = 3; PassAvg = 4.3; PassTDs = 0; PassYards = 13; Interceptions = 0; PassCompletions = 2 }
+        Rushing = @{ RushAvg = 9.0; RushYards = 9; Carries = 1; LongRush = $null; RushTDs = 0 }
+    },
+    @{
+        GameID = '20260920_LAR@SF'; Week = 17; WeekFinal = $false; Date = '20260920'; Home = 'SF'; Away = 'LA'
+        HomePoints = 3; AwayPoints = 6; TeamID = 'LA'; TeamAbv = 'LA'; FantasyPoints = 0; Touchdowns = 0
+        SnapCount = 4; SnapPercentage = 1; Attempts = 4
+        Kicking = @{ KickingPts = 6.0; FgLong = 40; FgMade = 1; FgAttempts = 1; FgMissed = 0; FgPct = 100.0; XpMade = 3; XpAttempts = 3; XpMissed = 0 }
+    }
+)
+$converted = @(ConvertTo-PlayerGameHistory -Entries $entries -PlayoffStartWeek 15 -LastLeagueWeek 17)
+Assert-PlsEqual $converted.Count 2 'Every export entry becomes a GameHistory entry.'
+Assert-PlsEqual $converted[0].GameDetails.WeekPlayoff $false 'Week 1 is before the playoffs.'
+Assert-PlsEqual $converted[1].GameDetails.WeekPlayoff $true 'Week 17 is a playoff week from PlayoffStartWeek on.'
+Assert-PlsEqual $converted[1].GameDetails.WeekScored $true 'WeekScored follows LastLeagueWeek.'
+Assert-PlsEqual $converted[0].GameDetails.HomeID 'LA' 'Team keys are canonical abbreviations.'
+Assert-PlsEqual $converted[0].GameDetails.AwayPoints 0 'A game without a score reports 0 points like the legacy contract.'
+Assert-PlsEqual $converted[0].FantasyPoints 10.01 'Game points are rounded to two decimals.'
+Assert-PlsTrue ($null -eq $converted[0].Passing.QBRating) 'A missing QBR stays null.'
+Assert-PlsTrue ($null -eq $converted[0].Rushing.LongRush) 'An unknown long rush stays null, not zero.'
+Assert-PlsTrue ($null -eq $converted[0].Receiving) 'Blocks the export does not carry stay absent.'
+Assert-PlsEqual $converted[1].Kicking.FgMade 1 'The Kicking block is carried over.'
+Assert-PlsEqual @(ConvertTo-PlayerGameHistory -Entries $null -PlayoffStartWeek 15 -LastLeagueWeek 17).Count 0 'No entries give an empty history.'
 
 # 5. Identity hold keeps the last published values, zeros for a player that was never published.
 $old = [PSCustomObject]@{
@@ -109,6 +124,15 @@ for ($i = 0; $i -lt $players.Count; $i += 25) {
     }
     $stats = Get-PlayerLeagueScoringCurrentStats -SeasonRows $rowsOfSeason -Position $player.Position -LastWeek $lastWeek -GamesPotential ([int]$player.GamesPotential)
     Assert-PlsEqual $stats.GamesPlayed $expectedGames "Games played of player $($player.ID) follow the exported rows."
+    # GameHistory: one entry per exported game week, canonical team keys, newest game first.
+    $history = @(ConvertTo-PlayerGameHistory -Entries $entry.GameHistory -PlayoffStartWeek 99 -LastLeagueWeek $lastWeek)
+    $ids = @($history | ForEach-Object { $_.GameID })
+    Assert-PlsEqual (@($ids | Sort-Object -Descending) -join ',') ($ids -join ',') "GameHistory of player $($player.ID) is ordered newest first."
+    foreach ($game in $history) {
+        Assert-PlsTrue ($game.GameID -match '^\d{8}_[A-Z]+@[A-Z]+$') "GameID $($game.GameID) keeps the legacy format."
+        Assert-PlsEqual $game.GameDetails.HomeID $game.GameDetails.Home 'HomeID is the canonical team abbreviation.'
+        Assert-PlsTrue ($game.TeamID -eq $game.GameDetails.Home -or $game.TeamID -eq $game.GameDetails.Away) "TeamID of player $($player.ID) plays in the game."
+    }
     $sampled++
 }
 Assert-PlsTrue ($sampled -gt 0) 'At least one sampled player resolved.'

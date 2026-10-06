@@ -1373,3 +1373,35 @@ decisions:
         - Players without a current-season roster, draft or league reason leave Players.json (1,268 to 937 on the 2026-10-05 data, 336 removed, 5 added, none league-owned); they return automatically through a roster entry.
         - GameHistory still depends on Games.json via the canonical Tank01 ID until G3.
         - A new Sleeper player that neither nflverse nor the bridge can resolve needs adjudication.
+
+  - id: ADR-044
+    title: Players GameHistory is built from canonical NFL facts
+    status: accepted
+    context: >
+      GameHistory in Players.json came from Tank01 boxscores in Games.json: the QBRating was wrong
+      (1 of 148 values matched ESPN), points of non-final and postseason games were Tank01 PPR, snap
+      and kicking fields carried Tank01 artifacts (zero Kicking blocks for non-kickers) and a few games
+      were missing entirely. #347 requires that no Tank01 dependency remains (Robert, 2026-10-05,
+      Decision 4: all fields stay in the contract).
+    decision: >
+      GameHistory is built in tools/players_game_history.py inside the players_league_scoring.py export,
+      so identity resolution and the hold decision stay shared with the points. An entry exists for every
+      current-season game with a canonical player-stats row or snap-counts row. Fields follow the G1 design:
+      exact-fraction half-up rounding for Rating and the *Avg fields, QBRating from ESPN QBR, long gains
+      from player-game-long-gains (0 for covered games without a record, null for games the dataset does
+      not cover yet, negative values kept), canonical team abbreviations for all team keys while GameID keeps
+      the legacy provider spelling, league-scored points for every game. QBRating, LongRush and LongReceptions
+      may be null (unknown, never zero). A game whose special-teams fumble evidence is ambiguous gets no
+      entry instead of a wrong zero; a player in identity hold keeps the last published GameHistory.
+    rationale: >
+      One scorer and one identity resolution serve points and games, canonical facts replace a provider
+      object that cannot be repaired, and unknown values stay distinguishable from zero.
+    consequences:
+      positive:
+        - No Games.json input remains in RequestPlayers.ps1; the Players workflow no longer depends on Tank01 boxscores.
+        - GameHistory points follow the league ScoringSettings for every game.
+        - Games Tank01 never listed (for example a player missing from its boxscore) appear and change GamesPotential and SalaryProjected for those players.
+      negative:
+        - Published GameHistory team keys change from numeric Tank01 IDs and LAR/WSH spellings to canonical abbreviations (LA, WAS).
+        - Rating differs by 0.1 from Tank01 on exact rounding ties.
+        - Games.json, RequestGames.ps1 and RequestPlayersSeason.ps1 stay until G4.

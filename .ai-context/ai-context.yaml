@@ -157,6 +157,7 @@ shortContext:
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons, einschließlich Matchups und FantasyGameContext wenn vorhanden
   public/requests/RequestPastSeasonsIndex.ps1: Entry-Point zum Regenerieren von PastSeasonsIndex.json
   public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen, Schreiben stabiler data/... Web-Pfade und ContentHash-basierter Index-Metadaten
+  tools/players_game_history.py: Builder für Players.json GameHistory aus kanonischen NFL-Fakten (player-stats, snap-counts, qbr-week, player-game-long-gains, Schedule, Finality); läuft innerhalb des players_league_scoring.py-Exports, ADR-044
   public/requests/utils/league/DraftOrderAwareUtils.psm1: Order-aware Draft-Pick-Generator; behält alle Drafts der aktuellen Saison unabhängig vom Status und ergänzt je Typ/Instanz die konfigurierte Anzahl offener Drafts; berücksichtigt linear/snake bei exakten Drafts
   public/requests/utils/league/DraftHistoryUtils.psm1: Completed-Draft-History-Generator; nutzt dieselbe Season+DraftType+DraftInstance-Identität wie Current Drafts und reichert completed Pick-Ergebnisse sowie CurrentOwnerRosterID aus Sleeper-Pick-Ergebnissen an
   public/requests/utils/league/LeagueUtils.psm1: Generator für League Status und Phase; unterscheidet Pre Draft, In Draft und Between Drafts anhand aktueller offener, laufender und abgeschlossener Drafts
