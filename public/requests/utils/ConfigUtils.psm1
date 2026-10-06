@@ -5,11 +5,6 @@ function Get-Config {
     $MaxTransactionWeek = 20
     $LeagueStatusSeasonStartBufferDays = 7
 
-    # RapidAPI-Key für Tank01
-    $RapidAPIKey = "cccff76c4bmsh01946acbc2d3c0bp141721jsn161bd86f4c69"
-    $RapidAPIKeyAlt1 = "1e10165385msh4175f82e3d08e84p19fd3ejsn82f1e01c01aa"
-    $RapidAPIKeyAlt2 = "3a3482fb66msh803287ddb5773dbp185f31jsnc6f1e236cd5e"
-
     # Point Settings
     $WeightTotal = 0.5
     $WeightGame = 0.5
@@ -24,7 +19,6 @@ function Get-Config {
     $WeeklyRecapsFile = Join-Path $DataDir "WeeklyRecaps.json"
     $TeamsFile = Join-Path $DataDir "Teams.json"
     $ScheduleFile = Join-Path $DataDir "Schedule.json"
-    $GamesFile = Join-Path $DataDir "Games.json"
     $StandingsFile = Join-Path $DataDir "Standings.json"
     $ManualTransactionsFile = Join-Path $DataDir "Transactions_Manual.json"
     $TransactionsFile = Join-Path $DataDir "Transactions.json"
@@ -48,8 +42,6 @@ function Get-Config {
 
     $PastSeasonPlayersFileHistoricalPrefix = Join-Path $PastSeasonsDir "Players_"
     $PastSeasonPlayersFileHistoricalSuffix = ".json"
-    $PastSeasonGamesFileHistoricalPrefix = Join-Path $PastSeasonsDir "Games_"
-    $PastSeasonGamesFileHistoricalSuffix = ".json"
     $PastSeasonScheduleFileHistoricalPrefix = Join-Path $PastSeasonsDir "Schedule_"
     $PastSeasonScheduleFileHistoricalSuffix = ".json"
     $PastSeasonStandingsFileHistoricalPrefix = Join-Path $PastSeasonsDir "Standings_"
@@ -86,12 +78,6 @@ function Get-Config {
             Key = "Players"
             Directory = $PastSeasonsDir
             Prefix = "Players_"
-            Suffix = ".json"
-        },
-        @{
-            Key = "Games"
-            Directory = $PastSeasonsDir
-            Prefix = "Games_"
             Suffix = ".json"
         },
         @{
@@ -149,9 +135,6 @@ function Get-Config {
         LeagueTimeZone                   = $LeagueTimeZone
         OwnerIDs                         = $ownerIDs
 
-        RapidAPIKey                      = $RapidAPIKey
-        RapidAPIKeyAlt1                  = $RapidAPIKeyAlt1
-        RapidAPIKeyAlt2                  = $RapidAPIKeyAlt2
 
         WeightTotal                      = $WeightTotal
         WeightGame                       = $WeightGame
@@ -164,7 +147,6 @@ function Get-Config {
         WeeklyRecapsFile                 = $WeeklyRecapsFile
         TeamsFile                        = $TeamsFile
         ScheduleFile                     = $ScheduleFile
-        GamesFile                        = $GamesFile
         StandingsFile                    = $StandingsFile
 
         PlayersFile                      = $PlayersFile
@@ -191,8 +173,6 @@ function Get-Config {
         PastSeasonsIndexFile                        = $PastSeasonsIndexFile
         PastSeasonPlayersFileHistoricalPrefix       = $PastSeasonPlayersFileHistoricalPrefix
         PastSeasonPlayersFileHistoricalSuffix       = $PastSeasonPlayersFileHistoricalSuffix
-        PastSeasonGamesFileHistoricalPrefix         = $PastSeasonGamesFileHistoricalPrefix
-        PastSeasonGamesFileHistoricalSuffix         = $PastSeasonGamesFileHistoricalSuffix
         PastSeasonScheduleFileHistoricalPrefix      = $PastSeasonScheduleFileHistoricalPrefix
         PastSeasonScheduleFileHistoricalSuffix      = $PastSeasonScheduleFileHistoricalSuffix
         PastSeasonStandingsFileHistoricalPrefix     = $PastSeasonStandingsFileHistoricalPrefix

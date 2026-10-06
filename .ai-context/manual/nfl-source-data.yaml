@@ -538,7 +538,7 @@ operationalDatasetEvaluation:
       gameKey: nflverse game_id
       playerIdentityRequired: false
     currentRuntimeUntilMigration:
-      - Schedule.json wird seit #347 G2 vollstaendig aus kanonischem Schedule plus Finality gebaut (Tank01 nur noch fuer Boxscores bis G3/G4)
+      - Schedule.json wird seit #347 G2 vollstaendig aus kanonischem Schedule plus Finality gebaut (seit #347 G4 ohne jeden Tank01-Aufruf; Produzent ist RequestSchedule.ps1, Games.json entfaellt)
     guards:
       - game_id ist innerhalb des kanonischen Schedule-Datasets eindeutig
       - game_type wird explizit erhalten
@@ -582,7 +582,7 @@ operationalDatasetEvaluation:
       Noch nicht veroeffentlichte aktuelle Stats duerfen als not-yet-available
       gelten. Missing ist nicht 0.
     currentRuntimeUntilMigration:
-      - Tank01 bleibt Quelle des heutigen provider-spezifischen Games.json-Boxscore-Schemas bis Phase 2
+      - Games.json und Tank01-Boxscores sind seit #347 G4 abgeschaltet; Points und GameHistory kommen aus kanonischen Stats
 
   rosters:
     recommendedRole: primary-canonical-for-nfl-membership
@@ -689,8 +689,8 @@ tank01Target:
 
 historicalBackfill:
   currentAppHistory: >
-    public/data/past_seasons besitzt fuer Players, Games und Schedule derzeit
-    materialisierte Saisons 2022 bis 2025.
+    public/data/past_seasons besitzt fuer Players und Schedule derzeit
+    materialisierte Saisons 2022 bis 2025 (die Games-Archive wurden mit #347 G4 entfernt).
   bands:
     - seasons: 2012-2021
       coverage: schedules + player-stats + weekly-rosters + snap-counts (2013-2021)

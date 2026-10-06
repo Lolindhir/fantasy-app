@@ -37,30 +37,11 @@ joinAudit:
   player:
     currentOutput:
       canonicalKey: Players.ID
-      providerKey: TankID
       rules:
-        - Players.ID is required and globally unique.
-        - TankID is required and globally unique in generated Players.json.
-        - Tank01 playerID must be unique in the provider input.
-        - Tank01 sleeperBotID is optional, but every non-empty value must identify at most one Tank01 record.
+        - Players.ID (Sleeper player_id from the canonical Sleeper snapshot) is required and globally unique.
+        - Since #347 H1b Players.json carries no provider ID (TankID removed); the Tank01 join helpers and the historical Tank01 archive aggregation were removed with #347 G4.
         - Sleeper player_id is optional in the global player catalog, but every non-empty value must be unique before joining.
       defenseInDepth: public/requests/utils/player/PlayerUtils.psm1::Test-UniquePlayerIds
-    history:
-      key: TankID
-      rule: >
-        Every historical Players_<season>.json used for current player calculations
-        must contain at most one record per non-empty TankID. Historical lookup
-        construction must fail instead of overwriting a previous record.
-        Since #347 D4 RequestPlayers.ps1 no longer reads these archives (points history
-        comes from the canonical league-scoring export keyed by Sleeper ID and season);
-        the helper remains for the archive generators.
-    historicalGameAggregation:
-      providerKey: Tank01 playerID
-      rule: >
-        RequestPlayersSeason.ps1 aggregates the same Tank01 playerID across games,
-        but one game may not contain multiple playerStats entries claiming that
-        same playerID. The provider playerID, not the JSON property name, is the
-        historical identity key.
 
   team:
     source: Sleeper

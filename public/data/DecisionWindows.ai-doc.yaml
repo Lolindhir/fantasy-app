@@ -145,9 +145,9 @@ contract:
         completed: The player's NFL game is Final; no ordinary additional live fantasy points can be added by that player.
         unknown: Required scheduled-game evidence is unavailable or ambiguous.
       rules:
-        - Final is taken from the effective Schedule gameStatus after RequestGames canonical finality resolution.
+        - Final is taken from the effective Schedule gameStatus after RequestSchedule canonical finality resolution.
         - Canonical Final truth is source-data/nfl/game-finality/<season>.json, derived from validated nflverse released-games evidence; score or fantasy-point presence is never Final evidence.
-        - RequestGames builds Schedule.json from canonical schedule and finality (#347 G2); kickoff is canonical Eastern local time converted to a UTC epoch with the IANA zone, so no Tank01 TBD gap remains.
+        - RequestSchedule builds Schedule.json from canonical schedule and finality (#347 G2); kickoff is canonical Eastern local time converted to a UTC epoch with the IANA zone, so no Tank01 TBD gap remains.
         - Kickoff comparison is evaluated during generation against current UTC time.
         - No EvaluatedAt timestamp is persisted; semantic output changes only when source facts or a relevant state boundary change.
         - Later stat corrections are outside live remaining-scoring-path semantics.
@@ -327,7 +327,7 @@ freshness:
 failureBehavior:
   - Invalid required derivation input must not overwrite the prior valid generated file.
   - Duplicate/conflicting provider-neutral evidence must never use first/last-wins behavior.
-  - Canonical schedule/finality/provider-ID contradictions fail closed in RequestGames before Schedule publication.
+  - Canonical schedule/finality/provider-ID contradictions fail closed in RequestSchedule before Schedule publication.
   - Safe per-player ambiguity becomes unknown; unrecoverable derivation failures fail closed.
   - Repairability ambiguity that could change the outcome remains unknown rather than being guessed into repairable or irreparable.
   - Participant terminal ambiguity remains RemainingScoringPathState=unknown rather than being guessed into none.

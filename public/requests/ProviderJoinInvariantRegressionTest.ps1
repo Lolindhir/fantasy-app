@@ -60,24 +60,6 @@ Test-Throws -ExpectedMessagePart "missing id" -Action {
         -DescriptionProperties @("id", "name") | Out-Null
 }
 
-# Player joins: Tank01 provider IDs and Tank01 -> Sleeper mappings must be unique.
-Test-Throws -ExpectedMessagePart "Duplicate sleeperBotID 's1'" -Action {
-    New-PlayerProviderLookups `
-        -SleeperPlayers @([PSCustomObject]@{ player_id = "s1"; full_name = "Sleeper One" }) `
-        -TankPlayers @(
-            [PSCustomObject]@{ playerID = "t1"; sleeperBotID = "s1"; longName = "Tank One" },
-            [PSCustomObject]@{ playerID = "t2"; sleeperBotID = "s1"; longName = "Tank Two" }
-        ) | Out-Null
-}
-Test-Throws -ExpectedMessagePart "Duplicate TankID 't1'" -Action {
-    New-HistoricalPlayerTankLookup `
-        -Season "2025" `
-        -Players @(
-            [PSCustomObject]@{ TankID = "t1"; ID = "s1"; Name = "One" },
-            [PSCustomObject]@{ TankID = "t1"; ID = "s2"; Name = "Two" }
-        ) | Out-Null
-}
-
 # Player position resolution: keep supported primary positions, fall back to
 # supported fantasy eligibility for dual-position players, and exclude defensive-only players.
 $primaryWideReceiver = Get-AppFantasyPosition -SleeperPlayer ([PSCustomObject]@{

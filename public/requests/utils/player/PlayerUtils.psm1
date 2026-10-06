@@ -15,47 +15,6 @@ catch {
 # 2. Funktionen
 # ===========================================================================
 
-function New-PlayerProviderLookups {
-    param(
-        [Parameter(Mandatory = $true)]
-        [AllowEmptyCollection()]
-        [array]$SleeperPlayers,
-
-        [Parameter(Mandatory = $true)]
-        [AllowEmptyCollection()]
-        [array]$TankPlayers
-    )
-
-    $sleeperByID = New-UniqueObjectLookup `
-        -Items $SleeperPlayers `
-        -KeyProperty "player_id" `
-        -SourceLabel "Sleeper NFL players" `
-        -KeyLabel "player_id" `
-        -DescriptionProperties @("player_id", "full_name", "position", "team") `
-        -AllowMissingKey
-
-    $tankByID = New-UniqueObjectLookup `
-        -Items $TankPlayers `
-        -KeyProperty "playerID" `
-        -SourceLabel "Tank01 NFL players" `
-        -KeyLabel "playerID" `
-        -DescriptionProperties @("playerID", "longName", "team", "pos")
-
-    $tankBySleeperID = New-UniqueObjectLookup `
-        -Items $TankPlayers `
-        -KeyProperty "sleeperBotID" `
-        -SourceLabel "Tank01 to Sleeper player mappings" `
-        -KeyLabel "sleeperBotID" `
-        -DescriptionProperties @("playerID", "longName", "sleeperBotID", "team", "pos") `
-        -AllowMissingKey
-
-    return [PSCustomObject][ordered]@{
-        SleeperByID     = $sleeperByID
-        TankByID        = $tankByID
-        TankBySleeperID = $tankBySleeperID
-    }
-}
-
 function Get-AppFantasyPosition {
     [CmdletBinding()]
     param(
@@ -78,48 +37,6 @@ function Get-AppFantasyPosition {
     }
 
     return $null
-}
-
-function New-HistoricalPlayerTankLookup {
-    param(
-        [Parameter(Mandatory = $true)]
-        [AllowEmptyCollection()]
-        [array]$Players,
-
-        [Parameter(Mandatory = $true)]
-        [string]$Season
-    )
-
-    return New-UniqueObjectLookup `
-        -Items $Players `
-        -KeyProperty "TankID" `
-        -SourceLabel "historical Players_$Season" `
-        -KeyLabel "TankID" `
-        -DescriptionProperties @("TankID", "ID", "Name", "TeamID", "Position")
-}
-
-function Test-RequiredHistoricalPlayerTankIds {
-    $config = Get-Config
-    $leagueYear = [int]$config.LeagueYear
-
-    foreach ($offset in 1..3) {
-        $season = $leagueYear - $offset
-        $filePath = "$($config.PastSeasonPlayersFileHistoricalPrefix)$season$($config.PastSeasonPlayersFileHistoricalSuffix)"
-        if (-not (Test-Path $filePath)) {
-            continue
-        }
-
-        try {
-            $players = Get-Content $filePath -Raw | ConvertFrom-Json
-        }
-        catch {
-            throw "Could not parse historical Players_$season at '$filePath'. $_"
-        }
-
-        New-HistoricalPlayerTankLookup -Players @($players) -Season ([string]$season) | Out-Null
-    }
-
-    return $true
 }
 
 function Get-PlayersFromFile {

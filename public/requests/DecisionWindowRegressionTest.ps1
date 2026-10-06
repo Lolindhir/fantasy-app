@@ -16,7 +16,6 @@ $ErrorActionPreference = 'Stop'
 & "$PSScriptRoot\NflByeWeekRegressionTest.ps1"
 & "$PSScriptRoot\PlayerLeagueScoringRegressionTest.ps1"
 & "$PSScriptRoot\PlayerPopulationRegressionTest.ps1"
-& "$PSScriptRoot\GameScoreRegressionTest.ps1"
 & "$PSScriptRoot\CanonicalScheduleRegressionTest.ps1"
 & "$PSScriptRoot\FantasyGameContextScoreRegressionTest.ps1"
 & "$PSScriptRoot\FantasyMatchupPreviewRegressionTest.ps1"
