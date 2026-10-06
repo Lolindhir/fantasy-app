@@ -9,6 +9,7 @@ from typing import Any, Iterable
 from .canonical_identity import identity_lookup
 from .common import CANONICAL_SCHEMA_VERSION, Dataset, as_float, as_int, clean, load_json
 from .lifecycle import effective_partition_payload
+from .player_profiles import PLAYER_PROFILES_DATASET_ID, build_player_profiles
 from .teams import TEAMS_DATASET_ID, TEAMS_RELATIVE_PATH, build_teams_payload
 
 
@@ -23,6 +24,7 @@ _PHASE1_DATASET_IDS = {
     "nflverse.snap-counts",
     "nflverse.espn-qbr-week",
     "sleeper.players",
+    PLAYER_PROFILES_DATASET_ID,
     TEAMS_DATASET_ID,
 }
 
@@ -1416,6 +1418,13 @@ def build_phase1_outputs(
         built, coverage, count = _build_sleeper_players(repo_root, sleeper_dataset, canonical)
         outputs.extend(built)
         audit["sleeperPlayers"] = coverage
+        preserved += count
+
+    profiles_dataset = datasets.get(PLAYER_PROFILES_DATASET_ID)
+    if profiles_dataset is not None:
+        built, coverage, count = build_player_profiles(repo_root, profiles_dataset, canonical)
+        outputs.extend(built)
+        audit["playerProfiles"] = coverage
         preserved += count
 
     teams_dataset = datasets.get(TEAMS_DATASET_ID)

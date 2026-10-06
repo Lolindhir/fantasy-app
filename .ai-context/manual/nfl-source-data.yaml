@@ -339,6 +339,28 @@ qbrWeekContract:
   audit: phase1Datasets.qbrWeek (partitionCount, recordCount, resolvedIdentityCount, unresolvedIdentityCount, publishedGameCount, notYetAvailableGameCount)
   consumer: G3 (GameHistory). G1 fixes the Passer Rating and average formulas there. Parity for the legacy Tank01 QBRating is not meaningful (qb-rating-uses-previous-passing-row in source-of-truth-matrix.yaml).
 
+playerProfilesContract:
+  issue: 347
+  step: F2
+  providerDataset: nflverse.players
+  upstream: nflverse-data release players, file players.csv (already persisted raw, also read by the identity layer)
+  canonicalPath: source-data/nfl/player-profiles/nflverse.json
+  implementation: tools/nfl_source_data_lib/player_profiles.py
+  acquisition: >
+    Unchanged; materialized by the existing NFL Source Sync from the persisted raw CSV. No workflow change.
+  fields: >
+    CanonicalPlayerID, GSISID, DisplayName, ShortName, Headshot, Position, PositionGroup, RookieSeason,
+    LastSeason, Status, LatestTeam, BirthDate. The set is the single table _PROFILE_FIELDS; adding a
+    persisted raw column is a one-line change. Empty or NA values stay null, never zero or empty string.
+  identityGuard: >
+    The projection is not an identity owner. Records are keyed by the CanonicalPlayerID that the identity
+    layer already resolved from IDs.GSIS (and GSIS aliases). A source row without a resolvable GSIS identity
+    is counted (phase1Datasets.playerProfiles.unresolvedIdentityCount) and not persisted; it never creates,
+    merges or re-links a player. A duplicate gsis_id, or two rows resolving to one CanonicalPlayerID, fails the
+    materialization closed because a profile join would be ambiguous. Identity materialization does not read this output.
+  audit: phase1Datasets.playerProfiles (sourceRowCount, recordCount, unresolvedIdentityCount)
+  consumer: H2 (Players profile, NameShort, Picture). Consumers join by CanonicalPlayerID only.
+
 canonicalOutputs:
   schedules: source-data/nfl/schedules/<season>.json
   gameFinality: source-data/nfl/game-finality/<season>.json
@@ -349,6 +371,7 @@ canonicalOutputs:
   playerGameLongGains: source-data/nfl/player-game-long-gains/<season>.json
   snapCounts: source-data/nfl/snap-counts/<season>/<week>.json
   qbrWeek: source-data/nfl/qbr-week/<season>.json
+  playerProfiles: source-data/nfl/player-profiles/nflverse.json
   sleeperPlayers: source-data/nfl/platform/sleeper/players.json
   teams: source-data/nfl/teams.json
   audit: source-data/audits/nfl-source-data-audit.json
