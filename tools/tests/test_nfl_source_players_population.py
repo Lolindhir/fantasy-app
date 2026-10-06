@@ -138,7 +138,7 @@ class PopulationRuleTests(unittest.TestCase):
 
     def test_derive_profile_leaves_unknown_parts_null(self) -> None:
         derived = pop.derive_profile("Cher", None, None)
-        self.assertEqual(derived, {"NameShort": None, "Picture": None,
+        self.assertEqual(derived, {"NameShort": None, "Picture": None, "PictureLarge": None,
                                    "FantasyPros": "https://www.fantasypros.com/nfl/players/cher.php", "ESPN": None})
         self.assertEqual(pop.derive_profile(None, None, "5")["FantasyPros"], None)
         self.assertEqual(pop.short_name("Marvin Harrison Jr."), "M. Harrison Jr.")
@@ -152,6 +152,11 @@ class PopulationRuleTests(unittest.TestCase):
         self.assertEqual(pop.sized_headshot("https://img/1.png"), "https://img/1.png")
         self.assertIsNone(pop.sized_headshot(None))
         self.assertEqual(pop.derive_profile("Cher", base, None)["Picture"], sized)
+        self.assertEqual(pop.derive_profile("Cher", base, None)["PictureLarge"],
+                         f"https://static.www.nfl.com/image/upload/f_auto,q_auto,w_{pop.HEADSHOT_LARGE_WIDTH}/league/abc")
+        espn = "https://a.espncdn.com/i/headshots/nfl/players/full/5.png"
+        fallback = pop.derive_profile("Cher", None, "5")
+        self.assertEqual((fallback["Picture"], fallback["PictureLarge"]), (espn, espn))
 
     def test_missing_profiles_fail_closed(self) -> None:
         fixture = PopulationFixture([snapshot_row("1")], roster=["1"])

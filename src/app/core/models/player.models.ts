@@ -153,6 +153,8 @@ export interface RawPlayer {
   Age: number;
   Year: number;
   Picture: string;
+  /** Large headshot rendition for detail and desktop portraits; absent until the next Players refresh. */
+  PictureLarge?: string | null;
   Number: string;
   FantasyPros: string;
   ESPN: string;
