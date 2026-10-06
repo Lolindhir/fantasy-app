@@ -356,7 +356,11 @@ def build_shadow(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
         repo_root, seasons, season, final_weeks_current, wanted, scoring,
     )
 
-    port = validate_legacy_port(players, league, weight_total, weight_game, final_week)
+    timestamps = read_json_bom(repo_root / "public/data/Timestamps.json")
+    port = validate_legacy_port(
+        players, league, weight_total, weight_game, final_week,
+        league_predates_players=league_predates_players(timestamps),
+    )
 
     shadow_players: list[dict[str, Any]] = []
     counters: Counter = Counter()
@@ -449,7 +453,21 @@ def avg_consistent(total: float, divisor: float, published: float, digits: int) 
     return abs(published - total / divisor) <= tolerance
 
 
-def validate_legacy_port(players: list[dict[str, Any]], league: dict[str, Any], weight_total: float, weight_game: float, final_week: int) -> dict[str, Any]:
+def league_predates_players(timestamps: dict[str, Any]) -> bool:
+    """Whether the published League.json is older than the published Players.json.
+
+    League.json carries the salary cap of the Players.json that existed when it was generated. The two
+    files are published by different workflows, so for a while after Players.json changes the League cap
+    is derived from an older player file and cannot be compared with the current one.
+    """
+    league_at, players_at = timestamps.get("League"), timestamps.get("Players")
+    return bool(league_at and players_at and str(players_at) > str(league_at))
+
+
+def validate_legacy_port(
+    players: list[dict[str, Any]], league: dict[str, Any], weight_total: float, weight_game: float, final_week: int,
+    league_predates_players: bool = False,
+) -> dict[str, Any]:
     """Re-derive Salary/SalaryProjected/Ranking/Avg* from the committed legacy inputs.
 
     The committed Players.json is rebuilt only a few times a day, so it can legitimately have been
@@ -484,6 +502,8 @@ def validate_legacy_port(players: list[dict[str, Any]], league: dict[str, Any], 
         "mismatches": dict(mismatches),
         "cap": cap,
         "capMatchesPublished": cap == [league["SalaryCap"], league["SalaryCapProjected"]],
+        # The published cap is only a valid reference once League.json was generated after Players.json.
+        "capComparable": not league_predates_players,
         "producedAtFinalWeek": produced_at,
     }
 
