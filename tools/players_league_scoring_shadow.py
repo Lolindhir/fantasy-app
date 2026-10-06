@@ -437,6 +437,18 @@ def _salary_mismatches(players: list[dict[str, Any]], weight_total: float, weigh
     return mismatches
 
 
+def avg_consistent(total: float, divisor: float, published: float, digits: int) -> bool:
+    """Whether a published average matches its rounded total.
+
+    The generators round the average from the exact points, while only the 2-decimal total is
+    persisted. A rounded total can therefore sit on the other side of a half-unit rounding tie
+    (for example 60.26 / 4 = 15.065 against a published 15.07), so the comparison tolerates the
+    average's own rounding step plus the half-cent the total can be off by, spread over the divisor.
+    """
+    tolerance = 0.5 * 10.0 ** -digits + 0.005 / divisor + 1e-9
+    return abs(published - total / divisor) <= tolerance
+
+
 def validate_legacy_port(players: list[dict[str, Any]], league: dict[str, Any], weight_total: float, weight_game: float, final_week: int) -> dict[str, Any]:
     """Re-derive Salary/SalaryProjected/Ranking/Avg* from the committed legacy inputs.
 
@@ -449,11 +461,11 @@ def validate_legacy_port(players: list[dict[str, Any]], league: dict[str, Any], 
     mismatches: Counter = Counter(salary_mismatches)
     recomputed: list[dict[str, Any]] = []
     for p in players:
-        if p["GamesPlayed"] > 0 and net_round(p["FantasyPointsTotal"] / p["GamesPlayed"], 2) != p["FantasyPointsAvgGame"]:
+        if p["GamesPlayed"] > 0 and not avg_consistent(p["FantasyPointsTotal"], p["GamesPlayed"], p["FantasyPointsAvgGame"], 2):
             mismatches["FantasyPointsAvgGame"] += 1
-        if p["SnapsTotal"] > 0 and net_round(p["FantasyPointsTotal"] / p["SnapsTotal"], 5) != p["FantasyPointsAvgSnap"]:
+        if p["SnapsTotal"] > 0 and not avg_consistent(p["FantasyPointsTotal"], p["SnapsTotal"], p["FantasyPointsAvgSnap"], 5):
             mismatches["FantasyPointsAvgSnap"] += 1
-        if p["AttemptsTotal"] > 0 and net_round(p["FantasyPointsTotal"] / p["AttemptsTotal"], 5) != p["FantasyPointsAvgAttempt"]:
+        if p["AttemptsTotal"] > 0 and not avg_consistent(p["FantasyPointsTotal"], p["AttemptsTotal"], p["FantasyPointsAvgAttempt"], 5):
             mismatches["FantasyPointsAvgAttempt"] += 1
         recomputed.append(p)
     rankings = compute_rankings(recomputed, weight_total, weight_game)
