@@ -24,4 +24,8 @@ Assert-Equal 'Knee' $hurt.Details.Description 'description falls back to body pa
 $noted = ConvertTo-PlayerInjuryDetails -Injury ([PSCustomObject]@{ Status = 'Out'; StartDate = $null; BodyPart = 'Knee'; Notes = ' ACL '; PracticeDescription = $null })
 Assert-Equal 'ACL' $noted.Details.Description 'notes win over body part and are trimmed'
 
+$stale = ConvertTo-PlayerInjuryDetails -Injury ([PSCustomObject]@{ Status = $null; StartDate = $null; BodyPart = 'Knee'; Notes = 'Surgery'; PracticeDescription = $null })
+Assert-Equal $false $stale.Injured 'stale notes without a status are not injured'
+Assert-Equal '' $stale.Details.Description 'stale notes without a status do not become a description'
+
 Write-Host 'PlayerPopulationRegressionTest passed.' -ForegroundColor Green

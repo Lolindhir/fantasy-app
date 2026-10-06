@@ -214,7 +214,7 @@
     <!-- 🩹 Injury Tab -->
     <mat-tab *ngIf="player.Injured && player.InjuryDetails" label="Injury">
       <div class="dialog-injury">
-        <p><strong>{{ player.InjuryDetails.Description }}</strong></p>
+        <p *ngIf="player.InjuryDetails.Description"><strong>{{ player.InjuryDetails.Description }}</strong></p>
         <p *ngIf="player.InjuryDetails.Designation"><strong>Designation:</strong> {{ player.InjuryDetails.Designation }}</p>
         <p *ngIf="player.InjuryDetails.ReturnDate"><strong>Expected Return Date:</strong> {{ player.InjuryDetails.ReturnDate | date }}</p>
       </div>
