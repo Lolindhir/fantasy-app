@@ -3,7 +3,6 @@
 # matchup player points only; no generic NFL fantasy-point source is accepted.
 
 try {
-    Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Could not load Sleeper helpers for FantasyGameContext. $_"
@@ -118,22 +117,6 @@ function ConvertTo-FgcPointMapFromRows {
         if ($null -ne $points) { $map[$playerID] = [double]$points }
     }
     return $map
-}
-
-function Get-FgcCurrentMatchupLoad {
-    param(
-        [Parameter(Mandatory = $true)][string]$LeagueID,
-        [Parameter(Mandatory = $true)][int]$Week
-    )
-
-    try {
-        $rows = @(Get-SleeperMatchups -leagueID $LeagueID -week $Week)
-        return [PSCustomObject][ordered]@{ Success = $true; Rows = $rows }
-    }
-    catch {
-        Write-Warning "Could not refresh fantasy matchup facts for FantasyGameContext Week $Week. $_"
-        return [PSCustomObject][ordered]@{ Success = $false; Rows = @() }
-    }
 }
 
 function ConvertTo-FgcCurrentMatchupFacts {
