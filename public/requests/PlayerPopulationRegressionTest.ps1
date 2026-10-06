@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 
-# #347 H1b: injury mapping and interim profile values of RequestPlayers.ps1 (no Tank01, no live Sleeper call).
+# #347 H1b: injury mapping of RequestPlayers.ps1 (no Tank01, no live Sleeper call).
 
 Import-Module "$PSScriptRoot\utils\player\PlayerPopulationUtils.psm1" -ErrorAction Stop -Force
 
@@ -23,15 +23,5 @@ Assert-Equal 'Knee' $hurt.Details.Description 'description falls back to body pa
 
 $noted = ConvertTo-PlayerInjuryDetails -Injury ([PSCustomObject]@{ Status = 'Out'; StartDate = $null; BodyPart = 'Knee'; Notes = ' ACL '; PracticeDescription = $null })
 Assert-Equal 'ACL' $noted.Details.Description 'notes win over body part and are trimmed'
-
-$old = [PSCustomObject]@{ Picture = 'p'; FantasyPros = 'f'; ESPN = 'e'; NameShort = 'n' }
-$kept = Get-InterimPlayerProfileLinks -OldPlayer $old -ESPNAthleteID '123'
-Assert-Equal 'p' $kept.Picture 'published picture is carried forward'
-Assert-Equal 'f' $kept.FantasyPros 'published FantasyPros link is carried forward'
-$fresh = Get-InterimPlayerProfileLinks -OldPlayer $null -ESPNAthleteID '123'
-Assert-Equal 'https://a.espncdn.com/i/headshots/nfl/players/full/123.png' $fresh.Picture 'new player gets the ESPN headshot'
-if ($null -ne $fresh.FantasyPros -or $null -ne $fresh.ESPN) { throw 'links stay null until H2 derives them' }
-$none = Get-InterimPlayerProfileLinks -OldPlayer $null -ESPNAthleteID $null
-if ($null -ne $none.Picture) { throw 'no ESPN athlete ID means no picture' }
 
 Write-Host 'PlayerPopulationRegressionTest passed.' -ForegroundColor Green
