@@ -540,15 +540,23 @@ dataFlow:
       stable current TeamID fields join players to Schedule games.
 
   - from: ESPN Fantasy kona_player_info injuryStatus
+    to: source-data/nfl/player-availability/espn.json
+    purpose: >
+      tools/espn_player_availability.py (workflow sync-nfl-player-availability.yml, scheduler target
+      nfl-player-availability, every ten minutes September through January at minute 9) snapshots the ESPN injury
+      status of every returned player by ESPN player ID into the shared NFL source layer (#347, ADR-046). The
+      snapshot is consumer-neutral, written only on semantic change, keeps StatusSinceUtc stable while a status is
+      unchanged and leaves the last known good file untouched on a failed or implausibly small response.
+
+  - from: source-data/nfl/player-availability/espn.json
     to: public/data/DecisionWindows.json
     purpose: >
-      Supply current starter scoring-availability evidence during the frequent League
-      refresh. Canonical Player Identity `IDs.Sleeper -> IDs.ESPN` joins the provider
-      observation to app players; the legacy Players.json ESPN field is not identity
-      authority. Only explicit OUT removes a direct scoring path; missing/provider-error evidence
-      remains unknown and must not synthesize unavailability. The generated observation keeps a
-      stable FirstObservedAtUtc for the current provider status (with legacy ObservedAtUtc as the
-      same compatibility alias) so unchanged polling does not create semantic DecisionWindows churn.
+      RequestLeague reads the canonical snapshot (PlayerScoringAvailabilityUtils.psm1::Get-CanonicalScoringAvailabilityObservations)
+      without any network call. Canonical Player Identity `IDs.Sleeper -> IDs.ESPN` joins starters to snapshot rows; the legacy Players.json
+      ESPN field is not identity authority. Only explicit OUT removes a direct scoring path; a missing or other-season snapshot, a
+      missing row or an unknown status stays unknown and must not synthesize unavailability. The generated observation keeps a
+      stable FirstObservedAtUtc (legacy ObservedAtUtc as the same compatibility alias) so unchanged polling does not create semantic
+      DecisionWindows churn. Snapshot freshness is monitored through the workflow health of sync-nfl-player-availability.yml.
 
   - from: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-*.json
     to: public/data/Transactions.json

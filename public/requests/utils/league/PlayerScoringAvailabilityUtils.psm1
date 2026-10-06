@@ -130,13 +130,13 @@ function Resolve-PlayerScoringAvailabilityObservationTimes {
     return @($resolved)
 }
 
-function Get-EspnScoringAvailabilityObservations {
+function Get-CanonicalScoringAvailabilityObservations {
     param(
         [Parameter(Mandatory = $true)][int]$Season,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Teams,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Players,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$CanonicalIdentities,
-        [int]$TimeoutSec = 15
+        [Parameter(Mandatory = $true)][string]$SnapshotPath
     )
 
     $playerBySleeper = @{}
@@ -191,50 +191,45 @@ function Get-EspnScoringAvailabilityObservations {
     $espnIDs = @($targetByEspn.Keys | Where-Object { $null -ne $targetByEspn[$_] } | Sort-Object -Unique)
     if ($espnIDs.Count -eq 0) { return @() }
 
-    $filter = @{
-        players = @{
-            filterIds = @{ value = @($espnIDs | ForEach-Object { [int64]$_ }) }
-            sortPercOwned = @{ sortPriority = 1; sortAsc = $false }
-            limit = [Math]::Max(1, $espnIDs.Count)
-        }
-    } | ConvertTo-Json -Depth 8 -Compress
-
-    $uri = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/$Season/segments/0/leaguedefaults/3?view=kona_player_info"
+    # Canonical source-data snapshot (espn.player-availability, #347); no network access here.
+    if (-not (Test-Path -LiteralPath $SnapshotPath)) {
+        Write-Warning "Canonical player-availability snapshot is missing; availability remains unknown."
+        return @()
+    }
     try {
-        $response = Invoke-RestMethod -Method Get -Uri $uri -Headers @{
-            'Accept' = 'application/json'
-            'X-Fantasy-Filter' = $filter
-            'User-Agent' = 'fantasy-app/espn-scoring-availability'
-        } -TimeoutSec $TimeoutSec
+        $snapshot = Get-Content -LiteralPath $SnapshotPath -Raw | ConvertFrom-Json
     }
     catch {
-        Write-Warning "ESPN scoring-availability request failed; availability remains unknown. $_"
+        Write-Warning "Canonical player-availability snapshot is unreadable; availability remains unknown. $_"
+        return @()
+    }
+    if ([int](Get-PsaValue -Object $snapshot -Names @('Season')) -ne $Season) {
+        Write-Warning "Canonical player-availability snapshot is not for season $Season; availability remains unknown."
         return @()
     }
 
-    $observedAtUtc = [DateTimeOffset]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ss'Z'")
+    $rowByEspn = @{}
+    foreach ($row in @(Get-PsaCollection (Get-PsaValue -Object $snapshot -Names @('Players')))) {
+        if ($null -eq $row) { continue }
+        $rowEspnID = ([string](Get-PsaValue -Object $row -Names @('ESPNPlayerID'))).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($rowEspnID)) { $rowByEspn[$rowEspnID] = $row }
+    }
+
     $observations = @()
-    foreach ($entry in @(Get-PsaCollection (Get-PsaValue -Object $response -Names @('players','Players')))) {
-        $player = Get-PsaValue -Object $entry -Names @('player','Player')
-        if ($null -eq $player) { $player = $entry }
-
-        $espnID = ([string](Get-PsaValue -Object $player -Names @('id','ID'))).Trim()
-        if ([string]::IsNullOrWhiteSpace($espnID)) {
-            $espnID = ([string](Get-PsaValue -Object $entry -Names @('id','ID'))).Trim()
-        }
-        if ([string]::IsNullOrWhiteSpace($espnID) -or -not $targetByEspn.ContainsKey($espnID)) { continue }
-
+    foreach ($espnID in $espnIDs) {
+        if (-not $rowByEspn.ContainsKey($espnID)) { continue }
+        $row = $rowByEspn[$espnID]
         $sleeperID = $targetByEspn[$espnID]
         if ($null -eq $sleeperID) { continue }
 
-        $providerStatus = ([string](Get-PsaValue -Object $player -Names @('injuryStatus','InjuryStatus'))).Trim()
+        $providerStatus = ([string](Get-PsaValue -Object $row -Names @('ProviderStatus'))).Trim()
         $observations += [PSCustomObject][ordered]@{
             PlayerID = [string]$sleeperID
             ESPNPlayerID = [string]$espnID
             State = ConvertTo-PsaNormalizedState -ProviderStatus $providerStatus
             ProviderStatus = if ([string]::IsNullOrWhiteSpace($providerStatus)) { $null } else { $providerStatus.ToUpperInvariant() }
             Source = 'ESPN'
-            ObservedAtUtc = $observedAtUtc
+            ObservedAtUtc = ConvertTo-PsaUtcTimestamp (Get-PsaValue -Object $row -Names @('StatusSinceUtc'))
         }
     }
     return @($observations)
@@ -325,4 +320,4 @@ function Add-PlayerScoringAvailabilityDecisionFacts {
     return $BaseReadModel
 }
 
-Export-ModuleMember -Function Get-EspnScoringAvailabilityObservations, Resolve-PlayerScoringAvailabilityObservationTimes, Add-PlayerScoringAvailabilityDecisionFacts
+Export-ModuleMember -Function Get-CanonicalScoringAvailabilityObservations, Resolve-PlayerScoringAvailabilityObservationTimes, Add-PlayerScoringAvailabilityDecisionFacts

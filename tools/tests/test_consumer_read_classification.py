@@ -143,6 +143,19 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         missing = [p for p in load_registry()["consumers"] if not (REPO_ROOT / p).is_file()]
         self.assertEqual([], missing)
 
+    def test_app_generators_make_no_direct_provider_requests(self) -> None:
+        """#347: provider acquisition lives in the source layer; public/requests only holds the generic HTTP helper."""
+        offenders = []
+        for path, entry in load_registry()["consumers"].items():
+            if not path.startswith("public/requests/"):
+                continue
+            for token, category in (entry.get("reads") or {}).items():
+                if token == "network" and category != "http-helper":
+                    offenders.append(f"{path}: {token} is {category}")
+                if token.startswith("provider:") and category not in ("display-link-construction", "provider-client"):
+                    offenders.append(f"{path}: {token} is {category}")
+        self.assertEqual([], offenders, "\n".join(offenders))
+
     def test_unclassified_reads_are_detected(self) -> None:
         names = read_model_names(REPO_ROOT)
         fns = sleeper_functions(REPO_ROOT)

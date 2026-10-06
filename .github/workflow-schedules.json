@@ -122,6 +122,16 @@
       "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
     },
     {
+      "id": "nfl-player-availability",
+      "workflow": "sync-nfl-player-availability.yml",
+      "path": ".github/workflows/sync-nfl-player-availability.yml",
+      "eventType": "scheduler-sync-nfl-player-availability",
+      "profile": "productive",
+      "timezone": "Europe/Berlin",
+      "cron": ["9-59/10 * * 9-12,1 *"],
+      "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
+    },
+    {
       "id": "league-source",
       "workflow": "sync-league-source-data.yml",
       "path": ".github/workflows/sync-league-source-data.yml",
