@@ -241,6 +241,12 @@ workflows:
     - repository_dispatch
     consecutiveFailures: 1
     rationale: Seasonal ten-minute canonical NFL Finality refresh dispatched by the central scheduler from September through January. It calls the hardened NFL source workflow for nflverse.game-finality only; one production failure is actionable because stale completion state can keep finished games falsely live. No staleness timer is used because the workflow is intentionally dormant outside its configured season months.
+  .github/workflows/sync-nfl-player-availability.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    consecutiveFailures: 2
+    rationale: Seasonal ten-minute ESPN player injury-status snapshot (September through January, minute 9, directly before the minute-10 League refresh) dispatched by the central scheduler. It feeds DecisionWindows scoring availability through the canonical source layer; a failed run keeps the last known good snapshot, so one transient failure is tolerated and two consecutive failures are actionable. The snapshot is written only on semantic change, so no staleness timer is used; the workflow is intentionally dormant outside its configured season months. Manual repair runs remain non-paging.
   .github/workflows/sync-league-source-data.yml:
     category: important
     relevantEvents:

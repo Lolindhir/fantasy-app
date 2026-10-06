@@ -1146,11 +1146,6 @@ consumerReadClassification:
       reads:
         legacy:PastSeasonsIndex: app-output-owner
       note: 'Writes PastSeasonsIndex.json.'
-    public/requests/utils/league/PlayerScoringAvailabilityUtils.psm1:
-      reads:
-        network: provider-direct-supplementary
-        provider:espn: provider-direct-supplementary
-      note: 'ESPN injuryStatus observation for DecisionWindows (data-sources.yaml); identity join via canonical IDs.'
     public/requests/utils/league/PlayoffUtils.psm1:
       reads:
         sleeper-api:Get-SleeperLosersBracket: legacy-provider-path
@@ -1200,6 +1195,11 @@ consumerReadClassification:
       reads:
         legacy:Players: validation-shadow
       note: 'Population audit compares canonical identities with the published Players.json; guard only, never identity evidence (ADR-039, ADR-043).'
+    tools/espn_player_availability.py:
+      reads:
+        network: source-layer-acquisition
+        provider:espn: source-layer-acquisition
+      note: 'ESPN kona_player_info injury status snapshot into source-data/nfl/player-availability (#347); consumed by RequestLeague as canonical input.'
     tools/nfl_source_data_lib/common.py:
       reads:
         network: source-layer-acquisition

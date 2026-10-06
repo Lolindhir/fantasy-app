@@ -38,6 +38,9 @@ jobs:
           python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
           python -m unittest tools.tests.test_historical_fantasy_scoring -v
 
+      - name: Run ESPN player availability source tests
+        run: python -m unittest tools.tests.test_espn_player_availability -v
+
       - name: Run Players league-scoring shadow and Sleeper gate
         run: |
           python -m unittest tools.tests.test_players_league_scoring_shadow -v

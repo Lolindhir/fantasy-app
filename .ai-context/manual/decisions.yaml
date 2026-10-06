@@ -1435,3 +1435,30 @@ decisions:
       negative:
         - The leaked RapidAPI keys stay valid in git history until Robert rotates them at RapidAPI (rest of Issue #186).
         - The workflow name still says Games although it only publishes the Schedule.
+
+  - id: ADR-046
+    title: ESPN player injury status is a shared NFL source dataset
+    status: accepted
+    context: >
+      RequestLeague fetched ESPN kona_player_info directly on every ten-minute League refresh and wrote the result only to
+      DecisionWindows.json. That was the last network call under public/requests (#347 target check, 2026-10-06) and the
+      observation was filtered to the current fantasy starters, so it was not reusable by other consumers.
+    decision: >
+      Robert approved the workflow change on 2026-10-06. tools/espn_player_availability.py snapshots the ESPN injury status of
+      all returned players into source-data/nfl/player-availability/espn.json (provenance in
+      source-data/providers/espn/player-availability/metadata.json); the raw 21 MB response is not retained. The new workflow
+      sync-nfl-player-availability.yml (rebuild-and-retry, monitoring category important) is dispatched by the central scheduler
+      every ten minutes from September through January at minute 9, before the minute-10 League refresh. RequestLeague only reads
+      the canonical snapshot; a missing, unreadable or other-season snapshot leaves availability unknown. The K1 consumer-read test
+      now forbids direct provider requests under public/requests.
+    rationale: >
+      Provider acquisition belongs to the source layer, the observation is consumer-neutral, and a dedicated thin workflow avoids
+      forcing a JSON provider into the CSV-oriented NFL registry and the daily NFL sync.
+    consequences:
+      positive:
+        - public/requests holds no provider request anymore; the League refresh no longer depends on ESPN availability.
+        - Other consumers can read the same injury snapshot.
+      negative:
+        - One more scheduled workflow; a stale snapshot shows up as unknown availability until the workflow health alerts.
+        - Outside September through January the snapshot is not refreshed.
+

@@ -329,11 +329,12 @@ try {
     }
 
     $currentScoringAvailabilityObservations = @(
-        Get-EspnScoringAvailabilityObservations `
+        Get-CanonicalScoringAvailabilityObservations `
             -Season ([int]$currentSeason) `
             -Teams $teamData `
             -Players $playersData `
-            -CanonicalIdentities $canonicalIdentities
+            -CanonicalIdentities $canonicalIdentities `
+            -SnapshotPath (Join-Path $PSScriptRoot "..\..\source-data\nfl\player-availability\espn.json")
     )
     $scoringAvailabilityObservations = @(
         Resolve-PlayerScoringAvailabilityObservationTimes `
