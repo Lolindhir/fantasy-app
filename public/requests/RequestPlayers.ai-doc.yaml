@@ -3,13 +3,15 @@ title: Request Players
 layer: generator-scripts
 
 responsibility: >
-  Builds the current generated player read model from Tank01 and Sleeper-backed
-  player identities, enrichments and historical inputs, then writes Players.json
-  only when the generated dataset passes its integrity checks and has changed.
+  Builds the current generated player read model from the canonical population
+  export (canonical Sleeper snapshot, NFL rosters/draft, league ownership; #347 H1b,
+  ADR-043), league-scored canonical stats and transitional Tank01-keyed game history,
+  then writes Players.json only when the generated dataset passes its integrity checks
+  and has changed.
 
 owns:
   - generation of public/data/Players.json
-  - Tank01-to-Sleeper player identity join
+  - consuming the population export of tools/players_population.py (no Tank01 or live Sleeper population call)
   - canonical player ID assignment
   - player ranking enrichment, including previous-season Combined fallback ranking
   - player-data integrity validation before persistence
@@ -22,17 +24,15 @@ doesNotOwn:
 identityContract:
   canonicalId:
     field: Players[].ID
-    source: Sleeper player_id
-    join: Tank01 sleeperBotID -> Sleeper player_id
+    source: Sleeper player_id from the canonical Sleeper snapshot
     requirements:
       - non-empty for every generated player record
       - globally unique within Players.json
   providerId:
-    field: Players[].TankID
-    source: Tank01 playerID
-    purpose: >
-      Preserves the Tank01 source identity so collisions in the canonical Sleeper
-      identity can be diagnosed without losing provider provenance.
+    status: removed in #347 H1b (Players[].TankID no longer exists)
+    note: >
+      The Tank01 playerID is only reachable through the CanonicalPlayerID identity and is used
+      solely to key the transitional Games.json GameHistory until #347 G3.
 
 scoringContract:
   issue: 347
@@ -92,7 +92,7 @@ integrityValidation:
   diagnostics:
     - report the number of missing canonical IDs when present
     - report every duplicate canonical Players.ID
-    - include TankID, Name, TeamID and Position for each conflicting source record
+    - include Name, TeamID and Position for each conflicting source record
 
 persistence:
   target: public/data/Players.json

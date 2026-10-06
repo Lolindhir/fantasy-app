@@ -65,9 +65,18 @@ def fixed_seasonal_dataset(root: Path, dataset_id: str) -> Dataset:
 
 
 def write_league(root: Path, season: int) -> None:
-    path = root / "public/data/League.json"
+    path = root / "source-data/leagues/test-league/manifest.json"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"Season": season}), encoding="utf-8")
+    path.write_text(
+        json.dumps(
+            {
+                "CanonicalLeagueID": "test-league",
+                "CurrentCanonicalLeagueSeasonID": f"test-league-{season}",
+                "Seasons": [{"CanonicalLeagueSeasonID": f"test-league-{season}", "Season": season}],
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def schedule_row(

@@ -447,17 +447,24 @@ matrix:
   nflFreeAgentAndAvailabilityStatus:
     facts:
       - NFL free-agent/active availability style fields in current Players.json
-    durableCanonicalPrimary: unresolved
-    currentRuntimePrimary: Tank01 isFreeAgent plus Sleeper status in RequestPlayers.ps1
+    durableCanonicalPrimary: canonical Sleeper platform snapshot (sleeper.players) Team and status via the canonical NFL team registry (decided #347 H5, Robert 2026-10-05 Decision C)
+    currentRuntimePrimary: tools/players_population.py export consumed by RequestPlayers.ps1 (#347 H1b); no Tank01 or live Sleeper call
     secondary:
-      - canonical weekly/season rosters may provide membership evidence after activation
-    fallback: none-defined
-    identityKey: CanonicalPlayerID / current provider mappings
-    lifecycle: dynamic
+      - canonical weekly/season rosters are population evidence (nfl_roster_current_season), not the team or free-agent source
+    fallback: none (missing snapshot or unknown team abbreviation fails closed)
+    identityKey: Sleeper player_id for the platform fact; CanonicalPlayerID for roster/draft population reasons
+    lifecycle: dynamic, daily with the Sleeper snapshot
     historyCoverage: not-consolidated
-    migrationState: requires-separate-field-definition-during-player-readmodel-migration
+    migrationState: implemented-347-h1b
+    definition:
+      TeamAbbr: canonical abbreviation of the Sleeper Team (LAR -> LA, WSH -> WAS); null without a Sleeper team
+      TeamID: equals TeamAbbr (ADR-042); null without a team
+      IsFreeAgent: true exactly when Sleeper holds no current team (NFL free agency)
+      Status: Sleeper status from the snapshot
     guards:
-      - absence from a roster snapshot must not automatically equal free-agent status without an explicit rule
+      - IsFreeAgent is NFL employment as the league platform shows it, not fantasy availability; fantasy availability stays league ownership / the Free-Agent-Market in Angular
+      - absence from a roster snapshot must not equal free-agent status; roster membership only decides population
+      - Sleeper Team alone is not a population criterion (retired players keep stale teams, ADR-043)
       - platform status and NFL employment status are distinct concepts
 
   byeWeek:
@@ -689,13 +696,14 @@ playersReadModelFieldInventory:
   producer:
     script: public/requests/RequestPlayers.ps1
     population: >
-      Tank01 getNFLPlayerList rows with sleeperBotID, joined to Sleeper /players/nfl
-      by that claim, restricted to app fantasy positions (Get-AppFantasyPosition)
-      and to rows with a parseable Sleeper birth_date. The Sleeper<->Tank01 pairing
-      is therefore a Tank01 provider claim, not a canonical identity decision.
+      Since #347 H1b (ADR-043): canonical Sleeper snapshot players with an app fantasy
+      position and a valid birth date that have a roster, draft or league-ownership reason
+      (tools/players_population.py). Before H1b it was Tank01 getNFLPlayerList rows with
+      sleeperBotID joined to Sleeper /players/nfl; that pairing was a provider claim, not a
+      canonical identity decision. Inventory evidence below describes the pre-H1b snapshot.
     inputs:
-      - Sleeper /players/nfl (live API call)
-      - Tank01 getNFLPlayerList (live API call, RapidAPI keys)
+      - source-data/nfl/platform/sleeper/players.json (canonical Sleeper snapshot, since H1b; replaces the live Sleeper and Tank01 getNFLPlayerList calls)
+      - source-data/nfl/teams.json, rosters, draft and identities (population and team key, since H1b)
       - public/data/Games.json (Tank01 boxscores incl. fantasyPointsDefault.PPR and snapCounts)
       - public/data/League.json (LastLeagueWeek, PlayoffStartWeek, FinalScoredWeek)
       - public/data/past_seasons/Players_<season-1..season-3>.json keyed by TankID
@@ -709,7 +717,7 @@ playersReadModelFieldInventory:
     appIdentity:
       fields: [ID, TankID]
       layer: sourceFact
-      currentProducer: ID = Sleeper player_id; TankID = Tank01 playerID
+      currentProducer: ID = Sleeper player_id from the canonical snapshot; TankID removed with #347 H1b (inventory snapshot listed Tank01 playerID)
       matrixKey: nflPersonIdentity
       targetOwner: ID stays Sleeper player_id (App contract); provider mappings resolve through CanonicalPlayerID
       consumers:
@@ -732,9 +740,9 @@ playersReadModelFieldInventory:
     nflTeamAndAvailability:
       fields: [TeamID, TeamAbbr, IsFreeAgent, Status]
       layer: sourceFact
-      currentProducer: Tank01 team/teamID/isFreeAgent; Sleeper status
+      currentProducer: since #347 H1b canonical Sleeper snapshot Team/status via the team registry (inventory snapshot: Tank01 team/teamID/isFreeAgent; Sleeper status)
       matrixKey: [nflWeeklyRosterMembership, nflFreeAgentAndAvailabilityStatus, sleeperPlayerPlatformFacts]
-      targetOwner: canonical weekly roster membership for team; free-agent definition still unresolved
+      targetOwner: Sleeper platform snapshot via the canonical team registry; free-agent definition decided in nflFreeAgentAndAvailabilityStatus (#347 H5)
       consumers:
         - App TeamID -> TeamNFL display; IsFreeAgent only maps TeamNFL to FA and blanks Number; TeamAbbr and Status not read
         - FM build_player_signal_dataset.py no longer reads TeamAbbr (C2, 2026-10-05: the has_nfl_team population bridge was replaced by canonical_nfl_membership / canonical_nfl_recent_history from canonical NFL roster membership)
@@ -843,8 +851,12 @@ playersReadModelFieldInventory:
       sleeperPlatformEvidence). audit.py and coverage.py still read Players.json,
       but only as an object under test, never as evidence. Persisted
       app.Players provenance in provider mappings stays as history. Population and
-      field migration of Players.json (#347 H1b) can therefore be fed from canonical
-      identities without re-asserting its own pairings.
+      field migration of Players.json (#347 H1b, done) is fed from canonical
+      identities and the canonical Sleeper snapshot without re-asserting its own
+      pairings. H1b removed the remaining Tank01 pairing claim (getNFLPlayerList
+      sleeperBotID); the cycle Players.json -> identities -> Players.json no longer exists.
+      Optional follow-up (needs workflow approval): drop public/data/Players.json from the
+      materialize input list of the NFL Source Sync.
     salaryCap: >
       RequestLeague.ps1 derives the league salary cap from Players.json Salary and
       SalaryProjected, so Players salary changes propagate into League.json.
@@ -897,6 +909,6 @@ playersReadModelFieldInventory:
     - Migrate by field group, never Players.json as a whole (#613 guardrail).
     - byeWeek is the smallest independent cutover candidate (canonical schedule, fixes a verified defect, only internal consumer GamesPotential); its parity diff is expected to be non-empty and must be approved as a correction.
     - seasonStatsAndPoints, pointHistory, ranking, salary and the League.json salary cap move together in #347 block D (D2 design, D3 shadow, D4 cutover).
-    - nflTeamAndAvailability needs an explicit free-agent definition before cutover (nflFreeAgentAndAvailabilityStatus is unresolved).
-    - appIdentity and population changes require the identityEvidence cycle decision first.
+    - nflTeamAndAvailability: free-agent definition decided and implemented in #347 H5/H1b (nflFreeAgentAndAvailabilityStatus).
+    - appIdentity and population changes required the identityEvidence cycle decision first; resolved by #347 H1a/H1b (ADR-043).
     - convenienceLinks and grading need no source migration; grading has no consumer and may be repaired or retired separately.

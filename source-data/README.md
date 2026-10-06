@@ -61,7 +61,7 @@ A `not-yet-available` metadata record intentionally has no per-run timestamp, so
 
 Invalid combinations fail while loading the registry. Lifecycle and source fields are executable policy, not descriptive free text.
 
-For season-partitioned raw sources, an already persisted season older than the current source season is reused as `frozen-existing` during a normal sync and is not fetched again. `--force` is the explicit repair path. The current source season is resolved from `public/data/League.json -> Season`, then `public/data/Metadata.json -> LeagueYear`, with the UTC calendar year only as a final technical fallback.
+For season-partitioned raw sources, an already persisted season older than the current source season is reused as `frozen-existing` during a normal sync and is not fetched again. `--force` is the explicit repair path. The current source season is resolved from the canonical League facts (`source-data/leagues/*/manifest.json -> CurrentCanonicalLeagueSeasonID`; the latest current season wins across leagues, an unresolvable manifest fails closed), with the UTC calendar year only as a final technical fallback when no league manifest exists. The NFL source layer reads neither `public/data/League.json` nor `public/data/Metadata.json` for this (Issue #347 I2).
 
 Current active datasets:
 

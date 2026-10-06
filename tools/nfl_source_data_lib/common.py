@@ -519,14 +519,29 @@ def planned_dataset_ids(repo_root: Path) -> list[str]:
 
 
 def current_source_season(repo_root: Path) -> int:
-    league = load_json(repo_root / "public/data/League.json", {}) or {}
-    season = as_int(league.get("Season"))
-    if season is not None:
-        return season
-    metadata = load_json(repo_root / "public/data/Metadata.json", {}) or {}
-    season = as_int(metadata.get("LeagueYear"))
-    if season is not None:
-        return season
+    """Current season from canonical League facts (``source-data/leagues/*/manifest.json``).
+
+    The NFL source layer must not depend on App delivery read models or manual
+    league metadata, so nothing under ``public/data`` is read here. With several
+    canonical leagues the latest current season wins. A manifest whose current season entry
+    cannot be resolved fails closed; without any league manifest the UTC year is the last resort.
+    """
+    seasons: list[int] = []
+    for manifest_path in sorted((repo_root / "source-data/leagues").glob("*/manifest.json")):
+        manifest = load_json(manifest_path, {}) or {}
+        current_id = str(manifest.get("CurrentCanonicalLeagueSeasonID") or "").strip()
+        matches = [
+            as_int(entry.get("Season"))
+            for entry in manifest.get("Seasons") or []
+            if isinstance(entry, dict) and str(entry.get("CanonicalLeagueSeasonID") or "") == current_id
+        ]
+        if not current_id or len(matches) != 1 or matches[0] is None:
+            raise ValueError(
+                f"League manifest must resolve CurrentCanonicalLeagueSeasonID to exactly one season: {manifest_path}"
+            )
+        seasons.append(matches[0])
+    if seasons:
+        return max(seasons)
     return datetime.now(timezone.utc).year
 
 
