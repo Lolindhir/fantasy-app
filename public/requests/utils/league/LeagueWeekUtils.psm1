@@ -104,4 +104,15 @@ function Resolve-FantasyMatchupLoadWeek {
     return [Math]::Min($lineupWeek, $LastLeagueWeek)
 }
 
-Export-ModuleMember -Function Resolve-LeagueWeekState, Resolve-FantasyMatchupLoadWeek
+function Resolve-LeagueFinalScoredWeek {
+    param(
+        [Parameter(Mandatory = $true)][int]$ScheduleFinalWeek,
+        [Parameter(Mandatory = $true)][int]$LastScoredLeg
+    )
+
+    # A week is scored only when every NFL game is final AND the league provider has scored it.
+    # Game finality alone runs ahead of provider scoring (standings, records), see #895.
+    return [Math]::Max(0, [Math]::Min($ScheduleFinalWeek, $LastScoredLeg))
+}
+
+Export-ModuleMember -Function Resolve-LeagueWeekState, Resolve-FantasyMatchupLoadWeek, Resolve-LeagueFinalScoredWeek

@@ -44,13 +44,48 @@ EXPORT_ROW_FIELDS = ("Points", "Snaps", "KickAttempts", "Attempts", "TdPass", "T
 # --------------------------------------------------------------------------- #
 # Canonical inputs
 # --------------------------------------------------------------------------- #
-def final_regular_weeks(repo_root: Path, season: int) -> set[int]:
+def game_final_regular_weeks(repo_root: Path, season: int) -> set[int]:
+    """Regular-season weeks whose NFL games are all final (game finality only)."""
     path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
     payload = read_json(path)
     return {
         int(w["Week"])
         for w in payload["Weeks"]
         if w.get("WeekFinal") is True and w.get("GameType", "REG") == "REG"
+    }
+
+
+def stats_cover_week(repo_root: Path, season: int, week: int) -> bool:
+    """True when the canonical player-stats partition has rows for every team playing that week.
+
+    nflverse publishes player stats later than game results, so a week whose games are
+    all final can still have an incomplete partition. Scoring such a week would treat
+    the missing teams' players as zero (the 2026 week 4 case, #895).
+    """
+    stats_path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+    schedule_path = repo_root / "source-data/nfl/schedules" / f"{season}.json"
+    if not stats_path.is_file() or not schedule_path.is_file():
+        return False
+    playing = {
+        team
+        for game in read_json(schedule_path)["Games"]
+        if game.get("GameType", "REG") == "REG" and int(game["Week"]) == week
+        for team in (game.get("HomeTeam"), game.get("AwayTeam"))
+        if team
+    }
+    covered = {
+        record.get("Team")
+        for record in read_json(stats_path)["Records"]
+        if record.get("SeasonType", "REG") == "REG"
+    }
+    return bool(playing) and playing <= covered
+
+
+def final_regular_weeks(repo_root: Path, season: int) -> set[int]:
+    """Weeks that are final for scoring: all games final and the stats partition complete."""
+    return {
+        week for week in game_final_regular_weeks(repo_root, season)
+        if stats_cover_week(repo_root, season, week)
     }
 
 
