@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from .audit import build_audit
 from .combine import build_combine_files
-from .common import CANONICAL_SCHEMA_VERSION, Dataset, as_int, load_json, write_json_if_changed
+from .common import CANONICAL_SCHEMA_VERSION, Dataset, current_source_season, write_json_if_changed
 from .draft import build_draft_files
 from .identity import build_identities
 from .lifecycle import effective_partition_payload
@@ -17,15 +16,7 @@ from .provisional_reconciliation import reconcile_provisional_app_mappings
 
 
 def _observation_season(repo_root: Path) -> int:
-    league = load_json(repo_root / "public/data/League.json", {}) or {}
-    season = as_int(league.get("Season"))
-    if season is not None:
-        return season
-    metadata = load_json(repo_root / "public/data/Metadata.json", {}) or {}
-    season = as_int(metadata.get("LeagueYear"))
-    if season is not None:
-        return season
-    return datetime.now(timezone.utc).year
+    return current_source_season(repo_root)
 
 
 def _persisted_phase1_audit(phase1_audit: dict[str, Any]) -> dict[str, Any]:

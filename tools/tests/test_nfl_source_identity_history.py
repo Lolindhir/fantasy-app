@@ -11,6 +11,22 @@ sys.path.insert(0, str(TOOLS))
 from nfl_source_data_lib import common as common_mod
 from nfl_source_data_lib.materialize import materialize
 
+def _write_league_manifest(root: Path, season: int) -> None:
+    """Canonical League fact that owns the current season of the NFL source layer."""
+    path = root / "source-data/leagues/test-league/manifest.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "CanonicalLeagueID": "test-league",
+                "CurrentCanonicalLeagueSeasonID": f"test-league-{season}",
+                "Seasons": [{"CanonicalLeagueSeasonID": f"test-league-{season}", "Season": season}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 
 def write_csv(path: Path, rows, fieldnames):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -70,7 +86,7 @@ def write_app(root: Path, players, season):
     (root / "public/data").mkdir(parents=True, exist_ok=True)
     (root / "public/data/Players.json").write_text(json.dumps(players), encoding="utf-8")
     (root / "public/data/Players_Relevant.json").write_text(json.dumps(players), encoding="utf-8")
-    (root / "public/data/League.json").write_text(json.dumps({"Season": season}), encoding="utf-8")
+    _write_league_manifest(root, season)
 
 
 class NflSourceIdentityHistoryTests(unittest.TestCase):
