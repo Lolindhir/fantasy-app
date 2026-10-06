@@ -190,12 +190,11 @@ function Test-UniquePlayerIds {
             $errorLines += "Missing canonical Players.ID on $($playersWithoutId.Count) record(s):"
 
             foreach ($player in $playersWithoutId) {
-                $tankId = if ($null -ne $player.TankID -and -not [string]::IsNullOrWhiteSpace([string]$player.TankID)) { [string]$player.TankID } else { "<missing>" }
                 $name = if ($null -ne $player.Name -and -not [string]::IsNullOrWhiteSpace([string]$player.Name)) { [string]$player.Name } else { "<missing>" }
                 $teamId = if ($null -ne $player.TeamID -and -not [string]::IsNullOrWhiteSpace([string]$player.TeamID)) { [string]$player.TeamID } else { "<missing>" }
                 $position = if ($null -ne $player.Position -and -not [string]::IsNullOrWhiteSpace([string]$player.Position)) { [string]$player.Position } else { "<missing>" }
 
-                $errorLines += "- ID=<missing>; TankID=$tankId; Name='$name'; TeamID=$teamId; Position=$position"
+                $errorLines += "- ID=<missing>; Name='$name'; TeamID=$teamId; Position=$position"
             }
         }
 
@@ -205,12 +204,11 @@ function Test-UniquePlayerIds {
             foreach ($group in $duplicateGroups) {
                 $recordSummaries = @(
                     @($group.Value) | ForEach-Object {
-                        $tankId = if ($null -ne $_.TankID -and -not [string]::IsNullOrWhiteSpace([string]$_.TankID)) { [string]$_.TankID } else { "<missing>" }
                         $name = if ($null -ne $_.Name -and -not [string]::IsNullOrWhiteSpace([string]$_.Name)) { [string]$_.Name } else { "<missing>" }
                         $teamId = if ($null -ne $_.TeamID -and -not [string]::IsNullOrWhiteSpace([string]$_.TeamID)) { [string]$_.TeamID } else { "<missing>" }
                         $position = if ($null -ne $_.Position -and -not [string]::IsNullOrWhiteSpace([string]$_.Position)) { [string]$_.Position } else { "<missing>" }
 
-                        "TankID=$tankId; Name='$name'; TeamID=$teamId; Position=$position"
+                        "Name='$name'; TeamID=$teamId; Position=$position"
                     }
                 )
 
@@ -221,13 +219,7 @@ function Test-UniquePlayerIds {
         throw ($errorLines -join [Environment]::NewLine)
     }
 
-    New-UniqueObjectLookup `
-        -Items @($Players) `
-        -KeyProperty "TankID" `
-        -SourceLabel "generated Players.json provider identities" `
-        -KeyLabel "TankID" `
-        -DescriptionProperties @("TankID", "ID", "Name", "TeamID", "Position") | Out-Null
-
+    # Players.json no longer carries a provider ID (TankID removed with #347 H1b); the canonical Sleeper ID is the key.
     return $true
 }
 
