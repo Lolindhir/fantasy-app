@@ -1,195 +1,4 @@
 # --- Funktionen ---
-# Globale Variable für den zuletzt erfolgreichen Key
-$Global:CurrentApiKey = $null
-# function Invoke-Tank01-With-Fallback {
-#     param(
-#         [string]$Url,
-#         [string[]]$Keys
-#     )
-
-#     $delay = 2  # Start-Wartezeit in Sekunden
-
-#     # Wenn bereits ein funktionierender Key gespeichert ist, probiere diesen zuerst
-#     if ($Global:CurrentApiKey -and $Keys -contains $Global:CurrentApiKey) {
-#         $headers = @{
-#             "X-RapidAPI-Key" = $Global:CurrentApiKey
-#             "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
-#         }
-#         try {
-#             Write-Host "  Using cached key: $($Global:CurrentApiKey)" -ForegroundColor DarkGray
-#             return Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
-#         } catch {
-#             $statusCode = $_.Exception.Response.StatusCode.Value__
-#             if ($statusCode -eq 429) {
-#                 Write-Warning "Cached key $($Global:CurrentApiKey) hit 429 - switching..."
-#                 # Reset Key, nächster Versuch mit allen Keys
-#                 $Global:CurrentApiKey = $null
-#             } else {
-#                 throw $_
-#             }
-#         }
-#     }
-
-#     # Normale Fallback-Logik (alle Keys durchprobieren)
-#     foreach ($key in $Keys) {
-#         $headers = @{
-#             "X-RapidAPI-Key" = $key
-#             "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
-#         }
-
-#         try {
-#             Write-Host "  Try with key: $key" -ForegroundColor DarkGray
-#             $result = Invoke-RestMethod -Uri $Url -Headers $headers -ErrorAction Stop
-#             # Wenn erfolgreich: Key merken
-#             $Global:CurrentApiKey = $key
-#             return $result
-#         } catch {
-#             $statusCode = $_.Exception.Response.StatusCode.Value__
-#             if ($statusCode -eq 429) {
-#                 Write-Warning "429 Too Many Requests - wait $delay sec before next key..."
-#                 Start-Sleep -Seconds $delay
-#                 $delay = [Math]::Min($delay * 2, 30)
-#                 continue
-#             } else {
-#                 throw $_
-#             }
-#         }
-#     }
-
-#     throw "All API keys have failed (including 429 errors)."
-# }
-
-function Invoke-Tank01-With-Fallback {
-    param(
-        [string]$Url,
-        [string[]]$Keys
-    )
-
-    $delay = 2
-    $maxRetries = 4
-
-    function Invoke-With-Retry {
-        param($Url, $Headers)
-
-        $attempt = 0
-        $localDelay = $delay
-
-        while ($attempt -lt $maxRetries) {
-            try {
-                return Invoke-RestMethod `
-                    -Uri $Url `
-                    -Headers $Headers `
-                    -TimeoutSec 60 `
-                    -ErrorAction Stop
-            }
-            catch {
-                $attempt++
-
-                $statusCode = $null
-                if ($_.Exception.Response) {
-                    $statusCode = $_.Exception.Response.StatusCode.Value__
-                }
-
-                # -----------------------------
-                # Network errors
-                # -----------------------------
-                if ($_.Exception.Message -match "Connection reset" -or
-                    $_.Exception.Message -match "transport connection" -or
-                    $_.Exception.Message -match "The underlying connection was closed" -or
-                    $_.Exception.Message -match "Unable to read data") {
-
-                    if ($attempt -lt $maxRetries) {
-                        Write-Warning "Network issue - retry in $localDelay sec..."
-                        Start-Sleep -Seconds $localDelay
-                        $localDelay = [Math]::Min($localDelay * 2, 30)
-                        continue
-                    }
-                }
-
-                # -----------------------------
-                # Server errors (5xx)
-                # -----------------------------
-                if ($statusCode -ge 500 -and $attempt -lt $maxRetries) {
-                    Write-Warning "Server error $statusCode - retry in $localDelay sec..."
-                    Start-Sleep -Seconds $localDelay
-                    $localDelay = [Math]::Min($localDelay * 2, 30)
-                    continue
-                }
-
-                throw $_
-            }
-        }
-
-        throw "Max retries reached."
-    }
-
-    # -------------------------------------------------
-    # 1️⃣ Try cached key first
-    # -------------------------------------------------
-    if ($Global:CurrentApiKey -and $Keys -contains $Global:CurrentApiKey) {
-        $headers = @{
-            "X-RapidAPI-Key"  = $Global:CurrentApiKey
-            "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
-        }
-
-        try {
-            Write-Host "  Using cached key: $($Global:CurrentApiKey)" -ForegroundColor DarkGray
-            return Invoke-With-Retry $Url $headers
-        }
-        catch {
-            $statusCode = $null
-            if ($_.Exception.Response) {
-                $statusCode = $_.Exception.Response.StatusCode.Value__
-            }
-
-            if ($statusCode -eq 429) {
-                Write-Warning "Cached key hit 429 - switching..."
-                $Global:CurrentApiKey = $null
-            }
-            else {
-                Write-Warning "Cached key failed - switching to next key..."
-                $Global:CurrentApiKey = $null
-            }
-        }
-    }
-
-    # -------------------------------------------------
-    # 2️⃣ Try all keys
-    # -------------------------------------------------
-    foreach ($key in $Keys) {
-
-        $headers = @{
-            "X-RapidAPI-Key"  = $key
-            "X-RapidAPI-Host" = "tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com"
-        }
-
-        try {
-            Write-Host "  Try with key: $key" -ForegroundColor DarkGray
-            $result = Invoke-With-Retry $Url $headers
-
-            # Erfolgreich → Key merken
-            $Global:CurrentApiKey = $key
-            return $result
-        }
-        catch {
-            $statusCode = $null
-            if ($_.Exception.Response) {
-                $statusCode = $_.Exception.Response.StatusCode.Value__
-            }
-
-            if ($statusCode -eq 429) {
-                Write-Warning "429 Too Many Requests - switching key..."
-                continue
-            }
-            else {
-                Write-Warning "Key failed - trying next..."
-                continue
-            }
-        }
-    }
-
-    throw "All API keys exhausted."
-}
 
 function PlayersHaveChanged($oldPlayers, $newPlayers) {
     Compare-Players -OldPlayers $oldPlayers -NewPlayers $newPlayers
@@ -502,11 +311,7 @@ Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -F
 Import-Module "$PSScriptRoot\utils\general\NflScheduleUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\player\PlayerLeagueScoringUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\player\SleeperPlatformUtils.psm1" -ErrorAction Stop -Force
-$apiKeys = @(
-    $Global:RapidAPIKey,
-    $Global:RapidAPIKeyAlt1,
-    $Global:RapidAPIKeyAlt2
-)
+Import-Module "$PSScriptRoot\utils\player\PlayerPopulationUtils.psm1" -ErrorAction Stop -Force
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targetFile = Join-Path $scriptDir "..\data\Players.json"
 $backupDir = Join-Path $scriptDir "..\data\backup"
@@ -542,39 +347,28 @@ Write-Host "Loaded last week (Week $($lastWeek)) from canonical WeekStructure...
 Write-Host "Loaded playoff start week (Week $($playoffStartWeek)) from canonical WeekStructure..." -ForegroundColor Yellow
 Write-Host "Loaded final week (Week $($finalWeek)) from canonical game finality..." -ForegroundColor Yellow
 
-# --- Sleeper Spieler abrufen ---
-Write-Host "Fetch Sleeper players..." -ForegroundColor Yellow
+# --- Population und Plattformfelder aus dem kanonischen Source-Data (#347 H1b) ---
+# Fantasy-Management-Regel (NFL-Roster/-Draft der Saison oder Liga-Besitz), Team/Status/Profil aus dem
+# kanonischen Sleeper-Snapshot ueber die Team-Registry. Kein Tank01- und kein Live-Sleeper-Aufruf.
+Write-Host "Build population from canonical source data..." -ForegroundColor Yellow
 try {
-    $sleeperPlayersUrl = "https://api.sleeper.app/v1/players/nfl"
-    $sleeperPlayers = Invoke-RestMethod -Uri $sleeperPlayersUrl
-    $sleeperPlayers = $sleeperPlayers.PSObject.Properties.Value
+    $population = Invoke-PlayerPopulationExport -Season ([int]$seasonYear) -RepoRoot (Split-Path -Parent (Split-Path -Parent $scriptDir))
 } catch {
-    Write-Error "Error fetching Sleeper players: $_"
+    Write-Error "Error building the Players population: $_"
     exit 1
 }
-Write-Host "Sleeper players found: $($sleeperPlayers.Count)" -ForegroundColor Yellow
+if ($population.RosterBasis.UsedPreviousSeasonRoster) {
+    Write-Warning "Season roster $($population.RosterBasis.Season) not yet published; population uses the $($population.RosterBasis.RosterSeason) roster."
+}
+Write-Host "Population players: $($population.Players.Count)" -ForegroundColor Yellow
 
 # --- Sleeper Depth Charts aus dem kanonischen Plattform-Snapshot (#347 H4) ---
 $sleeperDepthCharts = Get-CanonicalSleeperDepthCharts -RepoRoot (Split-Path -Parent (Split-Path -Parent $scriptDir))
 Write-Host "Canonical Sleeper depth chart records: $($sleeperDepthCharts.Count)" -ForegroundColor Yellow
 $depthChartMissingPlayers = @()
 
-# --- Tank01 Spieler ---
-Write-Host "Fetch Tank01 players..." -ForegroundColor Yellow
-$tankPlayersUrl = "https://tank01-nfl-live-in-game-real-time-statistics-nfl.p.rapidapi.com/getNFLPlayerList"
-try {
-    $tankPlayersResponse = Invoke-Tank01-With-Fallback -Url $tankPlayersUrl -Keys $apiKeys
-    $tankPlayers = $tankPlayersResponse.body
-} catch {
-    Write-Error "Error fetching Tank01 players: $_"
-    exit 1
-}
-Write-Host "Tank01 players found: $($tankPlayers.Count)" -ForegroundColor Yellow
-
 # --- Spieler JSON vorbereiten ---
 Write-Host "Creating Players.json..." -ForegroundColor Yellow
-$sleeperLookup = @{}
-foreach ($sleeper in $sleeperPlayers) { $sleeperLookup[$sleeper.player_id] = $sleeper }
 
 # Alte Spieler laden (für Vergleich und evtl. Gehälter)
 $oldPlayersLookup = @{}
@@ -754,11 +548,7 @@ if (Test-Path $gamesFile) {
 
 # --- League scoring (#347 D4): canonical NFL stats scored with the league ScoringSettings ---
 # Replaces Tank01 PPR points and the Tank01 past_seasons archives. The export is keyed by Sleeper player ID.
-$leagueScoringSleeperIDs = @(
-    $tankPlayers |
-        Where-Object { $_.sleeperBotID -and $sleeperLookup.ContainsKey([string]$_.sleeperBotID) } |
-        ForEach-Object { [string]$_.sleeperBotID }
-)
+$leagueScoringSleeperIDs = @($population.Players | ForEach-Object { [string]$_.SleeperID })
 $leagueScoringExport = Invoke-PlayerLeagueScoringExport -SleeperIDs $leagueScoringSleeperIDs -Season ([int]$seasonYear)
 if ([int]$leagueScoringExport.Season -ne [int]$seasonYear) {
     throw "League scoring export season $($leagueScoringExport.Season) does not match LeagueYear $seasonYear."
@@ -767,26 +557,23 @@ $finalWeeksCurrent = [int[]]@($leagueScoringExport.FinalRegularWeeksCurrent)
 $identityHoldPlayers = @()
 
 $playerData = @()
-foreach ($tankEntry in $tankPlayers) {
-    if (-not $tankEntry.sleeperBotID) { continue }
-    $sleeperEntry = $sleeperLookup[$tankEntry.sleeperBotID]
-    if (-not $sleeperEntry) { continue }
-    $position = Get-AppFantasyPosition -SleeperPlayer $sleeperEntry
+foreach ($entry in $population.Players) {
+    $position = [string]$entry.Position
     if (-not $position) { continue }
 
     # --- PlayerID ---
-    $playerID = $sleeperEntry.player_id
+    $playerID = [string]$entry.SleeperID
     # --- Year berechnen ---
-    $year = $sleeperEntry.years_exp + 1
-    # --- Team ---
-    $team = $tankEntry.team
+    $year = $entry.YearsExp + 1
+    # --- Team (kanonisches Kuerzel oder $null ohne NFL-Team) ---
+    $team = $entry.TeamAbbr
 
     # --- Age ---
     $age = $null
-    if ($sleeperEntry.birth_date) {
+    if ($entry.BirthDate) {
         try {
             $birthDate = [datetime]::ParseExact(
-                $sleeperEntry.birth_date,
+                $entry.BirthDate,
                 "yyyy-MM-dd",
                 [System.Globalization.CultureInfo]::InvariantCulture
             )
@@ -810,38 +597,22 @@ foreach ($tankEntry in $tankPlayers) {
     $canonicalTeam = ConvertTo-CanonicalNflScheduleTeam -Team $team
     $byeWeek = if ($canonicalTeam -and $teamByeWeek.ContainsKey($canonicalTeam)) { $teamByeWeek[$canonicalTeam] } else { 0 }
 
-    # --- Free Agency Status bestimmen ---
-    $freeAgent = $false
-    if ($tankEntry.isFreeAgent -eq $true -or $tankEntry.isFreeAgent -eq "true" -or $tankEntry.isFreeAgent -eq "True") {
-        $freeAgent = $true
-    }
+    # --- Free Agency Status: NFL-Free-Agency (kein Sleeper-Team), nicht Fantasy-Verfuegbarkeit ---
+    $freeAgent = [bool]$entry.IsFreeAgent
 
-    # --- Injury bestimmen ---
-    $injured = $false
-    $injury = [PSCustomObject]@{
-        ReturnDate  = ""
-        Description = ""
-        Date        = ""
-        Designation = ""
-    }
+    # --- Injury aus dem kanonischen Sleeper-Snapshot (#347 Decision 6), ReturnDate unbekannt ---
+    $injuryResult = ConvertTo-PlayerInjuryDetails -Injury $entry.Injury
+    $injured = $injuryResult.Injured
+    $injury = $injuryResult.Details
 
-    if ($tankEntry.injury.injReturnDate) {
-        $injury.ReturnDate = $tankEntry.injury.injReturnDate
-    }
-    if ($tankEntry.injury.injDate) {
-        $injury.Date = $tankEntry.injury.injDate
-    }
-    if ($tankEntry.injury.description) {
-        $injury.Description = $tankEntry.injury.description
-    }    
-    if ($tankEntry.injury.designation) {
-        $injury.Designation = $tankEntry.injury.designation
-        $injured = $true
-    }
+    # --- Interimswerte bis H2: veroeffentlichte Werte uebernehmen, sonst ESPN-Headshot aus der Identity ---
+    $profileLinks = Get-InterimPlayerProfileLinks -OldPlayer $oldPlayersLookup[$playerID] -ESPNAthleteID $entry.ESPNAthleteID
 
 
     # --- Player Stats: Spiele aus Games.json (Tank01), Punkte und Spielzahlen aus dem Liga-Scoring ---
-    $stats = $playerHistory[$tankEntry.playerID]
+    # GameHistory haengt bis G3 an Games.json ueber die Tank01-ID der kanonischen Identity (Uebergang, kein Live-Call).
+    $tankID = [string]$entry.Tank01ID
+    $stats = if ($tankID) { $playerHistory[$tankID] } else { $null }
 
     # --- Potentielle Spiele berechnen (ByeWeek berücksichtigen) ---
     $gamesPotential = 0
@@ -866,7 +637,7 @@ foreach ($tankEntry in $tankPlayers) {
         }
     } else {
         # Identity hold (no unique canonical identity for the current season): keep the last published values.
-        $identityHoldPlayers += "$($sleeperEntry.full_name) ($playerID)"
+        $identityHoldPlayers += "$($entry.FullName) ($playerID)"
         $held = Get-PlayerLeagueScoringHeldStats -OldPlayer $oldPlayersLookup[[string]$playerID]
         $current = $held.Current
         $pointHistory = $held.PointHistory
@@ -923,7 +694,7 @@ foreach ($tankEntry in $tankPlayers) {
 
     # --- Average letzte vier gescorte Spiele für Form-Grading berechnen ---
     $formValue = @()
-    $formValue = $playerHistory[$tankEntry.playerID].GameHistory | 
+    $formValue = $stats.GameHistory | 
         Where-Object { $_.GameDetails.WeekFinal -and $_.GameDetails.WeekScored } |
         Select-Object -First 4
     
@@ -939,36 +710,35 @@ foreach ($tankEntry in $tankPlayers) {
     $depthChart = $sleeperDepthCharts[[string]$playerID]
     if (-not $depthChart) {
         $depthChart = @{ Position = $null; Order = $null }
-        $depthChartMissingPlayers += "$($sleeperEntry.full_name) ($playerID)"
+        $depthChartMissingPlayers += "$($entry.FullName) ($playerID)"
     }
 
     # --- Player Objekt bauen ---
     $playerData += [PSCustomObject]@{
         ID                           = $playerID
-        TankID                       = $tankEntry.playerID
-        Name                         = $sleeperEntry.full_name
-        NameFirst                    = $sleeperEntry.first_name
-        NameLast                     = $sleeperEntry.last_name
-        NameShort                    = $tankEntry.cbsShortName
-        TeamID                       = $tankEntry.teamID
-        TeamAbbr                     = $tankEntry.team
+        Name                         = $entry.FullName
+        NameFirst                    = $entry.FirstName
+        NameLast                     = $entry.LastName
+        NameShort                    = $profileLinks.NameShort
+        TeamID                       = $entry.TeamID
+        TeamAbbr                     = $entry.TeamAbbr
         ByeWeek                      = $byeWeek
-        Status                       = $sleeperEntry.status
+        Status                       = $entry.Status
         IsFreeAgent                  = $freeAgent
         Position                     = $position
         Age                          = $age
         Year                         = $year
-        Number                       = $tankEntry.jerseyNum
+        Number                       = if ($null -ne $entry.Number) { [string]$entry.Number } else { "" }
         Salary                       = [math]::Round($salaryDollarsFantasy)
         SalaryProjected              = [math]::Round($salaryDollarsProjectedFantasy)
-        Picture                      = $tankEntry.espnHeadshot
-        FantasyPros                  = $tankEntry.fantasyProsLink
-        ESPN                         = $tankEntry.espnLink
-        ESPNID                       = $sleeperEntry.espn_id
+        Picture                      = $profileLinks.Picture
+        FantasyPros                  = $profileLinks.FantasyPros
+        ESPN                         = $profileLinks.ESPN
+        ESPNID                       = $entry.ESPNID
         SleeperDepthChartPosition    = $depthChart.Position
         SleeperDepthChartOrder       = $depthChart.Order
-        College                      = $sleeperEntry.college
-        HighSchool                   = $sleeperEntry.high_school
+        College                      = $entry.College
+        HighSchool                   = $entry.HighSchool
         Injured                      = $injured
         InjuryDetails                = $injury
         GamesPlayed                  = $gamesPlayed

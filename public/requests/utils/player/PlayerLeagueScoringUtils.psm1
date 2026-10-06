@@ -255,6 +255,7 @@ function Get-PlayerLeagueScoringHeldStats {
 Export-ModuleMember -Function `
     Get-PlayerLeagueScoringHeldStats, `
     Invoke-PlayerLeagueScoringExport, `
+    Get-PlayerLeagueWeekBounds, `
     Get-PlayerLeagueScoringPlayedRows, `
     Get-PlayerLeagueScoringSeasonStats, `
     Get-PlayerLeagueScoringCurrentStats, `
