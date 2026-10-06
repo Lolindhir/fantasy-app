@@ -254,7 +254,7 @@ matrix:
       - weekly player stat totals
       - team/opponent/game references
     durableCanonicalPrimary: nflverse player-stats
-    currentRuntimePrimary: Tank01 playerStats embedded in Games.json and consumed by RequestPlayers.ps1
+    currentRuntimePrimary: canonical player-stats consumed by RequestPlayers.ps1 for points and GameHistory (#347 D4, G3); Tank01 playerStats remain only in the legacy Games.json until G4
     secondary: none-required for finalized history
     fallback:
       - Tank01 for legacy Games.json until that read model is redesigned
@@ -264,7 +264,7 @@ matrix:
     historyCoverage: 1999-present
     freshness: nightly after game days plus additional game-day updates
     preferredFinalizedWeeklyRead: Thursday after NFL stat-correction window
-    migrationState: canonical-active-runtime-not-migrated
+    migrationState: players-consumer-migrated-g3-games-json-legacy-until-g4
     guards:
       - no name-based player join
       - secondary/fallback data cannot overwrite a conflicting finalized canonical stat silently
@@ -275,7 +275,7 @@ matrix:
     facts:
       - league-specific fantasy points derived from canonical NFL player statistics
     durableCanonicalPrimary: deterministic derivation from canonical NFL player stats plus Sleeper league scoring_settings
-    currentRuntimePrimary: league-scored points exported by tools/players_league_scoring.py for Players.json (#347 D4, 2026-10-05); Tank01 fantasyPointsDefault.PPR remains only the provider value of GameHistory games that are not final or are playoff games, and in Games.json
+    currentRuntimePrimary: league-scored points exported by tools/players_league_scoring.py for Players.json (#347 D4, 2026-10-05); GameHistory points of every game follow the same scorer since #347 G3; Tank01 fantasyPointsDefault.PPR remains only in the legacy Games.json until G4
     secondary:
       - nflverse/provider fantasy-point values may be used as validation/corroboration only
     fallback: none for Players.json points; an identity hold keeps the last published values
@@ -298,7 +298,7 @@ matrix:
       - st_snaps
       - st_pct
     durableCanonicalPrimary: nflverse PFR snap-count dataset
-    currentRuntimePrimary: Tank01 snapCounts embedded in Games.json
+    currentRuntimePrimary: canonical snap-counts consumed by RequestPlayers.ps1 GameHistory (#347 G3); Tank01 snapCounts remain only in the legacy Games.json until G4
     secondary: none-required
     fallback:
       - Tank01 for legacy Games.json during migration
@@ -307,7 +307,7 @@ matrix:
     lifecycle: seasonal-finalizable
     historyCoverage: 2012-present
     freshness: four-times-daily-during-season-dependent-on-PFR
-    migrationState: canonical-active-runtime-not-migrated
+    migrationState: players-consumer-migrated-g3-games-json-legacy-until-g4
     guards:
       - ambiguous/missing PFR mappings remain unresolved or quarantined
       - pre-2012 unavailable data is not zero
@@ -704,7 +704,7 @@ playersReadModelFieldInventory:
     inputs:
       - source-data/nfl/platform/sleeper/players.json (canonical Sleeper snapshot, since H1b; replaces the live Sleeper and Tank01 getNFLPlayerList calls)
       - source-data/nfl/teams.json, rosters, draft and identities (population and team key, since H1b)
-      - public/data/Games.json (Tank01 boxscores incl. fantasyPointsDefault.PPR and snapCounts)
+      - canonical player-stats, snap-counts, qbr-week, player-game-long-gains, schedules and game-finality for GameHistory (since #347 G3; replaces public/data/Games.json)
       - public/data/League.json (LastLeagueWeek, PlayoffStartWeek, FinalScoredWeek)
       - public/data/past_seasons/Players_<season-1..season-3>.json keyed by TankID
       - config.ps1 WeightTotal/WeightGame

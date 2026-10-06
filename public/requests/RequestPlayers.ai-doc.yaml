@@ -5,7 +5,7 @@ layer: generator-scripts
 responsibility: >
   Builds the current generated player read model from the canonical population
   export (canonical Sleeper snapshot, NFL rosters/draft, league ownership; #347 H1b,
-  ADR-043), league-scored canonical stats and transitional Tank01-keyed game history,
+  ADR-043), league-scored canonical stats and the canonical GameHistory (#347 G3),
   then writes Players.json only when the generated dataset passes its integrity checks
   and has changed.
 
@@ -31,8 +31,7 @@ identityContract:
   providerId:
     status: removed in #347 H1b (Players[].TankID no longer exists)
     note: >
-      The Tank01 playerID is only reachable through the CanonicalPlayerID identity and is used
-      solely to key the transitional Games.json GameHistory until #347 G3.
+      No Tank01 playerID is read any more; GameHistory comes from canonical facts since #347 G3.
 
 scoringContract:
   issue: 347
@@ -41,8 +40,8 @@ scoringContract:
   meaning: >
     Points, played games, snaps, attempts, touchdowns and the three prior seasons
     (PointHistory) are canonical NFL player stats scored with the league ScoringSettings,
-    not Tank01 PPR. Per-game FantasyPoints of final regular-season games in GameHistory use the
-    same points; playoff and not yet final games keep the Tank01 value. Salary, SalaryProjected,
+    not Tank01 PPR. Per-game FantasyPoints of every GameHistory game use the same scorer (since
+    #347 G3 also not yet final and postseason games). Salary, SalaryProjected,
     Ranking, Grading.Rank and the League salary cap follow from these inputs through the unchanged
     PowerShell formulas.
   identity: >
@@ -55,6 +54,17 @@ scoringContract:
     committed; persisting it as a derived-data product needs a publish-scope change of the Players
     workflow and is a separate approved step.
   validation: tools/players_league_scoring_shadow.py gate (Sleeper PlayerPoints reference, wired in build.yml)
+
+gameHistoryContract:
+  issue: 347
+  step: G3
+  source: tools/players_game_history.py (built inside the players_league_scoring.py export), converted by ConvertTo-PlayerGameHistory
+  meaning: >
+    Current-season games of a player from canonical player-stats, snap-counts, qbr-week,
+    player-game-long-gains, schedule and game finality; no Games.json and no Tank01. Team keys are
+    canonical abbreviations, GameID keeps the legacy provider spelling. QBRating, LongRush and
+    LongReceptions are null when the canonical source has no value (unknown, not zero). Details:
+    .ai-context/manual/data-sources.yaml players.gameHistoryContract and ADR-044.
 
 rankingContract:
   currentCombined:

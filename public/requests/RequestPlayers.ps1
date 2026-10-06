@@ -316,7 +316,6 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targetFile = Join-Path $scriptDir "..\data\Players.json"
 $backupDir = Join-Path $scriptDir "..\data\backup"
 if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
-$gamesFile = Join-Path $scriptDir "..\data\Games.json"
 $errorsFile = Join-Path $scriptDir "..\data\Errors.json"
 
 # --- Season aus config.ps1 ---
@@ -385,165 +384,9 @@ if (Test-Path $targetFile) {
 }
 
 
-# --- Load Games.json (alle Saisonspiele mit Stats) ---
-$playerHistory = @{}
-
 # Team → ByeWeek mapping aus dem kanonischen NFL-Spielplan (nicht aus bereits gespielten Games)
 $teamByeWeek = Get-CanonicalNflTeamByeWeeks -Season ([int]$seasonYear) -RepoRoot (Split-Path -Parent (Split-Path -Parent $scriptDir))
 Write-Host "Loaded bye weeks for $($teamByeWeek.Count) teams from canonical NFL schedule..." -ForegroundColor Yellow
-
-if (Test-Path $gamesFile) {
-    try {
-        $gamesRaw = Get-Content $gamesFile -Raw
-        $games = $gamesRaw | ConvertFrom-Json
-        Write-Host "Loaded $($games.Count) games from Games.json..." -ForegroundColor Yellow
-
-        # Sortiere Games nach GameID (neueste oben)
-        $games = $games | Sort-Object -Property gameID -Descending
-
-        foreach ($game in $games) {
-            if (-not $game.playerStats) { continue }
-
-            foreach ($playerKey in $game.playerStats.PSObject.Properties.Name) {
-                $p = $game.playerStats.$playerKey
-                if (-not $p.playerID) { continue }
-
-                $playerID = $p.playerID
-                if (-not $playerHistory.ContainsKey($playerID)) {
-                    $playerHistory[$playerID] = [ordered]@{
-                        TankID                 = $playerID
-                        GameHistory            = @()
-                    }
-                }
-
-                # --- GameInfo aufbauen (individuelle Teile aus Stat-Objekt übernehmen) ---
-                $gameStats = [ordered]@{}
-                $gameStats.GameID = $p.gameID
-
-                # Game Week ermitteln
-                if ($game.gameWeek -match 'Week (\d+)') {
-                    $gameWeek = [int]$matches[1]
-                } else {
-                    Write-Warning "Could not parse gameWeek: $($game.gameWeek)"
-                }
-
-                # --- Details bauen
-                $gameStats.GameDetails = [ordered]@{}
-                $gameStats.GameDetails.Week = $gameWeek
-                $gameStats.GameDetails.WeekFinal = $game.weekFinal
-                $gameStats.GameDetails.WeekPlayoff = $gameStats.GameDetails.Week -ge $playoffStartWeek -and $playoffStartWeek -gt 0
-                $gameStats.GameDetails.WeekScored = $gameStats.GameDetails.Week -le $lastWeek
-                $gameStats.GameDetails.Date = $game.gameDate
-                $gameStats.GameDetails.Home = $game.home
-                $gameStats.GameDetails.HomeID = $game.teamIDHome
-                $gameStats.GameDetails.Away = $game.away
-                $gameStats.GameDetails.AwayID = $game.teamIDAway
-                $gameStats.GameDetails.HomePoints = [int]$game.homePts
-                $gameStats.GameDetails.AwayPoints = [int]$game.awayPts
-
-                $gameStats.TeamID = $p.teamID
-                $gameStats.TeamAbv = $p.teamAbv
-                $gameStats.FantasyPoints = [double]$p.fantasyPointsDefault.PPR
-
-                # Touchdown Gesamtzahl pro Spieltag
-                $gameStats.Touchdowns = 0
-
-                if($p.snapCounts) {
-                    # Kicker erhalten pro Attempt einen Snap, alle anderen nehmen die Offensive Snaps
-                    if ($p.Kicking) {
-                        $gameStats.SnapCount = [int]$([int]$p.Kicking.fgAttempts + [int]$p.Kicking.xpAttempts)
-                        $gameStats.SnapPercentage = 1
-                    } else {
-                        $gameStats.SnapCount = [int]$p.snapCounts.offSnap
-                        $gameStats.SnapPercentage = [double]$p.snapCounts.offSnapPct
-                    }                    
-                } else {
-                    $gameStats.SnapCount = 0
-                    $gameStats.SnapPercentage = 0
-                }
-
-                $gameStats.Attempts = 0
-                if($p.Passing.passAttempts) { $gameStats.Attempts += [int]$p.Passing.passAttempts }
-                if($p.Receiving.targets) { $gameStats.Attempts += [int]$p.Receiving.targets }
-                if($p.Rushing.carries) { $gameStats.Attempts += [int]$p.Rushing.carries }
-                if($p.Kicking.fgAttempts) { $gameStats.Attempts += [int]$p.Kicking.fgAttempts }
-                if($p.Kicking.xpAttempts) { $gameStats.Attempts += [int]$p.Kicking.xpAttempts }
-
-                # QBR sauber in Double konvertieren, falls möglich
-                $qbrValue = $null
-                if ([double]::TryParse($pass.qbr, [ref]$qbrValue)) {
-                    $QBRating = $qbrValue
-                } else {
-                    $QBRating = $null  # oder 0, je nach Wunsch
-                }
-
-                if ($p.Passing) {
-                    $pass = $p.Passing
-                    $gameStats.Touchdowns += [int]$pass.passTD
-                    $gameStats.Passing = [PSCustomObject]@{
-                        QBRating        = $QBRating
-                        Rating          = [double]$pass.rtg
-                        PassAttempts    = [int]$pass.passAttempts
-                        PassAvg         = [double]$pass.passAvg
-                        PassTDs         = [int]$pass.passTD
-                        PassYards       = [int]$pass.passYds
-                        Interceptions   = [int]$pass.int
-                        PassCompletions = [int]$pass.passCompletions
-                    }
-                }
-                if ($p.Receiving) {
-                    $rec = $p.Receiving
-                    $gameStats.Touchdowns += [int]$rec.recTD
-                    $gameStats.Receiving = [PSCustomObject]@{
-                        Receptions       = [int]$rec.receptions
-                        ReceptionTDs     = [int]$rec.recTD
-                        LongReceptions   = [int]$rec.longRec
-                        Targets          = [int]$rec.targets
-                        ReceptionYards   = [int]$rec.recYds
-                        ReceptionAvg     = [double]$rec.recAvg
-                    }
-                }
-
-                if ($p.Rushing) {
-                    $rush = $p.Rushing
-                    $gameStats.Touchdowns += [int]$rush.rushTD
-                    $gameStats.Rushing = [PSCustomObject]@{
-                        RushAvg     = [double]$rush.rushAvg
-                        RushYards   = [int]$rush.rushYds
-                        Carries     = [int]$rush.carries
-                        LongRush    = [int]$rush.longRush
-                        RushTDs     = [int]$rush.rushTD
-                    }
-                }
-                if ($p.Kicking) {
-                    $kick = $p.Kicking
-                    $gameStats.Kicking = [PSCustomObject]@{
-                        KickingPts  = [double]$kick.kickingPts
-                        FgLong      = [int]$kick.fgLong
-                        FgMade      = [int]$kick.fgMade
-                        FgAttempts  = [int]$kick.fgAttempts
-                        FgMissed    = [int]$kick.fgMissed
-                        FgPct       = [double]$kick.fgPct
-                        XpMade      = [int]$kick.xpMade
-                        XpAttempts  = [int]$kick.xpAttempts
-                        XpMissed    = [int]$kick.xpMissed
-                    }
-                }
-
-                # Game zur Historie hinzufügen (vorne)
-                $playerHistory[$playerID].GameHistory += @($gameStats)
-
-            }             
-        }
-
-    } catch {
-        Write-Error "Error reading Games.json: $_"
-        return 1
-    }
-} else {
-    Write-Error "Games.json not found!"
-    return 1
-}
 
 
 # --- League scoring (#347 D4): canonical NFL stats scored with the league ScoringSettings ---
@@ -553,7 +396,6 @@ $leagueScoringExport = Invoke-PlayerLeagueScoringExport -SleeperIDs $leagueScori
 if ([int]$leagueScoringExport.Season -ne [int]$seasonYear) {
     throw "League scoring export season $($leagueScoringExport.Season) does not match LeagueYear $seasonYear."
 }
-$finalWeeksCurrent = [int[]]@($leagueScoringExport.FinalRegularWeeksCurrent)
 $identityHoldPlayers = @()
 
 $playerData = @()
@@ -606,27 +448,28 @@ foreach ($entry in $population.Players) {
     $injury = $injuryResult.Details
 
 
-    # --- Player Stats: Spiele aus Games.json (Tank01), Punkte und Spielzahlen aus dem Liga-Scoring ---
-    # GameHistory haengt bis G3 an Games.json ueber die Tank01-ID der kanonischen Identity (Uebergang, kein Live-Call).
-    $tankID = [string]$entry.Tank01ID
-    $stats = if ($tankID) { $playerHistory[$tankID] } else { $null }
+    # --- Player Stats: Spiele, Punkte und Spielzahlen aus den kanonischen NFL-Fakten (#347 G3, D4) ---
+    $leagueScoring = $leagueScoringExport.Players[[string]$playerID]
+    $gameHistory = @()
+    if ($leagueScoring -and $leagueScoring.Status -eq 'resolved') {
+        $gameHistory = @(ConvertTo-PlayerGameHistory -Entries $leagueScoring.GameHistory -PlayoffStartWeek $playoffStartWeek -LastLeagueWeek $lastWeek)
+    } elseif ($oldPlayersLookup.ContainsKey([string]$playerID) -and $oldPlayersLookup[[string]$playerID].GameHistory) {
+        # Identity hold: keep the last published games together with the other held values.
+        $gameHistory = @($oldPlayersLookup[[string]$playerID].GameHistory)
+    }
 
     # --- Potentielle Spiele berechnen (ByeWeek berücksichtigen) ---
     $gamesPotential = 0
-    $gameHistory = @()
-    if ($stats) {
+    if ($gameHistory.Count -gt 0) {
         $gamesPotential = $finalWeek
         if($byeWeek -le $finalWeek){
             $gamesPotential--
         }
-        $gameHistory = $stats.GameHistory
     }
 
-    $leagueScoring = $leagueScoringExport.Players[[string]$playerID]
     if ($leagueScoring -and $leagueScoring.Status -eq 'resolved') {
         $currentRows = $leagueScoring.Seasons[[string]$seasonYear]
         $current = Get-PlayerLeagueScoringCurrentStats -SeasonRows $currentRows -Position $position -LastWeek $lastWeek -GamesPotential $gamesPotential
-        Update-PlayerGameHistoryLeaguePoints -GameHistory $gameHistory -SeasonRows $currentRows -FinalWeeks $finalWeeksCurrent | Out-Null
         $pointHistory = [ordered]@{
             SeasonMinus1 = Get-PlayerLeagueScoringSeasonStats -SeasonRows $leagueScoring.Seasons[[string]($seasonYear - 1)] -Position $position -LastWeek $lastWeek
             SeasonMinus2 = Get-PlayerLeagueScoringSeasonStats -SeasonRows $leagueScoring.Seasons[[string]($seasonYear - 2)] -Position $position -LastWeek $lastWeek
@@ -691,7 +534,7 @@ foreach ($entry in $population.Players) {
 
     # --- Average letzte vier gescorte Spiele für Form-Grading berechnen ---
     $formValue = @()
-    $formValue = $stats.GameHistory | 
+    $formValue = $gameHistory | 
         Where-Object { $_.GameDetails.WeekFinal -and $_.GameDetails.WeekScored } |
         Select-Object -First 4
     

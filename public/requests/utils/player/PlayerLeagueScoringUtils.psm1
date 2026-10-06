@@ -2,9 +2,9 @@
 # League-scoring Players inputs (#347 D4)
 #
 # Consumes the export of tools/players_league_scoring.py: canonical NFL stats scored
-# with the league ScoringSettings, per Sleeper player ID and season. It replaces
-# Tank01 PPR points and the Tank01 past_seasons/Players_<year>.json archives as the
-# points source of RequestPlayers.ps1. Salary, ranking and grading formulas stay in
+# with the league ScoringSettings, per Sleeper player ID and season, plus the current-season
+# GameHistory entries (#347 G3, tools/players_game_history.py). It replaces Tank01 PPR points,
+# the Tank01 past_seasons/Players_<year>.json archives and Games.json as inputs of RequestPlayers.ps1. Salary, ranking and grading formulas stay in
 # RequestPlayers.ps1 / PlayerUtils.psm1 and are unchanged.
 # ===========================================================================
 
@@ -187,27 +187,95 @@ function Get-PlayerLeagueScoringCurrentStats {
     }
 }
 
-# Rescores the per-game points of the current season in place. Only final regular-season weeks
-# are replaced (a week without a stat row scores 0); playoff and not yet final games keep the
-# provider value. Returns the number of rescored games.
-function Update-PlayerGameHistoryLeaguePoints {
+# GameHistory entries of the export (tools/players_game_history.py) in the published Players.json shape,
+# newest game first. WeekPlayoff and WeekScored keep their League-week formulas here. Optional blocks
+# (Passing, Rushing, Receiving, Kicking) are only present when the export has them; LongRush,
+# LongReceptions and QBRating stay null when the canonical source has no value yet (unknown, not zero).
+function ConvertTo-PlayerGameHistory {
     param(
-        [AllowNull()][AllowEmptyCollection()]$GameHistory,
-        [AllowNull()]$SeasonRows,
-        [Parameter(Mandatory = $true)][int[]]$FinalWeeks
+        [AllowNull()][AllowEmptyCollection()]$Entries,
+        [Parameter(Mandatory = $true)][int]$PlayoffStartWeek,
+        [Parameter(Mandatory = $true)][int]$LastLeagueWeek
     )
 
-    $rescored = 0
-    foreach ($game in @($GameHistory)) {
-        if ($null -eq $game) { continue }
-        $week = [int]$game.GameDetails.Week
-        if ($game.GameDetails.WeekPlayoff -or ($FinalWeeks -notcontains $week)) { continue }
+    $history = @()
+    foreach ($entry in @($Entries)) {
+        if ($null -eq $entry) { continue }
+        $week = [int]$entry.Week
+        $game = [ordered]@{}
+        $game.GameID = [string]$entry.GameID
+        $game.GameDetails = [ordered]@{
+            Week        = $week
+            WeekFinal   = [bool]$entry.WeekFinal
+            WeekPlayoff = ($week -ge $PlayoffStartWeek -and $PlayoffStartWeek -gt 0)
+            WeekScored  = ($week -le $LastLeagueWeek)
+            Date        = [string]$entry.Date
+            Home        = [string]$entry.Home
+            HomeID      = [string]$entry.Home
+            Away        = [string]$entry.Away
+            AwayID      = [string]$entry.Away
+            HomePoints  = if ($null -ne $entry.HomePoints) { [int]$entry.HomePoints } else { 0 }
+            AwayPoints  = if ($null -ne $entry.AwayPoints) { [int]$entry.AwayPoints } else { 0 }
+        }
+        $game.TeamID = [string]$entry.TeamID
+        $game.TeamAbv = [string]$entry.TeamAbv
+        $game.FantasyPoints = [math]::Round([double]$entry.FantasyPoints, 2)
+        $game.Touchdowns = [int]$entry.Touchdowns
+        $game.SnapCount = [int]$entry.SnapCount
+        $game.SnapPercentage = [double]$entry.SnapPercentage
+        $game.Attempts = [int]$entry.Attempts
 
-        $row = if ($SeasonRows) { $SeasonRows[[string]$week] } else { $null }
-        $game.FantasyPoints = if ($row) { [math]::Round([double]$row.Points, 2) } else { 0.0 }
-        $rescored++
+        if ($entry.ContainsKey('Passing')) {
+            $pass = $entry.Passing
+            $game.Passing = [PSCustomObject]@{
+                QBRating        = if ($null -ne $pass.QBRating) { [double]$pass.QBRating } else { $null }
+                Rating          = [double]$pass.Rating
+                PassAttempts    = [int]$pass.PassAttempts
+                PassAvg         = [double]$pass.PassAvg
+                PassTDs         = [int]$pass.PassTDs
+                PassYards       = [int]$pass.PassYards
+                Interceptions   = [int]$pass.Interceptions
+                PassCompletions = [int]$pass.PassCompletions
+            }
+        }
+        if ($entry.ContainsKey('Receiving')) {
+            $rec = $entry.Receiving
+            $game.Receiving = [PSCustomObject]@{
+                Receptions     = [int]$rec.Receptions
+                ReceptionTDs   = [int]$rec.ReceptionTDs
+                LongReceptions = if ($null -ne $rec.LongReceptions) { [int]$rec.LongReceptions } else { $null }
+                Targets        = [int]$rec.Targets
+                ReceptionYards = [int]$rec.ReceptionYards
+                ReceptionAvg   = [double]$rec.ReceptionAvg
+            }
+        }
+        if ($entry.ContainsKey('Rushing')) {
+            $rush = $entry.Rushing
+            $game.Rushing = [PSCustomObject]@{
+                RushAvg  = [double]$rush.RushAvg
+                RushYards = [int]$rush.RushYards
+                Carries  = [int]$rush.Carries
+                LongRush = if ($null -ne $rush.LongRush) { [int]$rush.LongRush } else { $null }
+                RushTDs  = [int]$rush.RushTDs
+            }
+        }
+        if ($entry.ContainsKey('Kicking')) {
+            $kick = $entry.Kicking
+            $game.Kicking = [PSCustomObject]@{
+                KickingPts = [double]$kick.KickingPts
+                FgLong     = [int]$kick.FgLong
+                FgMade     = [int]$kick.FgMade
+                FgAttempts = [int]$kick.FgAttempts
+                FgMissed   = [int]$kick.FgMissed
+                FgPct      = [double]$kick.FgPct
+                XpMade     = [int]$kick.XpMade
+                XpAttempts = [int]$kick.XpAttempts
+                XpMissed   = [int]$kick.XpMissed
+            }
+        }
+        $history += , $game
     }
-    return $rescored
+    return $history
 }
 
 # Identity hold: the player has no unique canonical identity for the current season, so no league
@@ -259,4 +327,4 @@ Export-ModuleMember -Function `
     Get-PlayerLeagueScoringPlayedRows, `
     Get-PlayerLeagueScoringSeasonStats, `
     Get-PlayerLeagueScoringCurrentStats, `
-    Update-PlayerGameHistoryLeaguePoints
+    ConvertTo-PlayerGameHistory
