@@ -50,6 +50,7 @@ import {
   hasMatchupPlayerStatus,
   type MatchupPlayerStatusTeamView
 } from '../matchup-player-status/matchup-player-status.util';
+import { findNflTeam } from '../../utils/nfl-team-key.util';
 
 interface FantasyGamePlayerDisplay {
   PlayerID: string;
@@ -260,7 +261,7 @@ export class FantasyGameContextDialogComponent {
   }
 
   nflLogo(teamID: string | number): string | null {
-    return (this.data.nflTeams ?? []).find(team => String(team.ID) === String(teamID))?.Logo || null;
+    return findNflTeam(this.data.nflTeams ?? [], teamID)?.Logo || null;
   }
 
   playerName(playerID: string): string {

@@ -16,6 +16,7 @@ import {
   getNextDecisionWindow,
   type DecisionWindowStatusBadge
 } from './decision-window-view.util';
+import { findNflTeam } from './nfl-team-key.util';
 
 export interface LeagueTimelineDraft {
   name: string;
@@ -296,7 +297,7 @@ function resolveNflTeamBrand(
   nflTeams: NFLTeam[]
 ): LeagueTimelineNflTeamBrand {
   const normalizedAbbr = teamAbbr?.trim().toUpperCase() ?? '';
-  const team = nflTeams.find(candidate => candidate.ID === teamId)
+  const team = findNflTeam(nflTeams, teamId)
     ?? nflTeams.find(candidate => candidate.Abv.trim().toUpperCase() === normalizedAbbr);
 
   return {
