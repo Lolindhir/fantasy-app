@@ -56,6 +56,8 @@ SNAPSHOT_PATH = "source-data/nfl/platform/sleeper/players.json"
 PROFILES_PATH = "source-data/nfl/player-profiles/nflverse.json"
 FANTASYPROS_URL = "https://www.fantasypros.com/nfl/players/{slug}.php"
 ESPN_PLAYER_URL = "https://www.espn.com/nfl/player/_/id/{espn_id}/{slug}"
+# The NFL image CDN serves the original (3400x2450 px, 1 to 5 MB); the app shows 34 to 60 px, so request 160 px (about 6 KB).
+HEADSHOT_WIDTH = 160
 ESPN_HEADSHOT_URL = "https://a.espncdn.com/i/headshots/nfl/players/full/{espn_id}.png"
 REQUIRED_SNAPSHOT_FIELDS = (
     "Status", "Team", "Position", "FantasyPositions", "BirthDate", "FullName", "FirstName", "LastName",
@@ -196,6 +198,17 @@ def short_name(display_name: str) -> str | None:
     return f"{parts[0][0]}. {parts[1]}"
 
 
+def sized_headshot(url: str | None) -> str | None:
+    """Add a width transformation to an NFL image CDN link; other links and already sized links stay unchanged."""
+    if not url or "static.www.nfl.com/image/upload/" not in url:
+        return url
+    head, _, tail = url.partition("/image/upload/")
+    transform, sep, rest = tail.partition("/")
+    if not sep or any(part.startswith("w_") for part in transform.split(",")):
+        return url
+    return f"{head}/image/upload/{transform},w_{HEADSHOT_WIDTH}/{rest}"
+
+
 def derive_profile(display_name: str | None, headshot: str | None, espn_id: str | None) -> dict[str, Any]:
     """Name short, picture and profile links from canonical facts; nothing is taken from the published file.
 
@@ -204,7 +217,7 @@ def derive_profile(display_name: str | None, headshot: str | None, espn_id: str 
     """
     name = (display_name or "").strip()
     slug = profile_slug(name) if name else ""
-    picture = headshot or (ESPN_HEADSHOT_URL.format(espn_id=espn_id) if espn_id else None)
+    picture = sized_headshot(headshot) or (ESPN_HEADSHOT_URL.format(espn_id=espn_id) if espn_id else None)
     return {
         "NameShort": short_name(name) if name else None,
         "Picture": picture,

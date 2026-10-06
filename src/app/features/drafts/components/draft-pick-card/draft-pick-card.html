@@ -8,7 +8,7 @@
   <span class="tile-pick-label">{{ item.pick.DisplayPick }}</span>
 
   @if (item.selectedPlayer) {
-    <img class="tile-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
+    <img loading="lazy" decoding="async" class="tile-player-picture" [src]="item.selectedPlayer.Picture" alt="" />
     <img class="tile-owner-avatar" [src]="item.currentOwner.avatar" alt="" />
   } @else {
     <img class="tile-open-owner-logo" [src]="item.currentOwner.avatar" alt="" />

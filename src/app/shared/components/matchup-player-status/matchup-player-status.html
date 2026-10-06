@@ -25,7 +25,7 @@
           (click)="playerSelected.emit(player.playerID)"
         >
           <span class="mps-photo-wrap">
-            <img *ngIf="player.picture as picture" [src]="picture" alt="" class="mps-photo" />
+            <img loading="lazy" decoding="async" *ngIf="player.picture as picture" [src]="picture" alt="" class="mps-photo" />
             <img *ngIf="player.nflLogo as logo" [src]="logo" alt="" class="mps-nfl-logo" />
           </span>
           <span class="mps-player-copy">

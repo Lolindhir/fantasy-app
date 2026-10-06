@@ -459,7 +459,7 @@
               (click)="openRecapPlayerDetail(player)"
             >
               <span class="weekly-recap-player-picture">
-                <img *ngIf="recapPlayerPicture(player) as picture" class="weekly-recap-player-portrait" [src]="picture" alt="" />
+                <img loading="lazy" decoding="async" *ngIf="recapPlayerPicture(player) as picture" class="weekly-recap-player-portrait" [src]="picture" alt="" />
                 <span *ngIf="!recapPlayerPicture(player)">{{ player.Position }}</span>
               </span>
               <span class="weekly-recap-player-copy">
