@@ -48,6 +48,9 @@ jobs:
           python -m unittest tools.tests.test_league_source_transaction_shadow -v
           python -m unittest tools.tests.test_league_source_transaction_consumer -v
 
+      - name: Run consumer read classification test
+        run: python -m unittest tools.tests.test_consumer_read_classification -v
+
       - name: Run PowerShell data regression tests
         shell: pwsh
         run: |
