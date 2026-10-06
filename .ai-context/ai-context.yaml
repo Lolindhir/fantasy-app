@@ -146,6 +146,7 @@ shortContext:
   derived-data/**: Physischer kanonischer Owner fuer reproduzierbare consumer-neutrale Shared-Derived-Daten nach ADR-038; erster produktiver Datensatz ist PlayerWeekFantasy
   .ai-context/manual/player-week-fantasy.yaml: Kanonischer Shared-Derived-Vertrag fuer PlayerWeekFantasy mit scoring-spezifischer Identitaet, semantischem SettingsHash sowie Actual/Projection/PredictionRange-Semantik
   .ai-context/manual/historical-fantasy-scoring.yaml: ADR-033 und kanonischer Hardening-Vertrag für historische/What-if-Neuberechnung aus persistierten NFL-Fakten plus explizitem League-Scoringprofil; Missing historisch ist fail-closed, Provider-Fantasy-Punkte bleiben validation-only und nfl-reise ist die aktuelle CanonicalLeagueID
+  .ai-context/manual/source-of-truth-matrix.yaml#consumerReadClassification: Pro Datei klassifizierte Provider- und public/data-Reads aller App-, Fantasy-Management- und Tooling-Consumer (#347 K1); tools/tests/test_consumer_read_classification.py schlaegt bei jedem nicht klassifizierten Read fehl
   .ai-context/manual/provider-join-invariants.yaml: Fail-closed Cardinality-/Uniqueness-Vertrag für Player-, Team-, Draft-, Transaction- und Historical-Provider-Joins
   .ai-context/manual/source-of-truth-matrix.yaml: Konsolidierte feldbezogene Primary-/Secondary-/Fallback-Entscheidung für NFL- und Fantasy-League-Quellen sowie heutige Runtime-vs.-kanonische Zielbesitzer
   public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
