@@ -304,7 +304,7 @@ function classifySlot(
 
 function outlineFor(kind: MatchupProgressKind): MatchupProgressOutline {
   if (kind === 'next') return 'next';
-  if (kind === 'repairable') return 'repairable';
+  if (kind === 'repairable' || kind === 'irreparable') return 'repairable';
   if (kind === 'questionable') return 'questionable';
   if (kind === 'unknown') return 'unknown';
   return null;

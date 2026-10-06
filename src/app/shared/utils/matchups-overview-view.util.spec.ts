@@ -246,6 +246,7 @@ describe('matchups overview view utility', () => {
     ]);
     expect(left?.groups.find(group => group.kind === 'next')?.outline).toBe('next');
     expect(left?.groups.find(group => group.kind === 'repairable')?.outline).toBe('repairable');
+    expect(left?.groups.find(group => group.kind === 'irreparable')?.outline).toBe('repairable');
     expect(left?.groups.find(group => group.kind === 'unknown')?.outline).toBe('unknown');
   });
 
