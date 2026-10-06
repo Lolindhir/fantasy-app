@@ -956,14 +956,11 @@ consumerReadClassification:
     mention-only: the token appears in a comment or docstring, not in an executed read
     legacy-read-model-pending: a base fact is still read from a published read model; open migration or review item
   consumers:
-    fantasy-management/_ai/kicker-weekly-research-config.json:
-      reads:
-        legacy:Schedule: legacy-read-model-pending
-      note: 'Declares the published App Schedule.json as input for the kicker weekly research plan; same open follow-up as build_kicker_weekly_research_plan.py.'
     fantasy-management/_ai/scripts/build_kicker_weekly_research_plan.py:
       reads:
-        legacy:Schedule: legacy-read-model-pending
-      note: 'Reads the published App Schedule.json (path configured in kicker-weekly-research-config.json) instead of the canonical NFL schedule. Open follow-up, not migrated by K1.'
+        provider:cbssports: display-link-construction
+        provider:espn: display-link-construction
+      note: 'Reads the canonical NFL schedule, game finality and team registry from source-data/nfl (#347 FM-read step); the ESPN and CBS box-score URLs are built for display only, nothing is fetched.'
     fantasy-management/_ai/scripts/canonical_league_ownership.py:
       reads:
         legacy:League: intentional-overlay
@@ -1041,7 +1038,7 @@ consumerReadClassification:
         legacy:League: intentional-overlay
         legacy:Players: legacy-read-model-pending
         legacy:Timestamps: freshness-trigger
-      note: 'League.json: display overlay. Timestamps.json: freshness bridge. Players.json: still declared as input; build_fantasy_operations_inputs.py reads Players Status (ops-inputs-legacy-status in source-of-truth-matrix); field-level migration open.'
+      note: 'League.json: display overlay. Timestamps.json: freshness bridge. Players.json: still declared as input; build_fantasy_operations_inputs.py reads the league-derived Salary and SalaryProjected plus Age, Year, IsFreeAgent and the injury fields (Name, Position, Team and Status already come from the canonical Sleeper snapshot). Salary has no canonical owner until the derived-data centralization Issue (Shared Derived: Salary, Ranking, Grading und Salary Cap nach derived-data zentralisieren) lands; the remaining reads are bounded to those fields.'
     fantasy-management/automation/jobs/entity-observation.json:
       reads:
         legacy:League: intentional-overlay
@@ -1051,8 +1048,7 @@ consumerReadClassification:
       reads:
         legacy:League: intentional-overlay
         legacy:Timestamps: freshness-trigger
-        legacy:Transactions: legacy-read-model-pending
-      note: 'Weekly review job input declaration. Transactions.json is declared here although no Fantasy Management script reads it (J1 finding); open follow-up to remove or migrate.'
+      note: 'Weekly review job input declaration. The Transactions.json dependency was migrated to the canonical League transaction partition (source-data/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-<n>.json) in the #347 FM-read step; League.json is the display overlay, Timestamps.json the freshness bridge.'
     fantasy-management/automation/kicker-streaming-input-materialization.json:
       reads:
         legacy:League: intentional-overlay
@@ -1066,7 +1062,7 @@ consumerReadClassification:
         legacy:League: intentional-overlay
         legacy:Players: legacy-read-model-pending
         legacy:Timestamps: freshness-trigger
-      note: 'League.json: managed-team display and ScoringType overlay (6S). Timestamps.json: freshness bridge. Players.json: declared input whose remaining field reads were not individually verified in K1; open follow-up.'
+      note: 'League.json: managed-team display and ScoringType overlay (6S). Timestamps.json: freshness bridge. Players.json: declared input; build_player_signal_dataset.py takes the population list plus the league-derived Salary and SalaryProjected, Age, Year, IsFreeAgent and the injury fields from it (field audit #347 FM-read step; Name, Position, Team and Status are canonical Sleeper). Salary has no canonical owner until the derived-data centralization Issue lands; the population/injury/free-agent reads can move to tools/players_population.py once that Issue decides the Players owner.'
     fantasy-management/automation/runner-config.json:
       reads:
         legacy:League: intentional-overlay
