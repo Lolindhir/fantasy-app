@@ -362,7 +362,7 @@ playerProfilesContract:
     merges or re-links a player. A duplicate gsis_id, or two rows resolving to one CanonicalPlayerID, fails the
     materialization closed because a profile join would be ambiguous. Identity materialization does not read this output.
   audit: phase1Datasets.playerProfiles (sourceRowCount, recordCount, unresolvedIdentityCount)
-  consumer: H2 (Players profile, NameShort, Picture). Consumers join by CanonicalPlayerID only.
+  consumer: tools/players_population.py (#347 H2 - NameShort, Picture, ESPN and FantasyPros links via DisplayName/Headshot). Consumers join by CanonicalPlayerID only.
 
 canonicalOutputs:
   schedules: source-data/nfl/schedules/<season>.json

@@ -605,9 +605,6 @@ foreach ($entry in $population.Players) {
     $injured = $injuryResult.Injured
     $injury = $injuryResult.Details
 
-    # --- Interimswerte bis H2: veroeffentlichte Werte uebernehmen, sonst ESPN-Headshot aus der Identity ---
-    $profileLinks = Get-InterimPlayerProfileLinks -OldPlayer $oldPlayersLookup[$playerID] -ESPNAthleteID $entry.ESPNAthleteID
-
 
     # --- Player Stats: Spiele aus Games.json (Tank01), Punkte und Spielzahlen aus dem Liga-Scoring ---
     # GameHistory haengt bis G3 an Games.json ueber die Tank01-ID der kanonischen Identity (Uebergang, kein Live-Call).
@@ -719,7 +716,7 @@ foreach ($entry in $population.Players) {
         Name                         = $entry.FullName
         NameFirst                    = $entry.FirstName
         NameLast                     = $entry.LastName
-        NameShort                    = $profileLinks.NameShort
+        NameShort                    = $entry.NameShort
         TeamID                       = $entry.TeamID
         TeamAbbr                     = $entry.TeamAbbr
         ByeWeek                      = $byeWeek
@@ -731,10 +728,9 @@ foreach ($entry in $population.Players) {
         Number                       = if ($null -ne $entry.Number) { [string]$entry.Number } else { "" }
         Salary                       = [math]::Round($salaryDollarsFantasy)
         SalaryProjected              = [math]::Round($salaryDollarsProjectedFantasy)
-        Picture                      = $profileLinks.Picture
-        FantasyPros                  = $profileLinks.FantasyPros
-        ESPN                         = $profileLinks.ESPN
-        ESPNID                       = $entry.ESPNID
+        Picture                      = $entry.Picture
+        FantasyPros                  = $entry.FantasyPros
+        ESPN                         = $entry.ESPN
         SleeperDepthChartPosition    = $depthChart.Position
         SleeperDepthChartOrder       = $depthChart.Order
         College                      = $entry.College

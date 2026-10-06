@@ -53,6 +53,10 @@ class PopulationFixture:
         shutil.copy(ROOT / "source-data/nfl/teams.json", self.root / "source-data/nfl/teams.json")
         write(self.root, "source-data/nfl/identities/players.json", {"Players": [
             {"CanonicalPlayerID": f"NFLP-{i}", "IDs": {"Sleeper": i, "Tank01": f"T{i}", "ESPN": f"E{i}"}} for i in ids]})
+        write(self.root, "source-data/nfl/player-profiles/nflverse.json", {
+            "SourceDataset": "nflverse.players",
+            "Records": [{"CanonicalPlayerID": f"NFLP-{i}", "DisplayName": f"Prof {i} Jr.", "Headshot": f"https://img/{i}.png"}
+                        for i in ids if i != "nohead"]})
         write(self.root, "source-data/nfl/identities/provider-mappings.json", {"Mappings": [
             {"Provider": "Sleeper", "ExternalID": i, "CanonicalPlayerID": f"NFLP-{i}", "FirstObservedSeason": 2020,
              "LastObservedSeason": SEASON} for i in ids], "Conflicts": []})
@@ -119,6 +123,34 @@ class PopulationRuleTests(unittest.TestCase):
         self.assertEqual((by_id["3"]["TeamAbbr"], by_id["3"]["Position"]), ("WAS", "RB"))
         self.assertEqual(by_id["1"]["Tank01ID"], "T1")
 
+    def test_profile_fields_derive_from_canonical_profile_and_identity(self) -> None:
+        rows = [snapshot_row("1"), snapshot_row("nohead", FullName="Zoë O'Neil-Smith Jr.", ESPNID="777")]
+        result = self.build(rows, roster=["1", "nohead"])
+        by_id = {p["SleeperID"]: p for p in result["Players"]}
+        one = by_id["1"]
+        self.assertEqual(one["Picture"], "https://img/1.png")
+        self.assertEqual(one["NameShort"], "P. 1 Jr.")
+        self.assertEqual(one["FantasyPros"], "https://www.fantasypros.com/nfl/players/prof-1-jr.php")
+        self.assertEqual(one["ESPN"], "https://www.espn.com/nfl/player/_/id/E1/prof-1-jr")
+        fallback = by_id["nohead"]  # no nflverse profile: Sleeper name, ESPN headshot of the canonical ESPN ID
+        self.assertEqual(fallback["Picture"], "https://a.espncdn.com/i/headshots/nfl/players/full/Enohead.png")
+        self.assertEqual(fallback["FantasyPros"], "https://www.fantasypros.com/nfl/players/zoe-oneil-smith-jr.php")
+
+    def test_derive_profile_leaves_unknown_parts_null(self) -> None:
+        derived = pop.derive_profile("Cher", None, None)
+        self.assertEqual(derived, {"NameShort": None, "Picture": None,
+                                   "FantasyPros": "https://www.fantasypros.com/nfl/players/cher.php", "ESPN": None})
+        self.assertEqual(pop.derive_profile(None, None, "5")["FantasyPros"], None)
+        self.assertEqual(pop.short_name("Marvin Harrison Jr."), "M. Harrison Jr.")
+        self.assertEqual(pop.profile_slug("Amon-Ra St. Brown"), "amon-ra-st-brown")
+
+    def test_missing_profiles_fail_closed(self) -> None:
+        fixture = PopulationFixture([snapshot_row("1")], roster=["1"])
+        self.addCleanup(fixture.close)
+        (fixture.root / "source-data/nfl/player-profiles/nflverse.json").unlink()
+        with self.assertRaises(pop.PopulationError):
+            fixture.build()
+
     def test_unknown_team_fails_closed(self) -> None:
         with self.assertRaises(pop.PopulationError):
             self.build([snapshot_row("1", Team="XXX")], roster=["1"])
@@ -160,6 +192,8 @@ class GeneratorCutoverTests(unittest.TestCase):
         self.assertNotIn("api.sleeper.app", source)
         self.assertNotIn("$tankPlayers", source)
         self.assertIn("Invoke-PlayerPopulationExport", source)
+        self.assertNotIn("Get-InterimPlayerProfileLinks", source)
+        self.assertNotIn("$profileLinks", source)
         self.assertNotRegex(source, r"TankID\s+=\s+\$entry")
 
 

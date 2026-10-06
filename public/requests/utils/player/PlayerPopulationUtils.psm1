@@ -86,38 +86,6 @@ function ConvertTo-PlayerInjuryDetails {
     }
 }
 
-# Interim until H2 derives picture and links from canonical sources: values already published for a player
-# are carried forward; a player without a published record gets the ESPN headshot from the canonical ESPN
-# athlete ID (the pattern of the published values), or null.
-function Get-InterimPlayerProfileLinks {
-    param(
-        [AllowNull()]$OldPlayer,
-        [AllowNull()][string]$ESPNAthleteID
-    )
-
-    $picture = $null
-    $fantasyPros = $null
-    $espn = $null
-    $nameShort = $null
-    if ($OldPlayer) {
-        $picture = $OldPlayer.Picture
-        $fantasyPros = $OldPlayer.FantasyPros
-        $espn = $OldPlayer.ESPN
-        $nameShort = $OldPlayer.NameShort
-    }
-    if (-not $picture -and $ESPNAthleteID) {
-        $picture = "https://a.espncdn.com/i/headshots/nfl/players/full/$ESPNAthleteID.png"
-    }
-
-    return [PSCustomObject]@{
-        Picture     = $picture
-        FantasyPros = $fantasyPros
-        ESPN        = $espn
-        NameShort   = $nameShort
-    }
-}
-
 Export-ModuleMember -Function `
     Invoke-PlayerPopulationExport, `
-    ConvertTo-PlayerInjuryDetails, `
-    Get-InterimPlayerProfileLinks
+    ConvertTo-PlayerInjuryDetails

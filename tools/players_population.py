@@ -32,7 +32,9 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import re
 import sys
+import unicodedata
 from collections import Counter
 from datetime import date
 from pathlib import Path
@@ -51,6 +53,10 @@ from players_league_scoring import (  # noqa: E402
 SCHEMA_VERSION = 1
 APP_FANTASY_POSITIONS = ("TE", "QB", "RB", "WR", "K")
 SNAPSHOT_PATH = "source-data/nfl/platform/sleeper/players.json"
+PROFILES_PATH = "source-data/nfl/player-profiles/nflverse.json"
+FANTASYPROS_URL = "https://www.fantasypros.com/nfl/players/{slug}.php"
+ESPN_PLAYER_URL = "https://www.espn.com/nfl/player/_/id/{espn_id}/{slug}"
+ESPN_HEADSHOT_URL = "https://a.espncdn.com/i/headshots/nfl/players/full/{espn_id}.png"
 REQUIRED_SNAPSHOT_FIELDS = (
     "Status", "Team", "Position", "FantasyPositions", "BirthDate", "FullName", "FirstName", "LastName",
     "YearsExp", "College", "HighSchool", "Number", "ESPNID", "InjuryStatus", "InjuryStartDate",
@@ -152,7 +158,7 @@ def provider_ids_by_canonical(repo_root: Path) -> dict[str, dict[str, str]]:
     """Provider IDs RequestPlayers still needs per CanonicalPlayerID.
 
     Tank01 is a transition key only (until G3): GameHistory still reads Games.json by the Tank01 player
-    ID. ESPN is the athlete ID used for the interim headshot of players without a published value (until H2).
+    ID. ESPN is the athlete ID for the ESPN profile link and the headshot fallback (H2).
     """
     payload = read_json(repo_root / "source-data/nfl/identities/players.json")
     out: dict[str, dict[str, str]] = {}
@@ -162,6 +168,49 @@ def provider_ids_by_canonical(repo_root: Path) -> dict[str, dict[str, str]]:
         if wanted:
             out[str(record["CanonicalPlayerID"])] = wanted
     return out
+
+
+def load_profiles(repo_root: Path) -> dict[str, dict[str, Any]]:
+    """nflverse player profiles (F2) by CanonicalPlayerID."""
+    path = repo_root / PROFILES_PATH
+    if not path.is_file():
+        raise PopulationError(f"Canonical nflverse player profiles are required: {PROFILES_PATH}")
+    payload = read_json(path)
+    if payload.get("SourceDataset") != "nflverse.players" or not isinstance(payload.get("Records"), list):
+        raise PopulationError(f"Unexpected canonical player profile layout: {PROFILES_PATH}")
+    return {str(r["CanonicalPlayerID"]): r for r in payload["Records"] if r.get("CanonicalPlayerID")}
+
+
+def profile_slug(name: str) -> str:
+    """Lower-case ASCII slug used by the FantasyPros and ESPN profile URLs (apostrophes and dots dropped)."""
+    ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+    ascii_name = re.sub(r"[.'\u2019,]", "", ascii_name)
+    return re.sub(r"[^a-z0-9]+", "-", ascii_name).strip("-")
+
+
+def short_name(display_name: str) -> str | None:
+    """First initial plus the rest of the display name ("Marvin Harrison Jr." -> "M. Harrison Jr.")."""
+    parts = display_name.strip().split(None, 1)
+    if len(parts) < 2 or not parts[0]:
+        return None
+    return f"{parts[0][0]}. {parts[1]}"
+
+
+def derive_profile(display_name: str | None, headshot: str | None, espn_id: str | None) -> dict[str, Any]:
+    """Name short, picture and profile links from canonical facts; nothing is taken from the published file.
+
+    Picture is the nflverse headshot, falling back to the ESPN headshot of the canonical ESPN athlete ID.
+    Links are null when the name slug or the ESPN athlete ID is missing (never a link with an empty part).
+    """
+    name = (display_name or "").strip()
+    slug = profile_slug(name) if name else ""
+    picture = headshot or (ESPN_HEADSHOT_URL.format(espn_id=espn_id) if espn_id else None)
+    return {
+        "NameShort": short_name(name) if name else None,
+        "Picture": picture,
+        "FantasyPros": FANTASYPROS_URL.format(slug=slug) if slug else None,
+        "ESPN": ESPN_PLAYER_URL.format(espn_id=espn_id, slug=slug) if slug and espn_id else None,
+    }
 
 
 def _team(registry: NflTeamRegistry, value: Any, season: int, label: str) -> str | None:
@@ -181,6 +230,7 @@ def build_population(repo_root: Path, league_id: str, season: int) -> dict[str, 
     draft_ids = draft_basis(repo_root, season)
     owned = league_owned_sleeper_ids(repo_root, league_id, season)
     provider_ids = provider_ids_by_canonical(repo_root)
+    profiles = load_profiles(repo_root)
 
     players: list[dict[str, Any]] = []
     skipped: Counter = Counter()
@@ -210,12 +260,17 @@ def build_population(repo_root: Path, league_id: str, season: int) -> dict[str, 
             skipped["no_reason" if status == SleeperIdentityResolver.RESOLVED else f"no_reason_{status}"] += 1
             continue
         team = _team(registry, row.get("Team"), season, f"Sleeper player {sleeper_id}")
+        profile = profiles.get(cid) if cid else None
+        espn_id = provider_ids.get(cid, {}).get("ESPN") if cid else None
+        espn_id = espn_id or (str(row["ESPNID"]) if row.get("ESPNID") else None)
+        derived = derive_profile(
+            (profile or {}).get("DisplayName") or row.get("FullName"), (profile or {}).get("Headshot"), espn_id
+        )
         players.append({
             "SleeperID": sleeper_id,
             "CanonicalPlayerID": cid,
             "IdentityStatus": status,
             "Tank01ID": provider_ids.get(cid, {}).get("Tank01") if cid else None,
-            "ESPNAthleteID": provider_ids.get(cid, {}).get("ESPN") if cid else None,
             "Reasons": reasons,
             "Position": position,
             "TeamAbbr": team,
@@ -229,7 +284,10 @@ def build_population(repo_root: Path, league_id: str, season: int) -> dict[str, 
             "College": row.get("College"),
             "HighSchool": row.get("HighSchool"),
             "Number": row.get("Number"),
-            "ESPNID": row.get("ESPNID"),
+            "NameShort": derived["NameShort"],
+            "Picture": derived["Picture"],
+            "FantasyPros": derived["FantasyPros"],
+            "ESPN": derived["ESPN"],
             "BirthDate": row["BirthDate"],
             "Injury": {
                 "Status": row.get("InjuryStatus"),
@@ -297,6 +355,10 @@ def build_shadow(repo_root: Path, league_id: str, season: int, published_path: P
             "Status": (old.get("Status"), cur["Status"]),
             "Name": (old.get("Name"), cur["FullName"]),
             "Position": (old.get("Position"), cur["Position"]),
+            "NameShort": (old.get("NameShort") or short_name(str(old.get("Name") or "")), cur["NameShort"]),
+            "Picture": (old.get("Picture"), cur["Picture"]),
+            "FantasyPros": (old.get("FantasyPros"), cur["FantasyPros"]),
+            "ESPN": (old.get("ESPN"), cur["ESPN"]),
         }
         for field, (a, b) in checks.items():
             if a != b:
