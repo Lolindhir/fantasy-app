@@ -8,6 +8,7 @@ try {
     Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\CanonicalDraftUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\CanonicalLeagueCoreUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -382,8 +383,14 @@ function Get-DraftJsonFileContent {
 }
 
 function Get-DraftLeagueLocal {
-    $config = Get-Config
-    return Get-DraftJsonFileContent -filePath $config.LeagueFile -description "League"
+    # Draft generation only needs the current league team list (TeamID = roster ID). It comes from the
+    # canonical League Core source (members + rosters), not from the published League.json read model.
+    # A missing or inconsistent canonical source fails closed instead of yielding an empty team list.
+    param([string]$CanonicalLeagueID = "nfl-reise")
+
+    return [PSCustomObject][ordered]@{
+        Teams = @(Get-CanonicalCurrentTeamsForLeague -CanonicalLeagueID $CanonicalLeagueID)
+    }
 }
 
 function Get-DraftStandingsLocal {

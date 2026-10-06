@@ -226,6 +226,8 @@ $transactionPickUtils = Get-Content "$PSScriptRoot\utils\league\TransactionDraft
 $historicalIdentityUtils = Get-Content "$PSScriptRoot\utils\league\HistoricalTransactionDraftPickIdentityUtils.psm1" -Raw
 
 Assert-True -Condition $draftUtils.Contains("Get-CanonicalSleeperDrafts") -Message "Current draft mapping is not backed by Canonical League Source Data."
+Assert-True -Condition $draftUtils.Contains("Get-CanonicalCurrentTeamsForLeague") -Message "Draft team list is not backed by canonical League Core source data."
+Assert-True -Condition (-not $draftUtils.Contains("LeagueFile")) -Message "Draft generation still reads the published League.json read model."
 Assert-True -Condition (-not $draftUtils.Contains("Get-SleeperDrafts -leagueID")) -Message "Current draft mapping still performs a direct Sleeper draft-index read."
 Assert-True -Condition (-not $draftUtils.Contains("Get-SleeperDraft -draftID")) -Message "Current draft mapping still performs a direct Sleeper draft-detail read."
 Assert-True -Condition $draftHistoryUtils.Contains("Get-CanonicalSleeperDrafts -Season") -Message "Historical draft generation is not backed by Canonical League Source Data."

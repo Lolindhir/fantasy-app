@@ -1131,10 +1131,9 @@ consumerReadClassification:
       note: 'Draft history and Transactions form one coupled rebuild (ADR-026).'
     public/requests/utils/league/DraftUtils.psm1:
       reads:
-        legacy:League: legacy-read-model-pending
         legacy:Standings: app-read-model-chain
         legacy:Transactions: app-read-model-chain
-      note: 'Standings and Transactions are chain inputs of the coupled draft rebuild. League.json (team list and league context via Get-DraftLeagueLocal) is a legacy read of a published read model; the I3 review item (justify or move to Get-CanonicalCurrentTeamsForLeague) is still open.'
+      note: 'Standings and Transactions are chain inputs of the coupled draft rebuild. The league team list (Get-DraftLeagueLocal) comes from the canonical League Core source via Get-CanonicalCurrentTeamsForLeague (#347 I3-Rest); League.json is no longer read.'
     public/requests/utils/league/FantasyGameContextCore.ps1:
       reads:
         sleeper-api:Get-SleeperMatchups: legacy-provider-path
