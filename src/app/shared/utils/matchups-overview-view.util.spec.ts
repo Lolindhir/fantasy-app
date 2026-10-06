@@ -215,6 +215,15 @@ describe('matchups overview view utility', () => {
     expect(progress?.groups[0].outline).toBe('repairable');
   });
 
+  it('shows a bye slot as a red problem while unknown evidence stays unknown', () => {
+    const progress = buildMatchupStarterProgress(
+      team([slot('QB-1', 'bye'), slot('RB-2', 'unknown')]), 'next', 'left'
+    );
+    expect(progress?.groups.map(group => group.kind)).toEqual(['repairable', 'unknown']);
+    expect(progress?.groups[0].outline).toBe('repairable');
+    expect(progress?.groups[1].outline).toBe('unknown');
+  });
+
   it('renders completed, live, next, later and problem semantics concurrently with precedence intact', () => {
     const repairable = {
       ProblemCode: 'OPEN_STARTER_SLOT' as const,

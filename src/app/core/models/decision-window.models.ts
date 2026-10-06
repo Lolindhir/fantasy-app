@@ -70,7 +70,7 @@ export interface DecisionWindowTeamLineupEvaluation {
 }
 
 export type FantasyRelevanceRosterPlacement = 'starter' | 'bench' | 'ir' | 'taxi';
-export type FantasyRelevanceGameState = 'unlocked' | 'locked-active' | 'completed' | 'unknown';
+export type FantasyRelevanceGameState = 'unlocked' | 'locked-active' | 'completed' | 'bye' | 'unknown';
 export type FantasyRelevanceRepairabilityState = 'repairable' | 'irreparable' | 'unknown';
 export type FantasyRelevanceRepairabilityPath = 'internal-roster' | 'external-acquisition';
 export type FantasyRelevanceRepairabilityProblemCode =
