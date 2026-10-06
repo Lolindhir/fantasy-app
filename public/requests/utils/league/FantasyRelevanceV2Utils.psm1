@@ -86,7 +86,9 @@ function Get-FrvGameState {
         [Parameter(Mandatory = $true)][DateTimeOffset]$AsOfUtc
     )
 
-    if ($null -eq $LockFact -or [string](Get-FrvPropertyValue -Object $LockFact -Names @('Kind')) -ne 'scheduled') {
+    $lockKind = if ($null -eq $LockFact) { $null } else { [string](Get-FrvPropertyValue -Object $LockFact -Names @('Kind')) }
+    if ($lockKind -eq 'bye') { return 'bye' }
+    if ($lockKind -ne 'scheduled') {
         return 'unknown'
     }
     if (-not [string]::IsNullOrWhiteSpace($GameStatus) -and $GameStatus -match '^Final') {

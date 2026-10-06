@@ -143,6 +143,7 @@ contract:
         unlocked: The player's NFL kickoff is still in the future; current lineup placement is mutable.
         locked-active: The player's NFL kickoff has occurred and the NFL game is not Final; placement is committed and the player may still add points.
         completed: The player's NFL game is Final; no ordinary additional live fantasy points can be added by that player.
+        bye: The player's NFL team has no game in the lineup week (known state, not missing evidence); placement stays mutable and the player has no scoring path this week.
         unknown: Required scheduled-game evidence is unavailable or ambiguous.
       rules:
         - Final is taken from the effective Schedule gameStatus after RequestSchedule canonical finality resolution.

@@ -295,6 +295,8 @@ function classifySlot(
   if (slot.Repairability?.State === 'repairable') return 'repairable';
   // An explicit OUT is an objective problem and always red, even when repair or slot evidence is unknown.
   if (slot.ScoringAvailability?.State === 'out') return 'repairable';
+  // A bye is a known state of its own and shown red like any objective starter problem; unknown stays amber.
+  if (slot.State === 'bye') return 'repairable';
   if (slot.Repairability?.State === 'unknown' || slot.State === 'unknown') return 'unknown';
   // Known status: ESPN lists the starter as questionable. Distinct from the unknown-state review marker.
   if (slot.ScoringAvailability?.State === 'uncertain') return 'questionable';
