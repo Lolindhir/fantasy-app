@@ -90,6 +90,10 @@ try {
         $threw = $true
     }
     Assert-Equal -Expected $true -Actual $threw -Message 'Scored leg beyond the structural boundary must fail closed.'
+
+    Assert-Equal -Expected 3 -Actual (Resolve-LeagueFinalScoredWeek -ScheduleFinalWeek 4 -LastScoredLeg 3) -Message 'Final scored week must wait for provider scoring.'
+    Assert-Equal -Expected 3 -Actual (Resolve-LeagueFinalScoredWeek -ScheduleFinalWeek 3 -LastScoredLeg 4) -Message 'Final scored week must not exceed schedule finality.'
+    Assert-Equal -Expected 0 -Actual (Resolve-LeagueFinalScoredWeek -ScheduleFinalWeek 1 -LastScoredLeg 0) -Message 'No scored leg means no final scored week.'
 }
 finally {
     Remove-Item $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
