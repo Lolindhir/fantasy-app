@@ -171,8 +171,10 @@ class RepositoryDataTests(unittest.TestCase):
                 player["TouchdownsPassing"] + player["TouchdownsReceiving"] + player["TouchdownsRushing"],
             )
             if player["GamesPlayed"]:
-                self.assertAlmostEqual(
-                    player["FantasyPointsAvgGame"], player["FantasyPointsTotal"] / player["GamesPlayed"], places=2)
+                self.assertTrue(
+                    shadow.avg_consistent(
+                        player["FantasyPointsTotal"], player["GamesPlayed"], player["FantasyPointsAvgGame"], 2),
+                    player["ID"])
             ranking = {r["Type"]: r["Value"] for r in player["Ranking"]}
             if "Combined_Pos" in ranking:
                 self.assertGreaterEqual(ranking["Combined_Pos"], 1)
