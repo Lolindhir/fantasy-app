@@ -144,6 +144,15 @@ class PopulationRuleTests(unittest.TestCase):
         self.assertEqual(pop.short_name("Marvin Harrison Jr."), "M. Harrison Jr.")
         self.assertEqual(pop.profile_slug("Amon-Ra St. Brown"), "amon-ra-st-brown")
 
+    def test_sized_headshot_requests_a_small_nfl_cdn_image(self) -> None:
+        base = "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/abc"
+        sized = pop.sized_headshot(base)
+        self.assertEqual(sized, f"https://static.www.nfl.com/image/upload/f_auto,q_auto,w_{pop.HEADSHOT_WIDTH}/league/abc")
+        self.assertEqual(pop.sized_headshot(sized), sized)
+        self.assertEqual(pop.sized_headshot("https://img/1.png"), "https://img/1.png")
+        self.assertIsNone(pop.sized_headshot(None))
+        self.assertEqual(pop.derive_profile("Cher", base, None)["Picture"], sized)
+
     def test_missing_profiles_fail_closed(self) -> None:
         fixture = PopulationFixture([snapshot_row("1")], roster=["1"])
         self.addCleanup(fixture.close)
