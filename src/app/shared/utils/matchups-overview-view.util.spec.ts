@@ -202,6 +202,19 @@ describe('matchups overview view utility', () => {
     expect(view?.groups[0].segments.length).toBe(10);
   });
 
+  it('keeps an OUT starter red even when slot and repairability evidence are unknown', () => {
+    const out = slot('WR-1', 'unknown', {
+      ScoringAvailability: { State: 'out', ProviderStatus: 'OUT', Source: 'ESPN' } as never,
+      Repairability: {
+        ProblemCode: 'STARTER_UNAVAILABLE' as never, State: 'unknown' as const, Path: null,
+        ReasonCode: 'LINEUP_EVIDENCE_UNKNOWN' as const, InternalCandidateCount: 0, ExternalCandidateCount: 0
+      }
+    });
+    const progress = buildMatchupStarterProgress(team([out]), 'next', 'left');
+    expect(progress?.groups[0].kind).toBe('repairable');
+    expect(progress?.groups[0].outline).toBe('repairable');
+  });
+
   it('renders completed, live, next, later and problem semantics concurrently with precedence intact', () => {
     const repairable = {
       ProblemCode: 'OPEN_STARTER_SLOT' as const,
@@ -246,6 +259,7 @@ describe('matchups overview view utility', () => {
     ]);
     expect(left?.groups.find(group => group.kind === 'next')?.outline).toBe('next');
     expect(left?.groups.find(group => group.kind === 'repairable')?.outline).toBe('repairable');
+    expect(left?.groups.find(group => group.kind === 'irreparable')?.outline).toBe('repairable');
     expect(left?.groups.find(group => group.kind === 'unknown')?.outline).toBe('unknown');
   });
 
