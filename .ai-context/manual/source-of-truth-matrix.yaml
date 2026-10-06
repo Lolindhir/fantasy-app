@@ -1229,7 +1229,8 @@ consumerReadClassification:
       reads:
         legacy:League: validation-shadow
         legacy:Players: validation-shadow
-      note: 'Compares the scoring export with the published Players.json and League.json; read-only, never writes public/data.'
+        legacy:Timestamps: validation-shadow
+      note: 'Compares the scoring export with the published Players.json and League.json; read-only, never writes public/data. Timestamps.json only decides whether League.json is old enough to be a valid salary-cap reference.'
     tools/players_population.py:
       reads:
         legacy:Players: validation-shadow
