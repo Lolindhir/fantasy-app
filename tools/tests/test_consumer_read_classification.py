@@ -17,6 +17,13 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MATRIX = REPO_ROOT / ".ai-context/manual/source-of-truth-matrix.yaml"
 SLEEPER_CLIENT = "public/requests/utils/invoke/SleeperUtils.psm1"
+# The Sleeper HTTP client was retired in #347 (K1 follow-up); its function names stay
+# reserved so a reintroduced direct call is reported as an unclassified read.
+RETIRED_SLEEPER_CLIENT_FUNCTIONS = (
+    "Get-SleeperLeague", "Get-SleeperMembers", "Get-SleeperRosters", "Get-SleeperWinnersBracket",
+    "Get-SleeperLosersBracket", "Get-SleeperTransactions", "Get-SleeperMatchups", "Get-SleeperDrafts",
+    "Get-SleeperDraft", "Get-SleeperDraftPicks", "Get-SleeperDraftTradedPicks", "Get-SleeperTradedPicks",
+)
 
 PROVIDER_HOSTS = (
     "sleeper", "nflverse", "fantasypros", "fantasycalc", "fftoday",
@@ -45,8 +52,11 @@ def read_model_names(repo_root: Path) -> list[str]:
 
 
 def sleeper_functions(repo_root: Path) -> list[str]:
-    text = (repo_root / SLEEPER_CLIENT).read_text(encoding="utf-8")
-    return sorted(set(re.findall(r"function (Get-Sleeper\w+)", text)))
+    client = repo_root / SLEEPER_CLIENT
+    found = set(RETIRED_SLEEPER_CLIENT_FUNCTIONS)
+    if client.exists():
+        found |= set(re.findall(r"function (Get-Sleeper\w+)", client.read_text(encoding="utf-8")))
+    return sorted(found)
 
 
 def scan_text(path: str, text: str, names: list[str], sleeper_fns: list[str]) -> set[str]:
