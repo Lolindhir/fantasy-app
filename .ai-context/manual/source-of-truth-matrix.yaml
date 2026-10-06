@@ -262,7 +262,7 @@ matrix:
     historyCoverage: 1999-present
     freshness: nightly after game days plus additional game-day updates
     preferredFinalizedWeeklyRead: Thursday after NFL stat-correction window
-    migrationState: players-consumer-migrated-g3-games-json-legacy-until-g4
+    migrationState: players-consumer-migrated-g3-no-games-json-since-g4
     guards:
       - no name-based player join
       - secondary/fallback data cannot overwrite a conflicting finalized canonical stat silently
@@ -305,7 +305,7 @@ matrix:
     lifecycle: seasonal-finalizable
     historyCoverage: 2012-present
     freshness: four-times-daily-during-season-dependent-on-PFR
-    migrationState: players-consumer-migrated-g3-games-json-legacy-until-g4
+    migrationState: players-consumer-migrated-g3-no-games-json-since-g4
     guards:
       - ambiguous/missing PFR mappings remain unresolved or quarantined
       - pre-2012 unavailable data is not zero
@@ -910,3 +910,338 @@ playersReadModelFieldInventory:
     - nflTeamAndAvailability: free-agent definition decided and implemented in #347 H5/H1b (nflFreeAgentAndAvailabilityStatus).
     - appIdentity and population changes required the identityEvidence cycle decision first; resolved by #347 H1a/H1b (ADR-043).
     - convenienceLinks and grading need no source migration; grading has no consumer and may be repaired or retired separately.
+
+consumerReadClassification:
+  issue: 347
+  step: K1
+  test: tools/tests/test_consumer_read_classification.py
+  purpose: >
+    Every App, Fantasy Management and tooling file that reads a provider or a
+    published public/data read model must carry a classification entry here. The
+    repository test scans the consumer code and fails when a read has no entry, when
+    an entry names a read that no longer exists, or when a category is unknown.
+  scope:
+    scanned:
+      - public/requests/** (PowerShell, without *RegressionTest.ps1)
+      - tools/** (Python, without tests)
+      - fantasy-management/** (Python, without tests)
+      - fantasy-management/automation/**/*.json and fantasy-management/_ai/*.json (declared inputs)
+    notScanned:
+      - src/app/** (Angular is the delivery consumer of public/data by design, ADR-004; all JSON loads go through DataApiService)
+      - .github/workflows/** (workflow trigger paths are governed by workflow-monitoring.yaml and workflow-publication.yaml)
+      - source-data/** (canonical store; a read there is a canonical read, not a classified legacy or provider read)
+  tokens:
+    provider:<host>: a URL naming a known provider host (sleeper, nflverse, fantasypros, fantasycalc, fftoday, cbssports, fantasyfootballcalculator, espn, tank01, rapidapi)
+    sleeper-api:<Function>: a call to a SleeperUtils.psm1 provider function outside that module
+    network: an HTTP client call (Invoke-RestMethod, urllib, requests, ...)
+    legacy:<Name>: a reference to public/data/<Name>.json or the matching $config.<Name>File
+  categories:
+    source-layer-acquisition: provider read owned by the source-data acquisition layer; sanctioned
+    provider-client: the shared Sleeper HTTP client module
+    provider-evidence-fetcher: Fantasy Management acquisition of attributed external evidence (ADR-037)
+    provider-direct-supplementary: documented direct provider observation that no canonical dataset covers yet
+    legacy-provider-path: App generator code that still calls the Sleeper client directly; the productive path uses a canonical adapter; open follow-up
+    display-link-construction: a URL string is built for display; nothing is fetched
+    http-helper: generic HTTP helper without a provider-specific read
+    repository-infrastructure: repository tooling, not a fantasy base fact
+    app-output-owner: the generator or publisher that writes that read model
+    app-read-model-chain: a consumer reads another published App read model as a deliberate step of the App derivation chain
+    app-config-path-owner: resolves generated-file paths
+    intentional-overlay: documented consumer-specific display or scoring enrichment (ADR-002 boundary); base facts come from source-data
+    manual-league-rule: Metadata.json, the manual league-rule owner (ADR-002)
+    freshness-trigger: read or declared only to detect that published data changed
+    validation-shadow: read-only comparison or guard against published output; never an input
+    historical-static-reference: frozen published history, not a live read
+    analysis-snapshot-input: one-off analysis over published data
+    mention-only: the token appears in a comment or docstring, not in an executed read
+    legacy-read-model-pending: a base fact is still read from a published read model; open migration or review item
+  consumers:
+    fantasy-management/_ai/kicker-weekly-research-config.json:
+      reads:
+        legacy:Schedule: legacy-read-model-pending
+      note: 'Declares the published App Schedule.json as input for the kicker weekly research plan; same open follow-up as build_kicker_weekly_research_plan.py.'
+    fantasy-management/_ai/scripts/build_kicker_weekly_research_plan.py:
+      reads:
+        legacy:Schedule: legacy-read-model-pending
+      note: 'Reads the published App Schedule.json (path configured in kicker-weekly-research-config.json) instead of the canonical NFL schedule. Open follow-up, not migrated by K1.'
+    fantasy-management/_ai/scripts/canonical_league_ownership.py:
+      reads:
+        legacy:League: intentional-overlay
+        legacy:Players: mention-only
+      note: 'Ownership and roster membership come from source-data/leagues. League.json is read only as TeamID display enrichment (checkpoint 6P). The Players.json hit is a docstring mention, not a read.'
+    fantasy-management/_ai/scripts/fantasy_football_calculator_adp_core.py:
+      reads:
+        network: provider-evidence-fetcher
+        provider:fantasyfootballcalculator: provider-evidence-fetcher
+      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+    fantasy-management/_ai/scripts/fantasy_football_calculator_kicker_adp.py:
+      reads:
+        provider:fantasyfootballcalculator: provider-evidence-fetcher
+      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+    fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py:
+      reads:
+        network: provider-evidence-fetcher
+        provider:cbssports: provider-evidence-fetcher
+      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+    fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py:
+      reads:
+        network: provider-evidence-fetcher
+        provider:cbssports: provider-evidence-fetcher
+      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+    fantasy-management/_ai/scripts/fetch_fantasycalc_rankings_impl.py:
+      reads:
+        network: provider-evidence-fetcher
+        provider:fantasycalc: provider-evidence-fetcher
+      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+    fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex_impl.py:
+      reads:
+        network: provider-evidence-fetcher
+        provider:fantasypros: provider-evidence-fetcher
+      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+    fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex_impl.py:
+      reads:
+        provider:fantasypros: provider-evidence-fetcher
+      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+    fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py:
+      reads:
+        provider:fftoday: provider-evidence-fetcher
+      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+    fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py:
+      reads:
+        provider:fftoday: provider-evidence-fetcher
+      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+    fantasy-management/_ai/scripts/fetch_sleeper_trending.py:
+      reads:
+        network: provider-evidence-fetcher
+        provider:sleeper: provider-evidence-fetcher
+      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+    fantasy-management/_ai/scripts/http_fetch_resilience.py:
+      reads:
+        network: http-helper
+      note: 'Shared HTTP retry helper for the provider evidence fetchers; contains no provider-specific read.'
+    fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py:
+      reads:
+        legacy:League: freshness-trigger
+        legacy:Metadata: manual-league-rule
+        legacy:Players: freshness-trigger
+        legacy:Timestamps: freshness-trigger
+      note: 'Decides whether a push touching these paths triggers Operations materialization; it reads no content. Metadata.json is the DraftType binding (J2).'
+    fantasy-management/automation/external-signal-materialization.json:
+      reads:
+        legacy:League: intentional-overlay
+      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from source-data/leagues.'
+    fantasy-management/automation/fa-board-materialization.json:
+      reads:
+        legacy:League: intentional-overlay
+        legacy:Metadata: manual-league-rule
+        legacy:Timestamps: freshness-trigger
+      note: 'League.json: documented FA-board enrichment overlay (6T). Metadata.json: manual league rules. Timestamps.json: freshness bridge.'
+    fantasy-management/automation/input-materialization.json:
+      reads:
+        legacy:League: intentional-overlay
+        legacy:Players: legacy-read-model-pending
+        legacy:Timestamps: freshness-trigger
+      note: 'League.json: display overlay. Timestamps.json: freshness bridge. Players.json: still declared as input; build_fantasy_operations_inputs.py reads Players Status (ops-inputs-legacy-status in source-of-truth-matrix); field-level migration open.'
+    fantasy-management/automation/jobs/entity-observation.json:
+      reads:
+        legacy:League: intentional-overlay
+        legacy:Timestamps: freshness-trigger
+      note: 'Declares League.json and Timestamps.json as observation inputs of the weekly entity-observation job.'
+    fantasy-management/automation/jobs/weekly-league-review.json:
+      reads:
+        legacy:League: intentional-overlay
+        legacy:Timestamps: freshness-trigger
+        legacy:Transactions: legacy-read-model-pending
+      note: 'Weekly review job input declaration. Transactions.json is declared here although no Fantasy Management script reads it (J1 finding); open follow-up to remove or migrate.'
+    fantasy-management/automation/kicker-streaming-input-materialization.json:
+      reads:
+        legacy:League: intentional-overlay
+      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from source-data/leagues.'
+    fantasy-management/automation/managed-roster-overview.json:
+      reads:
+        legacy:League: intentional-overlay
+      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from source-data/leagues.'
+    fantasy-management/automation/player-signal-materialization.json:
+      reads:
+        legacy:League: intentional-overlay
+        legacy:Players: legacy-read-model-pending
+        legacy:Timestamps: freshness-trigger
+      note: 'League.json: managed-team display and ScoringType overlay (6S). Timestamps.json: freshness bridge. Players.json: declared input whose remaining field reads were not individually verified in K1; open follow-up.'
+    fantasy-management/automation/runner-config.json:
+      reads:
+        legacy:League: intentional-overlay
+      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from source-data/leagues.'
+    fantasy-management/league-economy/salary/simulation/salary_simulation.py:
+      reads:
+        legacy:League: analysis-snapshot-input
+        legacy:Players: analysis-snapshot-input
+        legacy:Transactions: analysis-snapshot-input
+      note: 'Point-in-time salary analysis over the published App read models; not a recurring pipeline consumer.'
+    public/requests/RequestLeague.ps1:
+      reads:
+        legacy:DecisionWindows: app-output-owner
+        legacy:Matchups: app-output-owner
+        legacy:Schedule: app-read-model-chain
+      note: 'League generator: writes DecisionWindows.json and Matchups.json; reads the published Schedule.json as transitional adapter input (ADR-036 migration boundary).'
+    public/requests/RequestTeams.ps1:
+      reads:
+        legacy:Teams: app-output-owner
+      note: 'Writes Teams.json from the canonical NFL team registry (F3c).'
+    public/requests/RequestWeeklyRecaps.ps1:
+      reads:
+        legacy:Matchups: app-read-model-chain
+        legacy:Schedule: app-read-model-chain
+        legacy:Standings: app-read-model-chain
+        legacy:WeeklyRecaps: app-output-owner
+      note: 'Weekly recaps derive from the published Matchups, Schedule and Standings read models inside the App chain.'
+    public/requests/utils/general/AvatarUtils.psm1:
+      reads:
+        provider:sleeper: display-link-construction
+      note: 'Builds an avatar CDN URL string; performs no fetch.'
+    public/requests/utils/general/CanonicalScheduleUtils.psm1:
+      reads:
+        provider:cbssports: display-link-construction
+        provider:espn: display-link-construction
+      note: 'Builds boxscore link strings from canonical provider game IDs; performs no fetch.'
+    public/requests/utils/general/FileUtils.psm1:
+      reads:
+        legacy:DecisionWindows: app-config-path-owner
+        legacy:Drafts: app-config-path-owner
+        legacy:League: app-config-path-owner
+        legacy:Matchups: app-config-path-owner
+        legacy:Players: app-config-path-owner
+        legacy:Schedule: app-config-path-owner
+        legacy:Standings: app-config-path-owner
+        legacy:Teams: app-config-path-owner
+        legacy:Timestamps: app-config-path-owner
+        legacy:Transactions: app-config-path-owner
+        legacy:WeeklyRecaps: app-config-path-owner
+      note: 'Resolves the generated-file paths from ConfigUtils for all generators.'
+    public/requests/utils/invoke/InvokeUtils.psm1:
+      reads:
+        network: http-helper
+      note: 'Generic HTTP helper used by the provider client.'
+    public/requests/utils/invoke/SleeperUtils.psm1:
+      reads:
+        provider:sleeper: provider-client
+      note: 'Sleeper HTTP client. Productive App consumers of league facts use the canonical adapters; remaining direct callers are listed as legacy-provider-path.'
+    public/requests/utils/league/DraftHistoryUtils.psm1:
+      reads:
+        legacy:Transactions: app-read-model-chain
+      note: 'Draft history and Transactions form one coupled rebuild (ADR-026).'
+    public/requests/utils/league/DraftUtils.psm1:
+      reads:
+        legacy:League: legacy-read-model-pending
+        legacy:Standings: app-read-model-chain
+        legacy:Transactions: app-read-model-chain
+      note: 'Standings and Transactions are chain inputs of the coupled draft rebuild. League.json (team list and league context via Get-DraftLeagueLocal) is a legacy read of a published read model; the I3 review item (justify or move to Get-CanonicalCurrentTeamsForLeague) is still open.'
+    public/requests/utils/league/FantasyGameContextCore.ps1:
+      reads:
+        sleeper-api:Get-SleeperMatchups: legacy-provider-path
+      note: 'Get-FgcCurrentMatchupLoad still calls the Sleeper client; the canonical matchup adapter is productive in RequestLeague. Reachability of this path was not verified in K1.'
+    public/requests/utils/league/LeagueUtils.psm1:
+      reads:
+        sleeper-api:Get-SleeperLeague: legacy-provider-path
+      note: 'Get-LeagueRaw and Get-LeaguesRecursive call Sleeper directly; Get-LeaguesRecursive still serves draft and transaction history discovery. Open follow-up.'
+    public/requests/utils/league/PastSeasonsIndexUtils.psm1:
+      reads:
+        legacy:PastSeasonsIndex: app-output-owner
+      note: 'Writes PastSeasonsIndex.json.'
+    public/requests/utils/league/PlayerScoringAvailabilityUtils.psm1:
+      reads:
+        network: provider-direct-supplementary
+        provider:espn: provider-direct-supplementary
+      note: 'ESPN injuryStatus observation for DecisionWindows (data-sources.yaml); identity join via canonical IDs.'
+    public/requests/utils/league/PlayoffUtils.psm1:
+      reads:
+        sleeper-api:Get-SleeperLosersBracket: legacy-provider-path
+        sleeper-api:Get-SleeperWinnersBracket: legacy-provider-path
+      note: 'Get-Playoffs calls the Sleeper brackets; productive current playoffs use CanonicalPlayoffUtils. Reachability of this path was not verified in K1.'
+    public/requests/utils/league/TeamDraftPickUtils.psm1:
+      reads:
+        legacy:Drafts: app-read-model-chain
+      note: 'Resolves team DraftPicks from the published Drafts.json (ADR-006).'
+    public/requests/utils/league/TeamUtils.psm1:
+      reads:
+        sleeper-api:Get-SleeperMembers: legacy-provider-path
+        sleeper-api:Get-SleeperRosters: legacy-provider-path
+      note: 'Get-Teams calls the Sleeper members and rosters; productive teams use CanonicalLeagueCoreUtils. Reachability of this path was not verified in K1.'
+    public/requests/utils/league/TransactionDraftPickEnrichmentUtils.psm1:
+      reads:
+        legacy:Drafts: app-read-model-chain
+        legacy:Transactions: app-read-model-chain
+      note: 'Transactions and Drafts enrichment inside the coupled rebuild (ADR-026).'
+    public/requests/utils/league/TransactionUtils.psm1:
+      reads:
+        sleeper-api:Get-SleeperLeague: legacy-provider-path
+        sleeper-api:Get-SleeperTransactions: legacy-provider-path
+      note: 'Update-TransactionsCurrentSeason and Get-TransactionsRemoteRecursive call Sleeper directly; canonical transactions are the productive base. Reachability of this path was not verified in K1.'
+    tools/build_workflow_health_snapshot.py:
+      reads:
+        network: repository-infrastructure
+      note: 'GitHub API access for repository operations; no fantasy base fact.'
+    tools/league_source_data_lib/acquire.py:
+      reads:
+        network: source-layer-acquisition
+        provider:sleeper: source-layer-acquisition
+      note: 'Provider acquisition owned by the source-data layer (raw evidence under source-data/providers).'
+    tools/league_source_data_lib/core.py:
+      reads:
+        network: source-layer-acquisition
+        provider:sleeper: source-layer-acquisition
+      note: 'Provider acquisition owned by the source-data layer (raw evidence under source-data/providers).'
+    tools/matchup_projection.py:
+      reads:
+        legacy:DecisionWindows: app-read-model-chain
+        legacy:FantasyGameContext: app-read-model-chain
+        legacy:MatchupProjections: app-output-owner
+        legacy:PlayerWeekFantasy: app-read-model-chain
+      note: 'Matchup projection derives from published FantasyGameContext, PlayerWeekFantasy and DecisionWindows and writes MatchupProjections.json.'
+    tools/nfl_source_data_lib/audit.py:
+      reads:
+        legacy:Players: validation-shadow
+      note: 'Population audit compares canonical identities with the published Players.json; guard only, never identity evidence (ADR-039, ADR-043).'
+    tools/nfl_source_data_lib/common.py:
+      reads:
+        network: source-layer-acquisition
+      note: 'Provider acquisition owned by the source-data layer (raw evidence under source-data/providers).'
+    tools/nfl_source_data_lib/historical_crosswalk.py:
+      reads:
+        network: source-layer-acquisition
+      note: 'Provider acquisition owned by the source-data layer (raw evidence under source-data/providers).'
+    tools/nfl_source_data_lib/identity_sources.py:
+      reads:
+        legacy:Players: mention-only
+      note: 'Docstring states that identity evidence no longer depends on Players.json (ADR-043).'
+    tools/nfl_source_data_lib/teams.py:
+      reads:
+        legacy:Teams: historical-static-reference
+      note: 'Legacy numeric team IDs come from the frozen published Teams.json history (ADR-042 LegacyIDs), not a live read.'
+    tools/player_week_fantasy_app_publish.py:
+      reads:
+        legacy:PlayerWeekFantasy: app-output-owner
+      note: 'Publishes PlayerWeekFantasy.json from the shared-derived product.'
+    tools/player_week_fantasy_refresh.py:
+      reads:
+        legacy:FantasyGameContext: app-read-model-chain
+      note: 'Reads the published FantasyGameContext to find the current App week.'
+    tools/players_league_scoring_shadow.py:
+      reads:
+        legacy:League: validation-shadow
+        legacy:Players: validation-shadow
+      note: 'Compares the scoring export with the published Players.json and League.json; read-only, never writes public/data.'
+    tools/players_population.py:
+      reads:
+        legacy:Players: validation-shadow
+        provider:espn: display-link-construction
+        provider:fantasypros: display-link-construction
+      note: 'Population shadow compares with the published Players.json; ESPN and FantasyPros hits are link templates only.'
+    tools/transaction_canonical_shadow.py:
+      reads:
+        legacy:Transactions: validation-shadow
+        legacy:Transactions_Manual: validation-shadow
+      note: 'Shadow comparison of canonical transactions with the published Transactions.json and the manual overlay.'
+    tools/validate_work_tracking.py:
+      reads:
+        network: repository-infrastructure
+      note: 'GitHub API access for repository operations; no fantasy base fact.'
