@@ -1,3 +1,4 @@
+Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 . "$PSScriptRoot\FantasyGameContextCore.ps1"
 Import-Module "$PSScriptRoot\FantasyRelevanceV2Utils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\PlayerScoringAvailabilityUtils.psm1" -ErrorAction Stop -Force

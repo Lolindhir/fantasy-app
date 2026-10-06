@@ -3,7 +3,7 @@
   "scope": "public/data/Players.json",
   "datasetRegistry": {
     "schemaVersion": 3,
-    "activeDatasetCount": 12,
+    "activeDatasetCount": 15,
     "activeDatasetIDs": [
       "nflverse.players",
       "nflverse.ff-player-ids",
@@ -15,8 +15,11 @@
       "nflverse.weekly-rosters",
       "nflverse.player-stats",
       "nflverse.special-teams-fumble-events",
+      "nflverse.player-game-long-gains",
       "nflverse.snap-counts",
-      "sleeper.players"
+      "nflverse.espn-qbr-week",
+      "sleeper.players",
+      "nflverse.teams"
     ],
     "plannedDatasetCount": 2,
     "plannedDatasetIDs": [
@@ -40357,28 +40360,56 @@
       "unresolvedGSISIDs": [],
       "equivalentDuplicateEventCount": 0
     },
+    "playerGameLongGains": {
+      "partitionCount": 1,
+      "coveredGameCount": 63,
+      "recordCount": 1396,
+      "recordTypeCounts": {
+        "LongReception": 900,
+        "LongRush": 496
+      },
+      "resolvedIdentityCount": 1396,
+      "unresolvedIdentityCount": 0,
+      "unresolvedGSISIDs": []
+    },
     "snapCounts": {
       "partitionCount": 282,
-      "recordCount": 329190,
-      "resolvedIdentityCount": 328959,
-      "unresolvedIdentityCount": 231,
+      "recordCount": 330487,
+      "resolvedIdentityCount": 330253,
+      "unresolvedIdentityCount": 234,
       "missingProviderIDRowCount": 0
+    },
+    "qbrWeek": {
+      "partitionCount": 1,
+      "recordCount": 125,
+      "resolvedIdentityCount": 125,
+      "unresolvedIdentityCount": 0,
+      "publishedGameCount": 63,
+      "notYetAvailableGameCount": 209
     },
     "sleeperPlayers": {
       "recordCount": 12229,
       "resolvedIdentityCount": 6570,
       "unresolvedIdentityCount": 5659
     },
+    "teams": {
+      "teamCount": 32,
+      "aliasCount": 5,
+      "sourceRowCount": 36
+    },
     "activeDatasetIDs": [
+      "nflverse.espn-qbr-week",
       "nflverse.game-finality",
+      "nflverse.player-game-long-gains",
       "nflverse.player-stats",
       "nflverse.rosters",
       "nflverse.schedules",
       "nflverse.snap-counts",
       "nflverse.special-teams-fumble-events",
+      "nflverse.teams",
       "nflverse.weekly-rosters",
       "sleeper.players"
     ],
-    "canonicalOutputFileCount": 2032
+    "canonicalOutputFileCount": 2035
   }
 }

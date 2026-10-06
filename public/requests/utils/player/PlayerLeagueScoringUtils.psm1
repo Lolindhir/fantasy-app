@@ -59,6 +59,41 @@ function Invoke-PlayerLeagueScoringExport {
     }
 }
 
+# Week bounds (LastLeagueWeek, PlayoffStartWeek, FinalScoredWeek) from the canonical League-season
+# WeekStructure and canonical NFL game finality (#347 I1). Fails closed; no League.json involved.
+function Get-PlayerLeagueWeekBounds {
+    param(
+        [Parameter(Mandatory = $true)][int]$Season,
+        [string]$RepoRoot = (Get-PlayerLeagueScoringRepoRoot)
+    )
+
+    $toolPath = Join-Path $RepoRoot "tools/players_league_scoring.py"
+    if (-not (Test-Path $toolPath)) {
+        throw "League-scoring tool missing at '$toolPath'."
+    }
+
+    $python = Get-PlayerLeagueScoringPythonCommand
+    $output = & $python $toolPath --repo-root $RepoRoot week-bounds --season $Season 2>&1
+    $exitCode = $LASTEXITCODE
+    $outputText = (@($output) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+    if ($exitCode -ne 0) {
+        throw "Canonical league week bounds failed with exit code $exitCode. $outputText"
+    }
+
+    try {
+        $bounds = $outputText | ConvertFrom-Json
+    }
+    catch {
+        throw "Canonical league week bounds returned invalid JSON. $outputText"
+    }
+    foreach ($name in @('LastLeagueWeek', 'PlayoffStartWeek', 'FinalScoredWeek')) {
+        if ($null -eq $bounds.$name -or [int]$bounds.$name -lt 0) {
+            throw "Canonical league week bounds lack '$name'."
+        }
+    }
+    return $bounds
+}
+
 # A game counts as played with offensive snaps; kickers play with at least one kick attempt.
 function Get-PlayerLeagueScoringPlayedRows {
     param(

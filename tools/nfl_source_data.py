@@ -4,10 +4,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 
-from nfl_source_data_lib.common import current_source_season, load_json, load_registry, sync_dataset
+from nfl_source_data_lib.common import (
+    UpstreamDownloadCache,
+    current_source_season,
+    load_json,
+    load_registry,
+    sync_dataset,
+)
 from nfl_source_data_lib.finality_materialize import (
     GAME_FINALITY_DATASET_ID,
     GAME_FINALITY_SCOPE,
@@ -141,23 +148,26 @@ def main() -> int:
             else:
                 print("historical backfill batch: none")
 
-        for dataset in selected:
-            if dataset.is_season_partitioned:
-                partitions = list(args.seasons or [source_season])
-                partitions.extend(historical_by_dataset.get(dataset.id, []))
-            else:
-                partitions = [None]
-            for season in partitions:
-                result = sync_dataset(
-                    dataset,
-                    force=args.force,
-                    offline=args.offline,
-                    season=season,
-                    current_season=source_season,
-                )
-                partition = f" season={season}" if season is not None else ""
-                row_count = result["rowCount"] if result["rowCount"] is not None else "n/a"
-                print(f"{dataset.id}{partition}: {result['status']} ({row_count} rows)")
+        with tempfile.TemporaryDirectory(prefix="nfl-source-upstream-") as upstream_dir:
+            upstream_cache = UpstreamDownloadCache(Path(upstream_dir))
+            for dataset in selected:
+                if dataset.is_season_partitioned:
+                    partitions = list(args.seasons or [source_season])
+                    partitions.extend(historical_by_dataset.get(dataset.id, []))
+                else:
+                    partitions = [None]
+                for season in partitions:
+                    result = sync_dataset(
+                        dataset,
+                        force=args.force,
+                        offline=args.offline,
+                        season=season,
+                        current_season=source_season,
+                        upstream_cache=upstream_cache,
+                    )
+                    partition = f" season={season}" if season is not None else ""
+                    row_count = result["rowCount"] if result["rowCount"] is not None else "n/a"
+                    print(f"{dataset.id}{partition}: {result['status']} ({row_count} rows)")
         if args.raw_only:
             print("canonical materialization skipped: --raw-only requested")
             return 0

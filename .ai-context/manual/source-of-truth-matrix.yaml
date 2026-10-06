@@ -395,7 +395,7 @@ matrix:
     facts:
       - NFL depth-chart role/order snapshots
     durableCanonicalPrimary: unresolved
-    currentRuntimePrimary: Sleeper depth_chart_position/order for the current app fields
+    currentRuntimePrimary: canonical Sleeper platform snapshot (source-data/nfl/platform/sleeper/players.json DepthChartPosition/DepthChartOrder) read by RequestPlayers.ps1 through utils/player/SleeperPlatformUtils.psm1 for the current app fields (#347 H4); a player missing from the snapshot stays null
     secondary:
       - nflverse depth-charts is a candidate snapshot source pending separate evaluation
       - other depth-chart providers may be evaluated separately
@@ -404,7 +404,7 @@ matrix:
     lifecycle: snapshot when canonicalized
     historyCoverage: not-consolidated
     freshness: nflverse candidate updates daily and uses timestamped snapshots from 2025 onward
-    migrationState: explicit-depth-chart-evaluation-still-open
+    migrationState: sleeper-fields-canonical-active-additional-source-evaluation-still-open
     guards:
       - depth-chart rank is a role/roster signal, not direct fantasy opportunity
       - preserve timestamped historical snapshots rather than overwriting only latest state if nflverse is adopted
@@ -743,6 +743,7 @@ playersReadModelFieldInventory:
       observations:
         - For free agents TeamAbbr/TeamID hold the last Tank01 team, not a current NFL team
         - IsFreeAgent agrees with absence from the canonical 2026 week-4 weekly roster for 439 of 452 true values (sleeper-mapped rows); 70 rows with IsFreeAgent=false are not on that roster
+        - Team key identity: source-data/nfl/teams.json (nflverse.teams, #347 F3a, ADR-042) is the canonical registry with aliases and LegacyAppTeamID; read since #347 F3b by the PowerShell team-key join helper (Get-NflTeamJoinKey) and NflScheduleUtils/WeeklyRecapUtils; Angular resolves via Teams.json ID/LegacyIDs; since F3c Teams.json is generated from this registry (RequestTeams.ps1, no Tank01 call, ID = abbreviation, LegacyIDs = former numeric ID); other producers switch from F3d
     convenienceLinks:
       fields: [Picture, FantasyPros, ESPN, ESPNID]
       layer: consumerOnly
@@ -880,6 +881,8 @@ playersReadModelFieldInventory:
         RequestPlayers.ps1 parses $pass.qbr before $pass = $p.Passing is assigned, so
         GameHistory Passing.QBRating carries the previous passing row's value or null.
         Not read by Angular.
+        Canonical replacement exists since #347 F4a: source-data/nfl/qbr-week/<season>.json
+        (ESPN QBR via nflverse); the consumer switch is G3.
     - id: historical-fgc-player-fallback-unmatched
       verified: code-reading-only
       evidence: >

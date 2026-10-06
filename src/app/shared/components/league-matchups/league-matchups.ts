@@ -62,6 +62,7 @@ import {
 } from '../fantasy-game-context-dialog/fantasy-game-context-dialog';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
+import { findNflTeam } from '../../utils/nfl-team-key.util';
 
 type LeagueMatchupContextMode = 'current' | 'previous';
 
@@ -382,11 +383,11 @@ export class LeagueMatchupsComponent {
   }
 
   nflLogo(teamID: string | number): string | null {
-    return this.nflTeamsSignal().find(team => String(team.ID) === String(teamID))?.Logo || null;
+    return findNflTeam(this.nflTeamsSignal(), teamID)?.Logo || null;
   }
 
   nflAbbr(teamID: string | number): string {
-    const team = this.nflTeamsSignal().find(candidate => String(candidate.ID) === String(teamID));
+    const team = findNflTeam(this.nflTeamsSignal(), teamID);
     return team?.Abv || String(teamID);
   }
 

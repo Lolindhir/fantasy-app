@@ -19,6 +19,7 @@ every Players run from the canonical facts and is not persisted in the repositor
 
 Usage:
   players_league_scoring.py export --season 2026 --sleeper-ids-file ids.json --out export.json
+  players_league_scoring.py week-bounds --season 2026
 """
 from __future__ import annotations
 
@@ -50,6 +51,47 @@ def final_regular_weeks(repo_root: Path, season: int) -> set[int]:
         int(w["Week"])
         for w in payload["Weeks"]
         if w.get("WeekFinal") is True and w.get("GameType", "REG") == "REG"
+    }
+
+
+def resolve_league_week_bounds(repo_root: Path, league_id: str, season: int) -> dict[str, int]:
+    """Week bounds of the Players generator from canonical facts only (#347 I1).
+
+    LastLeagueWeek and PlayoffStartWeek come from the canonical League-season
+    WeekStructure; FinalScoredWeek is the last week of the uninterrupted run of
+    final regular-season weeks in the canonical NFL game finality, capped at
+    LastLeagueWeek. A missing structure or finality fails closed.
+    """
+    path = repo_root / "source-data/leagues" / league_id / "seasons" / str(season) / "league.json"
+    if not path.is_file():
+        raise ValueError(f"Canonical league source missing: {path}")
+    structure = read_json(path).get("WeekStructure")
+    if not isinstance(structure, dict):
+        raise ValueError(f"No WeekStructure in {path}")
+
+    def positive(name: str) -> int | None:
+        value = structure.get(name)
+        if value is None:
+            return None
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValueError(f"WeekStructure.{name} must be a positive integer in {path}")
+        return value
+
+    last_week = positive("ExpectedLastLeagueWeek") or positive("FinalLeagueWeek")
+    playoff_start = positive("PlayoffStartWeek")
+    if last_week is None:
+        raise ValueError(f"WeekStructure in {path} cannot resolve a last league week")
+    if playoff_start is None:
+        raise ValueError(f"WeekStructure in {path} has no PlayoffStartWeek")
+
+    final_weeks = final_regular_weeks(repo_root, season)
+    final_week = 0
+    while final_week + 1 in final_weeks:
+        final_week += 1
+    return {
+        "LastLeagueWeek": last_week,
+        "PlayoffStartWeek": playoff_start,
+        "FinalScoredWeek": min(final_week, last_week),
     }
 
 
@@ -400,11 +442,21 @@ def parse_args() -> argparse.Namespace:
     export.add_argument("--season", type=int, required=True)
     export.add_argument("--sleeper-ids-file", type=Path, required=True, help="JSON array of Sleeper player IDs")
     export.add_argument("--out", type=Path, required=True)
+    bounds = sub.add_parser("week-bounds", help="print LastLeagueWeek, PlayoffStartWeek and FinalScoredWeek as JSON")
+    bounds.add_argument("--season", type=int, required=True)
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
+    if args.command == "week-bounds":
+        try:
+            bounds = resolve_league_week_bounds(args.repo_root, args.league, args.season)
+        except (ValueError, KeyError, OSError) as error:
+            print(f"Week bounds unavailable: {error}", file=sys.stderr)
+            return 1
+        print(json.dumps(bounds, sort_keys=True))
+        return 0
     ids = json.loads(args.sleeper_ids_file.read_text(encoding="utf-8-sig"))
     if not isinstance(ids, list) or not ids:
         print("--sleeper-ids-file must hold a non-empty JSON array", file=sys.stderr)

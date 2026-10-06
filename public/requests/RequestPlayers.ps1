@@ -501,6 +501,7 @@ function Get-SeasonPointStats {
 Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\general\NflScheduleUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\player\PlayerLeagueScoringUtils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\utils\player\SleeperPlatformUtils.psm1" -ErrorAction Stop -Force
 $apiKeys = @(
     $Global:RapidAPIKey,
     $Global:RapidAPIKeyAlt1,
@@ -511,7 +512,6 @@ $targetFile = Join-Path $scriptDir "..\data\Players.json"
 $backupDir = Join-Path $scriptDir "..\data\backup"
 if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
 $gamesFile = Join-Path $scriptDir "..\data\Games.json"
-$leagueFile = Join-Path $scriptDir "..\data\League.json"
 $errorsFile = Join-Path $scriptDir "..\data\Errors.json"
 
 # --- Season aus config.ps1 ---
@@ -529,26 +529,18 @@ if (-not $Global:WeightTotal -or -not $Global:WeightGame) {
 $weightTotal = $Global:WeightTotal
 $weightGame = $Global:WeightGame
 
-$finalWeek = 0
-$lastWeek = 0
-$playoffStartWeek = 0
-if (Test-Path $leagueFile) {
-    try {
-        $leagueRaw = Get-Content $leagueFile -Raw
-        $league = $leagueRaw | ConvertFrom-Json
-        if($league){
-            $lastWeek = $league.LastLeagueWeek
-            $playoffStartWeek = $league.PlayoffStartWeek
-            $finalWeek = $league.FinalScoredWeek
-        }
-        Write-Host "Loaded last week (Week $($lastWeek)) from League.json..." -ForegroundColor Yellow
-        Write-Host "Loaded playoff start week (Week $($playoffStartWeek)) from League.json..." -ForegroundColor Yellow
-        Write-Host "Loaded final week (Week $($finalWeek)) from League.json..." -ForegroundColor Yellow
-    } catch {
-        Write-Error "Error fetching league: $_"
-        exit 1
-    }
+try {
+    $weekBounds = Get-PlayerLeagueWeekBounds -Season ([int]$seasonYear)
+} catch {
+    Write-Error "Error resolving canonical league week bounds: $_"
+    exit 1
 }
+$lastWeek = [int]$weekBounds.LastLeagueWeek
+$playoffStartWeek = [int]$weekBounds.PlayoffStartWeek
+$finalWeek = [int]$weekBounds.FinalScoredWeek
+Write-Host "Loaded last week (Week $($lastWeek)) from canonical WeekStructure..." -ForegroundColor Yellow
+Write-Host "Loaded playoff start week (Week $($playoffStartWeek)) from canonical WeekStructure..." -ForegroundColor Yellow
+Write-Host "Loaded final week (Week $($finalWeek)) from canonical game finality..." -ForegroundColor Yellow
 
 # --- Sleeper Spieler abrufen ---
 Write-Host "Fetch Sleeper players..." -ForegroundColor Yellow
@@ -561,6 +553,11 @@ try {
     exit 1
 }
 Write-Host "Sleeper players found: $($sleeperPlayers.Count)" -ForegroundColor Yellow
+
+# --- Sleeper Depth Charts aus dem kanonischen Plattform-Snapshot (#347 H4) ---
+$sleeperDepthCharts = Get-CanonicalSleeperDepthCharts -RepoRoot (Split-Path -Parent (Split-Path -Parent $scriptDir))
+Write-Host "Canonical Sleeper depth chart records: $($sleeperDepthCharts.Count)" -ForegroundColor Yellow
+$depthChartMissingPlayers = @()
 
 # --- Tank01 Spieler ---
 Write-Host "Fetch Tank01 players..." -ForegroundColor Yellow
@@ -938,6 +935,13 @@ foreach ($tankEntry in $tankPlayers) {
     $grading += $form
 
 
+    # Depth chart: canonical snapshot; a player not yet in the snapshot stays unknown (null), never guessed.
+    $depthChart = $sleeperDepthCharts[[string]$playerID]
+    if (-not $depthChart) {
+        $depthChart = @{ Position = $null; Order = $null }
+        $depthChartMissingPlayers += "$($sleeperEntry.full_name) ($playerID)"
+    }
+
     # --- Player Objekt bauen ---
     $playerData += [PSCustomObject]@{
         ID                           = $playerID
@@ -961,8 +965,8 @@ foreach ($tankEntry in $tankPlayers) {
         FantasyPros                  = $tankEntry.fantasyProsLink
         ESPN                         = $tankEntry.espnLink
         ESPNID                       = $sleeperEntry.espn_id
-        SleeperDepthChartPosition    = $sleeperEntry.depth_chart_position
-        SleeperDepthChartOrder       = $sleeperEntry.depth_chart_order
+        SleeperDepthChartPosition    = $depthChart.Position
+        SleeperDepthChartOrder       = $depthChart.Order
         College                      = $sleeperEntry.college
         HighSchool                   = $sleeperEntry.high_school
         Injured                      = $injured
@@ -987,6 +991,9 @@ foreach ($tankEntry in $tankPlayers) {
     }
 }
 
+if ($depthChartMissingPlayers.Count -gt 0) {
+    Write-Warning "Depth chart unknown (player not yet in the canonical Sleeper snapshot) for $($depthChartMissingPlayers.Count) players: $($depthChartMissingPlayers -join ', ')"
+}
 if ($identityHoldPlayers.Count -gt 0) {
     Write-Warning "League scoring identity hold: kept the last published scoring values for $($identityHoldPlayers.Count) players: $($identityHoldPlayers -join ', ')"
 }

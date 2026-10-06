@@ -72,12 +72,13 @@ class MaterializationTriggerTests(unittest.TestCase):
         self.assertTrue(decision.run)
         self.assertEqual(decision.reason, "relevant_source_or_heartbeat_change")
 
-    def test_league_players_drafts_and_timestamps_inputs_run_immediately(self) -> None:
+    def test_league_players_metadata_canonical_drafts_and_timestamps_inputs_run_immediately(self) -> None:
         for path in (
             "public/data/League.json",
             "public/data/Players.json",
-            "public/data/Drafts.json",
+            "public/data/Metadata.json",
             "public/data/Timestamps.json",
+            "source-data/leagues/any-league/seasons/2031/drafts.json",
         ):
             with self.subTest(path=path):
                 decision = MODULE.decide(
@@ -87,6 +88,15 @@ class MaterializationTriggerTests(unittest.TestCase):
                 )
                 self.assertTrue(decision.run)
                 self.assertEqual(decision.reason, "relevant_league_or_player_input_change")
+
+    def test_legacy_app_drafts_read_model_no_longer_triggers_materialization(self) -> None:
+        decision = MODULE.decide(
+            event_name="push",
+            changed_files=["public/data/Drafts.json"],
+            now=datetime(2026, 8, 17, 5, 40, tzinfo=BERLIN),
+        )
+        self.assertFalse(decision.run)
+        self.assertEqual(decision.reason, "irrelevant_push")
 
     def test_generated_operations_only_push_does_not_retrigger_materializer(self) -> None:
         decision = MODULE.decide(

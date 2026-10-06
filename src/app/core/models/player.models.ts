@@ -201,6 +201,8 @@ export interface RawNFLTeam {
   Name: string;
   Abv: string;
   Logo: string;
+  /** Former numeric app team IDs; generated data may still reference them (#347 F3). */
+  LegacyIDs?: string[];
 }
 
 export interface NFLTeam extends RawNFLTeam {}
