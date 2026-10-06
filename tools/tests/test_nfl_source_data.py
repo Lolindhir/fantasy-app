@@ -114,6 +114,7 @@ class NflSourceDataTests(unittest.TestCase):
                 ["season", "round", "pick", "team", "gsis_id", "pfr_player_id", "pfr_player_name", "position"]
             )
             (root / "public/data").mkdir(parents=True)
+            # public/data/Players.json is a consumer output and no identity evidence (#347 H1a).
             players = [
                 {"ID": "S1", "TankID": "T1", "Name": "Drafted Player", "Position": "WR"},
                 {"ID": "S2", "TankID": "T2", "Name": "Undrafted Player", "Position": "RB"},
@@ -142,7 +143,7 @@ class NflSourceDataTests(unittest.TestCase):
             self.assertEqual("fantasy-app", canonical["IdentityPolicy"]["CanonicalPlayerIDNamespace"])
             self.assertTrue(canonical["IdentityPolicy"]["CanonicalPlayerIDIsApplicationDefined"])
             by_sleeper = {row["IDs"]["Sleeper"]: row for row in canonical["Players"] if row["IDs"].get("Sleeper")}
-            self.assertEqual("T1", by_sleeper["S1"]["IDs"]["Tank01"])
+            self.assertNotIn("Tank01", by_sleeper["S1"]["IDs"])
             self.assertEqual("41405", by_sleeper["S1"]["IDs"]["NFL"])
             self.assertEqual("2543774", by_sleeper["S1"]["IDs"]["NFLCom"])
             self.assertEqual("11", by_sleeper["S1"]["IDs"]["ESPN"])

@@ -91,10 +91,40 @@ identityModel:
         value is not promoted to an active IDAlias. Historical validity belongs in
         provider-mappings.json with a non-overlapping interval when it is actually
         supported by earlier observations.
+    sleeperPlatformEvidence:
+      status: implemented-347-h1a
+      replaces: app.Players and app.Players.git.* as live identity evidence
+      source: source-data/providers/sleeper/players/raw-latest.json (dataset sleeper.players, provider evidence, not an app output)
+      implementation: tools/nfl_source_data_lib/identity_sources.py::sleeper_player_candidates
+      rule: >
+        The identity builder no longer reads public/data/Players.json or its git
+        history, which closes the cycle Players.json -> identities -> Players.json.
+        Sleeper snapshot records with an app fantasy position (QB, RB, WR, TE, K)
+        and a valid birth date become candidates with source sleeper.players when
+        they carry a current NFL team or already have a persisted Sleeper mapping.
+        Evidence is the Sleeper ID plus Sleeper espn_id only when current external
+        evidence corroborates it. Tank01 is no attach key any more; persisted
+        Tank01 values stay as historical mappings. A Sleeper ID that other evidence
+        already holds identifies the person on its own, so Sleeper's birth date is
+        not used for that attachment.
+      sleeperCurrentRosterAttributeBridge:
+        provenance: auto.sleeper-roster-attribute-bridge:<GSIS>
+        rule: >
+          A Sleeper record whose Sleeper ID is new (held by no other source and no
+          persisted identity) attaches to exactly one current-season nflverse roster
+          record when exact birth date, current team and position match, the match
+          is unique on both sides and no provider ID contradicts it. Names play no
+          role. Sleeper LAR and WSH are normalized to LA and WAS (interim alias table
+          until the team registry of #347 F3a). An ambiguous match is reported as
+          identity diagnostic sleeper_attribute_bridge_not_unique and the record
+          stays provisional or goes to human adjudication (splitIdentity). A Sleeper
+          ID already persisted on a provisional identity is never bridged, because
+          that would merge two persisted CanonicalPlayerIDs.
     provisionalAppReconciliation:
       provisionalSources:
-        - app.Players
-        - app.Players.git.*
+        - app.Players (persisted provenance only since #347 H1a)
+        - app.Players.git.* (persisted provenance only since #347 H1a)
+        - sleeper.players
       replacementEvidence:
         - corroborated external historical crosswalk claim
         - unique current claim jointly observed by app.Players and at least one non-app source
