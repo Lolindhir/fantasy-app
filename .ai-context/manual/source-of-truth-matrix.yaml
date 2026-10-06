@@ -1038,7 +1038,7 @@ consumerReadClassification:
         legacy:League: intentional-overlay
         legacy:Players: legacy-read-model-pending
         legacy:Timestamps: freshness-trigger
-      note: 'League.json: display overlay. Timestamps.json: freshness bridge. Players.json: still declared as input; build_fantasy_operations_inputs.py reads the league-derived Salary and SalaryProjected plus Age, Year, IsFreeAgent and the injury fields (Name, Position, Team and Status already come from the canonical Sleeper snapshot). Salary has no canonical owner until the derived-data centralization Issue (Shared Derived: Salary, Ranking, Grading und Salary Cap nach derived-data zentralisieren) lands; the remaining reads are bounded to those fields.'
+      note: 'League.json: display overlay. Timestamps.json: freshness bridge. Players.json: still declared as input; build_fantasy_operations_inputs.py reads the league-derived Salary and SalaryProjected plus Age, Year, IsFreeAgent and the injury fields (Name, Position, Team and Status already come from the canonical Sleeper snapshot). Salary has no canonical owner until the derived-data centralization Issue lands; the remaining reads are bounded to those fields. Accepted as a known interim state by Robert on 2026-10-06 (#347 option A); cleanup is tracked in Issue #919 (Shared Derived: Salary, Ranking, Grading und Salary Cap nach derived-data zentralisieren), whose acceptance requires removing this entry.'
     fantasy-management/automation/jobs/entity-observation.json:
       reads:
         legacy:League: intentional-overlay
@@ -1062,7 +1062,7 @@ consumerReadClassification:
         legacy:League: intentional-overlay
         legacy:Players: legacy-read-model-pending
         legacy:Timestamps: freshness-trigger
-      note: 'League.json: managed-team display and ScoringType overlay (6S). Timestamps.json: freshness bridge. Players.json: declared input; build_player_signal_dataset.py takes the population list plus the league-derived Salary and SalaryProjected, Age, Year, IsFreeAgent and the injury fields from it (field audit #347 FM-read step; Name, Position, Team and Status are canonical Sleeper). Salary has no canonical owner until the derived-data centralization Issue lands; the population/injury/free-agent reads can move to tools/players_population.py once that Issue decides the Players owner.'
+      note: 'League.json: managed-team display and ScoringType overlay (6S). Timestamps.json: freshness bridge. Players.json: declared input; build_player_signal_dataset.py takes the population list plus the league-derived Salary and SalaryProjected, Age, Year, IsFreeAgent and the injury fields from it (field audit #347 FM-read step; Name, Position, Team and Status are canonical Sleeper). Salary has no canonical owner until the derived-data centralization Issue lands; the population/injury/free-agent reads can move to tools/players_population.py once that Issue decides the Players owner. Accepted as a known interim state by Robert on 2026-10-06 (#347 option A); cleanup is tracked in Issue #919 (Shared Derived: Salary, Ranking, Grading und Salary Cap nach derived-data zentralisieren), whose acceptance requires removing this entry.'
     fantasy-management/automation/runner-config.json:
       reads:
         legacy:League: intentional-overlay
