@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-10-06T15:11:42.628609Z",
-  "input_fingerprint": "b2f5103eb5441e0aa4077afbdd799b9785f302463802271c4b291d0c5a44dd7f",
+  "generated_at": "2026-10-06T15:17:12Z",
+  "input_fingerprint": "11a0b857f402381b5b4d91444b984817a89af25acf7477d77a930a6caf081fe0",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "570ef04c1a3b8ac22c65cc7e1fe0e56f664066eed365c1d9cfebc57cea32be80"
+      "input_fingerprint": "6e4d163d54662f55f6278e3cf51cfb7f85937e26027fcfac891202e7893b01ee"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "c074f74bcf4b32dcdca6ebf0c850bf72c44ca28fb47d10847a52590c807a9451"
+      "input_fingerprint": "570ef04c1a3b8ac22c65cc7e1fe0e56f664066eed365c1d9cfebc57cea32be80"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,17 +23,17 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 276,
-    "previous_discovery_count": 271,
+    "current_discovery_count": 271,
+    "previous_discovery_count": 276,
     "event_count": 8,
     "event_type_counts": {
-      "changed": 2,
-      "new": 5,
-      "structural_change": 1
+      "changed": 3,
+      "resolved": 5
     },
     "event_priority_counts": {
-      "high": 3,
-      "medium": 5
+      "high": 1,
+      "low": 5,
+      "medium": 2
     },
     "baseline_mode": "comparison"
   },
@@ -41,8 +41,8 @@
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "3ccda25758495d80090d8ef7aa61df4c933b2d490ad3a9012676558aa313a19c",
-    "previous_evidence_fingerprint": "e4892dcca8550ae298968ff9a0fb1016d8a2c2b3ea22422503a2b456d3aec5d2",
+    "current_evidence_fingerprint": "ff5b359831d4f35208ac0c50031339ad6f684e8abfa7395f8d309408af4c2e25",
+    "previous_evidence_fingerprint": "3ccda25758495d80090d8ef7aa61df4c933b2d490ad3a9012676558aa313a19c",
     "contract_changed": false,
     "evidence_changed": true,
     "comparison_event_count_before_suppression": 8,
@@ -51,25 +51,74 @@
   },
   "events": [
     {
-      "player_id": "13413",
-      "name": "Cyrus Allen",
+      "player_id": "11633",
+      "name": "Jamari Thrash",
       "position": "WR",
       "event_type": "changed",
       "event_priority": "high",
       "current_research_priority": "high",
       "previous_research_priority": "medium",
-      "current_state_hash": "cf97de95f87a4af63d782a7920c1a7a9f581ea0f241c603f7fd27d107704695f",
-      "previous_state_hash": "3672bf26871c08904f7a7435d2d4beac93823dcc758ad5b3be533c8a3296ac09",
+      "current_state_hash": "802745585c8fed060c24113f71cfe99f62dc3990009cbf6417ccacb1712ca108",
+      "previous_state_hash": "80faee25abd8066926063409cc0ad29e294ff4df05a8d533074e126511df065f",
       "changed_dimensions": [
         "research_priority",
         "structural_change"
       ],
       "current_material_families": [
         "dynasty_market",
-        "role_opportunity"
+        "injury_availability"
       ],
       "previous_material_families": [
         "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "injury_availability",
+          "kind": "injury_flag_change",
+          "severity": "medium",
+          "from": true,
+          "to": false
+        },
+        {
+          "family": "injury_availability",
+          "kind": "injury_designation_change",
+          "severity": "medium",
+          "from": "Questionable",
+          "to": null
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "13413",
+      "name": "Cyrus Allen",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "3672bf26871c08904f7a7435d2d4beac93823dcc758ad5b3be533c8a3296ac09",
+      "previous_state_hash": "cf97de95f87a4af63d782a7920c1a7a9f581ea0f241c603f7fd27d107704695f",
+      "changed_dimensions": [
+        "research_priority"
+      ],
+      "current_material_families": [
+        "dynasty_market"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "role_opportunity"
       ],
       "current_replacement_classification": "near_rostered_boundary",
       "previous_replacement_classification": "near_rostered_boundary",
@@ -88,15 +137,7 @@
         }
       ],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 5,
-          "to": 4
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
@@ -104,21 +145,20 @@
       "name": "Jalen Royals",
       "position": "WR",
       "event_type": "changed",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "medium",
-      "current_state_hash": "036b304a8e1f1e3a8819c5f4fdbcc9ddec58e0d6a74010f179a5373570a11b17",
-      "previous_state_hash": "7470851e1eb0cd421c612d489a49bc3af96ca06e9595547746c131da6c30ec42",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "7470851e1eb0cd421c612d489a49bc3af96ca06e9595547746c131da6c30ec42",
+      "previous_state_hash": "036b304a8e1f1e3a8819c5f4fdbcc9ddec58e0d6a74010f179a5373570a11b17",
       "changed_dimensions": [
-        "research_priority",
-        "structural_change"
+        "research_priority"
       ],
       "current_material_families": [
-        "dynasty_market",
-        "role_opportunity"
+        "dynasty_market"
       ],
       "previous_material_families": [
-        "dynasty_market"
+        "dynasty_market",
+        "role_opportunity"
       ],
       "current_replacement_classification": "below_rostered_boundary",
       "previous_replacement_classification": "below_rostered_boundary",
@@ -143,246 +183,127 @@
         }
       ],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 4,
-          "to": 3
-        }
-      ],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "8188",
-      "name": "Tyquan Thornton",
-      "position": "WR",
-      "event_type": "structural_change",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "high",
-      "current_state_hash": "b5f45e9e902dbe24ff3fc74b4404969ef72b8730dc635df12799e6c437aa1835",
-      "previous_state_hash": "b5f45e9e902dbe24ff3fc74b4404969ef72b8730dc635df12799e6c437aa1835",
-      "changed_dimensions": [
-        "structural_change"
-      ],
-      "current_material_families": [
-        "dynasty_market",
-        "role_opportunity"
-      ],
-      "previous_material_families": [
-        "dynasty_market"
-      ],
-      "current_replacement_classification": "near_rostered_boundary",
-      "previous_replacement_classification": "near_rostered_boundary",
-      "threshold_summary": [
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "high",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "medium",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_value_movement",
-          "severity": "medium",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "overall_rank_movement",
-          "severity": "medium",
-          "direction": "down"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "overall_rank_movement",
-          "severity": "medium",
-          "direction": "up"
-        }
-      ],
-      "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 3,
-          "to": 6
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "4219",
       "name": "Jeremy McNichols",
       "position": "RB",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "role_opportunity"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "below_rostered_boundary",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 5,
-          "to": 4
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "11304",
       "name": "E.J. Jenkins",
       "position": "TE",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "56be8871a455a92ed3c14a123322f2918f22f55d836a943f9a6cac857615da4c",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "56be8871a455a92ed3c14a123322f2918f22f55d836a943f9a6cac857615da4c",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "role_opportunity"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "below_rostered_boundary",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 3,
-          "to": 2
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "4314",
       "name": "Johnny Mundt",
       "position": "TE",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "role_opportunity"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 2,
-          "to": 1
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "13825",
       "name": "Malik McClain",
       "position": "WR",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "role_opportunity"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 4,
-          "to": 3
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "11320",
       "name": "Nikko Remigio",
       "position": "WR",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "role_opportunity"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 6,
-          "to": 5
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     }
   ],
