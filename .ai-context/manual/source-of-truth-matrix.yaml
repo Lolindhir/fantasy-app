@@ -376,19 +376,19 @@ matrix:
       - injury start date where supplied
       - practice participation where supplied
       - richer description/expected return only when a separately accepted source supplies it
-    durableCanonicalPrimary: Sleeper /players/nfl for the current core injury/status fields; richer injury narrative/return-date contract remains unresolved
-    currentRuntimePrimary: Tank01 player injury object in RequestPlayers.ps1 until the later generator migration
-    secondary:
-      - Tank01 may remain legacy/current-runtime evidence during migration and later a bounded control source
+    durableCanonicalPrimary: canonical sleeper.players snapshot (source-data/nfl/platform/sleeper/players.json) for status, start date, body part, notes and practice description; no return date exists in any accepted source
+    currentRuntimePrimary: RequestPlayers.ps1 through PlayerPopulationUtils.psm1::ConvertTo-PlayerInjuryDetails from the canonical snapshot (#347 H1b/H3, Decision 6); no Tank01 input
+    secondary: []
     fallback: none-accepted-for-conflict-resolution
     identityKey: Sleeper player_id -> CanonicalPlayerID
     lifecycle: dynamic
     historyCoverage: no accepted canonical historical injury timeline; this decision is for current state
     freshness: persist Sleeper player map and refresh sparingly, approximately daily
-    migrationState: canonical-active-runtime-not-migrated
+    migrationState: canonical-active-runtime-migrated
     guards:
       - nflverse injury source is not a valid current replacement after its source ended following 2024
-      - missing Tank01-style ReturnDate/Description is allowed and is not synthesized
+      - ReturnDate is an honest null (unknown) and is not synthesized; InjuryStartDate is currently empty in Sleeper data and publishes as an empty string
+      - Description is published only while an injury status exists; stale Sleeper body part/notes after recovery must not become a false Fantasy Management injury signal
       - conflicting provider injury claims are not silently resolved by fallback priority
 
   nflDepthChart:
@@ -772,9 +772,9 @@ playersReadModelFieldInventory:
     injury:
       fields: [Injured, InjuryDetails.Designation, InjuryDetails.Description, InjuryDetails.ReturnDate, InjuryDetails.Date]
       layer: sourceFact
-      currentProducer: Tank01 injury object (Injured = designation present)
+      currentProducer: canonical Sleeper snapshot via PlayerPopulationUtils.psm1::ConvertTo-PlayerInjuryDetails (Injured = designation present; ReturnDate null; #347 H3)
       matrixKey: nflInjuriesCurrent
-      targetOwner: Sleeper for current core status; richer narrative unresolved
+      targetOwner: unchanged (canonical Sleeper snapshot)
       consumers:
         - App injury chip and injury tab (Date normalized but not displayed)
         - FM derive_injury_signal in player-signals and ops inputs

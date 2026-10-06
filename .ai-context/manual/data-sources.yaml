@@ -115,8 +115,10 @@ dataSources:
         - no reason set for any player or no usable roster basis
       exportPersistence: rebuilt on every run, deterministic, not committed
       remainingTank01: >
-        None for GameHistory since #347 G3. Profile, Picture and link fields are interim published
-        values until #347 H2; Injury follows in H3.
+        None. GameHistory since #347 G3, profile/Picture/links since H2 and Injury since H3 come from
+        canonical sources. Injury: Designation = Sleeper injury status, Description (notes, else body part,
+        else practice description) only while a status exists, Date = Sleeper injury start date (currently
+        empty), ReturnDate = null (unknown); producer PlayerPopulationUtils.psm1::ConvertTo-PlayerInjuryDetails.
     gameHistoryContract:
       issue: 347
       step: G3

@@ -56,7 +56,9 @@ function Invoke-PlayerPopulationExport {
 }
 
 # Sleeper equivalents of the former Tank01 injury block (#347 Decision 6): Designation = Sleeper injury
-# status, Date = injury start date, Description = first non-empty of notes, body part, practice description.
+# status, Date = injury start date, Description = first non-empty of notes, body part, practice description
+# but only while a designation exists (Sleeper keeps stale body part/notes after recovery; without a
+# designation they would surface as a false injury signal in Fantasy Management).
 # ReturnDate is an honest unknown (null); Sleeper has no return date. Injured keeps its meaning
 # "has a designation". Text fields stay empty strings when Sleeper carries no value.
 function ConvertTo-PlayerInjuryDetails {
@@ -70,9 +72,11 @@ function ConvertTo-PlayerInjuryDetails {
 
     $designation = & $text $Injury.Status
     $description = ""
-    foreach ($candidate in @($Injury.Notes, $Injury.BodyPart, $Injury.PracticeDescription)) {
-        $value = & $text $candidate
-        if ($value) { $description = $value; break }
+    if ($designation) {
+        foreach ($candidate in @($Injury.Notes, $Injury.BodyPart, $Injury.PracticeDescription)) {
+            $value = & $text $candidate
+            if ($value) { $description = $value; break }
+        }
     }
 
     return [PSCustomObject]@{
