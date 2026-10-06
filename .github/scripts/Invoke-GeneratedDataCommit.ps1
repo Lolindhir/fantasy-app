@@ -17,7 +17,8 @@ param(
         "fftoday-projections",
         "cbs-projections",
         "sleeper-trending",
-        "player-week-fantasy"
+        "player-week-fantasy",
+        "nfl-player-availability"
     )]
     [string]$Scope
 )
