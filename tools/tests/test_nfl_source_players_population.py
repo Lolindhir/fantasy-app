@@ -121,7 +121,7 @@ class PopulationRuleTests(unittest.TestCase):
         self.assertEqual((by_id["2"]["TeamAbbr"], by_id["2"]["TeamID"], by_id["2"]["IsFreeAgent"]), (None, None, True))
         self.assertEqual(by_id["2"]["Status"], "Inactive")
         self.assertEqual((by_id["3"]["TeamAbbr"], by_id["3"]["Position"]), ("WAS", "RB"))
-        self.assertEqual(by_id["1"]["Tank01ID"], "T1")
+        self.assertNotIn("Tank01ID", by_id["1"])
 
     def test_profile_fields_derive_from_canonical_profile_and_identity(self) -> None:
         rows = [snapshot_row("1"), snapshot_row("nohead", FullName="Zoë O'Neil-Smith Jr.", ESPNID="777")]

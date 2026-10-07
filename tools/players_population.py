@@ -160,14 +160,13 @@ def load_snapshot(repo_root: Path) -> list[dict[str, Any]]:
 def provider_ids_by_canonical(repo_root: Path) -> dict[str, dict[str, str]]:
     """Provider IDs RequestPlayers still needs per CanonicalPlayerID.
 
-    Tank01 is a transition key only (until G3): GameHistory still reads Games.json by the Tank01 player
-    ID. ESPN is the athlete ID for the ESPN profile link and the headshot fallback (H2).
+    ESPN is the athlete ID for the ESPN profile link and the headshot fallback (H2).
     """
     payload = read_json(repo_root / "source-data/nfl/identities/players.json")
     out: dict[str, dict[str, str]] = {}
     for record in payload.get("Players") or []:
         ids = record.get("IDs") or {}
-        wanted = {name: str(ids[name]) for name in ("Tank01", "ESPN") if ids.get(name)}
+        wanted = {name: str(ids[name]) for name in ("ESPN",) if ids.get(name)}
         if wanted:
             out[str(record["CanonicalPlayerID"])] = wanted
     return out
@@ -287,7 +286,6 @@ def build_population(repo_root: Path, league_id: str, season: int) -> dict[str, 
             "SleeperID": sleeper_id,
             "CanonicalPlayerID": cid,
             "IdentityStatus": status,
-            "Tank01ID": provider_ids.get(cid, {}).get("Tank01") if cid else None,
             "Reasons": reasons,
             "Position": position,
             "TeamAbbr": team,

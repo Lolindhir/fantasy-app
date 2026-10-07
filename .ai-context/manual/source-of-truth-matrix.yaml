@@ -703,13 +703,19 @@ playersReadModelFieldInventory:
       - source-data/nfl/platform/sleeper/players.json (canonical Sleeper snapshot, since H1b; replaces the live Sleeper and Tank01 getNFLPlayerList calls)
       - source-data/nfl/teams.json, rosters, draft and identities (population and team key, since H1b)
       - canonical player-stats, snap-counts, qbr-week, player-game-long-gains, schedules and game-finality for GameHistory (since #347 G3; replaces public/data/Games.json)
-      - public/data/League.json (LastLeagueWeek, PlayoffStartWeek, FinalScoredWeek)
-      - public/data/past_seasons/Players_<season-1..season-3>.json keyed by TankID
+      - canonical League-season WeekStructure and NFL game finality for LastLeagueWeek, PlayoffStartWeek and FinalScoredWeek (since #347 I1; replaces public/data/League.json)
+      - league-scored canonical player-stats of the three prior seasons (since #347 D4; replaces the past_seasons/Players_<year>.json archives)
       - config.ps1 WeightTotal/WeightGame
     historyArchives:
       producer: none; RequestPlayersSeason.ps1 and its Games_<year>.json input were retired with #347 G4
       shape: TankID, Name, TeamIDs, Games[] with FantasyPoints = Tank01 fantasyPointsDefault.PPR
-      note: the existing past_seasons/Players_<year>.json files stay as static, Tank01-keyed archives; no producer or consumer in the repository reads them
+      note: >-
+        The existing past_seasons/Players_<year>.json files stay as static, Tank01-keyed archives. No App or
+        Fantasy Management consumer reads them. The only reader is the NFL identity builder
+        (tools/nfl_source_data_lib/mapping_history.py::build_historical_app_mapping_claims), which treats an archive
+        row as historical identity evidence only with a second corroborating provider ID; on the 2026-10-07 data
+        it resolved 0 of 8,713 rows (source-data/audits/nfl-source-data-audit.json::historicalAppMappingCoverage).
+        This static read is intentional and kept so that Tank01-keyed history stays available as cross-check evidence.
 
   fieldGroups:
     appIdentity:
