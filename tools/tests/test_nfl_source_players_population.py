@@ -149,6 +149,9 @@ class PopulationRuleTests(unittest.TestCase):
         sized = pop.sized_headshot(base)
         self.assertEqual(sized, f"https://static.www.nfl.com/image/upload/f_auto,q_auto,w_{pop.HEADSHOT_WIDTH}/league/abc")
         self.assertEqual(pop.sized_headshot(sized), sized)
+        private = "https://static.www.nfl.com/image/private/f_auto,q_auto/league/abc"
+        self.assertEqual(pop.sized_headshot(private),
+                         f"https://static.www.nfl.com/image/private/f_auto,q_auto,w_{pop.HEADSHOT_WIDTH}/league/abc")
         self.assertEqual(pop.sized_headshot("https://img/1.png"), "https://img/1.png")
         self.assertIsNone(pop.sized_headshot(None))
         self.assertEqual(pop.derive_profile("Cher", base, None)["Picture"], sized)
