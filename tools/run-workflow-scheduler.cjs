@@ -192,6 +192,70 @@ function validateConfig(config) {
   }
 }
 
+function isCancelledRun(run) {
+  return run.status === 'completed' && run.conclusion === 'cancelled';
+}
+
+// A run cancelled by GitHub (typically a waiting run replaced inside its concurrency group) did not execute
+// and is no evidence of failure, consistent with Workflow Health (ignoredConclusions: cancelled).
+function countCancelledRuns(attemptRuns) {
+  return attemptRuns.filter(isCancelledRun).length;
+}
+
+function slotCoveredByState(satisfiedSlot, latestDue) {
+  const satisfiedMs = Date.parse(satisfiedSlot?.dueAt || '');
+  return Number.isFinite(satisfiedMs) && latestDue.getTime() <= satisfiedMs;
+}
+
+function satisfiedByRun(baseResult, latestDue, run, satisfiedSlot, now) {
+  const dueAt = latestDue.toISOString();
+  const unchanged = satisfiedSlot && satisfiedSlot.dueAt === dueAt && satisfiedSlot.runId === (run.id ?? null);
+  return {
+    result: {
+      ...baseResult,
+      decision: 'satisfied',
+      dueAt,
+      satisfyingRunId: run.id,
+      satisfyingEvent: run.event,
+      satisfyingStatus: run.status,
+      satisfyingConclusion: run.conclusion,
+    },
+    nextState: null,
+    satisfiedSlot: unchanged ? satisfiedSlot : { dueAt, runId: run.id ?? null, recordedAt: now.toISOString() },
+  };
+}
+
+function satisfiedByState(baseResult, latestDue, satisfiedSlot) {
+  return {
+    result: {
+      ...baseResult,
+      decision: 'satisfied',
+      dueAt: latestDue.toISOString(),
+      satisfiedFromState: true,
+      satisfiedSlotDueAt: satisfiedSlot.dueAt,
+      satisfyingRunId: satisfiedSlot.runId ?? null,
+      satisfiedRecordedAt: satisfiedSlot.recordedAt || null,
+    },
+    nextState: null,
+    satisfiedSlot,
+  };
+}
+
+function recordSatisfiedSlots(runtimeState, config, evaluation, targetId) {
+  if (evaluation.satisfiedSlot) {
+    runtimeState.satisfiedSlots = { ...(runtimeState.satisfiedSlots || {}), [targetId]: evaluation.satisfiedSlot };
+  }
+}
+
+function pruneSatisfiedSlots(runtimeState, config) {
+  if (!runtimeState.satisfiedSlots) return;
+  const ids = new Set(config.targets.map((target) => target.id));
+  for (const id of Object.keys(runtimeState.satisfiedSlots)) {
+    if (!ids.has(id)) delete runtimeState.satisfiedSlots[id];
+  }
+  if (Object.keys(runtimeState.satisfiedSlots).length === 0) delete runtimeState.satisfiedSlots;
+}
+
 function evaluateTarget(target, ref, now, lookbackMinutes, runs) {
   const dueAt = latestDueSlot(target.cron, target.timezone, now, lookbackMinutes);
   if (!dueAt) return { id: target.id, workflow: target.workflow, decision: 'no-due-slot-in-lookback' };
@@ -242,26 +306,14 @@ function retryState(dueAt, attemptsDispatched, extra = {}) {
   };
 }
 
-function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, targetState = null) {
+function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, targetState = null, satisfiedSlot = null) {
   const latestDue = latestDueSlot(target.cron, target.timezone, now, lookbackMinutes);
   const base = { id: target.id, workflow: target.workflow, profile: target.profile, healthBarrier: profile.healthBarrier };
   if (!latestDue) return { result: { ...base, decision: 'no-due-slot-in-lookback' }, nextState: null };
 
   const latestSuccess = runs.find((run) => runSatisfiesSlot(run, target, latestDue, ref));
-  if (latestSuccess) {
-    return {
-      result: {
-        ...base,
-        decision: 'satisfied',
-        dueAt: latestDue.toISOString(),
-        satisfyingRunId: latestSuccess.id,
-        satisfyingEvent: latestSuccess.event,
-        satisfyingStatus: latestSuccess.status,
-        satisfyingConclusion: latestSuccess.conclusion,
-      },
-      nextState: null,
-    };
-  }
+  if (latestSuccess) return satisfiedByRun(base, latestDue, latestSuccess, satisfiedSlot, now);
+  if (slotCoveredByState(satisfiedSlot, latestDue)) return satisfiedByState(base, latestDue, satisfiedSlot);
 
   let state = targetState && typeof targetState === 'object' ? { ...targetState } : null;
   let stateDue = state ? new Date(state.dueAt) : null;
@@ -305,18 +357,7 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
   if (cycleSuccess) {
     const successCreatedAt = Date.parse(cycleSuccess.created_at || '');
     if (Number.isFinite(successCreatedAt) && successCreatedAt >= latestDue.getTime()) {
-      return {
-        result: {
-          ...base,
-          decision: 'satisfied',
-          dueAt: latestDue.toISOString(),
-          satisfyingRunId: cycleSuccess.id,
-          satisfyingEvent: cycleSuccess.event,
-          satisfyingStatus: cycleSuccess.status,
-          satisfyingConclusion: cycleSuccess.conclusion,
-        },
-        nextState: null,
-      };
+      return satisfiedByRun(base, latestDue, cycleSuccess, satisfiedSlot, now);
     }
     state = null;
     cycleDue = latestDue;
@@ -327,8 +368,8 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
 
   const attemptRuns = schedulerAttemptRuns(cycleRuns, target, cycleDue, ref);
   const observedAttempts = attemptRuns.length;
-  const attemptsDispatched = Math.max(state?.attemptsDispatched || 0, observedAttempts);
-  const latestAttempt = attemptRuns.find((run) => run.status === 'completed') || null;
+  const attemptsDispatched = Math.max(0, Math.max(state?.attemptsDispatched || 0, observedAttempts) - countCancelledRuns(attemptRuns));
+  const latestAttempt = attemptRuns.find((run) => run.status === 'completed' && !isCancelledRun(run)) || null;
   const inFlight = cycleRuns.find((run) => Boolean(run.status) && run.status !== 'completed');
 
   if (inFlight) {
@@ -478,28 +519,67 @@ function validateSchedulerState(state, config) {
   if (!state || typeof state !== 'object' || Array.isArray(state)) throw new Error('Scheduler runtime state is not an object');
   if (state.schemaVersion !== config.state.schemaVersion) throw new Error('Unsupported scheduler runtime state schemaVersion');
   if (!state.targets || typeof state.targets !== 'object' || Array.isArray(state.targets)) throw new Error('Scheduler runtime state targets must be an object');
+  if (state.satisfiedSlots !== undefined) {
+    if (!state.satisfiedSlots || typeof state.satisfiedSlots !== 'object' || Array.isArray(state.satisfiedSlots)) {
+      throw new Error('Scheduler runtime state satisfiedSlots must be an object');
+    }
+    for (const [id, slot] of Object.entries(state.satisfiedSlots)) {
+      if (!slot || typeof slot !== 'object' || !Number.isFinite(Date.parse(slot.dueAt || ''))) {
+        throw new Error(`Scheduler runtime state satisfiedSlots.${id} needs a valid dueAt`);
+      }
+    }
+  }
 }
 
 function serializeSchedulerState(state) {
   return `${JSON.stringify(state, null, 2)}\n`;
 }
 
-async function loadSchedulerState({ github, context, config, core }) {
+const DEFAULT_STATE_CONTENT_RETRY_DELAYS_MS = Object.freeze([1000, 2000]);
+
+function sleepMs(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function loadSchedulerState({
+  github,
+  context,
+  config,
+  core,
+  retryDelaysMs = DEFAULT_STATE_CONTENT_RETRY_DELAYS_MS,
+  sleepFn = sleepMs,
+}) {
   const empty = createEmptySchedulerState(config);
   try {
-    const response = await github.rest.repos.getContent({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      path: config.state.path,
-      ref: config.state.branch,
-    });
-    if (!response.data || Array.isArray(response.data) || !response.data.content) {
-      throw new Error(`Scheduler runtime state ${config.state.branch}/${config.state.path} is not a file`);
+    for (let attempt = 0; ; attempt += 1) {
+      const response = await github.rest.repos.getContent({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        path: config.state.path,
+        ref: config.state.branch,
+      });
+      if (!response.data || Array.isArray(response.data)) {
+        throw new Error(`Scheduler runtime state ${config.state.branch}/${config.state.path} is not a file`);
+      }
+      let state;
+      try {
+        const text = Buffer.from(response.data.content || '', 'base64').toString('utf8');
+        if (!text.trim()) throw new SyntaxError('Unexpected end of JSON input');
+        state = JSON.parse(text);
+      } catch (error) {
+        // An empty or truncated read is treated like a transient read error (e.g. read during a concurrent write).
+        if (!(error instanceof SyntaxError) || attempt >= retryDelaysMs.length) throw error;
+        const delayMs = retryDelaysMs[attempt];
+        core.warning(
+          `Scheduler runtime state content was empty or incomplete (${error.message}); re-reading in ${delayMs} ms `
+          + `(attempt ${attempt + 2}/${retryDelaysMs.length + 1}).`,
+        );
+        await sleepFn(delayMs);
+        continue;
+      }
+      validateSchedulerState(state, config);
+      return { state, serialized: serializeSchedulerState(state), exists: true };
     }
-    const text = Buffer.from(response.data.content, 'base64').toString('utf8');
-    const state = JSON.parse(text);
-    validateSchedulerState(state, config);
-    return { state, serialized: serializeSchedulerState(state), exists: true };
   } catch (error) {
     if (error && error.status === 404) {
       core.info(`Scheduler runtime state ${config.state.branch}/${config.state.path} does not exist yet; it will be initialized on the first state change.`);
@@ -604,6 +684,9 @@ function actionLabel(result) {
 function reasonForResult(result, timeZone) {
   switch (result.decision) {
     case 'satisfied':
+      if (result.satisfiedFromState) {
+        return `Slot ${result.satisfiedSlotDueAt} already satisfied by run #${result.satisfyingRunId} (evidence from scheduler state; the run list did not show it).`;
+      }
       return `Run #${result.satisfyingRunId} completed successfully.`;
     case 'in-flight':
       return `Run #${result.inFlightRunId} is ${result.inFlightStatus || 'in flight'}.`;
@@ -673,14 +756,14 @@ async function writeSummary(core, results, now, config) {
   await core.summary.addRaw(buildSummaryMarkdown(results, now, config)).write();
 }
 
-async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date() }) {
+async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date(), stateReadRetryDelaysMs, sleepFn }) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   validateConfig(config);
   if (config.repository !== `${context.repo.owner}/${context.repo.repo}`) {
     throw new Error(`Scheduler repository mismatch: config=${config.repository} runtime=${context.repo.owner}/${context.repo.repo}`);
   }
   const ref = config.ref || 'main';
-  const loadedState = await loadSchedulerState({ github, context, config, core });
+  const loadedState = await loadSchedulerState({ github, context, config, core, retryDelaysMs: stateReadRetryDelaysMs, sleepFn });
   const runtimeState = JSON.parse(JSON.stringify(loadedState.state));
   const failures = [];
   const evaluated = [];
@@ -705,7 +788,9 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
         config.lookbackMinutes,
         response.data.workflow_runs || [],
         runtimeState.targets[target.id] || null,
+        runtimeState.satisfiedSlots?.[target.id] || null,
       );
+      recordSatisfiedSlots(runtimeState, config, evaluation, target.id);
       if (evaluation.nextState) runtimeState.targets[target.id] = evaluation.nextState;
       else delete runtimeState.targets[target.id];
       evaluated.push({ target, result: evaluation.result });
@@ -716,6 +801,7 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
     }
   }
 
+  pruneSatisfiedSlots(runtimeState, config);
   const peerResults = evaluated.map((item) => item.result);
   for (const item of evaluated) {
     item.result = applyTargetDeferral(item.target, item.result, peerResults, now);
@@ -800,6 +886,13 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
 
 module.exports = {
   applyTargetDeferral,
+  countCancelledRuns,
+  isCancelledRun,
+  pruneSatisfiedSlots,
+  recordSatisfiedSlots,
+  satisfiedByRun,
+  satisfiedByState,
+  slotCoveredByState,
   buildSummaryMarkdown,
   createEmptySchedulerState,
   cronMatches,

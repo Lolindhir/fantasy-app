@@ -78,6 +78,17 @@ scheduler:
       GitHub Actions run history is positive evidence for actual execution status and failure conclusions. Scheduler runtime
       state is authoritative only for the fact that a dispatch request was issued and for anchoring retry, observation,
       deferral and circuit timing. Absence from one workflow-run list response is unknown state, never failure evidence.
+    satisfiedSlots:
+      location: satisfiedSlots.<targetId> in workflow-scheduler-state.json (optional map, no schema version bump)
+      content: dueAt of the last slot seen as satisfied, the satisfying runId and recordedAt; one entry per target.
+      rule: >
+        A slot recorded as satisfied is never dispatched again, even when a later workflow-run list response does not
+        contain the successful run. A newer due slot behaves normally. The decision is `satisfied` with
+        satisfiedFromState=true so the JSON decision log and Job Summary show where the evidence came from. Entries of
+        removed targets are pruned.
+    stateReadRule: >
+      Empty or truncated scheduler state content is treated like a transient read error: it is re-read up to twice with
+      the configured delays (1 s, 2 s) and only then fails closed.
   profiles:
     productive:
       healthBarrier: true
@@ -97,6 +108,7 @@ scheduler:
       listWorkflowRuns query filtered to event=repository_dispatch without the branch parameter, merge/dedupe both result sets,
       then apply the local main/event/due-slot matcher again.
     missingRunRule: A persisted dispatch that is not visible in the merged run reads is `awaiting-observation`; it must not increment attempts or trigger a retry.
+    preDispatchRule: Before any `dispatch` decision (without stored satisfied-slot evidence) the same fallback query is run once and merged, so a successful or running run hidden from the primary list prevents the dispatch.
     timeoutRule: After 15 minutes without observing the requested run, open an observation circuit instead of issuing a blind retry.
     cooldownMinutes: 60
     cooldownRule: While the observation circuit is open, do not dispatch the target. After expiry a later scheduler tick may start one fresh cycle for the then-current due slot.
@@ -110,7 +122,11 @@ scheduler:
     - 10
     cooldownMinutes: 60
     slotAnchor: original-due-slot-until-success-or-circuit-resolution
-    failureEvidenceRule: A retry may be scheduled only after an actually observed repository_dispatch run for the active cycle is completed with a non-success conclusion. Missing run observation is not a failed attempt.
+    failureEvidenceRule: >
+      A retry may be scheduled only after an actually observed repository_dispatch run for the active cycle is completed with a non-success conclusion.
+      Missing run observation is not a failed attempt.
+      A run with conclusion `cancelled` (typically a waiting run replaced inside its concurrency group before any step ran) is neither a failed attempt nor an observation gap: it does not count toward maxAttempts, triggers no retry-wait, retry-exhausted or cooldown, and the next tick may dispatch normally.
+      This matches Workflow Health, which ignores `cancelled`.
     successRule: Any newer relevant successful run that satisfies the active cycle heals it and clears scheduler runtime state.
     exhaustionRule: After the configured observed failed attempts are exhausted, open the retry circuit for the configured cooldown instead of dispatching again on every scheduler tick.
     cooldownRule: While the retry circuit is open, do not dispatch the target; after expiry a later scheduler tick may start a fresh cycle for the then-current due slot.
