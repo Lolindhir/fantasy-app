@@ -925,7 +925,7 @@ if (Test-Path $targetFile) {
 
 # --- JSON schreiben ---
 try {
-    $playerData | ConvertTo-Json -Depth 5 | Out-File $targetFile -Encoding UTF8
+    $playerData | ConvertTo-Json -Depth (Get-PlayersPublishedJsonDepth) | Out-File $targetFile -Encoding UTF8
     Write-Host "Players.json saved!" -ForegroundColor Green
 } catch {
     Write-Error "Error writing Players.json: $_"

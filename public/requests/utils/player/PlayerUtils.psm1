@@ -234,6 +234,31 @@ function Add-PreviousSeasonCombinedRanking {
     return $Players
 }
 
+# Serialization depth used when RequestPlayers writes Players.json. The change comparison must use
+# the same depth: freshly built objects are deeper than the published file (for example
+# Grading[].Value[].GameDetails is cut to its type name at this depth), so comparing at a larger
+# depth reports a change on every run although the written file stays identical.
+$script:PlayersPublishedJsonDepth = 5
+
+function Get-PlayersPublishedJsonDepth {
+    return $script:PlayersPublishedJsonDepth
+}
+
+function ConvertTo-PublishedPlayersComparable {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)]
+        [AllowEmptyCollection()]
+        [object]$Players
+    )
+
+    # Serialize like the published file, then re-parse so freshly built and file-loaded objects
+    # share the same types before the sorted, compressed comparison string is produced.
+    $depth = Get-PlayersPublishedJsonDepth
+    $published = @($Players | Sort-Object -Property ID) | ConvertTo-Json -Depth $depth -Compress -WarningAction SilentlyContinue
+    return ($published | ConvertFrom-Json) | ConvertTo-Json -Depth $depth -Compress -WarningAction SilentlyContinue
+}
+
 function Compare-Players {
     param(
         [object]$OldPlayers,
@@ -254,8 +279,8 @@ function Compare-Players {
         return $true
     }
 
-    $oldPlayersJson = @($OldPlayers | Sort-Object -Property ID) | ConvertTo-Json -Depth 20 -Compress
-    $newPlayersJson = @($NewPlayers | Sort-Object -Property ID) | ConvertTo-Json -Depth 20 -Compress
+    $oldPlayersJson = ConvertTo-PublishedPlayersComparable -Players $OldPlayers
+    $newPlayersJson = ConvertTo-PublishedPlayersComparable -Players $NewPlayers
 
     if ($oldPlayersJson -ne $newPlayersJson) {
         Write-Host "Player data changed."
