@@ -198,15 +198,19 @@ def short_name(display_name: str) -> str | None:
     return f"{parts[0][0]}. {parts[1]}"
 
 
+# Public (`upload`) and private (`private`) delivery types both serve the 1 to 5 MB original without a width.
+NFL_IMAGE_URL = re.compile(r"^(?P<head>https://static\.www\.nfl\.com/image/(?:upload|private)/)(?P<transform>[^/]+)/(?P<rest>.+)$")
+
+
 def sized_headshot(url: str | None, width: int = HEADSHOT_WIDTH) -> str | None:
     """Add a width transformation to an NFL image CDN link; other links and already sized links stay unchanged."""
-    if not url or "static.www.nfl.com/image/upload/" not in url:
+    match = NFL_IMAGE_URL.match(url or "")
+    if not match:
         return url
-    head, _, tail = url.partition("/image/upload/")
-    transform, sep, rest = tail.partition("/")
-    if not sep or any(part.startswith("w_") for part in transform.split(",")):
+    transform = match["transform"]
+    if any(part.startswith("w_") for part in transform.split(",")):
         return url
-    return f"{head}/image/upload/{transform},w_{width}/{rest}"
+    return f"{match['head']}{transform},w_{width}/{match['rest']}"
 
 
 def derive_profile(display_name: str | None, headshot: str | None, espn_id: str | None) -> dict[str, Any]:
