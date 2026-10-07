@@ -168,6 +168,18 @@ dataSources:
         existing last-known-good Players.json remains untouched. Diagnostics list
         every duplicate ID together with Name, TeamID and Position for all
         conflicting records.
+    changeDetection:
+      issue: 929
+      rule: >
+        Compare-Players compares old and new players serialized exactly like the published file
+        (PlayerUtils.psm1::Get-PlayersPublishedJsonDepth, currently 5, re-parsed and sorted by ID).
+        Only a difference in the published content creates a backup, rewrites Players.json and
+        updates Timestamps.Players; an unchanged run ends with "No changes - update skipped.".
+      knownLimit: >
+        At depth 5 Grading[].Value[].GameDetails is published as the type name
+        "System.Collections.Specialized.OrderedDictionary" (no consumer reads it). Changing the write
+        depth would change the published contract and needs a separate approval.
+      regressionTest: public/requests/PlayersChangeDetectionRegressionTest.ps1
     timestamped: true
     backup: true
     backupPathPattern: public/data/backup/Players_<UTC timestamp>.json
