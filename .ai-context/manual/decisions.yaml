@@ -1462,3 +1462,35 @@ decisions:
         - One more scheduled workflow; a stale snapshot shows up as unknown availability until the workflow health alerts.
         - Outside September through January the snapshot is not refreshed.
 
+
+  - id: ADR-047
+    title: Satisfied slots are persisted; absence never re-opens a satisfied slot, cancelled runs are not failed attempts
+    status: accepted
+    context: >
+      Productive observation on 2026-10-07 (Issue #927, found in the #471 analysis) showed weekly and daily targets
+      such as Standings, Players and Games being dispatched dozens of times per day. A later scheduler tick did not
+      receive the already successful run in its workflow-run list (same unexplained phenomenon as ADR-034), found no
+      satisfying run and started a new cycle for an already satisfied due slot. Separately, runs that GitHub cancelled
+      as waiting runs inside a shared concurrency group (league-source-data-sync, nfl-source-data-sync) were counted as
+      attempts, which produced retry-wait, retry-exhausted and 60-minute cooldowns without any failure. A scheduler
+      state file read as empty or truncated also turned a whole scheduler run red.
+    decision: >
+      Extend ADR-033/ADR-034: the runtime state keeps one satisfied slot per target (satisfiedSlots.<targetId> with
+      dueAt, runId, recordedAt; optional map, schema version unchanged). A due slot at or before the stored dueAt is
+      `satisfied` (satisfiedFromState=true in decision log and Job Summary) even when the run list does not contain the
+      run; a newer due slot behaves as before. Before any dispatch decision the existing unfiltered repository_dispatch
+      fallback query is run once and merged. Runs with conclusion cancelled are not counted as attempts and cause no
+      retry-wait, circuit or cooldown (consistent with Workflow Health ignoring cancelled). Empty or truncated state
+      content is re-read up to twice before failing closed.
+    rationale: >
+      Absence from a list response is unknown state and must never create work; a satisfied slot is a monotonic fact
+      that is cheap to persist. A cancelled run did not execute and is no failure evidence, so counting it contradicts
+      the failure-evidence rule of ADR-034.
+    consequences:
+      positive:
+        - Weekly and daily targets run once per slot even when the run list is incomplete.
+        - Shared-concurrency cancellations no longer open retry circuits.
+        - A transient empty state read no longer fails the scheduler run.
+      negative:
+        - The state file is rewritten once per newly satisfied slot per target.
+        - A genuine cancel by a person is also not retried within the same slot until the next tick dispatches normally.

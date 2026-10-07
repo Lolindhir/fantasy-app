@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const base = require('./run-workflow-scheduler.cjs');
 
 const OBSERVATION_DECISIONS = new Set(['awaiting-observation', 'observation-timeout', 'observation-cooldown']);
+const FALLBACK_DECISIONS = new Set([...OBSERVATION_DECISIONS, 'dispatch']);
 
 function validateConfig(config) {
   base.validateConfig(config);
@@ -85,26 +86,15 @@ function observationDecision(baseResult, cycleDue, latestDue, retryPolicy, state
   };
 }
 
-function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, targetState = null) {
+function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, targetState = null, satisfiedSlot = null) {
   const latestDue = base.latestDueSlot(target.cron, target.timezone, now, lookbackMinutes);
   const baseResult = { id: target.id, workflow: target.workflow, profile: target.profile, healthBarrier: profile.healthBarrier };
   if (!latestDue) return { result: { ...baseResult, decision: 'no-due-slot-in-lookback' }, nextState: null };
 
   const latestSuccess = runs.find((run) => base.runSatisfiesSlot(run, target, latestDue, ref));
-  if (latestSuccess) {
-    return {
-      result: {
-        ...baseResult,
-        decision: 'satisfied',
-        dueAt: latestDue.toISOString(),
-        satisfyingRunId: latestSuccess.id,
-        satisfyingEvent: latestSuccess.event,
-        satisfyingStatus: latestSuccess.status,
-        satisfyingConclusion: latestSuccess.conclusion,
-      },
-      nextState: null,
-    };
-  }
+  if (latestSuccess) return base.satisfiedByRun(baseResult, latestDue, latestSuccess, satisfiedSlot, now);
+  // Absence from one run-list response is unknown state, never a reason to re-open a slot already seen as satisfied.
+  if (base.slotCoveredByState(satisfiedSlot, latestDue)) return base.satisfiedByState(baseResult, latestDue, satisfiedSlot);
 
   let state = targetState && typeof targetState === 'object' ? { ...targetState } : null;
   let stateDue = state ? new Date(state.dueAt) : null;
@@ -151,18 +141,7 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
   if (cycleSuccess) {
     const successCreatedAt = Date.parse(cycleSuccess.created_at || '');
     if (Number.isFinite(successCreatedAt) && successCreatedAt >= latestDue.getTime()) {
-      return {
-        result: {
-          ...baseResult,
-          decision: 'satisfied',
-          dueAt: latestDue.toISOString(),
-          satisfyingRunId: cycleSuccess.id,
-          satisfyingEvent: cycleSuccess.event,
-          satisfyingStatus: cycleSuccess.status,
-          satisfyingConclusion: cycleSuccess.conclusion,
-        },
-        nextState: null,
-      };
+      return base.satisfiedByRun(baseResult, latestDue, cycleSuccess, satisfiedSlot, now);
     }
     state = null;
     cycleDue = latestDue;
@@ -174,8 +153,8 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
   const attemptRuns = base.schedulerAttemptRuns(cycleRuns, target, cycleDue, ref);
   const observedAttempts = attemptRuns.length;
   const stateAttempts = state?.attemptsDispatched || 0;
-  const attemptsDispatched = Math.max(stateAttempts, observedAttempts);
-  const latestAttempt = attemptRuns[0] || null;
+  const attemptsDispatched = Math.max(0, Math.max(stateAttempts, observedAttempts) - base.countCancelledRuns(attemptRuns));
+  const latestAttempt = attemptRuns.find((run) => !base.isCancelledRun(run)) || null;
   const inFlight = cycleRuns.find((run) => Boolean(run.status) && run.status !== 'completed');
 
   if (inFlight) {
@@ -206,7 +185,7 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
   if (state && stateAttempts > observedAttempts) {
     const observation = observationDecision(baseResult, cycleDue, latestDue, retryPolicy, state, observedAttempts, now);
     if (observation) return observation;
-    return evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, null);
+    return evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, null, satisfiedSlot);
   }
 
   const latestAttemptFailed = latestAttempt
@@ -304,7 +283,7 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
   };
 }
 
-async function evaluateTargetFromGithub({ github, context, target, profile, retryPolicy, ref, now, lookbackMinutes, targetState }) {
+async function evaluateTargetFromGithub({ github, context, target, profile, retryPolicy, ref, now, lookbackMinutes, targetState, satisfiedSlot = null }) {
   const primaryResponse = await github.rest.actions.listWorkflowRuns({
     owner: context.repo.owner,
     repo: context.repo.repo,
@@ -313,8 +292,9 @@ async function evaluateTargetFromGithub({ github, context, target, profile, retr
     per_page: 100,
   });
   const primaryRuns = primaryResponse.data.workflow_runs || [];
-  let evaluation = evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, primaryRuns, targetState);
-  if (!OBSERVATION_DECISIONS.has(evaluation.result.decision)) return evaluation;
+  let evaluation = evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, primaryRuns, targetState, satisfiedSlot);
+  // Before starting a run, also confirm through the unfiltered query that no successful or running run is hiding from the primary list.
+  if (!FALLBACK_DECISIONS.has(evaluation.result.decision)) return evaluation;
 
   const fallbackResponse = await github.rest.actions.listWorkflowRuns({
     owner: context.repo.owner,
@@ -325,9 +305,9 @@ async function evaluateTargetFromGithub({ github, context, target, profile, retr
   });
   const fallbackRuns = fallbackResponse.data.workflow_runs || [];
   const mergedRuns = mergeWorkflowRuns(primaryRuns, fallbackRuns);
-  evaluation = evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, mergedRuns, targetState);
+  evaluation = evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, mergedRuns, targetState, satisfiedSlot);
   evaluation.result.runQueryFallbackUsed = true;
-  evaluation.result.runQueryFallbackRecovered = !OBSERVATION_DECISIONS.has(evaluation.result.decision);
+  evaluation.result.runQueryFallbackRecovered = !FALLBACK_DECISIONS.has(evaluation.result.decision);
   evaluation.result.primaryRunCount = primaryRuns.length;
   evaluation.result.fallbackRunCount = fallbackRuns.length;
   return evaluation;
@@ -470,7 +450,9 @@ function reasonForResult(result, timeZone) {
   let text;
   switch (result.decision) {
     case 'satisfied':
-      text = `Run #${result.satisfyingRunId} completed successfully.`;
+      text = result.satisfiedFromState
+        ? `Slot ${result.satisfiedSlotDueAt} already satisfied by run #${result.satisfyingRunId} (evidence from scheduler state; the run list did not show it).`
+        : `Run #${result.satisfyingRunId} completed successfully.`;
       break;
     case 'in-flight':
       text = `Run #${result.inFlightRunId} is ${result.inFlightStatus || 'in flight'}.`;
@@ -565,14 +547,14 @@ async function writeSummary(core, results, now, config) {
   await core.summary.addRaw(buildSummaryMarkdown(results, now, config)).write();
 }
 
-async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date() }) {
+async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date(), stateReadRetryDelaysMs, sleepFn }) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   validateConfig(config);
   if (config.repository !== `${context.repo.owner}/${context.repo.repo}`) {
     throw new Error(`Scheduler repository mismatch: config=${config.repository} runtime=${context.repo.owner}/${context.repo.repo}`);
   }
   const ref = config.ref || 'main';
-  const loadedState = await base.loadSchedulerState({ github, context, config, core });
+  const loadedState = await base.loadSchedulerState({ github, context, config, core, retryDelaysMs: stateReadRetryDelaysMs, sleepFn });
   const runtimeState = JSON.parse(JSON.stringify(loadedState.state));
   const failures = [];
   const evaluated = [];
@@ -594,7 +576,9 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
         now,
         lookbackMinutes: config.lookbackMinutes,
         targetState: runtimeState.targets[target.id] || null,
+        satisfiedSlot: runtimeState.satisfiedSlots?.[target.id] || null,
       });
+      base.recordSatisfiedSlots(runtimeState, config, evaluation, target.id);
       if (evaluation.nextState) runtimeState.targets[target.id] = evaluation.nextState;
       else delete runtimeState.targets[target.id];
       evaluated.push({ target, result: evaluation.result });
@@ -605,6 +589,7 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
     }
   }
 
+  base.pruneSatisfiedSlots(runtimeState, config);
   const peerResults = evaluated.map((item) => item.result);
   for (const item of evaluated) {
     item.result = applyTargetDeferral(item.target, item.result, peerResults, now);

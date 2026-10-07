@@ -115,7 +115,9 @@ async function run({
     retryDelaysMs,
     sleepFn,
   });
-  const results = await runtime.run({ github: retryingGithub, context, core, configPath, now });
+  const results = await runtime.run({
+    github: retryingGithub, context, core, configPath, now, stateReadRetryDelaysMs: retryDelaysMs, sleepFn,
+  });
 
   let projectFieldResult;
   try {
