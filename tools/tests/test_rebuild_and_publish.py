@@ -248,6 +248,152 @@ class RebuildAndPublishTests(unittest.TestCase):
             )
         reset_to_target.assert_called_once()
 
+    def test_transient_classifier_separates_transient_race_and_auth(self) -> None:
+        def result(stderr: str) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(["git"], 1, "", stderr)
+
+        for stderr in (
+            "fatal: unable to access 'x': The requested URL returned error: 502",
+            "error: RPC failed; HTTP 500 curl 22",
+            "fatal: the remote end hung up unexpectedly",
+            "fatal: unable to access: Could not resolve host: github.com",
+        ):
+            with self.subTest(stderr=stderr):
+                self.assertTrue(publisher.is_transient_failure(result(stderr)))
+        for stderr in (
+            "rejected (fetch first)",
+            "The requested URL returned error: 403",
+            "remote: Permission denied",
+            "Authentication failed",
+            "! [remote rejected] main (pre-receive hook declined)",
+            "protected branch update failed",
+        ):
+            with self.subTest(stderr=stderr):
+                self.assertFalse(publisher.is_transient_failure(result(stderr)))
+
+    def _patch_publish_stack(self):
+        names = [
+            "changed_paths",
+            "create_generated_commit",
+            "configure_generated_commit_identity",
+            "has_staged_changes",
+            "stage_paths",
+            "assert_only_allowed_changes",
+            "reset_to_target",
+            "run",
+            "run_git",
+        ]
+        patchers = {n: patch(f"tools.rebuild_and_publish.{n}") for n in names}
+        mocks = {n: p.start() for n, p in patchers.items()}
+        for p in patchers.values():
+            self.addCleanup(p.stop)
+        sleep = patch("tools.rebuild_and_publish.time.sleep")
+        self.sleep = sleep.start()
+        self.addCleanup(sleep.stop)
+        jitter = patch("tools.rebuild_and_publish.random.uniform", return_value=0.0)
+        jitter.start()
+        self.addCleanup(jitter.stop)
+        mocks["changed_paths"].return_value = []
+        mocks["has_staged_changes"].return_value = True
+        mocks["assert_only_allowed_changes"].return_value = ["public/data/League.json"]
+        mocks["run"].return_value = subprocess.CompletedProcess(["generator"], 0, "", "")
+        return mocks
+
+    def _publish(self, **kwargs) -> None:
+        publisher.publish_rebuilt(
+            remote="origin",
+            branch="main",
+            scope="league",
+            allowed_paths=["public/data"],
+            command=["generator"],
+            max_attempts=3,
+            backoff_seconds=0,
+            jitter_seconds=0,
+            transient_backoff_seconds=5.0,
+            **kwargs,
+        )
+
+    def test_transient_push_failure_retries_same_commit_without_rebuild(self) -> None:
+        mocks = self._patch_publish_stack()
+        transient = subprocess.CompletedProcess(["git", "push"], 1, "", "error: RPC failed; HTTP 502")
+        mocks["run_git"].side_effect = [transient, transient, subprocess.CompletedProcess(["git", "push"], 0, "", "")]
+
+        self._publish()
+
+        self.assertEqual(mocks["run_git"].call_count, 3)
+        mocks["reset_to_target"].assert_called_once()
+        mocks["run"].assert_called_once()
+        self.assertEqual([c.args[0] for c in self.sleep.call_args_list], [5.0, 15.0])
+
+    def test_transient_then_race_uses_race_path_with_rebuild(self) -> None:
+        mocks = self._patch_publish_stack()
+        mocks["run_git"].side_effect = [
+            subprocess.CompletedProcess(["git", "push"], 1, "", "The requested URL returned error: 503"),
+            subprocess.CompletedProcess(["git", "push"], 1, "", "rejected (fetch first)"),
+            subprocess.CompletedProcess(["git", "push"], 0, "", ""),
+        ]
+
+        self._publish()
+
+        self.assertEqual(mocks["reset_to_target"].call_count, 2)
+        self.assertEqual(mocks["run"].call_count, 2)
+        self.assertEqual(mocks["run_git"].call_count, 3)
+
+    def test_transient_push_failure_exhausts_with_clear_error(self) -> None:
+        mocks = self._patch_publish_stack()
+        mocks["run_git"].return_value = subprocess.CompletedProcess(
+            ["git", "push"], 1, "", "fatal: the remote end hung up unexpectedly"
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "transient error after 3 retries"):
+            self._publish()
+
+        self.assertEqual(mocks["run_git"].call_count, 4)
+        mocks["reset_to_target"].assert_called_once()
+
+    def test_auth_and_hook_push_failures_do_not_retry_even_with_transient_text(self) -> None:
+        for stderr in (
+            "remote: Permission denied\nThe requested URL returned error: 403",
+            "remote rejected (pre-receive hook declined) after RPC failed",
+        ):
+            with self.subTest(stderr=stderr):
+                mocks = self._patch_publish_stack()
+                mocks["run_git"].return_value = subprocess.CompletedProcess(["git", "push"], 1, "", stderr)
+                with self.assertRaisesRegex(RuntimeError, "non-race reason"):
+                    self._publish()
+                mocks["run_git"].assert_called_once()
+                self.sleep.assert_not_called()
+
+    @patch("tools.rebuild_and_publish.time.sleep")
+    @patch("tools.rebuild_and_publish.random.uniform", return_value=0.0)
+    @patch("tools.rebuild_and_publish.run_git")
+    def test_fetch_retries_transient_failure_then_resets(self, run_git, _jitter, sleep) -> None:
+        ok = subprocess.CompletedProcess(["git"], 0, "", "")
+        run_git.side_effect = [
+            subprocess.CompletedProcess(["git", "fetch"], 128, "", "fatal: early EOF"),
+            ok,
+            ok,
+            ok,
+        ]
+
+        publisher.reset_to_target("origin", "main", transient_backoff_seconds=5.0)
+
+        self.assertEqual(run_git.call_args_list[0].args[0][0], "fetch")
+        self.assertEqual(run_git.call_args_list[1].args[0][0], "fetch")
+        self.assertEqual(run_git.call_count, 4)
+        sleep.assert_called_once_with(5.0)
+
+    @patch("tools.rebuild_and_publish.time.sleep")
+    @patch("tools.rebuild_and_publish.run_git")
+    def test_fetch_auth_failure_fails_without_retry(self, run_git, sleep) -> None:
+        run_git.return_value = subprocess.CompletedProcess(["git", "fetch"], 128, "", "Authentication failed")
+
+        with self.assertRaisesRegex(RuntimeError, "git fetch failed"):
+            publisher.reset_to_target("origin", "main")
+
+        run_git.assert_called_once()
+        sleep.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

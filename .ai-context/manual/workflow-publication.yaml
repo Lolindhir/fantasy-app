@@ -10,6 +10,8 @@ principles:
   - Self-contained snapshots may use rebase-and-retry when their content does not depend on repository state that can change during the run.
   - Repository-derived outputs must use rebuild-and-retry: fetch latest target, discard the stale generated commit, rerun the generator, then retry publication.
   - Real generator failures, unexpected changed paths and non-race Git failures fail closed.
+  - Transient transport/server failures (HTTP 5xx, RPC failed, hung-up or reset connections, DNS/timeouts, HTTP 429) of git push and git fetch are neither a branch race nor a generator failure. Both helpers repeat the same git command a bounded number of times (default 3, backoff 5/15/45 s plus jitter, `--max-transient-retries` / `--transient-backoff-seconds`) with a separate counter from the race counter; a rebuild helper re-pushes the same local commit instead of rebuilding. Auth errors (403, permission denied, authentication failed) and hook/protection rejections stay fail-closed, as do exhausted transient retries.
+  - Workflow-local push loops that do not use the helpers (sync-league-source-data, sync-nfl-source-data, materialize-fantasy-operations-inputs, source-data-readiness) do not yet have transient retry; moving them onto the helpers is tracked in Issue #471 and needs explicit workflow approval.
   - Cross-workflow serialization is not the primary safety mechanism; independent writers may remain parallel when publication semantics are race-safe.
   - Generated-data writers publish only their declared output scope.
   - Every workflow that requests repository content write permission, or otherwise contains recognized branch-publication behavior, must be explicitly classified here before CI may accept it.
