@@ -172,13 +172,14 @@ dataSources:
       issue: 929
       rule: >
         Compare-Players compares old and new players serialized exactly like the published file
-        (PlayerUtils.psm1::Get-PlayersPublishedJsonDepth, currently 5, re-parsed and sorted by ID).
+        (PlayerUtils.psm1::Get-PlayersPublishedJsonDepth, currently 7, re-parsed and sorted by ID).
         Only a difference in the published content creates a backup, rewrites Players.json and
         updates Timestamps.Players; an unchanged run ends with "No changes - update skipped.".
-      knownLimit: >
-        At depth 5 Grading[].Value[].GameDetails is published as the type name
-        "System.Collections.Specialized.OrderedDictionary" (no consumer reads it). Changing the write
-        depth would change the published contract and needs a separate approval.
+      writeDepth: >
+        Robert approved on 2026-10-08 (Issue #935) that Players.json contains everything the script
+        writes. Depth 7 publishes Grading[].Value[].GameDetails as a complete object (level 6); at the
+        former depth 5 it was only the type name "System.Collections.Specialized.OrderedDictionary".
+        The depth stays shared by writer and comparison; the Grading content itself is reviewed later.
       regressionTest: public/requests/PlayersChangeDetectionRegressionTest.ps1
     timestamped: true
     backup: true

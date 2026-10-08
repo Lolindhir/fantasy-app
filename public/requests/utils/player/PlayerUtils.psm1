@@ -235,10 +235,10 @@ function Add-PreviousSeasonCombinedRanking {
 }
 
 # Serialization depth used when RequestPlayers writes Players.json. The change comparison must use
-# the same depth: freshly built objects are deeper than the published file (for example
-# Grading[].Value[].GameDetails is cut to its type name at this depth), so comparing at a larger
-# depth reports a change on every run although the written file stays identical.
-$script:PlayersPublishedJsonDepth = 5
+# the same depth: if the comparison were deeper than the written file, freshly built objects would
+# differ from the file-loaded ones and every run would report a change. Depth 7 keeps the full
+# Grading[].Value[].GameDetails object (level 6); at depth 5 it was cut to its type name.
+$script:PlayersPublishedJsonDepth = 7
 
 function Get-PlayersPublishedJsonDepth {
     return $script:PlayersPublishedJsonDepth
