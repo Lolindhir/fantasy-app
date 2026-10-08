@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-10-08T04:52:50.372600Z",
+  "generated_at": "2026-10-08T05:10:13.532459Z",
   "berlin_date": "2026-10-08",
   "timezone": "Europe/Berlin",
   "domain_context": {
@@ -32,18 +32,18 @@
         "relevance": "required",
         "active": true,
         "reason": "phase_policy:regular_season",
-        "runtime_status": "active_degraded",
+        "runtime_status": "active_ready",
         "execution_allowed": true,
-        "no_event_conclusion_allowed": false
+        "no_event_conclusion_allowed": true
       },
       {
         "id": "kicker-daily-monitoring",
         "relevance": "required",
         "active": true,
         "reason": "phase_policy:regular_season",
-        "runtime_status": "active_degraded",
+        "runtime_status": "active_ready",
         "execution_allowed": true,
-        "no_event_conclusion_allowed": false
+        "no_event_conclusion_allowed": true
       }
     ],
     "required_module_ids": [
@@ -60,27 +60,21 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 5,
-    "stale_count": 1,
+    "fresh_count": 6,
+    "stale_count": 0,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
   },
-  "overall_status": "degraded",
+  "overall_status": "ok",
   "monitoring": {
-    "decision": "proceed_degraded",
+    "decision": "proceed",
     "allowed": true,
-    "no_event_conclusion_allowed": false,
-    "unfresh_source_ids": [
-      "fftoday"
-    ],
+    "no_event_conclusion_allowed": true,
+    "unfresh_source_ids": [],
     "blocking_source_ids": [],
-    "no_event_blocking_source_ids": [
-      "fftoday"
-    ],
-    "affected_signal_families": [
-      "season_projection"
-    ]
+    "no_event_blocking_source_ids": [],
+    "affected_signal_families": []
   },
   "sources": [
     {
@@ -97,7 +91,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-10-08T03:26:43.435619Z",
-      "age_minutes": 86.12,
+      "age_minutes": 103.5,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -115,7 +109,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-10-08T03:41:28.091651Z",
-      "age_minutes": 71.37,
+      "age_minutes": 88.76,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -132,7 +126,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-10-08T03:51:10.457975Z",
-      "age_minutes": 61.67,
+      "age_minutes": 79.05,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -146,10 +140,10 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "stale",
-      "reason": "heartbeat_not_from_current_berlin_date",
-      "checked_at": "2026-10-07T19:13:13.693056Z",
-      "age_minutes": 579.61,
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-10-08T05:05:08.669559Z",
+      "age_minutes": 5.08,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -166,7 +160,7 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-10-08T04:16:54.907176Z",
-      "age_minutes": 35.92,
+      "age_minutes": 53.31,
       "content_changed": true,
       "trigger": "repository_dispatch"
     },
@@ -183,13 +177,13 @@
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
       "checked_at": "2026-10-08T04:26:44.933681Z",
-      "age_minutes": 26.09,
+      "age_minutes": 43.48,
       "content_changed": true,
       "trigger": "repository_dispatch"
     }
   ],
   "quality": {
-    "status": "degraded",
+    "status": "ok",
     "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
     "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false"
   }
