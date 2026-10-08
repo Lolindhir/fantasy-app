@@ -16,8 +16,8 @@ function Assert-Equal {
     }
 }
 
-# Generic fixture: nested deeper than the published JSON depth, so freshly built objects differ from
-# the file-loaded ones exactly like Grading[].Value[].GameDetails in the real Players.json.
+# Generic fixture shaped like Grading[].Value[].GameDetails in the real Players.json. Freshly built
+# ordered dictionaries differ in type from the file-loaded objects, so the comparison must re-parse.
 function New-TestPlayers {
     param([int]$Count)
 
@@ -59,10 +59,11 @@ New-Item -ItemType Directory -Path $tempDir | Out-Null
 try {
     $file = Join-Path $tempDir 'Players.json'
 
-    # Written content must really be cut at the published depth, otherwise this fixture proves nothing.
+    # The published file must keep the complete GameDetails object, not its type name.
     $first = @(New-TestPlayers -Count 3)
     $old = Write-AndReloadPlayers -Players $first -Path $file
-    Assert-Equal 'System.Collections.Specialized.OrderedDictionary' $old[0].Grading[0].Value[0].GameDetails 'Fixture must exceed the published JSON depth.'
+    Assert-Equal 1 $old[0].Grading[0].Value[0].GameDetails.Week 'GameDetails must be written as a complete object.'
+    Assert-Equal 'AAA' $old[0].Grading[0].Value[0].GameDetails.Home 'GameDetails fields must survive the write.'
 
     # Rebuilding identical data must not count as a change.
     $rebuilt = @(New-TestPlayers -Count 3)
