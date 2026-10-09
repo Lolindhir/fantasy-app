@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-10-09T04:16:23.231859Z",
-  "input_fingerprint": "5f74174ae2e70312f44865fbedad741ccaa30f5ea2afce612936a7bd5ad14cf5",
+  "generated_at": "2026-10-09T05:23:47Z",
+  "input_fingerprint": "ccd8d2a97a630bebf2641bef6a00ee14d22dd6449f21668d11005c5371854277",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "5b3b8a822e4c2dca78387abed84328555f5a8eda1bafa44bab3c56b97c73cde3",
-      "source_timestamp": "2026-10-08T08:32:56Z"
+      "content_sha256": "25c5c549801a40c979de5296e41ec9cd0f8be1afd419a41d0cb7a041829bd060",
+      "source_timestamp": "2026-10-09T05:20:09Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "5df0e337c41f3bd6e84ebf9fb7d86d0893dbb3921ec18ccfd09bf81eaf4356e8",
-      "source_timestamp": "2026-10-09T03:47:56Z"
+      "content_sha256": "448a007d3a0c3cac21efac0efc42c6d16ced320c0c0b3cac6b90e14c8a788136",
+      "source_timestamp": "2026-10-09T05:23:47Z"
     },
     {
       "id": "operations_source_catalog",
@@ -2889,7 +2889,7 @@
       "is_starter": true,
       "app_data": {
         "status": "Active",
-        "age": 26.5,
+        "age": 26.6,
         "years_experience": 4,
         "salary": 22961606,
         "salary_projected": 31224753,
@@ -3143,13 +3143,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Hamstring",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -3365,9 +3365,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -7644,13 +7645,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Questionable",
-        "description": "Hand",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "high",
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -7880,10 +7881,9 @@
         }
       },
       "external_research": {
-        "injury_priority": "high",
+        "injury_priority": "routine",
         "role_opportunity_priority": "routine",
         "reasons": [
-          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
