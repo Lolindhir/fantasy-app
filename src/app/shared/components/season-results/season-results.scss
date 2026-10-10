@@ -21,11 +21,12 @@
 
 .team-row {
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
   align-items: center;
   column-gap: 0.6rem;
   box-sizing: border-box;
-  padding: 0.5rem 0.75rem;
+  height: 58px;
+  padding: 0 0.75rem;
   border-radius: 8px;
   background: linear-gradient(to right, #eff2f5, #e2e8f0);
 }
@@ -94,11 +95,11 @@
 
 .team-row__name {
   min-width: 0;
+  flex: 1 1 auto;
   overflow: hidden;
   font-size: 1.08rem;
   font-weight: 800;
-  line-height: 1.1;
-  text-overflow: ellipsis;
+  line-height: 1.15;
   white-space: nowrap;
 }
 
@@ -167,13 +168,6 @@
 .owner.champ {
   font-size: larger;
   padding-top: 0.75rem;
-}
-
-.owner-awards {
-  min-width: 2rem;
-  display: flex;
-  justify-content: flex-end;
-  font-size: 0.9rem;
 }
 
 .result-awards {

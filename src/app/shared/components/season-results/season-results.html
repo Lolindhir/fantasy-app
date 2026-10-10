@@ -131,13 +131,14 @@
             </span>
           </span>
 
-          <div class="team-row__name">{{ result.teamName || result.team.Owner }}</div>
-        </div>
-
-        <div class="owner-awards">
-          <ng-container
-            *ngTemplateOutlet="resultAwards; context: { $implicit: result }"
-          ></ng-container>
+          <div
+            class="team-row__name"
+            [appFitText]="result.teamName || result.team.Owner"
+            [fitTextMinSize]="13"
+            [fitTextMaxSize]="17.28"
+          >
+            {{ result.teamName || result.team.Owner }}
+          </div>
         </div>
       </div>
     </div>
