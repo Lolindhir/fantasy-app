@@ -86,9 +86,11 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
         for immediate_path in (
             "public/data/League.json",
             "public/data/Players.json",
-            "public/data/Timestamps.json",
         ):
             self.assertIn(immediate_path, workflow)
+
+        # Timestamps-only data commits carry no materializer input (Issue #930).
+        self.assertNotIn("public/data/Timestamps.json", workflow)
 
         self.assertIn("workflow_dispatch:", workflow)
 
