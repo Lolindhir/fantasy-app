@@ -590,13 +590,25 @@ function Select-CurrentMatchupProviderComparable {
             }
     )
 
+    # Sleeper marks an unfilled starter slot with "0". The canonical layer treats it as "no player"
+    # (issue #940), so the provider side drops those slots together with their parallel points.
+    $starterIds = @($Row.starters | ForEach-Object { [string]$_ })
+    $starterPointValues = @($Row.starters_points)
+    $filledStarters = @()
+    $filledStarterPoints = @()
+    for ($i = 0; $i -lt $starterIds.Count; $i++) {
+        if ($starterIds[$i] -eq '0') { continue }
+        $filledStarters += $starterIds[$i]
+        $filledStarterPoints += $(if ($null -eq $starterPointValues[$i]) { $null } else { [double]$starterPointValues[$i] })
+    }
+
     return [PSCustomObject][ordered]@{
         roster_id       = [int]$Row.roster_id
         matchup_id      = if ($null -eq $Row.matchup_id) { $null } else { [int]$Row.matchup_id }
         players         = @($Row.players | ForEach-Object { [string]$_ })
-        starters        = @($Row.starters | ForEach-Object { [string]$_ })
+        starters        = $filledStarters
         players_points  = $playerPoints
-        starters_points = @($Row.starters_points | ForEach-Object { if ($null -eq $_) { $null } else { [double]$_ } })
+        starters_points = $filledStarterPoints
         points          = if ($null -eq $Row.points) { $null } else { [double]$Row.points }
         custom_points   = if ($null -eq $Row.custom_points) { $null } else { [double]$Row.custom_points }
     }
