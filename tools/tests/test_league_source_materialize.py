@@ -12,7 +12,9 @@ if str(TOOLS) not in sys.path:
 
 from league_source_data_lib.core import canonical_league_season_id  # noqa: E402
 from league_source_data_lib.materialize import (  # noqa: E402
+    SLEEPER_EMPTY_STARTER_SLOT_IDS,
     PlayerMappingResolver,
+    _player_refs,
     persist_canonical_outputs,
     plan_canonical_materialization,
 )
@@ -193,6 +195,17 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             self.assertEqual(second["CanonicalFilesChanged"], 0)
         finally:
             temporary.cleanup()
+
+    def test_empty_starter_slots_are_not_players_but_real_duplicates_fail(self) -> None:
+        resolver = PlayerMappingResolver.load(Path(__file__).resolve().parents[2])
+        refs = _player_refs(resolver, ["p1", "0", "0"], 2025, "matchups.week-5.starters",
+                            empty_slot_ids=SLEEPER_EMPTY_STARTER_SLOT_IDS)
+        self.assertEqual(len(refs), 1)
+        with self.assertRaisesRegex(ValueError, "Duplicate Sleeper player id p1"):
+            _player_refs(resolver, ["p1", "0", "p1"], 2025, "matchups.week-5.starters",
+                         empty_slot_ids=SLEEPER_EMPTY_STARTER_SLOT_IDS)
+        with self.assertRaisesRegex(ValueError, "Duplicate Sleeper player id 0"):
+            _player_refs(resolver, ["0", "0"], 2025, "matchups.week-5.players")
 
     def test_preserves_real_positive_trade_deadline_week(self) -> None:
         temporary, root, canonical_league_id, provider_league_id = self._repo()
