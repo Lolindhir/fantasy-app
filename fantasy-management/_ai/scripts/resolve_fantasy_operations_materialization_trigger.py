@@ -14,7 +14,6 @@ GENERATED_OPERATIONS_PREFIX = "fantasy-management/generated/operations/"
 CORE_INPUT_PATHS = {
     "public/data/League.json",
     "public/data/Players.json",
-    "public/data/Timestamps.json",
     "public/data/Metadata.json",
 }
 # Current-season Canonical League drafts feed the FA board (build_fa_board_readmodel.py).
