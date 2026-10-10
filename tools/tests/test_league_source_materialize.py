@@ -10,9 +10,8 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from league_source_data_lib.core import canonical_league_season_id  # noqa: E402
+from league_source_data_lib.core import canonical_league_season_id, normalize_sleeper_player_id  # noqa: E402
 from league_source_data_lib.materialize import (  # noqa: E402
-    SLEEPER_EMPTY_STARTER_SLOT_IDS,
     PlayerMappingResolver,
     _player_refs,
     persist_canonical_outputs,
@@ -196,16 +195,20 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
         finally:
             temporary.cleanup()
 
-    def test_empty_starter_slots_are_not_players_but_real_duplicates_fail(self) -> None:
+    def test_empty_player_slots_are_not_players_but_real_duplicates_fail(self) -> None:
         resolver = PlayerMappingResolver.load(Path(__file__).resolve().parents[2])
-        refs = _player_refs(resolver, ["p1", "0", "0"], 2025, "matchups.week-5.starters",
-                            empty_slot_ids=SLEEPER_EMPTY_STARTER_SLOT_IDS)
-        self.assertEqual(len(refs), 1)
+        for label in ("matchups.week-5.starters", "matchups.week-5.players", "roster.taxi"):
+            refs = _player_refs(resolver, ["p1", "0", "0", " ", None], 2025, label)
+            self.assertEqual(len(refs), 1, label)
         with self.assertRaisesRegex(ValueError, "Duplicate Sleeper player id p1"):
-            _player_refs(resolver, ["p1", "0", "p1"], 2025, "matchups.week-5.starters",
-                         empty_slot_ids=SLEEPER_EMPTY_STARTER_SLOT_IDS)
-        with self.assertRaisesRegex(ValueError, "Duplicate Sleeper player id 0"):
-            _player_refs(resolver, ["0", "0"], 2025, "matchups.week-5.players")
+            _player_refs(resolver, ["p1", "0", "p1"], 2025, "matchups.week-5.starters")
+
+    def test_normalize_sleeper_player_id(self) -> None:
+        self.assertEqual(normalize_sleeper_player_id(" 4046 "), "4046")
+        self.assertEqual(normalize_sleeper_player_id(4046), "4046")
+        for empty in (None, "", "  ", "0", 0, " 0 "):
+            self.assertIsNone(normalize_sleeper_player_id(empty), repr(empty))
+        self.assertEqual(normalize_sleeper_player_id("10"), "10")
 
     def test_preserves_real_positive_trade_deadline_week(self) -> None:
         temporary, root, canonical_league_id, provider_league_id = self._repo()

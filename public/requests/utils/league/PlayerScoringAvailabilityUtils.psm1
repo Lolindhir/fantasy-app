@@ -1,3 +1,4 @@
+Import-Module "$PSScriptRoot\..\general\SleeperPlayerIdUtils.psm1" -ErrorAction Stop -Force
 function Get-PsaValue {
     param([AllowNull()][object]$Object, [Parameter(Mandatory = $true)][string[]]$Names)
     if ($null -eq $Object) { return $null }
@@ -16,10 +17,7 @@ function Get-PsaCollection {
 
 function ConvertTo-PsaPlayerID {
     param([AllowNull()][object]$Value)
-    if ($null -eq $Value) { return $null }
-    $text = ([string]$Value).Trim()
-    if ([string]::IsNullOrWhiteSpace($text) -or $text -eq '0') { return $null }
-    return $text
+    return ConvertTo-SleeperPlayerID -Value $Value
 }
 
 function ConvertTo-PsaNormalizedState {

@@ -1,3 +1,4 @@
+Import-Module "$PSScriptRoot\..\general\SleeperPlayerIdUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\LineupRepairabilityUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 
@@ -24,11 +25,7 @@ function Get-LreCollection {
 
 function ConvertTo-LrePlayerID {
     param([AllowNull()][object]$Value)
-
-    if ($null -eq $Value) { return $null }
-    $text = ([string]$Value).Trim()
-    if ([string]::IsNullOrWhiteSpace($text) -or $text -eq '0') { return $null }
-    return $text
+    return ConvertTo-SleeperPlayerID -Value $Value
 }
 
 function ConvertTo-LreUtc {
