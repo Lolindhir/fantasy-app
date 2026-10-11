@@ -111,6 +111,7 @@ guidance:
   ciDeployment:
     - After commits to main, check the deploy/result commit status for the committed SHA whenever possible.
     - Treat deploy/result as the primary machine-readable deployed-build result when workflow runs are not directly listable through the available tools.
+    - The deploy workflow only starts on a main push that touches build or delivered files (src/**, public/**, angular.json, package*.json, tsconfig*.json, deploy_action.ps1, deploy.yml). Commits touching only source-data/**, derived-data/** or fantasy-management/** do not deploy, so no deploy/result status exists for that SHA; this is expected and not a failure.
     - Prefer machine-readable diagnostics from .ai-workflow/workflow-result.json, .ai-workflow/deploy-script-result.json and build.log when they are available through CI artifacts.
     - If CI status or diagnostics cannot be read through the available tools, state that limitation explicitly in the visible post-commit check.
     - Do not commit local .ai-workflow diagnostics; they are transient CI/helper output.
