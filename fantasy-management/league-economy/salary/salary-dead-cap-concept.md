@@ -551,7 +551,7 @@ Das erhöht den Wert von aktivem Roster- und Trade-Management vor der Cap Deadli
 
 Als konkretes Diskussionsbeispiel wurde Flo genannt: Unter diesem Modell hätte er in der aktuellen Saison voraussichtlich entweder mehr Spieler cutten und die entsprechende Dead-Cap-Belastung tragen oder früher versuchen müssen, diese Spieler aktiv zu traden.
 
-## 11. Minimum Salary als erfahrungsabhängiges Base Salary: geklärte Konzeptentscheidung
+## 11. Erfahrungsabhängiges Minimum Salary mit gleitender Performance-Anrechnung: geklärte Konzeptentscheidung
 
 Salary und Dead Cap werden in **vollen Dollarbeträgen ohne Dezimalstellen** geführt.
 
@@ -602,50 +602,61 @@ Beispiel bei einem Vorjahres-Cap von **$434.255.984**:
 | 5–7 | 0,45 % | $1.954.152 |
 | 8+ | 0,50 % | $2.171.280 |
 
-### Additives Base Salary statt nachträglichem Floor
+### Gleitendes 50-%-Minimum statt voller Addition (Konzeptentscheidung vom 11.10.2026)
 
-Das Minimum Salary ist nicht nur eine Untergrenze, die nachträglich mit `max(...)` auf das normale Salary angewendet wird. Es ist ein **echtes Base Salary**, auf dem der variable Salary-Anteil aufbaut.
+Das bisherige vollständig additive Base Salary (`Salary = Minimum + Performance Salary`) wird durch ein **einfaches gleitendes Minimum** ersetzt. Ein reiner Floor (`max(P, M)`) wäre zwar billig, würde aber viele Spieler mit niedriger, aber unterschiedlicher Performance auf exakt denselben Betrag setzen. Die neue Regel bewahrt diese Differenzierung, ohne hochpreisige Spieler pauschal zu verteuern.
 
-Für die normale Performance-Skalierung gilt deshalb konzeptionell:
-
-```text
-Player Salary
-= Base Minimum Salary nach Player.Year
-+ leistungsbasierter Salary-Anteil
-```
-
-Die bisherige Performance-Skala bleibt als variabler Anteil erhalten:
+Für Spieler **außerhalb des dreijährigen Rookie Contracts (ab `Player.Year = 4`)** gilt:
 
 ```text
-0 Performance-Punkte  → $0 variabler Anteil
-20 Performance-Punkte → $50.000.000 variabler Anteil
+P = normales leistungsbasiertes Salary aus der separat definierten
+    Performance-/Criticality-/Dollar-Kurve, noch OHNE Minimum
+M = erfahrungsabhängiges Minimum nach Player.Year aus dem Vorjahres-Cap
+
+Player Salary = max(P, M + 0,50 × P)
 ```
 
-Damit gilt insgesamt:
+Die finale Berechnung wird nach der oben festgelegten kaufmännischen Rundungsregel auf ganze Dollar gerundet. `M` ist zuvor bereits auf ganze Dollar gerundet; `P` stammt aus der normalen Salary-Skalierung. Die Regel ändert **nicht** die Performance-/Criticality-Kurve selbst.
 
-```text
-0 Performance-Punkte
-→ Base Minimum Salary
+Konsequenzen:
 
-20 Performance-Punkte
-→ Base Minimum Salary + $50.000.000
-```
+- **P = 0:** Salary entspricht genau dem erfahrungsabhängigen Minimum `M`.
+- **0 < P < 2 × M:** Salary entspricht `M + 0,50 × P`; unterschiedliche positive Leistungen erhalten unterschiedliche Salaries.
+- **P >= 2 × M:** Salary entspricht wieder exakt `P`; insbesondere bei hochpreisigen Spielern gibt es keinen zusätzlichen Erfahrungsaufschlag.
+- Mehr NFL-Erfahrung erhöht die garantierte Untergrenze, aber erzeugt **keinen permanenten Aufschlag auf Elite-Salaries**.
+- Es gibt **keinen künstlichen Veteranen-Discount** und keine besondere Salary-Regel, um die in einer Sechs-Team-Dynasty-Liga natürliche Nachfrage nach jungen Core-Spielern künstlich auszugleichen. NFL-Mechanismen dienen als Orientierung, nicht als Selbstzweck.
 
-Die bestehende quadratische Performance-Kurve wird dadurch nicht gestaucht oder neu skaliert, sondern lediglich um das jeweilige Base Minimum nach oben verschoben.
+Einfaches Beispiel mit `M = 2 Mio.`:
 
-Diese Konstruktion verhindert außerdem, dass ein größerer Bereich unterschiedlicher Low-End-Performance durch ein nachträgliches `max(Minimum, Performance Salary)` auf exakt denselben Salary-Wert fällt. Nur ein Spieler ohne zusätzlichen variablen Salary-Anteil liegt exakt auf seinem Base Minimum.
+| Normales Performance-Salary `P` | Gleitendes Gesamt-Salary |
+| ---: | ---: |
+| 0 Mio. | 2,0 Mio. |
+| 1 Mio. | 2,5 Mio. |
+| 3 Mio. | 3,5 Mio. |
+| 4 Mio. | 4,0 Mio. |
+| 20 Mio. | 20,0 Mio. |
 
 ### Verhältnis zum Rookie-/Young-Player-Modell
 
-Das erfahrungsabhängige Base Minimum ist die garantierte unterste Salary-Schicht für alle Spieler.
+Die dreijährigen Rookie Contracts bleiben unverändert und sind **ausdrücklich von der gleitenden Performance-Formel ausgenommen**:
 
-Für das normale Performance-Modell wird dieses Base Minimum additiv mit dem leistungsbasierten Salary-Anteil kombiniert.
+- **Year 1:** Die 65/35-Draft-Formel liefert bereits das vollständige Year-1-Salary, inklusive des Minimums von 0,25 %. Keine zusätzliche Minimum- oder 50-%-Komponente.
+- **Year 2 und Year 3:** Festes Salary von 125 % bzw. 150 % des ursprünglichen Year-1-Dollarvertrags (nicht kumulativ); weiterhin gilt die allgemeine jeweilige Mindestgehaltsuntergrenze. Keine Performance-Neubewertung und kein gleitender Zuschlag.
+- **Ab Year 4:** Der Rookie Contract endet. Das dann reguläre Drei-Jahres-Performance-Salary wird erstmals mit `max(P, M + 0,50 × P)` berechnet; für Year 4 gilt `M = 0,40 %` des maßgeblichen Vorjahres-Caps.
 
-**Rookie Year 1 ist eine explizite Sonderbehandlung:** Die Draft-basierte Year-1-Formel enthält das Year-1-Minimum von 0,25 % bereits in ihren Draft-Komponenten und liefert direkt das vollständige Year-1-Salary. Das Minimum wird deshalb bei Rookies in Year 1 nicht ein zweites Mal addiert.
+**Explizites Undrafted-Prüfbeispiel:** Ist ein Rookie sowohl im Fantasy Draft als auch im realen NFL Draft undrafted, beträgt sein Year-1-Salary genau **0,25 %** des maßgeblichen Vorjahres-Caps. Bei zum Vergleich konstant gehaltenem Cap kostet derselbe Spieler nach der festen Rookie-Staffel **0,3125 %** in Year 2 und **0,375 %** in Year 3. Ein Spieler in **Year 4 mit drei abgeschlossenen Saisons und `P = 0`** erhält dagegen **0,40 %**. Damit bleibt der beidseitig undrafted Rookie bei derselben Cap-Basis in allen drei Vertragsjahren günstiger. Bei tatsächlichen Cap-Änderungen sind die historischen Dollaranker und die jeweils gültigen Year-2-/Year-3-Floors zu berücksichtigen.
 
-**Rookie Year 2 und Year 3 bleiben ebenfalls innerhalb des festen Rookie Contracts:** Die Salary-Werte werden als 125 % beziehungsweise 150 % des ursprünglichen Year-1-Dollarvertrags berechnet. Sie werden weder aus aktueller Performance noch aus einem späteren Salary Cap neu hergeleitet.
+### Quantitativer Abgleich und Status
 
-Die allgemeine Minimum-Salary-Regel bleibt parallel als ligaweite Untergrenze bestehen. Ab Year 4 endet der Rookie Contract; dann greift erstmals das normale Drei-Saison-Performance-Modell mit dem für Year 4 geltenden Base Minimum.
+Auf der vorhandenen, datierten Simulation vom **05.10.2026** (1.268 Spieler; Liga-Scoring, neues Criticality-Arbeitsmodell, `k = 1,5`, unveränderte Rookie Contracts) wurde die neue Formel als zusätzliche **Konzept-Sensitivität** durchgerechnet:
+
+- Baseline mit damals produktiver Formel: Cap **432,6 Mio.**.
+- Redesign mit Rookie Contracts, **ohne** Base Minimum: Cap **440,9 Mio.**.
+- Dasselbe Redesign mit **gleitendem 50-%-Minimum**: Cap **440,9 Mio.**; das Minimum verteuert die damaligen Top 120 nicht zusätzlich.
+- Historisches Hauptszenario mit **voll additivem** Base Minimum: Cap **478,9 Mio.**. Dieses Szenario dokumentiert die verworfene ältere Mindestgehaltsvariante, **nicht** den hier bestätigten Konzeptstand.
+- Bei den **325** Spielern außerhalb der Rookie Contracts mit positivem Performance-Salary unter 5 Mio. entstehen im gleitenden 50-%-Modell **321 unterschiedliche Salaries** (reiner `max(P, M)`-Floor: **106**). Spieler mit `P = 0` liegen weiterhin exakt beim Erfahrungsminimum.
+
+Diese Resultate beziehen sich auf den Snapshot vom 05.10.2026 und ersetzen weder eine neue vollständige reproduzierbare Gesamt-/Dead-Cap-Simulation noch den später erforderlichen Ligabeschluss. Die damals gespeicherten JSON-/CSV-/Markdown-Berichte bleiben als **historische** Versuchsstände unverändert. Das aktuell gültige App-Salary-System bleibt ebenfalls unverändert.
 
 ### Dead-Cap-Floor innerhalb eines Salary-Zyklus
 
@@ -819,9 +830,9 @@ Diese Live-Berechnung ist deterministisch. Sie ist von einer probabilistischen P
 - Das neue Team zahlt nur den verbleibenden aktiven Salary-Anteil.
 - Innerhalb eines Salary-Zyklus bleibt die ursprüngliche Gesamtbelastung erhalten, solange das anwendbare Minimum Salary nicht greift.
 - Salary und Dead Cap werden in ganzen Dollarbeträgen ohne Dezimalstellen geführt.
-- Das Minimum Salary ist ein erfahrungsabhängiges Base Salary nach `Player.Year`.
+- Das Minimum Salary ist eine erfahrungsabhängige Untergrenze nach `Player.Year`, die bei geringen normalen Performance-Salaries gleitend angerechnet wird.
 - Die Staffel beträgt **0,25 % / 0,30 % / 0,35 % / 0,40 % / 0,45 % / 0,50 %** des maßgeblichen Vorjahres-Salary-Caps für Year 1 / 2 / 3 / 4 / 5–7 / 8+.
-- Für das normale Performance-Modell wird das Base Minimum additiv mit dem variablen Performance-Salary-Anteil kombiniert.
+- Für normale Performance-Verträge ab Year 4 gilt `Salary = max(P, M + 0,50 × P)`; das frühere vollständig additive Base Salary ist überholt. Rookie-Verträge Year 1–3 bleiben ausgenommen.
 - Das Minimum eines Zyklus basiert auf dem kanonisch berechneten Salary Cap des vorherigen Zyklus.
 - Greift der Floor nach einem Cut, darf aktives Salary plus Dead Caps oberhalb des ursprünglichen Salaries liegen.
 - Die reguläre Salary-Überprüfung / Cap Deadline resettet sämtliche alten Dead-Cap-Anteile.
