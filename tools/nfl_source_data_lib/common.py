@@ -12,7 +12,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
-from .source_projection import SUPPORTED_SOURCE_PROJECTIONS, project_source
+from .source_projection import (
+    SUPPORTED_SOURCE_PROJECTIONS,
+    project_source,
+    projection_output_format,
+)
 
 SCHEMA_VERSION = 1
 CANONICAL_SCHEMA_VERSION = 2
@@ -349,8 +353,9 @@ def _validate_source_contract(value: dict[str, Any], dataset_id: str) -> dict[st
                 f"Dataset {dataset_id} sourceProjection {projection_id}@{projection_version} "
                 f"requires upstreamFormat={expected_upstream}"
             )
-        if source_format != "json":
-            raise ValueError(f"Projected dataset {dataset_id} must persist sourceFormat=json")
+        expected_output = projection_output_format(projection_id, projection_version)
+        if source_format != expected_output:
+            raise ValueError(f"Projected dataset {dataset_id} must persist sourceFormat={expected_output}")
 
     source_url = str(value.get("sourceUrl") or "").strip()
     raw_path = str(value.get("rawPath") or "").strip()
