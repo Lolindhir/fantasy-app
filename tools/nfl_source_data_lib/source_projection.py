@@ -75,10 +75,42 @@ _LONG_GAINS_SOURCE_FIELDS = (
     "receiving_yards",
 )
 
+SCHEDULE_WITHOUT_ODDS_PROJECTION_ID = "nflverse-schedule-without-odds"
+SCHEDULE_WITHOUT_ODDS_PROJECTION_VERSION = 1
+SCHEDULE_ODDS_PROJECTION_ID = "nflverse-schedule-odds"
+SCHEDULE_ODDS_PROJECTION_VERSION = 1
+
+# Betting-line columns of the nflverse games.csv. They change continuously while the
+# remaining schedule columns (kickoff, teams, scores, venue) change rarely, so the raw
+# schedule snapshot and the odds snapshot are persisted as two independent datasets.
+SCHEDULE_ODDS_COLUMNS = (
+    "away_moneyline",
+    "home_moneyline",
+    "spread_line",
+    "away_spread_odds",
+    "home_spread_odds",
+    "total_line",
+    "under_odds",
+    "over_odds",
+)
+SCHEDULE_ODDS_KEY_COLUMN = "game_id"
+
 SUPPORTED_SOURCE_PROJECTIONS = {
     (SPECIAL_TEAMS_FUMBLE_PROJECTION_ID, SPECIAL_TEAMS_FUMBLE_PROJECTION_VERSION): "csv.gz",
     (PLAYER_GAME_LONG_GAINS_PROJECTION_ID, PLAYER_GAME_LONG_GAINS_PROJECTION_VERSION): "csv.gz",
+    (SCHEDULE_WITHOUT_ODDS_PROJECTION_ID, SCHEDULE_WITHOUT_ODDS_PROJECTION_VERSION): "csv",
+    (SCHEDULE_ODDS_PROJECTION_ID, SCHEDULE_ODDS_PROJECTION_VERSION): "csv",
 }
+
+# Persisted format of a projection result; projections not listed here persist JSON.
+SOURCE_PROJECTION_OUTPUT_FORMATS = {
+    (SCHEDULE_WITHOUT_ODDS_PROJECTION_ID, SCHEDULE_WITHOUT_ODDS_PROJECTION_VERSION): "csv",
+    (SCHEDULE_ODDS_PROJECTION_ID, SCHEDULE_ODDS_PROJECTION_VERSION): "csv",
+}
+
+
+def projection_output_format(projection_id: str, projection_version: int) -> str:
+    return SOURCE_PROJECTION_OUTPUT_FORMATS.get((projection_id, projection_version), "json")
 
 
 def _is_one(value: Any) -> bool:
@@ -244,6 +276,64 @@ def project_player_game_long_gains(upstream_path: Path, output_path: Path) -> di
     }
 
 
+def _project_schedule_csv(
+    upstream_path: Path,
+    output_path: Path,
+    *,
+    keep: tuple[str, ...] | None,
+    drop: tuple[str, ...],
+) -> dict[str, Any]:
+    """Write the upstream schedule CSV restricted to `keep` or without `drop`, row order unchanged."""
+    with upstream_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.reader(handle)
+        header = next(reader, None)
+        if not header:
+            raise ValueError("nflverse schedule CSV has no header")
+        missing = sorted((set(drop) | set(keep or ())) - set(header))
+        if missing:
+            raise ValueError(
+                "nflverse schedule CSV is missing columns required for projection: " + ", ".join(missing)
+            )
+        indexes = [
+            index
+            for index, name in enumerate(header)
+            if (name in keep if keep is not None else name not in drop)
+        ]
+        if keep is not None:
+            indexes.sort(key=lambda index: keep.index(header[index]))
+        with output_path.open("w", encoding="utf-8", newline="") as output:
+            writer = csv.writer(output, lineterminator="\n")
+            writer.writerow([header[index] for index in indexes])
+            row_count = 0
+            for row in reader:
+                if not row:
+                    continue
+                if len(row) != len(header):
+                    raise ValueError(
+                        f"nflverse schedule CSV row {row_count + 2} has {len(row)} fields, expected {len(header)}"
+                    )
+                writer.writerow([row[index] for index in indexes])
+                row_count += 1
+    return {
+        "sourceColumnCount": len(header),
+        "projectedColumnCount": len(indexes),
+        "projectedRowCount": row_count,
+    }
+
+
+def project_schedule_without_odds(upstream_path: Path, output_path: Path) -> dict[str, Any]:
+    return _project_schedule_csv(upstream_path, output_path, keep=None, drop=SCHEDULE_ODDS_COLUMNS)
+
+
+def project_schedule_odds(upstream_path: Path, output_path: Path) -> dict[str, Any]:
+    return _project_schedule_csv(
+        upstream_path,
+        output_path,
+        keep=(SCHEDULE_ODDS_KEY_COLUMN, *SCHEDULE_ODDS_COLUMNS),
+        drop=(),
+    )
+
+
 def project_source(
     projection_id: str,
     projection_version: int,
@@ -261,6 +351,10 @@ def project_source(
         PLAYER_GAME_LONG_GAINS_PROJECTION_VERSION,
     ):
         return project_player_game_long_gains(upstream_path, output_path)
+    if key == (SCHEDULE_WITHOUT_ODDS_PROJECTION_ID, SCHEDULE_WITHOUT_ODDS_PROJECTION_VERSION):
+        return project_schedule_without_odds(upstream_path, output_path)
+    if key == (SCHEDULE_ODDS_PROJECTION_ID, SCHEDULE_ODDS_PROJECTION_VERSION):
+        return project_schedule_odds(upstream_path, output_path)
     raise ValueError(
         f"Unsupported source projection: id={projection_id} version={projection_version}"
     )

@@ -85,7 +85,7 @@ registry:
       Raw Source persistiert.
     contract:
       - sourceProjection muss id, positive version und upstreamFormat deklarieren.
-      - Persistiertes sourceFormat bleibt ein normales Registry-Format; projected sources verwenden aktuell JSON.
+      - Persistiertes sourceFormat bleibt ein normales Registry-Format. Die meisten Projections persistieren JSON; die Schedule-Projections (nflverse-schedule-without-odds@1, nflverse-schedule-odds@1) persistieren CSV. Das erwartete Ausgabeformat je Projection-ID/Version steht in source_projection.py (SOURCE_PROJECTION_OUTPUT_FORMATS).
       - Nur explizit im Code registrierte Projection-ID/Version-Paare sind erlaubt.
       - Die Projection darf nur Provider-Zeilen filtern und Provider-Felder projizieren; CanonicalPlayerID, Fantasy-Scoring oder andere Derived Semantik bleibt dem Materializer vorbehalten.
       - Upstream-Bytes duerfen transient sein; Metadata persistiert Upstream-Hash, Byte-Groesse und Projection-Statistik.
@@ -265,7 +265,13 @@ activeDatasets:
   - id: nflverse.schedules
     lifecycle: seasonal-finalizable
     sourceMode: fixed
+    sourceProjection: nflverse-schedule-without-odds@1
     materialize: true
+  - id: nflverse.schedule-odds
+    lifecycle: seasonal-finalizable
+    sourceMode: fixed
+    sourceProjection: nflverse-schedule-odds@1
+    materialize: false
   - id: nflverse.game-finality
     lifecycle: seasonal-finalizable
     sourceMode: fixed
@@ -525,6 +531,24 @@ operationalDatasetEvaluation:
     nflverse und Sleeper werden feldbezogen bewertet. Die Phase-1-Datasets sind
     im Source-Data-Vertrag aktiviert; dies aendert public/data und seine Runtime-
     Provider noch nicht. App-Generator-Migration bleibt Phase 2.
+
+  scheduleOddsSplit:
+    issue: 946
+    rule: >
+      nflverse games.csv liefert Spielplan und Wettquoten in einer Datei. Die Quotenspalten
+      (away_moneyline, home_moneyline, spread_line, away_spread_odds, home_spread_odds,
+      total_line, under_odds, over_odds) aendern sich laufend und erzeugten bis zu 37
+      Raw-Commits pro Tag. Das Raw-Snapshot wird deshalb in zwei unabhaengige Datasets aus
+      derselben Upstream-URL geteilt: nflverse.schedules (providers/nflverse/schedules, ohne
+      Quotenspalten, materialize=true) und nflverse.schedule-odds (providers/nflverse/schedule-odds,
+      game_id plus Quotenspalten, materialize=false, kein kanonischer Konsument).
+    refreshRule: >
+      Beide Datasets haben eigenen Hash, eigene Metadata und eigene No-op-Erkennung. Der
+      Game-Finality-Scope des Workflows synct nur nflverse.schedules; die Quoten werden nur im
+      taeglichen vollen NFL-Sync aktualisiert. Eine reine Quotenaenderung veraendert die
+      Spielplan-Rohdatei nicht.
+    registryVersion: Registry-Schema bleibt v3 (additive Erweiterung der Projection-Ausgabeformate).
+    licenseAndProvenance: Lizenz und Attribution des Upstreams gelten unveraendert fuer beide Datasets.
 
   schedules:
     recommendedRole: primary-canonical
