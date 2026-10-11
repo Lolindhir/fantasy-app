@@ -41,9 +41,9 @@ function tempRoot() {
 function target(overrides = {}) {
   return {
     id: 'nfl-live',
-    workflow: 'sync-nfl-game-finality.yml',
-    path: '.github/workflows/sync-nfl-game-finality.yml',
-    eventType: 'scheduler-sync-nfl-game-finality',
+    workflow: 'nfl-live.yml',
+    path: '.github/workflows/nfl-live.yml',
+    eventType: 'scheduler-nfl-live',
     profile: 'productive',
     timezone: 'Etc/UTC',
     cron: ['*/10 * * * *'],
@@ -220,11 +220,11 @@ test('config validation accepts game-window targets and rejects malformed ones',
   assert.throws(() => check(target({ gameWindow: { ...WINDOW, maxOverrunMinutes: 0 } })), /maxOverrunMinutes/);
 });
 
-test('the real scheduler config validates and nfl-game-finality uses the game-window mode', () => {
+test('the real scheduler config validates and nfl-live uses the game-window mode', () => {
   const config = JSON.parse(fs.readFileSync(path.join(ROOT, '.github', 'workflow-schedules.json'), 'utf8'));
   scheduler.validateConfig(config);
   const windowed = config.targets.filter((item) => item.mode === 'game-window');
-  assert.ok(windowed.some((item) => item.id === 'nfl-game-finality'));
+  assert.ok(windowed.some((item) => item.id === 'nfl-live'));
   for (const item of windowed) {
     assert.ok(item.gameWindow.idleCron.length > 0);
     assert.ok(item.gameWindow.postFinalMinutes >= 0);

@@ -66,6 +66,10 @@ on:
         required: false
         type: string
         default: "full"
+    outputs:
+      main_before_sync:
+        description: "origin/main commit at the start of the sync job (NFL Live change detection base)"
+        value: ${{ jobs.sync.outputs.main_before_sync }}
     secrets:
       PAT_PUSH:
         required: true
@@ -84,6 +88,8 @@ jobs:
     timeout-minutes: 45
     env:
       MATERIALIZATION_SCOPE: ${{ inputs.materialization_scope || 'full' }}
+    outputs:
+      main_before_sync: ${{ steps.base.outputs.main_before_sync }}
 
     steps:
       - name: Record queue timing
@@ -145,6 +151,11 @@ jobs:
           ref: main
           fetch-depth: ${{ inputs.materialization_scope == 'game-finality' && 1 || 0 }}
           token: ${{ secrets.PAT_PUSH }}
+
+      - name: Record main before sync
+        id: base
+        shell: bash
+        run: echo "main_before_sync=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Record checkout timing
         shell: bash
