@@ -11,6 +11,19 @@ from typing import Callable, Iterable
 CANONICAL_LEAGUE_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SUPPORTED_PROVIDERS = {"Sleeper"}
 
+# Sleeper marks an unfilled lineup slot with the player id "0"; no real player has that id.
+SLEEPER_EMPTY_PLAYER_ID = "0"
+
+
+def normalize_sleeper_player_id(value: object) -> str | None:
+    """Return the trimmed Sleeper player id, or None for "no player" (None, blank or "0")."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or text == SLEEPER_EMPTY_PLAYER_ID:
+        return None
+    return text
+
 
 @dataclass(frozen=True)
 class LeagueBootstrap:

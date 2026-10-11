@@ -1,6 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 Import-Module "$PSScriptRoot\utils\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\utils\general\SleeperPlayerIdUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\league\DraftUtils.psm1" -ErrorAction Stop -Force
@@ -28,6 +29,16 @@ function Test-Throws {
     if (-not $thrown) {
         throw "Expected action to throw an error containing '$ExpectedMessagePart'."
     }
+}
+
+# Sleeper empty-slot contract: null, blank and "0" mean no player; real ids are trimmed and kept.
+foreach ($emptyValue in @($null, "", "  ", "0", 0, " 0 ")) {
+    if ($null -ne (ConvertTo-SleeperPlayerID -Value $emptyValue)) {
+        throw "ConvertTo-SleeperPlayerID must treat '$emptyValue' as no player."
+    }
+}
+if ((ConvertTo-SleeperPlayerID -Value " 4046 ") -ne "4046" -or (ConvertTo-SleeperPlayerID -Value "10") -ne "10") {
+    throw "ConvertTo-SleeperPlayerID must keep real player ids."
 }
 
 # Generic lookup contract.

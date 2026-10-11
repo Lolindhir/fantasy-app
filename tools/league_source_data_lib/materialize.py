@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-from .core import canonical_league_season_id, write_json_if_changed
+from .core import canonical_league_season_id, normalize_sleeper_player_id, write_json_if_changed
 from .registry import LeagueDataset
 from .week_structure import derive_season_week_structures, resolve_nfl_regular_season_week_ceiling
 
@@ -141,10 +141,8 @@ class PlayerMappingResolver:
 
 
 def _player_ref(resolver: PlayerMappingResolver, provider_player_id: object, season: int) -> dict | None:
-    if provider_player_id is None:
-        return None
-    external = str(provider_player_id).strip()
-    if not external:
+    external = normalize_sleeper_player_id(provider_player_id)
+    if external is None:
         return None
     return {
         "CanonicalPlayerID": resolver.resolve("Sleeper", external, season),
@@ -152,17 +150,11 @@ def _player_ref(resolver: PlayerMappingResolver, provider_player_id: object, sea
     }
 
 
-# Sleeper marks an unfilled starter slot with "0"; it is not a player.
-SLEEPER_EMPTY_STARTER_SLOT_IDS = frozenset({"0"})
-
-
 def _player_refs(
     resolver: PlayerMappingResolver,
     values: object,
     season: int,
     source_label: str,
-    *,
-    empty_slot_ids: frozenset[str] = frozenset(),
 ) -> list[dict]:
     if values is None:
         return []
@@ -171,8 +163,8 @@ def _player_refs(
     result: list[dict] = []
     seen: set[str] = set()
     for value in values:
-        external = str(value or "").strip()
-        if not external or external in empty_slot_ids:
+        external = normalize_sleeper_player_id(value)
+        if external is None:
             continue
         if external in seen:
             raise ValueError(f"Duplicate Sleeper player id {external} in {source_label}")
@@ -270,7 +262,7 @@ def _members_and_rosters(
                 "Players": _player_refs(resolver, item.get("players") or [], season, "roster.players"),
                 "Reserve": _player_refs(resolver, item.get("reserve") or [], season, "roster.reserve"),
                 "Taxi": _player_refs(resolver, item.get("taxi") or [], season, "roster.taxi"),
-                "Starters": _player_refs(resolver, item.get("starters") or [], season, "roster.starters", empty_slot_ids=SLEEPER_EMPTY_STARTER_SLOT_IDS),
+                "Starters": _player_refs(resolver, item.get("starters") or [], season, "roster.starters"),
             }
         )
     members.sort(key=lambda item: item["CanonicalLeagueMemberID"])
@@ -394,16 +386,12 @@ def _points_entries(
     raw_players: object,
     season: int,
     label: str,
-    *,
-    empty_slot_ids: frozenset[str] = frozenset(),
 ) -> list[dict]:
     if raw_points is None:
         return []
     result: list[dict] = []
     if isinstance(raw_points, dict):
         for provider_player_id in sorted(raw_points, key=str):
-            if str(provider_player_id).strip() in empty_slot_ids:
-                continue
             ref = _player_ref(resolver, provider_player_id, season)
             if ref is not None:
                 result.append({"Player": ref, "Points": raw_points[provider_player_id]})
@@ -414,8 +402,6 @@ def _points_entries(
         if len(raw_points) != len(raw_players):
             raise ValueError(f"{label} length does not match parallel player list")
         for provider_player_id, points in zip(raw_players, raw_points):
-            if str(provider_player_id).strip() in empty_slot_ids:
-                continue
             ref = _player_ref(resolver, provider_player_id, season)
             if ref is not None:
                 result.append({"Player": ref, "Points": points})
@@ -454,9 +440,9 @@ def _canonicalize_matchups(
                 "Points": item.get("points"),
                 "CustomPoints": item.get("custom_points"),
                 "Players": _player_refs(resolver, item.get("players") or [], season, f"matchups.week-{week}.players"),
-                "Starters": _player_refs(resolver, item.get("starters") or [], season, f"matchups.week-{week}.starters", empty_slot_ids=SLEEPER_EMPTY_STARTER_SLOT_IDS),
+                "Starters": _player_refs(resolver, item.get("starters") or [], season, f"matchups.week-{week}.starters"),
                 "PlayerPoints": _points_entries(resolver, item.get("players_points"), item.get("players") or [], season, f"matchups.week-{week}.players_points"),
-                "StarterPoints": _points_entries(resolver, item.get("starters_points"), item.get("starters") or [], season, f"matchups.week-{week}.starters_points", empty_slot_ids=SLEEPER_EMPTY_STARTER_SLOT_IDS),
+                "StarterPoints": _points_entries(resolver, item.get("starters_points"), item.get("starters") or [], season, f"matchups.week-{week}.starters_points"),
             }
         )
     result.sort(key=lambda item: item["CanonicalLeagueRosterID"])
