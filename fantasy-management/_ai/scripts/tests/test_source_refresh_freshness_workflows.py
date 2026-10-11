@@ -149,16 +149,16 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
 
     def test_league_app_workflow_has_no_fantasy_management_dependency(self) -> None:
         # This is a cross-context invariant: FM may consume League app data, not own its producer.
-        workflow = self._read(".github/workflows/update-league.yml")
+        workflow = self._read(".github/workflows/league-live.yml")
         publication_wrapper = self._read("public/requests/RequestLeaguePublication.ps1")
-        target = self._schedule_target("league")
+        target = self._schedule_target("league-live")
 
         self.assertEqual(target["cron"], ["*/10 * * * *"])
         self.assertEqual(target["timezone"], "Etc/UTC")
-        self.assertEqual(target["eventType"], "scheduler-update-league")
+        self.assertEqual(target["eventType"], "scheduler-league-live")
         for required in (
             "repository_dispatch:",
-            "- scheduler-update-league",
+            "- scheduler-league-live",
             "python3 tools/rebuild_and_publish.py",
             "--scope league",
             "--path public/data",

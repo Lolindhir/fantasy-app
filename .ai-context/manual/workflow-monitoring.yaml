@@ -271,25 +271,6 @@ workflows:
     consecutiveFailures: 1
     staleAfterMinutes: 1800
     rationale: Daily persistent League Source sync dispatched by the central scheduler; main-push runs verify source-layer changes immediately, while failures or a missed daily cycle should surface promptly. Pull-request, reusable-call and manual repair runs remain non-paging.
-  .github/workflows/sync-league-core.yml:
-    category: important
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 45
-    rationale: Ten-minute canonical League Core freshness refresh dispatched at minute 2 of each ten-minute window, plus narrow main-push rebuilds when the League Core wrapper or its direct materialization code changes. It delegates current league, members, rosters, winners/losers brackets and exactly the active current matchup week, materializing the five Core files plus one bounded current-matchup partition. Scheduler and narrow push runs are production health evidence. Two consecutive production failures or roughly 45 minutes without a successful production run are actionable. Manual repair runs remain non-paging.
-  .github/workflows/sync-league-transactions.yml:
-    category: important
-    relevantEvents:
-    - repository_dispatch
-    staleAfterMinutes: 45
-    rationale: Ten-minute canonical League transaction freshness refresh dispatched by the central scheduler. It delegates to the reusable League Source producer for the source-owned current/previous-week transaction window; two consecutive production failures or roughly 45 minutes without a successful scheduler run are actionable. Manual repair runs remain non-paging.
-  .github/workflows/sync-league-drafts.yml:
-    category: important
-    relevantEvents:
-    - repository_dispatch
-    staleAfterMinutes: 45
-    rationale: Ten-minute canonical League draft/pick freshness refresh dispatched at minute 8 of each ten-minute window, after transaction-source refresh and before the next App League refresh. It delegates current-season draft-index/detail/picks/traded-picks acquisition and bounded drafts.json materialization to the reusable League Source producer; two consecutive production failures or roughly 45 minutes without a successful scheduler run are actionable. Manual repair runs remain non-paging.
   .github/workflows/source-data-readiness.yml:
     category: important
     relevantEvents:
@@ -357,13 +338,12 @@ workflows:
     - push
     staleAfterMinutes: 1800
     rationale: Daily pre-Operations signal refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-league.yml:
+  .github/workflows/league-live.yml:
     category: important
     relevantEvents:
     - repository_dispatch
-    - push
     staleAfterMinutes: 45
-    rationale: Ten-minute league refreshes from the central scheduler plus narrow main-push refreshes for Schedule, published Standings, the League workflow, its direct canonical generator adapters (League Core, Playoffs and Current Matchups), and canonical nfl-reise current-matchup partition changes provide production health evidence. A Standings publication therefore re-enriches League team placement/record context promptly; two consecutive failures or roughly 45 minutes without a successful production run are actionable; the same run also refreshes PlayerWeekFantasy and MatchupProjections for the current App week in a second rebuild-and-retry step, where a missing weekly-roster partition is skipped but any other failure marks the run failed.
+    rationale: Ten-minute League Live pipeline dispatched by the central scheduler (Issue #945, replaces the former League Core, League transactions, League drafts and App League scheduler targets). One run chains the current League source scopes (League Core, current/previous transaction week, current drafts) into a single pair of source commits, a Standings rebuild only when Standings inputs changed during the chain, and the App League refresh including PlayerWeekFantasy and MatchupProjections. Two consecutive production failures or roughly 45 minutes without a successful scheduler run are actionable. Code changes reach production through the next scheduled run, so no push events are evaluated. Manual repair runs remain non-paging.
   .github/workflows/update-players.yml:
     category: important
     relevantEvents:
@@ -387,9 +367,8 @@ workflows:
     category: routine
     relevantEvents:
     - repository_dispatch
-    - push
     staleAfterMinutes: 11520
-    rationale: Weekly between-week standings refresh remains the scheduler fallback, while narrow main-push rebuilds also react to canonical nfl-reise league/member/roster/playoff-bracket source changes and to Standings workflow/derivation changes. Push-triggered refreshes keep completed-week records current without inventing a more frequent time schedule; the long staleness threshold still reflects that source changes are not guaranteed every hour.
+    rationale: Weekly between-week standings refresh as scheduler fallback and manual repair path. Current Standings are rebuilt by the League Live pipeline (league-live.yml) whenever canonical nfl-reise league/member/roster/playoff-bracket inputs change; this workflow no longer has push triggers (Issue #945). The long staleness threshold reflects the weekly fallback cadence.
   .github/workflows/update-teams.yml:
     category: routine
     relevantEvents:

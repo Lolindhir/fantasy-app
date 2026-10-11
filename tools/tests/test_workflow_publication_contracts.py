@@ -15,7 +15,7 @@ REBUILD_HELPER = "tools/rebuild_and_publish.py"
 REBASE_HELPER = "tools/publish_generated_commit.py"
 
 REBUILD_WRITERS = {
-    "update-league.yml",
+    "league-live.yml",
     "update-players.yml",
     "update-games.yml",
     "update-drafts.yml",
@@ -36,9 +36,7 @@ WORKFLOW_LOCAL_REBUILD_WRITERS = {
 
 DELEGATED_REBUILD_WRITERS = {
     "sync-nfl-game-finality.yml": "sync-nfl-source-data.yml",
-    "sync-league-transactions.yml": "sync-league-source-data.yml",
-    "sync-league-drafts.yml": "sync-league-source-data.yml",
-    "sync-league-core.yml": "sync-league-source-data.yml",
+    "league-live.yml": "sync-league-source-data.yml",
 }
 
 REBASE_WRITERS = {
@@ -178,7 +176,11 @@ class WorkflowPublicationContractTests(unittest.TestCase):
         for name in sorted(WORKFLOW_LOCAL_REBUILD_WRITERS):
             with self.subTest(workflow=name):
                 text = self.read(name)
-                self.assertIn("git fetch", text)
+                # git_transient.py wraps `git fetch`/`git push` with the shared transient retry.
+                self.assertTrue(
+                    "git fetch" in text or "tools/git_transient.py fetch" in text,
+                    f"{name} must fetch the latest target before rebuilding",
+                )
                 self.assertIn("git reset --hard", text)
                 self.assertTrue(
                     "max_attempts=" in text or "for attempt in 1 2 3" in text,

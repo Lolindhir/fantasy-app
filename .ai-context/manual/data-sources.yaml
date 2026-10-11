@@ -243,7 +243,7 @@ dataSources:
       productiveLeagueAdapter: public/requests/utils/league/CanonicalLeagueCoreUtils.psm1::Get-CanonicalCurrentLeagueRaw
       productiveTeamAdapter: public/requests/utils/league/CanonicalLeagueCoreUtils.psm1::Get-CanonicalCurrentTeamsForLeague
       canonicalInputs: league.json + members.json + rosters.json
-      freshness: productively scheduled League Core scope every ten minutes; canonical standing-source changes trigger Standings rebuilds, and changed Standings output triggers League re-enrichment
+      freshness: League Core is refreshed every ten minutes by the League Live pipeline (source scope current); the same pipeline rebuilds Standings when canonical standing-source files changed during the chain and then builds League, which re-enriches team placement from the fresh Standings (Issue #945)
       providerFallback: none
       cutoverStatus: productive
       currentPlayoffBracketSource:
@@ -258,11 +258,11 @@ dataSources:
         mode: canonical-active
         productiveAdapter: public/requests/utils/league/CanonicalMatchupUtils.psm1::Get-CanonicalCurrentMatchupLoad
         canonicalInput: matchups/week-<CurrentWeek>.json
-        freshness: productively scheduled with the bounded League Core scope every ten minutes at minute 2
+        freshness: refreshed every ten minutes by the League Live pipeline (source scope current, then App League in the same run)
         currentWeekSelection: shared source-owned current-week resolver / settings.leg first
         providerFallback: none
         parity: persisted current raw Sleeper provider semantics + downstream ConvertTo-FgcCurrentMatchupFacts
-        publicationTrigger: APP • Data • League narrow main-push on CanonicalMatchupUtils or canonical current-matchup partition changes
+        publicationTrigger: APP • Pipeline • League Live runs the App League build right after the source scope in every ten-minute chain (no push trigger since Issue #945)
         cutoverStatus: productive
       downstreamDerivedUnchanged:
         - drafts and transactions
@@ -336,7 +336,7 @@ dataSources:
       mode: canonical-active
       productiveConsumer: public/requests/utils/league/CanonicalStandingUtils.psm1::Get-CanonicalCurrentSeasonData
       canonicalInputs: league.json + members.json + rosters.json + winners-bracket.json + losers-bracket.json
-      freshness: productively scheduled League Core scope every ten minutes
+      freshness: League Core every ten minutes via the League Live pipeline; Standings are rebuilt there only when standing inputs (league, members, rosters, brackets) changed during the chain, plus the weekly scheduler fallback (update-standings.yml, no push triggers)
       providerFallback: none
       cutoverStatus: productive
     timestamped: true

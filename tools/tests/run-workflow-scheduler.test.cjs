@@ -11,7 +11,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const CONFIG_PATH = path.join(ROOT, '.github', 'workflow-schedules.json');
 
 const EXPECTED = {
-  'update-league.yml': { timezone: 'Etc/UTC', cron: ['*/10 * * * *'] },
+  'league-live.yml': { timezone: 'Etc/UTC', cron: ['*/10 * * * *'] },
   'update-games.yml': { timezone: 'America/New_York', cron: ['45 0 * * *', '0 13 * * *'] },
   'update-players.yml': { timezone: 'America/New_York', cron: ['15 1 * * *', '0 8 * * *', '30 13 * * *'] },
   'update-standings.yml': { timezone: 'America/New_York', cron: ['35 3 * * 3'] },
@@ -21,9 +21,6 @@ const EXPECTED = {
   'sync-nfl-game-finality.yml': { timezone: 'Europe/Berlin', cron: ['*/10 * * 9-12,1 *'] },
   'sync-nfl-player-availability.yml': { timezone: 'Europe/Berlin', cron: ['9-59/10 * * 9-12,1 *'] },
   'sync-league-source-data.yml': { timezone: 'Europe/Berlin', cron: ['30 4 * * *'] },
-  'sync-league-core.yml': { timezone: 'Europe/Berlin', cron: ['2-59/10 * * * *'] },
-  'sync-league-transactions.yml': { timezone: 'Europe/Berlin', cron: ['5-59/10 * * * *'] },
-  'sync-league-drafts.yml': { timezone: 'Europe/Berlin', cron: ['8-59/10 * * * *'] },
   'source-data-readiness.yml': { timezone: 'Europe/Berlin', cron: ['0 5 * * *'] },
   'update-fantasypros-rankings.yml': { timezone: 'Europe/Berlin', cron: ['20 5 * * *'] },
   'update-fantasycalc-rankings.yml': { timezone: 'Europe/Berlin', cron: ['32 5 * * *'] },
@@ -74,10 +71,10 @@ test('central config preserves all migrated schedules, profiles and state contra
   const config = loadConfig();
   scheduler.validateConfig(config);
   assert.equal(config.schemaVersion, 2);
-  assert.equal(config.targets.length, 23);
+  assert.equal(config.targets.length, 20);
   const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
-  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 23);
+  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 20);
   assert.deepEqual(config.state, {
     schemaVersion: 1,
     branch: 'workflow-scheduler-state',
@@ -86,7 +83,7 @@ test('central config preserves all migrated schedules, profiles and state contra
   assert.deepEqual(config.retryPolicies.standard, retryPolicy);
   assert.equal(config.targets.find((item) => item.id === 'backup-cleanup').profile, 'maintenance');
   assert.equal(config.targets.find((item) => item.id === 'workflow-health').profile, 'observer');
-  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 20);
+  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 17);
   assert.deepEqual(config.targets.find((item) => item.id === 'workflow-health').deferUntilOtherTargetsSettled, { maxMinutes: 20 });
 });
 
@@ -109,32 +106,37 @@ test('migrated targets have repository_dispatch and no local schedule trigger', 
   }
 });
 
-test('League Core cadence is phased before transactions, drafts and the next League refresh', () => {
+test('League Live is one ten-minute pipeline target replacing the former four League targets', () => {
   const config = loadConfig();
-  const target = config.targets.find((item) => item.id === 'league-core-source');
+  const ids = config.targets.map((item) => item.id);
+  for (const removed of ['league', 'league-core-source', 'league-transaction-source', 'league-draft-source']) {
+    assert.ok(!ids.includes(removed), `${removed} must be replaced by league-live`);
+  }
+  const target = config.targets.find((item) => item.id === 'league-live');
   assert.ok(target);
-  assert.equal(target.workflow, 'sync-league-core.yml');
+  assert.equal(target.workflow, 'league-live.yml');
+  assert.equal(target.eventType, 'scheduler-league-live');
   assert.equal(target.profile, 'productive');
-  assert.deepEqual(target.cron, ['2-59/10 * * * *']);
-
-  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sync-league-core.yml'), 'utf8');
-  assert.match(workflow, /uses:\s+\.\/\.github\/workflows\/sync-league-source-data\.yml/);
-  assert.match(workflow, /materialization_scope:\s+league-core/);
+  assert.deepEqual(target.cron, ['*/10 * * * *']);
+  assert.deepEqual(target.satisfyingEvents, ['repository_dispatch', 'workflow_dispatch']);
+  for (const removedWorkflow of ['update-league.yml', 'sync-league-core.yml', 'sync-league-transactions.yml', 'sync-league-drafts.yml']) {
+    assert.ok(!fs.existsSync(path.join(ROOT, '.github', 'workflows', removedWorkflow)), `${removedWorkflow} must be deleted`);
+  }
 });
 
-test('draft source cadence is phased after transactions and before the next League refresh', () => {
-  const config = loadConfig();
-  const target = config.targets.find((item) => item.id === 'league-draft-source');
-  assert.ok(target);
-  assert.equal(target.workflow, 'sync-league-drafts.yml');
-  assert.equal(target.profile, 'productive');
-  assert.deepEqual(target.cron, ['8-59/10 * * * *']);
-
-  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sync-league-drafts.yml'), 'utf8');
+test('League Live chains current source scope, Standings and League in order without cancelling', () => {
+  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'league-live.yml'), 'utf8');
   assert.match(workflow, /uses:\s+\.\/\.github\/workflows\/sync-league-source-data\.yml/);
-  assert.match(workflow, /materialization_scope:\s+drafts/);
+  assert.match(workflow, /materialization_scope:\s+current/);
+  assert.match(workflow, /group:\s+league-live\s*\n\s+cancel-in-progress:\s+false/);
+  assert.doesNotMatch(workflow, /\n  push:\s*\n/, 'League Live is driven by the scheduler, not by pushes');
+  assert.match(workflow, /standings:\s*\n\s+needs:\s+source/);
+  assert.match(workflow, /league:\s*\n\s+needs:\s+\[source, standings\]/);
+  assert.ok(
+    workflow.indexOf('RequestStandings.ps1') < workflow.indexOf('RequestLeaguePublication.ps1'),
+    'Standings must be published before League is built',
+  );
 });
-
 
 test('NFL game finality uses targeted seasonal polling and event-driven Games publication', () => {
   const config = loadConfig();
