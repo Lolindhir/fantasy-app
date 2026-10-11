@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-10-11T04:16:23.867362Z",
-  "input_fingerprint": "5183602093f39a560e1302042be2e9233da2a280f898e3d89c122801e8da329a",
+  "generated_at": "2026-10-11T05:20:29Z",
+  "input_fingerprint": "9066cbaad453687b44724c7e05b548e6bea886b6e8ab6dc24001e668cc8ac8b9",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "604f6e9589b2955f0d2994ac244ee2b70b5339888f0c651d538f2979e5218510",
-      "source_timestamp": "2026-10-10T05:21:35Z"
+      "content_sha256": "6f2a026ca358c4904647301c3a5d04d3bd3f116f231dac1398863aca0bfdcafa",
+      "source_timestamp": "2026-10-11T05:20:29Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "a40508be76c1a16974b25699dc4b59dcc31506fc8e9299c58911bb090a0b8c69",
-      "source_timestamp": "2026-10-10T21:31:51Z"
+      "content_sha256": "dcc5ce8fabf0e8f88a81206654c943fc067c71baeed91c6e5ba04920101e912d",
+      "source_timestamp": "2026-10-11T05:20:29Z"
     },
     {
       "id": "operations_source_catalog",
@@ -4656,13 +4656,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Coach's Decision",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -4878,9 +4878,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -9394,7 +9395,7 @@
     "coverage": {
       "managed_roster_ids": 37,
       "resolved_players": 37,
-      "players_with_current_injury_signal": 12,
+      "players_with_current_injury_signal": 13,
       "primary_adp_applicable": 5,
       "primary_adp_listed": 4,
       "sources": {

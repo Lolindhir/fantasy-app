@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-10-11T04:16:23.867362Z",
-  "input_fingerprint": "39bff3c7da9b44fa7248407dcb9a224bff9f4718e2d5b06ae8896a32be7a4209",
+  "generated_at": "2026-10-11T05:20:29Z",
+  "input_fingerprint": "c96350b08d22cad537b18246776ba30555f720c78bd818dab0e03aa4f313d262",
   "sources": [
     {
       "id": "league_enrichment",
@@ -12,7 +12,7 @@
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "052c0c382e0a76c2f1124a363a2771cde448b54f3b9a5b530ac6fabfa9c5fe1d"
+      "content_sha256": "1f538a060dd79f399f9676c4bccf70e7eb63899664e2cfd61b6f04baa92b4fb5"
     },
     {
       "id": "roster_evaluation_state",
@@ -2350,13 +2350,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Coach's Decision",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
