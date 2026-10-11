@@ -1533,3 +1533,56 @@ decisions:
         - A failure in an early job fails the whole chain and is retried as one cycle; the later jobs still run on the last published data so freshness degrades gracefully.
         - Changes to Standings derivation code reach production at the next input change, the weekly fallback or a manual run instead of immediately via push.
         - Code changes of the League generator reach production with the next ten-minute chain instead of an immediate push run.
+
+  - id: ADR-049
+    title: Scheduler targets can follow NFL game windows
+    status: accepted
+    context: >
+      The Finality target ran every ten minutes from September through January (143 runs on a Saturday without a single
+      NFL game, Issue #946, step S3 of Issue #471). Nothing changes between NFL games, so dense polling outside game
+      windows is pure Actions and commit load.
+    decision: >
+      Robert approved the workflow change on 2026-10-11. A scheduler target may declare mode game-window with
+      preKickoffMinutes, postFinalMinutes and idleCron in .github/workflow-schedules.json. The runtime derives game blocks
+      (games with overlapping assumed durations) from the canonical NFL schedule and Eastern-time kickoffs and uses the
+      target cron only inside a window (first kickoff minus preKickoffMinutes until the assumed end of the block plus
+      postFinalMinutes, extended up to maxOverrunMinutes while games are not final) and the idleCron otherwise. Canonical
+      finality has no timestamp, so the post-final lag is anchored on the assumed end. An unreadable schedule keeps the
+      dense cron. Player availability keeps its own ten-minute target all season because injury news does not follow
+      game windows. Implementation: tools/nfl-game-window.cjs, evaluated in tools/run-workflow-scheduler-runtime.cjs.
+    rationale: >
+      The window is derived from the same canonical schedule the rest of the platform uses, stays configuration-driven per
+      target and fails towards more runs, never fewer.
+    consequences:
+      positive:
+        - No ten-minute runs on days without games; Finality and Schedule stay about ten minutes fresh inside windows.
+        - Window state is visible in the machine-readable decision and the Job Summary.
+      negative:
+        - A schedule change that moves a game is picked up only after the next canonical schedule refresh.
+        - The post-final lag is approximated from the assumed game end because finality has no timestamp.
+
+  - id: ADR-050
+    title: NFL Live is one game-window pipeline target
+    status: accepted
+    context: >
+      After ADR-048 the NFL finality refresh, the Games workflow (Schedule.json) and their push trigger were still separate
+      moving parts: a ten-minute finality target, two daily Games slots and a push-triggered Games run that raced the source
+      commits (Issue #946, step S3 of Issue #471).
+    decision: >
+      Replace the scheduler targets nfl-game-finality and games by one target nfl-live (workflow nfl-live.yml, event
+      scheduler-nfl-live, mode game-window per ADR-049). The pipeline runs jobs in order: finality (the existing sync-nfl-source-data.yml
+      game-finality scope, which also syncs the schedule snapshot without odds), schedule (update-games.yml as reusable workflow, only when
+      game-finality or the canonical schedule changed between the start of the finality job and the detect job), and league (repository_dispatch
+      of scheduler-league-live, only when finality changed). update-games.yml loses its push and scheduler triggers and keeps workflow_dispatch for
+      repair. The wrapper sync-nfl-game-finality.yml is removed. Player Availability keeps its own ten-minute target. The pipeline owns the
+      concurrency group nfl-live without cancellation.
+    rationale: >
+      A dependency chain belongs in one run (ADR-048): one scheduler decision, one retry cycle and one monitoring signal; a changed finality
+      wakes the League chain immediately instead of waiting up to ten minutes.
+    consequences:
+      positive:
+        - No push-triggered Games runs and no daily Games fallback runs; Schedule.json is rebuilt only when its inputs changed.
+        - Finality changes reach League.json about one tick earlier.
+      negative:
+        - A Schedule.json publication failure fails the nfl-live run and is retried as one cycle.
+        - The League Live wake-up is an additional repository_dispatch from a workflow, using the PAT_PUSH secret.

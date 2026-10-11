@@ -164,6 +164,7 @@ shortContext:
   public/requests/utils/league/LeagueUtils.psm1: Generator für League Status und Phase; unterscheidet Pre Draft, In Draft und Between Drafts anhand aktueller offener, laufender und abgeschlossener Drafts
   public/requests/utils/league/LeagueOverviewUtils.psm1: Generator-Helper für nullable TradeDeadlineWeek sowie echten Regular-Season-/Playoff-Kickoff; Matchup-Snapshot-Kompatibilität gehört nicht mehr zu League.json
   public/requests/utils/league/MatchupReadModelUtils.psm1: Öffentliche Generator-Grenze für season-weite Matchups-Read-Models, Vergleich, historische Materialisierung, kanonische Pairing-/Score-Helfer und neutrale #503-Reihenfolge; Legacy League.Matchups wird nicht exportiert
+  tools/nfl-game-window.cjs: Scheduler-Modul fuer mode game-window; leitet NFL-Spielfenster aus dem kanonischen Schedule (Eastern-Kickoffs) und Game-Finality ab, waehlt dichten oder Idle-Cron und faellt bei unlesbarem Schedule auf den dichten Cron zurueck (Issue #946)
   deploy_action.ps1: Pages-Build-Script; schreibt .ai-workflow/build.log und deploy-script-result.json als transiente CI-Diagnose
   .ai-context/manual/ci-diagnostics.yaml: Manuelle Doku für transiente Build-/Deploy-Diagnoseausgaben
   src/app/core/interceptors/json-data-cache-busting.interceptor.ts: Fügt lokalen GET-Requests für JSON unter data/ den aktuellen Build-Commit als Queryparameter hinzu; data/past_seasons/** bleibt für langfristiges historisches Caching ausgenommen

@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('node:fs');
+const gameWindow = require('./nfl-game-window.cjs');
 
 function parseField(raw, minimum, maximum) {
   const values = new Set();
@@ -189,6 +190,7 @@ function validateConfig(config) {
     }
     localParts(new Date('2026-01-05T00:00:00Z'), target.timezone);
     for (const expression of target.cron) cronMatches(expression, new Date('2026-01-05T00:00:00Z'), target.timezone);
+    gameWindow.validateGameWindowConfig(target, cronMatches);
   }
 }
 

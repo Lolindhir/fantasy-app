@@ -10,7 +10,7 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 
 class GameFinalityWorkflowContractTests(unittest.TestCase):
     def test_finality_wrapper_selects_scoped_materialization(self) -> None:
-        wrapper = (WORKFLOWS / "sync-nfl-game-finality.yml").read_text(encoding="utf-8")
+        wrapper = (WORKFLOWS / "nfl-live.yml").read_text(encoding="utf-8")
         self.assertIn("dataset: nflverse.game-finality", wrapper)
         self.assertIn("materialization_scope: game-finality", wrapper)
         self.assertIn("actions: read", wrapper)

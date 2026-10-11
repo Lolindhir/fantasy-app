@@ -12,13 +12,12 @@ const CONFIG_PATH = path.join(ROOT, '.github', 'workflow-schedules.json');
 
 const EXPECTED = {
   'league-live.yml': { timezone: 'Etc/UTC', cron: ['*/10 * * * *'] },
-  'update-games.yml': { timezone: 'America/New_York', cron: ['45 0 * * *', '0 13 * * *'] },
   'update-players.yml': { timezone: 'America/New_York', cron: ['15 1 * * *', '0 8 * * *', '30 13 * * *'] },
   'update-standings.yml': { timezone: 'America/New_York', cron: ['35 3 * * 3'] },
   'update-transactions.yml': { timezone: 'America/New_York', cron: ['5 4 * * 3'] },
   'update-teams.yml': { timezone: 'America/New_York', cron: ['35 4 * * 3'] },
   'sync-nfl-source-data.yml': { timezone: 'Europe/Berlin', cron: ['0 4 * * *'] },
-  'sync-nfl-game-finality.yml': { timezone: 'Europe/Berlin', cron: ['*/10 * * 9-12,1 *'] },
+  'nfl-live.yml': { timezone: 'Europe/Berlin', cron: ['*/10 * * * *'] },
   'sync-nfl-player-availability.yml': { timezone: 'Europe/Berlin', cron: ['9-59/10 * * 9-12,1 *'] },
   'sync-league-source-data.yml': { timezone: 'Europe/Berlin', cron: ['30 4 * * *'] },
   'source-data-readiness.yml': { timezone: 'Europe/Berlin', cron: ['0 5 * * *'] },
@@ -71,10 +70,10 @@ test('central config preserves all migrated schedules, profiles and state contra
   const config = loadConfig();
   scheduler.validateConfig(config);
   assert.equal(config.schemaVersion, 2);
-  assert.equal(config.targets.length, 20);
+  assert.equal(config.targets.length, 19);
   const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
-  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 20);
+  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 19);
   assert.deepEqual(config.state, {
     schemaVersion: 1,
     branch: 'workflow-scheduler-state',
@@ -83,7 +82,7 @@ test('central config preserves all migrated schedules, profiles and state contra
   assert.deepEqual(config.retryPolicies.standard, retryPolicy);
   assert.equal(config.targets.find((item) => item.id === 'backup-cleanup').profile, 'maintenance');
   assert.equal(config.targets.find((item) => item.id === 'workflow-health').profile, 'observer');
-  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 17);
+  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 16);
   assert.deepEqual(config.targets.find((item) => item.id === 'workflow-health').deferUntilOtherTargetsSettled, { maxMinutes: 20 });
 });
 
@@ -138,30 +137,44 @@ test('League Live chains current source scope, Standings and League in order wit
   );
 });
 
-test('NFL game finality uses targeted seasonal polling and event-driven Games publication', () => {
+test('NFL Live is one game-window pipeline target; Games publication is part of its chain', () => {
   const config = loadConfig();
-  const finalityTarget = config.targets.find((item) => item.id === 'nfl-game-finality');
-  assert.ok(finalityTarget);
-  assert.equal(finalityTarget.workflow, 'sync-nfl-game-finality.yml');
-  assert.equal(finalityTarget.profile, 'productive');
-  assert.deepEqual(finalityTarget.cron, ['*/10 * * 9-12,1 *']);
+  const liveTarget = config.targets.find((item) => item.id === 'nfl-live');
+  assert.ok(liveTarget);
+  assert.equal(liveTarget.workflow, 'nfl-live.yml');
+  assert.equal(liveTarget.eventType, 'scheduler-nfl-live');
+  assert.equal(liveTarget.profile, 'productive');
+  // Dense cron only inside an NFL game window (S3b, Issue #946); outside windows the idle cron applies.
+  assert.deepEqual(liveTarget.cron, ['*/10 * * * *']);
+  assert.equal(liveTarget.mode, 'game-window');
+  assert.deepEqual(liveTarget.gameWindow.idleCron, ['7 */6 * 9-12,1 *']);
+  assert.ok(!config.targets.some((item) => item.id === 'games' || item.id === 'nfl-game-finality'));
+  for (const removed of ['sync-nfl-game-finality.yml']) {
+    assert.ok(!fs.existsSync(path.join(ROOT, '.github', 'workflows', removed)), `${removed} must be deleted`);
+  }
 
-  const finalityWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'sync-nfl-game-finality.yml'), 'utf8');
-  assert.match(finalityWorkflow, /uses:\s+\.\/\.github\/workflows\/sync-nfl-source-data\.yml/);
-  assert.match(finalityWorkflow, /dataset:\s+nflverse\.game-finality/);
-  assert.match(finalityWorkflow, /historical_backfill_limit:\s+0/);
+  const workflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'nfl-live.yml'), 'utf8');
+  assert.match(workflow, /scheduler-nfl-live/);
+  assert.match(workflow, /uses:\s+\.\/\.github\/workflows\/sync-nfl-source-data\.yml/);
+  assert.match(workflow, /dataset:\s+nflverse\.game-finality/);
+  assert.match(workflow, /historical_backfill_limit:\s+0/);
+  assert.match(workflow, /group:\s+nfl-live\s*\n\s+cancel-in-progress:\s+false/);
+  assert.match(workflow, /uses:\s+\.\/\.github\/workflows\/update-games\.yml/);
+  assert.match(workflow, /scheduler-league-live/);
+  assert.match(workflow, /finality_changed == 'true'/);
+  assert.doesNotMatch(workflow, /\n  push:\s*\n/);
 
-  const gamesTarget = config.targets.find((item) => item.id === 'games');
-  assert.ok(gamesTarget.satisfyingEvents.includes('push'));
   const gamesWorkflow = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'update-games.yml'), 'utf8');
-  assert.match(gamesWorkflow, /\n  push:\s*\n/);
-  assert.match(gamesWorkflow, /source-data\/nfl\/game-finality\/\*\*/);
+  assert.match(gamesWorkflow, /\n  workflow_call:/);
+  assert.doesNotMatch(gamesWorkflow, /\n  push:\s*\n/);
+  assert.doesNotMatch(gamesWorkflow, /scheduler-update-games/);
 });
 
-test('finality cadence resolves in-season slots and stays dormant in the offseason', () => {
-  const inSeason = scheduler.latestDueSlot(['*/10 * * 9-12,1 *'], 'Europe/Berlin', new Date('2026-09-10T12:44:00Z'), 60);
-  assert.equal(inSeason.toISOString(), '2026-09-10T12:40:00.000Z');
-  const offseason = scheduler.latestDueSlot(['*/10 * * 9-12,1 *'], 'Europe/Berlin', new Date('2026-08-10T12:44:00Z'), 60);
+test('finality idle cadence resolves in-season slots and stays dormant in the offseason', () => {
+  const idleCron = ['7 */6 * 9-12,1 *'];
+  const inSeason = scheduler.latestDueSlot(idleCron, 'Europe/Berlin', new Date('2026-09-10T12:44:00Z'), 600);
+  assert.equal(inSeason.toISOString(), '2026-09-10T10:07:00.000Z');
+  const offseason = scheduler.latestDueSlot(idleCron, 'Europe/Berlin', new Date('2026-08-10T12:44:00Z'), 60);
   assert.equal(offseason, null);
 });
 

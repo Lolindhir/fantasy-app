@@ -1,14 +1,14 @@
 name: APP • Data • Games
 
+# Publishes Schedule.json from the canonical NFL schedule and game finality. Called by
+# APP • Pipeline • NFL Live (Issue #946, step S3 of #471); no push or scheduler trigger of its own.
+# workflow_dispatch stays as the manual repair path.
+
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "source-data/nfl/game-finality/**"
-  repository_dispatch:
-    types:
-      - scheduler-update-games
+  workflow_call:
+    secrets:
+      PAT_PUSH:
+        required: true
   workflow_dispatch:
 
 permissions:

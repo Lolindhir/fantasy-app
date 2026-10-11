@@ -52,16 +52,6 @@
       "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
     },
     {
-      "id": "games",
-      "workflow": "update-games.yml",
-      "path": ".github/workflows/update-games.yml",
-      "eventType": "scheduler-update-games",
-      "profile": "productive",
-      "timezone": "America/New_York",
-      "cron": ["45 0 * * *", "0 13 * * *"],
-      "satisfyingEvents": ["repository_dispatch", "schedule", "workflow_dispatch", "push"]
-    },
-    {
       "id": "players",
       "workflow": "update-players.yml",
       "path": ".github/workflows/update-players.yml",
@@ -112,13 +102,19 @@
       "satisfyingEvents": ["repository_dispatch", "workflow_dispatch", "push"]
     },
     {
-      "id": "nfl-game-finality",
-      "workflow": "sync-nfl-game-finality.yml",
-      "path": ".github/workflows/sync-nfl-game-finality.yml",
-      "eventType": "scheduler-sync-nfl-game-finality",
+      "id": "nfl-live",
+      "workflow": "nfl-live.yml",
+      "path": ".github/workflows/nfl-live.yml",
+      "eventType": "scheduler-nfl-live",
       "profile": "productive",
       "timezone": "Europe/Berlin",
-      "cron": ["*/10 * * 9-12,1 *"],
+      "cron": ["*/10 * * * *"],
+      "mode": "game-window",
+      "gameWindow": {
+        "preKickoffMinutes": 15,
+        "postFinalMinutes": 60,
+        "idleCron": ["7 */6 * 9-12,1 *"]
+      },
       "satisfyingEvents": ["repository_dispatch", "workflow_dispatch"]
     },
     {
