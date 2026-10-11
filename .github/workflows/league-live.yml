@@ -1,0 +1,133 @@
+name: APP • Pipeline • League Live
+
+# One ten-minute chain for the live league data (Issue #945, step S2 of #471):
+#   source    current League Core + transactions + drafts, one run and one pair of commits
+#   standings only when Standings inputs changed during this chain (or when forced)
+#   league    App League plus PlayerWeekFantasy/MatchupProjections
+# Standings runs before League because League.json embeds the published Standings placement.
+
+on:
+  repository_dispatch:
+    types:
+      - scheduler-league-live
+  workflow_dispatch:
+    inputs:
+      force_standings:
+        description: "Rebuild Standings even if no Standings input changed"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+# Own group, no cancellation: a newer tick waits for the running chain. The source job
+# additionally takes the group of sync-league-source-data.yml so the daily full League
+# source sync never writes in parallel.
+concurrency:
+  group: league-live
+  cancel-in-progress: false
+
+jobs:
+  source:
+    uses: ./.github/workflows/sync-league-source-data.yml
+    with:
+      materialization_scope: current
+    secrets: inherit
+
+  standings:
+    needs: source
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Detect changed Standings inputs
+        id: detect
+        env:
+          BASE: ${{ needs.source.outputs.main_before_sync }}
+          FORCE: ${{ inputs.force_standings }}
+        run: |
+          set -euo pipefail
+          run=false
+          reason=""
+          if [[ "${FORCE:-false}" == "true" ]]; then
+            run=true
+            reason="forced by workflow_dispatch input"
+          elif [[ -z "${BASE:-}" ]]; then
+            run=true
+            reason="no source base commit available (source job did not report); running conservatively"
+          else
+            changed="$(git diff --name-only "$BASE" HEAD -- \
+              ':(glob)source-data/leagues/*/seasons/*/league.json' \
+              ':(glob)source-data/leagues/*/seasons/*/members.json' \
+              ':(glob)source-data/leagues/*/seasons/*/rosters.json' \
+              ':(glob)source-data/leagues/*/seasons/*/winners-bracket.json' \
+              ':(glob)source-data/leagues/*/seasons/*/losers-bracket.json')"
+            if [[ -n "$changed" ]]; then
+              run=true
+              reason="Standings inputs changed since $BASE"
+              printf '%s\n' "$changed"
+            else
+              reason="no Standings input changed since $BASE"
+            fi
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+          echo "- Standings: run=$run ($reason)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Node.js
+        if: steps.detect.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Rebuild and publish Standings data
+        if: steps.detect.outputs.run == 'true'
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope standings
+          --path public/data
+          --
+          pwsh ./public/requests/RequestStandings.ps1
+
+  league:
+    needs: [source, standings]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Rebuild and publish League data
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope league
+          --path public/data
+          --
+          pwsh ./public/requests/RequestLeaguePublication.ps1
+
+      - name: Rebuild and publish PlayerWeekFantasy and MatchupProjections
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope player-week-fantasy
+          --path derived-data/player-week-fantasy
+          --path public/data/PlayerWeekFantasy.json
+          --path public/data/MatchupProjections.json
+          --
+          python3 tools/player_week_fantasy_refresh.py

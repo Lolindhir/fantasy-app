@@ -1494,3 +1494,42 @@ decisions:
       negative:
         - The state file is rewritten once per newly satisfied slot per target.
         - A genuine cancel by a person is also not retried within the same slot until the next tick dispatches normally.
+
+  - id: ADR-048
+    title: Scheduler targets are pipelines
+    status: accepted
+    context: >
+      ADR-031 and ADR-033 gave every ten-minute League step its own scheduler target and workflow: League Core (:02),
+      transactions (:05), drafts (:08) and App League (:10), plus push-triggered Standings and League rebuilds on the
+      files these steps wrote. Measured on 2026-10-10 this produced about 500 runs per day, 41 cancelled waiting runs
+      (all source targets share the concurrency group league-source-data-sync) and many commits on main racing each
+      other (Issue #945, step S2 of Issue #471).
+    decision: >
+      Model one scheduler target per dependency chain instead of one per step. The target league-live
+      (.github/workflows/league-live.yml, event scheduler-league-live, every ten minutes, profile productive) runs
+      jobs in order: source (reusable sync-league-source-data.yml with the new materialization scope current), Standings
+      (only when canonical standing inputs changed between the start of the source job and the Standings job, or when
+      forced) and App League including PlayerWeekFantasy and MatchupProjections. Standings runs before League because
+      League.json embeds the published Standings placement. The scope current is not a new materializer: tools/
+      league_source_data.py --current-scope runs the League Core, transaction-window and draft planners in that order and
+      merges their results; tests/test_league_source_current_scope.py proves identical files and semantic no-op behaviour
+      against the three single scopes. The pipeline owns its concurrency group league-live without cancel-in-progress; the
+      source job additionally takes league-source-data-sync so the daily full League source sync never writes in parallel.
+      The former targets league, league-core-source, league-transaction-source and league-draft-source and the workflows
+      sync-league-core, sync-league-transactions, sync-league-drafts and update-league are removed; update-standings.yml
+      stays as weekly fallback and manual path without push triggers. The League source loop fetches and pushes through
+      tools/git_transient.py so the transient retry of ADR-033-era publication helpers applies. Monitoring is one entry
+      (important, repository_dispatch, 45 minutes), publication class rebuild-and-retry.
+    rationale: >
+      A chain whose steps depend on each other belongs in one run: one scheduler decision, one retry cycle, one monitoring
+      signal, no waiting runs cancelled by a shared concurrency group and no commit race between producer and consumer.
+      Single scopes stay available for manual repair so no capability is lost.
+    consequences:
+      positive:
+        - One scheduler target and roughly one run plus the necessary commits per ten-minute window instead of four targets and push-triggered follow-ups.
+        - No cancelled waiting League runs; League and Standings consume the source commit of their own chain.
+        - Future chains (for example the NFL live chain, FM daily chain) follow the same pattern.
+      negative:
+        - A failure in an early job fails the whole chain and is retried as one cycle; the later jobs still run on the last published data so freshness degrades gracefully.
+        - Changes to Standings derivation code reach production at the next input change, the weekly fallback or a manual run instead of immediately via push.
+        - Code changes of the League generator reach production with the next ten-minute chain instead of an immediate push run.

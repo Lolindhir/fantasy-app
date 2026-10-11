@@ -71,19 +71,22 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Cano
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-FgcCurrentMatchupLoad") -Expected 0 -Message "RequestLeague still performs the legacy live current-matchup provider read after the 6O cutover."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-CanonicalCurrentMatchupLoad") -Expected 1 -Message "RequestLeague must use exactly one canonical current Matchup read."
 Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentMatchupLoad -CanonicalLeagueID `$CanonicalLeagueID -Season ([int]`$league.season) -Week `$matchupWeek") -Message "RequestLeague canonical current Matchup read does not bind canonical league, season and active week explicitly."
-$updateLeagueWorkflow = Get-Content (Join-Path (Join-Path $PSScriptRoot "..\..") ".github/workflows/update-league.yml") -Raw
-Assert-True -Condition $updateLeagueWorkflow.Contains('"public/requests/utils/league/CanonicalMatchupUtils.psm1"') -Message "APP League workflow does not rebuild when the canonical current Matchup adapter changes."
-Assert-True -Condition $updateLeagueWorkflow.Contains('"source-data/leagues/nfl-reise/seasons/*/matchups/week-*.json"') -Message "APP League workflow does not rebuild when canonical current Matchup partitions change."
-Assert-True -Condition $updateLeagueWorkflow.Contains('"public/data/Standings.json"') -Message "APP League workflow does not re-enrich team placement context when Standings.json changes."
+$leagueLiveWorkflow = Get-Content (Join-Path (Join-Path $PSScriptRoot "..\..") ".github/workflows/league-live.yml") -Raw
+Assert-True -Condition $leagueLiveWorkflow.Contains("materialization_scope: current") -Message "League Live does not run the combined current League source scope."
+Assert-True -Condition $leagueLiveWorkflow.Contains("RequestLeaguePublication.ps1") -Message "League Live does not publish the App League read model."
+Assert-True -Condition $leagueLiveWorkflow.Contains("RequestStandings.ps1") -Message "League Live does not rebuild Standings."
+# Standings must be published before League is built: League.json embeds the published Standings placement context.
+Assert-True -Condition ($leagueLiveWorkflow.IndexOf("RequestStandings.ps1") -lt $leagueLiveWorkflow.IndexOf("RequestLeaguePublication.ps1")) -Message "League Live must rebuild Standings before League so team placement context is current."
 $updateStandingsWorkflow = Get-Content (Join-Path (Join-Path $PSScriptRoot "..\..") ".github/workflows/update-standings.yml") -Raw
+Assert-True -Condition (-not $updateStandingsWorkflow.Contains("  push:")) -Message "APP Standings workflow must not have push triggers; League Live owns input-driven rebuilds."
 foreach ($canonicalStandingPath in @(
-    '"source-data/leagues/nfl-reise/seasons/*/league.json"',
-    '"source-data/leagues/nfl-reise/seasons/*/members.json"',
-    '"source-data/leagues/nfl-reise/seasons/*/rosters.json"',
-    '"source-data/leagues/nfl-reise/seasons/*/winners-bracket.json"',
-    '"source-data/leagues/nfl-reise/seasons/*/losers-bracket.json"'
+    "source-data/leagues/*/seasons/*/league.json",
+    "source-data/leagues/*/seasons/*/members.json",
+    "source-data/leagues/*/seasons/*/rosters.json",
+    "source-data/leagues/*/seasons/*/winners-bracket.json",
+    "source-data/leagues/*/seasons/*/losers-bracket.json"
 )) {
-    Assert-True -Condition $updateStandingsWorkflow.Contains($canonicalStandingPath) -Message "APP Standings workflow does not rebuild when canonical standing source '$canonicalStandingPath' changes."
+    Assert-True -Condition $leagueLiveWorkflow.Contains($canonicalStandingPath) -Message "League Live does not detect Standings input '$canonicalStandingPath'."
 }
 
 # Historical playoff identity must be snapshotted from the same season's canonical

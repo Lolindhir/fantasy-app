@@ -379,6 +379,20 @@ productiveAcceptance:
       follow-up; draft-history season discovery reads the canonical league seasons).
 
 phase2TargetedFreshnessScopes:
+  currentCombinedScope:
+    status: productive-scheduled
+    issue: 945
+    purpose: >
+      One run and one commit pair for the three ten-minute League scopes. The combined
+      scope reuses the single-scope planners; it is not a new materializer.
+    cli:
+      acquisition: tools/league_source_data.py sync --current-scope
+      materialization: tools/league_source_data.py materialize --materialization-scope current --current-scope
+    composition: League Core (with active matchup week), then current transaction window, then current drafts
+    writeSet: union of the three single-scope write-sets
+    parity: tools/tests/test_league_source_current_scope.py proves identical files and semantic no-op behaviour versus the three single scopes run in order
+    workflow: .github/workflows/sync-league-source-data.yml materialization_scope=current, called by .github/workflows/league-live.yml
+    singleScopes: league-core, transactions, drafts and matchups stay available for manual repair runs through workflow_dispatch
   currentLeagueCore:
     status: productive-scheduled
     purpose: >
@@ -407,15 +421,15 @@ phase2TargetedFreshnessScopes:
       - drafts
       - consumer publication
     workflow:
-      wrapper: .github/workflows/sync-league-core.yml
+      pipeline: .github/workflows/league-live.yml (Issue #945, ADR-048)
       delegatedProducer: .github/workflows/sync-league-source-data.yml
-      materializationScope: league-core
-      schedulerTarget: league-core-source
-      eventType: scheduler-sync-league-core
-      timezone: Europe/Berlin
-      cron: 2-59/10 * * * *
-      ordering: League Core + active Current Matchup :02 -> Transactions :05 -> Drafts :08 -> App League :10
-      monitoring: important / repository_dispatch / 45-minute staleness
+      productionMaterializationScope: current (League Core + current transaction window + current drafts in one run; isolated manual scope league-core remains available)
+      schedulerTarget: league-live
+      eventType: scheduler-league-live
+      timezone: Etc/UTC
+      cron: "*/10 * * * *"
+      ordering: League Live chain per tick = source scope current (League Core + active Current Matchup, Transactions, Drafts) -> Standings (only on changed inputs) -> App League
+      monitoring: important / repository_dispatch / 45-minute staleness (league-live.yml)
       publication: rebuild-and-retry via delegated League Source producer
     weekStructureRule: >
       WeekStructure is intentionally outside the fast League Core scope because it
@@ -477,16 +491,16 @@ phase2TargetedFreshnessScopes:
       - drafts
       - consumer publication
     workflow:
-      wrapper: .github/workflows/sync-league-core.yml
+      pipeline: .github/workflows/league-live.yml (Issue #945, ADR-048)
       delegatedProducer: .github/workflows/sync-league-source-data.yml
-      productionMaterializationScope: league-core
+      productionMaterializationScope: current (includes the League Core matchup week)
       isolatedManualMaterializationScope: matchups
-      schedulerTarget: league-core-source
-      eventType: scheduler-sync-league-core
-      timezone: Europe/Berlin
-      cron: 2-59/10 * * * *
-      ordering: League Core + active Current Matchup :02 -> Transactions :05 -> Drafts :08 -> App League scheduler :10
-      monitoring: important / repository_dispatch + narrow push / 45-minute staleness
+      schedulerTarget: league-live
+      eventType: scheduler-league-live
+      timezone: Etc/UTC
+      cron: "*/10 * * * *"
+      ordering: source scope current -> Standings (on changed inputs) -> App League, within one pipeline run
+      monitoring: important / repository_dispatch / 45-minute staleness
       publication: rebuild-and-retry via delegated League Source producer
     identityGuard: >
       Current Sleeper payload ProviderLeagueID/Season, bootstrap CurrentProviderLeagueID,
@@ -500,11 +514,11 @@ phase2TargetedFreshnessScopes:
       RequestLeague performs exactly one Get-CanonicalCurrentMatchupLoad read for the
       active week and no longer performs a direct current-matchup provider read.
     publicationOrderingNote: >
-      The regular scheduler still provides League Core + active Current Matchup at :02
-      and App League at :10, but correctness no longer depends on that timing alone.
-      APP • Data • League also has a narrow main-push trigger for CanonicalMatchupUtils
-      and canonical nfl-reise matchup partition changes, so newly published current
-      matchup evidence causes a rebuild through the existing rebuild-and-retry writer.
+      Since Issue #945 the League Live pipeline runs the current source scope and then
+      the App League build in one chain, so newly materialized current matchup evidence
+      is consumed by the League job of the same run; the former narrow main-push trigger
+      on CanonicalMatchupUtils and matchup partitions is gone. Correctness still does not
+      depend on timing: each job checks out the latest main.
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03

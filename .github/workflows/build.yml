@@ -31,6 +31,7 @@ jobs:
       - name: Run publication-safety regression tests
         run: |
           python -m unittest tools.tests.test_rebuild_and_publish -v
+          python -m unittest tools.tests.test_git_transient -v
           python -m unittest tools.tests.test_workflow_publication_contracts -v
 
       - name: Run NFL source-data regression tests
