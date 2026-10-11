@@ -792,7 +792,7 @@
               "PlayerID": "12512",
               "NFLTeamID": "CLE",
               "GameID": "20261011_CLE@NYJ",
-              "IsStarter": false
+              "IsStarter": true
             },
             {
               "PlayerID": "12522",
@@ -834,7 +834,7 @@
               "PlayerID": "2449",
               "NFLTeamID": "WAS",
               "GameID": "20261011_NYG@WSH",
-              "IsStarter": true
+              "IsStarter": false
             },
             {
               "PlayerID": "4199",
@@ -3085,7 +3085,7 @@
       "GameID": "20261011_CLE@NYJ",
       "DecisionWindowID": "2026-10-11T17:00:00Z",
       "StartsAtUtc": "2026-10-11T17:00:00Z",
-      "IsStarter": false
+      "IsStarter": true
     },
     {
       "FantasyTeamID": 5,
@@ -3185,7 +3185,7 @@
       "GameID": "20261011_NYG@WSH",
       "DecisionWindowID": "2026-10-11T17:00:00Z",
       "StartsAtUtc": "2026-10-11T17:00:00Z",
-      "IsStarter": true
+      "IsStarter": false
     },
     {
       "FantasyTeamID": 5,
@@ -8217,7 +8217,7 @@
         "BenchCount": 17,
         "IRCount": 3,
         "TaxiCount": 0,
-        "UnlockedStarterCount": 12,
+        "UnlockedStarterCount": 13,
         "LockedActiveStarterCount": 0,
         "CompletedStarterCount": 0,
         "EligibleBenchCandidateCount": 14,
@@ -8380,26 +8380,19 @@
             "SlotType": "FLEX",
             "SlotOrdinal": 1,
             "SlotIndex": 8,
-            "CurrentStarterID": "2449",
+            "CurrentStarterID": "12512",
             "State": "unlocked",
-            "GameID": "20261011_NYG@WSH",
+            "GameID": "20261011_CLE@NYJ",
             "DecisionWindowID": "2026-10-11T17:00:00Z",
             "StartsAtUtc": "2026-10-11T17:00:00Z",
             "ScoringAvailability": {
-              "State": "out",
-              "ProviderStatus": "OUT",
+              "State": "available",
+              "ProviderStatus": "ACTIVE",
               "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-10-09T19:26:36Z",
-              "ObservedAtUtc": "2026-10-09T19:26:36Z"
+              "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
+              "ObservedAtUtc": "2026-10-06T21:33:37Z"
             },
-            "Repairability": {
-              "ProblemCode": "STARTER_UNAVAILABLE",
-              "State": "repairable",
-              "Path": "internal-roster",
-              "ReasonCode": "INTERNAL_ASSIGNMENT_AVAILABLE",
-              "InternalCandidateCount": 26,
-              "ExternalCandidateCount": 0
-            }
+            "Repairability": null
           },
           {
             "SlotID": "FLEX-2",
@@ -8515,35 +8508,6 @@
             "IsBenchCandidate": false,
             "HasDirectScoringPath": false,
             "HasAlternativePath": false,
-            "ScoringAvailability": {
-              "State": "unknown",
-              "ProviderStatus": null,
-              "Source": "ESPN",
-              "FirstObservedAtUtc": null,
-              "ObservedAtUtc": null
-            }
-          },
-          {
-            "PlayerID": "12512",
-            "Placement": "bench",
-            "Position": "RB",
-            "GameState": "unlocked",
-            "GameID": "20261011_CLE@NYJ",
-            "DecisionWindowID": "2026-10-11T17:00:00Z",
-            "StartsAtUtc": "2026-10-11T17:00:00Z",
-            "LineupSlotID": null,
-            "LineupSlotType": null,
-            "EligibleUnlockedSlotIDs": [
-              "RB-1",
-              "RB-2",
-              "FLEX-1",
-              "FLEX-2",
-              "FLEX-3",
-              "FLEX-4"
-            ],
-            "IsBenchCandidate": true,
-            "HasDirectScoringPath": false,
-            "HasAlternativePath": true,
             "ScoringAvailability": {
               "State": "unknown",
               "ProviderStatus": null,
@@ -8673,6 +8637,35 @@
             "EligibleUnlockedSlotIDs": [
               "RB-1",
               "RB-2",
+              "FLEX-1",
+              "FLEX-2",
+              "FLEX-3",
+              "FLEX-4"
+            ],
+            "IsBenchCandidate": true,
+            "HasDirectScoringPath": false,
+            "HasAlternativePath": true,
+            "ScoringAvailability": {
+              "State": "unknown",
+              "ProviderStatus": null,
+              "Source": "ESPN",
+              "FirstObservedAtUtc": null,
+              "ObservedAtUtc": null
+            }
+          },
+          {
+            "PlayerID": "2449",
+            "Placement": "bench",
+            "Position": "WR",
+            "GameState": "unlocked",
+            "GameID": "20261011_NYG@WSH",
+            "DecisionWindowID": "2026-10-11T17:00:00Z",
+            "StartsAtUtc": "2026-10-11T17:00:00Z",
+            "LineupSlotID": null,
+            "LineupSlotType": null,
+            "EligibleUnlockedSlotIDs": [
+              "WR-1",
+              "WR-2",
               "FLEX-1",
               "FLEX-2",
               "FLEX-3",
@@ -9028,6 +9021,28 @@
             }
           },
           {
+            "PlayerID": "12512",
+            "Placement": "starter",
+            "Position": "RB",
+            "GameState": "unlocked",
+            "GameID": "20261011_CLE@NYJ",
+            "DecisionWindowID": "2026-10-11T17:00:00Z",
+            "StartsAtUtc": "2026-10-11T17:00:00Z",
+            "LineupSlotID": "FLEX-1",
+            "LineupSlotType": "FLEX",
+            "EligibleUnlockedSlotIDs": [],
+            "IsBenchCandidate": false,
+            "HasDirectScoringPath": true,
+            "HasAlternativePath": false,
+            "ScoringAvailability": {
+              "State": "available",
+              "ProviderStatus": "ACTIVE",
+              "Source": "ESPN",
+              "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
+              "ObservedAtUtc": "2026-10-06T21:33:37Z"
+            }
+          },
+          {
             "PlayerID": "12527",
             "Placement": "starter",
             "Position": "RB",
@@ -9069,28 +9084,6 @@
               "Source": "ESPN",
               "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
               "ObservedAtUtc": "2026-10-06T21:33:37Z"
-            }
-          },
-          {
-            "PlayerID": "2449",
-            "Placement": "starter",
-            "Position": "WR",
-            "GameState": "unlocked",
-            "GameID": "20261011_NYG@WSH",
-            "DecisionWindowID": "2026-10-11T17:00:00Z",
-            "StartsAtUtc": "2026-10-11T17:00:00Z",
-            "LineupSlotID": "FLEX-1",
-            "LineupSlotType": "FLEX",
-            "EligibleUnlockedSlotIDs": [],
-            "IsBenchCandidate": false,
-            "HasDirectScoringPath": false,
-            "HasAlternativePath": false,
-            "ScoringAvailability": {
-              "State": "out",
-              "ProviderStatus": "OUT",
-              "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-10-09T19:26:36Z",
-              "ObservedAtUtc": "2026-10-09T19:26:36Z"
             }
           },
           {
@@ -10402,15 +10395,6 @@
       "ObservedAtUtc": "2026-10-06T21:33:37Z"
     },
     {
-      "PlayerID": "2449",
-      "ESPNPlayerID": "2976212",
-      "State": "out",
-      "ProviderStatus": "OUT",
-      "Source": "ESPN",
-      "FirstObservedAtUtc": "2026-10-09T19:26:36Z",
-      "ObservedAtUtc": "2026-10-09T19:26:36Z"
-    },
-    {
       "PlayerID": "4217",
       "ESPNPlayerID": "3040151",
       "State": "available",
@@ -10944,6 +10928,15 @@
     {
       "PlayerID": "12519",
       "ESPNPlayerID": "4685278",
+      "State": "available",
+      "ProviderStatus": "ACTIVE",
+      "Source": "ESPN",
+      "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
+      "ObservedAtUtc": "2026-10-06T21:33:37Z"
+    },
+    {
+      "PlayerID": "12512",
+      "ESPNPlayerID": "4685702",
       "State": "available",
       "ProviderStatus": "ACTIVE",
       "Source": "ESPN",
