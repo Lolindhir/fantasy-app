@@ -1,6 +1,8 @@
 'use strict';
 
 const fs = require('node:fs');
+const path = require('node:path');
+const gameWindow = require('./nfl-game-window.cjs');
 const base = require('./run-workflow-scheduler.cjs');
 
 const OBSERVATION_DECISIONS = new Set(['awaiting-observation', 'observation-timeout', 'observation-cooldown']);
@@ -501,7 +503,18 @@ function reasonForResult(result, timeZone) {
     default:
       text = result.deferralExpired ? 'Observation deferral limit expired.' : 'See machine-readable log.';
   }
-  return appendFallback(result, text);
+  return appendWindow(result, appendFallback(result, text), timeZone);
+}
+
+function appendWindow(result, text, timeZone) {
+  const window = result.gameWindow;
+  if (!window) return text;
+  const detail = window.state === 'in-window'
+    ? `in-window until ${formatTimestamp(window.windowEndsAt, timeZone)}`
+    : window.state === 'idle'
+      ? `idle${window.nextWindowAt ? `, next window at ${formatTimestamp(window.nextWindowAt, timeZone)}` : ', no further window'}`
+      : 'schedule unavailable (dense cron)';
+  return `${text} Game window: ${detail}.`;
 }
 
 function buildSummaryMarkdown(results, now, config) {
@@ -520,6 +533,17 @@ function buildSummaryMarkdown(results, now, config) {
   for (const result of results) {
     const attempts = result.maxAttempts ? `${result.retryAttempt || result.attemptsDispatched || '—'}/${result.maxAttempts}` : '—';
     markdown += `| ${escapeTableCell(result.id)} | ${escapeTableCell(result.profile || '—')} | ${escapeTableCell(decisionLabel(result))} | ${escapeTableCell(actionLabel(result))} | ${escapeTableCell(formatTimestamp(result.dueAt, timeZone))} | ${escapeTableCell(attempts)} | ${escapeTableCell(reasonForResult(result, timeZone))} |\n`;
+  }
+
+  const windowed = results.filter((result) => result.gameWindow);
+  if (windowed.length > 0) {
+    markdown += '\n### NFL game windows\n\n';
+    for (const result of windowed) {
+      const window = result.gameWindow;
+      markdown += `- **${result.id}:** ${window.state} (${window.cronSet} cron) — ${window.reason}`;
+      if (window.state === 'idle' && window.nextWindowAt) markdown += ` Next window at ${formatTimestamp(window.nextWindowAt, timeZone)}.`;
+      markdown += '\n';
+    }
   }
 
   const deferredHealth = results.find((result) => result.id === 'workflow-health' && result.decision === 'deferred');
@@ -547,9 +571,10 @@ async function writeSummary(core, results, now, config) {
   await core.summary.addRaw(buildSummaryMarkdown(results, now, config)).write();
 }
 
-async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date(), stateReadRetryDelaysMs, sleepFn }) {
+async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date(), stateReadRetryDelaysMs, sleepFn, repoRoot }) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   validateConfig(config);
+  const scheduleRoot = repoRoot || path.resolve(path.dirname(path.resolve(configPath)), '..');
   if (config.repository !== `${context.repo.owner}/${context.repo.repo}`) {
     throw new Error(`Scheduler repository mismatch: config=${config.repository} runtime=${context.repo.owner}/${context.repo.repo}`);
   }
@@ -566,10 +591,14 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
         ...config.retryPolicies[profile.retryPolicy],
         dispatchObservationTimeoutMinutes: config.dispatchObservation.timeoutMinutes,
       };
+      // A game-window target runs on its dense cron only inside an NFL game window and on its idle cron otherwise.
+      const windowStatus = target.mode === 'game-window'
+        ? gameWindow.resolveGameWindow({ target, now, repoRoot: scheduleRoot })
+        : null;
       const evaluation = await evaluateTargetFromGithub({
         github,
         context,
-        target,
+        target: windowStatus ? { ...target, cron: windowStatus.cron } : target,
         profile,
         retryPolicy,
         ref,
@@ -581,6 +610,10 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
       base.recordSatisfiedSlots(runtimeState, config, evaluation, target.id);
       if (evaluation.nextState) runtimeState.targets[target.id] = evaluation.nextState;
       else delete runtimeState.targets[target.id];
+      if (windowStatus) {
+        const { cron, ...publicStatus } = windowStatus;
+        evaluation.result.gameWindow = { ...publicStatus, activeCron: cron };
+      }
       evaluated.push({ target, result: evaluation.result });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

@@ -130,6 +130,24 @@ scheduler:
     successRule: Any newer relevant successful run that satisfies the active cycle heals it and clears scheduler runtime state.
     exhaustionRule: After the configured observed failed attempts are exhausted, open the retry circuit for the configured cooldown instead of dispatching again on every scheduler tick.
     cooldownRule: While the retry circuit is open, do not dispatch the target; after expiry a later scheduler tick may start a fresh cycle for the then-current due slot.
+  gameWindow:
+    issue: 946
+    policyOwner: .github/workflow-schedules.json
+    implementation: tools/nfl-game-window.cjs
+    mode: >-
+      A target may declare `mode: game-window` with `gameWindow.preKickoffMinutes`, `gameWindow.postFinalMinutes` and `gameWindow.idleCron` (optional `assumedGameDurationMinutes` default 210, `maxOverrunMinutes` default 180). Inside an NFL game window the target's normal `cron` applies; outside windows only `idleCron` does.
+    windowSource: >-
+      Canonical NFL schedule source-data/nfl/schedules/<season>.json (Eastern-time kickoffs, same rule as tools/nfl_season_context.py and CanonicalScheduleUtils.psm1) for the previous and current calendar year, plus source-data/nfl/game-finality/<season>.json.
+    blockRule: >-
+      Games whose assumed durations overlap form one block. A window opens preKickoffMinutes before the first kickoff and closes postFinalMinutes after the assumed end of the block. Canonical finality carries no timestamp, so the post-final lag is anchored on the assumed end; a block with games that are not final stays open for at most maxOverrunMinutes beyond the assumed end.
+    failClosedRule: >-
+      An unreadable, missing or invalid schedule never pauses a target; it keeps the normal (dense) cron and the decision reports `schedule-unavailable`.
+    observability: >-
+      Every game-window decision carries `gameWindow` (state in-window | idle | schedule-unavailable, active cron set, window end or next window start). The Job Summary appends the window state to the Reason column and lists all windowed targets in an `NFL game windows` section.
+    monitoringRule: >-
+      A game-window target rests outside windows by design. Its workflow entry therefore uses failure streaks only and no staleAfterMinutes, like the seasonal finality workflow before it.
+    slotRule: >-
+      Satisfied-slot evidence and retry state are keyed by due slot and keep working across cron-set changes; a slot of the idle cron that was already satisfied is never dispatched again when a window ends.
   projectFieldSync:
     policyOwner: .github/workflow-schedules.json
     implementation: tools/run-project-field-sync-scheduler.cjs
@@ -256,7 +274,7 @@ workflows:
     relevantEvents:
     - repository_dispatch
     consecutiveFailures: 1
-    rationale: Seasonal ten-minute canonical NFL Finality refresh dispatched by the central scheduler from September through January. It calls the hardened NFL source workflow for nflverse.game-finality only; one production failure is actionable because stale completion state can keep finished games falsely live. No staleness timer is used because the workflow is intentionally dormant outside its configured season months.
+    rationale: Canonical NFL Finality refresh dispatched by the central scheduler in game-window mode (Issue #946, S3b) - every ten minutes inside NFL game windows and every six hours (September through January) otherwise. It calls the hardened NFL source workflow for nflverse.game-finality only; one production failure is actionable because stale completion state can keep finished games falsely live. No staleness timer is used because the workflow rests outside game windows and outside its season months by design.
   .github/workflows/sync-nfl-player-availability.yml:
     category: important
     relevantEvents:

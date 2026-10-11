@@ -1533,3 +1533,30 @@ decisions:
         - A failure in an early job fails the whole chain and is retried as one cycle; the later jobs still run on the last published data so freshness degrades gracefully.
         - Changes to Standings derivation code reach production at the next input change, the weekly fallback or a manual run instead of immediately via push.
         - Code changes of the League generator reach production with the next ten-minute chain instead of an immediate push run.
+
+  - id: ADR-049
+    title: Scheduler targets can follow NFL game windows
+    status: accepted
+    context: >
+      The Finality target ran every ten minutes from September through January (143 runs on a Saturday without a single
+      NFL game, Issue #946, step S3 of Issue #471). Nothing changes between NFL games, so dense polling outside game
+      windows is pure Actions and commit load.
+    decision: >
+      Robert approved the workflow change on 2026-10-11. A scheduler target may declare mode game-window with
+      preKickoffMinutes, postFinalMinutes and idleCron in .github/workflow-schedules.json. The runtime derives game blocks
+      (games with overlapping assumed durations) from the canonical NFL schedule and Eastern-time kickoffs and uses the
+      target cron only inside a window (first kickoff minus preKickoffMinutes until the assumed end of the block plus
+      postFinalMinutes, extended up to maxOverrunMinutes while games are not final) and the idleCron otherwise. Canonical
+      finality has no timestamp, so the post-final lag is anchored on the assumed end. An unreadable schedule keeps the
+      dense cron. Player availability keeps its own ten-minute target all season because injury news does not follow
+      game windows. Implementation: tools/nfl-game-window.cjs, evaluated in tools/run-workflow-scheduler-runtime.cjs.
+    rationale: >
+      The window is derived from the same canonical schedule the rest of the platform uses, stays configuration-driven per
+      target and fails towards more runs, never fewer.
+    consequences:
+      positive:
+        - No ten-minute runs on days without games; Finality and Schedule stay about ten minutes fresh inside windows.
+        - Window state is visible in the machine-readable decision and the Job Summary.
+      negative:
+        - A schedule change that moves a game is picked up only after the next canonical schedule refresh.
+        - The post-final lag is approximated from the assumed game end because finality has no timestamp.
