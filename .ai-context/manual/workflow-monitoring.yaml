@@ -214,7 +214,7 @@ workflows:
     relevantEvents:
     - push
     - workflow_call
-    rationale: Main deployment failure can leave the published app behind repository state.
+    rationale: Main deployment failure can leave the published app behind repository state. The push trigger uses a positive path filter (src, public, Angular/npm/tsconfig build inputs, deploy_action.ps1, the workflow itself), so commits touching only source-data, derived-data or fantasy-management do not deploy; there is deliberately no debounce.
   .github/workflows/fantasy-management-validation.yml:
     category: critical
     relevantEvents:
