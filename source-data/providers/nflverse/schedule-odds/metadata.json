@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "registrySchemaVersion": 3,
+  "dataset": "nflverse.schedule-odds",
+  "provider": "nflverse",
+  "upstream": "nflverse/nfldata",
+  "sourceUrl": "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv",
+  "sourceFormat": "csv",
+  "sourceMode": "fixed",
+  "availabilityStatus": "available",
+  "kind": "schedule-odds",
+  "refreshPolicy": "current-season",
+  "retentionPolicy": "permanent-by-season",
+  "lifecycle": {
+    "class": "seasonal-finalizable",
+    "partitionKey": "season",
+    "finalization": "freeze-prior-seasons",
+    "repairPolicy": "explicit-force"
+  },
+  "license": "See upstream data terms",
+  "attribution": "nflverse schedule betting lines",
+  "sourceProjection": {
+    "id": "nflverse-schedule-odds",
+    "version": 1,
+    "upstreamFormat": "csv"
+  },
+  "retrievedAtUtc": "2026-10-11T05:07:49Z",
+  "contentHashSha256": "611401dc343b0ade3d285696dc3d5b5011668284bd3df994365eacb53d0ae0f5",
+  "rowCount": 7548,
+  "columns": [
+    "game_id",
+    "away_moneyline",
+    "home_moneyline",
+    "spread_line",
+    "away_spread_odds",
+    "home_spread_odds",
+    "total_line",
+    "under_odds",
+    "over_odds"
+  ],
+  "upstreamContentHashSha256": "7cebdc54196b47d11e9995ee121c56c74ab9723a4798006ae17a564c2e32e9e2",
+  "upstreamByteSize": 2184005,
+  "projectionStats": {
+    "sourceColumnCount": 46,
+    "projectedColumnCount": 9,
+    "projectedRowCount": 7548
+  }
+}
