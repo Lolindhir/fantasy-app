@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-10-11T10:02:41Z",
-  "input_fingerprint": "80d8748bd7deddc4a0fc29df8b660e7fa2936855b6b4b3f74b2d63f502d6ba18",
+  "generated_at": "2026-10-11T10:21:32Z",
+  "input_fingerprint": "897646088b645f0606bb3bae1750de84bf0a09c8b8c6e4d9b87231bd70b97e8c",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "198d11ad71560b05f2edc09f12d76bdae5b113b371ccb62cbb7bc366944079fa"
+      "input_fingerprint": "4fc0813ace1773ff29fb9e28389f0d24b2a269ddc48e89eaa95347e1af611a04"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "55d846cb4af100a3fc8c3f3a30edc0af8e49101d1f655814b14383b24c12e7a2"
+      "input_fingerprint": "198d11ad71560b05f2edc09f12d76bdae5b113b371ccb62cbb7bc366944079fa"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,15 +23,15 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 215,
-    "previous_discovery_count": 219,
-    "event_count": 6,
+    "current_discovery_count": 216,
+    "previous_discovery_count": 215,
+    "event_count": 3,
     "event_type_counts": {
-      "changed": 2,
-      "resolved": 4
+      "new": 2,
+      "resolved": 1
     },
     "event_priority_counts": {
-      "low": 4,
+      "high": 1,
       "medium": 2
     },
     "baseline_mode": "comparison"
@@ -40,55 +40,58 @@
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "5a28d8daa7a425bdd7468353e2738e5e013629826ce18435f8304c82ca5bd1ef",
-    "previous_evidence_fingerprint": "75a080f6225d3d4bf9741f225afe5dd74512c939b581376fc6d3d1a11e98c806",
+    "current_evidence_fingerprint": "ee7ba5eebc89885ceb856b153ebb049156e5b90518fb7508f351eb946fc142f6",
+    "previous_evidence_fingerprint": "5a28d8daa7a425bdd7468353e2738e5e013629826ce18435f8304c82ca5bd1ef",
     "contract_changed": false,
     "evidence_changed": true,
-    "comparison_event_count_before_suppression": 6,
+    "comparison_event_count_before_suppression": 3,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
   "events": [
     {
-      "player_id": "11370",
-      "name": "Chris Brooks",
+      "player_id": "11576",
+      "name": "Braelon Allen",
       "position": "RB",
-      "event_type": "changed",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": "high",
-      "current_state_hash": "55e547117f8d13b1a2302e08adbc1ab7fe1c1e17e1885bb344f8e8bc6acea2b3",
-      "previous_state_hash": "41e34c9023f16cfa105f4936906f742c273a507eb8d6e5d3b9af6a51c0ddbdd8",
+      "event_type": "new",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": null,
+      "current_state_hash": "338bbe9fbe9ac19d877a14f0246c415ad6dba8f2fcef5f0460e5121060580168",
+      "previous_state_hash": null,
       "changed_dimensions": [
-        "research_priority"
+        "new_discovery"
       ],
       "current_material_families": [
         "dynasty_market"
       ],
-      "previous_material_families": [
-        "dynasty_market",
-        "injury_availability"
-      ],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": "below_rostered_boundary",
+      "previous_material_families": [],
+      "current_replacement_classification": "at_or_above_rostered_boundary",
+      "previous_replacement_classification": null,
       "threshold_summary": [
         {
           "family": "dynasty_market",
           "kind": "fantasycalc_percentile_movement",
+          "severity": "high",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
           "severity": "medium",
-          "direction": "down"
+          "direction": "up"
         },
         {
           "family": "dynasty_market",
           "kind": "overall_rank_movement",
           "severity": "medium",
-          "direction": "down"
+          "direction": "up"
         },
         {
           "family": "dynasty_market",
           "kind": "position_rank_movement",
           "severity": "medium",
-          "direction": "down"
+          "direction": "up"
         },
         {
           "family": "dynasty_market",
@@ -102,132 +105,83 @@
       "final_roster_recommendation": null
     },
     {
-      "player_id": "7670",
-      "name": "Josh Palmer",
-      "position": "WR",
-      "event_type": "changed",
+      "player_id": "5119",
+      "name": "Jason Sanders",
+      "position": "K",
+      "event_type": "new",
       "event_priority": "medium",
       "current_research_priority": "medium",
-      "previous_research_priority": "high",
-      "current_state_hash": "f61e3c8659e5ad98fd91570ff56cd4622a9711c7ff98b263aabaf5a0b5889a9d",
-      "previous_state_hash": "25f77a5bd44b9a74048b5dc8a48916043f7867c85d8ae08e18a2efe1badaab25",
+      "previous_research_priority": null,
+      "current_state_hash": "0d441fe7f67b50fde032ea7e52712cb677bd4e9175b3700d83ffa62630132d2c",
+      "previous_state_hash": null,
       "changed_dimensions": [
-        "research_priority"
+        "new_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "8154",
+      "name": "Brian Robinson",
+      "position": "RB",
+      "event_type": "resolved",
+      "event_priority": "medium",
+      "current_research_priority": null,
+      "previous_research_priority": "high",
+      "current_state_hash": null,
+      "previous_state_hash": "63b86462601aeea054236c98439b3e863412462d4c2b2843d0eb64e442a130b6",
+      "changed_dimensions": [
+        "resolved_discovery"
+      ],
+      "current_material_families": [],
+      "previous_material_families": [
         "dynasty_market"
       ],
-      "previous_material_families": [
-        "dynasty_market",
-        "injury_availability"
-      ],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": "below_rostered_boundary",
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "at_or_above_rostered_boundary",
       "threshold_summary": [
         {
           "family": "dynasty_market",
           "kind": "fantasycalc_percentile_movement",
           "severity": "medium",
           "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "fantasycalc_value_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "overall_rank_movement",
+          "severity": "medium",
+          "direction": "up"
+        },
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
         }
       ],
-      "cross_signal_summary": [],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "7610",
-      "name": "Trey Lance",
-      "position": "QB",
-      "event_type": "resolved",
-      "event_priority": "low",
-      "current_research_priority": null,
-      "previous_research_priority": "medium",
-      "current_state_hash": null,
-      "previous_state_hash": "ed3de4cebe4236ba2353903b6c17b2160e6254a6242679e646ab60bc04a824ff",
-      "changed_dimensions": [
-        "resolved_discovery"
+      "cross_signal_summary": [
+        {
+          "kind": "confirmation_up",
+          "families": [
+            "dynasty_market",
+            "season_projection"
+          ],
+          "up_families": [],
+          "down_families": []
+        }
       ],
-      "current_material_families": [],
-      "previous_material_families": [
-        "injury_availability"
-      ],
-      "current_replacement_classification": null,
-      "previous_replacement_classification": "below_rostered_boundary",
-      "threshold_summary": [],
-      "cross_signal_summary": [],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "7204",
-      "name": "Reggie Gilliam",
-      "position": "RB",
-      "event_type": "resolved",
-      "event_priority": "low",
-      "current_research_priority": null,
-      "previous_research_priority": "medium",
-      "current_state_hash": null,
-      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "changed_dimensions": [
-        "resolved_discovery"
-      ],
-      "current_material_families": [],
-      "previous_material_families": [
-        "injury_availability"
-      ],
-      "current_replacement_classification": null,
-      "previous_replacement_classification": "unknown",
-      "threshold_summary": [],
-      "cross_signal_summary": [],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "13121",
-      "name": "Ben Yurosek",
-      "position": "TE",
-      "event_type": "resolved",
-      "event_priority": "low",
-      "current_research_priority": null,
-      "previous_research_priority": "medium",
-      "current_state_hash": null,
-      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "changed_dimensions": [
-        "resolved_discovery"
-      ],
-      "current_material_families": [],
-      "previous_material_families": [
-        "injury_availability"
-      ],
-      "current_replacement_classification": null,
-      "previous_replacement_classification": "unknown",
-      "threshold_summary": [],
-      "cross_signal_summary": [],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "4351",
-      "name": "Tim Patrick",
-      "position": "WR",
-      "event_type": "resolved",
-      "event_priority": "low",
-      "current_research_priority": null,
-      "previous_research_priority": "medium",
-      "current_state_hash": null,
-      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "changed_dimensions": [
-        "resolved_discovery"
-      ],
-      "current_material_families": [],
-      "previous_material_families": [
-        "injury_availability"
-      ],
-      "current_replacement_classification": null,
-      "previous_replacement_classification": "unknown",
-      "threshold_summary": [],
-      "cross_signal_summary": [],
       "structural_changes": [],
       "final_roster_recommendation": null
     }
