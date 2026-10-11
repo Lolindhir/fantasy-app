@@ -3,6 +3,7 @@
 # matchup player points only; no generic NFL fantasy-point source is accepted.
 
 try {
+    Import-Module "$PSScriptRoot\..\general\SleeperPlayerIdUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Could not load Sleeper helpers for FantasyGameContext. $_"
@@ -33,14 +34,13 @@ function ConvertTo-FgcPlayerID {
 
     if ($null -eq $Player) { return $null }
     if ($Player -is [string] -or $Player -is [ValueType]) {
-        $text = ([string]$Player).Trim()
-        return $(if ([string]::IsNullOrWhiteSpace($text) -or $text -eq '0') { $null } else { $text })
+        return ConvertTo-SleeperPlayerID -Value $Player
     }
 
     $direct = Get-FgcPropertyValue -Object $Player -Names @('PlayerID','ID','SleeperID')
     if ($null -ne $direct) {
-        $text = ([string]$direct).Trim()
-        if (-not [string]::IsNullOrWhiteSpace($text) -and $text -ne '0') { return $text }
+        $text = ConvertTo-SleeperPlayerID -Value $direct
+        if ($null -ne $text) { return $text }
     }
 
     foreach ($mapping in @(Get-FgcCollection (Get-FgcPropertyValue -Object $Player -Names @('ProviderMappings')))) {
@@ -145,7 +145,7 @@ function ConvertTo-FgcCurrentMatchupFacts {
         $starterIDs = @(
             Get-FgcCollection (Get-FgcPropertyValue -Object $row -Names @('starters','Starters')) |
                 ForEach-Object { ConvertTo-FgcPlayerID -Player $_ } |
-                Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and $_ -ne '0' } |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
                 Sort-Object -Unique
         )
 

@@ -1,4 +1,5 @@
 Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\..\general\SleeperPlayerIdUtils.psm1" -ErrorAction Stop -Force
 
 function ConvertTo-DecisionWindowUtcString {
     param(
@@ -40,8 +41,7 @@ function Get-DecisionWindowCollectionInfo {
 function ConvertTo-DecisionWindowPlayerId {
     param(
         [AllowNull()]
-        [object]$Value,
-        [switch]$TreatZeroAsEmpty
+        [object]$Value
     )
 
     if ($null -eq $Value) {
@@ -56,12 +56,8 @@ function ConvertTo-DecisionWindowPlayerId {
         return [PSCustomObject]@{ State = "malformed"; Value = $null }
     }
 
-    $text = ([string]$Value).Trim()
-    if ([string]::IsNullOrWhiteSpace($text)) {
-        return [PSCustomObject]@{ State = "empty"; Value = $null }
-    }
-
-    if ($TreatZeroAsEmpty -and $text -eq "0") {
+    $text = ConvertTo-SleeperPlayerID -Value $Value
+    if ($null -eq $text) {
         return [PSCustomObject]@{ State = "empty"; Value = $null }
     }
 
@@ -300,7 +296,7 @@ function Get-DecisionWindowFacts {
         $validStarterIds = @()
         $starterSeen = @{}
         foreach ($rawStarterId in @($starterInfo.Items)) {
-            $playerInfo = ConvertTo-DecisionWindowPlayerId -Value $rawStarterId -TreatZeroAsEmpty
+            $playerInfo = ConvertTo-DecisionWindowPlayerId -Value $rawStarterId
             if ($playerInfo.State -eq "empty") {
                 continue
             }
