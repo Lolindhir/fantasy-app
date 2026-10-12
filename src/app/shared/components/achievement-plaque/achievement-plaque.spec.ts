@@ -29,6 +29,8 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
   });
 
   it('keeps the mobile plaque internals compact without shrinking avatars or emblems', () => {
+    // Exercise the <=480px container-query style regardless of the CI browser viewport.
+    (fixture.nativeElement as HTMLElement).style.width = '320px';
     fixture.detectChanges();
 
     const plaque = fixture.nativeElement.querySelector('.achievement-plaque') as HTMLElement;
