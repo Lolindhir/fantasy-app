@@ -20,4 +20,5 @@ export class AchievementBannerComponent {
   @Input() secondaryAvatar: string | null | undefined;
   @Input({ required: true }) emblemSrc!: string;
   @Input() accent: AchievementBannerAccent = 'silver';
+  @Input() achievementBadgeSrc: string | null = null;
 }

@@ -509,12 +509,28 @@ $canonicalCurrentStandings = Get-CanonicalCurrentStandings `
     -PreviousSeasonStandings $canonicalPreviousSeason[0]
 Assert-StandingsJsonEqual -Actual $canonicalCurrentStandings -Expected $canonicalCurrentSeasonData.Output -Message "Canonical current standings compatibility wrapper parity failed."
 
+# The pre-migration published Standings.json snapshots still contain the former
+# Regular Season King award. New canonical generation correctly derives this
+# placement-based achievement from RegularSeason.Place=1 instead. Normalize
+# ONLY that one legacy Award entry in expected snapshots for historical parity;
+# every other field and award remains subject to strict equality.
+function Remove-LegacyRegularSeasonKingFromExpectedAwards {
+    param([Parameter(Mandatory = $true)]$Standing)
+
+    $normalized = $Standing | ConvertTo-Json -Depth 100 -Compress | ConvertFrom-Json
+    if ($normalized.PSObject.Properties['Awards']) {
+        $normalized.Awards = @($normalized.Awards | Where-Object { $_.Name -ne "Regular Season King" })
+    }
+    return $normalized
+}
+
 foreach ($season in @("2024", "2025")) {
     $publishedSeason = @($publishedStandings | Where-Object { [string]$_.Season -eq $season })
     $canonicalSeason = @($canonicalStandings.Seasons | Where-Object { [string]$_.Season -eq $season })
     Assert-Equal -Actual $publishedSeason.Count -Expected 1 -Message "Published standings must contain season $season exactly once."
     Assert-Equal -Actual $canonicalSeason.Count -Expected 1 -Message "Canonical historical consumer must contain season $season exactly once."
-    Assert-StandingsJsonEqual -Actual $canonicalSeason[0] -Expected $publishedSeason[0] -Message "Canonical historical standings parity failed for $season."
+    $expectedMigratedSeason = Remove-LegacyRegularSeasonKingFromExpectedAwards -Standing $publishedSeason[0]
+    Assert-StandingsJsonEqual -Actual $canonicalSeason[0] -Expected $expectedMigratedSeason -Message "Canonical historical standings parity failed for $season."
 }
 
 $publishedAllTime = @($publishedStandings | Where-Object { [string]$_.Season -eq "AllTime" })

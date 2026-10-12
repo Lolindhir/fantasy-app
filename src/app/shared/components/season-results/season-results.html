@@ -13,6 +13,7 @@
           [subjectAvatar]="runnerUp.teamAvatar"
           [secondaryAvatar]="runnerUp.ownerAvatar"
           emblemSrc="assets/awards/ui/award-runner-up.png"
+          [achievementBadgeSrc]="runnerUp.isRegularSeasonChampion ? 'assets/awards/ui/award-regular-season.png' : null"
         ></app-achievement-banner>
 
         <app-achievement-banner
@@ -24,6 +25,7 @@
           [subjectAvatar]="champion.teamAvatar"
           [secondaryAvatar]="champion.ownerAvatar"
           emblemSrc="assets/awards/ui/award-championship-ring.png"
+          [achievementBadgeSrc]="champion.isRegularSeasonChampion ? 'assets/awards/ui/award-regular-season.png' : null"
         ></app-achievement-banner>
 
         <app-achievement-banner
@@ -35,6 +37,7 @@
           [subjectAvatar]="thirdPlace.teamAvatar"
           [secondaryAvatar]="thirdPlace.ownerAvatar"
           emblemSrc="assets/awards/ui/award-third-place.png"
+          [achievementBadgeSrc]="thirdPlace.isRegularSeasonChampion ? 'assets/awards/ui/award-regular-season.png' : null"
         ></app-achievement-banner>
       </div>
     </section>
@@ -60,6 +63,9 @@
             <span *ngIf="result.ownerAvatar" class="team-row__secondary-avatar">
               <img [src]="result.ownerAvatar" alt="" aria-hidden="true" />
             </span>
+            <span *ngIf="result.isRegularSeasonChampion" class="team-row__achievement-badge" title="Regular Season Champion" aria-label="Regular Season Champion">
+              <img src="assets/awards/ui/award-regular-season.png" alt="" aria-hidden="true" />
+            </span>
           </span>
 
           <div
@@ -73,5 +79,16 @@
         </div>
       </div>
     </div>
+
+    <app-achievement-plaque
+      *ngIf="resultsVm.regularSeasonChampion as winner"
+      class="regular-season-achievement"
+      [season]="bannerSeason ?? ''"
+      [subjectName]="winner.teamName || winner.owner"
+      [subjectAvatar]="winner.teamAvatar"
+      [secondaryAvatar]="winner.ownerAvatar"
+      [record]="winner.record"
+      [points]="winner.points"
+    ></app-achievement-plaque>
   </div>
 </section>
