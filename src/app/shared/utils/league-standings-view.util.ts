@@ -194,10 +194,10 @@ export function buildSeasonResults(teams: FantasyTeam[], league?: League): Seaso
 
   return {
     teams: allResults,
-    champion: allResults[0],
-    runnerUp: allResults[1],
-    thirdPlace: allResults[2],
-    remainingTeams: allResults.slice(3),
+    champion: allResults.find(row => row.place === 1),
+    runnerUp: allResults.find(row => row.place === 2),
+    thirdPlace: allResults.find(row => row.place === 3),
+    remainingTeams: allResults.filter(row => row.place > 3),
     regularSeasonChampion: winner ? {
       teamId: winner.TeamID,
       owner: winner.Owner,
