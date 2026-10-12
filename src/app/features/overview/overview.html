@@ -421,8 +421,8 @@
   ></app-season-results>
 
   <!-- 🔥 Awards -->
-  <section class="awards" *ngIf="vm.league.IsFinished">
-    <h3>Regular Season Awards</h3>
+  <section class="awards" *ngIf="vm.league.IsFinished && vm.awards.length > 0">
+    <h3>Season Awards</h3>
     <div class="awards-grid">
       <div *ngFor="let award of vm.awards" class="award-card">
         <div class="award-icon">{{award.Icon}}</div>
