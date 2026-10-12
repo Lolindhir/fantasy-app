@@ -17,6 +17,7 @@ param(
         "fftoday-projections",
         "cbs-projections",
         "sleeper-trending",
+        "fantasy-operations",
         "player-week-fantasy",
         "nfl-player-availability"
     )]
@@ -43,6 +44,7 @@ function Get-GeneratedDataLabel {
         "^fantasy-management/sources/external-rankings/projections/fftoday/" { return "FFToday projections" }
         "^fantasy-management/sources/external-rankings/projections/cbs-sports/" { return "CBS Sports projections" }
         "^fantasy-management/sources/external-signals/roster-activity/sleeper/" { return "Sleeper trending" }
+        "^fantasy-management/generated/operations/" { return "Fantasy Operations inputs" }
         "^derived-data/player-week-fantasy/" { return "PlayerWeekFantasy derived" }
         "/PlayerWeekFantasy\.json$" { return "PlayerWeekFantasy" }
         "/MatchupProjections\.json$" { return "MatchupProjections" }

@@ -23,7 +23,7 @@ The productive morning refresh path uses independent source-triggered materializ
 - a manual `workflow_dispatch` of the materializer always runs immediately;
 - generated Operations-only commits do not recursively trigger the materializer, and PR-only validation must not publish production heartbeats or production materialization.
 
-The trigger decision is versioned and testable in `fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py`. `FM • Materialize • Operations Inputs` separates its lightweight `gate` job from the expensive `materialize` job. Push-triggered materializations may supersede older push-triggered materializations, while the scheduled 06:45 catch-up is not allowed to cancel an already running source-triggered materialization.
+The trigger decision is versioned and testable in `fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py`. `FM • Pipeline • Daily` (`.github/workflows/fm-daily.yml`) separates its lightweight `gate` job from the expensive `materialize` job, which runs after the six provider matrix jobs (also when one of them failed) and publishes through `tools/rebuild_and_publish.py`. Pushes that only change source or heartbeat files do not start a second run, because the pipeline materializes explicitly after the providers. Materializations never cancel each other; a later push-triggered run queues behind a running one.
 
 Correctness does not depend on GitHub Actions starting the scheduled 06:45 catch-up on time or completing it before the 07:00 consumer. The latest successfully published canonical Operations state is authoritative, and its `source-freshness.json` contract determines whether monitoring may proceed, proceed in degraded mode or block.
 

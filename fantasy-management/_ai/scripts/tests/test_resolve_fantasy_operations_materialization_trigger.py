@@ -40,37 +40,31 @@ class MaterializationTriggerTests(unittest.TestCase):
         self.assertTrue(decision.run)
         self.assertEqual(decision.reason, "scheduled_central_dispatch")
 
-    def test_relevant_source_push_runs_immediately_at_0530(self) -> None:
-        decision = MODULE.decide(
-            event_name="push",
-            changed_files=[
+    def test_source_only_pushes_do_not_start_a_second_run(self) -> None:
+        # Provider commits come from the FM Daily chain, which materializes explicitly afterwards (#947).
+        for changed_files in (
+            [
                 "fantasy-management/sources/external-rankings/market-value/fantasycalc/latest.json",
                 "fantasy-management/sources/external-rankings/market-value/fantasycalc/snapshots/2026-08-17.json",
             ],
-            now=datetime(2026, 8, 17, 5, 30, tzinfo=BERLIN),
-        )
-        self.assertTrue(decision.run)
-        self.assertEqual(decision.reason, "relevant_source_or_heartbeat_change")
+            ["fantasy-management/sources/refresh-status/sleeper-trending.json"],
+            ["fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json"],
+        ):
+            with self.subTest(changed_files=changed_files):
+                decision = MODULE.decide(event_name="push", changed_files=changed_files)
+                self.assertFalse(decision.run)
+                self.assertEqual(decision.reason, "source_inputs_refreshed_by_pipeline")
 
-    def test_relevant_heartbeat_push_runs_immediately_at_0630(self) -> None:
-        decision = MODULE.decide(
-            event_name="push",
-            changed_files=["fantasy-management/sources/refresh-status/sleeper-trending.json"],
-            now=datetime(2026, 8, 17, 6, 30, tzinfo=BERLIN),
-        )
-        self.assertTrue(decision.run)
-        self.assertEqual(decision.reason, "relevant_source_or_heartbeat_change")
-
-    def test_relevant_source_push_runs_immediately_outside_former_morning_window(self) -> None:
+    def test_source_change_together_with_core_input_still_runs(self) -> None:
         decision = MODULE.decide(
             event_name="push",
             changed_files=[
-                "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json"
+                "fantasy-management/sources/refresh-status/sleeper-trending.json",
+                "public/data/League.json",
             ],
-            now=datetime(2026, 8, 17, 14, 15, tzinfo=BERLIN),
         )
         self.assertTrue(decision.run)
-        self.assertEqual(decision.reason, "relevant_source_or_heartbeat_change")
+        self.assertEqual(decision.reason, "relevant_league_or_player_input_change")
 
     def test_league_players_metadata_and_canonical_drafts_inputs_run_immediately(self) -> None:
         for path in (

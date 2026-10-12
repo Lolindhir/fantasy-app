@@ -929,8 +929,8 @@ class PlayerSignalDatasetTests(unittest.TestCase):
 
     def test_production_workflow_materializes_player_signals_after_external_signals(self) -> None:
         root = SCRIPT_PATH.parents[3]
-        workflow_path = root / ".github/workflows/materialize-fantasy-operations-inputs.yml"
-        workflow = workflow_path.read_text(encoding="utf-8")
+        workflow_path = root / ".github/workflows/fm-daily.yml"
+        workflow = workflow_path.read_text(encoding="utf-8") + (root / "fantasy-management/_ai/scripts/materialize_operations_inputs.sh").read_text(encoding="utf-8")
 
         external_command = "python fantasy-management/_ai/scripts/materialize_external_signals.py"
         player_command = "python fantasy-management/_ai/scripts/build_player_signal_dataset.py"

@@ -31,7 +31,6 @@ WORKFLOW_LOCAL_REBUILD_WRITERS = {
     "source-data-readiness.yml",
     "sync-nfl-source-data.yml",
     "sync-league-source-data.yml",
-    "materialize-fantasy-operations-inputs.yml",
 }
 
 DELEGATED_REBUILD_WRITERS = {
@@ -39,15 +38,11 @@ DELEGATED_REBUILD_WRITERS = {
     "league-live.yml": "sync-league-source-data.yml",
 }
 
-REBASE_WRITERS = {
-    "update-fantasypros-rankings.yml",
-    "update-fantasycalc-rankings.yml",
-    "update-fantasy-football-calculator-adp.yml",
-    "update-fftoday-projections.yml",
-    "update-cbs-sports-projections.yml",
-    "update-sleeper-trending.yml",
+# Mixed pipeline (Issue #947): provider matrix legs publish self-contained snapshots (rebase-and-retry),
+# the materialize job rebuilds from the latest main (rebuild-and-retry). Classified as rebuild-and-retry.
+MIXED_REBUILD_WRITERS = {
+    "fm-daily.yml",
 }
-
 BRANCH_PUBLICATION_PATTERNS = (
     re.compile(r"\bgit\s+push\b"),
     re.compile(r"\bgit\s+update-ref\b"),
@@ -167,10 +162,15 @@ class WorkflowPublicationContractTests(unittest.TestCase):
                 self.assertNotIn("pages: write", text)
                 self.assertNotIn("id-token: write", text)
 
-    def test_self_contained_fm_writers_use_rebase_helper(self) -> None:
-        for name in sorted(REBASE_WRITERS):
+    def test_mixed_pipeline_writers_use_both_helpers_and_are_rebuild_classified(self) -> None:
+        for name in sorted(MIXED_REBUILD_WRITERS):
             with self.subTest(workflow=name):
-                self.assertIn(REBASE_HELPER, self.read(name))
+                text = self.read(name)
+                self.assertIn(REBUILD_HELPER, text)
+                self.assertIn(REBASE_HELPER, text)
+                self.assertNotIn("git push", text)
+                self.assertNotIn("HEAD:main", text)
+                self.assertEqual(self.classifications.get(f".github/workflows/{name}"), "rebuild-and-retry")
 
     def test_workflow_local_rebuild_writers_have_retry_and_reset_contract(self) -> None:
         for name in sorted(WORKFLOW_LOCAL_REBUILD_WRITERS):

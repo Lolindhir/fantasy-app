@@ -122,7 +122,7 @@ Für den 07:00-Consumer gilt ausschließlich der tatsächlich veröffentlichte k
 
 ## Materialisierungs-Observability
 
-`FM • Materialize • Operations Inputs` schreibt bei jedem ausgeführten Materializer-Lauf eine kompakte Laufzeitübersicht in das GitHub-Actions-Run-Summary. Für Push-Trigger werden dabei getrennt ausgewiesen:
+`FM • Pipeline • Daily` (Job `materialize`) schreibt bei jedem ausgeführten Materializer-Lauf eine kompakte Laufzeitübersicht in das GitHub-Actions-Run-Summary. Für Push-Trigger werden dabei getrennt ausgewiesen:
 
 - Trigger-/Source-Commit-Zeitpunkt → Start des Materializer-Jobs;
 - Start des Materializer-Jobs → erfolgreicher Publish des kanonischen Operations-State;

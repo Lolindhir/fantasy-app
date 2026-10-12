@@ -11,7 +11,7 @@ principles:
   - Repository-derived outputs must use rebuild-and-retry: fetch latest target, discard the stale generated commit, rerun the generator, then retry publication.
   - Real generator failures, unexpected changed paths and non-race Git failures fail closed.
   - Transient transport/server failures (HTTP 5xx, RPC failed, hung-up or reset connections, DNS/timeouts, HTTP 429) of git push and git fetch are neither a branch race nor a generator failure. Both helpers repeat the same git command a bounded number of times (default 3, backoff 5/15/45 s plus jitter, `--max-transient-retries` / `--transient-backoff-seconds`) with a separate counter from the race counter; a rebuild helper re-pushes the same local commit instead of rebuilding. Auth errors (403, permission denied, authentication failed) and hook/protection rejections stay fail-closed, as do exhausted transient retries.
-  - Workflow-local push loops that do not use the helpers (sync-nfl-source-data, materialize-fantasy-operations-inputs, source-data-readiness) do not yet have transient retry; moving them onto the helpers is tracked in Issue #471 and needs explicit workflow approval.
+  - Workflow-local push loops that do not use the helpers (sync-nfl-source-data, source-data-readiness) do not yet have transient retry; moving them onto the helpers is tracked in Issue #471 and needs explicit workflow approval.
   - sync-league-source-data.yml keeps its two-phase raw-then-canonical loop with failure diagnostics, but fetches and pushes through tools/git_transient.py, which reuses the transient-retry classification of tools/rebuild_and_publish.py (exit 10 = branch race, rebuild from latest main; any other failure fails closed). Its League Live callers (league-live.yml) publish Standings, League and PlayerWeekFantasy through tools/rebuild_and_publish.py.
   - Cross-workflow serialization is not the primary safety mechanism; independent writers may remain parallel when publication semantics are race-safe.
   - Generated-data writers publish only their declared output scope.
@@ -27,6 +27,7 @@ classes:
     helper: tools/rebuild_and_publish.py or workflow-local/delegated equivalent with the same semantics
     meaning: The generator is rerun from the latest target branch after every recognized publication race.
     exception: sync-nfl-source-data.yml may rebase its validated canonical commit when the race touched no declared materialization input path (materialize_input_pathspecs); any input change, rebase conflict or exhausted rebase attempts still force a full rebuild or fail closed.
+    mixedWorkflow: fm-daily.yml (Issue #947) is classified rebuild-and-retry because its materialize job rebuilds Fantasy Operations inputs through tools/rebuild_and_publish.py. Its six provider matrix legs each publish one self-contained external-source snapshot through tools/publish_generated_commit.py (rebase-and-retry); both helpers are required in that workflow.
   isolated-branch:
     meaning: State is intentionally published to a dedicated non-main branch and must not compete with main writers.
   non-branch-writer:
@@ -47,13 +48,7 @@ writers:
   .github/workflows/sync-nfl-source-data.yml: rebuild-and-retry
   .github/workflows/sync-nfl-player-availability.yml: rebuild-and-retry
   .github/workflows/sync-league-source-data.yml: rebuild-and-retry
-  .github/workflows/materialize-fantasy-operations-inputs.yml: rebuild-and-retry
-  .github/workflows/update-fantasypros-rankings.yml: rebase-and-retry
-  .github/workflows/update-fantasycalc-rankings.yml: rebase-and-retry
-  .github/workflows/update-fantasy-football-calculator-adp.yml: rebase-and-retry
-  .github/workflows/update-fftoday-projections.yml: rebase-and-retry
-  .github/workflows/update-cbs-sports-projections.yml: rebase-and-retry
-  .github/workflows/update-sleeper-trending.yml: rebase-and-retry
+  .github/workflows/fm-daily.yml: rebuild-and-retry
   .github/workflows/workflow-health-snapshot.yml: isolated-branch
   .github/workflows/scheduler.yml: isolated-branch
 
@@ -69,6 +64,7 @@ validation:
     - Every writers entry must point to an existing workflow file and use a declared class.
     - Every workflow listed as rebuild-and-retry must invoke tools/rebuild_and_publish.py, contain an explicitly reviewed workflow-local rebuild loop, or delegate to a reusable workflow with the same classified rebuild semantics.
     - Every workflow listed as rebase-and-retry must invoke tools/publish_generated_commit.py.
+    - fm-daily.yml must invoke both tools/rebuild_and_publish.py and tools/publish_generated_commit.py and must not contain a naked git push.
     - Workflows classified non-branch-writer must not contain recognized branch-publication markers.
     - App/Maintenance generated-data workflows must not contain a naked direct HEAD:main push.
     - App/Maintenance generated-data workflows need contents: write only unless another permission is separately justified.

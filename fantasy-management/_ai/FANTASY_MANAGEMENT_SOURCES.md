@@ -421,7 +421,7 @@ python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --skip
 python fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py --skip-unchanged
 ```
 
-The workflow `FM • Projection • FFToday` refreshes the source daily before monitoring and also runs once after a fetcher, fetcher test or workflow-contract change reaches `main`.
+The workflow `FM • Pipeline • Daily` (matrix job `Provider • fftoday`) refreshes the source daily before monitoring.
 
 Canonical source documentation:
 
@@ -443,7 +443,7 @@ Operational rules:
 
 ### CBS Sports projection snapshots
 
-CBS Sports is an active automated Projection provider for QB, RB, WR, TE and K. The GitHub-Actions workflow `FM • Projection • CBS Sports` refreshes the source daily at 06:08 Europe/Berlin, supports manual `workflow_dispatch` runs and also runs once after its fetcher, fetcher test or workflow contract changes on `main`.
+CBS Sports is an active automated Projection provider for QB, RB, WR, TE and K. The GitHub-Actions workflow `FM • Pipeline • Daily` (matrix job `Provider • cbs-sports`) refreshes the source daily from 05:20 Europe/Berlin and supports manual `workflow_dispatch` runs.
 
 Stored source area:
 
