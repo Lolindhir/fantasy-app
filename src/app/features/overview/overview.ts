@@ -167,7 +167,7 @@ export class OverviewComponent {
         ...row.team,
         DisplayPlace: row.displayPlace
       }));
-      const seasonResults = buildSeasonResults(teams);
+      const seasonResults = buildSeasonResults(teams, league);
       const allTimeStandings = buildAllTimeStandings(teams);
       const allTime = allTimeStandings.map(row => row.team);
 
