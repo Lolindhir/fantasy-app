@@ -181,16 +181,10 @@ A relevant trend should trigger targeted verification against current injury, ro
 Active workflow:
 
 ```text
-.github/workflows/update-sleeper-trending.yml
+.github/workflows/fm-daily.yml
 ```
 
-Der sichtbare Workflow-Name ist `FM • Signal • Sleeper Trending`. Er zielt DST-sicher auf 06:20 Europe/Berlin. Sein Generated-Data-Push triggert:
-
-```text
-.github/workflows/materialize-fantasy-operations-inputs.yml
-```
-
-Der nachgelagerte Workflow heißt sichtbar `FM • Materialize • Operations Inputs`.
+Der sichtbare Workflow-Name ist `FM • Pipeline • Daily`; Sleeper Trending läuft dort als Provider-Matrix-Job `Provider • sleeper-trending` (Heartbeat-Label `FM • Signal • Sleeper Trending`). Der Scheduler-Slot ist täglich 05:20 Europe/Berlin. Danach läuft im selben Workflow der Materializer (`FM • Pipeline • Daily`, Job `materialize`).
 
 The intended order is:
 

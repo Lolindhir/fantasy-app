@@ -301,61 +301,19 @@ workflows:
     relevantEvents:
     - repository_dispatch
     rationale: Scheduler-dispatched batches mirror canonical Issue state and labels after a five-minute quiet period, with a 30-minute maximum wait during continuous activity. Repeated batch failures can desynchronize the GitHub Project; manual workflow_dispatch repair runs remain non-paging.
+  .github/workflows/fm-daily.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    - push
+    staleAfterMinutes: 1800
+    rationale: Daily Fantasy Operations pipeline dispatched by the central scheduler (Issue #947, replaces the six provider refresh workflows and the separate materializer). Six provider legs run as matrix jobs with fail-fast false and publish their own snapshots; the materializer runs afterwards even when a provider failed and uses the last good source state. A failed provider leg fails the run (and is named in the Job Summary and a warning annotation), so two consecutive production failures or a missed daily cycle are actionable. Main-push runs materialize League/Players/Metadata/draft and definition changes without the providers. Pull-request and manual repair runs remain non-paging.
   .github/workflows/clean-backups.yml:
     category: routine
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 11520
     rationale: Weekly maintenance dispatched by the central scheduler; alert after the scheduled cycle has effectively been missed for about a day.
-  .github/workflows/materialize-fantasy-operations-inputs.yml:
-    category: important
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily Operations materialization dispatched by the central scheduler should not silently miss a complete daily cycle.
-  .github/workflows/update-cbs-sports-projections.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-fantasy-football-calculator-adp.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-fantasycalc-rankings.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-fantasypros-rankings.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-fftoday-projections.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-sleeper-trending.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations signal refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
   .github/workflows/league-live.yml:
     category: important
     relevantEvents:

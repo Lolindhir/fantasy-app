@@ -224,7 +224,7 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
 
     def test_production_workflow_materializes_after_free_agents(self) -> None:
         root = SCRIPT_PATH.parents[3]
-        workflow = (root / ".github/workflows/materialize-fantasy-operations-inputs.yml").read_text(encoding="utf-8")
+        workflow = (root / ".github/workflows/fm-daily.yml").read_text(encoding="utf-8") + (root / "fantasy-management/_ai/scripts/materialize_operations_inputs.sh").read_text(encoding="utf-8")
         free_agent = "python fantasy-management/_ai/scripts/build_free_agent_dataset.py"
         movement = "python fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py"
         self.assertLess(workflow.index(free_agent), workflow.index(movement))

@@ -21,13 +21,7 @@ const EXPECTED = {
   'sync-nfl-player-availability.yml': { timezone: 'Europe/Berlin', cron: ['9-59/10 * * 9-12,1 *'] },
   'sync-league-source-data.yml': { timezone: 'Europe/Berlin', cron: ['30 4 * * *'] },
   'source-data-readiness.yml': { timezone: 'Europe/Berlin', cron: ['0 5 * * *'] },
-  'update-fantasypros-rankings.yml': { timezone: 'Europe/Berlin', cron: ['20 5 * * *'] },
-  'update-fantasycalc-rankings.yml': { timezone: 'Europe/Berlin', cron: ['32 5 * * *'] },
-  'update-fantasy-football-calculator-adp.yml': { timezone: 'Europe/Berlin', cron: ['44 5 * * *'] },
-  'update-fftoday-projections.yml': { timezone: 'Europe/Berlin', cron: ['56 5 * * *'] },
-  'update-cbs-sports-projections.yml': { timezone: 'Europe/Berlin', cron: ['8 6 * * *'] },
-  'update-sleeper-trending.yml': { timezone: 'Europe/Berlin', cron: ['20 6 * * *'] },
-  'materialize-fantasy-operations-inputs.yml': { timezone: 'Europe/Berlin', cron: ['45 6 * * *'] },
+  'fm-daily.yml': { timezone: 'Europe/Berlin', cron: ['20 5 * * *'] },
   'clean-backups.yml': { timezone: 'Europe/Berlin', cron: ['0 17 * * 3'] },
   'workflow-health-snapshot.yml': { timezone: 'Etc/UTC', cron: ['7-59/30 * * * *'] },
 };
@@ -70,10 +64,10 @@ test('central config preserves all migrated schedules, profiles and state contra
   const config = loadConfig();
   scheduler.validateConfig(config);
   assert.equal(config.schemaVersion, 2);
-  assert.equal(config.targets.length, 19);
+  assert.equal(config.targets.length, 13);
   const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
-  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 19);
+  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 13);
   assert.deepEqual(config.state, {
     schemaVersion: 1,
     branch: 'workflow-scheduler-state',
@@ -82,8 +76,24 @@ test('central config preserves all migrated schedules, profiles and state contra
   assert.deepEqual(config.retryPolicies.standard, retryPolicy);
   assert.equal(config.targets.find((item) => item.id === 'backup-cleanup').profile, 'maintenance');
   assert.equal(config.targets.find((item) => item.id === 'workflow-health').profile, 'observer');
-  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 16);
+  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 10);
   assert.deepEqual(config.targets.find((item) => item.id === 'workflow-health').deferUntilOtherTargetsSettled, { maxMinutes: 20 });
+});
+
+test('FM Daily is one daily pipeline target replacing the former seven provider and materializer targets', () => {
+  const config = loadConfig();
+  const ids = config.targets.map((item) => item.id);
+  for (const removed of ['fantasypros', 'fantasycalc', 'ffc-adp', 'fftoday', 'cbs-sports', 'sleeper-trending', 'fantasy-operations-materializer']) {
+    assert.ok(!ids.includes(removed), `${removed} must be replaced by fm-daily`);
+  }
+  const target = config.targets.find((item) => item.id === 'fm-daily');
+  assert.ok(target);
+  assert.equal(target.workflow, 'fm-daily.yml');
+  assert.equal(target.eventType, 'scheduler-fm-daily');
+  assert.equal(target.timezone, 'Europe/Berlin');
+  assert.deepEqual(target.cron, ['20 5 * * *']);
+  // A push run of the workflow only materializes; it must not satisfy the daily slot.
+  assert.deepEqual(target.satisfyingEvents, ['repository_dispatch', 'workflow_dispatch']);
 });
 
 test('scheduler relies on external dispatch after cutover and keeps manual fallback', () => {

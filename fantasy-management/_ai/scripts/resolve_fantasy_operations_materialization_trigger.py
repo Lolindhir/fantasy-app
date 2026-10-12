@@ -30,7 +30,8 @@ MATERIALIZATION_DEFINITION_PATHS = {
     "fantasy-management/_ai/schema-list.json",
     "fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md",
     "fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md",
-    ".github/workflows/materialize-fantasy-operations-inputs.yml",
+    ".github/workflows/fm-daily.yml",
+    "fantasy-management/_ai/scripts/materialize_operations_inputs.sh",
 }
 
 
@@ -89,8 +90,10 @@ def decide(
     if all(_is_generated_operations(path) for path in files):
         return TriggerDecision(False, "generated_operations_only_change")
 
-    if any(_is_source_input(path) for path in files):
-        return TriggerDecision(True, "relevant_source_or_heartbeat_change")
+    # Provider commits are produced by the FM Daily chain, which materializes explicitly after the
+    # providers (Issue #947). A push that only touches source inputs must not start a second run.
+    if all(_is_source_input(path) or _is_generated_operations(path) for path in files):
+        return TriggerDecision(False, "source_inputs_refreshed_by_pipeline")
 
     if any(path in CORE_INPUT_PATHS or CANONICAL_LEAGUE_DRAFTS_PATTERN.match(path) for path in files):
         return TriggerDecision(True, "relevant_league_or_player_input_change")

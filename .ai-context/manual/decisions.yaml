@@ -1586,3 +1586,40 @@ decisions:
       negative:
         - A Schedule.json publication failure fails the nfl-live run and is retried as one cycle.
         - The League Live wake-up is an additional repository_dispatch from a workflow, using the PAT_PUSH secret.
+
+  - id: ADR-051
+    title: FM Daily is one pipeline target with provider matrix legs
+    status: accepted
+    context: >
+      The daily Fantasy Operations chain consisted of six provider refresh workflows (05:20 to 06:20 Berlin) and a
+      separate materializer (06:45) with its own push-trigger loop, seven scheduler targets in total (Issue #947,
+      step S4 of Issue #471). Provider commits push-triggered the materializer, and the materializer kept a
+      workflow-local push loop without the transient retry of the shared publication helper.
+    decision: >
+      Robert approved the workflow change on 2026-10-11. One scheduler target fm-daily (workflow fm-daily.yml, event
+      scheduler-fm-daily, 05:20 Europe/Berlin, profile productive) runs the six providers as matrix legs with
+      fail-fast false (each publishes its own snapshot through tools/publish_generated_commit.py), then the
+      materializer job after all of them (needs providers, if not cancelled), also when a provider failed, using the
+      last good source state. A report job writes the per-leg results into the Job Summary and a warning annotation;
+      the run stays failed when a leg failed. The materializer generator moved into
+      fantasy-management/_ai/scripts/materialize_operations_inputs.sh and is published through
+      tools/rebuild_and_publish.py (scope fantasy-operations), so the transient retry applies. The workflow is
+      classified rebuild-and-retry (it contains a rebuild writer; the provider legs are documented self-contained
+      rebase writers). Push triggers: only League/Players/Metadata/draft inputs and materialization definitions run
+      the gate and materialize jobs; source and heartbeat paths are no triggers (the resolver returns
+      source_inputs_refreshed_by_pipeline), and fetcher code merges no longer refresh immediately; pull requests run
+      the fetcher tests only. A queued materialization never cancels a running one. The former seven scheduler
+      targets and workflows are removed; monitoring has one entry (important, staleness 1800 minutes).
+    rationale: >
+      A dependency chain belongs in one run (ADR-048): one scheduler decision, one retry cycle, one monitoring signal,
+      and no push loop between producers and consumer. The productive profile is kept because the chain is short
+      (parallel legs plus one materialize job) and Health should snapshot only after it.
+    consequences:
+      positive:
+        - One scheduler target and one monitoring entry instead of seven; the materializer follows the providers directly.
+        - The materializer publication gains the transient retry of the shared helper.
+        - A failing provider no longer blocks materialization, and the failure is named in the run summary.
+      negative:
+        - A fetcher code change reaches production at the next daily run instead of immediately after the merge.
+        - The commit message of materializer commits changes to the generated-data schema (data(fantasy-operations): Fantasy Operations inputs).
+        - A failed provider leg fails the whole run, so the scheduler retries the complete chain (providers use skip-unchanged).
