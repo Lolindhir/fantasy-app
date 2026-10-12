@@ -1,9 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import {
-  AchievementBannerAccent,
-  AchievementBannerComponent
-} from './achievement-banner';
+import type { AchievementBannerAccent } from './achievement-banner';
+import { AchievementBannerComponent } from './achievement-banner';
 
 describe('AchievementBannerComponent textile treatment', () => {
   let fixture: ComponentFixture<AchievementBannerComponent>;
