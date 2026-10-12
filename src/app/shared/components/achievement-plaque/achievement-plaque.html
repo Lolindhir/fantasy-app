@@ -19,7 +19,7 @@
         <span class="achievement-plaque__primary-avatar">
           <img *ngIf="subjectAvatar; else avatarFallback" [src]="subjectAvatar" alt="" aria-hidden="true" />
           <ng-template #avatarFallback>
-            <span>{{ subjectName.charAt(0) || '?' }}</span>
+            <img src="assets/default-team-avatar.png" alt="" aria-hidden="true" />
           </ng-template>
         </span>
         <span *ngIf="secondaryAvatar" class="achievement-plaque__secondary-avatar">
