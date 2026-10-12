@@ -15,6 +15,15 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertIn("materialization_scope: game-finality", wrapper)
         self.assertIn("actions: read", wrapper)
 
+    def test_detect_and_schedule_jobs_use_shallow_checkout(self) -> None:
+        live = (WORKFLOWS / "nfl-live.yml").read_text(encoding="utf-8")
+        games = (WORKFLOWS / "update-games.yml").read_text(encoding="utf-8")
+        self.assertNotIn("fetch-depth: 0", live)
+        self.assertNotIn("fetch-depth: 0", games)
+        # the shallow detect checkout must fetch the base commit explicitly and fall back conservatively
+        self.assertIn('git fetch --no-tags --depth=1 origin "$BASE"', live)
+        self.assertIn("could not be fetched; running conservatively", live)
+
     def test_source_workflow_keeps_serialization_and_rebuild_retry(self) -> None:
         source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
         self.assertIn("group: nfl-source-data-sync", source)
