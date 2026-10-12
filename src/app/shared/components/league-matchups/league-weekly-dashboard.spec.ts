@@ -499,6 +499,40 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(host.querySelectorAll('.weekly-last-side').length).toBe(10);
   });
 
+  it('positions the playoff cutline from league settings and hides it when not applicable', () => {
+    dataService.getMatchups.and.returnValue(of(makeMatchups(6)));
+    fixture.destroy();
+    fixture = TestBed.createComponent(LeagueMatchupsComponent);
+    const league = makeLeague(6);
+    league.Settings = { playoff_teams: 4 };
+    fixture.componentInstance.league = league;
+    fixture.detectChanges();
+
+    const cutlineRanks = () => Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+        '.weekly-standing-row--playoff-cutline .weekly-standing-rank'
+      )
+    ).map(rank => rank.textContent?.trim());
+
+    expect(cutlineRanks()).toEqual(['5']);
+
+    league.Settings = { playoff_teams: 2 };
+    fixture.detectChanges();
+    expect(cutlineRanks()).toEqual(['3']);
+
+    league.Settings = { playoff_teams: 6 };
+    fixture.detectChanges();
+    expect(cutlineRanks()).toEqual([]);
+
+    league.Settings = {};
+    fixture.detectChanges();
+    expect(cutlineRanks()).toEqual([]);
+
+    league.Settings = { playoff_teams: 'invalid' };
+    fixture.detectChanges();
+    expect(cutlineRanks()).toEqual([]);
+  });
+
   it('renders each Last Week result as one explicit two-sided matchup with the correct team-score association', () => {
     const host: HTMLElement = fixture.nativeElement;
     const matchups = host.querySelectorAll<HTMLElement>('.weekly-last-matchup');
