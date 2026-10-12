@@ -65,7 +65,7 @@ describe('Regular Season Champion achievement', () => {
     const outcome = buildSeasonResults([team(2, 1), team(4, 4)], league(true));
     expect(outcome.regularSeasonChampion?.teamId).toBe(4);
     expect(outcome.regularSeasonChampion?.record).toBe('10-3');
-    expect(outcome.remainingTeams[0].isRegularSeasonChampion).toBeTrue();
+    expect(outcome.remainingTeams.find(row => row.teamId === 4)?.isRegularSeasonChampion).toBeTrue();
     expect(outcome.champion?.isRegularSeasonChampion).toBeFalse();
   });
 
