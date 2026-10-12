@@ -1,11 +1,10 @@
-/* #500 supersedes the legacy active-season standings/leaders/moves snapshot cards.
- * The weekly dashboard is rendered by app-league-matchups; draft/off-season surfaces
- * remain owned by overview.html and are intentionally unaffected. */
+/* #500 supersedes the legacy active-season snapshot cards in the weekly dashboard.
+ * Keep the compact Recent Moves preview as the league activity entry point. */
 .header {
   order: -20;
 }
 
 .season-pulse-card,
-.active-overview-card {
+.active-overview-card:not(.recent-moves-card) {
   display: none;
 }
