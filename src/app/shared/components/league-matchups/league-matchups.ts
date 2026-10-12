@@ -190,6 +190,17 @@ export class LeagueMatchupsComponent {
     return !this.league?.Status || ['Pre-Season', 'In-Season', 'Playoffs'].includes(this.league.Status);
   }
 
+  get playoffCutlineStartPlace(): number | null {
+    const playoffTeams = this.league?.Settings?.['playoff_teams'];
+    const teamCount = this.league?.Teams?.length ?? 0;
+    return typeof playoffTeams === 'number'
+      && Number.isInteger(playoffTeams)
+      && playoffTeams > 0
+      && playoffTeams < teamCount
+      ? playoffTeams + 1
+      : null;
+  }
+
   get hasOverviewContextData(): boolean {
     return Array.isArray(this.league?.Standings)
       && Array.isArray(this.league?.Teams)

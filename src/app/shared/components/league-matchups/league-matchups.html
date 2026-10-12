@@ -7,7 +7,11 @@
       </div>
 
       <div class="weekly-context-rows">
-        <div *ngFor="let row of context.standings" class="weekly-context-row weekly-standing-row">
+        <div
+          *ngFor="let row of context.standings"
+          class="weekly-context-row weekly-standing-row"
+          [class.weekly-standing-row--playoff-cutline]="row.displayPlace === playoffCutlineStartPlace"
+        >
           <strong class="weekly-standing-rank">{{ row.displayPlace }}</strong>
           <span class="weekly-team-avatar">
             <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
