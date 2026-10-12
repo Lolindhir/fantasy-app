@@ -28,6 +28,23 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
     expect(fixture.nativeElement.querySelector('.achievement-plaque__primary-avatar span')).toBeNull();
   });
 
+  it('keeps the mobile plaque internals compact without shrinking avatars or emblems', () => {
+    // Exercise the <=480px container-query style regardless of the CI browser viewport.
+    (fixture.nativeElement as HTMLElement).style.width = '320px';
+    fixture.detectChanges();
+
+    const plaque = fixture.nativeElement.querySelector('.achievement-plaque') as HTMLElement;
+    const metal = fixture.nativeElement.querySelector('.achievement-plaque__metal') as HTMLElement;
+    const body = fixture.nativeElement.querySelector('.achievement-plaque__body') as HTMLElement;
+    const emblem = fixture.nativeElement.querySelector('.achievement-plaque__emblem img') as HTMLElement;
+
+    expect(getComputedStyle(plaque).paddingTop).toBe('6px');
+    expect(getComputedStyle(metal).paddingLeft).toBe('8px');
+    expect(getComputedStyle(metal).paddingTop).toBe('7px');
+    expect(getComputedStyle(body).columnGap).toBe('7px');
+    expect(getComputedStyle(emblem).width).toBe('46px');
+  });
+
   it('keeps the real team avatar when a snapshot provides one', () => {
     fixture.componentInstance.subjectAvatar = 'assets/test-team-avatar.png';
     fixture.detectChanges();

@@ -28,6 +28,18 @@ describe('AchievementBannerComponent textile treatment', () => {
     expect(banner.querySelector('.achievement-banner__season')?.textContent).toContain('2025');
   });
 
+  it('reserves 3px of safety space on each side of the team name', () => {
+    fixture.componentInstance.subjectName = 'ND - Fighting Childish';
+    fixture.detectChanges();
+
+    const name = fixture.nativeElement.querySelector('.achievement-banner__name') as HTMLElement;
+    const style = getComputedStyle(name);
+
+    expect(style.boxSizing).toBe('border-box');
+    expect(style.paddingLeft).toBe('3px');
+    expect(style.paddingRight).toBe('3px');
+  });
+
   it('uses a common textile background while changing only metallic threading', () => {
     const styles = (['silver', 'gold', 'bronze'] as AchievementBannerAccent[]).map(accent => {
       fixture.componentInstance.accent = accent;
