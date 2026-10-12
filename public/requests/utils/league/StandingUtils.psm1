@@ -672,18 +672,6 @@ function Get-Awards {
     # Unabhängige Regular Season Awards #
     #===================================#
 
-    # Regular Season King
-    $king = $regularSeasonStandings | Sort-Object Place | Select-Object -First 1
-    $awards += [PSCustomObject]@{
-        Name            = "Regular Season King"
-        Type            = $awardTypes['Special']
-        IconUnicode     = "1F451" #👑
-        StatDisplay     = "Record: ($($king.Wins)-$($king.Losses)-$($king.Ties)) | Points: $($king.Points)"
-        TeamID          = $king.TeamID
-        Owner           = $king.Owner
-        TeamName        = $king.TeamName
-    }
-
     # Best Performer
     $bestPerformer = $regularSeasonStandings | Sort-Object Points -Descending | Select-Object -First 1
     $awards += [PSCustomObject]@{
