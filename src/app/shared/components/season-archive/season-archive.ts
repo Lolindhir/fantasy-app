@@ -5,10 +5,8 @@ import { RegularSeasonStandingsListComponent } from '../regular-season-standings
 import { SeasonResultsComponent } from '../season-results/season-results';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import type {
-  SeasonHistoryAwardItem,
   SeasonHistorySeasonViewModel,
   SeasonHistoryViewModel,
-  SeasonResultAwardVisual,
   SeasonResultsViewModel
 } from '../../utils/league-standings-view.util';
 
@@ -28,53 +26,36 @@ export class SeasonArchiveComponent {
   @Input({ required: true }) history: SeasonHistoryViewModel | null | undefined;
 
   playoffResultsViewModel(season: SeasonHistorySeasonViewModel): SeasonResultsViewModel {
+    const winner = season.champion ? season.regularSeasonWinner : undefined;
     const teams = season.playoffResults
-      .map(row => {
-        const awards = this.awardsForOwner(season, row.owner);
-
-        return {
-          team: { Owner: row.owner },
-          teamName: row.teamName,
-          place: row.place,
-          awardsDisplay: awards
-            .map(award => award.icon)
-            .join(''),
-          awardVisuals: awards.map(award => this.awardVisual(award)),
-          ownerAvatar: row.ownerAvatar,
-          teamAvatar: row.teamAvatar
-        };
-      })
+      .map(row => ({
+        team: { Owner: row.owner },
+        teamId: row.teamId,
+        teamName: row.teamName,
+        place: row.place,
+        isRegularSeasonChampion: !!winner && String(row.teamId) === String(winner.teamId),
+        awardsDisplay: '',
+        ownerAvatar: row.ownerAvatar,
+        teamAvatar: row.teamAvatar
+      }))
       .sort((a, b) => a.place - b.place);
 
     return {
       teams,
-      champion: teams[0],
-      runnerUp: teams[1],
-      thirdPlace: teams[2],
-      remainingTeams: teams.slice(3)
+      champion: teams.find(row => row.place === 1),
+      runnerUp: teams.find(row => row.place === 2),
+      thirdPlace: teams.find(row => row.place === 3),
+      remainingTeams: teams.filter(row => row.place > 3),
+      regularSeasonChampion: winner ? {
+        teamId: winner.teamId,
+        owner: winner.owner,
+        teamName: winner.teamName,
+        teamAvatar: winner.teamAvatar,
+        ownerAvatar: winner.ownerAvatar,
+        record: winner.record,
+        points: winner.points
+      } : undefined
     };
   }
 
-  awardsForOwner(
-    season: SeasonHistorySeasonViewModel,
-    owner: string
-  ): SeasonHistoryAwardItem[] {
-    return season.awards.filter(award => award.owner === owner);
-  }
-
-  private awardVisual(award: SeasonHistoryAwardItem): SeasonResultAwardVisual {
-    if (award.name === 'Regular Season King') {
-      return {
-        key: award.key,
-        label: award.name,
-        imageSrc: 'assets/awards/ui/award-regular-season.png'
-      };
-    }
-
-    return {
-      key: award.key,
-      label: award.name,
-      text: award.icon
-    };
-  }
 }
