@@ -35,3 +35,30 @@ time alone does not.
 Consumer-specific publication and identity adaptation happen downstream. The
 shared layer remains keyed by `CanonicalPlayerID`; App/Sleeper identity joins
 belong to the later App publisher.
+
+
+## TeamWeekPerformance (in progress, not yet published)
+
+Target dataset:
+
+`derived-data/team-week-performance/<CanonicalLeagueID>/<season>/<week>.json`
+
+Canonical contract:
+
+`.ai-context/manual/team-week-performance.yaml`
+
+Domain calculator and deterministic no-op writer:
+
+`tools/team_week_performance.py`
+
+It calculates all-roster hypothetical best-ball potential, actual starter points,
+coaching efficiency, missed points and league-wide Best Manager/Best Coach winners
+from canonical fantasy week matchups, historical positions and season-specific
+slot eligibility. Starter, Bench, Taxi and IR/Reserve are all considered.
+The shared result is designed for WeeklyRecaps/Overview, Team History, Season
+Awards and other consumers; no consumer should recompute these domain values.
+
+**Current checkpoint:** The calculator, writer and tests exist, but no
+producer job, real derived-data partition, App publisher or frontend consumer
+has been activated. Full historical fantasy-position coverage, intraweek
+ownership timing and canonical week finality must be validated first.
