@@ -307,7 +307,7 @@ dataSources:
       Season-specific Playoff rows additionally retain OwnerAvatar and TeamAvatar
       from the same season's canonical members.json snapshot so archive consumers
       never resolve historical identity from the current team.
-      Current-season RegularSeason rows (and therefore Teams.json
+      Current-season RegularSeason rows (and therefore League.json Teams[]
       Placements.Current.Regular) additionally carry the canonical weekly table
       movement, issue #565, ADR-040. PreviousWeekPlace is the regular season place
       after the immediately preceding completed week (completed weeks = games in
@@ -320,7 +320,18 @@ dataSources:
       (fewer than two completed weeks, missing or incomplete week facts, or weekly
       outcomes contradicting a team Record); consumers must not reconstruct or
       infer them, and Placements.Previous (previous season) is never a source.
-      Completed-season rows do not carry the fields.
+      Current-season rows also carry WeeklyMovements[] with Week, Place,
+      PreviousWeekPlace and PlaceDelta for each validated completed regular-season
+      week after Week 1. Entries are computed using the same canonical per-week
+      matchup sources, record consistency checks and regular-season tiebreak.
+      If a week is missing or inconsistent, that week and subsequent weeks have
+      no entries (no fabricated history). Overview uses the entry for the week
+      immediately preceding its displayed matchup week even if its display week
+      is retained during rollover and League.json already reflects newer games.
+      The existing current PreviousWeekPlace and PlaceDelta remain for compatibility;
+      consumers must not use them as the historical movement for an older snapshot.
+      Both Standings.json and enriched League.json participate in compare/publish
+      when the week history changes. Completed-season rows do not carry these fields.
     historicalSource:
       canonicalLeagueID: nfl-reise
       consumer: public/requests/utils/league/CanonicalStandingUtils.psm1

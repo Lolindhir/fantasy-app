@@ -1260,6 +1260,14 @@ decisions:
       ranking/tiebreak function and publishes PreviousWeekPlace and PlaceDelta
       (PreviousWeekPlace - Place, positive = moved up) on current-season
       RegularSeason rows. Values are null when no trustworthy comparison exists.
+      The 2026-10-13 retained-week regression additionally requires a
+      WeeklyMovements[] history (Week, Place, PreviousWeekPlace, PlaceDelta)
+      generated from validated per-week canonical matchup facts on current-season
+      RegularSeason rows. Angular selects the history entry for its displayed
+      as-of week, checks Place against the snapshot, and renders null when missing.
+      Current PreviousWeekPlace/PlaceDelta remain backward-compatible and are
+      never misapplied to older weekly snapshots. Neither historical seasons nor
+      the frontend derive new standings rankings.
       Angular only displays the value.
     rationale: >
       Ranking and tiebreak semantics stay in one place, the league size stays

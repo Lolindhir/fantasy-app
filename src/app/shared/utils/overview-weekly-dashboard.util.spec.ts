@@ -457,6 +457,88 @@ describe('Overview weekly dashboard presentation', () => {
       ]);
     });
 
+    it('shows historical W4 movement during a retained W5 even after League reached W5', () => {
+      const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+      const currentPlaces = new Map([[1, 3], [2, 2], [3, 1], [4, 4]]);
+      const latestDeltas = new Map([[1, -1], [2, 1], [3, 0], [4, 0]]);
+      for (const team of teams) {
+        const regular = team.Placements.Current.Regular;
+        regular.Place = currentPlaces.get(team.TeamID)!;
+        regular.Wins = 3;
+        regular.Losses = 2;
+        regular.PlaceDelta = latestDeltas.get(team.TeamID)!;
+      }
+      const league = makeLeague(teams, 5);
+      league.PlayoffStartWeek = 14;
+
+      const pairs = [
+        [[1, 2], [3, 4]],
+        [[3, 1], [2, 4]],
+        [[1, 4], [2, 3]],
+        [[1, 2], [3, 4]],
+        [[3, 1], [2, 4]],
+        [[1, 3], [2, 4]]
+      ];
+      const model: MatchupsReadModel = {
+        SchemaVersion: 1,
+        Season: '2026',
+        Weeks: pairs.map((weekPairs, index) => ({
+          Week: index + 1,
+          Stage: 'regular-season' as const,
+          FirstKickoffUtc: '2026-09-10T00:00:00Z',
+          CompletionState: (index < 5 ? 'final' : 'open') as 'final' | 'open',
+          Matchups: weekPairs.map(([a, b], matchIndex) =>
+            matchup(`w${index + 1}-m${matchIndex}`, a, b, index < 5 ? 'final' : 'open'))
+        })),
+        Summary: { LastCompletedWeek: 5, ActiveOrNextWeek: 6 }
+      };
+
+      const displayWeek = resolveOverviewDisplayWeek(
+        league, model,
+        { Season: '2026', LineupWeek: 5 } as DecisionWindowsReadModel,
+        { Season: '2026', Week: 5 } as FantasyGameContextReadModel
+      );
+      expect(displayWeek).toBe(5);
+      const before = buildOverviewTopContext(league, model, displayWeek);
+      expect(before.standings.map(row => row.team.TeamID)).toEqual([3, 1, 2, 4]);
+      expect(before.standings.every(row => row.placeDelta === null)).toBeTrue();
+
+      const week4Deltas = new Map([[1, 1], [2, -1], [3, 0], [4, 0]]);
+      for (const row of before.standings) {
+        const regular = row.team.Placements.Current.Regular;
+        const oldPlace = row.displayPlace + week4Deltas.get(row.team.TeamID)!;
+        regular.WeeklyMovements = [
+          {
+            Week: 4,
+            Place: row.displayPlace,
+            PreviousWeekPlace: oldPlace,
+            PlaceDelta: oldPlace - row.displayPlace
+          },
+          {
+            Week: 5,
+            Place: regular.Place,
+            PreviousWeekPlace: regular.Place + latestDeltas.get(row.team.TeamID)!,
+            PlaceDelta: latestDeltas.get(row.team.TeamID)!
+          }
+        ];
+      }
+
+      const held = buildOverviewTopContext(league, model, displayWeek);
+      expect(held.standings.map(row => [row.team.TeamID, row.placeDelta])).toEqual([
+        [3, 0], [1, 1], [2, -1], [4, 0]
+      ]);
+      const released = buildOverviewTopContext(league, model, 6);
+      expect(released.standings.map(row => [row.team.TeamID, row.placeDelta])).toEqual([
+        [3, 0], [2, 1], [1, -1], [4, 0]
+      ]);
+      // A missing week, or a mismatched generated place, must remain neutral.
+      teams[0].Placements.Current.Regular.WeeklyMovements = [];
+      teams[1].Placements.Current.Regular.WeeklyMovements![0].Place = 99;
+      const guarded = buildOverviewTopContext(league, model, 5);
+      expect(guarded.standings.find(row => row.team.TeamID === 1)?.placeDelta).toBeNull();
+      expect(guarded.standings.find(row => row.team.TeamID === 2)?.placeDelta).toBeNull();
+    });
+
     it('does not leak movement into a retained display week that is older than the current table', () => {
       // Current table already has two games, the Overview still displays Week 2 (standings after Week 1).
       const league = movementLeague();

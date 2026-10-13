@@ -370,21 +370,30 @@ function buildOverviewStandingsSnapshot(
       pointsAgainst: roundStandingPoints(row.pointsAgainst),
       record: formatStandingRecord(row.wins, row.losses, row.ties),
       streak: formatStandingStreak(row.results),
-      placeDelta: resolveCanonicalPlaceDelta(row.team, displayPlace, row.wins + row.losses + row.ties)
+      placeDelta: resolveCanonicalPlaceDelta(row.team, displayPlace, targetRegularWeek, row.wins + row.losses + row.ties)
     };
   });
 }
 
-// The generator's PlaceDelta describes the current table. It is only shown for a snapshot that
-// is that same table (same games played and same place); otherwise no movement is claimed, so a
-// retained display week during rollover never leaks the next week's movement.
+// The generator owns weekly position changes. Match the historical movement to
+// the exact completed week of the as-of snapshot, not to the current League week.
+// Older data without history may use current PlaceDelta only for the current table.
 function resolveCanonicalPlaceDelta(
   team: FantasyTeam,
   displayPlace: number,
+  completedWeek: number,
   gamesInSnapshot: number
 ): number | null {
   const placement = team.Placements?.Current?.Regular;
   if (!placement) return null;
+
+  if (Array.isArray(placement.WeeklyMovements)) {
+    const movement = placement.WeeklyMovements.find(entry => entry.Week === completedWeek);
+    if (!movement || movement.Place !== displayPlace) return null;
+    return typeof movement.PlaceDelta === 'number' && Number.isFinite(movement.PlaceDelta)
+      ? movement.PlaceDelta
+      : null;
+  }
 
   const delta = placement.PlaceDelta;
   if (typeof delta !== 'number' || !Number.isFinite(delta)) return null;
