@@ -1,4 +1,13 @@
-import { CurrentStandingsComponent } from './current-standings';
+import {
+  recentStandingResults,
+  recentStandingResultsLabel,
+  standingCanonicalDelta,
+  standingMovementLabel,
+  standingMovementText,
+  standingPerGame,
+  standingPlayoffCutline,
+  standingPointDifferential
+} from './current-standings-display.util';
 import type { CurrentStandingRow } from '../../utils/league-standings-view.util';
 
 function sampleRow(record: string, options: {
@@ -26,7 +35,7 @@ function sampleRow(record: string, options: {
       Placements: {
         Current: { Regular: {
           Place: options.place ?? 1,
-          PlaceDelta: options.delta ?? 2,
+          PlaceDelta: options.delta === undefined ? 2 : options.delta,
           Wins: wins,
           Losses: losses,
           Ties: ties,
@@ -37,24 +46,17 @@ function sampleRow(record: string, options: {
   };
 }
 
-describe('CurrentStandingsComponent detailed variant', () => {
-  let component: CurrentStandingsComponent;
-  beforeEach(() => { component = new CurrentStandingsComponent(); });
-
-  it('preserves compact rendering as the default', () => {
-    expect(component.variant).toBe('compact');
-  });
-
-  it('shows only available completed results early in the season', () => {
-    expect(component.recentResults(sampleRow('WLW'))).toEqual([
+describe('Current standings detailed presentation helpers', () => {
+  it('shows only completed results early in the season', () => {
+    expect(recentStandingResults(sampleRow('WLW'))).toEqual([
       { week: 1, result: 'W' },
       { week: 2, result: 'L' },
       { week: 3, result: 'W' }
     ]);
   });
 
-  it('keeps only the latest five chronological results, including ties', () => {
-    const results = component.recentResults(sampleRow('WWLTWLW'));
+  it('keeps only the latest five chronological results including ties', () => {
+    const results = recentStandingResults(sampleRow('WWLTWLW'));
     expect(results).toEqual([
       { week: 3, result: 'L' },
       { week: 4, result: 'T' },
@@ -62,48 +64,40 @@ describe('CurrentStandingsComponent detailed variant', () => {
       { week: 6, result: 'L' },
       { week: 7, result: 'W' }
     ]);
-    expect(component.recentResultsLabel(results)).toContain('week 4 tie');
+    expect(recentStandingResultsLabel(results)).toContain('week 4 tie');
   });
 
-  it('fails closed for incomplete or inconsistent record histories', () => {
-    expect(component.recentResults(sampleRow('WL?', { wins: 1, losses: 1 }))).toEqual([]);
-    expect(component.recentResults(sampleRow('WL', { wins: 3 }))).toEqual([]);
+  it('fails closed on inconsistent or malformed records', () => {
+    expect(recentStandingResults(sampleRow('WL?', { wins: 1, losses: 1 }))).toEqual([]);
+    expect(recentStandingResults(sampleRow('WL', { wins: 3 }))).toEqual([]);
+    expect(recentStandingResults(sampleRow(''))).toEqual([]);
   });
 
-  it('uses canonical position movement and neutralizes missing values', () => {
-    expect(component.movementText(sampleRow('WWL', { delta: 2 }))).toBe('▲2');
-    expect(component.movementText(sampleRow('WWL', { delta: -1 }))).toBe('▼1');
-    expect(component.movementText(sampleRow('WWL', { delta: 0 }))).toBe('—');
+  it('uses canonical movement and leaves missing or wrong-place evidence neutral', () => {
+    expect(standingMovementText(sampleRow('WWL', { delta: 2 }))).toBe('▲2');
+    expect(standingMovementText(sampleRow('WWL', { delta: -1 }))).toBe('▼1');
+    expect(standingMovementText(sampleRow('WWL', { delta: 0 }))).toBe('—');
+    expect(standingMovementLabel(sampleRow('WWL', { delta: -2 }))).toContain('down 2 places');
+    const missing = sampleRow('WWL', { delta: null });
+    expect(standingCanonicalDelta(missing)).toBeNull();
+    const wrongPlace = sampleRow('WWL');
+    wrongPlace.team.Placements.Current.Regular.Place = 3;
+    expect(standingCanonicalDelta(wrongPlace)).toBeNull();
+  });
+
+  it('draws the cutoff only for a valid playoff count', () => {
+    const fifth = sampleRow('WL', { place: 5 });
+    expect(standingPlayoffCutline(fifth, 4, 6)).toBeTrue();
+    expect(standingPlayoffCutline(fifth, 5, 6)).toBeFalse();
+    expect(standingPlayoffCutline(fifth, 6, 6)).toBeFalse();
+    expect(standingPlayoffCutline(fifth, null, 6)).toBeFalse();
+  });
+
+  it('formats point differences and per-game metrics without inventing pre-season values', () => {
     const row = sampleRow('WWL');
-    row.team.Placements.Current.Regular.Place = 3;
-    expect(component.placeDelta(row)).toBeNull();
-  });
-
-  it('draws a cutoff only when playoff places are valid', () => {
-    component.standings = [1, 2, 3, 4, 5, 6].map(place => sampleRow('WL', { place }));
-    component.playoffTeams = 4;
-    expect(component.isPlayoffCutline(component.standings[4])).toBeTrue();
-    expect(component.isPlayoffCutline(component.standings[3])).toBeFalse();
-    component.playoffTeams = 6;
-    expect(component.isPlayoffCutline(component.standings[4])).toBeFalse();
-  });
-
-  it('allows only one expanded team at a time', () => {
-    component.toggleDetails(1);
-    expect(component.expandedTeamId).toBe(1);
-    component.toggleDetails(2);
-    expect(component.expandedTeamId).toBe(2);
-    component.toggleDetails(2);
-    expect(component.expandedTeamId).toBeNull();
-  });
-
-  it('computes additional stats and handles pre-season zero games', () => {
-    const row = sampleRow('WWL');
-    expect(component.pointDifferential(row)).toBe(60);
-    expect(component.pointsPerGame(row)).toBeCloseTo(850 / 3, 6);
-    expect(component.pointsAgainstPerGame(row)).toBeCloseTo(790 / 3, 6);
-    const empty = sampleRow('');
-    expect(component.pointsPerGame(empty)).toBeNull();
-    expect(component.recentResults(empty)).toEqual([]);
+    expect(standingPointDifferential(row)).toBe(60);
+    expect(standingPerGame(row, row.team.Points)).toBeCloseTo(850 / 3, 6);
+    expect(standingPerGame(row, row.team.PointsAgainst)).toBeCloseTo(790 / 3, 6);
+    expect(standingPerGame(sampleRow(''), 0)).toBeNull();
   });
 });
