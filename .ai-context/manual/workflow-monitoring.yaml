@@ -199,6 +199,29 @@ principles:
 runEvaluation:
   defaultBranch: main
   recentRunsToInspect: 100
+  runVolume:
+    issue: 934
+    scheduleConfig: .github/workflow-schedules.json
+    windowHours: 24
+    warningFactor: 2
+    warningOffset: 2
+    cancelledWarningMinimum: 5
+    mode: informational
+    rule: >-
+      For every workflow that is a scheduler target (matched by path in scheduleConfig) the snapshot adds
+      workflows.<path>.runVolume with observed24h (repository_dispatch runs on main created in the window, all
+      conclusions), expected24h (cron slots of the target in the window, evaluated in the target timezone;
+      game-window targets use their dense cron as upper bound), ratio and warning. warning is true when
+      observed24h > warningFactor * expected24h + warningOffset. The factor tolerates scheduler retries (up to three
+      attempts per slot) and the offset tolerates sparse targets; the stale-slot defect that produced 46 instead of 2 Players
+      runs is far above both. cancelledWarning flags at least cancelledWarningMinimum cancelled runs that also exceed
+      the expected slot count (concurrency contention). Push, manual and pull-request runs are not counted.
+    output: >-
+      Warnings are listed in the snapshot top-level warnings array (types multiple-starts, many-cancelled-runs). They
+      are never incidents, never change overall and never page; the external watcher may mention them in a digest.
+    limitation: >-
+      Only the newest recentRunsToInspect runs are read; runVolume.truncated is true when the window holds more runs than
+      were read, so observed24h is then a lower bound.
   defaultIgnoredEvents:
   - pull_request
   - workflow_dispatch

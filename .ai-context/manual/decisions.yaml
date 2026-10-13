@@ -1664,3 +1664,23 @@ decisions:
         - A target with a transient read error is skipped for one tick, so its dispatch may be delayed by five minutes.
         - A failed dispatch whose event did arrive is only noticed through the next tick's run list.
         - Retries add up to about 17 seconds (plus jitter) per failing read.
+
+  - id: ADR-053
+    title: Workflow Health reports scheduler run volume as an informational warning
+    status: accepted
+    context: >
+      Health evaluated only failures and staleness, so a defect that started a target far more often than planned
+      (Players: 46 instead of 2 runs in 13 hours, ADR-047) went unnoticed (Issue #934).
+    decision: >
+      Robert approved the change on 2026-10-13. The snapshot compares, per scheduler target, the repository_dispatch runs of the last 24 hours with the
+      cron slots planned in .github/workflow-schedules.json (runVolume) and lists multiple-starts and many-cancelled-runs in a
+      top-level warnings array. Threshold observed > 2 x expected + 2; game-window targets use the dense cron as upper bound.
+      Warnings never create incidents, never change overall and never page. Details in workflow-monitoring.yaml runEvaluation.runVolume.
+    rationale: >
+      Volume anomalies are an early signal but push runs, manual repeats and legitimate retries make exact counts unreliable, so the signal stays informational.
+    consequences:
+      positive:
+        - Repeated dispatching of satisfied slots becomes visible in the snapshot.
+      negative:
+        - Cron evaluation exists in Python and in the scheduler (Node); both support the same simple expression subset.
+        - Targets denser than 100 runs per window report a lower-bound count.
