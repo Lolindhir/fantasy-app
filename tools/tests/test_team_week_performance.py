@@ -40,12 +40,15 @@ def team(roster_id: str, players: dict[str, float], starters: list[str], week: i
 
 
 def derive(rows: list[dict], positions: dict[str, str], slots: list[StartingSlot] | None = None,
-           scoring: dict | None = None, finalized: bool = True) -> dict:
+           scoring: dict | None = None, finalized: bool = True,
+           expected_team_count: int | None = None) -> dict:
     return build_team_week_performance(
         canonical_league_id="nfl-reise", season=2024, week=4,
         scoring_settings={"rec": 1, "rec_yd": 0.1} if scoring is None else scoring,
         slots=[slot("WR-1", "WR")] if slots is None else slots,
-        matchup_rows=rows, position_by_player=positions,
+        matchup_rows=rows,
+        expected_team_count=len(rows) if expected_team_count is None else expected_team_count,
+        position_by_player=positions,
         finalized=finalized, finality_evidence="source-data/nfl/game-finality/2024.json:REG-W4",
     )
 
@@ -121,6 +124,27 @@ class TeamWeekPerformanceTests(unittest.TestCase):
     def test_unfinalized_week_cannot_be_materialized(self) -> None:
         with self.assertRaisesRegex(ValueError, "Finality evidence required"):
             derive([team("A", {"a": 2}, ["a"])], {"a": "WR"}, finalized=False)
+
+    def test_incomplete_team_week_population_fails_closed(self) -> None:
+        rows = [team("A", {"a": 8}, ["a"])]
+        with self.assertRaisesRegex(ValueError, "Incomplete weekly fantasy teams"):
+            derive(rows, {"a": "WR"}, expected_team_count=2)
+
+    def test_actual_starters_must_fit_historical_lineup_slots(self) -> None:
+        rows = [team("A", {"rb": 7, "wr": 6}, ["rb", "wr"])]
+        with self.assertRaisesRegex(ValueError, "Historical starters cannot fit lineup slots"):
+            derive(rows, {"rb": "RB", "wr": "WR"}, slots=[slot("WR-1", "WR")])
+        with self.assertRaisesRegex(ValueError, "Historical starters cannot fit lineup slots"):
+            derive([team("A", {"rb": 7}, ["rb"])], {"rb": "RB"}, slots=[slot("WR-1", "WR")])
+
+    def test_multiple_overlapping_slots_accept_actual_starters(self) -> None:
+        rows = [team("A", {"rb": 7, "wr": 6}, ["rb", "wr"])]
+        data = derive(rows, {"rb": "RB", "wr": "WR"},
+                      slots=[slot("FLEX-1", "RB", "WR", "TE"),
+                             slot("REC_FLEX-1", "WR", "TE")])
+        self.assertEqual(data["Teams"][0]["ActualStarterPoints"], 13)
+        self.assertEqual(data["Teams"][0]["PotentialPoints"], 13)
+        self.assertEqual(data["Teams"][0]["EfficiencyPercent"], 100)
 
     def test_output_path_and_semantic_noop_persistence(self) -> None:
         payload = derive([team("A", {"a": 2}, ["a"])], {"a": "WR"})
