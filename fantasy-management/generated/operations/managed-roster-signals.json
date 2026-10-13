@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-10-13T05:00:52Z",
-  "input_fingerprint": "9a0a4c10aee222fda366b4976b6fa2c436c0d4032bd07d5ca10648d67a0b8928",
+  "generated_at": "2026-10-13T05:22:08Z",
+  "input_fingerprint": "32518fb46a3ab6058f83b154e3ed110cdbade7ce24132f4b732355f55571f910",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "b1f46794ea7ee8a4b5c10bf35c9e72c02054db24214e05f3920c8f1eb2701adb",
-      "source_timestamp": "2026-10-12T05:21:32Z"
+      "content_sha256": "8b173fe8225137a73b3636698a7949c9c376e3d145626f1d493be64a34031583",
+      "source_timestamp": "2026-10-13T05:22:08Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "c0e212deb89d5e8b0c0d5c05a0786034ace153b5984571ecfe01a83e33d56ab5",
-      "source_timestamp": "2026-10-13T05:00:52Z"
+      "content_sha256": "bb963cbe7a15c563c7c9253e675465470a25e8d8b51baec48f910b0d4cc56aab",
+      "source_timestamp": "2026-10-13T05:22:08Z"
     },
     {
       "id": "operations_source_catalog",
@@ -3637,13 +3637,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Ribs",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -3873,9 +3873,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -5151,13 +5152,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Foot",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -5373,9 +5374,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -9394,7 +9396,7 @@
     "coverage": {
       "managed_roster_ids": 37,
       "resolved_players": 37,
-      "players_with_current_injury_signal": 12,
+      "players_with_current_injury_signal": 14,
       "primary_adp_applicable": 5,
       "primary_adp_listed": 4,
       "sources": {
