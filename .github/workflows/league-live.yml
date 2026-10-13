@@ -44,7 +44,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Detect changed Standings inputs
@@ -63,6 +63,7 @@ jobs:
             run=true
             reason="no source base commit available (source job did not report); running conservatively"
           else
+            git fetch --no-tags --depth=1 origin "$BASE"
             changed="$(git diff --name-only "$BASE" HEAD -- \
               ':(glob)source-data/leagues/*/seasons/*/league.json' \
               ':(glob)source-data/leagues/*/seasons/*/members.json' \
@@ -105,7 +106,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Setup Node.js
@@ -114,20 +115,15 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Rebuild and publish League data
+      # One generator run and one commit for League and PlayerWeekFantasy/MatchupProjections:
+      # two pushes seconds apart made the Deploy of the first one cancel itself.
+      - name: Rebuild and publish League, PlayerWeekFantasy and MatchupProjections
         run: >-
           python3 tools/rebuild_and_publish.py
           --scope league
           --path public/data
-          --
-          pwsh ./public/requests/RequestLeaguePublication.ps1
-
-      - name: Rebuild and publish PlayerWeekFantasy and MatchupProjections
-        run: >-
-          python3 tools/rebuild_and_publish.py
-          --scope player-week-fantasy
           --path derived-data/player-week-fantasy
-          --path public/data/PlayerWeekFantasy.json
-          --path public/data/MatchupProjections.json
           --
-          python3 tools/player_week_fantasy_refresh.py
+          bash -euo pipefail -c
+          'pwsh ./public/requests/RequestLeaguePublication.ps1 &&
+          python3 tools/player_week_fantasy_refresh.py'
