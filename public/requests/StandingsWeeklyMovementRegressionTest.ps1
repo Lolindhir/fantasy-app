@@ -103,11 +103,14 @@ $fiveWeekByTeam = @{}
 foreach ($row in $fiveWeekStandings) { $fiveWeekByTeam[[int]$row.TeamID] = $row }
 Assert-Equal -1 $fiveWeekByTeam[1].PlaceDelta 'Current PlaceDelta still describes week 5.'
 Assert-Equal 0 (@($fiveWeekByTeam[1].WeeklyMovements | Where-Object { $_.Week -eq 4 })[0].PlaceDelta) 'Week 4 delta must remain available in the published row.'
-Assert-Equal $false ($plain[0].PSObject.Properties.Name -contains 'WeeklyMovements') 'Completed seasons must omit weekly history.'
-
 $brokenHistory = Get-WeeklyRegularSeasonMovements -teamData $fiveWeekTeams -weeklyMatchups @($fiveWeeks[0..3])
 Assert-Equal 3 @($brokenHistory[1]).Count 'A missing week 5 must preserve validated weeks 2-4, but never fabricate week 5.'
 Assert-Equal $false (@($brokenHistory[1] | Where-Object { $_.Week -eq 5 }).Count -gt 0) 'Missing week 5 must not have movement.'
+# The current table is identical; only the nested history differs. Publishing
+# must still detect the change, rather than depending on scalar row fields.
+$editedRows = @(($fiveWeekStandings | ConvertTo-Json -Depth 12 | ConvertFrom-Json))
+$editedRows[0].WeeklyMovements[0].PlaceDelta = 99
+Assert-Equal $true (Compare-RegularSeasonStandings -oldRegularSeason $fiveWeekStandings -newRegularSeason $editedRows) 'Nested weekly history must participate in compare/publish.'
 Assert-Equal $true (Compare-RegularSeasonStandings -oldRegularSeason $standings -newRegularSeason $fiveWeekStandings) 'Current and historic movement change detection must trigger.'
 
 # Without the movement switch (completed seasons) the fields must not exist.
