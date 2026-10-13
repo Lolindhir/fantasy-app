@@ -110,7 +110,7 @@ def build_team_week_performance(
     if any(not slot.slot_id or not slot.eligible_positions for slot in slots):
         raise ValueError("Invalid slot definition")
     if type(expected_team_count) is not int or expected_team_count < 1:
-        raise ValueError("Historical league expected_team_count must be >= 2")
+        raise ValueError("Historical league expected_team_count must be positive")
     if len(matchup_rows) != expected_team_count:
         raise ValueError(
             f"Incomplete weekly fantasy teams: expected {expected_team_count}, got {len(matchup_rows)}"
