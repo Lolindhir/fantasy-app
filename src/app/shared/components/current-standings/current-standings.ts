@@ -5,6 +5,8 @@ import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identit
 import type { CurrentStandingRow } from '../../utils/league-standings-view.util';
 import {
   standingCanonicalDelta,
+  standingPlacementTrend,
+  type StandingPlacementTrend,
   standingMovementLabel,
   standingMovementText,
   standingPerGame,
@@ -66,6 +68,10 @@ export class CurrentStandingsComponent {
 
   recentResultsLabel(results: readonly StandingRecentResult[]): string {
     return recentStandingResultsLabel(results);
+  }
+
+  placementTrend(row: CurrentStandingRow, teamCount: number): StandingPlacementTrend | null {
+    return standingPlacementTrend(row, teamCount);
   }
 
   pointDifferential(row: CurrentStandingRow): number {
