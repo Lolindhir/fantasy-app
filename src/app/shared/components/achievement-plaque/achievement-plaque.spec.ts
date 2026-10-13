@@ -39,9 +39,9 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
     const emblem = fixture.nativeElement.querySelector('.achievement-plaque__emblem img') as HTMLElement;
 
     expect(getComputedStyle(plaque).paddingTop).toBe('6px');
-    expect(getComputedStyle(metal).paddingLeft).toBe('8px');
-    expect(getComputedStyle(metal).paddingTop).toBe('7px');
-    expect(getComputedStyle(body).columnGap).toBe('7px');
+    expect(getComputedStyle(metal).paddingLeft).toBe('6px');
+    expect(getComputedStyle(metal).paddingTop).toBe('6px');
+    expect(getComputedStyle(body).columnGap).toBe('4px');
     expect(getComputedStyle(emblem).width).toBe('46px');
   });
 
