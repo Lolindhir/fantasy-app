@@ -153,6 +153,21 @@ class SourcesTest(unittest.TestCase):
         self.assertEqual(resolve_week_positions(self.root, 2024, 4, self.roster),
                          {"a": "WR", "b": "RB"})
 
+    def test_same_season_finalized_position_takes_precedence_over_older_seasons(self):
+        weekly = self.root / "source-data/nfl/weekly-rosters/2024/04.json"
+        weekly.write_text(json.dumps({"Season": 2024, "Week": 4,
+            "Records": [{"CanonicalPlayerID": "a", "Position": "WR"}]}))
+        historical = self.root / "source-data/nfl/rosters"
+        historical.mkdir(parents=True)
+        (historical / "2024.json").write_text(json.dumps({
+            "Season": 2024, "Finalized": True,
+            "Records": [{"CanonicalPlayerID": "b", "Position": "RB"}]}))
+        (historical / "2023.json").write_text(json.dumps({
+            "Season": 2023, "Finalized": True,
+            "Records": [{"CanonicalPlayerID": "b", "Position": "WR"}]}))
+        self.assertEqual(resolve_week_positions(self.root, 2024, 4, self.roster),
+                         {"a": "WR", "b": "RB"})
+
     def test_prior_season_fallback_rejects_unfinalized_or_future_data(self):
         weekly = self.root / "source-data/nfl/weekly-rosters/2024/04.json"
         weekly.write_text(json.dumps({"Season": 2024, "Week": 4,
