@@ -261,7 +261,7 @@ def load_verified_week_inputs(
         raise WeekSourceNotReady("Missing canonical fantasy team matchup rows")
     league_settings = league.get("Settings")
     expected_teams = league_settings.get("num_teams") if isinstance(league_settings, dict) else None
-    if type(expected_teams) is not int or expected_teams < 2:
+    if type(expected_teams) is not int or expected_teams < 1:
         raise WeekSourceNotReady("Missing valid historical league Settings.num_teams")
     if len(matchups) != expected_teams:
         raise WeekSourceNotReady(
