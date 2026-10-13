@@ -94,12 +94,19 @@ def refresh(repo_root: Path) -> dict[str, Any]:
     league_id, season, week = resolve_target(root)
     target = {"CanonicalLeagueID": league_id, "Season": season, "Week": week}
 
-    if not weekly_roster_path(root, season, week).is_file():
+    target_roster_exists = weekly_roster_path(root, season, week).is_file()
+    previous_roster_exists = week > 1 and weekly_roster_path(root, season, week - 1).is_file()
+    if not target_roster_exists and not previous_roster_exists:
         return {**target, "Status": "skipped-weekly-roster-not-synced"}
 
-    payload = build_player_week_fantasy_dataset(
-        root, league_id=league_id, season=season, week=week
-    )
+    # The current App refresh can project one week ahead using last-known NFL
+    # membership while NFLverse's new weekly partition is not yet available.
+    # This is not enabled for historical/backtest materialization.
+    provisional = not target_roster_exists
+    build_args = {"league_id": league_id, "season": season, "week": week}
+    if provisional:
+        build_args["allow_provisional_roster"] = True
+    payload = build_player_week_fantasy_dataset(root, **build_args)
     derived_changed = write_dataset(
         output_path(root, league_id=league_id, season=season, week=week), payload
     )
@@ -108,6 +115,8 @@ def refresh(repo_root: Path) -> dict[str, Any]:
     return {
         **target,
         "Status": "published",
+        "RosterSourceWeek": week - 1 if provisional else week,
+        "RosterProvisional": provisional,
         "DerivedChanged": derived_changed,
         "AppChanged": app_changed,
         "RecordCount": len(published["Records"]),
