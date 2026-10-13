@@ -78,9 +78,9 @@ def resolve_week_positions(
     """Resolve season-correct natural positions for ALL fantasy matchup players.
 
     The canonical target-week NFL roster is primary. Missing IR/Taxi/bye players
-    can use earlier NFL weekly roster partitions in the SAME season, or a
-    finalized NFL season roster. Never use current platform player profiles or
-    a nonfinalized season roster as a historical substitute.
+    can use earlier NFL weekly roster partitions in the SAME season, a
+    finalized same-season roster, then consistent finalized PRIOR NFL seasons.
+    Never use mutable current player profiles or unfinalized season rosters.
     """
     path = repo_root / "source-data/nfl/weekly-rosters" / str(season) / f"{week:02d}.json"
     payload = _read_json(path)
@@ -155,12 +155,46 @@ def resolve_week_positions(
                     if player_id in positions and positions[player_id] != position:
                         raise WeekSourceNotReady(f"Conflicting finalized season positions for {player_id}")
                     positions[player_id] = position
+    if missing:
+        # A prior *completed* NFL season is immutable historical evidence, even
+        # for a player who has no current-season NFL roster row (e.g. IR).
+        # Match by CanonicalPlayerID and reject disagreements across years.
+        historical_positions: dict[str, str] = {}
+        historical_dir = repo_root / "source-data/nfl/rosters"
+        if historical_dir.is_dir():
+            for prior_path in sorted(historical_dir.glob("*.json")):
+                if not prior_path.stem.isdecimal():
+                    continue
+                prior_season = int(prior_path.stem)
+                if prior_season >= season:
+                    continue
+                prior_doc = _read_json(prior_path)
+                if not isinstance(prior_doc, dict) or prior_doc.get("Season") != prior_season:
+                    raise WeekSourceNotReady(f"Historical NFL roster identity mismatch: {prior_path}")
+                if prior_doc.get("Finalized") is not True:
+                    continue
+                prior_rows = prior_doc.get("Records")
+                if not isinstance(prior_rows, list):
+                    raise WeekSourceNotReady(f"Finalized historical NFL roster missing Records: {prior_path}")
+                for row in prior_rows:
+                    if not isinstance(row, dict):
+                        raise WeekSourceNotReady(f"Invalid historical NFL roster row: {prior_path}")
+                    player_id, position = row.get("CanonicalPlayerID"), row.get("Position")
+                    if player_id not in missing or not isinstance(position, str) or not position.strip():
+                        continue
+                    position = position.strip().upper()
+                    if player_id in historical_positions and historical_positions[player_id] != position:
+                        raise WeekSourceNotReady(
+                            f"Conflicting finalized prior-season positions for {player_id}"
+                        )
+                    historical_positions[player_id] = position
+        positions.update(historical_positions)
     missing = sorted(owned - positions.keys())
     if missing:
         raise WeekSourceNotReady(
             f"Missing historical week {season}/{week} fantasy positions for "
             f"{len(missing)} of {len(owned)} roster players (first IDs: {missing[:5]}). "
-            "No verified same-season evidence; do not substitute current player profiles."
+            "No verified historical position; do not substitute current player profiles."
         )
     return {player_id: positions[player_id] for player_id in sorted(owned)}
 
@@ -225,6 +259,14 @@ def load_verified_week_inputs(
     )
     if not isinstance(matchups, list) or not matchups:
         raise WeekSourceNotReady("Missing canonical fantasy team matchup rows")
+    league_settings = league.get("Settings")
+    expected_teams = league_settings.get("num_teams") if isinstance(league_settings, dict) else None
+    if type(expected_teams) is not int or expected_teams < 2:
+        raise WeekSourceNotReady("Missing valid historical league Settings.num_teams")
+    if len(matchups) != expected_teams:
+        raise WeekSourceNotReady(
+            f"Incomplete weekly fantasy team population: expected {expected_teams}, got {len(matchups)}"
+        )
     positions = resolve_week_positions(repo_root, season, week, matchups)
     slots = resolve_slots_from_existing_rules(repo_root, league_path, positions, runner=runner)
     return {
@@ -234,6 +276,7 @@ def load_verified_week_inputs(
         "scoring_settings": league["ScoringSettings"],
         "slots": slots,
         "matchup_rows": matchups,
+        "expected_team_count": expected_teams,
         "position_by_player": positions,
         "finalized": True,
         "finality_evidence": evidence,
