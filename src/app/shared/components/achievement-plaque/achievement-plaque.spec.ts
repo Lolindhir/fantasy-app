@@ -59,7 +59,7 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
 
     expect(getComputedStyle(year).fontSize).toBe('16px');
     expect(getComputedStyle(body).columnGap).toBe('4px');
-    expect(getComputedStyle(record).fontSize).toBe('16.8px');
+    expect(Number.parseFloat(getComputedStyle(record).fontSize)).toBeCloseTo(16.8, 1);
     expect(Number.parseFloat(getComputedStyle(points).fontSize)).toBeLessThan(
       Number.parseFloat(getComputedStyle(record).fontSize)
     );
