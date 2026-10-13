@@ -149,5 +149,79 @@ class SnapshotTests(unittest.TestCase):
         self.assertTrue(current[0]["notificationDue"])
 
 
+class _FakeResponse:
+    def __init__(self, payload):
+        self._payload = payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def read(self):
+        return self._payload
+
+
+class GithubGetterRetryTests(unittest.TestCase):
+    def getter(self, outcomes, delays=None):
+        calls = []
+        sleeps = []
+
+        def opener(request, timeout):
+            calls.append(request.full_url)
+            outcome = outcomes[min(len(calls) - 1, len(outcomes) - 1)]
+            if isinstance(outcome, BaseException):
+                raise outcome
+            return _FakeResponse(outcome)
+
+        get = module.github_getter(
+            "owner/repo", "token", opener=opener, sleep=sleeps.append, jitter=lambda: 0.0,
+            **({"retry_delays": delays} if delays else {}),
+        )
+        return get, calls, sleeps
+
+    @staticmethod
+    def http_error(code, headers=None):
+        import io
+        from email.message import Message
+        message = Message()
+        for key, value in (headers or {}).items():
+            message[key] = value
+        return module.HTTPError("https://api.github.com/x", code, "err", message, io.BytesIO(b'{"message":"Server Error"}'))
+
+    def test_single_502_is_retried_and_succeeds(self):
+        get, calls, sleeps = self.getter([self.http_error(502), b'{"ok": true}'])
+        self.assertEqual(get("/actions/workflows?per_page=100"), {"ok": True})
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(sleeps, [2.0])
+
+    def test_persistent_5xx_fails_after_budget_with_backoff(self):
+        get, calls, sleeps = self.getter([self.http_error(503)])
+        with self.assertRaisesRegex(RuntimeError, "GitHub API 503"):
+            get("/x")
+        self.assertEqual(len(calls), 4)
+        self.assertEqual(sleeps, [2.0, 5.0, 10.0])
+
+    def test_retry_after_is_honoured_on_429(self):
+        get, _calls, sleeps = self.getter([self.http_error(429, {"Retry-After": "20"}), b"{}"])
+        get("/x")
+        self.assertEqual(sleeps, [20.0])
+
+    def test_network_abort_is_retried(self):
+        get, calls, sleeps = self.getter([module.URLError("reset"), b"{}"])
+        get("/x")
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(sleeps, [2.0])
+
+    def test_client_errors_fail_immediately(self):
+        for code in (401, 403, 404, 422):
+            get, calls, sleeps = self.getter([self.http_error(code)])
+            with self.assertRaisesRegex(RuntimeError, f"GitHub API {code}"):
+                get("/x")
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(sleeps, [])
+
+
 if __name__ == "__main__":
     unittest.main()

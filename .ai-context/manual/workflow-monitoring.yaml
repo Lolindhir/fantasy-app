@@ -58,6 +58,7 @@ snapshot:
   - At or after 30 minutes from the retained Health due slot, the next central scheduler tick must dispatch Health even when a productive target is newly dispatched, in-flight or awaiting observation in that same tick. The machine-readable decision and Job Summary must identify the starvation override and any still-active blockers.
   - Retry-wait, retry-exhausted, retry cooldown, observation-timeout and observation-cooldown are not Health blockers. Once retry or dispatch observation can no longer productively settle in the current window, Health must be allowed to materialize the observable state instead of being starved.
   - The observation barrier delays only Workflow Health. Other productive scheduler targets remain parallel and are not serialized by monitoring.
+  - Snapshot API reads (tools/build_workflow_health_snapshot.py github_getter) retry transient failures (HTTP 429/5xx, network aborts, timeouts) three times with about 2, 5 and 10 seconds backoff plus jitter and log each retry as a warning; client errors fail immediately. Only an error that survives all retries fails the run (Issue 980); snapshot freshness stays the backstop.
   - The snapshot producer itself has no schedule, push or workflow_run trigger; repository activity and unrelated workflow completions must not create Health Snapshot runs.
   - Each actual scheduler dispatch materializes a snapshot directly. There is no snapshot-side freshness gate because the central scheduler owns due-slot deduplication and observation-barrier timing.
   - The verified external Cloudflare cron is the sole automatic wake-up source for the central scheduler through `external-scheduler-tick` repository_dispatch; workflow_dispatch remains available for manual recovery and testing.
@@ -148,6 +149,21 @@ scheduler:
       A game-window target rests outside windows by design. Its workflow entry therefore uses failure streaks only and no staleAfterMinutes, like the seasonal finality workflow before it.
     slotRule: >-
       Satisfied-slot evidence and retry state are keyed by due slot and keep working across cron-set changes; a slot of the idle cron that was already satisfied is never dispatched again when a window ends.
+  apiErrors:
+    issue: 980
+    policyOwner: .github/workflow-schedules.json
+    policyKey: apiErrorPolicy.failAfterConsecutiveTicks
+    implementation: tools/run-workflow-scheduler-entry.cjs (read retry) and tools/run-workflow-scheduler-runtime.cjs (decision and counter)
+    retryRule: >-
+      Workflow-run list reads (primary and fallback) retry HTTP 429, 500, 502, 503, 504, network aborts and timeouts up to three times with backoff of about 2, 5 and 10 seconds plus jitter (retry-after honoured on 429, capped at 30 s); every retry is logged as a warning with workflow and attempt. 401, 403, 404, 422 and all other errors are not retried and fail the run immediately.
+    dispatchRule: >-
+      createDispatchEvent is never repeated blindly because a 5xx leaves it unknown whether the event was delivered. A transient dispatch failure records no run state and counts as an API error for that tick; the next tick sees a landed run as in-flight or dispatches again, so the existing observation logic (ADR-034) prevents duplicates.
+    decisionRule: >-
+      A target whose read (after retries) or dispatch still fails transiently gets the decision `api-error` for this tick: nothing is dispatched and its retry/observation state stays unchanged. The decision is visible in the JSON decision log, the summary counter and a `GitHub API errors` section of the Job Summary.
+    persistenceRule: >-
+      runtime state carries optional apiErrors.<targetId> (consecutiveTicks, firstAt, lastAt, lastError; no schema version bump). It is reset by the first tick without an API error for that target and pruned for removed targets.
+    failureRule: >-
+      A single transient API error is a warning. When the same target fails in apiErrorPolicy.failAfterConsecutiveTicks (default 2) consecutive ticks, the scheduler run fails after all other targets and the state were processed, so a persistent outage stays visible to run-health monitoring.
   projectFieldSync:
     policyOwner: .github/workflow-schedules.json
     implementation: tools/run-project-field-sync-scheduler.cjs
