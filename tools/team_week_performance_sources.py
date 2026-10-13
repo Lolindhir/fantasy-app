@@ -155,6 +155,7 @@ def resolve_week_positions(
                     if player_id in positions and positions[player_id] != position:
                         raise WeekSourceNotReady(f"Conflicting finalized season positions for {player_id}")
                     positions[player_id] = position
+    missing = owned - positions.keys()
     if missing:
         # A prior *completed* NFL season is immutable historical evidence, even
         # for a player who has no current-season NFL roster row (e.g. IR).
