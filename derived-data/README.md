@@ -58,6 +58,14 @@ slot eligibility. Starter, Bench, Taxi and IR/Reserve are all considered.
 The shared result is designed for WeeklyRecaps/Overview, Team History, Season
 Awards and other consumers; no consumer should recompute these domain values.
 
+**Historical input adapter:** `tools/team_week_performance_sources.py`
+validates both canonical NFL week finality and the League's scored-week
+boundary, resolves week-specific player positions and delegates all starter/
+FLEX slot eligibility to the existing FantasyRelevance PowerShell helpers
+through `public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1`.
+Missing historical position evidence fails closed; the adapter does not
+implicitly approve intraweek-ownership timing or publish derived records.
+
 **Current checkpoint:** The calculator, writer and tests exist, but no
 producer job, real derived-data partition, App publisher or frontend consumer
 has been activated. Full historical fantasy-position coverage, intraweek

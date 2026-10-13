@@ -15,6 +15,8 @@ physicalOwner:
     calculation: tools/team_week_performance.py::build_team_week_performance
     persistence: tools/team_week_performance.py::save_team_week_performance
     optimizer: tools/weekly_lineup_optimizer.py::maximize_lineup
+    canonicalInputAdapter: tools/team_week_performance_sources.py::load_verified_week_inputs
+    lineupEligibilityBridge: public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1
   status: writer-implemented-but-not-yet-orchestrated
   delivery: >
     An App publisher/read-model projection must be separately implemented.
@@ -64,7 +66,9 @@ inputs:
   historicalFantasyPositions:
     requirement: >
       For ALL candidate CanonicalPlayerIDs, caller must provide a verified
-      week-appropriate fantasy position. Missing positions fail closed.
+      week-appropriate fantasy position. The source adapter first checks
+      source-data/nfl/weekly-rosters/<season>/<week:02d>.json::Records.
+      Missing positions fail closed.
       Week-specific NFL roster evidence is the preferred historical anchor,
       but rostered IR/Taxi players may need a separate trustworthy, season-
       appropriate fantasy position fallback. Using today's profile to infer
@@ -72,7 +76,9 @@ inputs:
   finality:
     requirement: >
       Producer must verify finality independently from canonical NFL
-      game finality and the league's scored-week state before passing
+      game finality and the league's scored-week state (canonical league
+      WeekStructure.LastScoredLeg); the source adapter reuses the existing
+      player_week_fantasy_materialize._week_finality reader before passing
       finalized=True and concrete finality_evidence. The builder checks this
       explicit gate but does not itself verify the asserted source.
       Simply having non-null PlayerPoints or a week-N source file is NOT
