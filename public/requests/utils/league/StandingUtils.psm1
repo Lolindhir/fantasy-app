@@ -346,7 +346,9 @@ function Get-PreviousWeekRegularSeasonPlaces {
         [array]$teamData,
         [AllowNull()]
         [AllowEmptyCollection()]
-        [array]$weeklyMatchups
+        [array]$weeklyMatchups,
+        # Optional exact completed week. Default preserves legacy "previous week" behavior.
+        [int]$ThroughWeek = -1
     )
 
     $teams = @($teamData)
@@ -360,7 +362,8 @@ function Get-PreviousWeekRegularSeasonPlaces {
     $completedWeeks = [int]$gamesPlayed[0]
     if ($completedWeeks -lt 2) { return $null }
 
-    $previousWeeks = $completedWeeks - 1
+    $previousWeeks = if ($ThroughWeek -ge 0) { $ThroughWeek } else { $completedWeeks - 1 }
+    if ($previousWeeks -lt 1 -or $previousWeeks -gt $completedWeeks) { return $null }
     $weeksByNumber = @{}
     foreach ($weekEntry in @($weeklyMatchups)) {
         if ($null -ne $weekEntry) { $weeksByNumber[[int]$weekEntry.Week] = $weekEntry }
@@ -456,6 +459,49 @@ function Get-PreviousWeekRegularSeasonPlaces {
     return $places
 }
 
+# Preserve a validated place movement for each finished regular-season week.
+# A missing/contradictory canonical week stops the history at that point; later
+# weeks are never assigned an inferred position. Week 1 has no previous week.
+function Get-WeeklyRegularSeasonMovements {
+    param(
+        [Parameter(Mandatory = $true)][array]$teamData,
+        [AllowNull()][AllowEmptyCollection()][array]$weeklyMatchups
+    )
+
+    $historyByTeam = @{}
+    foreach ($team in $teamData) { $historyByTeam[[int]$team.TeamID] = @() }
+
+    $gamesPlayed = @($teamData | ForEach-Object { ([string]$_.Record).Length } | Select-Object -Unique)
+    if ($gamesPlayed.Count -ne 1) { return $historyByTeam }
+
+    $previousPlaces = $null
+    for ($week = 1; $week -le [int]$gamesPlayed[0]; $week++) {
+        $places = Get-PreviousWeekRegularSeasonPlaces -teamData $teamData -weeklyMatchups $weeklyMatchups -ThroughWeek $week
+        if ($null -eq $places) { break }
+
+        if ($null -ne $previousPlaces) {
+            foreach ($team in $teamData) {
+                $teamID = [int]$team.TeamID
+                if (-not $places.ContainsKey($teamID) -or -not $previousPlaces.ContainsKey($teamID)) {
+                    return $historyByTeam
+                }
+                $place = [int]$places[$teamID]
+                $previousPlace = [int]$previousPlaces[$teamID]
+                $historyByTeam[$teamID] += [PSCustomObject][ordered]@{
+                    Week              = $week
+                    Place             = $place
+                    PreviousWeekPlace = $previousPlace
+                    PlaceDelta        = $previousPlace - $place
+                }
+            }
+        }
+
+        $previousPlaces = $places
+    }
+
+    return $historyByTeam
+}
+
 function Get-RegularSeasonStandings {
     param (
         [Parameter(Mandatory = $true)]
@@ -466,6 +512,7 @@ function Get-RegularSeasonStandings {
         # weekly movement fields, e.g. for completed seasons.
         [AllowNull()]
         [hashtable]$previousWeekPlaces = $null,
+        [AllowNull()][hashtable]$weeklyMovementsByTeam = $null,
         [switch]$includeWeeklyMovement
     )
 
@@ -589,6 +636,12 @@ function Get-RegularSeasonStandings {
             }
             $row['PreviousWeekPlace'] = $previousPlace
             $row['PlaceDelta'] = $placeDelta
+            $teamID = [int]$team.TeamID
+            $row['WeeklyMovements'] = if ($null -ne $weeklyMovementsByTeam -and $weeklyMovementsByTeam.ContainsKey($teamID)) {
+                @($weeklyMovementsByTeam[$teamID])
+            } else {
+                @()
+            }
         }
 
         [PSCustomObject]$row
@@ -617,6 +670,18 @@ function Compare-RegularSeasonStandings{
     if(Compare-Standings -oldStandings $oldRegularSeason -newStandings $newRegularSeason -propertiesToCheck (Get-RegularSeasonProperties)) {
         Write-Host "Regular season standings changed."
         return $true
+    }
+
+    # A previously published weekly movement may change even when current
+    # wins, points and current PlaceDelta are identical. Compare nested values
+    # explicitly; Compare-Standings' scalar -ne is not an array comparator.
+    for ($i = 0; $i -lt @($newRegularSeason).Count; $i++) {
+        $oldHistory = if ($i -lt @($oldRegularSeason).Count) { @($oldRegularSeason[$i].WeeklyMovements) } else { @() }
+        $newHistory = @($newRegularSeason[$i].WeeklyMovements)
+        if ((ConvertTo-Json -InputObject $oldHistory -Depth 6 -Compress) -cne (ConvertTo-Json -InputObject $newHistory -Depth 6 -Compress)) {
+            Write-Host "Regular season weekly movements changed for team '$($newRegularSeason[$i].TeamID)'."
+            return $true
+        }
     }
 
     return $false
@@ -902,10 +967,12 @@ function Get-StandingsRemote {
 
         # Regular Season Standings berechnen
         $previousWeekPlaces = $null
+        $weeklyMovementsByTeam = $null
         if ($includeWeeklyMovement) {
             $previousWeekPlaces = Get-PreviousWeekRegularSeasonPlaces -teamData $teamData -weeklyMatchups $weeklyMatchups
+            $weeklyMovementsByTeam = Get-WeeklyRegularSeasonMovements -teamData $teamData -weeklyMatchups $weeklyMatchups
         }
-        $regularStandings = Get-RegularSeasonStandings -teamData $teamData -regularSeasonGames $regularSeasonGames -previousWeekPlaces $previousWeekPlaces -includeWeeklyMovement:$includeWeeklyMovement
+        $regularStandings = Get-RegularSeasonStandings -teamData $teamData -regularSeasonGames $regularSeasonGames -previousWeekPlaces $previousWeekPlaces -weeklyMovementsByTeam $weeklyMovementsByTeam -includeWeeklyMovement:$includeWeeklyMovement
 
         if($regularStandings.Count -eq 0){
             Write-Host "No regular season information available yet." -ForegroundColor Cyan

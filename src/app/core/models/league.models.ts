@@ -164,6 +164,13 @@ export interface PlacementRegularSeason extends Placement {
   PreviousWeekPlace?: number | null;
   /** Current season only: PreviousWeekPlace - Place (positive = moved up); null if no comparison exists. */
   PlaceDelta?: number | null;
+  /** Current season only: validated per-completed-week movement for as-of standings (no entry for Week 1). */
+  WeeklyMovements?: Array<{
+    Week: number;
+    Place: number;
+    PreviousWeekPlace: number;
+    PlaceDelta: number;
+  }>;
 }
 
 export interface PlacementRegularSeasonAllTime extends Omit<PlacementRegularSeason, 'Record' | 'Streak'> {
