@@ -56,15 +56,35 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
     const emblem = fixture.nativeElement.querySelector('.achievement-plaque__emblem img') as HTMLElement;
     const avatar = fixture.nativeElement.querySelector('.achievement-plaque__primary-avatar') as HTMLElement;
 
-    expect(getComputedStyle(year).fontSize).toBe('16px');
+    expect(Number.parseFloat(getComputedStyle(year).fontSize)).toBeCloseTo(13.12, 1);
     expect(getComputedStyle(emblem).width).toBe('46px');
-    expect(getComputedStyle(avatar).width).toBe('50px');
+    expect(getComputedStyle(avatar).width).toBe('52px');
     expect(getComputedStyle(plaque).width).toBe('280px');
     expect(fixture.nativeElement.querySelector('.achievement-plaque__stats')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Record');
     expect(fixture.nativeElement.textContent).not.toContain('Points');
     expect(fixture.nativeElement.textContent).toContain('ND - Fighting Childish');
     expect(fixture.nativeElement.textContent).toContain('Regular Season Champion');
+  });
+
+  it('matches banner title sizes and gives both avatar outlines neutral contrast', () => {
+    (fixture.nativeElement as HTMLElement).style.width = '280px';
+    fixture.componentInstance.subjectAvatar = 'assets/2025-team.png';
+    fixture.componentInstance.secondaryAvatar = 'assets/2025-owner.png';
+    fixture.detectChanges();
+
+    const year = fixture.nativeElement.querySelector('.achievement-plaque__year') as HTMLElement;
+    const title = fixture.nativeElement.querySelector('.achievement-plaque__title') as HTMLElement;
+    const name = fixture.nativeElement.querySelector('.achievement-plaque__name') as HTMLElement;
+    const primary = fixture.nativeElement.querySelector('.achievement-plaque__primary-avatar') as HTMLElement;
+    const secondary = fixture.nativeElement.querySelector('.achievement-plaque__secondary-avatar') as HTMLElement;
+
+    expect(Number.parseFloat(getComputedStyle(year).fontSize)).toBeCloseTo(13.12, 1);
+    expect(Number.parseFloat(getComputedStyle(title).fontSize)).toBeCloseTo(12.48, 1);
+    expect(Number.parseFloat(getComputedStyle(name).fontSize)).toBeLessThanOrEqual(15.36);
+    expect(getComputedStyle(primary).width).toBe('52px');
+    expect(getComputedStyle(primary).borderTopColor).toBe('rgb(247, 242, 232)');
+    expect(getComputedStyle(secondary).borderTopColor).toBe('rgb(247, 242, 232)');
   });
 
   it('keeps the real team avatar when a snapshot provides one', () => {
