@@ -64,13 +64,18 @@ boundary, resolves week-specific player positions and delegates all starter/
 FLEX slot eligibility to the existing FantasyRelevance PowerShell helpers
 through `public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1`.
 Missing target-week positions may fall back to consistent earlier weeks
-of the same season, and then a finalized same-season canonical NFL roster.
-Missing/contradictory historical position evidence fails closed. The fantasy
+of the same season, then a finalized same-season NFL roster, then only a
+**prior finalized NFL season** with a matching canonical player ID and no
+conflicting older finalized season positions. Missing/contradictory historical
+position evidence fails closed. Partial weekly team populations are rejected
+against the historical league `Settings.num_teams`; actual starters must
+fit the historical slot configuration. The fantasy
 team's canonical matchup-week Players array is its complete retrospective
 candidate pool under ADR-036; no intraweek transfer replay is required.
 The adapter does not publish derived records.
 
 **Current checkpoint:** The calculator, writer and tests exist, but no
 producer job, real derived-data partition, App publisher or frontend consumer
-has been activated. Full historical fantasy-position coverage and canonical
-week finality must be validated first; the weekly ownership pool is settled.
+has been activated. Real full-repository Python integration, PowerShell
+slot-bridge execution and canonical scoring parity remain publication gates.
+The week-scoped fantasy ownership pool is settled.
