@@ -35,7 +35,7 @@ export class CurrentStandingsComponent {
 
   readonly mobileTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr', 'owner'];
   readonly desktopTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
-  readonly detailedTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name', 'owner'];
+  readonly detailedTeamIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
 
   formatRecord(row: CurrentStandingRow): string {
     const { Wins: wins, Losses: losses, Ties: ties } = row.team;

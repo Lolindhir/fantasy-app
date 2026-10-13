@@ -40,8 +40,7 @@
   <ng-template #detailedStandings>
     <div class="standing-detailed-heading">
       <h2>{{ title }}</h2>
-      <span class="standing-detailed-column-heading standing-detailed-heading--pf">PF</span>
-      <span class="standing-detailed-column-heading standing-detailed-heading--pa">PA</span>
+
     </div>
 
     <ng-container *ngFor="let row of rows">
@@ -66,6 +65,7 @@
             size="small"
           ></app-team-identity>
           <div class="standing-detailed-form-line">
+            <span class="standing-detailed-owner" [title]="row.team.Owner">{{ row.team.Owner }}</span>
             <span class="standing-detailed-record">{{ formatRecord(row) }}</span>
             <span class="standing-detailed-streak" *ngIf="row.team.Streak">{{ row.team.Streak }}</span>
             <ng-container *ngIf="recentResults(row) as results">
@@ -89,8 +89,16 @@
           </div>
         </div>
 
-        <span class="standing-detailed-points standing-detailed-points--for">{{ row.team.Points | number:'1.2-2':'en-US' }}</span>
-        <span class="standing-detailed-points standing-detailed-points--against">{{ row.team.PointsAgainst | number:'1.2-2':'en-US' }}</span>
+        <div class="standing-detailed-scores">
+          <span class="standing-detailed-score">
+            <span class="standing-detailed-score-label">PF</span>
+            <strong class="standing-detailed-points standing-detailed-points--for">{{ row.team.Points | number:'1.2-2':'en-US' }}</strong>
+          </span>
+          <span class="standing-detailed-score">
+            <span class="standing-detailed-score-label">PA</span>
+            <span class="standing-detailed-points standing-detailed-points--against">{{ row.team.PointsAgainst | number:'1.2-2':'en-US' }}</span>
+          </span>
+        </div>
 
         <button
           class="standing-detailed-expand"
