@@ -411,6 +411,33 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Keep all five form markers readable at 320–359px; clip only the secondary owner. */
+@media (max-width: 359px) {
+  .current-standings--detailed {
+    --standing-detail-grid: 20px minmax(0, 1fr) 75px 24px;
+    --standing-detail-gap: 4px;
+  }
+  .standing-detailed-identity {
+    --team-identity-avatar-size: 32px;
+    --team-identity-gap: 5px;
+    --team-identity-title-font-size: 0.76rem;
+  }
+  .standing-detailed-team { min-height: 32px; }
+  .standing-detailed-form-line {
+    top: 19px;
+    left: 37px;
+    gap: 2px;
+    font-size: 0.6rem;
+  }
+  .standing-detailed-streak,
+  .standing-detailed-form { padding-left: 3px; }
+  .standing-detailed-form { gap: 2px; }
+  .standing-detailed-form-dot { width: 6px; height: 6px; }
+  .standing-detailed-points { font-size: 0.66rem; }
+  .standing-detailed-score-label { font-size: 0.5rem; }
+  .standing-detailed-expand { width: 24px; }
+}
+
 @media (min-width: 480px) {
   .current-standings--detailed {
     --standing-detail-grid: 30px minmax(0, 1fr) 96px 32px;
