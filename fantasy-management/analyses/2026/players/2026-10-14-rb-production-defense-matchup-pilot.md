@@ -57,7 +57,7 @@ Chase Brown einzeln:
 
 ## 2025 – einfacher Walk-forward Pilot
 
-**Daten:** `source-data/nfl/player-stats/2025/01.json` bis `10.json` (alle `Finalized=true`). Nur RBs mit mindestens einer Carry oder einem Target im jeweiligen Game; 2025 W1–10: **728 RB-Spiel-Beobachtungen mit mindestens einem Carry/Target**, 298 Defense-Team-Spiele. Davon erfüllen **510** Player-Games die Prognose-Inklusionsbedingungen.
+**Daten:** `source-data/nfl/player-stats/2025/01.json` bis `10.json` (alle `Finalized=true`). Nur RBs mit mindestens einer Carry oder einem Target im jeweiligen Game; 2025 W1–10: **739 RB-Spiel-Beobachtungen mit mindestens einem Carry/Target**, 298 Defense-Team-Spiele. Davon erfüllen **510** Player-Games die Prognose-Inklusionsbedingungen.
 
 **Ex-ante-Regeln, bewusst illustrativ:**
 - Für Week W zunächst Spieler-Durchschnitt aus **allen vorangegangenen** Spielen mit Carry/Target; Spieler braucht mindestens zwei Vorgängerspiele.
