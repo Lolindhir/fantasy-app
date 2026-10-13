@@ -45,8 +45,8 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
     expect(getComputedStyle(emblem).width).toBe('46px');
   });
 
-  it('displays a 280px-sized trophy without record or points, keeping identity intact', () => {
-    (fixture.nativeElement as HTMLElement).style.width = '280px';
+  it('displays a 270px-sized trophy without record or points, keeping identity intact', () => {
+    (fixture.nativeElement as HTMLElement).style.width = '270px';
     fixture.componentInstance.subjectAvatar = 'assets/2024-team.png';
     fixture.componentInstance.secondaryAvatar = 'assets/2024-owner.png';
     fixture.detectChanges();
@@ -59,7 +59,7 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
     expect(Number.parseFloat(getComputedStyle(year).fontSize)).toBeCloseTo(13.12, 1);
     expect(getComputedStyle(emblem).width).toBe('46px');
     expect(getComputedStyle(avatar).width).toBe('52px');
-    expect(getComputedStyle(plaque).width).toBe('280px');
+    expect(getComputedStyle(plaque).width).toBe('270px');
     expect(fixture.nativeElement.querySelector('.achievement-plaque__stats')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Record');
     expect(fixture.nativeElement.textContent).not.toContain('Points');
@@ -68,7 +68,7 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
   });
 
   it('matches banner title sizes and gives both avatar outlines neutral contrast', () => {
-    (fixture.nativeElement as HTMLElement).style.width = '280px';
+    (fixture.nativeElement as HTMLElement).style.width = '270px';
     fixture.componentInstance.subjectAvatar = 'assets/2025-team.png';
     fixture.componentInstance.secondaryAvatar = 'assets/2025-owner.png';
     fixture.detectChanges();
@@ -85,6 +85,8 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
     expect(getComputedStyle(primary).width).toBe('52px');
     expect(getComputedStyle(primary).borderTopColor).toBe('rgb(247, 242, 232)');
     expect(getComputedStyle(secondary).borderTopColor).toBe('rgb(247, 242, 232)');
+    expect(getComputedStyle(secondary).right).toBe('-2px');
+    expect(getComputedStyle(secondary).bottom).toBe('-1px');
   });
 
   it('keeps the real team avatar when a snapshot provides one', () => {
