@@ -54,6 +54,27 @@ describe('AchievementBannerComponent textile treatment', () => {
     expect(style.paddingRight).toBe('3px');
   });
 
+  it('colors both avatar outlines with the gold, silver or bronze thread', () => {
+    fixture.componentInstance.secondaryAvatar = 'assets/owner-avatar.png';
+
+    const expected = [
+      { accent: 'silver', color: 'rgb(225, 229, 234)' },
+      { accent: 'gold', color: 'rgb(240, 206, 131)' },
+      { accent: 'bronze', color: 'rgb(232, 178, 142)' }
+    ] as const;
+
+    for (const tier of expected) {
+      fixture.componentInstance.accent = tier.accent;
+      fixture.detectChanges();
+
+      const primary = fixture.nativeElement.querySelector('.achievement-banner__primary-avatar') as HTMLElement;
+      const secondary = fixture.nativeElement.querySelector('.achievement-banner__secondary-avatar') as HTMLElement;
+
+      expect(getComputedStyle(primary).borderTopColor).toBe(tier.color);
+      expect(getComputedStyle(secondary).borderTopColor).toBe(tier.color);
+    }
+  });
+
   it('uses a common textile background while changing only metallic threading', () => {
     const styles = (['silver', 'gold', 'bronze'] as AchievementBannerAccent[]).map(accent => {
       fixture.componentInstance.accent = accent;
