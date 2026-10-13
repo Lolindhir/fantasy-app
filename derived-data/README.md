@@ -63,10 +63,14 @@ validates both canonical NFL week finality and the League's scored-week
 boundary, resolves week-specific player positions and delegates all starter/
 FLEX slot eligibility to the existing FantasyRelevance PowerShell helpers
 through `public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1`.
-Missing historical position evidence fails closed; the adapter does not
-implicitly approve intraweek-ownership timing or publish derived records.
+Missing target-week positions may fall back to consistent earlier weeks
+of the same season, and then a finalized same-season canonical NFL roster.
+Missing/contradictory historical position evidence fails closed. The fantasy
+team's canonical matchup-week Players array is its complete retrospective
+candidate pool under ADR-036; no intraweek transfer replay is required.
+The adapter does not publish derived records.
 
 **Current checkpoint:** The calculator, writer and tests exist, but no
 producer job, real derived-data partition, App publisher or frontend consumer
-has been activated. Full historical fantasy-position coverage, intraweek
-ownership timing and canonical week finality must be validated first.
+has been activated. Full historical fantasy-position coverage and canonical
+week finality must be validated first; the weekly ownership pool is settled.

@@ -94,6 +94,53 @@ class SourcesTest(unittest.TestCase):
         with self.assertRaisesRegex(WeekSourceNotReady, "Missing historical week .*fantasy positions"):
             resolve_week_positions(self.root, 2024, 4, self.roster)
 
+    def test_prior_week_positions_can_cover_injured_or_taxi_players(self):
+        weekly = self.root / "source-data/nfl/weekly-rosters/2024"
+        (weekly / "04.json").write_text(json.dumps({"Season": 2024, "Week": 4,
+            "Records": [{"CanonicalPlayerID": "a", "Position": "WR"}]}))
+        (weekly / "03.json").write_text(json.dumps({"Season": 2024, "Week": 3,
+            "Records": [{"CanonicalPlayerID": "b", "Position": "RB"}]}))
+        self.assertEqual(resolve_week_positions(self.root, 2024, 4, self.roster), {"a": "WR", "b": "RB"})
+
+    def test_finalized_same_season_roster_fills_remaining_positions(self):
+        weekly = self.root / "source-data/nfl/weekly-rosters/2024/04.json"
+        weekly.write_text(json.dumps({"Season": 2024, "Week": 4,
+            "Records": [{"CanonicalPlayerID": "a", "Position": "WR"}]}))
+        season = self.root / "source-data/nfl/rosters/2024.json"
+        season.parent.mkdir(parents=True)
+        season.write_text(json.dumps({"Season": 2024, "Finalized": True,
+            "Records": [{"CanonicalPlayerID": "b", "Position": "RB"}]}))
+        self.assertEqual(resolve_week_positions(self.root, 2024, 4, self.roster), {"a": "WR", "b": "RB"})
+
+    def test_unfinalized_season_roster_cannot_backfill_historical_position(self):
+        weekly = self.root / "source-data/nfl/weekly-rosters/2024/04.json"
+        weekly.write_text(json.dumps({"Season": 2024, "Week": 4,
+            "Records": [{"CanonicalPlayerID": "a", "Position": "WR"}]}))
+        season = self.root / "source-data/nfl/rosters/2024.json"
+        season.parent.mkdir(parents=True)
+        season.write_text(json.dumps({"Season": 2024, "Finalized": False,
+            "Records": [{"CanonicalPlayerID": "b", "Position": "RB"}]}))
+        with self.assertRaisesRegex(WeekSourceNotReady, "Missing historical week"):
+            resolve_week_positions(self.root, 2024, 4, self.roster)
+
+    def test_conflicting_prior_week_position_evidence_is_rejected(self):
+        weekly = self.root / "source-data/nfl/weekly-rosters/2024"
+        (weekly / "04.json").write_text(json.dumps({"Season": 2024, "Week": 4,
+            "Records": [{"CanonicalPlayerID": "a", "Position": "WR"}]}))
+        for week, pos in [(2, "RB"), (3, "WR")]:
+            (weekly / f"{week:02d}.json").write_text(json.dumps({"Season": 2024, "Week": week,
+                "Records": [{"CanonicalPlayerID": "b", "Position": pos}]}))
+        with self.assertRaisesRegex(WeekSourceNotReady, "Conflicting prior-week"):
+            resolve_week_positions(self.root, 2024, 4, self.roster)
+
+    def test_canonical_weekly_roster_is_authoritative_without_transactions(self):
+        # No transaction directory/snapshots exist in the fixture by design.
+        params = load_verified_week_inputs(
+            self.root, "nfl-reise", 2024, 4, nfl_finality=self.final, runner=self.bridge
+        )
+        self.assertEqual(params["matchup_rows"][0]["Players"], self.roster[0]["Players"])
+        self.assertFalse((self.root / "source-data/leagues/nfl-reise/seasons/2024/transactions").exists())
+
     def test_week_identity_mismatch_is_rejected(self):
         roster_file = self.root / "source-data/nfl/weekly-rosters/2024/04.json"
         roster_file.write_text(json.dumps({"Season": 2024, "Week": 5, "Records": []}))

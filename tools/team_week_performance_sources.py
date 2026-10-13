@@ -1,7 +1,7 @@
 """Fail-closed canonical input adapter for reusable TeamWeekPerformance.
 
 This adapter does not publish data. It avoids inferring historical roster
-positions or intraweek eligibility from mutable current-season player data.
+positions from mutable current-season player data.
 """
 
 from __future__ import annotations
@@ -75,10 +75,12 @@ def validate_final_week(
 def resolve_week_positions(
     repo_root: Path, season: int, week: int, matchup_rows: list[dict],
 ) -> dict[str, str]:
-    """Use only the historical week-specific NFL roster for natural position.
+    """Resolve season-correct natural positions for ALL fantasy matchup players.
 
-    Missing IR/Taxi or bye-week players are reported, not silently assigned a
-    present-day Sleeper position. A canonical historical fallback is future work.
+    The canonical target-week NFL roster is primary. Missing IR/Taxi/bye players
+    can use earlier NFL weekly roster partitions in the SAME season, or a
+    finalized NFL season roster. Never use current platform player profiles or
+    a nonfinalized season roster as a historical substitute.
     """
     path = repo_root / "source-data/nfl/weekly-rosters" / str(season) / f"{week:02d}.json"
     payload = _read_json(path)
@@ -105,15 +107,62 @@ def resolve_week_positions(
             if not isinstance(player_id, str) or not player_id:
                 raise WeekSourceNotReady("Invalid historical fantasy roster player reference")
             owned.add(player_id)
+    missing = owned - positions.keys()
+    if missing:
+        # Earlier weeks are immutable historical evidence for the same season.
+        # Inspect every earlier week, not merely the nearest row, so conflicting
+        # historical position changes cannot be silently masked.
+        prior_positions: dict[str, str] = {}
+        for prior_week in range(1, week):
+            prior_path = path.parent / f"{prior_week:02d}.json"
+            if not prior_path.is_file():
+                continue
+            prior_doc = _read_json(prior_path)
+            if (not isinstance(prior_doc, dict) or prior_doc.get("Season") != season
+                    or prior_doc.get("Week") != prior_week or not isinstance(prior_doc.get("Records"), list)):
+                raise WeekSourceNotReady(f"Invalid prior-week NFL roster identity: {prior_path}")
+            for row in prior_doc["Records"]:
+                if not isinstance(row, dict):
+                    raise WeekSourceNotReady(f"Invalid prior-week NFL roster row: {prior_path}")
+                player_id, position = row.get("CanonicalPlayerID"), row.get("Position")
+                if player_id not in missing or not isinstance(position, str) or not position.strip():
+                    continue
+                position = position.strip().upper()
+                if player_id in prior_positions and prior_positions[player_id] != position:
+                    raise WeekSourceNotReady(f"Conflicting prior-week historical positions for {player_id}")
+                prior_positions[player_id] = position
+        positions.update(prior_positions)
+        missing = owned - positions.keys()
+    if missing:
+        # A finalized season roster is historical (not a mutable current-state
+        # snapshot); its season-scoped position can fill unmatched inactive rows.
+        season_path = repo_root / "source-data/nfl/rosters" / f"{season}.json"
+        if season_path.is_file():
+            season_doc = _read_json(season_path)
+            if not isinstance(season_doc, dict) or season_doc.get("Season") != season:
+                raise WeekSourceNotReady(f"NFL season roster identity mismatch: {season_path}")
+            if season_doc.get("Finalized") is True:
+                records = season_doc.get("Records")
+                if not isinstance(records, list):
+                    raise WeekSourceNotReady(f"Finalized season roster missing Records: {season_path}")
+                for row in records:
+                    if not isinstance(row, dict):
+                        raise WeekSourceNotReady(f"Invalid NFL season roster row: {season_path}")
+                    player_id, position = row.get("CanonicalPlayerID"), row.get("Position")
+                    if player_id not in missing or not isinstance(position, str) or not position.strip():
+                        continue
+                    position = position.strip().upper()
+                    if player_id in positions and positions[player_id] != position:
+                        raise WeekSourceNotReady(f"Conflicting finalized season positions for {player_id}")
+                    positions[player_id] = position
     missing = sorted(owned - positions.keys())
     if missing:
         raise WeekSourceNotReady(
             f"Missing historical week {season}/{week} fantasy positions for "
             f"{len(missing)} of {len(owned)} roster players (first IDs: {missing[:5]}). "
-            "Do not substitute current player profiles."
+            "No verified same-season evidence; do not substitute current player profiles."
         )
     return {player_id: positions[player_id] for player_id in sorted(owned)}
-
 
 def resolve_slots_from_existing_rules(
     repo_root: Path, league_file: Path, positions: dict[str, str],
@@ -163,9 +212,10 @@ def load_verified_week_inputs(
 ) -> dict[str, Any]:
     """Assemble, but do NOT publish, verified canonical team-week inputs.
 
-    A separate same-week acquisition timing audit remains required before
-    production materialization. This method deliberately does not call the
-    JSON writer and does not signal that the timing audit is complete.
+    The canonical matchup week's Players are the authoritative fantasy-team
+    candidate pool (ADR-036); no intraweek transfer replay is required for
+    this deliberately week-scoped award. This adapter does not call the JSON
+    writer; unresolved historical positions or week finality fail closed.
     """
     league_path, league = _league_source(repo_root, canonical_league_id, season)
     evidence = validate_final_week(repo_root, league, season, week, nfl_finality=nfl_finality)

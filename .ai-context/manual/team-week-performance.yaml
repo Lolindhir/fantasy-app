@@ -53,9 +53,13 @@ inputs:
     semantics: >
       Every player appearing in a team's canonical week Players array is
       a hypothetical candidate, including Starter, Bench, Taxi and IR/Reserve.
-      A player must not appear for two teams in the same week. The week source
-      must be checked for temporal validity around intraweek acquisitions.
-      Historical ownership is not inferred from a current roster snapshot.
+      A player must not appear for two teams in the same week. Per ADR-036,
+      the canonical weekly matchup Players list is the authoritative
+      week-scoped fantasy ownership pool. No intraweek transaction replay or
+      per-NFL-kickoff roster snapshot is required by these awards; this is
+      explicitly a retrospective WEEK-POOL metric, not evidence of precise
+      minute-by-minute acquisition eligibility. Historical ownership is
+      not inferred from a current roster snapshot.
   lineupDefinition:
     owner: source-data/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json::RosterPositions
     constraint: >
@@ -68,11 +72,12 @@ inputs:
       For ALL candidate CanonicalPlayerIDs, caller must provide a verified
       week-appropriate fantasy position. The source adapter first checks
       source-data/nfl/weekly-rosters/<season>/<week:02d>.json::Records.
-      Missing positions fail closed.
-      Week-specific NFL roster evidence is the preferred historical anchor,
-      but rostered IR/Taxi players may need a separate trustworthy, season-
-      appropriate fantasy position fallback. Using today's profile to infer
-      a historical fantasy position without evidence is prohibited.
+      Missing target-week positions can use canonical NFL weekly roster
+      partitions strictly earlier in the same season (consistent position
+      required), then the same-season NFL roster only when Finalized=true.
+      If multiple earlier weeks disagree or no trusted historical position
+      exists, fail closed. These fallbacks allow bye/IR/Taxi players without
+      backdating a current Sleeper platform profile.
   finality:
     requirement: >
       Producer must verify finality independently from canonical NFL
