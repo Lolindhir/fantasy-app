@@ -44,7 +44,7 @@
 
     <div class="rest">
       <div *ngFor="let result of resultsVm.remainingTeams" class="team-row">
-        <div class="place">{{ placeEmoji(result.place) }}</div>
+        <div class="place"><app-standing-rank-badge [rank]="result.place" /></div>
 
         <div class="team-row__identity">
           <span class="team-row__avatar-stack">
