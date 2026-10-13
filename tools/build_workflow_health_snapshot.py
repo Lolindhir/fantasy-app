@@ -7,6 +7,9 @@ import argparse
 import hashlib
 import json
 import os
+import random
+import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -28,7 +31,31 @@ def iso_time(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def github_getter(repository: str, token: str) -> ApiGet:
+TRANSIENT_HTTP_STATUSES = frozenset({429, 500, 502, 503, 504})
+DEFAULT_RETRY_DELAYS_SECONDS = (2.0, 5.0, 10.0)
+MAX_RETRY_AFTER_SECONDS = 30.0
+JITTER_MAX_SECONDS = 1.0
+
+
+def retry_after_seconds(headers: Any) -> float:
+    try:
+        value = float(headers.get("Retry-After")) if headers is not None else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+    return min(max(value, 0.0), MAX_RETRY_AFTER_SECONDS)
+
+
+def github_getter(
+    repository: str,
+    token: str,
+    *,
+    opener: Callable[..., Any] = urlopen,
+    sleep: Callable[[float], None] = time.sleep,
+    jitter: Callable[[], float] = lambda: random.uniform(0.0, JITTER_MAX_SECONDS),
+    retry_delays: tuple[float, ...] = DEFAULT_RETRY_DELAYS_SECONDS,
+) -> ApiGet:
+    """Read-only GitHub API getter. Transient failures (5xx, 429, network aborts, timeouts) are retried with
+    backoff; 401/403/404/422 and other client errors fail immediately."""
     base = f"https://api.github.com/repos/{repository}"
 
     def get(path: str) -> JsonDict:
@@ -41,14 +68,31 @@ def github_getter(repository: str, token: str) -> ApiGet:
                 "User-Agent": "fantasy-app-workflow-health-snapshot",
             },
         )
-        try:
-            with urlopen(request, timeout=30) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"GitHub API {exc.code} for {path}: {body}") from exc
-        except URLError as exc:
-            raise RuntimeError(f"GitHub API request failed for {path}: {exc}") from exc
+        for attempt in range(len(retry_delays) + 1):
+            wait = 0.0
+            try:
+                with opener(request, timeout=30) as response:
+                    return json.loads(response.read().decode("utf-8"))
+            except HTTPError as exc:
+                body = exc.read().decode("utf-8", errors="replace")
+                error = RuntimeError(f"GitHub API {exc.code} for {path}: {body}")
+                if exc.code not in TRANSIENT_HTTP_STATUSES or attempt >= len(retry_delays):
+                    raise error from exc
+                reason = f"HTTP {exc.code}"
+                wait = retry_after_seconds(exc.headers)
+            except (URLError, TimeoutError, ConnectionError) as exc:
+                error = RuntimeError(f"GitHub API request failed for {path}: {exc}")
+                if attempt >= len(retry_delays):
+                    raise error from exc
+                reason = type(exc).__name__
+            delay = max(retry_delays[attempt], wait) + jitter()
+            print(
+                f"::warning::GitHub API read {path} failed transiently ({reason}); "
+                f"retrying in {delay:.1f} s (attempt {attempt + 2}/{len(retry_delays) + 1}).",
+                file=sys.stderr,
+            )
+            sleep(delay)
+        raise AssertionError("unreachable")  # pragma: no cover
 
     return get
 

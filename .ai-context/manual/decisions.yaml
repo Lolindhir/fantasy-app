@@ -1631,3 +1631,36 @@ decisions:
         - A fetcher code change reaches production at the next daily run instead of immediately after the merge.
         - The commit message of materializer commits changes to the generated-data schema (data(fantasy-operations): Fantasy Operations inputs).
         - A failed provider leg fails the whole run, so the scheduler retries the complete chain (providers use skip-unchanged).
+
+  - id: ADR-052
+    title: Transient GitHub API read errors are retried and only persistent ones fail the run
+    status: accepted
+    context: >
+      On 2026-10-12 (10:50 to 12:50 UTC) nine REPO Scheduler runs and one Workflow Health Snapshot run failed because a
+      single GitHub API read returned HTTP 5xx (Issue #980). The scheduler already isolated errors per target, but one
+      failed listWorkflowRuns still turned the whole run (monitoring category critical) red, and the Health snapshot had no
+      retry at all. Everything was green again at the next tick.
+    decision: >
+      Robert approved the workflow-adjacent change on 2026-10-13. Idempotent API reads are retried inside the run:
+      transient statuses 429, 500, 502, 503, 504 and network aborts or timeouts, three retries with about 2, 5 and
+      10 seconds backoff plus jitter (retry-after honoured), each logged as a warning; 401, 403, 404 and 422 fail
+      immediately. JS: tools/run-workflow-scheduler-entry.cjs wraps listWorkflowRuns next to the existing state-read retry.
+      Python: github_getter in tools/build_workflow_health_snapshot.py. createDispatchEvent is not retried blindly because a
+      5xx does not prove non-delivery; a transient dispatch failure records no run state and the next tick relies on the
+      observation logic of ADR-034 (a landed run shows up as in-flight). A read or dispatch failure that survives the retries
+      gives the target the decision api-error for that tick (no dispatch, state unchanged), counted in
+      runtimeState.apiErrors.<targetId>. The scheduler run turns red only when the same target hits an API error in
+      apiErrorPolicy.failAfterConsecutiveTicks (2) consecutive ticks.
+    rationale: >
+      A short GitHub outage is infrastructure noise, not a scheduling defect, and must not page via the critical scheduler
+      workflow. A persistent outage must stay visible, so repeated errors per target still fail the run. Not repeating the
+      dispatch avoids duplicate productive runs.
+    consequences:
+      positive:
+        - A single 5xx no longer produces a red Scheduler or Health run.
+        - Retries and api-error decisions are visible in logs, the Job Summary and the machine-readable decisions.
+        - No duplicate dispatch from retrying.
+      negative:
+        - A target with a transient read error is skipped for one tick, so its dispatch may be delayed by five minutes.
+        - A failed dispatch whose event did arrive is only noticed through the next tick's run list.
+        - Retries add up to about 17 seconds (plus jitter) per failing read.

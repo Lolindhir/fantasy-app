@@ -525,9 +525,11 @@ function buildSummaryMarkdown(results, now, config) {
   const observationStates = results.filter((result) => OBSERVATION_DECISIONS.has(result.decision)).length;
   const satisfied = results.filter((result) => result.decision === 'satisfied').length;
   const inFlight = results.filter((result) => result.decision === 'in-flight').length;
+  const apiErrors = results.filter((result) => result.decision === 'api-error').length;
 
   let markdown = `## Scheduler summary — ${formatTimestamp(now, timeZone)}\n\n`;
-  markdown += `**${dispatched} dispatched · ${deferred} deferred · ${retryStates} retry/cooldown · ${observationStates} observation · ${inFlight} in flight · ${satisfied} satisfied**\n\n`;
+  markdown += `**${dispatched} dispatched · ${deferred} deferred · ${retryStates} retry/cooldown · ${observationStates} observation · ${inFlight} in flight · ${satisfied} satisfied`;
+  markdown += `${apiErrors > 0 ? ` · ${apiErrors} API error` : ''}**\n\n`;
   markdown += '| Target | Profile | Status | Action | Due slot | Attempt | Reason |\n';
   markdown += '| --- | --- | --- | --- | --- | --- | --- |\n';
   for (const result of results) {
@@ -560,6 +562,11 @@ function buildSummaryMarkdown(results, now, config) {
     markdown += '\n### Retry / circuit-breaker notes\n\n';
     for (const result of circuits) markdown += `- **${result.id}:** ${reasonForResult(result, timeZone)}\n`;
   }
+  const apiErrorResults = results.filter((result) => result.decision === 'api-error');
+  if (apiErrorResults.length > 0) {
+    markdown += '\n### GitHub API errors\n\n';
+    for (const result of apiErrorResults) markdown += `- **${result.id}:** ${reasonForResult(result, timeZone)}\n`;
+  }
   markdown += '\n<details><summary>Machine-readable decisions</summary>\n\n```json\n';
   markdown += `${JSON.stringify(results, null, 2)}\n`;
   markdown += '```\n</details>\n';
@@ -583,6 +590,33 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
   const runtimeState = JSON.parse(JSON.stringify(loadedState.state));
   const failures = [];
   const evaluated = [];
+  const apiErrorTargets = new Set();
+  const failAfterTicks = base.apiErrorFailAfterTicks(config);
+  // Transient API failures are recorded per target as consecutive ticks; only a persistent failure turns the run red.
+  const noteApiError = (targetId, phase, message) => {
+    apiErrorTargets.add(targetId);
+    const entry = base.recordApiError(runtimeState, targetId, message, now);
+    const text = `${targetId}: GitHub API ${phase} failed transiently (${message}); consecutive ticks ${entry.consecutiveTicks}/${failAfterTicks}`;
+    if (entry.consecutiveTicks >= failAfterTicks) {
+      core.error(text);
+      failures.push(`${targetId}: ${message} (persistent, ${entry.consecutiveTicks} consecutive ticks)`);
+    } else {
+      core.warning(text);
+    }
+    return entry;
+  };
+  const apiErrorResult = (target, profile, phase, message, entry) => ({
+    id: target.id,
+    workflow: target.workflow,
+    profile: target.profile,
+    healthBarrier: profile?.healthBarrier ?? false,
+    decision: 'api-error',
+    apiErrorPhase: phase,
+    error: message,
+    consecutiveTicks: entry.consecutiveTicks,
+    failAfterConsecutiveTicks: failAfterTicks,
+    firstErrorAt: entry.firstAt,
+  });
 
   for (const target of config.targets) {
     try {
@@ -617,8 +651,19 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
       evaluated.push({ target, result: evaluation.result });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      core.error(`${target.id}: ${message}`);
-      failures.push(`${target.id}: ${message}`);
+      if (base.isTransientApiError(error)) {
+        // Persistent transient read failure after the client retries: skip this target for the tick, leave its state untouched.
+        const profile = config.profiles[target.profile];
+        const entry = noteApiError(target.id, 'read', message);
+        evaluated.push({
+          target,
+          result: apiErrorResult(target, profile, 'read', message, entry),
+          apiError: true,
+        });
+      } else {
+        core.error(`${target.id}: ${message}`);
+        failures.push(`${target.id}: ${message}`);
+      }
     }
   }
 
@@ -674,10 +719,24 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
       results.push(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      core.error(`${target.id}: ${message}`);
-      failures.push(`${target.id}: ${message}`);
+      if (result.decision === 'dispatch' && !result.dispatched && base.isTransientApiError(error)) {
+        // A 5xx on createDispatchEvent leaves it unknown whether the event arrived. It is never repeated blindly:
+        // no run state is recorded, and the next tick sees a landed run as in flight before it could dispatch again.
+        const entry = noteApiError(target.id, 'dispatch', message);
+        const apiResult = apiErrorResult(target, config.profiles[target.profile], 'dispatch', message, entry);
+        core.info(JSON.stringify(apiResult));
+        results.push(apiResult);
+      } else {
+        core.error(`${target.id}: ${message}`);
+        failures.push(`${target.id}: ${message}`);
+      }
     }
   }
+
+  for (const target of config.targets) {
+    if (!apiErrorTargets.has(target.id)) base.clearApiError(runtimeState, target.id);
+  }
+  base.pruneApiErrors(runtimeState, config);
 
   try {
     await base.persistSchedulerState({

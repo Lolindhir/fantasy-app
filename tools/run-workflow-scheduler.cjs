@@ -125,6 +125,10 @@ function validateConfig(config) {
   if (config.state.schemaVersion !== 1 || !config.state.branch || !config.state.path) {
     throw new Error('Invalid scheduler state contract');
   }
+  if (config.apiErrorPolicy !== undefined) {
+    const ticks = config.apiErrorPolicy?.failAfterConsecutiveTicks;
+    if (!Number.isInteger(ticks) || ticks < 1) throw new Error('apiErrorPolicy.failAfterConsecutiveTicks must be a positive integer');
+  }
 
   if (!config.retryPolicies || typeof config.retryPolicies !== 'object' || Array.isArray(config.retryPolicies)) {
     throw new Error('Scheduler config must contain retryPolicies');
@@ -513,6 +517,61 @@ function applyTargetDeferral(target, result, peerResults, now) {
   return { ...annotated, deferralExpired: true, deferralReason: 'in-flight-deferral-expired' };
 }
 
+const TRANSIENT_API_HTTP_STATUSES = new Set([429, 500, 502, 503, 504]);
+const TRANSIENT_API_NETWORK_CODES = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'EAI_AGAIN',
+  'ENETUNREACH',
+  'EPIPE',
+  'ETIMEDOUT',
+  'UND_ERR_BODY_TIMEOUT',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_SOCKET',
+]);
+const DEFAULT_API_ERROR_FAIL_AFTER_TICKS = 2;
+
+// Transient GitHub API failures (5xx, 429, network aborts, timeouts). 401/403/404/422 and other errors are not transient.
+function isTransientApiError(error) {
+  const status = Number(error?.status ?? error?.response?.status);
+  if (Number.isInteger(status) && TRANSIENT_API_HTTP_STATUSES.has(status)) return true;
+  return TRANSIENT_API_NETWORK_CODES.has(error?.code || error?.cause?.code || null);
+}
+
+function apiErrorFailAfterTicks(config) {
+  return config.apiErrorPolicy?.failAfterConsecutiveTicks ?? DEFAULT_API_ERROR_FAIL_AFTER_TICKS;
+}
+
+function recordApiError(runtimeState, targetId, message, now) {
+  const previous = runtimeState.apiErrors?.[targetId];
+  const consecutive = (previous?.consecutiveTicks || 0) + 1;
+  runtimeState.apiErrors = {
+    ...(runtimeState.apiErrors || {}),
+    [targetId]: {
+      consecutiveTicks: consecutive,
+      firstAt: previous?.firstAt || now.toISOString(),
+      lastAt: now.toISOString(),
+      lastError: String(message).slice(0, 300),
+    },
+  };
+  return runtimeState.apiErrors[targetId];
+}
+
+function clearApiError(runtimeState, targetId) {
+  if (!runtimeState.apiErrors?.[targetId]) return;
+  delete runtimeState.apiErrors[targetId];
+}
+
+function pruneApiErrors(runtimeState, config) {
+  if (!runtimeState.apiErrors) return;
+  const ids = new Set(config.targets.map((target) => target.id));
+  for (const id of Object.keys(runtimeState.apiErrors)) {
+    if (!ids.has(id)) delete runtimeState.apiErrors[id];
+  }
+  if (Object.keys(runtimeState.apiErrors).length === 0) delete runtimeState.apiErrors;
+}
+
 function createEmptySchedulerState(config) {
   return { schemaVersion: config.state.schemaVersion, targets: {} };
 }
@@ -528,6 +587,16 @@ function validateSchedulerState(state, config) {
     for (const [id, slot] of Object.entries(state.satisfiedSlots)) {
       if (!slot || typeof slot !== 'object' || !Number.isFinite(Date.parse(slot.dueAt || ''))) {
         throw new Error(`Scheduler runtime state satisfiedSlots.${id} needs a valid dueAt`);
+      }
+    }
+  }
+  if (state.apiErrors !== undefined) {
+    if (!state.apiErrors || typeof state.apiErrors !== 'object' || Array.isArray(state.apiErrors)) {
+      throw new Error('Scheduler runtime state apiErrors must be an object');
+    }
+    for (const [id, entry] of Object.entries(state.apiErrors)) {
+      if (!entry || !Number.isInteger(entry.consecutiveTicks) || entry.consecutiveTicks < 1) {
+        throw new Error(`Scheduler runtime state apiErrors.${id} needs consecutiveTicks >= 1`);
       }
     }
   }
@@ -672,6 +741,7 @@ function decisionLabel(result) {
     'retry-exhausted': '❌ Retry exhausted',
     cooldown: '🧯 Cooldown',
     'no-due-slot-in-lookback': '⚪ No due slot',
+    'api-error': '⚠️ API error',
   };
   return labels[result.decision] || result.decision;
 }
@@ -679,6 +749,7 @@ function decisionLabel(result) {
 function actionLabel(result) {
   if (result.decision === 'dispatch') return result.dispatched ? 'Started' : 'Start';
   if (result.decision === 'deferred' || result.decision === 'retry-wait') return 'Wait';
+  if (result.decision === 'api-error') return 'Skipped this tick';
   if (result.decision === 'retry-exhausted') return 'Open circuit';
   return 'No action';
 }
@@ -712,6 +783,8 @@ function reasonForResult(result, timeZone) {
       if (result.hardDispatchBarrier) return `Health waits because productive work starts this tick: ${blockers}.`;
       return `Health waits for productive in-flight work: ${blockers}.`;
     }
+    case 'api-error':
+      return `GitHub API ${result.apiErrorPhase || 'read'} failed transiently after retries (${result.error}); nothing dispatched and state unchanged, consecutive ticks ${result.consecutiveTicks}/${result.failAfterConsecutiveTicks}.`;
     case 'no-due-slot-in-lookback':
       return 'No matching schedule slot exists in the configured lookback.';
     default:
@@ -887,7 +960,12 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
 }
 
 module.exports = {
+  apiErrorFailAfterTicks,
   applyTargetDeferral,
+  clearApiError,
+  isTransientApiError,
+  pruneApiErrors,
+  recordApiError,
   countCancelledRuns,
   isCancelledRun,
   pruneSatisfiedSlots,
