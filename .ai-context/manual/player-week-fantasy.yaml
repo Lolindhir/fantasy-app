@@ -20,7 +20,7 @@ architecture:
   physicalStorage: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
   implementationFoundation: tools/player_week_fantasy.py
   rules:
-    - source-data/nfl/weekly-rosters/<season>/<week>.json remains the canonical week-scoped NFL player anchor.
+    - source-data/nfl/weekly-rosters/<season>/<week>.json remains the authoritative canonical week-scoped NFL player anchor when present. For the live App refresh only, a missing target partition permits a provisional, exactly one-week-old same-season canonical roster; historical/backtest materialization stays strict.
     - PlayerWeekFantasy never mutates or enriches canonical NFL source records in place.
     - public/data is an App delivery layer and is not the shared domain owner.
     - FantasyGameContext, Players/Free Agents and later Fantasy Operations are consumers, not independent scoring owners.
@@ -188,6 +188,18 @@ dependencies:
     key: SettingsHash
   weeklyPlayerAnchor:
     owner: source-data/nfl/weekly-rosters/<season>/<week>.json
+    liveRefreshFallback: >
+      Only when the target-week NFL weekly roster partition is absent, the current App
+      refresh may use the immediately previous week's same-season canonical NFL roster
+      as a provisional set of known players and NFL team membership. The target
+      Season/Week, NFL game schedule, historical training cutoff, and current Sleeper
+      starters remain those of the actual target week. No historical/backtest fallback;
+      an older or malformed fallback partition is never accepted. The derived artifact
+      records Materialization.TargetRosterSourceWeek and TargetRosterProvisional and
+      the refresh status logs the fallback. A later real target-week roster
+      automatically supersedes provisional evidence. Team trades/new players after
+      the prior weekly snapshot may remain unavailable or temporarily stale; do not
+      invent joins or hide unresolved starter coverage.
     invalidates:
       - target-week player population
       - no-game/game association semantics

@@ -12,6 +12,7 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 import player_week_fantasy_refresh as refresh  # noqa: E402
+from player_week_fantasy_materialize import _target_roster  # noqa: E402
 
 
 def write_json(path: Path, payload: object) -> None:
@@ -135,6 +136,102 @@ class RefreshTests(unittest.TestCase):
             self.assertFalse(result["AppChanged"])
             self.assertEqual(result["RecordCount"], 3)
 
+    def test_missing_current_week_uses_previous_roster_for_current_app_refresh(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_repo(root)
+            write_json(refresh.weekly_roster_path(root, 2026, 3), {"Season": 2026, "Week": 3, "Records": []})
+            kwargs_seen = []
+            dataset = {"Records": []}
+            with mock.patch.object(
+                refresh, "build_player_week_fantasy_dataset",
+                side_effect=lambda repo_root, **kwargs: (kwargs_seen.append(kwargs) or dataset),
+            ), mock.patch.object(refresh, "write_dataset", return_value=True), mock.patch.object(
+                refresh, "materialize_app_player_week_fantasy", return_value=({"Records": []}, True)
+            ), mock.patch.object(
+                refresh, "publish_matchup_projections", return_value={"Status": "published"}
+            ):
+                result = refresh.refresh(root)
+            self.assertEqual(result["Status"], "published")
+            self.assertEqual(result["RosterSourceWeek"], 3)
+            self.assertTrue(result["RosterProvisional"])
+            self.assertEqual(kwargs_seen, [{
+                "league_id": "league-a", "season": 2026, "week": 4,
+                "allow_provisional_roster": True,
+            }])
+
+    def test_week_one_does_not_use_previous_season_roster(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_repo(root, context={"LeagueID": "999", "Season": 2026, "Week": 1})
+            result = refresh.refresh(root)
+            self.assertEqual(result["Status"], "skipped-weekly-roster-not-synced")
+
+
+class TargetWeeklyRosterFallbackTests(unittest.TestCase):
+    def test_current_week_is_authoritative_even_when_provisional_is_enabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_json(refresh.weekly_roster_path(root, 2026, 3), {
+                "Season": 2026, "Week": 3,
+                "Records": [{"Position": "WR", "CanonicalPlayerID": "previous", "Team": "OLD"}],
+            })
+            write_json(refresh.weekly_roster_path(root, 2026, 4), {
+                "Season": 2026, "Week": 4,
+                "Records": [{"Position": "WR", "CanonicalPlayerID": "current", "Team": "NEW"}],
+            })
+            roster, finalized, source_week = _target_roster(
+                root, 2026, 4, allow_provisional_roster=True
+            )
+            self.assertEqual(source_week, 4)
+            self.assertFalse(finalized)
+            self.assertEqual([(p["CanonicalPlayerID"], p["Team"]) for p in roster], [("current", "NEW")])
+
+    def test_provisional_uses_only_immediately_previous_week_in_same_season(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_json(refresh.weekly_roster_path(root, 2026, 3), {
+                "Season": 2026, "Week": 3,
+                "Records": [
+                    {"Position": "WR", "CanonicalPlayerID": "known", "Team": "SEA"},
+                    {"Position": "DB", "CanonicalPlayerID": "ignored", "Team": "SEA"},
+                    {"Position": "QB", "CanonicalPlayerID": "retired", "Team": "SEA", "Status": "RET"},
+                ],
+            })
+            roster, finalized, source_week = _target_roster(
+                root, 2026, 4, allow_provisional_roster=True
+            )
+            self.assertEqual(source_week, 3)
+            self.assertFalse(finalized)
+            self.assertEqual([p["CanonicalPlayerID"] for p in roster], ["known"])
+            with self.assertRaises(ValueError):
+                _target_roster(root, 2026, 4)  # Historical/backtest mode: fail closed.
+            with self.assertRaises(ValueError):
+                _target_roster(root, 2026, 5, allow_provisional_roster=True)
+            with self.assertRaises(ValueError):
+                _target_roster(root, 2027, 4, allow_provisional_roster=True)
+
+    def test_provisional_rejects_wrong_week_and_duplicate_identity(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            previous = refresh.weekly_roster_path(root, 2026, 3)
+            write_json(previous, {
+                "Season": 2026, "Week": 2, "Records": []
+            })
+            with self.assertRaisesRegex(ValueError, "season/week mismatch"):
+                _target_roster(root, 2026, 4, allow_provisional_roster=True)
+            write_json(previous, {
+                "Season": 2026, "Week": 3,
+                "Records": [
+                    {"Position": "WR", "CanonicalPlayerID": "same", "Team": "SEA"},
+                    {"Position": "RB", "CanonicalPlayerID": "same", "Team": "DEN"},
+                ],
+            })
+            with self.assertRaisesRegex(ValueError, "Duplicate CanonicalPlayerID"):
+                _target_roster(root, 2026, 4, allow_provisional_roster=True)
+
+
+class RefreshErrorTests(unittest.TestCase):
     def test_generator_failure_is_not_swallowed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -109,10 +109,24 @@ def _target_roster(
     repo_root: Path,
     season: int,
     week: int,
-) -> tuple[list[dict[str, Any]], bool]:
-    path = repo_root / "source-data/nfl/weekly-rosters" / str(season) / f"{week:02d}.json"
+    *,
+    allow_provisional_roster: bool = False,
+) -> tuple[list[dict[str, Any]], bool, int]:
+    """Use the target NFL weekly roster, or one prior week for current App pregame refresh.
+
+    Historical/backtest calls remain strict by default. A previous-week roster
+    supplies last-known NFL team membership, never target-week results.
+    """
+    directory = repo_root / "source-data/nfl/weekly-rosters" / str(season)
+    source_week = week
+    path = directory / f"{week:02d}.json"
+    if not path.is_file() and allow_provisional_roster and week > 1:
+        previous_path = directory / f"{week - 1:02d}.json"
+        if previous_path.is_file():
+            path = previous_path
+            source_week = week - 1
     payload = _require_object(path)
-    if payload.get("Season") != season or payload.get("Week") != week:
+    if payload.get("Season") != season or payload.get("Week") != source_week:
         raise ValueError(f"Weekly roster season/week mismatch: {path}")
     rows = payload.get("Records")
     if not isinstance(rows, list):
@@ -145,7 +159,7 @@ def _target_roster(
             }
         )
     players.sort(key=lambda row: row["CanonicalPlayerID"])
-    return players, payload.get("Finalized") is True
+    return players, payload.get("Finalized") is True, source_week
 
 
 def _scheduled_teams(repo_root: Path, season: int, week: int) -> set[str]:
@@ -1006,11 +1020,14 @@ def build_player_week_fantasy_dataset(
     season: int,
     week: int,
     scoring_season: int | None = None,
+    allow_provisional_roster: bool = False,
 ) -> dict[str, Any]:
     root = repo_root.resolve()
     scoring_season = season if scoring_season is None else scoring_season
     scoring, scoring_profile = _scoring_settings(root, league_id, scoring_season)
-    roster, roster_finalized = _target_roster(root, season, week)
+    roster, roster_finalized, roster_source_week = _target_roster(
+        root, season, week, allow_provisional_roster=allow_provisional_roster
+    )
     scheduled_teams = _scheduled_teams(root, season, week)
 
     model_state = _build_model_state(
@@ -1080,6 +1097,8 @@ def build_player_week_fantasy_dataset(
     }
     contract["Materialization"] = {
         "TargetWeeklyRosterFinalized": roster_finalized,
+        "TargetRosterSourceWeek": roster_source_week,
+        "TargetRosterProvisional": roster_source_week != week,
         "ActualScoringEvidenceFinalized": actual_finalized,
         "FantasyRelevantPositions": sorted(FANTASY_POSITIONS),
         "ExcludedWeeklyRosterStatuses": sorted(EXCLUDED_WEEKLY_ROSTER_STATUSES),
