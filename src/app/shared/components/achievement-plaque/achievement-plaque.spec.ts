@@ -45,6 +45,32 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
     expect(getComputedStyle(emblem).width).toBe('46px');
   });
 
+  it('uses a smaller year and a single compact stats row with accessible record/points labels', () => {
+    (fixture.nativeElement as HTMLElement).style.width = '300px';
+    fixture.componentInstance.record = '11-3';
+    fixture.componentInstance.points = 2468.78;
+    fixture.detectChanges();
+
+    const year = fixture.nativeElement.querySelector('.achievement-plaque__year') as HTMLElement;
+    const record = fixture.nativeElement.querySelector('.achievement-plaque__record') as HTMLElement;
+    const points = fixture.nativeElement.querySelector('.achievement-plaque__points') as HTMLElement;
+    const stats = fixture.nativeElement.querySelector('.achievement-plaque__stats') as HTMLElement;
+    const body = fixture.nativeElement.querySelector('.achievement-plaque__body') as HTMLElement;
+
+    expect(getComputedStyle(year).fontSize).toBe('16px');
+    expect(getComputedStyle(body).columnGap).toBe('4px');
+    expect(getComputedStyle(record).fontSize).toBe('16.8px');
+    expect(Number.parseFloat(getComputedStyle(points).fontSize)).toBeLessThan(
+      Number.parseFloat(getComputedStyle(record).fontSize)
+    );
+    expect(stats.querySelectorAll('.achievement-plaque__stat-label').length).toBe(0);
+    expect(record.textContent).toContain('Record:');
+    expect(record.textContent).toContain('11-3');
+    expect(points.textContent).toContain('Points:');
+    expect(points.textContent).toContain('2,468.78');
+    expect(points.textContent).toContain('pts');
+  });
+
   it('keeps the real team avatar when a snapshot provides one', () => {
     fixture.componentInstance.subjectAvatar = 'assets/test-team-avatar.png';
     fixture.detectChanges();
