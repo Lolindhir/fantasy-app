@@ -17,6 +17,4 @@ export class AchievementPlaqueComponent {
   @Input() subjectAvatar: string | null | undefined;
   @Input() secondaryAvatar: string | null | undefined;
   @Input() emblemSrc = 'assets/awards/ui/award-regular-season.png';
-  @Input() record: string | null | undefined;
-  @Input() points: number | null | undefined;
 }
