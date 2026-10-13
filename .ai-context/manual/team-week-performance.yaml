@@ -1,6 +1,6 @@
 schemaVersion: 1
 domain: team-week-performance
-status: implementation-checkpoint-2-not-yet-published
+status: implementation-checkpoint-5-not-yet-published
 trackingIssue: 355
 
 purpose: >
@@ -60,6 +60,12 @@ inputs:
       explicitly a retrospective WEEK-POOL metric, not evidence of precise
       minute-by-minute acquisition eligibility. Historical ownership is
       not inferred from a current roster snapshot.
+  expectedTeamPopulation:
+    owner: source-data/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json::Settings.num_teams
+    requirement: >
+      A final week must contain exactly the historical season's configured
+      number of fantasy team matchup rows, with unique CanonicalLeagueRosterIDs.
+      Partial team-week populations fail closed before leaderboard calculation.
   lineupDefinition:
     owner: source-data/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json::RosterPositions
     constraint: >
@@ -75,9 +81,13 @@ inputs:
       Missing target-week positions can use canonical NFL weekly roster
       partitions strictly earlier in the same season (consistent position
       required), then the same-season NFL roster only when Finalized=true.
-      If multiple earlier weeks disagree or no trusted historical position
-      exists, fail closed. These fallbacks allow bye/IR/Taxi players without
-      backdating a current Sleeper platform profile.
+      When still missing, earlier NFL season roster partitions may be used
+      only if Finalized=true, CanonicalPlayerID matches, and every earlier
+      finalized season containing that ID agrees on its Position. Future
+      seasons and nonfinalized rosters are never eligible as fallback evidence.
+      Evidence remains traceable to canonical NFL season/year source partitions;
+      no current Sleeper platform profile is backdated. Conflicts or missing
+      positions fail closed, including for bye/IR/Taxi players.
   finality:
     requirement: >
       Producer must verify finality independently from canonical NFL
@@ -140,7 +150,8 @@ contract:
     Taxi players to fill a slot, without simulating their real activation
     constraints, cuts or irreversible roster moves.
   edgeCases:
-    - Missing/invalid positions, scores, team identities and incomplete starter evidence fail closed.
+    - Missing/invalid positions, scores, team identities, historical league team counts and incomplete starter evidence fail closed.
+    - Every actual starter must be assignable injectively to a historical legal slot; actual starter production must not exceed the theoretical all-roster maximum. Commissioner-adjusted official Points are recorded separately.
     - Empty slots score zero and may be chosen instead of a negative score in this theoretical v1 implementation; compare against intended product semantics before publishing awards.
     - A nonpositive PotentialPoints yields null EfficiencyPercent; no award winners when the league maximum is zero.
     - All exact tied winner roster IDs are kept; consumers must not silently select a favorite.
