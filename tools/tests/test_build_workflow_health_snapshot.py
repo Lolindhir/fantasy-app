@@ -1,7 +1,7 @@
 import importlib.util
 import tempfile
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 MODULE_PATH = Path(__file__).parents[1] / "build_workflow_health_snapshot.py"
@@ -221,6 +221,96 @@ class GithubGetterRetryTests(unittest.TestCase):
                 get("/x")
             self.assertEqual(len(calls), 1)
             self.assertEqual(sleeps, [])
+
+VOLUME_SETTINGS = {"windowHours": 24, "warningFactor": 2, "warningOffset": 2, "cancelledWarningMinimum": 5}
+
+
+def dispatch_runs(count, conclusion="success", start_minutes_ago=30, spacing=10):
+    return [
+        run(
+            1000 + index,
+            conclusion,
+            (NOW - timedelta(minutes=start_minutes_ago + index * spacing)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            event="repository_dispatch",
+        )
+        for index in range(count)
+    ]
+
+
+class RunVolumeTests(unittest.TestCase):
+    PLAYERS = {"id": "players", "timezone": "America/New_York", "cron": ["15 1 * * *", "0 8 * * *", "30 13 * * *"]}
+
+    def test_cron_slot_count_uses_target_timezone(self):
+        start = NOW - timedelta(hours=24)
+        self.assertEqual(module.count_cron_slots(self.PLAYERS["cron"], self.PLAYERS["timezone"], start, NOW), 3)
+        self.assertEqual(module.count_cron_slots(["*/10 * * * *"], "Etc/UTC", start, NOW), 144)
+        self.assertEqual(module.count_cron_slots(["0 17 * * 3"], "Europe/Berlin", start, NOW), 0)
+
+    def test_forty_six_runs_for_three_slots_warns(self):
+        volume = module.evaluate_run_volume(self.PLAYERS, dispatch_runs(46, spacing=15), VOLUME_SETTINGS, EVALUATION, NOW)
+        self.assertEqual(volume["expected24h"], 3)
+        self.assertEqual(volume["observed24h"], 46)
+        self.assertTrue(volume["warning"])
+
+    def test_normal_volume_with_retries_does_not_warn(self):
+        volume = module.evaluate_run_volume(self.PLAYERS, dispatch_runs(8, spacing=60), VOLUME_SETTINGS, EVALUATION, NOW)
+        self.assertFalse(volume["warning"])
+
+    def test_game_window_target_at_dense_cron_does_not_warn(self):
+        target = {"id": "nfl-live", "timezone": "Europe/Berlin", "cron": ["*/10 * * * *"], "mode": "game-window"}
+        volume = module.evaluate_run_volume(target, dispatch_runs(100, spacing=10), VOLUME_SETTINGS, EVALUATION, NOW)
+        self.assertEqual(volume["expected24h"], 144)
+        self.assertFalse(volume["warning"])
+        self.assertTrue(volume["truncated"])
+
+    def test_push_manual_and_old_runs_are_not_counted(self):
+        runs = dispatch_runs(1) + [
+            run(1, "success", "2026-08-29T23:00:00Z", event="push"),
+            run(2, "success", "2026-08-29T22:00:00Z", event="workflow_dispatch"),
+            run(3, "success", "2026-08-27T22:00:00Z", event="repository_dispatch"),
+        ]
+        volume = module.evaluate_run_volume(self.PLAYERS, runs, VOLUME_SETTINGS, EVALUATION, NOW)
+        self.assertEqual(volume["observed24h"], 1)
+
+    def test_many_cancelled_runs_set_hint(self):
+        volume = module.evaluate_run_volume(self.PLAYERS, dispatch_runs(7, "cancelled", spacing=60), VOLUME_SETTINGS, EVALUATION, NOW)
+        self.assertTrue(volume["cancelledWarning"])
+        self.assertFalse(volume["warning"])
+
+    def test_snapshot_lists_warning_without_incident(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".github" / "workflows").mkdir(parents=True)
+            (root / ".github" / "workflows" / "update-players.yml").write_text("name: x\n")
+            (root / ".github" / "workflow-schedules.json").write_text(
+                '{"targets": [{"id": "players", "path": ".github/workflows/update-players.yml", '
+                '"timezone": "America/New_York", "cron": ["15 1 * * *", "0 8 * * *", "30 13 * * *"]}]}'
+            )
+            policy = {
+                "ownership": {"canonicalFile": "p.yaml"},
+                "categories": {"important": CATEGORY},
+                "runEvaluation": {**EVALUATION, "runVolume": {**VOLUME_SETTINGS, "scheduleConfig": ".github/workflow-schedules.json"}},
+                "workflows": {".github/workflows/update-players.yml": {"category": "important", "relevantEvents": ["repository_dispatch"]}},
+            }
+
+            def api_get(path):
+                if path.startswith("/actions/workflows?"):
+                    return {"workflows": [{"id": 10, "path": ".github/workflows/update-players.yml", "state": "active"}]}
+                return {"workflow_runs": dispatch_runs(46, spacing=15)}
+
+            snapshot = module.build_snapshot(policy, "o/r", root, api_get, NOW)
+        self.assertEqual(snapshot["overall"], "healthy")
+        self.assertEqual(snapshot["incidents"], [])
+        self.assertEqual([w["type"] for w in snapshot["warnings"]], ["multiple-starts"])
+        self.assertTrue(snapshot["workflows"][".github/workflows/update-players.yml"]["runVolume"]["warning"])
+
+    def test_canonical_policy_declares_run_volume(self):
+        policy = module.load_policy(REPOSITORY_ROOT / ".ai-context/manual/workflow-monitoring.yaml")
+        settings = policy["runEvaluation"]["runVolume"]
+        targets = module.load_scheduler_targets(REPOSITORY_ROOT, settings["scheduleConfig"])
+        self.assertIn(".github/workflows/league-live.yml", targets)
+        for target in targets.values():
+            module.count_cron_slots(target["cron"], target.get("timezone", "UTC"), NOW - timedelta(hours=1), NOW)
 
 
 if __name__ == "__main__":

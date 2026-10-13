@@ -10,11 +10,12 @@ import os
 import random
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 
 JsonDict = dict[str, Any]
@@ -121,6 +122,108 @@ def workflow_files(root: Path) -> set[str]:
 def incident_key(workflow_path: str, incident_type: str, onset: str) -> str:
     raw = f"{workflow_path}|{incident_type}|{onset}".encode("utf-8")
     return hashlib.sha256(raw).hexdigest()[:24]
+
+
+def _cron_field(spec: str, low: int, high: int) -> set[int]:
+    values: set[int] = set()
+    for part in spec.split(","):
+        base, _, step_text = part.partition("/")
+        step = int(step_text) if step_text else 1
+        if base == "*":
+            start, end = low, high
+        elif "-" in base:
+            first, last = base.split("-", 1)
+            start, end = int(first), int(last)
+        else:
+            start = int(base)
+            end = high if step_text else start
+        values.update(range(start, end + 1, step))
+    return values
+
+
+def parse_cron(expression: str) -> tuple[set[int], set[int], set[int], set[int], set[int], bool, bool]:
+    fields = expression.split()
+    if len(fields) != 5:
+        raise ValueError(f"Unsupported cron expression: {expression!r}")
+    minutes = _cron_field(fields[0], 0, 59)
+    hours = _cron_field(fields[1], 0, 23)
+    days = _cron_field(fields[2], 1, 31)
+    months = _cron_field(fields[3], 1, 12)
+    weekdays = {value % 7 for value in _cron_field(fields[4], 0, 7)}
+    return minutes, hours, days, months, weekdays, fields[2] != "*", fields[4] != "*"
+
+
+def count_cron_slots(expressions: list[str], timezone_name: str, start: datetime, end: datetime) -> int:
+    """Count distinct minutes in (start, end] matching any expression, evaluated in the target timezone."""
+    zone = ZoneInfo(timezone_name)
+    parsed = [parse_cron(item) for item in expressions]
+    count = 0
+    cursor = start.replace(second=0, microsecond=0) + timedelta(minutes=1)
+    while cursor <= end:
+        local = cursor.astimezone(zone)
+        weekday = (local.weekday() + 1) % 7
+        for minutes, hours, days, months, weekdays, day_restricted, weekday_restricted in parsed:
+            if local.minute not in minutes or local.hour not in hours or local.month not in months:
+                continue
+            if day_restricted and weekday_restricted:
+                day_ok = local.day in days or weekday in weekdays
+            else:
+                day_ok = local.day in days and weekday in weekdays
+            if day_ok:
+                count += 1
+                break
+        cursor += timedelta(minutes=1)
+    return count
+
+
+def load_scheduler_targets(root: Path, config_path: str) -> dict[str, JsonDict]:
+    path = root / config_path
+    if not path.is_file():
+        return {}
+    config = json.loads(path.read_text(encoding="utf-8"))
+    return {item["path"]: item for item in config.get("targets", []) if item.get("path")}
+
+
+def evaluate_run_volume(target: JsonDict, runs: list[JsonDict], settings: JsonDict, evaluation: JsonDict, now: datetime) -> JsonDict | None:
+    """Compare scheduler-dispatched runs of the last window with the planned slots (informational, never paging)."""
+    window_hours = int(settings.get("windowHours", 24))
+    factor = float(settings.get("warningFactor", 2))
+    offset = int(settings.get("warningOffset", 2))
+    cancelled_min = int(settings.get("cancelledWarningMinimum", 5))
+    start = now - timedelta(hours=window_hours)
+    default_branch = evaluation.get("defaultBranch", "main")
+
+    observed = 0
+    cancelled = 0
+    for item in runs:
+        if item.get("event") != "repository_dispatch":
+            continue
+        head_branch = item.get("head_branch")
+        if head_branch and head_branch != default_branch:
+            continue
+        created = parse_time(item.get("created_at"))
+        if not created or created < start:
+            continue
+        observed += 1
+        if item.get("conclusion") == "cancelled":
+            cancelled += 1
+
+    # A game-window target is bounded by its dense cron; the idle cron is never denser.
+    expected = count_cron_slots(target.get("cron") or [], target.get("timezone", "UTC"), start, now)
+    ratio = round(observed / expected, 2) if expected else None
+    warning = observed > factor * expected + offset
+    cancelled_warning = cancelled >= cancelled_min and cancelled > expected
+    return {
+        "windowHours": window_hours,
+        "observed24h": observed,
+        "expected24h": expected,
+        "ratio": ratio,
+        "warning": warning,
+        "cancelled24h": cancelled,
+        "cancelledWarning": cancelled_warning,
+        "warningThreshold": factor * expected + offset,
+        "truncated": len(runs) >= 100 and bool(runs) and (parse_time(runs[-1].get("created_at")) or now) >= start,
+    }
 
 
 def run_summary(run: JsonDict | None) -> JsonDict | None:
@@ -368,6 +471,13 @@ def build_snapshot(
 
     incidents: list[JsonDict] = []
     drift: list[JsonDict] = []
+    warnings: list[JsonDict] = []
+    volume_settings = evaluation.get("runVolume") or {}
+    scheduler_targets = (
+        load_scheduler_targets(root, volume_settings["scheduleConfig"])
+        if volume_settings.get("scheduleConfig")
+        else {}
+    )
 
     for path in sorted(local_files - configured_files):
         key = incident_key(path, "unclassified-workflow", path)
@@ -407,6 +517,22 @@ def build_snapshot(
         workflow_results[path] = result
         incidents.extend(workflow_incidents)
 
+        target = scheduler_targets.get(path)
+        if target and runs and api_workflow.get("state") == "active":
+            volume = evaluate_run_volume(target, runs, volume_settings, evaluation, now)
+            if volume:
+                result["runVolume"] = volume
+                for kind, flag in (("multiple-starts", "warning"), ("many-cancelled-runs", "cancelledWarning")):
+                    if volume[flag]:
+                        warnings.append({
+                            "type": kind,
+                            "workflow": path,
+                            "targetId": target.get("id"),
+                            "observed24h": volume["observed24h"],
+                            "expected24h": volume["expected24h"],
+                            "cancelled24h": volume["cancelled24h"],
+                        })
+
     incidents = drift + incidents
     renotify = int((evaluation.get("notificationDeduplication") or {}).get("reNotifyAfterHours", 24))
     carry_incident_observation_state(incidents, previous, now, renotify)
@@ -421,6 +547,7 @@ def build_snapshot(
         "overall": "incident" if incidents else "healthy",
         "configurationDrift": [item for item in incidents if item.get("type") in {"unclassified-workflow", "configured-workflow-missing", "workflow-not-in-actions-api", "unknown-category"}],
         "incidents": incidents,
+        "warnings": warnings,
         "workflows": workflow_results,
     }
 
