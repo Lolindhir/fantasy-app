@@ -32,14 +32,12 @@
           {{ subjectName }}
         </div>
         <div class="achievement-plaque__stats">
-          <div *ngIf="record" class="achievement-plaque__stat">
-            <span class="achievement-plaque__stat-label">Record</span>
-            <strong>{{ record }}</strong>
-          </div>
-          <div *ngIf="points !== null && points !== undefined" class="achievement-plaque__stat">
-            <span class="achievement-plaque__stat-label">Points</span>
-            <strong>{{ points | number:'1.2-2' }}</strong>
-          </div>
+          <strong *ngIf="record" class="achievement-plaque__record">
+            <span class="achievement-plaque__sr-only">Record: </span>{{ record }}
+          </strong>
+          <span *ngIf="points !== null && points !== undefined" class="achievement-plaque__points">
+            <span class="achievement-plaque__sr-only">Points: </span>{{ points | number:'1.2-2' }} <span aria-hidden="true">pts</span>
+          </span>
         </div>
       </div>
     </div>
