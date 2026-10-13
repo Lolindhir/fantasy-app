@@ -1,4 +1,5 @@
-<section class="current-standings" *ngIf="standings as rows">
+<section class="current-standings" [class.current-standings--detailed]="variant === 'detailed'" *ngIf="standings as rows">
+  <ng-container *ngIf="variant === 'compact'; else detailedStandings">
   <div class="standing-mobile-heading">
     <h2 class="standing-mobile-title">{{ title === 'Current Standings' ? 'Standings' : title }}</h2>
     <div>Record</div>
@@ -34,4 +35,90 @@
     <div class="standing-record">{{ formatRecord(row) }}</div>
     <div class="standing-points">{{ row.team.Points | number:'1.0-2':'en-US' }}</div>
   </div>
+  </ng-container>
+
+  <ng-template #detailedStandings>
+    <div class="standing-detailed-heading">
+      <h2>{{ title }}</h2>
+      <span class="standing-detailed-column-heading standing-detailed-heading--pf">PF</span>
+      <span class="standing-detailed-column-heading standing-detailed-heading--pa">PA</span>
+    </div>
+
+    <ng-container *ngFor="let row of rows">
+      <div class="standing-detailed-row" [class.standing-detailed-row--cutline]="isPlayoffCutline(row)">
+        <div class="standing-detailed-rank">
+          <strong>{{ row.displayPlace }}</strong>
+          <span
+            class="standing-detailed-movement"
+            [class.standing-detailed-movement--up]="placeDelta(row) !== null && placeDelta(row)! > 0"
+            [class.standing-detailed-movement--down]="placeDelta(row) !== null && placeDelta(row)! < 0"
+            [attr.aria-label]="movementLabel(row)"
+            [title]="movementLabel(row)"
+          >{{ movementText(row) }}</span>
+        </div>
+
+        <div class="standing-detailed-team">
+          <app-team-identity
+            class="standing-detailed-identity"
+            [team]="row.team"
+            [elements]="detailedTeamIdentityElements"
+            size="small"
+          ></app-team-identity>
+          <div class="standing-detailed-form-line">
+            <span class="standing-detailed-record">{{ formatRecord(row) }}</span>
+            <span class="standing-detailed-streak" *ngIf="row.team.Streak">{{ row.team.Streak }}</span>
+            <ng-container *ngIf="recentResults(row) as results">
+              <span
+                *ngIf="results.length > 0"
+                class="standing-detailed-form"
+                role="img"
+                [attr.aria-label]="recentResultsLabel(results)"
+                [title]="recentResultsLabel(results)"
+              >
+                <span
+                  *ngFor="let result of results"
+                  class="standing-detailed-form-dot"
+                  [class.standing-detailed-form-dot--win]="result.result === 'W'"
+                  [class.standing-detailed-form-dot--loss]="result.result === 'L'"
+                  [class.standing-detailed-form-dot--tie]="result.result === 'T'"
+                  aria-hidden="true"
+                ></span>
+              </span>
+            </ng-container>
+          </div>
+        </div>
+
+        <span class="standing-detailed-points standing-detailed-points--for">{{ row.team.Points | number:'1.2-2':'en-US' }}</span>
+        <span class="standing-detailed-points standing-detailed-points--against">{{ row.team.PointsAgainst | number:'1.2-2':'en-US' }}</span>
+
+        <button
+          class="standing-detailed-expand"
+          type="button"
+          [attr.aria-label]="(expandedTeamId === row.team.TeamID ? 'Hide' : 'Show') + ' standing statistics for ' + (row.team.Team || row.team.Owner)"
+          [attr.aria-expanded]="expandedTeamId === row.team.TeamID"
+          [attr.aria-controls]="'standing-details-' + row.team.TeamID"
+          (click)="toggleDetails(row.team.TeamID)"
+        ><span class="standing-detailed-chevron" [class.standing-detailed-chevron--open]="expandedTeamId === row.team.TeamID" aria-hidden="true"></span></button>
+      </div>
+
+      <div
+        *ngIf="expandedTeamId === row.team.TeamID"
+        class="standing-detailed-details"
+        [id]="'standing-details-' + row.team.TeamID"
+      >
+        <div class="standing-detailed-stat">
+          <span>Point Differential</span>
+          <strong>{{ pointDifferential(row) | number:'1.2-2':'en-US' }}</strong>
+        </div>
+        <div class="standing-detailed-stat">
+          <span>Points per Game</span>
+          <strong>{{ pointsPerGame(row) | number:'1.2-2':'en-US' }}</strong>
+        </div>
+        <div class="standing-detailed-stat">
+          <span>Points Against per Game</span>
+          <strong>{{ pointsAgainstPerGame(row) | number:'1.2-2':'en-US' }}</strong>
+        </div>
+      </div>
+    </ng-container>
+  </ng-template>
 </section>
