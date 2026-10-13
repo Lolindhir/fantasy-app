@@ -88,6 +88,7 @@ def build_team_week_performance(
     scoring_settings: Mapping[str, Any],
     slots: Sequence[StartingSlot],
     matchup_rows: Sequence[Mapping[str, Any]],
+    expected_team_count: int,
     position_by_player: Mapping[str, str],
     finalized: bool,
     finality_evidence: str,
@@ -108,8 +109,12 @@ def build_team_week_performance(
         raise ValueError("Explicit unique starting slots are required")
     if any(not slot.slot_id or not slot.eligible_positions for slot in slots):
         raise ValueError("Invalid slot definition")
-    if not matchup_rows:
-        raise ValueError("No fantasy teams for requested week")
+    if type(expected_team_count) is not int or expected_team_count < 2:
+        raise ValueError("Historical league expected_team_count must be >= 2")
+    if len(matchup_rows) != expected_team_count:
+        raise ValueError(
+            f"Incomplete weekly fantasy teams: expected {expected_team_count}, got {len(matchup_rows)}"
+        )
 
     scoring_profile = build_scoring_profile_identity(canonical_league_id, season, scoring_settings)
     teams: list[dict[str, Any]] = []
@@ -143,8 +148,16 @@ def build_team_week_performance(
             if not isinstance(position, str) or not position.strip():
                 raise ValueError(f"Missing historical fantasy position for {player_id}")
             candidates.append(ScoredPlayer(player_id, position.strip().upper(), points[player_id]))
+        # Even though the hypothetical best ball may leave slots empty, the
+        # recorded lineup must admit a one-to-one assignment to historical slots.
+        starter_members = [ScoredPlayer(item.player_id, item.position, Decimal(1))
+                           for item in candidates if item.player_id in starter_points]
+        if len(starters) > len(slots) or len(maximize_lineup(slots, starter_members).assignments) != len(starters):
+            raise ValueError(f"Historical starters cannot fit lineup slots for {roster_id}")
         best_ball = maximize_lineup(slots, candidates)
         actual = sum(starter_points.values(), Decimal(0))
+        if actual > best_ball.points:
+            raise ValueError(f"Actual starter score exceeds all-roster maximum for {roster_id}")
         official = _decimal(row.get("Points"), f"{roster_id}.Points")
         maximum = best_ball.points
         efficiency = actual * Decimal(100) / maximum if maximum > 0 else None
