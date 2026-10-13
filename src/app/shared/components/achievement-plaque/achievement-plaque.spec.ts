@@ -39,10 +39,36 @@ describe('AchievementPlaqueComponent avatar fallback', () => {
     const emblem = fixture.nativeElement.querySelector('.achievement-plaque__emblem img') as HTMLElement;
 
     expect(getComputedStyle(plaque).paddingTop).toBe('6px');
-    expect(getComputedStyle(metal).paddingLeft).toBe('8px');
-    expect(getComputedStyle(metal).paddingTop).toBe('7px');
-    expect(getComputedStyle(body).columnGap).toBe('7px');
+    expect(getComputedStyle(metal).paddingLeft).toBe('6px');
+    expect(getComputedStyle(metal).paddingTop).toBe('6px');
+    expect(getComputedStyle(body).columnGap).toBe('4px');
     expect(getComputedStyle(emblem).width).toBe('46px');
+  });
+
+  it('uses a smaller year and a single compact stats row with accessible record/points labels', () => {
+    (fixture.nativeElement as HTMLElement).style.width = '300px';
+    fixture.componentInstance.record = '11-3';
+    fixture.componentInstance.points = 2468.78;
+    fixture.detectChanges();
+
+    const year = fixture.nativeElement.querySelector('.achievement-plaque__year') as HTMLElement;
+    const record = fixture.nativeElement.querySelector('.achievement-plaque__record') as HTMLElement;
+    const points = fixture.nativeElement.querySelector('.achievement-plaque__points') as HTMLElement;
+    const stats = fixture.nativeElement.querySelector('.achievement-plaque__stats') as HTMLElement;
+    const body = fixture.nativeElement.querySelector('.achievement-plaque__body') as HTMLElement;
+
+    expect(getComputedStyle(year).fontSize).toBe('16px');
+    expect(getComputedStyle(body).columnGap).toBe('4px');
+    expect(Number.parseFloat(getComputedStyle(record).fontSize)).toBeCloseTo(16.8, 1);
+    expect(Number.parseFloat(getComputedStyle(points).fontSize)).toBeLessThan(
+      Number.parseFloat(getComputedStyle(record).fontSize)
+    );
+    expect(stats.querySelectorAll('.achievement-plaque__stat-label').length).toBe(0);
+    expect(record.textContent).toContain('Record:');
+    expect(record.textContent).toContain('11-3');
+    expect(points.textContent).toContain('Points:');
+    expect(points.textContent).toContain('2,468.78');
+    expect(points.textContent).toContain('pts');
   });
 
   it('keeps the real team avatar when a snapshot provides one', () => {

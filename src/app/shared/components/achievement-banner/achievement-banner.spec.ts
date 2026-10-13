@@ -28,6 +28,19 @@ describe('AchievementBannerComponent textile treatment', () => {
     expect(banner.querySelector('.achievement-banner__season')?.textContent).toContain('2025');
   });
 
+  it('makes the regular-season achievement badge 25% larger without resizing the team avatar', () => {
+    fixture.componentInstance.achievementBadgeSrc = 'assets/awards/ui/award-regular-season.png';
+    fixture.detectChanges();
+
+    const badge = fixture.nativeElement.querySelector('.achievement-banner__corner-badge') as HTMLElement;
+    const badgeImage = badge.querySelector('img') as HTMLImageElement;
+    const avatar = fixture.nativeElement.querySelector('.achievement-banner__primary-avatar') as HTMLElement;
+
+    expect(getComputedStyle(badge).width).toBe('32px');
+    expect(getComputedStyle(badgeImage).width).toBe('27px');
+    expect(getComputedStyle(avatar).width).toBe('52px');
+  });
+
   it('reserves 3px of safety space on each side of the team name', () => {
     fixture.componentInstance.subjectName = 'ND - Fighting Childish';
     fixture.detectChanges();
