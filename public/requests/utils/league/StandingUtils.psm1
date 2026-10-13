@@ -637,11 +637,13 @@ function Get-RegularSeasonStandings {
             $row['PreviousWeekPlace'] = $previousPlace
             $row['PlaceDelta'] = $placeDelta
             $teamID = [int]$team.TeamID
-            $row['WeeklyMovements'] = if ($null -ne $weeklyMovementsByTeam -and $weeklyMovementsByTeam.ContainsKey($teamID)) {
-                @($weeklyMovementsByTeam[$teamID])
-            } else {
-                @()
+            $weeklyMovements = @()
+            if ($null -ne $weeklyMovementsByTeam -and $weeklyMovementsByTeam.ContainsKey($teamID)) {
+                $weeklyMovements = @($weeklyMovementsByTeam[$teamID])
             }
+            # Assign the array itself, not the enumerated output of an if expression;
+            # Week 2 must serialize as a one-entry JSON array, not an object.
+            $row['WeeklyMovements'] = $weeklyMovements
         }
 
         [PSCustomObject]$row
