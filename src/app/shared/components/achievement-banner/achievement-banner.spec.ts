@@ -38,6 +38,7 @@ describe('AchievementBannerComponent textile treatment', () => {
 
     expect(getComputedStyle(badge).width).toBe('32px');
     expect(getComputedStyle(badgeImage).width).toBe('27px');
+    expect(Number.parseFloat(getComputedStyle(badge).right)).toBeCloseTo(-10.72, 1);
     expect(getComputedStyle(avatar).width).toBe('52px');
   });
 
