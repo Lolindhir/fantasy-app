@@ -29,6 +29,7 @@ class SourcesTest(unittest.TestCase):
         (league_dir / "league.json").write_text(json.dumps({
             "CanonicalLeagueID": "nfl-reise", "Season": 2024,
             "RosterPositions": ["WR", "FLEX", "REC_FLEX", "BN"],
+            "Settings": {"num_teams": 1},
             "ScoringSettings": {"rec": 1},
             "WeekStructure": {"Season": 2024, "StartWeek": 1,
                               "ExpectedLastLeagueWeek": 17, "LastScoredLeg": 4},
@@ -140,6 +141,54 @@ class SourcesTest(unittest.TestCase):
         )
         self.assertEqual(params["matchup_rows"][0]["Players"], self.roster[0]["Players"])
         self.assertFalse((self.root / "source-data/leagues/nfl-reise/seasons/2024/transactions").exists())
+
+    def test_prior_finalized_season_resolves_inactive_player_position(self):
+        weekly = self.root / "source-data/nfl/weekly-rosters/2024/04.json"
+        weekly.write_text(json.dumps({"Season": 2024, "Week": 4,
+            "Records": [{"CanonicalPlayerID": "a", "Position": "WR"}]}))
+        historical = self.root / "source-data/nfl/rosters/2023.json"
+        historical.parent.mkdir(parents=True)
+        historical.write_text(json.dumps({"Season": 2023, "Finalized": True,
+            "Records": [{"CanonicalPlayerID": "b", "Position": "RB"}]}))
+        self.assertEqual(resolve_week_positions(self.root, 2024, 4, self.roster),
+                         {"a": "WR", "b": "RB"})
+
+    def test_prior_season_fallback_rejects_unfinalized_or_future_data(self):
+        weekly = self.root / "source-data/nfl/weekly-rosters/2024/04.json"
+        weekly.write_text(json.dumps({"Season": 2024, "Week": 4,
+            "Records": [{"CanonicalPlayerID": "a", "Position": "WR"}]}))
+        historical = self.root / "source-data/nfl/rosters/2023.json"
+        historical.parent.mkdir(parents=True)
+        historical.write_text(json.dumps({"Season": 2023, "Finalized": False,
+            "Records": [{"CanonicalPlayerID": "b", "Position": "RB"}]}))
+        future = historical.parent / "2025.json"
+        future.write_text(json.dumps({"Season": 2025, "Finalized": True,
+            "Records": [{"CanonicalPlayerID": "b", "Position": "RB"}]}))
+        with self.assertRaisesRegex(WeekSourceNotReady, "Missing historical week"):
+            resolve_week_positions(self.root, 2024, 4, self.roster)
+
+    def test_conflicting_finalized_prior_seasons_fail_closed(self):
+        weekly = self.root / "source-data/nfl/weekly-rosters/2024/04.json"
+        weekly.write_text(json.dumps({"Season": 2024, "Week": 4,
+            "Records": [{"CanonicalPlayerID": "a", "Position": "WR"}]}))
+        historical = self.root / "source-data/nfl/rosters"
+        historical.mkdir(parents=True)
+        for year, position in [(2022, "WR"), (2023, "RB")]:
+            (historical / f"{year}.json").write_text(json.dumps({
+                "Season": year, "Finalized": True,
+                "Records": [{"CanonicalPlayerID": "b", "Position": position}]}))
+        with self.assertRaisesRegex(WeekSourceNotReady, "Conflicting finalized prior-season"):
+            resolve_week_positions(self.root, 2024, 4, self.roster)
+
+    def test_incomplete_weekly_team_population_fails_closed(self):
+        league_file = self.root / "source-data/leagues/nfl-reise/seasons/2024/league.json"
+        league = json.loads(league_file.read_text())
+        league["Settings"]["num_teams"] = 2
+        league_file.write_text(json.dumps(league))
+        with self.assertRaisesRegex(WeekSourceNotReady, "Incomplete weekly fantasy team population"):
+            load_verified_week_inputs(
+                self.root, "nfl-reise", 2024, 4, nfl_finality=self.final, runner=self.bridge
+            )
 
     def test_week_identity_mismatch_is_rejected(self):
         roster_file = self.root / "source-data/nfl/weekly-rosters/2024/04.json"
