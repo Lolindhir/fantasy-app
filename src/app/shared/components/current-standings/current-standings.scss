@@ -207,11 +207,18 @@
 
 .standing-detailed-record { font-weight: 800; }
 .standing-detailed-streak { color: #64748b; font-weight: 700; }
+.standing-detailed-record + .standing-detailed-streak {
+  padding-left: 8px;
+  border-left: 1px solid rgba(100, 116, 139, 0.3);
+}
 
 .standing-detailed-form {
   display: inline-flex;
   align-items: center;
   gap: 3px;
+  margin-left: 1px;
+  padding-left: 9px;
+  border-left: 1px solid rgba(100, 116, 139, 0.3);
 }
 
 .standing-detailed-form-dot {
@@ -295,6 +302,71 @@
   color: #334155;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.standing-detailed-trend {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.standing-detailed-trend-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  color: #334155;
+  font-size: 0.78rem;
+}
+
+.standing-detailed-trend-heading > span {
+  color: #64748b;
+  font-size: 0.68rem;
+}
+
+.standing-detailed-trend-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+  overflow: visible;
+}
+
+.standing-detailed-trend-guide {
+  fill: none;
+  stroke: rgba(100, 116, 139, 0.24);
+  stroke-width: 0.9;
+  stroke-dasharray: 3 4;
+}
+
+.standing-detailed-trend-axis {
+  fill: #64748b;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.standing-detailed-trend-line {
+  fill: none;
+  stroke: #4c8260;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.standing-detailed-trend-point {
+  fill: #fff;
+  stroke: #4c8260;
+  stroke-width: 2;
+}
+
+.standing-detailed-trend-unavailable {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.3);
+  color: #64748b;
+  font-size: 0.74rem;
 }
 
 @keyframes standing-details-in {
