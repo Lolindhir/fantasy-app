@@ -1204,6 +1204,11 @@ consumerReadClassification:
         provider:espn: display-link-construction
         provider:fantasypros: display-link-construction
       note: 'Population shadow compares with the published Players.json; ESPN and FantasyPros hits are link templates only.'
+    tools/player_valuation_shadow.py:
+      reads:
+        legacy:League: validation-shadow
+        legacy:Players: validation-shadow
+      note: 'Compares the PlayerValuation snapshot of the published week exactly with the published Players.json and League.json (Issue #919 step 4); read-only, never writes public/data.'
     tools/transaction_canonical_shadow.py:
       reads:
         legacy:Transactions: validation-shadow
