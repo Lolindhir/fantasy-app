@@ -16,6 +16,21 @@ dataSources:
       - OwnerIDs
       - Drafts configuration, including the number of non-completed drafts retained per draft type
 
+  leagueMetadata:
+    path: data-meta/<CanonicalLeagueID>/metadata.json
+    category: manual-domain-config
+    role: Hand-maintained league metadata per league (ADR-054, Issue #986)
+    contract: .ai-context/manual/league-metadata.yaml
+    loaders:
+      - tools/league_metadata.py
+      - public/requests/utils/LeagueMetadataUtils.psm1
+    description: >
+      Target owner of everything hand-maintained about one league: provider league ID, owners,
+      draft configuration, per-season Cap Deadline and the model choice per season. Not generated
+      and never written by a workflow. Status: file and loaders exist (Issue #986 step 2) and are
+      parity-tested; public/data/Metadata.json remains the productive input until the consumers are
+      switched (step 3).
+
   configUtils:
     path: public/requests/utils/ConfigUtils.psm1
     category: technical-generation-config

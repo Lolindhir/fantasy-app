@@ -49,6 +49,20 @@ contextModel:
     mayBeEditedByAI: true
     mayBeRegeneratedAutomatically: false
 
+  leagueMetadata:
+    description: >
+      Hand-maintained league metadata per league under data-meta/<CanonicalLeagueID>/ (ADR-054,
+      Issue #986): provider league ID, owners, draft configuration, per-season Cap Deadline and model
+      choice per season. Calculation logic lives in central models, not here.
+    contract: .ai-context/manual/league-metadata.yaml
+    directory: data-meta
+    mayBeEditedByAI: true
+    mayBeRegeneratedAutomatically: false
+    rules:
+      - Only hand maintenance writes into data-meta; no workflow or generator does.
+      - Read it through tools/league_metadata.py or LeagueMetadataUtils.psm1, never by ad-hoc path.
+      - Do not put model parameters or facts that are already canonical in source-data into the metadata.
+
   workTracking:
     description: >
       GitHub Issues are the canonical operative source of truth for repository
@@ -114,6 +128,7 @@ readingOrder:
   - .ai-context/manual/work-tracking.yaml
   - .ai-context/manual/workflow-monitoring.yaml
   - .ai-context/manual/architecture.yaml
+  - .ai-context/manual/league-metadata.yaml
   - .ai-context/manual/frontend-design/index.yaml
   - .ai-context/manual/domain.yaml
   - .ai-context/manual/draft-identity.yaml
@@ -140,6 +155,7 @@ shortContext:
   .ai-context/manual/work-tracking.yaml: Kanonischer Vertrag für GitHub-Issue-Work-Tracking, Label-Semantik, Prioritäten, Handoff und Drift-Governance
   .ai-context/manual/workflow-monitoring.yaml: Kanonischer fail-closed Vertrag für Workflow-Klassifizierung, Failure-/Staleness-Auswertung, isolierten Health-Snapshot und externe Alarmierung
   .ai-context/manual/frontend-design/index.yaml: Kanonischer Einstiegspunkt für app-weite Frontend-Design-Governance mit getrennten Principles, Architecture, Standards und Decisions sowie MUST/SHOULD/MAY-Review-Semantik
+  .ai-context/manual/league-metadata.yaml: Kanonischer Vertrag fuer die handgepflegten Liga-Metadaten data-meta/<CanonicalLeagueID>/metadata.json (ADR-054, Issue #986) mit Modellwahl je Saison, Lader und fail-closed Regeln; loest Metadata.json, config.ps1 und _bootstrap schrittweise ab
   public/data/Metadata.json: Liga-spezifische Inputs und Regeln; Drafts.UpcomingDraftCount zählt nicht abgeschlossene Drafts pro Typ zusätzlich zu allen Drafts der aktuellen LeagueYear; DraftType + DraftInstance identifiziert einen konfigurierten Draft-Slot und SleeperDraftIDs bindet bekannte konkrete Sleeper-Drafts saisonweise
   .ai-context/manual/draft-identity.yaml: Kanonischer Vertrag für DraftType, DraftInstance, DraftCode, DraftKey, SleeperDraftID-Mapping und Transaction-Pick-Auflösung
   .ai-context/manual/player-identity.yaml: Kanonischer Vertrag für die von fantasy-app vergebene providerunabhängige CanonicalPlayerID, historische Provider-Mappings, Konflikt-Quarantäne, Legacy-Feldmigration und den unveränderten Sleeper-basierten Players.json-App-Vertrag
