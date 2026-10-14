@@ -43,6 +43,7 @@ from players_league_scoring import (  # noqa: E402,F401
     played_weeks,
     season_view,
 )
+from data_roots import DATA_SOURCE_ROOT
 
 LEAGUE_ID = "nfl-reise"
 HISTORY_SEASONS = ("SeasonMinus1", "SeasonMinus2", "SeasonMinus3")
@@ -643,7 +644,7 @@ def classify_residual(diff: float, applicable_weights: list[float]) -> str | Non
 
 
 def sleeper_gate(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
-    seasons_dir = repo_root / "source-data/leagues" / league_id / "seasons"
+    seasons_dir = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons"
     exact = 0
     compared = 0
     residuals: list[dict[str, Any]] = []
@@ -667,13 +668,13 @@ def sleeper_gate(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
                 else:
                     skipped[f"{season}:week-not-final"] += 1
                 continue
-            stats_path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+            stats_path = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
             if not stats_path.exists():
                 raise FileNotFoundError(f"Final week without canonical player-stats partition: {stats_path}")
             records = {r["CanonicalPlayerID"]: r for r in read_json(stats_path)["Records"]
                        if r.get("SeasonType", "REG") == "REG" and r.get("CanonicalPlayerID")}
             events: dict[str, list[dict[str, Any]]] = defaultdict(list)
-            events_path = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
+            events_path = repo_root / DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
             if events_path.exists():
                 for event in read_json(events_path)["Records"]:
                     events[event.get("CanonicalPlayerID")].append(event)

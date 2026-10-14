@@ -26,11 +26,12 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from nfl_source_data_lib.common import current_source_season, load_json, write_json_if_changed
+from data_roots import DATA_SOURCE_ROOT
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATASET_ID = "espn.player-availability"
-SNAPSHOT_PATH = Path("source-data/nfl/player-availability/espn.json")
-METADATA_PATH = Path("source-data/providers/espn/player-availability/metadata.json")
+SNAPSHOT_PATH = Path(DATA_SOURCE_ROOT) / "nfl/player-availability/espn.json"
+METADATA_PATH = Path(DATA_SOURCE_ROOT) / "providers/espn/player-availability/metadata.json"
 SOURCE_URL_TEMPLATE = (
     "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{season}"
     "/segments/0/leaguedefaults/3?view=kona_player_info"

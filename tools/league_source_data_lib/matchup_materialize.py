@@ -9,6 +9,7 @@ from .materialize import CanonicalOutput, PlayerMappingResolver, _canonicalize_m
 from .registry import LeagueDataset
 from .transaction_window import resolve_current_transaction_window
 from .week_structure import resolve_nfl_regular_season_week_ceiling
+from data_roots import DATA_SOURCE_ROOT
 
 MATCHUP_DATASET_ID = "sleeper.matchups"
 MATCHUP_SCOPE_DEPENDENCIES = (
@@ -42,7 +43,7 @@ def _matchup_dataset(registry: Iterable[LeagueDataset]) -> LeagueDataset:
 
 
 def _manifest(repo_root: Path, canonical_league_id: str) -> dict:
-    path = repo_root / "source-data" / "leagues" / canonical_league_id / "manifest.json"
+    path = repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "manifest.json"
     raw = _read_json(path)
     if not isinstance(raw, dict):
         raise ValueError(f"League manifest must be an object: {path}")
@@ -190,7 +191,7 @@ def plan_matchup_materialization(
         provider_league_id = _sleeper_provider_league_id(season_entry, season)
         season_root = (
             repo_root
-            / "source-data"
+            / DATA_SOURCE_ROOT
             / "leagues"
             / canonical_league_id
             / "seasons"
@@ -220,7 +221,7 @@ def plan_matchup_materialization(
 
         raw_root = (
             repo_root
-            / "source-data"
+            / DATA_SOURCE_ROOT
             / "providers"
             / "sleeper"
             / "leagues"

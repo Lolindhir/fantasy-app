@@ -15,6 +15,7 @@ from .identity_model import (
     ids_from_ff,
     ids_from_players,
 )
+from data_roots import DATA_SOURCE_ROOT
 
 
 _VALID_GSIS_PLAYER_ID = re.compile(r"^00-\d{7}$")
@@ -110,7 +111,7 @@ def _replay_signature(
 def _existing_weak_replay_index(
     repo_root: Path,
 ) -> dict[tuple[tuple[tuple[str, str], ...], str, str, str], set[str]]:
-    payload = load_json(repo_root / "source-data/nfl/identities/players.json", {}) or {}
+    payload = load_json(repo_root / DATA_SOURCE_ROOT / "nfl/identities/players.json", {}) or {}
     index: dict[tuple[tuple[tuple[str, str], ...], str, str, str], set[str]] = defaultdict(set)
     for row in payload.get("Players", []) or []:
         ids = {

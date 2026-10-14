@@ -64,6 +64,7 @@ from player_week_fantasy import (
     build_scoring_profile_identity,
     derive_actual_points,
 )
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 
 POINT_MODEL = "V4-C"
 INTERVAL_MODEL = "V4-C-PI1"
@@ -117,7 +118,7 @@ def _target_roster(
     Historical/backtest calls remain strict by default. A previous-week roster
     supplies last-known NFL team membership, never target-week results.
     """
-    directory = repo_root / "source-data/nfl/weekly-rosters" / str(season)
+    directory = repo_root / DATA_SOURCE_ROOT / "nfl/weekly-rosters" / str(season)
     source_week = week
     path = directory / f"{week:02d}.json"
     if not path.is_file() and allow_provisional_roster and week > 1:
@@ -163,7 +164,7 @@ def _target_roster(
 
 
 def _scheduled_teams(repo_root: Path, season: int, week: int) -> set[str]:
-    path = repo_root / "source-data/nfl/schedules" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/schedules" / f"{season}.json"
     payload = _require_object(path)
     if payload.get("Season") != season:
         raise ValueError(f"Schedule season mismatch: {path}")
@@ -198,7 +199,7 @@ def _week_finality(
     season becomes historical. WeekFinal is therefore the temporal authority for
     whether a completed current-season week may enter pregame projection history.
     """
-    path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/game-finality" / f"{season}.json"
     payload = _require_object(path)
     if payload.get("Season") != season:
         raise ValueError(f"Game-finality season mismatch: {path}")
@@ -251,7 +252,7 @@ def _current_partition_records(
     season: int,
     week: int,
 ) -> list[dict[str, Any]]:
-    path = repo_root / "source-data/nfl" / relative_path / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl" / relative_path / str(season) / f"{week:02d}.json"
     payload = _require_object(path)
     if payload.get("Season") != season or payload.get("Week") != week:
         raise ValueError(f"Current-season canonical partition season/week mismatch: {path}")
@@ -294,7 +295,7 @@ def _current_event_rows_by_player(
 ) -> dict[str, list[dict[str, Any]]]:
     path = (
         repo_root
-        / "source-data/nfl/special-teams-fumble-events"
+        / DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events"
         / str(season)
         / f"{week:02d}.json"
     )
@@ -943,7 +944,7 @@ def _final_actual_inputs(
     if not week_final:
         return False, {}, {}
 
-    stats_path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+    stats_path = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
     if not stats_path.exists():
         return False, {}, {}
     rows = _current_partition_records(
@@ -1146,7 +1147,7 @@ def output_path(
 ) -> Path:
     return (
         repo_root
-        / "derived-data"
+        / DATA_DERIVED_ROOT
         / "player-week-fantasy"
         / league_id
         / str(season)

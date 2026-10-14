@@ -13,6 +13,7 @@ from .mapping_history import build_historical_app_mapping_claims, extend_provide
 from .phase1 import build_phase1_outputs
 from .provider_mappings import build_provider_mapping_payload
 from .provisional_reconciliation import reconcile_provisional_app_mappings
+from data_roots import DATA_SOURCE_ROOT
 
 
 def _observation_season(repo_root: Path) -> int:
@@ -46,7 +47,7 @@ def _draft_payloads(
         }
         payload, was_preserved = effective_partition_payload(
             dataset,
-            path=repo_root / "source-data/nfl/draft" / f"{season}.json",
+            path=repo_root / DATA_SOURCE_ROOT / "nfl/draft" / f"{season}.json",
             candidate=candidate,
             partition_season=season,
             observation_season=observation_season,
@@ -86,7 +87,7 @@ def _combine_payloads(
         }
         payload, was_preserved = effective_partition_payload(
             dataset,
-            path=repo_root / "source-data/nfl/combine" / f"{season}.json",
+            path=repo_root / DATA_SOURCE_ROOT / "nfl/combine" / f"{season}.json",
             candidate=candidate,
             partition_season=season,
             observation_season=observation_season,
@@ -196,25 +197,25 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
     }
 
     identity_changed = write_json_if_changed(
-        repo_root / "source-data/nfl/identities/players.json", identity_payload
+        repo_root / DATA_SOURCE_ROOT / "nfl/identities/players.json", identity_payload
     )
     provider_mappings_changed = write_json_if_changed(
-        repo_root / "source-data/nfl/identities/provider-mappings.json", provider_mapping_payload
+        repo_root / DATA_SOURCE_ROOT / "nfl/identities/provider-mappings.json", provider_mapping_payload
     )
     draft_changed = 0
     for season, payload in draft_payloads.items():
-        if write_json_if_changed(repo_root / "source-data/nfl/draft" / f"{season}.json", payload):
+        if write_json_if_changed(repo_root / DATA_SOURCE_ROOT / "nfl/draft" / f"{season}.json", payload):
             draft_changed += 1
     combine_changed = 0
     for season, payload in combine_payloads.items():
-        if write_json_if_changed(repo_root / "source-data/nfl/combine" / f"{season}.json", payload):
+        if write_json_if_changed(repo_root / DATA_SOURCE_ROOT / "nfl/combine" / f"{season}.json", payload):
             combine_changed += 1
     phase1_changed = 0
     for path, payload in phase1_outputs:
         if write_json_if_changed(path, payload):
             phase1_changed += 1
     audit_changed = write_json_if_changed(
-        repo_root / "source-data/audits/nfl-source-data-audit.json", audit
+        repo_root / DATA_SOURCE_ROOT / "audits/nfl-source-data-audit.json", audit
     )
 
     return {

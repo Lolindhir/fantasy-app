@@ -30,6 +30,7 @@ from player_week_fantasy_materialize import (  # noqa: E402
     output_path,
     write_dataset,
 )
+from data_roots import DATA_SOURCE_ROOT
 
 CONTEXT_PATH = Path("public/data/FantasyGameContext.json")
 SLEEPER_PROVIDER = "Sleeper"
@@ -57,7 +58,7 @@ def _positive_int(value: Any, field: str) -> int:
 
 def _canonical_league_id(repo_root: Path, provider_league_id: str, season: int) -> str:
     matches: list[str] = []
-    for path in sorted((repo_root / "source-data" / "leagues").glob(f"*/seasons/{season}/league.json")):
+    for path in sorted((repo_root / DATA_SOURCE_ROOT / "leagues").glob(f"*/seasons/{season}/league.json")):
         league = _read_object(path)
         for mapping in league.get("ProviderMappings") or []:
             if (
@@ -86,7 +87,7 @@ def resolve_target(repo_root: Path) -> tuple[str, int, int]:
 
 
 def weekly_roster_path(repo_root: Path, season: int, week: int) -> Path:
-    return repo_root / "source-data" / "nfl" / "weekly-rosters" / str(season) / f"{week:02d}.json"
+    return repo_root / DATA_SOURCE_ROOT / "nfl" / "weekly-rosters" / str(season) / f"{week:02d}.json"
 
 
 def refresh(repo_root: Path) -> dict[str, Any]:

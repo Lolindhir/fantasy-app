@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from data_roots import DATA_SOURCE_ROOT
 
 try:
     from tools.transaction_canonical_shadow import (
@@ -28,7 +29,7 @@ def build_repo_canonical_transactions(
 ) -> list[dict[str, object]]:
     season_dir = (
         repo_root
-        / "source-data"
+        / DATA_SOURCE_ROOT
         / "leagues"
         / canonical_league_id
         / "seasons"

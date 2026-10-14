@@ -16,6 +16,7 @@ from .materialize import (
 )
 from .matchup_materialize import resolve_current_matchup_scope
 from .registry import LeagueDataset
+from data_roots import DATA_SOURCE_ROOT
 
 LEAGUE_CORE_DATASET_IDS = (
     "sleeper.league",
@@ -69,7 +70,7 @@ def _registry_guard(registry: Iterable[LeagueDataset]) -> None:
 
 
 def _manifest(repo_root: Path, canonical_league_id: str) -> dict:
-    path = repo_root / "source-data" / "leagues" / canonical_league_id / "manifest.json"
+    path = repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "manifest.json"
     raw = _read_json(path)
     if not isinstance(raw, dict):
         raise ValueError(f"League manifest must be an object: {path}")
@@ -222,7 +223,7 @@ def plan_league_core_materialization(
         provider_league_id = str(provider_mapping["ProviderLeagueID"])
         raw_base = (
             repo_root
-            / "source-data"
+            / DATA_SOURCE_ROOT
             / "providers"
             / "sleeper"
             / "leagues"
@@ -230,7 +231,7 @@ def plan_league_core_materialization(
         )
         season_root = (
             repo_root
-            / "source-data"
+            / DATA_SOURCE_ROOT
             / "leagues"
             / canonical_league_id
             / "seasons"

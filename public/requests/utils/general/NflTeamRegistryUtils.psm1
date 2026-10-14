@@ -2,10 +2,12 @@
 # Accepts canonical abbreviations, provider spellings (LAR, WSH), season-bounded historical aliases
 # (OAK, SD, STL) and the legacy numeric app team IDs. Mirrors tools/nfl_source_data_lib/teams.py.
 
+Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+
 function Get-NflTeamRegistry {
     param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
-    $path = Join-Path $RepoRoot 'source-data/nfl/teams.json'
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) 'nfl/teams.json'
     if (-not (Test-Path $path)) {
         throw "Canonical NFL team registry is required: $path"
     }

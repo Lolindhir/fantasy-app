@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from data_roots import DATA_SOURCE_ROOT
 
 VALID_SCOPES = {"league-instance", "week", "draft"}
 VALID_RESPONSE_TYPES = {"object", "array"}
@@ -30,11 +31,11 @@ class LeagueDataset:
 
 
 def load_league_registry(repo_root: Path) -> list[LeagueDataset]:
-    path = repo_root / "source-data/league-registry.json"
+    path = repo_root / DATA_SOURCE_ROOT / "league-registry.json"
     with path.open("r", encoding="utf-8") as handle:
         raw = json.load(handle)
     if raw.get("schemaVersion") != 1:
-        raise ValueError("source-data/league-registry.json must use schemaVersion 1")
+        raise ValueError(f"{DATA_SOURCE_ROOT}/league-registry.json must use schemaVersion 1")
     if raw.get("provider") != "Sleeper":
         raise ValueError("League registry currently supports provider Sleeper only")
     items = raw.get("datasets")

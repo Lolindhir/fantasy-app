@@ -42,7 +42,7 @@ function Get-CanonicalLeagueCoreJson {
     )
 
     $repoRoot = Get-CanonicalLeagueCoreRepoRoot
-    $path = Join-Path $repoRoot "source-data/leagues/$CanonicalLeagueID/seasons/$Season/$FileName"
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues/$CanonicalLeagueID/seasons/$Season/$FileName"
     if (-not (Test-Path $path)) {
         throw "Canonical League Core source '$FileName' missing for $CanonicalLeagueID/$Season at '$path'."
     }
@@ -375,7 +375,7 @@ function Get-CanonicalLeagueSeasonLeagues {
         [string]$CanonicalLeagueID = "nfl-reise"
     )
 
-    $seasonsRoot = Join-Path (Get-CanonicalLeagueCoreRepoRoot) "source-data/leagues/$CanonicalLeagueID/seasons"
+    $seasonsRoot = Join-Path (Get-DataSourceRoot -RepoRoot (Get-CanonicalLeagueCoreRepoRoot)) "leagues/$CanonicalLeagueID/seasons"
     if (-not (Test-Path $seasonsRoot)) {
         throw "Canonical League season directory missing at '$seasonsRoot'."
     }

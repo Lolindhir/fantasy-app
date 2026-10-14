@@ -149,7 +149,8 @@ shortContext:
   .ai-context/manual/source-of-truth-matrix.yaml#consumerReadClassification: Pro Datei klassifizierte Provider- und public/data-Reads aller App-, Fantasy-Management- und Tooling-Consumer (#347 K1); tools/tests/test_consumer_read_classification.py schlaegt bei jedem nicht klassifizierten Read fehl
   .ai-context/manual/provider-join-invariants.yaml: Fail-closed Cardinality-/Uniqueness-Vertrag für Player-, Team-, Draft-, Transaction- und Historical-Provider-Joins
   .ai-context/manual/source-of-truth-matrix.yaml: Konsolidierte feldbezogene Primary-/Secondary-/Fallback-Entscheidung für NFL- und Fantasy-League-Quellen sowie heutige Runtime-vs.-kanonische Zielbesitzer
-  public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
+  public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration; besitzt außerdem die PowerShell-Daten-Roots (Get-DataSourceRoot, Get-DataDerivedRoot, Get-DataMetaRoot, Config DataSourceDir/DataDerivedDir/DataMetaDir)
+  tools/data_roots.py: Einzige Python-Definition der Daten-Roots (DATA_SOURCE_ROOT, DATA_DERIVED_ROOT, DATA_META_ROOT) nach Issue #788 Schritt 0; Produktivcode unter tools/ und public/requests/ schreibt die Root-Namen nicht aus, tools/tests/test_data_roots.py erzwingt das und hält Python und ConfigUtils synchron
   public/data/*.json: Generierte App-Daten
   public/data/PlayerWeekFantasy.json: App-Delivery-Adapter des Shared-Derived PlayerWeekFantasy-Snapshots; bewahrt CanonicalPlayerID und ergänzt nullable Sleeper PlayerID ohne Projection-/Scoring-Neuberechnung
   public/data/League.json: Generiertes League-Home-Read-Model für Lifecycle, Teams, Standings, League-Konfiguration und Season-Metadaten; Fantasy-Matchup-Schedule/Score/Result/Finality liegen ausschließlich im dedizierten Matchups-Read-Model

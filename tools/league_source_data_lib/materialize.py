@@ -9,6 +9,7 @@ from typing import Any, Iterable
 from .core import canonical_league_season_id, normalize_sleeper_player_id, write_json_if_changed
 from .registry import LeagueDataset
 from .week_structure import derive_season_week_structures, resolve_nfl_regular_season_week_ceiling
+from data_roots import DATA_SOURCE_ROOT
 
 SCHEMA_VERSION = 1
 REQUIRED_DATASET_IDS = {
@@ -94,7 +95,7 @@ class PlayerMappingResolver:
 
     @classmethod
     def load(cls, repo_root: Path) -> "PlayerMappingResolver":
-        path = repo_root / "source-data/nfl/identities/provider-mappings.json"
+        path = repo_root / DATA_SOURCE_ROOT / "nfl/identities/provider-mappings.json"
         raw = _read_json(path)
         if not isinstance(raw, dict):
             raise ValueError(f"Player provider mappings must be an object: {path}")
@@ -652,7 +653,7 @@ def _canonicalize_drafts(
 
 
 def _manifest(repo_root: Path, canonical_league_id: str) -> dict:
-    path = repo_root / "source-data" / "leagues" / canonical_league_id / "manifest.json"
+    path = repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "manifest.json"
     raw = _read_json(path)
     if not isinstance(raw, dict):
         raise ValueError(f"League manifest must be an object: {path}")
@@ -708,7 +709,7 @@ def plan_canonical_materialization(
         provider_league_id = str(provider_mapping.get("ProviderLeagueID") or "").strip()
         if not provider_league_id:
             raise ValueError(f"Sleeper ProviderLeagueID is required for {canonical_league_id}/{season}")
-        raw_base = repo_root / "source-data" / "providers" / "sleeper" / "leagues" / provider_league_id
+        raw_base = repo_root / DATA_SOURCE_ROOT / "providers" / "sleeper" / "leagues" / provider_league_id
         league_raw = _read_json(raw_base / "league.json")
         members_raw = _read_json(raw_base / "members.json")
         rosters_raw = _read_json(raw_base / "rosters.json")
@@ -760,7 +761,7 @@ def plan_canonical_materialization(
         season_entry = context["SeasonEntry"]
         provider_mapping = context["ProviderMapping"]
         league_raw = context["LeagueRaw"]
-        season_root = repo_root / "source-data" / "leagues" / canonical_league_id / "seasons" / str(season)
+        season_root = repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "seasons" / str(season)
 
         members, rosters, member_by_provider, roster_by_provider = _members_and_rosters(
             canonical_league_id, season_id, context["MembersRaw"], context["RostersRaw"], resolver, season

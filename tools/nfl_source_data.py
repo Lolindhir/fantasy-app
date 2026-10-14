@@ -24,6 +24,7 @@ from nfl_source_data_lib.finality_materialize import (
 from nfl_source_data_lib.historical_crosswalk import sync_historical_crosswalk_evidence
 from nfl_source_data_lib.history import select_missing_historical_partitions
 from nfl_source_data_lib.materialize import materialize
+from data_roots import DATA_SOURCE_ROOT
 
 # Keep this entry point side-effect free until main() is invoked; CI imports the
 # supporting modules independently during source-data validation.
@@ -82,7 +83,7 @@ def main() -> int:
         raise ValueError("--scope is only valid with the materialize command")
 
     if args.command == "audit":
-        audit_path = repo_root / "source-data/audits/nfl-source-data-audit.json"
+        audit_path = repo_root / DATA_SOURCE_ROOT / "audits/nfl-source-data-audit.json"
         audit = load_json(audit_path)
         if audit is None:
             raise FileNotFoundError(

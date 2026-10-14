@@ -7,6 +7,7 @@ import json
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
+from data_roots import DATA_SOURCE_ROOT
 
 POSTSEASON_TYPES = {"WC", "DIV", "CON", "SB"}
 VALID_PHASES = {
@@ -32,7 +33,7 @@ def _as_date(value: date | datetime | str | None) -> date:
 
 
 def _load_schedule(root: Path, season: int) -> dict[str, Any]:
-    path = root / "source-data" / "nfl" / "schedules" / f"{season}.json"
+    path = root / DATA_SOURCE_ROOT / "nfl" / "schedules" / f"{season}.json"
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
@@ -73,7 +74,7 @@ def _schedule_bounds(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _available_seasons(root: Path) -> list[int]:
-    directory = root / "source-data" / "nfl" / "schedules"
+    directory = root / DATA_SOURCE_ROOT / "nfl" / "schedules"
     seasons = []
     for path in directory.glob("*.json"):
         try:
@@ -174,6 +175,6 @@ def resolve_nfl_season_context(
         },
         "source": {
             "kind": "canonical_nfl_schedule",
-            "path": f"source-data/nfl/schedules/{resolved_season}.json",
+            "path": f"{DATA_SOURCE_ROOT}/nfl/schedules/{resolved_season}.json",
         },
     }

@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from data_roots import DATA_SOURCE_ROOT
 from .common import Dataset, write_json_if_changed
 from .materialize import _observation_season
 from .phase1 import _build_game_finality, _build_schedules
@@ -10,8 +11,8 @@ from .phase1 import _build_game_finality, _build_schedules
 SCHEDULE_DATASET_ID = "nflverse.schedules"
 GAME_FINALITY_DATASET_ID = "nflverse.game-finality"
 GAME_FINALITY_SCOPE = "game-finality"
-SCHEDULE_WRITE_SET = "source-data/nfl/schedules/**"
-GAME_FINALITY_WRITE_SET = "source-data/nfl/game-finality/**"
+SCHEDULE_WRITE_SET = f"{DATA_SOURCE_ROOT}/nfl/schedules/**"
+GAME_FINALITY_WRITE_SET = f"{DATA_SOURCE_ROOT}/nfl/game-finality/**"
 
 
 def _write_scoped_outputs(
@@ -89,13 +90,13 @@ def materialize_game_finality(
     schedule_changed_paths = _write_scoped_outputs(
         repo_root,
         schedule_outputs,
-        prefix="source-data/nfl/schedules/",
+        prefix=f"{DATA_SOURCE_ROOT}/nfl/schedules/",
         label="schedule",
     )
     finality_changed_paths = _write_scoped_outputs(
         repo_root,
         finality_outputs,
-        prefix="source-data/nfl/game-finality/",
+        prefix=f"{DATA_SOURCE_ROOT}/nfl/game-finality/",
         label="game-finality",
     )
 
