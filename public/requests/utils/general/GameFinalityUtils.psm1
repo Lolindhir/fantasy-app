@@ -1,3 +1,5 @@
+Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+
 function Get-GfuPropertyValue {
     param(
         [AllowNull()][object]$Object,
@@ -19,8 +21,8 @@ function Get-CanonicalGameFinalityByEspnID {
         [Parameter(Mandatory = $true)][string]$RepoRoot
     )
 
-    $canonicalSchedulePath = Join-Path $RepoRoot "source-data/nfl/schedules/$Season.json"
-    $canonicalFinalityPath = Join-Path $RepoRoot "source-data/nfl/game-finality/$Season.json"
+    $canonicalSchedulePath = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/schedules/$Season.json"
+    $canonicalFinalityPath = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/game-finality/$Season.json"
 
     if (-not (Test-Path $canonicalSchedulePath)) {
         throw "Canonical NFL schedule is required for game finality resolution: $canonicalSchedulePath"

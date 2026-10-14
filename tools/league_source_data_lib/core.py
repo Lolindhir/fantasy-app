@@ -7,6 +7,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable
+from data_roots import DATA_SOURCE_ROOT
 
 CANONICAL_LEAGUE_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SUPPORTED_PROVIDERS = {"Sleeper"}
@@ -68,7 +69,7 @@ def write_json_if_changed(path: Path, value: object) -> bool:
 
 
 def load_bootstraps(repo_root: Path) -> list[LeagueBootstrap]:
-    bootstrap_dir = repo_root / "source-data/leagues/_bootstrap"
+    bootstrap_dir = repo_root / DATA_SOURCE_ROOT / "leagues/_bootstrap"
     if not bootstrap_dir.exists():
         return []
     result: list[LeagueBootstrap] = []
@@ -151,7 +152,7 @@ def persisted_sleeper_fetcher(repo_root: Path) -> Callable[[str], dict]:
     def fetch(provider_league_id: str) -> dict:
         path = (
             repo_root
-            / "source-data/providers/sleeper/leagues"
+            / DATA_SOURCE_ROOT / "providers/sleeper/leagues"
             / provider_league_id
             / "league.json"
         )
@@ -193,7 +194,7 @@ def discover_sleeper_lineage(
 
 
 def _load_existing_manifests(repo_root: Path) -> dict[str, dict]:
-    league_root = repo_root / "source-data/leagues"
+    league_root = repo_root / DATA_SOURCE_ROOT / "leagues"
     result: dict[str, dict] = {}
     if not league_root.exists():
         return result
@@ -397,14 +398,14 @@ def sync_bootstrap(
     for instance in lineage:
         base = (
             repo_root
-            / "source-data/providers/sleeper/leagues"
+            / DATA_SOURCE_ROOT / "providers/sleeper/leagues"
             / instance.provider_league_id
         )
         raw_outputs.append((base / "league.json", instance.payload))
         raw_outputs.append((base / "league.metadata.json", _raw_metadata(instance)))
 
     raw_changed = sum(write_json_if_changed(path, value) for path, value in raw_outputs)
-    manifest_path = repo_root / "source-data/leagues" / bootstrap.canonical_league_id / "manifest.json"
+    manifest_path = repo_root / DATA_SOURCE_ROOT / "leagues" / bootstrap.canonical_league_id / "manifest.json"
     manifest_changed = write_json_if_changed(manifest_path, manifest)
     return {
         "CanonicalLeagueID": bootstrap.canonical_league_id,

@@ -1,6 +1,8 @@
 # Keep the implementation core private to this module boundary. The core predates this
 # wrapper split and contains its original Export-ModuleMember declaration; shadow the
 # cmdlet while loading it so this module can expose one deliberate public API below.
+Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+
 function Export-ModuleMember {
     param(
         [string[]]$Function,

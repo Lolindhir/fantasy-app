@@ -133,12 +133,12 @@ function Ensure-PreviousFantasyGameContextHistory {
 
     $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
     $canonicalLeagueID = "nfl-reise"
-    $seasonSourceDir = Join-Path $repoRoot "source-data\leagues\$canonicalLeagueID\seasons\$historicalSeason"
+    $seasonSourceDir = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues\$canonicalLeagueID\seasons\$historicalSeason"
     $leagueSourceFile = Join-Path $seasonSourceDir "league.json"
     $matchupDirectory = Join-Path $seasonSourceDir "matchups"
     $scheduleFile = Join-Path $config.PastSeasonsDir "Schedule_$historicalSeason.json"
     $playersFile = Join-Path $config.PastSeasonsDir "Players_$historicalSeason.json"
-    $weeklyRosterDirectory = Join-Path $repoRoot "source-data\nfl\weekly-rosters\$historicalSeason"
+    $weeklyRosterDirectory = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "nfl\weekly-rosters\$historicalSeason"
 
     if (-not (Test-Path $leagueSourceFile) -or -not (Test-Path $matchupDirectory) -or -not (Test-Path $scheduleFile) -or -not (Test-Path $playersFile)) {
         Write-Warning "Historical FantasyGameContext $historicalSeason is not materialized because required source evidence is incomplete."
@@ -277,7 +277,7 @@ try {
     Write-Host "Playoff start week: Week $playoffStart" -ForegroundColor Yellow
 
     $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-    $currentLeagueSourceFile = Join-Path $repoRoot "source-data\leagues\$CanonicalLeagueID\seasons\$currentSeason\league.json"
+    $currentLeagueSourceFile = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues\$CanonicalLeagueID\seasons\$currentSeason\league.json"
     $leagueWeekState = Resolve-LeagueWeekState `
         -League $league `
         -CanonicalLeagueSourceFile $currentLeagueSourceFile
@@ -311,7 +311,7 @@ try {
         -WaiversOpen $waiversOpen `
         -NextWaiverRun $nextWaiverRun
 
-    $canonicalIdentityPath = Join-Path $PSScriptRoot "..\..\source-data\nfl\identities\players.json"
+    $canonicalIdentityPath = Join-Path (Get-DataSourceRoot -RepoRoot (Join-Path $PSScriptRoot "..\..")) "nfl\identities\players.json"
     $canonicalIdentityPayload = Get-Content $canonicalIdentityPath -Raw | ConvertFrom-Json
     $canonicalIdentities = @($canonicalIdentityPayload.Players)
 
@@ -334,7 +334,7 @@ try {
             -Teams $teamData `
             -Players $playersData `
             -CanonicalIdentities $canonicalIdentities `
-            -SnapshotPath (Join-Path $PSScriptRoot "..\..\source-data\nfl\player-availability\espn.json")
+            -SnapshotPath (Join-Path (Get-DataSourceRoot -RepoRoot (Join-Path $PSScriptRoot "..\..")) "nfl\player-availability\espn.json")
     )
     $scoringAvailabilityObservations = @(
         Resolve-PlayerScoringAvailabilityObservationTimes `

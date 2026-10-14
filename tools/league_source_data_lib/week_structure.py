@@ -4,6 +4,7 @@ import json
 import math
 from pathlib import Path
 from typing import Any
+from data_roots import DATA_SOURCE_ROOT
 
 STANDARD_PLAYOFF_FORMATS = {
     "one-week-rounds",
@@ -13,7 +14,7 @@ STANDARD_PLAYOFF_FORMATS = {
 
 
 def resolve_nfl_regular_season_week_ceiling(repo_root: Path, season: int) -> int:
-    path = repo_root / "source-data" / "nfl" / "schedules" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl" / "schedules" / f"{season}.json"
     if not path.exists():
         raise FileNotFoundError(
             f"Canonical NFL schedule is required for league week acquisition: {path}"

@@ -1,3 +1,5 @@
+Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+
 try {
     Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
@@ -71,7 +73,7 @@ function Get-WrKickoffUtc {
 
 function Get-WrCanonicalScheduleGames {
     param([Parameter(Mandatory = $true)][string]$RepoRoot, [Parameter(Mandatory = $true)][int]$Season)
-    $path = Join-Path $RepoRoot "source-data/nfl/schedules/$Season.json"
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/schedules/$Season.json"
     if (-not (Test-Path $path)) { throw "WeeklyRecaps canonical NFL schedule is missing for season $Season at $path." }
     $document = Get-Content $path -Raw | ConvertFrom-Json
     return @(Get-WrCollection (Get-WrValue -Object $document -Names @('Games')))
@@ -83,7 +85,7 @@ function Get-WrWeeklyRosterRows {
         [Parameter(Mandatory = $true)][int]$Season,
         [Parameter(Mandatory = $true)][int]$Week
     )
-    $path = Join-Path $RepoRoot ("source-data/nfl/weekly-rosters/{0}/{1:D2}.json" -f $Season, $Week)
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) ("nfl/weekly-rosters/{0}/{1:D2}.json" -f $Season, $Week)
     if (-not (Test-Path $path)) { throw "WeeklyRecaps canonical weekly-roster evidence is missing for season $Season Week $Week at $path." }
     $document = Get-Content $path -Raw | ConvertFrom-Json
     return @(Get-WrCollection (Get-WrValue -Object $document -Names @('Records','Rows','Players','Data')))
@@ -389,7 +391,7 @@ function New-WeeklyRecapSeasonReadModel {
     $identitySchedule = @(Get-Content $IdentityScheduleFile -Raw | ConvertFrom-Json)
     $canonicalSchedule = @(Get-WrCanonicalScheduleGames -RepoRoot $RepoRoot -Season $Season)
     $teamOrder = Get-MatchupParticipantOrderMap -Standings $Standings -Season $Season -HistoricalCutoff:$HistoricalCutoff
-    $seasonDir = Join-Path $RepoRoot "source-data/leagues/$CanonicalLeagueID/seasons/$Season/matchups"
+    $seasonDir = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "leagues/$CanonicalLeagueID/seasons/$Season/matchups"
     $weeks = @()
 
     foreach ($matchupsWeek in $finalWeeks) {

@@ -42,7 +42,7 @@ function Get-CanonicalStandingSeasonDirectory {
     )
 
     $repoRoot = Get-CanonicalStandingRepoRoot
-    $leagueRoot = Join-Path $repoRoot "source-data/leagues/$CanonicalLeagueID"
+    $leagueRoot = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues/$CanonicalLeagueID"
     $seasonDirectory = Join-Path $leagueRoot "seasons/$Season"
     if (-not (Test-Path $seasonDirectory)) {
         throw "Canonical League season directory missing at '$seasonDirectory'."
@@ -421,7 +421,7 @@ function Get-CanonicalHistoricalStandingSeasons {
     )
 
     $repoRoot = Get-CanonicalStandingRepoRoot
-    $seasonsRoot = Join-Path $repoRoot "source-data/leagues/$CanonicalLeagueID/seasons"
+    $seasonsRoot = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues/$CanonicalLeagueID/seasons"
     if (-not (Test-Path $seasonsRoot)) {
         throw "Canonical League seasons directory missing at '$seasonsRoot'."
     }

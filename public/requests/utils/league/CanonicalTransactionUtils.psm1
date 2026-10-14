@@ -189,7 +189,7 @@ function Get-CanonicalHistoricalTransactionSeasons {
     )
 
     $repoRoot = Get-TransactionCanonicalRepoRoot
-    $seasonsRoot = Join-Path $repoRoot "source-data\leagues\$CanonicalLeagueID\seasons"
+    $seasonsRoot = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues\$CanonicalLeagueID\seasons"
     if (-not (Test-Path $seasonsRoot)) {
         throw "Canonical League season directory missing at '$seasonsRoot'."
     }

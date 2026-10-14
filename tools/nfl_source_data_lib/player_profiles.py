@@ -10,11 +10,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from data_roots import DATA_SOURCE_ROOT
 from .canonical_identity import identity_lookup
 from .common import CANONICAL_SCHEMA_VERSION, Dataset, as_int, clean, iter_csv
 
 PLAYER_PROFILES_DATASET_ID = "nflverse.players"
-PLAYER_PROFILES_RELATIVE_PATH = "source-data/nfl/player-profiles/nflverse.json"
+PLAYER_PROFILES_RELATIVE_PATH = f"{DATA_SOURCE_ROOT}/nfl/player-profiles/nflverse.json"
 
 # Output field -> (raw nflverse column, coercion). Single contract-driven table; consumers decide what to read.
 _PROFILE_FIELDS: tuple[tuple[str, str, Any], ...] = (

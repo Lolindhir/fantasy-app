@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from historical_fantasy_scoring import number, read_json  # noqa: E402
 from nfl_source_data_lib.teams import NflTeamRegistry  # noqa: E402
+from data_roots import DATA_SOURCE_ROOT
 
 TEAM_SPELLING_KIND = "provider-spelling"
 POSTSEASON_TYPES = ("WC", "DIV", "CON", "SB")
@@ -95,7 +96,7 @@ class TeamKeys:
 
 
 def _index_games(repo_root: Path, season: int) -> dict[str, dict[str, Any]]:
-    schedule = read_json(repo_root / "source-data/nfl/schedules" / f"{season}.json")
+    schedule = read_json(repo_root / DATA_SOURCE_ROOT / "nfl/schedules" / f"{season}.json")
     if int(schedule.get("Season", -1)) != season:
         raise GameHistoryError(f"Canonical schedule season mismatch for {season}")
     games = {str(game["GameID"]): game for game in schedule.get("Games") or []}
@@ -105,12 +106,12 @@ def _index_games(repo_root: Path, season: int) -> dict[str, dict[str, Any]]:
 
 
 def _week_final(repo_root: Path, season: int) -> dict[tuple[str, int], bool]:
-    payload = read_json(repo_root / "source-data/nfl/game-finality" / f"{season}.json")
+    payload = read_json(repo_root / DATA_SOURCE_ROOT / "nfl/game-finality" / f"{season}.json")
     return {(str(w["GameType"]), int(w["Week"])): bool(w.get("WeekFinal")) for w in payload.get("Weeks") or []}
 
 
 def _partition_records(repo_root: Path, dataset: str, season: int) -> list[tuple[int, list[dict[str, Any]]]]:
-    directory = repo_root / "source-data/nfl" / dataset / str(season)
+    directory = repo_root / DATA_SOURCE_ROOT / "nfl" / dataset / str(season)
     if not directory.is_dir():
         raise GameHistoryError(f"Canonical partition directory missing: {directory}")
     out = []
@@ -121,7 +122,7 @@ def _partition_records(repo_root: Path, dataset: str, season: int) -> list[tuple
 
 
 def _qbr_index(repo_root: Path, season: int) -> dict[tuple[str, str], float | None]:
-    path = repo_root / "source-data/nfl/qbr-week" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/qbr-week" / f"{season}.json"
     if not path.exists():
         return {}
     payload = read_json(path)
@@ -135,7 +136,7 @@ def _qbr_index(repo_root: Path, season: int) -> dict[tuple[str, str], float | No
 def _long_gain_index(
     repo_root: Path, season: int
 ) -> tuple[dict[tuple[str, str, str], int], set[str]]:
-    path = repo_root / "source-data/nfl/player-game-long-gains" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/player-game-long-gains" / f"{season}.json"
     if not path.exists():
         return {}, set()
     payload = read_json(path)
@@ -196,7 +197,7 @@ def build_game_histories(
             if game_id not in games:
                 raise GameHistoryError(f"player-stats row of {cid} week {week} names game '{game_id}' missing in the canonical schedule")
             stat_rows[(cid, game_id)] = record
-    snap_dir = repo_root / "source-data/nfl/snap-counts" / str(season)
+    snap_dir = repo_root / DATA_SOURCE_ROOT / "nfl/snap-counts" / str(season)
     if snap_dir.is_dir():
         stats_weeks = {week for week, _ in _partition_records(repo_root, "player-stats", season)}
         for path in sorted(snap_dir.glob("*.json")):

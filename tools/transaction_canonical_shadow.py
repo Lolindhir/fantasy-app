@@ -8,6 +8,12 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+import sys as _sys
+_TOOLS_DIR = str(Path(__file__).resolve().parent)
+if _TOOLS_DIR not in _sys.path:
+    _sys.path.insert(0, _TOOLS_DIR)
+
+from data_roots import DATA_SOURCE_ROOT  # noqa: E402
 
 SLEEPER = "Sleeper"
 WEEK_FILE_RE = re.compile(r"week-(\d+)\.json$")
@@ -433,7 +439,7 @@ def build_shadow_report(
 
 
 def build_repo_shadow_report(repo_root: Path, *, canonical_league_id: str, season: int) -> dict[str, Any]:
-    season_dir = repo_root / "source-data" / "leagues" / canonical_league_id / "seasons" / str(season)
+    season_dir = repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "seasons" / str(season)
     rosters = load_json(season_dir / "rosters.json")
     lookup = build_roster_provider_lookup(rosters)
     canonical_transactions = load_canonical_transactions(season_dir, lookup, season=season)

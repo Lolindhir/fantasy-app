@@ -1,3 +1,5 @@
+Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+
 Import-Module "$PSScriptRoot\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 
 # Builds the App Schedule.json read model from canonical NFL facts (#347 G2):
@@ -219,8 +221,8 @@ function Get-CanonicalAppSchedule {
         [string[]]$GameTypes = @('REG')
     )
 
-    $schedulePath = Join-Path $RepoRoot "source-data/nfl/schedules/$Season.json"
-    $finalityPath = Join-Path $RepoRoot "source-data/nfl/game-finality/$Season.json"
+    $schedulePath = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/schedules/$Season.json"
+    $finalityPath = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/game-finality/$Season.json"
     if (-not (Test-Path $schedulePath)) { throw "Canonical NFL schedule is required: $schedulePath" }
     if (-not (Test-Path $finalityPath)) { throw "Canonical NFL game finality is required: $finalityPath" }
 

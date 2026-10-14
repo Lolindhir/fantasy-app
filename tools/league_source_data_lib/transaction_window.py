@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from .week_structure import resolve_nfl_regular_season_week_ceiling
+from data_roots import DATA_SOURCE_ROOT
 
 
 def _parse_int(value: object, *, field: str, minimum: int = 0) -> int | None:
@@ -26,7 +27,7 @@ def load_persisted_current_league_payload(
 ) -> dict:
     path = (
         repo_root
-        / "source-data"
+        / DATA_SOURCE_ROOT
         / "providers"
         / "sleeper"
         / "leagues"
@@ -47,7 +48,7 @@ def validate_current_transaction_identity(
     provider_league_id: str,
     season: int,
 ) -> None:
-    manifest_path = repo_root / "source-data" / "leagues" / canonical_league_id / "manifest.json"
+    manifest_path = repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "manifest.json"
     if not manifest_path.exists():
         raise FileNotFoundError(
             f"Canonical League manifest is required for current transaction refresh: {manifest_path}"

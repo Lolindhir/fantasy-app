@@ -34,6 +34,7 @@ from .identity_model import (
     ids_from_players,
 )
 from .identity_sources import raw_identity_candidates, sleeper_player_candidates
+from data_roots import DATA_SOURCE_ROOT
 
 
 _CANONICAL_BIRTHDATE_RECONCILIATION_MIN_SHARED_ANCHORS = 3
@@ -104,7 +105,7 @@ class UnionFind:
 
 def existing_identity_candidates(repo_root: Path) -> list[IdentityCandidate]:
     payload = normalize_legacy_canonical_player_fields(
-        load_json(repo_root / "source-data/nfl/identities/players.json", {}) or {}
+        load_json(repo_root / DATA_SOURCE_ROOT / "nfl/identities/players.json", {}) or {}
     )
     result: list[IdentityCandidate] = []
     for row in payload.get("Players", []):
@@ -706,7 +707,7 @@ def current_identity_adjudication_state(
     suppressing the upstream claim for as long as the upstream still makes it.
     """
     persisted = normalize_legacy_canonical_player_fields(
-        load_json(repo_root / "source-data/nfl/identities/players.json", {}) or {}
+        load_json(repo_root / DATA_SOURCE_ROOT / "nfl/identities/players.json", {}) or {}
     )
     players = [row for row in persisted.get("Players", []) if isinstance(row, dict)]
     known_ids = {
@@ -717,7 +718,7 @@ def current_identity_adjudication_state(
     decisions = load_current_identity_adjudications(repo_root, known_ids, observation_season)
     if not decisions:
         return [], []
-    mappings = load_json(repo_root / "source-data/nfl/identities/provider-mappings.json", {}) or {}
+    mappings = load_json(repo_root / DATA_SOURCE_ROOT / "nfl/identities/provider-mappings.json", {}) or {}
     statuses = validate_current_identity_adjudications_against_state(
         decisions,
         players,

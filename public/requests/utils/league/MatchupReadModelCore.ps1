@@ -242,7 +242,7 @@ function Get-MrmCanonicalScheduleGames {
         [Parameter(Mandatory = $true)][int]$Season
     )
 
-    $path = Join-Path $RepoRoot "source-data/nfl/schedules/$Season.json"
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/schedules/$Season.json"
     if (-not (Test-Path $path)) { throw "Canonical NFL schedule not found for Matchups $Season at $path." }
     $document = Get-Content $path -Raw | ConvertFrom-Json
     return @(Get-MrmCollection (Get-MrmValue -Object $document -Names @('Games')) | Where-Object {
@@ -257,7 +257,7 @@ function Get-MrmFinalityMap {
         [Parameter(Mandatory = $true)][int]$Season
     )
 
-    $path = Join-Path $RepoRoot "source-data/nfl/game-finality/$Season.json"
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/game-finality/$Season.json"
     if (-not (Test-Path $path)) { return $null }
     $document = Get-Content $path -Raw | ConvertFrom-Json
     $map = @{}
@@ -277,7 +277,7 @@ function Get-MrmWeeklyAssignmentMap {
         [Parameter(Mandatory = $true)][int]$Week
     )
 
-    $path = Join-Path $RepoRoot ("source-data/nfl/weekly-rosters/{0}/{1:D2}.json" -f $Season, $Week)
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) ("nfl/weekly-rosters/{0}/{1:D2}.json" -f $Season, $Week)
     if (-not (Test-Path $path)) { return $null }
     $document = Get-Content $path -Raw | ConvertFrom-Json
     $recordCollection = Get-MrmValue -Object $document -Names @('Records','Rows','Rosters','Players','Data')
@@ -503,7 +503,7 @@ function New-MatchupSeasonReadModel {
         [switch]$HistoricalCutoff
     )
 
-    $seasonDir = Join-Path $RepoRoot "source-data/leagues/$CanonicalLeagueID/seasons/$Season"
+    $seasonDir = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "leagues/$CanonicalLeagueID/seasons/$Season"
     $leagueFile = Join-Path $seasonDir 'league.json'
     $matchupDir = Join-Path $seasonDir 'matchups'
     if (-not (Test-Path $leagueFile) -or -not (Test-Path $matchupDir)) {
@@ -642,7 +642,7 @@ function Ensure-MatchupHistoryReadModels {
         [string]$RepoRoot = (Get-MrmRepositoryRoot)
     )
 
-    $seasonRoot = Join-Path $RepoRoot "source-data/leagues/$CanonicalLeagueID/seasons"
+    $seasonRoot = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "leagues/$CanonicalLeagueID/seasons"
     if (-not (Test-Path $seasonRoot)) { throw "Canonical league season root not found at $seasonRoot." }
     $historyDir = Join-Path ([string]$Config.PastSeasonsDir) 'Matchups'
     if (-not (Test-Path $historyDir)) { New-Item -ItemType Directory -Path $historyDir -Force | Out-Null }

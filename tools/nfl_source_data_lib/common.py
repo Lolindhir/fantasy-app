@@ -17,6 +17,7 @@ from .source_projection import (
     project_source,
     projection_output_format,
 )
+from data_roots import DATA_SOURCE_ROOT
 
 SCHEMA_VERSION = 1
 CANONICAL_SCHEMA_VERSION = 2
@@ -469,16 +470,16 @@ class Dataset:
 
 
 def load_registry_manifest(repo_root: Path) -> dict[str, Any]:
-    source_root = repo_root / "source-data"
+    source_root = repo_root / DATA_SOURCE_ROOT
     registry = load_json(source_root / "registry.json")
     if not isinstance(registry, dict):
-        raise ValueError("source-data/registry.json is missing or invalid")
+        raise ValueError(f"{DATA_SOURCE_ROOT}/registry.json is missing or invalid")
     version = as_int(registry.get("schemaVersion"))
     if version not in SUPPORTED_REGISTRY_SCHEMA_VERSIONS:
-        raise ValueError("source-data/registry.json has an unsupported schemaVersion")
+        raise ValueError(f"{DATA_SOURCE_ROOT}/registry.json has an unsupported schemaVersion")
     datasets = registry.get("datasets")
     if not isinstance(datasets, list) or not datasets:
-        raise ValueError("source-data/registry.json must contain at least one active dataset")
+        raise ValueError(f"{DATA_SOURCE_ROOT}/registry.json must contain at least one active dataset")
 
     seen: set[str] = set()
     for value in datasets:
@@ -509,7 +510,7 @@ def load_registry_manifest(repo_root: Path) -> dict[str, Any]:
 
 
 def load_registry(repo_root: Path) -> list[Dataset]:
-    source_root = repo_root / "source-data"
+    source_root = repo_root / DATA_SOURCE_ROOT
     registry = load_registry_manifest(repo_root)
     version = int(registry["schemaVersion"])
     return [
@@ -532,7 +533,7 @@ def current_source_season(repo_root: Path) -> int:
     cannot be resolved fails closed; without any league manifest the UTC year is the last resort.
     """
     seasons: list[int] = []
-    for manifest_path in sorted((repo_root / "source-data/leagues").glob("*/manifest.json")):
+    for manifest_path in sorted((repo_root / DATA_SOURCE_ROOT / "leagues").glob("*/manifest.json")):
         manifest = load_json(manifest_path, {}) or {}
         current_id = str(manifest.get("CurrentCanonicalLeagueSeasonID") or "").strip()
         matches = [

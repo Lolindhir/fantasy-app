@@ -23,6 +23,7 @@ from historical_projection_v3_calibration import (
     _v3_projection,
     build_v3_examples,
 )
+from data_roots import DATA_SOURCE_ROOT
 
 RECENT_WINDOW = 3
 HISTORY_DECAY = 0.25
@@ -66,7 +67,7 @@ def _snap_pct_by_player(
     season: int,
     week: int,
 ) -> dict[str, float]:
-    path = repo_root / "source-data/nfl/snap-counts" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/snap-counts" / str(season) / f"{week:02d}.json"
     payload = _require_finalized_partition(path, season, week)
     records = payload.get("Records")
     if not isinstance(records, list):
@@ -100,7 +101,7 @@ def _usage_by_week(
 
     for week in range(first_week, last_week + 1):
         stats_path = (
-            repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+            repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
         )
         payload = _require_finalized_partition(stats_path, season, week)
         records = payload.get("Records")

@@ -1,3 +1,24 @@
+# Data root directories (Issue #788, step 0). The only place in PowerShell that spells out the root names;
+# tools/data_roots.py is the Python counterpart and tools/tests/test_data_roots.py keeps both in sync.
+$script:DataSourceRootName = 'source-data'
+$script:DataDerivedRootName = 'derived-data'
+$script:DataMetaRootName = 'data-meta'
+
+function Get-DataSourceRoot {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+    return (Join-Path $RepoRoot $script:DataSourceRootName)
+}
+
+function Get-DataDerivedRoot {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+    return (Join-Path $RepoRoot $script:DataDerivedRootName)
+}
+
+function Get-DataMetaRoot {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+    return (Join-Path $RepoRoot $script:DataMetaRootName)
+}
+
 function Get-Config {
 
     # League Settings
@@ -11,6 +32,10 @@ function Get-Config {
 
     # File Locations
     $DataDir = "$PSScriptRoot\..\..\data"
+    $RepoRootDir = Join-Path $PSScriptRoot "..\..\.."
+    $DataSourceDir = Get-DataSourceRoot -RepoRoot $RepoRootDir
+    $DataDerivedDir = Get-DataDerivedRoot -RepoRoot $RepoRootDir
+    $DataMetaDir = Get-DataMetaRoot -RepoRoot $RepoRootDir
     $BackupDir = Join-Path $DataDir "backup"
     $PlayersFile = Join-Path $DataDir "Players.json"
     $LeagueFile = Join-Path $DataDir "League.json"
@@ -140,6 +165,9 @@ function Get-Config {
         WeightGame                       = $WeightGame
 
         DataDir                          = $DataDir
+        DataSourceDir                    = $DataSourceDir
+        DataDerivedDir                   = $DataDerivedDir
+        DataMetaDir                      = $DataMetaDir
         BackupDir                        = $BackupDir
         LeagueFile                       = $LeagueFile
         DecisionWindowsFile              = $DecisionWindowsFile

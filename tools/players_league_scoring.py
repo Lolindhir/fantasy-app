@@ -35,6 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from historical_fantasy_scoring import number, read_json, score_record  # noqa: E402
 from player_week_fantasy import build_scoring_profile_identity  # noqa: E402
 from players_game_history import GAME_HISTORY_SEASON_TYPES, build_game_histories  # noqa: E402
+from data_roots import DATA_SOURCE_ROOT
 
 LEAGUE_ID = "nfl-reise"
 SCHEMA_VERSION = 2
@@ -47,7 +48,7 @@ EXPORT_ROW_FIELDS = ("Points", "Snaps", "KickAttempts", "Attempts", "TdPass", "T
 # --------------------------------------------------------------------------- #
 def game_final_regular_weeks(repo_root: Path, season: int) -> set[int]:
     """Regular-season weeks whose NFL games are all final (game finality only)."""
-    path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/game-finality" / f"{season}.json"
     payload = read_json(path)
     return {
         int(w["Week"])
@@ -63,8 +64,8 @@ def stats_cover_week(repo_root: Path, season: int, week: int) -> bool:
     all final can still have an incomplete partition. Scoring such a week would treat
     the missing teams' players as zero (the 2026 week 4 case, #895).
     """
-    stats_path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
-    schedule_path = repo_root / "source-data/nfl/schedules" / f"{season}.json"
+    stats_path = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
+    schedule_path = repo_root / DATA_SOURCE_ROOT / "nfl/schedules" / f"{season}.json"
     if not stats_path.is_file() or not schedule_path.is_file():
         return False
     playing = {
@@ -98,7 +99,7 @@ def resolve_league_week_bounds(repo_root: Path, league_id: str, season: int) -> 
     final regular-season weeks in the canonical NFL game finality, capped at
     LastLeagueWeek. A missing structure or finality fails closed.
     """
-    path = repo_root / "source-data/leagues" / league_id / "seasons" / str(season) / "league.json"
+    path = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons" / str(season) / "league.json"
     if not path.is_file():
         raise ValueError(f"Canonical league source missing: {path}")
     structure = read_json(path).get("WeekStructure")
@@ -132,7 +133,7 @@ def resolve_league_week_bounds(repo_root: Path, league_id: str, season: int) -> 
 
 
 def league_scoring_settings(repo_root: Path, league_id: str, season: int) -> dict[str, Any]:
-    path = repo_root / "source-data/leagues" / league_id / "seasons" / str(season) / "league.json"
+    path = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons" / str(season) / "league.json"
     settings = read_json(path).get("ScoringSettings")
     if not isinstance(settings, dict) or not settings:
         raise ValueError(f"No ScoringSettings in {path}")
@@ -140,7 +141,7 @@ def league_scoring_settings(repo_root: Path, league_id: str, season: int) -> dic
 
 
 def league_owned_sleeper_ids(repo_root: Path, league_id: str, season: int) -> set[str]:
-    rosters = read_json(repo_root / "source-data/leagues" / league_id / "seasons" / str(season) / "rosters.json")
+    rosters = read_json(repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons" / str(season) / "rosters.json")
     return {
         str(mapping["ProviderPlayerID"])
         for team in rosters
@@ -191,8 +192,8 @@ class SleeperIdentityResolver:
     @classmethod
     def from_repo(cls, repo_root: Path) -> "SleeperIdentityResolver":
         return cls(
-            read_json(repo_root / "source-data/nfl/identities/provider-mappings.json"),
-            read_json(repo_root / "source-data/nfl/identities/players.json"),
+            read_json(repo_root / DATA_SOURCE_ROOT / "nfl/identities/provider-mappings.json"),
+            read_json(repo_root / DATA_SOURCE_ROOT / "nfl/identities/players.json"),
         )
 
     def _candidates(self, sleeper_id: str, season: int) -> set[str]:
@@ -229,7 +230,7 @@ AMBIGUOUS_FUMBLE_MESSAGE = "ambiguous fumble-team relation"
 
 
 def _partition_files(repo_root: Path, dataset: str, season: int) -> list[Path]:
-    directory = repo_root / "source-data/nfl" / dataset / str(season)
+    directory = repo_root / DATA_SOURCE_ROOT / "nfl" / dataset / str(season)
     if not directory.is_dir():
         raise FileNotFoundError(f"Canonical partition directory missing: {directory}")
     return sorted(directory.glob("*.json"))
@@ -266,13 +267,13 @@ def build_weekly_scores(
             elif payload.get("Finalized") is not True:
                 raise ValueError(f"Historical player-stats partition is not finalized: {stats_file}")
             snaps: dict[str, int] = defaultdict(int)
-            snap_path = repo_root / "source-data/nfl/snap-counts" / str(season) / stats_file.name
+            snap_path = repo_root / DATA_SOURCE_ROOT / "nfl/snap-counts" / str(season) / stats_file.name
             if snap_path.exists():
                 for record in read_json(snap_path)["Records"]:
                     if record.get("CanonicalPlayerID") in wanted:
                         snaps[record["CanonicalPlayerID"]] += int(record.get("OffenseSnaps") or 0)
             events: dict[str, list[dict[str, Any]]] = defaultdict(list)
-            events_path = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season) / stats_file.name
+            events_path = repo_root / DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events" / str(season) / stats_file.name
             events_ok = False
             if events_path.exists():
                 events_payload = read_json(events_path)
