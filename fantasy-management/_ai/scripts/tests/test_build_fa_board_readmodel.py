@@ -155,7 +155,7 @@ class Fixture:
         self.config = root / "fantasy-management/automation/fa-board-materialization.json"
         self.write("public/data/League.json", league_data)
         self.write(
-            "public/data/Metadata.json",
+            "data-meta/test-league/metadata.json",
             {"Drafts": {"Types": [
                 {"DraftType": "Rookie", "DraftInstance": 1, "DraftNo": 1, "Rounds": 5},
                 {"DraftType": "Free_Agent", "DraftInstance": 1, "DraftNo": 2, "Rounds": 5, **(draft_binding or {})},
@@ -181,7 +181,7 @@ class Fixture:
                 "sources": {
                     "player_signals": "fantasy-management/generated/operations/player-signals.json",
                     "league_enrichment": "public/data/League.json",
-                    "league_metadata": "public/data/Metadata.json",
+                    "league_metadata": "data-meta/test-league/metadata.json",
                     "timestamps": "public/data/Timestamps.json",
                 },
                 "output": {"fa_board_readmodel": "fantasy-management/generated/operations/fa-board-readmodel.json"},

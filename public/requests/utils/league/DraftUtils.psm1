@@ -174,7 +174,7 @@ function Assert-DraftTypeConfigs {
 
         $draftNo = [int]$draftTypeConfig.DraftNo
         if ($draftNo -lt 1) { throw "DraftNo must be at least 1 for draft '$identityKey'." }
-        if ($draftNos.ContainsKey([string]$draftNo)) { throw "Duplicate DraftNo '$draftNo' in Metadata.json." }
+        if ($draftNos.ContainsKey([string]$draftNo)) { throw "Duplicate DraftNo '$draftNo' in the league metadata (data-meta)." }
         $draftNos[[string]$draftNo] = $true
 
         $bindings = Get-DraftObjectProperty -object $draftTypeConfig -propertyName "SleeperDraftIDs" -defaultValue $null

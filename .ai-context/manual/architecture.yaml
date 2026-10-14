@@ -32,10 +32,10 @@ layers:
     path: data-meta/<CanonicalLeagueID>/
     responsibility: >
       ADR-054 (Issue #986): hand-maintained metadata per league, one metadata.json per
-      CanonicalLeagueID. It will replace public/data/Metadata.json, public/requests/config.ps1,
+      CanonicalLeagueID. It replaces public/data/Metadata.json, public/requests/config.ps1,
       the league defaults in ConfigUtils.psm1 and source-data/leagues/_bootstrap during the staged
-      migration; until step 3 of Issue #986 the legacy owners stay productive and the new file is
-      verified for parity only. Contract: .ai-context/manual/league-metadata.yaml.
+      migration; since step 3 of Issue #986 the consumers read it and the legacy files are only
+      removed in step 4. Contract: .ai-context/manual/league-metadata.yaml.
     owns:
       - Provider league ID, owners, draft configuration and draft IDs
       - per-season calendar dates (Cap Deadline) and the model choice per season

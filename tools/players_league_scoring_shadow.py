@@ -235,12 +235,12 @@ def compute_salary_cap(salaries_by_player: list[float], team_size: int, team_cou
 # Canonical inputs
 # --------------------------------------------------------------------------- #
 def read_ps_config_weights(repo_root: Path) -> tuple[float, float]:
-    text = (repo_root / "public/requests/config.ps1").read_text(encoding="utf-8-sig")
+    text = (repo_root / "public/requests/utils/ConfigUtils.psm1").read_text(encoding="utf-8-sig")
     weights = []
     for name in ("WeightTotal", "WeightGame"):
-        match = re.search(rf"\$Global:{name}\s*=\s*([0-9.]+)", text)
+        match = re.search(rf"^\s*\${name}\s*=\s*([0-9.]+)", text, re.MULTILINE)
         if not match:
-            raise ValueError(f"config.ps1 has no {name}")
+            raise ValueError(f"ConfigUtils.psm1 has no {name}")
         weights.append(float(match.group(1)))
     return weights[0], weights[1]
 
