@@ -12,30 +12,13 @@ architecture:
     until separately migrated.
 
 layers:
-  - name: manual-domain-config
-    path: public/data/Metadata.json
-    responsibility: >
-      Contains league-specific inputs and rules used by the PowerShell generation
-      pipeline.
-    owns:
-      - league-specific inputs
-      - league-specific rules
-      - owner id mapping
-      - draft configuration
-    doesNotOwn:
-      - technical paths
-      - runtime credentials
-      - Angular rendering
-      - generated app output
-
   - name: league-metadata
     path: data-meta/<CanonicalLeagueID>/
     responsibility: >
       ADR-054 (Issue #986): hand-maintained metadata per league, one metadata.json per
-      CanonicalLeagueID. It replaces public/data/Metadata.json, public/requests/config.ps1,
-      the league defaults in ConfigUtils.psm1 and source-data/leagues/_bootstrap during the staged
-      migration; since step 3 of Issue #986 the consumers read it and the legacy files are only
-      removed in step 4. Contract: .ai-context/manual/league-metadata.yaml.
+      CanonicalLeagueID. It replaced public/data/Metadata.json, public/requests/config.ps1,
+      the league defaults in ConfigUtils.psm1 and source-data/leagues/_bootstrap (removed in
+      Issue #986 step 4); all consumers read it. Contract: .ai-context/manual/league-metadata.yaml.
     owns:
       - Provider league ID, owners, draft configuration and draft IDs
       - per-season calendar dates (Cap Deadline) and the model choice per season
@@ -48,13 +31,13 @@ layers:
     path: public/requests/utils/ConfigUtils.psm1
     responsibility: >
       Provides technical paths and generation configuration for the PowerShell
-      data generation pipeline. Loads Metadata.json and exposes configuration to
+      data generation pipeline. Loads the league metadata (data-meta) and exposes configuration to
       generator scripts.
     owns:
       - generated data file paths
       - backup paths
       - request/generation defaults
-      - mapping Metadata.json into generator config
+      - mapping the league metadata (data-meta) into generator config
     doesNotOwn:
       - Angular rendering
       - generated JSON content as source of truth

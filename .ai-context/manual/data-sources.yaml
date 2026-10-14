@@ -1,21 +1,6 @@
 schemaVersion: 1
 
 dataSources:
-  metadata:
-    path: public/data/Metadata.json
-    category: manual-domain-config
-    role: Liga-spezifische Inputs und Regeln
-    description: >
-      Contains league-specific configuration and domain rules used by the
-      PowerShell generation pipeline.
-    owns:
-      - LeagueID
-      - LeagueYear
-      - CapDeadline
-      - CapDeadlineBufferDays
-      - OwnerIDs
-      - Drafts configuration, including the number of non-completed drafts retained per draft type
-
   leagueMetadata:
     path: data-meta/<CanonicalLeagueID>/metadata.json
     category: manual-domain-config
@@ -27,9 +12,9 @@ dataSources:
     description: >
       Target owner of everything hand-maintained about one league: provider league ID, owners,
       draft configuration, per-season Cap Deadline and the model choice per season. Not generated
-      and never written by a workflow. Status (Issue #986 step 3): ConfigUtils Get-Config, the League
-      source sync and readiness, and the Fantasy Management FA board read it; public/data/Metadata.json
-      and the _bootstrap files are no longer read by productive code and are removed in step 4.
+      and never written by a workflow. ConfigUtils Get-Config, the League source sync and readiness
+      and the Fantasy Management FA board read it. It replaced public/data/Metadata.json, config.ps1
+      and the League source bootstrap files (removed in Issue #986 step 4).
 
   configUtils:
     path: public/requests/utils/ConfigUtils.psm1
@@ -37,7 +22,7 @@ dataSources:
     role: Technische Pfade und Generierungs-Konfiguration
     description: >
       Provides technical path resolution and generation configuration for the
-      PowerShell data pipeline. Loads Metadata.json and returns the generator
+      PowerShell data pipeline. Loads the league metadata (data-meta) and returns the generator
       configuration object.
     owns:
       - DataDir
@@ -48,7 +33,7 @@ dataSources:
       - data root directory names for PowerShell (source, derived, meta; Python counterpart tools/data_roots.py, Issue #788)
       - configured past season resource path patterns
       - timestamp file path
-      - mapping Metadata.json into generator config
+      - mapping the league metadata (data-meta) into generator config
     exposes:
       - DataSourceDir
       - DataDerivedDir
@@ -72,8 +57,8 @@ dataSources:
     role: Generierte App-Daten
     description: >
       Generated read models consumed by Angular. These files are output, not the
-      architectural source of truth. Metadata.json is an exception because it is
-      manually maintained domain input.
+      architectural source of truth. Hand-maintained league inputs live in data-meta,
+      not here.
 
   players:
     path: public/data/Players.json
@@ -559,11 +544,11 @@ dataSources:
       league rules.
 
 dataFlow:
-  - from: public/data/Metadata.json
+  - from: data-meta/<CanonicalLeagueID>/metadata.json
     to: public/requests/utils/ConfigUtils.psm1
     purpose: Load league-specific inputs and rules, including the open draft count per draft type.
 
-  - from: public/data/Metadata.json
+  - from: data-meta/<CanonicalLeagueID>/metadata.json
     to: public/data/League.json
     purpose: Provide CapDeadline and CapDeadlineBufferDays for generated league Status and Phase rules.
 
@@ -617,7 +602,7 @@ dataFlow:
     to: public/data/Drafts.json
     purpose: Apply draft-pick ownership changes before generating current-season and open future draft output.
 
-  - from: public/data/Metadata.json
+  - from: data-meta/<CanonicalLeagueID>/metadata.json
     to: public/data/Drafts.json
     purpose: Provide draft types, rounds, configured order rules and the number of non-completed drafts retained per type.
 

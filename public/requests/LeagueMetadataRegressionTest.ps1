@@ -15,23 +15,19 @@ function Assert-Throws {
 }
 
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
-$legacy = Get-Content (Join-Path $repoRoot 'public/data/Metadata.json') -Raw | ConvertFrom-Json
 $manifest = Get-Content (Join-Path $repoRoot 'source-data/leagues/nfl-reise/manifest.json') -Raw | ConvertFrom-Json
 
-# Parity: every legacy Metadata.json field has the same value in the loader result.
+# Repository metadata: current season has a Cap Deadline and every manifest season has the first model versions.
 $all = Get-AllLeagueMetadata
 $meta = $all['nfl-reise']
-Assert-Equal $legacy.LeagueID $meta.CurrentProviderLeagueID 'LeagueID parity.'
-Assert-Equal $legacy.LeagueTimeZone $meta.LeagueTimeZone 'LeagueTimeZone parity.'
-Assert-Equal ($legacy.OwnerIDs | ConvertTo-Json -Compress) ($meta.Owners | ConvertTo-Json -Compress) 'OwnerIDs parity.'
-Assert-Equal ($legacy.Drafts | ConvertTo-Json -Depth 10 -Compress) ($meta.Drafts | ConvertTo-Json -Depth 10 -Compress) 'Drafts parity.'
 $season = [int]($manifest.CurrentCanonicalLeagueSeasonID -replace '^.*-', '')
-Assert-Equal $legacy.LeagueYear $season 'LeagueYear equals the manifest current season.'
 $deadline = Get-LeagueCapDeadline -Metadata $meta -Season $season
-Assert-Equal ([datetime]$legacy.CapDeadline).ToUniversalTime().ToString('o') ([datetime]$deadline.CapDeadline).ToUniversalTime().ToString('o') 'CapDeadline parity.'
-Assert-Equal $legacy.CapDeadlineBufferDays $deadline.CapDeadlineBufferDays 'CapDeadlineBufferDays parity.'
+if (-not $deadline.CapDeadline -or $null -eq $deadline.CapDeadlineBufferDays) { throw 'Current season needs CapDeadline and CapDeadlineBufferDays.' }
 foreach ($s in $manifest.Seasons) {
     Assert-Equal 'salary-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Salary') "Salary model $($s.Season)."
+}
+foreach ($retired in @('public/data/Metadata.json', 'public/data/Metadata.ai-doc.yaml', 'source-data/leagues/_bootstrap', 'public/requests/config.ps1')) {
+    if (Test-Path (Join-Path $repoRoot $retired)) { throw "Retired legacy path still exists: $retired" }
 }
 
 # Fail-closed behavior and multi-league iteration on fixtures.

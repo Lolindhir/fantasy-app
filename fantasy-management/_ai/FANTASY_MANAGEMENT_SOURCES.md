@@ -18,7 +18,7 @@ Important files:
 - `public/data/Drafts.json`
 - `public/data/Transactions.json`
 - `public/data/Timestamps.json`
-- `public/data/Metadata.json`
+- `data-meta/nfl-reise/metadata.json`
 
 ## League source rules
 
@@ -91,7 +91,7 @@ This is **not** a wholesale Fantasy Management source cutover. `free-agent-signa
 
 ## Metadata source rules
 
-`public/data/Metadata.json` is the canonical source for owner/team mapping and league-specific manual inputs.
+`data-meta/<CanonicalLeagueID>/metadata.json` is the canonical source for owner/team mapping and league-specific manual inputs.
 
 Known mapping may include:
 
@@ -104,7 +104,7 @@ Known mapping may include:
 | Dennis | 5 |
 | Tim | 6 |
 
-Always re-check `Metadata.json` when exact owner mapping matters.
+Always re-check the league metadata (`data-meta/<CanonicalLeagueID>/metadata.json`) when exact owner mapping matters.
 
 ## Player source rules
 

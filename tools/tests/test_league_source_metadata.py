@@ -1,4 +1,4 @@
-"""League metadata loader (ADR-054): schema, fail-closed behavior, multi-league, parity with Metadata.json."""
+"""League metadata loader (ADR-054): schema, fail-closed behavior, multi-league."""
 from __future__ import annotations
 
 import copy
@@ -38,19 +38,18 @@ class LeagueMetadataLoaderTests(unittest.TestCase):
         manifest = json.loads((REPO_ROOT / "source-data/leagues" / LEAGUE / "manifest.json").read_text(encoding="utf-8"))
         lm.validate_against_manifest(real_metadata(), manifest)
 
-    def test_parity_with_legacy_metadata_and_bootstrap(self) -> None:
-        legacy = json.loads((REPO_ROOT / "public/data/Metadata.json").read_text(encoding="utf-8"))
-        bootstrap = json.loads((REPO_ROOT / "source-data/leagues/_bootstrap" / f"{LEAGUE}.json").read_text(encoding="utf-8"))
+    def test_models_cap_deadline_and_legacy_paths_are_retired(self) -> None:
         meta = real_metadata()
-        self.assertEqual(legacy["LeagueID"], meta["CurrentProviderLeagueID"])
-        self.assertEqual(bootstrap, {k: meta[k] for k in ("CanonicalLeagueID", "Provider", "CurrentProviderLeagueID")})
-        self.assertEqual(legacy["LeagueTimeZone"], meta["LeagueTimeZone"])
-        self.assertEqual(legacy["OwnerIDs"], meta["Owners"])
-        self.assertEqual(legacy["Drafts"], meta["Drafts"])
-        self.assertEqual((legacy["CapDeadline"], legacy["CapDeadlineBufferDays"]), lm.cap_deadline(meta, legacy["LeagueYear"]))
+        manifest = json.loads((REPO_ROOT / "source-data/leagues" / LEAGUE / "manifest.json").read_text(encoding="utf-8"))
+        current = int(manifest["CurrentCanonicalLeagueSeasonID"].rsplit("-", 1)[1])
+        self.assertTrue(all(lm.cap_deadline(meta, current)))
         for kind, expected in (("Salary", "salary-v1"), ("SalaryCap", "salary-cap-v1"), ("Grading", "grading-v1")):
             for season in meta["Seasons"]:
                 self.assertEqual(expected, lm.model_for(meta, season, kind))
+        self.assertFalse((REPO_ROOT / "public/data/Metadata.json").exists())
+        self.assertFalse((REPO_ROOT / "public/data/Metadata.ai-doc.yaml").exists())
+        self.assertFalse((REPO_ROOT / "source-data/leagues/_bootstrap").exists())
+        self.assertFalse((REPO_ROOT / "public/requests/config.ps1").exists())
 
     def test_multiple_leagues_are_iterated(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
