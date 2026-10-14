@@ -28,12 +28,12 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
         provider_league_id = "1257421353431080960"
         season_id = canonical_league_season_id(canonical_league_id, 2025)
 
-        registry_source = Path(__file__).resolve().parents[2] / "source-data/league-registry.json"
-        registry_target = root / "source-data" / "league-registry.json"
+        registry_source = Path(__file__).resolve().parents[2] / "data-source/league-registry.json"
+        registry_target = root / "data-source" / "league-registry.json"
         registry_target.parent.mkdir(parents=True, exist_ok=True)
         registry_target.write_text(registry_source.read_text(encoding="utf-8"), encoding="utf-8")
 
-        schedule_path = root / "source-data" / "nfl" / "schedules" / "2025.json"
+        schedule_path = root / "data-source" / "nfl" / "schedules" / "2025.json"
         schedule_path.parent.mkdir(parents=True, exist_ok=True)
         schedule_path.write_text(
             json.dumps(
@@ -49,7 +49,7 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        mappings_path = root / "source-data" / "nfl" / "identities" / "provider-mappings.json"
+        mappings_path = root / "data-source" / "nfl" / "identities" / "provider-mappings.json"
         mappings_path.parent.mkdir(parents=True, exist_ok=True)
         mappings_path.write_text(
             json.dumps(
@@ -70,7 +70,7 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        manifest_path = root / "source-data" / "leagues" / canonical_league_id / "manifest.json"
+        manifest_path = root / "data-source" / "leagues" / canonical_league_id / "manifest.json"
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_text(
             json.dumps(
@@ -99,7 +99,7 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        raw = root / "source-data" / "providers" / "sleeper" / "leagues" / provider_league_id
+        raw = root / "data-source" / "providers" / "sleeper" / "leagues" / provider_league_id
         raw.mkdir(parents=True, exist_ok=True)
         (raw / "league.json").write_text(
             json.dumps(
@@ -179,7 +179,7 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             result = persist_canonical_outputs(outputs)
             self.assertGreater(result["CanonicalFilesChanged"], 0)
 
-            season_root = root / "source-data" / "leagues" / canonical_league_id / "seasons" / "2025"
+            season_root = root / "data-source" / "leagues" / canonical_league_id / "seasons" / "2025"
             league = json.loads((season_root / "league.json").read_text(encoding="utf-8"))
             rosters = json.loads((season_root / "rosters.json").read_text(encoding="utf-8"))
             self.assertEqual(league["WeekStructure"]["ObservedPlayoffFormat"], "two-week-rounds")
@@ -215,7 +215,7 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
         try:
             raw_league_path = (
                 root
-                / "source-data"
+                / "data-source"
                 / "providers"
                 / "sleeper"
                 / "leagues"
@@ -233,7 +233,7 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             )
             league_path = (
                 root
-                / "source-data"
+                / "data-source"
                 / "leagues"
                 / canonical_league_id
                 / "seasons"
@@ -249,7 +249,7 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
     def test_materializes_transaction_and_draft_refs(self) -> None:
         temporary, root, canonical_league_id, provider_league_id = self._repo()
         try:
-            raw = root / "source-data" / "providers" / "sleeper" / "leagues" / provider_league_id
+            raw = root / "data-source" / "providers" / "sleeper" / "leagues" / provider_league_id
             (raw / "transactions" / "week-3.json").write_text(
                 json.dumps(
                     [
@@ -304,7 +304,7 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             registry = load_league_registry(root)
             resolver = PlayerMappingResolver.load(root)
             persist_canonical_outputs(plan_canonical_materialization(root, canonical_league_id, registry, resolver))
-            season_root = root / "source-data" / "leagues" / canonical_league_id / "seasons" / "2025"
+            season_root = root / "data-source" / "leagues" / canonical_league_id / "seasons" / "2025"
             transaction = json.loads((season_root / "transactions" / "week-3.json").read_text(encoding="utf-8"))[0]
             draft_result = json.loads((season_root / "drafts.json").read_text(encoding="utf-8"))[0]
             self.assertTrue(transaction["CanonicalLeagueTransactionID"].startswith("clt-"))
@@ -317,7 +317,7 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
     def test_ambiguous_player_mapping_fails_closed(self) -> None:
         temporary, root, canonical_league_id, _ = self._repo()
         try:
-            mapping_path = root / "source-data" / "nfl" / "identities" / "provider-mappings.json"
+            mapping_path = root / "data-source" / "nfl" / "identities" / "provider-mappings.json"
             mapping = json.loads(mapping_path.read_text(encoding="utf-8"))
             mapping["Conflicts"] = [
                 {

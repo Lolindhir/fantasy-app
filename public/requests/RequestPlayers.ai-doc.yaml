@@ -50,7 +50,7 @@ scoringContract:
     scoring values are kept and the run logs a warning. A league-owned player with an ambiguous
     identity aborts the export (fail closed, last known good Players.json stays).
   persistence: >
-    The export is rebuilt on every run from canonical source-data in a temporary file and is not
+    The export is rebuilt on every run from canonical data-source in a temporary file and is not
     committed; persisting it as a data-derived product needs a publish-scope change of the Players
     workflow and is a separate approved step.
   validation: tools/players_league_scoring_shadow.py gate (Sleeper PlayerPoints reference, wired in build.yml)

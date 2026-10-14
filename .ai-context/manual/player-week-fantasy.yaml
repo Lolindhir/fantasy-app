@@ -20,7 +20,7 @@ architecture:
   physicalStorage: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
   implementationFoundation: tools/player_week_fantasy.py
   rules:
-    - source-data/nfl/weekly-rosters/<season>/<week>.json remains the authoritative canonical week-scoped NFL player anchor when present. For the live App refresh only, a missing target partition permits a provisional, exactly one-week-old same-season canonical roster; historical/backtest materialization stays strict.
+    - data-source/nfl/weekly-rosters/<season>/<week>.json remains the authoritative canonical week-scoped NFL player anchor when present. For the live App refresh only, a missing target partition permits a provisional, exactly one-week-old same-season canonical roster; historical/backtest materialization stays strict.
     - PlayerWeekFantasy never mutates or enriches canonical NFL source records in place.
     - public/data is an App delivery layer and is not the shared domain owner.
     - FantasyGameContext, Players/Free Agents and later Fantasy Operations are consumers, not independent scoring owners.
@@ -180,14 +180,14 @@ actual:
 
 dependencies:
   scoringProfile:
-    owner: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
     invalidates:
       - Actual
       - Projection
       - PredictionRange
     key: SettingsHash
   weeklyPlayerAnchor:
-    owner: source-data/nfl/weekly-rosters/<season>/<week>.json
+    owner: data-source/nfl/weekly-rosters/<season>/<week>.json
     liveRefreshFallback: >
       Only when the target-week NFL weekly roster partition is absent, the current App
       refresh may use the immediately previous week's same-season canonical NFL roster
@@ -354,7 +354,7 @@ productionMaterialization:
       explicitly selected ScoringSettings. A SettingsHash change therefore invalidates
       Actual, Projection and PredictionRange without requiring a code change.
   currentSeasonFinality:
-    authority: source-data/nfl/game-finality/<season>.json::Weeks[].WeekFinal
+    authority: data-source/nfl/game-finality/<season>.json::Weeks[].WeekFinal
     rule: >
       Current-season source partitions may remain lifecycle Finalized=false while
       completed weeks are valid history. Only canonical REG WeekFinal=true weeks
@@ -370,7 +370,7 @@ productionMaterialization:
     targetResolution: >
       League/Season/Week are read from public/data/FantasyGameContext.json so the published
       snapshot always matches the week the Angular join requires. The Sleeper league is mapped to
-      the canonical league through source-data/leagues/*/seasons/<season>/league.json ProviderMappings.
+      the canonical league through data-source/leagues/*/seasons/<season>/league.json ProviderMappings.
     publicationScope:
       - data-derived/player-week-fantasy
       - public/data/PlayerWeekFantasy.json

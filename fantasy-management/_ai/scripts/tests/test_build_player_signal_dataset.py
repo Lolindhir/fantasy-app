@@ -152,7 +152,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         )
         self.write_json(
             root,
-            "source-data/leagues/test-league/manifest.json",
+            "data-source/leagues/test-league/manifest.json",
             {
                 "CanonicalLeagueID": "test-league",
                 "CurrentCanonicalLeagueSeasonID": "test-league-2026",
@@ -166,7 +166,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         )
         self.write_json(
             root,
-            "source-data/leagues/test-league/seasons/2026/league.json",
+            "data-source/leagues/test-league/seasons/2026/league.json",
             {
                 "CanonicalLeagueID": "test-league",
                 "Season": 2026,
@@ -175,7 +175,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         )
         self.write_json(
             root,
-            "source-data/leagues/test-league/seasons/2026/members.json",
+            "data-source/leagues/test-league/seasons/2026/members.json",
             [
                 {
                     "CanonicalLeagueMemberID": "member-1",
@@ -195,7 +195,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         )
         self.write_json(
             root,
-            "source-data/leagues/test-league/seasons/2026/rosters.json",
+            "data-source/leagues/test-league/seasons/2026/rosters.json",
             [
                 {
                     "CanonicalLeagueMemberID": "member-1",
@@ -225,7 +225,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         )
         self.write_json(
             root,
-            "source-data/nfl/identities/players.json",
+            "data-source/nfl/identities/players.json",
             {
                 "Players": [
                     {
@@ -248,7 +248,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         )
         self.write_json(
             root,
-            "source-data/nfl/platform/sleeper/players.json",
+            "data-source/nfl/platform/sleeper/players.json",
             {
                 "Records": [
                     {
@@ -327,17 +327,17 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         )
         self.write_json(
             root,
-            "source-data/nfl/rosters/2026.json",
+            "data-source/nfl/rosters/2026.json",
             self.canonical_roster_document(["canonical-1", "canonical-2"]),
         )
         self.write_json(
             root,
-            "source-data/nfl/weekly-rosters/2026/01.json",
+            "data-source/nfl/weekly-rosters/2026/01.json",
             self.canonical_roster_document(["canonical-1", "canonical-2"], week=1),
         )
         self.write_json(
             root,
-            "source-data/nfl/weekly-rosters/2026/02.json",
+            "data-source/nfl/weekly-rosters/2026/02.json",
             self.canonical_roster_document(["canonical-1"], week=2),
         )
         self.write_json(
@@ -506,8 +506,8 @@ class PlayerSignalDatasetTests(unittest.TestCase):
                 "sources": {
                     "league_display": "public/data/League.json",
                     "players": "public/data/Players.json",
-                    "canonical_player_identities": "source-data/nfl/identities/players.json",
-                    "canonical_sleeper_players": "source-data/nfl/platform/sleeper/players.json",
+                    "canonical_player_identities": "data-source/nfl/identities/players.json",
+                    "canonical_sleeper_players": "data-source/nfl/platform/sleeper/players.json",
                     "timestamps": "public/data/Timestamps.json",
                     "external_signal_relevance": "fantasy-management/generated/operations/external-signal-relevance.json",
                 },
@@ -632,7 +632,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             )
             players_path.write_text(json.dumps(players, indent=2) + "\n", encoding="utf-8")
 
-            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper_path = root / "data-source/nfl/platform/sleeper/players.json"
             sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
             sleeper["Records"][0]["Position"] = "DB"
             sleeper["Records"][0]["FantasyPositions"] = ["DB", "K"]
@@ -687,7 +687,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             players[2]["TeamAbbr"] = "LEG"
             players[2]["IsFreeAgent"] = False
             players_path.write_text(json.dumps(players, indent=2) + "\n", encoding="utf-8")
-            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper_path = root / "data-source/nfl/platform/sleeper/players.json"
             sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
             sleeper["Records"][2]["Team"] = "CAN"
             sleeper_path.write_text(json.dumps(sleeper, indent=2) + "\n", encoding="utf-8")
@@ -701,7 +701,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             config_path = self.prepare_root(root)
             self.write_json(
                 root,
-                "source-data/nfl/weekly-rosters/2026/02.json",
+                "data-source/nfl/weekly-rosters/2026/02.json",
                 self.canonical_roster_document(["canonical-1", "canonical-3"], week=2),
             )
 
@@ -717,7 +717,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             config_path = self.prepare_root(root)
-            (root / "source-data/nfl/rosters/2026.json").unlink()
+            (root / "data-source/nfl/rosters/2026.json").unlink()
             with self.assertRaisesRegex(
                 MODULE.PlayerSignalMaterializationError, "Canonical NFL roster membership"
             ):
@@ -728,7 +728,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             root = Path(directory)
             config_path = self.prepare_root(root)
 
-            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper_path = root / "data-source/nfl/platform/sleeper/players.json"
             sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
             sleeper["Records"][1]["Team"] = "CAN"
             sleeper_path.write_text(json.dumps(sleeper, indent=2) + "\n", encoding="utf-8")
@@ -744,7 +744,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             root = Path(directory)
             config_path = self.prepare_root(root)
 
-            identities_path = root / "source-data/nfl/identities/players.json"
+            identities_path = root / "data-source/nfl/identities/players.json"
             identities = json.loads(identities_path.read_text(encoding="utf-8"))
             identities["Players"][0].update(
                 {
@@ -775,7 +775,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             root = Path(directory)
             config_path = self.prepare_root(root)
 
-            identities_path = root / "source-data/nfl/identities/players.json"
+            identities_path = root / "data-source/nfl/identities/players.json"
             identities = json.loads(identities_path.read_text(encoding="utf-8"))
             identities["Players"][0].update(
                 {
@@ -805,7 +805,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             root = Path(directory)
             config_path = self.prepare_root(root)
 
-            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper_path = root / "data-source/nfl/platform/sleeper/players.json"
             sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
             sleeper["Records"][0]["CanonicalPlayerID"] = "canonical-other"
             sleeper_path.write_text(json.dumps(sleeper, indent=2) + "\n", encoding="utf-8")
@@ -821,7 +821,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             root = Path(directory)
             config_path = self.prepare_root(root)
 
-            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper_path = root / "data-source/nfl/platform/sleeper/players.json"
             sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
             sleeper["Records"][0]["FantasyPositions"] = "K"
             sleeper_path.write_text(json.dumps(sleeper, indent=2) + "\n", encoding="utf-8")

@@ -19,7 +19,7 @@ _SPEC.loader.exec_module(_IMPL)
 
 _OLD_ROOT = "fantasy-management/sources/external-rankings/fantasycalc"
 _NEW_ROOT = "fantasy-management/sources/external-rankings/market-value/fantasycalc"
-_CANONICAL_SLEEPER_PLAYERS_PATH = Path("source-data/nfl/platform/sleeper/players.json")
+_CANONICAL_SLEEPER_PLAYERS_PATH = Path("data-source/nfl/platform/sleeper/players.json")
 
 
 def _replace_paths(value: Any) -> Any:

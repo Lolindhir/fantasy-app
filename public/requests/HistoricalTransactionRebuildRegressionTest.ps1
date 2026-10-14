@@ -43,7 +43,7 @@ function Assert-Before {
 }
 
 # The transactions request must rebuild current and historical transaction bases
-# from canonical League source-data, then rebuild dependent drafts before final
+# from canonical League data-source, then rebuild dependent drafts before final
 # draft-result enrichment.
 $requestTransactions = Get-Content "$PSScriptRoot\RequestTransactions.ps1" -Raw
 Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonical") -Message "RequestTransactions no longer uses the canonical all-season transaction rebuild."

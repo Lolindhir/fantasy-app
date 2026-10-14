@@ -20,8 +20,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 DATA = ROOT / "public" / "data"
-LEAGUE_SRC = ROOT / "source-data" / "leagues" / "nfl-reise" / "seasons"
-NFL_SRC = ROOT / "source-data" / "nfl"
+LEAGUE_SRC = ROOT / "data-source" / "leagues" / "nfl-reise" / "seasons"
+NFL_SRC = ROOT / "data-source" / "nfl"
 OUT_DIR = Path(__file__).resolve().parents[1] / "analyses"
 OUT_STEM = "2026-10-05-salary-simulation"
 
@@ -797,9 +797,9 @@ def main():
             "players": "public/data/Players.json (Liga-Scoring seit #347 D4)",
             "league": "public/data/League.json",
             "rookie_drafts": "public/data/past_seasons/Drafts/Drafts_<season>.json",
-            "nfl_draft": "source-data/nfl/draft/<season>.json",
+            "nfl_draft": "data-source/nfl/draft/<season>.json",
             "transactions": "public/data/past_seasons/Transactions/*.json + public/data/Transactions.json",
-            "rosters_2025": "source-data/leagues/nfl-reise/seasons/2025/rosters.json",
+            "rosters_2025": "data-source/leagues/nfl-reise/seasons/2025/rosters.json",
             "season_2022": "public/data/past_seasons/Players_2022.json (Tank01-PPR, nur für Zyklus 2025)",
         },
         "format": fmt,

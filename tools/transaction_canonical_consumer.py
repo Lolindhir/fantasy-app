@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the current app transaction base from canonical League source-data."""
+"""Build the current app transaction base from canonical League data-source."""
 from __future__ import annotations
 
 import argparse

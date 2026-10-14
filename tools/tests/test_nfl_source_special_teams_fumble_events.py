@@ -33,8 +33,8 @@ def projected_dataset(root: Path) -> common_mod.Dataset:
         provider="nflverse",
         upstream="nflverse/nflverse-data",
         source_url="https://example.invalid/play_by_play_{season}.csv.gz",
-        raw_path=root / "source-data/providers/nflverse/special-teams-fumble-events/raw-{season}.json",
-        metadata_path=root / "source-data/providers/nflverse/special-teams-fumble-events/metadata-{season}.json",
+        raw_path=root / "data-source/providers/nflverse/special-teams-fumble-events/raw-{season}.json",
+        metadata_path=root / "data-source/providers/nflverse/special-teams-fumble-events/metadata-{season}.json",
         required_columns=tuple(SPECIAL_TEAMS_FUMBLE_FIELDS),
         minimum_rows=0,
         kind="special-teams-fumble-event-evidence",
@@ -83,7 +83,7 @@ def write_game_finality(
     incomplete_weeks: list[int] | None = None,
 ) -> None:
     incomplete_weeks = incomplete_weeks or []
-    path = root / "source-data/nfl/game-finality" / f"{season}.json"
+    path = root / "data-source/nfl/game-finality" / f"{season}.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(
@@ -122,7 +122,7 @@ class SpecialTeamsFumbleRegistryTests(unittest.TestCase):
     def test_registry_loads_versioned_projected_source_contract(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            registry_path = root / "source-data/registry.json"
+            registry_path = root / "data-source/registry.json"
             registry_path.parent.mkdir(parents=True, exist_ok=True)
             registry_path.write_text(
                 json.dumps(
@@ -178,7 +178,7 @@ class SpecialTeamsFumbleRegistryTests(unittest.TestCase):
     def test_registry_rejects_unknown_projection_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            registry_path = root / "source-data/registry.json"
+            registry_path = root / "data-source/registry.json"
             registry_path.parent.mkdir(parents=True, exist_ok=True)
             registry_path.write_text(
                 json.dumps(
@@ -430,7 +430,7 @@ class SpecialTeamsFumbleCanonicalTests(unittest.TestCase):
             by_week = {payload["Week"]: (path, payload) for path, payload in outputs}
             empty_path, empty_payload = by_week[8]
             self.assertEqual(
-                root / "source-data/nfl/special-teams-fumble-events/2025/08.json",
+                root / "data-source/nfl/special-teams-fumble-events/2025/08.json",
                 empty_path,
             )
             self.assertTrue(empty_payload["Finalized"])

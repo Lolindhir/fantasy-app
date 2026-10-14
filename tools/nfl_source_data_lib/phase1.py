@@ -1308,7 +1308,7 @@ def build_phase1_outputs(
     *,
     force: bool = False,
 ) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
-    """Build all activated Phase-1 canonical source-data outputs before publication."""
+    """Build all activated Phase-1 canonical data-source outputs before publication."""
     outputs: list[tuple[Path, dict[str, Any]]] = []
     audit: dict[str, Any] = {}
     preserved = 0

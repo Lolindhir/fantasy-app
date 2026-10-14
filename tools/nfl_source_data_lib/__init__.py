@@ -1,4 +1,4 @@
-"""Shared implementation for the persistent NFL source-data layer."""
+"""Shared implementation for the persistent NFL data-source layer."""
 
 import sys
 from pathlib import Path

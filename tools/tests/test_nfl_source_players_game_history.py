@@ -41,35 +41,35 @@ class GameHistoryFixture:
     def __init__(self, *, with_qbr: bool = True, long_gain_games: tuple[str, ...] = ("2026_01_SF_LA",)) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        (self.root / "source-data/nfl").mkdir(parents=True)
-        shutil.copy(ROOT / "source-data/nfl/teams.json", self.root / "source-data/nfl/teams.json")
-        write(self.root, f"source-data/nfl/schedules/{SEASON}.json", {"Season": SEASON, "Games": [
+        (self.root / "data-source/nfl").mkdir(parents=True)
+        shutil.copy(ROOT / "data-source/nfl/teams.json", self.root / "data-source/nfl/teams.json")
+        write(self.root, f"data-source/nfl/schedules/{SEASON}.json", {"Season": SEASON, "Games": [
             game("2026_01_SF_LA", 1, "2026-09-13", "SF", "LA", AwayScore=27, HomeScore=7),
             game("2026_02_LA_SF", 2, "2026-09-20", "LA", "SF"),
             game("2026_02_WAS_KC", 2, "2026-09-20", "WAS", "KC"),
         ]})
-        write(self.root, f"source-data/nfl/game-finality/{SEASON}.json", {"Season": SEASON, "Weeks": [
+        write(self.root, f"data-source/nfl/game-finality/{SEASON}.json", {"Season": SEASON, "Weeks": [
             {"GameType": "REG", "Week": 1, "WeekFinal": True}, {"GameType": "REG", "Week": 2, "WeekFinal": False}]})
-        write(self.root, f"source-data/nfl/player-stats/{SEASON}/01.json", {"Season": SEASON, "Week": 1, "Records": [
+        write(self.root, f"data-source/nfl/player-stats/{SEASON}/01.json", {"Season": SEASON, "Week": 1, "Records": [
             stat_row(QB, "LA", "2026_01_SF_LA", 1, "QB", attempts=30, completions=20, passing_yards=300, passing_tds=3,
                      passing_interceptions=0, carries=1, rushing_yards=-2),
             stat_row(KR, "SF", "2026_01_SF_LA", 1, "K", fg_att=2, fg_made=1, fg_missed=1, fg_long=44, pat_att=3, pat_made=3),
             stat_row(RB, "SF", "2026_01_SF_LA", 1, "RB", carries=3, rushing_yards=4, targets=2, receptions=1, receiving_yards=5),
         ]})
-        write(self.root, f"source-data/nfl/player-stats/{SEASON}/02.json", {"Season": SEASON, "Week": 2, "Records": [
+        write(self.root, f"data-source/nfl/player-stats/{SEASON}/02.json", {"Season": SEASON, "Week": 2, "Records": [
             stat_row(RB, "SF", "2026_02_LA_SF", 2, "RB", carries=5, rushing_yards=11),
         ]})
-        write(self.root, f"source-data/nfl/snap-counts/{SEASON}/01.json", {"Season": SEASON, "Week": 1, "Records": [
+        write(self.root, f"data-source/nfl/snap-counts/{SEASON}/01.json", {"Season": SEASON, "Week": 1, "Records": [
             {"CanonicalPlayerID": RB, "GameID": "2026_01_SF_LA", "GameType": "REG", "Team": "SF", "OffenseSnaps": 20, "OffensePct": 0.33},
             {"CanonicalPlayerID": QB, "GameID": "2026_01_SF_LA", "GameType": "REG", "Team": "LA", "OffenseSnaps": 60, "OffensePct": 1.0},
         ]})
-        write(self.root, f"source-data/nfl/snap-counts/{SEASON}/02.json", {"Season": SEASON, "Week": 2, "Records": [
+        write(self.root, f"data-source/nfl/snap-counts/{SEASON}/02.json", {"Season": SEASON, "Week": 2, "Records": [
             # special-teams-only player without a stat line: a played game with zero points
             {"CanonicalPlayerID": QB, "GameID": "2026_02_LA_SF", "GameType": "REG", "Team": "LA", "OffenseSnaps": 0, "OffensePct": 0.0},
         ]})
-        write(self.root, f"source-data/nfl/qbr-week/{SEASON}.json", {"Season": SEASON, "Games": [], "Records": (
+        write(self.root, f"data-source/nfl/qbr-week/{SEASON}.json", {"Season": SEASON, "Games": [], "Records": (
             [{"CanonicalPlayerID": QB, "GameID": "2026_01_SF_LA", "QBRTotal": 83.6}] if with_qbr else [])})
-        write(self.root, f"source-data/nfl/player-game-long-gains/{SEASON}.json", {
+        write(self.root, f"data-source/nfl/player-game-long-gains/{SEASON}.json", {
             "Season": SEASON,
             "Games": [{"GameID": g} for g in long_gain_games],
             "Records": [
@@ -170,7 +170,7 @@ class BuildTests(unittest.TestCase):
         self.assertEqual(counters["games_skipped_points_unavailable"], 1)
 
     def test_game_missing_in_schedule_fails_closed(self) -> None:
-        write(self.fx.root, f"source-data/nfl/player-stats/{SEASON}/03.json", {"Season": SEASON, "Week": 3, "Records": [
+        write(self.fx.root, f"data-source/nfl/player-stats/{SEASON}/03.json", {"Season": SEASON, "Week": 3, "Records": [
             stat_row(RB, "SF", "2026_03_XX_YY", 3, "RB", carries=1)]})
         with self.assertRaises(gh.GameHistoryError):
             self.fx.build()

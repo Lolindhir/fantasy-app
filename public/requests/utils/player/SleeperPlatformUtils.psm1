@@ -1,4 +1,4 @@
-# Reads Sleeper platform facts from the canonical NFL source layer (source-data/nfl/platform/sleeper/players.json)
+# Reads Sleeper platform facts from the canonical NFL source layer (data-source/nfl/platform/sleeper/players.json)
 # instead of the live Sleeper /players/nfl call. Sleeper player_id stays the Players.json ID contract (#347 H4).
 
 # Returns a hashtable Sleeper player_id -> @{ Position; Order } for the Sleeper depth chart fields.

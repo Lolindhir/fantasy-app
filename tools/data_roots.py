@@ -13,7 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 
 # Persistent provider raw data plus canonical NFL and League facts (written by sync workflows only).
-DATA_SOURCE_ROOT = "source-data"
+DATA_SOURCE_ROOT = "data-source"
 # Shared Derived Data with full history (written by materializers only, ADR-038).
 DATA_DERIVED_ROOT = "data-derived"
 # Hand-maintained league metadata (introduced by #986; no producer yet).

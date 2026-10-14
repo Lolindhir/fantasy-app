@@ -20,7 +20,7 @@ class RebuildAndPublishTests(unittest.TestCase):
                 ["public/data/PastSeasonsIndex.json"],
             )
         )
-        self.assertFalse(publisher.path_allowed("source-data/nfl/test.json", ["public/data"]))
+        self.assertFalse(publisher.path_allowed("data-source/nfl/test.json", ["public/data"]))
 
     def test_recognizes_only_known_ref_races(self) -> None:
         race = subprocess.CompletedProcess(["git"], 1, "", "rejected (fetch first)")

@@ -56,7 +56,7 @@ class FantasyFootballCalculatorAdpTests(unittest.TestCase):
             ),
             encoding="utf-8",
         )
-        schedule_path = root / "source-data/nfl/schedules/2026.json"
+        schedule_path = root / "data-source/nfl/schedules/2026.json"
         schedule_path.parent.mkdir(parents=True, exist_ok=True)
         schedule_path.write_text(
             json.dumps(

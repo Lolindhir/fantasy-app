@@ -189,7 +189,7 @@ function Get-CanonicalScoringAvailabilityObservations {
     $espnIDs = @($targetByEspn.Keys | Where-Object { $null -ne $targetByEspn[$_] } | Sort-Object -Unique)
     if ($espnIDs.Count -eq 0) { return @() }
 
-    # Canonical source-data snapshot (espn.player-availability, #347); no network access here.
+    # Canonical data-source snapshot (espn.player-availability, #347); no network access here.
     if (-not (Test-Path -LiteralPath $SnapshotPath)) {
         Write-Warning "Canonical player-availability snapshot is missing; availability remains unknown."
         return @()

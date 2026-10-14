@@ -80,11 +80,11 @@ Assert-True -Condition ($leagueLiveWorkflow.IndexOf("RequestStandings.ps1") -lt 
 $updateStandingsWorkflow = Get-Content (Join-Path (Join-Path $PSScriptRoot "..\..") ".github/workflows/update-standings.yml") -Raw
 Assert-True -Condition (-not $updateStandingsWorkflow.Contains("  push:")) -Message "APP Standings workflow must not have push triggers; League Live owns input-driven rebuilds."
 foreach ($canonicalStandingPath in @(
-    "source-data/leagues/*/seasons/*/league.json",
-    "source-data/leagues/*/seasons/*/members.json",
-    "source-data/leagues/*/seasons/*/rosters.json",
-    "source-data/leagues/*/seasons/*/winners-bracket.json",
-    "source-data/leagues/*/seasons/*/losers-bracket.json"
+    "data-source/leagues/*/seasons/*/league.json",
+    "data-source/leagues/*/seasons/*/members.json",
+    "data-source/leagues/*/seasons/*/rosters.json",
+    "data-source/leagues/*/seasons/*/winners-bracket.json",
+    "data-source/leagues/*/seasons/*/losers-bracket.json"
 )) {
     Assert-True -Condition $leagueLiveWorkflow.Contains($canonicalStandingPath) -Message "League Live does not detect Standings input '$canonicalStandingPath'."
 }
@@ -154,7 +154,7 @@ Assert-True -Condition $pipeline.Contains("Get-CanonicalTransactionsCurrentSeaso
 Assert-Equal -Actual (Get-OccurrenceCount -Text $pipeline -Needle "Get-TransactionsRemoteForWeeks") -Expected 0 -Message "League in-memory helper still fetches transactions directly from Sleeper."
 
 # Standalone/history requests retain the file-based draft contract while both
-# current and historical transaction bases come from canonical League source-data.
+# current and historical transaction bases come from canonical League data-source.
 $requestTransactions = Get-Content "$PSScriptRoot\RequestTransactions.ps1" -Raw
 Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonical") -Message "Standalone transaction rebuild no longer uses canonical all-season data."
 Assert-True -Condition (-not $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonicalCurrent")) -Message "Standalone transaction rebuild still uses the transitional current-only canonical path."
@@ -498,7 +498,7 @@ $canonicalCurrentSource = Get-CanonicalStandingSourceForSeason `
     -AllowActiveSeason
 Assert-Equal -Actual $canonicalCurrentSeasonData.IsCompleted -Expected $canonicalCurrentSource.IsCompleted -Message "Canonical current standings completion state is not propagated from league.json."
 
-# Current canonical source-data and generated Standings.json are published by
+# Current canonical data-source and generated Standings.json are published by
 # separate race-safe workflows. A PR merge ref may therefore observe the canonical
 # source one commit ahead of the generated current-season snapshot. Validate the two
 # canonical current consumer APIs against each other here; the workflow-trigger
@@ -560,8 +560,8 @@ Assert-StandingsJsonEqual -Actual $canonicalPlayoffs -Expected $publishedLeague.
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $providerLeagueID = [string]$canonicalLeagueCoreShadow.League.league_id
-$rawWinnersPath = Join-Path $repoRoot "source-data/providers/sleeper/leagues/$providerLeagueID/winners-bracket.json"
-$rawLosersPath = Join-Path $repoRoot "source-data/providers/sleeper/leagues/$providerLeagueID/losers-bracket.json"
+$rawWinnersPath = Join-Path $repoRoot "data-source/providers/sleeper/leagues/$providerLeagueID/winners-bracket.json"
+$rawLosersPath = Join-Path $repoRoot "data-source/providers/sleeper/leagues/$providerLeagueID/losers-bracket.json"
 $rawWinners = @((Get-Content $rawWinnersPath -Raw | ConvertFrom-Json))
 $rawLosers = @((Get-Content $rawLosersPath -Raw | ConvertFrom-Json))
 $shadowWinners = @($canonicalPlayoffs.WinnersBracket)
@@ -570,7 +570,7 @@ Assert-StandingsJsonEqual -Actual $shadowWinners -Expected $rawWinners -Message 
 Assert-StandingsJsonEqual -Actual $shadowLosers -Expected $rawLosers -Message "Canonical current losers bracket does not reconstruct raw Sleeper routing."
 
 # Current matchup adapter must reconstruct the persisted Sleeper provider semantics
-# from canonical week-partitioned source-data without live-provider fallback.
+# from canonical week-partitioned data-source without live-provider fallback.
 $canonicalMatchupUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -Raw
 Assert-True -Condition (-not $canonicalMatchupUtils.Contains("Get-SleeperMatchups")) -Message "Canonical current matchup shadow performs a live Sleeper matchup read."
 Assert-True -Condition (-not $canonicalMatchupUtils.Contains("Invoke-RestMethod")) -Message "Canonical current matchup shadow performs a direct HTTP read."
@@ -583,7 +583,7 @@ if ($currentMatchupWeek -le 0) {
 }
 Assert-True -Condition ($currentMatchupWeek -gt 0) -Message "Canonical current matchup parity could not resolve a positive active week."
 
-$rawCurrentMatchupPath = Join-Path $repoRoot "source-data/providers/sleeper/leagues/$providerLeagueID/matchups/week-$currentMatchupWeek.json"
+$rawCurrentMatchupPath = Join-Path $repoRoot "data-source/providers/sleeper/leagues/$providerLeagueID/matchups/week-$currentMatchupWeek.json"
 Assert-True -Condition (Test-Path $rawCurrentMatchupPath) -Message "Persisted current Sleeper matchup source is missing for parity."
 $rawCurrentMatchupRows = @(
     Get-Content $rawCurrentMatchupPath -Raw |

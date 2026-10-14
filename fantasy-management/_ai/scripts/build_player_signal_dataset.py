@@ -388,7 +388,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     external_signal_timestamp = external_signal_document.get("generated_at") if isinstance(external_signal_document, dict) else None
     canonical_league_root = (
         root
-        / "source-data"
+        / "data-source"
         / "leagues"
         / canonical_league_id
     )
@@ -692,8 +692,8 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
                     ),
                 },
                 "sources": [
-                    "source-data/nfl/rosters/<season>.json",
-                    "source-data/nfl/weekly-rosters/<season>/<week>.json",
+                    "data-source/nfl/rosters/<season>.json",
+                    "data-source/nfl/weekly-rosters/<season>/<week>.json",
                 ],
                 "semantics": "canonical_nfl_roster_evidence_by_canonical_player_id_provider_team_fields_are_not_membership",
             },

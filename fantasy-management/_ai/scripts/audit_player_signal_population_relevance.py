@@ -277,7 +277,7 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
     managed_team_id = str(config["managed_team"]["team_id"])
     ownership = external_signals.build_ownership(ownership_teams)
 
-    season_roster_path = root / "source-data" / "nfl" / "rosters" / f"{season}.json"
+    season_roster_path = root / "data-source" / "nfl" / "rosters" / f"{season}.json"
     if not season_roster_path.is_file():
         raise PopulationRelevanceAuditError(
             f"Canonical season roster is missing for {season}: {season_roster_path}"
@@ -285,7 +285,7 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
     latest_week, latest_weekly_path = resolve_latest_weekly_roster_path(root, int(season))
     previous_season = int(season) - 1
     previous_season_roster_path = (
-        root / "source-data" / "nfl" / "rosters" / f"{previous_season}.json"
+        root / "data-source" / "nfl" / "rosters" / f"{previous_season}.json"
     )
     if not previous_season_roster_path.is_file():
         raise PopulationRelevanceAuditError(

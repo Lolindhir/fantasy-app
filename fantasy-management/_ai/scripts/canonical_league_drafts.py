@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Canonical League draft adapter for Fantasy Management consumers.
 
-Reads the current season's drafts from `source-data/leagues/<id>/seasons/<season>/drafts.json`
+Reads the current season's drafts from `data-source/leagues/<id>/seasons/<season>/drafts.json`
 and exposes them in the draft/pick shape the FA-board builder already consumes
 (DraftKey, DraftType, Status, Picks[PlayerID, CurrentOwnerRosterID, ...]).
 
@@ -33,7 +33,7 @@ _STATUS_LABELS = {"complete": "Complete", "drafting": "Drafting", "pre_draft": "
 
 def drafts_path(root: Path, canonical_league_id: str, season: int) -> Path:
     return (
-        root / "source-data" / "leagues" / canonical_league_id / "seasons" / str(season) / "drafts.json"
+        root / "data-source" / "leagues" / canonical_league_id / "seasons" / str(season) / "drafts.json"
     )
 
 

@@ -27,7 +27,7 @@ from nfl_source_data_lib.materialize import materialize
 from data_roots import DATA_SOURCE_ROOT
 
 # Keep this entry point side-effect free until main() is invoked; CI imports the
-# supporting modules independently during source-data validation.
+# supporting modules independently during data-source validation.
 
 
 def parse_args() -> argparse.Namespace:

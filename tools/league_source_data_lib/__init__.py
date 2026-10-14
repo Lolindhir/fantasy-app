@@ -1,4 +1,4 @@
-"""League source-data synchronization helpers."""
+"""League data-source synchronization helpers."""
 
 import sys
 from pathlib import Path

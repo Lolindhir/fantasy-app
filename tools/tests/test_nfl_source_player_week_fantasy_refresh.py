@@ -26,7 +26,7 @@ def build_repo(root: Path, *, context: dict | None = None, mappings: list | None
         context if context is not None else {"LeagueID": "999", "Season": "2026", "Week": 4},
     )
     write_json(
-        root / "source-data" / "leagues" / "league-a" / "seasons" / "2026" / "league.json",
+        root / "data-source" / "leagues" / "league-a" / "seasons" / "2026" / "league.json",
         {
             "CanonicalLeagueID": "league-a",
             "ProviderMappings": mappings

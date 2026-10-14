@@ -24,7 +24,7 @@ FIELDS = [
 
 
 def write_teams_csv(path: Path, mutate=None) -> None:
-    rows = list(csv.DictReader((REPO_ROOT / "source-data/providers/nflverse/teams/raw-latest.csv").open(encoding="utf-8")))
+    rows = list(csv.DictReader((REPO_ROOT / "data-source/providers/nflverse/teams/raw-latest.csv").open(encoding="utf-8")))
     if mutate:
         rows = mutate(rows)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -101,7 +101,7 @@ class TeamRegistryTests(unittest.TestCase):
             write_teams_csv(raw)
             dataset = teams_dataset(raw)
             outputs, audit, _ = build_phase1_outputs(root, {dataset.id: dataset}, [], 2026)
-            self.assertEqual([root / "source-data/nfl/teams.json"], [path for path, _ in outputs])
+            self.assertEqual([root / "data-source/nfl/teams.json"], [path for path, _ in outputs])
             self.assertEqual(32, audit["teams"]["teamCount"])
             self.assertIn("nflverse.teams", audit["activeDatasetIDs"])
 
@@ -109,7 +109,7 @@ class TeamRegistryTests(unittest.TestCase):
 class TeamResolverTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        payload, _ = build_teams_payload(teams_dataset(REPO_ROOT / "source-data/providers/nflverse/teams/raw-latest.csv"))
+        payload, _ = build_teams_payload(teams_dataset(REPO_ROOT / "data-source/providers/nflverse/teams/raw-latest.csv"))
         cls.registry = NflTeamRegistry(payload)
 
     def test_resolves_abbreviations_spellings_and_legacy_keys(self):
@@ -138,12 +138,12 @@ class TeamResolverTests(unittest.TestCase):
 class PersistedRegistryTests(unittest.TestCase):
     """Run against the committed canonical output; skipped until it is materialized."""
 
-    path = REPO_ROOT / "source-data/nfl/teams.json"
+    path = REPO_ROOT / "data-source/nfl/teams.json"
 
     def test_registry_matches_canonical_schedule_abbreviations(self):
-        self.assertTrue(self.path.exists(), "source-data/nfl/teams.json must be materialized")
+        self.assertTrue(self.path.exists(), "data-source/nfl/teams.json must be materialized")
         registry = NflTeamRegistry.load(REPO_ROOT)
-        schedule_files = sorted((REPO_ROOT / "source-data/nfl/schedules").glob("*.json"))
+        schedule_files = sorted((REPO_ROOT / "data-source/nfl/schedules").glob("*.json"))
         latest = json.loads(schedule_files[-1].read_text(encoding="utf-8"))
         schedule_teams = {game[side] for game in latest["Games"] for side in ("HomeTeam", "AwayTeam")}
         self.assertEqual(set(registry.abbreviations()), schedule_teams)

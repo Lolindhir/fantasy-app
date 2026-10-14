@@ -6,7 +6,7 @@ status: accepted
 consolidatedAt: 2026-09-10
 
 purpose: >
-  Consolidates field- and domain-level source ownership after the NFL source-data
+  Consolidates field- and domain-level source ownership after the NFL data-source
   evaluation and provider-join audit. It distinguishes durable canonical ownership
   from the provider that still feeds the current app runtime during migration.
   This matrix is the decision boundary used before activating additional nflverse
@@ -32,7 +32,7 @@ principles:
     durableCanonicalPrimary states the intended long-lived owner of a fact.
     currentRuntimePrimary states what the app generator currently reads. They may
     differ while a migration is incomplete. A canonical decision does not itself
-    change public/data or activate a source-data dataset.
+    change public/data or activate a data-source dataset.
   fieldLevelOwnership: >
     A provider is primary only for the fields explicitly assigned to it. No
     provider receives blanket ownership of a whole player, game or roster object
@@ -45,7 +45,7 @@ principles:
   identityFirst: >
     Provider IDs are mappings/evidence. Canonical NFL-domain person facts resolve
     to CanonicalPlayerID through explicit provider mappings. CanonicalPlayerID is
-    issued by fantasy-app, not by the NFL or another provider; source-data/nfl is
+    issued by fantasy-app, not by the NFL or another provider; data-source/nfl is
     the domain path, not an issuer namespace. Display names are never an
     authoritative join key.
   futureOfficialNflId: >
@@ -61,7 +61,7 @@ principles:
     as a genuine numeric/string zero merely to satisfy a consumer contract.
   generatedReadModels: >
     public/data/** remains generated app output. It may intentionally preserve a
-    legacy provider-shaped contract while canonical source-data is introduced
+    legacy provider-shaped contract while canonical data-source is introduced
     behind it.
   providerJoinContract: >
     Every future materializer and consumer must apply the fail-closed uniqueness,
@@ -79,7 +79,7 @@ matrix:
     facts:
       - permanent real-person identity
       - historical provider-ID mappings
-    durableCanonicalPrimary: source-data/nfl/identities using CanonicalPlayerID in the fantasy-app namespace
+    durableCanonicalPrimary: data-source/nfl/identities using CanonicalPlayerID in the fantasy-app namespace
     currentRuntimePrimary: public/data/Players.json uses Sleeper player_id as Players.ID
     secondary:
       - nflverse players / ff-player-ids provider mappings
@@ -136,8 +136,8 @@ matrix:
       - pick within round / overall pick
       - drafting NFL team
       - drafted/undrafted/not-yet-drafted/unknown status
-    durableCanonicalPrimary: nflverse draft-picks normalized to source-data/nfl/draft/<season>.json
-    currentRuntimePrimary: canonical source-data for NFL Draft history; fantasy-league Drafts.json is a separate domain
+    durableCanonicalPrimary: nflverse draft-picks normalized to data-source/nfl/draft/<season>.json
+    currentRuntimePrimary: canonical data-source for NFL Draft history; fantasy-league Drafts.json is a separate domain
     secondary:
       - provider raw draft evidence retained as provenance
     fallback: none
@@ -157,8 +157,8 @@ matrix:
       - bench press
       - vertical/broad jump
       - three-cone/shuttle
-    durableCanonicalPrimary: nflverse Combine normalized to source-data/nfl/combine/<season>.json
-    currentRuntimePrimary: canonical source-data; not automatically projected into Players.json
+    durableCanonicalPrimary: nflverse Combine normalized to data-source/nfl/combine/<season>.json
+    currentRuntimePrimary: canonical data-source; not automatically projected into Players.json
     secondary:
       - PFR ID as authoritative identity mapping for this dataset
       - upstream draft fields retained only as SourceDraftEvidence
@@ -171,7 +171,7 @@ matrix:
     guards:
       - same-season duplicate PFR claims from distinguishable rows are quarantined as ambiguous
       - exact duplicate raw rows fail closed
-      - canonical Draft link comes from source-data/nfl/draft rather than upstream Combine draft fields
+      - canonical Draft link comes from data-source/nfl/draft rather than upstream Combine draft fields
 
   nflSchedule:
     facts:
@@ -183,7 +183,7 @@ matrix:
       - game identity
       - final scores when published by schedule dataset
     durableCanonicalPrimary: nflverse schedules
-    currentRuntimePrimary: source-data/nfl/schedules/<season>.json plus game-finality/<season>.json consumed by CanonicalScheduleUtils.psm1::Get-CanonicalAppSchedule in RequestSchedule.ps1 (#347 G2, renamed in G4); kickoff is Eastern local time converted with the IANA zone America/New_York
+    currentRuntimePrimary: data-source/nfl/schedules/<season>.json plus game-finality/<season>.json consumed by CanonicalScheduleUtils.psm1::Get-CanonicalAppSchedule in RequestSchedule.ps1 (#347 G2, renamed in G4); kickoff is Eastern local time converted with the IANA zone America/New_York
     secondary: none-required
     fallback:
       - none; a missing or inconsistent canonical schedule fails closed and the last published Schedule.json stays
@@ -205,7 +205,7 @@ matrix:
       - explicit Final state
       - derived all-games-final week closure
     durableCanonicalPrimary: nflverse released-games evidence normalized by canonical game_id
-    currentRuntimePrimary: source-data/nfl/game-finality/<season>.json consumed by CanonicalScheduleUtils.psm1 in RequestSchedule.ps1
+    currentRuntimePrimary: data-source/nfl/game-finality/<season>.json consumed by CanonicalScheduleUtils.psm1 in RequestSchedule.ps1
     secondary:
       - nflverse schedules own canonical game identity, game type and final score fields
     fallback:
@@ -374,7 +374,7 @@ matrix:
       - injury start date where supplied
       - practice participation where supplied
       - richer description/expected return only when a separately accepted source supplies it
-    durableCanonicalPrimary: canonical sleeper.players snapshot (source-data/nfl/platform/sleeper/players.json) for status, start date, body part, notes and practice description; no return date exists in any accepted source
+    durableCanonicalPrimary: canonical sleeper.players snapshot (data-source/nfl/platform/sleeper/players.json) for status, start date, body part, notes and practice description; no return date exists in any accepted source
     currentRuntimePrimary: RequestPlayers.ps1 through PlayerPopulationUtils.psm1::ConvertTo-PlayerInjuryDetails from the canonical snapshot (#347 H1b/H3, Decision 6); no Tank01 input
     secondary: []
     fallback: none-accepted-for-conflict-resolution
@@ -393,7 +393,7 @@ matrix:
     facts:
       - NFL depth-chart role/order snapshots
     durableCanonicalPrimary: unresolved
-    currentRuntimePrimary: canonical Sleeper platform snapshot (source-data/nfl/platform/sleeper/players.json DepthChartPosition/DepthChartOrder) read by RequestPlayers.ps1 through utils/player/SleeperPlatformUtils.psm1 for the current app fields (#347 H4); a player missing from the snapshot stays null
+    currentRuntimePrimary: canonical Sleeper platform snapshot (data-source/nfl/platform/sleeper/players.json DepthChartPosition/DepthChartOrder) read by RequestPlayers.ps1 through utils/player/SleeperPlatformUtils.psm1 for the current app fields (#347 H4); a player missing from the snapshot stays null
     secondary:
       - nflverse depth-charts is a candidate snapshot source pending separate evaluation
       - other depth-chart providers may be evaluated separately
@@ -558,12 +558,12 @@ matrix:
     migrationState: retained-domain-owner
     guards:
       - explicit SleeperDraftID bindings are authoritative and never fall back to another provider draft
-      - NFL Draft history under source-data/nfl/draft is a separate domain
+      - NFL Draft history under data-source/nfl/draft is a separate domain
       - duplicate DraftKey/PickKey/provider IDs fail closed according to provider-join-invariants.yaml
 
 unresolvedDecisionsBeforeAppGeneratorDag:
   blocking:
-    - migrate the remaining app consumers from direct/legacy provider reads to the accepted canonical source-data layer without changing public contracts unintentionally
+    - migrate the remaining app consumers from direct/legacy provider reads to the accepted canonical data-source layer without changing public contracts unintentionally
     - validate how canonical source availability states are exposed to downstream generators so missing/not-yet-available/fetch-failed do not collapse into zero
     - regression-test league-settings-based fantasy scoring against current outputs before replacing provider point values
   nonBlockingForInitialDagDesign:
@@ -636,7 +636,7 @@ repositoryEvidence:
   - public/requests/utils/general/CanonicalScheduleUtils.psm1
 
 nextArchitectureStep: >
-  Phase 1 source-data is accepted, #447 migrated current Final truth plus live
+  Phase 1 data-source is accepted, #447 migrated current Final truth plus live
   game-day refresh and #347 G2 builds Schedule.json entirely from canonical facts. Continue the App-Generator-DAG
   and remaining consumer migration while preserving public contracts unless a separate
   contract change is explicitly approved.
@@ -649,8 +649,8 @@ playerWeekFantasy:
   physicalOwner: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
   identity: CanonicalPlayerID + CanonicalLeagueID + Season + Week + ScoringProfile.SettingsHash
   primaryInputs:
-    weeklyPlayerAnchor: source-data/nfl/weekly-rosters/<season>/<week>.json
-    scoringProfile: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
+    weeklyPlayerAnchor: data-source/nfl/weekly-rosters/<season>/<week>.json
+    scoringProfile: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
     actualScoring: canonical NFL scoring evidence via tools/historical_fantasy_scoring.py
     projection: canonical historical scoring plus snap/usage evidence under the selected scoring profile
   currentConsumers:
@@ -688,7 +688,7 @@ playersReadModelFieldInventory:
     shadow -> parity -> cutover step under #347.
   layerLegend:
     sourceFact: provider/platform fact or observation (Source Evidence or Canonical/Normalized under #613)
-    sharedDerived: deterministic league-owned derivation (Shared Derived under #613); must not move into source-data/nfl/**
+    sharedDerived: deterministic league-owned derivation (Shared Derived under #613); must not move into data-source/nfl/**
     consumerOnly: App delivery shape or display convenience (Consumer Data under #613)
 
   producer:
@@ -700,8 +700,8 @@ playersReadModelFieldInventory:
       sleeperBotID joined to Sleeper /players/nfl; that pairing was a provider claim, not a
       canonical identity decision. Inventory evidence below describes the pre-H1b snapshot.
     inputs:
-      - source-data/nfl/platform/sleeper/players.json (canonical Sleeper snapshot, since H1b; replaces the live Sleeper and Tank01 getNFLPlayerList calls)
-      - source-data/nfl/teams.json, rosters, draft and identities (population and team key, since H1b)
+      - data-source/nfl/platform/sleeper/players.json (canonical Sleeper snapshot, since H1b; replaces the live Sleeper and Tank01 getNFLPlayerList calls)
+      - data-source/nfl/teams.json, rosters, draft and identities (population and team key, since H1b)
       - canonical player-stats, snap-counts, qbr-week, player-game-long-gains, schedules and game-finality for GameHistory (since #347 G3; replaces public/data/Games.json)
       - canonical League-season WeekStructure and NFL game finality for LastLeagueWeek, PlayoffStartWeek and FinalScoredWeek (since #347 I1; replaces public/data/League.json)
       - league-scored canonical player-stats of the three prior seasons (since #347 D4; replaces the past_seasons/Players_<year>.json archives)
@@ -714,7 +714,7 @@ playersReadModelFieldInventory:
         Fantasy Management consumer reads them. The only reader is the NFL identity builder
         (tools/nfl_source_data_lib/mapping_history.py::build_historical_app_mapping_claims), which treats an archive
         row as historical identity evidence only with a second corroborating provider ID; on the 2026-10-07 data
-        it resolved 0 of 8,713 rows (source-data/audits/nfl-source-data-audit.json::historicalAppMappingCoverage).
+        it resolved 0 of 8,713 rows (data-source/audits/nfl-source-data-audit.json::historicalAppMappingCoverage).
         This static read is intentional and kept so that Tank01-keyed history stays available as cross-check evidence.
 
   fieldGroups:
@@ -755,11 +755,11 @@ playersReadModelFieldInventory:
       observations:
         - For free agents TeamAbbr/TeamID hold the last Tank01 team, not a current NFL team
         - IsFreeAgent agrees with absence from the canonical 2026 week-4 weekly roster for 439 of 452 true values (sleeper-mapped rows); 70 rows with IsFreeAgent=false are not on that roster
-        - Team key identity: source-data/nfl/teams.json (nflverse.teams, #347 F3a, ADR-042) is the canonical registry with aliases and LegacyAppTeamID; read since #347 F3b by the PowerShell team-key join helper (Get-NflTeamJoinKey) and NflScheduleUtils/WeeklyRecapUtils; Angular resolves via Teams.json ID/LegacyIDs; since F3c Teams.json is generated from this registry (RequestTeams.ps1, no Tank01 call, ID = abbreviation, LegacyIDs = former numeric ID); other producers switch from F3d
+        - Team key identity: data-source/nfl/teams.json (nflverse.teams, #347 F3a, ADR-042) is the canonical registry with aliases and LegacyAppTeamID; read since #347 F3b by the PowerShell team-key join helper (Get-NflTeamJoinKey) and NflScheduleUtils/WeeklyRecapUtils; Angular resolves via Teams.json ID/LegacyIDs; since F3c Teams.json is generated from this registry (RequestTeams.ps1, no Tank01 call, ID = abbreviation, LegacyIDs = former numeric ID); other producers switch from F3d
     convenienceLinks:
       fields: [Picture, FantasyPros, ESPN]
       layer: consumerOnly
-      currentProducer: tools/players_population.py (#347 H2) derives Picture (nflverse headshot, fallback ESPN headshot of the canonical ESPN athlete ID), ESPN link (canonical ESPN athlete ID + name slug) and FantasyPros link (name slug) from source-data/nfl/player-profiles/nflverse.json and identities; published values are not carried forward; a missing slug or ESPN ID yields null
+      currentProducer: tools/players_population.py (#347 H2) derives Picture (nflverse headshot, fallback ESPN headshot of the canonical ESPN athlete ID), ESPN link (canonical ESPN athlete ID + name slug) and FantasyPros link (name slug) from data-source/nfl/player-profiles/nflverse.json and identities; published values are not carried forward; a missing slug or ESPN ID yields null
       matrixKey: nflPlayerConvenienceMetadata
       targetOwner: none-required; convenience enrichment
       consumers:
@@ -785,9 +785,9 @@ playersReadModelFieldInventory:
     byeWeek:
       fields: [ByeWeek]
       layer: sharedDerived
-      currentProducer: RequestPlayers.ps1 through NflScheduleUtils.psm1 from canonical source-data/nfl/schedules/<season>.json (#347 E1)
+      currentProducer: RequestPlayers.ps1 through NflScheduleUtils.psm1 from canonical data-source/nfl/schedules/<season>.json (#347 E1)
       matrixKey: byeWeek
-      targetOwner: derivation from canonical source-data/nfl/schedules/<season>.json
+      targetOwner: derivation from canonical data-source/nfl/schedules/<season>.json
       consumers:
         - not read by Angular; used inside RequestPlayers.ps1 for GamesPotential
     seasonStatsAndPoints:
@@ -824,7 +824,7 @@ playersReadModelFieldInventory:
       layer: sharedDerived
       currentProducer: Get-FantasySalaryWithFloor over weighted per-season points (Salary uses seasons -1..-3; SalaryProjected blends the current season with -1 and -2) mapped non-linearly to dollars
       matrixKey: fantasyLeagueSettings (league rule) plus fantasyPointsLeagueScoring (input)
-      targetOwner: Shared Derived league rule; must not move into source-data/nfl/**
+      targetOwner: Shared Derived league rule; must not move into data-source/nfl/**
       consumers:
         - App cap, free-agent market and salary displays
         - RequestLeague.ps1 league salary cap (average of top SalaryRelevantTeamSize x team count by Salary/SalaryProjected)
@@ -875,7 +875,7 @@ playersReadModelFieldInventory:
       verified: true
       evidence: >
         2026-10-04: ByeWeek is 4 for 1104 rows and 5 for 164 rows; none of the 1268
-        rows matches the team's actual bye week in source-data/nfl/schedules/2026.json.
+        rows matches the team's actual bye week in data-source/nfl/schedules/2026.json.
         Games.json only holds games already fetched, so the first week without a
         fetched game is taken as bye.
       effect: >
@@ -895,7 +895,7 @@ playersReadModelFieldInventory:
         RequestPlayers.ps1 parses $pass.qbr before $pass = $p.Passing is assigned, so
         GameHistory Passing.QBRating carries the previous passing row's value or null.
         Not read by Angular.
-        Canonical replacement exists since #347 F4a: source-data/nfl/qbr-week/<season>.json
+        Canonical replacement exists since #347 F4a: data-source/nfl/qbr-week/<season>.json
         (ESPN QBR via nflverse); the consumer switch is G3.
     - id: historical-fgc-player-fallback-unmatched
       verified: code-reading-only
@@ -935,14 +935,14 @@ consumerReadClassification:
     notScanned:
       - src/app/** (Angular is the delivery consumer of public/data by design, ADR-004; all JSON loads go through DataApiService)
       - .github/workflows/** (workflow trigger paths are governed by workflow-monitoring.yaml and workflow-publication.yaml)
-      - source-data/** (canonical store; a read there is a canonical read, not a classified legacy or provider read)
+      - data-source/** (canonical store; a read there is a canonical read, not a classified legacy or provider read)
   tokens:
     provider:<host>: a URL naming a known provider host (sleeper, nflverse, fantasypros, fantasycalc, fftoday, cbssports, fantasyfootballcalculator, espn, tank01, rapidapi)
     sleeper-api:<Function>: a call to a Sleeper client function (the client SleeperUtils.psm1 was retired; its function names stay reserved in the test so a reintroduced call is reported)
     network: an HTTP client call (Invoke-RestMethod, urllib, requests, ...)
     legacy:<Name>: a reference to public/data/<Name>.json or the matching $config.<Name>File
   categories:
-    source-layer-acquisition: provider read owned by the source-data acquisition layer; sanctioned
+    source-layer-acquisition: provider read owned by the data-source acquisition layer; sanctioned
     provider-client: the shared Sleeper HTTP client module (retired in #347 K1 follow-up; category kept for history)
     provider-evidence-fetcher: Fantasy Management acquisition of attributed external evidence (ADR-037)
     provider-direct-supplementary: documented direct provider observation that no canonical dataset covers yet
@@ -953,7 +953,7 @@ consumerReadClassification:
     app-output-owner: the generator or publisher that writes that read model
     app-read-model-chain: a consumer reads another published App read model as a deliberate step of the App derivation chain
     app-config-path-owner: resolves generated-file paths
-    intentional-overlay: documented consumer-specific display or scoring enrichment (ADR-054 boundary); base facts come from source-data
+    intentional-overlay: documented consumer-specific display or scoring enrichment (ADR-054 boundary); base facts come from data-source
     manual-league-rule: data-meta league metadata, the manual league-input owner (ADR-054)
     freshness-trigger: read or declared only to detect that published data changed
     validation-shadow: read-only comparison or guard against published output; never an input
@@ -966,12 +966,12 @@ consumerReadClassification:
       reads:
         provider:cbssports: display-link-construction
         provider:espn: display-link-construction
-      note: 'Reads the canonical NFL schedule, game finality and team registry from source-data/nfl (#347 FM-read step); the ESPN and CBS box-score URLs are built for display only, nothing is fetched.'
+      note: 'Reads the canonical NFL schedule, game finality and team registry from data-source/nfl (#347 FM-read step); the ESPN and CBS box-score URLs are built for display only, nothing is fetched.'
     fantasy-management/_ai/scripts/canonical_league_ownership.py:
       reads:
         legacy:League: intentional-overlay
         legacy:Players: mention-only
-      note: 'Ownership and roster membership come from source-data/leagues. League.json is read only as TeamID display enrichment (checkpoint 6P). The Players.json hit is a docstring mention, not a read.'
+      note: 'Ownership and roster membership come from data-source/leagues. League.json is read only as TeamID display enrichment (checkpoint 6P). The Players.json hit is a docstring mention, not a read.'
     fantasy-management/_ai/scripts/fantasy_football_calculator_adp_core.py:
       reads:
         network: provider-evidence-fetcher
@@ -1030,7 +1030,7 @@ consumerReadClassification:
     fantasy-management/automation/external-signal-materialization.json:
       reads:
         legacy:League: intentional-overlay
-      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from source-data/leagues.'
+      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from data-source/leagues.'
     fantasy-management/automation/fa-board-materialization.json:
       reads:
         legacy:League: intentional-overlay
@@ -1051,15 +1051,15 @@ consumerReadClassification:
       reads:
         legacy:League: intentional-overlay
         legacy:Timestamps: freshness-trigger
-      note: 'Weekly review job input declaration. The Transactions.json dependency was migrated to the canonical League transaction partition (source-data/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-<n>.json) in the #347 FM-read step; League.json is the display overlay, Timestamps.json the freshness bridge.'
+      note: 'Weekly review job input declaration. The Transactions.json dependency was migrated to the canonical League transaction partition (data-source/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-<n>.json) in the #347 FM-read step; League.json is the display overlay, Timestamps.json the freshness bridge.'
     fantasy-management/automation/kicker-streaming-input-materialization.json:
       reads:
         legacy:League: intentional-overlay
-      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from source-data/leagues.'
+      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from data-source/leagues.'
     fantasy-management/automation/managed-roster-overview.json:
       reads:
         legacy:League: intentional-overlay
-      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from source-data/leagues.'
+      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from data-source/leagues.'
     fantasy-management/automation/player-signal-materialization.json:
       reads:
         legacy:League: intentional-overlay
@@ -1069,7 +1069,7 @@ consumerReadClassification:
     fantasy-management/automation/runner-config.json:
       reads:
         legacy:League: intentional-overlay
-      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from source-data/leagues.'
+      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from data-source/leagues.'
     fantasy-management/league-economy/salary/simulation/salary_simulation.py:
       reads:
         legacy:League: analysis-snapshot-input
@@ -1146,12 +1146,12 @@ consumerReadClassification:
       reads:
         network: source-layer-acquisition
         provider:sleeper: source-layer-acquisition
-      note: 'Provider acquisition owned by the source-data layer (raw evidence under source-data/providers).'
+      note: 'Provider acquisition owned by the data-source layer (raw evidence under data-source/providers).'
     tools/league_source_data_lib/core.py:
       reads:
         network: source-layer-acquisition
         provider:sleeper: source-layer-acquisition
-      note: 'Provider acquisition owned by the source-data layer (raw evidence under source-data/providers).'
+      note: 'Provider acquisition owned by the data-source layer (raw evidence under data-source/providers).'
     tools/matchup_projection.py:
       reads:
         legacy:DecisionWindows: app-read-model-chain
@@ -1167,15 +1167,15 @@ consumerReadClassification:
       reads:
         network: source-layer-acquisition
         provider:espn: source-layer-acquisition
-      note: 'ESPN kona_player_info injury status snapshot into source-data/nfl/player-availability (#347); consumed by RequestLeague as canonical input.'
+      note: 'ESPN kona_player_info injury status snapshot into data-source/nfl/player-availability (#347); consumed by RequestLeague as canonical input.'
     tools/nfl_source_data_lib/common.py:
       reads:
         network: source-layer-acquisition
-      note: 'Provider acquisition owned by the source-data layer (raw evidence under source-data/providers).'
+      note: 'Provider acquisition owned by the data-source layer (raw evidence under data-source/providers).'
     tools/nfl_source_data_lib/historical_crosswalk.py:
       reads:
         network: source-layer-acquisition
-      note: 'Provider acquisition owned by the source-data layer (raw evidence under source-data/providers).'
+      note: 'Provider acquisition owned by the data-source layer (raw evidence under data-source/providers).'
     tools/nfl_source_data_lib/identity_sources.py:
       reads:
         legacy:Players: mention-only

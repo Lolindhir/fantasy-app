@@ -17,7 +17,7 @@ Source refreshers own acquisition and source-local normalization. They do not ma
 The productive morning refresh path uses independent source-triggered materialization around the 07:00 Europe/Berlin monitoring window:
 
 - every successful relevant external ranking, projection, activity or Success-Heartbeat push on `main` may materialize immediately, including pushes between 05:00 and 06:45 Europe/Berlin;
-- relevant `League.json`, league metadata (`data-meta/<CanonicalLeagueID>/metadata.json`), `Players.json` and current-season Canonical League `drafts.json` (`source-data/leagues/*/seasons/*/drafts.json`) input changes remain immediate materialization triggers; a `Timestamps.json`-only push no longer is one (Issue #930); the App read model `Drafts.json` no longer is one;
+- relevant `League.json`, league metadata (`data-meta/<CanonicalLeagueID>/metadata.json`), `Players.json` and current-season Canonical League `drafts.json` (`data-source/leagues/*/seasons/*/drafts.json`) input changes remain immediate materialization triggers; a `Timestamps.json`-only push no longer is one (Issue #930); the App read model `Drafts.json` no longer is one;
 - materialization code, configuration, schema and workflow changes remain immediate triggers;
 - the DST-safe scheduled 06:45 Europe/Berlin materializer remains only as an additional catch-up and is never the sole normal morning consolidation path;
 - a manual `workflow_dispatch` of the materializer always runs immediately;
@@ -99,7 +99,7 @@ The dataset joins:
 
 Projection providers remain independent. Comparable rank percentiles may be summarized across projection providers, but provider fantasy-point projections are retained separately and must not be averaged because provider scoring contracts can differ and are not Mighty-Giants scoring.
 
-The compact FA-board decision-infrastructure contract is built from freshly materialized `player-signals.json`, Canonical League ownership, non-membership `League.json` rule/display enrichment, the current-season Canonical League drafts (`source-data/leagues/<CanonicalLeagueID>/seasons/<season>/drafts.json`, classified through the league metadata `data-meta/<CanonicalLeagueID>/metadata.json` Drafts.Types) and `Timestamps.json`:
+The compact FA-board decision-infrastructure contract is built from freshly materialized `player-signals.json`, Canonical League ownership, non-membership `League.json` rule/display enrichment, the current-season Canonical League drafts (`data-source/leagues/<CanonicalLeagueID>/seasons/<season>/drafts.json`, classified through the league metadata `data-meta/<CanonicalLeagueID>/metadata.json` Drafts.Types) and `Timestamps.json`:
 
 ```text
 fantasy-management/automation/fa-board-materialization.json
@@ -485,7 +485,7 @@ Legacy workflow and helper files may remain only where another explicitly docume
 
 Fantasy Operations behandelt zeitabhängige Source-Relevanz datengetrieben statt über versteckte Scheduler-Sonderlogik.
 
-Der gemeinsame NFL Season Context wird deterministisch aus kanonischen Schedule-Fakten aufgelöst. Der erste Resolver ist `tools/nfl_season_context.py` und verwendet `source-data/nfl/schedules/<season>.json`. Er unterscheidet mindestens `pre_regular_season`, `regular_season`, `postseason` und `post_regular_season`. Consumer dürfen diese Semantik nicht separat aus Sleeper rekonstruieren.
+Der gemeinsame NFL Season Context wird deterministisch aus kanonischen Schedule-Fakten aufgelöst. Der erste Resolver ist `tools/nfl_season_context.py` und verwendet `data-source/nfl/schedules/<season>.json`. Er unterscheidet mindestens `pre_regular_season`, `regular_season`, `postseason` und `post_regular_season`. Consumer dürfen diese Semantik nicht separat aus Sleeper rekonstruieren.
 
 Für externe Source-Datasets gelten getrennte Zustände:
 1. **technical refresh** — Provider erreichbar und technischer Vertrag valide;
@@ -505,7 +505,7 @@ Der gemeinsame NFL Season Context wird in Fantasy Operations zusätzlich in eine
 Der aktuelle Runtime-Contract wird zusammen mit Source Freshness publiziert:
 
 ```text
-source-data/nfl/schedules/<season>.json
+data-source/nfl/schedules/<season>.json
 → shared NFL Season Context
 → Fantasy Operations Consumer Activity Policy
 → generated/operations/source-freshness.json -> consumer_activity

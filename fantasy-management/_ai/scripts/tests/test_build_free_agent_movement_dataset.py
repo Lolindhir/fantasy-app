@@ -108,8 +108,8 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
         self.write_json(root, "generated/free-agent-signals.json", {"schema_version": 1, "dataset_id": "free-agent-signals", "generated_at": "2026-08-16T06:30:00Z", "input_fingerprint": "b" * 64, "players": [wr, kicker], "quality": {"status": "ok", "source_quality_status": "ok", "source_issue_count": 0, "selection_count_matches_source": True}})
         previous = root / "generated/free-agent-signals.previous.json"
         self.write_json(root, "generated/free-agent-signals.previous.json", {"schema_version": 1, "dataset_id": "free-agent-signals", "generated_at": "2026-08-15T06:30:00Z", "input_fingerprint": "c" * 64, "players": [self.player("fa-wr", "WR", "fantasy_free_agent", depth=3), self.player("fa-k", "K", "fantasy_free_agent")], "quality": {"status": "ok"}})
-        self.write_json(root, "source-data/leagues/test/manifest.json", {"CanonicalLeagueID": "test", "CurrentCanonicalLeagueSeasonID": "test-2026", "Seasons": [{"CanonicalLeagueSeasonID": "test-2026", "Season": 2026}]})
-        self.write_json(root, "source-data/leagues/test/seasons/2026/league.json", {"CanonicalLeagueID": "test", "Season": 2026, "ScoringSettings": {}})
+        self.write_json(root, "data-source/leagues/test/manifest.json", {"CanonicalLeagueID": "test", "CurrentCanonicalLeagueSeasonID": "test-2026", "Seasons": [{"CanonicalLeagueSeasonID": "test-2026", "Season": 2026}]})
+        self.write_json(root, "data-source/leagues/test/seasons/2026/league.json", {"CanonicalLeagueID": "test", "Season": 2026, "ScoringSettings": {}})
 
         definitions = [
             self.source("wr-adp", "adp", "WR", "redraft_adp", ["rank", "percentile", "adp", "times_drafted"], primary=True),
@@ -191,14 +191,14 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
             source = result["source"]["canonical_league_scoring"]
             self.assertEqual(source["canonical_league_id"], "test")
             self.assertEqual(source["season"], 2026)
-            self.assertEqual(source["path"], "source-data/leagues/test/seasons/2026/league.json")
+            self.assertEqual(source["path"], "data-source/leagues/test/seasons/2026/league.json")
             self.assertNotIn("league", result["source"])
 
     def test_canonical_scoring_identity_mismatch_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             config, previous = self.fixture(root)
-            self.write_json(root, "source-data/leagues/test/seasons/2026/league.json", {"CanonicalLeagueID": "wrong", "Season": 2026, "ScoringSettings": {}})
+            self.write_json(root, "data-source/leagues/test/seasons/2026/league.json", {"CanonicalLeagueID": "wrong", "Season": 2026, "ScoringSettings": {}})
             with self.assertRaisesRegex(MODULE.FreeAgentMovementMaterializationError, "identity mismatch"):
                 MODULE.build(root, config, previous)
 

@@ -217,7 +217,7 @@ class RepositoryAdjudicationBuilderTests(unittest.TestCase):
             ROOT, datasets, cls.season
         )
         cls.persisted = json.loads(
-            (ROOT / "source-data/nfl/identities/players.json").read_text(encoding="utf-8-sig")
+            (ROOT / "data-source/nfl/identities/players.json").read_text(encoding="utf-8-sig")
         )["Players"]
 
     def test_repository_decisions_are_applicable(self):

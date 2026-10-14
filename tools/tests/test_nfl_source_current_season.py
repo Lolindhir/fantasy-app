@@ -14,7 +14,7 @@ from nfl_source_data_lib.materialize import _observation_season
 
 
 def write_manifest(root: Path, league: str, current: int, seasons: list[int]) -> None:
-    path = root / "source-data/leagues" / league / "manifest.json"
+    path = root / "data-source/leagues" / league / "manifest.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(
@@ -65,7 +65,7 @@ class NflSourceCurrentSeasonTests(unittest.TestCase):
 
     def test_real_repository_current_season_matches_canonical_manifest(self) -> None:
         root = TOOLS.parent
-        manifest = json.loads((root / "source-data/leagues/nfl-reise/manifest.json").read_text(encoding="utf-8"))
+        manifest = json.loads((root / "data-source/leagues/nfl-reise/manifest.json").read_text(encoding="utf-8"))
         current = manifest["CurrentCanonicalLeagueSeasonID"]
         expected = next(s["Season"] for s in manifest["Seasons"] if s["CanonicalLeagueSeasonID"] == current)
         self.assertEqual(expected, current_source_season(root))

@@ -206,7 +206,7 @@ class TransactionCanonicalShadowTests(unittest.TestCase):
     def test_repository_fixture_proves_week_partition_loading_without_hardcoded_ceiling(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            season_dir = root / "source-data" / "leagues" / "test-league" / "seasons" / "2026"
+            season_dir = root / "data-source" / "leagues" / "test-league" / "seasons" / "2026"
             transaction_dir = season_dir / "transactions"
             transaction_dir.mkdir(parents=True)
             (root / "public" / "data").mkdir(parents=True)
@@ -268,7 +268,7 @@ class CurrentRepositoryTransactionShadowIntegrationTests(unittest.TestCase):
             with self.subTest(season=season):
                 season_dir = (
                     repo_root
-                    / "source-data"
+                    / "data-source"
                     / "leagues"
                     / "nfl-reise"
                     / "seasons"

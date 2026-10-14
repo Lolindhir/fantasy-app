@@ -221,7 +221,7 @@ class AmbiguousEvidenceTests(unittest.TestCase):
             return {"FantasyPoints": 1.5, "UnsupportedNonZeroSettings": []}
 
         with tempfile.TemporaryDirectory() as tmp:
-            partition = Path(tmp) / "source-data/nfl/player-stats/2026"
+            partition = Path(tmp) / "data-source/nfl/player-stats/2026"
             partition.mkdir(parents=True)
             records = [
                 {"CanonicalPlayerID": cid, "SeasonType": "REG", "Stats": {}, "Position": "CB"} for cid in ("A", "B")

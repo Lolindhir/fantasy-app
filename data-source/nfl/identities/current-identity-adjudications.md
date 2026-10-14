@@ -2,7 +2,7 @@
 
 `current-identity-adjudications.json` is the versioned source contract for rare **current-season** provider-identity corrections that remain unresolved after the ordinary automatic identity rules but can be deliberately confirmed from reviewable evidence.
 
-This source is intentionally separate from `historical-identity-adjudications.json`. Historical adjudication fills a bounded past provider observation in `provider-mappings.json`; current adjudication is intended for a future identity-builder step that would change the **active** provider bridge in `source-data/nfl/identities/players.json`.
+This source is intentionally separate from `historical-identity-adjudications.json`. Historical adjudication fills a bounded past provider observation in `provider-mappings.json`; current adjudication is intended for a future identity-builder step that would change the **active** provider bridge in `data-source/nfl/identities/players.json`.
 
 ## Contract
 

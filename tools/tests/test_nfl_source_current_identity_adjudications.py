@@ -54,7 +54,7 @@ class CurrentIdentityAdjudicationTests(unittest.TestCase):
 
     @classmethod
     def _write_source(cls, root: Path, entries: list[dict[str, Any]]) -> None:
-        path = root / "source-data/nfl/identities/current-identity-adjudications.json"
+        path = root / "data-source/nfl/identities/current-identity-adjudications.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps({"SchemaVersion": 1, "Adjudications": entries}, indent=2) + "\n",
@@ -519,10 +519,10 @@ class CurrentIdentityAdjudicationTests(unittest.TestCase):
 
     def test_repository_source_is_valid_against_current_identity_state(self) -> None:
         players = json.loads(
-            (ROOT / "source-data/nfl/identities/players.json").read_text(encoding="utf-8-sig")
+            (ROOT / "data-source/nfl/identities/players.json").read_text(encoding="utf-8-sig")
         ).get("Players", [])
         conflicts = json.loads(
-            (ROOT / "source-data/nfl/identities/provider-mappings.json").read_text(
+            (ROOT / "data-source/nfl/identities/provider-mappings.json").read_text(
                 encoding="utf-8-sig"
             )
         ).get("Conflicts", [])
@@ -532,7 +532,7 @@ class CurrentIdentityAdjudicationTests(unittest.TestCase):
             if str(item.get("CanonicalPlayerID") or "")
         }
         payload = json.loads(
-            (ROOT / "source-data/nfl/identities/current-identity-adjudications.json").read_text(
+            (ROOT / "data-source/nfl/identities/current-identity-adjudications.json").read_text(
                 encoding="utf-8"
             )
         )

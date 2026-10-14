@@ -18,7 +18,7 @@ CORE_INPUT_PATHS = {
 # Hand-maintained league metadata (ADR-054) feeds the draft type classification of the FA board.
 LEAGUE_METADATA_PATTERN = re.compile(r"^data-meta/[^/]+/metadata\.json$")
 # Current-season Canonical League drafts feed the FA board (build_fa_board_readmodel.py).
-CANONICAL_LEAGUE_DRAFTS_PATTERN = re.compile(r"^source-data/leagues/[^/]+/seasons/[^/]+/drafts\.json$")
+CANONICAL_LEAGUE_DRAFTS_PATTERN = re.compile(r"^data-source/leagues/[^/]+/seasons/[^/]+/drafts\.json$")
 MATERIALIZATION_DEFINITION_PREFIXES = (
     "fantasy-management/automation/",
     "fantasy-management/_ai/scripts/",

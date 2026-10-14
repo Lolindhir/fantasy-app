@@ -1,7 +1,7 @@
 schemaVersion: 2
 
 purpose: >
-  Defines the durable player-identity architecture shared by the NFL source-data
+  Defines the durable player-identity architecture shared by the NFL data-source
   layer, generated app data and historical consumers. It separates the
   application-defined canonical person identity from provider-specific identifiers
   and from the current Sleeper-based application contract.
@@ -9,7 +9,7 @@ purpose: >
 identityModel:
   canonicalPerson:
     key: CanonicalPlayerID
-    owner: source-data/nfl
+    owner: data-source/nfl
     namespace: fantasy-app
     issuer: fantasy-app
     semantics: >
@@ -23,7 +23,7 @@ identityModel:
       - Never use a display name as an authoritative merge key.
       - Do not rename or regenerate an existing CanonicalPlayerID merely because a new provider ID becomes available.
       - Preserve historical facts that already reference a CanonicalPlayerID.
-      - The source-data/nfl path describes the NFL data domain, not the issuer or namespace of CanonicalPlayerID.
+      - The data-source/nfl path describes the NFL data domain, not the issuer or namespace of CanonicalPlayerID.
       - Any future official NFL-issued player identifier is another external/provider mapping and does not replace or rename CanonicalPlayerID.
     valueCompatibility: >
       Existing opaque canonical ID values remain unchanged during the
@@ -37,7 +37,7 @@ identityModel:
     canonicalSchemaVersion: 2
     rule: >
       NFLPlayerID is a legacy schema label only. Readers may temporarily accept it
-      to migrate already persisted v1 source-data, but all new canonical output,
+      to migrate already persisted v1 data-source, but all new canonical output,
       provider-mapping output, Draft/Combine records, audits and documentation use
       CanonicalPlayerID. Migration changes the field name, not the canonical ID
       value or the person it identifies.
@@ -56,7 +56,7 @@ identityModel:
       current Angular and generated-data contracts. This is an app-facing source
       contract, not the permanent cross-provider identity of a person.
     requirements:
-      - Do not migrate Players.json[].ID away from Sleeper as part of the source-data identity work.
+      - Do not migrate Players.json[].ID away from Sleeper as part of the data-source identity work.
       - Current Sleeper roster, draft and transaction facts remain authoritative for what happened in the fantasy league where the app currently relies on Sleeper.
       - A Sleeper ID must not be assumed to identify the same person for all historical time without temporal evidence.
 
@@ -84,7 +84,7 @@ identityModel:
         intervals later.
     activeVsHistoricalLinks:
       rule: >
-        source-data/nfl/identities/players.json represents the active canonical
+        data-source/nfl/identities/players.json represents the active canonical
         provider bridge, not an append-only bag of every identifier ever observed.
         If current corroborated evidence for a CanonicalPlayerID supplies a
         different value for the same provider, the stale persisted latest-snapshot
@@ -95,7 +95,7 @@ identityModel:
       status: implemented-347-h1a
       architectureDecision: ADR-043
       replaces: app.Players and app.Players.git.* as live identity evidence
-      source: source-data/providers/sleeper/players/raw-latest.json (dataset sleeper.players, provider evidence, not an app output)
+      source: data-source/providers/sleeper/players/raw-latest.json (dataset sleeper.players, provider evidence, not an app output)
       implementation: tools/nfl_source_data_lib/identity_sources.py::sleeper_player_candidates
       rule: >
         The identity builder no longer reads public/data/Players.json or its git
@@ -151,8 +151,8 @@ identityModel:
       - Quarantining one provider mapping must not discard unrelated corroborated mappings for the same person unless those mappings are independently contradictory.
       - Do not choose a winner silently and do not add provider-specific or player-specific hard-coded identity exceptions as the primary conflict strategy.
     currentAdjudication:
-      source: source-data/nfl/identities/current-identity-adjudications.json
-      documentation: source-data/nfl/identities/current-identity-adjudications.md
+      source: data-source/nfl/identities/current-identity-adjudications.json
+      documentation: data-source/nfl/identities/current-identity-adjudications.md
       provenancePrefix: manual.current-identity-adjudication
       role: bounded-human-reviewed-current-provider-reassignment
       runtimeStatus: consumed-by-identity-builder
@@ -352,7 +352,7 @@ identityModel:
         - reviewed adjudication entries for the open splitIdentity and wrongUpstreamClaim cases
         - productive consumption in the identity builder (current adjudication integration steps 1-7; implemented, Issue #347 B5)
     historicalAdjudication:
-      source: source-data/nfl/identities/historical-identity-adjudications.json
+      source: data-source/nfl/identities/historical-identity-adjudications.json
       provenancePrefix: manual.identity-adjudication
       role: bounded-human-reviewed-evidence
       rule: >
@@ -460,7 +460,7 @@ metadataSeparation:
       semantic payload comparison of those datasets.
 
 boundaries:
-  - source-data/nfl owns provider-independent NFL-domain identities and historical provider mappings; the path name does not imply NFL-issued identifiers.
+  - data-source/nfl owns provider-independent NFL-domain identities and historical provider mappings; the path name does not imply NFL-issued identifiers.
   - public/data remains generated app output and is not the source of truth for cross-provider identity history.
   - fantasy-management may consume the canonical identity bridge but does not own the app player identity contract.
   - public/data/PlayerWeekFantasy.json is the first explicitly designed App publication carrying CanonicalPlayerID beside the existing Sleeper-based PlayerID; unresolved active Sleeper identity stays PlayerID=null, duplicate/conflicting mappings fail closed, and no name fallback is allowed.

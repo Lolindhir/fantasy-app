@@ -57,10 +57,10 @@ class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
         }
 
         canonical_identity_path = (
-            ROOT / "source-data" / "nfl" / "identities" / "players.json"
+            ROOT / "data-source" / "nfl" / "identities" / "players.json"
         ).resolve()
         canonical_sleeper_path = (
-            ROOT / "source-data" / "nfl" / "platform" / "sleeper" / "players.json"
+            ROOT / "data-source" / "nfl" / "platform" / "sleeper" / "players.json"
         ).resolve()
         original_load_json = population_policy.ops.load_json
         persisted_sleeper_document = original_load_json(canonical_sleeper_path)

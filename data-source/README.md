@@ -1,6 +1,6 @@
 # NFL source data
 
-`source-data/` is the persistent input layer for provider-backed NFL facts. It is intentionally separate from generated app read models under `public/data/` and from Fantasy Management source material under `fantasy-management/sources/`.
+`data-source/` is the persistent input layer for provider-backed NFL facts. It is intentionally separate from generated app read models under `public/data/` and from Fantasy Management source material under `fantasy-management/sources/`.
 
 ## Layers
 
@@ -8,10 +8,10 @@
 external provider
       |
       v
-source-data/providers/<provider>/   provider-shaped raw input + provenance
+data-source/providers/<provider>/   provider-shaped raw input + provenance
       |
       v
-source-data/nfl/                    provider-independent canonical NFL data
+data-source/nfl/                    provider-independent canonical NFL data
       |
       v
 public/requests/**                  app generators / downstream consumers
@@ -61,7 +61,7 @@ A `not-yet-available` metadata record intentionally has no per-run timestamp, so
 
 Invalid combinations fail while loading the registry. Lifecycle and source fields are executable policy, not descriptive free text.
 
-For season-partitioned raw sources, an already persisted season older than the current source season is reused as `frozen-existing` during a normal sync and is not fetched again. `--force` is the explicit repair path. The current source season is resolved from the canonical League facts (`source-data/leagues/*/manifest.json -> CurrentCanonicalLeagueSeasonID`; the latest current season wins across leagues, an unresolvable manifest fails closed), with the UTC calendar year only as a final technical fallback when no league manifest exists. The NFL source layer reads neither `public/data/League.json` nor `public/data/Metadata.json` for this (Issue #347 I2).
+For season-partitioned raw sources, an already persisted season older than the current source season is reused as `frozen-existing` during a normal sync and is not fetched again. `--force` is the explicit repair path. The current source season is resolved from the canonical League facts (`data-source/leagues/*/manifest.json -> CurrentCanonicalLeagueSeasonID`; the latest current season wins across leagues, an unresolvable manifest fails closed), with the UTC calendar year only as a final technical fallback when no league manifest exists. The NFL source layer reads neither `public/data/League.json` nor `public/data/Metadata.json` for this (Issue #347 I2).
 
 Current active datasets:
 
@@ -126,13 +126,13 @@ The resolver establishes person components from corroborated NFL identity eviden
 Canonical persons are stored in:
 
 ```text
-source-data/nfl/identities/players.json
+data-source/nfl/identities/players.json
 ```
 
 Historical provider mappings are stored in:
 
 ```text
-source-data/nfl/identities/provider-mappings.json
+data-source/nfl/identities/provider-mappings.json
 ```
 
 Provider mappings use season-level observation intervals. A provider ID may map to different `CanonicalPlayerID` values in non-overlapping seasons; overlapping contradictory claims fail closed and are recorded as conflicts.
@@ -141,7 +141,7 @@ The legacy field name `NFLPlayerID` is accepted only for migration reads. Curren
 
 ## Draft contract
 
-`source-data/nfl/draft/<season>.json` stores NFL selections as historical facts with round, position within round, overall pick, drafting NFL team, canonical `CanonicalPlayerID` when resolved, and source GSIS/PFR IDs for provenance.
+`data-source/nfl/draft/<season>.json` stores NFL selections as historical facts with round, position within round, overall pick, drafting NFL team, canonical `CanonicalPlayerID` when resolved, and source GSIS/PFR IDs for provenance.
 
 The draft status audit distinguishes `drafted`, `undrafted`, `unknown` and `not_yet_drafted`. In particular, `draft_year = 0` is never treated as proof of UDFA.
 
@@ -152,18 +152,18 @@ Draft is an `immutable-history` dataset. Existing prior-season canonical files a
 Provider raw Combine data is persisted at:
 
 ```text
-source-data/providers/nflverse/combine/raw-latest.csv
+data-source/providers/nflverse/combine/raw-latest.csv
 ```
 
 Canonical Combine data is season-partitioned at:
 
 ```text
-source-data/nfl/combine/<season>.json
+data-source/nfl/combine/<season>.json
 ```
 
 Combine identity resolves to `CanonicalPlayerID` only through an unambiguous PFR provider mapping. `player_name`, position and school are descriptive evidence and never authoritative identity joins. `cfb_id` remains provenance rather than a matching shortcut.
 
-The normalized `Draft` link comes from canonical `source-data/nfl/draft/<season>.json`; Combine's own draft evidence remains separately preserved. Conflicts are audited instead of silently selecting a winner. Duplicate PFR identities or duplicate resolved `CanonicalPlayerID` values inside the same Combine season fail closed according to the documented invariants.
+The normalized `Draft` link comes from canonical `data-source/nfl/draft/<season>.json`; Combine's own draft evidence remains separately preserved. Conflicts are audited instead of silently selecting a winner. Duplicate PFR identities or duplicate resolved `CanonicalPlayerID` values inside the same Combine season fail closed according to the documented invariants.
 
 ## Metadata and no-op contract
 
@@ -171,14 +171,14 @@ Technical fetch, generation and freshness metadata belongs in dedicated provider
 
 Canonical source datasets preserve semantic no-op behavior. If validated source content and derived canonical facts are unchanged, materialization must not rewrite the dataset solely because runtime time advanced.
 
-The materializer computes and validates semantic payloads before publishing canonical files. A normalization failure must not leave a partially rebuilt canonical source-data state.
+The materializer computes and validates semantic payloads before publishing canonical files. A normalization failure must not leave a partially rebuilt canonical data-source state.
 
 ## Audit contract
 
 The materialized audit lives at:
 
 ```text
-source-data/audits/nfl-source-data-audit.json
+data-source/audits/nfl-source-data-audit.json
 ```
 
 It reports registry coverage, current app-player identity coverage, draft status coverage, Combine coverage/conflicts, duplicate or ambiguous provider mappings, historical resolution conflicts and other data-quality invariants. As new Phase-1 datasets become canonical, their availability/freshness/coverage and join conflicts must be added to the same audit contract.

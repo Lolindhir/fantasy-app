@@ -70,8 +70,8 @@ def _kickoff_epoch(game_day: str, game_time: str | None) -> str:
 
 def load_canonical_schedule(repo_root: Path, season: int, registry: NflTeamRegistry) -> list[dict[str, Any]]:
     """Build the schedule rows this script joins on from canonical NFL schedule and game-finality facts."""
-    schedule = load_json(repo_root / f"source-data/nfl/schedules/{season}.json")
-    finality = load_json(repo_root / f"source-data/nfl/game-finality/{season}.json")
+    schedule = load_json(repo_root / f"data-source/nfl/schedules/{season}.json")
+    finality = load_json(repo_root / f"data-source/nfl/game-finality/{season}.json")
     for label, payload, dataset in (("schedule", schedule, "nflverse.schedules"), ("game finality", finality, "nflverse.game-finality")):
         if not isinstance(payload, dict) or int(payload.get("Season", -1)) != season or payload.get("SourceDataset") != dataset:
             raise KickerWeeklyResearchPlanError(f"Canonical NFL {label} for season {season} is missing or inconsistent")
@@ -478,7 +478,7 @@ def main() -> None:
     parser.add_argument("--input", default="fantasy-management/generated/operations/kicker-streaming-inputs.json")
     parser.add_argument("--analysis-config", default="fantasy-management/_ai/kicker-streaming-analysis-config.json")
     parser.add_argument("--research-config", default="fantasy-management/_ai/kicker-weekly-research-config.json")
-    parser.add_argument("--repo-root", default=str(REPO_ROOT), help="Repository root holding the canonical source-data.")
+    parser.add_argument("--repo-root", default=str(REPO_ROOT), help="Repository root holding the canonical data-source.")
     parser.add_argument("--schema", default="fantasy-management/_ai/schemas/kicker-weekly-research-plan.schema.json")
     parser.add_argument("--week", type=int, default=None)
     parser.add_argument("--output", default=None, help="Optional output path. Default is stdout only.")

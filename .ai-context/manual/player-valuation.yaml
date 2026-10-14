@@ -48,7 +48,7 @@ identity:
     capped at LastLeagueWeek. A snapshot for week NN uses only current-season
     results of weeks <= NN.
   scope:
-    seasons: every season listed in source-data/leagues/<CanonicalLeagueID>/manifest.json
+    seasons: every season listed in data-source/leagues/<CanonicalLeagueID>/manifest.json
     weeks: "00 up to the last scored week of the season (completed seasons: all weeks; current season: up to the current AsOfFinalScoredWeek)"
     rule: Any snapshot can be regenerated at any time from data-source plus data-meta; no snapshot is a source of truth.
   providerBoundary: >
@@ -96,7 +96,7 @@ contract:
     - Salary and SalaryProjected are whole-dollar integers from the selected salary model.
     - Ranking uses the types and order of derived-models.yaml rankingFunctions; inactive players have an empty list.
     - Grading contains exactly the Rank row of the selected grading model. The Form row is not part of the product.
-    - Inputs make every row self-describing so models can be re-run and audited without re-reading source-data; they are copies of the league-scored values and carry no extra rounding.
+    - Inputs make every row self-describing so models can be re-run and audited without re-reading data-source; they are copies of the league-scored values and carry no extra rounding.
     - Players are sorted by row key (ordinal) and keys inside objects have a fixed order, so equal content is byte-equal.
     - No wall-clock timestamp, run ID or commit hash appears in the content (semantic no-op).
   missingVersusZero: >
@@ -118,7 +118,7 @@ inputs:
       rounded to two decimals first, then the averages, potential = LastLeagueWeek - 1 of
       the snapshot season. Implementation: tools/derived_data_lib/player_valuation.py.
   scoringProfile:
-    owner: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
     fingerprint: tools/player_week_fantasy.py scoring_settings_fingerprint (SettingsHash)
   population:
     owner: tools/players_population.py (ADR-043)
@@ -139,7 +139,7 @@ inputs:
     owner: tools/players_league_scoring.py::resolve_league_week_bounds
     rule: LastLeagueWeek, PlayoffStartWeek from the canonical league-season WeekStructure; AsOfFinalScoredWeek from canonical game finality and stats coverage.
   teamCount:
-    owner: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::Settings.num_teams
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::Settings.num_teams
   modelSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986, loader in #986 step 2)
     rule: Seasons.<season>.Models; unknown or missing choice for a season fails the snapshot.

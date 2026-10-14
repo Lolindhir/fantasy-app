@@ -120,8 +120,8 @@ class KickerWeeklyResearchPlanTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
-            (base / "source-data/nfl/schedules").mkdir(parents=True)
-            (base / "source-data/nfl/game-finality").mkdir(parents=True)
+            (base / "data-source/nfl/schedules").mkdir(parents=True)
+            (base / "data-source/nfl/game-finality").mkdir(parents=True)
             games = [
                 {"GameID": "g1", "GameType": "REG", "Week": 3, "GameDay": "2030-09-22", "GameTime": "13:00",
                  "AwayTeam": away, "HomeTeam": provider_alias or home, "Location": "Neutral", "Overtime": "1",
@@ -129,9 +129,9 @@ class KickerWeeklyResearchPlanTests(unittest.TestCase):
                 {"GameID": "g2", "GameType": "REG", "Week": 3, "GameDay": "2030-09-22", "GameTime": None,
                  "AwayTeam": abbrs[2], "HomeTeam": abbrs[3], "Location": "Home", "ProviderGameIDs": {"ESPN": "43"}},
             ]
-            (base / "source-data/nfl/schedules/2030.json").write_text(
+            (base / "data-source/nfl/schedules/2030.json").write_text(
                 json.dumps({"Season": 2030, "SourceDataset": "nflverse.schedules", "Games": games}), encoding="utf-8")
-            (base / "source-data/nfl/game-finality/2030.json").write_text(
+            (base / "data-source/nfl/game-finality/2030.json").write_text(
                 json.dumps({"Season": 2030, "SourceDataset": "nflverse.game-finality",
                             "Games": [{"GameID": "g1", "Final": True}, {"GameID": "g2", "Final": False}]}),
                 encoding="utf-8")
@@ -147,7 +147,7 @@ class KickerWeeklyResearchPlanTests(unittest.TestCase):
             self.assertEqual(second["gameStatus"], "Scheduled")
             self.assertEqual(MODULE.resolve_team_schedule(provider_alias or home, [], {home}, registry, 2030)["status"], "bye")
 
-            (base / "source-data/nfl/game-finality/2030.json").write_text(
+            (base / "data-source/nfl/game-finality/2030.json").write_text(
                 json.dumps({"Season": 2030, "SourceDataset": "nflverse.game-finality", "Games": []}), encoding="utf-8")
             with self.assertRaises(MODULE.KickerWeeklyResearchPlanError):
                 MODULE.load_canonical_schedule(base, 2030, registry)

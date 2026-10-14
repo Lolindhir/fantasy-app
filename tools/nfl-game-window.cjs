@@ -2,8 +2,8 @@
 
 // Game-window evaluation for scheduler targets with mode "game-window" (Issue #946, step S3b of #471).
 //
-// A game window is derived from the canonical NFL schedule (source-data/nfl/schedules/<season>.json) and,
-// when available, canonical game finality (source-data/nfl/game-finality/<season>.json). It decides whether
+// A game window is derived from the canonical NFL schedule (data-source/nfl/schedules/<season>.json) and,
+// when available, canonical game finality (data-source/nfl/game-finality/<season>.json). It decides whether
 // the target runs on its normal (dense) cron or on its idle cron. Same inputs and Eastern-time kickoff rule
 // as tools/nfl_season_context.py and CanonicalScheduleUtils.psm1.
 //
@@ -26,7 +26,7 @@ const MINUTE_MS = 60000;
 const DEFAULTS = Object.freeze({
   assumedGameDurationMinutes: 210,
   maxOverrunMinutes: 180,
-  scheduleDir: 'source-data/nfl',
+  scheduleDir: 'data-source/nfl',
 });
 
 function zoneOffsetMs(utcMs, timeZone) {
