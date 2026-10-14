@@ -785,3 +785,16 @@ sharedDerivedData:
       Salary, SalaryProjected, Ranking, Grading and the Salary Cap in Players.json and
       League.json are still produced by RequestPlayers.ps1 and RequestLeague.ps1 until the
       cutover step of Issue #919.
+
+sharedDerivedLeagueHistory:
+  architectureDecision: ADR-057
+  contract: .ai-context/manual/league-history.yaml
+  trackingIssue: 999
+  state: contract-accepted-implementation-pending
+  outputPattern:
+    transactions: data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
+    drafts: data-derived/league-drafts/<CanonicalLeagueID>/<season>.json
+  note: >
+    Transactions.json, Drafts.json and past_seasons/Transactions and Drafts are still produced by the
+    PowerShell rebuild described above until the cutover (Issue #999 step 5). After it they are consumer
+    deliveries written from these products and no generated archive is an input.
