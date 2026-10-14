@@ -26,6 +26,7 @@ SINGLE_SCOPES = (
 )
 REQUIRED_INPUTS = (
     "source-data/league-registry.json",
+    "data-meta",
     "source-data/leagues",
     "source-data/providers/sleeper",
     "source-data/nfl/schedules",

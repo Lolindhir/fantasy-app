@@ -1025,9 +1025,8 @@ consumerReadClassification:
     fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py:
       reads:
         legacy:League: freshness-trigger
-        legacy:Metadata: manual-league-rule
         legacy:Players: freshness-trigger
-      note: 'Decides whether a push touching these paths triggers Operations materialization; it reads no content. Metadata.json is the DraftType binding (J2).'
+      note: 'Decides whether a push touching these paths triggers Operations materialization; it reads no content. The league metadata data-meta/<CanonicalLeagueID>/metadata.json (DraftType binding, J2; ADR-054) is also a trigger path and is not a legacy read.'
     fantasy-management/automation/external-signal-materialization.json:
       reads:
         legacy:League: intentional-overlay
@@ -1035,9 +1034,8 @@ consumerReadClassification:
     fantasy-management/automation/fa-board-materialization.json:
       reads:
         legacy:League: intentional-overlay
-        legacy:Metadata: manual-league-rule
         legacy:Timestamps: freshness-trigger
-      note: 'League.json: documented FA-board enrichment overlay (6T). Metadata.json: manual league rules. Timestamps.json: freshness bridge.'
+      note: 'League.json: documented FA-board enrichment overlay (6T). The manual league rules come from data-meta/<CanonicalLeagueID>/metadata.json (ADR-054). Timestamps.json: freshness bridge.'
     fantasy-management/automation/input-materialization.json:
       reads:
         legacy:League: intentional-overlay

@@ -38,11 +38,15 @@ function ObjectsAreEqualByJson {
 # Saves: Schedule.json, Timestamps.json
 # ===================================================================
 
-# --- Config / reuse existing variables ---
-. "$PSScriptRoot\config.ps1"
-
-# year aus config holen
-$year = $Global:LeagueYear
+# --- Config: season comes from the League source manifest via ConfigUtils ---
+try {
+    $config = Get-Config
+}
+catch {
+    Write-Error "Error loading configuration: $_"
+    exit 1
+}
+$year = $config.LeagueYear
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dataDir = Join-Path $scriptDir "..\data"

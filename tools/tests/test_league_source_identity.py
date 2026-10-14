@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import tempfile
 import unittest
@@ -11,6 +12,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+from league_metadata import load_league_metadata  # noqa: E402
 from league_source_data import combine_sync_results  # noqa: E402
 from league_source_data_lib.core import (  # noqa: E402
     LeagueBootstrap,
@@ -28,6 +30,18 @@ IDS = {
     2025: "1257421353431080960",
     2024: "1133541805053714432",
 }
+
+
+def write_metadata(root: Path, canonical_id: str, provider_id: str) -> Path:
+    """Write a complete league metadata file (ADR-054) derived from the repository file."""
+    data = copy.deepcopy(load_league_metadata("nfl-reise"))
+    data["CanonicalLeagueID"] = canonical_id
+    data["CurrentProviderLeagueID"] = provider_id
+    directory = root / "data-meta" / canonical_id
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / "metadata.json"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    return path
 
 
 def league(season: int, previous: str | None) -> dict:
@@ -53,33 +67,15 @@ class LeagueSourceIdentityTests(unittest.TestCase):
     def test_bootstrap_accepts_manual_slug_and_rejects_display_name_shape(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            directory = root / "source-data/leagues/_bootstrap"
-            directory.mkdir(parents=True)
-            (directory / "nfl-reise.json").write_text(
-                json.dumps(
-                    {
-                        "CanonicalLeagueID": "nfl-reise",
-                        "Provider": "Sleeper",
-                        "CurrentProviderLeagueID": IDS[2026],
-                    }
-                ),
-                encoding="utf-8",
-            )
+            path = write_metadata(root, "nfl-reise", IDS[2026])
             loaded = load_bootstraps(root)
             self.assertEqual(loaded[0].canonical_league_id, "nfl-reise")
+            self.assertEqual(loaded[0].path, path)
 
-            (directory / "nfl-reise.json").unlink()
-            (directory / "NFL Reise.json").write_text(
-                json.dumps(
-                    {
-                        "CanonicalLeagueID": "NFL Reise",
-                        "Provider": "Sleeper",
-                        "CurrentProviderLeagueID": IDS[2026],
-                    }
-                ),
-                encoding="utf-8",
-            )
-            with self.assertRaisesRegex(ValueError, "Invalid CanonicalLeagueID"):
+            path.unlink()
+            path.parent.rmdir()
+            write_metadata(root, "NFL Reise", IDS[2026])
+            with self.assertRaisesRegex(ValueError, "invalid CanonicalLeagueID"):
                 load_bootstraps(root)
 
     def test_discovers_current_to_historical_lineage(self) -> None:
@@ -175,19 +171,7 @@ class LeagueSourceIdentityTests(unittest.TestCase):
         }
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            bootstrap_dir = root / "source-data/leagues/_bootstrap"
-            bootstrap_dir.mkdir(parents=True)
-            bootstrap_path = bootstrap_dir / f"{CANONICAL_ID}.json"
-            bootstrap_path.write_text(
-                json.dumps(
-                    {
-                        "CanonicalLeagueID": CANONICAL_ID,
-                        "Provider": "Sleeper",
-                        "CurrentProviderLeagueID": IDS[2026],
-                    }
-                ),
-                encoding="utf-8",
-            )
+            write_metadata(root, CANONICAL_ID, IDS[2026])
             bootstrap = load_bootstraps(root)[0]
             first = sync_bootstrap(root, bootstrap, fixtures.__getitem__)
             second = sync_bootstrap(root, bootstrap, fixtures.__getitem__)
@@ -218,23 +202,12 @@ class LeagueSourceIdentityTests(unittest.TestCase):
     def test_multiple_bootstraps_are_supported_without_single_league_assumption(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            directory = root / "source-data/leagues/_bootstrap"
-            directory.mkdir(parents=True)
             values = [
                 (CANONICAL_ID, IDS[2026]),
                 ("second-league", "9999999999999999999"),
             ]
             for canonical_id, provider_id in values:
-                (directory / f"{canonical_id}.json").write_text(
-                    json.dumps(
-                        {
-                            "CanonicalLeagueID": canonical_id,
-                            "Provider": "Sleeper",
-                            "CurrentProviderLeagueID": provider_id,
-                        }
-                    ),
-                    encoding="utf-8",
-                )
+                write_metadata(root, canonical_id, provider_id)
             loaded = load_bootstraps(root)
             self.assertEqual([item.canonical_league_id for item in loaded], sorted(item[0] for item in values))
 

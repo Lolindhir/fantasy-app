@@ -535,7 +535,7 @@ class SourceDataReadinessTests(unittest.TestCase):
 
     def _configure_league(self) -> str:
         self.write_json(
-            "source-data/leagues/_bootstrap/nfl-reise.json",
+            "data-meta/nfl-reise/metadata.json",
             {
                 "CanonicalLeagueID": "nfl-reise",
                 "Provider": "sleeper",

@@ -48,25 +48,12 @@ catch {
 }
 
 $LeagueID = $config.LeagueID
-$CanonicalLeagueID = "nfl-reise"
+$CanonicalLeagueID = $config.CanonicalLeagueID
 $SalaryRelevantTeamSize = $config.SalaryRelevantTeamSize
 $CapDeadline = $config.CapDeadline
 $LeagueTimeZone = $config.LeagueTimeZone
-$CapDeadlineBufferDays = 3
+$CapDeadlineBufferDays = $config.CapDeadlineBufferDays
 $LeagueStatusSeasonStartBufferDays = $config.LeagueStatusSeasonStartBufferDays
-
-try {
-    $metadataPath = Join-Path $config.DataDir "Metadata.json"
-    if (Test-Path $metadataPath) {
-        $metadataContent = Get-Content $metadataPath -Raw | ConvertFrom-Json
-        if ($metadataContent.PSObject.Properties.Name -contains "CapDeadlineBufferDays") {
-            $CapDeadlineBufferDays = [int]$metadataContent.CapDeadlineBufferDays
-        }
-    }
-}
-catch {
-    Write-Warning "Could not read CapDeadlineBufferDays from Metadata.json. Falling back to 3 days. $_"
-}
 
 $ScheduleFile = $config.ScheduleFile
 $FantasyGameContextFile = Join-Path $config.DataDir "FantasyGameContext.json"
@@ -132,7 +119,7 @@ function Ensure-PreviousFantasyGameContextHistory {
     if (Test-Path $targetFile) { return }
 
     $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-    $canonicalLeagueID = "nfl-reise"
+    $canonicalLeagueID = $config.CanonicalLeagueID
     $seasonSourceDir = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues\$canonicalLeagueID\seasons\$historicalSeason"
     $leagueSourceFile = Join-Path $seasonSourceDir "league.json"
     $matchupDirectory = Join-Path $seasonSourceDir "matchups"
@@ -169,11 +156,11 @@ function Ensure-PreviousFantasyGameContextHistory {
 
 try {
     if (-not $LeagueID) {
-        Write-Error "LeagueID not set in config.ps1!"
+        Write-Error "LeagueID not set in the league metadata (data-meta)!"
         exit 1
     }
     if (-not $SalaryRelevantTeamSize -or $SalaryRelevantTeamSize -le 0) {
-        Write-Error "SalaryRelevantTeamSize not set or invalid in config.ps1!"
+        Write-Error "SalaryRelevantTeamSize not set or invalid in ConfigUtils.psm1!"
         exit 1
     }
 

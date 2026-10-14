@@ -4,6 +4,8 @@ $script:DataSourceRootName = 'source-data'
 $script:DataDerivedRootName = 'data-derived'
 $script:DataMetaRootName = 'data-meta'
 
+Import-Module "$PSScriptRoot\LeagueMetadataUtils.psm1" -ErrorAction Stop
+
 function Get-DataSourceRoot {
     param([Parameter(Mandatory = $true)][string]$RepoRoot)
     return (Join-Path $RepoRoot $script:DataSourceRootName)
@@ -128,35 +130,50 @@ function Get-Config {
     $TimestampsFile = Join-Path $DataDir "Timestamps.json"
     $ErrorsFile = Join-Path $DataDir "Errors.json"
 
-    # Lade Metadata
-    $metadataPath = Join-Path $DataDir "Metadata.json"
+    # Lade Liga-Metadaten (data-meta/<CanonicalLeagueID>/metadata.json, ADR-054, Issue #986).
+    # The generators still work on exactly one league; more than one league needs an explicit selection first.
+    $leagueIds = @(Get-LeagueMetadataIds -Root $DataMetaDir)
+    if ($leagueIds.Count -ne 1) {
+        throw "Expected exactly one league under $DataMetaDir but found $($leagueIds.Count) ($($leagueIds -join ', ')); generator league selection is not implemented."
+    }
+    $CanonicalLeagueID = [string]$leagueIds[0]
+    $metadataContent = Get-LeagueMetadata -LeagueId $CanonicalLeagueID -Root $DataMetaDir
 
-    if (-not (Test-Path $metadataPath)) {
-        Write-Error "Metadata file not found at $metadataPath."
-        throw "Metadata file not found."
+    # LeagueYear is canonical in the League source manifest, not hand-maintained.
+    $manifestPath = Join-Path (Join-Path (Join-Path $DataSourceDir "leagues") $CanonicalLeagueID) "manifest.json"
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+        throw "League source manifest not found at $manifestPath."
+    }
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $currentSeasonId = [string]$manifest.CurrentCanonicalLeagueSeasonID
+    if ($currentSeasonId -notmatch "^$([regex]::Escape($CanonicalLeagueID))-(?<season>[0-9]{4})$") {
+        throw "League source manifest of $CanonicalLeagueID has no valid CurrentCanonicalLeagueSeasonID ('$currentSeasonId')."
+    }
+    $LeagueYear = [int]$Matches['season']
+
+    # CapDeadline and its buffer are mandatory for the current season (the loader fails closed otherwise).
+    $seasonEntry = Get-LeagueSeasonEntry -Metadata $metadataContent -Season $LeagueYear
+    if ($seasonEntry.PSObject.Properties.Name -notcontains "CapDeadline") {
+        throw "League metadata of $CanonicalLeagueID has no CapDeadline for the current season $LeagueYear."
     }
 
-    $metadataContent = Get-Content $metadataPath -Raw | ConvertFrom-Json
-
     $ownerIDs = @{}
-    $metadataContent.OwnerIDs.PSObject.Properties | ForEach-Object {
+    $metadataContent.Owners.PSObject.Properties | ForEach-Object {
         $ownerIDs[$_.Name] = $_.Value
     }
 
     $DraftsConfig = $metadataContent.Drafts
-    $LeagueTimeZone = if ($metadataContent.PSObject.Properties.Name -contains "LeagueTimeZone") {
-        [string]$metadataContent.LeagueTimeZone
-    } else {
-        "UTC"
-    }
+    $LeagueTimeZone = [string]$metadataContent.LeagueTimeZone
 
     return @{
-        LeagueYear                       = $metadataContent.LeagueYear
+        CanonicalLeagueID                = $CanonicalLeagueID
+        LeagueYear                       = $LeagueYear
         SalaryRelevantTeamSize           = $SalaryRelevantTeamSize
         MaxTransactionWeek               = $MaxTransactionWeek
         LeagueStatusSeasonStartBufferDays = $LeagueStatusSeasonStartBufferDays
-        LeagueID                         = $metadataContent.LeagueID
-        CapDeadline                      = $metadataContent.CapDeadline
+        LeagueID                         = [string]$metadataContent.CurrentProviderLeagueID
+        CapDeadline                      = $seasonEntry.CapDeadline
+        CapDeadlineBufferDays            = [int]$seasonEntry.CapDeadlineBufferDays
         LeagueTimeZone                   = $LeagueTimeZone
         OwnerIDs                         = $ownerIDs
 

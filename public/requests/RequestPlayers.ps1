@@ -306,7 +306,7 @@ function Get-SeasonPointStats {
 
 
 # --- Konfiguration ---
-. "$PSScriptRoot\config.ps1"
+Import-Module "$PSScriptRoot\utils\ConfigUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\general\NflScheduleUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\player\PlayerLeagueScoringUtils.psm1" -ErrorAction Stop -Force
@@ -318,20 +318,26 @@ $backupDir = Join-Path $scriptDir "..\data\backup"
 if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
 $errorsFile = Join-Path $scriptDir "..\data\Errors.json"
 
-# --- Season aus config.ps1 ---
-if (-not $Global:LeagueYear) {
-    Write-Error "LeagueYear not set in config.ps1!"
+# --- Season (League source manifest) und Gewichtungen (ConfigUtils.psm1) ---
+try {
+    $config = Get-Config
+}
+catch {
+    Write-Error "Error loading configuration: $_"
     exit 1
 }
-$seasonYear = $Global:LeagueYear
+if (-not $config.LeagueYear) {
+    Write-Error "LeagueYear not resolved from the league source manifest!"
+    exit 1
+}
+$seasonYear = $config.LeagueYear
 
-# --- Gewichtungen aus config.ps1 ---
-if (-not $Global:WeightTotal -or -not $Global:WeightGame) {
-    Write-Error "Weights not set in config.ps1!"
+if (-not $config.WeightTotal -or -not $config.WeightGame) {
+    Write-Error "Weights not set in ConfigUtils.psm1!"
     exit 1
 }
-$weightTotal = $Global:WeightTotal
-$weightGame = $Global:WeightGame
+$weightTotal = $config.WeightTotal
+$weightGame = $config.WeightGame
 
 try {
     $weekBounds = Get-PlayerLeagueWeekBounds -Season ([int]$seasonYear)

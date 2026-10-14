@@ -14,7 +14,9 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-# Interim local root until the shared root constants of Issue #788 step 0 exist.
+from data_roots import data_meta_dir
+
+# Optional override of the metadata root (tests, fixtures); the default comes from data_roots.
 DATA_META_ROOT_ENV = "DATA_META_ROOT"
 METADATA_FILE_NAME = "metadata.json"
 SCHEMA_VERSION = 1
@@ -45,7 +47,7 @@ def data_meta_root(repo_root: Path | None = None) -> Path:
     if override:
         return Path(override)
     base = repo_root if repo_root is not None else Path(__file__).resolve().parents[1]
-    return base / "data-meta"
+    return data_meta_dir(base)
 
 
 def list_league_ids(root: Path | None = None) -> list[str]:

@@ -19,9 +19,10 @@ function Assert-LeagueMetadata {
 }
 
 function Get-DataMetaDir {
-    # Interim local root until the shared root constants of Issue #788 step 0 exist.
+    # DATA_META_ROOT overrides the root (tests, fixtures); the default comes from ConfigUtils.psm1.
     if (-not [string]::IsNullOrWhiteSpace($env:DATA_META_ROOT)) { return $env:DATA_META_ROOT }
-    return [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..\data-meta'))
+    Import-Module "$PSScriptRoot\ConfigUtils.psm1" -ErrorAction Stop
+    return Get-DataMetaRoot -RepoRoot ([System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..')))
 }
 
 function Get-LeagueMetadataIds {

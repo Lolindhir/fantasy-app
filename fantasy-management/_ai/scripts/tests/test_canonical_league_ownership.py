@@ -204,11 +204,11 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
 
     def test_repository_current_ownership_is_strictly_equal(self) -> None:
         root = Path(__file__).resolve().parents[4]
-        metadata = self._read_json(root / "public/data/Metadata.json")
+        manifest = self._read_json(root / "source-data/leagues/nfl-reise/manifest.json")
         snapshot = build_canonical_ownership_snapshot(
             root,
             canonical_league_id="nfl-reise",
-            season=int(metadata["LeagueYear"]),
+            season=int(str(manifest["CurrentCanonicalLeagueSeasonID"]).rsplit("-", 1)[-1]),
         )
         app_league = self._read_json(root / "public/data/League.json")
 

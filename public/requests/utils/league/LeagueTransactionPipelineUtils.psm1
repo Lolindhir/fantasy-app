@@ -79,7 +79,7 @@ function Update-LeagueDraftsOrderAwareFromTransactions {
     if ($openDraftCountPerType -lt 1) { throw "UpcomingDraftCount must be at least 1." }
 
     $draftTypeConfigs = @(ConvertTo-DraftSafeArray -value $draftsConfig.Types | Sort-Object DraftNo)
-    if ($draftTypeConfigs.Count -eq 0) { throw "No draft types configured in Metadata.json." }
+    if ($draftTypeConfigs.Count -eq 0) { throw "No draft types configured in the league metadata (data-meta)." }
     Assert-DraftTypeConfigs -draftTypeConfigs $draftTypeConfigs
 
     $league = Get-DraftLeagueLocal

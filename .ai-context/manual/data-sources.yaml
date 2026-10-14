@@ -27,9 +27,9 @@ dataSources:
     description: >
       Target owner of everything hand-maintained about one league: provider league ID, owners,
       draft configuration, per-season Cap Deadline and the model choice per season. Not generated
-      and never written by a workflow. Status: file and loaders exist (Issue #986 step 2) and are
-      parity-tested; public/data/Metadata.json remains the productive input until the consumers are
-      switched (step 3).
+      and never written by a workflow. Status (Issue #986 step 3): ConfigUtils Get-Config, the League
+      source sync and readiness, and the Fantasy Management FA board read it; public/data/Metadata.json
+      and the _bootstrap files are no longer read by productive code and are removed in step 4.
 
   configUtils:
     path: public/requests/utils/ConfigUtils.psm1

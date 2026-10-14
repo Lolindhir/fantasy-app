@@ -15,7 +15,8 @@ from nfl_source_data_lib.history import (
     known_unavailable_reason,
     known_unavailable_week_reason,
 )
-from data_roots import DATA_SOURCE_ROOT
+from data_roots import DATA_SOURCE_ROOT, data_meta_dir
+from league_metadata import list_league_ids
 
 LARGE_FILE_BYTES = 5 * 1024 * 1024
 SPECIAL_TEAMS_FUMBLE_EVENTS_DATASET_ID = "nflverse.special-teams-fumble-events"
@@ -432,9 +433,9 @@ def build_league_readiness(repo_root: Path) -> dict[str, Any]:
     root = repo_root / DATA_SOURCE_ROOT / "leagues"
     leagues = []
     failures = []
-    for bootstrap_path in sorted((root / "_bootstrap").glob("*.json")):
-        bootstrap = read_json(bootstrap_path, {}) or {}
-        canonical_id = bootstrap.get("CanonicalLeagueID")
+    meta_root = data_meta_dir(repo_root)
+    for canonical_id in list_league_ids(meta_root) if meta_root.exists() else []:
+        bootstrap = read_json(meta_root / str(canonical_id) / "metadata.json", {}) or {}
         manifest_path = root / str(canonical_id) / "manifest.json"
         manifest = read_json(manifest_path, {}) or {}
         seasons = []
