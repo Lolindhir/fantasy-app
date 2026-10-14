@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 919
 architectureDecision: ADR-055
-implementationState: contract-only (models in step 2, materializer in step 3, shadow in step 4, cutover in step 5 of #919)
+implementationState: models (step 2) and materializer (step 3, tools/derived_data.py) implemented and tested locally; nothing is published or committed under data-derived yet (shadow in step 4, cutover in step 5 of #919)
 
 purpose: >
   Define the Shared Derived Data product PlayerValuation: for one league and one
@@ -110,8 +110,13 @@ inputs:
     rule: >
       League-scored weekly points of the snapshot season (weeks <= AsOfFinalScoredWeek)
       and the three previous seasons from canonical player-stats and snap-counts with
-      the canonical ScoringSettings of each season. AvgGame is points per played game,
-      AvgPotentialGame is points per potential game (week structure of that season).
+      the canonical ScoringSettings of the snapshot season, applied to all four seasons as
+      RequestPlayers.ps1 does today. AvgGame is points per played game, AvgPotentialGame
+      is points per potential game. Current season: unrounded point sum, averages rounded
+      half-to-even to two decimals, potential = as-of week minus one when the team bye week
+      is <= the as-of week (bye 0 without a team, legacy parity). Previous seasons: total
+      rounded to two decimals first, then the averages, potential = LastLeagueWeek - 1 of
+      the snapshot season. Implementation: tools/derived_data_lib/player_valuation.py.
   scoringProfile:
     owner: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
     fingerprint: tools/player_week_fantasy.py scoring_settings_fingerprint (SettingsHash)
@@ -191,14 +196,25 @@ failClosed:
 openPoints:
   - id: historical-population
     text: >
-      The historical population rule above is the proposal for step 3. Players that
-      were rostered in a completed season but are missing in the canonical profile
-      data cannot be listed; the step 4 plausibility report states coverage. Needs
-      validation, no change to current-season behaviour.
+      Implemented in tools/player_valuation_sources.py (canonical rosters plus weekly rosters,
+      Sleeper source ID, app position, valid birth date). Known gaps: FB players are not in
+      the historical population (nflverse position versus Sleeper fantasy position) and a
+      league-owned player without roster record is skipped and counted. The step 4
+      plausibility report states coverage.
   - id: snapshot-size
     text: >
-      Roughly 900 rows times about 18 weeks times 3 seasons. Size and compact
-      encoding are measured in step 3 before data-derived is committed in step 5.
+      Measured in step 3 (compact JSON, about 0.54 MB per snapshot): 2026 six snapshots 3.3 MB,
+      2024 and 2025 about 9.7 MB each, about 23 MB for everything. Whether the full history is
+      committed stays a step 5 decision.
+  - id: hold-seeding
+    text: >
+      Identity-hold rows take Inputs from the existing snapshot (same week, else the newest
+      earlier week of the season); otherwise they stay null. The cutover (step 5) must seed
+      held values from the published Players.json PointHistory before the first productive run.
+  - id: non-contiguous-final-weeks
+    text: >
+      Legacy scores all final weeks while a snapshot uses only weeks <= AsOfFinalScoredWeek.
+      Both agree while final weeks are contiguous; the step 4 shadow must confirm this.
   - id: unranked-grade
     text: >
       grading-v1 keeps today's behaviour that a player without a rank gets grade A.
