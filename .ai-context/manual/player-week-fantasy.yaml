@@ -17,7 +17,7 @@ architecture:
     - ADR-037
     - ADR-038
   logicalLayer: Shared Derived Data
-  physicalStorage: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+  physicalStorage: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
   implementationFoundation: tools/player_week_fantasy.py
   rules:
     - source-data/nfl/weekly-rosters/<season>/<week>.json remains the authoritative canonical week-scoped NFL player anchor when present. For the live App refresh only, a missing target partition permits a provisional, exactly one-week-old same-season canonical roster; historical/backtest materialization stays strict.
@@ -317,7 +317,7 @@ currentCheckpoint:
     - contract builder/validation
     - Actual derivation delegation to canonical scorer
     - regression coverage
-    - physical Shared Derived storage path under derived-data/**
+    - physical Shared Derived storage path under data-derived/**
     - current-week materialization
     - V4-C production promotion
     - V4-C-PI1 interval production promotion
@@ -335,8 +335,8 @@ currentCheckpoint:
 
 productionMaterialization:
   implementation: tools/player_week_fantasy_materialize.py
-  outputPattern: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
-  firstAcceptedSnapshot: derived-data/player-week-fantasy/nfl-reise/2026/03.json
+  outputPattern: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+  firstAcceptedSnapshot: data-derived/player-week-fantasy/nfl-reise/2026/03.json
   writeSemantics: deterministic-semantic-no-op
   targetPopulation: >
     All canonical weekly-roster QB/RB/WR/TE/FB/K players for the target NFL week,
@@ -372,7 +372,7 @@ productionMaterialization:
       snapshot always matches the week the Angular join requires. The Sleeper league is mapped to
       the canonical league through source-data/leagues/*/seasons/<season>/league.json ProviderMappings.
     publicationScope:
-      - derived-data/player-week-fantasy
+      - data-derived/player-week-fantasy
       - public/data/PlayerWeekFantasy.json
     notReadyRule: >
       A target week without a synced canonical weekly-roster partition is skipped and the existing

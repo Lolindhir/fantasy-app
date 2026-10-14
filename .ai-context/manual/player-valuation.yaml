@@ -22,9 +22,8 @@ architecture:
   logicalLayer: Shared Derived Data
   physicalStorage: data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json
   physicalStorageTransition: >
-    Until the root rename (#788 SA) the product root is derived-data/ and is
-    addressed only through the central root constant (#788 step 0). The contract path
-    is written with the target name data-derived.
+    The product root was renamed from derived-data/ to data-derived/ in #788 SA; the root is addressed
+    only through the central root constant (#788 step 0).
   models: .ai-context/manual/derived-models.yaml
   rules:
     - The product is consumer-neutral. App, Fantasy Operations, Fantasy Management and the salary simulation read the same snapshot; consumer shapes are produced by consumer generators.

@@ -45,7 +45,7 @@ function Get-GeneratedDataLabel {
         "^fantasy-management/sources/external-rankings/projections/cbs-sports/" { return "CBS Sports projections" }
         "^fantasy-management/sources/external-signals/roster-activity/sleeper/" { return "Sleeper trending" }
         "^fantasy-management/generated/operations/" { return "Fantasy Operations inputs" }
-        "^derived-data/player-week-fantasy/" { return "PlayerWeekFantasy derived" }
+        "^data-derived/player-week-fantasy/" { return "PlayerWeekFantasy derived" }
         "/PlayerWeekFantasy\.json$" { return "PlayerWeekFantasy" }
         "/MatchupProjections\.json$" { return "MatchupProjections" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }

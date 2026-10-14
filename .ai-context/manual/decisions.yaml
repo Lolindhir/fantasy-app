@@ -1168,7 +1168,7 @@ decisions:
 
 
   - id: ADR-038
-    title: Shared Derived Data materializes under derived-data
+    title: Shared Derived Data materializes under data-derived
     status: accepted
     context: >
       ADR-037 defined Shared Derived Data logically but deliberately deferred its
@@ -1176,10 +1176,10 @@ decisions:
       shared derivation and needs an owner that is neither source-data, public/data
       nor a consumer namespace.
     decision: >
-      Use derived-data/** as the canonical physical repository root for deterministic,
+      Use data-derived/** (renamed from derived-data/** in #788 SA) as the canonical physical repository root for deterministic,
       reproducible and consumer-neutral Shared Derived Data. PlayerWeekFantasy is the
       first product at
-      derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json.
+      data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json.
       source-data/** remains source/canonical facts; public/data/** remains App
       delivery; consumer-generated insights remain consumer-owned. Writers must be
       deterministic and preserve semantic no-op writes. Existing transitional
@@ -1296,7 +1296,7 @@ decisions:
       which scores canonical player-stats and snap-counts with the canonical league ScoringSettings and
       resolves Players.json[].ID (Sleeper) to a CanonicalPlayerID per season. The salary formula, weights,
       ranking and cap formulas stay unchanged in PowerShell; the salary redesign concept is not part of
-      this decision. The export is rebuilt per run and not committed; persisting it as a derived-data
+      this decision. The export is rebuilt per run and not committed; persisting it as a data-derived
       product needs a separate workflow approval. The Sleeper PlayerPoints gate in build.yml is the
       permanent validation of the scorer.
     rationale: >

@@ -1,6 +1,6 @@
 # Shared Derived Data
 
-`derived-data/**` is the physical repository owner for deterministic,
+`data-derived/**` is the physical repository owner for deterministic,
 reproducible, consumer-neutral **Shared Derived Data** under ADR-037/ADR-038.
 
 It is deliberately separate from:
@@ -13,7 +13,7 @@ It is deliberately separate from:
 
 The first product is:
 
-`derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json`
+`data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json`
 
 Canonical contract:
 

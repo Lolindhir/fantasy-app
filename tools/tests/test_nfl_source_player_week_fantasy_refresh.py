@@ -107,7 +107,7 @@ class RefreshTests(unittest.TestCase):
             def fake_write(path, payload):
                 calls.append("write")
                 self.assertEqual(
-                    path, root / "derived-data" / "player-week-fantasy" / "league-a" / "2026" / "04.json"
+                    path, root / "data-derived" / "player-week-fantasy" / "league-a" / "2026" / "04.json"
                 )
                 self.assertIs(payload, dataset)
                 return True

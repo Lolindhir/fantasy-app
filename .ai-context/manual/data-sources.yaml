@@ -737,12 +737,12 @@ sharedDerivedContexts:
 
 sharedDerivedData:
   architectureDecision: ADR-038
-  root: derived-data/**
+  root: data-derived/**
   role: deterministic-consumer-neutral-derivations
   products:
     playerWeekFantasy:
       contract: .ai-context/manual/player-week-fantasy.yaml
-      outputPattern: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+      outputPattern: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
       implementation: tools/player_week_fantasy_materialize.py
       inputs:
         - source-data/nfl/weekly-rosters/<season>/<week>.json

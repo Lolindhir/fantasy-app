@@ -20,8 +20,8 @@ sys.path.insert(0, str(TOOLS))
 import data_roots  # noqa: E402
 
 CONFIG_UTILS = REPO_ROOT / "public/requests/utils/ConfigUtils.psm1"
-PY_PATH_LITERAL = re.compile(r"(?<![\w-])(source-data|derived-data)(?=$|[/\\])")
-PS_PATH_LITERAL = re.compile(r"(?<![\w-])(source-data|derived-data)(?=[\"'/\\])")
+PY_PATH_LITERAL = re.compile(r"(?<![\w-])(source-data|data-derived)(?=$|[/\\])")
+PS_PATH_LITERAL = re.compile(r"(?<![\w-])(source-data|data-derived)(?=[\"'/\\])")
 
 
 def python_production_files() -> list[Path]:
@@ -81,7 +81,7 @@ class DataRootsTests(unittest.TestCase):
 
     def test_detectors_flag_path_literals_but_not_prose(self) -> None:
         self.assertTrue(PY_PATH_LITERAL.search("source-data/nfl"))
-        self.assertTrue(PY_PATH_LITERAL.search("derived-data"))
+        self.assertTrue(PY_PATH_LITERAL.search("data-derived"))
         self.assertFalse(PY_PATH_LITERAL.search("fantasy-app-source-data/1"))
         self.assertFalse(PY_PATH_LITERAL.search("canonical source-data layer"))
         self.assertTrue(PS_PATH_LITERAL.search('Join-Path $r "source-data\\nfl"'))
