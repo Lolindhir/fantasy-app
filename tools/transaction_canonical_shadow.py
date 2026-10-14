@@ -8,7 +8,12 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from data_roots import DATA_SOURCE_ROOT
+import sys as _sys
+_TOOLS_DIR = str(Path(__file__).resolve().parent)
+if _TOOLS_DIR not in _sys.path:
+    _sys.path.insert(0, _TOOLS_DIR)
+
+from data_roots import DATA_SOURCE_ROOT  # noqa: E402
 
 SLEEPER = "Sleeper"
 WEEK_FILE_RE = re.compile(r"week-(\d+)\.json$")

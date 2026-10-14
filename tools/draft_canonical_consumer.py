@@ -4,7 +4,12 @@ from __future__ import annotations
 import argparse, json
 from pathlib import Path
 from typing import Any
-from data_roots import DATA_SOURCE_ROOT
+import sys as _sys
+_TOOLS_DIR = str(Path(__file__).resolve().parent)
+if _TOOLS_DIR not in _sys.path:
+    _sys.path.insert(0, _TOOLS_DIR)
+
+from data_roots import DATA_SOURCE_ROOT  # noqa: E402
 
 def load_json(path: Path) -> Any:
     if not path.is_file():
