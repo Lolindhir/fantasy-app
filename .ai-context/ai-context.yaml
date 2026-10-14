@@ -137,6 +137,8 @@ readingOrder:
   - .ai-context/manual/league-source-data.yaml
   - .ai-context/manual/historical-fantasy-scoring.yaml
   - .ai-context/manual/player-week-fantasy.yaml
+  - .ai-context/manual/derived-models.yaml
+  - .ai-context/manual/player-valuation.yaml
   - .ai-context/manual/provider-join-invariants.yaml
   - .ai-context/manual/source-of-truth-matrix.yaml
   - .ai-context/manual/data-sources.yaml
@@ -161,6 +163,8 @@ shortContext:
   .ai-context/manual/league-source-data.yaml: Produktiv akzeptierter Phase-1B-Vertrag des gemeinsamen League Source Layers; CanonicalLeagueID/CanonicalLeagueSeasonID, Sleeper-League-Lineage, saisonale WeekStructure, Multi-League-Struktur, Raw/Canonical-Lifecycle und Phase-2-Consumergrenzen
   derived-data/**: Physischer kanonischer Owner fuer reproduzierbare consumer-neutrale Shared-Derived-Daten nach ADR-038; erster produktiver Datensatz ist PlayerWeekFantasy
   .ai-context/manual/player-week-fantasy.yaml: Kanonischer Shared-Derived-Vertrag fuer PlayerWeekFantasy mit scoring-spezifischer Identitaet, semantischem SettingsHash sowie Actual/Projection/PredictionRange-Semantik
+  .ai-context/manual/derived-models.yaml: Kanonischer Vertrag fuer zentrale, ligaunabhaengige, versionierte Derivationsmodelle (salary-v1, salary-cap-v1, grading-v1) mit Registry, Unveraenderlichkeit nach erstem produktiven Einsatz, Modellwahl je Liga und Saison ueber data-meta und exakter Paritaet zum PowerShell-Verhalten (ADR-055, #919)
+  .ai-context/manual/player-valuation.yaml: Shared-Derived-Vertrag fuer PlayerValuation (Salary, SalaryProjected, Ranking, Rank-Grading, Salary Cap) mit voller Historie je Liga, Saison und Woche unter data-derived/player-valuation, Snapshot-Identitaet, Identity-Hold und Invalidierung (ADR-055, #919)
   .ai-context/manual/historical-fantasy-scoring.yaml: ADR-033 und kanonischer Hardening-Vertrag für historische/What-if-Neuberechnung aus persistierten NFL-Fakten plus explizitem League-Scoringprofil; Missing historisch ist fail-closed, Provider-Fantasy-Punkte bleiben validation-only und nfl-reise ist die aktuelle CanonicalLeagueID
   .ai-context/manual/source-of-truth-matrix.yaml#consumerReadClassification: Pro Datei klassifizierte Provider- und public/data-Reads aller App-, Fantasy-Management- und Tooling-Consumer (#347 K1); tools/tests/test_consumer_read_classification.py schlaegt bei jedem nicht klassifizierten Read fehl
   .ai-context/manual/provider-join-invariants.yaml: Fail-closed Cardinality-/Uniqueness-Vertrag für Player-, Team-, Draft-, Transaction- und Historical-Provider-Joins

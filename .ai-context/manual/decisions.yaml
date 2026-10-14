@@ -1724,3 +1724,48 @@ decisions:
       negative:
         - Until step 3 two sources exist and are kept equal only by a parity test.
         - The interim model catalogue in the loaders must move to the model registry of Issue #919.
+
+  - id: ADR-055
+    title: Salary, Ranking, Grading and Salary Cap are central versioned models with the player-valuation product
+    status: accepted
+    context: >
+      Salary, SalaryProjected, Ranking, Grading and the League Salary Cap are computed in
+      public/requests/RequestPlayers.ps1 and RequestLeague.ps1 with parameters spread over
+      config.ps1, ConfigUtils.psm1 and literals. Fantasy Management keeps a copy of the curve
+      and floor in its salary simulation, and its Operations/Signal builders still read Salary
+      from Players.json (legacy-read-model-pending in the K1 register). ADR-038 deferred the
+      migration of such transitional derivations to scoped steps; Issue #919 is that step for
+      this family. The league will use more than one Salary concept over time (a redesign is
+      under discussion), and more than one league can exist.
+    decision: >
+      Robert decided on 2026-10-14 (Issue #919): the logic is central and league-independent.
+      Each derivation is a versioned model in tools/derived_data_lib/models/<kind>/v<N>.py
+      (salary-v1, salary-cap-v1, grading-v1) registered in registry.py; parameters live with
+      the code, never in league files. A league chooses per season which model ID applies
+      through data-meta/<CanonicalLeagueID>/metadata.json (ADR-054, #986). A model is
+      immutable after its first productive use; any change is a new version. Ranking is a
+      deterministic order statistic in tools/derived_data_lib/ranking.py without a model ID.
+      Results are stored as the Shared Derived product PlayerValuation under
+      data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json with full
+      history (every season of the league manifest, every week), regenerable at any time.
+      public/data stays an App delivery contract filled by consumer generators with an
+      unchanged contract; FM Operations/Signals and the salary simulation read the same
+      product and models. The first versions reproduce today's behaviour exactly (Robert:
+      parity without rounding tolerance); the Salary redesign becomes salary-v2 later. The
+      contracts are .ai-context/manual/derived-models.yaml and
+      .ai-context/manual/player-valuation.yaml.
+    rationale: >
+      One implementation per model removes the PowerShell/Python/FM copies, makes the Salary
+      concept selectable per league and season without hidden parameters, keeps old seasons
+      reproducible under the model that was valid then, and gives every consumer the same
+      numbers. Immutable versions turn a formula change into an explicit, reviewable event.
+    consequences:
+      positive:
+        - Salary, Ranking, Grading and Cap have one implementation, one registry and one stored history.
+        - App, Operations, Management and the simulation can no longer drift apart.
+        - A redesign (salary-v2, Dead Cap) lands as a new version without touching old seasons.
+      negative:
+        - The full history under data-derived adds repository size; it is measured in step 3 before it is committed.
+        - Identity-hold rows depend on earlier snapshot content and are the only non-rebuildable part.
+        - grading-v1 keeps the parity quirk that an unranked player is graded A until a grading-v2 is decided.
+        - Until the cutover (step 5) the PowerShell implementation stays the productive one and the models are covered by tests and the shadow only.
