@@ -34,7 +34,7 @@ jobs:
           python -m unittest tools.tests.test_git_transient -v
           python -m unittest tools.tests.test_workflow_publication_contracts -v
 
-      - name: Run NFL source-data regression tests
+      - name: Run NFL data-source regression tests
         run: |
           python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
           python -m unittest tools.tests.test_historical_fantasy_scoring -v
@@ -47,7 +47,7 @@ jobs:
           python -m unittest tools.tests.test_players_league_scoring_shadow -v
           python tools/players_league_scoring_shadow.py gate
 
-      - name: Run League source-data regression tests
+      - name: Run League data-source regression tests
         run: python -m unittest discover -s tools/tests -p "test_league_source*.py" -v
 
       - name: Run consumer read classification test

@@ -91,7 +91,7 @@ Assert-Equal 'unknown' (@($historicalDecision.PlayerLockFacts | Where-Object Pla
 
 # Real 2025 canonical matchup fixture: pairing identity and league-scored points must be deterministic.
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-$weekOneFile = Join-Path $repoRoot 'source-data\leagues\nfl-reise\seasons\2025\matchups\week-1.json'
+$weekOneFile = Join-Path $repoRoot 'data-source\leagues\nfl-reise\seasons\2025\matchups\week-1.json'
 if (Test-Path $weekOneFile) {
     $weekOneRows = @(Get-Content $weekOneFile -Raw | ConvertFrom-Json)
     $historyA = @(ConvertTo-FgcCanonicalMatchupFacts -Season '2025' -Week 1 -MatchupRows $weekOneRows)

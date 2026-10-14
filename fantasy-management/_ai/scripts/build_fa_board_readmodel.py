@@ -883,7 +883,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     current_draft = draft_state.get("draft") if isinstance(draft_state.get("draft"), dict) else None
     canonical_league_root = (
-        root / "source-data" / "leagues" / canonical_league_id
+        root / "data-source" / "leagues" / canonical_league_id
     )
     canonical_season_root = canonical_league_root / "seasons" / str(canonical_season)
     source_records = {

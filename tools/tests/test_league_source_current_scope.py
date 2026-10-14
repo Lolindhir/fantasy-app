@@ -25,12 +25,12 @@ SINGLE_SCOPES = (
     ("drafts", "--current-draft-scope"),
 )
 REQUIRED_INPUTS = (
-    "source-data/league-registry.json",
+    "data-source/league-registry.json",
     "data-meta",
-    "source-data/leagues",
-    "source-data/providers/sleeper",
-    "source-data/nfl/schedules",
-    "source-data/nfl/identities/provider-mappings.json",
+    "data-source/leagues",
+    "data-source/providers/sleeper",
+    "data-source/nfl/schedules",
+    "data-source/nfl/identities/provider-mappings.json",
 )
 
 
@@ -47,7 +47,7 @@ def _copy_inputs(target: Path) -> None:
 
 def _remove_current_canonical_outputs(root: Path) -> None:
     """Delete the canonical current-season outputs so the run has to rewrite them."""
-    for league_dir in (root / "source-data" / "leagues").glob("*/seasons"):
+    for league_dir in (root / "data-source" / "leagues").glob("*/seasons"):
         seasons = sorted(p for p in league_dir.iterdir() if p.is_dir() and p.name.isdigit())
         if not seasons:
             continue
@@ -61,7 +61,7 @@ def _remove_current_canonical_outputs(root: Path) -> None:
 
 
 def _tree(root: Path) -> dict[str, bytes]:
-    base = root / "source-data" / "leagues"
+    base = root / "data-source" / "leagues"
     return {
         str(path.relative_to(base)): path.read_bytes()
         for path in sorted(base.rglob("*"))
@@ -82,7 +82,7 @@ def _run(root: Path, *extra: str) -> dict:
 
 @unittest.skipUnless(
     all((REPO / relative).exists() for relative in REQUIRED_INPUTS),
-    "persisted League source-data is not available",
+    "persisted League data-source is not available",
 )
 class CurrentScopeParityTests(unittest.TestCase):
     def test_combined_scope_matches_three_single_scopes_and_is_noop_on_rerun(self) -> None:

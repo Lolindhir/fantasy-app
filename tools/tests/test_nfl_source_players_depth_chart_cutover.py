@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SNAPSHOT = ROOT / "source-data" / "nfl" / "platform" / "sleeper" / "players.json"
+SNAPSHOT = ROOT / "data-source" / "nfl" / "platform" / "sleeper" / "players.json"
 GENERATOR = ROOT / "public" / "requests" / "RequestPlayers.ps1"
 MODULE = ROOT / "public" / "requests" / "utils" / "player" / "SleeperPlatformUtils.psm1"
 

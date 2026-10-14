@@ -73,8 +73,8 @@ jobs:
             finality=true; schedule=true; run=true
             reason="base commit $BASE could not be fetched; running conservatively"
           else
-            if [[ -n "$(git diff --name-only "$BASE" HEAD -- source-data/nfl/game-finality)" ]]; then finality=true; fi
-            if [[ -n "$(git diff --name-only "$BASE" HEAD -- source-data/nfl/schedules)" ]]; then schedule=true; fi
+            if [[ -n "$(git diff --name-only "$BASE" HEAD -- data-source/nfl/game-finality)" ]]; then finality=true; fi
+            if [[ -n "$(git diff --name-only "$BASE" HEAD -- data-source/nfl/schedules)" ]]; then schedule=true; fi
             if [[ "$finality" == "true" || "$schedule" == "true" ]]; then run=true; fi
             reason="finality_changed=$finality schedule_changed=$schedule since $BASE"
           fi

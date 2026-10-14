@@ -73,7 +73,7 @@ class SourceFreshnessGateTests(unittest.TestCase):
         self.tempdir.cleanup()
 
     def _write_schedule(self) -> None:
-        path = self.root / "source-data/nfl/schedules/2026.json"
+        path = self.root / "data-source/nfl/schedules/2026.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps(
@@ -96,7 +96,7 @@ class SourceFreshnessGateTests(unittest.TestCase):
     def _enable_consumer_activity(self) -> None:
         self.config["domain_context"] = {
             "resolver": "canonical_nfl_schedule",
-            "source_root": "source-data/nfl/schedules",
+            "source_root": "data-source/nfl/schedules",
         }
         self.config["consumer_activity"] = {
             "modules": [
@@ -238,7 +238,7 @@ class SourceFreshnessGateTests(unittest.TestCase):
         self._write_timestamps("2026-09-21T04:35:00Z")
         self.config["domain_context"] = {
             "resolver": "canonical_nfl_schedule",
-            "source_root": "source-data/nfl/schedules",
+            "source_root": "data-source/nfl/schedules",
         }
         self.config["sources"][1]["phase_policy"] = {
             "regular_season": {
@@ -264,7 +264,7 @@ class SourceFreshnessGateTests(unittest.TestCase):
         self._write_timestamps("2027-01-20T04:35:00Z")
         self.config["domain_context"] = {
             "resolver": "canonical_nfl_schedule",
-            "source_root": "source-data/nfl/schedules",
+            "source_root": "data-source/nfl/schedules",
         }
         self.config["sources"][1]["phase_policy"] = {
             "postseason": {

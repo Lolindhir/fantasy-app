@@ -5,7 +5,7 @@ reproducible, consumer-neutral **Shared Derived Data** under ADR-037/ADR-038.
 
 It is deliberately separate from:
 
-- `source-data/**`: provider evidence and canonical/normalized NFL or League facts;
+- `data-source/**`: provider evidence and canonical/normalized NFL or League facts;
 - `public/data/**`: generated App delivery/read-model contracts;
 - `fantasy-management/**`: consumer-specific Operations, analysis and decisions.
 

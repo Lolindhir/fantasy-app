@@ -157,7 +157,7 @@ function Get-CanonicalTransactionsForSeasonInMemory {
         [Parameter(Mandatory = $true)][string]$Season
     )
 
-    Write-Host "Build season $Season transactions from canonical League source-data..." -ForegroundColor Yellow
+    Write-Host "Build season $Season transactions from canonical League data-source..." -ForegroundColor Yellow
 
     $canonicalTransactions = @(Invoke-TransactionCanonicalConsumer `
         -CanonicalLeagueID $CanonicalLeagueID `
@@ -235,7 +235,7 @@ function Update-TransactionsHistoricalSeasonsFromCanonical {
         [switch]$ForceHistory
     )
 
-    Write-Host "Update historical transactions from canonical League source-data..." -ForegroundColor Yellow
+    Write-Host "Update historical transactions from canonical League data-source..." -ForegroundColor Yellow
     $seasons = @(Get-CanonicalHistoricalTransactionSeasons -CanonicalLeagueID $CanonicalLeagueID)
 
     if ($seasons.Count -eq 0) {
@@ -250,7 +250,7 @@ function Update-TransactionsHistoricalSeasonsFromCanonical {
             continue
         }
 
-        Write-Host "Building historical transactions for season $season from canonical source-data..." -ForegroundColor Yellow
+        Write-Host "Building historical transactions for season $season from canonical data-source..." -ForegroundColor Yellow
         $transactions = @(Get-CanonicalTransactionsForSeasonInMemory `
             -CanonicalLeagueID $CanonicalLeagueID `
             -Season $season)
@@ -269,7 +269,7 @@ function Update-TransactionsAllSeasonsCanonical {
         [switch]$ForceHistory
     )
 
-    Write-Host "Update current and historical transactions from canonical League source-data..." -ForegroundColor Yellow
+    Write-Host "Update current and historical transactions from canonical League data-source..." -ForegroundColor Yellow
     Update-TransactionsCurrentSeasonFromCanonical -CanonicalLeagueID $CanonicalLeagueID | Out-Null
     Update-TransactionsHistoricalSeasonsFromCanonical `
         -CanonicalLeagueID $CanonicalLeagueID `

@@ -12,7 +12,7 @@ decision:
     deterministically under the scoring rules of a selected League season. Provider
     fantasy-point totals are useful for validation, but they are not canonical facts.
   decision: >
-    Persist raw/statistical NFL facts in source-data, persist League scoring settings
+    Persist raw/statistical NFL facts in data-source, persist League scoring settings
     with the canonical League season, and derive historical/what-if fantasy points at
     evaluation time. Historical source gaps fail closed and are never interpreted as zero.
   consequences:
@@ -40,18 +40,18 @@ canonicalLeague:
 
 factOwnership:
   nflFacts:
-    owner: source-data/nfl/**
+    owner: data-source/nfl/**
     relevantDatasets:
-      - source-data/nfl/player-stats/**
-      - source-data/nfl/special-teams-fumble-events/**
-      - source-data/nfl/rosters/**
-      - source-data/nfl/weekly-rosters/**
-      - source-data/nfl/snap-counts/**
+      - data-source/nfl/player-stats/**
+      - data-source/nfl/special-teams-fumble-events/**
+      - data-source/nfl/rosters/**
+      - data-source/nfl/weekly-rosters/**
+      - data-source/nfl/snap-counts/**
     rule: >
       Store provider-independent facts and evidence required for later derivation. Do not
       bake League scoring settings or provider fantasy-point totals into canonical NFL facts.
   leagueScoringProfile:
-    ownerPattern: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json
+    ownerPattern: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json
     field: ScoringSettings
     rule: >
       ScoringSettings is an explicit input profile for a scoring calculation. It is League
@@ -152,9 +152,9 @@ readinessContract:
   implementation: tools/source_data_readiness.py
   historicalBandOwner: tools/nfl_source_data_lib/history.py
   persistedAudits:
-    - source-data/audits/nfl-source-data-readiness.json
-    - source-data/audits/league-source-data-audit.json
-    - source-data/audits/source-data-storage-audit.json
+    - data-source/audits/nfl-source-data-readiness.json
+    - data-source/audits/league-source-data-audit.json
+    - data-source/audits/source-data-storage-audit.json
   readyForHistoricalScoringRule: >
     Every historical season in every declared support band must have persisted raw evidence
     and complete canonical materialization. For special-teams-fumble-events, completeness is

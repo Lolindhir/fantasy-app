@@ -35,12 +35,12 @@ class LeagueMetadataLoaderTests(unittest.TestCase):
         (directory / "metadata.json").write_text(json.dumps(data), encoding="utf-8")
 
     def test_repository_metadata_is_valid_and_matches_manifest(self) -> None:
-        manifest = json.loads((REPO_ROOT / "source-data/leagues" / LEAGUE / "manifest.json").read_text(encoding="utf-8"))
+        manifest = json.loads((REPO_ROOT / "data-source/leagues" / LEAGUE / "manifest.json").read_text(encoding="utf-8"))
         lm.validate_against_manifest(real_metadata(), manifest)
 
     def test_models_cap_deadline_and_legacy_paths_are_retired(self) -> None:
         meta = real_metadata()
-        manifest = json.loads((REPO_ROOT / "source-data/leagues" / LEAGUE / "manifest.json").read_text(encoding="utf-8"))
+        manifest = json.loads((REPO_ROOT / "data-source/leagues" / LEAGUE / "manifest.json").read_text(encoding="utf-8"))
         current = int(manifest["CurrentCanonicalLeagueSeasonID"].rsplit("-", 1)[1])
         self.assertTrue(all(lm.cap_deadline(meta, current)))
         for kind, expected in (("Salary", "salary-v1"), ("SalaryCap", "salary-cap-v1"), ("Grading", "grading-v1")):
@@ -48,7 +48,7 @@ class LeagueMetadataLoaderTests(unittest.TestCase):
                 self.assertEqual(expected, lm.model_for(meta, season, kind))
         self.assertFalse((REPO_ROOT / "public/data/Metadata.json").exists())
         self.assertFalse((REPO_ROOT / "public/data/Metadata.ai-doc.yaml").exists())
-        self.assertFalse((REPO_ROOT / "source-data/leagues/_bootstrap").exists())
+        self.assertFalse((REPO_ROOT / "data-source/leagues/_bootstrap").exists())
         self.assertFalse((REPO_ROOT / "public/requests/config.ps1").exists())
 
     def test_multiple_leagues_are_iterated(self) -> None:
@@ -94,7 +94,7 @@ class LeagueMetadataLoaderTests(unittest.TestCase):
 
     def test_manifest_season_without_model_choice_fails(self) -> None:
         meta = copy.deepcopy(real_metadata())
-        manifest = json.loads((REPO_ROOT / "source-data/leagues" / LEAGUE / "manifest.json").read_text(encoding="utf-8"))
+        manifest = json.loads((REPO_ROOT / "data-source/leagues" / LEAGUE / "manifest.json").read_text(encoding="utf-8"))
         del meta["Seasons"]["2024"]
         with self.assertRaises(lm.LeagueMetadataError):
             lm.validate_against_manifest(meta, manifest)

@@ -20,9 +20,9 @@ class LeagueSourceAcquisitionTests(unittest.TestCase):
     def _root_with_registry(self) -> tuple[tempfile.TemporaryDirectory, Path]:
         temporary = tempfile.TemporaryDirectory()
         root = Path(temporary.name)
-        target = root / "source-data"
+        target = root / "data-source"
         target.mkdir(parents=True)
-        source = Path(__file__).resolve().parents[2] / "source-data/league-registry.json"
+        source = Path(__file__).resolve().parents[2] / "data-source/league-registry.json"
         target.joinpath("league-registry.json").write_text(
             source.read_text(encoding="utf-8"), encoding="utf-8"
         )
@@ -30,7 +30,7 @@ class LeagueSourceAcquisitionTests(unittest.TestCase):
 
     @staticmethod
     def _write_schedule(root: Path, season: int, last_week: int) -> None:
-        schedule_path = root / "source-data" / "nfl" / "schedules" / f"{season}.json"
+        schedule_path = root / "data-source" / "nfl" / "schedules" / f"{season}.json"
         schedule_path.parent.mkdir(parents=True, exist_ok=True)
         games = [
             {"GameID": f"{season}_{week:02d}_A_B", "GameType": "REG", "Week": week}
@@ -75,7 +75,7 @@ class LeagueSourceAcquisitionTests(unittest.TestCase):
                 resolve_nfl_regular_season_week_ceiling(root, 2026)
 
             self._write_schedule(root, 2026, 18)
-            schedule_path = root / "source-data" / "nfl" / "schedules" / "2026.json"
+            schedule_path = root / "data-source" / "nfl" / "schedules" / "2026.json"
             payload = json.loads(schedule_path.read_text(encoding="utf-8"))
             payload["Games"] = [g for g in payload["Games"] if g.get("Week") != 9]
             schedule_path.write_text(json.dumps(payload), encoding="utf-8")

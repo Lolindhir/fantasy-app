@@ -15,7 +15,7 @@ function Assert-Throws {
 }
 
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
-$manifest = Get-Content (Join-Path $repoRoot 'source-data/leagues/nfl-reise/manifest.json') -Raw | ConvertFrom-Json
+$manifest = Get-Content (Join-Path $repoRoot 'data-source/leagues/nfl-reise/manifest.json') -Raw | ConvertFrom-Json
 
 # Repository metadata: current season has a Cap Deadline and every manifest season has the first model versions.
 $all = Get-AllLeagueMetadata
@@ -26,7 +26,7 @@ if (-not $deadline.CapDeadline -or $null -eq $deadline.CapDeadlineBufferDays) { 
 foreach ($s in $manifest.Seasons) {
     Assert-Equal 'salary-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Salary') "Salary model $($s.Season)."
 }
-foreach ($retired in @('public/data/Metadata.json', 'public/data/Metadata.ai-doc.yaml', 'source-data/leagues/_bootstrap', 'public/requests/config.ps1')) {
+foreach ($retired in @('public/data/Metadata.json', 'public/data/Metadata.ai-doc.yaml', 'data-source/leagues/_bootstrap', 'public/requests/config.ps1')) {
     if (Test-Path (Join-Path $repoRoot $retired)) { throw "Retired legacy path still exists: $retired" }
 }
 

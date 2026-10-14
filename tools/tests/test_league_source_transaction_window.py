@@ -20,7 +20,7 @@ class CurrentTransactionWindowTests(unittest.TestCase):
     def _root(self) -> tuple[tempfile.TemporaryDirectory, Path]:
         temporary = tempfile.TemporaryDirectory()
         root = Path(temporary.name)
-        schedule = root / "source-data" / "nfl" / "schedules" / "2026.json"
+        schedule = root / "data-source" / "nfl" / "schedules" / "2026.json"
         schedule.parent.mkdir(parents=True)
         schedule.write_text(
             json.dumps(
@@ -39,7 +39,7 @@ class CurrentTransactionWindowTests(unittest.TestCase):
             ),
             encoding="utf-8",
         )
-        manifest = root / "source-data" / "leagues" / "test-league" / "manifest.json"
+        manifest = root / "data-source" / "leagues" / "test-league" / "manifest.json"
         manifest.parent.mkdir(parents=True)
         manifest.write_text(
             json.dumps(
@@ -170,7 +170,7 @@ class CurrentTransactionWindowTests(unittest.TestCase):
     def test_manifest_identity_drift_fails_closed(self) -> None:
         temporary, root = self._root()
         try:
-            manifest = root / "source-data" / "leagues" / "test-league" / "manifest.json"
+            manifest = root / "data-source" / "leagues" / "test-league" / "manifest.json"
             value = json.loads(manifest.read_text(encoding="utf-8"))
             value["CurrentProviderLeagueID"] = "different"
             manifest.write_text(json.dumps(value), encoding="utf-8")
@@ -189,7 +189,7 @@ class CurrentTransactionWindowTests(unittest.TestCase):
         try:
             raw = (
                 root
-                / "source-data"
+                / "data-source"
                 / "providers"
                 / "sleeper"
                 / "leagues"

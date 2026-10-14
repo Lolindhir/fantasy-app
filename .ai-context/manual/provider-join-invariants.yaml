@@ -103,7 +103,7 @@ joinAudit:
       as distinct season-roster records for different teams; a trade or roster
       move must not be collapsed across teams.
     rawEvidenceRule: >
-      All provider rows remain unchanged in source-data/providers. Canonical
+      All provider rows remain unchanged in data-source/providers. Canonical
       merging enriches only the derived SourceIDs map and never chooses a first or
       last row as a winner.
     observability: >
@@ -146,7 +146,7 @@ joinAudit:
         one Data-Exchange weekly identity and produce values such as ACT and TRT
         that are not independent week-specific status evidence.
       canonicalRule: >
-        Preserve every provider row unchanged in source-data/providers, but do not
+        Preserve every provider row unchanged in data-source/providers, but do not
         promote the later Shield status enrichment into canonical weekly Status for
         seasons 2002-2015; canonical Status is null for those weekly records.
         status_description_abbr remains week-specific Data-Exchange evidence and is
@@ -159,7 +159,7 @@ joinAudit:
         Canonical materialization reports equivalentDuplicateRowCount and
         legacyWeeklyStatusSuppressedRowCount in the weekly-roster audit.
     rawEvidenceRule: >
-      All provider rows remain unchanged in source-data/providers. Canonical
+      All provider rows remain unchanged in data-source/providers. Canonical
       SourceID enrichment only combines compatible evidence into the derived
       weekly record and never rewrites provider raw history.
 
@@ -183,4 +183,4 @@ regressionCoverage:
 futureSourceDataImplication: >
   New nflverse schedules, stats, rosters and snap-count materializers must apply
   the same contract to GSIS, PFR, game and season/week keys before their canonical
-  source-data files can become inputs to app generators.
+  data-source files can become inputs to app generators.

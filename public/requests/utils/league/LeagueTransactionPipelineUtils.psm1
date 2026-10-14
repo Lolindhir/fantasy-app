@@ -31,7 +31,7 @@ function Get-LeagueTransactionsCurrentSeasonInMemory {
         throw "Canonical current transaction consumer only supports the configured current league."
     }
 
-    Write-Host "Build current season transactions from canonical source-data for league refresh..." -ForegroundColor Yellow
+    Write-Host "Build current season transactions from canonical data-source for league refresh..." -ForegroundColor Yellow
     $transactions = @(Get-CanonicalTransactionsCurrentSeasonInMemory `
         -CanonicalLeagueID $CanonicalLeagueID)
     Write-Host "Current season canonical transaction candidate built in memory." -ForegroundColor DarkCyan

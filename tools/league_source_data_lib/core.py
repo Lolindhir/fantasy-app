@@ -72,7 +72,7 @@ def write_json_if_changed(path: Path, value: object) -> bool:
 def load_bootstraps(repo_root: Path) -> list[LeagueBootstrap]:
     """Read the leagues to sync from the hand-maintained league metadata (ADR-054, Issue #986).
 
-    The function name is kept for its callers; the former source-data/leagues/_bootstrap files
+    The function name is kept for its callers; the former data-source/leagues/_bootstrap files
     are replaced by data-meta/<CanonicalLeagueID>/metadata.json, validated fail-closed.
     """
     meta_root = data_meta_dir(repo_root)

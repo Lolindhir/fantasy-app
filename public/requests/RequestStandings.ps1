@@ -85,7 +85,7 @@ try {
 
     Write-Host "Starting to fetch and build standings data..." -ForegroundColor Yellow
 
-    # Historical and current standings are rebuilt from Canonical League source-data.
+    # Historical and current standings are rebuilt from Canonical League data-source.
     # Current inputs are refreshed by the bounded League Core producer before app consumers.
     $canonicalLeagueID = "nfl-reise"
     $historicalStandings = Get-CanonicalHistoricalStandings -CanonicalLeagueID $canonicalLeagueID

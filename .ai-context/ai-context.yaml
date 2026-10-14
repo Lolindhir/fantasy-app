@@ -61,7 +61,7 @@ contextModel:
     rules:
       - Only hand maintenance writes into data-meta; no workflow or generator does.
       - Read it through tools/league_metadata.py or LeagueMetadataUtils.psm1, never by ad-hoc path.
-      - Do not put model parameters or facts that are already canonical in source-data into the metadata.
+      - Do not put model parameters or facts that are already canonical in data-source into the metadata.
 
   workTracking:
     description: >
@@ -158,7 +158,7 @@ shortContext:
   .ai-context/manual/league-metadata.yaml: Kanonischer Vertrag fuer die handgepflegten Liga-Metadaten data-meta/<CanonicalLeagueID>/metadata.json (ADR-054, Issue #986) mit Modellwahl je Saison, Lader und fail-closed Regeln; hat Metadata.json, config.ps1 und _bootstrap abgeloest (entfernt)
   .ai-context/manual/draft-identity.yaml: Kanonischer Vertrag für DraftType, DraftInstance, DraftCode, DraftKey, SleeperDraftID-Mapping und Transaction-Pick-Auflösung
   .ai-context/manual/player-identity.yaml: Kanonischer Vertrag für die von fantasy-app vergebene providerunabhängige CanonicalPlayerID, historische Provider-Mappings, Konflikt-Quarantäne, Legacy-Feldmigration und den unveränderten Sleeper-basierten Players.json-App-Vertrag
-  .ai-context/manual/nfl-source-data.yaml: Kanonischer Vertrag für source-data Registry v3, Fixed-/Season-Partitioned Acquisition, Availability, Dataset-Lifecycle, Refresh/Retention/Repair, historische Partitionen und NFL-Source-Materialisierung
+  .ai-context/manual/nfl-source-data.yaml: Kanonischer Vertrag für data-source Registry v3, Fixed-/Season-Partitioned Acquisition, Availability, Dataset-Lifecycle, Refresh/Retention/Repair, historische Partitionen und NFL-Source-Materialisierung
   .ai-context/manual/league-source-data.yaml: Produktiv akzeptierter Phase-1B-Vertrag des gemeinsamen League Source Layers; CanonicalLeagueID/CanonicalLeagueSeasonID, Sleeper-League-Lineage, saisonale WeekStructure, Multi-League-Struktur, Raw/Canonical-Lifecycle und Phase-2-Consumergrenzen
   data-derived/**: Physischer kanonischer Owner fuer reproduzierbare consumer-neutrale Shared-Derived-Daten nach ADR-038; erster produktiver Datensatz ist PlayerWeekFantasy
   .ai-context/manual/player-week-fantasy.yaml: Kanonischer Shared-Derived-Vertrag fuer PlayerWeekFantasy mit scoring-spezifischer Identitaet, semantischem SettingsHash sowie Actual/Projection/PredictionRange-Semantik

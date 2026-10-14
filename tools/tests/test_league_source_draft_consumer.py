@@ -18,7 +18,7 @@ def project_traded(item):
 class DraftCanonicalConsumerTest(unittest.TestCase):
     def test_fixture_adapts_canonical_ids_to_sleeper_shape(self):
         with tempfile.TemporaryDirectory() as tmp:
-            root=Path(tmp); season_dir=root/"source-data"/"leagues"/"fixture"/"seasons"/"2026"; season_dir.mkdir(parents=True)
+            root=Path(tmp); season_dir=root/"data-source"/"leagues"/"fixture"/"seasons"/"2026"; season_dir.mkdir(parents=True)
             (season_dir/"members.json").write_text(json.dumps([{"CanonicalLeagueMemberID":"m1","ProviderMappings":[{"Provider":"Sleeper","ProviderUserID":"u1"}]}]),encoding="utf-8")
             (season_dir/"rosters.json").write_text(json.dumps([{"CanonicalLeagueRosterID":"r1","ProviderMappings":[{"Provider":"Sleeper","ProviderRosterID":"1"}]}]),encoding="utf-8")
             (season_dir/"drafts.json").write_text(json.dumps([{
@@ -43,7 +43,7 @@ class DraftCanonicalConsumerTest(unittest.TestCase):
                 self.assertEqual(len(payload["Drafts"]),expected_count)
                 for adapted in payload["Drafts"]:
                     draft_id=adapted["draft_id"]
-                    matches=list((REPO_ROOT/"source-data"/"providers"/"sleeper"/"leagues").glob(f"*/drafts/{draft_id}"))
+                    matches=list((REPO_ROOT/"data-source"/"providers"/"sleeper"/"leagues").glob(f"*/drafts/{draft_id}"))
                     self.assertEqual(len(matches),1)
                     raw_dir=matches[0]
                     raw_draft=json.loads((raw_dir/"draft.json").read_text(encoding="utf-8"))

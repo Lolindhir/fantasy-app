@@ -5,7 +5,7 @@ on:
     paths:
       - ".github/workflows/sync-league-source-data.yml"
       - ".github/workflows/league-live.yml"
-      - "source-data/league-registry.json"
+      - "data-source/league-registry.json"
       - "data-meta/**"
       - "tools/league_source_data.py"
       - "tools/league_source_data_lib/**"
@@ -16,9 +16,9 @@ on:
       - main
     paths:
       - ".github/workflows/sync-league-source-data.yml"
-      - "source-data/league-registry.json"
+      - "data-source/league-registry.json"
       - "data-meta/**"
-      - "source-data/nfl/schedules/**"
+      - "data-source/nfl/schedules/**"
       - "tools/league_source_data.py"
       - "tools/league_source_data_lib/**"
       - "tools/git_transient.py"
@@ -87,7 +87,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Test League source-data tooling
+      - name: Test League data-source tooling
         shell: bash
         run: |
           set -euo pipefail
@@ -124,7 +124,7 @@ jobs:
               ;;
           esac
 
-      - name: Validate League source-data registry and bootstrap
+      - name: Validate League data-source registry and bootstrap
         run: python tools/league_source_data.py validate
 
   sync:
@@ -231,9 +231,9 @@ jobs:
             python3 tools/git_transient.py fetch origin main
             git reset --hard origin/main
             git clean -fd -- \
-              source-data/providers/sleeper/leagues \
-              source-data/leagues \
-              source-data/_sync
+              data-source/providers/sleeper/leagues \
+              data-source/leagues \
+              data-source/_sync
           }
 
           changed_paths() {
@@ -245,7 +245,7 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/providers/sleeper/leagues/*|source-data/leagues/*|source-data/_sync/last-league-failure.json)
+                data-source/providers/sleeper/leagues/*|data-source/leagues/*|data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -264,11 +264,11 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/providers/sleeper/leagues/*/league.json|\
-                source-data/providers/sleeper/leagues/*/league.metadata.json|\
-                source-data/providers/sleeper/leagues/*/transactions/week-*.json|\
-                source-data/providers/sleeper/leagues/*/transactions/week-*.metadata.json|\
-                source-data/_sync/last-league-failure.json)
+                data-source/providers/sleeper/leagues/*/league.json|\
+                data-source/providers/sleeper/leagues/*/league.metadata.json|\
+                data-source/providers/sleeper/leagues/*/transactions/week-*.json|\
+                data-source/providers/sleeper/leagues/*/transactions/week-*.metadata.json|\
+                data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -287,8 +287,8 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/leagues/*/seasons/*/transactions/week-*.json|\
-                source-data/_sync/last-league-failure.json)
+                data-source/leagues/*/seasons/*/transactions/week-*.json|\
+                data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -307,11 +307,11 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/providers/sleeper/leagues/*/league.json|\
-                source-data/providers/sleeper/leagues/*/league.metadata.json|\
-                source-data/providers/sleeper/leagues/*/matchups/week-*.json|\
-                source-data/providers/sleeper/leagues/*/matchups/week-*.metadata.json|\
-                source-data/_sync/last-league-failure.json)
+                data-source/providers/sleeper/leagues/*/league.json|\
+                data-source/providers/sleeper/leagues/*/league.metadata.json|\
+                data-source/providers/sleeper/leagues/*/matchups/week-*.json|\
+                data-source/providers/sleeper/leagues/*/matchups/week-*.metadata.json|\
+                data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -330,8 +330,8 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/leagues/*/seasons/*/matchups/week-*.json|\
-                source-data/_sync/last-league-failure.json)
+                data-source/leagues/*/seasons/*/matchups/week-*.json|\
+                data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -350,15 +350,15 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/providers/sleeper/leagues/*/drafts/index.json|\
-                source-data/providers/sleeper/leagues/*/drafts/index.metadata.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/draft.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/draft.metadata.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/picks.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/picks.metadata.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/traded-picks.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/traded-picks.metadata.json|\
-                source-data/_sync/last-league-failure.json)
+                data-source/providers/sleeper/leagues/*/drafts/index.json|\
+                data-source/providers/sleeper/leagues/*/drafts/index.metadata.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/draft.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/draft.metadata.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/picks.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/picks.metadata.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/traded-picks.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/traded-picks.metadata.json|\
+                data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -377,8 +377,8 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/leagues/*/seasons/*/drafts.json|\
-                source-data/_sync/last-league-failure.json)
+                data-source/leagues/*/seasons/*/drafts.json|\
+                data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -397,19 +397,19 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/providers/sleeper/leagues/*/league.json|\
-                source-data/providers/sleeper/leagues/*/league.metadata.json|\
-                source-data/providers/sleeper/leagues/*/members.json|\
-                source-data/providers/sleeper/leagues/*/members.metadata.json|\
-                source-data/providers/sleeper/leagues/*/rosters.json|\
-                source-data/providers/sleeper/leagues/*/rosters.metadata.json|\
-                source-data/providers/sleeper/leagues/*/winners-bracket.json|\
-                source-data/providers/sleeper/leagues/*/winners-bracket.metadata.json|\
-                source-data/providers/sleeper/leagues/*/losers-bracket.json|\
-                source-data/providers/sleeper/leagues/*/losers-bracket.metadata.json|\
-                source-data/providers/sleeper/leagues/*/matchups/week-*.json|\
-                source-data/providers/sleeper/leagues/*/matchups/week-*.metadata.json|\
-                source-data/_sync/last-league-failure.json)
+                data-source/providers/sleeper/leagues/*/league.json|\
+                data-source/providers/sleeper/leagues/*/league.metadata.json|\
+                data-source/providers/sleeper/leagues/*/members.json|\
+                data-source/providers/sleeper/leagues/*/members.metadata.json|\
+                data-source/providers/sleeper/leagues/*/rosters.json|\
+                data-source/providers/sleeper/leagues/*/rosters.metadata.json|\
+                data-source/providers/sleeper/leagues/*/winners-bracket.json|\
+                data-source/providers/sleeper/leagues/*/winners-bracket.metadata.json|\
+                data-source/providers/sleeper/leagues/*/losers-bracket.json|\
+                data-source/providers/sleeper/leagues/*/losers-bracket.metadata.json|\
+                data-source/providers/sleeper/leagues/*/matchups/week-*.json|\
+                data-source/providers/sleeper/leagues/*/matchups/week-*.metadata.json|\
+                data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -428,13 +428,13 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/leagues/*/seasons/*/league.json|\
-                source-data/leagues/*/seasons/*/members.json|\
-                source-data/leagues/*/seasons/*/rosters.json|\
-                source-data/leagues/*/seasons/*/winners-bracket.json|\
-                source-data/leagues/*/seasons/*/losers-bracket.json|\
-                source-data/leagues/*/seasons/*/matchups/week-*.json|\
-                source-data/_sync/last-league-failure.json)
+                data-source/leagues/*/seasons/*/league.json|\
+                data-source/leagues/*/seasons/*/members.json|\
+                data-source/leagues/*/seasons/*/rosters.json|\
+                data-source/leagues/*/seasons/*/winners-bracket.json|\
+                data-source/leagues/*/seasons/*/losers-bracket.json|\
+                data-source/leagues/*/seasons/*/matchups/week-*.json|\
+                data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -453,29 +453,29 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/providers/sleeper/leagues/*/league.json|\
-                source-data/providers/sleeper/leagues/*/league.metadata.json|\
-                source-data/providers/sleeper/leagues/*/members.json|\
-                source-data/providers/sleeper/leagues/*/members.metadata.json|\
-                source-data/providers/sleeper/leagues/*/rosters.json|\
-                source-data/providers/sleeper/leagues/*/rosters.metadata.json|\
-                source-data/providers/sleeper/leagues/*/winners-bracket.json|\
-                source-data/providers/sleeper/leagues/*/winners-bracket.metadata.json|\
-                source-data/providers/sleeper/leagues/*/losers-bracket.json|\
-                source-data/providers/sleeper/leagues/*/losers-bracket.metadata.json|\
-                source-data/providers/sleeper/leagues/*/matchups/week-*.json|\
-                source-data/providers/sleeper/leagues/*/matchups/week-*.metadata.json|\
-                source-data/providers/sleeper/leagues/*/transactions/week-*.json|\
-                source-data/providers/sleeper/leagues/*/transactions/week-*.metadata.json|\
-                source-data/providers/sleeper/leagues/*/drafts/index.json|\
-                source-data/providers/sleeper/leagues/*/drafts/index.metadata.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/draft.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/draft.metadata.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/picks.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/picks.metadata.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/traded-picks.json|\
-                source-data/providers/sleeper/leagues/*/drafts/*/traded-picks.metadata.json|\
-                source-data/_sync/last-league-failure.json)
+                data-source/providers/sleeper/leagues/*/league.json|\
+                data-source/providers/sleeper/leagues/*/league.metadata.json|\
+                data-source/providers/sleeper/leagues/*/members.json|\
+                data-source/providers/sleeper/leagues/*/members.metadata.json|\
+                data-source/providers/sleeper/leagues/*/rosters.json|\
+                data-source/providers/sleeper/leagues/*/rosters.metadata.json|\
+                data-source/providers/sleeper/leagues/*/winners-bracket.json|\
+                data-source/providers/sleeper/leagues/*/winners-bracket.metadata.json|\
+                data-source/providers/sleeper/leagues/*/losers-bracket.json|\
+                data-source/providers/sleeper/leagues/*/losers-bracket.metadata.json|\
+                data-source/providers/sleeper/leagues/*/matchups/week-*.json|\
+                data-source/providers/sleeper/leagues/*/matchups/week-*.metadata.json|\
+                data-source/providers/sleeper/leagues/*/transactions/week-*.json|\
+                data-source/providers/sleeper/leagues/*/transactions/week-*.metadata.json|\
+                data-source/providers/sleeper/leagues/*/drafts/index.json|\
+                data-source/providers/sleeper/leagues/*/drafts/index.metadata.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/draft.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/draft.metadata.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/picks.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/picks.metadata.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/traded-picks.json|\
+                data-source/providers/sleeper/leagues/*/drafts/*/traded-picks.metadata.json|\
+                data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -494,15 +494,15 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/leagues/*/seasons/*/league.json|\
-                source-data/leagues/*/seasons/*/members.json|\
-                source-data/leagues/*/seasons/*/rosters.json|\
-                source-data/leagues/*/seasons/*/winners-bracket.json|\
-                source-data/leagues/*/seasons/*/losers-bracket.json|\
-                source-data/leagues/*/seasons/*/matchups/week-*.json|\
-                source-data/leagues/*/seasons/*/transactions/week-*.json|\
-                source-data/leagues/*/seasons/*/drafts.json|\
-                source-data/_sync/last-league-failure.json)
+                data-source/leagues/*/seasons/*/league.json|\
+                data-source/leagues/*/seasons/*/members.json|\
+                data-source/leagues/*/seasons/*/rosters.json|\
+                data-source/leagues/*/seasons/*/winners-bracket.json|\
+                data-source/leagues/*/seasons/*/losers-bracket.json|\
+                data-source/leagues/*/seasons/*/matchups/week-*.json|\
+                data-source/leagues/*/seasons/*/transactions/week-*.json|\
+                data-source/leagues/*/seasons/*/drafts.json|\
+                data-source/_sync/last-league-failure.json)
                   ;;
                 *)
                   unexpected+=("$path")
@@ -523,7 +523,7 @@ jobs:
 
             for diagnostic_attempt in $(seq 1 "$max_attempts"); do
               reset_to_main
-              mkdir -p source-data/_sync
+              mkdir -p data-source/_sync
 
               PHASE="$phase" EXIT_CODE="$exit_code" LOG_FILE="$log_file" MATERIALIZATION_SCOPE="$materialization_scope" \
                 python - <<'PY'
@@ -547,14 +547,14 @@ jobs:
               "forceInput": (os.environ.get("FORCE") or "false").lower() == "true",
               "errorTail": lines[-80:],
           }
-          Path("source-data/_sync/last-league-failure.json").write_text(
+          Path("data-source/_sync/last-league-failure.json").write_text(
               json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
               encoding="utf-8",
           )
           PY
 
               assert_league_source_only
-              git add -- source-data/_sync/last-league-failure.json
+              git add -- data-source/_sync/last-league-failure.json
               if git diff --cached --quiet; then
                 echo "League failure diagnostic already matches main."
                 return 0
@@ -615,7 +615,7 @@ jobs:
               )
           PY
               assert_transaction_raw_only
-              git add -- source-data/providers/sleeper/leagues
+              git add -- data-source/providers/sleeper/leagues
             elif [[ "$materialization_scope" == "drafts" ]]; then
               python - "$raw_stdout" >> "$GITHUB_STEP_SUMMARY" <<'PY'
           import json
@@ -635,7 +635,7 @@ jobs:
               )
           PY
               assert_draft_raw_only
-              git add -- source-data/providers/sleeper/leagues
+              git add -- data-source/providers/sleeper/leagues
             elif [[ "$materialization_scope" == "league-core" ]]; then
               python - "$raw_stdout" >> "$GITHUB_STEP_SUMMARY" <<'PY'
           import json
@@ -655,7 +655,7 @@ jobs:
               )
           PY
               assert_league_core_raw_only
-              git add -- source-data/providers/sleeper/leagues
+              git add -- data-source/providers/sleeper/leagues
             elif [[ "$materialization_scope" == "matchups" ]]; then
               python - "$raw_stdout" >> "$GITHUB_STEP_SUMMARY" <<'PY'
           import json
@@ -677,7 +677,7 @@ jobs:
               )
           PY
               assert_matchup_raw_only
-              git add -- source-data/providers/sleeper/leagues
+              git add -- data-source/providers/sleeper/leagues
             elif [[ "$materialization_scope" == "current" ]]; then
               python - "$raw_stdout" >> "$GITHUB_STEP_SUMMARY" <<'PY'
           import json
@@ -701,10 +701,10 @@ jobs:
               )
           PY
               assert_current_raw_only
-              git add -- source-data/providers/sleeper/leagues
+              git add -- data-source/providers/sleeper/leagues
             else
               assert_league_source_only
-              git add -- source-data/providers/sleeper/leagues source-data/leagues
+              git add -- data-source/providers/sleeper/leagues data-source/leagues
             fi
 
             if ! git diff --cached --quiet; then
@@ -771,8 +771,8 @@ jobs:
               exit "$noop_status"
             fi
 
-            mkdir -p source-data/_sync
-            rm -f source-data/_sync/last-league-failure.json
+            mkdir -p data-source/_sync
+            rm -f data-source/_sync/last-league-failure.json
             if [[ "$materialization_scope" == "transactions" ]]; then
               assert_transaction_canonical_only
             elif [[ "$materialization_scope" == "drafts" ]]; then
@@ -789,16 +789,16 @@ jobs:
 
             mapfile -t changed < <(changed_paths)
             if (( ${#changed[@]} == 0 )); then
-              echo "No canonical League source-data changes detected."
+              echo "No canonical League data-source changes detected."
               exit 0
             fi
 
-            printf 'Validated canonical League source-data changes:\n'
+            printf 'Validated canonical League data-source changes:\n'
             printf ' - %s\n' "${changed[@]}"
 
-            git add -A -- source-data/leagues source-data/_sync
+            git add -A -- data-source/leagues data-source/_sync
             if git diff --cached --quiet; then
-              echo "No canonical League source-data changes to commit."
+              echo "No canonical League data-source changes to commit."
               exit 0
             fi
 
@@ -807,7 +807,7 @@ jobs:
             push_status=0
             python3 tools/git_transient.py push "$push_url" HEAD:main || push_status=$?
             if (( push_status == 0 )); then
-              echo "League source-data publish succeeded."
+              echo "League data-source publish succeeded."
               exit 0
             fi
             if (( push_status != 10 )); then

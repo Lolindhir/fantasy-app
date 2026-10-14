@@ -97,7 +97,7 @@ class FantasyCalcFetcherTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary_directory:
             repo_root = Path(temporary_directory)
             canonical_path = (
-                repo_root / "source-data/nfl/platform/sleeper/players.json"
+                repo_root / "data-source/nfl/platform/sleeper/players.json"
             )
             canonical_path.parent.mkdir(parents=True, exist_ok=True)
             canonical_path.write_text(

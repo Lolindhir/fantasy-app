@@ -901,7 +901,7 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     league_timestamp = timestamps.get("League") if isinstance(timestamps, dict) else None
     canonical_league_root = (
         root
-        / "source-data"
+        / "data-source"
         / "leagues"
         / canonical_league_id
     )

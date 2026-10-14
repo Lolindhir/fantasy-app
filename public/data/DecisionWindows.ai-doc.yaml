@@ -147,7 +147,7 @@ contract:
         unknown: Required scheduled-game evidence is unavailable or ambiguous.
       rules:
         - Final is taken from the effective Schedule gameStatus after RequestSchedule canonical finality resolution.
-        - Canonical Final truth is source-data/nfl/game-finality/<season>.json, derived from validated nflverse released-games evidence; score or fantasy-point presence is never Final evidence.
+        - Canonical Final truth is data-source/nfl/game-finality/<season>.json, derived from validated nflverse released-games evidence; score or fantasy-point presence is never Final evidence.
         - RequestSchedule builds Schedule.json from canonical schedule and finality (#347 G2); kickoff is canonical Eastern local time converted to a UTC epoch with the IANA zone, so no Tank01 TBD gap remains.
         - Kickoff comparison is evaluated during generation against current UTC time.
         - No EvaluatedAt timestamp is persisted; semantic output changes only when source facts or a relevant state boundary change.

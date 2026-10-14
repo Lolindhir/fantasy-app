@@ -2,7 +2,7 @@
 """Canonical NFL roster membership evidence for Fantasy Operations population.
 
 Membership is resolved only from persisted canonical NFL roster facts
-(``source-data/nfl/rosters`` and ``source-data/nfl/weekly-rosters``) by
+(``data-source/nfl/rosters`` and ``data-source/nfl/weekly-rosters``) by
 CanonicalPlayerID. Provider team fields (Sleeper Team, Tank01 TeamAbbr/IsFreeAgent)
 and name matching never create membership.
 """
@@ -96,7 +96,7 @@ def in_roster_membership(
 
 
 def list_weekly_roster_partitions(root: Path, season: int) -> list[tuple[int, Path]]:
-    directory = root / "source-data" / "nfl" / "weekly-rosters" / str(season)
+    directory = root / "data-source" / "nfl" / "weekly-rosters" / str(season)
     if not directory.is_dir():
         raise CanonicalNflMembershipError(
             f"Canonical weekly-roster directory is missing for season {season}: {directory}"
@@ -173,7 +173,7 @@ def load_current_season_membership(
     * ``current_history``: season roster or any current-season weekly roster.
     """
 
-    season_roster_path = root / "source-data" / "nfl" / "rosters" / f"{season}.json"
+    season_roster_path = root / "data-source" / "nfl" / "rosters" / f"{season}.json"
     if not season_roster_path.is_file():
         raise CanonicalNflMembershipError(
             f"Canonical season roster is missing for {season}: {season_roster_path}"

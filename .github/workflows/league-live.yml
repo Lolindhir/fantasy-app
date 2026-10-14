@@ -65,11 +65,11 @@ jobs:
           else
             git fetch --no-tags --depth=1 origin "$BASE"
             changed="$(git diff --name-only "$BASE" HEAD -- \
-              ':(glob)source-data/leagues/*/seasons/*/league.json' \
-              ':(glob)source-data/leagues/*/seasons/*/members.json' \
-              ':(glob)source-data/leagues/*/seasons/*/rosters.json' \
-              ':(glob)source-data/leagues/*/seasons/*/winners-bracket.json' \
-              ':(glob)source-data/leagues/*/seasons/*/losers-bracket.json')"
+              ':(glob)data-source/leagues/*/seasons/*/league.json' \
+              ':(glob)data-source/leagues/*/seasons/*/members.json' \
+              ':(glob)data-source/leagues/*/seasons/*/rosters.json' \
+              ':(glob)data-source/leagues/*/seasons/*/winners-bracket.json' \
+              ':(glob)data-source/leagues/*/seasons/*/losers-bracket.json')"
             if [[ -n "$changed" ]]; then
               run=true
               reason="Standings inputs changed since $BASE"

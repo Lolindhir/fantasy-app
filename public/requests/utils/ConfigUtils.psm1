@@ -1,6 +1,6 @@
 # Data root directories (Issue #788, step 0). The only place in PowerShell that spells out the root names;
 # tools/data_roots.py is the Python counterpart and tools/tests/test_data_roots.py keeps both in sync.
-$script:DataSourceRootName = 'source-data'
+$script:DataSourceRootName = 'data-source'
 $script:DataDerivedRootName = 'data-derived'
 $script:DataMetaRootName = 'data-meta'
 

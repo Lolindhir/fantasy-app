@@ -27,7 +27,7 @@ class PlayerWeekFantasyMaterializationTests(unittest.TestCase):
             scoring_season=2026,
         )
 
-        league_path = repo_root / "source-data/leagues/nfl-reise/seasons/2026/league.json"
+        league_path = repo_root / "data-source/leagues/nfl-reise/seasons/2026/league.json"
         league = json.loads(league_path.read_text(encoding="utf-8"))
         expected_hash = scoring_settings_fingerprint(league["ScoringSettings"])
 

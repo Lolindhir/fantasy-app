@@ -1769,3 +1769,33 @@ decisions:
         - Identity-hold rows depend on earlier snapshot content and are the only non-rebuildable part.
         - grading-v1 keeps the parity quirk that an unranked player is graded A until a grading-v2 is decided.
         - Until the cutover (step 5) the PowerShell implementation stays the productive one and the models are covered by tests and the shadow only.
+
+  - id: ADR-056
+    title: The three data roots are data-source, data-meta and data-derived
+    status: accepted
+    context: >
+      The data roots were named source-data, derived-data and (new) data-meta, and every module spelled the
+      root names out itself (about 1,250 mentions of source-data in about 230 files). A shared prefix makes the
+      three roles easy to scan and the roots sort together in the repository (Issue #788).
+    decision: >
+      Robert decided on 2026-10-14 (gestaffelt) and approved the merges and the foreseen workflow changes the
+      same day. Step 0 centralized the root names (tools/data_roots.py, ConfigUtils.psm1 Get-DataSourceRoot,
+      Get-DataDerivedRoot, Get-DataMetaRoot, tools/tests/test_data_roots.py). Step A renamed derived-data to
+      data-derived. Step B renames source-data to data-source in one atomic change: git mv, the constants, every
+      path in code, workflows, .github/workflow-schedules.json, tools/nfl-game-window.cjs, tests and active
+      documentation. Workflow file names, scheduler target IDs, event types and contract file names that contain
+      "source-data" (for example sync-nfl-source-data.yml, nfl-source-data.yaml) are identifiers, not paths, and
+      stay. No compatibility layer and no double paths. Earlier ADRs and the analyses under
+      fantasy-management/analyses/** are historical records and keep the path names valid when they were written
+      (source-data/, derived-data/); read them with this ADR. The provenance strings inside
+      data-source/nfl/identities/historical-identity-adjudications.json are persisted evidence and stay as written.
+    rationale: >
+      One prefix for the three data roots, one place per language that spells them out, and a single atomic
+      rename keep the repository consistent at every commit. Rollback is a revert of the rename commit.
+    consequences:
+      positive:
+        - The roots sort together and are addressed through one constant per language.
+        - A further move needs one constant instead of hundreds of edits.
+      negative:
+        - Older ADR text and historical analyses still say source-data/ and derived-data/.
+        - Sync and pipeline workflows must not run across the rename merge; the merge happens in a quiet window.

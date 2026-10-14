@@ -206,7 +206,7 @@ class ProjectionV4Team2025Backtest(unittest.TestCase):
 
             matchup_path = (
                 ROOT
-                / "source-data/leagues/nfl-reise/seasons/2025/matchups"
+                / "data-source/leagues/nfl-reise/seasons/2025/matchups"
                 / f"week-{week}.json"
             )
             matchups = json.loads(matchup_path.read_text(encoding="utf-8"))

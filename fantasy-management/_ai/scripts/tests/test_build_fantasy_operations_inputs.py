@@ -198,7 +198,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             )
             players_path.write_text(json.dumps(players), encoding="utf-8")
 
-            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper_path = root / "data-source/nfl/platform/sleeper/players.json"
             sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
             receiver = next(
                 row for row in sleeper["Records"] if row["SleeperPlayerID"] == "2"
@@ -254,7 +254,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             root = Path(directory)
             self._write_fixture(root)
 
-            identities_path = root / "source-data/nfl/identities/players.json"
+            identities_path = root / "data-source/nfl/identities/players.json"
             identities = json.loads(identities_path.read_text(encoding="utf-8"))
             identities["Players"].append(
                 {
@@ -277,7 +277,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             root = Path(directory)
             self._write_fixture(root)
 
-            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper_path = root / "data-source/nfl/platform/sleeper/players.json"
             sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
             sleeper["Records"][0]["CanonicalPlayerID"] = "canonical-other"
             sleeper_path.write_text(json.dumps(sleeper), encoding="utf-8")
@@ -294,7 +294,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             root = Path(directory)
             self._write_fixture(root)
 
-            sleeper_path = root / "source-data/nfl/platform/sleeper/players.json"
+            sleeper_path = root / "data-source/nfl/platform/sleeper/players.json"
             sleeper = json.loads(sleeper_path.read_text(encoding="utf-8"))
             sleeper["Records"][0]["FantasyPositions"] = "QB"
             sleeper_path.write_text(json.dumps(sleeper), encoding="utf-8")
@@ -324,9 +324,9 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             "fantasy-management/automation",
             "fantasy-management/_ai",
             "fantasy-management/league-context",
-            "source-data/leagues/test-league/seasons/2026",
-            "source-data/nfl/identities",
-            "source-data/nfl/platform/sleeper",
+            "data-source/leagues/test-league/seasons/2026",
+            "data-source/nfl/identities",
+            "data-source/nfl/platform/sleeper",
             "sources/fp",
             "sources/fc",
             "sources/ppr",
@@ -343,8 +343,8 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             "sources": {
                 "league_display": "public/data/League.json",
                 "players": "public/data/Players.json",
-                "canonical_player_identities": "source-data/nfl/identities/players.json",
-                "canonical_sleeper_players": "source-data/nfl/platform/sleeper/players.json",
+                "canonical_player_identities": "data-source/nfl/identities/players.json",
+                "canonical_sleeper_players": "data-source/nfl/platform/sleeper/players.json",
                 "timestamps": "public/data/Timestamps.json",
             },
             "source_catalog": "fantasy-management/_ai/operations-source-catalog.json",
@@ -385,7 +385,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             },
         )
         self._write_json(
-            root / "source-data/leagues/test-league/manifest.json",
+            root / "data-source/leagues/test-league/manifest.json",
             {
                 "CanonicalLeagueID": "test-league",
                 "CurrentCanonicalLeagueSeasonID": "test-league-2026",
@@ -398,7 +398,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             },
         )
         self._write_json(
-            root / "source-data/leagues/test-league/seasons/2026/league.json",
+            root / "data-source/leagues/test-league/seasons/2026/league.json",
             {
                 "CanonicalLeagueID": "test-league",
                 "Season": 2026,
@@ -406,7 +406,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             },
         )
         self._write_json(
-            root / "source-data/leagues/test-league/seasons/2026/members.json",
+            root / "data-source/leagues/test-league/seasons/2026/members.json",
             [
                 {
                     "CanonicalLeagueMemberID": "member-1",
@@ -418,7 +418,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            root / "source-data/leagues/test-league/seasons/2026/rosters.json",
+            root / "data-source/leagues/test-league/seasons/2026/rosters.json",
             [
                 {
                     "CanonicalLeagueMemberID": "member-1",
@@ -443,7 +443,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            root / "source-data/nfl/identities/players.json",
+            root / "data-source/nfl/identities/players.json",
             {
                 "Players": [
                     {
@@ -465,7 +465,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             },
         )
         self._write_json(
-            root / "source-data/nfl/platform/sleeper/players.json",
+            root / "data-source/nfl/platform/sleeper/players.json",
             {
                 "Records": [
                     {

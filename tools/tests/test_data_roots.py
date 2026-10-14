@@ -20,8 +20,8 @@ sys.path.insert(0, str(TOOLS))
 import data_roots  # noqa: E402
 
 CONFIG_UTILS = REPO_ROOT / "public/requests/utils/ConfigUtils.psm1"
-PY_PATH_LITERAL = re.compile(r"(?<![\w-])(source-data|data-derived)(?=$|[/\\])")
-PS_PATH_LITERAL = re.compile(r"(?<![\w-])(source-data|data-derived)(?=[\"'/\\])")
+PY_PATH_LITERAL = re.compile(r"(?<![\w-])(data-source|data-derived)(?=$|[/\\])")
+PS_PATH_LITERAL = re.compile(r"(?<![\w-])(data-source|data-derived)(?=[\"'/\\])")
 
 
 def python_production_files() -> list[Path]:
@@ -80,12 +80,12 @@ class DataRootsTests(unittest.TestCase):
         self.assertEqual([], violations, "use Get-DataSourceRoot/Get-DataDerivedRoot/Get-DataMetaRoot from ConfigUtils.psm1")
 
     def test_detectors_flag_path_literals_but_not_prose(self) -> None:
-        self.assertTrue(PY_PATH_LITERAL.search("source-data/nfl"))
+        self.assertTrue(PY_PATH_LITERAL.search("data-source/nfl"))
         self.assertTrue(PY_PATH_LITERAL.search("data-derived"))
         self.assertFalse(PY_PATH_LITERAL.search("fantasy-app-source-data/1"))
-        self.assertFalse(PY_PATH_LITERAL.search("canonical source-data layer"))
-        self.assertTrue(PS_PATH_LITERAL.search('Join-Path $r "source-data\\nfl"'))
-        self.assertFalse(PS_PATH_LITERAL.search('Write-Host "canonical source-data..."'))
+        self.assertFalse(PY_PATH_LITERAL.search("canonical data-source layer"))
+        self.assertTrue(PS_PATH_LITERAL.search('Join-Path $r "data-source\\nfl"'))
+        self.assertFalse(PS_PATH_LITERAL.search('Write-Host "canonical data-source..."'))
 
     def test_powershell_roots_match_python_constants(self) -> None:
         text = CONFIG_UTILS.read_text(encoding="utf-8")

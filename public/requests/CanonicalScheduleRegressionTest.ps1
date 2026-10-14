@@ -70,8 +70,8 @@ Assert-CsrEqual 'SEA' (Get-NflTeamCbsSpelling -Team 'SEA') 'CBS keeps other team
 # --- 4. Builder on a synthetic canonical repository ---
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("canonical-schedule-" + [guid]::NewGuid().ToString('N'))
 try {
-    $scheduleDir = Join-Path $tempRoot 'source-data/nfl/schedules'
-    $finalityDir = Join-Path $tempRoot 'source-data/nfl/game-finality'
+    $scheduleDir = Join-Path $tempRoot 'data-source/nfl/schedules'
+    $finalityDir = Join-Path $tempRoot 'data-source/nfl/game-finality'
     New-Item -ItemType Directory -Path $scheduleDir -Force | Out-Null
     New-Item -ItemType Directory -Path $finalityDir -Force | Out-Null
 

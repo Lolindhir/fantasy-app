@@ -71,7 +71,7 @@ class MaterializationTriggerTests(unittest.TestCase):
             "public/data/League.json",
             "public/data/Players.json",
             "data-meta/nfl-reise/metadata.json",
-            "source-data/leagues/any-league/seasons/2031/drafts.json",
+            "data-source/leagues/any-league/seasons/2031/drafts.json",
         ):
             with self.subTest(path=path):
                 decision = MODULE.decide(

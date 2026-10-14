@@ -104,7 +104,7 @@ def load_canonical_league_scoring(root: Path, config: dict[str, Any]) -> tuple[d
     except canonical_ownership.CanonicalOwnershipError as exc:
         raise FreeAgentMovementMaterializationError(str(exc)) from exc
 
-    relative_path = Path("source-data") / "leagues" / canonical_league_id / "seasons" / str(season) / "league.json"
+    relative_path = Path("data-source") / "leagues" / canonical_league_id / "seasons" / str(season) / "league.json"
     league = load_json(root / relative_path)
     if not isinstance(league, dict):
         raise FreeAgentMovementMaterializationError("Canonical league scoring source must be a JSON object")

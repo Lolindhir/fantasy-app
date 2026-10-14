@@ -525,7 +525,7 @@ def planned_dataset_ids(repo_root: Path) -> list[str]:
 
 
 def current_source_season(repo_root: Path) -> int:
-    """Current season from canonical League facts (``source-data/leagues/*/manifest.json``).
+    """Current season from canonical League facts (``data-source/leagues/*/manifest.json``).
 
     The NFL source layer must not depend on App delivery read models or manual
     league metadata, so nothing under ``public/data`` is read here. With several

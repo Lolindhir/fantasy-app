@@ -19,7 +19,7 @@ function game(id, day, time, extra = {}) {
 }
 
 function writeSeason(root, games, { finalIds = [], withFinality = true, season = SEASON } = {}) {
-  const base = path.join(root, 'source-data', 'nfl');
+  const base = path.join(root, 'data-source', 'nfl');
   fs.mkdirSync(path.join(base, 'schedules'), { recursive: true });
   fs.writeFileSync(path.join(base, 'schedules', `${season}.json`), JSON.stringify({ Season: season, Games: games }));
   if (withFinality) {
@@ -194,14 +194,14 @@ test('an unreadable or missing schedule fails closed to the dense cron', () => {
   assert.match(missing.reason, /dense cron/);
 
   const broken = tempRoot();
-  fs.mkdirSync(path.join(broken, 'source-data', 'nfl', 'schedules'), { recursive: true });
-  fs.writeFileSync(path.join(broken, 'source-data', 'nfl', 'schedules', `${SEASON}.json`), '{ not json');
+  fs.mkdirSync(path.join(broken, 'data-source', 'nfl', 'schedules'), { recursive: true });
+  fs.writeFileSync(path.join(broken, 'data-source', 'nfl', 'schedules', `${SEASON}.json`), '{ not json');
   assert.equal(status(broken, '2031-10-05T21:30:00Z').state, 'schedule-unavailable');
 
   const wrongSeason = tempRoot();
   writeSeason(wrongSeason, GAMES);
   fs.writeFileSync(
-    path.join(wrongSeason, 'source-data', 'nfl', 'schedules', `${SEASON}.json`),
+    path.join(wrongSeason, 'data-source', 'nfl', 'schedules', `${SEASON}.json`),
     JSON.stringify({ Season: 1999, Games: GAMES }),
   );
   assert.equal(status(wrongSeason, '2031-10-05T21:30:00Z').state, 'schedule-unavailable');

@@ -33,12 +33,12 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
     def _root_with_registry(self) -> tuple[tempfile.TemporaryDirectory, Path]:
         temporary = tempfile.TemporaryDirectory()
         root = Path(temporary.name)
-        source = Path(__file__).resolve().parents[2] / "source-data" / "league-registry.json"
-        target = root / "source-data" / "league-registry.json"
+        source = Path(__file__).resolve().parents[2] / "data-source" / "league-registry.json"
+        target = root / "data-source" / "league-registry.json"
         target.parent.mkdir(parents=True)
         target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
-        schedule_source = Path(__file__).resolve().parents[2] / "source-data" / "nfl" / "schedules" / "2026.json"
-        schedule_target = root / "source-data" / "nfl" / "schedules" / "2026.json"
+        schedule_source = Path(__file__).resolve().parents[2] / "data-source" / "nfl" / "schedules" / "2026.json"
+        schedule_target = root / "data-source" / "nfl" / "schedules" / "2026.json"
         schedule_target.parent.mkdir(parents=True, exist_ok=True)
         schedule_target.write_text(schedule_source.read_text(encoding="utf-8"), encoding="utf-8")
         return temporary, root
@@ -51,7 +51,7 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
         provider_league_id: str = "2000000000000000000",
         season: int = 2026,
     ) -> None:
-        mappings = root / "source-data" / "nfl" / "identities" / "provider-mappings.json"
+        mappings = root / "data-source" / "nfl" / "identities" / "provider-mappings.json"
         mappings.parent.mkdir(parents=True, exist_ok=True)
         mappings.write_text(
             json.dumps(
@@ -73,7 +73,7 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
         )
 
         season_id = canonical_league_season_id(canonical_league_id, season)
-        league_root = root / "source-data" / "leagues" / canonical_league_id
+        league_root = root / "data-source" / "leagues" / canonical_league_id
         league_root.mkdir(parents=True, exist_ok=True)
         provider_mapping = {
             "Provider": "Sleeper",
@@ -123,7 +123,7 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
 
         raw_root = (
             root
-            / "source-data"
+            / "data-source"
             / "providers"
             / "sleeper"
             / "leagues"
@@ -282,12 +282,12 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
             self.assertEqual(
                 relative_paths,
                 {
-                    "source-data/leagues/test-league/seasons/2026/league.json",
-                    "source-data/leagues/test-league/seasons/2026/members.json",
-                    "source-data/leagues/test-league/seasons/2026/rosters.json",
-                    "source-data/leagues/test-league/seasons/2026/winners-bracket.json",
-                    "source-data/leagues/test-league/seasons/2026/losers-bracket.json",
-                    "source-data/leagues/test-league/seasons/2026/matchups/week-2.json",
+                    "data-source/leagues/test-league/seasons/2026/league.json",
+                    "data-source/leagues/test-league/seasons/2026/members.json",
+                    "data-source/leagues/test-league/seasons/2026/rosters.json",
+                    "data-source/leagues/test-league/seasons/2026/winners-bracket.json",
+                    "data-source/leagues/test-league/seasons/2026/losers-bracket.json",
+                    "data-source/leagues/test-league/seasons/2026/matchups/week-2.json",
                 },
             )
             self.assertEqual(
@@ -327,7 +327,7 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
             )
             self.assertEqual(first["CanonicalFiles"], 6)
             self.assertEqual(second["CanonicalFilesChanged"], 0)
-            season_root = root / "source-data/leagues/test-league/seasons/2026"
+            season_root = root / "data-source/leagues/test-league/seasons/2026"
             self.assertTrue((season_root / "matchups" / "week-2.json").exists())
             self.assertFalse((season_root / "transactions").exists())
             self.assertFalse((season_root / "drafts.json").exists())
@@ -426,7 +426,7 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
             self._write_fixture(root)
             league_path = (
                 root
-                / "source-data"
+                / "data-source"
                 / "leagues"
                 / "test-league"
                 / "seasons"
@@ -453,7 +453,7 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
 class CurrentRepositoryLeagueCoreScopeIntegrationTests(unittest.TestCase):
     def test_current_nfl_reise_core_is_materializable_from_existing_canonical_baseline(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
-        manifest_path = repo_root / "source-data" / "leagues" / "nfl-reise" / "manifest.json"
+        manifest_path = repo_root / "data-source" / "leagues" / "nfl-reise" / "manifest.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         provider_league_id = str(manifest["CurrentProviderLeagueID"])
         season = resolve_current_league_core_season(
@@ -474,7 +474,7 @@ class CurrentRepositoryLeagueCoreScopeIntegrationTests(unittest.TestCase):
 
         season_root = (
             repo_root
-            / "source-data"
+            / "data-source"
             / "leagues"
             / "nfl-reise"
             / "seasons"

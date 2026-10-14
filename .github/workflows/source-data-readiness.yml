@@ -42,7 +42,7 @@ jobs:
       - name: Validate historical scoring and readiness contracts
         run: python -m unittest tools.tests.test_historical_fantasy_scoring tools.tests.test_nfl_source_readiness -v
 
-      - name: Build and publish source-data readiness audits
+      - name: Build and publish data-source readiness audits
         shell: bash
         env:
           PAT_PUSH: ${{ secrets.PAT_PUSH }}
@@ -65,7 +65,7 @@ jobs:
             unexpected=()
             for path in "${changed[@]}"; do
               case "$path" in
-                source-data/audits/nfl-source-data-readiness.json|source-data/audits/league-source-data-audit.json|source-data/audits/source-data-storage-audit.json) ;;
+                data-source/audits/nfl-source-data-readiness.json|data-source/audits/league-source-data-audit.json|data-source/audits/source-data-storage-audit.json) ;;
                 *) unexpected+=("$path") ;;
               esac
             done
@@ -75,7 +75,7 @@ jobs:
               exit 1
             fi
 
-            git add -- source-data/audits/nfl-source-data-readiness.json source-data/audits/league-source-data-audit.json source-data/audits/source-data-storage-audit.json
+            git add -- data-source/audits/nfl-source-data-readiness.json data-source/audits/league-source-data-audit.json data-source/audits/source-data-storage-audit.json
             if git diff --cached --quiet; then
               echo "Source-data readiness audits already match main."
               exit 0

@@ -1,4 +1,4 @@
-# Fail-closed resolver for NFL team keys against the canonical team registry (source-data/nfl/teams.json).
+# Fail-closed resolver for NFL team keys against the canonical team registry (data-source/nfl/teams.json).
 # Accepts canonical abbreviations, provider spellings (LAR, WSH), season-bounded historical aliases
 # (OAK, SD, STL) and the legacy numeric app team IDs. Mirrors tools/nfl_source_data_lib/teams.py.
 

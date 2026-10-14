@@ -169,7 +169,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Test NFL source-data tooling
+      - name: Test NFL data-source tooling
         shell: bash
         run: |
           set -euo pipefail
@@ -249,7 +249,7 @@ jobs:
             echo "- Materialization scope: $materialization_scope"
             if [[ "$materialization_scope" == "game-finality" ]]; then
               echo "- Scoped raw datasets: nflverse.schedules + nflverse.game-finality"
-              echo "- Canonical write-set: source-data/nfl/schedules/** + source-data/nfl/game-finality/**"
+              echo "- Canonical write-set: data-source/nfl/schedules/** + data-source/nfl/game-finality/**"
               echo "- Full NFL audit: read/write disabled for scoped materialization"
             else
               echo "- Canonical write-set: full NFL source materialization"
@@ -275,21 +275,21 @@ jobs:
           reset_to_main() {
             git fetch origin main
             git reset --hard origin/main
-            git clean -fd -- source-data
+            git clean -fd -- data-source
           }
 
           # Materialization reads only these inputs. Pushes by other writers to any
-          # other path (league source incl. source-data/providers/sleeper/leagues,
+          # other path (league source incl. data-source/providers/sleeper/leagues,
           # fantasy operations, matchups) cannot change the canonical result, so the validated commit may be rebased instead of rebuilt.
           materialize_input_pathspecs=(
-            source-data/registry.json
-            source-data/providers/dynastyprocess
-            source-data/providers/nflverse
-            source-data/providers/sleeper/players
-            source-data/nfl
-            source-data/audits
-            source-data/historical-identity-backfill.json
-            'source-data/leagues/*/manifest.json'
+            data-source/registry.json
+            data-source/providers/dynastyprocess
+            data-source/providers/nflverse
+            data-source/providers/sleeper/players
+            data-source/nfl
+            data-source/audits
+            data-source/historical-identity-backfill.json
+            'data-source/leagues/*/manifest.json'
             public/data/past_seasons
             tools
             .github/workflows/sync-nfl-source-data.yml
@@ -325,12 +325,12 @@ jobs:
             mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
             unexpected=()
             for path in "${changed[@]}"; do
-              if [[ "$path" != source-data/* ]]; then
+              if [[ "$path" != data-source/* ]]; then
                 unexpected+=("$path")
               fi
             done
             if (( ${#unexpected[@]} > 0 )); then
-              printf 'Unexpected changes outside source-data/:\n' >&2
+              printf 'Unexpected changes outside data-source/:\n' >&2
               printf ' - %s\n' "${unexpected[@]}" >&2
               return 1
             fi
@@ -343,13 +343,13 @@ jobs:
             mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
             unexpected=()
             for path in "${changed[@]}"; do
-              if [[ "$path" == source-data/nfl/schedules/* ]]; then
+              if [[ "$path" == data-source/nfl/schedules/* ]]; then
                 continue
               fi
-              if [[ "$path" == source-data/nfl/game-finality/* ]]; then
+              if [[ "$path" == data-source/nfl/game-finality/* ]]; then
                 continue
               fi
-              if [[ "$path" == "source-data/_sync/last-failure.json" ]]; then
+              if [[ "$path" == "data-source/_sync/last-failure.json" ]]; then
                 continue
               fi
               unexpected+=("$path")
@@ -368,7 +368,7 @@ jobs:
 
             for diagnostic_attempt in $(seq 1 "$max_attempts"); do
               reset_to_main
-              mkdir -p source-data/_sync
+              mkdir -p data-source/_sync
 
               PHASE="$phase" EXIT_CODE="$exit_code" LOG_FILE="$log_file" \
                 python - <<'PY'
@@ -394,14 +394,14 @@ jobs:
               "forceInput": (os.environ.get("FORCE") or "false").lower() == "true",
               "errorTail": lines[-80:],
           }
-          Path("source-data/_sync/last-failure.json").write_text(
+          Path("data-source/_sync/last-failure.json").write_text(
               json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
               encoding="utf-8",
           )
           PY
 
               assert_source_data_only
-              git add -- source-data/_sync/last-failure.json
+              git add -- data-source/_sync/last-failure.json
               if git diff --cached --quiet; then
                 echo "Failure diagnostic already matches main."
                 return 0
@@ -450,7 +450,7 @@ jobs:
             fi
 
             assert_source_data_only
-            git add -- source-data/providers
+            git add -- data-source/providers
             if ! git diff --cached --quiet; then
               timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
               git commit -m "data(nfl-source): refresh provider raw sources • $timestamp"
@@ -603,25 +603,25 @@ jobs:
             if [[ "$materialization_scope" == "full" ]]; then
               python tools/nfl_source_data.py audit | tee -a "$materialize_log"
             fi
-            rm -f source-data/_sync/last-failure.json
+            rm -f data-source/_sync/last-failure.json
             assert_source_data_only
             assert_scoped_canonical_write_set
 
             mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
             if (( ${#changed[@]} == 0 )); then
-              echo "No canonical NFL source-data changes detected."
+              echo "No canonical NFL data-source changes detected."
               echo "- No-op reason: canonical write-set unchanged after validated second pass" >> "$GITHUB_STEP_SUMMARY"
               echo "- Publication (attempt $attempt): ${publication_seconds}s" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
 
-            printf 'Validated canonical source-data changes:\n'
+            printf 'Validated canonical data-source changes:\n'
             printf ' - %s\n' "${changed[@]}"
 
-            git add -- source-data
+            git add -- data-source
             if git diff --cached --quiet; then
-              echo "No canonical source-data changes to commit."
-              echo "- No-op reason: no staged semantic source-data changes" >> "$GITHUB_STEP_SUMMARY"
+              echo "No canonical data-source changes to commit."
+              echo "- No-op reason: no staged semantic data-source changes" >> "$GITHUB_STEP_SUMMARY"
               echo "- Publication (attempt $attempt): ${publication_seconds}s" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
@@ -631,7 +631,7 @@ jobs:
             publish_start="$(date +%s)"
             if publish_canonical_commit; then
               publication_seconds=$(( publication_seconds + $(date +%s) - publish_start ))
-              echo "NFL source-data publish succeeded."
+              echo "NFL data-source publish succeeded."
               echo "- Publication (attempt $attempt): ${publication_seconds}s" >> "$GITHUB_STEP_SUMMARY"
               echo "- No-op reason: n/a — validated canonical changes published" >> "$GITHUB_STEP_SUMMARY"
               exit 0
