@@ -765,3 +765,19 @@ sharedDerivedData:
           starters independent) per FantasyMatchupID and team; DisplayLevel and Axis are data.
         publicationRule: week mismatch between the two inputs skips publication and keeps the existing file
         backtest: tools/historical_team_range_backtest.py
+
+  playerValuation:
+    architectureDecision: ADR-055
+    contract: .ai-context/manual/player-valuation.yaml
+    modelsContract: .ai-context/manual/derived-models.yaml
+    outputPattern: data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json
+    state: contract-accepted-implementation-pending
+    inputs:
+      - league-scored points of the season and the three previous seasons (tools/players_league_scoring.py)
+      - population (tools/players_population.py)
+      - week bounds (resolve_league_week_bounds)
+      - model choice (data-meta, #986)
+    note: >
+      Salary, SalaryProjected, Ranking, Grading and the Salary Cap in Players.json and
+      League.json are still produced by RequestPlayers.ps1 and RequestLeague.ps1 until the
+      cutover step of Issue #919.

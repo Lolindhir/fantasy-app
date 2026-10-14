@@ -587,3 +587,25 @@ sharedDerivedPhysicalLayer:
     - Writers must be deterministic and preserve semantic no-op behavior.
     - Shared outputs remain consumer-neutral; consumer-specific joins happen downstream.
     - Existing transitional derivations are not automatically migrated by introducing this root.
+
+
+playerValuationSharedDerived:
+  contract: .ai-context/manual/player-valuation.yaml
+  modelsContract: .ai-context/manual/derived-models.yaml
+  architectureDecision: ADR-055
+  trackingIssue: 919
+  logicalLayer: Shared Derived Data
+  physicalPath: data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json
+  physicalPathTransition: addressed as derived-data/ until the root rename (#788 SA)
+  identity: CanonicalLeagueID + Season + AsOfFinalScoredWeek + ScoringProfile.SettingsHash + selected model IDs
+  models:
+    implementation: tools/derived_data_lib/models/<kind>/v<N>.py
+    registry: tools/derived_data_lib/models/registry.py
+    ids:
+      - salary-v1
+      - salary-cap-v1
+      - grading-v1
+  rules:
+    - Model logic is central and league-independent; a league only selects model IDs per season (data-meta, ADR-054).
+    - A model is immutable after its first productive use; changes are new versions.
+    - Until the cutover (#919 step 5) RequestPlayers.ps1 and RequestLeague.ps1 stay productive and public/data contracts stay unchanged.
