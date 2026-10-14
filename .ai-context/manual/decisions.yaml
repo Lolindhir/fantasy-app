@@ -22,7 +22,8 @@ decisions:
 
   - id: ADR-002
     title: Metadata owns league-specific rules
-    status: accepted
+    status: superseded
+    supersededBy: ADR-054
     decision: >
       League-specific inputs and rules belong in public/data/Metadata.json, not
       in Angular and not in technical path utilities.
@@ -1684,3 +1685,42 @@ decisions:
       negative:
         - Cron evaluation exists in Python and in the scheduler (Node); both support the same simple expression subset.
         - Targets denser than 100 runs per window report a lower-bound count.
+
+  - id: ADR-054
+    title: Hand-maintained league metadata lives in data-meta per league; calculation logic is central
+    status: accepted
+    supersedes: ADR-002
+    context: >
+      Hand-maintained league inputs were spread over public/data/Metadata.json,
+      public/requests/config.ps1, league defaults in ConfigUtils.psm1 and the League source
+      bootstrap (source-data/leagues/_bootstrap). ADR-002 put league rules into Metadata.json,
+      which mixed metadata with calculation parameters and tied them to the App delivery tree.
+      With several leagues possible and Salary, Cap and Grading moving into central models
+      (Issue #919), one place per league is needed that holds only what a person decides.
+    decision: >
+      Robert decided on 2026-10-14 (Issue #986). Everything hand-maintained about one league
+      lives in data-meta/<CanonicalLeagueID>/metadata.json (plus, later, transactions-manual.json
+      from Issue #999): CanonicalLeagueID, Provider, CurrentProviderLeagueID, LeagueTimeZone,
+      Owners, Drafts including SleeperDraftIDs, and per season the Cap Deadline with its buffer
+      and the model choice (Salary, SalaryCap, Grading). Calculation logic and model parameters
+      are central and league-independent (versioned, immutable models, Issue #919); a league only
+      chooses a model ID per season. Facts that are already canonical stay out of the metadata
+      (LeagueYear, TeamCount, earlier provider league IDs). data-meta is written by hand only;
+      no workflow or generator writes into it. Access goes through tools/league_metadata.py and
+      LeagueMetadataUtils.psm1, which fail closed (missing file or season, unknown key, unknown
+      model ID) and iterate all leagues. The staged migration (Issue #986): contract (step 1),
+      file and loaders with a parity test (step 2), consumer switch (step 3), removal of the
+      legacy owners (step 4). ADR-002 is superseded; its ownership of league inputs passes to
+      this decision, its ConfigUtils/technical-path split (ADR-003) is unchanged.
+    rationale: >
+      Metadata (what a league is and chooses) and logic (how values are calculated) change for
+      different reasons and have different owners. One file per league supports multiple leagues
+      and makes the model choice per season reproducible for history.
+    consequences:
+      positive:
+        - One hand-maintained place per league; no league metadata in public/data or technical scripts.
+        - A new model version applies from a chosen season while older seasons stay reproducible.
+        - Multi-league capable loaders with fail-closed validation.
+      negative:
+        - Until step 3 two sources exist and are kept equal only by a parity test.
+        - The interim model catalogue in the loaders must move to the model registry of Issue #919.

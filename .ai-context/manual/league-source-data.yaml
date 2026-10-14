@@ -173,6 +173,7 @@ bootstrapContract:
     - Beim Saisonwechsel bleibt CanonicalLeagueID unveraendert und CurrentProviderLeagueID wird auf die neue Provider-Saison aktualisiert.
     - Jede weitere unabhaengige Fantasy-Liga erhaelt einen eigenen Bootstrap und eine eigene CanonicalLeagueID.
     - public/data/Metadata.json bleibt bis zur Phase-2-Consumer-Migration produktiver Legacy-/App-Input und darf die aktuelle Sleeper LeagueID parallel enthalten.
+    - 'ADR-054 (Issue #986): Die handgepflegte Liga-Metadaten-Datei data-meta/<CanonicalLeagueID>/metadata.json (.ai-context/manual/league-metadata.yaml) loest diesen Bootstrap ab. Sie enthaelt dieselben drei Felder (CanonicalLeagueID, Provider, CurrentProviderLeagueID) und ist seit Schritt 2 vorhanden; bis zur Consumer-Umstellung (Schritt 3) liest der League-Source-Sync weiter _bootstrap/, der Bootstrap wird in Schritt 4 entfernt. Der Paritaetstest tools/tests/test_league_source_metadata.py haelt beide Quellen bis dahin gleich.'
 
 leagueIdentity:
   principle: >
