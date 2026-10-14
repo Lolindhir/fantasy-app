@@ -15,7 +15,7 @@ from pathlib import Path
 # Persistent provider raw data plus canonical NFL and League facts (written by sync workflows only).
 DATA_SOURCE_ROOT = "source-data"
 # Shared Derived Data with full history (written by materializers only, ADR-038).
-DATA_DERIVED_ROOT = "derived-data"
+DATA_DERIVED_ROOT = "data-derived"
 # Hand-maintained league metadata (introduced by #986; no producer yet).
 DATA_META_ROOT = "data-meta"
 

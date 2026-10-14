@@ -566,7 +566,7 @@ playerWeekFantasySharedDerived:
   contract: .ai-context/manual/player-week-fantasy.yaml
   trackingIssue: 697
   logicalLayer: Shared Derived Data
-  physicalPath: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+  physicalPath: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
   identity: CanonicalPlayerID + CanonicalLeagueID + Season + Week + ScoringProfile.SettingsHash
   inputs:
     - canonical NFL weekly roster/player/game facts
@@ -586,13 +586,13 @@ playerWeekFantasySharedDerived:
 
 sharedDerivedPhysicalLayer:
   architectureDecision: ADR-038
-  root: derived-data/**
+  root: data-derived/**
   responsibility: >
     Physical owner for deterministic, reproducible, consumer-neutral Shared Derived
     Data downstream of canonical source-data and upstream of consumer publication.
   firstProduct:
     name: PlayerWeekFantasy
-    path: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+    path: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
     contract: .ai-context/manual/player-week-fantasy.yaml
     materializer: tools/player_week_fantasy_materialize.py
   doesNotOwn:
@@ -612,7 +612,7 @@ playerValuationSharedDerived:
   trackingIssue: 919
   logicalLayer: Shared Derived Data
   physicalPath: data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json
-  physicalPathTransition: addressed as derived-data/ until the root rename (#788 SA)
+  physicalPathTransition: renamed from derived-data/ to data-derived/ in #788 SA (history preserved by git mv)
   identity: CanonicalLeagueID + Season + AsOfFinalScoredWeek + ScoringProfile.SettingsHash + selected model IDs
   models:
     implementation: tools/derived_data_lib/models/<kind>/v<N>.py

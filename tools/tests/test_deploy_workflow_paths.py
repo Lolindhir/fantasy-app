@@ -30,7 +30,7 @@ class DeployWorkflowPathFilterTests(unittest.TestCase):
 
     def test_source_data_roots_do_not_trigger_deploy(self) -> None:
         paths = push_trigger()["paths"]
-        for root in ("source-data", "derived-data", "fantasy-management"):
+        for root in ("source-data", "data-derived", "fantasy-management"):
             self.assertFalse(any(p.startswith(root) for p in paths), root)
 
 
