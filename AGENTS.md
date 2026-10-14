@@ -49,7 +49,7 @@ For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/
 
 ## Source-of-truth rules
 
-- `public/data/Metadata.json` owns league-specific inputs and rules.
+- `data-meta/<CanonicalLeagueID>/metadata.json` owns hand-maintained league metadata (owners, drafts, Cap Deadline, model choice per season); contract `.ai-context/manual/league-metadata.yaml`.
 - `public/requests/utils/ConfigUtils.psm1` owns technical paths and generation configuration.
 - `public/data/*.json` files are generated app data.
 - `src/app/**` owns Angular display and frontend interaction.
@@ -99,10 +99,7 @@ Generated app data lives under:
 
 - `public/data`
 
-Exception:
-
-- `public/data/Metadata.json` is manual input.
-- `public/data/Metadata.ai-doc.yaml` documents `Metadata.json`.
+Manual input lives in `data-meta/**`; no workflow or generator writes into it.
 
 ## GitHub Actions approval
 

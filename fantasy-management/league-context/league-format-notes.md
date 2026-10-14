@@ -5,7 +5,7 @@ Purpose: stable interpretation notes for the league format.
 Canonical current settings come from current repository data, especially:
 
 - `public/data/League.json`
-- `public/data/Metadata.json`
+- `data-meta/nfl-reise/metadata.json`
 
 Re-check current data before dynamic roster, salary, pick, standings or trade conclusions.
 

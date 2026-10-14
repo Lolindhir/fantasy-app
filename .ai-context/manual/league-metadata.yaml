@@ -26,8 +26,8 @@ fields:
   Provider: Currently Sleeper only.
   CurrentProviderLeagueID: Provider league ID of the newest season; starting point of the League source sync (replaces _bootstrap).
   LeagueTimeZone: IANA time zone of the league; used for calendar semantics such as the Cap Deadline.
-  Owners: Name to numeric owner ID, moved 1:1 from Metadata.json OwnerIDs. Values are unique. Owner semantics (manager versus franchise) stay with Issues #777 and #774.
-  Drafts: Moved 1:1 from Metadata.json Drafts (UpcomingDraftCount, UpcomingDraftCountMode PerDraftType, Types with DraftType, DraftInstance, DraftNo, Rounds, SleeperDraftIDs per season, order configuration). Semantics follow draft-identity.yaml.
+  Owners: Name to numeric owner ID, moved 1:1 from the former Metadata.json OwnerIDs. Values are unique. Owner semantics (manager versus franchise) stay with Issues #777 and #774.
+  Drafts: Moved 1:1 from the former Metadata.json Drafts (UpcomingDraftCount, UpcomingDraftCountMode PerDraftType, Types with DraftType, DraftInstance, DraftNo, Rounds, SleeperDraftIDs per season, order configuration). Semantics follow draft-identity.yaml.
   Seasons:
     key: Four-digit season string. Every season in the league manifest needs an entry.
     CapDeadline: ISO timestamp; optional per season, but together with CapDeadlineBufferDays. The current season needs it.
@@ -71,8 +71,8 @@ migration:
     1: Contract and ADR-054.
     2: "File, loaders, tests and parity test (done, PR 1000)."
     3: "Switch consumers: ConfigUtils Get-Config (LeagueYear from the League source manifest, CapDeadlineBufferDays without fallback), RequestLeague/RequestPlayers/RequestSchedule (config.ps1 removed), league_source_data.py (load_bootstraps now reads data-meta), source_data_readiness.py, Fantasy Management FA board config and trigger resolver, plus the path triggers of fm-daily.yml and sync-league-source-data.yml (workflow approval recorded in the Issue)."
-    4: Remove public/data/Metadata.json, its ai-doc, config.ps1 league values, ConfigUtils defaults and _bootstrap; update AGENTS.md and remaining documentation.
-  paritySafeguard: tools/tests/test_league_source_metadata.py compares every legacy Metadata.json field and the bootstrap with the new file until step 4.
+    4: "Done: public/data/Metadata.json, its ai-doc, _bootstrap removed; AGENTS.md and remaining documentation updated; parity test replaced by a retirement check."
+  retirementSafeguard: tools/tests/test_league_source_metadata.py asserts that the legacy Metadata.json, its ai-doc, _bootstrap and config.ps1 do not exist.
 
 validation:
   tests: tools/tests/test_league_source_metadata.py

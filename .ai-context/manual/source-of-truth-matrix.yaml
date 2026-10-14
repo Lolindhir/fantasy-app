@@ -20,11 +20,11 @@ scope:
     - NFL player stats and snap counts
     - NFL roster membership and current player/platform status
     - injuries, depth-chart facts and convenience metadata
-    - fantasy-league facts that must remain owned by Sleeper, Metadata or generated domain logic
+    - fantasy-league facts that must remain owned by Sleeper, the league metadata (data-meta) or generated domain logic
   excludes:
     - frontend-only display state
     - fantasy-management analysis sources and rankings
-    - league-specific rules already owned by public/data/Metadata.json
+    - hand-maintained league metadata already owned by data-meta
     - generated public/data files as architectural source-of-truth owners
 
 principles:
@@ -487,9 +487,9 @@ matrix:
       - draft configuration
       - Sleeper league settings such as roster positions, scoring, trade settings and playoff settings
     durableCanonicalPrimary:
-      manualRules: public/data/Metadata.json
+      manualRules: data-meta/<CanonicalLeagueID>/metadata.json
       platformState: Sleeper league endpoint
-    currentRuntimePrimary: Metadata + Sleeper
+    currentRuntimePrimary: league metadata (data-meta) + Sleeper
     secondary: none
     fallback: none
     identityKey: LeagueID / season
@@ -705,7 +705,7 @@ playersReadModelFieldInventory:
       - canonical player-stats, snap-counts, qbr-week, player-game-long-gains, schedules and game-finality for GameHistory (since #347 G3; replaces public/data/Games.json)
       - canonical League-season WeekStructure and NFL game finality for LastLeagueWeek, PlayoffStartWeek and FinalScoredWeek (since #347 I1; replaces public/data/League.json)
       - league-scored canonical player-stats of the three prior seasons (since #347 D4; replaces the past_seasons/Players_<year>.json archives)
-      - config.ps1 WeightTotal/WeightGame
+      - ConfigUtils.psm1 WeightTotal/WeightGame
     historyArchives:
       producer: none; RequestPlayersSeason.ps1 and its Games_<year>.json input were retired with #347 G4
       shape: TankID, Name, TeamIDs, Games[] with FantasyPoints = Tank01 fantasyPointsDefault.PPR
@@ -953,8 +953,8 @@ consumerReadClassification:
     app-output-owner: the generator or publisher that writes that read model
     app-read-model-chain: a consumer reads another published App read model as a deliberate step of the App derivation chain
     app-config-path-owner: resolves generated-file paths
-    intentional-overlay: documented consumer-specific display or scoring enrichment (ADR-002 boundary); base facts come from source-data
-    manual-league-rule: Metadata.json, the manual league-rule owner (ADR-002)
+    intentional-overlay: documented consumer-specific display or scoring enrichment (ADR-054 boundary); base facts come from source-data
+    manual-league-rule: data-meta league metadata, the manual league-input owner (ADR-054)
     freshness-trigger: read or declared only to detect that published data changed
     validation-shadow: read-only comparison or guard against published output; never an input
     historical-static-reference: frozen published history, not a live read

@@ -40,7 +40,7 @@ draftIdentity:
     SleeperDraftID:
       meaning: External Sleeper identity for a concrete draft.
       rule: >
-        A known SleeperDraftID may be bound per season in Metadata.json. Explicit
+        A known SleeperDraftID may be bound per season in the league metadata (data-meta). Explicit
         bindings are authoritative; unbound drafts may be bootstrapped by Sleeper
         metadata/type classification plus configured instance order.
     SleeperFuturePickPool:
@@ -53,7 +53,7 @@ draftIdentity:
         Rookie. At most one configured draft instance may own the role at a time.
 
   metadataContract:
-    source: public/data/Metadata.json
+    source: data-meta/<CanonicalLeagueID>/metadata.json
     draftDefinition:
       required:
         - DraftType
