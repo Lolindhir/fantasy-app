@@ -1219,6 +1219,11 @@ consumerReadClassification:
         legacy:League: validation-shadow
         legacy:Players: validation-shadow
       note: 'Compares the PlayerValuation snapshot of the published week exactly with the published Players.json and League.json (Issue #919 step 4); read-only, never writes public/data.'
+    tools/derived_data.py:
+      reads:
+        legacy:League: mention-only
+        legacy:Players: legacy-read-model-pending
+      note: 'League.json is only named in the docstring. The optional --hold-seed-players-file reads the last published Players.json solely to seed identity-hold rows that no PlayerValuation snapshot knows yet (Issue #919 step 5, same values as the predecessor generator); transitional, because every snapshot persists its hold rows afterwards.'
     tools/transaction_canonical_shadow.py:
       reads:
         legacy:Transactions: validation-shadow
