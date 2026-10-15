@@ -7,8 +7,8 @@ ADR-026 order in memory and hand the same objects to each other, exactly as the 
   1. transactions base  - canonical transactions merged with the manual overlay, per season
   2. pick identity      - Update-AllTransactionDraftPickTypesFromSleeper (all seasons, configured drafts), then
                           Update-HistoricalTransactionDraftPickTypesFromCompletedDrafts (past seasons)
-  3. drafts             - added with step 3 of Issue #999
-  4. pick results back  - added with step 3 of Issue #999
+  3. drafts             - completed history, current and open future drafts (league_drafts.py)
+  4. pick results back  - Update-AllTransactionDraftPickDetailsFromLocalDrafts (enrich_pick_details)
 """
 from __future__ import annotations
 
@@ -24,9 +24,11 @@ from .league_draft_identity import (
     provider_draft_map,
     sorted_configs,
 )
+from .league_drafts import DraftBuildError, build_drafts
 from .league_transactions import (
     TransactionHistoryError,
     assert_unique_transaction_ids,
+    enrich_pick_details,
     merge_manual_overlay,
     resolve_pick_identities,
 )
@@ -165,6 +167,40 @@ def build_transaction_stage(inputs: LeagueHistoryInputs) -> TransactionStage:
     return TransactionStage(transactions=transactions, unresolved=unresolved)
 
 
+@dataclass
+class HistoryResult:
+    transactions: dict[int, list[dict[str, Any]]]
+    drafts: dict[int, list[dict[str, Any]]]
+    unresolved: list[dict[str, Any]]
+
+
+def build_history(inputs: LeagueHistoryInputs) -> HistoryResult:
+    """All four ADR-026 stages in memory."""
+    stage = build_transaction_stage(inputs)
+    all_transactions = [item for season in sorted(stage.transactions) for item in stage.transactions[season]]
+    drafts = build_drafts(
+        league_year=inputs.league_year,
+        seasons=inputs.seasons,
+        provider_league_ids=inputs.provider_league_ids,
+        configs=inputs.draft_configs,
+        open_count=inputs.open_draft_count,
+        team_ids=inputs.team_ids,
+        standings_loader=inputs.standings_loader,
+        payloads=inputs.payloads,
+        transactions=all_transactions,
+    )
+    enrich_pick_details(all_transactions, drafts)
+    by_season: dict[int, list[dict[str, Any]]] = {}
+    for draft in drafts:
+        by_season.setdefault(int(draft["Season"]), []).append(draft)
+    return HistoryResult(transactions=stage.transactions, drafts=by_season, unresolved=stage.unresolved)
+
+
+def drafts_document(league_id: str, season: int, drafts: list[dict[str, Any]]) -> dict[str, Any]:
+    """Root object of data-derived/league-drafts/<CanonicalLeagueID>/<season>.json."""
+    return {"ContractVersion": CONTRACT_VERSION, "CanonicalLeagueID": league_id, "Season": season, "Drafts": drafts}
+
+
 CONTRACT_VERSION = 1
 
 
@@ -197,6 +233,10 @@ def transactions_document(
 
 __all__ = [
     "CONTRACT_VERSION",
+    "DraftBuildError",
+    "HistoryResult",
+    "build_history",
+    "drafts_document",
     "transactions_document",
     "DraftIdentityError",
     "LeagueHistoryInputs",

@@ -10,12 +10,13 @@ the model code lives in tools/derived_data_lib. A snapshot is rebuilt from canon
 and written only on a semantic difference (a second run is a file-level no-op). Nothing publishes the
 output yet; the product stays a local/test artifact until the cutover of Issue #919 step 5.
 
-Second product family: league-transactions (league-history.yaml, ADR-057, Issue #999), written to
-<derived root>/league-transactions/<CanonicalLeagueID>/<season>.json for every manifest season. Nothing
-publishes it yet; the App files in public/data stay produced by the PowerShell rebuild until the cutover.
+Second product family: league-transactions and league-drafts (league-history.yaml, ADR-057, Issue #999),
+written to <derived root>/league-transactions|league-drafts/<CanonicalLeagueID>/<season>.json. Both come
+from one in-memory run in ADR-026 order (the transaction picks carry the draft pick results). Nothing
+publishes them yet; the App files in public/data stay produced by the PowerShell rebuild until the cutover.
 
 Usage:
-  derived_data.py materialize --product player-valuation|league-transactions [--league nfl-reise]
+  derived_data.py materialize --product player-valuation|league-transactions|league-drafts [--league nfl-reise]
                               [--season 2026 ...] [--out-root DIR] [--check]
 """
 from __future__ import annotations
@@ -39,12 +40,13 @@ from league_metadata import (  # noqa: E402
     validate_against_manifest,
 )
 import player_valuation_sources as sources  # noqa: E402
-from derived_data_lib.league_history import build_transaction_stage, transactions_document  # noqa: E402
+from derived_data_lib.league_history import build_history, drafts_document, transactions_document  # noqa: E402
 from league_history_sources import LeagueHistorySourceError, load_inputs  # noqa: E402
 from players_league_scoring import SleeperIdentityResolver  # noqa: E402
 
 LEAGUE_TRANSACTIONS = "league-transactions"
-PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS)
+LEAGUE_DRAFTS = "league-drafts"
+PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS)
 EXIT_CHANGED = 3  # --check found a snapshot that differs from disk
 
 
@@ -144,36 +146,49 @@ def materialize_player_valuation(
     return summary
 
 
+def league_history_path(out_root: Path, product: str, league_id: str, season: int) -> Path:
+    return out_root / product / league_id / f"{season}.json"
+
+
 def league_transactions_path(out_root: Path, league_id: str, season: int) -> Path:
-    return out_root / LEAGUE_TRANSACTIONS / league_id / f"{season}.json"
+    return league_history_path(out_root, LEAGUE_TRANSACTIONS, league_id, season)
 
 
-def materialize_league_transactions(
-    repo_root: Path, out_root: Path, league_id: str, seasons: list[int] | None, check_only: bool,
+def materialize_league_history(
+    repo_root: Path, out_root: Path, league_id: str, product: str, seasons: list[int] | None, check_only: bool,
 ) -> dict[str, Any]:
     inputs = load_inputs(repo_root, league_id)
-    wanted = inputs.seasons if not seasons else sorted(set(seasons))
-    unknown = [s for s in wanted if s not in inputs.seasons]
-    if unknown:
-        raise sources.SourceError(f"Seasons not in the league manifest: {unknown}; available: {inputs.seasons}")
-    stage = build_transaction_stage(inputs)
-    if stage.unresolved:
-        raise sources.SourceError(f"Transaction picks without a unique draft identity: {stage.unresolved}")
-    resolver = SleeperIdentityResolver.from_repo(repo_root)
-    summary: dict[str, Any] = {"Product": LEAGUE_TRANSACTIONS, "CanonicalLeagueID": league_id, "Seasons": []}
+    if seasons:
+        unknown = [s for s in seasons if s not in inputs.seasons]
+        if product == LEAGUE_TRANSACTIONS and unknown:
+            raise sources.SourceError(f"Seasons not in the league manifest: {unknown}; available: {inputs.seasons}")
+    history = build_history(inputs)
+    if history.unresolved:
+        raise sources.SourceError(f"Transaction picks without a unique draft identity: {history.unresolved}")
+    documents: dict[int, tuple[dict[str, Any], int]] = {}
+    if product == LEAGUE_TRANSACTIONS:
+        resolver = SleeperIdentityResolver.from_repo(repo_root)
+        for season in inputs.seasons:
+            document = transactions_document(
+                league_id, season, history.transactions[season], lambda player, year: resolver.resolve(player, year)[0]
+            )
+            documents[season] = (document, len(document["Transactions"]))
+    else:
+        for season, drafts in sorted(history.drafts.items()):
+            documents[season] = (drafts_document(league_id, season, drafts), len(drafts))
+    wanted = sorted(documents) if not seasons else [s for s in sorted(set(seasons)) if s in documents]
+    summary: dict[str, Any] = {"Product": product, "CanonicalLeagueID": league_id, "Seasons": []}
     for season in wanted:
-        document = transactions_document(
-            league_id, season, stage.transactions[season], lambda player, year: resolver.resolve(player, year)[0]
-        )
+        document, count = documents[season]
         text = serialize(document)
-        path = league_transactions_path(out_root, league_id, season)
+        path = league_history_path(out_root, product, league_id, season)
         unchanged = path.is_file() and path.read_text(encoding="utf-8") == text
         if not unchanged and not check_only:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
         summary["Seasons"].append({
             "Season": season,
-            "Transactions": len(document["Transactions"]),
+            "Transactions" if product == LEAGUE_TRANSACTIONS else "Drafts": count,
             "Bytes": len(text.encode("utf-8")),
             "Unchanged": 1 if unchanged else 0,
             "Written" if not check_only else "WouldWrite": 0 if unchanged else 1,
@@ -199,9 +214,9 @@ def main() -> int:
     out_root = args.out_root or data_derived_dir(args.repo_root)
     try:
         leagues = [args.league] if args.league else list_league_ids(data_meta_root(args.repo_root))
-        if args.product == LEAGUE_TRANSACTIONS:
+        if args.product in (LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS):
             results = [
-                materialize_league_transactions(args.repo_root, out_root, league, args.season, args.check)
+                materialize_league_history(args.repo_root, out_root, league, args.product, args.season, args.check)
                 for league in leagues
             ]
         else:
