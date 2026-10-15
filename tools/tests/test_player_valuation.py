@@ -387,3 +387,46 @@ class HoldSourceTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HoldSeedTests(unittest.TestCase):
+    """Cutover hold seed (Issue #919 step 5): values of the last published Players.json for identity-hold rows."""
+
+    @staticmethod
+    def _player(player_id: str, base: float) -> dict:
+        return {
+            "ID": player_id,
+            "FantasyPointsAvgPotentialGame": base,
+            "FantasyPointsAvgGame": base + 1,
+            "PointHistory": {
+                name: {"AvgPotentialGame": base + i, "AvgGame": base + i + 0.5}
+                for i, name in enumerate(("SeasonMinus1", "SeasonMinus2", "SeasonMinus3"), start=2)
+            },
+        }
+
+    def test_seed_maps_published_fields_to_inputs_by_sleeper_id(self):
+        import json
+        import tempfile
+        from pathlib import Path
+
+        import derived_data
+
+        broken = {"ID": "9", "FantasyPointsAvgGame": 1.0}  # no PointHistory: cannot seed, must be skipped
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "Players.json"
+            path.write_text(json.dumps([self._player("1", 10.0), broken]), encoding="utf-8")
+            seed = derived_data.load_hold_seed(path)
+        self.assertEqual(set(seed), {"1"})
+        self.assertEqual(seed["1"]["Current"], {"AvgPotentialGame": 10.0, "AvgGame": 11.0})
+        self.assertEqual(seed["1"]["SeasonMinus1"], {"AvgPotentialGame": 12.0, "AvgGame": 12.5})
+        self.assertEqual(seed["1"]["SeasonMinus3"], {"AvgPotentialGame": 14.0, "AvgGame": 14.5})
+
+    def test_seed_is_only_a_fallback_behind_persisted_snapshots(self):
+        import derived_data
+
+        persisted = {"A": ({"Current": "snapshot"}, 3)}
+        lookup = derived_data._with_seed(lambda key: persisted.get(key, (None, None)),
+                                         {"A": {"Current": "seed"}, "B": {"Current": "seed"}}, 5)
+        self.assertEqual(lookup("A"), ({"Current": "snapshot"}, 3))
+        self.assertEqual(lookup("B"), ({"Current": "seed"}, 5))
+        self.assertEqual(lookup("C"), (None, None))

@@ -29,6 +29,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\player\PlayerValuationUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -239,25 +240,20 @@ try {
     $teamData = Add-DraftPickKeysToTeams -teams $teamData -drafts $drafts
 
     $playersData = Get-PlayersFromFile
-    $topCount = [int]$SalaryRelevantTeamSize * [int]$teamData.Count
-    if ($topCount -le 0) {
-        Write-Error "Invalid topCount for Salary Cap calculation. SalaryRelevantTeamSize=$SalaryRelevantTeamSize, TeamCount=$($teamData.Count)"
+    # --- Salary Cap aus dem PlayerValuation-Snapshot (#919 step 5): der neueste Snapshot der Saison ist der
+    # Stand, den der letzte Players-Lauf zusammen mit Players.json veroeffentlicht hat. Keine Berechnung hier.
+    $valuationSnapshot = Get-PlayerValuationLatestSnapshot -CanonicalLeagueID $CanonicalLeagueID -Season ([int]$league.season)
+    if ([int]$valuationSnapshot.League.TeamCount -ne [int]$teamData.Count) {
+        Write-Error "PlayerValuation snapshot TeamCount $($valuationSnapshot.League.TeamCount) differs from the league's $($teamData.Count) teams."
         exit 1
     }
-
-    $topPlayers = $playersData | Sort-Object -Property Salary -Descending | Select-Object -First $topCount
-    $topPlayersProjected = $playersData | Sort-Object -Property SalaryProjected -Descending | Select-Object -First $topCount
-    if ($topPlayers.Count -eq 0 -or $topPlayersProjected.Count -eq 0) {
-        Write-Error "No players found for Salary Cap calculation!"
+    if ([int]$valuationSnapshot.League.SalaryRelevantTeamSize -ne [int]$SalaryRelevantTeamSize) {
+        Write-Error "PlayerValuation snapshot SalaryRelevantTeamSize $($valuationSnapshot.League.SalaryRelevantTeamSize) differs from the configured $SalaryRelevantTeamSize."
         exit 1
     }
-    Write-Host "Top $topCount players considered for Salary Cap calculation." -ForegroundColor Yellow
-
-    $avgSalary = ($topPlayers | Measure-Object -Property Salary -Average).Average
-    $avgSalaryProjected = ($topPlayersProjected | Measure-Object -Property SalaryProjected -Average).Average
-    $salaryCapTotal = [math]::Round($avgSalary * $SalaryRelevantTeamSize * 0.9)
-    $salaryCapProjected = [math]::Round($avgSalaryProjected * $SalaryRelevantTeamSize * 0.9)
-    Write-Host "Salary Cap (current): $($salaryCapTotal.ToString("N0"))" -ForegroundColor Yellow
+    $salaryCapTotal = [double]$valuationSnapshot.League.SalaryCap
+    $salaryCapProjected = [double]$valuationSnapshot.League.SalaryCapProjected
+    Write-Host "Salary Cap (current): $($salaryCapTotal.ToString("N0")) from $($valuationSnapshot.Models.SalaryCap) snapshot week $($valuationSnapshot.AsOfFinalScoredWeek)" -ForegroundColor Yellow
     Write-Host "Salary Cap (projected): $($salaryCapProjected.ToString("N0"))" -ForegroundColor Yellow
 
     $playoffStart = $league.settings.playoff_week_start

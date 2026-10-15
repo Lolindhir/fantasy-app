@@ -364,7 +364,7 @@ workflows:
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 840
-    rationale: Three centrally scheduled daily refreshes; 14 hours covers the longest normal gap with modest operational grace.
+    rationale: Three centrally scheduled daily refreshes; 14 hours covers the longest normal gap with modest operational grace. Since Issue #919 step 5 the run also materializes and publishes data-derived/player-valuation (Salary, Ranking, Grading, Salary Cap); a failed materialization fails the run, so the existing category and staleness cover it.
   .github/workflows/update-games.yml:
     category: non-paging
     relevantEvents: []
