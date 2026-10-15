@@ -4,10 +4,11 @@ The grade is the first letter whose threshold times the position multiplier is g
 the Combined_Pos rank; above the last threshold it is F. Multipliers: K 1, RB and WR 2, everything else
 1.5 (position match is case-insensitive like PowerShell ``-eq``).
 
-Parity quirk kept in v1: a player without a Combined_Pos rank is graded as if the rank were 0 and gets
-an A, while the Rank row carries null for Value and Rank. Treating unranked players as unknown would be
-a behaviour change and therefore ``grading-v2``. The Form row of the Players grading is not part of this
-model. Immutable after its first productive use.
+A player without a Combined_Pos rank gets no grade: the Rank row carries null for Value, Rank and Grade.
+The legacy PowerShell code graded such a player as if the rank were 0 and gave an A; Robert decided on
+2026-10-15 that this is a defect and corrected it in v1 itself (an explicit, one-time exception to model
+immutability, because the model had only been in productive use for hours and the old behaviour was never
+intended). The Form row of the Players grading is not part of this model.
 """
 from __future__ import annotations
 
@@ -27,8 +28,11 @@ PARAMS = MappingProxyType({
 })
 
 
-def letter_grade(rank: float | None, position: str | None) -> str:
-    value = 0.0 if rank is None else require_finite(rank, "rank")
+def letter_grade(rank: float | None, position: str | None) -> str | None:
+    """Letter for a rank, or None when the player has no rank (unknown, never a grade)."""
+    if rank is None:
+        return None
+    value = require_finite(rank, "rank")
     multiplier = PARAMS["PositionMultiplier"].get(str(position or "").upper(), PARAMS["DefaultMultiplier"])
     grades = PARAMS["Grades"]
     for threshold, grade in zip(PARAMS["Thresholds"], grades):

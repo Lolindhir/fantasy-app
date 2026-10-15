@@ -142,7 +142,7 @@ function Get-PlayerValuationPlayerValues {
             Type  = "Rank"
             Value = $rank[0].Value
             Rank  = $rank[0].Rank
-            Grade = [string]$rank[0].Grade
+            Grade = $rank[0].Grade
         }
     }
 }

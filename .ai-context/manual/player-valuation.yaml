@@ -233,6 +233,8 @@ openPoints:
       covered by that evidence and must be re-checked when it occurs.
   - id: unranked-grade
     text: >
-      grading-v1 keeps today's behaviour that a player without a rank gets grade A.
-      A model that treats unranked players as unknown would be grading-v2 and needs
-      Robert's decision.
+      Resolved 2026-10-15 (Robert): a player without a rank gets Grade null in grading-v1 instead of A
+      (defect fix in place, no grading-v2). Players.json carries Grade null for these players from the
+      first Players run after the fix; no app or Fantasy Management consumer reads Grade. The
+      shadow treats published A versus snapshot null for an unranked player as the intended deviation
+      until the file is republished.

@@ -204,9 +204,9 @@ class GradingV1Tests(unittest.TestCase):
             for rank, grade in ranks.items():
                 self.assertEqual(grade, grading_v1.letter_grade(rank, position), msg=f"{position} {rank}")
 
-    def test_parity_quirk_unranked_player_is_graded_a(self) -> None:
-        self.assertEqual("A", grading_v1.letter_grade(None, "QB"))
-        self.assertEqual({"Type": "Rank", "Value": None, "Rank": None, "Grade": "A"}, grading_v1.rank_row(None, "WR"))
+    def test_unranked_player_gets_no_grade(self) -> None:
+        self.assertIsNone(grading_v1.letter_grade(None, "QB"))
+        self.assertEqual({"Type": "Rank", "Value": None, "Rank": None, "Grade": None}, grading_v1.rank_row(None, "WR"))
 
     def test_rank_row_shape_and_position_case(self) -> None:
         self.assertEqual({"Type": "Rank", "Value": 7, "Rank": 7, "Grade": "B"}, grading_v1.rank_row(7, "k"))
@@ -348,8 +348,11 @@ class ParityWithValidatedPortTests(unittest.TestCase):
 
     def test_grading(self) -> None:
         for position in (*self.POSITIONS, "XX"):
-            for rank in [None, *range(0, 70)]:
+            for rank in range(0, 70):
                 self.assertEqual(shadow.letter_grade(rank, position), grading_v1.letter_grade(rank, position))
+            # the legacy port grades a missing rank as 0 (A); grading-v1 deliberately gives no grade (2026-10-15)
+            self.assertEqual("A", shadow.letter_grade(None, position))
+            self.assertIsNone(grading_v1.letter_grade(None, position))
 
     def test_salary_cap(self) -> None:
         rng = random.Random(99)
