@@ -50,6 +50,12 @@ jobs:
       - name: Run League data-source regression tests
         run: python -m unittest discover -s tools/tests -p "test_league_source*.py" -v
 
+      - name: Run PlayerValuation model and materializer tests
+        run: |
+          python -m unittest tools.tests.test_derived_data_models -v
+          python -m unittest tools.tests.test_player_valuation -v
+          python -m unittest tools.tests.test_player_valuation_shadow -v
+
       - name: Run consumer read classification test
         run: python -m unittest tools.tests.test_consumer_read_classification -v
 
