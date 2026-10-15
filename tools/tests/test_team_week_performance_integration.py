@@ -13,12 +13,13 @@ import tempfile
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from team_week_performance_materialize import materialize, verify_pwf_actual_parity
+from team_week_performance_materialize import materialize, materialize_all_finalized, verify_pwf_actual_parity
 from team_week_performance import build_team_week_performance, save_team_week_performance, output_path  # noqa: E402
 from team_week_performance_sources import (  # noqa: E402
     load_verified_week_inputs,
@@ -103,6 +104,28 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
             for i in range(0, len(encoded), 3000):
                 print("TWP_WEEK5_PART=" + encoded[i:i+3000], flush=True)
 
+
+    def test_clean_derived_root_rebuilds_all_weeks_and_second_run_is_noop(self) -> None:
+        """Use a truly empty isolated derived root while reading real canonical inputs."""
+        with tempfile.TemporaryDirectory(prefix=".twp-recovery-", dir=REPO_ROOT) as temp:
+            derived_root = Path(temp).relative_to(REPO_ROOT).as_posix()
+            with patch("team_week_performance_materialize.DATA_DERIVED_ROOT", derived_root), \
+                 patch("team_week_performance.DATA_DERIVED_ROOT", derived_root):
+                first = materialize_all_finalized(REPO_ROOT, league_id="nfl-reise", write=True)
+                self.assertEqual((first["TargetCount"], first["ReadyCount"],
+                                  first["BlockedCount"], first["ChangedCount"]), (39, 39, 0, 39))
+                self.assertTrue(all(w["PlayerWeekFantasyParity"]["State"] == "not-available"
+                                    for w in first["Weeks"]))
+                for w in first["Weeks"]:
+                    self.assertEqual(w["TeamCount"], 6)
+                    self.assertTrue((REPO_ROOT / w["Path"]).is_file())
+                for week in (4, 5):
+                    generated = REPO_ROOT / derived_root / "team-week-performance/nfl-reise/2026" / f"{week:02d}.json"
+                    published = REPO_ROOT / "data-derived/team-week-performance/nfl-reise/2026" / f"{week:02d}.json"
+                    self.assertEqual(generated.read_bytes(), published.read_bytes())
+                second = materialize_all_finalized(REPO_ROOT, league_id="nfl-reise", write=True)
+                self.assertEqual((second["ReadyCount"], second["BlockedCount"],
+                                  second["ChangedCount"]), (39, 0, 0))
 
 if __name__ == "__main__":
     unittest.main()
