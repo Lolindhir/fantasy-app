@@ -13,6 +13,7 @@ from player_week_fantasy import (
     DISPLAY_INTERVAL_LEVEL,
     build_player_week_fantasy_contract,
 )
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 
 APP_SCHEMA_VERSION = 1
 IDENTITY_PROVIDER = "Sleeper"
@@ -273,14 +274,14 @@ def materialize_app_player_week_fantasy(
 
     source_path = (
         repo_root
-        / "derived-data"
+        / DATA_DERIVED_ROOT
         / "player-week-fantasy"
         / canonical_league_id
         / str(season)
         / f"{week:02d}.json"
     )
-    identity_path = repo_root / "source-data" / "nfl" / "identities" / "players.json"
-    sleeper_path = repo_root / "source-data" / "nfl" / "platform" / "sleeper" / "players.json"
+    identity_path = repo_root / DATA_SOURCE_ROOT / "nfl" / "identities" / "players.json"
+    sleeper_path = repo_root / DATA_SOURCE_ROOT / "nfl" / "platform" / "sleeper" / "players.json"
     target_path = output_path or (repo_root / "public" / "data" / "PlayerWeekFantasy.json")
 
     payload = build_app_player_week_fantasy_read_model(

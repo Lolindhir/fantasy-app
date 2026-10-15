@@ -19,10 +19,11 @@ import sys
 import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+import canonical_player_inputs
 from canonical_league_ownership import (
     CanonicalOwnershipError,
     build_canonical_ownership_snapshot,
@@ -275,6 +276,15 @@ def max_timestamp(values: Iterable[Any]) -> str | None:
     if not parsed:
         return None
     return max(parsed).isoformat().replace("+00:00", "Z")
+
+
+def _player_reference_date(timestamps: Any) -> date:
+    """Reference date for Age: the date of the last Players refresh (deterministic input)."""
+    value = timestamps.get("Players") if isinstance(timestamps, dict) else None
+    parsed = parse_datetime(value)
+    if parsed is None:
+        raise MaterializationError("Timestamps.json has no usable Players timestamp for the Age reference date")
+    return parsed.date()
 
 
 def source_file(source_id: str, path: Path, root: Path, timestamp: Any = None) -> SourceFile:
@@ -803,21 +813,17 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         raise MaterializationError("Unexpected input materialization config schema version")
     core_sources = config["sources"]
     league_display_path = root / core_sources["league_display"]
-    players_path = root / core_sources["players"]
     canonical_identities_path = root / core_sources["canonical_player_identities"]
     canonical_sleeper_players_path = root / core_sources["canonical_sleeper_players"]
     timestamps_path = root / core_sources["timestamps"]
     catalog_path = root / config["source_catalog"]
 
     league_display = load_json(league_display_path)
-    players = load_json(players_path)
     canonical_identities = load_json(canonical_identities_path)
     canonical_sleeper_players = load_json(canonical_sleeper_players_path)
     timestamps = load_json(timestamps_path)
     catalog = load_json(catalog_path)
     validate_catalog(catalog)
-    if not isinstance(players, list):
-        raise MaterializationError("Players input must be a JSON array")
     identity_by_sleeper = build_canonical_identity_by_sleeper(canonical_identities)
     sleeper_player_lookup = build_canonical_sleeper_player_lookup(
         canonical_sleeper_players,
@@ -847,7 +853,13 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             canonical_league_id=canonical_league_id,
             season=canonical_season,
         )
-    except CanonicalOwnershipError as exc:
+        players = canonical_player_inputs.load_players(
+            root,
+            canonical_league_id,
+            canonical_season,
+            _player_reference_date(timestamps),
+        )
+    except (CanonicalOwnershipError, canonical_player_inputs.CanonicalPlayerInputsError) as exc:
         raise MaterializationError(
             f"Canonical managed-roster ownership is unavailable: {exc}"
         ) from exc
@@ -901,7 +913,7 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     league_timestamp = timestamps.get("League") if isinstance(timestamps, dict) else None
     canonical_league_root = (
         root
-        / "source-data"
+        / "data-source"
         / "leagues"
         / canonical_league_id
     )
@@ -928,7 +940,12 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             canonical_season_root / "rosters.json",
             root,
         ),
-        source_file("players", players_path, root, player_timestamp),
+        *(
+            source_file(source_id, path, root, player_timestamp)
+            for source_id, path in canonical_player_inputs.source_files(
+                root, canonical_league_id, canonical_season
+            )
+        ),
         source_file(
             "canonical_player_identities",
             canonical_identities_path,

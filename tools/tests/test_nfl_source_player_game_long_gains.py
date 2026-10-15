@@ -68,8 +68,8 @@ def long_gains_dataset(root: Path) -> common_mod.Dataset:
         provider="nflverse",
         upstream="nflverse/nflverse-data",
         source_url="https://example.invalid/play_by_play_{season}.csv.gz",
-        raw_path=root / "source-data/providers/nflverse/player-game-long-gains/raw-{season}.json",
-        metadata_path=root / "source-data/providers/nflverse/player-game-long-gains/metadata-{season}.json",
+        raw_path=root / "data-source/providers/nflverse/player-game-long-gains/raw-{season}.json",
+        metadata_path=root / "data-source/providers/nflverse/player-game-long-gains/metadata-{season}.json",
         required_columns=tuple(PLAYER_GAME_LONG_GAINS_FIELDS),
         minimum_rows=0,
         kind="player-game-long-gain-evidence",
@@ -263,7 +263,7 @@ class LongGainsCanonicalTests(unittest.TestCase):
 
             self.assertEqual(0, preserved)
             ((path, payload),) = outputs
-            self.assertEqual("source-data/nfl/player-game-long-gains/2026.json", str(path.relative_to(root)))
+            self.assertEqual("data-source/nfl/player-game-long-gains/2026.json", str(path.relative_to(root)))
             self.assertFalse(payload["Finalized"])
             self.assertEqual(["2026_07_AAA_BBB", "2026_07_CCC_DDD"], [g["GameID"] for g in payload["Games"]])
             rush = next(r for r in payload["Records"] if r["GainType"] == "LongRush")

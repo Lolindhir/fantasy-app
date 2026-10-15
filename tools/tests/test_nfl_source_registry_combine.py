@@ -70,7 +70,7 @@ class RegistryCombineTests(unittest.TestCase):
     def test_invalid_immutable_lifecycle_contract_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "source-data").mkdir()
+            (root / "data-source").mkdir()
             registry = {
                 "schemaVersion": REGISTRY_SCHEMA_VERSION,
                 "datasets": [{
@@ -95,7 +95,7 @@ class RegistryCombineTests(unittest.TestCase):
                     "attribution": "test",
                 }],
             }
-            (root / "source-data/registry.json").write_text(json.dumps(registry), encoding="utf-8")
+            (root / "data-source/registry.json").write_text(json.dumps(registry), encoding="utf-8")
             with self.assertRaises(ValueError):
                 load_registry(root)
 

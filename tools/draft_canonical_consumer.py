@@ -4,6 +4,12 @@ from __future__ import annotations
 import argparse, json
 from pathlib import Path
 from typing import Any
+import sys as _sys
+_TOOLS_DIR = str(Path(__file__).resolve().parent)
+if _TOOLS_DIR not in _sys.path:
+    _sys.path.insert(0, _TOOLS_DIR)
+
+from data_roots import DATA_SOURCE_ROOT  # noqa: E402
 
 def load_json(path: Path) -> Any:
     if not path.is_file():
@@ -54,7 +60,7 @@ def player_sleeper_id(player: Any, label: str) -> str | None:
     return sleeper_mapping(player, "ProviderPlayerID", f"{label}.Player")
 
 def build_legacy_payload(repo_root: Path, canonical_league_id: str, season: str) -> dict[str, Any]:
-    season_dir = repo_root / "source-data" / "leagues" / canonical_league_id / "seasons" / str(season)
+    season_dir = repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "seasons" / str(season)
     drafts = load_json(season_dir / "drafts.json")
     rosters = load_json(season_dir / "rosters.json")
     members = load_json(season_dir / "members.json")

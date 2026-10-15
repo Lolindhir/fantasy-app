@@ -25,8 +25,8 @@ def partitioned_dataset(
         provider="x",
         upstream="x",
         source_url=f"https://example.invalid/{path_id}_{{season}}.csv",
-        raw_path=root / f"source-data/providers/x/{path_id}/{{season}}.csv",
-        metadata_path=root / f"source-data/providers/x/{path_id}/{{season}}.metadata.json",
+        raw_path=root / f"data-source/providers/x/{path_id}/{{season}}.csv",
+        metadata_path=root / f"data-source/providers/x/{path_id}/{{season}}.metadata.json",
         required_columns=("season", "player_id"),
         minimum_rows=1,
         kind="stats",
@@ -176,7 +176,7 @@ class NflSourcePartitionSyncTests(unittest.TestCase):
     def test_registry_v3_requires_season_templates_for_partitioned_source(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "source-data").mkdir()
+            (root / "data-source").mkdir()
             registry = {
                 "schemaVersion": REGISTRY_SCHEMA_VERSION,
                 "datasets": [{
@@ -205,7 +205,7 @@ class NflSourcePartitionSyncTests(unittest.TestCase):
                     "attribution": "x",
                 }],
             }
-            (root / "source-data/registry.json").write_text(json.dumps(registry), encoding="utf-8")
+            (root / "data-source/registry.json").write_text(json.dumps(registry), encoding="utf-8")
             with self.assertRaises(ValueError):
                 load_registry(root)
 

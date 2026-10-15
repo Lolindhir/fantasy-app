@@ -36,6 +36,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import build_fantasy_operations_inputs as ops  # noqa: E402
 import build_player_signal_dataset as player_signals  # noqa: E402
 import canonical_nfl_membership as nfl_membership  # noqa: E402
+import canonical_player_inputs  # noqa: E402
 import materialize_external_signals as external_signals  # noqa: E402
 from canonical_league_ownership import (  # noqa: E402
     CanonicalOwnershipError,
@@ -230,13 +231,9 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
     baseline = player_signals.build(root, config_path)
     sources = config["sources"]
 
-    legacy_players = ops.load_json(root / sources["players"])
     canonical_identities = ops.load_json(root / sources["canonical_player_identities"])
     canonical_sleeper_players = ops.load_json(root / sources["canonical_sleeper_players"])
     league_display = ops.load_json(root / sources["league_display"])
-
-    if not isinstance(legacy_players, list):
-        raise PopulationRelevanceAuditError("Players input must be a JSON array")
 
     try:
         identity_by_sleeper = ops.build_canonical_identity_by_sleeper(canonical_identities)
@@ -274,10 +271,20 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
             f"Canonical league ownership is unavailable: {exc}"
         ) from exc
 
+    try:
+        legacy_players = canonical_player_inputs.load_players(
+            root,
+            canonical_league_id,
+            season,
+            ops._player_reference_date(ops.load_json(root / sources["timestamps"])),
+        )
+    except canonical_player_inputs.CanonicalPlayerInputsError as exc:
+        raise PopulationRelevanceAuditError(f"Canonical player inputs are unavailable: {exc}") from exc
+
     managed_team_id = str(config["managed_team"]["team_id"])
     ownership = external_signals.build_ownership(ownership_teams)
 
-    season_roster_path = root / "source-data" / "nfl" / "rosters" / f"{season}.json"
+    season_roster_path = root / "data-source" / "nfl" / "rosters" / f"{season}.json"
     if not season_roster_path.is_file():
         raise PopulationRelevanceAuditError(
             f"Canonical season roster is missing for {season}: {season_roster_path}"
@@ -285,7 +292,7 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
     latest_week, latest_weekly_path = resolve_latest_weekly_roster_path(root, int(season))
     previous_season = int(season) - 1
     previous_season_roster_path = (
-        root / "source-data" / "nfl" / "rosters" / f"{previous_season}.json"
+        root / "data-source" / "nfl" / "rosters" / f"{previous_season}.json"
     )
     if not previous_season_roster_path.is_file():
         raise PopulationRelevanceAuditError(

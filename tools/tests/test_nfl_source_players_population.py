@@ -47,17 +47,17 @@ class PopulationFixture:
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
         ids = identity_ids if identity_ids is not None else [r["SleeperPlayerID"] for r in rows]
-        write(self.root, "source-data/nfl/platform/sleeper/players.json",
+        write(self.root, "data-source/nfl/platform/sleeper/players.json",
               {"SchemaVersion": 2, "SourceDataset": "sleeper.players", "Records": rows})
-        (self.root / "source-data/nfl").mkdir(parents=True, exist_ok=True)
-        shutil.copy(ROOT / "source-data/nfl/teams.json", self.root / "source-data/nfl/teams.json")
-        write(self.root, "source-data/nfl/identities/players.json", {"Players": [
+        (self.root / "data-source/nfl").mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / "data-source/nfl/teams.json", self.root / "data-source/nfl/teams.json")
+        write(self.root, "data-source/nfl/identities/players.json", {"Players": [
             {"CanonicalPlayerID": f"NFLP-{i}", "IDs": {"Sleeper": i, "Tank01": f"T{i}", "ESPN": f"E{i}"}} for i in ids]})
-        write(self.root, "source-data/nfl/player-profiles/nflverse.json", {
+        write(self.root, "data-source/nfl/player-profiles/nflverse.json", {
             "SourceDataset": "nflverse.players",
             "Records": [{"CanonicalPlayerID": f"NFLP-{i}", "DisplayName": f"Prof {i} Jr.", "Headshot": f"https://img/{i}.png"}
                         for i in ids if i != "nohead"]})
-        write(self.root, "source-data/nfl/identities/provider-mappings.json", {"Mappings": [
+        write(self.root, "data-source/nfl/identities/provider-mappings.json", {"Mappings": [
             {"Provider": "Sleeper", "ExternalID": i, "CanonicalPlayerID": f"NFLP-{i}", "FirstObservedSeason": 2020,
              "LastObservedSeason": SEASON} for i in ids], "Conflicts": []})
 
@@ -65,13 +65,13 @@ class PopulationFixture:
             return {"Records": [{"CanonicalPlayerID": f"NFLP-{i}"} for i in sids]}
 
         if current_roster:
-            write(self.root, f"source-data/nfl/rosters/{SEASON}.json", records(roster))
+            write(self.root, f"data-source/nfl/rosters/{SEASON}.json", records(roster))
         if previous_roster is not None:
-            write(self.root, f"source-data/nfl/rosters/{SEASON - 1}.json", records(previous_roster))
+            write(self.root, f"data-source/nfl/rosters/{SEASON - 1}.json", records(previous_roster))
         if weekly:
-            write(self.root, f"source-data/nfl/weekly-rosters/{SEASON}/01.json", records(list(weekly)))
-        write(self.root, f"source-data/nfl/draft/{SEASON}.json", {"Picks": [{"CanonicalPlayerID": f"NFLP-{i}"} for i in draft]})
-        write(self.root, f"source-data/leagues/{LEAGUE}/seasons/{SEASON}/rosters.json", [
+            write(self.root, f"data-source/nfl/weekly-rosters/{SEASON}/01.json", records(list(weekly)))
+        write(self.root, f"data-source/nfl/draft/{SEASON}.json", {"Picks": [{"CanonicalPlayerID": f"NFLP-{i}"} for i in draft]})
+        write(self.root, f"data-source/leagues/{LEAGUE}/seasons/{SEASON}/rosters.json", [
             {"Players": [{"ProviderMappings": [{"Provider": "Sleeper", "ProviderPlayerID": i}]} for i in owned]}])
 
     def build(self) -> dict:
@@ -164,7 +164,7 @@ class PopulationRuleTests(unittest.TestCase):
     def test_missing_profiles_fail_closed(self) -> None:
         fixture = PopulationFixture([snapshot_row("1")], roster=["1"])
         self.addCleanup(fixture.close)
-        (fixture.root / "source-data/nfl/player-profiles/nflverse.json").unlink()
+        (fixture.root / "data-source/nfl/player-profiles/nflverse.json").unlink()
         with self.assertRaises(pop.PopulationError):
             fixture.build()
 

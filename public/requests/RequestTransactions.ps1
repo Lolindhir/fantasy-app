@@ -31,7 +31,7 @@ function Invoke-PastSeasonsIndexRefresh {
 $CanonicalLeagueID = "nfl-reise"
 
 # Current and historical transaction bases are rebuilt from canonical League
-# source-data. Draft/pick identity enrichment remains a separate coupled step.
+# data-source. Draft/pick identity enrichment remains a separate coupled step.
 Update-TransactionsAllSeasonsCanonical `
     -CanonicalLeagueID $CanonicalLeagueID `
     -ForceHistory

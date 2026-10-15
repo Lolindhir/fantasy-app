@@ -5,8 +5,8 @@ ESPN ``kona_player_info`` is a provider observation of the current NFL injury st
 per player. It is consumer-neutral and independent of any fantasy roster, so the
 snapshot covers every player ESPN returns. Output:
 
-* ``source-data/nfl/player-availability/espn.json`` (canonical, keyed by ESPN player ID)
-* ``source-data/providers/espn/player-availability/metadata.json`` (provenance)
+* ``data-source/nfl/player-availability/espn.json`` (canonical, keyed by ESPN player ID)
+* ``data-source/providers/espn/player-availability/metadata.json`` (provenance)
 
 Rules: a run writes only when the semantic content changed (no-op otherwise);
 ``StatusSinceUtc`` stays stable while a player's provider status is unchanged; a
@@ -26,11 +26,12 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from nfl_source_data_lib.common import current_source_season, load_json, write_json_if_changed
+from data_roots import DATA_SOURCE_ROOT
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATASET_ID = "espn.player-availability"
-SNAPSHOT_PATH = Path("source-data/nfl/player-availability/espn.json")
-METADATA_PATH = Path("source-data/providers/espn/player-availability/metadata.json")
+SNAPSHOT_PATH = Path(DATA_SOURCE_ROOT) / "nfl/player-availability/espn.json"
+METADATA_PATH = Path(DATA_SOURCE_ROOT) / "providers/espn/player-availability/metadata.json"
 SOURCE_URL_TEMPLATE = (
     "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/{season}"
     "/segments/0/leaguedefaults/3?view=kona_player_info"

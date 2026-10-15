@@ -140,100 +140,6 @@ function Test-UniquePlayerIds {
     return $true
 }
 
-function Add-PreviousSeasonCombinedRanking {
-    [CmdletBinding()]
-    param(
-        [Parameter(Mandatory=$true)]
-        [AllowEmptyCollection()]
-        [array]$Players
-    )
-
-    $config = Get-Config
-    $weightTotal = [double]$config.WeightTotal
-    $weightGame = [double]$config.WeightGame
-
-    foreach ($player in @($Players)) {
-        $player.Ranking = @($player.Ranking | Where-Object { $_.Type -ne 'Combined_Previous' })
-    }
-
-    $playersWithHistory = @(
-        $Players | Where-Object {
-            $null -ne $_.PointHistory -and
-            $null -ne $_.PointHistory.SeasonMinus1 -and
-            [double]$_.PointHistory.SeasonMinus1.AvgPotentialGame -gt 0 -and
-            [double]$_.PointHistory.SeasonMinus1.AvgGame -gt 0
-        }
-    )
-
-    if ($playersWithHistory.Count -eq 0) {
-        return $Players
-    }
-
-    function Get-HistoricalRankMap {
-        param(
-            [Parameter(Mandatory=$true)][array]$Items,
-            [Parameter(Mandatory=$true)][scriptblock]$ValueSelector
-        )
-
-        $rankMap = @{}
-        $sorted = @(
-            $Items | Sort-Object -Property @{ Expression = { & $ValueSelector $_ }; Descending = $true }
-        )
-        $previousValue = $null
-        $rank = 0
-        $index = 0
-
-        foreach ($item in $sorted) {
-            $index++
-            $value = [double](& $ValueSelector $item)
-            if ($null -eq $previousValue -or $value -ne $previousValue) {
-                $rank = $index
-            }
-            $previousValue = $value
-            $rankMap[[string]$item.ID] = $rank
-        }
-
-        return $rankMap
-    }
-
-    $totalSelector = { param($player) [double]$player.PointHistory.SeasonMinus1.AvgPotentialGame }
-    $gameSelector = { param($player) [double]$player.PointHistory.SeasonMinus1.AvgGame }
-    $totalRanks = Get-HistoricalRankMap -Items $playersWithHistory -ValueSelector $totalSelector
-    $gameRanks = Get-HistoricalRankMap -Items $playersWithHistory -ValueSelector $gameSelector
-
-    $combinedRows = @(
-        foreach ($player in $playersWithHistory) {
-            $playerId = [string]$player.ID
-            [PSCustomObject]@{
-                Player = $player
-                CombinedValue = ([double]$totalRanks[$playerId] * $weightTotal) + ([double]$gameRanks[$playerId] * $weightGame)
-                TotalValue = [double]$player.PointHistory.SeasonMinus1.AvgPotentialGame
-                GameValue = [double]$player.PointHistory.SeasonMinus1.AvgGame
-            }
-        }
-    ) | Sort-Object -Property @{ Expression = 'CombinedValue'; Ascending = $true },
-                               @{ Expression = 'TotalValue'; Descending = $true },
-                               @{ Expression = 'GameValue'; Descending = $true }
-
-    $previousCombinedValue = $null
-    $combinedRank = 0
-    $combinedIndex = 0
-
-    foreach ($row in $combinedRows) {
-        $combinedIndex++
-        if ($null -eq $previousCombinedValue -or $row.CombinedValue -ne $previousCombinedValue) {
-            $combinedRank = $combinedIndex
-        }
-        $previousCombinedValue = $row.CombinedValue
-        $row.Player.Ranking += [PSCustomObject]@{
-            Type = 'Combined_Previous'
-            Value = $combinedRank
-        }
-    }
-
-    return $Players
-}
-
 # Serialization depth used when RequestPlayers writes Players.json. The change comparison must use
 # the same depth: if the comparison were deeper than the written file, freshly built objects would
 # differ from the file-loaded ones and every run would report a change. Depth 7 keeps the full
@@ -265,7 +171,6 @@ function Compare-Players {
         [object]$NewPlayers
     )
 
-    Add-PreviousSeasonCombinedRanking -Players @($NewPlayers) | Out-Null
     Test-UniquePlayerIds -Players @($NewPlayers) | Out-Null
 
     if (-not $OldPlayers) {

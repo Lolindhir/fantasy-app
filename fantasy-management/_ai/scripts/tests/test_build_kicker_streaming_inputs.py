@@ -126,7 +126,7 @@ class KickerStreamingInputTests(unittest.TestCase):
         )
         self.write_json(
             root,
-            "source-data/leagues/test/manifest.json",
+            "data-source/leagues/test/manifest.json",
             {
                 "CanonicalLeagueID": "test",
                 "CurrentCanonicalLeagueSeasonID": "test-2026",
@@ -135,7 +135,7 @@ class KickerStreamingInputTests(unittest.TestCase):
         )
         self.write_json(
             root,
-            "source-data/leagues/test/seasons/2026/league.json",
+            "data-source/leagues/test/seasons/2026/league.json",
             {"CanonicalLeagueID": "test", "Season": 2026, "ScoringSettings": self.scoring()},
         )
         self.write_json(
@@ -241,7 +241,7 @@ class KickerStreamingInputTests(unittest.TestCase):
             del scoring["xpmiss"]
             self.write_json(
                 root,
-                "source-data/leagues/test/seasons/2026/league.json",
+                "data-source/leagues/test/seasons/2026/league.json",
                 {"CanonicalLeagueID": "test", "Season": 2026, "ScoringSettings": scoring},
             )
             with self.assertRaisesRegex(MODULE.KickerStreamingInputError, "xpmiss"):
@@ -253,7 +253,7 @@ class KickerStreamingInputTests(unittest.TestCase):
             config_path = self.prepare_root(root)
             self.write_json(
                 root,
-                "source-data/leagues/test/seasons/2026/league.json",
+                "data-source/leagues/test/seasons/2026/league.json",
                 {"CanonicalLeagueID": "test", "Season": 2025, "ScoringSettings": self.scoring()},
             )
             with self.assertRaisesRegex(MODULE.KickerStreamingInputError, "season mismatch"):

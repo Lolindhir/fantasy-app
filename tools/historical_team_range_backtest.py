@@ -29,12 +29,13 @@ if str(TOOLS) not in sys.path:
 
 from matchup_projection import player_sigma, team_ranges, z_for_level  # noqa: E402
 from player_week_fantasy import PRIMARY_INTERVAL_LEVEL, PUBLISHED_INTERVAL_LEVELS  # noqa: E402
+from data_roots import DATA_SOURCE_ROOT
 
 LEAGUE_ID = "nfl-reise"
 
 
 def last_fantasy_week(repo_root: Path, league_id: str, season: int) -> int:
-    path = repo_root / "source-data" / "leagues" / league_id / "seasons" / str(season) / "league.json"
+    path = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons" / str(season) / "league.json"
     structure = json.loads(path.read_text(encoding="utf-8")).get("WeekStructure") or {}
     week = structure.get("FinalLeagueWeek") or structure.get("ExpectedLastLeagueWeek")
     if isinstance(week, bool) or not isinstance(week, int) or week < 1:
@@ -90,7 +91,7 @@ def collect(
                 failed_weeks.append({"Season": season, "Week": week, "Error": str(exc)[:160]})
                 continue
             by_player = {record["CanonicalPlayerID"]: record["Projection"] for record in dataset["Records"]}
-            partition = repo_root / "source-data" / "leagues" / league_id / "seasons" / str(season) / "matchups" / f"week-{week}.json"
+            partition = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons" / str(season) / "matchups" / f"week-{week}.json"
             for entry in json.loads(partition.read_text(encoding="utf-8")):
                 starters = [item["CanonicalPlayerID"] for item in entry["Starters"] if item.get("CanonicalPlayerID")]
                 key = {"Season": season, "Week": week, "Roster": entry["CanonicalLeagueRosterID"]}

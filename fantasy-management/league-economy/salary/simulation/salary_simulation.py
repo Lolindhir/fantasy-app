@@ -15,24 +15,28 @@ from __future__ import annotations
 import csv
 import json
 import math
+import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from tools.derived_data_lib.models import registry  # noqa: E402
+
+# Heutige Formel: Kurve, Floor und Cap kommen aus den zentralen Modellen (ADR-055, #919), nicht aus einer Kopie.
+SALARY_MODEL = registry.get_model("salary-v1", "salary")
+SALARY_CAP_MODEL = registry.get_model("salary-cap-v1", "salary-cap")
 DATA = ROOT / "public" / "data"
-LEAGUE_SRC = ROOT / "source-data" / "leagues" / "nfl-reise" / "seasons"
-NFL_SRC = ROOT / "source-data" / "nfl"
+LEAGUE_SRC = ROOT / "data-source" / "leagues" / "nfl-reise" / "seasons"
+NFL_SRC = ROOT / "data-source" / "nfl"
 OUT_DIR = Path(__file__).resolve().parents[1] / "analyses"
 OUT_STEM = "2026-10-05-salary-simulation"
 
 POSITIONS = ["QB", "RB", "WR", "TE", "K"]
 FLEX_ELIGIBLE = {"RB", "WR", "TE"}
 SEASONS = {"SeasonMinus1": 2025, "SeasonMinus2": 2024, "SeasonMinus3": 2023}
-
-# Heutige Formel (RequestPlayers.ps1 / RequestLeague.ps1)
-REF_SIGNAL = 20.0
-REF_SALARY = 50_000_000
-CAP_FACTOR = 0.9
 
 # Entwurf (salary-dead-cap-concept.md)
 MIN_PCT_BY_YEAR = [(1, 0.0025), (2, 0.0030), (3, 0.0035), (4, 0.0040), (5, 0.0045), (8, 0.0050)]
@@ -60,36 +64,23 @@ def as_list(data, key):
 # ---------------------------------------------------------------- Salary-Kurven
 
 def map_salary(signal: float, k: float) -> float:
-    """MapSalaryToDollarsNonLinear mit Quelle 0..20 und Ziel 0..50 Mio."""
-    normalized = signal / REF_SIGNAL
-    if normalized > 1:
-        scaled = 1 + (normalized - 1) * k
-    else:
-        scaled = max(normalized, 0) ** k
-    return scaled * REF_SALARY
+    """Kurve des Modells salary-v1 (ungerundet) mit variablem Exponenten k fuer die Sensitivitaet."""
+    return SALARY_MODEL.curve_dollars(signal, k)
 
 
 def season_performance(entry: dict) -> float:
-    return 0.5 * entry["AvgPotentialGame"] + 0.5 * entry["AvgGame"]
+    return (SALARY_MODEL.PARAMS["WeightTotal"] * entry["AvgPotentialGame"]
+            + SALARY_MODEL.PARAMS["WeightGame"] * entry["AvgGame"])
 
 
 def floored_three_year(p1: float, p2: float, p3: float) -> float:
-    """Get-FantasySalaryWithFloor ohne Dollar-Abbildung: 3Y-Performance."""
-    if p1 == 0 and p2 == 0:
-        return 0.0
-    if p1 >= p2 and p1 >= p3:
-        ratio, top = 0.5, p1
-    elif p2 >= p1 and p2 >= p3:
-        ratio, top = 0.33, p2
-    else:
-        ratio, top = 0.17, p3
-    floor = top * ratio
-    return (max(p1, floor) + max(p2, floor) + max(p3, floor)) / 3
+    """Floor und Mittel des Modells salary-v1 ohne Dollar-Abbildung: 3Y-Performance."""
+    return SALARY_MODEL.floored_average(p1, p2, p3)
 
 
 def top_n_cap(salaries: list[float], top_n: int, relevant_team_size: int) -> float:
-    ordered = sorted(salaries, reverse=True)[:top_n]
-    return sum(ordered) / len(ordered) * relevant_team_size * CAP_FACTOR
+    """Ungerundeter Cap des Modells salary-cap-v1 aus den top_n hoechsten Salaries."""
+    return SALARY_CAP_MODEL.raw_cap(sorted(salaries, reverse=True)[:top_n], relevant_team_size)
 
 
 def min_pct(year: int) -> float:
@@ -797,9 +788,9 @@ def main():
             "players": "public/data/Players.json (Liga-Scoring seit #347 D4)",
             "league": "public/data/League.json",
             "rookie_drafts": "public/data/past_seasons/Drafts/Drafts_<season>.json",
-            "nfl_draft": "source-data/nfl/draft/<season>.json",
+            "nfl_draft": "data-source/nfl/draft/<season>.json",
             "transactions": "public/data/past_seasons/Transactions/*.json + public/data/Transactions.json",
-            "rosters_2025": "source-data/leagues/nfl-reise/seasons/2025/rosters.json",
+            "rosters_2025": "data-source/leagues/nfl-reise/seasons/2025/rosters.json",
             "season_2022": "public/data/past_seasons/Players_2022.json (Tank01-PPR, nur für Zyklus 2025)",
         },
         "format": fmt,

@@ -25,7 +25,7 @@ function Get-DraftHistoryTypeConfigs {
     if ($null -eq $draftsConfig) { throw "Metadata Drafts configuration missing." }
 
     $draftTypeConfigs = @(ConvertTo-DraftSafeArray -value $draftsConfig.Types | Sort-Object DraftNo)
-    if ($draftTypeConfigs.Count -eq 0) { throw "No draft types configured in Metadata.json." }
+    if ($draftTypeConfigs.Count -eq 0) { throw "No draft types configured in the league metadata (data-meta)." }
     Assert-DraftTypeConfigs -draftTypeConfigs $draftTypeConfigs
 
     return $draftTypeConfigs

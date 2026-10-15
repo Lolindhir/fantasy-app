@@ -115,7 +115,7 @@ class CalibrationTests(unittest.TestCase):
 class LastFantasyWeekTests(unittest.TestCase):
     def _league(self, structure: dict) -> Path:
         root = Path(tempfile.mkdtemp())
-        path = root / "source-data/leagues/league-a/seasons/2025/league.json"
+        path = root / "data-source/leagues/league-a/seasons/2025/league.json"
         path.parent.mkdir(parents=True)
         path.write_text(json.dumps({"WeekStructure": structure}), encoding="utf-8")
         return root

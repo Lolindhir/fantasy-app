@@ -1,4 +1,4 @@
-# Generates public/data/Teams.json from the canonical NFL team registry (source-data/nfl/teams.json, #347 F3c).
+# Generates public/data/Teams.json from the canonical NFL team registry (data-source/nfl/teams.json, #347 F3c).
 # No provider call: identity, names, division and logo come from the registry, LegacyIDs keep the former numeric app IDs.
 
 Import-Module "$PSScriptRoot\utils\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force

@@ -26,7 +26,7 @@ def build_repo(root: Path, *, context: dict | None = None, mappings: list | None
         context if context is not None else {"LeagueID": "999", "Season": "2026", "Week": 4},
     )
     write_json(
-        root / "source-data" / "leagues" / "league-a" / "seasons" / "2026" / "league.json",
+        root / "data-source" / "leagues" / "league-a" / "seasons" / "2026" / "league.json",
         {
             "CanonicalLeagueID": "league-a",
             "ProviderMappings": mappings
@@ -107,7 +107,7 @@ class RefreshTests(unittest.TestCase):
             def fake_write(path, payload):
                 calls.append("write")
                 self.assertEqual(
-                    path, root / "derived-data" / "player-week-fantasy" / "league-a" / "2026" / "04.json"
+                    path, root / "data-derived" / "player-week-fantasy" / "league-a" / "2026" / "04.json"
                 )
                 self.assertIs(payload, dataset)
                 return True

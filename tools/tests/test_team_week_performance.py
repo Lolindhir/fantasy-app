@@ -49,7 +49,7 @@ def derive(rows: list[dict], positions: dict[str, str], slots: list[StartingSlot
         matchup_rows=rows,
         expected_team_count=len(rows) if expected_team_count is None else expected_team_count,
         position_by_player=positions,
-        finalized=finalized, finality_evidence="source-data/nfl/game-finality/2024.json:REG-W4",
+        finalized=finalized, finality_evidence="data-source/nfl/game-finality/2024.json:REG-W4",
     )
 
 
@@ -151,7 +151,7 @@ class TeamWeekPerformanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             path = output_path(root, payload)
-            self.assertEqual(path.relative_to(root).as_posix(), "derived-data/team-week-performance/nfl-reise/2024/04.json")
+            self.assertEqual(path.relative_to(root).as_posix(), "data-derived/team-week-performance/nfl-reise/2024/04.json")
             self.assertTrue(save_team_week_performance(root, payload))
             before = path.read_bytes()
             self.assertFalse(save_team_week_performance(root, payload))

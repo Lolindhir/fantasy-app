@@ -1,20 +1,20 @@
 schemaVersion: 1
 
 dataSources:
-  metadata:
-    path: public/data/Metadata.json
+  leagueMetadata:
+    path: data-meta/<CanonicalLeagueID>/metadata.json
     category: manual-domain-config
-    role: Liga-spezifische Inputs und Regeln
+    role: Hand-maintained league metadata per league (ADR-054, Issue #986)
+    contract: .ai-context/manual/league-metadata.yaml
+    loaders:
+      - tools/league_metadata.py
+      - public/requests/utils/LeagueMetadataUtils.psm1
     description: >
-      Contains league-specific configuration and domain rules used by the
-      PowerShell generation pipeline.
-    owns:
-      - LeagueID
-      - LeagueYear
-      - CapDeadline
-      - CapDeadlineBufferDays
-      - OwnerIDs
-      - Drafts configuration, including the number of non-completed drafts retained per draft type
+      Target owner of everything hand-maintained about one league: provider league ID, owners,
+      draft configuration, per-season Cap Deadline and the model choice per season. Not generated
+      and never written by a workflow. ConfigUtils Get-Config, the League source sync and readiness
+      and the Fantasy Management FA board read it. It replaced public/data/Metadata.json, config.ps1
+      and the League source bootstrap files (removed in Issue #986 step 4).
 
   configUtils:
     path: public/requests/utils/ConfigUtils.psm1
@@ -22,7 +22,7 @@ dataSources:
     role: Technische Pfade und Generierungs-Konfiguration
     description: >
       Provides technical path resolution and generation configuration for the
-      PowerShell data pipeline. Loads Metadata.json and returns the generator
+      PowerShell data pipeline. Loads the league metadata (data-meta) and returns the generator
       configuration object.
     owns:
       - DataDir
@@ -30,10 +30,14 @@ dataSources:
       - transaction archive paths
       - draft archive paths
       - past season index file path
+      - data root directory names for PowerShell (source, derived, meta; Python counterpart tools/data_roots.py, Issue #788)
       - configured past season resource path patterns
       - timestamp file path
-      - mapping Metadata.json into generator config
+      - mapping the league metadata (data-meta) into generator config
     exposes:
+      - DataSourceDir
+      - DataDerivedDir
+      - DataMetaDir
       - PlayersFile
       - DecisionWindowsFile
       - PastSeasonsDir
@@ -53,8 +57,8 @@ dataSources:
     role: Generierte App-Daten
     description: >
       Generated read models consumed by Angular. These files are output, not the
-      architectural source of truth. Metadata.json is an exception because it is
-      manually maintained domain input.
+      architectural source of truth. Hand-maintained league inputs live in data-meta,
+      not here.
 
   players:
     path: public/data/Players.json
@@ -92,7 +96,7 @@ dataSources:
       producer: tools/players_population.py via PlayerPopulationUtils.psm1::Invoke-PlayerPopulationExport
       rule: >
         A Sleeper player from the canonical snapshot
-        (source-data/nfl/platform/sleeper/players.json) belongs in Players.json when it has an
+        (data-source/nfl/platform/sleeper/players.json) belongs in Players.json when it has an
         app fantasy position (Get-AppFantasyPosition), a valid birth date and at least one
         reason: nfl_roster_current_season (canonical season roster or any weekly roster of the
         season), nfl_draft_current_season (canonical NFL draft of the season) or league_owned
@@ -104,7 +108,7 @@ dataSources:
         export marks it (RosterBasis.UsedPreviousSeasonRoster). Without both rosters the run
         fails closed; an empty Players.json is never published.
       platformFields:
-        TeamAbbr: canonical team abbreviation of the Sleeper snapshot Team via source-data/nfl/teams.json (LAR -> LA, WSH -> WAS); null without a Sleeper team
+        TeamAbbr: canonical team abbreviation of the Sleeper snapshot Team via data-source/nfl/teams.json (LAR -> LA, WSH -> WAS); null without a Sleeper team
         TeamID: equals TeamAbbr (canonical app team key, ADR-042); null for a free agent
         IsFreeAgent: true exactly when Sleeper holds no current team; this is NFL free agency, not fantasy availability
         Status: Sleeper status from the snapshot
@@ -158,7 +162,7 @@ dataSources:
       canonicalField: ID
       canonicalSource: Sleeper player_id (canonical Sleeper snapshot)
       providerField: none (TankID removed with #347 H1b)
-      crossProviderKey: CanonicalPlayerID resolved per season through source-data/nfl/identities (player-identity.yaml)
+      crossProviderKey: CanonicalPlayerID resolved per season through data-source/nfl/identities (player-identity.yaml)
       requirements:
         - every generated player record has a non-empty canonical ID
         - canonical ID values are globally unique within Players.json
@@ -203,7 +207,7 @@ dataSources:
       League Metadata/Settings and Members/Rosters team base through
       CanonicalLeagueCoreUtils.psm1 from the productively fresh current League Core
       source. Current playoff brackets and active matchup score/player evidence are
-      likewise consumed from productively fresh canonical League source-data. Phase is
+      likewise consumed from productively fresh canonical League data-source. Phase is
       generated by the league
       pipeline as a UI-safe label and is empty when no meaningful sub-phase exists.
       TradesOpen is a league-process flag, not merely the technical ability to
@@ -299,8 +303,8 @@ dataSources:
     role: Hybrid current plus historical standings read model
     description: >
       Historical completed seasons and the configured current season are derived
-      productively from Canonical League source-data under
-      source-data/leagues/<CanonicalLeagueID>/seasons/<season> using league, member,
+      productively from Canonical League data-source under
+      data-source/leagues/<CanonicalLeagueID>/seasons/<season> using league, member,
       roster and playoff-bracket facts. Current inputs are kept fresh by the bounded
       League Core producer before app consumers run. Existing StandingUtils
       derivation owns Regular Season standings, Playoffs, Awards and AllTime.
@@ -314,7 +318,7 @@ dataSources:
       Record, previous = that minus one) and PlaceDelta = PreviousWeekPlace - Place
       (positive = moved up, negative = moved down, 0 = unchanged). The previous
       table is rebuilt from the canonical per-week matchups
-      (source-data/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-<n>.json)
+      (data-source/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-<n>.json)
       with the same Get-RankedRegularSeasonStandings ranking and tiebreak as the
       current table. Both fields are explicit null when no comparison exists
       (fewer than two completed weeks, missing or incomplete week facts, or weekly
@@ -375,7 +379,7 @@ dataSources:
       lineupWeekSource: Sleeper settings.leg from already-fetched League state
       scheduleJoin: Player.TeamID -> Schedule.teamIDHome / teamIDAway
       providerRequests: none added specifically for DecisionWindows
-      migrationBoundary: '#347 may replace transitional current adapters with canonical source-data inputs without changing the provider-neutral derivation semantics.'
+      migrationBoundary: '#347 may replace transitional current adapters with canonical data-source inputs without changing the provider-neutral derivation semantics.'
     historicalRule: >
       Historical relevance remains rebuildable from persisted season/week schedule,
       fantasy players/starters and week-appropriate player-to-NFL-team assignments
@@ -393,7 +397,7 @@ dataSources:
 
   transactions:
     path: public/data/Transactions.json
-    manualInput: public/data/Transactions_Manual.json
+    manualInput: data-meta/<CanonicalLeagueID>/transactions-manual.json
     generator: public/requests/RequestTransactions.ps1
     helpers:
       - public/requests/utils/league/CanonicalTransactionUtils.psm1
@@ -405,7 +409,7 @@ dataSources:
     description: >
       Current-season transaction output used by draft generation and the app.
       Current and historical transaction bases are adapted from Canonical League
-      transactions under source-data/leagues/** and combined with the documented
+      transactions under data-source/leagues/** and combined with the documented
       manual overlay. Historical transaction files are generated by
       RequestTransactions.ps1 under public/data/past_seasons/Transactions. A full
       all-season rebuild then resolves canonical draft identity, regenerates
@@ -447,9 +451,9 @@ dataSources:
       only draft output used to enrich League.json team DraftPick references,
       including picked current-season picks needed for complete-season Draft Capital.
     updateMode:
-      restricted: frequent RequestLeague.ps1 update
-      scheduledFull: weekly coupled RequestTransactions.ps1 rebuild
-      manualFull: workflow_dispatch RequestDrafts.ps1 refresh
+      restricted: League Live writes Drafts.json and Transactions.json with tools/league_history_app_publish.py write before RequestLeague.ps1, which only reads Drafts.json (Issue #999 step 5b-2)
+      scheduledFull: weekly update-transactions workflow writes the files from the league history product (tools/league_history_app_publish.py write, Issue #999 step 5b)
+      manualFull: workflow_dispatch update-drafts workflow, same writer
     timestamped: true
     backup: true
 
@@ -540,11 +544,11 @@ dataSources:
       league rules.
 
 dataFlow:
-  - from: public/data/Metadata.json
+  - from: data-meta/<CanonicalLeagueID>/metadata.json
     to: public/requests/utils/ConfigUtils.psm1
     purpose: Load league-specific inputs and rules, including the open draft count per draft type.
 
-  - from: public/data/Metadata.json
+  - from: data-meta/<CanonicalLeagueID>/metadata.json
     to: public/data/League.json
     purpose: Provide CapDeadline and CapDeadlineBufferDays for generated league Status and Phase rules.
 
@@ -564,7 +568,7 @@ dataFlow:
       stable current TeamID fields join players to Schedule games.
 
   - from: ESPN Fantasy kona_player_info injuryStatus
-    to: source-data/nfl/player-availability/espn.json
+    to: data-source/nfl/player-availability/espn.json
     purpose: >
       tools/espn_player_availability.py (workflow sync-nfl-player-availability.yml, scheduler target
       nfl-player-availability, every ten minutes September through January at minute 9) snapshots the ESPN injury
@@ -572,7 +576,7 @@ dataFlow:
       snapshot is consumer-neutral, written only on semantic change, keeps StatusSinceUtc stable while a status is
       unchanged and leaves the last known good file untouched on a failed or implausibly small response.
 
-  - from: source-data/nfl/player-availability/espn.json
+  - from: data-source/nfl/player-availability/espn.json
     to: public/data/DecisionWindows.json
     purpose: >
       RequestLeague reads the canonical snapshot (PlayerScoringAvailabilityUtils.psm1::Get-CanonicalScoringAvailabilityObservations)
@@ -582,15 +586,15 @@ dataFlow:
       stable FirstObservedAtUtc (legacy ObservedAtUtc as the same compatibility alias) so unchanged polling does not create semantic
       DecisionWindows churn. Snapshot freshness is monitored through the workflow health of sync-nfl-player-availability.yml.
 
-  - from: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-*.json
+  - from: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-*.json
     to: public/data/Transactions.json
     purpose: Adapt canonical current-season completed transaction facts to the existing app read-model contract.
 
-  - from: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-*.json
+  - from: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-*.json
     to: public/data/past_seasons/Transactions/Transactions_<season>.json
     purpose: Adapt canonical historical completed transaction facts to the existing archived read-model contract.
 
-  - from: public/data/Transactions_Manual.json
+  - from: data-meta/<CanonicalLeagueID>/transactions-manual.json
     to: public/data/Transactions.json
     purpose: Enrich or add manual transaction output.
 
@@ -598,7 +602,7 @@ dataFlow:
     to: public/data/Drafts.json
     purpose: Apply draft-pick ownership changes before generating current-season and open future draft output.
 
-  - from: public/data/Metadata.json
+  - from: data-meta/<CanonicalLeagueID>/metadata.json
     to: public/data/Drafts.json
     purpose: Provide draft types, rounds, configured order rules and the number of non-completed drafts retained per type.
 
@@ -662,7 +666,7 @@ dataFlow:
     to: src/app/core/services/data.service.ts
     purpose: Frontend Player model.
 
-  - from: source-data/nfl/teams.json
+  - from: data-source/nfl/teams.json
     to: public/data/Teams.json
     purpose: RequestTeams.ps1 generates the app NFL team list from the canonical registry (#347 F3c, ADR-042); ID = canonical abbreviation, LegacyIDs = former numeric app IDs.
 
@@ -680,7 +684,7 @@ notesForAIAgents:
   - Do not persist Decision Window upcoming/locked state or NextDecisionWindow; frontend time comparison against StartsAtUtc owns those clock-dependent presentation facts.
   - Decision Window historical relevance uses rebuildable rostered + starter semantics from persisted weekly facts; do not introduce a mandatory live kickoff snapshot.
   - Timestamps.json.DecisionWindows means last semantic generated-data update, not last check/fetch; an unchanged regeneration must preserve the older timestamp.
-  - The #343 current Decision Window adapter is transitional and reuses current League/Team/Player/Schedule facts; #347 owns migration to canonical source-data without changing the provider-neutral derivation contract.
+  - The #343 current Decision Window adapter is transitional and reuses current League/Team/Player/Schedule facts; #347 owns migration to canonical data-source without changing the provider-neutral derivation contract.
   - Historical Transactions and Drafts are disposable generated outputs; a full rebuild must not treat an older generated historical Draft file as an authoritative enrichment source.
   - The scheduled historical rebuild order is Transactions base -> draft identity -> fresh current/historical Drafts -> transaction pick-result enrichment -> PastSeasonsIndex.
   - Legacy generated DraftKeys such as 2024_D1_Free_Agent are replaced by canonical current-contract keys during regeneration; do not add compatibility mappings merely to preserve an old generated schema.
@@ -706,7 +710,7 @@ notesForAIAgents:
 sharedDerivedContexts:
   nflSeasonContext:
     resolver: tools/nfl_season_context.py
-    input: source-data/nfl/schedules/<season>.json
+    input: data-source/nfl/schedules/<season>.json
     inputRole: canonical NFL schedule facts
     outputRole: deterministic shared product semantics consumed at runtime
     rule: >
@@ -718,21 +722,21 @@ sharedDerivedContexts:
 
 sharedDerivedData:
   architectureDecision: ADR-038
-  root: derived-data/**
+  root: data-derived/**
   role: deterministic-consumer-neutral-derivations
   products:
     playerWeekFantasy:
       contract: .ai-context/manual/player-week-fantasy.yaml
-      outputPattern: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+      outputPattern: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
       implementation: tools/player_week_fantasy_materialize.py
       inputs:
-        - source-data/nfl/weekly-rosters/<season>/<week>.json
-        - source-data/nfl/schedules/<season>.json
-        - source-data/nfl/game-finality/<season>.json
-        - source-data/nfl/player-stats/**
-        - source-data/nfl/snap-counts/**
-        - source-data/nfl/special-teams-fumble-events/**
-        - source-data/leagues/<CanonicalLeagueID>/seasons/<scoring-season>/league.json::ScoringSettings
+        - data-source/nfl/weekly-rosters/<season>/<week>.json
+        - data-source/nfl/schedules/<season>.json
+        - data-source/nfl/game-finality/<season>.json
+        - data-source/nfl/player-stats/**
+        - data-source/nfl/snap-counts/**
+        - data-source/nfl/special-teams-fumble-events/**
+        - data-source/leagues/<CanonicalLeagueID>/seasons/<scoring-season>/league.json::ScoringSettings
       outputSemantics:
         - scoring-specific Actual
         - V4-C pregame Projection
@@ -746,8 +750,8 @@ sharedDerivedData:
       appPublication:
         output: public/data/PlayerWeekFantasy.json
         implementation: tools/player_week_fantasy_app_publish.py
-        identityPrimary: source-data/nfl/identities/players.json::Players[].IDs.Sleeper
-        identityCrossCheck: source-data/nfl/platform/sleeper/players.json
+        identityPrimary: data-source/nfl/identities/players.json::Players[].IDs.Sleeper
+        identityCrossCheck: data-source/nfl/platform/sleeper/players.json
         unresolvedIdentity: retain record with PlayerID=null
         semantics: adapt-only-no-recompute
         currentConsumer: src/app/core/services/data.service.ts::getFantasyGameContext
@@ -765,3 +769,36 @@ sharedDerivedData:
           starters independent) per FantasyMatchupID and team; DisplayLevel and Axis are data.
         publicationRule: week mismatch between the two inputs skips publication and keeps the existing file
         backtest: tools/historical_team_range_backtest.py
+
+  playerValuation:
+    architectureDecision: ADR-055
+    contract: .ai-context/manual/player-valuation.yaml
+    modelsContract: .ai-context/manual/derived-models.yaml
+    outputPattern: data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json
+    state: productive-since-919-step-5
+    inputs:
+      - league-scored points of the season and the three previous seasons (tools/players_league_scoring.py)
+      - population (tools/players_population.py)
+      - week bounds (resolve_league_week_bounds)
+      - model choice (data-meta, #986)
+    note: >
+      Since the cutover (Issue #919 step 5) RequestPlayers.ps1 runs the materializer and fills
+      Salary, SalaryProjected, Ranking and the Rank grading of Players.json from the snapshot of
+      the final scored week; RequestLeague.ps1 takes SalaryCap and SalaryCapProjected from the
+      newest snapshot of the season. The update-players workflow publishes data-derived/player-valuation
+      together with public/data. The public/data contracts are unchanged.
+
+sharedDerivedLeagueHistory:
+  architectureDecision: ADR-057
+  contract: .ai-context/manual/league-history.yaml
+  trackingIssue: 999
+  state: transactions-and-drafts-products-productive-since-999-step-5b
+  outputPattern:
+    transactions: data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
+    drafts: data-derived/league-drafts/<CanonicalLeagueID>/<season>.json
+  note: >
+    Since the cutover (Issue #999 step 5b) Transactions.json, Drafts.json and past_seasons/Transactions and
+    Drafts are consumer deliveries written from these products by tools/league_history_app_publish.py write
+    (update-transactions, update-drafts and League Live); no generated archive is an input. The PowerShell
+    rebuild modules described above remain in the repository until step 7 but are no longer called by the
+    productive workflows.

@@ -26,7 +26,7 @@ REPO_ROOT = TOOLS.parent
 @unittest.skipUnless(shutil.which("pwsh"), "PowerShell CLI is required for real-source integration")
 class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
     def test_real_2024_slot_bridge_preserves_special_flex(self) -> None:
-        league_path = REPO_ROOT / "source-data/leagues/nfl-reise/seasons/2024/league.json"
+        league_path = REPO_ROOT / "data-source/leagues/nfl-reise/seasons/2024/league.json"
         slots = resolve_slots_from_existing_rules(
             REPO_ROOT, league_path,
             {"qb": "QB", "rb": "RB", "wr": "WR", "te": "TE", "k": "K"},

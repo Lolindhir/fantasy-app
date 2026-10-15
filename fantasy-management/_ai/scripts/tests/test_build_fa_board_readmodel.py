@@ -155,7 +155,7 @@ class Fixture:
         self.config = root / "fantasy-management/automation/fa-board-materialization.json"
         self.write("public/data/League.json", league_data)
         self.write(
-            "public/data/Metadata.json",
+            "data-meta/test-league/metadata.json",
             {"Drafts": {"Types": [
                 {"DraftType": "Rookie", "DraftInstance": 1, "DraftNo": 1, "Rounds": 5},
                 {"DraftType": "Free_Agent", "DraftInstance": 1, "DraftNo": 2, "Rounds": 5, **(draft_binding or {})},
@@ -168,7 +168,7 @@ class Fixture:
         )
         self.write_canonical_league(canonical_membership or league_data)
         self.write(
-            "source-data/leagues/test-league/seasons/2026/drafts.json",
+            "data-source/leagues/test-league/seasons/2026/drafts.json",
             canonical_drafts if canonical_drafts is not None else [canonical_draft(d) for d in draft_data],
         )
         self.write(
@@ -181,7 +181,7 @@ class Fixture:
                 "sources": {
                     "player_signals": "fantasy-management/generated/operations/player-signals.json",
                     "league_enrichment": "public/data/League.json",
-                    "league_metadata": "public/data/Metadata.json",
+                    "league_metadata": "data-meta/test-league/metadata.json",
                     "timestamps": "public/data/Timestamps.json",
                 },
                 "output": {"fa_board_readmodel": "fantasy-management/generated/operations/fa-board-readmodel.json"},
@@ -252,7 +252,7 @@ class Fixture:
             },
         )
         self.write(
-            "source-data/leagues/test-league/manifest.json",
+            "data-source/leagues/test-league/manifest.json",
             {
                 "CanonicalLeagueID": "test-league",
                 "CurrentCanonicalLeagueSeasonID": "test-league-2026",
@@ -265,7 +265,7 @@ class Fixture:
             },
         )
         self.write(
-            "source-data/leagues/test-league/seasons/2026/league.json",
+            "data-source/leagues/test-league/seasons/2026/league.json",
             {
                 "CanonicalLeagueID": "test-league",
                 "Season": 2026,
@@ -273,11 +273,11 @@ class Fixture:
             },
         )
         self.write(
-            "source-data/leagues/test-league/seasons/2026/members.json",
+            "data-source/leagues/test-league/seasons/2026/members.json",
             members,
         )
         self.write(
-            "source-data/leagues/test-league/seasons/2026/rosters.json",
+            "data-source/leagues/test-league/seasons/2026/rosters.json",
             rosters,
         )
 
@@ -408,11 +408,11 @@ class FaBoardReadmodelTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             fixture = Fixture(root, [player("unknown", "Unknown")], league(), draft())
-            rosters_path = root / "source-data/leagues/test-league/seasons/2026/rosters.json"
+            rosters_path = root / "data-source/leagues/test-league/seasons/2026/rosters.json"
             rosters = json.loads(rosters_path.read_text(encoding="utf-8"))
             rosters[0]["ProviderOwnerUserID"] = "wrong-owner"
             fixture.write(
-                "source-data/leagues/test-league/seasons/2026/rosters.json",
+                "data-source/leagues/test-league/seasons/2026/rosters.json",
                 rosters,
             )
 
@@ -463,7 +463,7 @@ class FaBoardReadmodelTests(unittest.TestCase):
     def test_missing_canonical_drafts_file_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             fixture = Fixture(Path(tmp), [player("free", "Free")], league(), draft())
-            (Path(tmp) / "source-data/leagues/test-league/seasons/2026/drafts.json").unlink()
+            (Path(tmp) / "data-source/leagues/test-league/seasons/2026/drafts.json").unlink()
             result = fixture.build()
         self.assertEqual("unknown", result["current_fa_draft"]["resolution_status"])
         self.assertEqual("unknown", row(result, "free")["availability_status"])

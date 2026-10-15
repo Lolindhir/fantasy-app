@@ -22,7 +22,8 @@ decisions:
 
   - id: ADR-002
     title: Metadata owns league-specific rules
-    status: accepted
+    status: superseded
+    supersededBy: ADR-054
     decision: >
       League-specific inputs and rules belong in public/data/Metadata.json, not
       in Angular and not in technical path utilities.
@@ -1167,7 +1168,7 @@ decisions:
 
 
   - id: ADR-038
-    title: Shared Derived Data materializes under derived-data
+    title: Shared Derived Data materializes under data-derived
     status: accepted
     context: >
       ADR-037 defined Shared Derived Data logically but deliberately deferred its
@@ -1175,10 +1176,10 @@ decisions:
       shared derivation and needs an owner that is neither source-data, public/data
       nor a consumer namespace.
     decision: >
-      Use derived-data/** as the canonical physical repository root for deterministic,
+      Use data-derived/** (renamed from derived-data/** in #788 SA) as the canonical physical repository root for deterministic,
       reproducible and consumer-neutral Shared Derived Data. PlayerWeekFantasy is the
       first product at
-      derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json.
+      data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json.
       source-data/** remains source/canonical facts; public/data/** remains App
       delivery; consumer-generated insights remain consumer-owned. Writers must be
       deterministic and preserve semantic no-op writes. Existing transitional
@@ -1295,7 +1296,7 @@ decisions:
       which scores canonical player-stats and snap-counts with the canonical league ScoringSettings and
       resolves Players.json[].ID (Sleeper) to a CanonicalPlayerID per season. The salary formula, weights,
       ranking and cap formulas stay unchanged in PowerShell; the salary redesign concept is not part of
-      this decision. The export is rebuilt per run and not committed; persisting it as a derived-data
+      this decision. The export is rebuilt per run and not committed; persisting it as a data-derived
       product needs a separate workflow approval. The Sleeper PlayerPoints gate in build.yml is the
       permanent validation of the scorer.
     rationale: >
@@ -1684,3 +1685,154 @@ decisions:
       negative:
         - Cron evaluation exists in Python and in the scheduler (Node); both support the same simple expression subset.
         - Targets denser than 100 runs per window report a lower-bound count.
+
+  - id: ADR-054
+    title: Hand-maintained league metadata lives in data-meta per league; calculation logic is central
+    status: accepted
+    supersedes: ADR-002
+    context: >
+      Hand-maintained league inputs were spread over public/data/Metadata.json,
+      public/requests/config.ps1, league defaults in ConfigUtils.psm1 and the League source
+      bootstrap (source-data/leagues/_bootstrap). ADR-002 put league rules into Metadata.json,
+      which mixed metadata with calculation parameters and tied them to the App delivery tree.
+      With several leagues possible and Salary, Cap and Grading moving into central models
+      (Issue #919), one place per league is needed that holds only what a person decides.
+    decision: >
+      Robert decided on 2026-10-14 (Issue #986). Everything hand-maintained about one league
+      lives in data-meta/<CanonicalLeagueID>/metadata.json (plus, later, transactions-manual.json
+      from Issue #999): CanonicalLeagueID, Provider, CurrentProviderLeagueID, LeagueTimeZone,
+      Owners, Drafts including SleeperDraftIDs, and per season the Cap Deadline with its buffer
+      and the model choice (Salary, SalaryCap, Grading). Calculation logic and model parameters
+      are central and league-independent (versioned, immutable models, Issue #919); a league only
+      chooses a model ID per season. Facts that are already canonical stay out of the metadata
+      (LeagueYear, TeamCount, earlier provider league IDs). data-meta is written by hand only;
+      no workflow or generator writes into it. Access goes through tools/league_metadata.py and
+      LeagueMetadataUtils.psm1, which fail closed (missing file or season, unknown key, unknown
+      model ID) and iterate all leagues. The staged migration (Issue #986): contract (step 1),
+      file and loaders with a parity test (step 2), consumer switch (step 3), removal of the
+      legacy owners (step 4). ADR-002 is superseded; its ownership of league inputs passes to
+      this decision, its ConfigUtils/technical-path split (ADR-003) is unchanged.
+    rationale: >
+      Metadata (what a league is and chooses) and logic (how values are calculated) change for
+      different reasons and have different owners. One file per league supports multiple leagues
+      and makes the model choice per season reproducible for history.
+    consequences:
+      positive:
+        - One hand-maintained place per league; no league metadata in public/data or technical scripts.
+        - A new model version applies from a chosen season while older seasons stay reproducible.
+        - Multi-league capable loaders with fail-closed validation.
+      negative:
+        - Until step 3 two sources exist and are kept equal only by a parity test.
+        - The interim model catalogue in the loaders must move to the model registry of Issue #919.
+
+  - id: ADR-055
+    title: Salary, Ranking, Grading and Salary Cap are central versioned models with the player-valuation product
+    status: accepted
+    context: >
+      Salary, SalaryProjected, Ranking, Grading and the League Salary Cap are computed in
+      public/requests/RequestPlayers.ps1 and RequestLeague.ps1 with parameters spread over
+      config.ps1, ConfigUtils.psm1 and literals. Fantasy Management keeps a copy of the curve
+      and floor in its salary simulation, and its Operations/Signal builders still read Salary
+      from Players.json (legacy-read-model-pending in the K1 register). ADR-038 deferred the
+      migration of such transitional derivations to scoped steps; Issue #919 is that step for
+      this family. The league will use more than one Salary concept over time (a redesign is
+      under discussion), and more than one league can exist.
+    decision: >
+      Robert decided on 2026-10-14 (Issue #919): the logic is central and league-independent.
+      Each derivation is a versioned model in tools/derived_data_lib/models/<kind>/v<N>.py
+      (salary-v1, salary-cap-v1, grading-v1) registered in registry.py; parameters live with
+      the code, never in league files. A league chooses per season which model ID applies
+      through data-meta/<CanonicalLeagueID>/metadata.json (ADR-054, #986). A model is
+      immutable after its first productive use; any change is a new version. Ranking is a
+      deterministic order statistic in tools/derived_data_lib/ranking.py without a model ID.
+      Results are stored as the Shared Derived product PlayerValuation under
+      data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json with full
+      history (every season of the league manifest, every week), regenerable at any time.
+      public/data stays an App delivery contract filled by consumer generators with an
+      unchanged contract; FM Operations/Signals and the salary simulation read the same
+      product and models. The first versions reproduce today's behaviour exactly (Robert:
+      parity without rounding tolerance); the Salary redesign becomes salary-v2 later. The
+      contracts are .ai-context/manual/derived-models.yaml and
+      .ai-context/manual/player-valuation.yaml.
+    rationale: >
+      One implementation per model removes the PowerShell/Python/FM copies, makes the Salary
+      concept selectable per league and season without hidden parameters, keeps old seasons
+      reproducible under the model that was valid then, and gives every consumer the same
+      numbers. Immutable versions turn a formula change into an explicit, reviewable event.
+    consequences:
+      positive:
+        - Salary, Ranking, Grading and Cap have one implementation, one registry and one stored history.
+        - App, Operations, Management and the simulation can no longer drift apart.
+        - A redesign (salary-v2, Dead Cap) lands as a new version without touching old seasons.
+      negative:
+        - The full history under data-derived adds repository size; it is measured in step 3 before it is committed.
+        - Identity-hold rows depend on earlier snapshot content and are the only non-rebuildable part.
+        - Resolved 2026-10-15 (Robert): the legacy quirk that an unranked player is graded A was a defect and is fixed in grading-v1 itself (Grade null for unranked players); no grading-v2, one-time exception to model immutability.
+        - Until the cutover (step 5) the PowerShell implementation stays the productive one and the models are covered by tests and the shadow only.
+
+  - id: ADR-056
+    title: The three data roots are data-source, data-meta and data-derived
+    status: accepted
+    context: >
+      The data roots were named source-data, derived-data and (new) data-meta, and every module spelled the
+      root names out itself (about 1,250 mentions of source-data in about 230 files). A shared prefix makes the
+      three roles easy to scan and the roots sort together in the repository (Issue #788).
+    decision: >
+      Robert decided on 2026-10-14 (gestaffelt) and approved the merges and the foreseen workflow changes the
+      same day. Step 0 centralized the root names (tools/data_roots.py, ConfigUtils.psm1 Get-DataSourceRoot,
+      Get-DataDerivedRoot, Get-DataMetaRoot, tools/tests/test_data_roots.py). Step A renamed derived-data to
+      data-derived. Step B renames source-data to data-source in one atomic change: git mv, the constants, every
+      path in code, workflows, .github/workflow-schedules.json, tools/nfl-game-window.cjs, tests and active
+      documentation. Workflow file names, scheduler target IDs, event types and contract file names that contain
+      "source-data" (for example sync-nfl-source-data.yml, nfl-source-data.yaml) are identifiers, not paths, and
+      stay. No compatibility layer and no double paths. Earlier ADRs and the analyses under
+      fantasy-management/analyses/** are historical records and keep the path names valid when they were written
+      (source-data/, derived-data/); read them with this ADR. The provenance strings inside
+      data-source/nfl/identities/historical-identity-adjudications.json are persisted evidence and stay as written.
+    rationale: >
+      One prefix for the three data roots, one place per language that spells them out, and a single atomic
+      rename keep the repository consistent at every commit. Rollback is a revert of the rename commit.
+    consequences:
+      positive:
+        - The roots sort together and are addressed through one constant per language.
+        - A further move needs one constant instead of hundreds of edits.
+      negative:
+        - Older ADR text and historical analyses still say source-data/ and derived-data/.
+        - Sync and pipeline workflows must not run across the rename merge; the merge happens in a quiet window.
+
+  - id: ADR-057
+    title: League history (transactions and drafts) is a Shared Derived product with a slim App delivery
+    status: accepted
+    context: >
+      Completed transactions and all drafts are rebuilt by about 4,200 lines of PowerShell in
+      public/requests/utils/league and written to public/data/Transactions.json, Drafts.json and
+      past_seasons/Transactions and Drafts. Those generated files feed each other (ADR-026), the
+      history is not available to Fantasy Operations or Fantasy Management except through the App
+      read model, Display fields are mixed into the facts, and the draft order still reads
+      public/data/Standings.json (Issue #999, #183).
+    decision: >
+      Robert decided on 2026-10-14 (Issue #999, six-layer target of the derived-data analysis) that the full
+      league history lives in data-derived. Two products, data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
+      and data-derived/league-drafts/<CanonicalLeagueID>/<season>.json, hold every completed transaction
+      (manual overlay applied, picks resolved to canonical draft identity and pick result) and every draft
+      (completed, current and open future, order, ownership, pick results, TradeHistory) of every season,
+      reproducible at any time from data-source plus data-meta. They are computed together in the ADR-026
+      order in one in-memory materialization by tools/derived_data_lib and written only on semantic
+      difference. Presentation (DisplayStatus, Display*Key, DisplayPick, selection of current versus past files)
+      belongs to the consumer generator tools/league_history_app_publish.py, which writes the App files with an
+      unchanged contract; trimming App fields is a separate later step that needs Robert's approval of the
+      field list. No new transaction, draft-order or ownership rule is introduced. Exact parity is proven
+      by a shadow run before the cutover. The only temporary non-canonical input is the Standings placement for
+      configured draft orders, replaced by the league-standings product of Issue #987. Contract:
+      .ai-context/manual/league-history.yaml.
+    rationale: >
+      A reproducible history owned by one deterministic implementation removes the generated-file feedback
+      loop, serves all consumers from the same facts and lets the App receive a slim, App-specific delivery.
+    consequences:
+      positive:
+        - No generated archive is the source of any value; history is regenerated, not archived.
+        - App, Fantasy Operations and Fantasy Management can read the same transactions and drafts.
+        - Presentation changes no longer touch the facts.
+      negative:
+        - Until Issue #987 the draft order depends on the Standings placement through one explicit adapter.
+        - The PowerShell implementation stays productive until the cutover step, so two implementations coexist and are held equal by the shadow test.

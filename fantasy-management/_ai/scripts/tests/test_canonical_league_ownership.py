@@ -33,7 +33,7 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
                 ),
             )
 
-            manifest_path = root / "source-data/leagues/test-league/manifest.json"
+            manifest_path = root / "data-source/leagues/test-league/manifest.json"
             manifest = self._read_json(manifest_path)
             manifest["CurrentCanonicalLeagueSeasonID"] = "missing-season"
             self._write_json(manifest_path, manifest)
@@ -51,7 +51,7 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._write_fixture(root)
-            league_path = root / "source-data/leagues/test-league/seasons/2026/league.json"
+            league_path = root / "data-source/leagues/test-league/seasons/2026/league.json"
             league = self._read_json(league_path)
 
             league["ScoringSettings"] = {"pass_td": 4.0}
@@ -125,7 +125,7 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
             self._write_fixture(root, include_second_team=True)
             rosters_path = (
                 root
-                / "source-data/leagues/test-league/seasons/2026/rosters.json"
+                / "data-source/leagues/test-league/seasons/2026/rosters.json"
             )
             rosters = self._read_json(rosters_path)
             rosters[1]["Players"] = list(rosters[0]["Players"])
@@ -148,7 +148,7 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
             self._write_fixture(root)
             rosters_path = (
                 root
-                / "source-data/leagues/test-league/seasons/2026/rosters.json"
+                / "data-source/leagues/test-league/seasons/2026/rosters.json"
             )
             rosters = self._read_json(rosters_path)
             rosters[0]["ProviderOwnerUserID"] = "wrong-owner"
@@ -204,11 +204,11 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
 
     def test_repository_current_ownership_is_strictly_equal(self) -> None:
         root = Path(__file__).resolve().parents[4]
-        metadata = self._read_json(root / "public/data/Metadata.json")
+        manifest = self._read_json(root / "data-source/leagues/nfl-reise/manifest.json")
         snapshot = build_canonical_ownership_snapshot(
             root,
             canonical_league_id="nfl-reise",
-            season=int(metadata["LeagueYear"]),
+            season=int(str(manifest["CurrentCanonicalLeagueSeasonID"]).rsplit("-", 1)[-1]),
         )
         app_league = self._read_json(root / "public/data/League.json")
 
@@ -225,7 +225,7 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
     ) -> None:
         for path in (
             "fantasy-management/league-context",
-            "source-data/leagues/test-league/seasons/2026",
+            "data-source/leagues/test-league/seasons/2026",
             "public/data",
         ):
             (root / path).mkdir(parents=True, exist_ok=True)
@@ -314,7 +314,7 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
             },
         )
         self._write_json(
-            root / "source-data/leagues/test-league/manifest.json",
+            root / "data-source/leagues/test-league/manifest.json",
             {
                 "CanonicalLeagueID": "test-league",
                 "CurrentCanonicalLeagueSeasonID": "test-league-2026",
@@ -327,7 +327,7 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
             },
         )
         self._write_json(
-            root / "source-data/leagues/test-league/seasons/2026/league.json",
+            root / "data-source/leagues/test-league/seasons/2026/league.json",
             {
                 "CanonicalLeagueID": "test-league",
                 "Season": 2026,
@@ -335,11 +335,11 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
             },
         )
         self._write_json(
-            root / "source-data/leagues/test-league/seasons/2026/members.json",
+            root / "data-source/leagues/test-league/seasons/2026/members.json",
             members,
         )
         self._write_json(
-            root / "source-data/leagues/test-league/seasons/2026/rosters.json",
+            root / "data-source/leagues/test-league/seasons/2026/rosters.json",
             rosters,
         )
         self._write_json(root / "public/data/League.json", {"Teams": app_teams})

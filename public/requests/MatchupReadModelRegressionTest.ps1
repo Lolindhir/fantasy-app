@@ -108,7 +108,7 @@ function New-MrmDecisionFacts {
 
 $temp = Join-Path ([System.IO.Path]::GetTempPath()) ("matchup-read-model-" + [guid]::NewGuid().ToString('N'))
 try {
-    $seasonDir = Join-Path $temp 'source-data/leagues/nfl-reise/seasons/2026'
+    $seasonDir = Join-Path $temp 'data-source/leagues/nfl-reise/seasons/2026'
     $matchupDir = Join-Path $seasonDir 'matchups'
     New-Item -ItemType Directory -Path $matchupDir -Force | Out-Null
 
@@ -173,8 +173,8 @@ try {
             }
         )
     }
-    Write-MrmJson -Path (Join-Path $temp 'source-data/nfl/schedules/2026.json') -Value $schedule
-    Write-MrmJson -Path (Join-Path $temp 'source-data/nfl/game-finality/2026.json') -Value ([PSCustomObject][ordered]@{
+    Write-MrmJson -Path (Join-Path $temp 'data-source/nfl/schedules/2026.json') -Value $schedule
+    Write-MrmJson -Path (Join-Path $temp 'data-source/nfl/game-finality/2026.json') -Value ([PSCustomObject][ordered]@{
         SchemaVersion = 2
         Season = 2026
         Games = @(
@@ -182,7 +182,7 @@ try {
             [PSCustomObject][ordered]@{ GameID = '2026_01_CCC_DDD'; GameType = 'REG'; Week = 1; Final = $false }
         )
     })
-    Write-MrmJson -Path (Join-Path $temp 'source-data/nfl/weekly-rosters/2026/01.json') -Value ([PSCustomObject][ordered]@{
+    Write-MrmJson -Path (Join-Path $temp 'data-source/nfl/weekly-rosters/2026/01.json') -Value ([PSCustomObject][ordered]@{
         SchemaVersion = 2
         Season = 2026
         Week = 1

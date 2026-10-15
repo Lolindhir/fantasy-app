@@ -18,7 +18,7 @@ function Assert-NbwThrows {
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 
 # 1. Real canonical schedule: expectations are derived from the data, no hardwired teams or weeks.
-$scheduleFiles = @(Get-ChildItem (Join-Path $repoRoot 'source-data/nfl/schedules') -Filter '*.json' | Sort-Object Name)
+$scheduleFiles = @(Get-ChildItem (Join-Path $repoRoot 'data-source/nfl/schedules') -Filter '*.json' | Sort-Object Name)
 Assert-NbwTrue ($scheduleFiles.Count -gt 0) 'No canonical NFL schedule files found.'
 $season = [int]([System.IO.Path]::GetFileNameWithoutExtension($scheduleFiles[-1].Name))
 $schedule = Get-Content $scheduleFiles[-1].FullName -Raw | ConvertFrom-Json
@@ -49,7 +49,7 @@ Assert-NbwTrue ($byeWeeks.ContainsKey((ConvertTo-CanonicalNflScheduleTeam -Team 
 # 3. Fail-closed cases on synthetic schedules.
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("nfl-bye-weeks-" + [guid]::NewGuid().ToString('N'))
 try {
-    $dir = Join-Path $tempRoot 'source-data/nfl/schedules'
+    $dir = Join-Path $tempRoot 'data-source/nfl/schedules'
     New-Item -ItemType Directory -Path $dir -Force | Out-Null
 
     function Write-NbwSchedule {

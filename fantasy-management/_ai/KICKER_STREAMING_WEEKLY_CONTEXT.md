@@ -19,12 +19,12 @@ The research plan reads only versioned/current repository inputs:
 fantasy-management/generated/operations/kicker-streaming-inputs.json
 fantasy-management/_ai/kicker-streaming-analysis-config.json
 fantasy-management/_ai/kicker-weekly-research-config.json
-source-data/nfl/schedules/<season>.json
-source-data/nfl/game-finality/<season>.json
-source-data/nfl/teams.json
+data-source/nfl/schedules/<season>.json
+data-source/nfl/game-finality/<season>.json
+data-source/nfl/teams.json
 ```
 
-The canonical NFL schedule (`source-data/nfl/schedules/<season>.json`, with `game-finality` and the team registry for spelling) is the schedule input; `public/data/Schedule.json` is no longer read. Do not fetch a second schedule feed merely to rebuild the same matchup mapping.
+The canonical NFL schedule (`data-source/nfl/schedules/<season>.json`, with `game-finality` and the team registry for spelling) is the schedule input; `public/data/Schedule.json` is no longer read. Do not fetch a second schedule feed merely to rebuild the same matchup mapping.
 
 The builder is:
 

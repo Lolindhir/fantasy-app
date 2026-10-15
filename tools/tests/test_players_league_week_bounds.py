@@ -17,19 +17,19 @@ SEASON = 2030
 
 
 def write(root: Path, structure, final_weeks, incomplete_stats_weeks=()) -> None:
-    league_dir = root / "source-data/leagues" / LEAGUE / "seasons" / str(SEASON)
+    league_dir = root / "data-source/leagues" / LEAGUE / "seasons" / str(SEASON)
     league_dir.mkdir(parents=True)
     payload = {} if structure is None else {"WeekStructure": structure}
     (league_dir / "league.json").write_text(json.dumps(payload), encoding="utf-8")
-    finality = root / "source-data/nfl/game-finality"
+    finality = root / "data-source/nfl/game-finality"
     finality.mkdir(parents=True)
     weeks = [{"GameType": "REG", "Week": w, "WeekFinal": final} for w, final in final_weeks]
     (finality / f"{SEASON}.json").write_text(json.dumps({"Weeks": weeks}), encoding="utf-8")
-    schedules = root / "source-data/nfl/schedules"
+    schedules = root / "data-source/nfl/schedules"
     schedules.mkdir(parents=True)
     games = [{"GameType": "REG", "Week": w, "HomeTeam": "AAA", "AwayTeam": "BBB"} for w, _ in final_weeks]
     (schedules / f"{SEASON}.json").write_text(json.dumps({"Games": games}), encoding="utf-8")
-    stats = root / "source-data/nfl/player-stats" / str(SEASON)
+    stats = root / "data-source/nfl/player-stats" / str(SEASON)
     stats.mkdir(parents=True)
     for week, _ in final_weeks:
         teams = ["AAA"] if week in incomplete_stats_weeks else ["AAA", "BBB"]
@@ -58,7 +58,7 @@ class WeekBoundsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             write(root, {"ExpectedLastLeagueWeek": 17, "PlayoffStartWeek": 14}, [(1, True), (2, True)])
-            (root / "source-data/nfl/player-stats" / str(SEASON) / "02.json").unlink()
+            (root / "data-source/nfl/player-stats" / str(SEASON) / "02.json").unlink()
             result = scoring.resolve_league_week_bounds(root, LEAGUE, SEASON)
         self.assertEqual(1, result["FinalScoredWeek"])
 

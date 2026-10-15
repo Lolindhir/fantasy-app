@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
-"""Build the current app transaction base from canonical League source-data."""
+"""Build the current app transaction base from canonical League data-source."""
 from __future__ import annotations
 
 import argparse
 import json
 from pathlib import Path
+import sys as _sys
+_TOOLS_DIR = str(Path(__file__).resolve().parent)
+if _TOOLS_DIR not in _sys.path:
+    _sys.path.insert(0, _TOOLS_DIR)
+
+from data_roots import DATA_SOURCE_ROOT  # noqa: E402
 
 try:
     from tools.transaction_canonical_shadow import (
@@ -28,7 +34,7 @@ def build_repo_canonical_transactions(
 ) -> list[dict[str, object]]:
     season_dir = (
         repo_root
-        / "source-data"
+        / DATA_SOURCE_ROOT
         / "leagues"
         / canonical_league_id
         / "seasons"

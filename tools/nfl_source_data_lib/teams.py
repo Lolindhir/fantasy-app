@@ -5,10 +5,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Iterable
 
+from data_roots import DATA_SOURCE_ROOT
 from .common import CANONICAL_SCHEMA_VERSION, Dataset, clean, iter_csv, load_json
 
 TEAMS_DATASET_ID = "nflverse.teams"
-TEAMS_RELATIVE_PATH = "source-data/nfl/teams.json"
+TEAMS_RELATIVE_PATH = f"{DATA_SOURCE_ROOT}/nfl/teams.json"
 EXPECTED_TEAM_COUNT = 32
 
 CONFERENCE_NAMES = {

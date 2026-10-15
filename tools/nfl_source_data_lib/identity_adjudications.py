@@ -3,9 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from data_roots import DATA_SOURCE_ROOT
 from .common import load_json
 
-_ADJUDICATION_PATH = Path("source-data/nfl/identities/historical-identity-adjudications.json")
+_ADJUDICATION_PATH = Path(DATA_SOURCE_ROOT) / "nfl/identities/historical-identity-adjudications.json"
 _SCHEMA_VERSION = 1
 
 

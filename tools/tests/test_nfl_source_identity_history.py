@@ -13,7 +13,7 @@ from nfl_source_data_lib.materialize import materialize
 
 def _write_league_manifest(root: Path, season: int) -> None:
     """Canonical League fact that owns the current season of the NFL source layer."""
-    path = root / "source-data/leagues/test-league/manifest.json"
+    path = root / "data-source/leagues/test-league/manifest.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(
@@ -69,13 +69,13 @@ def write_registry(root: Path):
             },
         ],
     }
-    (root / "source-data").mkdir(parents=True, exist_ok=True)
-    (root / "source-data/registry.json").write_text(json.dumps(registry), encoding="utf-8")
+    (root / "data-source").mkdir(parents=True, exist_ok=True)
+    (root / "data-source/registry.json").write_text(json.dumps(registry), encoding="utf-8")
 
 
 def write_draft(root: Path, gsis="00-A", pfr="PlayerA00", name="Player A", season=2025):
     write_csv(
-        root / "source-data/providers/nflverse/draft-picks/raw-latest.csv",
+        root / "data-source/providers/nflverse/draft-picks/raw-latest.csv",
         [{"season": str(season), "round": "1", "pick": "1", "team": "ABC", "gsis_id": gsis,
           "pfr_player_id": pfr, "pfr_player_name": name, "position": "WR"}],
         ["season", "round", "pick", "team", "gsis_id", "pfr_player_id", "pfr_player_name", "position"],
@@ -95,7 +95,7 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
             root = Path(tmp)
             write_registry(root)
             write_csv(
-                root / "source-data/providers/nflverse/players/raw-latest.csv",
+                root / "data-source/providers/nflverse/players/raw-latest.csv",
                 [
                     {"gsis_id": "00-A", "display_name": "Greg Jones", "pfr_id": "JoneGr01", "position": "RB", "espn_id": "5580", "pff_id": "1776", "birth_date": "1981-05-09"},
                     {"gsis_id": "00-B", "display_name": "Greg K. Jones", "pfr_id": "JoneGr02", "position": "LB", "espn_id": "14172", "pff_id": "6337", "birth_date": "1988-10-05"},
@@ -103,7 +103,7 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
                 ["gsis_id", "display_name", "pfr_id", "position", "espn_id", "pff_id", "birth_date"],
             )
             write_csv(
-                root / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv",
+                root / "data-source/providers/nflverse/ff-player-ids/raw-latest.csv",
                 [
                     {"mfl_id": "A", "gsis_id": "00-A", "sleeper_id": "133", "espn_id": "5580", "pfr_id": "JoneGr01", "pff_id": "1776", "name": "Greg Jones", "birthdate": "1981-05-09", "position": "RB", "draft_year": "2004", "draft_round": "1", "draft_pick": "30", "draft_ovr": "30"},
                     {"mfl_id": "B", "gsis_id": "00-B", "sleeper_id": "133", "espn_id": "14172", "pfr_id": "JoneGr02", "pff_id": "6337", "name": "Greg K. Jones", "birthdate": "1988-10-05", "position": "LB", "draft_year": "2011", "draft_round": "", "draft_pick": "", "draft_ovr": ""},
@@ -117,10 +117,10 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
             result = materialize(root, datasets)
 
             self.assertEqual(2, result["identityCount"])
-            canonical = json.loads((root / "source-data/nfl/identities/players.json").read_text())
+            canonical = json.loads((root / "data-source/nfl/identities/players.json").read_text())
             self.assertEqual(2, len(canonical["Players"]))
             self.assertTrue(all(row.get("IDs", {}).get("Sleeper") != "133" for row in canonical["Players"]))
-            conflicts = json.loads((root / "source-data/nfl/identities/provider-mappings.json").read_text())["Conflicts"]
+            conflicts = json.loads((root / "data-source/nfl/identities/provider-mappings.json").read_text())["Conflicts"]
             sleeper_conflict = next(item for item in conflicts if item["Provider"] == "Sleeper" and item["ExternalID"] == "133")
             self.assertEqual(2, len(sleeper_conflict["CanonicalPlayerIDs"]))
             self.assertEqual(0, result["audit"]["identityInvariantViolations"]["duplicateLinkProviderIDCount"])
@@ -130,12 +130,12 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
             root = Path(tmp)
             write_registry(root)
             write_csv(
-                root / "source-data/providers/nflverse/players/raw-latest.csv",
+                root / "data-source/providers/nflverse/players/raw-latest.csv",
                 [{"gsis_id": "00-A", "display_name": "Player A", "pfr_id": "PlayerA00", "position": "WR", "espn_id": "1", "birth_date": "2000-01-01"}],
                 ["gsis_id", "display_name", "pfr_id", "position", "espn_id", "birth_date"],
             )
             write_csv(
-                root / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv",
+                root / "data-source/providers/nflverse/ff-player-ids/raw-latest.csv",
                 [{"mfl_id": "A", "gsis_id": "00-A", "sleeper_id": "1000", "espn_id": "1", "pfr_id": "PlayerA00", "name": "Player A", "birthdate": "2000-01-01", "position": "WR", "draft_year": "2025", "draft_round": "1", "draft_pick": "1", "draft_ovr": "1"}],
                 ["mfl_id", "gsis_id", "sleeper_id", "espn_id", "pfr_id", "name", "birthdate", "position", "draft_year", "draft_round", "draft_pick", "draft_ovr"],
             )
@@ -143,25 +143,25 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
             write_app(root, [{"ID": "1000", "TankID": "TA", "Name": "Player A", "Position": "WR"}], 2026)
             datasets = {d.id: d for d in common_mod.load_registry(root)}
             materialize(root, datasets)
-            first_payload = json.loads((root / "source-data/nfl/identities/provider-mappings.json").read_text())
+            first_payload = json.loads((root / "data-source/nfl/identities/provider-mappings.json").read_text())
             first = next(item for item in first_payload["Mappings"] if item["Provider"] == "Sleeper" and item["ExternalID"] == "1000")
             first_internal = first["CanonicalPlayerID"]
             self.assertEqual((2026, 2026), (first["FirstObservedSeason"], first["LastObservedSeason"]))
 
             write_csv(
-                root / "source-data/providers/nflverse/players/raw-latest.csv",
+                root / "data-source/providers/nflverse/players/raw-latest.csv",
                 [{"gsis_id": "00-B", "display_name": "Player B", "pfr_id": "PlayerB00", "position": "RB", "espn_id": "2", "birth_date": "2010-01-01"}],
                 ["gsis_id", "display_name", "pfr_id", "position", "espn_id", "birth_date"],
             )
             write_csv(
-                root / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv",
+                root / "data-source/providers/nflverse/ff-player-ids/raw-latest.csv",
                 [{"mfl_id": "B", "gsis_id": "00-B", "sleeper_id": "1000", "espn_id": "2", "pfr_id": "PlayerB00", "name": "Player B", "birthdate": "2010-01-01", "position": "RB", "draft_year": "2035", "draft_round": "1", "draft_pick": "1", "draft_ovr": "1"}],
                 ["mfl_id", "gsis_id", "sleeper_id", "espn_id", "pfr_id", "name", "birthdate", "position", "draft_year", "draft_round", "draft_pick", "draft_ovr"],
             )
             write_draft(root, gsis="00-B", pfr="PlayerB00", name="Player B", season=2035)
             write_app(root, [{"ID": "1000", "TankID": "TB", "Name": "Player B", "Position": "RB"}], 2036)
             second = materialize(root, datasets)
-            second_payload = json.loads((root / "source-data/nfl/identities/provider-mappings.json").read_text())
+            second_payload = json.loads((root / "data-source/nfl/identities/provider-mappings.json").read_text())
             sleeper_rows = [item for item in second_payload["Mappings"] if item["Provider"] == "Sleeper" and item["ExternalID"] == "1000"]
             self.assertEqual(2, len(sleeper_rows))
             self.assertEqual({2026, 2036}, {item["FirstObservedSeason"] for item in sleeper_rows})
@@ -174,12 +174,12 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
             root = Path(tmp)
             write_registry(root)
             write_csv(
-                root / "source-data/providers/nflverse/players/raw-latest.csv",
+                root / "data-source/providers/nflverse/players/raw-latest.csv",
                 [{"gsis_id": "00-A", "display_name": "Player A", "pfr_id": "PlayerA00", "position": "WR", "espn_id": "1", "birth_date": "2000-01-01"}],
                 ["gsis_id", "display_name", "pfr_id", "position", "espn_id", "birth_date"],
             )
             write_csv(
-                root / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv",
+                root / "data-source/providers/nflverse/ff-player-ids/raw-latest.csv",
                 [{"mfl_id": "A", "gsis_id": "00-A", "sleeper_id": "1000", "espn_id": "1", "pfr_id": "PlayerA00", "name": "Player A", "birthdate": "2000-01-01", "position": "WR", "draft_year": "2025", "draft_round": "1", "draft_pick": "1", "draft_ovr": "1"}],
                 ["mfl_id", "gsis_id", "sleeper_id", "espn_id", "pfr_id", "name", "birthdate", "position", "draft_year", "draft_round", "draft_pick", "draft_ovr"],
             )
@@ -189,10 +189,10 @@ class NflSourceIdentityHistoryTests(unittest.TestCase):
 
             first = materialize(root, datasets)
             paths = [
-                root / "source-data/nfl/identities/players.json",
-                root / "source-data/nfl/identities/provider-mappings.json",
-                root / "source-data/nfl/draft/2025.json",
-                root / "source-data/audits/nfl-source-data-audit.json",
+                root / "data-source/nfl/identities/players.json",
+                root / "data-source/nfl/identities/provider-mappings.json",
+                root / "data-source/nfl/draft/2025.json",
+                root / "data-source/audits/nfl-source-data-audit.json",
             ]
             before = {path: path.read_text(encoding="utf-8") for path in paths}
             second = materialize(root, datasets)

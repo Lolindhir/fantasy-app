@@ -11,14 +11,14 @@ purpose: >
 
 boundaries:
   providerRaw:
-    path: source-data/providers/<provider>/
+    path: data-source/providers/<provider>/
     owns:
       - validierte providernahe Rohdaten
       - Abrufprovenienz und Content-Hash
       - Provider-/Upstream-Feldnamen
       - expliziten Availability-State pro persistierter Source/Partition
   canonicalNfl:
-    path: source-data/nfl/
+    path: data-source/nfl/
     owns:
       - providerunabhaengige NFL-Fakten
       - dauerhafte CanonicalPlayerID-Verknuepfungen
@@ -31,7 +31,7 @@ boundaries:
     owns:
       - generierte App-Vertraege
     rule: >
-      Source-Datasets duerfen nicht allein durch ihre Aufnahme in source-data
+      Source-Datasets duerfen nicht allein durch ihre Aufnahme in data-source
       automatisch neue Felder, Provider oder Identitaeten in public/data
       einfuehren. Die App-Generator-Migration ist ein eigener spaeterer Schritt.
 
@@ -46,7 +46,7 @@ canonicalSchema:
     CanonicalPlayerID.
 
 registry:
-  path: source-data/registry.json
+  path: data-source/registry.json
   schemaVersion: 3
   principle: >
     Acquisition, Format, Availability, Materializer-Teilnahme, Refresh,
@@ -116,11 +116,11 @@ registry:
 
   sourceSeason:
     resolutionOrder:
-      - source-data/leagues/*/manifest.json -> CurrentCanonicalLeagueSeasonID (latest current season across leagues; unresolvable manifest fails closed)
+      - data-source/leagues/*/manifest.json -> CurrentCanonicalLeagueSeasonID (latest current season across leagues; unresolvable manifest fails closed)
       - UTC calendar year as final technical fallback when no league manifest exists
     independenceRule: >
       Die NFL-Source-Schicht liest weder public/data/League.json noch
-      public/data/Metadata.json (App-Delivery bzw. manuelle Liga-Regeln); die
+      die manuellen Liga-Metadaten in data-meta; die
       aktuelle Season stammt aus kanonischen League-Fakten (Issue #347 I2).
     explicitSelection: >
       `python tools/nfl_source_data.py sync --season <year>` ist wiederholbar und
@@ -168,7 +168,7 @@ registry:
     wiederverwendet. Historische Reparaturen verwenden --force.
 
 historicalIdentityBackfill:
-  configPath: source-data/historical-identity-backfill.json
+  configPath: data-source/historical-identity-backfill.json
   purpose: >
     Persistiert zeitgenoessische historische Provider-Crosswalk-Evidenz, damit
     spaeter hinzugefuegte Fantasy-Ligen alte Sleeper-Player-IDs gegen bereits
@@ -326,8 +326,8 @@ qbrWeekContract:
   step: F4a
   providerDataset: nflverse.espn-qbr-week
   upstream: nflverse-data release espn_data, file qbr_week_level.csv (ESPN Total QBR per quarterback and game, all seasons since 2006 in one file)
-  providerRawPath: source-data/providers/nflverse/espn-qbr-week/raw-latest.csv
-  canonicalPath: source-data/nfl/qbr-week/<season>.json
+  providerRawPath: data-source/providers/nflverse/espn-qbr-week/raw-latest.csv
+  canonicalPath: data-source/nfl/qbr-week/<season>.json
   acquisition: >
     Fixed source (like nflverse.game-finality), refreshed by the existing NFL Source Sync; no
     workflow change. The registry lifecycle is seasonal-finalizable/partitionKey=season because the
@@ -353,7 +353,7 @@ playerProfilesContract:
   step: F2
   providerDataset: nflverse.players
   upstream: nflverse-data release players, file players.csv (already persisted raw, also read by the identity layer)
-  canonicalPath: source-data/nfl/player-profiles/nflverse.json
+  canonicalPath: data-source/nfl/player-profiles/nflverse.json
   implementation: tools/nfl_source_data_lib/player_profiles.py
   acquisition: >
     Unchanged; materialized by the existing NFL Source Sync from the persisted raw CSV. No workflow change.
@@ -371,26 +371,26 @@ playerProfilesContract:
   consumer: tools/players_population.py (#347 H2 - NameShort, Picture, ESPN and FantasyPros links via DisplayName/Headshot). Consumers join by CanonicalPlayerID only.
 
 canonicalOutputs:
-  schedules: source-data/nfl/schedules/<season>.json
-  gameFinality: source-data/nfl/game-finality/<season>.json
-  rosters: source-data/nfl/rosters/<season>.json
-  weeklyRosters: source-data/nfl/weekly-rosters/<season>/<week>.json
-  playerStats: source-data/nfl/player-stats/<season>/<week>.json
-  specialTeamsFumbleEvents: source-data/nfl/special-teams-fumble-events/<season>/<week>.json
-  playerGameLongGains: source-data/nfl/player-game-long-gains/<season>.json
-  snapCounts: source-data/nfl/snap-counts/<season>/<week>.json
-  qbrWeek: source-data/nfl/qbr-week/<season>.json
-  playerProfiles: source-data/nfl/player-profiles/nflverse.json
-  sleeperPlayers: source-data/nfl/platform/sleeper/players.json
-  teams: source-data/nfl/teams.json
-  audit: source-data/audits/nfl-source-data-audit.json
+  schedules: data-source/nfl/schedules/<season>.json
+  gameFinality: data-source/nfl/game-finality/<season>.json
+  rosters: data-source/nfl/rosters/<season>.json
+  weeklyRosters: data-source/nfl/weekly-rosters/<season>/<week>.json
+  playerStats: data-source/nfl/player-stats/<season>/<week>.json
+  specialTeamsFumbleEvents: data-source/nfl/special-teams-fumble-events/<season>/<week>.json
+  playerGameLongGains: data-source/nfl/player-game-long-gains/<season>.json
+  snapCounts: data-source/nfl/snap-counts/<season>/<week>.json
+  qbrWeek: data-source/nfl/qbr-week/<season>.json
+  playerProfiles: data-source/nfl/player-profiles/nflverse.json
+  sleeperPlayers: data-source/nfl/platform/sleeper/players.json
+  teams: data-source/nfl/teams.json
+  audit: data-source/audits/nfl-source-data-audit.json
 
 teamRegistryContract:
   issue: 347
   step: F3a
   providerDataset: nflverse.teams
   upstream: nflverse-data release teams/teams_colors_logos.csv
-  canonicalPath: source-data/nfl/teams.json
+  canonicalPath: data-source/nfl/teams.json
   implementation: tools/nfl_source_data_lib/teams.py
   resolvers:
     python: tools/nfl_source_data_lib/teams.py::NflTeamRegistry
@@ -425,8 +425,8 @@ specialTeamsFumbleEventContract:
   providerDataset: nflverse.special-teams-fumble-events
   upstream: nflverse play-by-play csv.gz
   upstreamRetention: transient
-  providerProjectionPath: source-data/providers/nflverse/special-teams-fumble-events/raw-<season>.json
-  canonicalPath: source-data/nfl/special-teams-fumble-events/<season>/<week>.json
+  providerProjectionPath: data-source/providers/nflverse/special-teams-fumble-events/raw-<season>.json
+  canonicalPath: data-source/nfl/special-teams-fumble-events/<season>/<week>.json
   projectionRule: >
     Persist only nflverse PBP rows with special=1 and at least one forced-fumble
     or fumble-recovery player ID. Full play-by-play is not retained.
@@ -490,8 +490,8 @@ playerGameLongGainsContract:
     A sync run downloads one play-by-play URL once and reuses it for every projection
     that declares it (UpstreamDownloadCache); no extra workflow, schedule or timeout
     is needed.
-  providerProjectionPath: source-data/providers/nflverse/player-game-long-gains/raw-<season>.json
-  canonicalPath: source-data/nfl/player-game-long-gains/<season>.json
+  providerProjectionPath: data-source/providers/nflverse/player-game-long-gains/raw-<season>.json
+  canonicalPath: data-source/nfl/player-game-long-gains/<season>.json
   projectionRule: >
     Per game, player and gain type keep only the provider play row with the maximum
     yards (lowest play_id on ties) as evidence; full play-by-play is not retained.
@@ -552,7 +552,7 @@ operationalDatasetEvaluation:
 
   schedules:
     recommendedRole: primary-canonical
-    canonicalPath: source-data/nfl/schedules/<season>.json
+    canonicalPath: data-source/nfl/schedules/<season>.json
     primaryFor:
       - NFL-Spielplan und historische Schedule-Metadaten
       - Saison, Woche, Game Type, Datum, Teams und Scores
@@ -570,7 +570,7 @@ operationalDatasetEvaluation:
 
   gameFinality:
     recommendedRole: canonical-finality-evidence
-    canonicalPath: source-data/nfl/game-finality/<season>.json
+    canonicalPath: data-source/nfl/game-finality/<season>.json
     evidence: nflverse released_games.csv
     rule: >
       Ein Score allein ist niemals Final-Nachweis. Final=true gilt nur fuer eine
@@ -587,7 +587,7 @@ operationalDatasetEvaluation:
 
   playerStats:
     recommendedRole: primary-canonical
-    canonicalPath: source-data/nfl/player-stats/<season>/<week>.json
+    canonicalPath: data-source/nfl/player-stats/<season>/<week>.json
     primaryFor:
       - woechentliche NFL-Player-Rohstats
       - historische Passing-, Rushing-, Receiving-, Kicking- und Return-Statistik
@@ -610,8 +610,8 @@ operationalDatasetEvaluation:
 
   rosters:
     recommendedRole: primary-canonical-for-nfl-membership
-    canonicalSeasonPath: source-data/nfl/rosters/<season>.json
-    canonicalWeeklyPath: source-data/nfl/weekly-rosters/<season>/<week>.json
+    canonicalSeasonPath: data-source/nfl/rosters/<season>.json
+    canonicalWeeklyPath: data-source/nfl/weekly-rosters/<season>/<week>.json
     primaryFor:
       - NFL-Teamzugehoerigkeit und saisonale Roster-Historie
       - In-Season-Teamwechsel ueber Weekly Rosters
@@ -633,7 +633,7 @@ operationalDatasetEvaluation:
 
   snapCounts:
     recommendedRole: primary-canonical
-    canonicalPath: source-data/nfl/snap-counts/<season>/<week>.json
+    canonicalPath: data-source/nfl/snap-counts/<season>/<week>.json
     primaryFor:
       - offensive, defensive und Special-Teams-Snaps pro Spiel
       - historische Snap-Anteile und Snap-Counts
@@ -667,7 +667,7 @@ operationalDatasetEvaluation:
 
   sleeperPlayers:
     recommendedRole: current-platform-and-interim-injury-source
-    canonicalPath: source-data/nfl/platform/sleeper/players.json
+    canonicalPath: data-source/nfl/platform/sleeper/players.json
     identity:
       authoritativeProviderKey: Sleeper player_id
       canonicalTarget: CanonicalPlayerID
@@ -743,7 +743,7 @@ combine:
   providerDataset: nflverse.combine
   upstream: nflverse/nflverse-data
   provenance: NFL Combine data courtesy of Pro Football Reference
-  canonicalPath: source-data/nfl/combine/<season>.json
+  canonicalPath: data-source/nfl/combine/<season>.json
   identity:
     masterKey: CanonicalPlayerID
     authoritativeJoin: PFR provider mapping
@@ -757,7 +757,7 @@ combine:
       Position oder Schule duerfen keinen Gewinner bestimmen. Widerspruechliche
       Same-Season-PFR-Claims werden quarantinisiert.
   draftLink:
-    authoritativeSource: source-data/nfl/draft/<season>.json
+    authoritativeSource: data-source/nfl/draft/<season>.json
     sourceEvidenceField: SourceDraftEvidence
     rule: >
       Upstream-Draftfelder bleiben Provenienz. Die normalisierte Draft-

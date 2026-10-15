@@ -43,7 +43,7 @@ Datierte Salary-Berechnungen liegen unter derselben Root (jeweils `.md` und `.js
 
 ## Simulation (`simulation/`)
 
-- [`salary_simulation.py`](simulation/salary_simulation.py) rechnet die Simulation reproduzierbar aus Repo-Daten nach und schreibt JSON, CSV und Markdown nach `analyses/`. Aufruf aus dem Repo-Root: `python3 fantasy-management/league-economy/salary/simulation/salary_simulation.py`.
+- [`salary_simulation.py`](simulation/salary_simulation.py) rechnet die Simulation reproduzierbar aus Repo-Daten nach und schreibt JSON, CSV und Markdown nach `analyses/`. Aufruf aus dem Repo-Root: `python3 fantasy-management/league-economy/salary/simulation/salary_simulation.py`. Kurve, Floor, Saisonpunkte-Gewichte und Cap der heutigen Formel kommen aus den zentralen Modellen `salary-v1` und `salary-cap-v1` (`tools/derived_data_lib/models`, Issue #919 Schritt 7); die Entwurfsparameter des Redesigns (Mindestprozente, Rookie-Skala, Dead Cap) stehen weiter im Skript.
 
 ## Abgrenzung zur Technik
 

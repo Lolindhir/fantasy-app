@@ -293,7 +293,7 @@ class HistoricalFantasyScoringTests(unittest.TestCase):
     def test_nonfinal_special_teams_partition_cannot_supply_zero_by_absence(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            path = root / "source-data/nfl/special-teams-fumble-events/2000/03.json"
+            path = root / "data-source/nfl/special-teams-fumble-events/2000/03.json"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
                 json.dumps(

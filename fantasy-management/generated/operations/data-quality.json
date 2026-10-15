@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "report_id": "fantasy-operations-data-quality",
-  "generated_at": "2026-10-13T17:33:27Z",
-  "input_fingerprint": "4e4baa23217629da3fcf2150cb18024dbbf96b8d2cc1b948f670150e1f7f5e72",
+  "generated_at": "2026-10-15T08:07:10Z",
+  "input_fingerprint": "7124281cc661f7abdeda7aa249a76ac02ed3c40434cd3b0669be42828eca0466",
   "status": "warning",
   "coverage": {
     "managed_roster_ids": 37,
@@ -49,17 +49,18 @@
     },
     "external_signals": {
       "sleeper-trending": {
-        "row_count": 165,
-        "materialized_entity_count": 157,
-        "resolved_players": 157,
+        "row_count": 157,
+        "materialized_entity_count": 139,
+        "resolved_players": 139,
         "unresolved_players": 0,
         "excluded_non_player_entities": {
-          "count": 16,
+          "count": 18,
           "by_type": {
-            "team_defense": 16
+            "team_defense": 18
           },
           "entity_ids": [
             "BAL",
+            "CHI",
             "CLE",
             "DAL",
             "DET",
@@ -70,6 +71,7 @@
             "MIN",
             "NE",
             "NO",
+            "NYG",
             "NYJ",
             "PIT",
             "SEA",
@@ -78,9 +80,9 @@
           ]
         },
         "ownership": {
-          "fantasy_free_agent": 66,
-          "mighty_giants": 13,
-          "opponent_rostered": 78
+          "fantasy_free_agent": 58,
+          "mighty_giants": 11,
+          "opponent_rostered": 70
         },
         "baseline": false,
         "material_event_eligible": true
@@ -98,7 +100,7 @@
         "observed_rows": 28,
         "minimum_usable_rows": 50,
         "expected_minimum_rows": 50,
-        "checked_at": "2026-10-13T03:25:42.700137Z"
+        "checked_at": "2026-10-15T04:09:56.389465Z"
       }
     }
   ],
@@ -106,47 +108,92 @@
     {
       "id": "league_display",
       "path": "public/data/League.json",
-      "source_timestamp": "2026-10-13T17:33:27Z"
+      "source_timestamp": "2026-10-15T08:07:10Z"
     },
     {
       "id": "canonical_league_manifest",
-      "path": "source-data/leagues/nfl-reise/manifest.json",
+      "path": "data-source/leagues/nfl-reise/manifest.json",
       "source_timestamp": null
     },
     {
       "id": "canonical_league",
-      "path": "source-data/leagues/nfl-reise/seasons/2026/league.json",
+      "path": "data-source/leagues/nfl-reise/seasons/2026/league.json",
       "source_timestamp": null
     },
     {
       "id": "canonical_league_members",
-      "path": "source-data/leagues/nfl-reise/seasons/2026/members.json",
+      "path": "data-source/leagues/nfl-reise/seasons/2026/members.json",
       "source_timestamp": null
     },
     {
       "id": "canonical_league_rosters",
-      "path": "source-data/leagues/nfl-reise/seasons/2026/rosters.json",
+      "path": "data-source/leagues/nfl-reise/seasons/2026/rosters.json",
       "source_timestamp": null
     },
     {
-      "id": "players",
-      "path": "public/data/Players.json",
-      "source_timestamp": "2026-10-13T12:06:34Z"
+      "id": "player_valuation",
+      "path": "data-derived/player-valuation/nfl-reise/2026/week-05.json",
+      "source_timestamp": "2026-10-15T05:22:46Z"
+    },
+    {
+      "id": "canonical_player_profiles",
+      "path": "data-source/nfl/player-profiles/nflverse.json",
+      "source_timestamp": "2026-10-15T05:22:46Z"
+    },
+    {
+      "id": "canonical_nfl_rosters",
+      "path": "data-source/nfl/rosters/2026.json",
+      "source_timestamp": "2026-10-15T05:22:46Z"
+    },
+    {
+      "id": "canonical_nfl_weekly_rosters_01",
+      "path": "data-source/nfl/weekly-rosters/2026/01.json",
+      "source_timestamp": "2026-10-15T05:22:46Z"
+    },
+    {
+      "id": "canonical_nfl_weekly_rosters_02",
+      "path": "data-source/nfl/weekly-rosters/2026/02.json",
+      "source_timestamp": "2026-10-15T05:22:46Z"
+    },
+    {
+      "id": "canonical_nfl_weekly_rosters_03",
+      "path": "data-source/nfl/weekly-rosters/2026/03.json",
+      "source_timestamp": "2026-10-15T05:22:46Z"
+    },
+    {
+      "id": "canonical_nfl_weekly_rosters_04",
+      "path": "data-source/nfl/weekly-rosters/2026/04.json",
+      "source_timestamp": "2026-10-15T05:22:46Z"
+    },
+    {
+      "id": "canonical_nfl_weekly_rosters_05",
+      "path": "data-source/nfl/weekly-rosters/2026/05.json",
+      "source_timestamp": "2026-10-15T05:22:46Z"
+    },
+    {
+      "id": "canonical_nfl_weekly_rosters_06",
+      "path": "data-source/nfl/weekly-rosters/2026/06.json",
+      "source_timestamp": "2026-10-15T05:22:46Z"
+    },
+    {
+      "id": "canonical_nfl_draft",
+      "path": "data-source/nfl/draft/2026.json",
+      "source_timestamp": "2026-10-15T05:22:46Z"
     },
     {
       "id": "canonical_player_identities",
-      "path": "source-data/nfl/identities/players.json",
+      "path": "data-source/nfl/identities/players.json",
       "source_timestamp": null
     },
     {
       "id": "canonical_sleeper_players",
-      "path": "source-data/nfl/platform/sleeper/players.json",
+      "path": "data-source/nfl/platform/sleeper/players.json",
       "source_timestamp": null
     },
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "source_timestamp": "2026-10-13T17:33:27Z"
+      "source_timestamp": "2026-10-15T08:07:10Z"
     },
     {
       "id": "operations_source_catalog",
@@ -156,42 +203,42 @@
     {
       "id": "ffc-redraft-ppr-8-team_observation",
       "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/observation.json",
-      "source_timestamp": "2026-10-13T03:25:42.700137Z"
+      "source_timestamp": "2026-10-15T04:09:56.389465Z"
     },
     {
       "id": "ffc-redraft-2qb-10-team_observation",
       "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/observation.json",
-      "source_timestamp": "2026-10-13T03:25:42.700137Z"
+      "source_timestamp": "2026-10-15T04:09:56.389465Z"
     },
     {
       "id": "fantasypros-dynasty-superflex-ppr_pointer",
       "path": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/latest.json",
-      "source_timestamp": "2026-10-13T03:24:12.004901Z"
+      "source_timestamp": "2026-10-15T04:10:53.843851Z"
     },
     {
       "id": "fantasypros-dynasty-superflex-ppr_ranking",
-      "path": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/snapshots/2026-10-13/ranking.csv",
-      "source_timestamp": "2026-10-13T03:24:12.004901Z"
+      "path": "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/dynasty-superflex-ppr/snapshots/2026-10-15/ranking.csv",
+      "source_timestamp": "2026-10-15T04:10:53.843851Z"
     },
     {
       "id": "fantasycalc-dynasty-superflex-ppr-8-team_pointer",
       "path": "fantasy-management/sources/external-rankings/market-value/fantasycalc/dynasty-superflex-ppr-8-team/latest.json",
-      "source_timestamp": "2026-10-13T03:25:42.501931Z"
+      "source_timestamp": "2026-10-15T04:11:40.203223Z"
     },
     {
       "id": "fantasycalc-dynasty-superflex-ppr-8-team_ranking",
-      "path": "fantasy-management/sources/external-rankings/market-value/fantasycalc/dynasty-superflex-ppr-8-team/snapshots/2026-10-13/ranking.csv",
-      "source_timestamp": "2026-10-13T03:25:42.501931Z"
+      "path": "fantasy-management/sources/external-rankings/market-value/fantasycalc/dynasty-superflex-ppr-8-team/snapshots/2026-10-15/ranking.csv",
+      "source_timestamp": "2026-10-15T04:11:40.203223Z"
     },
     {
       "id": "ffc-redraft-2qb-10-team_pointer",
       "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/latest.json",
-      "source_timestamp": "2026-10-13T03:25:42.700137Z"
+      "source_timestamp": "2026-10-15T04:09:56.389465Z"
     },
     {
       "id": "ffc-redraft-2qb-10-team_ranking",
       "path": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/redraft-2qb-10-team/snapshots/2026-10-12/ranking.csv",
-      "source_timestamp": "2026-10-13T03:25:42.700137Z"
+      "source_timestamp": "2026-10-15T04:09:56.389465Z"
     },
     {
       "id": "fftoday-redraft-kicker-preseason_pointer",
@@ -206,17 +253,17 @@
     {
       "id": "cbs-sports-redraft-kicker-preseason_pointer",
       "path": "fantasy-management/sources/external-rankings/projections/cbs-sports/redraft-kicker-preseason/latest.json",
-      "source_timestamp": "2026-10-13T03:25:42.902607Z"
+      "source_timestamp": "2026-10-15T04:09:55.348298Z"
     },
     {
       "id": "cbs-sports-redraft-kicker-preseason_ranking",
-      "path": "fantasy-management/sources/external-rankings/projections/cbs-sports/redraft-kicker-preseason/snapshots/2026-10-12/ranking.csv",
-      "source_timestamp": "2026-10-13T03:25:42.902607Z"
+      "path": "fantasy-management/sources/external-rankings/projections/cbs-sports/redraft-kicker-preseason/snapshots/2026-10-15/ranking.csv",
+      "source_timestamp": "2026-10-15T04:09:55.348298Z"
     },
     {
       "id": "external_signal_sleeper-trending",
       "path": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
-      "source_timestamp": "2026-10-13T03:23:56.319525Z"
+      "source_timestamp": "2026-10-15T04:11:41.361651Z"
     }
   ],
   "interpretation_limits": [

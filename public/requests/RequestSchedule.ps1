@@ -32,17 +32,21 @@ function ObjectsAreEqualByJson {
 }
 
 # ===================================================================
-# Build Schedule.json from canonical NFL facts (source-data/nfl/schedules + game-finality).
+# Build Schedule.json from canonical NFL facts (data-source/nfl/schedules + game-finality).
 # No provider call and no API key: the former provider schedule, score and boxscore
 # fetches (and Games.json) were retired with #347 G2-G4.
 # Saves: Schedule.json, Timestamps.json
 # ===================================================================
 
-# --- Config / reuse existing variables ---
-. "$PSScriptRoot\config.ps1"
-
-# year aus config holen
-$year = $Global:LeagueYear
+# --- Config: season comes from the League source manifest via ConfigUtils ---
+try {
+    $config = Get-Config
+}
+catch {
+    Write-Error "Error loading configuration: $_"
+    exit 1
+}
+$year = $config.LeagueYear
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dataDir = Join-Path $scriptDir "..\data"
@@ -99,7 +103,7 @@ if ($oldSchedule -and $oldSchedule.Count -gt 0) {
 
 
 # --- Build schedule from canonical NFL facts (#347 G2) ---
-# source-data/nfl/schedules + game-finality own kickoff, teams, week, status and final scores. A missing or
+# data-source/nfl/schedules + game-finality own kickoff, teams, week, status and final scores. A missing or
 # inconsistent canonical schedule aborts here and leaves the last published Schedule.json untouched.
 Write-Host "Building schedule from canonical NFL source data (season $year)..." -ForegroundColor Yellow
 try {

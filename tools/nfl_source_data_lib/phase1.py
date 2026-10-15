@@ -11,6 +11,7 @@ from .common import CANONICAL_SCHEMA_VERSION, Dataset, as_float, as_int, clean, 
 from .lifecycle import effective_partition_payload
 from .player_profiles import PLAYER_PROFILES_DATASET_ID, build_player_profiles
 from .teams import TEAMS_DATASET_ID, TEAMS_RELATIVE_PATH, build_teams_payload
+from data_roots import DATA_SOURCE_ROOT
 
 
 _PHASE1_DATASET_IDS = {
@@ -95,7 +96,7 @@ def _canonical_partition(
     payload: dict[str, Any],
     force: bool,
 ) -> tuple[Path, dict[str, Any], bool]:
-    path = repo_root / "source-data/nfl" / relative_path
+    path = repo_root / DATA_SOURCE_ROOT / "nfl" / relative_path
     effective, preserved = effective_partition_payload(
         dataset,
         path=path,
@@ -583,7 +584,7 @@ def _build_player_stats(
 
 
 def _historical_week_finality(repo_root: Path, season: int) -> dict[int, bool]:
-    path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/game-finality" / f"{season}.json"
     if not path.exists():
         raise ValueError(
             f"Historical special-teams fumble materialization requires persisted game-finality evidence: {path}"
@@ -1074,7 +1075,7 @@ def _qbr_materialized_seasons(
     (frozen or explicitly repaired), never speculatively.
     """
     seasons = {observation_season}
-    directory = repo_root / "source-data/nfl/qbr-week"
+    directory = repo_root / DATA_SOURCE_ROOT / "nfl/qbr-week"
     if directory.is_dir():
         for path in directory.glob("*.json"):
             if re.fullmatch(r"\d{4}", path.stem):
@@ -1290,7 +1291,7 @@ def _build_sleeper_players(
         "SourceDataset": dataset.id,
         "Records": records,
     }
-    path = repo_root / "source-data/nfl/platform/sleeper/players.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/platform/sleeper/players.json"
     audit = {
         "recordCount": len(records),
         "resolvedIdentityCount": resolved_count,
@@ -1307,7 +1308,7 @@ def build_phase1_outputs(
     *,
     force: bool = False,
 ) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
-    """Build all activated Phase-1 canonical source-data outputs before publication."""
+    """Build all activated Phase-1 canonical data-source outputs before publication."""
     outputs: list[tuple[Path, dict[str, Any]]] = []
     audit: dict[str, Any] = {}
     preserved = 0

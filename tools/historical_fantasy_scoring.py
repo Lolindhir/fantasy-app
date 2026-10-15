@@ -6,6 +6,7 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any
+from data_roots import DATA_SOURCE_ROOT
 
 # Sleeper scoring keys are intentionally mapped to canonical nflverse raw-stat fields.
 # Provider fantasy-point columns are never consumed here.
@@ -198,7 +199,7 @@ def load_special_teams_fumble_events_for_player(
     week: int,
     player_id: str,
 ) -> list[dict[str, Any]]:
-    path = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
     if not path.exists():
         raise ValueError(
             "Canonical special-teams fumble evidence is missing; zero-by-absence is not allowed: "
@@ -298,11 +299,11 @@ def score_record(
 
 
 def league_season_path(repo_root: Path, league_id: str, season: int) -> Path:
-    return repo_root / "source-data/leagues" / league_id / "seasons" / str(season) / "league.json"
+    return repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons" / str(season) / "league.json"
 
 
 def find_player_record(repo_root: Path, season: int, week: int, player_id: str) -> dict[str, Any]:
-    path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
     payload = read_json(path)
     matches = [row for row in payload.get("Records", []) if row.get("CanonicalPlayerID") == player_id]
     if len(matches) != 1:
@@ -311,7 +312,7 @@ def find_player_record(repo_root: Path, season: int, week: int, player_id: str) 
 
 
 def snap_context(repo_root: Path, season: int, week: int, player_id: str) -> dict[str, Any] | None:
-    path = repo_root / "source-data/nfl/snap-counts" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/snap-counts" / str(season) / f"{week:02d}.json"
     if not path.exists():
         return None
     rows = [row for row in read_json(path).get("Records", []) if row.get("CanonicalPlayerID") == player_id]

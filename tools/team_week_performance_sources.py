@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from weekly_lineup_optimizer import StartingSlot
+from data_roots import DATA_SOURCE_ROOT
 
 
 class WeekSourceNotReady(ValueError):
@@ -31,7 +32,7 @@ def _read_json(path: Path) -> Any:
 def _league_source(repo_root: Path, league_id: str, season: int) -> tuple[Path, dict]:
     if not re.fullmatch(r"[A-Za-z0-9_-]+", league_id):
         raise ValueError("Invalid canonical league ID")
-    path = repo_root / "source-data/leagues" / league_id / "seasons" / str(season) / "league.json"
+    path = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons" / str(season) / "league.json"
     league = _read_json(path)
     if not isinstance(league, dict) or league.get("CanonicalLeagueID") != league_id or league.get("Season") != season:
         raise WeekSourceNotReady(f"Canonical league/season identity mismatch: {path}")
@@ -69,7 +70,7 @@ def validate_final_week(
     complete, game_ids = nfl_finality(repo_root, season=season, week=week)
     if complete is not True or not game_ids:
         raise WeekSourceNotReady(f"NFL regular season week {season}/{week} is not final")
-    return f"source-data/nfl/game-finality/{season}.json:REG-W{week};league:LastScoredLeg={scored}"
+    return f"{DATA_SOURCE_ROOT}/nfl/game-finality/{season}.json:REG-W{week};league:LastScoredLeg={scored}"
 
 
 def resolve_week_positions(
@@ -82,7 +83,7 @@ def resolve_week_positions(
     finalized same-season roster, then consistent finalized PRIOR NFL seasons.
     Never use mutable current player profiles or unfinalized season rosters.
     """
-    path = repo_root / "source-data/nfl/weekly-rosters" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/weekly-rosters" / str(season) / f"{week:02d}.json"
     payload = _read_json(path)
     if not isinstance(payload, dict) or payload.get("Season") != season or payload.get("Week") != week:
         raise WeekSourceNotReady(f"NFL weekly roster season/week mismatch: {path}")
@@ -136,7 +137,7 @@ def resolve_week_positions(
     if missing:
         # A finalized season roster is historical (not a mutable current-state
         # snapshot); its season-scoped position can fill unmatched inactive rows.
-        season_path = repo_root / "source-data/nfl/rosters" / f"{season}.json"
+        season_path = repo_root / DATA_SOURCE_ROOT / "nfl/rosters" / f"{season}.json"
         if season_path.is_file():
             season_doc = _read_json(season_path)
             if not isinstance(season_doc, dict) or season_doc.get("Season") != season:
@@ -161,7 +162,7 @@ def resolve_week_positions(
         # for a player who has no current-season NFL roster row (e.g. IR).
         # Match by CanonicalPlayerID and reject disagreements across years.
         historical_positions: dict[str, str] = {}
-        historical_dir = repo_root / "source-data/nfl/rosters"
+        historical_dir = repo_root / DATA_SOURCE_ROOT / "nfl/rosters"
         if historical_dir.is_dir():
             for prior_path in sorted(historical_dir.glob("*.json")):
                 if not prior_path.stem.isdecimal():
@@ -255,7 +256,7 @@ def load_verified_week_inputs(
     league_path, league = _league_source(repo_root, canonical_league_id, season)
     evidence = validate_final_week(repo_root, league, season, week, nfl_finality=nfl_finality)
     matchups = _read_json(
-        repo_root / "source-data/leagues" / canonical_league_id / "seasons" / str(season)
+        repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "seasons" / str(season)
         / "matchups" / f"week-{week}.json"
     )
     if not isinstance(matchups, list) or not matchups:

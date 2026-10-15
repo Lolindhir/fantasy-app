@@ -26,8 +26,8 @@ class LeagueSourceDraftTargetingTests(unittest.TestCase):
     def _root_with_registry(self) -> tuple[tempfile.TemporaryDirectory, Path]:
         temporary = tempfile.TemporaryDirectory()
         root = Path(temporary.name)
-        source = Path(__file__).resolve().parents[2] / "source-data" / "league-registry.json"
-        target = root / "source-data" / "league-registry.json"
+        source = Path(__file__).resolve().parents[2] / "data-source" / "league-registry.json"
+        target = root / "data-source" / "league-registry.json"
         target.parent.mkdir(parents=True)
         target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
         return temporary, root
@@ -41,7 +41,7 @@ class LeagueSourceDraftTargetingTests(unittest.TestCase):
         season: int = 2026,
         draft_id: str = "3000000000000000000",
     ) -> None:
-        mappings = root / "source-data" / "nfl" / "identities" / "provider-mappings.json"
+        mappings = root / "data-source" / "nfl" / "identities" / "provider-mappings.json"
         mappings.parent.mkdir(parents=True, exist_ok=True)
         mappings.write_text(
             json.dumps(
@@ -63,7 +63,7 @@ class LeagueSourceDraftTargetingTests(unittest.TestCase):
         )
 
         season_id = canonical_league_season_id(canonical_league_id, season)
-        league_root = root / "source-data" / "leagues" / canonical_league_id
+        league_root = root / "data-source" / "leagues" / canonical_league_id
         league_root.mkdir(parents=True, exist_ok=True)
         (league_root / "manifest.json").write_text(
             json.dumps(
@@ -123,7 +123,7 @@ class LeagueSourceDraftTargetingTests(unittest.TestCase):
 
         draft_root = (
             root
-            / "source-data"
+            / "data-source"
             / "providers"
             / "sleeper"
             / "leagues"
@@ -249,7 +249,7 @@ class LeagueSourceDraftTargetingTests(unittest.TestCase):
             self.assertEqual(len(outputs), 1)
             self.assertEqual(
                 outputs[0].path.relative_to(root).as_posix(),
-                "source-data/leagues/test-league/seasons/2026/drafts.json",
+                "data-source/leagues/test-league/seasons/2026/drafts.json",
             )
             self.assertEqual(
                 DRAFT_SCOPE_DEPENDENCIES,
@@ -305,7 +305,7 @@ class LeagueSourceDraftTargetingTests(unittest.TestCase):
             self._write_fixture(root)
             roster_path = (
                 root
-                / "source-data"
+                / "data-source"
                 / "leagues"
                 / "test-league"
                 / "seasons"

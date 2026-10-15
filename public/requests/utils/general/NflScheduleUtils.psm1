@@ -1,7 +1,9 @@
+Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+
 Import-Module "$PSScriptRoot\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 
 # Maps provider spellings that differ from the canonical NFL schedule (for example LAR, WSH) to the canonical
-# team abbreviation through the canonical team registry (source-data/nfl/teams.json). Unknown values stay
+# team abbreviation through the canonical team registry (data-source/nfl/teams.json). Unknown values stay
 # unchanged (upper-cased) so callers keep failing closed on them.
 function ConvertTo-CanonicalNflScheduleTeam {
     param([AllowNull()][string]$Team)
@@ -18,7 +20,7 @@ function Get-CanonicalNflTeamByeWeeks {
         [Parameter(Mandatory = $true)][string]$RepoRoot
     )
 
-    $path = Join-Path $RepoRoot "source-data/nfl/schedules/$Season.json"
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/schedules/$Season.json"
     if (-not (Test-Path $path)) {
         throw "Canonical NFL schedule is required for bye weeks: $path"
     }

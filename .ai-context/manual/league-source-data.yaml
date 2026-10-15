@@ -27,23 +27,23 @@ phasePlan:
     name: Consumer Migration
     status: in-progress
     goal: >
-      App-Generatoren und Fantasy-Management-Basisableitungen auf source-data
+      App-Generatoren und Fantasy-Management-Basisableitungen auf data-source
       umstellen, ohne bestehende public/data-Contracts unbeabsichtigt zu aendern.
 
 targetFlow: |
-  nflverse ---------------------> source-data/providers/nflverse/**
+  nflverse ---------------------> data-source/providers/nflverse/**
                                           |
-  Sleeper /players/nfl --------> source-data/providers/sleeper/**
+  Sleeper /players/nfl --------> data-source/providers/sleeper/**
                                           |
                                           v
-                                  source-data/nfl/**
+                                  data-source/nfl/**
                                           |
                                           |
-  Sleeper league APIs ---------> source-data/providers/sleeper/leagues/**
+  Sleeper league APIs ---------> data-source/providers/sleeper/leagues/**
                                           |
   League bootstrap/config ----->         |
                                           v
-                                  source-data/leagues/**
+                                  data-source/leagues/**
                                           |
                              +------------+------------+
                              |                         |
@@ -58,8 +58,8 @@ targetFlow: |
 boundaries:
   providerRaw:
     paths:
-      - source-data/providers/nflverse/**
-      - source-data/providers/sleeper/**
+      - data-source/providers/nflverse/**
+      - data-source/providers/sleeper/**
     owns:
       - validierte providernahe Rohdaten
       - Provider-IDs und Provider-Feldnamen
@@ -70,7 +70,7 @@ boundaries:
       Bewertungen enthalten.
 
   canonicalNfl:
-    path: source-data/nfl/**
+    path: data-source/nfl/**
     owns:
       - providerunabhaengige NFL-Fakten
       - CanonicalPlayerID und Provider-Mappings
@@ -78,14 +78,14 @@ boundaries:
     contract: .ai-context/manual/nfl-source-data.yaml
 
   canonicalLeague:
-    pathPattern: source-data/leagues/<CanonicalLeagueID>/**
+    pathPattern: data-source/leagues/<CanonicalLeagueID>/**
     owns:
       - stabile logische Ligaidentitaet ueber mehrere Provider-Saisons hinweg
       - validierte saisonale League-Instanzen und Provider-Mappings
       - normalisierte Liga-, Member-, Roster-, Bracket-, Matchup-, Transaction- und Fantasy-Draft-Fakten
       - saisonuebergreifende League-Lineage
     doesNotOwn:
-      - NFL-weite Fakten, die unter source-data/nfl gehoeren
+      - NFL-weite Fakten, die unter data-source/nfl gehoeren
       - App-spezifische Anzeige-/Readmodel-Felder
       - Fantasy-Management-Bewertungen, Watchlists, Monitoring-Urteile oder Analysen
 
@@ -95,7 +95,7 @@ boundaries:
       Phase 2 laeuft. Die unter consumerMigrationNotes als canonical-active
       gefuehrten App-Consumer (historische und aktuelle Standings, Transactions
       und Drafts sowie League Core, Playoff-Brackets und aktuelle Matchups in
-      RequestLeague) lesen ihre League-Fakten bereits aus source-data/leagues.
+      RequestLeague) lesen ihre League-Fakten bereits aus data-source/leagues.
       Noch nicht migrierte App-Generatoren lesen League-Daten bis zu ihrem eigenen
       Cutover weiterhin ueber ihre heutigen Provider-Pfade. Alle erzeugen
       unveraendert public/data Readmodels.
@@ -111,13 +111,13 @@ boundaries:
       den fail-closed Canonical League Ownership/Roster Adapter und die explizite
       TeamID->CanonicalLeagueMemberID-Bridge etabliert. Checkpoint 6Q nutzt diesen
       Adapter produktiv fuer managed-roster-signals: TeamID 1 Roster, Reserve, Taxi
-      und Starter kommen direkt aus source-data/leagues. Checkpoint 6R nutzt die
+      und Starter kommen direkt aus data-source/leagues. Checkpoint 6R nutzt die
       gleiche Canonical-Basis produktiv fuer external-signal-relevance und damit die
       vollstaendige league-weite Roster/Reserve/Taxi-Ownership-Union. Checkpoint 6S
       nutzt dieselbe Union produktiv fuer player-signals inklusive Ownership-Status
       und league_owned Population-Reason. Checkpoint 6T nutzt dieselbe Canonical-
       Ownership nun produktiv fuer fa-board-readmodel: Availability, Owner/Bucket
-      und Managed-Team Roster/Reserve/Taxi-Belegung kommen direkt aus source-data.
+      und Managed-Team Roster/Reserve/Taxi-Belegung kommen direkt aus data-source.
       Checkpoint 6U entfernt ausserdem den doppelten direkten Membership-Read im
       managed-roster-overview; dessen Held/Active/Reserve/Taxi-Struktur wird jetzt
       aus canonical-active managed-roster-signals abgeleitet. League.json liefert
@@ -145,7 +145,7 @@ boundaries:
       Sleeper roster_id bleibt reine Provenienz.
     targetState: >
       Basisfakten fuer Liga, Ownership, Drafts, Transactions und NFL-Zustand werden
-      nach Consumer-Migration direkt aus source-data abgeleitet. Fantasy-Management-
+      nach Consumer-Migration direkt aus data-source abgeleitet. Fantasy-Management-
       eigene Rankings, Signale, Knowledge, Analysen und Decisions bleiben unter
       fantasy-management.
 
@@ -172,7 +172,7 @@ bootstrapContract:
     - Historische Sleeper-Instanzen werden ueber previous_league_id rueckwaerts entdeckt und persistent gespeichert.
     - Beim Saisonwechsel bleibt CanonicalLeagueID unveraendert und CurrentProviderLeagueID wird auf die neue Provider-Saison aktualisiert.
     - Jede weitere unabhaengige Fantasy-Liga erhaelt einen eigenen Bootstrap und eine eigene CanonicalLeagueID.
-    - public/data/Metadata.json bleibt bis zur Phase-2-Consumer-Migration produktiver Legacy-/App-Input und darf die aktuelle Sleeper LeagueID parallel enthalten.
+    - 'ADR-054 (Issue #986): Der frühere Bootstrap data-source/leagues/_bootstrap/<CanonicalLeagueID>.json ist durch die handgepflegte Liga-Metadaten-Datei data-meta/<CanonicalLeagueID>/metadata.json (.ai-context/manual/league-metadata.yaml) ersetzt und entfernt. Der League-Source-Sync liest CanonicalLeagueID, Provider und CurrentProviderLeagueID von dort (tools/league_source_data_lib/core.py load_bootstraps).'
 
 leagueIdentity:
   principle: >
@@ -232,9 +232,7 @@ multiLeagueModel:
   productiveSecondLeagueRequiredForPhase1BAcceptance: false
   testEvidence: multi-bootstrap-regression-test
   exampleLayout: |
-    source-data/leagues/
-      _bootstrap/
-        <CanonicalLeagueID>.json
+    data-source/leagues/
       <CanonicalLeagueID-A>/
         manifest.json
         seasons/
@@ -366,12 +364,12 @@ productiveAcceptance:
       read of a provider or a published public/data read model lives in
       source-of-truth-matrix.yaml consumerReadClassification (#347 K1) and is enforced
       by tools/tests/test_consumer_read_classification.py. Intentional overlays:
-      Fantasy Management League.json display/scoring enrichment (6P-6V) and Metadata.json
-      manual league rules (ADR-002). Open items stay visible there as
+      Fantasy Management League.json display/scoring enrichment (6P-6V) and the manual league
+      metadata data-meta/<CanonicalLeagueID>/metadata.json (ADR-054). Open items stay visible there as
       legacy-read-model-pending (only the two Players.json declared
       inputs of the Fantasy Management player-signal and operations materializations,
       bounded to the league-derived Salary fields, Age, Year and the population; the
-      kicker research plan and the weekly-league-review job read canonical source-data
+      kicker research plan and the weekly-league-review job read canonical data-source
       since the #347 FM-read step) and
       legacy-provider-path (no entries left: the dead direct Sleeper client callers
       in TeamUtils, LeagueUtils, PlayoffUtils, TransactionUtils and FantasyGameContextCore
@@ -409,12 +407,12 @@ phase2TargetedFreshnessScopes:
       - sleeper.losers-bracket
       - sleeper.matchups / exactly CurrentWeek
     canonicalWriteSet:
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/league.json
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/members.json
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/rosters.json
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/winners-bracket.json
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/losers-bracket.json
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/matchups/week-<CurrentWeek>.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/league.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/members.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/rosters.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/winners-bracket.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/losers-bracket.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/matchups/week-<CurrentWeek>.json
     excluded:
       - non-current matchup weeks
       - transactions
@@ -482,7 +480,7 @@ phase2TargetedFreshnessScopes:
       - sleeper.league
       - sleeper.matchups
     canonicalWriteSet:
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/matchups/week-<CurrentWeek>.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/matchups/week-<CurrentWeek>.json
     excluded:
       - members
       - rosters
@@ -699,14 +697,14 @@ phase1BInventory:
     currentMechanism: >
       Der Legacy-App-Pfad Get-LeaguesRecursive (Sleeper-Rekursion ueber previous_league_id)
       wurde im #347-K1-Folgeschritt entfernt; die Draft-Historie liest die Saisonliste jetzt
-      aus Get-CanonicalLeagueSeasonLeagues (source-data/leagues/<CanonicalLeagueID>/seasons).
+      aus Get-CanonicalLeagueSeasonLeagues (data-source/leagues/<CanonicalLeagueID>/seasons).
       Der akzeptierte Source-
       Layer nutzt dieselbe Provider-Evidenz unabhaengig davon fuer persistente
       Lineage-Discovery und Canonical-Mappings.
     persistenceState: >
       Provider-League-Objekte und previous_league_id-Evidenz werden unter
-      source-data/providers/sleeper/leagues/** persistent gehalten. Der kanonische
-      Manifest-/Season-Layer unter source-data/leagues/<CanonicalLeagueID>/** bindet
+      data-source/providers/sleeper/leagues/** persistent gehalten. Der kanonische
+      Manifest-/Season-Layer unter data-source/leagues/<CanonicalLeagueID>/** bindet
       diese Provider-Instanzen fail-closed an stabile CanonicalLeagueID- und
       CanonicalLeagueSeasonID-Werte. Die produktive 2026→2025→2024-Lineage ist
       materialisiert und bestaetigt.
@@ -715,20 +713,20 @@ phase1BInventory:
         Provider: Sleeper
         ProviderLeagueID: "1133541805053714432"
         evidence:
-          - source-data/providers/sleeper/leagues/1133541805053714432/league.json
-          - source-data/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2024/league.json
+          - data-source/providers/sleeper/leagues/1133541805053714432/league.json
+          - data-source/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2024/league.json
       - season: 2025
         Provider: Sleeper
         ProviderLeagueID: "1257421353431080960"
         evidence:
-          - source-data/providers/sleeper/leagues/1257421353431080960/league.json
-          - source-data/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2025/league.json
+          - data-source/providers/sleeper/leagues/1257421353431080960/league.json
+          - data-source/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2025/league.json
       - season: 2026
         Provider: Sleeper
         ProviderLeagueID: "1354177383984267264"
         evidence:
-          - source-data/providers/sleeper/leagues/1354177383984267264/league.json
-          - source-data/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2026/league.json
+          - data-source/providers/sleeper/leagues/1354177383984267264/league.json
+          - data-source/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2026/league.json
     rawPreviousEdgesPersistedToday: true
     canonicalLeagueIDAssignedToday: true
     canonicalLeagueSeasonIDsAssignedToday: true
@@ -800,7 +798,7 @@ phase1BInventory:
       - generated DraftKey/DisplayDraftKey and UI labels
       - Fantasy Management Monitor/Grace/Watchlist/Buy/Sell or recommendation state
     manualSourceKeptSeparate:
-      - public/data/Metadata.json league-specific rules and current legacy App league selection
+      - data-meta/<CanonicalLeagueID>/metadata.json hand-maintained league metadata (ADR-054)
       - owner/team mappings that are application-owned rather than Sleeper facts
 
   inventoryConclusions:
@@ -827,15 +825,15 @@ phase1BInventory:
 
 consumerRules:
   sharedFacts:
-    - NFL player identity and NFL facts come from source-data/nfl
-    - league membership, ownership, settings, brackets, matchups, transactions and fantasy drafts come from source-data/leagues
+    - NFL player identity and NFL facts come from data-source/nfl
+    - league membership, ownership, settings, brackets, matchups, transactions and fantasy drafts come from data-source/leagues
   app:
     - public/data remains a generated app contract, not the shared source of truth
     - Phase 2 should preserve existing public/data shapes unless a contract change is separately approved
   fantasyManagement:
-    - source-data facts may feed Operations, monitoring and analyses
+    - data-source facts may feed Operations, monitoring and analyses
     - derived evaluations remain Fantasy-Management-owned artifacts
-    - source-data must not contain Buy/Sell/Monitor/Grace/Watchlist or recommendation state
+    - data-source must not contain Buy/Sell/Monitor/Grace/Watchlist or recommendation state
 
 acceptanceOrder:
   - Phase 1A NFL source layer remains accepted and unchanged

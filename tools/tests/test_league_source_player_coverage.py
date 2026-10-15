@@ -32,7 +32,7 @@ class LeagueSourcePlayerCoverageTests(unittest.TestCase):
     def _configure_league(self, root: Path, roster_payload: object) -> Path:
         self._write(
             root,
-            "source-data/leagues/_bootstrap/nfl-reise.json",
+            "data-meta/nfl-reise/metadata.json",
             {
                 "CanonicalLeagueID": "nfl-reise",
                 "Provider": "Sleeper",
@@ -41,7 +41,7 @@ class LeagueSourcePlayerCoverageTests(unittest.TestCase):
         )
         self._write(
             root,
-            "source-data/leagues/nfl-reise/manifest.json",
+            "data-source/leagues/nfl-reise/manifest.json",
             {
                 "Seasons": [
                     {
@@ -54,7 +54,7 @@ class LeagueSourcePlayerCoverageTests(unittest.TestCase):
                 ]
             },
         )
-        season_root = root / "source-data/leagues/nfl-reise/seasons/2025"
+        season_root = root / "data-source/leagues/nfl-reise/seasons/2025"
         self._write(
             season_root,
             "league.json",
@@ -72,7 +72,7 @@ class LeagueSourcePlayerCoverageTests(unittest.TestCase):
 
     def test_counts_unresolved_player_references_across_all_league_domains(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            season_root = Path(tmp) / "source-data/leagues/nfl-reise/seasons/2025"
+            season_root = Path(tmp) / "data-source/leagues/nfl-reise/seasons/2025"
             self._write(
                 season_root,
                 "rosters.json",

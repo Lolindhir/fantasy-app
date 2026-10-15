@@ -32,7 +32,7 @@ class ProviderMappingReconciliationPipelineTests(unittest.TestCase):
     def test_full_mapping_pipeline_preserves_reconciliation_and_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            path = root / "source-data/nfl/identities/provider-mappings.json"
+            path = root / "data-source/nfl/identities/provider-mappings.json"
             path.parent.mkdir(parents=True, exist_ok=True)
 
             historical_source = "dynastyprocess.ff-player-ids-history.git.2026.opening@deadbeef"
@@ -94,7 +94,7 @@ class ProviderMappingReconciliationPipelineTests(unittest.TestCase):
     def test_reconciliation_converges_when_current_owner_becomes_durable_on_next_pass(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            path = root / "source-data/nfl/identities/provider-mappings.json"
+            path = root / "data-source/nfl/identities/provider-mappings.json"
             path.parent.mkdir(parents=True, exist_ok=True)
 
             historical_source = "dynastyprocess.ff-player-ids-history.git.2026.opening@deadbeef"
@@ -165,7 +165,7 @@ class ProviderMappingReconciliationPipelineTests(unittest.TestCase):
     def test_reconciliation_preserves_winning_current_claim_source_in_first_pass(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            path = root / "source-data/nfl/identities/provider-mappings.json"
+            path = root / "data-source/nfl/identities/provider-mappings.json"
             path.parent.mkdir(parents=True, exist_ok=True)
 
             historical_source = "dynastyprocess.ff-player-ids-history.git.2026.opening@deadbeef"
@@ -215,7 +215,7 @@ class ProviderMappingReconciliationPipelineTests(unittest.TestCase):
     def test_full_mapping_pipeline_reconciles_joint_current_claim_without_history(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            path = root / "source-data/nfl/identities/provider-mappings.json"
+            path = root / "data-source/nfl/identities/provider-mappings.json"
             path.parent.mkdir(parents=True, exist_ok=True)
 
             initial = {

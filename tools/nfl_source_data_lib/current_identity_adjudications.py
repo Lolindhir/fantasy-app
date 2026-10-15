@@ -3,9 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from data_roots import DATA_SOURCE_ROOT
 from .common import load_json
 
-_ADJUDICATION_PATH = Path("source-data/nfl/identities/current-identity-adjudications.json")
+_ADJUDICATION_PATH = Path(DATA_SOURCE_ROOT) / "nfl/identities/current-identity-adjudications.json"
 _SCHEMA_VERSION = 1
 _REASSIGNMENT_KIND = "current-provider-reassignment"
 _OVERRIDE_KIND = "upstream-claim-override"

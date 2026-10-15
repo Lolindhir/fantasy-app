@@ -1,8 +1,10 @@
+Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+
 Import-Module "$PSScriptRoot\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 
 # Builds the App Schedule.json read model from canonical NFL facts (#347 G2):
-#   source-data/nfl/schedules/<season>.json   (nflverse.schedules)
-#   source-data/nfl/game-finality/<season>.json (nflverse.game-finality)
+#   data-source/nfl/schedules/<season>.json   (nflverse.schedules)
+#   data-source/nfl/game-finality/<season>.json (nflverse.game-finality)
 # No provider call is involved. Timing rule: the canonical GameTime is Eastern local time (America/New_York)
 # without a zone marker (nflverse convention); it is converted with the IANA zone, never with a fixed offset.
 
@@ -219,8 +221,8 @@ function Get-CanonicalAppSchedule {
         [string[]]$GameTypes = @('REG')
     )
 
-    $schedulePath = Join-Path $RepoRoot "source-data/nfl/schedules/$Season.json"
-    $finalityPath = Join-Path $RepoRoot "source-data/nfl/game-finality/$Season.json"
+    $schedulePath = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/schedules/$Season.json"
+    $finalityPath = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/game-finality/$Season.json"
     if (-not (Test-Path $schedulePath)) { throw "Canonical NFL schedule is required: $schedulePath" }
     if (-not (Test-Path $finalityPath)) { throw "Canonical NFL game finality is required: $finalityPath" }
 

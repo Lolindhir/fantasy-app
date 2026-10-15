@@ -17,7 +17,6 @@ import copy
 import csv
 import json
 import math
-import re
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -43,6 +42,7 @@ from players_league_scoring import (  # noqa: E402,F401
     played_weeks,
     season_view,
 )
+from data_roots import DATA_SOURCE_ROOT
 
 LEAGUE_ID = "nfl-reise"
 HISTORY_SEASONS = ("SeasonMinus1", "SeasonMinus2", "SeasonMinus3")
@@ -222,7 +222,10 @@ def letter_grade(rank: int | None, position: str) -> str:
 
 def rank_grading(player: dict[str, Any]) -> dict[str, Any]:
     rank = next((r["Value"] for r in player["Ranking"] if r["Type"] == "Combined_Pos"), None)
-    return {"Type": "Rank", "Value": rank, "Rank": rank, "Grade": letter_grade(rank, player["Position"])}
+    # The legacy quirk (unranked counts as 0 and grades A) was fixed in grading-v1 (ADR-055): the published
+    # grade of an unranked player is null; letter_grade itself stays the legacy oracle.
+    grade = None if rank is None else letter_grade(rank, player["Position"])
+    return {"Type": "Rank", "Value": rank, "Rank": rank, "Grade": grade}
 
 
 def compute_salary_cap(salaries_by_player: list[float], team_size: int, team_count: int) -> float:
@@ -233,15 +236,15 @@ def compute_salary_cap(salaries_by_player: list[float], team_size: int, team_cou
 # --------------------------------------------------------------------------- #
 # Canonical inputs
 # --------------------------------------------------------------------------- #
+# Weights of the retired PowerShell configuration (ConfigUtils.psm1 WeightTotal/WeightGame, removed with
+# Issue #919 step 8). The shadow stays an independent oracle of the legacy behaviour, so they are fixed here
+# instead of being read from the central salary-v1 model.
+LEGACY_WEIGHT_TOTAL = 0.5
+LEGACY_WEIGHT_GAME = 0.5
+
+
 def read_ps_config_weights(repo_root: Path) -> tuple[float, float]:
-    text = (repo_root / "public/requests/config.ps1").read_text(encoding="utf-8-sig")
-    weights = []
-    for name in ("WeightTotal", "WeightGame"):
-        match = re.search(rf"\$Global:{name}\s*=\s*([0-9.]+)", text)
-        if not match:
-            raise ValueError(f"config.ps1 has no {name}")
-        weights.append(float(match.group(1)))
-    return weights[0], weights[1]
+    return LEGACY_WEIGHT_TOTAL, LEGACY_WEIGHT_GAME
 
 
 # --------------------------------------------------------------------------- #
@@ -643,7 +646,7 @@ def classify_residual(diff: float, applicable_weights: list[float]) -> str | Non
 
 
 def sleeper_gate(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
-    seasons_dir = repo_root / "source-data/leagues" / league_id / "seasons"
+    seasons_dir = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons"
     exact = 0
     compared = 0
     residuals: list[dict[str, Any]] = []
@@ -667,13 +670,13 @@ def sleeper_gate(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
                 else:
                     skipped[f"{season}:week-not-final"] += 1
                 continue
-            stats_path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+            stats_path = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
             if not stats_path.exists():
                 raise FileNotFoundError(f"Final week without canonical player-stats partition: {stats_path}")
             records = {r["CanonicalPlayerID"]: r for r in read_json(stats_path)["Records"]
                        if r.get("SeasonType", "REG") == "REG" and r.get("CanonicalPlayerID")}
             events: dict[str, list[dict[str, Any]]] = defaultdict(list)
-            events_path = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
+            events_path = repo_root / DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
             if events_path.exists():
                 for event in read_json(events_path)["Records"]:
                     events[event.get("CanonicalPlayerID")].append(event)

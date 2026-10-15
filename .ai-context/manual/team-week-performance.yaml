@@ -1,6 +1,6 @@
 schemaVersion: 1
 domain: team-week-performance
-status: implementation-checkpoint-5-not-yet-published
+status: validated-core-pending-controlled-materialization
 trackingIssue: 355
 
 purpose: >
@@ -10,7 +10,7 @@ purpose: >
   downstream consumers. No Angular or frontend-owned recalculation is allowed.
 
 physicalOwner:
-  pattern: derived-data/team-week-performance/<CanonicalLeagueID>/<Season>/<Week:02d>.json
+  pattern: data-derived/team-week-performance/<CanonicalLeagueID>/<Season>/<Week:02d>.json
   producer:
     calculation: tools/team_week_performance.py::build_team_week_performance
     persistence: tools/team_week_performance.py::save_team_week_performance
@@ -41,7 +41,7 @@ identity:
 
 inputs:
   sourceRosterAndScores:
-    owner: source-data/leagues/<CanonicalLeagueID>/seasons/<Season>/matchups/week-<Week>.json
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/matchups/week-<Week>.json
     fields:
       - CanonicalLeagueRosterID
       - Week
@@ -61,13 +61,13 @@ inputs:
       minute-by-minute acquisition eligibility. Historical ownership is
       not inferred from a current roster snapshot.
   expectedTeamPopulation:
-    owner: source-data/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json::Settings.num_teams
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json::Settings.num_teams
     requirement: >
       A final week must contain exactly the historical season's configured
       number of fantasy team matchup rows, with unique CanonicalLeagueRosterIDs.
       Partial team-week populations fail closed before leaderboard calculation.
   lineupDefinition:
-    owner: source-data/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json::RosterPositions
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json::RosterPositions
     constraint: >
       Caller supplies slot IDs and allowed natural positions via the existing
       FantasyRelevance slot eligibility semantics. The Python performance
@@ -77,7 +77,7 @@ inputs:
     requirement: >
       For ALL candidate CanonicalPlayerIDs, caller must provide a verified
       week-appropriate fantasy position. The source adapter first checks
-      source-data/nfl/weekly-rosters/<season>/<week:02d>.json::Records.
+      data-source/nfl/weekly-rosters/<season>/<week:02d>.json::Records.
       Missing target-week positions can use canonical NFL weekly roster
       partitions strictly earlier in the same season (consistent position
       required), then the same-season NFL roster only when Finalized=true.
@@ -150,9 +150,11 @@ contract:
     Taxi players to fill a slot, without simulating their real activation
     constraints, cuts or irreversible roster moves.
   edgeCases:
+    - For hypothetical Best-Ball v1, any slot may be left empty for zero; a negative-score player is never mandatory in the theoretical optimum. This intentionally differs from submitted-lineup legality and is not a replay of Sleeper rules.
+    - ActualStarterPoints includes all real started negative values; official commissioner-adjusted Points remain distinct. A team with PotentialPoints <= 0 has null efficiency, cannot win Best Coach; no Best Manager winner when the maximum is <= 0.
     - Missing/invalid positions, scores, team identities, historical league team counts and incomplete starter evidence fail closed.
     - Every actual starter must be assignable injectively to a historical legal slot; actual starter production must not exceed the theoretical all-roster maximum. Commissioner-adjusted official Points are recorded separately.
-    - Empty slots score zero and may be chosen instead of a negative score in this theoretical v1 implementation; compare against intended product semantics before publishing awards.
+    - Empty slots score zero instead of negative candidate scores: approved v1 theoretical potential semantics, not a claim about an actually submitted lineup.
     - A nonpositive PotentialPoints yields null EfficiencyPercent; no award winners when the league maximum is zero.
     - All exact tied winner roster IDs are kept; consumers must not silently select a favorite.
 

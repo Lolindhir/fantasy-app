@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Canonical League draft adapter for Fantasy Management consumers.
 
-Reads the current season's drafts from `source-data/leagues/<id>/seasons/<season>/drafts.json`
+Reads the current season's drafts from `data-source/leagues/<id>/seasons/<season>/drafts.json`
 and exposes them in the draft/pick shape the FA-board builder already consumes
 (DraftKey, DraftType, Status, Picks[PlayerID, CurrentOwnerRosterID, ...]).
 
 Canonical drafts carry no DraftType. The type is resolved fail-closed from
-`Metadata.json` Drafts.Types: an explicit `SleeperDraftIDs` binding for the
+league metadata (`data-meta/<id>/metadata.json`) Drafts.Types: an explicit `SleeperDraftIDs` binding for the
 season is authoritative; an unbound draft is only classified by the same
 free-agent/rookie keyword rule the App generator applies to unbound Sleeper
 drafts. Anything else stays unclassified (DraftType None) and the caller must
@@ -33,7 +33,7 @@ _STATUS_LABELS = {"complete": "Complete", "drafting": "Drafting", "pre_draft": "
 
 def drafts_path(root: Path, canonical_league_id: str, season: int) -> Path:
     return (
-        root / "source-data" / "leagues" / canonical_league_id / "seasons" / str(season) / "drafts.json"
+        root / "data-source" / "leagues" / canonical_league_id / "seasons" / str(season) / "drafts.json"
     )
 
 
@@ -62,11 +62,11 @@ def _draft_code(draft_type: str, instance: int) -> str:
 def _configured_types(metadata: Any) -> list[dict[str, Any]]:
     types = ((metadata or {}).get("Drafts") or {}).get("Types") if isinstance(metadata, dict) else None
     if not isinstance(types, list) or not types:
-        raise CanonicalDraftError("Metadata.json Drafts.Types is missing.")
+        raise CanonicalDraftError("League metadata Drafts.Types is missing.")
     result: list[dict[str, Any]] = []
     for row in types:
         if not isinstance(row, dict) or not row.get("DraftType"):
-            raise CanonicalDraftError("Metadata.json Drafts.Types contains an invalid entry.")
+            raise CanonicalDraftError("League metadata Drafts.Types contains an invalid entry.")
         result.append(row)
     return result
 

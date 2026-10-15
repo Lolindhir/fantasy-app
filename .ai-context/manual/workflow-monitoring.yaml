@@ -138,7 +138,7 @@ scheduler:
     mode: >-
       A target may declare `mode: game-window` with `gameWindow.preKickoffMinutes`, `gameWindow.postFinalMinutes` and `gameWindow.idleCron` (optional `assumedGameDurationMinutes` default 210, `maxOverrunMinutes` default 180). Inside an NFL game window the target's normal `cron` applies; outside windows only `idleCron` does.
     windowSource: >-
-      Canonical NFL schedule source-data/nfl/schedules/<season>.json (Eastern-time kickoffs, same rule as tools/nfl_season_context.py and CanonicalScheduleUtils.psm1) for the previous and current calendar year, plus source-data/nfl/game-finality/<season>.json.
+      Canonical NFL schedule data-source/nfl/schedules/<season>.json (Eastern-time kickoffs, same rule as tools/nfl_season_context.py and CanonicalScheduleUtils.psm1) for the previous and current calendar year, plus data-source/nfl/game-finality/<season>.json.
     blockRule: >-
       Games whose assumed durations overlap form one block. A window opens preKickoffMinutes before the first kickoff and closes postFinalMinutes after the assumed end of the block. Canonical finality carries no timestamp, so the post-final lag is anchored on the assumed end; a block with games that are not final stays open for at most maxOverrunMinutes beyond the assumed end.
     failClosedRule: >-
@@ -287,7 +287,7 @@ workflows:
     relevantEvents:
     - push
     - workflow_call
-    rationale: Main deployment failure can leave the published app behind repository state. The push trigger uses a positive path filter (src, public, Angular/npm/tsconfig build inputs, deploy_action.ps1, the workflow itself), so commits touching only source-data, derived-data or fantasy-management do not deploy; there is deliberately no debounce.
+    rationale: Main deployment failure can leave the published app behind repository state. The push trigger uses a positive path filter (src, public, Angular/npm/tsconfig build inputs, deploy_action.ps1, the workflow itself), so commits touching only data-source, data-derived or fantasy-management do not deploy; there is deliberately no debounce.
   .github/workflows/fantasy-management-validation.yml:
     category: critical
     relevantEvents:
@@ -364,7 +364,7 @@ workflows:
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 840
-    rationale: Three centrally scheduled daily refreshes; 14 hours covers the longest normal gap with modest operational grace.
+    rationale: Three centrally scheduled daily refreshes; 14 hours covers the longest normal gap with modest operational grace. Since Issue #919 step 5 the run also materializes and publishes data-derived/player-valuation (Salary, Ranking, Grading, Salary Cap); a failed materialization fails the run, so the existing category and staleness cover it.
   .github/workflows/update-games.yml:
     category: non-paging
     relevantEvents: []

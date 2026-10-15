@@ -12,7 +12,7 @@ class TransactionCanonicalConsumerTests(unittest.TestCase):
     def test_builds_legacy_app_base_shape_from_week_partitions(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            season_dir = root / "source-data" / "leagues" / "test-league" / "seasons" / "2026"
+            season_dir = root / "data-source" / "leagues" / "test-league" / "seasons" / "2026"
             transaction_dir = season_dir / "transactions"
             transaction_dir.mkdir(parents=True)
 

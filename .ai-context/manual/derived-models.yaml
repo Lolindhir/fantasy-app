@@ -1,0 +1,172 @@
+schemaVersion: 1
+status: accepted-contract-v1
+trackingIssue: 919
+architectureDecision: ADR-055
+
+purpose: >
+  Canonical contract for central, league-independent, versioned derivation models
+  (Layer 4 "Zentrale Logik" of the six-layer data model). A model turns canonical
+  facts into a derived value with an algorithm and parameters that live next to the
+  code. Leagues do not carry model parameters; a league only selects, per season,
+  which model version applies. Salary, SalaryCap and Grading are the first models;
+  Standings and Awards follow (#987).
+
+architecture:
+  decisionBasis:
+    - ADR-037
+    - ADR-038
+    - ADR-055
+  logicalLayer: Shared Derived Data (algorithm side)
+  physicalLocation: tools/derived_data_lib/models/<kind>/v<N>.py
+  registry: tools/derived_data_lib/models/registry.py
+  unversionedFunctions: tools/derived_data_lib/ranking.py
+  consumers:
+    - tools/derived_data.py materializer (player-valuation product, #919 step 3)
+    - Fantasy Management salary simulation (#919 step 7)
+    - later models (standings, awards) through the same registry
+  rules:
+    - A model is a pure function of its explicit inputs plus its own PARAMS. It reads no files, no network, no clock, no environment and no league configuration.
+    - Inputs that depend on the league (team count, scoring settings, rosters) are passed in by the caller, which reads them from canonical league facts.
+    - Leagues never override PARAMS. Different behaviour is a different model version.
+    - A model may expose unrounded building blocks (salary-v1 curve_dollars and floored_average, salary-cap-v1 raw_cap) for analyses; the productive functions are defined through them and their results are unchanged. Analyses may pass an explicit exponent to curve_dollars to probe the curve; productive code never does.
+    - Models contain no presentation, no consumer shape and no Players.json/League.json field names beyond the documented result keys.
+
+identity:
+  modelId:
+    format: <kind>-v<N>
+    examples:
+      - salary-v1
+      - salary-cap-v1
+      - grading-v1
+    rules:
+      - The model ID is the only way a league, a snapshot or a test refers to a model.
+      - kind uses hyphens in the ID (salary-cap-v1) and underscores in the module path (salary_cap/v1.py).
+      - N is a positive integer without gaps in meaning; v2 never silently reuses v1 semantics.
+  kinds:
+    salary:
+      module: tools/derived_data_lib/models/salary/v1.py
+      produces: Salary and SalaryProjected in whole dollars
+    salary-cap:
+      module: tools/derived_data_lib/models/salary_cap/v1.py
+      produces: SalaryCap and SalaryCapProjected in whole dollars plus TopN
+    grading:
+      module: tools/derived_data_lib/models/grading/v1.py
+      produces: Grade letter and the Rank grading row
+
+immutability:
+  rule: >
+    A model is mutable only until its first productive use (first committed
+    data-derived snapshot that names it). From then on any change of formula,
+    parameter, rounding or tie handling is a new version. Bug fixes that change
+    results are also a new version, because earlier snapshots must stay reproducible.
+  enforcement:
+    - Each model module exposes MODEL_ID, KIND and an immutable PARAMS mapping.
+    - A regression test pins the PARAMS content of every registered model.
+    - A regression test pins hand-computed example results per model.
+    - Removing or editing a registered model without a version bump fails the test suite.
+  retirement: >
+    An old version stays registered as long as any snapshot or league season
+    manifest names it. It may be removed only together with the regeneration of
+    every snapshot that used it and a decision record.
+
+registry:
+  contract:
+    - registry.py maps every model ID to exactly one implementation module.
+    - Resolving an unknown ID raises an error; there is no default model and no fallback.
+    - Resolving an ID for the wrong kind raises an error (a grading ID cannot be used as salary model).
+    - Listing models is deterministic (sorted by ID).
+    - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
+  leagueSelection:
+    owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading } -> model IDs
+    rule: >
+      The league metadata chooses model IDs per season. A new version applies from
+      the season in which the metadata first names it; earlier seasons keep their
+      model and stay reproducible. Until #986 delivers the loader, callers pass
+      model IDs explicitly.
+    notInMetadata:
+      - model parameters (SalaryRelevantTeamSize, Cap factor, curve, floor, ramp-in, weights, grade thresholds)
+      - TeamCount (canonical league.json::Settings.num_teams)
+      - ScoringSettings (canonical league.json::ScoringSettings)
+
+models:
+  salary-v1:
+    status: planned-step-2
+    behaviour: exact port of the current RequestPlayers.ps1 behaviour (no redesign)
+    parameters:
+      weightTotal: 0.5
+      weightGame: 0.5
+      sourceMax: 20
+      curveExponent: 2
+      targetMin: 0
+      targetMax: 50000000
+      floorWeights: [0.5, 0.33, 0.17]
+      rampIn: {"0": "previous season only", "1": [0.25, 0.75], "2": [0.35, 0.65], "3": [0.5, 0.5], "4": [0.75, 0.25]}
+    rules:
+      - Season points = avgPotentialGame * weightTotal + avgGame * weightGame.
+      - Salary is computed from the three previous seasons; SalaryProjected from the current season (blended by AsOfFinalScoredWeek 0 to 4) plus the two newest previous seasons.
+      - If the two newest of the three point values are exactly 0 the salary is 0.
+      - The floor is the maximum point value times the weight of the season that holds the maximum; no value stays below the floor; the three floored values are averaged.
+      - The mapping is non-linear (square) up to sourceMax and linear-extrapolated above it; the result is rounded to whole dollars with banker's rounding.
+      - Dead code of the PowerShell version (random adjustments, fallback salary, linear branch) is not part of the model.
+  salary-cap-v1:
+    status: planned-step-2
+    behaviour: exact port of RequestLeague.ps1 salary cap computation
+    parameters:
+      salaryRelevantTeamSize: 20
+      factor: 0.9
+    rules:
+      - TopN = SalaryRelevantTeamSize * TeamCount; TeamCount comes from the caller.
+      - Cap = round(mean of the TopN highest salaries * SalaryRelevantTeamSize * factor), banker's rounding; fewer players than TopN use all players.
+      - SalaryCap uses Salary, SalaryCapProjected uses SalaryProjected; both are two calls of the same model.
+      - An empty input or a non-positive TopN is an error, never a cap of zero.
+  grading-v1:
+    status: planned-step-2
+    behaviour: exact port of Get-LetterGrade / Add-PositionalGradings Rank row
+    parameters:
+      thresholds: [6, 12, 18, 24, 30]
+      grades: [A, B, C, D, E, F]
+      positionMultiplier: {"K": 1.0, "RB": 2.0, "WR": 2.0, "default": 1.5}
+    rules:
+      - Grade is the first letter whose threshold times the position multiplier is greater than or equal to the Combined_Pos rank; above the last threshold the grade is F.
+      - A player without a Combined_Pos rank gets no grade: the Rank row carries null for Value, Rank and Grade. The legacy PowerShell graded such a player as rank 0 (A); Robert decided on 2026-10-15 that this is a defect and had it corrected in grading-v1 itself (a one-time, explicit exception to immutability, since the model had been productive for hours and the old behaviour was never intended; no grading-v2 was created).
+      - The Form grading row is a copy of the last four final scored GameHistory entries, not a model; it stays with the Players consumer generator.
+
+rankingFunctions:
+  implementation: tools/derived_data_lib/ranking.py
+  versioning: >
+    Ranking is a deterministic order statistic, not a league-selectable model. It has
+    no model ID. Its behaviour is part of the player-valuation product contract
+    (SchemaVersion); a behaviour change bumps that version.
+  contract:
+    - Active players have FantasyPointsAvgPotentialGame > 0 and FantasyPointsAvgGame > 0; inactive players receive no ranking rows.
+    - Ranks are competition ranks: equal values share the rank of the first of them and the following rank skips (1, 1, 3). Tiebreak sort keys never change a rank.
+    - Types in order: Total, PerGame, Combined, Total_Pos, PerGame_Pos, Combined_Pos, Combined_Previous.
+    - Combined = rank of (rankTotal * 0.5 + rankPerGame * 0.5), ascending; the _Pos variants use the same rule inside one position group.
+    - Combined_Previous uses the SeasonMinus1 AvgPotentialGame and AvgGame of players where both are greater than 0.
+    - Weights are 0.5 and 0.5 (formerly ConfigUtils.psm1 WeightTotal and WeightGame, removed with #919 step 8; the shadow keeps them as fixed legacy oracle constants); they are fixed ranking constants in v1 and not league metadata.
+
+parityRequirement:
+  rule: >
+    Every model reproduces the current PowerShell behaviour exactly, without
+    rounding tolerance (Robert, 2026-10-14). Parity is proven by hand-computed unit
+    tests, by an equivalence test against the existing validated Python port in
+    tools/players_league_scoring_shadow.py and by the exact shadow comparison of
+    #919 step 4. A difference is explained and fixed, or needs Robert's explicit okay.
+  numerics:
+    - PowerShell [math]::Round and Python round() both use round-half-to-even on the binary value.
+    - Sums that feed averages use sequential accumulation in descending order; Python's built-in sum() (compensated for floats since 3.12) is not used for money-like averages.
+    - Exponentiation uses math.pow(x, 2.0) like [math]::Pow.
+
+failClosed:
+  - unknown model ID
+  - model ID of the wrong kind
+  - non-finite input values (NaN, infinity)
+  - non-positive TopN or empty salary list in salary-cap
+  - non-integer or non-positive team count
+
+documentation:
+  humanDescription: >
+    The human-readable description of each model is its module docstring plus this
+    contract. The research under fantasy-management/league-economy/salary/ stays
+    concept material for future versions and is not the model definition.

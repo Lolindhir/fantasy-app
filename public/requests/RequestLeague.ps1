@@ -29,6 +29,7 @@ try {
     Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\player\PlayerValuationUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -48,25 +49,11 @@ catch {
 }
 
 $LeagueID = $config.LeagueID
-$CanonicalLeagueID = "nfl-reise"
-$SalaryRelevantTeamSize = $config.SalaryRelevantTeamSize
+$CanonicalLeagueID = $config.CanonicalLeagueID
 $CapDeadline = $config.CapDeadline
 $LeagueTimeZone = $config.LeagueTimeZone
-$CapDeadlineBufferDays = 3
+$CapDeadlineBufferDays = $config.CapDeadlineBufferDays
 $LeagueStatusSeasonStartBufferDays = $config.LeagueStatusSeasonStartBufferDays
-
-try {
-    $metadataPath = Join-Path $config.DataDir "Metadata.json"
-    if (Test-Path $metadataPath) {
-        $metadataContent = Get-Content $metadataPath -Raw | ConvertFrom-Json
-        if ($metadataContent.PSObject.Properties.Name -contains "CapDeadlineBufferDays") {
-            $CapDeadlineBufferDays = [int]$metadataContent.CapDeadlineBufferDays
-        }
-    }
-}
-catch {
-    Write-Warning "Could not read CapDeadlineBufferDays from Metadata.json. Falling back to 3 days. $_"
-}
 
 $ScheduleFile = $config.ScheduleFile
 $FantasyGameContextFile = Join-Path $config.DataDir "FantasyGameContext.json"
@@ -132,13 +119,13 @@ function Ensure-PreviousFantasyGameContextHistory {
     if (Test-Path $targetFile) { return }
 
     $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-    $canonicalLeagueID = "nfl-reise"
-    $seasonSourceDir = Join-Path $repoRoot "source-data\leagues\$canonicalLeagueID\seasons\$historicalSeason"
+    $canonicalLeagueID = $config.CanonicalLeagueID
+    $seasonSourceDir = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues\$canonicalLeagueID\seasons\$historicalSeason"
     $leagueSourceFile = Join-Path $seasonSourceDir "league.json"
     $matchupDirectory = Join-Path $seasonSourceDir "matchups"
     $scheduleFile = Join-Path $config.PastSeasonsDir "Schedule_$historicalSeason.json"
     $playersFile = Join-Path $config.PastSeasonsDir "Players_$historicalSeason.json"
-    $weeklyRosterDirectory = Join-Path $repoRoot "source-data\nfl\weekly-rosters\$historicalSeason"
+    $weeklyRosterDirectory = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "nfl\weekly-rosters\$historicalSeason"
 
     if (-not (Test-Path $leagueSourceFile) -or -not (Test-Path $matchupDirectory) -or -not (Test-Path $scheduleFile) -or -not (Test-Path $playersFile)) {
         Write-Warning "Historical FantasyGameContext $historicalSeason is not materialized because required source evidence is incomplete."
@@ -169,35 +156,18 @@ function Ensure-PreviousFantasyGameContextHistory {
 
 try {
     if (-not $LeagueID) {
-        Write-Error "LeagueID not set in config.ps1!"
-        exit 1
-    }
-    if (-not $SalaryRelevantTeamSize -or $SalaryRelevantTeamSize -le 0) {
-        Write-Error "SalaryRelevantTeamSize not set or invalid in config.ps1!"
+        Write-Error "LeagueID not set in the league metadata (data-meta)!"
         exit 1
     }
 
-    $transactionsCurrentSeason = Get-LeagueTransactionsCurrentSeasonInMemory -leagueID $LeagueID
-    $transactionsCurrentSeason = Resolve-LeagueTransactionDraftPickTypesInMemory `
-        -transactions $transactionsCurrentSeason
-
-    if ($transactionsCurrentSeason) {
-        Write-Host "Transactions for current season prepared in memory." -ForegroundColor Green
-    } else {
-        Write-Host "No transactions for current season generated." -ForegroundColor Yellow
-    }
-
-    $drafts = Update-LeagueDraftsOrderAwareFromTransactions `
-        -transactions $transactionsCurrentSeason `
-        -leagueID $LeagueID
+    # Current Transactions.json and Drafts.json are written from the league history product by the consumer
+    # generator (tools/league_history_app_publish.py write, ADR-057, Issue #999 step 5b) before this script runs
+    # in League Live. League status/phase and team draft picks read the freshly written Drafts.json.
+    $drafts = Get-LeagueDraftsLocal
     if (-not $drafts -or @($drafts).Count -eq 0) {
-        Write-Warning "Update-LeagueDraftsOrderAwareFromTransactions returned no drafts. Falling back to local Drafts.json."
-        $drafts = Get-LeagueDraftsLocal
+        throw "Drafts.json is missing or empty. The league history consumer generator must run before RequestLeague."
     }
-    $transactionsCurrentSeason = Add-LeagueTransactionDraftPickDetailsInMemory `
-        -transactions $transactionsCurrentSeason `
-        -drafts $drafts
-    Save-TransactionsCurrentSeason -transactions $transactionsCurrentSeason
+    Write-Host "Current drafts loaded from Drafts.json ($(@($drafts).Count))." -ForegroundColor Green
 
     $league = Get-CanonicalCurrentLeagueRaw -CanonicalLeagueID $CanonicalLeagueID
     $teamData = Get-CanonicalCurrentTeamsForLeague -CanonicalLeagueID $CanonicalLeagueID
@@ -252,32 +222,28 @@ try {
     $teamData = Add-DraftPickKeysToTeams -teams $teamData -drafts $drafts
 
     $playersData = Get-PlayersFromFile
-    $topCount = [int]$SalaryRelevantTeamSize * [int]$teamData.Count
-    if ($topCount -le 0) {
-        Write-Error "Invalid topCount for Salary Cap calculation. SalaryRelevantTeamSize=$SalaryRelevantTeamSize, TeamCount=$($teamData.Count)"
+    # --- Salary Cap aus dem PlayerValuation-Snapshot (#919 step 5): der neueste Snapshot der Saison ist der
+    # Stand, den der letzte Players-Lauf zusammen mit Players.json veroeffentlicht hat. Keine Berechnung hier.
+    $valuationSnapshot = Get-PlayerValuationLatestSnapshot -CanonicalLeagueID $CanonicalLeagueID -Season ([int]$league.season)
+    if ([int]$valuationSnapshot.League.TeamCount -ne [int]$teamData.Count) {
+        Write-Error "PlayerValuation snapshot TeamCount $($valuationSnapshot.League.TeamCount) differs from the league's $($teamData.Count) teams."
         exit 1
     }
-
-    $topPlayers = $playersData | Sort-Object -Property Salary -Descending | Select-Object -First $topCount
-    $topPlayersProjected = $playersData | Sort-Object -Property SalaryProjected -Descending | Select-Object -First $topCount
-    if ($topPlayers.Count -eq 0 -or $topPlayersProjected.Count -eq 0) {
-        Write-Error "No players found for Salary Cap calculation!"
+    $SalaryRelevantTeamSize = [int]$valuationSnapshot.League.SalaryRelevantTeamSize
+    if ($SalaryRelevantTeamSize -le 0) {
+        Write-Error "PlayerValuation snapshot SalaryRelevantTeamSize $SalaryRelevantTeamSize is invalid."
         exit 1
     }
-    Write-Host "Top $topCount players considered for Salary Cap calculation." -ForegroundColor Yellow
-
-    $avgSalary = ($topPlayers | Measure-Object -Property Salary -Average).Average
-    $avgSalaryProjected = ($topPlayersProjected | Measure-Object -Property SalaryProjected -Average).Average
-    $salaryCapTotal = [math]::Round($avgSalary * $SalaryRelevantTeamSize * 0.9)
-    $salaryCapProjected = [math]::Round($avgSalaryProjected * $SalaryRelevantTeamSize * 0.9)
-    Write-Host "Salary Cap (current): $($salaryCapTotal.ToString("N0"))" -ForegroundColor Yellow
+    $salaryCapTotal = [double]$valuationSnapshot.League.SalaryCap
+    $salaryCapProjected = [double]$valuationSnapshot.League.SalaryCapProjected
+    Write-Host "Salary Cap (current): $($salaryCapTotal.ToString("N0")) from $($valuationSnapshot.Models.SalaryCap) snapshot week $($valuationSnapshot.AsOfFinalScoredWeek)" -ForegroundColor Yellow
     Write-Host "Salary Cap (projected): $($salaryCapProjected.ToString("N0"))" -ForegroundColor Yellow
 
     $playoffStart = $league.settings.playoff_week_start
     Write-Host "Playoff start week: Week $playoffStart" -ForegroundColor Yellow
 
     $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-    $currentLeagueSourceFile = Join-Path $repoRoot "source-data\leagues\$CanonicalLeagueID\seasons\$currentSeason\league.json"
+    $currentLeagueSourceFile = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues\$CanonicalLeagueID\seasons\$currentSeason\league.json"
     $leagueWeekState = Resolve-LeagueWeekState `
         -League $league `
         -CanonicalLeagueSourceFile $currentLeagueSourceFile
@@ -311,7 +277,7 @@ try {
         -WaiversOpen $waiversOpen `
         -NextWaiverRun $nextWaiverRun
 
-    $canonicalIdentityPath = Join-Path $PSScriptRoot "..\..\source-data\nfl\identities\players.json"
+    $canonicalIdentityPath = Join-Path (Get-DataSourceRoot -RepoRoot (Join-Path $PSScriptRoot "..\..")) "nfl\identities\players.json"
     $canonicalIdentityPayload = Get-Content $canonicalIdentityPath -Raw | ConvertFrom-Json
     $canonicalIdentities = @($canonicalIdentityPayload.Players)
 
@@ -334,7 +300,7 @@ try {
             -Teams $teamData `
             -Players $playersData `
             -CanonicalIdentities $canonicalIdentities `
-            -SnapshotPath (Join-Path $PSScriptRoot "..\..\source-data\nfl\player-availability\espn.json")
+            -SnapshotPath (Join-Path (Get-DataSourceRoot -RepoRoot (Join-Path $PSScriptRoot "..\..")) "nfl\player-availability\espn.json")
     )
     $scoringAvailabilityObservations = @(
         Resolve-PlayerScoringAvailabilityObservationTimes `

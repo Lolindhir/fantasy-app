@@ -15,6 +15,8 @@ from nfl_source_data_lib.history import (
     known_unavailable_reason,
     known_unavailable_week_reason,
 )
+from data_roots import DATA_SOURCE_ROOT, data_meta_dir
+from league_metadata import list_league_ids
 
 LARGE_FILE_BYTES = 5 * 1024 * 1024
 SPECIAL_TEAMS_FUMBLE_EVENTS_DATASET_ID = "nflverse.special-teams-fumble-events"
@@ -51,7 +53,7 @@ def git_last_change(repo_root: Path, relative_path: str) -> str | None:
 
 
 def current_season(repo_root: Path) -> int:
-    schedules = repo_root / "source-data/nfl/schedules"
+    schedules = repo_root / DATA_SOURCE_ROOT / "nfl/schedules"
     values = [int(path.stem) for path in schedules.glob("*.json") if path.stem.isdigit()]
     if not values:
         raise ValueError("Cannot determine source season: no canonical schedule seasons exist")
@@ -59,7 +61,7 @@ def current_season(repo_root: Path) -> int:
 
 
 def registry_dataset(repo_root: Path, dataset_id: str) -> dict[str, Any]:
-    registry = read_json(repo_root / "source-data/registry.json", {})
+    registry = read_json(repo_root / DATA_SOURCE_ROOT / "registry.json", {})
     for dataset in registry.get("datasets", []):
         if dataset.get("id") == dataset_id:
             return dataset
@@ -71,7 +73,7 @@ def render_path(template: str, season: int) -> str:
 
 
 def canonical_partition_count(repo_root: Path, canonical: str, season: int) -> int:
-    root = repo_root / "source-data/nfl" / canonical
+    root = repo_root / DATA_SOURCE_ROOT / "nfl" / canonical
     file_path = root / f"{season}.json"
     if file_path.exists():
         return 1
@@ -84,7 +86,7 @@ def canonical_partition_count(repo_root: Path, canonical: str, season: int) -> i
 
 
 def build_special_teams_fumble_historical_coverage(repo_root: Path, season: int) -> dict[str, Any]:
-    finality_path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
+    finality_path = repo_root / DATA_SOURCE_ROOT / "nfl/game-finality" / f"{season}.json"
     finality = read_json(finality_path)
     contract_errors: list[str] = []
     week_finality: dict[int, bool] = {}
@@ -139,7 +141,7 @@ def build_special_teams_fumble_historical_coverage(repo_root: Path, season: int)
     blocking_incomplete_weeks = [
         week for week in incomplete_weeks if week not in known_unavailable_week_numbers
     ]
-    season_dir = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season)
+    season_dir = repo_root / DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events" / str(season)
     partition_paths = {
         int(path.stem): path
         for path in season_dir.glob("*.json")
@@ -227,8 +229,8 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
         historical_event_contract_errors: list[str] = []
 
         for season in range(int(policy["start"]), season_now + 1):
-            raw_rel = "source-data/" + render_path(dataset["rawPath"], season)
-            metadata_rel = "source-data/" + render_path(dataset["metadataPath"], season)
+            raw_rel = f"{DATA_SOURCE_ROOT}/" + render_path(dataset["rawPath"], season)
+            metadata_rel = f"{DATA_SOURCE_ROOT}/" + render_path(dataset["metadataPath"], season)
             raw_exists = (repo_root / raw_rel).exists()
             metadata = read_json(repo_root / metadata_rel, {}) or {}
             availability = metadata.get("availabilityStatus") or metadata.get("AvailabilityStatus")
@@ -316,8 +318,8 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             "MissingHistoricalSeasons": missing_historical,
             "CurrentSeasonMayBeUnavailable": dataset.get("availabilityPolicy") == "current-season-may-be-unavailable",
             "Seasons": rows,
-            "RawLastChange": git_last_change(repo_root, str(Path("source-data") / dataset["rawPath"].replace("{season}", "*"))),
-            "CanonicalLastChange": git_last_change(repo_root, f"source-data/nfl/{policy['canonical']}"),
+            "RawLastChange": git_last_change(repo_root, str(Path(DATA_SOURCE_ROOT) / dataset["rawPath"].replace("{season}", "*"))),
+            "CanonicalLastChange": git_last_change(repo_root, f"{DATA_SOURCE_ROOT}/nfl/{policy['canonical']}"),
         }
 
         if dataset_id == SPECIAL_TEAMS_FUMBLE_EVENTS_DATASET_ID:
@@ -392,8 +394,8 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
             f"{player_identity_coverage['GSISCanonicalConflictCount']} GSIS IDs map to multiple CanonicalPlayerIDs"
         )
 
-    schedule_files = sorted((repo_root / "source-data/nfl/schedules").glob("*.json"))
-    finality_files = sorted((repo_root / "source-data/nfl/game-finality").glob("*.json"))
+    schedule_files = sorted((repo_root / DATA_SOURCE_ROOT / "nfl/schedules").glob("*.json"))
+    finality_files = sorted((repo_root / DATA_SOURCE_ROOT / "nfl/game-finality").glob("*.json"))
     return {
         "schemaVersion": 1,
         "CurrentSourceSeason": season_now,
@@ -428,12 +430,12 @@ def build_nfl_readiness(repo_root: Path) -> dict[str, Any]:
 
 
 def build_league_readiness(repo_root: Path) -> dict[str, Any]:
-    root = repo_root / "source-data/leagues"
+    root = repo_root / DATA_SOURCE_ROOT / "leagues"
     leagues = []
     failures = []
-    for bootstrap_path in sorted((root / "_bootstrap").glob("*.json")):
-        bootstrap = read_json(bootstrap_path, {}) or {}
-        canonical_id = bootstrap.get("CanonicalLeagueID")
+    meta_root = data_meta_dir(repo_root)
+    for canonical_id in list_league_ids(meta_root) if meta_root.exists() else []:
+        bootstrap = read_json(meta_root / str(canonical_id) / "metadata.json", {}) or {}
         manifest_path = root / str(canonical_id) / "manifest.json"
         manifest = read_json(manifest_path, {}) or {}
         seasons = []
@@ -492,7 +494,7 @@ def build_league_readiness(repo_root: Path) -> dict[str, Any]:
 
 
 def build_storage_audit(repo_root: Path) -> dict[str, Any]:
-    source_root = repo_root / "source-data"
+    source_root = repo_root / DATA_SOURCE_ROOT
     files = []
     total = 0
     for path in source_root.rglob("*"):
@@ -535,9 +537,9 @@ def main() -> int:
     payload = {"NFL": nfl, "League": league, "Storage": storage}
     if args.write:
         changed = {
-            "nfl": write_json_if_changed(root / "source-data/audits/nfl-source-data-readiness.json", nfl),
-            "league": write_json_if_changed(root / "source-data/audits/league-source-data-audit.json", league),
-            "storage": write_json_if_changed(root / "source-data/audits/source-data-storage-audit.json", storage),
+            "nfl": write_json_if_changed(root / DATA_SOURCE_ROOT / "audits/nfl-source-data-readiness.json", nfl),
+            "league": write_json_if_changed(root / DATA_SOURCE_ROOT / "audits/league-source-data-audit.json", league),
+            "storage": write_json_if_changed(root / DATA_SOURCE_ROOT / "audits/source-data-storage-audit.json", storage),
         }
         payload["Changed"] = changed
     print(json.dumps(payload, indent=2, ensure_ascii=False, sort_keys=True))

@@ -39,12 +39,12 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertIn("publish_canonical_commit()", source)
         self.assertIn("materialize_input_pathspecs=(", source)
         for path in (
-            "source-data/registry.json",
-            "source-data/providers/dynastyprocess",
-            "source-data/providers/nflverse",
-            "source-data/providers/sleeper/players",
-            "source-data/nfl",
-            "'source-data/leagues/*/manifest.json'",
+            "data-source/registry.json",
+            "data-source/providers/dynastyprocess",
+            "data-source/providers/nflverse",
+            "data-source/providers/sleeper/players",
+            "data-source/nfl",
+            "'data-source/leagues/*/manifest.json'",
             "tools",
         ):
             self.assertIn(f"            {path}\n", source)
@@ -55,7 +55,7 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("public/data/League.json", inputs)
         self.assertIn('git diff --quiet "$base_sha" origin/main -- "${materialize_input_pathspecs[@]}"', source)
         self.assertIn("git rebase origin/main", source)
-        self.assertNotIn("            source-data/providers\n", source)
+        self.assertNotIn("            data-source/providers\n", source)
         self.assertNotIn("sleeper/leagues\n", source.split("materialize_input_pathspecs=(")[1].split(")")[0])
         self.assertIn("if publish_canonical_commit; then", source)
         self.assertNotIn("--force-with-lease", source)
@@ -64,7 +64,7 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
     def test_scoped_workflow_has_explicit_write_guard_and_no_full_audit(self) -> None:
         source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
         self.assertIn("assert_scoped_canonical_write_set", source)
-        self.assertIn('source-data/nfl/game-finality/*', source)
+        self.assertIn('data-source/nfl/game-finality/*', source)
         self.assertIn('materialize_args+=(--scope game-finality)', source)
         self.assertIn('if [[ "$materialization_scope" == "full" ]]; then', source)
         self.assertIn("python tools/nfl_source_data.py audit", source)
@@ -96,7 +96,7 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         audit_at = source.index(audit_cmd)
         self.assertGreater(audit_at, source.index("Second idempotency check (attempt"))
         self.assertLess(audit_at, source.index("python tools/nfl_source_data.py audit"))
-        self.assertLess(audit_at, source.index("git add -- source-data\n"))
+        self.assertLess(audit_at, source.index("git add -- data-source\n"))
         section = source[source.rindex('if [[ "$materialization_scope" == "full" ]]; then', 0, audit_at):audit_at]
         self.assertIn("post_audit_log", section)
         self.assertIn('write_failure_diagnostic "post-materialize-audit"', source)

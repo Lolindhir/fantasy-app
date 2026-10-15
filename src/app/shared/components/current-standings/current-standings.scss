@@ -107,3 +107,377 @@
     font-weight: inherit;
   }
 }
+/* The routed Standings page opts into this density; the Overview stays compact. */
+.current-standings--detailed {
+  gap: 0;
+  --standing-detail-grid: 24px minmax(0, 1fr) 87px 26px;
+  --standing-detail-gap: 6px;
+}
+
+.standing-detailed-heading,
+.standing-detailed-row {
+  display: grid;
+  grid-template-columns: var(--standing-detail-grid);
+  column-gap: var(--standing-detail-gap);
+  align-items: center;
+}
+
+.standing-detailed-heading {
+  padding: 0 2px 10px;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.standing-detailed-heading h2 {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.standing-detailed-row {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 50px;
+  padding: 3px 2px;
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.standing-detailed-row--cutline {
+  border-top-color: rgba(100, 116, 139, 0.63);
+  border-top-width: 2px;
+  margin-top: 3px;
+}
+
+.standing-detailed-rank {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+  color: #475569;
+}
+
+.standing-detailed-rank strong {
+  font-size: 0.94rem;
+}
+
+.standing-detailed-movement {
+  font-size: 0.68rem;
+  line-height: 1.15;
+  font-weight: 900;
+  white-space: nowrap;
+  color: #94a3b8;
+}
+
+.standing-detailed-movement--up { color: #4c8260; }
+.standing-detailed-movement--down { color: #aa5757; }
+
+.standing-detailed-team {
+  position: relative;
+  min-width: 0;
+  min-height: 36px;
+}
+.standing-detailed-identity {
+  --team-identity-avatar-size: 36px;
+  --team-identity-gap: 7px;
+  --team-identity-title-font-size: 0.82rem;
+  --team-identity-avatar-radius: 50%;
+  --team-identity-align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+}
+
+.standing-detailed-form-line {
+  position: absolute;
+  top: 20px;
+  right: 0;
+  left: 43px;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.15;
+  color: #475569;
+  white-space: nowrap;
+  font-size: 0.67rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.standing-detailed-owner {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #64748b;
+}
+.standing-detailed-record,
+.standing-detailed-streak,
+.standing-detailed-form {
+  flex: 0 0 auto;
+}
+.standing-detailed-record {
+  color: #172033;
+  font-size: calc(1em + 0.1rem);
+  font-weight: 800;
+}
+.standing-detailed-streak {
+  color: #64748b;
+  font-weight: 700;
+  padding-left: 6px;
+  border-left: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.standing-detailed-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding-left: 6px;
+  border-left: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.standing-detailed-form-dot {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.standing-detailed-form-dot--win { background: #4c8260; }
+.standing-detailed-form-dot--loss { background: #aa5757; }
+.standing-detailed-form-dot--tie { background: #94a3b8; }
+
+.standing-detailed-scores {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+.standing-detailed-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 5px;
+  width: 100%;
+  white-space: nowrap;
+}
+.standing-detailed-score-label {
+  color: #94a3b8;
+  font-size: 0.55rem;
+  font-weight: 750;
+}
+.standing-detailed-points {
+  text-align: right;
+  font-size: 0.72rem;
+  line-height: 1.1;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.standing-detailed-points--for {
+  font-weight: 800;
+  color: #172033;
+}
+
+.standing-detailed-expand {
+  display: grid;
+  place-items: center;
+  justify-self: end;
+  width: 26px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.standing-detailed-expand:hover { background: rgba(148, 163, 184, 0.12); }
+.standing-detailed-expand:focus-visible {
+  outline: 2px solid var(--mat-sys-primary, #4f46e5);
+  outline-offset: 2px;
+}
+
+.standing-detailed-chevron {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 150ms ease;
+}
+
+.standing-detailed-chevron--open { transform: rotate(225deg); }
+
+.standing-detailed-details {
+  display: grid;
+  gap: 8px;
+  margin: -1px 2px 7px 31px;
+  padding: 11px 13px;
+  border: 1px solid rgba(148, 163, 184, 0.17);
+  border-radius: 0 0 10px 10px;
+  background: #f1f5f9;
+  animation: standing-details-in 150ms ease-out;
+}
+
+.standing-detailed-stat {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.standing-detailed-stat strong {
+  color: #334155;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.standing-detailed-trend {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.standing-detailed-trend-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  color: #334155;
+  font-size: 0.78rem;
+}
+
+.standing-detailed-trend-heading > span {
+  color: #64748b;
+  font-size: 0.68rem;
+}
+
+.standing-detailed-trend-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+  overflow: visible;
+}
+
+.standing-detailed-trend-guide {
+  fill: none;
+  stroke: rgba(100, 116, 139, 0.24);
+  stroke-width: 0.9;
+  stroke-dasharray: 3 4;
+}
+
+.standing-detailed-trend-axis {
+  fill: #64748b;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.standing-detailed-trend-line {
+  fill: none;
+  stroke: #4c8260;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.standing-detailed-trend-point {
+  fill: #fff;
+  stroke: #4c8260;
+  stroke-width: 2;
+}
+
+.standing-detailed-trend-unavailable {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(148, 163, 184, 0.3);
+  color: #64748b;
+  font-size: 0.74rem;
+}
+
+@keyframes standing-details-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Keep all five form markers readable at 320–359px; clip only the secondary owner. */
+@media (max-width: 359px) {
+  .current-standings--detailed {
+    --standing-detail-grid: 20px minmax(0, 1fr) 75px 24px;
+    --standing-detail-gap: 4px;
+  }
+  .standing-detailed-identity {
+    --team-identity-avatar-size: 32px;
+    --team-identity-gap: 5px;
+    --team-identity-title-font-size: 0.76rem;
+  }
+  .standing-detailed-team { min-height: 32px; }
+  .standing-detailed-form-line {
+    top: 19px;
+    left: 37px;
+    gap: 2px;
+    font-size: 0.6rem;
+  }
+  .standing-detailed-streak,
+  .standing-detailed-form { padding-left: 3px; }
+  .standing-detailed-form { gap: 2px; }
+  .standing-detailed-form-dot { width: 6px; height: 6px; }
+  .standing-detailed-points { font-size: 0.66rem; }
+  .standing-detailed-score-label { font-size: 0.5rem; }
+  .standing-detailed-expand { width: 24px; }
+}
+
+@media (min-width: 480px) {
+  .current-standings--detailed {
+    --standing-detail-grid: 30px minmax(0, 1fr) 96px 32px;
+    --standing-detail-gap: 9px;
+  }
+  .standing-detailed-identity {
+    --team-identity-avatar-size: 40px;
+    --team-identity-title-font-size: 0.9rem;
+  }
+  .standing-detailed-team { min-height: 40px; }
+  .standing-detailed-form-line { top: 23px; left: 47px; font-size: 0.74rem; }
+  .standing-detailed-points { font-size: 0.83rem; }
+  .standing-detailed-form-dot { width: 9px; height: 9px; }
+  .standing-detailed-expand { width: 32px; }
+}
+
+@media (min-width: 768px) {
+  .current-standings--detailed {
+    --standing-detail-grid: 45px minmax(0, 1fr) 125px 38px;
+    --standing-detail-gap: 12px;
+  }
+  .standing-detailed-row { min-height: 66px; padding: 9px 8px; }
+  .standing-detailed-heading { padding: 3px 8px 12px; }
+  .standing-detailed-heading h2 { font-size: 1.15rem; }
+  .standing-detailed-identity {
+    --team-identity-avatar-size: 46px;
+    --team-identity-title-font-size: 0.98rem;
+  }
+  .standing-detailed-team { min-height: 46px; }
+  .standing-detailed-form-line { top: 26px; left: 53px; font-size: 0.8rem; }
+  .standing-detailed-details { margin-left: 49px; }
+  .standing-detailed-points { font-size: 0.94rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .standing-detailed-chevron { transition: none; }
+  .standing-detailed-details { animation: none; }
+}

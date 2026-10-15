@@ -43,7 +43,7 @@ function Assert-Before {
 }
 
 # The transactions request must rebuild current and historical transaction bases
-# from canonical League source-data, then rebuild dependent drafts before final
+# from canonical League data-source, then rebuild dependent drafts before final
 # draft-result enrichment.
 $requestTransactions = Get-Content "$PSScriptRoot\RequestTransactions.ps1" -Raw
 Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonical") -Message "RequestTransactions no longer uses the canonical all-season transaction rebuild."
@@ -239,7 +239,9 @@ Assert-Equal -Actual @($transactionsTarget.cron)[0] -Expected "5 4 * * 3" -Messa
 Assert-True -Condition $transactionsWorkflow.Contains("repository_dispatch:") -Message "Transactions workflow no longer accepts central scheduler dispatches."
 Assert-True -Condition $transactionsWorkflow.Contains("scheduler-update-transactions") -Message "Transactions workflow lost its central scheduler event type."
 Assert-True -Condition (-not $transactionsWorkflow.Contains("schedule:")) -Message "Transactions workflow must not own a local schedule after central scheduler migration."
-Assert-True -Condition $transactionsWorkflow.Contains("RequestTransactions.ps1") -Message "Transactions workflow no longer runs RequestTransactions.ps1."
+Assert-True -Condition $transactionsWorkflow.Contains("league_history_app_publish.py write") -Message "Transactions workflow no longer writes the App files from the league history product (Issue 999 step 5b)."
+Assert-True -Condition ($transactionsWorkflow.IndexOf("league_history_app_publish.py write") -lt $transactionsWorkflow.IndexOf("RequestPastSeasonsIndex.ps1")) -Message "Transactions workflow must refresh PastSeasonsIndex after the App files were written."
+Assert-True -Condition $draftsWorkflow.Contains("league_history_app_publish.py write") -Message "Drafts workflow no longer writes the App files from the league history product (Issue 999 step 5b)."
 Assert-True -Condition $draftsWorkflow.Contains("workflow_dispatch:") -Message "Drafts workflow is no longer manually dispatchable."
 Assert-True -Condition (-not $draftsWorkflow.Contains("schedule:")) -Message "Drafts workflow must be manual-only after the coupled history rebuild change."
 

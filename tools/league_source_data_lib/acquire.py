@@ -13,6 +13,7 @@ from typing import Callable
 from .core import SleeperLeagueInstance, write_json_if_changed
 from .registry import LeagueDataset
 from .week_structure import resolve_nfl_regular_season_week_ceiling
+from data_roots import DATA_SOURCE_ROOT
 
 API_ROOT = "https://api.sleeper.app"
 SLEEPER_FETCH_MAX_ATTEMPTS = 3
@@ -107,7 +108,7 @@ def _metadata(plan: PlannedRawWrite) -> dict:
 
 
 def _existing_payload(repo_root: Path, raw_relative_path: str) -> object | None:
-    path = repo_root / "source-data" / raw_relative_path
+    path = repo_root / DATA_SOURCE_ROOT / raw_relative_path
     if not path.exists():
         return None
     with path.open("r", encoding="utf-8") as handle:
@@ -135,7 +136,7 @@ def _plan_one(
     existing = _existing_payload(repo_root, raw_relative)
     if offline:
         if existing is None and seeded_payload is None:
-            raise FileNotFoundError(f"Offline raw dataset missing: {repo_root / 'source-data' / raw_relative}")
+            raise FileNotFoundError(f"Offline raw dataset missing: {repo_root / DATA_SOURCE_ROOT / raw_relative}")
         payload = seeded_payload if seeded_payload is not None else existing
     elif instance.season < current_season and existing is not None and not force:
         payload = existing
@@ -153,8 +154,8 @@ def _plan_one(
         dataset_id=dataset.id,
         provider_league_id=instance.provider_league_id,
         season=instance.season,
-        raw_path=repo_root / "source-data" / raw_relative,
-        metadata_path=repo_root / "source-data" / metadata_relative,
+        raw_path=repo_root / DATA_SOURCE_ROOT / raw_relative,
+        metadata_path=repo_root / DATA_SOURCE_ROOT / metadata_relative,
         payload=payload,
         source_url=source_url,
         partition=partition,

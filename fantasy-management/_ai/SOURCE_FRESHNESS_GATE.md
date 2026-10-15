@@ -157,7 +157,7 @@ Für FFC ist der erste produktive Vertrag:
 - vor Beginn der Regular Season bleibt `redraft_adp` ein No-Event-relevanter Input;
 - während der Regular Season bleibt FFC sichtbar und wird weiter refreshed, ist für Daily Free-Agent-No-Event aber `secondary`; ein fehlender FFC-Heartbeat degradiert den Freshness-Status, blockiert jedoch nicht die No-Event-Aussage;
 - in Postseason bzw. nach Ende der Regular Season wird FFC für diesen Freshness-Consumer aus der erwarteten Population genommen;
-- die Phase stammt aus dem kanonischen NFL Schedule unter `source-data/nfl/schedules/<season>.json`, nicht aus Sleeper- oder Workflow-Kalenderheuristik.
+- die Phase stammt aus dem kanonischen NFL Schedule unter `data-source/nfl/schedules/<season>.json`, nicht aus Sleeper- oder Workflow-Kalenderheuristik.
 
 Diese Policy ändert keine technische Validierungsgrenze. Malformed Payload, falsche Source-Identity, ungültige Teamzahl, veraltetes Sample oder mathematisch inkonsistente Playerdaten bleiben technische Fehler und erzeugen keinen Success-Heartbeat.
 

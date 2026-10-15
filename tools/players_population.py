@@ -49,11 +49,12 @@ from players_league_scoring import (  # noqa: E402
     SleeperIdentityResolver,
     league_owned_sleeper_ids,
 )
+from data_roots import DATA_SOURCE_ROOT  # noqa: E402
 
 SCHEMA_VERSION = 1
 APP_FANTASY_POSITIONS = ("TE", "QB", "RB", "WR", "K")
-SNAPSHOT_PATH = "source-data/nfl/platform/sleeper/players.json"
-PROFILES_PATH = "source-data/nfl/player-profiles/nflverse.json"
+SNAPSHOT_PATH = f"{DATA_SOURCE_ROOT}/nfl/platform/sleeper/players.json"
+PROFILES_PATH = f"{DATA_SOURCE_ROOT}/nfl/player-profiles/nflverse.json"
 FANTASYPROS_URL = "https://www.fantasypros.com/nfl/players/{slug}.php"
 ESPN_PLAYER_URL = "https://www.espn.com/nfl/player/_/id/{espn_id}/{slug}"
 # The NFL image CDN serves the original (3400x2450 px, 1 to 5 MB); the app shows 34 to 60 px, so request 160 px (about 6 KB).
@@ -105,7 +106,7 @@ def _canonical_ids(document: Any, source: str) -> set[str]:
 
 def roster_basis(repo_root: Path, season: int) -> tuple[set[str], dict[str, Any]]:
     """Canonical roster membership of the season; previous season while the current one is unpublished."""
-    rosters = repo_root / "source-data/nfl/rosters"
+    rosters = repo_root / DATA_SOURCE_ROOT / "nfl/rosters"
     current = rosters / f"{season}.json"
     used_season = season
     previous = False
@@ -117,7 +118,7 @@ def roster_basis(repo_root: Path, season: int) -> tuple[set[str], dict[str, Any]
                 f"No canonical NFL roster for {season} or {used_season}; refusing to publish an empty population"
             )
     ids = _canonical_ids(read_json(rosters / f"{used_season}.json"), f"rosters/{used_season}.json")
-    weekly_dir = repo_root / "source-data/nfl/weekly-rosters" / str(used_season)
+    weekly_dir = repo_root / DATA_SOURCE_ROOT / "nfl/weekly-rosters" / str(used_season)
     weekly_files = sorted(weekly_dir.glob("*.json")) if weekly_dir.is_dir() else []
     for path in weekly_files:
         ids |= _canonical_ids(read_json(path), f"weekly-rosters/{used_season}/{path.name}")
@@ -130,7 +131,7 @@ def roster_basis(repo_root: Path, season: int) -> tuple[set[str], dict[str, Any]
 
 
 def draft_basis(repo_root: Path, season: int) -> set[str]:
-    path = repo_root / "source-data/nfl/draft" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/draft" / f"{season}.json"
     if not path.is_file():
         return set()
     picks = read_json(path).get("Picks")
@@ -162,7 +163,7 @@ def provider_ids_by_canonical(repo_root: Path) -> dict[str, dict[str, str]]:
 
     ESPN is the athlete ID for the ESPN profile link and the headshot fallback (H2).
     """
-    payload = read_json(repo_root / "source-data/nfl/identities/players.json")
+    payload = read_json(repo_root / DATA_SOURCE_ROOT / "nfl/identities/players.json")
     out: dict[str, dict[str, str]] = {}
     for record in payload.get("Players") or []:
         ids = record.get("IDs") or {}

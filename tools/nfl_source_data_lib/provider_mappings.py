@@ -11,6 +11,7 @@ from .identity_adjudications import (
 )
 from .identity_model import ANCHOR_ID_KEYS
 from .provisional_reconciliation import _without_season
+from data_roots import DATA_SOURCE_ROOT
 
 PLACEHOLDER_GSIS_UPGRADE_REASON = "placeholder_gsis_upgrade_transfers_current_claim"
 CURRENT_ADJUDICATION_REASON = "current_identity_adjudication_transfers_current_claim"
@@ -115,7 +116,7 @@ def build_provider_mapping_payload(
     corrected current mapping for the same canonical person.
     """
 
-    path = repo_root / "source-data/nfl/identities/provider-mappings.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/identities/provider-mappings.json"
     existing = normalize_legacy_canonical_player_fields(load_json(path, {}) or {})
     mappings = [dict(item) for item in existing.get("Mappings", [])]
     conflicts = [dict(item) for item in existing.get("Conflicts", [])]

@@ -41,18 +41,17 @@ function Get-OccurrenceCount {
     return ([regex]::Matches($Text, [regex]::Escape($Needle))).Count
 }
 
-# RequestLeague must use the in-memory orchestration and persist current
-# Transactions.json exactly once after both enrichment phases.
+# Since Issue 999 step 5b RequestLeague no longer builds Transactions or Drafts itself: the league history
+# consumer generator writes them before RequestLeague runs in League Live; RequestLeague only reads Drafts.json.
 $requestLeague = Get-Content "$PSScriptRoot\RequestLeague.ps1" -Raw
-Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Save-TransactionsCurrentSeason -transactions `$transactionsCurrentSeason") -Expected 1 -Message "RequestLeague must have exactly one final Transactions persistence point."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Save-TransactionsCurrentSeason") -Expected 0 -Message "RequestLeague must not persist Transactions.json; the league history consumer generator owns it."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Update-TransactionsCurrentSeason") -Expected 0 -Message "RequestLeague still uses the persisting current-season transaction updater."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Update-CurrentTransactionDraftPickTypesFromSleeper") -Expected 0 -Message "RequestLeague still uses the persisting draft-identity enrichment wrapper."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Update-CurrentTransactionDraftPickDetails") -Expected 0 -Message "RequestLeague still uses the persisting pick-detail enrichment wrapper."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Update-DraftsOrderAware") -Expected 0 -Message "RequestLeague still lets Drafts reload Transactions.json instead of using the same snapshot."
-Assert-True -Condition $requestLeague.Contains("Get-LeagueTransactionsCurrentSeasonInMemory") -Message "RequestLeague does not build transactions in memory."
-Assert-True -Condition $requestLeague.Contains("Resolve-LeagueTransactionDraftPickTypesInMemory") -Message "RequestLeague does not resolve draft identity in memory."
-Assert-True -Condition $requestLeague.Contains("Update-LeagueDraftsOrderAwareFromTransactions") -Message "RequestLeague does not pass the in-memory transaction snapshot to draft generation."
-Assert-True -Condition $requestLeague.Contains("Add-LeagueTransactionDraftPickDetailsInMemory") -Message "RequestLeague does not enrich transaction pick details in memory."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-LeagueTransactionsCurrentSeasonInMemory") -Expected 0 -Message "RequestLeague still builds transactions itself."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Update-LeagueDraftsOrderAwareFromTransactions") -Expected 0 -Message "RequestLeague still generates drafts itself."
+Assert-True -Condition $requestLeague.Contains('$drafts = Get-LeagueDraftsLocal') -Message "RequestLeague does not read the Drafts.json written by the league history consumer generator."
 Assert-True -Condition $requestLeague.Contains("Resolve-LeagueTradeDeadlineWeek") -Message "RequestLeague does not normalize the trade deadline before publishing League.json."
 Assert-True -Condition $requestLeague.Contains("SeasonKickoff           = `$seasonKickoff") -Message "RequestLeague does not publish SeasonKickoff."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Matchups                = `$matchupSnapshot") -Expected 0 -Message "RequestLeague still publishes the legacy League.Matchups snapshot."
@@ -74,17 +73,19 @@ Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentMatchupLoad 
 $leagueLiveWorkflow = Get-Content (Join-Path (Join-Path $PSScriptRoot "..\..") ".github/workflows/league-live.yml") -Raw
 Assert-True -Condition $leagueLiveWorkflow.Contains("materialization_scope: current") -Message "League Live does not run the combined current League source scope."
 Assert-True -Condition $leagueLiveWorkflow.Contains("RequestLeaguePublication.ps1") -Message "League Live does not publish the App League read model."
+Assert-True -Condition $leagueLiveWorkflow.Contains("league_history_app_publish.py write") -Message "League Live does not write Transactions.json and Drafts.json from the league history product."
+Assert-True -Condition ($leagueLiveWorkflow.IndexOf("league_history_app_publish.py write") -lt $leagueLiveWorkflow.IndexOf("RequestLeaguePublication.ps1")) -Message "League Live must write the league history files before RequestLeague reads Drafts.json."
 Assert-True -Condition $leagueLiveWorkflow.Contains("RequestStandings.ps1") -Message "League Live does not rebuild Standings."
 # Standings must be published before League is built: League.json embeds the published Standings placement context.
 Assert-True -Condition ($leagueLiveWorkflow.IndexOf("RequestStandings.ps1") -lt $leagueLiveWorkflow.IndexOf("RequestLeaguePublication.ps1")) -Message "League Live must rebuild Standings before League so team placement context is current."
 $updateStandingsWorkflow = Get-Content (Join-Path (Join-Path $PSScriptRoot "..\..") ".github/workflows/update-standings.yml") -Raw
 Assert-True -Condition (-not $updateStandingsWorkflow.Contains("  push:")) -Message "APP Standings workflow must not have push triggers; League Live owns input-driven rebuilds."
 foreach ($canonicalStandingPath in @(
-    "source-data/leagues/*/seasons/*/league.json",
-    "source-data/leagues/*/seasons/*/members.json",
-    "source-data/leagues/*/seasons/*/rosters.json",
-    "source-data/leagues/*/seasons/*/winners-bracket.json",
-    "source-data/leagues/*/seasons/*/losers-bracket.json"
+    "data-source/leagues/*/seasons/*/league.json",
+    "data-source/leagues/*/seasons/*/members.json",
+    "data-source/leagues/*/seasons/*/rosters.json",
+    "data-source/leagues/*/seasons/*/winners-bracket.json",
+    "data-source/leagues/*/seasons/*/losers-bracket.json"
 )) {
     Assert-True -Condition $leagueLiveWorkflow.Contains($canonicalStandingPath) -Message "League Live does not detect Standings input '$canonicalStandingPath'."
 }
@@ -154,7 +155,7 @@ Assert-True -Condition $pipeline.Contains("Get-CanonicalTransactionsCurrentSeaso
 Assert-Equal -Actual (Get-OccurrenceCount -Text $pipeline -Needle "Get-TransactionsRemoteForWeeks") -Expected 0 -Message "League in-memory helper still fetches transactions directly from Sleeper."
 
 # Standalone/history requests retain the file-based draft contract while both
-# current and historical transaction bases come from canonical League source-data.
+# current and historical transaction bases come from canonical League data-source.
 $requestTransactions = Get-Content "$PSScriptRoot\RequestTransactions.ps1" -Raw
 Assert-True -Condition $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonical") -Message "Standalone transaction rebuild no longer uses canonical all-season data."
 Assert-True -Condition (-not $requestTransactions.Contains("Update-TransactionsAllSeasonsCanonicalCurrent")) -Message "Standalone transaction rebuild still uses the transitional current-only canonical path."
@@ -498,7 +499,7 @@ $canonicalCurrentSource = Get-CanonicalStandingSourceForSeason `
     -AllowActiveSeason
 Assert-Equal -Actual $canonicalCurrentSeasonData.IsCompleted -Expected $canonicalCurrentSource.IsCompleted -Message "Canonical current standings completion state is not propagated from league.json."
 
-# Current canonical source-data and generated Standings.json are published by
+# Current canonical data-source and generated Standings.json are published by
 # separate race-safe workflows. A PR merge ref may therefore observe the canonical
 # source one commit ahead of the generated current-season snapshot. Validate the two
 # canonical current consumer APIs against each other here; the workflow-trigger
@@ -560,8 +561,8 @@ Assert-StandingsJsonEqual -Actual $canonicalPlayoffs -Expected $publishedLeague.
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $providerLeagueID = [string]$canonicalLeagueCoreShadow.League.league_id
-$rawWinnersPath = Join-Path $repoRoot "source-data/providers/sleeper/leagues/$providerLeagueID/winners-bracket.json"
-$rawLosersPath = Join-Path $repoRoot "source-data/providers/sleeper/leagues/$providerLeagueID/losers-bracket.json"
+$rawWinnersPath = Join-Path $repoRoot "data-source/providers/sleeper/leagues/$providerLeagueID/winners-bracket.json"
+$rawLosersPath = Join-Path $repoRoot "data-source/providers/sleeper/leagues/$providerLeagueID/losers-bracket.json"
 $rawWinners = @((Get-Content $rawWinnersPath -Raw | ConvertFrom-Json))
 $rawLosers = @((Get-Content $rawLosersPath -Raw | ConvertFrom-Json))
 $shadowWinners = @($canonicalPlayoffs.WinnersBracket)
@@ -570,7 +571,7 @@ Assert-StandingsJsonEqual -Actual $shadowWinners -Expected $rawWinners -Message 
 Assert-StandingsJsonEqual -Actual $shadowLosers -Expected $rawLosers -Message "Canonical current losers bracket does not reconstruct raw Sleeper routing."
 
 # Current matchup adapter must reconstruct the persisted Sleeper provider semantics
-# from canonical week-partitioned source-data without live-provider fallback.
+# from canonical week-partitioned data-source without live-provider fallback.
 $canonicalMatchupUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -Raw
 Assert-True -Condition (-not $canonicalMatchupUtils.Contains("Get-SleeperMatchups")) -Message "Canonical current matchup shadow performs a live Sleeper matchup read."
 Assert-True -Condition (-not $canonicalMatchupUtils.Contains("Invoke-RestMethod")) -Message "Canonical current matchup shadow performs a direct HTTP read."
@@ -583,7 +584,7 @@ if ($currentMatchupWeek -le 0) {
 }
 Assert-True -Condition ($currentMatchupWeek -gt 0) -Message "Canonical current matchup parity could not resolve a positive active week."
 
-$rawCurrentMatchupPath = Join-Path $repoRoot "source-data/providers/sleeper/leagues/$providerLeagueID/matchups/week-$currentMatchupWeek.json"
+$rawCurrentMatchupPath = Join-Path $repoRoot "data-source/providers/sleeper/leagues/$providerLeagueID/matchups/week-$currentMatchupWeek.json"
 Assert-True -Condition (Test-Path $rawCurrentMatchupPath) -Message "Persisted current Sleeper matchup source is missing for parity."
 $rawCurrentMatchupRows = @(
     Get-Content $rawCurrentMatchupPath -Raw |

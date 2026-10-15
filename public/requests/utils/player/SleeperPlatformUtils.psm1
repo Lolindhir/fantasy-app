@@ -1,14 +1,16 @@
-# Reads Sleeper platform facts from the canonical NFL source layer (source-data/nfl/platform/sleeper/players.json)
+# Reads Sleeper platform facts from the canonical NFL source layer (data-source/nfl/platform/sleeper/players.json)
 # instead of the live Sleeper /players/nfl call. Sleeper player_id stays the Players.json ID contract (#347 H4).
 
 # Returns a hashtable Sleeper player_id -> @{ Position; Order } for the Sleeper depth chart fields.
 # Fails closed when the snapshot is missing, has an unexpected source/schema or lists a Sleeper player twice.
+Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+
 function Get-CanonicalSleeperDepthCharts {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot
     )
 
-    $path = Join-Path $RepoRoot 'source-data/nfl/platform/sleeper/players.json'
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) 'nfl/platform/sleeper/players.json'
     if (-not (Test-Path $path)) {
         throw "Canonical Sleeper players snapshot is required for depth charts: $path"
     }

@@ -19,6 +19,7 @@ from typing import Any
 
 from player_week_fantasy import build_scoring_profile_identity
 from weekly_lineup_optimizer import ScoredPlayer, StartingSlot, maximize_lineup
+from data_roots import DATA_DERIVED_ROOT
 
 CONTRACT_VERSION = 1
 QUANTUM = Decimal("0.0001")

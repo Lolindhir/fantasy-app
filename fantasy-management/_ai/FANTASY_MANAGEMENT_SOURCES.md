@@ -18,7 +18,7 @@ Important files:
 - `public/data/Drafts.json`
 - `public/data/Transactions.json`
 - `public/data/Timestamps.json`
-- `public/data/Metadata.json`
+- `data-meta/nfl-reise/metadata.json`
 
 ## League source rules
 
@@ -52,13 +52,13 @@ Checkpoint 6P established the fail-closed Canonical League ownership adapter at:
 
 It resolves the active League season from:
 
-- `source-data/leagues/nfl-reise/manifest.json`
+- `data-source/leagues/nfl-reise/manifest.json`
 
 and reads the accepted current-season basis facts from:
 
-- `source-data/leagues/nfl-reise/seasons/<season>/league.json`
-- `source-data/leagues/nfl-reise/seasons/<season>/members.json`
-- `source-data/leagues/nfl-reise/seasons/<season>/rosters.json`
+- `data-source/leagues/nfl-reise/seasons/<season>/league.json`
+- `data-source/leagues/nfl-reise/seasons/<season>/members.json`
+- `data-source/leagues/nfl-reise/seasons/<season>/rosters.json`
 
 The stable Fantasy Management `TeamID` remains an application/Fantasy-owned identity. Its bridge to Canonical League data is explicit through
 `fantasy-management/league-context/owner-registry.json -> owners[].canonical_league_member_id`.
@@ -69,7 +69,9 @@ The adapter exposes current member/ownership basis facts such as
 It intentionally does **not** own or reproduce salary/cap fields, standings, awards, draft-pick readmodels,
 team windows or other App/Fantasy-derived state.
 
-Checkpoint 6Q activated this adapter for `managed-roster-signals.json`, which gets TeamID 1 membership and starter facts from Canonical League Source Data. Checkpoint 6X additionally moves the managed-roster consumer player identity surface and the identity fields used by its ranking/ADP joins to Canonical NFL Source Data: `Name` comes from `source-data/nfl/identities/players.json`, while fantasy-relevant `Position` and current NFL team come from `source-data/nfl/platform/sleeper/players.json` using the same `FantasyPositions` preference established in 6W. `public/data/Players.json` remains an explicit legacy enrichment only for Status, Age/Experience, Salary, SalaryProjected, IsFreeAgent and the existing structured Injury contract.
+Checkpoint 6Q activated this adapter for `managed-roster-signals.json`, which gets TeamID 1 membership and starter facts from Canonical League Source Data. Checkpoint 6X additionally moves the managed-roster consumer player identity surface and the identity fields used by its ranking/ADP joins to Canonical NFL Source Data: `Name` comes from `data-source/nfl/identities/players.json`, while fantasy-relevant `Position` and current NFL team come from `data-source/nfl/platform/sleeper/players.json` using the same `FantasyPositions` preference established in 6W. `public/data/Players.json` remains an explicit legacy enrichment only for Status, Age/Experience, Salary, SalaryProjected, IsFreeAgent and the existing structured Injury contract.
+
+Issue #919 step 6 (2026-10-15) removes `public/data/Players.json` as an input of `managed-roster-signals.json`, `data-quality.json` and `player-signals.json`. `fantasy-management/_ai/scripts/canonical_player_inputs.py` now supplies the player list: population, Age/Experience, `IsFreeAgent`, Status and the structured Injury contract come from `tools/players_population.py` (ADR-043), Salary/SalaryProjected from the newest PlayerValuation snapshot under `data-derived/player-valuation` (ADR-055). Age uses the date of `Timestamps.json -> Players` as reference date. The earlier statements in this document that `Players.json` remains enrichment for those fields are historical.
 
 Checkpoint 6R activates the same canonical ownership basis for `external-signal-relevance.json`:
 the complete league-wide Roster/Reserve/Taxi union is now read from Canonical League Source Data,
@@ -84,14 +86,14 @@ Checkpoint 6U removes the Managed-Roster-Overview's duplicate direct membership 
 
 Checkpoint 6V moves the Free-Agent Movement consumer's league-scoring input from `public/data/League.json -> ScoringType` to the active Canonical League `league.json -> ScoringSettings`. This is a scoring-only cutover: Movement population and ownership remain inherited from canonical-active `player-signals.json` / `free-agent-signals.json`; `player-signals` projection reconciliation followed in #347 step A2 and now reads league scoring from the same canonical `ScoringSettings` (via `canonical_league_ownership.load_canonical_league_scoring_settings`; the previous silent empty-scoring fallback is now a fail-closed error). Kicker Streaming inputs followed in #347 step A1 and now read kicker scoring from the same canonical `ScoringSettings` (team, season and phase context still come from `League.json`).
 
-Checkpoint 6W removes the direct `public/data/Players.json` dependency from `external-signal-relevance.json`. Sleeper signal IDs resolve through the active `IDs.Sleeper` bridge in `source-data/nfl/identities/players.json`; player names come from that Canonical Identity contract, while fantasy-relevant position and current NFL team come from `source-data/nfl/platform/sleeper/players.json`. Position prefers the first provider-ordered QB/RB/WR/TE/K entry from `FantasyPositions` and falls back to raw `Position` when no such fantasy role exists (so dual-role players such as Travis Hunter remain WR rather than inheriting Sleeper's raw DB primary position). Duplicate active Sleeper identity links, duplicate platform Sleeper IDs and cross-source CanonicalPlayerID disagreement fail closed. Checkpoint 6Y later applies the same Canonical Identity/`FantasyPositions` contract to selected non-team player-signal fields; App-owned Salary/SalaryProjected/Grading and `RequestPlayers.ps1` remain outside that cutover.
+Checkpoint 6W removes the direct `public/data/Players.json` dependency from `external-signal-relevance.json`. Sleeper signal IDs resolve through the active `IDs.Sleeper` bridge in `data-source/nfl/identities/players.json`; player names come from that Canonical Identity contract, while fantasy-relevant position and current NFL team come from `data-source/nfl/platform/sleeper/players.json`. Position prefers the first provider-ordered QB/RB/WR/TE/K entry from `FantasyPositions` and falls back to raw `Position` when no such fantasy role exists (so dual-role players such as Travis Hunter remain WR rather than inheriting Sleeper's raw DB primary position). Duplicate active Sleeper identity links, duplicate platform Sleeper IDs and cross-source CanonicalPlayerID disagreement fail closed. Checkpoint 6Y later applies the same Canonical Identity/`FantasyPositions` contract to selected non-team player-signal fields; App-owned Salary/SalaryProjected/Grading and `RequestPlayers.ps1` remain outside that cutover.
 
 This is **not** a wholesale Fantasy Management source cutover. `free-agent-signals.json` is already downstream of canonical-active `player-signals` and therefore inherits canonical fantasy ownership without its own direct League read. Draft metadata, Transactions, Salary/Grading and other unmigrated source domains retain their currently documented contracts until separately migrated.
 
 
 ## Metadata source rules
 
-`public/data/Metadata.json` is the canonical source for owner/team mapping and league-specific manual inputs.
+`data-meta/<CanonicalLeagueID>/metadata.json` is the canonical source for owner/team mapping and league-specific manual inputs.
 
 Known mapping may include:
 
@@ -104,7 +106,7 @@ Known mapping may include:
 | Dennis | 5 |
 | Tim | 6 |
 
-Always re-check `Metadata.json` when exact owner mapping matters.
+Always re-check the league metadata (`data-meta/<CanonicalLeagueID>/metadata.json`) when exact owner mapping matters.
 
 ## Player source rules
 
@@ -131,7 +133,7 @@ Important player fields may include ID, name fields, NFL team, position, age, sa
 
 Operational rules:
 
-For `player-signals.json`, Checkpoint 6Y no longer reads these mirrored identity/role values from `Players.json`: ESPN identity comes from `source-data/nfl/identities/players.json -> IDs.ESPN`, while Sleeper status and nominal depth-chart fields come from `source-data/nfl/platform/sleeper/players.json`. The mirrored App fields may remain for other App consumers until their own contracts migrate.
+For `player-signals.json`, Checkpoint 6Y no longer reads these mirrored identity/role values from `Players.json`: ESPN identity comes from `data-source/nfl/identities/players.json -> IDs.ESPN`, while Sleeper status and nominal depth-chart fields come from `data-source/nfl/platform/sleeper/players.json`. The mirrored App fields may remain for other App consumers until their own contracts migrate.
 
 - Treat `ESPNID` as optional supplemental identity metadata. Sleeper does not populate it reliably for every current player, so it must not be the sole identity key or automatically override an already confirmed player mapping.
 - Treat `SleeperDepthChartPosition` as the source-provided nominal football slot or alignment. For wide receivers this can distinguish values such as `LWR`, `RWR` and `SWR`.
@@ -340,7 +342,7 @@ Operational rules:
 - treat FantasyCalc as observed trade-market context, not expert consensus or a projection
 - use normalized `Rank` for ordering and per-centile comparisons; retain `source_overall_rank` as an audit field with permitted ties
 - join players primarily through `sleeper_id`, then `source_asset_id`, then normalized name plus position
-- resolve only FantasyCalc's explicit `UNK` player-position sentinel through matching `SleeperPlayerID -> Position` from `source-data/nfl/platform/sleeper/players.json`; do not use `public/data/Players.json` for that fallback and keep all other unexpected provider positions fail-closed
+- resolve only FantasyCalc's explicit `UNK` player-position sentinel through matching `SleeperPlayerID -> Position` from `data-source/nfl/platform/sleeper/players.json`; do not use `public/data/Players.json` for that fallback and keep all other unexpected provider positions fail-closed
 - treat FantasyCalc draft-pick IDs as source-only synthetic identifiers
 - resolve real pick identity and ownership from `League.json` and `Drafts.json`
 - apply six-team replacement-level context after reading the eight-team proxy
