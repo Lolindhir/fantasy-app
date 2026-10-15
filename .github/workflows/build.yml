@@ -56,6 +56,12 @@ jobs:
           python -m unittest tools.tests.test_player_valuation -v
           python -m unittest tools.tests.test_player_valuation_shadow -v
 
+      - name: Run League history regression tests
+        run: |
+          python -m unittest discover -s tools/tests -p "test_league_transactions.py" -v
+          python -m unittest discover -s tools/tests -p "test_league_drafts.py" -v
+          python -m unittest discover -s tools/tests -p "test_league_history_app_publish.py" -v
+
       - name: Run consumer read classification test
         run: python -m unittest tools.tests.test_consumer_read_classification -v
 
