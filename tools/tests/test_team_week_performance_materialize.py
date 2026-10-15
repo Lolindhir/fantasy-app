@@ -5,14 +5,17 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from team_week_performance_materialize import verify_pwf_actual_parity  # noqa: E402
-from data_roots import DATA_DERIVED_ROOT  # noqa: E402
+from team_week_performance_materialize import (  # noqa: E402
+    discover_finalized_weeks, materialize_all_finalized, verify_pwf_actual_parity,
+)
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT, DATA_META_ROOT  # noqa: E402
 
 
 class MaterializerParityTests(unittest.TestCase):
@@ -91,6 +94,116 @@ class MaterializerParityTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "duplicate canonical matchup"):
             verify_pwf_actual_parity(self.root, self.model, self.matchups)
+
+
+
+class BatchMaterializerTests(unittest.TestCase):
+    def setUp(self) -> None:
+        t = tempfile.TemporaryDirectory()
+        self.addCleanup(t.cleanup)
+        self.root = Path(t.name)
+
+    def season(self, year: int, start: int, end: int, scored: int) -> None:
+        folder = self.root / DATA_SOURCE_ROOT / "leagues/nfl-reise/seasons" / str(year)
+        folder.mkdir(parents=True)
+        (folder / "league.json").write_text(json.dumps({
+            "CanonicalLeagueID": "nfl-reise", "Season": year,
+            "RosterPositions": ["QB"], "ScoringSettings": {},
+            "WeekStructure": {"Season": year, "StartWeek": start,
+                              "ExpectedLastLeagueWeek": end,
+                              "LastScoredLeg": scored},
+        }), encoding="utf-8")
+
+    def manifest(self, *years: int) -> None:
+        meta = self.root / DATA_META_ROOT / "nfl-reise"
+        meta.mkdir(parents=True)
+        (meta / "metadata.json").write_text("{}", encoding="utf-8")
+        folder = self.root / DATA_SOURCE_ROOT / "leagues/nfl-reise"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "manifest.json").write_text(json.dumps({
+            "CanonicalLeagueID": "nfl-reise", "Seasons": [{"Season": year} for year in years],
+        }), encoding="utf-8")
+
+    def test_discovery_uses_canonical_manifest_and_scored_bounds_not_derived(self) -> None:
+        self.manifest(2025, 2024, 2026)
+        self.season(2024, 1, 17, 2)
+        self.season(2025, 1, 17, 0)
+        self.season(2026, 2, 17, 3)
+        with patch("team_week_performance_materialize.load_league_metadata",
+                   return_value={}), patch(
+                       "team_week_performance_materialize.validate_against_manifest"):
+            self.assertEqual(discover_finalized_weeks(self.root), [
+                ("nfl-reise", 2024, 1), ("nfl-reise", 2024, 2),
+                ("nfl-reise", 2026, 2), ("nfl-reise", 2026, 3),
+            ])
+            self.assertEqual(discover_finalized_weeks(
+                self.root, league_id="nfl-reise", seasons=[2025]), [])
+            with self.assertRaisesRegex(ValueError, "do not exist"):
+                discover_finalized_weeks(self.root, seasons=[2027])
+
+    def test_discovery_rejects_invalid_finalized_bounds(self) -> None:
+        self.manifest(2026)
+        self.season(2026, 1, 17, 18)
+        with patch("team_week_performance_materialize.load_league_metadata",
+                   return_value={}), patch(
+                       "team_week_performance_materialize.validate_against_manifest"):
+            with self.assertRaisesRegex(ValueError, "Invalid finalized-week bounds"):
+                discover_finalized_weeks(self.root)
+
+    @staticmethod
+    def model(week: int) -> dict:
+        return {"CanonicalLeagueID": "nfl-reise", "Season": 2026, "Week": week,
+                "Teams": [{"CanonicalLeagueRosterID": "one"}]}
+
+    def test_batch_fails_closed_before_first_write_when_week_blocked(self) -> None:
+        targets = [("nfl-reise", 2026, 1), ("nfl-reise", 2026, 2)]
+        with patch("team_week_performance_materialize.discover_finalized_weeks",
+                   return_value=targets), patch(
+                       "team_week_performance_materialize._checked_week",
+                       side_effect=[(self.model(1), {"State": "verified"}),
+                                    ValueError("PWF Actual not final")]), patch(
+                       "team_week_performance_materialize.save_team_week_performance") as save:
+            result = materialize_all_finalized(self.root, write=True)
+            self.assertEqual((result["TargetCount"], result["ReadyCount"],
+                              result["BlockedCount"], result["ChangedCount"]), (2, 1, 1, 0))
+            self.assertTrue(result["WriteAborted"])
+            self.assertEqual([w["Status"] for w in result["Weeks"]], ["ready", "blocked"])
+            save.assert_not_called()
+
+    def test_readonly_and_idempotent_write(self) -> None:
+        targets = [("nfl-reise", 2026, 1), ("nfl-reise", 2026, 2)]
+        models = [(self.model(1), {"State": "not-available"}),
+                  (self.model(2), {"State": "verified"})]
+        with patch("team_week_performance_materialize.discover_finalized_weeks",
+                   return_value=targets), patch(
+                       "team_week_performance_materialize._checked_week",
+                       side_effect=models), patch(
+                       "team_week_performance_materialize.save_team_week_performance") as save:
+            report = materialize_all_finalized(self.root)
+            self.assertFalse(report["WriteRequested"])
+            self.assertEqual(report["ReadyCount"], 2)
+            self.assertEqual(report["Weeks"][0]["PlayerWeekFantasyParity"]["State"],
+                             "not-available")
+            save.assert_not_called()
+        with patch("team_week_performance_materialize.discover_finalized_weeks",
+                   return_value=targets), patch(
+                       "team_week_performance_materialize._checked_week",
+                       side_effect=models), patch(
+                       "team_week_performance_materialize.save_team_week_performance",
+                       side_effect=[True, False]) as save:
+            report = materialize_all_finalized(self.root, write=True)
+            self.assertEqual(report["ChangedCount"], 1)
+            self.assertFalse(report["WriteAborted"])
+            self.assertEqual([w["Changed"] for w in report["Weeks"]], [True, False])
+            self.assertEqual(save.call_count, 2)
+
+    def test_unexpected_errors_are_not_converted_to_unavailable_data(self) -> None:
+        with patch("team_week_performance_materialize.discover_finalized_weeks",
+                   return_value=[("nfl-reise", 2026, 1)]), patch(
+                       "team_week_performance_materialize._checked_week",
+                       side_effect=RuntimeError("unexpected code problem")):
+            with self.assertRaisesRegex(RuntimeError, "unexpected code problem"):
+                materialize_all_finalized(self.root, write=True)
 
 
 if __name__ == "__main__":
