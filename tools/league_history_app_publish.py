@@ -10,8 +10,8 @@ result of derived_data_lib.league_history.build_history) and renders exactly the
   public/data/past_seasons/Drafts/Drafts_<season>.json   completed drafts of one season
 
 The consumer owns the presentation fields (DisplayStatus, DisplayDraftKey, DisplayAbrDraftKey,
-DisplayDraftType, DisplayPick) and the pick LeagueID; the products carry none of them. Contract and field
-order are those of the PowerShell rebuild; trimming fields is a separate later step (Issue #999 step 6).
+DisplayDraftType, DisplayPick); the products carry none of them. Since Issue #999 step 6 the App contract is
+slim: the fields in the *_DROPPED tuples are not delivered and past Drafts files are always a list.
 
 Usage:
   league_history_app_publish.py compare [--league nfl-reise]   exact comparison against public/data
@@ -35,23 +35,33 @@ from derived_data_lib.league_drafts import DraftBuildError  # noqa: E402
 from derived_data_lib.league_history import HistoryResult, build_history  # noqa: E402
 from league_history_sources import load_inputs  # noqa: E402
 
+# Slim App contract (Issue #999 step 6, field list approved by Robert 2026-10-15). Fields the products carry but
+# the App contract omits are dropped by _slim; every other field must have a position here (see _ordered).
+# Transaction.Status stays: Angular (mergeCompletedRawTransactions) filters on it.
+# Draft-level SleeperDraftID stays only while Fantasy Management reads it (resolve_active_fa_draft in the FA
+# board); remove it from DRAFT_FIELD_ORDER as soon as FM no longer reads it (league-history.yaml, Issue #999).
 TRANSACTION_PICK_ORDER = (
-    "DraftType", "DraftInstance", "DraftCode", "DraftSource", "DraftKey", "Season", "Round",
-    "OriginalOwnerRosterID", "PreviousOwnerRosterID", "NewOwnerRosterID", "SleeperDraftID", "PickKey",
-    "PositionInRound", "OverallPick", "DisplayPick", "PlayerID", "PlayerName", "PickStatus", "SleeperPickNo",
+    "DraftType", "DraftKey", "Season", "Round", "OriginalOwnerRosterID", "PreviousOwnerRosterID",
+    "NewOwnerRosterID", "PickKey", "DisplayPick", "PlayerID", "PlayerName",
+)
+TRANSACTION_PICK_DROPPED = (
+    "DraftCode", "DraftSource", "PickStatus", "SleeperDraftID", "DraftInstance", "PositionInRound", "OverallPick",
+    "SleeperPickNo",
 )
 DRAFT_FIELD_ORDER = (
-    "LeagueID", "DraftKey", "DisplayDraftKey", "DisplayAbrDraftKey", "Season", "DraftType", "DraftInstance",
-    "DraftCode", "DisplayDraftType", "DraftNo", "DraftSource", "SleeperDraftID", "SleeperStatus",
-    "SleeperStartTime", "DraftStartTimeUtc", "Status", "DisplayStatus", "PickSource", "OrderSource",
-    "OrderMode", "Settings", "Picks",
+    "DraftKey", "DisplayDraftKey", "DisplayAbrDraftKey", "Season", "DraftType", "DraftInstance",
+    "DisplayDraftType", "DraftNo", "SleeperDraftID", "SleeperStatus", "SleeperStartTime", "DraftStartTimeUtc",
+    "Status", "DisplayStatus", "Settings", "Picks",
 )
+DRAFT_DROPPED = ("DraftCode", "DraftSource", "PickSource", "OrderSource", "OrderMode")
+DRAFT_SETTINGS_DROPPED = ("Teams",)
 PICK_FIELD_ORDER = (
-    "PickKey", "LeagueID", "DraftKey", "Season", "DraftType", "DraftInstance", "DraftCode", "Round",
-    "PositionInRound", "OverallPick", "DisplayPick", "OriginalOwnerRosterID", "CurrentOwnerRosterID",
-    "WasTraded", "IsCurrentlyTraded", "TradeSource", "TradeHistory", "PlayerID", "PlayerName", "Status",
-    "SleeperPickNo", "SleeperPickedBy",
+    "PickKey", "DraftKey", "Season", "DraftType", "DraftInstance", "Round", "PositionInRound", "OverallPick",
+    "DisplayPick", "OriginalOwnerRosterID", "CurrentOwnerRosterID", "IsCurrentlyTraded", "TradeHistory",
+    "PlayerID", "PlayerName", "Status", "SleeperPickNo", "SleeperPickedBy",
 )
+PICK_DROPPED = ("LeagueID", "DraftCode", "TradeSource", "WasTraded")
+TRADE_HISTORY_DROPPED = ("Source", "DraftSource")
 
 
 def display_pick(round_no: int, position: int | None) -> str:
@@ -81,6 +91,10 @@ def display_status(status: str, season: str, league_year: int) -> str:
     return status
 
 
+def _slim(source: dict[str, Any], dropped: tuple[str, ...]) -> dict[str, Any]:
+    return {key: value for key, value in source.items() if key not in dropped}
+
+
 def _ordered(source: dict[str, Any], order: tuple[str, ...]) -> dict[str, Any]:
     unknown = [key for key in source if key not in order]
     if unknown:
@@ -98,7 +112,7 @@ def app_transaction(transaction: dict[str, Any]) -> dict[str, Any]:
         entry = dict(pick)
         if entry.get("PickKey"):
             entry["DisplayPick"] = display_pick(int(entry["Round"]), entry.get("PositionInRound"))
-        picks.append(_ordered(entry, TRANSACTION_PICK_ORDER))
+        picks.append(_ordered(_slim(entry, TRANSACTION_PICK_DROPPED), TRANSACTION_PICK_ORDER))
     result["DraftPicks"] = picks
     return result
 
@@ -116,36 +130,42 @@ def app_transactions(transactions_by_season: dict[int, list[dict[str, Any]]], le
 # ---------------------------------------------------------------------------- drafts
 
 
-def _app_pick(pick: dict[str, Any], league_id: str) -> dict[str, Any]:
-    entry = dict(pick)
-    entry["LeagueID"] = league_id
+def _app_draft_base(draft: dict[str, Any], excluded: tuple[str, ...] = ()) -> dict[str, Any]:
+    entry = _slim(draft, ("ProviderLeagueID", *DRAFT_DROPPED, *excluded))
+    if isinstance(entry.get("Settings"), dict):
+        entry["Settings"] = _slim(entry["Settings"], DRAFT_SETTINGS_DROPPED)
+    return entry
+
+
+def _app_pick(pick: dict[str, Any]) -> dict[str, Any]:
+    entry = _slim(pick, PICK_DROPPED)
     entry["DisplayPick"] = display_pick(int(pick["Round"]), pick.get("PositionInRound"))
+    if "TradeHistory" in entry:
+        entry["TradeHistory"] = [_slim(item, TRADE_HISTORY_DROPPED) for item in entry["TradeHistory"]]
     return _ordered(entry, PICK_FIELD_ORDER)
 
 
 def app_current_draft(draft: dict[str, Any], league_year: int) -> dict[str, Any]:
-    entry = {key: value for key, value in draft.items() if key != "ProviderLeagueID"}
-    entry["LeagueID"] = draft["ProviderLeagueID"]
+    entry = _app_draft_base(draft)
     entry["DisplayDraftKey"] = f"{draft['Season']} {display_type(draft['DraftType'])}" + (
         f" #{draft['DraftInstance']}" if int(draft["DraftInstance"]) > 1 else "")
     entry["DisplayAbrDraftKey"] = f"{draft['Season']} {type_abbreviation(draft['DraftType'])}" + (
         f" #{draft['DraftInstance']}" if int(draft["DraftInstance"]) > 1 else "")
     entry["DisplayDraftType"] = display_type(draft["DraftType"])
     entry["DisplayStatus"] = display_status(draft["Status"], draft["Season"], league_year)
-    entry["Picks"] = [_app_pick(pick, draft["ProviderLeagueID"]) for pick in draft["Picks"]]
+    entry["Picks"] = [_app_pick(pick) for pick in draft["Picks"]]
     return _ordered(entry, DRAFT_FIELD_ORDER)
 
 
 def app_history_draft(draft: dict[str, Any], occurrence: int, count: int) -> dict[str, Any]:
     """New-DraftHistoryOutputOrderAware: no start-time fields, occurrence-based display keys."""
     suffix = f" #{occurrence}" if count > 1 else ""
-    entry = {key: value for key, value in draft.items() if key not in ("ProviderLeagueID", "SleeperStartTime", "DraftStartTimeUtc")}
-    entry["LeagueID"] = draft["ProviderLeagueID"]
+    entry = _app_draft_base(draft, ("SleeperStartTime", "DraftStartTimeUtc"))
     entry["DisplayDraftKey"] = f"{draft['Season']} {display_type(draft['DraftType'])}{suffix}"
     entry["DisplayAbrDraftKey"] = f"{draft['Season']} {type_abbreviation(draft['DraftType'])}{suffix}"
     entry["DisplayDraftType"] = display_type(draft["DraftType"])
     entry["DisplayStatus"] = display_status(draft["Status"], draft["Season"], 0)
-    entry["Picks"] = [_app_pick(pick, draft["ProviderLeagueID"]) for pick in draft["Picks"]]
+    entry["Picks"] = [_app_pick(pick) for pick in draft["Picks"]]
     return _ordered(entry, DRAFT_FIELD_ORDER)
 
 
@@ -170,8 +190,7 @@ def app_drafts(drafts_by_season: dict[int, list[dict[str, Any]]], league_year: i
         for draft in completed:
             seen[draft["DraftType"]] = seen.get(draft["DraftType"], 0) + 1
             entries.append(app_history_draft(draft, seen[draft["DraftType"]], counts[draft["DraftType"]]))
-        # ConvertTo-Json writes a one-element array as a plain object; the existing files keep that shape.
-        past[season] = entries[0] if len(entries) == 1 else entries
+        past[season] = entries
     return {"current": current, "past": past}
 
 
