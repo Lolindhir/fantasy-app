@@ -42,7 +42,6 @@ function Get-Config {
     $TeamsFile = Join-Path $DataDir "Teams.json"
     $ScheduleFile = Join-Path $DataDir "Schedule.json"
     $StandingsFile = Join-Path $DataDir "Standings.json"
-    $ManualTransactionsFile = Join-Path $DataDir "Transactions_Manual.json"
     $TransactionsFile = Join-Path $DataDir "Transactions.json"
 
     $PastSeasonsDir = Join-Path $DataDir "past_seasons"
@@ -132,6 +131,8 @@ function Get-Config {
         throw "Expected exactly one league under $DataMetaDir but found $($leagueIds.Count) ($($leagueIds -join ', ')); generator league selection is not implemented."
     }
     $CanonicalLeagueID = [string]$leagueIds[0]
+    # Hand-maintained manual transaction overlay of the league (Issue #999 step 5c).
+    $ManualTransactionsFile = Join-Path (Join-Path $DataMetaDir $CanonicalLeagueID) "transactions-manual.json"
     $metadataContent = Get-LeagueMetadata -LeagueId $CanonicalLeagueID -Root $DataMetaDir
 
     # LeagueYear is canonical in the League source manifest, not hand-maintained.

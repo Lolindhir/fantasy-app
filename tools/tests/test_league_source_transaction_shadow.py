@@ -248,7 +248,9 @@ class TransactionCanonicalShadowTests(unittest.TestCase):
                 }
             ]
             (root / "public" / "data" / "Transactions.json").write_text(json.dumps(legacy), encoding="utf-8")
-            (root / "public" / "data" / "Transactions_Manual.json").write_text("[]", encoding="utf-8")
+            manual_dir = root / "data-meta" / "test-league"
+            manual_dir.mkdir(parents=True)
+            (manual_dir / "transactions-manual.json").write_text("[]", encoding="utf-8")
             report = build_repo_shadow_report(root, canonical_league_id="test-league", season=2026)
             self.assertTrue(report["StrictParity"])
             self.assertEqual(report["Counts"]["CanonicalAdapted"], 1)
@@ -262,7 +264,7 @@ class CurrentRepositoryTransactionShadowIntegrationTests(unittest.TestCase):
 
     def test_historical_nfl_reise_transactions_match_canonical_owned_fields(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
-        manual = load_json(repo_root / "public" / "data" / "Transactions_Manual.json")
+        manual = load_json(repo_root / "data-meta" / "nfl-reise" / "transactions-manual.json")
 
         for season in (2024, 2025):
             with self.subTest(season=season):
