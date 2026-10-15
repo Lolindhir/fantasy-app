@@ -187,7 +187,6 @@ describe('moves-view-model.util', () => {
   ): TransactionDraftPick {
     return {
       DraftType: 'Rookie',
-      DraftSource: 'Sleeper',
       DraftKey: '2026_Rookie',
       Season: '2026',
       Round: 2,

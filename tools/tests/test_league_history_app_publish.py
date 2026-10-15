@@ -62,14 +62,14 @@ class DraftFileTests(unittest.TestCase):
         self.assertEqual("Completed", current[0]["DisplayStatus"])
         self.assertEqual("2026 Free Agent", current[1]["DisplayDraftKey"])
         self.assertEqual("2026 FA", current[1]["DisplayAbrDraftKey"])
-        self.assertEqual("p2026", current[0]["LeagueID"])
         self.assertEqual("1.01", current[0]["Picks"][0]["DisplayPick"])
 
     def test_past_file_holds_only_completed_drafts_without_start_times(self):
         past = publish.app_drafts(self.by_season, 2026)["past"]
         self.assertEqual([2026], list(past))
-        draft = past[2026]  # exactly one completed draft: written as a plain object like ConvertTo-Json does
-        self.assertIsInstance(draft, dict)
+        self.assertIsInstance(past[2026], list)  # always a list, also for exactly one completed draft
+        self.assertEqual(1, len(past[2026]))
+        draft = past[2026][0]
         self.assertNotIn("SleeperStartTime", draft)
         self.assertNotIn("DraftStartTimeUtc", draft)
         self.assertEqual("2026 Rookie", draft["DisplayDraftKey"])
@@ -82,6 +82,46 @@ class DraftFileTests(unittest.TestCase):
         past = publish.app_drafts(by_season, 2026)["past"][2026]
         self.assertIsInstance(past, list)
         self.assertEqual(["2026 Rookie #1", "2026 Rookie #2"], [d["DisplayDraftKey"] for d in past])
+
+
+class SlimContractTests(unittest.TestCase):
+    """Issue #999 step 6: the App contract omits the approved fields and keeps the explicitly retained ones."""
+
+    def setUp(self):
+        drafts = build([provider_draft("d1", "2026", "complete", name="rookie")], open_count=1)
+        self.current = publish.app_drafts(drafts_by_season(drafts), 2026)["current"]
+
+    def test_draft_and_pick_fields_are_slimmed(self):
+        for draft in self.current:
+            for name in publish.DRAFT_DROPPED + ("LeagueID",):
+                self.assertNotIn(name, draft)
+            self.assertNotIn("Teams", draft["Settings"])
+            self.assertIn("SleeperDraftID", draft)  # stays until Fantasy Management stops reading it
+            for pick in draft["Picks"]:
+                for name in publish.PICK_DROPPED:
+                    self.assertNotIn(name, pick)
+                self.assertIn("IsCurrentlyTraded", pick)
+                self.assertIn("TradeHistory", pick)
+
+    def test_transaction_fields_are_slimmed_and_trade_history_keeps_its_entries(self):
+        transaction = {"TransactionID": "1", "Status": "complete", "Week": 3, "Source": "Sleeper", "DraftPicks": [
+            {"PickKey": "k", "Round": 1, "PositionInRound": 3, "OverallPick": 3, "Season": "2026", "DraftKey": "2026_Rookie",
+             "DraftCode": "R", "DraftSource": "Sleeper", "PickStatus": "Open", "SleeperDraftID": "d", "DraftInstance": 1,
+             "SleeperPickNo": None},
+        ]}
+        result = publish.app_transaction(transaction)
+        self.assertEqual("complete", result["Status"])  # Angular filters on it
+        self.assertEqual((3, "Sleeper"), (result["Week"], result["Source"]))
+        self.assertEqual("1.03", result["DraftPicks"][0]["DisplayPick"])
+        for name in publish.TRANSACTION_PICK_DROPPED:
+            self.assertNotIn(name, result["DraftPicks"][0])
+
+    def test_trade_history_entries_lose_only_the_source_fields(self):
+        pick = {"PickKey": "k", "Round": 1, "TradeHistory": [
+            {"TransactionID": "t", "Source": "Sleeper", "DraftSource": "Sleeper", "CreatedAt": 1, "CreatedDate": "d",
+             "PreviousOwnerRosterID": 1, "NewOwnerRosterID": 2}]}
+        entry = publish._app_pick(pick)["TradeHistory"][0]
+        self.assertEqual({"TransactionID", "CreatedAt", "CreatedDate", "PreviousOwnerRosterID", "NewOwnerRosterID"}, set(entry))
 
 
 class TransactionFileTests(unittest.TestCase):
@@ -115,7 +155,7 @@ class WriteTests(unittest.TestCase):
     def rendered(self, name="a"):
         return {
             "Transactions": {"current": [{"TransactionID": name}], "past": {"2025": [{"TransactionID": "p"}]}},
-            "Drafts": {"current": [{"DraftKey": name}], "past": {"2025": {"DraftKey": "old"}}},
+            "Drafts": {"current": [{"DraftKey": name}], "past": {"2025": [{"DraftKey": "old"}]}},
         }
 
     def test_write_is_semantic_noop_and_stamps_only_changed_current_files(self):

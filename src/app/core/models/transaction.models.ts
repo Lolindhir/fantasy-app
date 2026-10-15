@@ -5,21 +5,13 @@ export type TransactionPlayerRosterMap = Record<string, number | string>;
 
 export interface RawTransactionDraftPick {
   DraftType: string | null;
-  DraftInstance?: number | null;
-  DraftCode?: string | null;
-  DraftSource: string;
   DraftKey: string | null;
   Season: string;
   Round: number;
-  SleeperDraftID?: string | null;
   PickKey?: string | null;
-  PositionInRound?: number | null;
-  OverallPick?: number | null;
   DisplayPick?: string | null;
   PlayerID?: string | null;
   PlayerName?: string | null;
-  PickStatus?: string | null;
-  SleeperPickNo?: number | null;
   OriginalOwnerRosterID: number | string;
   PreviousOwnerRosterID: number | string;
   NewOwnerRosterID: number | string;

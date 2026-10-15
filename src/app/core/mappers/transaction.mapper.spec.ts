@@ -39,7 +39,6 @@ describe('transaction.mapper', () => {
       DraftPicks: [
         {
           DraftType: 'Rookie',
-          DraftSource: 'Sleeper',
           DraftKey: '2027_Rookie',
           Season: '2027',
           Round: 2,
@@ -72,7 +71,6 @@ describe('transaction.mapper', () => {
       DraftPicks: [
         {
           DraftType: 'Rookie',
-          DraftSource: 'Sleeper',
           DraftKey: '2026_Rookie',
           Season: '2026',
           Round: 2,
@@ -82,7 +80,6 @@ describe('transaction.mapper', () => {
         },
         {
           DraftType: 'Rookie',
-          DraftSource: 'Sleeper',
           DraftKey: '2026_Rookie',
           Season: '2026',
           Round: 2,
