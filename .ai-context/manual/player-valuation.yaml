@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 919
 architectureDecision: ADR-055
-implementationState: models (step 2) and materializer (step 3, tools/derived_data.py) implemented and tested locally; nothing is published or committed under data-derived yet (shadow in step 4, cutover in step 5 of #919)
+implementationState: models (step 2), materializer (step 3, tools/derived_data.py) and shadow (step 4, tools/player_valuation_shadow.py) implemented and tested locally; the shadow reports exact parity for the published week; nothing is published or committed under data-derived yet (cutover in step 5 of #919)
 
 purpose: >
   Define the Shared Derived Data product PlayerValuation: for one league and one
@@ -197,10 +197,12 @@ openPoints:
   - id: historical-population
     text: >
       Implemented in tools/player_valuation_sources.py (canonical rosters plus weekly rosters,
-      Sleeper source ID, app position, valid birth date). Known gaps: FB players are not in
-      the historical population (nflverse position versus Sleeper fantasy position) and a
-      league-owned player without roster record is skipped and counted. The step 4
-      plausibility report states coverage.
+      Sleeper source ID, app position, valid birth date). FB players are not in the historical
+      population, which matches the current population rule (ADR-043: app positions QB, RB,
+      WR, TE, K only), so this is no gap against the published Players.json. A league-owned
+      player without roster record is skipped and counted. The step 4 plausibility report
+      (tools/player_valuation_shadow.py) states coverage per snapshot: the position mix of
+      2024 and 2025 matches 2026 in order of magnitude and no snapshot contains a hold row.
   - id: snapshot-size
     text: >
       Measured in step 3 (compact JSON, about 0.54 MB per snapshot): 2026 six snapshots 3.3 MB,
@@ -214,7 +216,9 @@ openPoints:
   - id: non-contiguous-final-weeks
     text: >
       Legacy scores all final weeks while a snapshot uses only weeks <= AsOfFinalScoredWeek.
-      Both agree while final weeks are contiguous; the step 4 shadow must confirm this.
+      Both agree while final weeks are contiguous. The step 4 shadow confirmed exact parity for
+      2026 week 5 (weeks 1 to 5 contiguous). A season with a gap in its final weeks is not
+      covered by that evidence and must be re-checked when it occurs.
   - id: unranked-grade
     text: >
       grading-v1 keeps today's behaviour that a player without a rank gets grade A.
