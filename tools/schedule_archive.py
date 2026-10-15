@@ -15,7 +15,7 @@ One game is not part of the canonical schedule: the cancelled 2022 week-17 game 
 
 Usage:
   schedule_archive.py compare-current            parity of the generator with public/data/Schedule.json
-  schedule_archive.py write [--season N ...]     write the archives (default: FIRST_ARCHIVE_SEASON up to the season before Schedule.json)
+  schedule_archive.py write [--season N ...]     write the archives (default: FIRST_ARCHIVE_SEASON up to the season before the current league season)
 """
 from __future__ import annotations
 
@@ -246,10 +246,14 @@ def _load(path: Path) -> Any:
 
 
 def _current_season(root: Path) -> int:
-    current = _load(root / "public" / "data" / "Schedule.json")
-    if not current:
-        raise ScheduleArchiveError("public/data/Schedule.json is empty; the current season is unknown.")
-    return int(current[0]["season"])
+    """Latest current season over all league manifests (the NFL schedule is league-independent)."""
+    seasons = []
+    for manifest_path in sorted((root / DATA_SOURCE_ROOT / "leagues").glob("*/manifest.json")):
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        seasons.append(int(str(manifest["CurrentCanonicalLeagueSeasonID"]).rsplit("-", 1)[-1]))
+    if not seasons:
+        raise ScheduleArchiveError("No league manifest found; the current season is unknown.")
+    return max(seasons)
 
 
 def write_archives(root: Path, seasons: list[int]) -> list[str]:

@@ -1152,6 +1152,12 @@ consumerReadClassification:
         legacy:Timestamps: app-output-owner
         legacy:Transactions: validation-shadow
       note: 'Consumer generator of the League history products (ADR-057, Issue #999). compare renders the App-shaped Transactions and Drafts files in memory and compares them exactly with the committed public/data files (validation-shadow, never an input). Since step 5b write publishes those files only on semantic change and updates the Transactions and Drafts keys of Timestamps.json (app-output-owner: the writer owns its own freshness timestamp, never an input).'
+    tools/schedule_archive.py:
+      reads:
+        legacy:Schedule: validation-shadow
+        provider:cbssports: display-link-construction
+        provider:espn: display-link-construction
+      note: 'Consumer generator of the past-season Schedule archives (ADR-058, Issue #999 step 7b). Facts come from data-source/nfl (schedules, game-finality) and the league manifests (current season); compare-current compares the generator with the published Schedule.json (validation-shadow, never an input). The boxscore links are built from canonical provider game IDs; no fetch.'
     tools/league_source_data_lib/acquire.py:
       reads:
         network: source-layer-acquisition
