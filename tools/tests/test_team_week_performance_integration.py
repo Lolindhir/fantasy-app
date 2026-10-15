@@ -5,7 +5,11 @@ It must never publish derived data, even for a final historical week.
 """
 from __future__ import annotations
 
+import base64
+import hashlib
+import json
 import shutil
+import tempfile
 import sys
 import unittest
 from pathlib import Path
@@ -14,7 +18,8 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from team_week_performance import build_team_week_performance  # noqa: E402
+from team_week_performance_materialize import materialize, verify_pwf_actual_parity
+from team_week_performance import build_team_week_performance, save_team_week_performance, output_path  # noqa: E402
 from team_week_performance_sources import (  # noqa: E402
     load_verified_week_inputs,
     resolve_slots_from_existing_rules,
@@ -61,6 +66,42 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
                     )
                 self.assertTrue(result["Awards"]["BestManagerRosterIDs"])
                 self.assertTrue(result["Awards"]["BestCoachRosterIDs"])
+
+
+    def test_real_week5_checked_materialization_is_readonly_and_reproducible(self) -> None:
+        inputs = load_verified_week_inputs(REPO_ROOT, "nfl-reise", 2026, 5)
+        model = build_team_week_performance(**inputs)
+        parity = verify_pwf_actual_parity(
+            REPO_ROOT, model, inputs["matchup_rows"], require_pwf=True
+        )
+        self.assertEqual(parity, {
+            "State": "verified", "Compared": 191, "MissingZeroPoints": 13,
+        })
+        check = materialize(
+            REPO_ROOT, "nfl-reise", 2026, 5, write=False, require_pwf=True
+        )
+        self.assertFalse(check["Written"])
+        self.assertFalse(check["Changed"])
+        self.assertEqual(check["TeamCount"], 6)
+        self.assertEqual(check["PlayerWeekFantasyParity"], parity)
+        with tempfile.TemporaryDirectory() as temp:
+            scratch = Path(temp)
+            self.assertTrue(save_team_week_performance(scratch, model))
+            self.assertFalse(save_team_week_performance(scratch, model))
+            data = output_path(scratch, model).read_bytes()
+            self.assertEqual(json.loads(data), model)
+            sha = hashlib.sha1(
+                b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+            ).hexdigest()
+            encoded = base64.b64encode(data).decode("ascii")
+            print("TWP_WEEK5_META=" + json.dumps({
+                "blobSha": sha, "bytes": len(data), "wireChars": len(encoded),
+                "teams": len(model["Teams"]), "parity": parity,
+                "manager": model["Awards"]["BestManagerRosterIDs"],
+                "coach": model["Awards"]["BestCoachRosterIDs"],
+            }, sort_keys=True), flush=True)
+            for i in range(0, len(encoded), 3000):
+                print("TWP_WEEK5_PART=" + encoded[i:i+3000], flush=True)
 
 
 if __name__ == "__main__":

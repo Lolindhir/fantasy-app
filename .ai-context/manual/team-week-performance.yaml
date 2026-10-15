@@ -14,10 +14,11 @@ physicalOwner:
   producer:
     calculation: tools/team_week_performance.py::build_team_week_performance
     persistence: tools/team_week_performance.py::save_team_week_performance
+    explicitMaterializer: tools/team_week_performance_materialize.py
     optimizer: tools/weekly_lineup_optimizer.py::maximize_lineup
     canonicalInputAdapter: tools/team_week_performance_sources.py::load_verified_week_inputs
     lineupEligibilityBridge: public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1
-  status: writer-implemented-but-not-yet-orchestrated
+  status: explicit-materializer-under-ci-validation-no-published-partition
   delivery: >
     An App publisher/read-model projection must be separately implemented.
     No scheduled workflow or public/data output has been changed in this
@@ -166,6 +167,15 @@ recomputation:
     - League season ScoringSettings hash change
     - season/week finality correction
     - contract/algorithm version change
+  publicationGate: >
+    tools/team_week_performance_materialize.py is read-only unless --write is supplied.
+    It uses the canonical finality/position/slot adapter and reconciles canonical
+    fantasy matchup PlayerPoints with persisted final PlayerWeekFantasy Actual
+    where available. Missing zero-point candidates are permitted, missing nonzero,
+    scoring hash mismatch, stale zero or nonfinal PWF Actual fails closed.
+    Use --require-pwf to enforce the dataset's presence for weeks such as 2026 W5.
+    The first generated historical week is CI-tested in a scratch directory;
+    no automatic scheduler or App consumer is part of this checkpoint.
   persistence: >
     Stable JSON key ordering, no generation-time timestamp, byte-identical
     semantic no-op. Recalculate and publish only after all input requirements

@@ -66,7 +66,8 @@ def verify_pwf_actual_parity(
     if any(pwf.get(key) != model[key]
            for key in ("CanonicalLeagueID", "Season", "Week")):
         raise ValueError("PlayerWeekFantasy league/season/week mismatch")
-    if pwf.get("ScoringProfile", {}).get("SettingsHash") != model["ScoringProfile"]["SettingsHash"]:
+    profile = pwf.get("ScoringProfile")
+    if not isinstance(profile, dict) or profile.get("SettingsHash") != model["ScoringProfile"]["SettingsHash"]:
         raise ValueError("PlayerWeekFantasy scoring fingerprint mismatch")
 
     rows = pwf.get("Records")

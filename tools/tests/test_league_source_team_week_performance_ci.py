@@ -16,6 +16,7 @@ def load_tests(loader: unittest.TestLoader, tests: unittest.TestSuite, pattern: 
         "tools.tests.test_team_week_performance",
         "tools.tests.test_team_week_performance_sources",
         "tools.tests.test_team_week_performance_integration",
+        "tools.tests.test_team_week_performance_materialize",
     ):
         suite.addTests(loader.loadTestsFromName(module))
     return suite
