@@ -31,4 +31,4 @@ jobs:
           --scope transactions
           --path public/data
           --
-          bash -euo pipefail -c 'python3 tools/league_history_app_publish.py write && pwsh ./public/requests/RequestPastSeasonsIndex.ps1'
+          bash -euo pipefail -c 'python3 tools/league_history_app_publish.py write && python3 tools/schedule_archive.py write && pwsh ./public/requests/RequestPastSeasonsIndex.ps1'

@@ -25,6 +25,11 @@ from .._common import require_finite, round_half_even
 MODEL_ID = "salary-v1"
 KIND = "salary"
 
+# Previous seasons the model reads for a season's Salary (newest first). Not part of PARAMS on purpose: PARAMS
+# is snapshot provenance and this value only tells consumers how much history a season needs (for example the
+# Schedule archives, tools/schedule_archive.py).
+HISTORY_SEASONS = 3
+
 PARAMS = MappingProxyType({
     "WeightTotal": 0.5,
     "WeightGame": 0.5,
