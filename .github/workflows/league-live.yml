@@ -125,5 +125,6 @@ jobs:
           --path data-derived/player-week-fantasy
           --
           bash -euo pipefail -c
-          'pwsh ./public/requests/RequestLeaguePublication.ps1 &&
+          'python3 tools/league_history_app_publish.py write &&
+          pwsh ./public/requests/RequestLeaguePublication.ps1 &&
           python3 tools/player_week_fantasy_refresh.py'

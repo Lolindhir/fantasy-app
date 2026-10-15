@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 999
 architectureDecision: ADR-057
-implementationState: steps 2 and 3 of Issue #999 implemented (LeagueTransactions and LeagueDrafts products in tools/derived_data_lib/league_transactions.py, league_drafts.py, league_history.py, tools/league_history_sources.py, products league-transactions and league-drafts in tools/derived_data.py, pick-result write-back included); step 4 adds the consumer generator tools/league_history_app_publish.py with the exact shadow comparison (command compare) against public/data; no cutover yet
+implementationState: steps 2 and 3 of Issue #999 implemented (LeagueTransactions and LeagueDrafts products in tools/derived_data_lib/league_transactions.py, league_drafts.py, league_history.py, tools/league_history_sources.py, products league-transactions and league-drafts in tools/derived_data.py, pick-result write-back included); step 4 adds the consumer generator tools/league_history_app_publish.py with the exact shadow comparison (command compare) against public/data; step 5b cutover: its write command now produces Transactions.json, Drafts.json and past_seasons/Transactions|Drafts in update-transactions, update-drafts and League Live (RequestLeague.ps1 only reads Drafts.json); steps 5c, 6 and 7 are open
 
 purpose: >
   Define the Shared Derived Data products LeagueTransactions and LeagueDrafts: the
@@ -30,7 +30,7 @@ architecture:
   rootConstant: data_derived_dir() in tools/data_roots.py and Get-DataDerivedRoot in ConfigUtils.psm1 (#788); no module spells the root name out.
   rules:
     - Both products are consumer-neutral. The App, Fantasy Operations and Fantasy Management read the same files; consumer shapes are produced by consumer generators.
-    - public/data/Transactions.json, Drafts.json and past_seasons/Transactions and Drafts keep their current contract until the cutover (Issue #999 step 5) and are produced from these products afterwards. Any App contract change is a separate step (step 6) that needs Robert's approval of the field list.
+    - public/data/Transactions.json, Drafts.json and past_seasons/Transactions and Drafts keep their current contract (unchanged by the step 5b cutover) and are produced from these products by tools/league_history_app_publish.py write. Any App contract change is a separate step (step 6) that needs Robert's approval of the field list.
     - Presentation belongs to the consumer generator, not the product - DisplayStatus, DisplayDraftKey, DisplayAbrDraftKey, DisplayDraftType and DisplayPick. Status (technical) stays in the product. This resolves Issue #183 point 2 structurally.
     - No generated archive (public/data/**, past_seasons/**) is an input. The only temporary exception is listed under transitionalInputs and has a removal condition.
     - Draft logic is the existing logic. Linear/snake order, trade application, pick results, TradeHistory, UpcomingDraftCount and ADR-021 stay as documented in domain.yaml, data-sources.yaml, draft-identity.yaml and decisions.yaml; this contract only moves where they are computed.
@@ -171,7 +171,7 @@ dynamicConfiguration:
 consumers:
   app:
     path: public/data/Transactions.json, Drafts.json, past_seasons/Transactions/Transactions_<season>.json, past_seasons/Drafts/Drafts_<season>.json
-    generator: tools/league_history_app_publish.py (shadow in step 4, cutover in step 5)
+    generator: tools/league_history_app_publish.py (shadow in step 4, writer since the step 5b cutover)
     adds: DisplayStatus, DisplayDraftKey, DisplayAbrDraftKey, DisplayDraftType, DisplayPick, LeagueID; selection of current versus past files; PastSeasonsIndex stays the manifest of the consumer outputs.
     historicalNames: Player names for historical moves are joined by the consumer generator from the canonical NFL rosters of the season plus identities; no player snapshot is archived (replaces the snapshot idea of Issue #193).
   fantasyOperations: later; reads the products directly instead of public/data.
