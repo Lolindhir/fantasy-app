@@ -156,6 +156,7 @@ describe('moves-view-model.util', () => {
       Source: 'Sleeper',
       TransactionID: transactionID,
       Type: type,
+      Status: 'complete',
       Season: '2026',
       Week: 1,
       CreatedAt: 1781261326971,

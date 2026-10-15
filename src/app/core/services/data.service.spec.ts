@@ -193,6 +193,7 @@ describe('DataService', () => {
       Source: 'Sleeper',
       TransactionID: 'transaction-1',
       Type: 'free_agent',
+      Status: 'complete',
       Season: '2026',
       Week: 1,
       CreatedAt: 1782125163269,

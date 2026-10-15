@@ -136,6 +136,7 @@ describe('transaction.mapper', () => {
       Source: 'Sleeper',
       TransactionID: 'transaction-1',
       Type: 'trade',
+      Status: 'complete',
       Season: '2026',
       Week: 1,
       CreatedAt: 1781261326971,
