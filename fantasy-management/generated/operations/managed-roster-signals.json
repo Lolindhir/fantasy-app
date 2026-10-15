@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-10-15T05:11:37Z",
-  "input_fingerprint": "01890df8f1c26510ef81e502b2c3396035bb832942c802d6d64a923646cbb787",
+  "generated_at": "2026-10-15T05:25:09Z",
+  "input_fingerprint": "80cd37e3909ff5b3c42cb34374dc5629a23de2d9d2599ad7721b44e40eecacf4",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -13,8 +13,8 @@
     {
       "id": "league_display",
       "path": "public/data/League.json",
-      "content_sha256": "f359658d16685f5de2ff143fe419d97bd8ed3706a637a0cb50e6aac5b08e753d",
-      "source_timestamp": "2026-10-15T05:11:37Z"
+      "content_sha256": "02af99b9942a239a0a4cfa5a2f2c55c9209c6e7554c0428b78a7dabdc3ab6226",
+      "source_timestamp": "2026-10-15T05:25:09Z"
     },
     {
       "id": "canonical_league_manifest",
@@ -43,8 +43,8 @@
     {
       "id": "players",
       "path": "public/data/Players.json",
-      "content_sha256": "80560de1c5b4b24249e0b7c5ca01cd7dcff7c1ff9156e9b3617373e59ffcf2bd",
-      "source_timestamp": "2026-10-14T05:21:09Z"
+      "content_sha256": "5a2cc2efcd637c3b281f06a9050cbf03e009af716e4b6f2aced6d3d8241515a6",
+      "source_timestamp": "2026-10-15T05:22:46Z"
     },
     {
       "id": "canonical_player_identities",
@@ -61,8 +61,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "35660cf3dd7d0fdf45acd4477a4cb7decbada66a141826d00a1513cc256c524d",
-      "source_timestamp": "2026-10-15T05:11:37Z"
+      "content_sha256": "4441d404fffdeb449944e91f2c8c04dc74010de2bfb74a0d552dfe49184f5baa",
+      "source_timestamp": "2026-10-15T05:25:09Z"
     },
     {
       "id": "operations_source_catalog",
@@ -919,7 +919,7 @@
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Out",
+        "designation": "Questionable",
         "description": "Hamstring",
         "reported_date": null,
         "return_date": null,
@@ -2650,7 +2650,7 @@
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Out",
+        "designation": "Doubtful",
         "description": "Quadriceps",
         "reported_date": null,
         "return_date": null,
@@ -3143,13 +3143,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Hamstring",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -3365,9 +3365,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -3637,13 +3638,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Questionable",
-        "description": "Ribs",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "high",
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -3873,10 +3874,9 @@
         }
       },
       "external_research": {
-        "injury_priority": "high",
+        "injury_priority": "routine",
         "role_opportunity_priority": "routine",
         "reasons": [
-          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -4411,8 +4411,8 @@
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Out",
-        "description": "Finger",
+        "designation": "Doubtful",
+        "description": "Surgery",
         "reported_date": null,
         "return_date": null,
         "external_verification_priority": "high",
@@ -4657,13 +4657,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Out",
-        "description": "Coach's Decision",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "high",
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -4879,10 +4879,9 @@
         }
       },
       "external_research": {
-        "injury_priority": "high",
+        "injury_priority": "routine",
         "role_opportunity_priority": "routine",
         "reasons": [
-          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
@@ -7398,7 +7397,7 @@
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Out",
+        "designation": "Questionable",
         "description": "Sprain",
         "reported_date": null,
         "return_date": null,
@@ -8152,13 +8151,13 @@
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Questionable",
+        "description": "Ankle",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -8374,9 +8373,10 @@
         }
       },
       "external_research": {
-        "injury_priority": "routine",
+        "injury_priority": "high",
         "role_opportunity_priority": "routine",
         "reasons": [
+          "current_structured_injury_signal_requires_verification",
           "role_opportunity_requires_qualitative_context"
         ]
       }
