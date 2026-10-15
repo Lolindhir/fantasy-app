@@ -32,13 +32,32 @@ class Week3ExactExportAudit(unittest.TestCase):
             ROOT, league_id=LEAGUE, season=SEASON, week=WEEK
         )
         self.assertEqual(existing["ScoringProfile"], produced["ScoringProfile"])
-        self.assertEqual(existing["ProjectionModel"], produced["ProjectionModel"])
+        # Old W03 predates the additive multi-interval contract; preserve all old fields.
+        legacy_model = {key: value for key, value in produced["ProjectionModel"].items()
+                        if key != "IntervalLevels"}
+        self.assertEqual(existing["ProjectionModel"], legacy_model)
+        self.assertEqual(produced["ProjectionModel"]["IntervalLevels"], [0.5, 0.8, 0.9])
         old_records = {row["CanonicalPlayerID"]: row for row in existing["Records"]}
         new_records = {row["CanonicalPlayerID"]: row for row in produced["Records"]}
         self.assertEqual(old_records.keys(), new_records.keys())
-        projection_changed = [pid for pid, rec in new_records.items()
-                              if rec["Projection"] != old_records[pid]["Projection"]]
-        self.assertEqual(projection_changed, [], f"Unexpected projection drift, first: {projection_changed[:5]}")
+        projection_changed = [
+            pid for pid, rec in new_records.items()
+            if {k: v for k, v in rec["Projection"].items() if k != "PredictionRanges"}
+            != old_records[pid]["Projection"]
+        ]
+        self.assertEqual(projection_changed, [],
+                         f"Unexpected existing projection metric drift, first: {projection_changed[:5]}")
+        multirange_added = sum(
+            "PredictionRanges" in rec["Projection"]
+            and "PredictionRanges" not in old_records[pid]["Projection"]
+            for pid, rec in new_records.items()
+        )
+        for rec in new_records.values():
+            p = rec["Projection"]
+            if "PredictionRanges" in p:
+                self.assertEqual([v["Level"] for v in p["PredictionRanges"]],
+                                 [0.5, 0.8, 0.9])
+                self.assertIn(p["PredictionRange"], p["PredictionRanges"])
         owned = json.loads(
             (ROOT / DATA_SOURCE_ROOT / "leagues" / LEAGUE / "seasons" / str(SEASON)
              / "matchups" / f"week-{WEEK}.json").read_text(encoding="utf-8")
@@ -84,7 +103,8 @@ class Week3ExactExportAudit(unittest.TestCase):
         report = {
             "RecordCount": 820, "FantasyMatchupCompared": compared,
             "MissingZero": missing_zero,
-            "ProjectionsChanged": len(projection_changed),
+            "ExistingProjectionsChanged": len(projection_changed),
+            "MultiRangeEnrichedRecords": multirange_added,
             "OldActualState": existing["Materialization"]["ActualStateCounts"],
             "NewActualState": produced["Materialization"]["ActualStateCounts"],
             "ActualChangedRows": sum(old_records[pid]["Actual"] != rec["Actual"]
