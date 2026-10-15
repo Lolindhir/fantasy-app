@@ -160,27 +160,14 @@ try {
         exit 1
     }
 
-    $transactionsCurrentSeason = Get-LeagueTransactionsCurrentSeasonInMemory -leagueID $LeagueID
-    $transactionsCurrentSeason = Resolve-LeagueTransactionDraftPickTypesInMemory `
-        -transactions $transactionsCurrentSeason
-
-    if ($transactionsCurrentSeason) {
-        Write-Host "Transactions for current season prepared in memory." -ForegroundColor Green
-    } else {
-        Write-Host "No transactions for current season generated." -ForegroundColor Yellow
-    }
-
-    $drafts = Update-LeagueDraftsOrderAwareFromTransactions `
-        -transactions $transactionsCurrentSeason `
-        -leagueID $LeagueID
+    # Current Transactions.json and Drafts.json are written from the league history product by the consumer
+    # generator (tools/league_history_app_publish.py write, ADR-057, Issue #999 step 5b) before this script runs
+    # in League Live. League status/phase and team draft picks read the freshly written Drafts.json.
+    $drafts = Get-LeagueDraftsLocal
     if (-not $drafts -or @($drafts).Count -eq 0) {
-        Write-Warning "Update-LeagueDraftsOrderAwareFromTransactions returned no drafts. Falling back to local Drafts.json."
-        $drafts = Get-LeagueDraftsLocal
+        throw "Drafts.json is missing or empty. The league history consumer generator must run before RequestLeague."
     }
-    $transactionsCurrentSeason = Add-LeagueTransactionDraftPickDetailsInMemory `
-        -transactions $transactionsCurrentSeason `
-        -drafts $drafts
-    Save-TransactionsCurrentSeason -transactions $transactionsCurrentSeason
+    Write-Host "Current drafts loaded from Drafts.json ($(@($drafts).Count))." -ForegroundColor Green
 
     $league = Get-CanonicalCurrentLeagueRaw -CanonicalLeagueID $CanonicalLeagueID
     $teamData = Get-CanonicalCurrentTeamsForLeague -CanonicalLeagueID $CanonicalLeagueID
