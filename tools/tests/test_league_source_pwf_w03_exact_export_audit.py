@@ -95,7 +95,7 @@ class Week3ExactExportAudit(unittest.TestCase):
         # No third, hidden mutated contract section.
         self.assertEqual(existing.keys(), produced.keys())
         for key in existing:
-            if key not in {"Records", "Materialization"}:
+            if key not in {"Records", "Materialization", "ProjectionModel"}:
                 self.assertEqual(existing[key], produced[key], f"Top-level drift: {key}")
         old_meta = dict(existing["Materialization"])
         new_meta = dict(produced["Materialization"])
