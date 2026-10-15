@@ -7,6 +7,7 @@ that can change is wired in.
 """
 from __future__ import annotations
 
+import importlib.util
 import math
 import random
 import sys
@@ -118,6 +119,19 @@ class SalaryV1Tests(OracleMixin):
         self.assertEqual(5_555_556, salary_v1.salary_from_points(10, 0, 0))
         self.assertEqual(50_000_000, salary_v1.salary_from_points(20, 20, 20))
 
+    def test_unrounded_curve_and_floor_average_back_the_rounded_salary(self) -> None:
+        self.assertEqual(12_500_000.0, salary_v1.curve_dollars(10.0))
+        self.assertEqual(50_000_000.0 * 0.5 ** 3, salary_v1.curve_dollars(10.0, 3))  # exponent override
+        self.assertEqual(70_000_000.0, salary_v1.curve_dollars(24.0, 2))
+        self.assertEqual(0.0, salary_v1.floored_average(0, 0, 12.0))
+        self.assertEqual(20 / 3, salary_v1.floored_average(10, 0, 0))
+        rng = random.Random(7)
+        for _ in range(200):
+            p = [rng.uniform(0, 30) for _ in range(3)]
+            self.assertEqual(salary_v1.salary_from_points(*p),
+                             salary_v1.map_points_to_dollars(salary_v1.floored_average(*p)))
+            self.assertEqual(salary_v1.map_points_to_dollars(p[0]), round(salary_v1.curve_dollars(p[0])))
+
     def test_two_newest_seasons_zero_gives_zero(self) -> None:
         self.assertEqual(0, salary_v1.salary_from_points(0, 0, 12.0))
         self.assertNotEqual(0, salary_v1.salary_from_points(0, 5, 0))
@@ -163,6 +177,14 @@ class SalaryCapV1Tests(unittest.TestCase):
     def test_hand_computed_cap(self) -> None:
         result = salary_cap_v1.compute(range(1, 26), team_count=1)  # top 20: 25..6, sum 310, mean 15.5
         self.assertEqual((279, 20, 20), (result.cap, result.top_n, result.players_considered))
+
+    def test_raw_cap_is_the_unrounded_value_behind_compute(self) -> None:
+        self.assertEqual(279.0, salary_cap_v1.raw_cap(range(25, 5, -1)))
+        self.assertEqual(27.0, salary_cap_v1.raw_cap([20, 10], relevant_team_size=2))  # mean 15 * 2 * 0.9
+        rng = random.Random(11)
+        for _ in range(100):
+            values = sorted((rng.uniform(1, 5e7) for _ in range(30)), reverse=True)
+            self.assertEqual(salary_cap_v1.compute(values, 1).cap, round(salary_cap_v1.raw_cap(values[:20])))
 
     def test_fewer_players_than_top_n_use_all_players(self) -> None:
         result = salary_cap_v1.compute([100] * 5, team_count=12)
@@ -360,6 +382,51 @@ class ParityWithValidatedPortTests(unittest.TestCase):
             salaries = [float(rng.randint(0, 60_000_000)) for _ in range(rng.randint(30, 500))]
             expected = shadow.compute_salary_cap(salaries, 20, team_count)
             self.assertEqual(expected, salary_cap_v1.compute(salaries, team_count).cap)
+
+
+SIM_SCRIPT = (Path(__file__).resolve().parents[2] / "fantasy-management" / "league-economy" / "salary"
+              / "simulation" / "salary_simulation.py")
+
+
+def load_simulation():
+    spec = importlib.util.spec_from_file_location("salary_simulation_under_test", SIM_SCRIPT)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+# FM salary simulation takes curve, floor and cap from the central models (ADR-055, #919 step 7).
+class SalarySimulationUsesRegistryTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.sim = load_simulation()
+        cls.salary = cls.sim.SALARY_MODEL
+        cls.cap = cls.sim.SALARY_CAP_MODEL
+
+    def test_models_are_the_registered_modules(self) -> None:
+        # The simulation imports the package as tools.derived_data_lib; this module as derived_data_lib.
+        self.assertEqual("salary-v1", self.salary.MODEL_ID)
+        self.assertEqual("salary-cap-v1", self.cap.MODEL_ID)
+        self.assertEqual(registry.describe("salary-v1")["Params"], dict(self.salary.PARAMS))
+        self.assertEqual(registry.describe("salary-cap-v1")["Params"], dict(self.cap.PARAMS))
+
+    def test_no_local_copy_of_the_formula_constants(self) -> None:
+        for name in ("REF_SIGNAL", "REF_SALARY", "CAP_FACTOR"):
+            self.assertFalse(hasattr(self.sim, name), f"{name} is a copy of a model parameter")
+        source = SIM_SCRIPT.read_text(encoding="utf-8")
+        for literal in ("0.33", "0.17", "50_000_000", "0.9"):
+            self.assertNotIn(literal, source.replace("MIN_PCT_BY_YEAR", ""), f"literal {literal} duplicates a model parameter")
+
+    def test_helpers_equal_the_model_functions(self) -> None:
+        for points in (0.0, 4.5, 10.0, 20.0, 27.3):
+            self.assertEqual(self.salary.curve_dollars(points, 2.0), self.sim.map_salary(points, 2.0))
+            self.assertEqual(self.salary.curve_dollars(points, 1.5), self.sim.map_salary(points, 1.5))
+        for triple in ((10, 6, 2), (10, 0, 0), (0, 0, 12), (3, 9, 4), (3, 4, 9)):
+            self.assertEqual(self.salary.floored_average(*triple), self.sim.floored_three_year(*triple))
+        entry = {"AvgPotentialGame": 12.4, "AvgGame": 9.6}
+        self.assertEqual(self.salary.season_points(self.salary.SeasonInput(12.4, 9.6)), self.sim.season_performance(entry))
+        salaries = [float(v) for v in range(1, 60)]
+        self.assertEqual(self.cap.raw_cap(sorted(salaries, reverse=True)[:20]), self.sim.top_n_cap(salaries, 20, 20))
 
 
 if __name__ == "__main__":

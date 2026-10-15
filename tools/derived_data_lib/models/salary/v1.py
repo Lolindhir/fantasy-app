@@ -61,25 +61,34 @@ def season_points(season: SeasonInput) -> float:
     return total * PARAMS["WeightTotal"] + game * PARAMS["WeightGame"]
 
 
-def map_points_to_dollars(points: float) -> int:
-    """MapSalaryFantasy: non-linear mapping of averaged season points to whole dollars."""
+def curve_dollars(points: float, exponent: float | None = None) -> float:
+    """Unrounded dollar value of averaged season points on the non-linear curve.
+
+    ``exponent`` defaults to the model's ``CurveExponent``; analyses may pass another value to probe
+    the curve. Productive code uses ``map_points_to_dollars``, which rounds this value.
+    """
+    exponent = PARAMS["CurveExponent"] if exponent is None else exponent
     source_min, source_max = PARAMS["SourceMin"], PARAMS["SourceMax"]
-    exponent = PARAMS["CurveExponent"]
     target_min, target_max = PARAMS["TargetMin"], PARAMS["TargetMax"]
     normalized = (points - source_min) / (source_max - source_min)
     scaled = math.pow(max(normalized, 0), exponent)
     if normalized > 1:
         scaled = 1 + (normalized - 1) * exponent
-    return round_half_even(target_min + scaled * (target_max - target_min))
+    return target_min + scaled * (target_max - target_min)
 
 
-def salary_from_points(points_newest: float, points_middle: float, points_oldest: float) -> int:
-    """Get-FantasySalaryWithFloor: whole-dollar salary of three season point values, newest first."""
+def map_points_to_dollars(points: float) -> int:
+    """MapSalaryFantasy: non-linear mapping of averaged season points to whole dollars."""
+    return round_half_even(curve_dollars(points))
+
+
+def floored_average(points_newest: float, points_middle: float, points_oldest: float) -> float:
+    """Floor and average of three season point values, newest first (before the dollar mapping)."""
     p1 = require_finite(points_newest, "points_newest")
     p2 = require_finite(points_middle, "points_middle")
     p3 = require_finite(points_oldest, "points_oldest")
     if p1 == 0 and p2 == 0:
-        return 0
+        return 0.0
     w1, w2, w3 = PARAMS["FloorWeights"]
     if p1 >= p2 and p1 >= p3:
         ratio, maximum = w1, p1
@@ -89,7 +98,12 @@ def salary_from_points(points_newest: float, points_middle: float, points_oldest
         ratio, maximum = w3, p3
     floor = maximum * ratio
     p1, p2, p3 = max(p1, floor), max(p2, floor), max(p3, floor)
-    return map_points_to_dollars((p1 + p2 + p3) / 3)
+    return (p1 + p2 + p3) / 3
+
+
+def salary_from_points(points_newest: float, points_middle: float, points_oldest: float) -> int:
+    """Get-FantasySalaryWithFloor: whole-dollar salary of three season point values, newest first."""
+    return map_points_to_dollars(floored_average(points_newest, points_middle, points_oldest))
 
 
 def current_season_points(points_current: float, points_previous: float, as_of_final_scored_week: int) -> float:
