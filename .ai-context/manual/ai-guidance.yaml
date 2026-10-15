@@ -10,11 +10,11 @@ guidance:
     - Define each step narrowly enough that its scope, validation result, persisted state and rollback path can be explained without reconstructing a large unfinished work chain.
     - Prefer several small commits, pull requests or merges over a large monolithic change when the work can be separated cleanly; do not accumulate unnecessarily large uncommitted or unmerged change chains.
     - Within one clearly authorized small step, do not pause merely for routine commit, pull-request or merge actions when those actions are already inside the granted scope and repository governance allows them; complete the step through the relevant validation and post-merge/live verification.
-    - In interactive ChatGPT-style workflows, autonomy applies within the agreed small step, not across an open-ended sequence of substantive work packages.
-    - After completing one substantive step, report the achieved state, relevant commit/PR/merge or persisted result, validation outcome, known risks or deviations, rollback path and the proposed next small step in chat, then stop before beginning that next substantive step.
-    - Begin the next substantive step only after another user interaction unless the user explicitly requested a continuous multi-step run.
-    - If an apparently small step expands materially in scope or no longer has a clean rollback/validation boundary, stop at the safest stable checkpoint, report the expansion and propose how to split the remaining work instead of continuing a monolithic run.
-    - These checkpoint rules govern execution granularity and interaction cadence; they do not weaken explicit authorization requirements, workflow approvals, issue synchronization, source-of-truth ownership or other repository governance.
+    - In interactive ChatGPT-style workflows, distinguish an approved single bounded step from an explicitly authorized complete Issue or work package. A full-work-package authorization permits continuous in-scope execution across substantive checkpoints by default; an isolated step authorization ends at that step.
+    - After each meaningful checkpoint, keep the Issue body synchronized and communicate the result, validation, persisted state, known risks and rollback path. Reporting a checkpoint does not itself require a new user approval when further steps remain inside the authorized work package.
+    - Do not begin a distinct work package, an unauthorized substantive scope expansion, or an action beyond the current authorization. At that boundary, stop and request the necessary decision.
+    - If a step expands materially or loses a clean rollback/validation boundary, stop at the safest stable checkpoint, reassess its risk and either re-split the work within the authorized scope or request targeted approval when required by the risk contract.
+    - These checkpoints preserve independent validation, Issue synchronization, protected technical boundaries and the authorization/risk rules below; they are not file-based workflow or routine merge approval gates.
 
   answering:
     - When the user asks implementation questions, option comparisons, feasibility questions or follow-up questions about specific application, frontend, data generation, script or repository behavior, inspect the relevant current repository files and AI context before answering.
@@ -48,7 +48,34 @@ guidance:
     - 'Examples of action instructions: "Mach das bitte", "Setze das um", "Erstelle ...", "Committe ...", "Füge ... hinzu".'
     - Once concrete repository work is explicitly authorized, the administrative GitHub Issue maintenance required to track that authorized work is implicitly authorized and does not require a separate confirmation.
     - Administrative Issue maintenance includes searching/reusing/creating the relevant Issue, updating its body/checklist/labels/handoff, adding commit or PR references, closing it when all acceptance criteria are actually complete after an authorized successful merge, reopening the same scope on regression, and creating a separate follow-up Issue for independently meaningful newly discovered work.
-    - This Issue-maintenance exception does not authorize extra code or architecture scope, GitHub Actions workflow changes without their specific approval, merge without the applicable merge approval, or Fantasy Management State/Knowledge/Decision/board/baseline/review persistence.
+    - Administrative Issue maintenance never expands the authorized technical scope or overrides Fantasy Management State/Knowledge/Decision/board/baseline/review persistence approvals. Normal in-scope GitHub Actions edits and merges are governed by authorizationAndRisk, not a separate file-based approval gate.
+
+  authorizationAndRisk:
+    principle: >-
+      User authorization covers a defined outcome and its concrete risk/effect boundaries, not a
+      fixed list of file extensions or agent providers. Inspect the actual behavior and affected
+      write paths, permissions, data ownership, triggers and rollback before classifying a change.
+      Merely editing a GitHub Actions YAML is not a separate approval trigger.
+    scope:
+      - Explicit approval of a fully defined Issue or end-to-end work package normally includes in-scope implementation, workflow adjustments, documentation, tests, validation, commits, pull requests, merges, Issue reconciliation and post-merge verification.
+      - A user authorizing a particular step does not thereby authorize subsequent substantive steps; questions, analyses, reviews and vague intent do not authorize mutation.
+      - A merge inside the authorized scope needs no additional chat approval when required validation and repository review/protection policies pass. Never bypass a failing or unavailable mandatory gate.
+      - A new objective, materially broader impact or higher risk than the user concretely approved is out of scope, even if it appears during implementation.
+    standard:
+      - Routine code, documentation, test and existing GitHub Actions workflow edits are autonomous within an authorized scope when they preserve existing data ownership, declared publication/write scopes, permissions and safety invariants.
+      - Normal generated-data regeneration and publication through already classified, bounded workflows is standard behavior; data files changing on a normal pipeline run is not by itself a critical effect.
+      - Scheduling, trigger, CI/observability and retry adjustments may be standard only after checking their real downstream write effects and preserving safety and publication contracts.
+    elevated:
+      - New automated writers, expanded output/publication destinations, changed write permissions, new persistence/activation paths, material changes to canonical ownership or cross-context producer behavior, and migrations that can substantially change stored results require an explicit impact, scope, validation and rollback assessment.
+      - Proceed only if the user specifically authorized the elevated effect and its relevant write scope in the approved work package. Otherwise request targeted approval before implementation or activation; a generic authorization does not cover undisclosed elevated effects.
+    critical:
+      - Destructive or hard-to-reverse edits to canonical hand-maintained facts, bulk deletion/replacement of persistent authoritative data, force-push/history rewrite, removal of protections or validation gates, exposure or weakening of credentials/secrets, and irreversible external side effects require separate targeted approval even when the surrounding Issue is approved.
+      - Never use user authorization to violate absolute repository constraints such as no automated writes into data-meta, generated-context immutability, publication safety, security rules, or independent Fantasy Management qualitative persistence approvals.
+    enforcement:
+      - If impact or risk cannot be established reliably, fail closed and explain the uncertainty before writing.
+      - Preserve the default prohibition on one-off, migration, upload, repair, recovery and branch-manipulation Actions workflows; any exception must be separately and narrowly approved after safer existing tooling is ruled out.
+      - Every created, renamed or materially repurposed workflow remains subject to workflow-monitoring classification, workflow-publication writer semantics, tests and observability review in the same change.
+      - Apply the same contract to ChatGPT, Claude, other agents and human-assisted agent runners; no actor-specific exemption.
 
   sourceOfTruth:
     - Do not infer source-of-truth domain ownership from Angular components alone.
