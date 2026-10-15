@@ -1,0 +1,291 @@
+"""Tests for the LeagueTransactions stages (league-history.yaml, ADR-057, Issue #999 step 2).
+
+Constructed leagues pin the ported PowerShell semantics (manual overlay, pick identity resolution,
+pick-result enrichment); one repository-level test checks invariants of the real canonical data without
+wiring any concrete player or transaction into the assertions.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+TOOLS = Path(__file__).resolve().parents[1]
+REPO = TOOLS.parent
+if str(TOOLS) not in sys.path:
+    sys.path.insert(0, str(TOOLS))
+
+from derived_data_lib.league_history import (  # noqa: E402
+    LeagueHistoryInputs,
+    build_transaction_stage,
+    transactions_document,
+)
+from derived_data_lib.league_transactions import (  # noqa: E402
+    TransactionHistoryError,
+    enrich_pick_details,
+    manual_transaction_id,
+    merge_manual_overlay,
+    resolve_pick_identities,
+    sort_transactions,
+)
+
+CONFIGS = [
+    {"DraftType": "Rookie", "DraftInstance": 1, "DraftNo": 1, "Rounds": 2, "SleeperFuturePickPool": True,
+     "OrderSource": "PreviousPlayoffs"},
+    {"DraftType": "Free_Agent", "DraftInstance": 1, "DraftNo": 2, "Rounds": 2, "OrderSource": "AllTime"},
+]
+OWNERS = {"Ann": 1, "Bob": 2, "Cy": 3}
+
+
+def tx(transaction_id, season="2026", week=1, created=1000, picks=(), adds=None, drops=None, source="Sleeper"):
+    return {
+        "Source": source, "TransactionID": transaction_id, "Type": "trade", "Status": "complete",
+        "Season": season, "Week": week, "CreatedAt": created, "CreatedDate": "2026-01-01",
+        "RosterIDs": [1, 2], "Adds": adds or {}, "Drops": drops or {}, "DraftPicks": [dict(p) for p in picks],
+        "Notes": None,
+    }
+
+
+def provider_pick(season, round_no, original, previous, new):
+    return {
+        "DraftType": None, "DraftInstance": None, "DraftCode": None, "DraftSource": "Sleeper", "DraftKey": None,
+        "Season": season, "Round": round_no, "OriginalOwnerRosterID": original, "PreviousOwnerRosterID": previous,
+        "NewOwnerRosterID": new, "SleeperDraftID": None,
+    }
+
+
+def traded(season, round_no, original, previous, owner):
+    return {"season": season, "round": round_no, "roster_id": original, "previous_owner_id": previous, "owner_id": owner}
+
+
+def context(key, draft_type, draft_id, traded_picks):
+    season = key.split("_", 1)[0]
+    return {"Season": season, "DraftType": draft_type, "DraftInstance": 1, "DraftCode": draft_type,
+            "DraftKey": key, "SleeperDraftID": draft_id, "TradedPicks": traded_picks}
+
+
+class ManualOverlayTests(unittest.TestCase):
+    def test_manual_transaction_id_is_a_stable_twelve_digit_sha1(self):
+        manual = {"Season": "2026", "Date": "2026-06-12", "Picks": [
+            {"DraftKey": "2026_Free_Agent", "Round": 2, "Original": "Bob", "From": "Ann", "To": "Cy"}]}
+        raw = "2026|2026-06-12|-R2-O2-F1-T3"  # overlay picks have no Season, as in the PowerShell ID rule
+        expected = "Manual_2026_" + hashlib.sha1(raw.encode()).hexdigest().upper()[:12]
+        self.assertEqual(expected, manual_transaction_id(manual, OWNERS))
+
+    def test_unknown_owner_fails_closed(self):
+        manual = {"Season": "2026", "Date": "2026-06-12", "Picks": [
+            {"DraftKey": "2026_Rookie", "Round": 1, "Original": "Nobody", "From": "Ann", "To": "Cy"}]}
+        with self.assertRaises(TransactionHistoryError):
+            manual_transaction_id(manual, OWNERS)
+
+    def test_binding_adds_picks_and_recomputes_roster_ids(self):
+        base = [tx("100", picks=[provider_pick("2026", 1, 1, 1, 2)], adds={"p1": 2}, drops={"p1": 1})]
+        rows = [{"Season": "2026", "Date": "2026-01-02", "Week": 1, "SleeperTransactionID": 100,
+                 "Picks": [{"DraftKey": "2027_Free_Agent", "Round": 4, "Original": "Cy", "From": "Cy", "To": "Ann"}]}]
+        merged = merge_manual_overlay(base, rows, "2026", OWNERS, CONFIGS)
+        self.assertEqual("Sleeper_Manual", merged[0]["Source"])
+        self.assertEqual(["Manual", "Sleeper"], sorted(p["DraftSource"] for p in merged[0]["DraftPicks"]))
+        self.assertEqual([1, 2, 3], merged[0]["RosterIDs"])  # the manual pick moves Cy -> Ann
+        manual = next(p for p in merged[0]["DraftPicks"] if p["DraftSource"] == "Manual")
+        self.assertEqual(("2027_Free_Agent", "Free_Agent", 1), (manual["DraftKey"], manual["DraftType"], manual["DraftInstance"]))
+
+    def test_unbound_row_becomes_manual_transaction_and_sorting_is_newest_first(self):
+        base = [tx("100", week=2, created=2000), tx("101", week=1, created=3000)]
+        rows = [{"Season": "2026", "Date": "2026-01-02", "Week": 3, "Picks": [
+            {"DraftKey": "2026_Rookie", "Round": 1, "Original": "Ann", "From": "Ann", "To": "Bob"}]},
+            {"Season": "2025", "Date": "2025-01-02", "Week": 1, "Picks": []}]  # other season is ignored
+        merged = merge_manual_overlay(base, rows, "2026", OWNERS, CONFIGS)
+        self.assertEqual(3, len(merged))
+        self.assertEqual("Manual", merged[0]["Source"])  # week 3 sorts first (descending)
+        self.assertEqual(["Manual", "Sleeper", "Sleeper"], [item["Source"] for item in merged])
+        self.assertEqual(1, merged[0]["CreatedAt"] // 1000 // 86400 // 365 - 55)  # a real epoch day was derived
+
+    def test_binding_without_canonical_transaction_fails_closed(self):
+        rows = [{"Season": "2026", "SleeperTransactionID": "999", "Picks": []}]
+        with self.assertRaises(TransactionHistoryError):
+            merge_manual_overlay([tx("100")], rows, "2026", OWNERS, CONFIGS)
+
+    def test_duplicate_binding_fails_closed(self):
+        rows = [{"Season": "2026", "SleeperTransactionID": "100", "Picks": []},
+                {"Season": "2026", "SleeperTransactionID": 100, "Picks": []}]
+        with self.assertRaises(TransactionHistoryError):
+            merge_manual_overlay([tx("100")], rows, "2026", OWNERS, CONFIGS)
+
+    def test_sort_is_descending_by_season_week_created_id(self):
+        items = [tx("a", week=1, created=5), tx("b", week=2, created=1), tx("c", week=2, created=1)]
+        self.assertEqual(["c", "b", "a"], [item["TransactionID"] for item in sort_transactions(items)])
+
+
+class PickIdentityTests(unittest.TestCase):
+    def test_exact_movement_beats_identity_only(self):
+        contexts = [
+            context("2026_Rookie", "Rookie", "d1", [traded("2026", 1, 1, 1, 2)]),
+            context("2026_Free_Agent", "Free_Agent", "d2", [traded("2026", 1, 1, 9, 9)]),
+        ]
+        items = [tx("1", picks=[provider_pick("2026", 1, 1, 1, 2)])]
+        self.assertEqual([], resolve_pick_identities(items, contexts, CONFIGS, 2026) and [])
+        pick = items[0]["DraftPicks"][0]
+        self.assertEqual(("2026_Rookie", "d1", "Rookie"), (pick["DraftKey"], pick["SleeperDraftID"], pick["DraftType"]))
+
+    def test_two_exact_matches_are_ambiguous_and_stay_unresolved(self):
+        contexts = [
+            context("2026_Rookie", "Rookie", "d1", [traded("2026", 1, 1, 1, 2)]),
+            context("2026_Free_Agent", "Free_Agent", "d2", [traded("2026", 1, 1, 1, 2)]),
+        ]
+        items = [tx("1", picks=[provider_pick("2026", 1, 1, 1, 2)])]
+        report = resolve_pick_identities(items, contexts, CONFIGS, 2026)
+        self.assertEqual(1, len(report))
+        self.assertIsNone(items[0]["DraftPicks"][0]["DraftKey"])
+
+    def test_sibling_manual_pick_claims_its_draft_key(self):
+        contexts = [
+            context("2026_Rookie", "Rookie", "d1", [traded("2026", 1, 1, 1, 2)]),
+            context("2026_Free_Agent", "Free_Agent", "d2", [traded("2026", 1, 1, 1, 2)]),
+        ]
+        manual = provider_pick("2026", 1, 1, 1, 2)
+        manual.update(DraftSource="Manual", DraftKey="2026_Free_Agent", DraftType="Free_Agent", DraftInstance=1, DraftCode="Free_Agent")
+        del manual["SleeperDraftID"]
+        items = [tx("1", picks=[provider_pick("2026", 1, 1, 1, 2), manual])]
+        self.assertEqual([], resolve_pick_identities(items, contexts, CONFIGS, 2026))
+        provider = next(p for p in items[0]["DraftPicks"] if p["DraftSource"] == "Sleeper")
+        self.assertEqual("2026_Rookie", provider["DraftKey"])
+
+    def test_future_pick_uses_the_future_pool_draft_type(self):
+        items = [tx("1", picks=[provider_pick("2028", 2, 3, 3, 1)])]
+        self.assertEqual([], resolve_pick_identities(items, [], CONFIGS, 2026))
+        pick = items[0]["DraftPicks"][0]
+        self.assertEqual(("2028_Rookie", None), (pick["DraftKey"], pick["SleeperDraftID"]))
+
+    def test_current_or_past_season_pick_without_context_stays_unresolved(self):
+        items = [tx("1", picks=[provider_pick("2026", 2, 3, 3, 1)])]
+        self.assertEqual(1, len(resolve_pick_identities(items, [], CONFIGS, 2026)))
+
+    def test_two_future_pool_configs_fail_closed(self):
+        configs = [dict(CONFIGS[0]), dict(CONFIGS[1], SleeperFuturePickPool=True)]
+        items = [tx("1", picks=[provider_pick("2028", 2, 3, 3, 1)])]
+        with self.assertRaises(TransactionHistoryError):
+            resolve_pick_identities(items, [], configs, 2026)
+
+
+class EnrichmentTests(unittest.TestCase):
+    def draft(self, key, draft_type, draft_id, picks):
+        return {"DraftKey": key, "DraftType": draft_type, "DraftInstance": 1, "DraftCode": draft_type,
+                "SleeperDraftID": draft_id, "Picks": picks}
+
+    def draft_pick(self, key, round_no, original, history=(), **extra):
+        pick = {"PickKey": f"{key}_R{round_no}_OO{original}", "Season": key.split("_")[0], "Round": round_no,
+                "OriginalOwnerRosterID": original, "PositionInRound": 2, "OverallPick": 2, "PlayerID": "p9",
+                "PlayerName": "A B", "Status": "Picked", "SleeperPickNo": 2, "TradeHistory": list(history)}
+        pick.update(extra)
+        return pick
+
+    def test_trade_history_selects_between_equal_round_picks_of_two_drafts(self):
+        entry = {"TransactionID": "1", "PreviousOwnerRosterID": 1, "NewOwnerRosterID": 2}
+        drafts = [
+            self.draft("2026_Rookie", "Rookie", "d1", [self.draft_pick("2026_Rookie", 1, 1)]),
+            self.draft("2026_Free_Agent", "Free_Agent", "d2", [self.draft_pick("2026_Free_Agent", 1, 1, [entry])]),
+        ]
+        items = [tx("1", picks=[provider_pick("2026", 1, 1, 1, 2)])]
+        enrich_pick_details(items, drafts)
+        pick = items[0]["DraftPicks"][0]
+        self.assertEqual(("2026_Free_Agent", "2026_Free_Agent_R1_OO1", "Picked", 2), (pick["DraftKey"], pick["PickKey"], pick["PickStatus"], pick["OverallPick"]))
+
+    def test_identity_fallback_uses_the_transaction_pick_hints_to_break_ties(self):
+        drafts = [
+            self.draft("2026_Rookie", "Rookie", "d1", [self.draft_pick("2026_Rookie", 1, 1)]),
+            self.draft("2026_Free_Agent", "Free_Agent", "d2", [self.draft_pick("2026_Free_Agent", 1, 1)]),
+        ]
+        pick_dict = provider_pick("2026", 1, 1, 1, 2)
+        pick_dict["DraftKey"] = "2026_Rookie"
+        pick_dict["SleeperDraftID"] = "d1"
+        items = [tx("1", picks=[pick_dict])]
+        enrich_pick_details(items, drafts)
+        self.assertEqual("2026_Rookie_R1_OO1", items[0]["DraftPicks"][0]["PickKey"])
+
+    def test_unmatched_pick_is_left_unchanged(self):
+        items = [tx("1", picks=[provider_pick("2031", 1, 1, 1, 2)])]
+        enrich_pick_details(items, [])
+        self.assertNotIn("PickKey", items[0]["DraftPicks"][0])
+
+    def test_conflicting_duplicate_draft_pick_identity_fails_closed(self):
+        a = self.draft("2026_Rookie", "Rookie", "d1", [self.draft_pick("2026_Rookie", 1, 1)])
+        b = self.draft("2026_Rookie", "Rookie", "d1", [self.draft_pick("2026_Rookie", 1, 1, PlayerID="other")])
+        items = [tx("1", picks=[provider_pick("2026", 1, 1, 1, 2)])]
+        with self.assertRaises(TransactionHistoryError):
+            enrich_pick_details(items, [a, b])
+
+
+def provider_draft(draft_id, season, status, created, name="", rounds=2, slots=(1, 2)):
+    return {
+        "draft_id": draft_id, "season": season, "type": "linear", "status": status, "start_time": created,
+        "created": created, "settings": {"rounds": rounds}, "metadata": {"name": name},
+        "draft_order": {}, "slot_to_roster_id": {str(i + 1): rid for i, rid in enumerate(slots)},
+    }
+
+
+class StageTests(unittest.TestCase):
+    def inputs(self, transactions, payloads, manual=()):
+        return LeagueHistoryInputs(
+            league_id="L", league_year=2026, seasons=[2025, 2026],
+            provider_league_ids={2025: "p25", 2026: "p26"}, draft_configs=CONFIGS, open_draft_count=3,
+            owners=OWNERS, canonical_transactions=transactions, payloads=payloads, manual_rows=list(manual),
+        )
+
+    def test_historical_stage_corrects_a_pick_to_the_completed_draft_classification(self):
+        d25 = provider_draft("d25", "2025", "complete", 1, name="rookie draft")
+        payloads = {
+            2025: {"Drafts": [d25], "PicksByDraftID": {"d25": []}, "TradedPicksByDraftID": {"d25": [traded("2025", 1, 1, 1, 2)]}},
+            2026: {"Drafts": [], "PicksByDraftID": {}, "TradedPicksByDraftID": {}},
+        }
+        transactions = {2025: [tx("1", "2025", picks=[provider_pick("2025", 1, 1, 1, 2)])], 2026: []}
+        stage = build_transaction_stage(self.inputs(transactions, payloads))
+        pick = stage.transactions[2025][0]["DraftPicks"][0]
+        self.assertEqual(("2025_Rookie", "d25"), (pick["DraftKey"], pick["SleeperDraftID"]))
+        self.assertEqual([], stage.unresolved)
+
+    def test_unidentified_provider_pick_is_reported(self):
+        payloads = {2025: {"Drafts": [], "PicksByDraftID": {}, "TradedPicksByDraftID": {}},
+                    2026: {"Drafts": [], "PicksByDraftID": {}, "TradedPicksByDraftID": {}}}
+        transactions = {2025: [tx("1", "2025", picks=[provider_pick("2025", 1, 1, 1, 2)])], 2026: []}
+        stage = build_transaction_stage(self.inputs(transactions, payloads))
+        self.assertEqual(1, len(stage.unresolved))
+
+    def test_duplicate_transaction_id_across_seasons_fails_closed(self):
+        payloads = {2025: {"Drafts": []}, 2026: {"Drafts": []}}
+        transactions = {2025: [tx("1", "2025")], 2026: [tx("1", "2026")]}
+        with self.assertRaises(TransactionHistoryError):
+            build_transaction_stage(self.inputs(transactions, payloads))
+
+    def test_document_lists_player_identities_of_the_file(self):
+        document = transactions_document("L", 2026, [tx("1", adds={"p1": 1}, drops={"p2": 2})], lambda p, s: None if p == "p2" else f"C-{p}")
+        self.assertEqual({"p1": "C-p1", "p2": None}, document["PlayerIdentities"])
+        self.assertEqual(1, document["ContractVersion"])
+
+
+class RepositoryInvariantTests(unittest.TestCase):
+    """Invariants of the real canonical data; no concrete player, transaction or draft is asserted."""
+
+    def test_materialization_is_idempotent_and_every_provider_pick_is_identified(self):
+        with tempfile.TemporaryDirectory() as out:
+            command = [sys.executable, str(TOOLS / "derived_data.py"), "materialize", "--product", "league-transactions", "--out-root", out]
+            first = subprocess.run(command, capture_output=True, text=True, cwd=REPO)
+            self.assertEqual(0, first.returncode, first.stderr)
+            second = subprocess.run(command + ["--check"], capture_output=True, text=True, cwd=REPO)
+            self.assertEqual(0, second.returncode, second.stdout + second.stderr)
+            ids = []
+            for path in sorted(Path(out, "league-transactions").rglob("*.json")):
+                payload = json.loads(path.read_text(encoding="utf-8"))
+                self.assertEqual(1, payload["ContractVersion"])
+                for transaction in payload["Transactions"]:
+                    ids.append(transaction["TransactionID"])
+                    for pick in transaction["DraftPicks"]:
+                        self.assertTrue(pick["DraftKey"], (path.name, transaction["TransactionID"]))
+            self.assertEqual(len(ids), len(set(ids)))
+
+
+if __name__ == "__main__":
+    unittest.main()

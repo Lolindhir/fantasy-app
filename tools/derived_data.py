@@ -10,9 +10,13 @@ the model code lives in tools/derived_data_lib. A snapshot is rebuilt from canon
 and written only on a semantic difference (a second run is a file-level no-op). Nothing publishes the
 output yet; the product stays a local/test artifact until the cutover of Issue #919 step 5.
 
+Second product family: league-transactions (league-history.yaml, ADR-057, Issue #999), written to
+<derived root>/league-transactions/<CanonicalLeagueID>/<season>.json for every manifest season. Nothing
+publishes it yet; the App files in public/data stay produced by the PowerShell rebuild until the cutover.
+
 Usage:
-  derived_data.py materialize --product player-valuation [--league nfl-reise] [--season 2026 ...]
-                              [--out-root DIR] [--check]
+  derived_data.py materialize --product player-valuation|league-transactions [--league nfl-reise]
+                              [--season 2026 ...] [--out-root DIR] [--check]
 """
 from __future__ import annotations
 
@@ -35,8 +39,12 @@ from league_metadata import (  # noqa: E402
     validate_against_manifest,
 )
 import player_valuation_sources as sources  # noqa: E402
+from derived_data_lib.league_history import build_transaction_stage, transactions_document  # noqa: E402
+from league_history_sources import LeagueHistorySourceError, load_inputs  # noqa: E402
+from players_league_scoring import SleeperIdentityResolver  # noqa: E402
 
-PRODUCTS = (sources.PRODUCT,)
+LEAGUE_TRANSACTIONS = "league-transactions"
+PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS)
 EXIT_CHANGED = 3  # --check found a snapshot that differs from disk
 
 
@@ -136,6 +144,43 @@ def materialize_player_valuation(
     return summary
 
 
+def league_transactions_path(out_root: Path, league_id: str, season: int) -> Path:
+    return out_root / LEAGUE_TRANSACTIONS / league_id / f"{season}.json"
+
+
+def materialize_league_transactions(
+    repo_root: Path, out_root: Path, league_id: str, seasons: list[int] | None, check_only: bool,
+) -> dict[str, Any]:
+    inputs = load_inputs(repo_root, league_id)
+    wanted = inputs.seasons if not seasons else sorted(set(seasons))
+    unknown = [s for s in wanted if s not in inputs.seasons]
+    if unknown:
+        raise sources.SourceError(f"Seasons not in the league manifest: {unknown}; available: {inputs.seasons}")
+    stage = build_transaction_stage(inputs)
+    if stage.unresolved:
+        raise sources.SourceError(f"Transaction picks without a unique draft identity: {stage.unresolved}")
+    resolver = SleeperIdentityResolver.from_repo(repo_root)
+    summary: dict[str, Any] = {"Product": LEAGUE_TRANSACTIONS, "CanonicalLeagueID": league_id, "Seasons": []}
+    for season in wanted:
+        document = transactions_document(
+            league_id, season, stage.transactions[season], lambda player, year: resolver.resolve(player, year)[0]
+        )
+        text = serialize(document)
+        path = league_transactions_path(out_root, league_id, season)
+        unchanged = path.is_file() and path.read_text(encoding="utf-8") == text
+        if not unchanged and not check_only:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        summary["Seasons"].append({
+            "Season": season,
+            "Transactions": len(document["Transactions"]),
+            "Bytes": len(text.encode("utf-8")),
+            "Unchanged": 1 if unchanged else 0,
+            "Written" if not check_only else "WouldWrite": 0 if unchanged else 1,
+        })
+    return summary
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -154,11 +199,17 @@ def main() -> int:
     out_root = args.out_root or data_derived_dir(args.repo_root)
     try:
         leagues = [args.league] if args.league else list_league_ids(data_meta_root(args.repo_root))
-        results = [
-            materialize_player_valuation(args.repo_root, out_root, league, args.season, args.check)
-            for league in leagues
-        ]
-    except (sources.SourceError, LeagueMetadataError, ValueError, KeyError, OSError) as error:
+        if args.product == LEAGUE_TRANSACTIONS:
+            results = [
+                materialize_league_transactions(args.repo_root, out_root, league, args.season, args.check)
+                for league in leagues
+            ]
+        else:
+            results = [
+                materialize_player_valuation(args.repo_root, out_root, league, args.season, args.check)
+                for league in leagues
+            ]
+    except (sources.SourceError, LeagueMetadataError, LeagueHistorySourceError, ValueError, KeyError, OSError) as error:
         print(f"derived_data materialize failed: {error}", file=sys.stderr)
         return 1
     print(json.dumps(results, indent=2, sort_keys=True))

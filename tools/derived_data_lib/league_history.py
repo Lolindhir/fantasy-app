@@ -1,0 +1,208 @@
+"""LeagueTransactions / LeagueDrafts materialization pipeline (league-history.yaml, ADR-026, ADR-057).
+
+Pure functions over a `LeagueHistoryInputs` value: no file access, no clock. The stages run in the
+ADR-026 order in memory and hand the same objects to each other, exactly as the PowerShell rebuild
+(DraftTransactionPipelineUtils.psm1::Invoke-DraftTransactionRebuild) does through files:
+
+  1. transactions base  - canonical transactions merged with the manual overlay, per season
+  2. pick identity      - Update-AllTransactionDraftPickTypesFromSleeper (all seasons, configured drafts), then
+                          Update-HistoricalTransactionDraftPickTypesFromCompletedDrafts (past seasons)
+  3. drafts             - added with step 3 of Issue #999
+  4. pick results back  - added with step 3 of Issue #999
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Callable
+
+from .league_draft_identity import (
+    DraftIdentityError,
+    assert_draft_type_configs,
+    completed_draft_definitions,
+    identity_from_key,
+    ps_string,
+    provider_draft_map,
+    sorted_configs,
+)
+from .league_transactions import (
+    TransactionHistoryError,
+    assert_unique_transaction_ids,
+    merge_manual_overlay,
+    resolve_pick_identities,
+)
+
+
+@dataclass
+class LeagueHistoryInputs:
+    """Everything the materialization reads, already loaded from canonical sources."""
+
+    league_id: str                                   # CanonicalLeagueID
+    league_year: int                                 # current season (league manifest)
+    seasons: list[int]                               # manifest seasons, ascending
+    provider_league_ids: dict[int, str]              # season -> provider league ID
+    draft_configs: list[dict[str, Any]]              # data-meta Drafts.Types
+    open_draft_count: int                            # data-meta Drafts.UpcomingDraftCount (PerDraftType)
+    owners: dict[str, int]                           # data-meta Owners: name -> RosterID
+    canonical_transactions: dict[int, list[dict[str, Any]]]  # season -> adapted provider transactions
+    payloads: dict[int, dict[str, Any]]              # season -> draft_canonical_consumer payload
+    manual_rows: list[dict[str, Any]]                # hand-maintained overlay rows
+    team_ids: list[int] = field(default_factory=list)  # current RosterIDs (TeamIDs), ascending
+    standings_loader: Callable[[], list[dict[str, Any]]] | None = None  # transitional (Issue #987)
+
+
+@dataclass
+class TransactionStage:
+    transactions: dict[int, list[dict[str, Any]]]
+    unresolved: list[dict[str, Any]]
+
+
+def _payload_drafts(inputs: LeagueHistoryInputs, season: int) -> list[dict[str, Any]]:
+    return list((inputs.payloads.get(season) or {}).get("Drafts") or [])
+
+
+def _traded_picks(inputs: LeagueHistoryInputs, season: int, draft_id: str) -> list[dict[str, Any]]:
+    container = (inputs.payloads.get(season) or {}).get("TradedPicksByDraftID") or {}
+    if draft_id not in container:
+        raise TransactionHistoryError(f"Canonical draft payload 'TradedPicksByDraftID' has no entry for draft '{draft_id}'.")
+    return list(container[draft_id])
+
+
+def configured_contexts(inputs: LeagueHistoryInputs, season: int) -> list[dict[str, Any]]:
+    """Get-TransactionDraftPickSleeperDraftContexts: configured/bound drafts of one season."""
+    draft_map = provider_draft_map(inputs.draft_configs, _payload_drafts(inputs, season))
+    contexts = []
+    for key in sorted(draft_map):
+        draft = draft_map[key]
+        identity = identity_from_key(key, inputs.draft_configs)
+        draft_id = ps_string(draft.get("draft_id"))
+        traded = _traded_picks(inputs, season, draft_id) if draft_id.strip() else []
+        contexts.append({
+            "Season": identity["Season"],
+            "DraftType": identity["DraftType"],
+            "DraftInstance": identity["DraftInstance"],
+            "DraftCode": identity["DraftCode"],
+            "DraftKey": identity["DraftKey"],
+            "SleeperDraftID": draft_id,
+            "TradedPicks": traded,
+        })
+    return contexts
+
+
+def historical_contexts(inputs: LeagueHistoryInputs) -> list[dict[str, Any]]:
+    """Get-HistoricalTransactionDraftPickSleeperContexts: completed drafts of every season."""
+    contexts: dict[str, dict[str, Any]] = {}
+    for season in sorted(inputs.seasons):
+        definitions = completed_draft_definitions(
+            str(season), _payload_drafts(inputs, season), inputs.draft_configs, inputs.provider_league_ids.get(season)
+        )
+        for definition in definitions:
+            draft_id = ps_string(definition["ProviderDraft"].get("draft_id"))
+            if not draft_id.strip():
+                raise TransactionHistoryError(
+                    f"Completed historical draft '{definition['DraftKey']}' has no Sleeper draft_id. "
+                    "Historical transaction identity resolution requires a concrete provider identity."
+                )
+            context = {
+                "Season": ps_string(definition["Season"]),
+                "DraftType": definition["DraftType"],
+                "DraftInstance": int(definition["DraftInstance"]),
+                "DraftCode": definition["DraftCode"],
+                "DraftKey": definition["DraftKey"],
+                "SleeperDraftID": draft_id,
+                "TradedPicks": _traded_picks(inputs, int(definition["Season"]), draft_id),
+            }
+            identity = f"{context['DraftKey']}|{context['SleeperDraftID']}"
+            if identity in contexts:
+                raise TransactionHistoryError(
+                    f"Duplicate historical draft context '{identity}'. Existing season '{contexts[identity]['Season']}' "
+                    f"and duplicate season '{context['Season']}' would otherwise overwrite one another."
+                )
+            contexts[identity] = context
+    return sorted(contexts.values(), key=lambda c: (int(c["Season"]), c["DraftKey"], c["SleeperDraftID"]))
+
+
+def build_transaction_stage(inputs: LeagueHistoryInputs) -> TransactionStage:
+    """Stages 1 and 2: transactions base with manual overlay, then pick identity resolution."""
+    assert_draft_type_configs(inputs.draft_configs)
+    configs = sorted_configs(inputs.draft_configs)
+    transactions: dict[int, list[dict[str, Any]]] = {}
+    for season in sorted(inputs.seasons):
+        base = [dict(item) for item in inputs.canonical_transactions[season]]
+        transactions[season] = merge_manual_overlay(base, inputs.manual_rows, str(season), inputs.owners, configs)
+    assert_unique_transaction_ids(
+        [item for season in sorted(transactions) for item in transactions[season]], "all season transactions"
+    )
+
+    # Stage 2a: every season against its configured/bound drafts.
+    for season in sorted(transactions):
+        if transactions[season]:
+            resolve_pick_identities(
+                transactions[season], configured_contexts(inputs, season), configs, inputs.league_year
+            )
+
+    # Stage 2b: past seasons against the completed-draft definitions of all seasons (same classification
+    # as the historical draft generation, so the following draft stage sees identical identities).
+    contexts = historical_contexts(inputs)
+    if contexts:
+        for season in sorted(transactions):
+            if season != inputs.league_year and transactions[season]:
+                resolve_pick_identities(transactions[season], contexts, configs, inputs.league_year)
+
+    # The PowerShell stages only warn per stage; a provider pick that no stage identified is the real gap.
+    unresolved = [
+        {
+            "Season": season,
+            "TransactionID": transaction["TransactionID"],
+            "PickSeason": pick["Season"],
+            "Round": pick["Round"],
+            "OriginalOwnerRosterID": pick["OriginalOwnerRosterID"],
+        }
+        for season in sorted(transactions)
+        for transaction in transactions[season]
+        for pick in transaction["DraftPicks"]
+        if ps_string(pick.get("DraftSource")) == "Sleeper" and not ps_string(pick.get("DraftKey")).strip()
+    ]
+    return TransactionStage(transactions=transactions, unresolved=unresolved)
+
+
+CONTRACT_VERSION = 1
+
+
+def _player_ids(transactions: list[dict[str, Any]]) -> list[str]:
+    found: set[str] = set()
+    for transaction in transactions:
+        found.update(ps_string(key) for key in transaction["Adds"])
+        found.update(ps_string(key) for key in transaction["Drops"])
+        for pick in transaction["DraftPicks"]:
+            if pick.get("PlayerID") is not None and ps_string(pick["PlayerID"]).strip():
+                found.add(ps_string(pick["PlayerID"]))
+    return sorted(found)
+
+
+def transactions_document(
+    league_id: str,
+    season: int,
+    transactions: list[dict[str, Any]],
+    resolve_player: Callable[[str, int], str | None],
+) -> dict[str, Any]:
+    """Root object of data-derived/league-transactions/<CanonicalLeagueID>/<season>.json."""
+    return {
+        "ContractVersion": CONTRACT_VERSION,
+        "CanonicalLeagueID": league_id,
+        "Season": season,
+        "PlayerIdentities": {player: resolve_player(player, season) for player in _player_ids(transactions)},
+        "Transactions": transactions,
+    }
+
+
+__all__ = [
+    "CONTRACT_VERSION",
+    "transactions_document",
+    "DraftIdentityError",
+    "LeagueHistoryInputs",
+    "TransactionHistoryError",
+    "TransactionStage",
+    "build_transaction_stage",
+    "configured_contexts",
+    "historical_contexts",
+]
