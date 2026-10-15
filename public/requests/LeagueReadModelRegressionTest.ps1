@@ -173,6 +173,10 @@ Assert-True -Condition ($null -ne (Get-Command Get-CanonicalHistoricalStandings 
 Assert-True -Condition ($null -ne (Get-Command Get-CanonicalCurrentSeasonData -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical current standings consumer."
 Assert-True -Condition ($null -ne (Get-Command Get-CanonicalCurrentStandings -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical current standings compatibility wrapper."
 
+# The clean-state import above unloads shared helpers that later cases still use.
+Import-Module "$PSScriptRoot\utils\general\AvatarUtils.psm1" -Force
+Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -Force
+
 # Cross-source previous-season award joins must not depend on the CLR numeric
 # type used to materialize the same provider roster ID.
 $mixedTypePreviousSeason = [PSCustomObject]@{
