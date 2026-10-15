@@ -608,3 +608,26 @@ playerValuationSharedDerived:
     - Model logic is central and league-independent; a league only selects model IDs per season (data-meta, ADR-054).
     - A model is immutable after its first productive use; changes are new versions.
     - Until the cutover (#919 step 5) RequestPlayers.ps1 and RequestLeague.ps1 stay productive and public/data contracts stay unchanged.
+
+
+leagueHistorySharedDerived:
+  contract: .ai-context/manual/league-history.yaml
+  architectureDecision: ADR-057
+  trackingIssue: 999
+  logicalLayer: Shared Derived Data
+  physicalPath:
+    transactions: data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
+    drafts: data-derived/league-drafts/<CanonicalLeagueID>/<season>.json
+  identity: CanonicalLeagueID + Season (+ TransactionID, DraftKey, PickKey as entry identities)
+  inputs:
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<season>/ (transactions, drafts, picks, traded picks, rosters, league)
+    - data-meta/<CanonicalLeagueID>/metadata.json (Owners, Drafts configuration)
+    - manual transaction overlay (public/data/Transactions_Manual.json until step 5, then data-meta/<CanonicalLeagueID>/transactions-manual.json)
+    - transitional - Standings placement for configured draft orders until Issue #987
+  consumers:
+    - App delivery files public/data/Transactions.json, Drafts.json and past_seasons/** via tools/league_history_app_publish.py (cutover in step 5)
+    - Fantasy Operations and Fantasy Management later
+  rules:
+    - Materialization order follows ADR-026 in one in-memory run; written only on semantic difference.
+    - Presentation fields belong to the consumer generator.
+    - The PowerShell rebuild stays productive until the cutover; no change of public/data contracts before Issue #999 step 6.

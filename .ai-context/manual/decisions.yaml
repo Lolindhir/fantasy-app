@@ -1799,3 +1799,40 @@ decisions:
       negative:
         - Older ADR text and historical analyses still say source-data/ and derived-data/.
         - Sync and pipeline workflows must not run across the rename merge; the merge happens in a quiet window.
+
+  - id: ADR-057
+    title: League history (transactions and drafts) is a Shared Derived product with a slim App delivery
+    status: accepted
+    context: >
+      Completed transactions and all drafts are rebuilt by about 4,200 lines of PowerShell in
+      public/requests/utils/league and written to public/data/Transactions.json, Drafts.json and
+      past_seasons/Transactions and Drafts. Those generated files feed each other (ADR-026), the
+      history is not available to Fantasy Operations or Fantasy Management except through the App
+      read model, Display fields are mixed into the facts, and the draft order still reads
+      public/data/Standings.json (Issue #999, #183).
+    decision: >
+      Robert decided on 2026-10-14 (Issue #999, six-layer target of the derived-data analysis) that the full
+      league history lives in data-derived. Two products, data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
+      and data-derived/league-drafts/<CanonicalLeagueID>/<season>.json, hold every completed transaction
+      (manual overlay applied, picks resolved to canonical draft identity and pick result) and every draft
+      (completed, current and open future, order, ownership, pick results, TradeHistory) of every season,
+      reproducible at any time from data-source plus data-meta. They are computed together in the ADR-026
+      order in one in-memory materialization by tools/derived_data_lib and written only on semantic
+      difference. Presentation (DisplayStatus, Display*Key, DisplayPick, selection of current versus past files)
+      belongs to the consumer generator tools/league_history_app_publish.py, which writes the App files with an
+      unchanged contract; trimming App fields is a separate later step that needs Robert's approval of the
+      field list. No new transaction, draft-order or ownership rule is introduced. Exact parity is proven
+      by a shadow run before the cutover. The only temporary non-canonical input is the Standings placement for
+      configured draft orders, replaced by the league-standings product of Issue #987. Contract:
+      .ai-context/manual/league-history.yaml.
+    rationale: >
+      A reproducible history owned by one deterministic implementation removes the generated-file feedback
+      loop, serves all consumers from the same facts and lets the App receive a slim, App-specific delivery.
+    consequences:
+      positive:
+        - No generated archive is the source of any value; history is regenerated, not archived.
+        - App, Fantasy Operations and Fantasy Management can read the same transactions and drafts.
+        - Presentation changes no longer touch the facts.
+      negative:
+        - Until Issue #987 the draft order depends on the Standings placement through one explicit adapter.
+        - The PowerShell implementation stays productive until the cutover step, so two implementations coexist and are held equal by the shadow test.

@@ -1,0 +1,207 @@
+schemaVersion: 1
+status: accepted-contract-v1
+trackingIssue: 999
+architectureDecision: ADR-057
+implementationState: contract only (step 1 of Issue #999); no code, no data-derived output and no consumer change yet
+
+purpose: >
+  Define the Shared Derived Data products LeagueTransactions and LeagueDrafts: the
+  complete, reproducible history of completed league transactions and of all league
+  drafts (completed, current and open future) per league and season. They replace the
+  PowerShell rebuild in public/requests/utils/league (TransactionUtils,
+  CanonicalTransactionUtils, TransactionDraftPickEnrichmentUtils,
+  HistoricalTransactionDraftPickIdentityUtils, DraftUtils, DraftOrderAwareUtils,
+  DraftHistoryUtils, DraftPickResultUtils, DraftCompareUtils, DraftHistoryEmptyDefinitionsFix,
+  DraftTransactionPipelineUtils) with one deterministic implementation under
+  tools/derived_data_lib. public/data/** becomes a slim App delivery produced by a
+  consumer generator from these products; no generated archive is an input any more.
+
+architecture:
+  decisionBasis:
+    - ADR-026
+    - ADR-037
+    - ADR-038
+    - ADR-054
+    - ADR-057
+  logicalLayer: Shared Derived Data
+  physicalStorage:
+    transactions: data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
+    drafts: data-derived/league-drafts/<CanonicalLeagueID>/<season>.json
+  rootConstant: data_derived_dir() in tools/data_roots.py and Get-DataDerivedRoot in ConfigUtils.psm1 (#788); no module spells the root name out.
+  rules:
+    - Both products are consumer-neutral. The App, Fantasy Operations and Fantasy Management read the same files; consumer shapes are produced by consumer generators.
+    - public/data/Transactions.json, Drafts.json and past_seasons/Transactions and Drafts keep their current contract until the cutover (Issue #999 step 5) and are produced from these products afterwards. Any App contract change is a separate step (step 6) that needs Robert's approval of the field list.
+    - Presentation belongs to the consumer generator, not the product - DisplayStatus, DisplayDraftKey, DisplayAbrDraftKey, DisplayDraftType and DisplayPick. Status (technical) stays in the product. This resolves Issue #183 point 2 structurally.
+    - No generated archive (public/data/**, past_seasons/**) is an input. The only temporary exception is listed under transitionalInputs and has a removal condition.
+    - Draft logic is the existing logic. Linear/snake order, trade application, pick results, TradeHistory, UpcomingDraftCount and ADR-021 stay as documented in domain.yaml, data-sources.yaml, draft-identity.yaml and decisions.yaml; this contract only moves where they are computed.
+    - Mighty-Giants-specific interpretation (Draft Capital value, pick strength, roster fit) stays consumer insight and never enters the products.
+
+identity:
+  transactionsFile: CanonicalLeagueID + Season; entry identity is TransactionID (Sleeper transaction ID for provider rows, the ID rule of TransactionUtils.psm1::Get-ManualTransactionID for manual-only rows).
+  draftsFile: CanonicalLeagueID + Season; entry identity is DraftKey (<Season>_<DraftCode>), pick identity is PickKey (<DraftKey>_R<Round>_OO<OriginalOwnerRosterID>) exactly as in draft-identity.yaml.
+  seasonScope:
+    transactions: every season in data-source/leagues/<CanonicalLeagueID>/manifest.json (completed seasons and the current season).
+    drafts: >
+      every manifest season that has at least one draft, plus every later season that
+      holds a configured open draft. The set of open future seasons is derived from
+      data-meta Drafts.UpcomingDraftCount per draft type and the completion state of the
+      canonical drafts (UpcomingDraftCountMode PerDraftType), exactly as
+      DraftOrderAwareUtils.psm1::Get-CurrentAndOpenDraftDefinitionsOrderAware does today.
+      A future season file therefore exists even though the season is not in the manifest.
+  providerBoundary: >
+    Rosters are addressed by the league-internal RosterID (the Sleeper roster ID, equal to
+    the App TeamID); player and draft IDs in Adds, Drops and pick results are Sleeper IDs, as
+    in the App contract. CanonicalPlayerID is added next to them where unique. Sleeper IDs are
+    join keys, never the canonical identity.
+  noWallClock: No timestamp, run ID or commit hash appears in the content. CreatedAt/CreatedDate are provider event times, not generation times.
+
+contract:
+  version: 1
+  transactionsRootShape: |
+    {
+      "ContractVersion": 1,
+      "CanonicalLeagueID": "nfl-reise",
+      "Season": 2026,
+      "PlayerIdentities": { "<SleeperPlayerID>": "<CanonicalPlayerID>" | null },
+      "Transactions": [ <transaction> ]
+    }
+  transactionShape: >
+    All fields of the current Transactions.json entry in the same order: Source
+    (Sleeper | Sleeper_Manual | Manual), TransactionID, Type, Status, Season, Week,
+    CreatedAt, CreatedDate, RosterIDs, Adds, Drops, DraftPicks, Notes. Adds and Drops map
+    Sleeper PlayerID to RosterID. DraftPicks entries carry the movement
+    (Season, Round, OriginalOwnerRosterID, PreviousOwnerRosterID, NewOwnerRosterID), the
+    canonical draft identity (DraftType, DraftInstance, DraftCode, DraftKey, SleeperDraftID,
+    PickKey, DraftSource) and, after the pick-result enrichment of the same materialization,
+    PositionInRound, OverallPick, PlayerID, PlayerName, PickStatus, SleeperPickNo. DisplayPick
+    is not part of the product.
+  playerIdentities: >
+    PlayerIdentities lists every Sleeper PlayerID that occurs in Adds, Drops or as a draft
+    pick result of the file, resolved to the CanonicalPlayerID valid for the file's season
+    through data-source/nfl/identities. null means no unique resolution (missing, never
+    guessed). The map is additive: no existing field is removed or renamed.
+  transactionOrdering: TransactionUtils.psm1::Get-SortedTransactions (newest first) and the pick sort of Merge-CanonicalTransactionsWithManual are kept; keys inside objects have a fixed order so equal content is byte-equal.
+  draftsRootShape: |
+    {
+      "ContractVersion": 1,
+      "CanonicalLeagueID": "nfl-reise",
+      "Season": 2026,
+      "Drafts": [ <draft> ]
+    }
+  draftShape: >
+    All technical fields of the current Drafts.json entry: ProviderLeagueID (the season's
+    provider league ID; the consumer publishes it as LeagueID), DraftKey, Season, DraftType,
+    DraftInstance, DraftCode, DraftNo, DraftSource (Sleeper | Virtual), SleeperDraftID,
+    SleeperStatus, SleeperStartTime, DraftStartTimeUtc, Status, PickSource, OrderSource,
+    OrderMode (Exact | RoundOnly), Settings (Rounds, Teams, Type) and Picks. A pick carries
+    PickKey, DraftKey, Season, DraftType, DraftInstance, DraftCode, Round, PositionInRound,
+    OverallPick, OriginalOwnerRosterID, CurrentOwnerRosterID, WasTraded, IsCurrentlyTraded,
+    TradeSource, TradeHistory, PlayerID, PlayerName, Status, SleeperPickNo, SleeperPickedBy.
+    Display* fields are not part of the product. PlayerName is the provider value of the
+    completed pick; resolving a display name from current Players.json is a consumer concern.
+  fieldRules:
+    - Unknown is null, never 0 or an empty string (PositionInRound and OverallPick of RoundOnly picks, PlayerID of open picks, SleeperStartTime of drafts without a start time).
+    - Status values keep their current meaning (Open, Picked for picks; Virtual, PreDraft, Drafting, Complete for drafts, other provider statuses passed through).
+    - A completed draft keeps its final pick ownership from the provider pick results; transaction data is provenance in TradeHistory and never overwrites it (data-sources.yaml draftHistory).
+
+materializationOrder:
+  rule: >
+    ADR-026 is the order of one materialization run per league, in memory, from canonical
+    inputs only. The result of each stage is the input of the next; a previously written
+    product file is never an input.
+  stages:
+    - id: transactions-base
+      text: Canonical transactions of the season (tools/transaction_canonical_consumer.py logic) merged with the manual overlay (Merge-CanonicalTransactionsWithManual semantics).
+    - id: pick-identity
+      text: Resolve the canonical draft identity of every transaction pick from canonical drafts and draft-specific traded picks (Update-AllTransactionDraftPickTypesFromSleeper and Update-HistoricalTransactionDraftPickTypesFromCompletedDrafts semantics).
+    - id: drafts
+      text: Build the drafts of every season (completed, current, open future) from definitions, order, trades and pick results.
+    - id: pick-results-back
+      text: Write the concrete pick details of the drafts back into the transaction picks (Update-AllTransactionDraftPickDetailsFromLocalDrafts semantics).
+  atomicity: Both products of one league are computed together and written together; a failing stage writes nothing.
+
+inputs:
+  canonicalLeagueFacts:
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/ (league.json, rosters.json, members.json, transactions/week-*.json, drafts.json and draft picks / traded picks)
+    adapters: tools/transaction_canonical_consumer.py, tools/transaction_canonical_shadow.py, tools/draft_canonical_consumer.py
+  leagueMetadata:
+    owner: data-meta/<CanonicalLeagueID>/metadata.json (ADR-054)
+    fields: Owners, Drafts (UpcomingDraftCount, UpcomingDraftCountMode, Types with DraftType, DraftInstance, DraftNo, Rounds, OrderSource, Order, OrderMap, SleeperFuturePickPool, SleeperDraftIDs)
+    loader: tools/league_metadata.py
+  manualOverlay:
+    current: public/data/Transactions_Manual.json (hand-maintained league information, not generated)
+    target: data-meta/<CanonicalLeagueID>/transactions-manual.json (Issue #999 step 5, format agreed with #986)
+    rule: The overlay is read through one loader function so the path change is a one-line step 5 change. Bindings to a Sleeper TransactionID without a canonical transaction fail closed.
+  currentSeason:
+    owner: data-meta / data-source league manifest (LeagueYear); never read from public/data.
+  transitionalInputs:
+    - id: standings-draft-order
+      input: public/data/Standings.json (Playoffs placement, seasons and AllTime)
+      use: Draft order for configured OrderSource PreviousPlayoffs and AllTime when the provider draft has no slot order yet (Get-DraftOrderRosterIDs).
+      removal: Replace by the league-standings Shared Derived product of Issue #987. Until then the dependency is explicit, read through one adapter function and fail-closed (missing season, empty ranking or duplicate standing identity fail the draft). It affects only Exact drafts without a provider slot order.
+
+invalidation:
+  triggers:
+    - canonical transaction, draft, draft pick, traded pick, roster, member or league facts of the league
+    - manual transaction overlay
+    - data-meta Owners and Drafts configuration (types, rounds, order source, UpcomingDraftCount, SleeperDraftIDs)
+    - league manifest (seasons, LeagueYear)
+    - NFL player identities used for PlayerIdentities
+    - standings placement while the transitional standings input exists
+  rule: >
+    Detected by recomputation, not by a cache key. The materializer recomputes every season
+    of the league and writes a file only on semantic difference; unchanged inputs produce no
+    file change and no commit. Changing a draft type, round count or order source in
+    data-meta needs only re-derivation, not code. A new draft rule needs code.
+  compatibility: A change of ContractVersion or of a model-like rule is a new version; consumers verify ContractVersion.
+
+dynamicConfiguration:
+  configurable:
+    - draft types, instances, rounds, order source and order map per league (data-meta)
+    - number of open future drafts per type (UpcomingDraftCount)
+    - Sleeper draft IDs per season (data-meta SleeperDraftIDs)
+    - owner names for the manual overlay (data-meta Owners)
+    - number of teams and rosters (canonical league facts)
+    - several leagues (one product directory per CanonicalLeagueID)
+  fixedInvariants:
+    - snake reverses even rounds, linear keeps the order (Sleeper draft type decides)
+    - pick identity (PickKey) and draft identity (DraftKey) formats
+    - fail-closed handling of unresolved identities
+
+consumers:
+  app:
+    path: public/data/Transactions.json, Drafts.json, past_seasons/Transactions/Transactions_<season>.json, past_seasons/Drafts/Drafts_<season>.json
+    generator: tools/league_history_app_publish.py (shadow in step 4, cutover in step 5)
+    adds: DisplayStatus, DisplayDraftKey, DisplayAbrDraftKey, DisplayDraftType, DisplayPick, LeagueID; selection of current versus past files; PastSeasonsIndex stays the manifest of the consumer outputs.
+    historicalNames: Player names for historical moves are joined by the consumer generator from the canonical NFL rosters of the season plus identities; no player snapshot is archived (replaces the snapshot idea of Issue #193).
+  fantasyOperations: later; reads the products directly instead of public/data.
+  fantasyManagement: later; same.
+
+failClosed:
+  - season of the manifest without canonical roster or transaction source
+  - manual overlay binding without canonical transaction, or duplicate binding
+  - duplicate TransactionID, DraftKey or PickKey
+  - transaction pick whose draft cannot be identified uniquely
+  - Exact draft without a provider slot order and without a usable configured order
+  - pick movement that names a pick not present in the generated draft
+  - unknown draft type, missing configuration or unsupported UpcomingDraftCountMode
+  - canonical draft or pick facts missing for a completed draft
+
+validation:
+  steps:
+    - id: unit-tests
+      text: Constructed leagues in tools/tests (linear and snake, trades before and after the draft, equal-round pick swaps, manual overlay, RoundOnly future drafts, multiple instances of one type).
+    - id: shadow-parity
+      text: Issue #999 step 4 compares the consumer output exactly (no tolerance) against the current Transactions.json, Drafts.json and every past_seasons file. Each difference is explained and fixed or approved by Robert.
+    - id: noop
+      text: A second materialization run is a file-level no-op.
+    - id: no-parallel-owner
+      text: After the cutover the PowerShell modules listed under purpose are removed and a test forbids archive files as inputs.
+
+openPoints:
+  - id: standings-input
+    text: The draft order for configured sources depends on the Standings placement until Issue #987 delivers league-standings. See transitionalInputs.
+  - id: manual-overlay-location
+    text: The overlay stays in public/data until step 5; its move is coordinated with Issue #986.
+  - id: product-size
+    text: Estimated from the current consumer files (about 0.2 MB Transactions and 0.4 MB Drafts for all seasons, measured in step 2/3); whether the history is committed stays a step 5 decision.
