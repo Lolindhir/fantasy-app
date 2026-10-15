@@ -312,6 +312,7 @@ Import-Module "$PSScriptRoot\utils\general\NflScheduleUtils.psm1" -ErrorAction S
 Import-Module "$PSScriptRoot\utils\player\PlayerLeagueScoringUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\player\SleeperPlatformUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\player\PlayerPopulationUtils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\utils\player\PlayerValuationUtils.psm1" -ErrorAction Stop -Force
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $targetFile = Join-Path $scriptDir "..\data\Players.json"
 $backupDir = Join-Path $scriptDir "..\data\backup"
@@ -403,6 +404,18 @@ if ([int]$leagueScoringExport.Season -ne [int]$seasonYear) {
     throw "League scoring export season $($leagueScoringExport.Season) does not match LeagueYear $seasonYear."
 }
 $identityHoldPlayers = @()
+
+# --- PlayerValuation (#919 step 5): Salary, Ranking, Grading come from the central models ---
+# The materializer seeds identity-hold rows from the Players.json published so far; the snapshot of the final
+# scored week is then the only source of Salary, SalaryProjected, Ranking and the Rank grading.
+try {
+    Invoke-PlayerValuationMaterialize -HoldSeedPlayersFile $targetFile
+    $valuation = Get-PlayerValuationSnapshotForWeek -CanonicalLeagueID $config.CanonicalLeagueID -Season ([int]$seasonYear) -Week $finalWeek
+} catch {
+    Write-Error "Error building the PlayerValuation snapshot: $_"
+    exit 1
+}
+Write-Host "PlayerValuation snapshot: $($valuation.Snapshot.Models.Salary), week $finalWeek, $($valuation.Rows.Count) rows." -ForegroundColor Yellow
 
 $playerData = @()
 foreach ($entry in $population.Players) {
@@ -502,34 +515,12 @@ foreach ($entry in $population.Players) {
     $tdRec = $current.TouchdownsReceiving
     $tdPass = $current.TouchdownsPassing
 
-    # --------------------------------------
-    # --- Salaries aus Fantasy berechnen ---
-    # --------------------------------------
-    # Jahrespunkte berechnen
-    $ptsCurrent = $fantasyPointsAvgPotentialGame * $weightTotal + $fantasyPointsAvgGame * $weightGame
-    $ptsSeasonMinus1 = $pointHistory.SeasonMinus1.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus1.AvgGame * $weightGame
-    $ptsSeasonMinus2 = $pointHistory.SeasonMinus2.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus2.AvgGame * $weightGame
-    $ptsSeasonMinus3 = $pointHistory.SeasonMinus3.AvgPotentialGame  * $weightTotal + $pointHistory.SeasonMinus3.AvgGame * $weightGame
-    # Vergangenheitswerte
-    $salaryDollarsFantasy = Get-FantasySalaryWithFloor $ptsSeasonMinus1 $ptsSeasonMinus2 $ptsSeasonMinus3 #-weight1 0.5 -weight2 0.35 -weight3 0.25
-    # Projektionswerte
-    # Wenn aktuelle Saison vor Spieltag 1 liegt, dann ist ptsCurrent der Wert der letzten Saison, ansonsten die aktuelle Saison
-    if($finalWeek -eq 0){
-        $ptsCurrent = $ptsSeasonMinus1
+    # --- Salary, Ranking und Rank-Grading aus dem PlayerValuation-Snapshot (#919 step 5) ---
+    $valuationRow = $valuation.Rows[[string]$playerID]
+    if (-not $valuationRow) {
+        throw "PlayerValuation snapshot lacks Sleeper player $playerID ($($entry.FullName)); population and snapshot diverge."
     }
-    if($finalWeek -eq 1){
-        $ptsCurrent = $ptsCurrent * 0.25 + $ptsSeasonMinus1 * 0.75
-    }
-    if($finalWeek -eq 2){
-        $ptsCurrent = $ptsCurrent * 0.35 + $ptsSeasonMinus1 * 0.65
-    }
-    if($finalWeek -eq 3){
-        $ptsCurrent = $ptsCurrent * 0.5 + $ptsSeasonMinus1 * 0.5
-    }
-    if($finalWeek -eq 4){
-        $ptsCurrent = $ptsCurrent * 0.75 + $ptsSeasonMinus1 * 0.25
-    }
-    $salaryDollarsProjectedFantasy = Get-FantasySalaryWithFloor $ptsCurrent $ptsSeasonMinus1 $ptsSeasonMinus2 #-weight1 0.5 -weight2 0.35 -weight3 0.25
+    $valuationValues = Get-PlayerValuationPlayerValues -Row $valuationRow
 
 
     # ----------------------------------------------
@@ -575,8 +566,8 @@ foreach ($entry in $population.Players) {
         Age                          = $age
         Year                         = $year
         Number                       = if ($null -ne $entry.Number) { [string]$entry.Number } else { "" }
-        Salary                       = [math]::Round($salaryDollarsFantasy)
-        SalaryProjected              = [math]::Round($salaryDollarsProjectedFantasy)
+        Salary                       = $valuationValues.Salary
+        SalaryProjected              = $valuationValues.SalaryProjected
         Picture                      = $entry.Picture
         PictureLarge                 = $entry.PictureLarge
         FantasyPros                  = $entry.FantasyPros
@@ -596,8 +587,8 @@ foreach ($entry in $population.Players) {
         FantasyPointsAvgPotentialGame = $fantasyPointsAvgPotentialGame
         FantasyPointsAvgSnap         = $fantasyPointsAvgSnap
         FantasyPointsAvgAttempt      = $fantasyPointsAvgAttempt
-        Ranking                      = @()
-        Grading                      = $grading
+        Ranking                      = $valuationValues.Ranking
+        Grading                      = $grading + $valuationValues.RankGrading
         PointHistory                 = $pointHistory
         TouchdownsTotal              = $tdTotal
         TouchdownsPassing            = $tdPass
@@ -619,250 +610,7 @@ $playerData = $playerData | Sort-Object -Property ID
 
 
 
-# --- Rankings hinzufügen ---
-Write-Host "Calculating player rankings..." -ForegroundColor Yellow
-
-function Add-Rankings {
-    param (
-        [Parameter(Mandatory)] [Array]$players,
-        [string]$propTotal = 'FantasyPointsAvgPotentialGame',
-        [string]$propAvg = 'FantasyPointsAvgGame',
-        [double]$weightTotal = 0.5,   # Gewichtung Total
-        [double]$weightAvg = 0.5      # Gewichtung PerGame
-    )
-
-    # Nur Spieler berücksichtigen, die überhaupt Werte haben
-    $playersActive = $players | Where-Object { $_.$propTotal -gt 0 -and $_.$propAvg -gt 0 }
-
-    # --- Helper: Ranking mit Sprüngen & Gleichständen ---
-    function Set-Rankings($list, $type, $property) {
-        $sorted = $list | Sort-Object -Property $property -Descending
-        $prevValue = $null
-        $rank = 0
-        $i = 0
-
-        foreach ($player in $sorted) {
-            $i++
-            $value = $player.$property
-            if ($null -eq $value -or $value -eq 0) { continue }
-
-            # Nur neuen Rang vergeben, wenn sich der Wert ändert
-            if ($value -ne $prevValue) { $rank = $i }
-            $prevValue = $value
-
-            if (-not $player.PSObject.Properties["Ranking"]) {
-                $player | Add-Member -NotePropertyName 'Ranking' -NotePropertyValue @()
-            }
-
-            $player.Ranking += [PSCustomObject]@{ Type = $type; Value = $rank }
-        }
-    }
-
-    # --- Basis-Rankings ---
-    Set-Rankings $playersActive 'Total' $propTotal
-    Set-Rankings $playersActive 'PerGame' $propAvg
-
-    # --- Combined Rank vorbereiten (Gewichtung über Ränge) ---
-    foreach ($p in $playersActive) {
-        $rankTotal = ($p.Ranking | Where-Object { $_.Type -eq 'Total' }).Value
-        $rankAvg   = ($p.Ranking | Where-Object { $_.Type -eq 'PerGame' }).Value
-        if ($null -ne $rankTotal -and $null -ne $rankAvg) {
-            $combinedValue = ($rankTotal * $weightTotal) + ($rankAvg * $weightAvg)
-            $p | Add-Member -NotePropertyName 'CombinedRankValue' -NotePropertyValue $combinedValue -Force
-        }
-    }
-
-    # --- Combined Ranking mit Tiebreaks ---
-    $combinedList = $playersActive | Where-Object { $_.CombinedRankValue -gt 0 } |
-        Sort-Object -Property @{Expression = 'CombinedRankValue'; Ascending = $true},
-                               @{Expression = $propTotal; Ascending = $false},
-                               @{Expression = $propAvg; Ascending = $false}
-
-    $prevValue = $null
-    $rank = 0
-    $i = 0
-    foreach ($p in $combinedList) {
-        $i++
-        $value = $p.CombinedRankValue
-
-        # Gleichstand -> gleicher Rang, Sprung danach
-        if ($value -ne $prevValue) { $rank = $i }
-        $prevValue = $value
-
-        if (-not $p.PSObject.Properties["Ranking"]) {
-            $p | Add-Member -NotePropertyName 'Ranking' -NotePropertyValue @()
-        }
-        $p.Ranking += [PSCustomObject]@{ Type = 'Combined'; Value = $rank }
-    }
-
-    # --- Positions-Rankings ---
-    $positions = $playersActive | Select-Object -ExpandProperty Position -Unique
-    foreach ($pos in $positions) {
-        $posPlayers = $playersActive | Where-Object { $_.Position -eq $pos }
-
-        # Positionsbasierte Rankings
-        Set-Rankings $posPlayers "Total_Pos" $propTotal
-        Set-Rankings $posPlayers "PerGame_Pos" $propAvg
-
-        # Kombinierter Positionswert
-        foreach ($p in $posPlayers) {
-            $rankTotal = ($p.Ranking | Where-Object { $_.Type -eq 'Total_Pos' }).Value
-            $rankAvg   = ($p.Ranking | Where-Object { $_.Type -eq 'PerGame_Pos' }).Value
-            if ($null -ne $rankTotal -and $null -ne $rankAvg) {
-                $combinedValue = ($rankTotal * $weightTotal) + ($rankAvg * $weightAvg)
-                $p | Add-Member -NotePropertyName 'CombinedRankValue_Pos' -NotePropertyValue $combinedValue -Force
-            }
-        }
-
-        # Positionsweise Combined mit Tiebreaks
-        $combinedPosList = $posPlayers | Where-Object { $_.CombinedRankValue_Pos -gt 0 } |
-            Sort-Object -Property @{Expression = 'CombinedRankValue_Pos'; Ascending = $true},
-                                   @{Expression = $propTotal; Ascending = $false},
-                                   @{Expression = $propAvg; Ascending = $false}
-
-        $prevValue = $null
-        $rank = 0
-        $i = 0
-        foreach ($p in $combinedPosList) {
-            $i++
-            $value = $p.CombinedRankValue_Pos
-            if ($value -ne $prevValue) { $rank = $i }
-            $prevValue = $value
-            $p.Ranking += [PSCustomObject]@{ Type = 'Combined_Pos'; Value = $rank }
-        }
-    }
-
-    # Temporäre Felder entfernen
-    foreach ($p in $playersActive) {
-        $p.PSObject.Properties.Remove('CombinedRankValue')
-        $p.PSObject.Properties.Remove('CombinedRankValue_Pos')
-    }
-
-    return $players
-}
-
-# Ranking anwenden
-$playerData = Add-Rankings -players $playerData -weightTotal $weightTotal -weightAvg $weightGame
-Write-Host "Player rankings calculated and added." -ForegroundColor Yellow
-
-
-
-function Get-LetterGrade {
-    param(
-        [double]$value,
-        [string]$position
-    )
-
-    $multiplier = 1.5
-    if($position -eq 'K') {
-        $multiplier = 1
-    }
-    if($position -eq 'RB' -or $position -eq 'WR') {
-        $multiplier = 2
-    }
-
-    #if ($value -ge 95) { return 'S' }
-
-    if ($value -le 6 * $multiplier) { return 'A' }
-    elseif ($value -le 12 * $multiplier) { return 'B' }
-    elseif ($value -le 18 * $multiplier) { return 'C' }
-    elseif ($value -le 24 * $multiplier) { return 'D' }
-    elseif ($value -le 30 * $multiplier) { return 'E' }
-    else { return 'F' }
-}
-
-
-function Add-PositionalGradings {
-    param(
-        [Parameter(Mandatory)][Array]$players
-    )
-
-    # --- Wunsch-Gradings (Werte von 0-5) ---
-    # Ranking (Kombination aus diesem und letztem Jahr, wo verfügbar)
-    # Verlässlichkeit (TD bereinigt, Vergangenheit, Floor, Effizienz)
-    # Potential (Impact, Ceiling, Draft Position Rookies, Highest Scores in Vergangenheit)
-    # Form (letzte X Spiele inklusive Playoffs, Teamrecord, Entwicklung Einsatzzeit)
-    # Position Individuelles
-
-
-    # --- jeden Spieler durchgehen und Grading Werte berechnen ---
-    foreach ($p in $players) {
-        
-        # Grading Objekt initialisieren, wenn noch nicht vorhanden
-        if (-not $p.PSObject.Properties["Grading"]) {
-            $p | Add-Member -NotePropertyName 'Grading' -NotePropertyValue @()
-        }
-
-        # --- Positional Ranking extrahieren (Combined_Pos) ---
-        $rankValue = ($p.Ranking | Where-Object { $_.Type -eq 'Combined_Pos' }).Value
-        
-        $posRank = [PSCustomObject]@{
-            Type = "Rank"
-            Value = $rankValue
-            Rank = $rankValue
-            Grade = Get-LetterGrade $rankValue $p.Position
-        }
-
-        $p.Grading += $posRank
-    }
-
-
-
-    # # --- Spieler nach Position gruppieren ---
-    # $positions = $players | Select-Object -ExpandProperty Position -Unique
-
-    # foreach ($pos in $positions) {
-    #     $posPlayers = $players | Where-Object { $_.Position -eq $pos }
-
-    #     # --- Maximalwerte pro Kriterium ermitteln ---
-    #     $maxForm = ($posPlayers | Measure-Object -Property FantasyPointsAvgGame -Maximum).Maximum
-    #     $maxConsistency = ($posPlayers | Measure-Object -Property FantasyPointsAvgPotentialGame -Maximum).Maximum
-    #     $maxEfficiency = ($posPlayers | Measure-Object -Property FantasyPointsAvgSnap -Maximum).Maximum
-    #     $maxImpact = ($posPlayers | Measure-Object -Property TouchdownsTotal -Maximum).Maximum
-    #     $maxPotential = ($posPlayers | Measure-Object -Property FantasyPointsAvgPotentialGame -Maximum).Maximum
-
-    #     foreach ($p in $posPlayers) {
-    #         # --- Normierte Werte berechnen ---
-    #         $formValue = if ($maxForm -gt 0) { ($p.FantasyPointsAvgGame / $maxForm) * 100 } else { 0 }
-    #         $consistencyValue = if ($maxConsistency -gt 0) { ($p.FantasyPointsAvgPotentialGame / $maxConsistency) * 100 } else { 0 }
-    #         $efficiencyValue = if ($maxEfficiency -gt 0) { ($p.FantasyPointsAvgSnap / $maxEfficiency) * 100 } else { 0 }
-    #         # Impact: Punkte abziehen für Touchdowns, weniger TDs = höherer Impact
-    #         $impactValue = if ($maxImpact -gt 0) { ((1 - ($p.TouchdownsTotal / $maxImpact)) * 100) } else { 100 }
-    #         $potentialValue = if ($maxPotential -gt 0) { ($p.FantasyPointsAvgPotentialGame / $maxPotential) * 100 } else { 0 }
-
-    #         # --- Gesamt-GradeValue ---
-    #         $gradeValue = ($formValue * $weightForm) + ($consistencyValue * $weightConsistency) +
-    #                       ($efficiencyValue * $weightEfficiency) + ($impactValue * $weightImpact) +
-    #                       ($potentialValue * $weightPotential)
-
-    #         $p.Grading += [PSCustomObject]@{ GradeValueForm = [math]::Round($formValue,2) }
-    #         $p.Grading += [PSCustomObject]@{ GradeValueConsistency = [math]::Round($consistencyValue,2) }
-    #         $p.Grading += [PSCustomObject]@{ GradeValueEfficiency = [math]::Round($efficiencyValue,2) }
-    #         $p.Grading += [PSCustomObject]@{ GradeValueImpact = [math]::Round($impactValue,2) }
-    #         $p.Grading += [PSCustomObject]@{ GradeValuePotential = [math]::Round($potentialValue,2) }
-    #         $p.Grading += [PSCustomObject]@{ GradeValue = [math]::Round($gradeValue,2) }
-    #         $p.Grading += [PSCustomObject]@{ Grade = (Get-Grade $gradeValue) }
-
-    #         # --- Objekt erweitern ---
-    #         # $p.Grading.GradeValueForm = [math]::Round($formValue,2)
-    #         # $p.Grading.GradeValueConsistency = [math]::Round($consistencyValue,2)
-    #         # $p.Grading.GradeValueEfficiency = [math]::Round($efficiencyValue,2)
-    #         # $p.Grading.GradeValueImpact = [math]::Round($impactValue,2)
-    #         # $p.Grading.GradeValuePotential = [math]::Round($potentialValue,2)
-    #         # $p.Grading.GradeValue = [math]::Round($gradeValue,2)
-    #         # $p.Grading.Grade = (Get-Grade $gradeValue)
-    #     }
-    # }
-
-    return $players
-}
-
-
-# Gradings berechnen
-Write-Host "Calculating player gradings..." -ForegroundColor Yellow
-$playerData = Add-PositionalGradings -players $playerData
-Write-Host "Player gradings calculated and added." -ForegroundColor Yellow
-
+# Ranking und Rank-Grading stammen aus dem PlayerValuation-Snapshot (#919 step 5); keine Berechnung hier.
 
 # Aus Errors.json EmptyPlayers-Error holen
 $emptyPlayersError = $null

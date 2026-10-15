@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 919
 architectureDecision: ADR-055
-implementationState: models (step 2), materializer (step 3, tools/derived_data.py) and shadow (step 4, tools/player_valuation_shadow.py) implemented and tested locally; the shadow reports exact parity for the published week; nothing is published or committed under data-derived yet (cutover in step 5 of #919)
+implementationState: cutover done (#919 step 5); RequestPlayers.ps1 materializes the product (tools/derived_data.py, all seasons and weeks, committed under data-derived by the update-players workflow) and fills Salary, SalaryProjected, Ranking and the Rank grading of Players.json from the snapshot of the final scored week; RequestLeague.ps1 takes SalaryCap and SalaryCapProjected from the newest snapshot of the season; Players.json and League.json are unchanged in content and type (byte-identical Players.json, semantically identical League.json against the pre-cutover generator); PowerShell valuation code is removed from RequestPlayers.ps1 for Ranking and Grading, the Salary functions are removed with step 8
 
 purpose: >
   Define the Shared Derived Data product PlayerValuation: for one league and one
@@ -205,14 +205,25 @@ openPoints:
       2024 and 2025 matches 2026 in order of magnitude and no snapshot contains a hold row.
   - id: snapshot-size
     text: >
-      Measured in step 3 (compact JSON, about 0.54 MB per snapshot): 2026 six snapshots 3.3 MB,
-      2024 and 2025 about 9.7 MB each, about 23 MB for everything. Whether the full history is
-      committed stays a step 5 decision.
+      Measured in step 3 (compact JSON, about 0.54 MB per snapshot) and decided in step 5: the full
+      history (2024 to 2026, about 22 MB) is committed under data-derived. The materializer writes
+      only semantically changed snapshots, so a daily run rewrites at most the snapshots of the
+      current season; past seasons change only after a stat or scoring correction.
   - id: hold-seeding
     text: >
       Identity-hold rows take Inputs from the existing snapshot (same week, else the newest
-      earlier week of the season); otherwise they stay null. The cutover (step 5) must seed
-      held values from the published Players.json PointHistory before the first productive run.
+      earlier week of the season). Without any snapshot, tools/derived_data.py
+      --hold-seed-players-file takes the values of the last published Players.json (current season,
+      final scored week only, matched by Sleeper player ID, which is the row key of a hold row
+      without CanonicalPlayerID), exactly as RequestPlayers.ps1 held them before the cutover.
+      A hold row that no source knows keeps null Inputs and RequestPlayers.ps1 fails closed
+      for it (the previous behaviour was to publish zeros).
+  - id: players-run-materializes-all-seasons
+    text: >
+      RequestPlayers.ps1 materializes every season on each run (about 25 seconds). Past seasons
+      therefore follow corrections of canonical stats automatically; the League refresh does not
+      materialize and reads the newest committed snapshot, which is the state the last Players run
+      published together with Players.json.
   - id: non-contiguous-final-weeks
     text: >
       Legacy scores all final weeks while a snapshot uses only weeks <= AsOfFinalScoredWeek.

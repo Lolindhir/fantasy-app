@@ -775,16 +775,18 @@ sharedDerivedData:
     contract: .ai-context/manual/player-valuation.yaml
     modelsContract: .ai-context/manual/derived-models.yaml
     outputPattern: data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json
-    state: contract-accepted-implementation-pending
+    state: productive-since-919-step-5
     inputs:
       - league-scored points of the season and the three previous seasons (tools/players_league_scoring.py)
       - population (tools/players_population.py)
       - week bounds (resolve_league_week_bounds)
       - model choice (data-meta, #986)
     note: >
-      Salary, SalaryProjected, Ranking, Grading and the Salary Cap in Players.json and
-      League.json are still produced by RequestPlayers.ps1 and RequestLeague.ps1 until the
-      cutover step of Issue #919.
+      Since the cutover (Issue #919 step 5) RequestPlayers.ps1 runs the materializer and fills
+      Salary, SalaryProjected, Ranking and the Rank grading of Players.json from the snapshot of
+      the final scored week; RequestLeague.ps1 takes SalaryCap and SalaryCapProjected from the
+      newest snapshot of the season. The update-players workflow publishes data-derived/player-valuation
+      together with public/data. The public/data contracts are unchanged.
 
 sharedDerivedLeagueHistory:
   architectureDecision: ADR-057
