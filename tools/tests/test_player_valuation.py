@@ -149,9 +149,9 @@ class SnapshotTests(unittest.TestCase):
                 self.assertEqual(ranking[key], row["Ranking"])
                 combined_pos = next((x["Value"] for x in row["Ranking"] if x["Type"] == "Combined_Pos"), None)
                 self.assertEqual([get_model("grading-v1").rank_row(combined_pos, row["Position"])], row["Grading"])
-        # a player without any points is unranked and, as in grading-v1, graded A with a null rank
+        # a player without any points is unranked and gets no grade (null rank, null grade)
         self.assertEqual([], rows["NFLP-d"]["Ranking"])
-        self.assertEqual([{"Type": "Rank", "Value": None, "Rank": None, "Grade": "A"}], rows["NFLP-d"]["Grading"])
+        self.assertEqual([{"Type": "Rank", "Value": None, "Rank": None, "Grade": None}], rows["NFLP-d"]["Grading"])
 
     def test_salary_cap_comes_from_the_cap_model_over_all_valued_rows(self) -> None:
         snapshot = pv.build_snapshot(context(as_of=3, team_count=2), self.players(), no_hold)

@@ -1767,7 +1767,7 @@ decisions:
       negative:
         - The full history under data-derived adds repository size; it is measured in step 3 before it is committed.
         - Identity-hold rows depend on earlier snapshot content and are the only non-rebuildable part.
-        - grading-v1 keeps the parity quirk that an unranked player is graded A until a grading-v2 is decided.
+        - Resolved 2026-10-15 (Robert): the legacy quirk that an unranked player is graded A was a defect and is fixed in grading-v1 itself (Grade null for unranked players); no grading-v2, one-time exception to model immutability.
         - Until the cutover (step 5) the PowerShell implementation stays the productive one and the models are covered by tests and the shadow only.
 
   - id: ADR-056

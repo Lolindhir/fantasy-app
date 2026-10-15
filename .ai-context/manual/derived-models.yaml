@@ -128,7 +128,7 @@ models:
       positionMultiplier: {"K": 1.0, "RB": 2.0, "WR": 2.0, "default": 1.5}
     rules:
       - Grade is the first letter whose threshold times the position multiplier is greater than or equal to the Combined_Pos rank; above the last threshold the grade is F.
-      - Parity quirk kept in v1: a player without a Combined_Pos rank is graded as if the rank were 0 and receives A. The Rank row then carries null for Value and Rank. A later version may model unranked players as unknown (candidate grading-v2); that is a behaviour change and needs its own decision.
+      - A player without a Combined_Pos rank gets no grade: the Rank row carries null for Value, Rank and Grade. The legacy PowerShell graded such a player as rank 0 (A); Robert decided on 2026-10-15 that this is a defect and had it corrected in grading-v1 itself (a one-time, explicit exception to immutability, since the model had been productive for hours and the old behaviour was never intended; no grading-v2 was created).
       - The Form grading row is a copy of the last four final scored GameHistory entries, not a model; it stays with the Players consumer generator.
 
 rankingFunctions:

@@ -94,9 +94,12 @@ def compare_player(snap_row: dict[str, Any], published: dict[str, Any]) -> list[
     grade_ours = next((g for g in snap_row["Grading"] if g["Type"] == "Rank"), None)
     grade_theirs = _rank_row(published)
     for field in ("Value", "Rank", "Grade"):
-        check(f"Grading.Rank.{field}",
-              grade_ours.get(field, "<absent>") if grade_ours else "<no row>",
-              grade_theirs.get(field, "<absent>") if grade_theirs else "<no row>")
+        ours_value = grade_ours.get(field, "<absent>") if grade_ours else "<no row>"
+        theirs_value = grade_theirs.get(field, "<absent>") if grade_theirs else "<no row>"
+        # Intentional deviation (2026-10-15): the pre-fix published file grades an unranked player A, grading-v1 gives none.
+        if field == "Grade" and ours_value is None and grade_ours.get("Rank") is None and theirs_value == "A":
+            continue
+        check(f"Grading.Rank.{field}", ours_value, theirs_value)
 
     inputs = snap_row["Inputs"]
     if inputs is None:
