@@ -20,7 +20,13 @@ assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
 
 
+from legacy_player_fixture import patch_player_inputs  # noqa: E402
+
+
 class PlayerSignalDatasetTests(unittest.TestCase):
+    def setUp(self) -> None:
+        patch_player_inputs(self)
+
     def write_json(self, root: Path, relative: str, value: object) -> None:
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)

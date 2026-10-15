@@ -71,6 +71,8 @@ team windows or other App/Fantasy-derived state.
 
 Checkpoint 6Q activated this adapter for `managed-roster-signals.json`, which gets TeamID 1 membership and starter facts from Canonical League Source Data. Checkpoint 6X additionally moves the managed-roster consumer player identity surface and the identity fields used by its ranking/ADP joins to Canonical NFL Source Data: `Name` comes from `data-source/nfl/identities/players.json`, while fantasy-relevant `Position` and current NFL team come from `data-source/nfl/platform/sleeper/players.json` using the same `FantasyPositions` preference established in 6W. `public/data/Players.json` remains an explicit legacy enrichment only for Status, Age/Experience, Salary, SalaryProjected, IsFreeAgent and the existing structured Injury contract.
 
+Issue #919 step 6 (2026-10-15) removes `public/data/Players.json` as an input of `managed-roster-signals.json`, `data-quality.json` and `player-signals.json`. `fantasy-management/_ai/scripts/canonical_player_inputs.py` now supplies the player list: population, Age/Experience, `IsFreeAgent`, Status and the structured Injury contract come from `tools/players_population.py` (ADR-043), Salary/SalaryProjected from the newest PlayerValuation snapshot under `data-derived/player-valuation` (ADR-055). Age uses the date of `Timestamps.json -> Players` as reference date. The earlier statements in this document that `Players.json` remains enrichment for those fields are historical.
+
 Checkpoint 6R activates the same canonical ownership basis for `external-signal-relevance.json`:
 the complete league-wide Roster/Reserve/Taxi union is now read from Canonical League Source Data,
 while `public/data/League.json` supplies only `Team`/`TeamAbbr` display enrichment and the existing

@@ -21,7 +21,13 @@ from build_fantasy_operations_inputs import (  # noqa: E402
 )
 
 
+from legacy_player_fixture import patch_player_inputs  # noqa: E402
+
+
 class FantasyOperationsInputsTests(unittest.TestCase):
+    def setUp(self) -> None:
+        patch_player_inputs(self)
+
     def test_current_source_observation_excludes_insufficient_dataset(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
