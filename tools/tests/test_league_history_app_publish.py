@@ -110,7 +110,7 @@ class SlimContractTests(unittest.TestCase):
              "SleeperPickNo": None},
         ]}
         result = publish.app_transaction(transaction)
-        self.assertEqual("complete", result["Status"])  # Angular filters on it
+        self.assertNotIn("Status", result)
         self.assertEqual((3, "Sleeper"), (result["Week"], result["Source"]))
         self.assertEqual("1.03", result["DraftPicks"][0]["DisplayPick"])
         for name in publish.TRANSACTION_PICK_DROPPED:

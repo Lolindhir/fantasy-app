@@ -26,7 +26,7 @@ import type {
 } from '../models/player.models';
 import type { RawTransaction, Transaction } from '../models/transaction.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
-import { mergeCompletedRawTransactions } from '../utils/transaction-history.util';
+import { mergeRawTransactions } from '../utils/transaction-history.util';
 import { sortPlayers } from '../../shared/utils/player-sort.util';
 import {
   calculateTopPlayersSalary,
@@ -254,7 +254,7 @@ export class DataService {
     }).pipe(
       map(({ leagueData, transactionLists }) => {
         const mappedLeagueData = this.mapLeagueData(leagueData, sortFields);
-        const transactionsRaw = mergeCompletedRawTransactions(transactionLists);
+        const transactionsRaw = mergeRawTransactions(transactionLists);
 
         return mapRawTransactions(
           transactionsRaw,
@@ -289,7 +289,7 @@ export class DataService {
     return this.dataApiService.getMovesData().pipe(
       map(data => {
         const mappedLeagueData = this.mapLeagueData(data, sortFields);
-        const transactionsRaw = mergeCompletedRawTransactions([data.transactionsRaw]);
+        const transactionsRaw = mergeRawTransactions([data.transactionsRaw]);
         const transactions = mapRawTransactions(
           transactionsRaw,
           mappedLeagueData.teams,

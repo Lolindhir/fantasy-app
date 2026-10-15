@@ -21,7 +21,6 @@ export interface RawTransaction {
   Source: string;
   TransactionID: string;
   Type: string;
-  Status: string;
   Season: string;
   Week: number;
   CreatedAt: number;
