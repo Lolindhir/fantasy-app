@@ -452,8 +452,8 @@ dataSources:
       including picked current-season picks needed for complete-season Draft Capital.
     updateMode:
       restricted: frequent RequestLeague.ps1 update
-      scheduledFull: weekly coupled RequestTransactions.ps1 rebuild
-      manualFull: workflow_dispatch RequestDrafts.ps1 refresh
+      scheduledFull: weekly update-transactions workflow writes the files from the league history product (tools/league_history_app_publish.py write, Issue #999 step 5b); the 10-minute RequestLeague.ps1 path is unchanged until step 5b-2
+      manualFull: workflow_dispatch update-drafts workflow, same writer
     timestamped: true
     backup: true
 

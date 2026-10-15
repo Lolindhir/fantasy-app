@@ -15,17 +15,23 @@ order are those of the PowerShell rebuild; trimming fields is a separate later s
 
 Usage:
   league_history_app_publish.py compare [--league nfl-reise]   exact comparison against public/data
+  league_history_app_publish.py write   [--league nfl-reise]   write the App files (semantic no-op, Timestamps.json)
+
+`write` keeps the last good files when the history cannot be built (fail-closed product) and reports the
+problem as a GitHub warning annotation; it exits 0 unless --fail-on-error is given.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from derived_data_lib.league_drafts import DraftBuildError  # noqa: E402
 from derived_data_lib.league_history import HistoryResult, build_history  # noqa: E402
 from league_history_sources import load_inputs  # noqa: E402
 
@@ -176,6 +182,51 @@ def render(history: HistoryResult, league_year: int) -> dict[str, Any]:
     }
 
 
+# ---------------------------------------------------------------------------- writing
+
+
+def _dump(payload: Any) -> str:
+    return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+
+
+def write_files(repo_root: Path, rendered: dict[str, Any], now: datetime | None = None) -> list[str]:
+    """Write the rendered App files only where they differ semantically; return the changed relative paths.
+
+    Timestamps.json[Transactions|Drafts] follows the current-season file only, like Save-JsonFile did.
+    Historical files carry no timestamp. A file is never deleted.
+    """
+    data = repo_root / "public" / "data"
+    stamp = (now or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    changed: list[str] = []
+    stamped: list[str] = []
+
+    def put(relative: str, payload: Any, timestamp_key: str | None = None) -> None:
+        path = data / relative
+        if path.is_file() and not _difference(payload, _load(path)):
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_dump(payload), encoding="utf-8")
+        changed.append(f"public/data/{relative}")
+        if timestamp_key:
+            stamped.append(timestamp_key)
+
+    put("Transactions.json", rendered["Transactions"]["current"], "Transactions")
+    for season, items in rendered["Transactions"]["past"].items():
+        put(f"past_seasons/Transactions/Transactions_{season}.json", items)
+    put("Drafts.json", rendered["Drafts"]["current"], "Drafts")
+    for season, payload in rendered["Drafts"]["past"].items():
+        put(f"past_seasons/Drafts/Drafts_{season}.json", payload)
+
+    if stamped:
+        stamp_path = data / "Timestamps.json"
+        timestamps = _load(stamp_path) if stamp_path.is_file() else {}
+        for key in stamped:
+            timestamps[key] = stamp
+        stamp_path.write_text(_dump(timestamps), encoding="utf-8")
+        changed.append("public/data/Timestamps.json")
+    return changed
+
+
 # ---------------------------------------------------------------------------- shadow comparison
 
 
@@ -236,11 +287,32 @@ def parse_args() -> argparse.Namespace:
     sub = parser.add_subparsers(dest="command", required=True)
     compare = sub.add_parser("compare", help="render the App files in memory and compare them exactly with public/data")
     compare.add_argument("--league", default="nfl-reise")
+    write = sub.add_parser("write", help="write the App files from the history (semantic no-op)")
+    write.add_argument("--league", default="nfl-reise")
+    write.add_argument("--fail-on-error", action="store_true", help="exit 1 when the history cannot be built")
     return parser.parse_args()
+
+
+def run_write(args: argparse.Namespace) -> int:
+    try:
+        inputs = load_inputs(args.repo_root, args.league)
+        history = build_history(inputs)
+        if history.unresolved:
+            raise DraftBuildError(f"Transaction picks without a unique draft identity: {history.unresolved}")
+        rendered = render(history, inputs.league_year)
+    except Exception as error:  # fail-closed product: keep the last good files, report visibly
+        print(f"::warning title=League history not published::{type(error).__name__}: {error}", file=sys.stderr)
+        print("League history could not be built; the last good App files stay unchanged.", file=sys.stderr)
+        return 1 if args.fail_on_error else 0
+    changed = write_files(args.repo_root, rendered)
+    print("\n".join(f"wrote {name}" for name in changed) if changed else "No changes - update skipped.")
+    return 0
 
 
 def main() -> int:
     args = parse_args()
+    if args.command == "write":
+        return run_write(args)
     inputs = load_inputs(args.repo_root, args.league)
     history = build_history(inputs)
     if history.unresolved:
