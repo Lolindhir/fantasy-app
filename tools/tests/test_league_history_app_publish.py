@@ -111,5 +111,32 @@ class ComparisonTests(unittest.TestCase):
         self.assertTrue(publish._difference({"a": 1}, {"a": 1, "b": 2}))
 
 
+class WriteTests(unittest.TestCase):
+    def rendered(self, name="a"):
+        return {
+            "Transactions": {"current": [{"TransactionID": name}], "past": {"2025": [{"TransactionID": "p"}]}},
+            "Drafts": {"current": [{"DraftKey": name}], "past": {"2025": {"DraftKey": "old"}}},
+        }
+
+    def test_write_is_semantic_noop_and_stamps_only_changed_current_files(self):
+        import json
+        import tempfile
+        from datetime import datetime, timezone
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "public" / "data").mkdir(parents=True)
+            (root / "public" / "data" / "Timestamps.json").write_text('{"League": "x"}', encoding="utf-8")
+            first = publish.write_files(root, self.rendered(), datetime(2026, 1, 2, 3, 4, 5, tzinfo=timezone.utc))
+            self.assertIn("public/data/Timestamps.json", first)
+            stamps = json.loads((root / "public/data/Timestamps.json").read_text(encoding="utf-8"))
+            self.assertEqual("2026-01-02T03:04:05Z", stamps["Transactions"])
+            self.assertEqual("x", stamps["League"])
+            self.assertEqual([], publish.write_files(root, self.rendered()))
+            second = publish.write_files(root, self.rendered("b"), datetime(2027, 1, 1, tzinfo=timezone.utc))
+            self.assertEqual("2027-01-01T00:00:00Z", json.loads((root / "public/data/Timestamps.json").read_text(encoding="utf-8"))["Drafts"])
+            self.assertNotIn("public/data/past_seasons/Drafts/Drafts_2025.json", second)
+
+
 if __name__ == "__main__":
     unittest.main()
