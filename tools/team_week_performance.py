@@ -206,7 +206,7 @@ def output_path(repo_root: Path, model: Mapping[str, Any]) -> Path:
         raise ValueError("Invalid CanonicalLeagueID for output path")
     if type(season) is not int or type(week) is not int or season < 1 or not 1 <= week <= 25:
         raise ValueError("Invalid season/week for output path")
-    return repo_root / "derived-data" / "team-week-performance" / league_id / str(season) / f"{week:02d}.json"
+    return repo_root / DATA_DERIVED_ROOT / "team-week-performance" / league_id / str(season) / f"{week:02d}.json"
 
 
 def save_team_week_performance(repo_root: Path, model: Mapping[str, Any]) -> bool:
