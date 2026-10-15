@@ -24,13 +24,8 @@ function Get-DataMetaRoot {
 function Get-Config {
 
     # League Settings
-    $SalaryRelevantTeamSize = 20
     $MaxTransactionWeek = 20
     $LeagueStatusSeasonStartBufferDays = 7
-
-    # Point Settings
-    $WeightTotal = 0.5
-    $WeightGame = 0.5
 
     # File Locations
     $DataDir = "$PSScriptRoot\..\..\data"
@@ -168,7 +163,6 @@ function Get-Config {
     return @{
         CanonicalLeagueID                = $CanonicalLeagueID
         LeagueYear                       = $LeagueYear
-        SalaryRelevantTeamSize           = $SalaryRelevantTeamSize
         MaxTransactionWeek               = $MaxTransactionWeek
         LeagueStatusSeasonStartBufferDays = $LeagueStatusSeasonStartBufferDays
         LeagueID                         = [string]$metadataContent.CurrentProviderLeagueID
@@ -177,9 +171,6 @@ function Get-Config {
         LeagueTimeZone                   = $LeagueTimeZone
         OwnerIDs                         = $ownerIDs
 
-
-        WeightTotal                      = $WeightTotal
-        WeightGame                       = $WeightGame
 
         DataDir                          = $DataDir
         DataSourceDir                    = $DataSourceDir

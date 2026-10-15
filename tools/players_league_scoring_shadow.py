@@ -17,7 +17,6 @@ import copy
 import csv
 import json
 import math
-import re
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -223,7 +222,10 @@ def letter_grade(rank: int | None, position: str) -> str:
 
 def rank_grading(player: dict[str, Any]) -> dict[str, Any]:
     rank = next((r["Value"] for r in player["Ranking"] if r["Type"] == "Combined_Pos"), None)
-    return {"Type": "Rank", "Value": rank, "Rank": rank, "Grade": letter_grade(rank, player["Position"])}
+    # The legacy quirk (unranked counts as 0 and grades A) was fixed in grading-v1 (ADR-055): the published
+    # grade of an unranked player is null; letter_grade itself stays the legacy oracle.
+    grade = None if rank is None else letter_grade(rank, player["Position"])
+    return {"Type": "Rank", "Value": rank, "Rank": rank, "Grade": grade}
 
 
 def compute_salary_cap(salaries_by_player: list[float], team_size: int, team_count: int) -> float:
@@ -234,15 +236,15 @@ def compute_salary_cap(salaries_by_player: list[float], team_size: int, team_cou
 # --------------------------------------------------------------------------- #
 # Canonical inputs
 # --------------------------------------------------------------------------- #
+# Weights of the retired PowerShell configuration (ConfigUtils.psm1 WeightTotal/WeightGame, removed with
+# Issue #919 step 8). The shadow stays an independent oracle of the legacy behaviour, so they are fixed here
+# instead of being read from the central salary-v1 model.
+LEGACY_WEIGHT_TOTAL = 0.5
+LEGACY_WEIGHT_GAME = 0.5
+
+
 def read_ps_config_weights(repo_root: Path) -> tuple[float, float]:
-    text = (repo_root / "public/requests/utils/ConfigUtils.psm1").read_text(encoding="utf-8-sig")
-    weights = []
-    for name in ("WeightTotal", "WeightGame"):
-        match = re.search(rf"^\s*\${name}\s*=\s*([0-9.]+)", text, re.MULTILINE)
-        if not match:
-            raise ValueError(f"ConfigUtils.psm1 has no {name}")
-        weights.append(float(match.group(1)))
-    return weights[0], weights[1]
+    return LEGACY_WEIGHT_TOTAL, LEGACY_WEIGHT_GAME
 
 
 # --------------------------------------------------------------------------- #
