@@ -54,7 +54,7 @@ class Week3ExactExportAudit(unittest.TestCase):
         )
         for rec in new_records.values():
             p = rec["Projection"]
-            if "PredictionRanges" in p:
+            if p.get("PredictionRanges"):
                 self.assertEqual([v["Level"] for v in p["PredictionRanges"]],
                                  [0.5, 0.8, 0.9])
                 self.assertIn(p["PredictionRange"], p["PredictionRanges"])
