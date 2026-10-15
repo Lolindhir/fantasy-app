@@ -73,6 +73,7 @@ guidance:
       - Never use user authorization to violate absolute repository constraints such as no automated writes into data-meta, generated-context immutability, publication safety, security rules, or independent Fantasy Management qualitative persistence approvals.
     enforcement:
       - If impact or risk cannot be established reliably, fail closed and explain the uncertainty before writing.
+      - When CI reveals stale generated outputs relative to canonical source facts, repair the responsible producer and regenerate through approved publication tooling; do not suppress parity checks or manually patch generated output to make validation green. Track a separately owned repair if it exceeds the original work-package scope.
       - Preserve the default prohibition on one-off, migration, upload, repair, recovery and branch-manipulation Actions workflows; any exception must be separately and narrowly approved after safer existing tooling is ruled out.
       - Every created, renamed or materially repurposed workflow remains subject to workflow-monitoring classification, workflow-publication writer semantics, tests and observability review in the same change.
       - Apply the same contract to ChatGPT, Claude, other agents and human-assisted agent runners; no actor-specific exemption.
