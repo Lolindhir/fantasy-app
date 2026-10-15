@@ -678,8 +678,14 @@ function Compare-RegularSeasonStandings{
     # wins, points and current PlaceDelta are identical. Compare nested values
     # explicitly; Compare-Standings' scalar -ne is not an array comparator.
     for ($i = 0; $i -lt @($newRegularSeason).Count; $i++) {
-        $oldHistory = if ($i -lt @($oldRegularSeason).Count) { @($oldRegularSeason[$i].WeeklyMovements) } else { @() }
-        $newHistory = @($newRegularSeason[$i].WeeklyMovements)
+        # Rows without the field (AllTime, completed seasons) must compare equal:
+        # assign arrays directly (an if expression unrolls @($null) to $null) and
+        # drop the $null that @() makes from a missing property.
+        $oldHistory = @()
+        if ($i -lt @($oldRegularSeason).Count) {
+            $oldHistory = @($oldRegularSeason[$i].WeeklyMovements | Where-Object { $null -ne $_ })
+        }
+        $newHistory = @($newRegularSeason[$i].WeeklyMovements | Where-Object { $null -ne $_ })
         if ((ConvertTo-Json -InputObject $oldHistory -Depth 6 -Compress) -cne (ConvertTo-Json -InputObject $newHistory -Depth 6 -Compress)) {
             Write-Host "Regular season weekly movements changed for team '$($newRegularSeason[$i].TeamID)'."
             return $true

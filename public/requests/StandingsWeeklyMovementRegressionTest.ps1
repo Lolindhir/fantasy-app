@@ -119,6 +119,16 @@ Assert-Equal $false ($plain[0].PSObject.Properties.Name -contains 'PlaceDelta') 
 Assert-Equal $false ($plain[0].PSObject.Properties.Name -contains 'PreviousWeekPlace') 'Movement fields must be omitted when not requested.'
 Assert-Equal $false ($plain[0].PSObject.Properties.Name -contains 'WeeklyMovements') 'History must be omitted when not requested.'
 
+# Rows without WeeklyMovements (AllTime, completed seasons) must not report a change,
+# neither as published JSON nor as freshly selected rows (League.json churn, Refs #945).
+$plainPublished = $plain | ConvertTo-Json -Depth 6 | ConvertFrom-Json
+$plainSelected = $plain | Select-Object * -ExcludeProperty TeamID, Owner, TeamName
+$plainPublishedSelected = $plainPublished | Select-Object * -ExcludeProperty TeamID, Owner, TeamName
+Assert-Equal $false (Compare-RegularSeasonStandings -oldRegularSeason $plainPublished -newRegularSeason $plain) 'Rows without history must compare equal after a JSON round trip.'
+Assert-Equal $false (Compare-RegularSeasonStandings -oldRegularSeason $plainPublishedSelected[0] -newRegularSeason $plainSelected[0]) 'A single row without history must compare equal.'
+$historyPublished = $fiveWeekStandings | ConvertTo-Json -Depth 6 | ConvertFrom-Json
+Assert-Equal $false (Compare-RegularSeasonStandings -oldRegularSeason $historyPublished -newRegularSeason $fiveWeekStandings) 'Unchanged history must compare equal after a JSON round trip.'
+
 # ---------------------------------------------------------------------------
 # Scenario 2: tiebreak and shared places in the previous table
 # After week 1: A and C are tied (1-0, 100 PF, 80 PA) and share place 1; B and D share place 2.
