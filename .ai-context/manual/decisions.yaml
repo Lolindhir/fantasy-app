@@ -1871,3 +1871,38 @@ decisions:
       negative:
         - The archives gain 13 postseason games per season and lose the numeric Tank01 team IDs (LegacyIDs still resolve).
         - The conversion exists in PowerShell and Python; compare-current guards against drift.
+
+  - id: ADR-059
+    title: Scope-based and risk-tiered authorization replaces file-based workflow approvals
+    status: accepted
+    context: >
+      Historic per-file GitHub Actions approval and per-step chat stoppages slow
+      authorized multi-agent delivery without addressing risks in generators or
+      other non-workflow code. Existing publication and workflow monitoring
+      contracts provide separately enforceable safety requirements.
+    decision: >
+      On 2026-10-16 the user approved authorization by defined work-package
+      scope and downstream operational impact rather than filename or model.
+      A clearly approved end-to-end Issue permits continuous routine scoped
+      workflow changes, commits, reviews, PRs and merges, subject to required
+      checks, with no further approval for each YAML or checkpoint. A single
+      bounded-step approval ends at its checkpoint. Standard changes preserve
+      ownership, permissions and writer scopes. Elevated effects require the
+      relevant specific scope and impact authorization; critical/destructive
+      effects require distinct targeted authorization even for an approved
+      Issue. Unknown risk fails closed. Keep Fantasy Management qualitative
+      persistence authorization, default one-off Actions prohibition, canonical
+      source-of-truth and branch-publication/monitoring safety unchanged.
+      The normative agent-independent rules live in
+      .ai-context/manual/ai-guidance.yaml under authorizationAndRisk
+      (Issue #1039).
+    rationale: >
+      Human attention should focus on unapproved risk or material new scope,
+      while reliable agents autonomously complete already authorized work.
+    consequences:
+      positive:
+        - Less repeated approval friction for ChatGPT, Claude and other agents.
+        - Real downstream data and permission effects determine review rigor.
+        - Reversible checkpoints, mandatory validation and technical safety remain.
+      negative:
+        - Each agent must assess actual operational impact and escalate uncertainty.

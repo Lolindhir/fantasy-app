@@ -223,7 +223,7 @@ Always:
 - avoid unrelated repository changes;
 - never write Fantasy Management analysis into `public/data/`;
 - never modify generated application data as an observation side effect;
-- never change GitHub Actions workflows without explicit approval;
+- apply the root scope-based risk authorization contract to GitHub Actions edits; routine in-scope workflow changes need no separate file-based approval;
 - never create daily no-op commits;
 - never let one job write another job's state;
 - never let a scheduled monitor alter target sets or profiles during normal execution;
@@ -266,4 +266,4 @@ When adding or changing a job or reactivating legacy autonomous behavior:
 5. add new schemas to `fantasy-management/_ai/schema-list.json`;
 6. create optional folders only when they contain real configuration or output files;
 7. run `validate_automation.py` and its unit tests;
-8. obtain explicit approval for any architecture change that would re-enable autonomous State publication or GitHub Actions behavior.
+8. keep autonomous State publication disabled until separately approved under the qualitative persistence rules; classify any reactivation or expansion of GitHub Actions behavior under the root risk contract, with targeted approval for undisclosed elevated or critical effects.

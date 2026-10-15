@@ -204,4 +204,4 @@ The research plan is deterministic and reproducible.
 
 The researched weekly context is ephemeral by default because weather, job security and injuries are time-sensitive. A dated analysis may be persisted under `fantasy-management/analyses/` only after explicit approval under the normal Fantasy Management persistence rules.
 
-No GitHub Actions workflow is created or modified by this design. Any future automatic materialization or scheduled weekly research orchestration requires a separate explicit workflow approval.
+No GitHub Actions workflow is created or modified by this design. Any future automatic materialization or scheduled weekly research orchestration requires an authorized work package and risk classification under the root governance contract; ordinary in-scope YAML changes need no separate approval, while new writers or qualitative State persistence still require their applicable safeguards.
