@@ -22,6 +22,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_fantasy_operations_inputs as ops  # noqa: E402
 import canonical_nfl_membership as nfl_membership  # noqa: E402
+import canonical_player_inputs  # noqa: E402
 import materialize_external_signals as external_signals  # noqa: E402
 from canonical_league_ownership import (  # noqa: E402
     CanonicalOwnershipError,
@@ -313,7 +314,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     core = config["sources"]
     league_display_path = root / core["league_display"]
-    players_path = root / core["players"]
     canonical_identities_path = root / core["canonical_player_identities"]
     canonical_sleeper_players_path = root / core["canonical_sleeper_players"]
     timestamps_path = root / core["timestamps"]
@@ -321,15 +321,12 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     catalog_path = root / config["source_catalog"]
 
     league_display = ops.load_json(league_display_path)
-    players = ops.load_json(players_path)
     canonical_identities = ops.load_json(canonical_identities_path)
     canonical_sleeper_players = ops.load_json(canonical_sleeper_players_path)
     timestamps = ops.load_json(timestamps_path)
     external_signal_document = ops.load_json(external_signal_path)
     catalog = ops.load_json(catalog_path)
     ops.validate_catalog(catalog)
-    if not isinstance(players, list):
-        raise PlayerSignalMaterializationError("Players input must be a JSON array")
     try:
         identity_by_sleeper = ops.build_canonical_identity_by_sleeper(
             canonical_identities
@@ -368,6 +365,15 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         raise PlayerSignalMaterializationError(
             f"Canonical player-signal ownership is unavailable: {exc}"
         ) from exc
+    try:
+        players = canonical_player_inputs.load_players(
+            root,
+            canonical_league_id,
+            canonical_season,
+            ops._player_reference_date(timestamps),
+        )
+    except canonical_player_inputs.CanonicalPlayerInputsError as exc:
+        raise PlayerSignalMaterializationError(f"Canonical player inputs are unavailable: {exc}") from exc
 
     managed_team = next((team for team in teams if str(team.get("TeamID")) == managed_team_id), None)
     if managed_team is None:
@@ -415,7 +421,12 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             canonical_season_root / "rosters.json",
             root,
         ),
-        ops.source_file("players", players_path, root, player_timestamp),
+        *(
+            ops.source_file(source_id, path, root, player_timestamp)
+            for source_id, path in canonical_player_inputs.source_files(
+                root, canonical_league_id, canonical_season
+            )
+        ),
         ops.source_file(
             "canonical_player_identities",
             canonical_identities_path,
