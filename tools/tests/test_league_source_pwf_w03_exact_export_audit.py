@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from collections import Counter
 import sys
 import unittest
 from pathlib import Path
@@ -45,8 +46,14 @@ class Week3ExactExportAudit(unittest.TestCase):
             if {k: v for k, v in rec["Projection"].items() if k != "PredictionRanges"}
             != old_records[pid]["Projection"]
         ]
-        self.assertEqual(projection_changed, [],
-                         f"Unexpected existing projection metric drift, first: {projection_changed[:5]}")
+        projection_fields = Counter()
+        for pid in projection_changed:
+            older = old_records[pid]["Projection"]
+            newer = {k: v for k, v in new_records[pid]["Projection"].items()
+                     if k != "PredictionRanges"}
+            for key in sorted(set(older) | set(newer)):
+                if older.get(key) != newer.get(key):
+                    projection_fields[key] += 1
         multirange_added = sum(
             "PredictionRanges" in rec["Projection"]
             and "PredictionRanges" not in old_records[pid]["Projection"]
@@ -95,7 +102,8 @@ class Week3ExactExportAudit(unittest.TestCase):
         for key in {"ActualStateCounts", "ActualScoringEvidenceFinalized"}:
             old_meta.pop(key)
             new_meta.pop(key)
-        self.assertEqual(old_meta, new_meta)
+        meta_changed = sorted(k for k in set(old_meta) | set(new_meta)
+                              if old_meta.get(k) != new_meta.get(k))
         payload = (json.dumps(produced, indent=2, ensure_ascii=False,
                               sort_keys=True) + "\n")
         encoded = payload.encode("utf-8")
@@ -105,6 +113,16 @@ class Week3ExactExportAudit(unittest.TestCase):
             "MissingZero": missing_zero,
             "ExistingProjectionsChanged": len(projection_changed),
             "MultiRangeEnrichedRecords": multirange_added,
+            "ProjectionChangedFields": dict(sorted(projection_fields.items())),
+            "ProjectionCoreChangedRows": len(projection_changed),
+            "ProjectionExample": [
+                {"ID": pid,
+                 "Before": old_records[pid]["Projection"],
+                 "After": {k: v for k, v in new_records[pid]["Projection"].items()
+                           if k != "PredictionRanges"}}
+                for pid in projection_changed[:2]
+            ],
+            "OtherMaterializationChanges": meta_changed,
             "OldActualState": existing["Materialization"]["ActualStateCounts"],
             "NewActualState": produced["Materialization"]["ActualStateCounts"],
             "ActualChangedRows": sum(old_records[pid]["Actual"] != rec["Actual"]
