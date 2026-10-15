@@ -73,8 +73,33 @@ team's canonical matchup-week Players array is its complete retrospective
 candidate pool under ADR-036; no intraweek transfer replay is required.
 The adapter does not publish derived records.
 
-**Current checkpoint:** The calculator, writer and tests exist, but no
-producer job, real derived-data partition, App publisher or frontend consumer
-has been activated. Real full-repository Python integration, PowerShell
-slot-bridge execution and canonical scoring parity remain publication gates.
-The week-scoped fantasy ownership pool is settled.
+**Controlled producer (Draft PR #993 only):**
+
+```shell
+# Single-week canonical audit; read-only by default.
+python3 tools/team_week_performance_materialize.py --league nfl-reise --season 2026 --week 5 --require-pwf
+
+# All registered leagues and seasons, all canonically scored weeks: read-only report.
+python3 tools/team_week_performance_materialize.py --all-finalized
+
+# Explicit full write only after every candidate week passes preflight.
+python3 tools/team_week_performance_materialize.py --all-finalized --write
+```
+
+The historical batch discovers leagues from `data-meta` and season identities
+from canonical League manifests, not App delivery or existing derived JSON.
+It determines potential weeks from League `WeekStructure` and independently
+validates finality, scoring, historical roster positions and PowerShell slot
+rules for every selected week. With `--write`, **all selected weeks are
+preflight-verified before any writes**, and a blocked week exits nonzero with
+no writes. Missing PWF snapshots report `not-available` parity; existing
+stale/non-final PWF is a blocker. Rebuilding PlayerWeekFantasy first is a
+separate cross-product orchestration responsibility (#471/#697). Batch writes
+are deterministic and second runs are no-ops.
+
+The 2026 W04/W05 partition files are currently committed **only to Draft PR
+#993**, with canonical-source validation and real PWF parity, not to main.
+A historical 39-week audit confirmed all 17 scored weeks in each of 2024/2025,
+plus 2026 W01/W02/W04/W05; 2026 W03 has a stale PWF Actual snapshot and
+blocks the complete batch until upstream repair. No automatic producer
+workflow, App publisher or Angular consumer is activated yet.
