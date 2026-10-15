@@ -129,9 +129,8 @@ inputs:
     fields: Owners, Drafts (UpcomingDraftCount, UpcomingDraftCountMode, Types with DraftType, DraftInstance, DraftNo, Rounds, OrderSource, Order, OrderMap, SleeperFuturePickPool, SleeperDraftIDs)
     loader: tools/league_metadata.py
   manualOverlay:
-    current: public/data/Transactions_Manual.json (hand-maintained league information, not generated)
-    target: data-meta/<CanonicalLeagueID>/transactions-manual.json (Issue #999 step 5, format agreed with #986)
-    rule: The overlay is read through one loader function so the path change is a one-line step 5 change. Bindings to a Sleeper TransactionID without a canonical transaction fail closed.
+    owner: data-meta/<CanonicalLeagueID>/transactions-manual.json (hand-maintained league information, not generated; moved from public/data/Transactions_Manual.json in Issue #999 step 5c, format unchanged)
+    rule: The overlay is read through one loader function (tools/league_history_sources.py::load_manual_overlay via transaction_canonical_shadow.manual_overlay_path). Bindings to a Sleeper TransactionID without a canonical transaction fail closed.
   currentSeason:
     owner: data-meta / data-source league manifest (LeagueYear); never read from public/data.
   transitionalInputs:

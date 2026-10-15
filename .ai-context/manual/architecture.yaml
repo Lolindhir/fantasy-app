@@ -622,7 +622,7 @@ leagueHistorySharedDerived:
   inputs:
     - data-source/leagues/<CanonicalLeagueID>/seasons/<season>/ (transactions, drafts, picks, traded picks, rosters, league)
     - data-meta/<CanonicalLeagueID>/metadata.json (Owners, Drafts configuration)
-    - manual transaction overlay (public/data/Transactions_Manual.json until step 5, then data-meta/<CanonicalLeagueID>/transactions-manual.json)
+    - manual transaction overlay (data-meta/<CanonicalLeagueID>/transactions-manual.json since Issue #999 step 5c)
     - transitional - Standings placement for configured draft orders until Issue #987
   consumers:
     - App delivery files public/data/Transactions.json, Drafts.json and past_seasons/** via tools/league_history_app_publish.py (cutover in step 5)

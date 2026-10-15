@@ -525,7 +525,7 @@ matrix:
       - completed fantasy trades/adds/drops
       - player movement
       - fantasy draft-pick movement
-    durableCanonicalPrimary: Sleeper transactions plus explicit public/data/Transactions_Manual.json enrichment
+    durableCanonicalPrimary: Sleeper transactions plus explicit data-meta/<CanonicalLeagueID>/transactions-manual.json enrichment
     currentRuntimePrimary: same
     secondary: manual input only under documented match/enrichment rules
     fallback: none
@@ -1145,8 +1145,7 @@ consumerReadClassification:
     tools/league_history_sources.py:
       reads:
         legacy:Standings: legacy-read-model-pending
-        legacy:Transactions_Manual: manual-league-rule
-      note: 'Input loader of the LeagueTransactions / LeagueDrafts products (ADR-057, Issue #999). Facts come from data-source/leagues and data-meta. Transactions_Manual.json is the hand-maintained overlay (moves to data-meta in step 5, coordinated with Issue #986). Standings.json is the one transitional non-canonical input (draft order for configured sources) and is removed with the league-standings product of Issue #987.'
+      note: 'Input loader of the LeagueTransactions / LeagueDrafts products (ADR-057, Issue #999). Facts come from data-source/leagues and data-meta. transactions-manual.json in data-meta is the hand-maintained overlay (moved there in Issue #999 step 5c). Standings.json is the one transitional non-canonical input (draft order for configured sources) and is removed with the league-standings product of Issue #987.'
     tools/league_history_app_publish.py:
       reads:
         legacy:Drafts: validation-shadow
@@ -1228,7 +1227,6 @@ consumerReadClassification:
     tools/transaction_canonical_shadow.py:
       reads:
         legacy:Transactions: validation-shadow
-        legacy:Transactions_Manual: validation-shadow
       note: 'Shadow comparison of canonical transactions with the published Transactions.json and the manual overlay.'
     tools/validate_work_tracking.py:
       reads:

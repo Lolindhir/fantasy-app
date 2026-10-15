@@ -397,7 +397,7 @@ dataSources:
 
   transactions:
     path: public/data/Transactions.json
-    manualInput: public/data/Transactions_Manual.json
+    manualInput: data-meta/<CanonicalLeagueID>/transactions-manual.json
     generator: public/requests/RequestTransactions.ps1
     helpers:
       - public/requests/utils/league/CanonicalTransactionUtils.psm1
@@ -594,7 +594,7 @@ dataFlow:
     to: public/data/past_seasons/Transactions/Transactions_<season>.json
     purpose: Adapt canonical historical completed transaction facts to the existing archived read-model contract.
 
-  - from: public/data/Transactions_Manual.json
+  - from: data-meta/<CanonicalLeagueID>/transactions-manual.json
     to: public/data/Transactions.json
     purpose: Enrich or add manual transaction output.
 

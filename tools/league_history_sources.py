@@ -20,9 +20,8 @@ from derived_data_lib.league_history import LeagueHistoryInputs  # noqa: E402
 from draft_canonical_consumer import build_legacy_payload  # noqa: E402
 from league_metadata import data_meta_root, load_league_metadata  # noqa: E402
 from transaction_canonical_consumer import build_repo_canonical_transactions  # noqa: E402
-from transaction_canonical_shadow import build_roster_provider_lookup, load_json  # noqa: E402
+from transaction_canonical_shadow import build_roster_provider_lookup, load_json, manual_overlay_path  # noqa: E402
 
-MANUAL_OVERLAY_PATH = Path("public/data/Transactions_Manual.json")  # step 5 moves it to data-meta (Issue #986)
 STANDINGS_PATH = Path("public/data/Standings.json")  # transitional until Issue #987
 
 
@@ -44,8 +43,8 @@ def _provider_league_id(entry: dict[str, Any]) -> str:
     return str(ids[0])
 
 
-def load_manual_overlay(repo_root: Path) -> list[dict[str, Any]]:
-    path = repo_root / MANUAL_OVERLAY_PATH
+def load_manual_overlay(repo_root: Path, league_id: str) -> list[dict[str, Any]]:
+    path = manual_overlay_path(repo_root, league_id)
     if not path.is_file():
         raise LeagueHistorySourceError(f"Manual transaction overlay missing: {path}")
     payload = load_json(path)
@@ -99,7 +98,7 @@ def load_inputs(repo_root: Path, league_id: str) -> LeagueHistoryInputs:
         owners={str(name): int(value) for name, value in (metadata.get("Owners") or {}).items()},
         canonical_transactions=canonical_transactions,
         payloads=payloads,
-        manual_rows=load_manual_overlay(repo_root),
+        manual_rows=load_manual_overlay(repo_root, league_id),
         team_ids=team_ids,
         standings_loader=make_standings_loader(repo_root),
     )
