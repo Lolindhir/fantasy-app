@@ -165,17 +165,18 @@ joinAudit:
 
 regressionCoverage:
   entryPoint: public/requests/ProviderJoinInvariantRegressionTest.ps1
-  ciEntryPoint: public/requests/DraftIdentityRegressionTest.ps1
+  ciEntryPoint: public/requests/ProviderJoinInvariantRegressionTest.ps1
+  draftAndTransactionJoins: >
+    The draft and transaction join cases (explicit Sleeper draft bindings, PickKey and TransactionID
+    uniqueness, historical draft-pick contexts, current versus archived pick copies) lived in the PowerShell
+    rebuild that was removed in Issue #999 step 7. They are covered by the league history products and tests
+    (tools/derived_data_lib/league_transactions.py, league_drafts.py, tools/tests/test_league_transactions.py,
+    test_league_drafts.py), which fail closed on the same conditions.
   cases:
     - generic duplicate and missing provider keys
     - Tank01-to-Sleeper player mapping collisions
     - historical TankID collisions
     - Sleeper member/roster owner cardinality
-    - duplicate/missing explicit Sleeper draft bindings
-    - duplicate standing identities and PickKeys
-    - duplicate generated TransactionIDs and manual SleeperTransactionID bindings
-    - missing completed historical Sleeper draft IDs
-    - identical versus conflicting current/history draft-pick copies
     - compatible nflverse season-roster SourceID enrichment collapses only across identical season/team/GSIS canonical facts while conflicting facts or provider IDs fail closed
     - compatible nflverse weekly-roster SourceID enrichment collapses only across identical weekly facts while conflicting provider IDs or weekly facts fail closed
     - legacy nflverse weekly-roster status variants collapse only after documented normalization while remaining canonical conflicts fail closed
