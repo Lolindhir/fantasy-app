@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 919
 architectureDecision: ADR-055
-implementationState: cutover done (#919 step 5); RequestPlayers.ps1 materializes the product (tools/derived_data.py, all seasons and weeks, committed under data-derived by the update-players workflow) and fills Salary, SalaryProjected, Ranking and the Rank grading of Players.json from the snapshot of the final scored week; RequestLeague.ps1 takes SalaryCap and SalaryCapProjected from the newest snapshot of the season; Players.json and League.json are unchanged in content and type (byte-identical Players.json, semantically identical League.json against the pre-cutover generator); PowerShell valuation code is removed from RequestPlayers.ps1 for Ranking and Grading, the Salary functions are removed with step 8
+implementationState: cutover done (#919 step 5); RequestPlayers.ps1 materializes the product (tools/derived_data.py, all seasons and weeks, committed under data-derived by the update-players workflow) and fills Salary, SalaryProjected, Ranking and the Rank grading of Players.json from the snapshot of the final scored week; RequestLeague.ps1 takes SalaryCap and SalaryCapProjected from the newest snapshot of the season; Players.json and League.json are unchanged in content and type (byte-identical Players.json, semantically identical League.json against the pre-cutover generator); PowerShell valuation code is removed from RequestPlayers.ps1 for Ranking and Grading, the PowerShell Salary functions, Add-PreviousSeasonCombinedRanking and the ConfigUtils weights/team-size constants are removed (step 8); RequestLeague takes SalaryRelevantTeamSize from the snapshot
 
 purpose: >
   Define the Shared Derived Data product PlayerValuation: for one league and one
@@ -188,6 +188,10 @@ consumers:
     path: fantasy-management/league-economy/salary/simulation/salary_simulation.py
     step: 7
     state: done 2026-10-15; curve, floor, season-points weights and cap come from the registered salary-v1 and salary-cap-v1 modules (curve_dollars, floored_average, raw_cap; unrounded variants with unchanged behaviour of the productive functions); simulation output (md, json, csv) is byte-identical before and after on the same input data; the draft-concept parameters (minimum percentages, rookie scale, dead cap) stay simulation-local because they belong to the unadopted redesign
+  legacyPowerShellRemoval:
+    path: public/requests (RequestPlayers.ps1, PlayerUtils.psm1, ConfigUtils.psm1, RequestLeague.ps1)
+    step: 8
+    state: done 2026-10-15; leftover PowerShell Salary functions (MapSalaryToDollarsLinear through AdjustSalaryWithMeta), Add-PreviousSeasonCombinedRanking and the constants SalaryRelevantTeamSize, WeightTotal, WeightGame are removed; the snapshot is the only source; players_league_scoring_shadow keeps the legacy weights as fixed oracle constants
 
 failClosed:
   - unknown model ID or model not chosen for the season

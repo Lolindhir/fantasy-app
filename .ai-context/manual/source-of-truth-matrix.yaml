@@ -705,7 +705,7 @@ playersReadModelFieldInventory:
       - canonical player-stats, snap-counts, qbr-week, player-game-long-gains, schedules and game-finality for GameHistory (since #347 G3; replaces public/data/Games.json)
       - canonical League-season WeekStructure and NFL game finality for LastLeagueWeek, PlayoffStartWeek and FinalScoredWeek (since #347 I1; replaces public/data/League.json)
       - league-scored canonical player-stats of the three prior seasons (since #347 D4; replaces the past_seasons/Players_<year>.json archives)
-      - ConfigUtils.psm1 WeightTotal/WeightGame
+      - data-derived/player-valuation snapshot for Salary, SalaryProjected, Ranking and Rank grading (since #919 step 5; the former ConfigUtils.psm1 WeightTotal/WeightGame were removed with step 8)
     historyArchives:
       producer: none; RequestPlayersSeason.ps1 and its Games_<year>.json input were retired with #347 G4
       shape: TankID, Name, TeamIDs, Games[] with FantasyPoints = Tank01 fantasyPointsDefault.PPR

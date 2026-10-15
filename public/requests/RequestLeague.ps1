@@ -50,7 +50,6 @@ catch {
 
 $LeagueID = $config.LeagueID
 $CanonicalLeagueID = $config.CanonicalLeagueID
-$SalaryRelevantTeamSize = $config.SalaryRelevantTeamSize
 $CapDeadline = $config.CapDeadline
 $LeagueTimeZone = $config.LeagueTimeZone
 $CapDeadlineBufferDays = $config.CapDeadlineBufferDays
@@ -160,10 +159,6 @@ try {
         Write-Error "LeagueID not set in the league metadata (data-meta)!"
         exit 1
     }
-    if (-not $SalaryRelevantTeamSize -or $SalaryRelevantTeamSize -le 0) {
-        Write-Error "SalaryRelevantTeamSize not set or invalid in ConfigUtils.psm1!"
-        exit 1
-    }
 
     $transactionsCurrentSeason = Get-LeagueTransactionsCurrentSeasonInMemory -leagueID $LeagueID
     $transactionsCurrentSeason = Resolve-LeagueTransactionDraftPickTypesInMemory `
@@ -247,8 +242,9 @@ try {
         Write-Error "PlayerValuation snapshot TeamCount $($valuationSnapshot.League.TeamCount) differs from the league's $($teamData.Count) teams."
         exit 1
     }
-    if ([int]$valuationSnapshot.League.SalaryRelevantTeamSize -ne [int]$SalaryRelevantTeamSize) {
-        Write-Error "PlayerValuation snapshot SalaryRelevantTeamSize $($valuationSnapshot.League.SalaryRelevantTeamSize) differs from the configured $SalaryRelevantTeamSize."
+    $SalaryRelevantTeamSize = [int]$valuationSnapshot.League.SalaryRelevantTeamSize
+    if ($SalaryRelevantTeamSize -le 0) {
+        Write-Error "PlayerValuation snapshot SalaryRelevantTeamSize $SalaryRelevantTeamSize is invalid."
         exit 1
     }
     $salaryCapTotal = [double]$valuationSnapshot.League.SalaryCap
