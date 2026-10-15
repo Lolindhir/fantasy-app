@@ -1851,8 +1851,10 @@ decisions:
       Robert decided on 2026-10-15 (Issue #999) that the archives are kept current by the regular runs, never generated
       once. tools/schedule_archive.py is the consumer generator; it repeats New-AppScheduleGame
       (CanonicalScheduleUtils.psm1) in Python, proves parity with the published Schedule.json through the command
-      compare-current, and writes Schedule_<season>.json for FIRST_ARCHIVE_SEASON (2022) up to the season before the
-      current Schedule.json, only on a semantic difference and fail-closed (a season that cannot be built keeps its last
+      compare-current, and writes Schedule_<season>.json from the first needed season (first league season minus the
+      history seasons the Salary model of that season reads, salary-v1: 3, so 2021 for the league that began in 2024; the
+      value is HISTORY_SEASONS of the model, not a constant of the generator) up to the season before the current
+      league season (league manifests), only on a semantic difference and fail-closed (a season that cannot be built keeps its last
       file and raises a warning). It runs in the weekly update-transactions run before the Past Seasons index refresh.
       Archives keep all game types (the records carry seasonType), team fields use canonical abbreviations (ADR-042,
       consumers resolve LegacyIDs), and the cancelled 2022 week-17 game BUF@CIN, absent from nflverse, is a visible

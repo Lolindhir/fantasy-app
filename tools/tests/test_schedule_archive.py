@@ -10,6 +10,7 @@ import json
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
@@ -123,3 +124,15 @@ class BuildTests(unittest.TestCase):
         self.assertEqual("20230102_BUF@CIN", cancelled[0]["gameID"])
         self.assertEqual("0", cancelled[0]["gameStatusCode"])
         self.assertNotIn("awayPts", cancelled[0])
+
+
+class FirstNeededSeasonTests(unittest.TestCase):
+    def test_comes_from_league_seasons_and_the_salary_model_history(self):
+        from derived_data_lib.models.registry import get_model
+
+        history = get_model("salary-v1").HISTORY_SEASONS
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            meta = {"2030": {"Models": {"Salary": "salary-v1", "SalaryCap": "salary-cap-v1", "Grading": "grading-v1"}}}
+            with unittest.mock.patch.object(sa, "load_all_league_metadata", return_value={"x": {"Seasons": meta}}):
+                self.assertEqual(2030 - history, sa.first_needed_season(root))

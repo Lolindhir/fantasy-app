@@ -15,7 +15,7 @@ One game is not part of the canonical schedule: the cancelled 2022 week-17 game 
 
 Usage:
   schedule_archive.py compare-current            parity of the generator with public/data/Schedule.json
-  schedule_archive.py write [--season N ...]     write the archives (default: FIRST_ARCHIVE_SEASON up to the season before the current league season)
+  schedule_archive.py write [--season N ...]     write the archives (default: first needed season up to the season before the current league season)
 """
 from __future__ import annotations
 
@@ -30,8 +30,9 @@ from zoneinfo import ZoneInfo
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import DATA_SOURCE_ROOT  # noqa: E402
+from derived_data_lib.models.registry import get_model  # noqa: E402
+from league_metadata import data_meta_root, load_all_league_metadata, model_for  # noqa: E402
 
-FIRST_ARCHIVE_SEASON = 2022
 EASTERN = ZoneInfo("America/New_York")
 POSTSEASON_TYPES = {"WC", "DIV", "CON", "SB"}
 
@@ -270,8 +271,20 @@ def write_archives(root: Path, seasons: list[int]) -> list[str]:
     return changed
 
 
+def first_needed_season(root: Path) -> int:
+    """Oldest season any league needs: its first season minus the history its Salary model reads (salary-v1: 3)."""
+    firsts = []
+    for metadata in load_all_league_metadata(data_meta_root(root)).values():
+        for season in metadata["Seasons"]:
+            model = get_model(model_for(metadata, season, "Salary"), "salary")
+            firsts.append(int(season) - int(getattr(model, "HISTORY_SEASONS", 0)))
+    if not firsts:
+        raise ScheduleArchiveError("No league season found; the first needed archive season is unknown.")
+    return min(firsts)
+
+
 def default_seasons(root: Path) -> list[int]:
-    return list(range(FIRST_ARCHIVE_SEASON, _current_season(root)))
+    return list(range(first_needed_season(root), _current_season(root)))
 
 
 def main(argv: list[str] | None = None) -> int:
