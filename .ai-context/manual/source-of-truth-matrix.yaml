@@ -1147,6 +1147,11 @@ consumerReadClassification:
         legacy:Standings: legacy-read-model-pending
         legacy:Transactions_Manual: manual-league-rule
       note: 'Input loader of the LeagueTransactions / LeagueDrafts products (ADR-057, Issue #999). Facts come from data-source/leagues and data-meta. Transactions_Manual.json is the hand-maintained overlay (moves to data-meta in step 5, coordinated with Issue #986). Standings.json is the one transitional non-canonical input (draft order for configured sources) and is removed with the league-standings product of Issue #987.'
+    tools/league_history_app_publish.py:
+      reads:
+        legacy:Drafts: validation-shadow
+        legacy:Transactions: validation-shadow
+      note: 'Consumer generator of the League history products (ADR-057, Issue #999 step 4). It renders the App-shaped Transactions and Drafts files in memory and compares them exactly with the committed public/data files (validation-shadow, never an input). From the cutover (step 5) it writes those files.'
     tools/league_source_data_lib/acquire.py:
       reads:
         network: source-layer-acquisition
