@@ -1836,3 +1836,35 @@ decisions:
       negative:
         - Until Issue #987 the draft order depends on the Standings placement through one explicit adapter.
         - The PowerShell implementation stays productive until the cutover step, so two implementations coexist and are held equal by the shadow test.
+
+  - id: ADR-058
+    title: Past-season Schedule archives are regenerated from canonical NFL facts every week
+    status: accepted
+    amends: ADR-045
+    context: >
+      ADR-045 left past_seasons/Schedule_<year>.json as static archives after the Tank01 generators were removed. A check
+      for Issue #999 step 7b found them reproducible from data-source/nfl (schedules plus game-finality) and, in part,
+      wrong: three 2024 and two 2022 kickoff times differed from the canonical facts (for example BAL@KC 2024-09-05 shown
+      as 8:40p instead of 8:20p). A derived output that is generated once cannot follow later changes of the derivation
+      logic or a corrected canonical fact.
+    decision: >
+      Robert decided on 2026-10-15 (Issue #999) that the archives are kept current by the regular runs, never generated
+      once. tools/schedule_archive.py is the consumer generator; it repeats New-AppScheduleGame
+      (CanonicalScheduleUtils.psm1) in Python, proves parity with the published Schedule.json through the command
+      compare-current, and writes Schedule_<season>.json for FIRST_ARCHIVE_SEASON (2022) up to the season before the
+      current Schedule.json, only on a semantic difference and fail-closed (a season that cannot be built keeps its last
+      file and raises a warning). It runs in the weekly update-transactions run before the Past Seasons index refresh.
+      Archives keep all game types (the records carry seasonType), team fields use canonical abbreviations (ADR-042,
+      consumers resolve LegacyIDs), and the cancelled 2022 week-17 game BUF@CIN, absent from nflverse, is a visible
+      hand-maintained supplement in the generator. Players_<year>.json stays a static Tank01 archive until its readers
+      (historical FantasyGameContext, FM salary simulation; Issue #420) are migrated to canonical sources.
+    rationale: >
+      One implementation of the schedule conversion per language with a parity command, no archive as input, and
+      archives that follow the canonical facts instead of freezing a provider's errors.
+    consequences:
+      positive:
+        - Schedule archives always equal the canonical facts and follow later logic changes with the next weekly run.
+        - Wrong Tank01 kickoff times in the archives are corrected.
+      negative:
+        - The archives gain 13 postseason games per season and lose the numeric Tank01 team IDs (LegacyIDs still resolve).
+        - The conversion exists in PowerShell and Python; compare-current guards against drift.
