@@ -187,6 +187,7 @@ consumers:
   fantasyManagement:
     path: fantasy-management/league-economy/salary/simulation/salary_simulation.py
     step: 7
+    state: done 2026-10-15; curve, floor, season-points weights and cap come from the registered salary-v1 and salary-cap-v1 modules (curve_dollars, floored_average, raw_cap; unrounded variants with unchanged behaviour of the productive functions); simulation output (md, json, csv) is byte-identical before and after on the same input data; the draft-concept parameters (minimum percentages, rookie scale, dead cap) stay simulation-local because they belong to the unadopted redesign
 
 failClosed:
   - unknown model ID or model not chosen for the season

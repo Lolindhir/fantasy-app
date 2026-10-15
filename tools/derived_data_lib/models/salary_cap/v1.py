@@ -39,14 +39,24 @@ def compute(salaries: Iterable[float], team_count: int) -> SalaryCapResult:
     if not values:
         raise ValueError("No salaries given for the Salary Cap calculation")
     top = sorted(values, reverse=True)[:top_n]
-    # Sequential accumulation in descending order like Measure-Object; built-in sum() is compensated
-    # for floats since Python 3.12 and would not be bit-identical for non-integral salaries.
-    total = 0.0
-    for value in top:
-        total += value
-    average = total / len(top)
     return SalaryCapResult(
-        cap=round_half_even(average * size * PARAMS["Factor"]),
+        cap=round_half_even(raw_cap(top, size)),
         top_n=top_n,
         players_considered=len(top),
     )
+
+
+def raw_cap(top_salaries: Iterable[float], relevant_team_size: int | None = None) -> float:
+    """Unrounded cap of the already selected top salaries (descending order, accumulated sequentially).
+
+    ``compute`` rounds this value; analyses that only need the raw figure call it directly.
+    """
+    size = PARAMS["SalaryRelevantTeamSize"] if relevant_team_size is None else relevant_team_size
+    # Sequential accumulation in descending order like Measure-Object; built-in sum() is compensated
+    # for floats since Python 3.12 and would not be bit-identical for non-integral salaries.
+    values = list(top_salaries)
+    total = 0.0
+    for value in values:
+        total += value
+    average = total / len(values)
+    return average * size * PARAMS["Factor"]

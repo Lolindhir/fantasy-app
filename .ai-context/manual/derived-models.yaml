@@ -28,6 +28,7 @@ architecture:
     - A model is a pure function of its explicit inputs plus its own PARAMS. It reads no files, no network, no clock, no environment and no league configuration.
     - Inputs that depend on the league (team count, scoring settings, rosters) are passed in by the caller, which reads them from canonical league facts.
     - Leagues never override PARAMS. Different behaviour is a different model version.
+    - A model may expose unrounded building blocks (salary-v1 curve_dollars and floored_average, salary-cap-v1 raw_cap) for analyses; the productive functions are defined through them and their results are unchanged. Analyses may pass an explicit exponent to curve_dollars to probe the curve; productive code never does.
     - Models contain no presentation, no consumer shape and no Players.json/League.json field names beyond the documented result keys.
 
 identity:
