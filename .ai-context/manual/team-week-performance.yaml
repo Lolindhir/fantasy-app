@@ -1,6 +1,6 @@
 schemaVersion: 1
 domain: team-week-performance
-status: validated-core-pending-controlled-materialization
+status: draft-validated-core-batch-under-review
 trackingIssue: 355
 
 purpose: >
@@ -18,7 +18,7 @@ physicalOwner:
     optimizer: tools/weekly_lineup_optimizer.py::maximize_lineup
     canonicalInputAdapter: tools/team_week_performance_sources.py::load_verified_week_inputs
     lineupEligibilityBridge: public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1
-  status: explicit-materializer-under-ci-validation-no-published-partition
+  status: draft-pr-993-week-04-and-05-only-no-main-publication
   delivery: >
     An App publisher/read-model projection must be separately implemented.
     No scheduled workflow or public/data output has been changed in this
@@ -98,8 +98,8 @@ inputs:
       finalized=True and concrete finality_evidence. The builder checks this
       explicit gate but does not itself verify the asserted source.
       Simply having non-null PlayerPoints or a week-N source file is NOT
-      finality. Historical 2024/2025 Matchups archives currently show
-      missing/unknown finality and require a separate backfill gate.
+      finality. Real 2024/2025 canonical league and NFL finality was verified
+      for all 17 scored weeks per season in the 2026-10-15 audit (#355).
   scoring:
     owner: Shared canonical fantasy scoring / league-scored weekly facts
     currentEvidence: canonical league matchup PlayerPoints and StarterPoints
@@ -174,8 +174,18 @@ recomputation:
     where available. Missing zero-point candidates are permitted, missing nonzero,
     scoring hash mismatch, stale zero or nonfinal PWF Actual fails closed.
     Use --require-pwf to enforce the dataset's presence for weeks such as 2026 W5.
-    The first generated historical week is CI-tested in a scratch directory;
-    no automatic scheduler or App consumer is part of this checkpoint.
+    The read-only --all-finalized batch mode discovers registered leagues from
+    data-meta and all seasons from canonical league manifests; finalized
+    fantasy-week bounds come from each season league.json and NFL week finality
+    remains an independent per-week gate. With --write, the entire selected
+    batch passes all source/optimizer/parity checks before any output is written;
+    a blocked finalized week aborts ALL batch writes and the CLI exits nonzero.
+    A missing PWF snapshot reports not-available rather than inventing parity;
+    an existing stale/non-final PWF snapshot is a real blocker. During a future
+    platform-wide clean rebuild (#471), upstream PWF must be rebuilt before
+    TeamWeekPerformance. This CLI does not orchestrate other derived products.
+    Initial 2026 W04/W05 snapshots exist only on Draft PR #993, not main.
+    No scheduled workflow or App publisher is part of this checkpoint.
   persistence: >
     Stable JSON key ordering, no generation-time timestamp, byte-identical
     semantic no-op. Recalculate and publish only after all input requirements
