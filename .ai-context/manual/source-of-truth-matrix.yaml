@@ -1142,6 +1142,11 @@ consumerReadClassification:
       reads:
         network: repository-infrastructure
       note: 'GitHub API access for repository operations; no fantasy base fact.'
+    tools/league_history_sources.py:
+      reads:
+        legacy:Standings: legacy-read-model-pending
+        legacy:Transactions_Manual: manual-league-rule
+      note: 'Input loader of the LeagueTransactions / LeagueDrafts products (ADR-057, Issue #999). Facts come from data-source/leagues and data-meta. Transactions_Manual.json is the hand-maintained overlay (moves to data-meta in step 5, coordinated with Issue #986). Standings.json is the one transitional non-canonical input (draft order for configured sources) and is removed with the league-standings product of Issue #987.'
     tools/league_source_data_lib/acquire.py:
       reads:
         network: source-layer-acquisition
