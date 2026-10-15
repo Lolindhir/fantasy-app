@@ -1116,15 +1116,6 @@ consumerReadClassification:
         legacy:Transactions: app-config-path-owner
         legacy:WeeklyRecaps: app-config-path-owner
       note: 'Resolves the generated-file paths from ConfigUtils for all generators.'
-    public/requests/utils/league/DraftHistoryUtils.psm1:
-      reads:
-        legacy:Transactions: app-read-model-chain
-      note: 'Draft history and Transactions form one coupled rebuild (ADR-026).'
-    public/requests/utils/league/DraftUtils.psm1:
-      reads:
-        legacy:Standings: app-read-model-chain
-        legacy:Transactions: app-read-model-chain
-      note: 'Standings and Transactions are chain inputs of the coupled draft rebuild. The league team list (Get-DraftLeagueLocal) comes from the canonical League Core source via Get-CanonicalCurrentTeamsForLeague (#347 I3-Rest); League.json is no longer read.'
     public/requests/utils/league/PastSeasonsIndexUtils.psm1:
       reads:
         legacy:PastSeasonsIndex: app-output-owner
@@ -1133,11 +1124,6 @@ consumerReadClassification:
       reads:
         legacy:Drafts: app-read-model-chain
       note: 'Resolves team DraftPicks from the published Drafts.json (ADR-006).'
-    public/requests/utils/league/TransactionDraftPickEnrichmentUtils.psm1:
-      reads:
-        legacy:Drafts: app-read-model-chain
-        legacy:Transactions: app-read-model-chain
-      note: 'Transactions and Drafts enrichment inside the coupled rebuild (ADR-026).'
     tools/build_workflow_health_snapshot.py:
       reads:
         network: repository-infrastructure

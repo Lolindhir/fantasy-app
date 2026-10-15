@@ -1836,6 +1836,7 @@ decisions:
       negative:
         - Until Issue #987 the draft order depends on the Standings placement through one explicit adapter.
         - The PowerShell implementation stays productive until the cutover step, so two implementations coexist and are held equal by the shadow test.
+        - Resolved 2026-10-15 (Robert, Issue #999 step 7): after the cutover the PowerShell rebuild (RequestTransactions.ps1, RequestDrafts.ps1 and the Draft/Transaction modules in public/requests/utils/league) was removed; ADR-026's dependency order now lives in tools/derived_data_lib/league_history.py and ADR-011/ADR-026 text that names the PowerShell entry points is historical.
 
   - id: ADR-058
     title: Past-season Schedule archives are regenerated from canonical NFL facts every week
