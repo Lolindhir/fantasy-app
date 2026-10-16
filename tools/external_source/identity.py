@@ -16,6 +16,7 @@ from data_roots import data_source_dir
 from nfl_season_context import resolve_season_for_date
 
 from .registry import dataset_dir
+from .snapshot_discovery import discover_snapshots
 
 IDENTITY_FILE_NAME = "identity.json"
 SCHEMA_VERSION = 1
@@ -98,9 +99,9 @@ def build_identity(repo_root: Path, dataset: dict[str, Any], index: MappingIndex
     provider_key = dataset["identity"]["providerKey"]
     column = dataset["identity"]["column"]
     entries: dict[tuple[int, str, str], dict[str, Any]] = {}
-    for snapshot in sorted(p for p in base.iterdir() if p.is_dir()):
-        season = resolve_season_for_date(repo_root, snapshot.name)
-        for provider_id, asset_type in snapshot_rows(snapshot, column):
+    for snapshot in discover_snapshots(base):
+        season = resolve_season_for_date(repo_root, snapshot.day.isoformat())
+        for provider_id, asset_type in snapshot_rows(snapshot.directory, column):
             key = (season, provider_id, asset_type)
             if key not in entries:
                 entries[key] = resolve_entry(provider_key, provider_id, asset_type, season, index)

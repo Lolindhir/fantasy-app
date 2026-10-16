@@ -8,10 +8,13 @@ purpose: >
   later in the same registry with domain media; this contract only keeps the structure open for them.
 
 state: >
-  Foundation (Issue #988 step 3.0): registry, loader, validator, identity index and the shared HTTP
-  helper exist. No snapshot has moved yet; acquisition and snapshots still live in
-  fantasy-management/_ai/scripts and fantasy-management/sources and move provider by provider
-  (steps 3.1 to 3.6). Until a provider has moved, its registry entry describes the target.
+  Issue #988 step 3.0-3.7 was completed on main: six external provider fetchers, their
+  normalized ranking/ADP/projection snapshots, identity indexes, raw-latest provenance,
+  retrieval resilience and Sleeper Trending latest now live in data-source with producer
+  modules under tools/external_source. Step 4A.1 adds a read-only common discovery for
+  legacy daily and future append-only intraday ranking snapshots. The append-only writer,
+  Sleeper durable activity archive, schema adapters and shared market-observations
+  derived product are planned separately in steps 4A.2-4D and do not yet exist.
 
 layerPosition: >
   Level 1 of the six-level target (global facts and market observations). The observations are global
@@ -43,7 +46,8 @@ registry:
 
 paths:
   raw: "data-source/providers/<provider>/<dataset>/  # raw-latest.json, provider metadata, source audit"
-  snapshots: data-source/market/<kind>/<provider>/<format>/snapshots/<YYYY-MM-DD>/{ranking.csv,metadata.json}
+  snapshots: "data-source/market/<kind>/<provider>/<format>/snapshots/<YYYY-MM-DD>/{ranking.csv,metadata.json} (existing legacy)"
+  plannedIntradaySnapshots: "data-source/market/<kind>/<provider>/<format>/snapshots/<YYYY-MM-DD>/<HHmmssZ-hash8>/{ranking.csv,metadata.json} (reader-supported in 4A.1; writer only in 4A.2)"
   latest: data-source/market/<kind>/<provider>/<format>/latest.json
   identity: data-source/market/<kind>/<provider>/<format>/identity.json
   status: data-source/market/_status/<provider>.json
@@ -51,6 +55,14 @@ paths:
   rosterActivity: "Sleeper Trending is one combined document (add and drop) and keeps a single latest.json at data-source/market/roster-activity/sleeper/latest.json with raw evidence at data-source/providers/sleeper/trending/ (no snapshot folders, so no identity.json yet)."
 
 snapshots:
+  discovery: tools/external_source/snapshot_discovery.py
+  discoverySemantics: >
+    Enumerate both historical daily folders and future UTC intraday folders by actual
+    ranking/metadata paths. Order by date and authenticated observation instant, with
+    stable path-key tiebreak. For old folders without a reliable fetched_at metadata
+    value, observation instant remains unknown; the date directory is not an invented
+    timestamp. Provider source-updated time is separate from acquisition observation
+    time. FM movement historical baselines and Source identity indexes reuse discovery.
   rules:
     - A normalized provider snapshot is immutable once written and keeps the provider's view (provider ID, provider rank, values, raw stats).
     - A new snapshot folder is written only on a semantic change of the normalized ranking.
