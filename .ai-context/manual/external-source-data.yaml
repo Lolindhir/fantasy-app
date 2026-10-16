@@ -87,6 +87,20 @@ readOnlyVersionedAdapters:
     cbs-sports: "schema versions 1, 2"
   combinedJsonProvider:
     sleeper: "roster-activity add/drop latest schema version 1; no invented historical archive"
+  neutralRowAdapter:
+    implementations:
+      - tools/external_source/observation_adapter.py::normalize_ranked_observations
+      - tools/external_source/observation_adapter.py::normalize_sleeper_activity_observations
+    status: "4A.4 read-only normalized row contract, not yet a persisted 4B product"
+    identity: "DatasetID + SnapshotKey + SourceRowNumber + AssetType + ProviderPlayerID; CanonicalPlayerID nullable and resolved by Source Identity mapping owner"
+    fields: "SourceSchemaVersion, NFLObservationSeason, ProviderTeamCount, IdentityStatus/Method and attributed ProviderValues; source rank, ADP and points remain provider-specific"
+    exceptions: >
+      Legacy actual_league_team_count is historical consumer context, excluded
+      from global neutral observations. providerTeamCount is read from registry
+      provider format only. Draft picks are not-a-player with no canonical
+      identity; missing provider keys are no-provider-key. Sleeper not_listed
+      remains null rank/count; latest comparison is never canonically copied.
+    repeatability: "Identical canonical evidence + mappings => byte-/semantically equal in-memory output; no branch write"
   semantics: >
     Validate recorded CSV ranking SHA-256, normalized rank identity, provider
     required columns and schema version. Preserve original provider attribution
