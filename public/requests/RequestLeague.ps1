@@ -121,10 +121,9 @@ function Ensure-PreviousFantasyGameContextHistory {
     $leagueSourceFile = Join-Path $seasonSourceDir "league.json"
     $matchupDirectory = Join-Path $seasonSourceDir "matchups"
     $scheduleFile = Join-Path $config.PastSeasonsDir "Schedule_$historicalSeason.json"
-    $playersFile = Join-Path $config.PastSeasonsDir "Players_$historicalSeason.json"
     $weeklyRosterDirectory = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "nfl\weekly-rosters\$historicalSeason"
 
-    if (-not (Test-Path $leagueSourceFile) -or -not (Test-Path $matchupDirectory) -or -not (Test-Path $scheduleFile) -or -not (Test-Path $playersFile)) {
+    if (-not (Test-Path $leagueSourceFile) -or -not (Test-Path $matchupDirectory) -or -not (Test-Path $scheduleFile) -or -not (Test-Path $weeklyRosterDirectory)) {
         Write-Warning "Historical FantasyGameContext $historicalSeason is not materialized because required source evidence is incomplete."
         return
     }
@@ -136,7 +135,6 @@ function Ensure-PreviousFantasyGameContextHistory {
         -LeagueSourceFile $leagueSourceFile `
         -MatchupDirectory $matchupDirectory `
         -ScheduleFile $scheduleFile `
-        -HistoricalPlayersFile $playersFile `
         -WeeklyRosterDirectory $weeklyRosterDirectory
 
     if (-not (Test-Path $historyDir)) {
