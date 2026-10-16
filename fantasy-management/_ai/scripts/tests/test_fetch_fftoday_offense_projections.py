@@ -11,6 +11,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import fetch_fftoday_offense_projections as module
+import fftoday_season_gate as gate
 import http_fetch_resilience as http
 
 
@@ -160,6 +161,71 @@ class FFTodayOffenseTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(module.ProjectionError, "status=403"):
                 module.fetch_html("https://example.test")
+
+    def test_cloudflare_challenge_403_is_not_retried_or_bypassed(self):
+        error = urllib.error.HTTPError(
+            "https://example.test",
+            403,
+            "Forbidden",
+            FakeHeaders(),
+            io.BytesIO(b"<!DOCTYPE html><title>Just a moment...</title>"),
+        )
+        with (
+            patch.object(http.urllib.request, "urlopen", side_effect=[error]) as urlopen,
+            patch.object(http.time, "sleep") as sleep,
+        ):
+            with self.assertRaisesRegex(http.HttpFetchBlockedError, "access challenge") as raised:
+                http.fetch_text_with_retry(
+                    "https://example.test",
+                    source_name="FFToday",
+                    retry_delays=(1.0, 2.0, 3.0),
+                )
+        self.assertIn("Just a moment", str(raised.exception))
+        self.assertEqual(1, urlopen.call_count)
+        sleep.assert_not_called()
+
+    def test_challenge_header_403_is_not_retried(self):
+        error = urllib.error.HTTPError(
+            "https://example.test",
+            403,
+            "Forbidden",
+            FakeHeaders({"cf-mitigated": "challenge"}),
+            io.BytesIO(b""),
+        )
+        with patch.object(http.urllib.request, "urlopen", side_effect=[error]) as urlopen:
+            with self.assertRaises(http.HttpFetchBlockedError):
+                http.fetch_text_with_retry("https://example.test", retry_delays=(0.0,))
+        self.assertEqual(1, urlopen.call_count)
+
+    def test_season_gate_only_allows_the_preseason_phase(self):
+        when = datetime(2026, 8, 10, tzinfo=timezone.utc)
+        for phase, expect_skip in (
+            ("pre_regular_season", False),
+            ("regular_season", True),
+            ("postseason", True),
+            ("post_regular_season", True),
+        ):
+            with patch.object(gate, "resolve_nfl_season_context", return_value={"phase": phase}):
+                reason = gate.skip_reason(Path("."), 2026, when)
+            self.assertEqual(expect_skip, reason is not None, phase)
+
+    def test_season_gate_skips_a_season_without_canonical_schedule(self):
+        when = datetime(2026, 8, 10, tzinfo=timezone.utc)
+        with patch.object(
+            gate,
+            "resolve_nfl_season_context",
+            side_effect=gate.NflSeasonContextError("missing"),
+        ):
+            self.assertIn("no canonical NFL schedule", gate.skip_reason(Path("."), 2027, when))
+
+    def test_main_skips_without_request_outside_preseason(self):
+        with (
+            patch.object(module, "skip_reason", return_value="phase regular_season"),
+            patch.object(module, "fetch_all_pages") as fetch_all,
+            patch("sys.argv", ["fetch_fftoday_offense_projections.py", "--skip-unchanged"]),
+        ):
+            self.assertEqual(0, module.main())
+        fetch_all.assert_not_called()
 
 
 if __name__ == "__main__":

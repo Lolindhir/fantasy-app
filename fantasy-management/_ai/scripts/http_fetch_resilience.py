@@ -18,8 +18,27 @@ MAX_ERROR_BODY_BYTES = 512
 MAX_ERROR_EXCERPT_CHARS = 300
 
 
+CHALLENGE_BODY_MARKERS = ("just a moment...", "cf-browser-verification", "challenge-platform")
+
+
 class HttpFetchError(RuntimeError):
     """Raised when a bounded external HTTP fetch cannot complete safely."""
+
+
+class HttpFetchBlockedError(HttpFetchError):
+    """Raised when the source answers with an access challenge; never retried or bypassed."""
+
+
+def _is_challenge_response(headers: Any, excerpt: str) -> bool:
+    """True for a bot/access challenge (for example Cloudflare), which retrying cannot resolve."""
+
+    mitigated = ""
+    if headers:
+        mitigated = str(headers.get("cf-mitigated") or "").strip().lower()
+    if mitigated == "challenge":
+        return True
+    lowered = excerpt.lower()
+    return any(marker in lowered for marker in CHALLENGE_BODY_MARKERS)
 
 
 def _retry_after_seconds(headers: Any) -> float | None:
@@ -96,13 +115,20 @@ def fetch_text_with_retry(
                     "content_type": response.headers.get("Content-Type") or "",
                 }
         except urllib.error.HTTPError as exc:
+            excerpt = _error_excerpt(exc) if exc.code in (401, 403) else ""
+            if exc.code == 403 and _is_challenge_response(exc.headers, excerpt):
+                exc.close()
+                raise HttpFetchBlockedError(
+                    f"{source_name} fetch blocked by an access challenge (not retried, not bypassed): "
+                    f"status={exc.code} reason={exc.reason} body_excerpt={excerpt!r}"
+                ) from exc
             can_retry = exc.code in retryable_http_status and attempt_index < len(retry_delays)
             if can_retry:
                 delay = _retry_delay(attempt_index, retry_delays, headers=exc.headers)
                 exc.close()
                 time.sleep(delay)
                 continue
-            excerpt = _error_excerpt(exc)
+            excerpt = excerpt or _error_excerpt(exc)
             detail = f"status={exc.code} reason={exc.reason}"
             if excerpt:
                 detail += f" body_excerpt={excerpt!r}"

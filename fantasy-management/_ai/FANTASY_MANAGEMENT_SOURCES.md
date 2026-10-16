@@ -228,6 +228,8 @@ Operational rules:
 - run source-identity, schema, completeness, freshness and plausibility validation only on a successful response and never relax those checks merely because retries were needed;
 - add source-specific pacing when repeated requests or pagination make provider throttling likely;
 - retries are resilience, not access-control circumvention: do not automate challenge solving, authentication bypasses or other mechanisms that evade a provider's access restrictions;
+- a 403 that carries an access challenge (Cloudflare `Just a moment...` body or `cf-mitigated: challenge` header) is not transient: it is raised as `HttpFetchBlockedError` without retries (Issue #1045);
+- a seasonal source (FFToday publishes preseason projections only) makes no request outside its active NFL phase, taken from the canonical season context (`fftoday_season_gate.py`), and ends successfully with a `skipped` message so the daily pipeline stays green;
 - when this contract is added or changed, audit existing automated fetchers separately for implementation drift instead of assuming documentation alone makes them compliant.
 
 ### External-ranking hierarchy

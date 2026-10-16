@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin
 
+from fftoday_season_gate import skip_reason
 from http_fetch_resilience import HttpFetchError, fetch_text_with_retry
 
 SOURCE_ID = "fftoday"
@@ -335,6 +336,10 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     fetched_at = datetime.now(timezone.utc)
+    reason = skip_reason(Path(args.repo_root).resolve(), args.season, fetched_at)
+    if reason:
+        print(f"[fftoday-projections:offense] skipped: {reason}")
+        return 0
     for position in [value.strip().upper() for value in args.positions.split(",") if value.strip()]:
         rows, diagnostics, pages, headers = fetch_all_pages(position, args.season, fetched_at)
         if args.dry_run:
