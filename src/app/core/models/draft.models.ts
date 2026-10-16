@@ -7,7 +7,6 @@ export interface RawDraft {
   DraftInstance: number;
   DisplayDraftType: string;
   DraftNo: number;
-  SleeperDraftID: string | null;
   SleeperStatus: string | null;
   SleeperStartTime: number | null | undefined;
   DraftStartTimeUtc: string | null | undefined;

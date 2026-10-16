@@ -96,7 +96,7 @@ class SlimContractTests(unittest.TestCase):
             for name in publish.DRAFT_DROPPED + ("LeagueID",):
                 self.assertNotIn(name, draft)
             self.assertNotIn("Teams", draft["Settings"])
-            self.assertIn("SleeperDraftID", draft)  # stays until Fantasy Management stops reading it
+            self.assertNotIn("SleeperDraftID", draft)
             for pick in draft["Picks"]:
                 for name in publish.PICK_DROPPED:
                     self.assertNotIn(name, pick)

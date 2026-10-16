@@ -38,8 +38,6 @@ from league_history_sources import load_inputs  # noqa: E402
 # Slim App contract (Issue #999 step 6, field list approved by Robert 2026-10-15). Fields the products carry but
 # the App contract omits are dropped by _slim; every other field must have a position here (see _ordered).
 # Transaction.Status stays: Angular (mergeCompletedRawTransactions) filters on it.
-# Draft-level SleeperDraftID stays only while Fantasy Management reads it (resolve_active_fa_draft in the FA
-# board); remove it from DRAFT_FIELD_ORDER as soon as FM no longer reads it (league-history.yaml, Issue #999).
 TRANSACTION_PICK_ORDER = (
     "DraftType", "DraftKey", "Season", "Round", "OriginalOwnerRosterID", "PreviousOwnerRosterID",
     "NewOwnerRosterID", "PickKey", "DisplayPick", "PlayerID", "PlayerName",
@@ -50,10 +48,10 @@ TRANSACTION_PICK_DROPPED = (
 )
 DRAFT_FIELD_ORDER = (
     "DraftKey", "DisplayDraftKey", "DisplayAbrDraftKey", "Season", "DraftType", "DraftInstance",
-    "DisplayDraftType", "DraftNo", "SleeperDraftID", "SleeperStatus", "SleeperStartTime", "DraftStartTimeUtc",
+    "DisplayDraftType", "DraftNo", "SleeperStatus", "SleeperStartTime", "DraftStartTimeUtc",
     "Status", "DisplayStatus", "Settings", "Picks",
 )
-DRAFT_DROPPED = ("DraftCode", "DraftSource", "PickSource", "OrderSource", "OrderMode")
+DRAFT_DROPPED = ("DraftCode", "DraftSource", "PickSource", "OrderSource", "OrderMode", "SleeperDraftID")
 DRAFT_SETTINGS_DROPPED = ("Teams",)
 PICK_FIELD_ORDER = (
     "PickKey", "DraftKey", "Season", "DraftType", "DraftInstance", "Round", "PositionInRound", "OverallPick",
