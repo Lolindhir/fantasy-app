@@ -100,6 +100,11 @@ def load_ranked_evidence(dataset: Mapping[str, Any], snapshot: Snapshot) -> Rank
         raise ObservationAdapterError(f"Not a registered ranked Source adapter: {provider}")
     metadata = _read_object(snapshot.metadata_file)
     version = _version(metadata, RANKED_VERSIONS[provider], snapshot.metadata_file)
+    expected_ranking_id = str(dataset["id"]).split(".", 2)[2]
+    if metadata.get("ranking_id") != expected_ranking_id:
+        raise ObservationAdapterError(
+            f"Ranked Source dataset identity mismatch: {snapshot.metadata_file}"
+        )
     info = metadata.get("snapshot")
     info = info if isinstance(info, dict) else metadata
 
