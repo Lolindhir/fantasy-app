@@ -18,7 +18,7 @@ physicalOwner:
     optimizer: tools/weekly_lineup_optimizer.py::maximize_lineup
     canonicalInputAdapter: tools/team_week_performance_sources.py::load_verified_week_inputs
     lineupEligibilityBridge: public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1
-  status: draft-pr-993-week-04-and-05-only-no-main-publication
+  status: draft-pr-993-week-03-04-05-only-no-main-publication
   delivery: >
     An App publisher/read-model projection must be separately implemented.
     No scheduled workflow or public/data output has been changed in this
@@ -184,7 +184,12 @@ recomputation:
     an existing stale/non-final PWF snapshot is a real blocker. During a future
     platform-wide clean rebuild (#471), upstream PWF must be rebuilt before
     TeamWeekPerformance. This CLI does not orchestrate other derived products.
-    Initial 2026 W04/W05 snapshots exist only on Draft PR #993, not main.
+    Finalized 2026 W03/W04/W05 snapshots exist only on Draft PR #993, not main.
+    The W03 snapshot was reconstructed after #697 restored final PlayerWeekFantasy
+    Actuals; its strict 202/202 player scoring parity was checked and the
+    generator's exact bytes were persisted without manual modifications.
+    All 39 canonically scored weeks passed a read-only historical audit;
+    the cross-product all-derived rebuild is still owned by #471.
     No scheduled workflow or App publisher is part of this checkpoint.
   persistence: >
     Stable JSON key ordering, no generation-time timestamp, byte-identical
