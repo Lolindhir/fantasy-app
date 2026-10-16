@@ -61,8 +61,6 @@ function Get-Config {
     $WeeklyRecapsFileHistoricalPrefix = Join-Path $WeeklyRecapsArchiveDir "WeeklyRecaps_"
     $WeeklyRecapsFileHistoricalSuffix = ".json"
 
-    $PastSeasonPlayersFileHistoricalPrefix = Join-Path $PastSeasonsDir "Players_"
-    $PastSeasonPlayersFileHistoricalSuffix = ".json"
     $PastSeasonScheduleFileHistoricalPrefix = Join-Path $PastSeasonsDir "Schedule_"
     $PastSeasonScheduleFileHistoricalSuffix = ".json"
     $PastSeasonStandingsFileHistoricalPrefix = Join-Path $PastSeasonsDir "Standings_"
@@ -93,12 +91,6 @@ function Get-Config {
             Key = "WeeklyRecaps"
             Directory = $WeeklyRecapsArchiveDir
             Prefix = "WeeklyRecaps_"
-            Suffix = ".json"
-        },
-        @{
-            Key = "Players"
-            Directory = $PastSeasonsDir
-            Prefix = "Players_"
             Suffix = ".json"
         },
         @{
@@ -208,8 +200,6 @@ function Get-Config {
 
         PastSeasonsDir                              = $PastSeasonsDir
         PastSeasonsIndexFile                        = $PastSeasonsIndexFile
-        PastSeasonPlayersFileHistoricalPrefix       = $PastSeasonPlayersFileHistoricalPrefix
-        PastSeasonPlayersFileHistoricalSuffix       = $PastSeasonPlayersFileHistoricalSuffix
         PastSeasonScheduleFileHistoricalPrefix      = $PastSeasonScheduleFileHistoricalPrefix
         PastSeasonScheduleFileHistoricalSuffix      = $PastSeasonScheduleFileHistoricalSuffix
         PastSeasonStandingsFileHistoricalPrefix     = $PastSeasonStandingsFileHistoricalPrefix

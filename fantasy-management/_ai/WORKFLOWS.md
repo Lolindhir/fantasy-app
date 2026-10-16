@@ -231,7 +231,7 @@ Default: hold one kicker.
 
 The Kicker engine can compare kickers. The Weekly Lineup + Waiver workflow must decide whether the roster cost of the move is justified.
 
-The concrete timing, Waiver-window cadence, late-injury rechecks and any automatic orchestration remain open work tracked in GitHub Issues and require separate approval before workflow-file changes.
+The concrete timing, Waiver-window cadence, late-injury rechecks and any automatic orchestration remain open work tracked in GitHub Issues. Once a sufficiently specified work package is authorized, routine in-scope workflow-file changes do not need an extra approval; new writers or persistence effects follow the root elevated/critical risk rules.
 
 ## Podcast workflow
 
@@ -338,7 +338,7 @@ Use owner registry, owner profiles, negotiation history and league-format notes 
 
 ## External signal refresh workflow
 
-1. Read `fantasy-management/sources/external-signals/README.md`, the source-specific README and machine-readable analysis metadata.
+1. Read `fantasy-management/sources/external-signals/README.md`, the source-specific README (shared providers: `data-source/providers/<provider>/<dataset>/`) and machine-readable analysis metadata.
 2. Fetch only the provider's documented public API with the source-specific query configuration.
 3. Keep the global source snapshot independent of `League.json`; league ownership and Mighty-Giants relevance belong to a downstream materialization step.
 4. Fetch and validate every required activity/profile payload before publishing any part of the new source state.
@@ -366,7 +366,7 @@ league/source refreshes
 
 Ranking and signal refreshes should finish shortly before the scheduled monitoring run so monitoring reads the newest successful inputs. Keep independent source refreshes failure-isolated, preserve their last good states and let the monitoring freshness gate decide whether a missing or stale required input blocks, limits or merely annotates the run.
 
-Actual GitHub Actions schedules, dependencies and activation require a separate explicit approval. Documentation, scripts, tests and manual baselines may be prepared before that workflow approval.
+GitHub Actions schedules and dependency changes follow the root scope-based authorization and risk rules. Standard in-scope changes are included in an explicitly authorized delivery package; newly activated writers, expanded persistence or other elevated/critical effects need the relevant concrete approval. Qualitative manual baseline persistence remains separately controlled.
 
 ### Season-aware Monitoring Activity
 

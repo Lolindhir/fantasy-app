@@ -2,13 +2,13 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 999
 architectureDecision: ADR-057
-implementationState: steps 2 and 3 of Issue #999 implemented (LeagueTransactions and LeagueDrafts products in tools/derived_data_lib/league_transactions.py, league_drafts.py, league_history.py, tools/league_history_sources.py, products league-transactions and league-drafts in tools/derived_data.py, pick-result write-back included); step 4 adds the consumer generator tools/league_history_app_publish.py with the exact shadow comparison (command compare) against public/data; step 5b cutover: its write command now produces Transactions.json, Drafts.json and past_seasons/Transactions|Drafts in update-transactions, update-drafts and League Live (RequestLeague.ps1 only reads Drafts.json); steps 5c, 6 and 7 are open
+implementationState: steps 2 and 3 of Issue #999 implemented (LeagueTransactions and LeagueDrafts products in tools/derived_data_lib/league_transactions.py, league_drafts.py, league_history.py, tools/league_history_sources.py, products league-transactions and league-drafts in tools/derived_data.py, pick-result write-back included); step 4 adds the consumer generator tools/league_history_app_publish.py with the exact shadow comparison (command compare) against public/data; step 5b cutover: its write command now produces Transactions.json, Drafts.json and past_seasons/Transactions|Drafts in update-transactions, update-drafts and League Live (RequestLeague.ps1 only reads Drafts.json); steps 5c and 6 are done; step 7 removed the PowerShell rebuild modules (listed in purpose, all deleted) together with RequestTransactions.ps1, RequestDrafts.ps1 and their regression tests; the Python ports keep the old function names in docstrings as provenance
 
 purpose: >
   Define the Shared Derived Data products LeagueTransactions and LeagueDrafts: the
   complete, reproducible history of completed league transactions and of all league
-  drafts (completed, current and open future) per league and season. They replace the
-  PowerShell rebuild in public/requests/utils/league (TransactionUtils,
+  drafts (completed, current and open future) per league and season. They replaced the
+  PowerShell rebuild (removed in step 7) in public/requests/utils/league (TransactionUtils,
   CanonicalTransactionUtils, TransactionDraftPickEnrichmentUtils,
   HistoricalTransactionDraftPickIdentityUtils, DraftUtils, DraftOrderAwareUtils,
   DraftHistoryUtils, DraftPickResultUtils, DraftCompareUtils, DraftHistoryEmptyDefinitionsFix,
@@ -30,14 +30,15 @@ architecture:
   rootConstant: data_derived_dir() in tools/data_roots.py and Get-DataDerivedRoot in ConfigUtils.psm1 (#788); no module spells the root name out.
   rules:
     - Both products are consumer-neutral. The App, Fantasy Operations and Fantasy Management read the same files; consumer shapes are produced by consumer generators.
-    - public/data/Transactions.json, Drafts.json and past_seasons/Transactions and Drafts keep their current contract (unchanged by the step 5b cutover) and are produced from these products by tools/league_history_app_publish.py write. Any App contract change is a separate step (step 6) that needs Robert's approval of the field list.
+    - 'public/data/Transactions.json, Drafts.json and past_seasons/Transactions and Drafts are produced from these products by tools/league_history_app_publish.py write. Since step 6 (field list approved by Robert 2026-10-15) the App contract is slim, defined by the *_ORDER and *_DROPPED tuples of that generator, and past Drafts files are always a list. Dropped, because the products carry them but no consumer reads them - transactions: pick DraftCode, DraftSource, PickStatus, SleeperDraftID, DraftInstance, PositionInRound, OverallPick, SleeperPickNo (pick details live in Drafts.json, join via PickKey); drafts: LeagueID, DraftCode, DraftSource, PickSource, OrderSource, OrderMode, Settings.Teams; picks: LeagueID, DraftCode, TradeSource, WasTraded; TradeHistory entries: Source, DraftSource. Kept on purpose - Transaction Status (the product holds failed transactions too and two consumers filter on it: Angular mergeCompletedRawTransactions and the Fantasy Management salary simulation; removal needs the delivery to drop failed transactions and the FM change approved), Transaction Source and Week, Draft DraftInstance, Pick IsCurrentlyTraded (read by drafts.ts) and TradeHistory (planned use).'
+    - 'Open removal: the Draft-level SleeperDraftID is kept in Drafts.json only because Fantasy Management reads it (resolve_active_fa_draft in the FA board). Remove it from DRAFT_FIELD_ORDER in tools/league_history_app_publish.py as soon as Fantasy Management no longer reads it (change on the FM side needs Robert''s go, ADR-023; tracked in Issue #999).'
     - Presentation belongs to the consumer generator, not the product - DisplayStatus, DisplayDraftKey, DisplayAbrDraftKey, DisplayDraftType and DisplayPick. Status (technical) stays in the product. This resolves Issue #183 point 2 structurally.
     - No generated archive (public/data/**, past_seasons/**) is an input. The only temporary exception is listed under transitionalInputs and has a removal condition.
     - Draft logic is the existing logic. Linear/snake order, trade application, pick results, TradeHistory, UpcomingDraftCount and ADR-021 stay as documented in domain.yaml, data-sources.yaml, draft-identity.yaml and decisions.yaml; this contract only moves where they are computed.
     - Mighty-Giants-specific interpretation (Draft Capital value, pick strength, roster fit) stays consumer insight and never enters the products.
 
 identity:
-  transactionsFile: CanonicalLeagueID + Season; entry identity is TransactionID (Sleeper transaction ID for provider rows, the ID rule of TransactionUtils.psm1::Get-ManualTransactionID for manual-only rows).
+  transactionsFile: CanonicalLeagueID + Season; entry identity is TransactionID (Sleeper transaction ID for provider rows, the ID rule of the former TransactionUtils.psm1::Get-ManualTransactionID, now in league_transactions.py for manual-only rows).
   draftsFile: CanonicalLeagueID + Season; entry identity is DraftKey (<Season>_<DraftCode>), pick identity is PickKey (<DraftKey>_R<Round>_OO<OriginalOwnerRosterID>) exactly as in draft-identity.yaml.
   seasonScope:
     transactions: every season in data-source/leagues/<CanonicalLeagueID>/manifest.json (completed seasons and the current season).
@@ -46,7 +47,7 @@ identity:
       holds a configured open draft. The set of open future seasons is derived from
       data-meta Drafts.UpcomingDraftCount per draft type and the completion state of the
       canonical drafts (UpcomingDraftCountMode PerDraftType), exactly as
-      DraftOrderAwareUtils.psm1::Get-CurrentAndOpenDraftDefinitionsOrderAware does today.
+      the former DraftOrderAwareUtils.psm1::Get-CurrentAndOpenDraftDefinitionsOrderAware did.
       A future season file therefore exists even though the season is not in the manifest.
   providerBoundary: >
     Rosters are addressed by the league-internal RosterID (the Sleeper roster ID, equal to
@@ -80,7 +81,7 @@ contract:
     pick result of the file, resolved to the CanonicalPlayerID valid for the file's season
     through data-source/nfl/identities. null means no unique resolution (missing, never
     guessed). The map is additive: no existing field is removed or renamed.
-  transactionOrdering: TransactionUtils.psm1::Get-SortedTransactions (newest first) and the pick sort of Merge-CanonicalTransactionsWithManual are kept; keys inside objects have a fixed order so equal content is byte-equal.
+  transactionOrdering: league_transactions.py (ported from the former TransactionUtils.psm1::Get-SortedTransactions) (newest first) and the pick sort of Merge-CanonicalTransactionsWithManual are kept; keys inside objects have a fixed order so equal content is byte-equal.
   draftsRootShape: |
     {
       "ContractVersion": 1,

@@ -228,6 +228,8 @@ Operational rules:
 - run source-identity, schema, completeness, freshness and plausibility validation only on a successful response and never relax those checks merely because retries were needed;
 - add source-specific pacing when repeated requests or pagination make provider throttling likely;
 - retries are resilience, not access-control circumvention: do not automate challenge solving, authentication bypasses or other mechanisms that evade a provider's access restrictions;
+- a 403 that carries an access challenge (Cloudflare `Just a moment...` body or `cf-mitigated: challenge` header) is not transient: it is raised as `HttpFetchBlockedError` without retries (Issue #1045);
+- a seasonal source (FFToday publishes preseason projections only) makes no request outside its active NFL phase, taken from the canonical season context (`fftoday_season_gate.py`), and ends successfully with a `skipped` message so the daily pipeline stays green;
 - when this contract is added or changed, audit existing automated fetchers separately for implementation drift instead of assuming documentation alone makes them compliant.
 
 ### External-ranking hierarchy
@@ -255,10 +257,11 @@ The canonical hierarchy and common rules are documented in:
 
 ### External-signal hierarchy
 
-External activities and events that do not evaluate player or asset quality belong under:
+External activities and events that do not evaluate player or asset quality are shared Source Evidence (ADR-060). The Sleeper roster-activity signal moved to the shared source layer:
 
 ```text
-fantasy-management/sources/external-signals/<signal_kind>/<provider>/
+data-source/market/roster-activity/<provider>/   normalized latest.json
+data-source/providers/<provider>/<dataset>/      raw-latest.json, README, SOURCE_AUDIT, analysis-metadata
 ```
 
 The current active signal kind is:
@@ -269,7 +272,7 @@ Source signals remain provider-global. In the productive external-signal relevan
 
 The canonical hierarchy and common rules are documented in:
 
-`fantasy-management/sources/external-signals/README.md`
+`fantasy-management/sources/external-signals/README.md` (generic rules) and `.ai-context/manual/external-source-data.yaml` (contract)
 
 ### FantasyPros expert-consensus snapshots
 
@@ -315,27 +318,27 @@ FantasyPros ECR is expert consensus. It is not ADP, a projection or league-speci
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/market-value/fantasycalc/`
+`data-source/market/market-value/fantasycalc/` (snapshots and `latest.json`), raw responses and documentation under `data-source/providers/fantasycalc/`, heartbeat `data-source/market/_status/fantasycalc.json` (shared source layer, ADR-060)
 
 Available ranking IDs:
 
 - `dynasty-superflex-ppr-8-team`: observed long-term trade-market values including source draft-pick assets
 - `redraft-superflex-ppr-8-team`: observed current-season trade-market values
 
-FantasyCalc is queried with two quarterbacks, full PPR and the nearest supported eight-team proxy for the actual six-team league. No TEP parameter is used because two fixed TE starters are not equivalent to Tight-End-Premium scoring.
+FantasyCalc is queried with two quarterbacks, full PPR and the provider's nearest supported eight-team parameter. New snapshots carry no league team count. No TEP parameter is used because two fixed TE starters are not equivalent to Tight-End-Premium scoring.
 
 For each ranking, use `latest.json` to resolve the newest normalized snapshot and current `raw-latest.json`. Historical snapshots contain only `ranking.csv` and `metadata.json`; the complete API payload is retained only as the latest Raw response.
 
 Refresh both formats with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py --skip-unchanged
+python -m tools.external_source.fantasycalc --skip-unchanged
 ```
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-rankings/market-value/fantasycalc/README.md`
-- `fantasy-management/sources/external-rankings/market-value/fantasycalc/analysis-metadata.json`
+- `data-source/providers/fantasycalc/README.md`
+- `data-source/providers/fantasycalc/analysis-metadata.json`
 
 Operational rules:
 
@@ -495,7 +498,7 @@ Sleeper Trending Players is the active automated external roster-activity signal
 
 Stored source area:
 
-`fantasy-management/sources/external-signals/roster-activity/sleeper/`
+`data-source/market/roster-activity/sleeper/` (normalized `latest.json`) and `data-source/providers/sleeper/trending/` (raw evidence and documentation). The freshness heartbeat is `data-source/market/_status/sleeper.json`.
 
 Default signal configuration:
 
@@ -508,16 +511,16 @@ Default signal configuration:
 Refresh both activity types with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_sleeper_trending.py
+python -m tools.external_source.sleeper_trending
 ```
 
 The first successful run creates `raw-latest.json` and `latest.json` as a silent baseline. Later compatible runs compare source membership, ranks and counts with the previous successful state.
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-signals/roster-activity/sleeper/README.md`
-- `fantasy-management/sources/external-signals/roster-activity/sleeper/SOURCE_AUDIT.md`
-- `fantasy-management/sources/external-signals/roster-activity/sleeper/analysis-metadata.json`
+- `data-source/providers/sleeper/trending/README.md`
+- `data-source/providers/sleeper/trending/SOURCE_AUDIT.md`
+- `data-source/providers/sleeper/trending/analysis-metadata.json`
 
 Operational rules:
 

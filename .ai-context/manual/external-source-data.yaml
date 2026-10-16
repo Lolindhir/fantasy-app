@@ -1,0 +1,94 @@
+schemaVersion: 1
+status: active
+
+purpose: >
+  Canonical contract for the shared external market, ranking, ADP, projection and roster-activity
+  sources (FantasyPros, FantasyCalc, Fantasy Football Calculator, FFToday, CBS Sports, Sleeper
+  Trending) as Source Evidence under data-source (ADR-060, Issue #988). Podcasts and articles follow
+  later in the same registry with domain media; this contract only keeps the structure open for them.
+
+state: >
+  Foundation (Issue #988 step 3.0): registry, loader, validator, identity index and the shared HTTP
+  helper exist. No snapshot has moved yet; acquisition and snapshots still live in
+  fantasy-management/_ai/scripts and fantasy-management/sources and move provider by provider
+  (steps 3.1 to 3.6). Until a provider has moved, its registry entry describes the target.
+
+layerPosition: >
+  Level 1 of the six-level target (global facts and market observations). The observations are global
+  and attributed: they record what a named provider said for a named format at an observation time.
+  League context (for example the league team count) is not part of an observation.
+
+registry:
+  file: data-source/external-registry.json
+  loader: tools/external_source/registry.py
+  cli: tools/external_source_data.py validate
+  rule: >
+    One entry per dataset (provider x format). Unknown or duplicate dataset IDs, missing or unknown
+    keys, an unknown identity provider key, an invalid season policy or missing rights fields fail
+    closed. The registry is separate from data-source/registry.json (v3, one URL per CSV dataset) and
+    from data-source/league-registry.json, like ADR-046 and the league layer, but reuses the terms
+    retentionPolicy and lifecycle.
+  fields:
+    id: "The pattern <provider>.<name>.<format>; the format part is also the directory name below the provider."
+    domain: market (media follows with podcasts).
+    kind: expert-consensus, market-value, adp, projection or roster-activity.
+    acquisition: mode (html-embedded-json, html-table, json-api) and the fetcher module.
+    format: Provider attributes only (horizon, scoring, quarterbackMode, providerTeamCount, positions, window). providerTeamCount is a provider request parameter, never a league property.
+    identity: providerKey (a key of player-identity.yaml or null) and the CSV column holding the provider player ID.
+    retentionPolicy: latest-with-git-history for all datasets.
+    quality: minimumRows (null until the fetcher's own limit moves into the registry).
+    seasonPolicy: expected, optional or inactive for each phase of tools/nfl_season_context.py.
+    rights: "license, attribution, storage, publication (unknown, allowed, restricted, forbidden) and evidence; mandatory, value unknown is allowed (Issue #190)."
+    lifecycle: active or retired; retiring a dataset keeps its data and is decided by the owner.
+
+paths:
+  raw: "data-source/providers/<provider>/<dataset>/  # raw-latest.json, provider metadata, source audit"
+  snapshots: data-source/market/<kind>/<provider>/<format>/snapshots/<YYYY-MM-DD>/{ranking.csv,metadata.json}
+  latest: data-source/market/<kind>/<provider>/<format>/latest.json
+  identity: data-source/market/<kind>/<provider>/<format>/identity.json
+  status: data-source/market/_status/<provider>.json
+  rule: Roots come from tools/data_roots.py; no new root literals.
+  rosterActivity: "Sleeper Trending is one combined document (add and drop) and keeps a single latest.json at data-source/market/roster-activity/sleeper/latest.json with raw evidence at data-source/providers/sleeper/trending/ (no snapshot folders, so no identity.json yet)."
+
+snapshots:
+  rules:
+    - A normalized provider snapshot is immutable once written and keeps the provider's view (provider ID, provider rank, values, raw stats).
+    - A new snapshot folder is written only on a semantic change of the normalized ranking.
+    - Historical snapshots move byte-identical with git mv. Paths inside old metadata.json files stay as historical provenance.
+    - New snapshots and metadata do not carry actual_league_team_count or team_count_usage.
+
+identity:
+  file: identity.json per dataset
+  producer: tools/external_source/identity.py (tools/external_source_data.py identity)
+  key: (Season, ProviderPlayerID, AssetType); Season is the NFL season of the snapshot date.
+  resolution: >
+    Through data-source/nfl/identities/provider-mappings.json with FirstObservedSeason and
+    LastObservedSeason. Exactly one valid mapping gives resolved with the CanonicalPlayerID; several
+    give ambiguous without an ID; none gives unresolved. Assets that are not players (for example
+    FantasyCalc draft picks, column asset_type) are not-a-player. A dataset without a provider key
+    (FFToday, Fantasy Football Calculator) is no-provider-key.
+  rules:
+    - There is no name or team fallback in the source layer. Name joins stay consumer policy.
+    - The index is regenerable from snapshots and identities and is written only when its content differs.
+    - Provider evidence is never rewritten when an identity is adjudicated later.
+
+http:
+  module: tools/external_source/http.py
+  rules:
+    - Bounded retries with backoff and Retry-After for transient statuses; the last good state stays untouched on failure.
+    - An access challenge (403 with Cloudflare challenge header or body) raises HttpFetchBlockedError, is never retried and is never bypassed.
+    - A dataset whose season policy is inactive for the current phase is not requested.
+  shim: fantasy-management/_ai/scripts/http_fetch_resilience.py re-exports the module until the last fetcher has moved.
+
+governance:
+  - Acquisition stays a matrix leg of fm-daily.yml (ADR-051) until an App consumer exists; a separate workflow needs its own approval.
+  - Every provider move is one PR with exact parity of the Fantasy Management outputs after path-prefix normalization, fetcher tests moved and no old path left behind.
+  - Fantasy Management reads the moved provider snapshots directly only as a transitional consumer (consumerReadClassification); no App consumer may read provider snapshots.
+  - Shared consumers later read the Shared Derived products data-derived/market-observations and the movement models (Issue #988 steps 4 to 6).
+  - publication unknown blocks every later App display of a dataset (Issue #190).
+
+validation:
+  tests: tools/tests/test_external_source_registry.py
+  rules:
+    - The repository registry validates and covers all six providers.
+    - Every fail-closed case of the registry and every identity state has a test.

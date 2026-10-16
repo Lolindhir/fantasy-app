@@ -12,8 +12,6 @@ try {
     Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\DraftUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\DraftOrderAwareUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueWeekUtils.psm1" -ErrorAction Stop -Force
@@ -25,11 +23,10 @@ try {
     Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\MatchupReadModelUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PastSeasonsIndexUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\TransactionUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\TransactionDraftPickEnrichmentUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\LeagueTransactionPipelineUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerValuationUtils.psm1" -ErrorAction Stop -Force
+    # Nested -Force imports of other modules (e.g. via StandingUtils) unload LeagueUtils from this scope; load it last.
+    Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -124,10 +121,9 @@ function Ensure-PreviousFantasyGameContextHistory {
     $leagueSourceFile = Join-Path $seasonSourceDir "league.json"
     $matchupDirectory = Join-Path $seasonSourceDir "matchups"
     $scheduleFile = Join-Path $config.PastSeasonsDir "Schedule_$historicalSeason.json"
-    $playersFile = Join-Path $config.PastSeasonsDir "Players_$historicalSeason.json"
     $weeklyRosterDirectory = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "nfl\weekly-rosters\$historicalSeason"
 
-    if (-not (Test-Path $leagueSourceFile) -or -not (Test-Path $matchupDirectory) -or -not (Test-Path $scheduleFile) -or -not (Test-Path $playersFile)) {
+    if (-not (Test-Path $leagueSourceFile) -or -not (Test-Path $matchupDirectory) -or -not (Test-Path $scheduleFile) -or -not (Test-Path $weeklyRosterDirectory)) {
         Write-Warning "Historical FantasyGameContext $historicalSeason is not materialized because required source evidence is incomplete."
         return
     }
@@ -139,7 +135,6 @@ function Ensure-PreviousFantasyGameContextHistory {
         -LeagueSourceFile $leagueSourceFile `
         -MatchupDirectory $matchupDirectory `
         -ScheduleFile $scheduleFile `
-        -HistoricalPlayersFile $playersFile `
         -WeeklyRosterDirectory $weeklyRosterDirectory
 
     if (-not (Test-Path $historyDir)) {

@@ -255,8 +255,8 @@ def _normalized_asset_map(value: object, *, context: str) -> dict[str, int]:
 def _legacy_draft_pick_projection(pick: object, *, index: int) -> dict[str, Any]:
     if not isinstance(pick, dict):
         raise ShadowContractError(f"legacy DraftPicks[{index}] must be an object")
+    # DraftSource is no longer part of the slim App delivery (Issue #999 step 6), so it is not compared.
     return {
-        "DraftSource": str(pick.get("DraftSource") or ""),
         "Season": str(pick.get("Season") or ""),
         "Round": int(pick.get("Round") or 0),
         "OriginalOwnerRosterID": int(pick.get("OriginalOwnerRosterID") or 0),
@@ -266,8 +266,8 @@ def _legacy_draft_pick_projection(pick: object, *, index: int) -> dict[str, Any]
 
 
 def _canonical_draft_pick_projection(pick: dict[str, Any]) -> dict[str, Any]:
+    # DraftSource is no longer part of the slim App delivery (Issue #999 step 6), so it is not compared.
     return {
-        "DraftSource": str(pick.get("DraftSource") or ""),
         "Season": str(pick.get("Season") or ""),
         "Round": int(pick.get("Round") or 0),
         "OriginalOwnerRosterID": int(pick.get("OriginalOwnerRosterID") or 0),

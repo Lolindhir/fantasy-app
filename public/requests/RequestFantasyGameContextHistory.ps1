@@ -22,7 +22,6 @@ try {
     $leagueSourceFile = Join-Path $seasonSourceDir 'league.json'
     $matchupDirectory = Join-Path $seasonSourceDir 'matchups'
     $scheduleFile = Join-Path $config.PastSeasonsDir "Schedule_$Season.json"
-    $playersFile = Join-Path $config.PastSeasonsDir "Players_$Season.json"
     $weeklyRosterDirectory = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "nfl\weekly-rosters\$Season"
     $targetDir = Join-Path $config.PastSeasonsDir 'FantasyGameContext'
     $targetFile = Join-Path $targetDir "FantasyGameContext_$Season.json"
@@ -33,7 +32,6 @@ try {
         -LeagueSourceFile $leagueSourceFile `
         -MatchupDirectory $matchupDirectory `
         -ScheduleFile $scheduleFile `
-        -HistoricalPlayersFile $playersFile `
         -WeeklyRosterDirectory $weeklyRosterDirectory
 
     if (-not (Test-Path $targetDir)) { New-Item -ItemType Directory -Path $targetDir -Force | Out-Null }

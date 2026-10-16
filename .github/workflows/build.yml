@@ -61,6 +61,10 @@ jobs:
           python -m unittest discover -s tools/tests -p "test_league_transactions.py" -v
           python -m unittest discover -s tools/tests -p "test_league_drafts.py" -v
           python -m unittest discover -s tools/tests -p "test_league_history_app_publish.py" -v
+          python -m unittest discover -s tools/tests -p "test_schedule_archive.py" -v
+
+      - name: Run external source registry tests
+        run: python -m unittest tools.tests.test_external_source_registry tools.tests.test_external_source_sleeper_trending tools.tests.test_external_source_fantasycalc -v
 
       - name: Run consumer read classification test
         run: python -m unittest tools.tests.test_consumer_read_classification -v
@@ -68,9 +72,8 @@ jobs:
       - name: Run PowerShell data regression tests
         shell: pwsh
         run: |
-          ./public/requests/DraftIdentityRegressionTest.ps1
-          ./public/requests/LeagueTransactionPipelineRegressionTest.ps1
-          ./public/requests/HistoricalTransactionRebuildRegressionTest.ps1
+          ./public/requests/LeagueReadModelRegressionTest.ps1
+          ./public/requests/ProviderJoinInvariantRegressionTest.ps1
           ./public/requests/WaiverScheduleRegressionTest.ps1
           ./public/requests/DecisionWindowRegressionTest.ps1
           ./public/requests/StandingsWeeklyMovementRegressionTest.ps1

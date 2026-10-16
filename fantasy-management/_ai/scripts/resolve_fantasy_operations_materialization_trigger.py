@@ -9,6 +9,7 @@ SOURCE_INPUT_PREFIXES = (
     "fantasy-management/sources/external-rankings/",
     "fantasy-management/sources/external-signals/",
     "fantasy-management/sources/refresh-status/",
+    "data-source/market/",
 )
 GENERATED_OPERATIONS_PREFIX = "fantasy-management/generated/operations/"
 CORE_INPUT_PATHS = {

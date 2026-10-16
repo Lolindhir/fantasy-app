@@ -144,6 +144,14 @@ class FFTodayTests(unittest.TestCase):
             with self.assertRaisesRegex(module.FFTodayProjectionError, "status=403"):
                 module.fetch_html("https://example.test", 30)
 
+    def test_main_skips_without_request_outside_preseason(self):
+        with (
+            patch.object(module, "skip_reason", return_value="phase regular_season"),
+            patch.object(module, "fetch_html") as fetch_html,
+        ):
+            self.assertEqual(0, module.main(["--season", "2026", "--dry-run"]))
+        fetch_html.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

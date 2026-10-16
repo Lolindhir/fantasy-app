@@ -353,7 +353,7 @@ The implemented local builder must:
 
 The builder is deterministic. It must not summarize, rewrite, infer or otherwise create editorial source content.
 
-A future GitHub Actions publication workflow is a separate execution layer. If approved, it must trigger only for an explicit ready request, prevent recursive triggering, use episode-scoped concurrency and commit only the finished validated package to `main`. It requires a separately approved workflow change because it needs narrowly scoped `contents: write` access. Do not implement or modify that workflow until its trigger, path scope, failure behavior, recursion guard and commit identity have been explicitly approved.
+A future GitHub Actions publication workflow is a separate execution layer. If approved, it must trigger only for an explicit ready request, prevent recursive triggering, use episode-scoped concurrency and commit only the finished validated package to `main`. Its new `contents: write` publication behavior is elevated risk under the root governance contract. Do not implement or activate it until the user has concretely authorized its trigger, path/write scope, failure behavior, recursion guard and commit identity, whether as part of a sufficiently specified work package or a targeted follow-up approval.
 
 ## Validation scope
 

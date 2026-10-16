@@ -590,17 +590,6 @@ function ConvertTo-FgcKickoff {
     return $null
 }
 
-function Get-FgcLegacyPlayerMap {
-    param([AllowEmptyCollection()][array]$Players)
-    $map = @{}
-    foreach ($player in @($Players)) {
-        $id = ConvertTo-FgcPlayerID -Player $player
-        if ([string]::IsNullOrWhiteSpace($id)) { continue }
-        if (-not $map.ContainsKey($id)) { $map[$id] = $player }
-    }
-    return $map
-}
-
 function Get-FgcWeeklyRosterAssignments {
     param([AllowNull()][object]$Document)
     $rows = @()
@@ -626,6 +615,11 @@ function Get-FgcWeeklyRosterAssignments {
             if ($null -eq $teamID) { $teamID = Get-FgcPropertyValue -Object $teamRef -Names @('CanonicalTeamID','TeamID') }
             if ($null -eq $teamAbbr) { $teamAbbr = Get-FgcPropertyValue -Object $teamRef -Names @('TeamAbbr','TeamAbv','Abbr') }
         }
+        elseif ($teamRef -is [string] -and -not [string]::IsNullOrWhiteSpace($teamRef)) {
+            # Canonical weekly NFL roster records (data-source/nfl/weekly-rosters) carry the canonical team abbreviation as the plain string Team.
+            if ($null -eq $teamID) { $teamID = $teamRef.Trim() }
+            if ($null -eq $teamAbbr) { $teamAbbr = $teamRef.Trim() }
+        }
         $result += [PSCustomObject]@{ CanonicalPlayerID = $canonicalID; TeamID = $teamID; TeamAbbr = $teamAbbr }
     }
     return $result
@@ -636,7 +630,6 @@ function New-FgcHistoricalDecisionFacts {
         [Parameter(Mandatory = $true)][int]$Week,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Schedule,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$FantasyMatchups,
-        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$HistoricalPlayers,
         [AllowNull()][object]$WeeklyRosterDocument
     )
 
@@ -656,7 +649,6 @@ function New-FgcHistoricalDecisionFacts {
         }
     }
 
-    $legacyPlayerMap = Get-FgcLegacyPlayerMap -Players $HistoricalPlayers
     $weeklyAssignments = @(Get-FgcWeeklyRosterAssignments -Document $WeeklyRosterDocument)
     $weeklyByCanonical = @{}
     foreach ($assignment in $weeklyAssignments) {
@@ -672,36 +664,22 @@ function New-FgcHistoricalDecisionFacts {
                 $canonicalID = [string]$player.CanonicalPlayerID
                 if (-not [string]::IsNullOrWhiteSpace($canonicalID) -and $weeklyByCanonical.ContainsKey($canonicalID)) {
                     foreach ($assignment in @($weeklyByCanonical[$canonicalID])) {
-                        $candidateGames += @($normalizedGames | Where-Object {
-                            (-not [string]::IsNullOrWhiteSpace([string]$assignment.TeamID) -and ((Get-NflTeamJoinKey -Value $_.AwayTeamID) -eq (Get-NflTeamJoinKey -Value $assignment.TeamID) -or (Get-NflTeamJoinKey -Value $_.HomeTeamID) -eq (Get-NflTeamJoinKey -Value $assignment.TeamID))) -or
-                            (-not [string]::IsNullOrWhiteSpace([string]$assignment.TeamAbbr) -and ([string]$_.AwayTeamAbbr -eq [string]$assignment.TeamAbbr -or [string]$_.HomeTeamAbbr -eq [string]$assignment.TeamAbbr))
-                        })
+                        foreach ($game in $normalizedGames) {
+                            $onTeam = (-not [string]::IsNullOrWhiteSpace([string]$assignment.TeamID) -and ((Get-NflTeamJoinKey -Value $game.AwayTeamID) -eq (Get-NflTeamJoinKey -Value $assignment.TeamID) -or (Get-NflTeamJoinKey -Value $game.HomeTeamID) -eq (Get-NflTeamJoinKey -Value $assignment.TeamID))) -or
+                                (-not [string]::IsNullOrWhiteSpace([string]$assignment.TeamAbbr) -and ([string]$game.AwayTeamAbbr -eq [string]$assignment.TeamAbbr -or [string]$game.HomeTeamAbbr -eq [string]$assignment.TeamAbbr))
+                            if ($onTeam) {
+                                $candidateGames += [PSCustomObject]@{ Game = $game; NFLTeamID = $(if (-not [string]::IsNullOrWhiteSpace([string]$assignment.TeamAbbr)) { [string]$assignment.TeamAbbr } else { [string]$assignment.TeamID }) }
+                            }
+                        }
                     }
                 }
 
-                if (@($candidateGames | Sort-Object GameID -Unique).Count -ne 1 -and $legacyPlayerMap.ContainsKey([string]$player.PlayerID)) {
-                    $legacyGames = @(Get-FgcCollection (Get-FgcPropertyValue -Object $legacyPlayerMap[[string]$player.PlayerID] -Names @('Games')) | Where-Object {
-                        [string](Get-FgcPropertyValue -Object $_ -Names @('Week')) -eq [string]$Week -or
-                        [string](Get-FgcPropertyValue -Object $_ -Names @('Week')) -eq "Week $Week"
-                    })
-                    $candidateGames = @()
-                    foreach ($legacyGame in $legacyGames) {
-                        $legacyGameID = [string](Get-FgcPropertyValue -Object $legacyGame -Names @('GameID','gameID'))
-                        if ([string]::IsNullOrWhiteSpace($legacyGameID)) { continue }
-                        $candidateGames += @($normalizedGames | Where-Object { $_.GameID -eq $legacyGameID })
-                    }
-                }
-
-                $uniqueGames = @($candidateGames | Sort-Object GameID -Unique)
-                if ($uniqueGames.Count -eq 1) {
-                    $game = $uniqueGames[0]
-                    $nflTeamID = $null
-                    if ($legacyPlayerMap.ContainsKey([string]$player.PlayerID)) {
-                        $legacyGame = @(Get-FgcCollection (Get-FgcPropertyValue -Object $legacyPlayerMap[[string]$player.PlayerID] -Names @('Games')) | Where-Object {
-                            [string](Get-FgcPropertyValue -Object $_ -Names @('GameID','gameID')) -eq $game.GameID
-                        } | Select-Object -First 1)
-                        if ($legacyGame.Count -eq 1) { $nflTeamID = Get-FgcPropertyValue -Object $legacyGame[0] -Names @('TeamID') }
-                    }
+                # Exactly one distinct game must follow from canonical week-specific membership; anything else stays explicitly unknown.
+                $uniqueGameIDs = @($candidateGames | ForEach-Object { $_.Game.GameID } | Sort-Object -Unique)
+                if ($uniqueGameIDs.Count -eq 1) {
+                    $game = $candidateGames[0].Game
+                    $nflTeamIDs = @($candidateGames | ForEach-Object { $_.NFLTeamID } | Sort-Object -Unique)
+                    $nflTeamID = $(if ($nflTeamIDs.Count -eq 1) { $nflTeamIDs[0] } else { $null })
                     $playerLockFacts += [PSCustomObject][ordered]@{
                         FantasyTeamID = $team.FantasyTeamID; PlayerID = $player.PlayerID; NFLTeamID = $nflTeamID
                         Kind = 'scheduled'; GameID = $game.GameID; DecisionWindowID = $game.StartsAtUtc; StartsAtUtc = $game.StartsAtUtc; IsStarter = $player.IsStarter
@@ -734,12 +712,11 @@ function New-HistoricalFantasyGameContextSeason {
         [Parameter(Mandatory = $true)][string]$LeagueSourceFile,
         [Parameter(Mandatory = $true)][string]$MatchupDirectory,
         [Parameter(Mandatory = $true)][string]$ScheduleFile,
-        [Parameter(Mandatory = $true)][string]$HistoricalPlayersFile,
         [AllowNull()][string]$WeeklyRosterDirectory
     )
 
-    if (-not (Test-Path $LeagueSourceFile) -or -not (Test-Path $MatchupDirectory) -or -not (Test-Path $ScheduleFile) -or -not (Test-Path $HistoricalPlayersFile)) {
-        throw "Historical FantasyGameContext $Season requires canonical league matchups plus historical schedule/player evidence."
+    if (-not (Test-Path $LeagueSourceFile) -or -not (Test-Path $MatchupDirectory) -or -not (Test-Path $ScheduleFile)) {
+        throw "Historical FantasyGameContext $Season requires canonical league matchups, the historical schedule and canonical weekly NFL roster evidence."
     }
 
     $leagueSource = Get-Content $LeagueSourceFile -Raw | ConvertFrom-Json
@@ -748,7 +725,6 @@ function New-HistoricalFantasyGameContextSeason {
     if ($lastWeek -le 0) { throw "Historical FantasyGameContext $Season cannot resolve the final fantasy week." }
 
     $schedule = @(Get-Content $ScheduleFile -Raw | ConvertFrom-Json)
-    $historicalPlayers = @(Get-Content $HistoricalPlayersFile -Raw | ConvertFrom-Json)
     $weeks = @()
     for ($week = 1; $week -le $lastWeek; $week++) {
         $matchupFile = Join-Path $MatchupDirectory "week-$week.json"
@@ -764,7 +740,7 @@ function New-HistoricalFantasyGameContextSeason {
                 try { $weeklyDocument = Get-Content $weeklyFile -Raw | ConvertFrom-Json } catch { Write-Warning "Could not read weekly NFL roster evidence '$weeklyFile'. $_" }
             }
         }
-        $decisionFacts = New-FgcHistoricalDecisionFacts -Week $week -Schedule $schedule -FantasyMatchups $facts -HistoricalPlayers $historicalPlayers -WeeklyRosterDocument $weeklyDocument
+        $decisionFacts = New-FgcHistoricalDecisionFacts -Week $week -Schedule $schedule -FantasyMatchups $facts -WeeklyRosterDocument $weeklyDocument
         $weekModel = New-FantasyGameContextReadModel -LeagueID $LeagueID -Season ([string]$Season) -Week $week -DecisionFacts $decisionFacts -FantasyMatchups $facts -Schedule $schedule -WeekIsFinal $true
         $weeks += $weekModel
     }

@@ -39,11 +39,11 @@ function Get-GeneratedDataLabel {
         "^public/data/past_seasons/Transactions/" { return "Transaction history" }
         "^public/data/backup/" { return "Backups" }
         "^fantasy-management/sources/external-rankings/expert-consensus/fantasypros/" { return "FantasyPros rankings" }
-        "^fantasy-management/sources/external-rankings/market-value/fantasycalc/" { return "FantasyCalc rankings" }
+        "^data-source/(market/market-value/fantasycalc|providers/fantasycalc|market/_status/fantasycalc\.json)" { return "FantasyCalc rankings" }
         "^fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/" { return "Fantasy Football Calculator ADP" }
         "^fantasy-management/sources/external-rankings/projections/fftoday/" { return "FFToday projections" }
         "^fantasy-management/sources/external-rankings/projections/cbs-sports/" { return "CBS Sports projections" }
-        "^fantasy-management/sources/external-signals/roster-activity/sleeper/" { return "Sleeper trending" }
+        "^data-source/(market/roster-activity/sleeper|providers/sleeper/trending|market/_status/sleeper\.json)" { return "Sleeper trending" }
         "^fantasy-management/generated/operations/" { return "Fantasy Operations inputs" }
         "^data-derived/player-week-fantasy/" { return "PlayerWeekFantasy derived" }
         "/PlayerWeekFantasy\.json$" { return "PlayerWeekFantasy" }

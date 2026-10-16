@@ -1431,8 +1431,8 @@ decisions:
       Tank01 example payloads, the Tank01 join helpers in PlayerUtils.psm1 and all RapidAPI keys (ConfigUtils.psm1,
       config.ps1, examples) are removed. The static past_seasons/Games_<year>.json archives (about 255 MB of Tank01
       boxscores without a consumer) are removed from the tree and from the Games resource of PastSeasonsIndex.json; they
-      remain recoverable from git history. past_seasons/Players_<year>.json and Schedule_<year>.json stay as static
-      archives. update-teams.yml needs no change (no Tank01 call since #347 F3c). workflow-monitoring.yaml and
+      remain recoverable from git history. Schedule_<year>.json stays an archive (regenerated, ADR-058); past_seasons/Players_<year>.json was removed
+      later (Issue #999 step 7b, 2026-10-16). update-teams.yml needs no change (no Tank01 call since #347 F3c). workflow-monitoring.yaml and
       workflow-publication.yaml classifications stay valid because workflow names, triggers and publication class are unchanged.
     rationale: >
       A dead provider pipeline that needs API keys is a maintenance and security liability; keeping the workflow and its
@@ -1836,3 +1836,118 @@ decisions:
       negative:
         - Until Issue #987 the draft order depends on the Standings placement through one explicit adapter.
         - The PowerShell implementation stays productive until the cutover step, so two implementations coexist and are held equal by the shadow test.
+        - Resolved 2026-10-15 (Robert, Issue #999 step 7): after the cutover the PowerShell rebuild (RequestTransactions.ps1, RequestDrafts.ps1 and the Draft/Transaction modules in public/requests/utils/league) was removed; ADR-026's dependency order now lives in tools/derived_data_lib/league_history.py and ADR-011/ADR-026 text that names the PowerShell entry points is historical.
+
+  - id: ADR-058
+    title: Past-season Schedule archives are regenerated from canonical NFL facts every week
+    status: accepted
+    amends: ADR-045
+    context: >
+      ADR-045 left past_seasons/Schedule_<year>.json as static archives after the Tank01 generators were removed. A check
+      for Issue #999 step 7b found them reproducible from data-source/nfl (schedules plus game-finality) and, in part,
+      wrong: three 2024 and two 2022 kickoff times differed from the canonical facts (for example BAL@KC 2024-09-05 shown
+      as 8:40p instead of 8:20p). A derived output that is generated once cannot follow later changes of the derivation
+      logic or a corrected canonical fact.
+    decision: >
+      Robert decided on 2026-10-15 (Issue #999) that the archives are kept current by the regular runs, never generated
+      once. tools/schedule_archive.py is the consumer generator; it repeats New-AppScheduleGame
+      (CanonicalScheduleUtils.psm1) in Python, proves parity with the published Schedule.json through the command
+      compare-current, and writes Schedule_<season>.json from the first needed season (first league season minus the
+      history seasons the Salary model of that season reads, salary-v1: 3, so 2021 for the league that began in 2024; the
+      value is HISTORY_SEASONS of the model, not a constant of the generator) up to the season before the current
+      league season (league manifests), only on a semantic difference and fail-closed (a season that cannot be built keeps its last
+      file and raises a warning). It runs in the weekly update-transactions run before the Past Seasons index refresh.
+      Archives keep all game types (the records carry seasonType), team fields use canonical abbreviations (ADR-042,
+      consumers resolve LegacyIDs), and the cancelled 2022 week-17 game BUF@CIN, absent from nflverse, is a visible
+      hand-maintained supplement in the generator. Players_<year>.json (static Tank01 archive) was removed on 2026-10-16 (Robert, Issue #999 step 7b) after its readers
+      (historical FantasyGameContext, #420; FM salary simulation, dead TankID join) no longer needed it; recoverable from git history.
+    rationale: >
+      One implementation of the schedule conversion per language with a parity command, no archive as input, and
+      archives that follow the canonical facts instead of freezing a provider's errors.
+    consequences:
+      positive:
+        - Schedule archives always equal the canonical facts and follow later logic changes with the next weekly run.
+        - Wrong Tank01 kickoff times in the archives are corrected.
+      negative:
+        - The archives gain 13 postseason games per season and lose the numeric Tank01 team IDs (LegacyIDs still resolve).
+        - The conversion exists in PowerShell and Python; compare-current guards against drift.
+
+  - id: ADR-059
+    title: Scope-based and risk-tiered authorization replaces file-based workflow approvals
+    status: accepted
+    context: >
+      Historic per-file GitHub Actions approval and per-step chat stoppages slow
+      authorized multi-agent delivery without addressing risks in generators or
+      other non-workflow code. Existing publication and workflow monitoring
+      contracts provide separately enforceable safety requirements.
+    decision: >
+      On 2026-10-16 the user approved authorization by defined work-package
+      scope and downstream operational impact rather than filename or model.
+      A clearly approved end-to-end Issue permits continuous routine scoped
+      workflow changes, commits, reviews, PRs and merges, subject to required
+      checks, with no further approval for each YAML or checkpoint. A single
+      bounded-step approval ends at its checkpoint. Standard changes preserve
+      ownership, permissions and writer scopes. Elevated effects require the
+      relevant specific scope and impact authorization; critical/destructive
+      effects require distinct targeted authorization even for an approved
+      Issue. Unknown risk fails closed. Keep Fantasy Management qualitative
+      persistence authorization, default one-off Actions prohibition, canonical
+      source-of-truth and branch-publication/monitoring safety unchanged.
+      The normative agent-independent rules live in
+      .ai-context/manual/ai-guidance.yaml under authorizationAndRisk
+      (Issue #1039).
+    rationale: >
+      Human attention should focus on unapproved risk or material new scope,
+      while reliable agents autonomously complete already authorized work.
+    consequences:
+      positive:
+        - Less repeated approval friction for ChatGPT, Claude and other agents.
+        - Real downstream data and permission effects determine review rigor.
+        - Reversible checkpoints, mandatory validation and technical safety remain.
+      negative:
+        - Each agent must assess actual operational impact and escalate uncertainty.
+
+  - id: ADR-060
+    title: External market, ranking, ADP, projection and roster-activity sources are shared Source Evidence under data-source
+    status: accepted
+    context: >
+      FantasyPros, FantasyCalc, Fantasy Football Calculator, FFToday, CBS Sports and Sleeper Trending are fetched by
+      Fantasy Management scripts and stored under fantasy-management/sources (Issue #988). ADR-037 says reusable
+      market/media acquisition must not stay in a consumer namespace. The inventory found league context
+      (actual_league_team_count) inside global observations, three raw retention styles, no CanonicalPlayerID and only
+      one season-aware quality contract, while the canonical identities already map FantasyPros, CBS and Sleeper IDs.
+    decision: >
+      Robert approved the migration plan and the foreseen workflow changes on 2026-10-14. The six sources become
+      Source Evidence in data-source. A separate registry (data-source/external-registry.json, like league-registry.json)
+      describes each dataset (provider x format): domain, kind, acquisition, provider format attributes, identity provider
+      key, retention, quality, season-phase policy and mandatory rights fields. Raw responses live under
+      data-source/providers/<provider>/<dataset>/ with latest-with-git-history retention. Normalized provider snapshots keep
+      their current layout under data-source/market/<kind>/<provider>/<format>/snapshots/<date>/ and are immutable once
+      written; history is moved with git mv. A per-dataset identity.json maps (Season, ProviderPlayerID) to CanonicalPlayerID
+      through provider-mappings.json, fail-closed, without name fallback, regenerable and written only on semantic change.
+      Observations carry format only as provider attributes; league context such as the league team count is not written.
+      Technical freshness status per provider lives under data-source/market/_status/; Fantasy Management keeps its readiness
+      gate as consumer policy. Code lives in tools/external_source_data.py and tools/external_source/. Acquisition keeps
+      running as matrix legs of fm-daily.yml until an App consumer exists. A challenge response of a provider is a blocked
+      state, never retried and never bypassed; a dataset inactive in the current NFL phase is not requested. No App display
+      without resolved rights (#190). Migration is one PR per provider with exact Fantasy Management output parity after
+      path-prefix normalization. Consumers do not read provider snapshots permanently: a deterministic Shared Derived product
+      data-derived/market-observations (one schema across providers, CanonicalPlayerID, full history) and central movement
+      models follow; App and Fantasy Management then read only those. Podcast transcripts later go to data-source/providers,
+      extracted takes and mentions (LLM output, not byte-reproducible) to data-source/media as immutable versioned
+      observations, and deterministic evaluations on top of them to data-derived; storage and publication rights stay a
+      separate per-dataset decision (ADR-037). Transition rule: until the market-observations cutover, Fantasy Management
+      reads the moved provider snapshots directly; this read is classified as transitional in consumerReadClassification and
+      removed with that cutover. Contract: .ai-context/manual/external-source-data.yaml.
+    rationale: >
+      One owner for consumer-neutral evidence, the same retention and identity rules as the rest of data-source, and a
+      migration that keeps every historical snapshot byte-identical.
+    consequences:
+      positive:
+        - App and Fantasy Management can read the same attributed values; Fantasy Management is no longer the hidden owner.
+        - Four of six sources gain a fail-closed CanonicalPlayerID without changing provider evidence.
+        - Season-phase expectations apply to every source, so preseason-only projections ending is not an error.
+      negative:
+        - A third registry next to registry v3 and league-registry.json.
+        - FFToday and Fantasy Football Calculator stay without CanonicalPlayerID until a provider ID mapping exists.
+        - Acquisition remains orchestrated by an FM-named workflow until a later split.

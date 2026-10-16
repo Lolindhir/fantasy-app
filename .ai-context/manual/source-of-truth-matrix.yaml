@@ -707,15 +707,13 @@ playersReadModelFieldInventory:
       - league-scored canonical player-stats of the three prior seasons (since #347 D4; replaces the past_seasons/Players_<year>.json archives)
       - data-derived/player-valuation snapshot for Salary, SalaryProjected, Ranking and Rank grading (since #919 step 5; the former ConfigUtils.psm1 WeightTotal/WeightGame were removed with step 8)
     historyArchives:
-      producer: none; RequestPlayersSeason.ps1 and its Games_<year>.json input were retired with #347 G4
-      shape: TankID, Name, TeamIDs, Games[] with FantasyPoints = Tank01 fantasyPointsDefault.PPR
+      status: removed (Issue #999 step 7b, Robert 2026-10-16)
       note: >-
-        The existing past_seasons/Players_<year>.json files stay as static, Tank01-keyed archives. No App or
-        Fantasy Management consumer reads them. The only reader is the NFL identity builder
-        (tools/nfl_source_data_lib/mapping_history.py::build_historical_app_mapping_claims), which treats an archive
-        row as historical identity evidence only with a second corroborating provider ID; on the 2026-10-07 data
-        it resolved 0 of 8,713 rows (data-source/audits/nfl-source-data-audit.json::historicalAppMappingCoverage).
-        This static read is intentional and kept so that Tank01-keyed history stays available as cross-check evidence.
+        The Tank01-keyed past_seasons/Players_<year>.json archives (2022 to 2025) were removed; no App or Fantasy
+        Management consumer read them (FM salary simulation: TankID join dead since #347 H1b; historical
+        FantasyGameContext migrated in #420). They remain recoverable from git history. The NFL identity builder
+        (tools/nfl_source_data_lib/mapping_history.py::build_historical_app_mapping_claims) still scans
+        past_seasons/Players_*.json if present and now finds none (earlier: 0 of 8,713 rows resolved).
 
   fieldGroups:
     appIdentity:
@@ -859,7 +857,7 @@ playersReadModelFieldInventory:
       identities and the canonical Sleeper snapshot without re-asserting its own
       pairings. H1b removed the remaining Tank01 pairing claim (getNFLPlayerList
       sleeperBotID); the cycle Players.json -> identities -> Players.json no longer exists.
-      Optional follow-up (needs workflow approval): drop public/data/Players.json from the
+      Optional follow-up (subject to scope-based risk authorization, no separate YAML gate): drop public/data/Players.json from the
       materialize input list of the NFL Source Sync.
     salaryCap: >
       RequestLeague.ps1 derives the league salary cap from Players.json Salary and
@@ -898,11 +896,14 @@ playersReadModelFieldInventory:
         Canonical replacement exists since #347 F4a: data-source/nfl/qbr-week/<season>.json
         (ESPN QBR via nflverse); the consumer switch is G3.
     - id: historical-fgc-player-fallback-unmatched
-      verified: code-reading-only
+      verified: resolved-2026-10-16
       evidence: >
-        FantasyGameContextCore.ps1 keys the legacy past-season player map by
+        FantasyGameContextCore.ps1 keyed the legacy past-season player map by
         PlayerID/ID/SleeperID, but past_seasons/Players_<year>.json carries only
-        TankID, so the fallback never matches.
+        TankID, so the fallback never matched. In addition the canonical weekly roster
+        rung read no team (records carry the plain string Team), so every 2025 player was
+        unknown. Resolved in Issue #420: the Players_<year>.json fallback was removed and
+        the weekly roster rung reads Team; history no longer reads Players_<year>.json.
     - id: ops-inputs-legacy-status
       verified: code-reading-only
       evidence: >
@@ -993,11 +994,10 @@ consumerReadClassification:
         network: provider-evidence-fetcher
         provider:cbssports: provider-evidence-fetcher
       note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_fantasycalc_rankings_impl.py:
+    tools/external_source/fantasycalc.py:
       reads:
-        network: provider-evidence-fetcher
         provider:fantasycalc: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+      note: 'Shared external source layer acquisition of attributed FantasyCalc market-value evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py; also resolves the explicit UNK position sentinel from the canonical Sleeper player snapshot.'
     fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex_impl.py:
       reads:
         network: provider-evidence-fetcher
@@ -1015,15 +1015,15 @@ consumerReadClassification:
       reads:
         provider:fftoday: provider-evidence-fetcher
       note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_sleeper_trending.py:
+    tools/external_source/sleeper_trending.py:
       reads:
         network: provider-evidence-fetcher
         provider:sleeper: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/http_fetch_resilience.py:
+      note: 'Shared external source layer acquisition of attributed Sleeper roster-activity evidence (ADR-037 Source Evidence, ADR-060); not a base-fact read.'
+    tools/external_source/http.py:
       reads:
         network: http-helper
-      note: 'Shared HTTP retry helper for the provider evidence fetchers; contains no provider-specific read.'
+      note: 'Shared bounded HTTP helper of the external source layer (ADR-060, moved from fantasy-management/_ai/scripts/http_fetch_resilience.py, which is now a shim); contains no provider-specific read.'
     fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py:
       reads:
         legacy:League: freshness-trigger
@@ -1116,15 +1116,6 @@ consumerReadClassification:
         legacy:Transactions: app-config-path-owner
         legacy:WeeklyRecaps: app-config-path-owner
       note: 'Resolves the generated-file paths from ConfigUtils for all generators.'
-    public/requests/utils/league/DraftHistoryUtils.psm1:
-      reads:
-        legacy:Transactions: app-read-model-chain
-      note: 'Draft history and Transactions form one coupled rebuild (ADR-026).'
-    public/requests/utils/league/DraftUtils.psm1:
-      reads:
-        legacy:Standings: app-read-model-chain
-        legacy:Transactions: app-read-model-chain
-      note: 'Standings and Transactions are chain inputs of the coupled draft rebuild. The league team list (Get-DraftLeagueLocal) comes from the canonical League Core source via Get-CanonicalCurrentTeamsForLeague (#347 I3-Rest); League.json is no longer read.'
     public/requests/utils/league/PastSeasonsIndexUtils.psm1:
       reads:
         legacy:PastSeasonsIndex: app-output-owner
@@ -1133,11 +1124,6 @@ consumerReadClassification:
       reads:
         legacy:Drafts: app-read-model-chain
       note: 'Resolves team DraftPicks from the published Drafts.json (ADR-006).'
-    public/requests/utils/league/TransactionDraftPickEnrichmentUtils.psm1:
-      reads:
-        legacy:Drafts: app-read-model-chain
-        legacy:Transactions: app-read-model-chain
-      note: 'Transactions and Drafts enrichment inside the coupled rebuild (ADR-026).'
     tools/build_workflow_health_snapshot.py:
       reads:
         network: repository-infrastructure
@@ -1152,6 +1138,12 @@ consumerReadClassification:
         legacy:Timestamps: app-output-owner
         legacy:Transactions: validation-shadow
       note: 'Consumer generator of the League history products (ADR-057, Issue #999). compare renders the App-shaped Transactions and Drafts files in memory and compares them exactly with the committed public/data files (validation-shadow, never an input). Since step 5b write publishes those files only on semantic change and updates the Transactions and Drafts keys of Timestamps.json (app-output-owner: the writer owns its own freshness timestamp, never an input).'
+    tools/schedule_archive.py:
+      reads:
+        legacy:Schedule: validation-shadow
+        provider:cbssports: display-link-construction
+        provider:espn: display-link-construction
+      note: 'Consumer generator of the past-season Schedule archives (ADR-058, Issue #999 step 7b). Facts come from data-source/nfl (schedules, game-finality) and the league manifests (current season); compare-current compares the generator with the published Schedule.json (validation-shadow, never an input). The boxscore links are built from canonical provider game IDs; no fetch.'
     tools/league_source_data_lib/acquire.py:
       reads:
         network: source-layer-acquisition

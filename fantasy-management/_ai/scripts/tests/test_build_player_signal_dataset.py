@@ -14,6 +14,9 @@ SCRIPT_PATH = Path(__file__).resolve().parents[1] / "build_player_signal_dataset
 SCRIPT_DIR = SCRIPT_PATH.parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
+TEST_DIRECTORY = Path(__file__).resolve().parent
+if str(TEST_DIRECTORY) not in sys.path:
+    sys.path.insert(0, str(TEST_DIRECTORY))
 SPEC = importlib.util.spec_from_file_location("build_player_signal_dataset", SCRIPT_PATH)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None

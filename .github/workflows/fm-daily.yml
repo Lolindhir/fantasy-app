@@ -182,18 +182,19 @@ jobs:
           - id: fantasycalc
             label: "FM • Ranking • FantasyCalc Market"
             test: >-
-              python -m unittest discover
-              -s fantasy-management/_ai/scripts/tests
-              -p "test_fetch_fantasycalc*.py"
+              python -m unittest
+              tools/tests/test_external_source_fantasycalc.py
               -v
             fetch: |
-              python fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py --skip-unchanged
+              python -m tools.external_source.fantasycalc --skip-unchanged
             source_id: fantasycalc
-            content_path: fantasy-management/sources/external-rankings/market-value/fantasycalc
+            content_path: data-source/market/market-value/fantasycalc
             stage_paths: >-
-              fantasy-management/sources/external-rankings/market-value/fantasycalc
-              fantasy-management/sources/refresh-status/fantasycalc.json
+              data-source/market/market-value/fantasycalc
+              data-source/providers/fantasycalc
+              data-source/market/_status/fantasycalc.json
             scope: fantasycalc-rankings
+            status_path: data-source/market/_status/fantasycalc.json
           - id: ffc-adp
             label: "FM • Ranking • FFC ADP"
             test: >-
@@ -245,16 +246,18 @@ jobs:
             label: "FM • Signal • Sleeper Trending"
             test: >-
               python -m unittest
-              fantasy-management/_ai/scripts/tests/test_fetch_sleeper_trending.py
+              tools/tests/test_external_source_sleeper_trending.py
               -v
             fetch: |
-              python fantasy-management/_ai/scripts/fetch_sleeper_trending.py
+              python -m tools.external_source.sleeper_trending
             source_id: sleeper-trending
-            content_path: fantasy-management/sources/external-signals/roster-activity/sleeper
+            content_path: data-source/market/roster-activity/sleeper
             stage_paths: >-
-              fantasy-management/sources/external-signals/roster-activity/sleeper
-              fantasy-management/sources/refresh-status/sleeper-trending.json
+              data-source/market/roster-activity/sleeper
+              data-source/providers/sleeper/trending
+              data-source/market/_status/sleeper.json
             scope: sleeper-trending
+            status_path: data-source/market/_status/sleeper.json
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -282,6 +285,7 @@ jobs:
           --workflow "${{ matrix.label }}"
           --trigger "${{ github.event_name }}"
           --content-path "${{ matrix.content_path }}"
+          --output "${{ matrix.status_path }}"
 
       - name: Commit and push updates
         if: github.event_name != 'pull_request'
