@@ -116,10 +116,11 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
         })
         self.assertFalse(check["Written"])
         self.assertFalse(check["Changed"])
-        self.assertFalse((REPO_ROOT / check["Path"]).exists(),
-                         "Read-only validation must not create Week 3 awards")
+        published = REPO_ROOT / check["Path"]
+        self.assertTrue(published.is_file(), "Verified Week 3 snapshot must be persisted in this Draft")
         inputs = load_verified_week_inputs(REPO_ROOT, "nfl-reise", 2026, 3)
         model = build_team_week_performance(**inputs)
+        self.assertEqual(json.loads(published.read_text(encoding="utf-8")), model)
         self.assertEqual(max(x["PotentialPoints"] for x in model["Teams"]), 258.38)
         self.assertEqual(max(x["EfficiencyPercent"] for x in model["Teams"]), 92.7319)
         self.assertTrue(model["Awards"]["BestManagerRosterIDs"])
@@ -133,8 +134,8 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
             "WroteOutput": check["Written"],
         }, sort_keys=True), flush=True)
 
-    def test_real_week3_verified_materializer_exports_deterministic_snapshot(self) -> None:
-        """Checkpoint export: exact producer bytes from a temp root, not hand-edited."""
+    def test_real_week3_verified_materializer_matches_persisted_snapshot(self) -> None:
+        """The persisted W03 bytes match production materialization and reruns are no-ops."""
         result = materialize(REPO_ROOT, "nfl-reise", 2026, 3, write=False, require_pwf=True)
         self.assertEqual(result["PlayerWeekFantasyParity"],
                          {"State": "verified", "Compared": 202, "MissingZeroPoints": 0})
@@ -151,17 +152,19 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
             digest = hashlib.sha1(
                 b"blob " + str(len(data)).encode("ascii") + b"\0" + data
             ).hexdigest()
-            encoded = base64.b64encode(data).decode("ascii")
-            print("TWP_WEEK3_EXPORT_META=" + json.dumps({
-                "blobSha": digest, "bytes": len(data), "wireChars": len(encoded),
-                "teams": len(model["Teams"]), "parity": result["PlayerWeekFantasyParity"],
+            published = output_path(REPO_ROOT, model)
+            self.assertTrue(published.is_file())
+            self.assertEqual(published.read_bytes(), data)
+            self.assertEqual(
+                hashlib.sha1(b"blob " + str(len(published.read_bytes())).encode("ascii")
+                             + b"\0" + published.read_bytes()).hexdigest(), digest
+            )
+            print("TWP_WEEK3_PERSISTED_PARITY=" + json.dumps({
+                "blobSha": digest, "bytes": len(data), "teams": len(model["Teams"]),
+                "parity": result["PlayerWeekFantasyParity"],
                 "manager": model["Awards"]["BestManagerRosterIDs"],
                 "coach": model["Awards"]["BestCoachRosterIDs"],
-                "points": max(x["PotentialPoints"] for x in model["Teams"]),
-                "efficiency": max(x["EfficiencyPercent"] for x in model["Teams"]),
             }, sort_keys=True), flush=True)
-            for i in range(0, len(encoded), 3000):
-                print("TWP_WEEK3_EXPORT_PART=" + encoded[i:i + 3000], flush=True)
 
 
     def test_real_all_finalized_weeks_readonly_on_published_pwf(self) -> None:
@@ -202,7 +205,7 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
                 for w in first["Weeks"]:
                     self.assertEqual(w["TeamCount"], 6)
                     self.assertTrue((REPO_ROOT / w["Path"]).is_file())
-                for week in (4, 5):
+                for week in (3, 4, 5):
                     generated = REPO_ROOT / derived_root / "team-week-performance/nfl-reise/2026" / f"{week:02d}.json"
                     published = REPO_ROOT / "data-derived/team-week-performance/nfl-reise/2026" / f"{week:02d}.json"
                     self.assertEqual(generated.read_bytes(), published.read_bytes())
