@@ -73,9 +73,16 @@ class SourcesTest(unittest.TestCase):
         self.assertEqual(params["position_by_player"], {"a": "WR", "b": "RB"})
         self.assertEqual([s.slot_id for s in params["slots"]], ["WR-1", "FLEX-1", "REC_FLEX-1"])
         self.assertTrue(params["finalized"])
-        self.assertIn("LastScoredLeg=4", params["finality_evidence"])
+        self.assertEqual(params["finality_evidence"],\n                         "data-source/nfl/game-finality/2024.json:REG-W4;league:scored-week-confirmed")
         self.assertEqual(self.calls, [{"season": 2024, "week": 4}])
         self.assertEqual(params["matchup_rows"], self.roster)
+
+    def test_finality_evidence_is_stable_when_later_weeks_are_scored(self):
+        before = validate_final_week(self.root, self.league, 2024, 4, nfl_finality=self.final)
+        self.league["WeekStructure"]["LastScoredLeg"] = 5
+        after = validate_final_week(self.root, self.league, 2024, 4, nfl_finality=self.final)
+        self.assertEqual(before, after)
+        self.assertNotIn("LastScoredLeg=", after)
 
     def test_league_scoring_gate_blocks_unfinalized_week(self):
         self.league["WeekStructure"]["LastScoredLeg"] = 3
