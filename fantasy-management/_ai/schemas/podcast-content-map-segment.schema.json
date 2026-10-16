@@ -267,6 +267,54 @@
       "items": {
         "type": "string"
       }
+    },
+    "weekly_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "season",
+        "week"
+      ],
+      "properties": {
+        "season": {
+          "type": "integer",
+          "minimum": 2000,
+          "maximum": 2200
+        },
+        "week": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 25
+        },
+        "as_of_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Source as-of date, only when verified."
+        },
+        "game": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "home_team",
+            "away_team"
+          ],
+          "properties": {
+            "home_team": {
+              "type": "string",
+              "minLength": 1
+            },
+            "away_team": {
+              "type": "string",
+              "minLength": 1
+            },
+            "canonical_game_id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Optional, only when verified against canonical schedule."
+            }
+          }
+        }
+      }
     }
   },
   "$defs": {
@@ -282,6 +330,7 @@
           "type": "string",
           "enum": [
             "player",
+            "game",
             "team",
             "position_group",
             "head_coach",
@@ -347,5 +396,34 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "segment_type": {
+            "enum": [
+              "game_preview",
+              "weekly_matchup",
+              "game_prediction",
+              "week_preview",
+              "weekly_start_sit",
+              "weekly_rankings",
+              "weekly_fantasy",
+              "player_matchup",
+              "streaming"
+            ]
+          }
+        },
+        "required": [
+          "segment_type"
+        ]
+      },
+      "then": {
+        "required": [
+          "weekly_context"
+        ]
+      }
+    }
+  ]
 }

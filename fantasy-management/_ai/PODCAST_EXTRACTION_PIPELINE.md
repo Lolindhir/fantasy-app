@@ -29,6 +29,7 @@ Podcast extraction is source-centered and entity-neutral. A source may primarily
 - injuries
 - NFL drafts, free agency or trades
 - fantasy formats, markets and strategy
+- week-specific NFL game previews, winner calls, start/sit and streaming recommendations
 
 Players remain the primary decision objects of later Fantasy Management analysis. They are not automatically the primary source objects of every episode.
 
@@ -127,6 +128,10 @@ The following files are deterministic generated entry points:
 - `index.json`
 
 A builder may copy the complete working package into the published location and generate those four entry points. It must not create new editorial interpretation during aggregation.
+
+## In-season game and weekly fantasy source context
+
+The active `game-matchup-preview` and `weekly-fantasy-start-sit` Golden Set profiles cover genuine NFL week/game previews and player-specific fantasy calls. A `game` may be the independent primary subject of a source take. For the listed weekly segment/take types, `weekly_context` records the **season and week**; attach verified matchup home/away teams and canonical game ID if available. Keep game-wide claims independent of but linked to affected players, preserve timing and host differences, and never rewrite original predictions with later scores or injuries. A podcast start/sit call is source evidence and never automatically a Mighty Giants lineup recommendation.
 
 ## Content Map
 

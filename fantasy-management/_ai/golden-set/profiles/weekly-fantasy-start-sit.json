@@ -1,0 +1,266 @@
+{
+  "profile_schema_version": 1,
+  "version": 1,
+  "depth_expectations": {
+    "passing": [
+      "Retain contextual references without manufacturing source positions."
+    ],
+    "brief": [
+      "Retain the spoken view and its immediate qualifiers without inventing details."
+    ],
+    "substantive": [
+      "Preserve conclusion, mechanism, meaningful conditions, limitations and source confidence."
+    ],
+    "deep": [
+      "Preserve the full reasoning chain, positive and negative paths, relevant comparisons, context, disagreements and uncertainty."
+    ],
+    "structural": [
+      "Preserve the broader game or weekly strategy independently of any one player; link affected subjects and conditions."
+    ]
+  },
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  },
+  "profile_id": "weekly-fantasy-start-sit",
+  "title": "Weekly Fantasy / Start-Sit",
+  "description": "Week-specific fantasy recommendations, rankings, streams, alternatives, role expectations and conditional start/sit calls with source attribution.",
+  "scope": {
+    "subject_types": [
+      "player",
+      "game",
+      "team",
+      "position_group",
+      "fantasy_format",
+      "strategy"
+    ],
+    "segment_types": [
+      "weekly_start_sit",
+      "weekly_rankings",
+      "weekly_fantasy",
+      "player_matchup",
+      "streaming",
+      "waiver_strategy",
+      "injury_news"
+    ],
+    "take_types": [
+      "start_sit",
+      "weekly_player_outlook",
+      "weekly_ranking",
+      "streamer_recommendation",
+      "weekly_comparison",
+      "conditional_start"
+    ]
+  },
+  "principles": [
+    "A weekly recommendation expires with its NFL week and must not overwrite enduring Dynasty evaluations.",
+    "Start/sit, FLEX, sleeper, streamer and avoid labels must reflect spoken source recommendations, not inferred sentiment.",
+    "Keep conditions tied to opponent, teammate injuries, lineup needs, league format and alternative starters when stated.",
+    "Preserve exact weekly ranks or tiers only if source-stated, and always preserve explicit player comparisons.",
+    "Maintain host attribution, conviction, uncertainty and timing. Later game results must not rewrite original calls.",
+    "Source takes are never automatic Mighty Giants lineup decisions; final start/sit belongs to the weekly decision process."
+  ],
+  "dimensions": [
+    {
+      "id": "weekly_identity",
+      "description": "season, NFL week and player or game applicability",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Record applicable season/week and the opponent/game only when supported or independently verified.",
+      "detection_questions": [
+        "Did the source materially discuss season, nfl week and player or game applicability?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "start_sit_call",
+      "description": "actual start, sit, must-start, flex or avoid language",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep recommendation strength, scope, source and any qualifiers.",
+      "detection_questions": [
+        "Did the source materially discuss actual start, sit, must-start, flex or avoid language?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "weekly_role",
+      "description": "projected snaps, routes, touches, targets and opportunity",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve the reasoning behind expected week-specific workload.",
+      "detection_questions": [
+        "Did the source materially discuss projected snaps, routes, touches, targets and opportunity?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "opponent_matchup",
+      "description": "opponent defensive tendencies and exploitable or difficult matchups",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve defense-related mechanism rather than a generic easy/hard label.",
+      "detection_questions": [
+        "Did the source materially discuss opponent defensive tendencies and exploitable or difficult matchups?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "game_script",
+      "description": "the game's projected pace, script and scoring opportunity",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain contextual effect and the assumptions it depends on.",
+      "detection_questions": [
+        "Did the source materially discuss the game's projected pace, script and scoring opportunity?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "injury_contingencies",
+      "description": "the player's or teammates' health and lineup uncertainty",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep conditional starts or sits conditional, not firm.",
+      "detection_questions": [
+        "Did the source materially discuss the player's or teammates' health and lineup uncertainty?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "ranking_tiers_alternatives",
+      "description": "weekly ordering, tiers, direct comparisons and relevant alternatives",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Capture actual preferences and their reasons, without invented numerical ranks.",
+      "detection_questions": [
+        "Did the source materially discuss weekly ordering, tiers, direct comparisons and relevant alternatives?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "format_lineup_context",
+      "description": "PPR, Superflex, FLEX, league depth and roster context",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve relevant source-stated league format assumptions.",
+      "detection_questions": [
+        "Did the source materially discuss ppr, superflex, flex, league depth and roster context?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "floor_ceiling",
+      "description": "weekly expected ceiling, floor, volatility and conviction",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep expressed uncertainty; never fabricate projected points.",
+      "detection_questions": [
+        "Did the source materially discuss weekly expected ceiling, floor, volatility and conviction?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "streaming_waivers",
+      "description": "weekly short-term waiver pickups and streaming rationale",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Distinguish a one-week rental from a long-term market call.",
+      "detection_questions": [
+        "Did the source materially discuss weekly short-term waiver pickups and streaming rationale?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "speaker_views",
+      "description": "host disagreement on an individual weekly call",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep attributable divergent recommendations separate.",
+      "detection_questions": [
+        "Did the source materially discuss host disagreement on an individual weekly call?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "time_boundary",
+      "description": "pre-kickoff as-of information and later invalidating events",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve when the call was made and which information was known.",
+      "detection_questions": [
+        "Did the source materially discuss pre-kickoff as-of information and later invalidating events?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    }
+  ],
+  "review_questions": [
+    "Does every weekly call identify its season and week?",
+    "Are start/sit strength, alternative players and reasons preserved accurately?",
+    "Are injury contingencies, game script and scoring-format limitations attached to the original claim?",
+    "Are individual host recommendations distinguished where necessary?",
+    "Can weekly player takes be linked to a game-wide forecast when both exist?",
+    "Are longer-term evaluations kept separate from this week's start/sit call?"
+  ],
+  "forbidden_distortions": [
+    "Never infer start/sit from generic praise or a favorable matchup alone.",
+    "Never change a conditional FLEX suggestion into a mandatory start.",
+    "Never invent exact rank, fantasy points, confidence or injury status.",
+    "Never use Mighty Giants roster context as though the podcast made a specific call.",
+    "Never alter the original take using information that emerged after the episode."
+  ],
+  "extension_signals": [
+    "Multi-game waiver and streaming articles require additional source-scoped context.",
+    "A recurring weekly value type cannot be represented by the existing take types.",
+    "Weekly profiles repeatedly need additional explicit horizon/format dimensions."
+  ]
+}

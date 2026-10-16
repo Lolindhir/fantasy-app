@@ -16,7 +16,11 @@ A segment may use multiple profiles. Examples:
 
 - a detailed rookie ranking may use `player-evaluation`, `position-group`, `ranking` and `market-strategy`;
 - a team preview may use `team-evaluation`, `coaching-staff`, `scheme-analysis` and `news-segment`;
-- a live rookie draft may use `mock-draft`, `ranking`, `market-strategy` and selected player profiles.
+- a live rookie draft may use `mock-draft`, `ranking`, `market-strategy` and selected player profiles;
+- a game-by-game in-season preview may use `game-matchup-preview`, `team-evaluation`, `coaching-staff` and `scheme-analysis`;
+- an in-season start/sit or weekly ranking segment may use `weekly-fantasy-start-sit`, `player-evaluation`, `ranking` and `game-matchup-preview`.
+
+For a concrete weekly forecast, preserve **NFL season and week** in the structured `weekly_context`; the home/away pairing is included when known, and a canonical game ID only when verified. Never turn a week-specific podcast take into an evergreen opinion or final fantasy-management lineup choice.
 
 Record selected profile IDs in the Content Map manifest, each relevant Content Map segment and every authored take.
 
