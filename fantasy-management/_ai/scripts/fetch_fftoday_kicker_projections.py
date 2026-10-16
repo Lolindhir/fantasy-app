@@ -17,6 +17,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
+from fftoday_season_gate import skip_reason
 from http_fetch_resilience import HttpFetchError, fetch_text_with_retry
 
 SOURCE_ID = "fftoday"
@@ -489,6 +490,11 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("Invalid season or max-stale-days")
         fetched_at = parse_timestamp(args.fetched_at)
         url = source_url(args.season)
+        if not args.input:
+            reason = skip_reason(args.repo_root.resolve(), args.season, fetched_at)
+            if reason:
+                print(f"[fftoday-projections:kicker] skipped: {reason}")
+                return 0
         if args.input:
             html = args.input.read_text(encoding="utf-8")
             headers: dict[str, str] = {}
