@@ -21,6 +21,12 @@ from external_source.snapshot_discovery import discover_snapshots  # noqa: E402
 from external_source.snapshot_plan import (  # noqa: E402
     SnapshotCollisionError, inspect_planned_snapshot, plan_snapshot,
 )
+from external_source.observation_adapter import (  # noqa: E402
+    ObservationAdapterError, load_ranked_evidence, load_roster_activity_evidence,
+)
+from external_source.snapshot_discovery import Snapshot  # noqa: E402
+from datetime import date
+
 
 PROVIDERS = {"fantasypros", "fantasycalc", "fantasy-football-calculator", "fftoday", "cbs-sports", "sleeper"}
 
@@ -293,6 +299,109 @@ class SnapshotPlanTests(unittest.TestCase):
             plan.metadata_file.write_text(json.dumps(metadata), encoding="utf-8")
             with self.assertRaisesRegex(SnapshotCollisionError, "collision"):
                 inspect_planned_snapshot(plan, csv_content=content)
+
+
+
+class VersionedObservationAdapterTests(unittest.TestCase):
+    def _observed_snapshot(self, dataset: dict, day: str) -> Snapshot:
+        directory = reg.dataset_dir(REPO_ROOT, dataset) / "snapshots" / day
+        return Snapshot(
+            day=date.fromisoformat(day), observed_at=None, key=day,
+            directory=directory,
+            ranking_file=directory / "ranking.csv",
+            metadata_file=directory / "metadata.json",
+        )
+
+    def test_all_19_current_dataset_contracts_without_source_writes(self) -> None:
+        registry = real_registry()
+        self.assertEqual(19, len(registry["datasets"]))
+        ranked_count = sleeper_count = 0
+        for dataset in registry["datasets"]:
+            with self.subTest(dataset_id=dataset["id"]):
+                if dataset["provider"] == "sleeper":
+                    source = REPO_ROOT / "data-source/market/roster-activity/sleeper/latest.json"
+                    result = load_roster_activity_evidence(dataset, source)
+                    self.assertEqual(dataset["id"], result.dataset_id)
+                    self.assertGreater(len(result.players), 0)
+                    sleeper_count += 1
+                else:
+                    pointer = json.loads((reg.dataset_dir(REPO_ROOT, dataset) / "latest.json").read_text(encoding="utf-8"))
+                    ranking = REPO_ROOT / pointer["ranking_file"]
+                    metadata = REPO_ROOT / pointer["metadata_file"]
+                    day = ranking.parent.name
+                    snapshot = Snapshot(
+                        day=date.fromisoformat(day), observed_at=None, key=day,
+                        directory=ranking.parent, ranking_file=ranking, metadata_file=metadata,
+                    )
+                    result = load_ranked_evidence(dataset, snapshot)
+                    self.assertEqual(dataset["id"], result.dataset_id)
+                    self.assertEqual(result.rows[0]["Rank"], "1")
+                    self.assertEqual(result.source_metadata["schema_version"], result.source_version)
+                    ranked_count += 1
+        self.assertEqual((17, 2), (ranked_count, sleeper_count))
+
+    def test_historical_observed_schema_versions_are_supported(self) -> None:
+        samples = [["fantasypros.ecr.dynasty-superflex-ppr","2026-07-15",5],["fantasypros.ecr.dynasty-superflex-ppr","2026-08-10",6],["fantasypros.ecr.dynasty-superflex-ppr","2026-10-16",7],["fantasycalc.value.dynasty-superflex-ppr-8-team","2026-07-17",2],["fantasycalc.value.dynasty-superflex-ppr-8-team","2026-08-10",3],["fantasycalc.value.dynasty-superflex-ppr-8-team","2026-10-16",4],["fantasy-football-calculator.adp.redraft-ppr-8-team","2026-09-20",1],["fantasy-football-calculator.adp.redraft-2qb-10-team","2026-10-16",2],["fftoday.projection.redraft-qb-preseason","2026-09-07",1],["cbs-sports.projection.redraft-qb-preseason","2026-10-16",1],["cbs-sports.projection.redraft-kicker-preseason","2026-10-16",2]]
+        for dataset_id, day, version in samples:
+            with self.subTest(dataset_id=dataset_id, day=day, version=version):
+                dataset = reg.get_dataset(real_registry(), dataset_id)
+                result = load_ranked_evidence(dataset, self._observed_snapshot(dataset, day))
+                self.assertEqual(version, result.source_version)
+                self.assertGreater(len(result.rows), 0)
+                self.assertEqual(day, result.snapshot_key)
+
+    def test_unknown_version_and_tampered_csv_fail_closed_without_mutating_data(self) -> None:
+        dataset = reg.get_dataset(real_registry(), "fantasycalc.value.dynasty-superflex-ppr-8-team")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "snapshots" / "2026-10-17"
+            root.mkdir(parents=True)
+            csv_content = "name,Rank,position,asset_type,source_asset_id,value,sleeper_id\nA,1,QB,player,123,99,123\n"
+            (root / "ranking.csv").write_text(csv_content, encoding="utf-8")
+            metadata = {
+                "schema_version": 99,
+                "snapshot": {
+                    "ranking_sha256": __import__("hashlib").sha256(csv_content.encode("utf-8")).hexdigest(),
+                    "row_count": 1,
+                },
+            }
+            (root / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
+            snapshot = Snapshot(date(2026,10,17),None,"2026-10-17",root,root/"ranking.csv",root/"metadata.json")
+            with self.assertRaisesRegex(ObservationAdapterError, "Unsupported Source schema_version"):
+                load_ranked_evidence(dataset,snapshot)
+            metadata["schema_version"] = 4
+            (root / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
+            self.assertEqual(1, len(load_ranked_evidence(dataset,snapshot).rows))
+            (root / "ranking.csv").write_text(csv_content.replace("99", "88"), encoding="utf-8")
+            with self.assertRaisesRegex(ObservationAdapterError, "SHA-256 mismatch"):
+                load_ranked_evidence(dataset,snapshot)
+
+    def test_sleeper_not_listed_preserved_and_unknown_version_blocked(self) -> None:
+        dataset = reg.get_dataset(real_registry(), "sleeper.trending.add")
+        source = load_roster_activity_evidence(
+            dataset, REPO_ROOT / "data-source/market/roster-activity/sleeper/latest.json"
+        )
+        self.assertTrue(any(
+            player["add"]["status"] == "not_listed"
+            and player["add"]["rank"] is None
+            and player["add"]["count"] is None
+            for player in source.players
+        ))
+        with tempfile.TemporaryDirectory() as tmp:
+            doc = Path(tmp) / "latest.json"
+            fixture = dict(source.source_document)
+            fixture["schema_version"] = 2
+            doc.write_text(json.dumps(fixture), encoding="utf-8")
+            with self.assertRaisesRegex(ObservationAdapterError, "Unsupported Source schema_version"):
+                load_roster_activity_evidence(dataset, doc)
+            fixture["schema_version"] = 1
+            fixture["players"] = [{
+                "sleeper_player_id": "A",
+                "add": {"status": "not_listed", "rank": None, "count": 0},
+                "drop": {"status": "listed", "rank": 1, "count": 100},
+            }]
+            doc.write_text(json.dumps(fixture), encoding="utf-8")
+            with self.assertRaisesRegex(ObservationAdapterError, "cannot mean zero"):
+                load_roster_activity_evidence(dataset, doc)
 
 
 if __name__ == "__main__":
