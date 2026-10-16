@@ -39,7 +39,7 @@ function Get-GeneratedDataLabel {
         "^public/data/past_seasons/Transactions/" { return "Transaction history" }
         "^public/data/backup/" { return "Backups" }
         "^fantasy-management/sources/external-rankings/expert-consensus/fantasypros/" { return "FantasyPros rankings" }
-        "^fantasy-management/sources/external-rankings/market-value/fantasycalc/" { return "FantasyCalc rankings" }
+        "^data-source/(market/market-value/fantasycalc|providers/fantasycalc|market/_status/fantasycalc\.json)" { return "FantasyCalc rankings" }
         "^fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/" { return "Fantasy Football Calculator ADP" }
         "^fantasy-management/sources/external-rankings/projections/fftoday/" { return "FFToday projections" }
         "^fantasy-management/sources/external-rankings/projections/cbs-sports/" { return "CBS Sports projections" }

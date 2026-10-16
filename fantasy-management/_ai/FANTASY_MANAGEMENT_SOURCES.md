@@ -318,27 +318,27 @@ FantasyPros ECR is expert consensus. It is not ADP, a projection or league-speci
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/market-value/fantasycalc/`
+`data-source/market/market-value/fantasycalc/` (snapshots and `latest.json`), raw responses and documentation under `data-source/providers/fantasycalc/`, heartbeat `data-source/market/_status/fantasycalc.json` (shared source layer, ADR-060)
 
 Available ranking IDs:
 
 - `dynasty-superflex-ppr-8-team`: observed long-term trade-market values including source draft-pick assets
 - `redraft-superflex-ppr-8-team`: observed current-season trade-market values
 
-FantasyCalc is queried with two quarterbacks, full PPR and the nearest supported eight-team proxy for the actual six-team league. No TEP parameter is used because two fixed TE starters are not equivalent to Tight-End-Premium scoring.
+FantasyCalc is queried with two quarterbacks, full PPR and the provider's nearest supported eight-team parameter. New snapshots carry no league team count. No TEP parameter is used because two fixed TE starters are not equivalent to Tight-End-Premium scoring.
 
 For each ranking, use `latest.json` to resolve the newest normalized snapshot and current `raw-latest.json`. Historical snapshots contain only `ranking.csv` and `metadata.json`; the complete API payload is retained only as the latest Raw response.
 
 Refresh both formats with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py --skip-unchanged
+python -m tools.external_source.fantasycalc --skip-unchanged
 ```
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-rankings/market-value/fantasycalc/README.md`
-- `fantasy-management/sources/external-rankings/market-value/fantasycalc/analysis-metadata.json`
+- `data-source/providers/fantasycalc/README.md`
+- `data-source/providers/fantasycalc/analysis-metadata.json`
 
 Operational rules:
 

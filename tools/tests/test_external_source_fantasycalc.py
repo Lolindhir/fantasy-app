@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-SCRIPT = Path(__file__).resolve().parents[1] / "fetch_fantasycalc_rankings.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "external_source" / "fantasycalc.py"
 spec = importlib.util.spec_from_file_location("fantasycalc_fetch", SCRIPT)
 module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
@@ -85,7 +85,6 @@ class FantasyCalcFetcherTests(unittest.TestCase):
     def test_uses_eight_team_proxy_without_tep(self):
         config = module.FORMAT_CONFIGS["dynasty"]
         params = module.request_parameters(config)
-        self.assertEqual(6, module.ACTUAL_LEAGUE_TEAMS)
         self.assertEqual("8", params["numTeams"])
         self.assertEqual("2", params["numQbs"])
         self.assertEqual("1", params["ppr"])
@@ -251,7 +250,9 @@ class FantasyCalcFetcherTests(unittest.TestCase):
             root = module.ranking_root(repo_root, config)
             self.assertTrue((root / "snapshots" / "2026-07-17" / "ranking.csv").is_file())
             self.assertFalse((root / "snapshots" / "2026-07-18").exists())
-            raw = json.loads((root / "raw-latest.json").read_text(encoding="utf-8"))
+            raw = json.loads(
+                (module.raw_root(repo_root, config) / "raw-latest.json").read_text(encoding="utf-8")
+            )
             self.assertEqual("second", raw[0]["rawNote"])
             latest = json.loads((root / "latest.json").read_text(encoding="utf-8"))
             self.assertEqual("2026-07-17", latest["snapshot_date"])
@@ -262,6 +263,13 @@ class FantasyCalcFetcherTests(unittest.TestCase):
                 )
             )
             self.assertEqual(module.SCHEMA_VERSION, metadata["schema_version"])
+            # E5 (ADR-060): no league context in new snapshots; the raw file lives in the provider area.
+            self.assertNotIn("actual_league_team_count", metadata["format"])
+            self.assertNotIn("team_count_usage", metadata["format"])
+            self.assertEqual(
+                "data-source/providers/fantasycalc/dynasty-superflex-ppr-8-team/raw-latest.json",
+                metadata["snapshot"]["raw_latest_file"],
+            )
             self.assertEqual(
                 1,
                 metadata["snapshot"]["rank_diagnostics"][
