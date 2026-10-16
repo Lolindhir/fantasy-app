@@ -1906,3 +1906,48 @@ decisions:
         - Reversible checkpoints, mandatory validation and technical safety remain.
       negative:
         - Each agent must assess actual operational impact and escalate uncertainty.
+
+  - id: ADR-060
+    title: External market, ranking, ADP, projection and roster-activity sources are shared Source Evidence under data-source
+    status: accepted
+    context: >
+      FantasyPros, FantasyCalc, Fantasy Football Calculator, FFToday, CBS Sports and Sleeper Trending are fetched by
+      Fantasy Management scripts and stored under fantasy-management/sources (Issue #988). ADR-037 says reusable
+      market/media acquisition must not stay in a consumer namespace. The inventory found league context
+      (actual_league_team_count) inside global observations, three raw retention styles, no CanonicalPlayerID and only
+      one season-aware quality contract, while the canonical identities already map FantasyPros, CBS and Sleeper IDs.
+    decision: >
+      Robert approved the migration plan and the foreseen workflow changes on 2026-10-14. The six sources become
+      Source Evidence in data-source. A separate registry (data-source/external-registry.json, like league-registry.json)
+      describes each dataset (provider x format): domain, kind, acquisition, provider format attributes, identity provider
+      key, retention, quality, season-phase policy and mandatory rights fields. Raw responses live under
+      data-source/providers/<provider>/<dataset>/ with latest-with-git-history retention. Normalized provider snapshots keep
+      their current layout under data-source/market/<kind>/<provider>/<format>/snapshots/<date>/ and are immutable once
+      written; history is moved with git mv. A per-dataset identity.json maps (Season, ProviderPlayerID) to CanonicalPlayerID
+      through provider-mappings.json, fail-closed, without name fallback, regenerable and written only on semantic change.
+      Observations carry format only as provider attributes; league context such as the league team count is not written.
+      Technical freshness status per provider lives under data-source/market/_status/; Fantasy Management keeps its readiness
+      gate as consumer policy. Code lives in tools/external_source_data.py and tools/external_source/. Acquisition keeps
+      running as matrix legs of fm-daily.yml until an App consumer exists. A challenge response of a provider is a blocked
+      state, never retried and never bypassed; a dataset inactive in the current NFL phase is not requested. No App display
+      without resolved rights (#190). Migration is one PR per provider with exact Fantasy Management output parity after
+      path-prefix normalization. Consumers do not read provider snapshots permanently: a deterministic Shared Derived product
+      data-derived/market-observations (one schema across providers, CanonicalPlayerID, full history) and central movement
+      models follow; App and Fantasy Management then read only those. Podcast transcripts later go to data-source/providers,
+      extracted takes and mentions (LLM output, not byte-reproducible) to data-source/media as immutable versioned
+      observations, and deterministic evaluations on top of them to data-derived; storage and publication rights stay a
+      separate per-dataset decision (ADR-037). Transition rule: until the market-observations cutover, Fantasy Management
+      reads the moved provider snapshots directly; this read is classified as transitional in consumerReadClassification and
+      removed with that cutover. Contract: .ai-context/manual/external-source-data.yaml.
+    rationale: >
+      One owner for consumer-neutral evidence, the same retention and identity rules as the rest of data-source, and a
+      migration that keeps every historical snapshot byte-identical.
+    consequences:
+      positive:
+        - App and Fantasy Management can read the same attributed values; Fantasy Management is no longer the hidden owner.
+        - Four of six sources gain a fail-closed CanonicalPlayerID without changing provider evidence.
+        - Season-phase expectations apply to every source, so preseason-only projections ending is not an error.
+      negative:
+        - A third registry next to registry v3 and league-registry.json.
+        - FFToday and Fantasy Football Calculator stay without CanonicalPlayerID until a provider ID mapping exists.
+        - Acquisition remains orchestrated by an FM-named workflow until a later split.
