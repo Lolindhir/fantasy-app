@@ -387,6 +387,8 @@ class VersionedObservationAdapterTests(unittest.TestCase):
         source = load_roster_activity_evidence(
             dataset, REPO_ROOT / "data-source/market/roster-activity/sleeper/latest.json"
         )
+        self.assertNotIn("comparison", source.source_document)
+        self.assertIn("players", source.source_document)
         self.assertTrue(any(
             player["add"]["status"] == "not_listed"
             and player["add"]["rank"] is None
