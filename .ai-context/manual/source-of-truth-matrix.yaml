@@ -984,16 +984,14 @@ consumerReadClassification:
       reads:
         provider:fantasyfootballcalculator: provider-evidence-fetcher
       note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py:
+    tools/external_source/cbs_sports_kicker.py:
       reads:
-        network: provider-evidence-fetcher
         provider:cbssports: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py:
+      note: 'Shared external source layer acquisition of attributed CBS Sports kicker projection evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
+    tools/external_source/cbs_sports_offense.py:
       reads:
-        network: provider-evidence-fetcher
         provider:cbssports: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+      note: 'Shared external source layer acquisition of attributed CBS Sports QB/RB/WR/TE projection evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
     tools/external_source/fantasycalc.py:
       reads:
         provider:fantasycalc: provider-evidence-fetcher

@@ -5,7 +5,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parents[1] / "fetch_cbs_sports_kicker_projections.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "external_source" / "cbs_sports_kicker.py"
 spec = importlib.util.spec_from_file_location("cbs_kicker_fetch", SCRIPT)
 module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
@@ -162,6 +162,18 @@ class CBSSportsTests(unittest.TestCase):
             self.assertEqual('2026-08-08', latest['snapshot_date'])
             self.assertFalse(latest['source_update_timestamp_available'])
             self.assertEqual('rest_of_season', latest['projection_horizon'])
+            # ADR-060: raw lives in the provider area, snapshots in the market area, no league context.
+            self.assertTrue((module.raw_root(Path(directory)) / 'raw-latest.html').is_file())
+            self.assertEqual(
+                'data-source/providers/cbs-sports/redraft-kicker-preseason/raw-latest.html',
+                latest['raw_latest_file'],
+            )
+            metadata = json.loads(
+                (Path(directory) / latest['metadata_file']).read_text()
+            )
+            self.assertEqual(module.SCHEMA_VERSION, metadata['schema_version'])
+            self.assertNotIn('actual_league_team_count', metadata['format'])
+            self.assertNotIn('actual_fixed_kicker_starters', metadata['format'])
 
     def test_changed_projection_creates_snapshot(self):
         rows, diagnostics = module.parse_projection_html(

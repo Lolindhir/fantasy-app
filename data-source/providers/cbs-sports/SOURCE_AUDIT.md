@@ -146,11 +146,11 @@ Ein Parserfehler oder unvollständiger Feed darf den letzten guten Source-Stand 
 ## Aktive Source-Pfade
 
 ```text
-fantasy-management/sources/external-rankings/projections/cbs-sports/redraft-qb-preseason/
-fantasy-management/sources/external-rankings/projections/cbs-sports/redraft-rb-preseason/
-fantasy-management/sources/external-rankings/projections/cbs-sports/redraft-wr-preseason/
-fantasy-management/sources/external-rankings/projections/cbs-sports/redraft-te-preseason/
-fantasy-management/sources/external-rankings/projections/cbs-sports/redraft-kicker-preseason/
+data-source/market/projection/cbs-sports/redraft-qb-preseason/
+data-source/market/projection/cbs-sports/redraft-rb-preseason/
+data-source/market/projection/cbs-sports/redraft-wr-preseason/
+data-source/market/projection/cbs-sports/redraft-te-preseason/
+data-source/market/projection/cbs-sports/redraft-kicker-preseason/
 ```
 
 ## Produktionsnachweis vom 10. August 2026

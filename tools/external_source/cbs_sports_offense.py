@@ -9,20 +9,29 @@ import io
 import json
 import os
 import re
+import sys
 import tempfile
-import urllib.error
-import urllib.request
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+from data_roots import data_source_dir  # noqa: E402
+from external_source.http import HttpFetchError, fetch_text_with_retry  # noqa: E402
+
+# Relative to the data-source root (tools/data_roots.py).
+MARKET_RELATIVE_DIR = Path("market/projection/cbs-sports")
+PROVIDER_RELATIVE_DIR = Path("providers/cbs-sports")
+
 SOURCE_ID = "cbs-sports"
 SOURCE_NAME = "CBS Sports"
 RANKING_KIND = "projections"
 SCHEMA_VERSION = 1
-SOURCE_ROOT = "fantasy-management/sources/external-rankings/projections/cbs-sports"
 USER_AGENT = "Mozilla/5.0 (compatible; MightyGiantsFantasy/1.0)"
 POSITIONS = {
     "QB": {
@@ -115,18 +124,15 @@ def source_url(position: str, season: int) -> str:
 
 
 def fetch_html(url: str, timeout: int = 30) -> tuple[str, dict[str, str]]:
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"})
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            charset = response.headers.get_content_charset() or "utf-8"
-            body = response.read().decode(charset, errors="replace")
-            return body, {
-                "etag": response.headers.get("ETag") or "",
-                "last_modified": response.headers.get("Last-Modified") or "",
-                "content_type": response.headers.get("Content-Type") or "",
-            }
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise ProjectionError(f"CBS Sports fetch failed: {exc}") from exc
+        return fetch_text_with_retry(
+            url,
+            timeout=timeout,
+            headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml"},
+            source_name="CBS Sports",
+        )
+    except HttpFetchError as exc:
+        raise ProjectionError(str(exc)) from exc
 
 
 def _number(value: str, field: str, name: str, *, allow_negative: bool = False) -> Decimal:
@@ -238,7 +244,11 @@ def ranking_id(position: str) -> str:
 
 
 def ranking_root(repo_root: Path, position: str) -> Path:
-    return repo_root / SOURCE_ROOT / ranking_id(position)
+    return data_source_dir(repo_root) / MARKET_RELATIVE_DIR / ranking_id(position)
+
+
+def raw_root(repo_root: Path, position: str) -> Path:
+    return data_source_dir(repo_root) / PROVIDER_RELATIVE_DIR / ranking_id(position)
 
 
 def _render_csv(rows: list[dict[str, Any]], position: str) -> str:
@@ -272,7 +282,7 @@ def _read_json(path: Path) -> dict[str, Any] | None:
 
 def write_projection(*, repo_root: Path, position: str, rows: list[dict[str, Any]], html: str, diagnostics: dict[str, Any], fetched_at: datetime, source_url_value: str, response_headers: dict[str, str], season: int, skip_unchanged: bool) -> tuple[list[Path], bool]:
     root = ranking_root(repo_root, position)
-    raw_path = root / "raw-latest.html"
+    raw_path = raw_root(repo_root, position) / "raw-latest.html"
     latest_path = root / "latest.json"
     snapshot_date = fetched_at.date().isoformat()
     csv_text = _render_csv(rows, position)

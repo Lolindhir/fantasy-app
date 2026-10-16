@@ -132,20 +132,20 @@ Diese Diagnose ist ausschließlich Observability. Sie darf nie dazu verwendet we
 Kicker:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --skip-unchanged
+python -m tools.external_source.cbs_sports_kicker --skip-unchanged
 ```
 
 QB/RB/WR/TE:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py --skip-unchanged
+python -m tools.external_source.cbs_sports_offense --skip-unchanged
 ```
 
 Prüfmodi für Kicker:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --dry-run
-python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --input /path/to/page.html --dry-run
+python -m tools.external_source.cbs_sports_kicker --dry-run
+python -m tools.external_source.cbs_sports_kicker --input /path/to/page.html --dry-run
 ```
 
 ## Automatische Aktualisierung

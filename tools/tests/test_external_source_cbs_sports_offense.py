@@ -2,11 +2,11 @@ import sys
 import unittest
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1]
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 
-import fetch_cbs_sports_offense_projections as module
+from external_source import cbs_sports_offense as module
 
 
 def fixture(
@@ -129,6 +129,29 @@ class CBSSportsOffenseTests(unittest.TestCase):
                     module.parse_projection_html(
                         fixture(position, week_one=True), position=position, season=2026
                     )
+
+
+class StorageLayoutTests(unittest.TestCase):
+    def test_raw_is_in_provider_area_and_snapshots_in_market_area(self):
+        import tempfile
+        from datetime import datetime, timezone
+
+        position = 'QB'
+        html = fixture(position)
+        rows, diagnostics = module.parse_projection_html(html, position=position, season=2026)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths, created = module.write_projection(
+                repo_root=root, position=position, rows=rows, html=html,
+                diagnostics=diagnostics, fetched_at=datetime(2026, 8, 8, tzinfo=timezone.utc),
+                source_url_value=module.source_url(position, 2026), response_headers={},
+                season=2026, skip_unchanged=True,
+            )
+            self.assertTrue(created)
+            self.assertTrue((module.raw_root(root, position) / 'raw-latest.html').is_file())
+            self.assertTrue((module.ranking_root(root, position) / 'latest.json').is_file())
+            self.assertFalse((module.ranking_root(root, position) / 'raw-latest.html').exists())
+            self.assertIn('data-source/market/projection/cbs-sports/redraft-qb-preseason', paths[1].as_posix())
 
 
 if __name__ == "__main__":

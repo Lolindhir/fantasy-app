@@ -452,7 +452,7 @@ CBS Sports is an active automated Projection provider for QB, RB, WR, TE and K. 
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/projections/cbs-sports/`
+`data-source/market/projection/cbs-sports/` (normalized snapshots) and `data-source/providers/cbs-sports/` (latest raw HTML and source documentation)
 
 Active ranking IDs:
 
@@ -467,16 +467,16 @@ The audited public Projection area also exposes DST projections. DST remains out
 Refresh directly with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --skip-unchanged
-python fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py --skip-unchanged
+python -m tools.external_source.cbs_sports_kicker --skip-unchanged
+python -m tools.external_source.cbs_sports_offense --skip-unchanged
 ```
 
 Canonical source documentation:
 
 - `fantasy-management/sources/external-rankings/projections/README.md`
-- `fantasy-management/sources/external-rankings/projections/cbs-sports/README.md`
-- `fantasy-management/sources/external-rankings/projections/cbs-sports/SOURCE_AUDIT.md`
-- `fantasy-management/sources/external-rankings/projections/cbs-sports/analysis-metadata.json`
+- `data-source/providers/cbs-sports/README.md`
+- `data-source/providers/cbs-sports/SOURCE_AUDIT.md`
+- `data-source/providers/cbs-sports/analysis-metadata.json`
 
 Operational rules:
 
