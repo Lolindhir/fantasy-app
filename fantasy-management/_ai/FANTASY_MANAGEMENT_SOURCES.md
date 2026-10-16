@@ -367,7 +367,7 @@ Fantasy Football Calculator is the active automated ADP provider.
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/`
+`data-source/market/adp/fantasy-football-calculator/`
 
 Available ranking IDs:
 
@@ -375,18 +375,18 @@ Available ranking IDs:
 - `redraft-ppr-8-team-kicker`: Kicker-only ADP derived from the same PPR 8-team all-position API payload without an additional network request
 - `redraft-2qb-10-team`: observed 2-QB mock-draft cost used primarily for quarterback-scarcity context
 
-For each ranking, use `latest.json` to resolve the newest normalized snapshot and the current Raw-fetch state. Load `ranking.csv` as the compact analysis table, `metadata.json` for source format, sample quality, provenance and freshness, and `raw-latest.json` only when the complete latest API payload or excluded source positions matter.
+For each ranking, use `latest.json` to resolve the newest normalized snapshot and the current Raw-fetch state. Load `ranking.csv` as the compact analysis table, `metadata.json` for source format, sample quality, provenance and freshness, and `data-source/providers/fantasy-football-calculator/<ranking-id>/raw-latest.json` only when the complete latest API payload or excluded source positions matter.
 
 Refresh all active FFC rankings together with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py --skip-unchanged
+python -m tools.external_source.fantasy_football_calculator --skip-unchanged
 ```
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/README.md`
-- `fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/analysis-metadata.json`
+- `data-source/providers/fantasy-football-calculator/README.md`
+- `data-source/providers/fantasy-football-calculator/analysis-metadata.json`
 
 Operational rules:
 

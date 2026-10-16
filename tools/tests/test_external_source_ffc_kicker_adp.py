@@ -5,11 +5,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 import sys
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1]
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 
-import fantasy_football_calculator_kicker_adp as module
+import external_source.fantasy_football_calculator_kicker_adp as module
 
 
 class FantasyFootballCalculatorKickerTests(unittest.TestCase):

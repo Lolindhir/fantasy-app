@@ -27,22 +27,21 @@ Das Kicker-Ranking wird **ohne zusätzlichen FFC-Request** aus demselben offizie
 ## Ablagestruktur
 
 ```text
-fantasy-football-calculator/
+data-source/market/adp/fantasy-football-calculator/<ranking-id>/
+├── latest.json
+└── snapshots/YYYY-MM-DD/{ranking.csv,metadata.json}
+
+data-source/providers/fantasy-football-calculator/
 ├── README.md
 ├── analysis-metadata.json
-├── redraft-ppr-8-team/
-│   ├── raw-latest.json
-│   ├── latest.json
-│   └── snapshots/YYYY-MM-DD/{ranking.csv,metadata.json}
-├── redraft-ppr-8-team-kicker/
-│   ├── raw-latest.json
-│   ├── latest.json
-│   └── snapshots/YYYY-MM-DD/{ranking.csv,metadata.json}
-└── redraft-2qb-10-team/
-    ├── raw-latest.json
-    ├── latest.json
-    └── snapshots/YYYY-MM-DD/{ranking.csv,metadata.json}
+├── source-contract.json
+├── observation.json
+└── <ranking-id>/raw-latest.json
+
+data-source/market/_status/fantasy-football-calculator.json   (Refresh-Heartbeat)
 ```
+
+`<ranking-id>` ist `redraft-ppr-8-team`, `redraft-ppr-8-team-kicker` oder `redraft-2qb-10-team`. Seit Schema 2 enthalten Snapshots keinen Liga-Kontext (`actual_league_team_count` entfällt); ältere Snapshots bleiben unverändert.
 
 ## Speicherregeln
 
@@ -61,7 +60,7 @@ Für jedes Ranking gilt:
 `ranking.csv` enthält:
 
 ```text
-name,Rank,source_rank,position,team,source_player_id,adp,adp_formatted,times_drafted,high,low,stdev,bye,source_format,source_team_count,actual_league_team_count,sample_total_drafts,sample_start_date,sample_end_date
+name,Rank,source_rank,position,team,source_player_id,adp,adp_formatted,times_drafted,high,low,stdev,bye,source_format,source_team_count,sample_total_drafts,sample_start_date,sample_end_date
 ```
 
 Rangsemantik:
@@ -107,7 +106,7 @@ Die FFC-Spieler-ID ist eine Quellenkennung und keine Sleeper-ID.
 ## Direkter Abruf
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py --skip-unchanged
+python -m tools.external_source.fantasy_football_calculator --skip-unchanged
 ```
 
 Der Befehl materialisiert die beiden bisherigen offensiven Rankings und das Kicker-Ranking. Das Kicker-Ranking verwendet dabei den bereits geladenen 8-Team-PPR-Payload und erzeugt keinen dritten API-Request.
@@ -115,8 +114,8 @@ Der Befehl materialisiert die beiden bisherigen offensiven Rankings und das Kick
 Prüfmodi:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py --dry-run
-python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py \
+python -m tools.external_source.fantasy_football_calculator --dry-run
+python -m tools.external_source.fantasy_football_calculator \
   --input ppr-8-team=/path/ppr.json \
   --input 2qb-10-team=/path/2qb.json \
   --dry-run

@@ -13,15 +13,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from fantasy_football_calculator_adp_core import (
-    ACTUAL_TEAMS,
-    ANALYSIS_METADATA,
+from external_source.fantasy_football_calculator_adp_core import (
+    analysis_metadata_file,
+    market_dir,
+    provider_dir,
     CSV_FIELDS,
     DIRECT_FETCHER,
     SCHEMA_VERSION,
     SOURCE_ID,
     SOURCE_NAME,
-    SOURCE_ROOT,
     WEBSITE,
     request_parameters,
 )
@@ -66,7 +66,11 @@ def read_json(path: Path) -> dict[str, Any] | None:
 
 
 def ranking_root(repo_root: Path, config: dict[str, Any]) -> Path:
-    return repo_root / SOURCE_ROOT / config["ranking_id"]
+    return market_dir(repo_root) / config["ranking_id"]
+
+
+def raw_root(repo_root: Path, config: dict[str, Any]) -> Path:
+    return provider_dir(repo_root) / config["ranking_id"]
 
 
 def build_metadata(
@@ -81,6 +85,8 @@ def build_metadata(
     csv_text: str,
     raw_text: str,
     season: int,
+    repo_root: Path,
+    raw_latest_file: str,
 ) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
@@ -99,8 +105,6 @@ def build_metadata(
             "scoring": config["scoring"],
             "two_qb": config["two_qb"],
             "source_team_count": config["teams"],
-            "actual_league_team_count": ACTUAL_TEAMS,
-            "team_count_usage": "nearest_supported_proxy",
             "fixed_two_te_modeled_by_source": False,
         },
         "sample": sample,
@@ -108,7 +112,7 @@ def build_metadata(
             "snapshot_date": fetched_at.date().isoformat(),
             "ranking_file": "ranking.csv",
             "metadata_file": "metadata.json",
-            "raw_latest_file": "../../raw-latest.json",
+            "raw_latest_file": raw_latest_file,
             "row_count": len(rows),
             "position_counts": dict(
                 sorted(Counter(row["position"] for row in rows).items())
@@ -149,14 +153,10 @@ def build_metadata(
             "not_expert_consensus": True,
             "not_trade_market_value": True,
             "not_projection": True,
-            "comparison_contract": ANALYSIS_METADATA,
+            "comparison_contract": analysis_metadata_file(repo_root),
             "rank_comparison": (
                 "Use list-length-aware percentiles; never average the PPR "
                 "and 2-QB feeds."
-            ),
-            "league_adjustment": (
-                "Apply six-team replacement level and fixed two-QB/two-TE "
-                "context during analysis."
             ),
         },
         "attribution": {
@@ -182,7 +182,7 @@ def write_format(
     skip_unchanged: bool,
 ) -> tuple[list[Path], bool]:
     root = ranking_root(repo_root, config)
-    raw_path = root / "raw-latest.json"
+    raw_path = raw_root(repo_root, config) / "raw-latest.json"
     latest_path = root / "latest.json"
     snapshot_dir = root / "snapshots" / fetched_at.date().isoformat()
     ranking_path = snapshot_dir / "ranking.csv"
@@ -225,6 +225,8 @@ def write_format(
         csv_text,
         raw_text,
         season,
+        repo_root,
+        raw_path.relative_to(repo_root).as_posix(),
     )
     latest = {
         "schema_version": SCHEMA_VERSION,
@@ -245,7 +247,7 @@ def write_format(
         "latest_sample": sample,
         "freshness_status": "live_fetch",
         "direct_fetcher": DIRECT_FETCHER,
-        "analysis_metadata_file": ANALYSIS_METADATA,
+        "analysis_metadata_file": analysis_metadata_file(repo_root),
         "refresh_before_value_sensitive_analysis": True,
     }
     atomic_write(ranking_path, csv_text)

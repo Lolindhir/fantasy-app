@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 import unittest
 from pathlib import Path
 
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
 SCRIPT = (
     Path(__file__).resolve().parents[1]
+    / "external_source"
     / "fantasy_football_calculator_source_quality.py"
 )
 spec = importlib.util.spec_from_file_location("ffc_source_quality", SCRIPT)
