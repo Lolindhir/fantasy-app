@@ -142,5 +142,52 @@ class HistoricalWeeklyRosterIdentityTests(unittest.TestCase):
         )
 
 
+class CurrentRepositoryHistoricalIdentityAudit(unittest.TestCase):
+    @unittest.skipUnless(
+        (TOOLS.parent / "data-source/nfl/identities/players.json").is_file(),
+        "Requires persisted canonical source data",
+    )
+    def test_missing_2024_2025_gsis_are_source_owned_and_count_impact(self):
+        from nfl_source_data_lib.common import load_registry
+
+        root = TOOLS.parent
+        datasets = {item.id: item for item in load_registry(root)}
+        identity = json.loads(
+            (root / "data-source/nfl/identities/players.json").read_text(encoding="utf-8")
+        )
+        existing_gsis = {
+            token
+            for row in identity["Players"]
+            for token in [row.get("IDs", {}).get("GSIS"),
+                          *(row.get("IDAliases", {}).get("GSIS") or [])]
+            if token
+        }
+        known_candidates = [known(token, "canonical-existing") for token in existing_gsis]
+        fallback = historical_weekly_roster_identity_candidates(
+            root, datasets, known_candidates,
+        )
+        fallback_ids = {row.ids["GSIS"] for row in fallback}
+        target: set[str] = set()
+        for season, week in ((2024, 1), (2024, 2), (2025, 1)):
+            payload = json.loads((root / (
+                f"data-source/nfl/weekly-rosters/{season}/{week:02d}.json"
+            )).read_text(encoding="utf-8"))
+            for row in payload["Records"]:
+                if (row.get("Position") in {"QB", "RB", "WR", "TE", "FB", "K"}
+                        and row.get("Status") != "RET"
+                        and not row.get("CanonicalPlayerID")):
+                    gsis = row.get("SourceIDs", {}).get("GSIS")
+                    if gsis not in existing_gsis:
+                        target.add(gsis)
+        missing = target - fallback_ids
+        print(
+            f"Historical roster-only identity candidate impact: total={len(fallback_ids)} "
+            f"target={len(target)} missing={len(missing)}", flush=True,
+        )
+        self.assertFalse(missing, sorted(missing)[:15])
+        self.assertGreaterEqual(len(target), 100)
+
+
+
 if __name__ == "__main__":
     unittest.main()
