@@ -78,7 +78,7 @@ http:
     - Bounded retries with backoff and Retry-After for transient statuses; the last good state stays untouched on failure.
     - An access challenge (403 with Cloudflare challenge header or body) raises HttpFetchBlockedError, is never retried and is never bypassed.
     - A dataset whose season policy is inactive for the current phase is not requested.
-  shim: fantasy-management/_ai/scripts/http_fetch_resilience.py re-exports the module until the last fetcher has moved.
+  note: The former Fantasy Management shim http_fetch_resilience.py was removed with the last provider move (Issue #988 step 3.7).
 
 governance:
   - Acquisition stays a matrix leg of fm-daily.yml (ADR-051) until an App consumer exists; a separate workflow needs its own approval.

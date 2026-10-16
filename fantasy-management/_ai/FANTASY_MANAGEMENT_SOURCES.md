@@ -234,11 +234,15 @@ Operational rules:
 
 ### External-ranking hierarchy
 
-All ordered external player or asset evaluations belong under:
+Active external ranking, ADP, market-value and projection providers are shared Source Evidence (ADR-060, Issue #988) and live in the shared source layer, not in `fantasy-management`:
 
 ```text
-fantasy-management/sources/external-rankings/<ranking_kind>/<provider>/<format>/
+data-source/market/<ranking_kind>/<provider>/<format>/   normalized snapshots, latest.json
+data-source/providers/<provider>/<dataset>/               raw-latest.*, README, SOURCE_AUDIT, analysis-metadata
+data-source/market/_status/<provider>.json                refresh heartbeat
 ```
+
+`fantasy-management/sources/external-rankings/` keeps only audits of inspected but inactive sources and manual-reference notes (KeepTradeCut, Dynasty Data Lab, FantasyPros ADP) plus the ranking-kind rules below. Fetchers live in `tools/external_source/`; Fantasy Management reads the moved snapshots only as a transitional consumer until the `market-observations` product exists.
 
 The first level describes how the ordering is produced, not who publishes it.
 

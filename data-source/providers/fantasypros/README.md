@@ -74,4 +74,4 @@ data-source/providers/fantasypros/analysis-metadata.json
 - Möglichst Snapshots desselben Tages verwenden.
 - Listenlängenabhängige Perzentile statt roher Rangdifferenzen bilden.
 - FantasyPros ECR ist Expertenkonsens, kein ADP, keine Projektion und keine ligaindividuelle Wahrheit.
-- Die Anwendung auf Mighty Giants muss zusätzlich Ligaformat, Replacement Level, zwei feste QB- und TE-Plätze, Roster, Salary/Cap, Ownership, Verletzungen, Rollenänderungen und weitere Marktquellen berücksichtigen.
+- Eine ligaspezifische Anwendung (Consumer, nicht die Source-Schicht) muss zusätzlich Ligaformat, Replacement Level, Lineup-Slots, Roster, Salary/Cap, Ownership, Verletzungen, Rollenänderungen und weitere Marktquellen berücksichtigen.
