@@ -169,6 +169,70 @@ def _persisted_player_stats_gsis_ids(dataset: Dataset) -> set[str]:
     return ids
 
 
+def historical_weekly_roster_identity_candidates(
+    repo_root: Path,
+    datasets: dict[str, Dataset],
+    known_candidates: list[IdentityCandidate],
+) -> list[IdentityCandidate]:
+    """Restore identity for real GSIS tokens evidenced by persisted weekly roster raw.
+
+    Current nflverse.players / ff-player-ids plus historical stat participation
+    already cover most GSIS IDs. Past preseason cuts and non-scoring reserve
+    players may only occur in immutable weekly roster evidence. A real GSIS ID
+    is a direct, provider-owned identity token; names/teams are *not* used to
+    invent a link. Preserve previous roster-only source provenance on replay,
+    otherwise the second materialization would drop that Source and not no-op.
+    """
+    dataset = datasets.get("nflverse.weekly-rosters")
+    if dataset is None or not dataset.is_season_partitioned:
+        return []
+
+    known_gsis = {
+        value
+        for candidate in known_candidates
+        if (value := candidate.ids.get("GSIS"))
+    }
+    existing = load_json(
+        repo_root / DATA_SOURCE_ROOT / "nfl/identities/players.json", {}
+    ) or {}
+    roster_owned_gsis: set[str] = set()
+    for row in existing.get("Players", []) or []:
+        if "nflverse.weekly-rosters" not in (row.get("Sources") or []):
+            continue
+        gsis = clean((row.get("IDs") or {}).get("GSIS"))
+        if gsis:
+            roster_owned_gsis.add(gsis)
+        for alias in (row.get("IDAliases") or {}).get("GSIS") or []:
+            if (value := clean(alias)):
+                roster_owned_gsis.add(value)
+
+    pattern = dataset.raw_path.name.replace("{season}", "*")
+    observed: set[str] = set()
+    for path in sorted(dataset.raw_path.parent.glob(pattern)):
+        if not path.is_file():
+            continue
+        for row in iter_csv(path):
+            gsis = clean(row.get("gsis_id"))
+            if gsis and _VALID_GSIS_PLAYER_ID.fullmatch(gsis):
+                observed.add(gsis)
+
+    return [
+        IdentityCandidate(
+            ids={"GSIS": gsis},
+            name=None,
+            first_name=None,
+            last_name=None,
+            birth_date=None,
+            position=None,
+            latest_team=None,
+            source="nflverse.weekly-rosters",
+            priority=40,
+        )
+        for gsis in sorted(observed)
+        if gsis not in known_gsis or gsis in roster_owned_gsis
+    ]
+
+
 def raw_identity_candidates(
     repo_root: Path,
     datasets: dict[str, Dataset],
