@@ -33,7 +33,11 @@ from .identity_model import (
     ids_from_ff,
     ids_from_players,
 )
-from .identity_sources import raw_identity_candidates, sleeper_player_candidates
+from .identity_sources import (
+    historical_weekly_roster_identity_candidates,
+    raw_identity_candidates,
+    sleeper_player_candidates,
+)
 from data_roots import DATA_SOURCE_ROOT
 
 
@@ -831,6 +835,9 @@ def build_identities(
 ]:
     raw_candidates, ff_rows, ff_candidates, source_conflicts = raw_identity_candidates(repo_root, datasets)
     existing_candidates = existing_identity_candidates(repo_root)
+    raw_candidates.extend(historical_weekly_roster_identity_candidates(
+        repo_root, datasets, [*existing_candidates, *raw_candidates],
+    ))
     if observation_season is None:
         from .materialize import _observation_season
 
