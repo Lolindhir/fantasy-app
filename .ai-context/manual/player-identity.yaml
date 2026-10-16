@@ -44,7 +44,11 @@ identityModel:
     frozenHistory: >
       Frozen historical partitions may be schema-normalized from the legacy field
       name to CanonicalPlayerID without --force because no historical fact changes.
-      Their canonical ID values and all other semantic facts remain unchanged.
+      A frozen nflverse player-stats or weekly-rosters partition may also enrich
+      a missing (null) CanonicalPlayerID from durable, non-ambiguous GSIS evidence
+      only when every other semantic fact and every existing non-null canonical
+      ID remains identical. It cannot rename people, alter facts or substitute
+      display-name matches. A different repair still requires explicit --force.
 
   currentAppIdentity:
     path: public/data/Players.json
