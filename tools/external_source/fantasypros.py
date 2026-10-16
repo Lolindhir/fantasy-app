@@ -6,7 +6,7 @@ The public FantasyPros rankings page embeds its ranking payload in the HTML as
 and validates the payload, then writes:
 
 - ``ranking.csv`` as a compact normalized analysis table
-- ``raw-ecr-data.json`` as the complete parsed ``ecrData`` payload
+- ``data-source/providers/fantasypros/<ranking>/raw-latest.json`` as the complete parsed ``ecrData`` payload (latest only)
 - ``metadata.json`` with provenance, schema and freshness information
 - ``latest.json`` as a pointer to the newest successful snapshot
 
@@ -22,18 +22,29 @@ import json
 import re
 import sys
 import tempfile
-import urllib.error
-import urllib.request
 from collections import Counter
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Iterable
 
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+from data_roots import data_source_dir  # noqa: E402
+from external_source.http import HttpFetchError, fetch_text_with_retry  # noqa: E402
+
+# Relative to the data-source root (tools/data_roots.py).
+MARKET_RELATIVE_DIR = Path("market/expert-consensus/fantasypros")
+PROVIDER_RELATIVE_DIR = Path("providers/fantasypros")
+DIRECT_FETCHER = "tools/external_source/fantasypros.py"
+
 SOURCE_URL = "https://www.fantasypros.com/nfl/rankings/dynasty-superflex.php"
 SOURCE_ID = "fantasypros"
 RANKING_ID = "dynasty-superflex-ppr"
-SCHEMA_VERSION = 5
+# Schema 7: no league context and the raw ECR payload lives in providers/.
+SCHEMA_VERSION = 7
 MIN_PLAYER_ROWS = 150
 OFFENSIVE_POSITIONS = frozenset({"QB", "RB", "WR", "TE"})
 CONSENSUS_FIELDS = ("tier", "rank_min", "rank_max", "rank_ave", "rank_std")
@@ -61,25 +72,19 @@ class FantasyProsFetchError(RuntimeError):
 
 
 def fetch_html(url: str = SOURCE_URL, *, timeout: int = 30) -> tuple[str, dict[str, str]]:
-    request = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": USER_AGENT,
-            "Accept": "text/html,application/xhtml+xml",
-            "Accept-Language": "en-US,en;q=0.9",
-        },
-    )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            charset = response.headers.get_content_charset() or "utf-8"
-            html = response.read().decode(charset, errors="replace")
-            headers = {
-                "etag": response.headers.get("ETag") or "",
-                "last_modified": response.headers.get("Last-Modified") or "",
-                "content_type": response.headers.get("Content-Type") or "",
-            }
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise FantasyProsFetchError(f"FantasyPros fetch failed: {exc}") from exc
+        html, headers = fetch_text_with_retry(
+            url,
+            timeout=timeout,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "text/html,application/xhtml+xml",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+            source_name="FantasyPros",
+        )
+    except HttpFetchError as exc:
+        raise FantasyProsFetchError(str(exc)) from exc
 
     if not html.strip():
         raise FantasyProsFetchError("FantasyPros returned an empty response")
@@ -309,14 +314,11 @@ def atomic_write_text(path: Path, content: str) -> None:
 
 
 def ranking_root(repo_root: Path) -> Path:
-    return (
-        repo_root
-        / "fantasy-management"
-        / "sources"
-        / "external-rankings"
-        / "fantasypros"
-        / RANKING_ID
-    )
+    return data_source_dir(repo_root) / MARKET_RELATIVE_DIR / RANKING_ID
+
+
+def raw_path_for(repo_root: Path, ranking_id: str = RANKING_ID) -> Path:
+    return data_source_dir(repo_root) / PROVIDER_RELATIVE_DIR / ranking_id / "raw-latest.json"
 
 
 def latest_snapshot_metadata(repo_root: Path) -> dict[str, Any] | None:
@@ -428,6 +430,7 @@ def build_metadata(
     ecr_data: dict[str, Any],
     fetched_at: datetime,
     response_headers: dict[str, str],
+    raw_data_file: str = "",
 ) -> dict[str, Any]:
     ranks = [int(row["Rank"]) for row in rows]
     missing_ranks = sorted(set(range(min(ranks), max(ranks) + 1)) - set(ranks))
@@ -456,7 +459,7 @@ def build_metadata(
         "snapshot": {
             "snapshot_date": fetched_at.date().isoformat(),
             "ranking_file": "ranking.csv",
-            "raw_data_file": "raw-ecr-data.json",
+            "raw_data_file": raw_data_file,
             "row_count": len(rows),
             "rank_min": min(ranks),
             "rank_max": max(ranks),
@@ -500,7 +503,7 @@ def build_metadata(
             },
             "field_semantics": {
                 "reference": (
-                    "fantasy-management/sources/external-rankings/fantasypros/README.md"
+                    (Path(raw_data_file).parent.parent / "README.md").as_posix() if raw_data_file else ""
                 ),
                 "methodology_status": (
                     "exact_aggregation_formula_not_available_in_source_payload"
@@ -528,10 +531,6 @@ def build_metadata(
                 },
                 "plausible_explanation_status": "unconfirmed",
             },
-            "league_adjustment": (
-                "Use as a Superflex proxy. In the Mighty Giants league with two fixed QB "
-                "starters, quarterbacks may require an additional scarcity boost."
-            ),
         },
     }
 
@@ -548,7 +547,7 @@ def write_snapshot(
     snapshot_date = fetched_at.date().isoformat()
     snapshot_dir = root / "snapshots" / snapshot_date
     ranking_path = snapshot_dir / "ranking.csv"
-    raw_path = snapshot_dir / "raw-ecr-data.json"
+    raw_path = raw_path_for(repo_root)
     metadata_path = snapshot_dir / "metadata.json"
     latest_path = root / "latest.json"
 
@@ -561,6 +560,7 @@ def write_snapshot(
         ecr_data=ecr_data,
         fetched_at=fetched_at,
         response_headers=response_headers,
+        raw_data_file=raw_path.relative_to(repo_root).as_posix(),
     )
     relative_snapshot = snapshot_dir.relative_to(repo_root).as_posix()
     latest = {
@@ -574,7 +574,7 @@ def write_snapshot(
         "raw_data_file": raw_path.relative_to(repo_root).as_posix(),
         "metadata_file": metadata_path.relative_to(repo_root).as_posix(),
         "freshness_status": "live_fetch",
-        "direct_fetcher": "fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py",
+        "direct_fetcher": DIRECT_FETCHER,
         "refresh_before_value_sensitive_analysis": True,
     }
 
@@ -595,7 +595,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--repo-root",
         type=Path,
-        default=Path(__file__).resolve().parents[3],
+        default=TOOLS_DIR.parent,
         help="Repository root used for snapshot output",
     )
     parser.add_argument(

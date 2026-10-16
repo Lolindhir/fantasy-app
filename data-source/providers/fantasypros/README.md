@@ -14,28 +14,25 @@ Beide Rankings besitzen dasselbe normalisierte CSV-Schema und dieselben Konsensf
 ## Ablagestruktur
 
 ```text
-expert-consensus/fantasypros/
+data-source/market/expert-consensus/fantasypros/<ranking-id>/
+  latest.json
+  snapshots/YYYY-MM-DD/{ranking.csv,metadata.json}
+
+data-source/providers/fantasypros/
   README.md
   analysis-metadata.json
-  dynasty-superflex-ppr/
-    latest.json
-    snapshots/YYYY-MM-DD/
-      ranking.csv
-      raw-ecr-data.json
-      metadata.json
-  redraft-ppr-superflex/
-    latest.json
-    snapshots/YYYY-MM-DD/
-      ranking.csv
-      raw-ecr-data.json
-      metadata.json
+  <ranking-id>/raw-latest.json
+
+data-source/market/_status/fantasypros.json   (Refresh-Heartbeat)
 ```
+
+`<ranking-id>` ist `dynasty-superflex-ppr` oder `redraft-ppr-superflex`. Ältere Snapshots (bis Schema 6) enthalten zusätzlich `raw-ecr-data.json` und bleiben unverändert; seit Schema 7 liegt der Roh-Payload nur noch als `raw-latest.json` unter `providers/` (Historie über Git).
 
 ## Direkter Abruf
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --skip-unchanged
-python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py --skip-unchanged
+python -m tools.external_source.fantasypros --skip-unchanged
+python -m tools.external_source.fantasypros_redraft --skip-unchanged
 ```
 
 Die offiziellen öffentlichen Seiten werden direkt aus dem eingebetteten `ecrData`-Payload gelesen. Es gibt keinen Mirror-Fallback. Netzwerk-, Source-Identity-, Schema-, Format- und Plausibilitätsfehler blockieren die Veröffentlichung eines neuen `latest.json`-Stands.
@@ -45,7 +42,7 @@ Der Workflow `FM • Ranking • FantasyPros ECR` testet und aktualisiert beide 
 ## Snapshot-Dateien
 
 - `ranking.csv`: kompakte normalisierte Analysequelle.
-- `raw-ecr-data.json`: vollständiger geparster `ecrData`-Payload des Snapshots.
+- `raw-latest.json` (unter `data-source/providers/fantasypros/<ranking-id>/`): vollständiger geparster `ecrData`-Payload des neuesten Snapshots.
 - `metadata.json`: Format, Provenienz, Raw-Schema, Feldabdeckung, Diagnostik und Hashes.
 - `latest.json`: Zeiger auf den neuesten erfolgreichen Snapshot.
 
@@ -58,7 +55,7 @@ name,Rank,position,team,position_rank,tier,rank_min,rank_max,rank_ave,rank_std,s
 Der gemeinsame Auswertungsvertrag liegt unter:
 
 ```text
-fantasy-management/sources/external-rankings/expert-consensus/fantasypros/analysis-metadata.json
+data-source/providers/fantasypros/analysis-metadata.json
 ```
 
 ## Konsensfelder

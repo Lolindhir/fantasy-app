@@ -16,29 +16,28 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 
-import fetch_fantasypros_dynasty_superflex as shared
+from data_roots import data_source_dir  # noqa: E402
+import external_source.fantasypros as shared  # noqa: E402
+
+# Relative to the data-source root (tools/data_roots.py).
+MARKET_RELATIVE_DIR = shared.MARKET_RELATIVE_DIR
 
 SOURCE_URL = "https://www.fantasypros.com/nfl/rankings/ppr-superflex-cheatsheets.php"
 SOURCE_ID = shared.SOURCE_ID
 RANKING_ID = "redraft-ppr-superflex"
 RANKING_NAME = "Redraft PPR Superflex ECR"
-SCHEMA_VERSION = shared.SCHEMA_VERSION
+SCHEMA_VERSION = shared.SCHEMA_VERSION  # 7, see fantasypros.py
 MIN_PLAYER_ROWS = shared.MIN_PLAYER_ROWS
 OFFENSIVE_POSITIONS = shared.OFFENSIVE_POSITIONS
 CONSENSUS_FIELDS = shared.CONSENSUS_FIELDS
 CSV_FIELDS = shared.CSV_FIELDS
 USER_AGENT = shared.USER_AGENT
 FantasyProsFetchError = shared.FantasyProsFetchError
-ANALYSIS_METADATA_FILE = (
-    "fantasy-management/sources/external-rankings/fantasypros/analysis-metadata.json"
-)
-DIRECT_FETCHER = (
-    "fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py"
-)
+DIRECT_FETCHER = "tools/external_source/fantasypros_redraft.py"
 
 extract_ecr_data = shared.extract_ecr_data
 parse_players = shared.parse_players
@@ -54,6 +53,12 @@ parse_timestamp = shared.parse_timestamp
 
 def fetch_html(url: str = SOURCE_URL, *, timeout: int = 30) -> tuple[str, dict[str, str]]:
     return shared.fetch_html(url, timeout=timeout)
+
+
+def analysis_metadata_file(repo_root: Path) -> str:
+    return (
+        data_source_dir(repo_root) / shared.PROVIDER_RELATIVE_DIR / "analysis-metadata.json"
+    ).relative_to(repo_root).as_posix()
 
 
 def validate_source_identity(data: dict[str, Any]) -> None:
@@ -82,14 +87,7 @@ def validate_source_identity(data: dict[str, Any]) -> None:
 
 
 def ranking_root(repo_root: Path) -> Path:
-    return (
-        repo_root
-        / "fantasy-management"
-        / "sources"
-        / "external-rankings"
-        / "fantasypros"
-        / RANKING_ID
-    )
+    return data_source_dir(repo_root) / MARKET_RELATIVE_DIR / RANKING_ID
 
 
 def latest_snapshot_metadata(repo_root: Path) -> dict[str, Any] | None:
@@ -157,6 +155,8 @@ def build_metadata(
     ecr_data: dict[str, Any],
     fetched_at,
     response_headers: dict[str, str],
+    raw_data_file: str = "",
+    analysis_metadata: str = "",
 ) -> dict[str, Any]:
     metadata = shared.build_metadata(
         rows=rows,
@@ -165,6 +165,7 @@ def build_metadata(
         ecr_data=ecr_data,
         fetched_at=fetched_at,
         response_headers=response_headers,
+        raw_data_file=raw_data_file,
     )
     source_year = str(ecr_data.get("year") or "").strip()
     metadata.update(
@@ -192,12 +193,7 @@ def build_metadata(
             "role": "Current-season external expert-consensus and win-now context",
             "value_horizon": "single_season",
             "primary_use": "current_season_lineup_value",
-            "comparison_contract": ANALYSIS_METADATA_FILE,
-            "league_adjustment": (
-                "Use for current-season production and win-now context, not as Dynasty "
-                "trade value. The Mighty Giants league starts two fixed QBs and two fixed "
-                "TEs, so league-specific scarcity may still require additional QB and TE adjustments."
-            ),
+            "comparison_contract": analysis_metadata,
         }
     )
     return metadata
@@ -215,7 +211,7 @@ def write_snapshot(
     snapshot_date = fetched_at.date().isoformat()
     snapshot_dir = root / "snapshots" / snapshot_date
     ranking_path = snapshot_dir / "ranking.csv"
-    raw_path = snapshot_dir / "raw-ecr-data.json"
+    raw_path = shared.raw_path_for(repo_root, RANKING_ID)
     metadata_path = snapshot_dir / "metadata.json"
     latest_path = root / "latest.json"
 
@@ -228,6 +224,8 @@ def write_snapshot(
         ecr_data=ecr_data,
         fetched_at=fetched_at,
         response_headers=response_headers,
+        raw_data_file=raw_path.relative_to(repo_root).as_posix(),
+        analysis_metadata=analysis_metadata_file(repo_root),
     )
     relative_snapshot = snapshot_dir.relative_to(repo_root).as_posix()
     latest = {
@@ -242,7 +240,7 @@ def write_snapshot(
         "metadata_file": metadata_path.relative_to(repo_root).as_posix(),
         "freshness_status": "live_fetch",
         "direct_fetcher": DIRECT_FETCHER,
-        "analysis_metadata_file": ANALYSIS_METADATA_FILE,
+        "analysis_metadata_file": analysis_metadata_file(repo_root),
         "refresh_before_value_sensitive_analysis": True,
     }
 
@@ -261,7 +259,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--repo-root",
         type=Path,
-        default=Path(__file__).resolve().parents[3],
+        default=TOOLS_DIR.parent,
         help="Repository root used for snapshot output",
     )
     parser.add_argument(

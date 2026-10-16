@@ -278,28 +278,28 @@ The canonical hierarchy and common rules are documented in:
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/expert-consensus/fantasypros/`
+`data-source/market/expert-consensus/fantasypros/`
 
 Available ranking IDs:
 
 - `dynasty-superflex-ppr`: long-term asset and expert-consensus context
 - `redraft-ppr-superflex`: current-season lineup, production and win-now context
 
-For each ranking, use `latest.json` to resolve the newest successful snapshot. Load `ranking.csv` as the compact analysis table, `raw-ecr-data.json` when additional source fields or schema inspection matter, and `metadata.json` for provenance, freshness and ranking-specific interpretation.
+For each ranking, use `latest.json` to resolve the newest successful snapshot. Load `ranking.csv` as the compact analysis table, `data-source/providers/fantasypros/<ranking-id>/raw-latest.json` when additional source fields or schema inspection matter, and `metadata.json` for provenance, freshness and ranking-specific interpretation.
 
 Refresh directly from the official FantasyPros pages with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --skip-unchanged
-python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py --skip-unchanged
+python -m tools.external_source.fantasypros --skip-unchanged
+python -m tools.external_source.fantasypros_redraft --skip-unchanged
 ```
 
 Both fetchers must fail closed after network, source-identity, schema, row-count or rank-validation errors. A successful refresh retains the complete parsed `ecrData` payload and writes the normalized consensus fields.
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-rankings/expert-consensus/fantasypros/README.md`
-- `fantasy-management/sources/external-rankings/expert-consensus/fantasypros/analysis-metadata.json`
+- `data-source/providers/fantasypros/README.md`
+- `data-source/providers/fantasypros/analysis-metadata.json`
 
 Operational rules:
 

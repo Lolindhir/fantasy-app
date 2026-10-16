@@ -165,19 +165,21 @@ jobs:
           - id: fantasypros
             label: "FM • Ranking • FantasyPros ECR"
             test: >-
-              python -m unittest discover
-              -s fantasy-management/_ai/scripts/tests
-              -p "test_fetch_fantasypros*.py"
+              python -m unittest
+              tools/tests/test_external_source_fantasypros_dynasty.py
+              tools/tests/test_external_source_fantasypros_redraft.py
               -v
             fetch: |
-              python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --skip-unchanged
-              python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py --skip-unchanged
+              python -m tools.external_source.fantasypros --skip-unchanged
+              python -m tools.external_source.fantasypros_redraft --skip-unchanged
             source_id: fantasypros
-            content_path: fantasy-management/sources/external-rankings/expert-consensus/fantasypros
+            content_path: data-source/market/expert-consensus/fantasypros
             stage_paths: >-
-              fantasy-management/sources/external-rankings/expert-consensus/fantasypros
-              fantasy-management/sources/refresh-status/fantasypros.json
+              data-source/market/expert-consensus/fantasypros
+              data-source/providers/fantasypros
+              data-source/market/_status/fantasypros.json
             scope: fantasypros-rankings
+            status_path: data-source/market/_status/fantasypros.json
           - id: fantasycalc
             label: "FM • Ranking • FantasyCalc Market"
             test: >-
