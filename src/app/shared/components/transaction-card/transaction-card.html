@@ -1,0 +1,108 @@
+<article
+  class="transaction-card"
+  [class.transaction-card--mini]="density === 'mini'"
+  [class.transaction-card--compact]="density === 'compact'"
+  [class.transaction-card--detail]="density === 'detail'"
+  [class.transaction-card--trade]="category === 'trade'"
+  [class.transaction-card--add]="category === 'add'"
+  [class.transaction-card--cut]="category === 'cut'"
+>
+  <header class="transaction-card__header">
+    <span class="transaction-card__type">
+      <mat-icon aria-hidden="true">{{ icon }}</mat-icon>
+      {{ label }}
+    </span>
+    @if (transaction.CreatedAtDate) {
+      <time [attr.datetime]="transaction.CreatedAtDate.toISOString()">
+        {{ transaction.CreatedAtDate | date: (density === 'mini' ? 'd MMM' : 'HH:mm') }}
+      </time>
+    }
+  </header>
+  <div class="transaction-card__participants">
+    @for (participant of transaction.Participants; track participant.RosterID) {
+      <section class="transaction-card__participant">
+        <div class="transaction-card__team">
+          @if (participant.Team; as team) {
+            <app-team-identity [team]="team" size="small" [elements]="['logo','name']" />
+          } @else {
+            <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
+          }
+          @if (category === 'trade') {
+            <span class="transaction-card__direction">Receives</span>
+          }
+        </div>
+        <div class="transaction-card__assets">
+          @for (asset of visibleAssets(participant, 'incoming'); track asset.key) {
+            <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'incoming' }" />
+          }
+          @if (hiddenAssets(participant, 'incoming') > 0) {
+            <button type="button" class="transaction-card__more" (click)="toggleExpanded()">
+              +{{ hiddenAssets(participant, 'incoming') }} more
+            </button>
+          }
+
+          @if (category !== 'trade') {
+            @for (asset of visibleAssets(participant, 'outgoing'); track asset.key) {
+              <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'outgoing' }" />
+            }
+            @if (hiddenAssets(participant, 'outgoing') > 0) {
+              <button type="button" class="transaction-card__more" (click)="toggleExpanded()">
+                +{{ hiddenAssets(participant, 'outgoing') }} more
+              </button>
+            }
+          }
+          @if (getAssets(participant, 'incoming').length === 0 &&
+               (category === 'trade' || getAssets(participant, 'outgoing').length === 0)) {
+            <span class="transaction-card__empty">No assets recorded</span>
+          }
+        </div>
+      </section>
+    }
+  </div>
+  @if (expanded && density !== 'detail') {
+    <button type="button" class="transaction-card__collapse" (click)="toggleExpanded()">Show less</button>
+  }
+  @if (density === 'detail' && transaction.Notes) {
+    <p class="transaction-card__notes">{{ transaction.Notes }}</p>
+  }
+</article>
+
+<ng-template #assetLine let-asset let-direction="direction">
+  <div class="transaction-card__asset-line" [class.transaction-card__asset-line--outgoing]="direction === 'outgoing'">
+    <mat-icon class="transaction-card__movement" aria-hidden="true">
+      {{ direction === 'incoming' ? 'add' : 'remove' }}
+    </mat-icon>
+    @if (asset.kind === 'player') {
+      <button
+        type="button"
+        class="transaction-card__player"
+        [disabled]="!asset.player"
+        [attr.aria-label]="asset.player ? 'Open ' + asset.label + ' player details' : null"
+        (click)="openPlayer(asset.player)"
+      >
+        <span class="transaction-card__portrait">
+          @if (asset.portrait) {
+            <img [src]="asset.portrait" alt="" loading="lazy" decoding="async" />
+          } @else {
+            <mat-icon aria-hidden="true">person</mat-icon>
+          }
+          @if (asset.nflTeamLogo) {
+            <img class="transaction-card__nfl-logo" [src]="asset.nflTeamLogo" alt="" loading="lazy" decoding="async" />
+          }
+        </span>
+        <span class="transaction-card__asset-copy">
+          <strong>{{ asset.label }}</strong>
+          <small>{{ asset.secondary }}</small>
+        </span>
+      </button>
+    } @else {
+      <span class="transaction-card__pick" [title]="'Original: ' + asset.originalOwner">
+        <b class="transaction-card__pick-round">R{{ asset.pickRound }}</b>
+        <span class="transaction-card__asset-copy">
+          <strong>{{ asset.label }}</strong>
+          <small>{{ asset.secondary }}</small>
+        </span>
+      </span>
+    }
+  </div>
+</ng-template>

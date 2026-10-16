@@ -1,0 +1,78 @@
+:host { display: block; min-width: 0; }
+.transaction-card {
+  --transaction-accent: #68778b;
+  display: block;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid var(--transaction-accent);
+  border-radius: 14px;
+  background: #fff;
+  color: #1c293d;
+  box-shadow: 0 3px 12px rgba(25, 40, 65, 0.045);
+}
+.transaction-card--trade { --transaction-accent: #3975db; }
+.transaction-card--add { --transaction-accent: #16866d; }
+.transaction-card--cut { --transaction-accent: #bf7d32; }
+.transaction-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px 7px;
+  border-bottom: 1px solid #edf0f5;
+  color: #728096;
+  font-size: 0.7rem;
+}
+.transaction-card__type { display: flex; align-items: center; gap: 5px; color: var(--transaction-accent); font-size: 0.76rem; font-weight: 800; }
+.transaction-card__type mat-icon { width: 17px; height: 17px; font-size: 17px; }
+.transaction-card__participants { display: flex; flex-direction: column; }
+.transaction-card__participant { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 9px 12px; }
+.transaction-card__participant + .transaction-card__participant { border-top: 1px solid #eaf0f5; }
+.transaction-card__team { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.transaction-card__team app-team-identity { min-width: 0; }
+.transaction-card__direction { flex: 0 0 auto; color: #6f7c8d; font-size: 0.64rem; font-weight: 700; text-transform: uppercase; }
+.transaction-card__unknown-team { font-weight: 700; font-size: 0.81rem; }
+.transaction-card__assets { display: flex; flex-wrap: wrap; gap: 4px 12px; min-width: 0; padding-left: 1px; }
+.transaction-card__asset-line { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.transaction-card__movement { width: 16px; height: 16px; flex: 0 0 16px; color: #14976c; font-size: 16px; }
+.transaction-card__asset-line--outgoing .transaction-card__movement { color: #be6670; }
+.transaction-card__player, .transaction-card__pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 4px 2px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.transaction-card__player { cursor: pointer; }
+.transaction-card__player:disabled { cursor: default; }
+.transaction-card__player:not(:disabled):hover strong { text-decoration: underline; }
+.transaction-card__player:focus-visible, .transaction-card__more:focus-visible, .transaction-card__collapse:focus-visible { outline: 2px solid #3975db; outline-offset: 2px; }
+.transaction-card__portrait { position: relative; display: flex; align-items: flex-end; justify-content: center; width: 27px; height: 27px; flex: 0 0 27px; border-radius: 7px; background: #e9eef5; }
+.transaction-card__portrait > img:first-child { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
+.transaction-card__portrait > mat-icon { color: #7f8ea2; font-size: 20px; width: 20px; height: 20px; }
+.transaction-card__portrait .transaction-card__nfl-logo { position: absolute; right: -3px; bottom: -2px; width: 13px; height: 13px; object-fit: contain; filter: drop-shadow(0 0 1px #fff); }
+.transaction-card__asset-copy { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.transaction-card__asset-copy strong { overflow: hidden; color: #26334a; font-size: 0.74rem; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.transaction-card__asset-copy small { overflow: hidden; color: #7b889b; font-size: 0.62rem; text-overflow: ellipsis; white-space: nowrap; }
+.transaction-card__pick-round { display: grid; place-items: center; flex: 0 0 auto; width: 27px; height: 27px; border-radius: 7px; background: #eaf1ff; color: #2e66c0; font-size: 0.69rem; }
+.transaction-card__more, .transaction-card__collapse { border: 0; background: transparent; color: #3975db; font: inherit; font-size: 0.68rem; font-weight: 750; cursor: pointer; }
+.transaction-card__more { padding: 6px 2px; }
+.transaction-card__collapse { width: 100%; padding: 6px; border-top: 1px solid #edf0f5; }
+.transaction-card__empty { color: #91a0b3; font-size: 0.68rem; font-style: italic; }
+.transaction-card__notes { margin: 0; padding: 10px 12px; border-top: 1px solid #edf0f5; font-size: 0.73rem; }
+.transaction-card--mini .transaction-card__header { padding: 5px 9px; }
+.transaction-card--mini .transaction-card__participant { padding: 6px 9px; }
+.transaction-card--mini .transaction-card__portrait, .transaction-card--mini .transaction-card__pick-round { width: 23px; height: 23px; flex-basis: 23px; }
+.transaction-card--mini .transaction-card__asset-copy small { display: none; }
+.transaction-card--detail .transaction-card__participant { padding: 14px; gap: 9px; }
+@media (min-width: 750px) {
+  .transaction-card--compact.transaction-card--trade .transaction-card__participants { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .transaction-card--compact.transaction-card--trade .transaction-card__participant + .transaction-card__participant { border-top: 0; border-left: 1px solid #eaf0f5; }
+  .transaction-card--compact.transaction-card--trade .transaction-card__participant:nth-child(n + 3) { border-top: 1px solid #eaf0f5; }
+}
