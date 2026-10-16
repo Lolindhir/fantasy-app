@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parents[1] / "fetch_fantasypros_dynasty_superflex.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "external_source" / "fantasypros.py"
 spec = importlib.util.spec_from_file_location("fantasypros_fetch", SCRIPT)
 module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
@@ -159,7 +159,16 @@ class FantasyProsFetcherTests(unittest.TestCase):
             metadata_data = json.loads(metadata.read_text(encoding="utf-8"))
             self.assertEqual(module.SCHEMA_VERSION, metadata_data["schema_version"])
             self.assertEqual(160, metadata_data["snapshot"]["row_count"])
-            self.assertEqual("raw-ecr-data.json", metadata_data["snapshot"]["raw_data_file"])
+            self.assertEqual(
+                "data-source/providers/fantasypros/dynasty-superflex-ppr/raw-latest.json",
+                metadata_data["snapshot"]["raw_data_file"],
+            )
+            self.assertEqual(7, metadata_data["schema_version"])
+            self.assertNotIn("league_adjustment", metadata_data["analysis_usage"])
+            self.assertFalse((metadata.parent / "raw-ecr-data.json").exists())
+            self.assertTrue(
+                (repo_root / metadata_data["snapshot"]["raw_data_file"]).is_file()
+            )
             self.assertEqual(160, metadata_data["snapshot"]["consensus_field_coverage"]["tier"])
             self.assertEqual(
                 0,
@@ -171,7 +180,7 @@ class FantasyProsFetcherTests(unittest.TestCase):
             self.assertEqual(160, metadata_data["raw_schema"]["player_count"])
             field_semantics = metadata_data["analysis_usage"]["field_semantics"]
             self.assertEqual(
-                "fantasy-management/sources/external-rankings/expert-consensus/fantasypros/README.md",
+                "data-source/providers/fantasypros/README.md",
                 field_semantics["reference"],
             )
             self.assertEqual(
@@ -191,7 +200,7 @@ class FantasyProsFetcherTests(unittest.TestCase):
             latest_data = json.loads(latest.read_text(encoding="utf-8"))
             self.assertEqual(module.SCHEMA_VERSION, latest_data["schema_version"])
             self.assertEqual("live_fetch", latest_data["freshness_status"])
-            self.assertTrue(latest_data["raw_data_file"].endswith("raw-ecr-data.json"))
+            self.assertTrue(latest_data["raw_data_file"].endswith("raw-latest.json"))
 
     def test_skip_unchanged_avoids_second_snapshot(self):
         html = self.make_html()

@@ -6,7 +6,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parents[1] / "fetch_fantasypros_redraft_ppr_superflex.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "external_source" / "fantasypros_redraft.py"
 spec = importlib.util.spec_from_file_location("fantasypros_redraft_fetch", SCRIPT)
 module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
@@ -108,7 +108,7 @@ class FantasyProsRedraftFetcherTests(unittest.TestCase):
                 metadata_data["analysis_usage"]["primary_use"],
             )
             self.assertEqual(
-                module.ANALYSIS_METADATA_FILE,
+                module.analysis_metadata_file(repo_root),
                 metadata_data["analysis_usage"]["comparison_contract"],
             )
             self.assertEqual("Draft", metadata_data["source_published_context"]["type"])
@@ -116,7 +116,7 @@ class FantasyProsRedraftFetcherTests(unittest.TestCase):
             latest_data = json.loads(latest.read_text(encoding="utf-8"))
             self.assertEqual(module.DIRECT_FETCHER, latest_data["direct_fetcher"])
             self.assertEqual(
-                module.ANALYSIS_METADATA_FILE, latest_data["analysis_metadata_file"]
+                module.analysis_metadata_file(repo_root), latest_data["analysis_metadata_file"]
             )
 
     def test_skip_unchanged_avoids_second_snapshot(self):

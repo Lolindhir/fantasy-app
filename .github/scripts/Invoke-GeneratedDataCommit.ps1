@@ -38,7 +38,7 @@ function Get-GeneratedDataLabel {
         "^public/data/past_seasons/Drafts/" { return "Draft history" }
         "^public/data/past_seasons/Transactions/" { return "Transaction history" }
         "^public/data/backup/" { return "Backups" }
-        "^fantasy-management/sources/external-rankings/expert-consensus/fantasypros/" { return "FantasyPros rankings" }
+        "^data-source/(market/expert-consensus/fantasypros|providers/fantasypros|market/_status/fantasypros\.json)" { return "FantasyPros rankings" }
         "^data-source/(market/market-value/fantasycalc|providers/fantasycalc|market/_status/fantasycalc\.json)" { return "FantasyCalc rankings" }
         "^data-source/(market/adp/fantasy-football-calculator|providers/fantasy-football-calculator|market/_status/fantasy-football-calculator\.json)" { return "Fantasy Football Calculator ADP" }
         "^data-source/(market/projection/fftoday|providers/fftoday|market/_status/fftoday\.json)" { return "FFToday projections" }
