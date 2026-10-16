@@ -230,18 +230,20 @@ jobs:
             label: "FM • Projection • CBS Sports"
             test: >-
               python -m unittest
-              fantasy-management/_ai/scripts/tests/test_fetch_cbs_sports_kicker_projections.py
-              fantasy-management/_ai/scripts/tests/test_fetch_cbs_sports_offense_projections.py
+              tools/tests/test_external_source_cbs_sports_kicker.py
+              tools/tests/test_external_source_cbs_sports_offense.py
               -v
             fetch: |
-              python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --skip-unchanged
-              python fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py --skip-unchanged
+              python -m tools.external_source.cbs_sports_kicker --skip-unchanged
+              python -m tools.external_source.cbs_sports_offense --skip-unchanged
             source_id: cbs-sports
-            content_path: fantasy-management/sources/external-rankings/projections/cbs-sports
+            content_path: data-source/market/projection/cbs-sports
             stage_paths: >-
-              fantasy-management/sources/external-rankings/projections/cbs-sports
-              fantasy-management/sources/refresh-status/cbs-sports.json
+              data-source/market/projection/cbs-sports
+              data-source/providers/cbs-sports
+              data-source/market/_status/cbs-sports.json
             scope: cbs-projections
+            status_path: data-source/market/_status/cbs-sports.json
           - id: sleeper-trending
             label: "FM • Signal • Sleeper Trending"
             test: >-
