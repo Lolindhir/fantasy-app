@@ -88,14 +88,14 @@ Bei Fehlern wird kein teilweiser neuer Ranking-Snapshot veröffentlicht.
 ## Direkter Abruf
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --skip-unchanged
+python -m tools.external_source.fftoday_kicker --skip-unchanged
 ```
 
 Prüfmodi:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --dry-run
-python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --input /path/to/page.html --dry-run
+python -m tools.external_source.fftoday_kicker --dry-run
+python -m tools.external_source.fftoday_kicker --input /path/to/page.html --dry-run
 ```
 
 ## Automatische Aktualisierung

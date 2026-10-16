@@ -9,6 +9,7 @@ import io
 import json
 import os
 import re
+import sys
 import tempfile
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
@@ -17,15 +18,23 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin
 
-from fftoday_season_gate import skip_reason
-from http_fetch_resilience import HttpFetchError, fetch_text_with_retry
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+from data_roots import data_source_dir  # noqa: E402
+from external_source.http import HttpFetchError, fetch_text_with_retry  # noqa: E402
+from external_source.season_phase import skip_reason  # noqa: E402
+
+# Relative to the data-source root (tools/data_roots.py).
+MARKET_RELATIVE_DIR = Path("market/projection/fftoday")
+PROVIDER_RELATIVE_DIR = Path("providers/fftoday")
 
 SOURCE_ID = "fftoday"
 SOURCE_NAME = "FFToday"
 RANKING_KIND = "projections"
 SCHEMA_VERSION = 1
 DEFAULT_MAX_STALE_DAYS = 45
-SOURCE_ROOT = "fantasy-management/sources/external-rankings/projections/fftoday"
 USER_AGENT = "Mozilla/5.0 (compatible; MightyGiantsFantasy/1.0)"
 POSITIONS = {
     "QB": {"pos_id": 10, "label": "Quarterback", "fields": ["bye", "pass_completions", "pass_attempts", "pass_yards", "pass_touchdowns", "interceptions", "rush_attempts", "rush_yards", "rush_touchdowns", "projected_fantasy_points"]},
@@ -235,7 +244,11 @@ def ranking_id(position: str) -> str:
 
 
 def ranking_root(repo_root: Path, position: str) -> Path:
-    return repo_root / SOURCE_ROOT / ranking_id(position)
+    return data_source_dir(repo_root) / MARKET_RELATIVE_DIR / ranking_id(position)
+
+
+def raw_root(repo_root: Path, position: str) -> Path:
+    return data_source_dir(repo_root) / PROVIDER_RELATIVE_DIR / ranking_id(position)
 
 
 def _render_csv(rows: list[dict[str, Any]], position: str) -> str:
@@ -269,7 +282,7 @@ def _read_json(path: Path) -> dict[str, Any] | None:
 
 def write_projection(*, repo_root: Path, position: str, rows: list[dict[str, Any]], pages: list[tuple[str, str]], diagnostics: dict[str, Any], fetched_at: datetime, response_headers: dict[str, str], season: int, skip_unchanged: bool) -> tuple[list[Path], bool]:
     root = ranking_root(repo_root, position)
-    raw_path = root / "raw-latest.html"
+    raw_path = raw_root(repo_root, position) / "raw-latest.html"
     latest_path = root / "latest.json"
     snapshot_date = fetched_at.date().isoformat()
     csv_text = _render_csv(rows, position)
@@ -336,11 +349,11 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     fetched_at = datetime.now(timezone.utc)
-    reason = skip_reason(Path(args.repo_root).resolve(), args.season, fetched_at)
-    if reason:
-        print(f"[fftoday-projections:offense] skipped: {reason}")
-        return 0
     for position in [value.strip().upper() for value in args.positions.split(",") if value.strip()]:
+        reason = skip_reason(Path(args.repo_root).resolve(), f"fftoday.projection.{ranking_id(position)}", args.season, fetched_at)
+        if reason:
+            print(f"[fftoday-projections:offense] skipped {position}: {reason}")
+            continue
         rows, diagnostics, pages, headers = fetch_all_pages(position, args.season, fetched_at)
         if args.dry_run:
             print(position, len(rows), diagnostics["page_count"])

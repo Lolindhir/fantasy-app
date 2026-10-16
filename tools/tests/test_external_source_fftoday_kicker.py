@@ -1,3 +1,4 @@
+import importlib.util
 import json
 import tempfile
 import unittest
@@ -6,12 +7,17 @@ from pathlib import Path
 from unittest.mock import patch
 import sys
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1]
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 
-import fetch_fftoday_kicker_projections as module
-import http_fetch_resilience as http
+from external_source import http  # noqa: E402
+
+SCRIPT = TOOLS_DIR / "external_source" / "fftoday_kicker.py"
+spec = importlib.util.spec_from_file_location("fftoday_kicker_fetch", SCRIPT)
+module = importlib.util.module_from_spec(spec)
+assert spec and spec.loader
+spec.loader.exec_module(module)
 
 
 def fixture(*, updated="8/6/2026", changed=False, duplicate=False, next_page=False):
@@ -93,6 +99,12 @@ class FFTodayTests(unittest.TestCase):
             paths, created = module.write_projection(fetched_at=self.fetched(), **kwargs)
             self.assertTrue(created)
             self.assertEqual(4, len(paths))
+            raw = Path(directory) / "data-source" / "providers" / "fftoday" / module.RANKING_ID / "raw-latest.html"
+            self.assertTrue(raw.is_file())
+            snapshot_metadata = json.loads(next(p for p in paths if p.name == "metadata.json").read_text())
+            self.assertEqual(2, snapshot_metadata["schema_version"])
+            self.assertNotIn("actual_league_team_count", snapshot_metadata["format"])
+            self.assertNotIn("actual_fixed_kicker_starters", snapshot_metadata["format"])
             paths, created = module.write_projection(
                 fetched_at=datetime(2026, 8, 9, 8, 0, tzinfo=timezone.utc), **kwargs
             )
