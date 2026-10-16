@@ -38,11 +38,11 @@ function Get-GeneratedDataLabel {
         "^public/data/past_seasons/Drafts/" { return "Draft history" }
         "^public/data/past_seasons/Transactions/" { return "Transaction history" }
         "^public/data/backup/" { return "Backups" }
-        "^fantasy-management/sources/external-rankings/expert-consensus/fantasypros/" { return "FantasyPros rankings" }
+        "^data-source/(market/expert-consensus/fantasypros|providers/fantasypros|market/_status/fantasypros\.json)" { return "FantasyPros rankings" }
         "^data-source/(market/market-value/fantasycalc|providers/fantasycalc|market/_status/fantasycalc\.json)" { return "FantasyCalc rankings" }
-        "^fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/" { return "Fantasy Football Calculator ADP" }
-        "^fantasy-management/sources/external-rankings/projections/fftoday/" { return "FFToday projections" }
-        "^fantasy-management/sources/external-rankings/projections/cbs-sports/" { return "CBS Sports projections" }
+        "^data-source/(market/adp/fantasy-football-calculator|providers/fantasy-football-calculator|market/_status/fantasy-football-calculator\.json)" { return "Fantasy Football Calculator ADP" }
+        "^data-source/(market/projection/fftoday|providers/fftoday|market/_status/fftoday\.json)" { return "FFToday projections" }
+        "^data-source/(market/projection/cbs-sports|providers/cbs-sports|market/_status/cbs-sports\.json)" { return "CBS Sports projections" }
         "^data-source/(market/roster-activity/sleeper|providers/sleeper/trending|market/_status/sleeper\.json)" { return "Sleeper trending" }
         "^fantasy-management/generated/operations/" { return "Fantasy Operations inputs" }
         "^data-derived/player-week-fantasy/" { return "PlayerWeekFantasy derived" }

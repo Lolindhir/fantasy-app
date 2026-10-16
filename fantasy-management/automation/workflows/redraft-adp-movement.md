@@ -8,7 +8,7 @@ Purpose: evaluate short-term observed draft-cost movement for managed-roster pla
 - current resolved player identity and position
 - Fantasy Football Calculator PPR 8-team latest pointer and normalized ranking
 - Fantasy Football Calculator 2-QB 10-team latest pointer and normalized ranking
-- `fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/analysis-metadata.json`
+- `data-source/providers/fantasy-football-calculator/analysis-metadata.json`
 - previous good profile state
 
 ## 1. Resolve sources once per run

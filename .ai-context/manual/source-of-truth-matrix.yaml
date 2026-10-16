@@ -975,46 +975,42 @@ consumerReadClassification:
         legacy:League: intentional-overlay
         legacy:Players: mention-only
       note: 'Ownership and roster membership come from data-source/leagues. League.json is read only as TeamID display enrichment (checkpoint 6P). The Players.json hit is a docstring mention, not a read.'
-    fantasy-management/_ai/scripts/fantasy_football_calculator_adp_core.py:
-      reads:
-        network: provider-evidence-fetcher
-        provider:fantasyfootballcalculator: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fantasy_football_calculator_kicker_adp.py:
+    tools/external_source/fantasy_football_calculator_adp_core.py:
       reads:
         provider:fantasyfootballcalculator: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py:
+      note: 'Shared external source layer acquisition of attributed Fantasy Football Calculator ADP evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
+    tools/external_source/fantasy_football_calculator_kicker_adp.py:
       reads:
-        network: provider-evidence-fetcher
-        provider:cbssports: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py:
+        provider:fantasyfootballcalculator: provider-evidence-fetcher
+      note: 'Shared external source layer acquisition of attributed Fantasy Football Calculator ADP evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
+    tools/external_source/cbs_sports_kicker.py:
       reads:
-        network: provider-evidence-fetcher
         provider:cbssports: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+      note: 'Shared external source layer acquisition of attributed CBS Sports kicker projection evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
+    tools/external_source/cbs_sports_offense.py:
+      reads:
+        provider:cbssports: provider-evidence-fetcher
+      note: 'Shared external source layer acquisition of attributed CBS Sports QB/RB/WR/TE projection evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
     tools/external_source/fantasycalc.py:
       reads:
         provider:fantasycalc: provider-evidence-fetcher
       note: 'Shared external source layer acquisition of attributed FantasyCalc market-value evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py; also resolves the explicit UNK position sentinel from the canonical Sleeper player snapshot.'
-    fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex_impl.py:
-      reads:
-        network: provider-evidence-fetcher
-        provider:fantasypros: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex_impl.py:
+    tools/external_source/fantasypros.py:
       reads:
         provider:fantasypros: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py:
+      note: 'Shared external source layer acquisition of attributed FantasyPros expert-consensus evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
+    tools/external_source/fantasypros_redraft.py:
+      reads:
+        provider:fantasypros: provider-evidence-fetcher
+      note: 'Shared external source layer acquisition of attributed FantasyPros expert-consensus evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
+    tools/external_source/fftoday_kicker.py:
       reads:
         provider:fftoday: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py:
+      note: 'Shared external source layer acquisition of attributed FFToday kicker projection evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
+    tools/external_source/fftoday_offense.py:
       reads:
         provider:fftoday: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+      note: 'Shared external source layer acquisition of attributed FFToday offense projection evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
     tools/external_source/sleeper_trending.py:
       reads:
         network: provider-evidence-fetcher
@@ -1023,7 +1019,7 @@ consumerReadClassification:
     tools/external_source/http.py:
       reads:
         network: http-helper
-      note: 'Shared bounded HTTP helper of the external source layer (ADR-060, moved from fantasy-management/_ai/scripts/http_fetch_resilience.py, which is now a shim); contains no provider-specific read.'
+      note: 'Shared bounded HTTP helper of the external source layer (ADR-060, moved from the removed fantasy-management/_ai/scripts/http_fetch_resilience.py); contains no provider-specific read.'
     fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py:
       reads:
         legacy:League: freshness-trigger

@@ -229,16 +229,20 @@ Operational rules:
 - add source-specific pacing when repeated requests or pagination make provider throttling likely;
 - retries are resilience, not access-control circumvention: do not automate challenge solving, authentication bypasses or other mechanisms that evade a provider's access restrictions;
 - a 403 that carries an access challenge (Cloudflare `Just a moment...` body or `cf-mitigated: challenge` header) is not transient: it is raised as `HttpFetchBlockedError` without retries (Issue #1045);
-- a seasonal source (FFToday publishes preseason projections only) makes no request outside its active NFL phase, taken from the canonical season context (`fftoday_season_gate.py`), and ends successfully with a `skipped` message so the daily pipeline stays green;
+- a seasonal source (FFToday publishes preseason projections only) makes no request outside its active NFL phase, taken from the canonical season context (`tools/external_source/season_phase.py`, driven by the `seasonPolicy` of the dataset in `data-source/external-registry.json`), and ends successfully with a `skipped` message so the daily pipeline stays green;
 - when this contract is added or changed, audit existing automated fetchers separately for implementation drift instead of assuming documentation alone makes them compliant.
 
 ### External-ranking hierarchy
 
-All ordered external player or asset evaluations belong under:
+Active external ranking, ADP, market-value and projection providers are shared Source Evidence (ADR-060, Issue #988) and live in the shared source layer, not in `fantasy-management`:
 
 ```text
-fantasy-management/sources/external-rankings/<ranking_kind>/<provider>/<format>/
+data-source/market/<ranking_kind>/<provider>/<format>/   normalized snapshots, latest.json
+data-source/providers/<provider>/<dataset>/               raw-latest.*, README, SOURCE_AUDIT, analysis-metadata
+data-source/market/_status/<provider>.json                refresh heartbeat
 ```
+
+`fantasy-management/sources/external-rankings/` keeps only audits of inspected but inactive sources and manual-reference notes (KeepTradeCut, Dynasty Data Lab, FantasyPros ADP) plus the ranking-kind rules below. Fetchers live in `tools/external_source/`; Fantasy Management reads the moved snapshots only as a transitional consumer until the `market-observations` product exists.
 
 The first level describes how the ordering is produced, not who publishes it.
 
@@ -278,28 +282,28 @@ The canonical hierarchy and common rules are documented in:
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/expert-consensus/fantasypros/`
+`data-source/market/expert-consensus/fantasypros/`
 
 Available ranking IDs:
 
 - `dynasty-superflex-ppr`: long-term asset and expert-consensus context
 - `redraft-ppr-superflex`: current-season lineup, production and win-now context
 
-For each ranking, use `latest.json` to resolve the newest successful snapshot. Load `ranking.csv` as the compact analysis table, `raw-ecr-data.json` when additional source fields or schema inspection matter, and `metadata.json` for provenance, freshness and ranking-specific interpretation.
+For each ranking, use `latest.json` to resolve the newest successful snapshot. Load `ranking.csv` as the compact analysis table, `data-source/providers/fantasypros/<ranking-id>/raw-latest.json` when additional source fields or schema inspection matter, and `metadata.json` for provenance, freshness and ranking-specific interpretation.
 
 Refresh directly from the official FantasyPros pages with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --skip-unchanged
-python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py --skip-unchanged
+python -m tools.external_source.fantasypros --skip-unchanged
+python -m tools.external_source.fantasypros_redraft --skip-unchanged
 ```
 
 Both fetchers must fail closed after network, source-identity, schema, row-count or rank-validation errors. A successful refresh retains the complete parsed `ecrData` payload and writes the normalized consensus fields.
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-rankings/expert-consensus/fantasypros/README.md`
-- `fantasy-management/sources/external-rankings/expert-consensus/fantasypros/analysis-metadata.json`
+- `data-source/providers/fantasypros/README.md`
+- `data-source/providers/fantasypros/analysis-metadata.json`
 
 Operational rules:
 
@@ -367,7 +371,7 @@ Fantasy Football Calculator is the active automated ADP provider.
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/`
+`data-source/market/adp/fantasy-football-calculator/`
 
 Available ranking IDs:
 
@@ -375,18 +379,18 @@ Available ranking IDs:
 - `redraft-ppr-8-team-kicker`: Kicker-only ADP derived from the same PPR 8-team all-position API payload without an additional network request
 - `redraft-2qb-10-team`: observed 2-QB mock-draft cost used primarily for quarterback-scarcity context
 
-For each ranking, use `latest.json` to resolve the newest normalized snapshot and the current Raw-fetch state. Load `ranking.csv` as the compact analysis table, `metadata.json` for source format, sample quality, provenance and freshness, and `raw-latest.json` only when the complete latest API payload or excluded source positions matter.
+For each ranking, use `latest.json` to resolve the newest normalized snapshot and the current Raw-fetch state. Load `ranking.csv` as the compact analysis table, `metadata.json` for source format, sample quality, provenance and freshness, and `data-source/providers/fantasy-football-calculator/<ranking-id>/raw-latest.json` only when the complete latest API payload or excluded source positions matter.
 
 Refresh all active FFC rankings together with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py --skip-unchanged
+python -m tools.external_source.fantasy_football_calculator --skip-unchanged
 ```
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/README.md`
-- `fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/analysis-metadata.json`
+- `data-source/providers/fantasy-football-calculator/README.md`
+- `data-source/providers/fantasy-football-calculator/analysis-metadata.json`
 
 Operational rules:
 
@@ -407,7 +411,7 @@ FFToday is an active automated Projection provider for QB, RB, WR, TE and K.
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/projections/fftoday/`
+`data-source/market/projection/fftoday/` (snapshots), `data-source/providers/fftoday/` (raw files and provider docs)
 
 Active ranking IDs:
 
@@ -422,8 +426,8 @@ The audited public Projection area also exposes DEF and IDP projections. Those p
 Refresh with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --skip-unchanged
-python fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py --skip-unchanged
+python -m tools.external_source.fftoday_kicker --skip-unchanged
+python -m tools.external_source.fftoday_offense --skip-unchanged
 ```
 
 The workflow `FM • Pipeline • Daily` (matrix job `Provider • fftoday`) refreshes the source daily before monitoring.
@@ -431,9 +435,9 @@ The workflow `FM • Pipeline • Daily` (matrix job `Provider • fftoday`) ref
 Canonical source documentation:
 
 - `fantasy-management/sources/external-rankings/projections/README.md`
-- `fantasy-management/sources/external-rankings/projections/fftoday/README.md`
-- `fantasy-management/sources/external-rankings/projections/fftoday/SOURCE_AUDIT.md`
-- `fantasy-management/sources/external-rankings/projections/fftoday/analysis-metadata.json`
+- `data-source/providers/fftoday/README.md`
+- `data-source/providers/fftoday/SOURCE_AUDIT.md`
+- `data-source/providers/fftoday/analysis-metadata.json`
 
 Operational rules:
 
@@ -452,7 +456,7 @@ CBS Sports is an active automated Projection provider for QB, RB, WR, TE and K. 
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/projections/cbs-sports/`
+`data-source/market/projection/cbs-sports/` (normalized snapshots) and `data-source/providers/cbs-sports/` (latest raw HTML and source documentation)
 
 Active ranking IDs:
 
@@ -467,16 +471,16 @@ The audited public Projection area also exposes DST projections. DST remains out
 Refresh directly with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --skip-unchanged
-python fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py --skip-unchanged
+python -m tools.external_source.cbs_sports_kicker --skip-unchanged
+python -m tools.external_source.cbs_sports_offense --skip-unchanged
 ```
 
 Canonical source documentation:
 
 - `fantasy-management/sources/external-rankings/projections/README.md`
-- `fantasy-management/sources/external-rankings/projections/cbs-sports/README.md`
-- `fantasy-management/sources/external-rankings/projections/cbs-sports/SOURCE_AUDIT.md`
-- `fantasy-management/sources/external-rankings/projections/cbs-sports/analysis-metadata.json`
+- `data-source/providers/cbs-sports/README.md`
+- `data-source/providers/cbs-sports/SOURCE_AUDIT.md`
+- `data-source/providers/cbs-sports/analysis-metadata.json`
 
 Operational rules:
 

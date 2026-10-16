@@ -90,7 +90,6 @@ on:
     paths:
       - fantasy-management/_ai/scripts/fetch_*.py
       - fantasy-management/_ai/scripts/tests/test_fetch_*.py
-      - fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py
       - .github/workflows/fm-daily.yml
   workflow_dispatch: # manueller Start
 
@@ -166,19 +165,21 @@ jobs:
           - id: fantasypros
             label: "FM • Ranking • FantasyPros ECR"
             test: >-
-              python -m unittest discover
-              -s fantasy-management/_ai/scripts/tests
-              -p "test_fetch_fantasypros*.py"
+              python -m unittest
+              tools/tests/test_external_source_fantasypros_dynasty.py
+              tools/tests/test_external_source_fantasypros_redraft.py
               -v
             fetch: |
-              python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --skip-unchanged
-              python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py --skip-unchanged
+              python -m tools.external_source.fantasypros --skip-unchanged
+              python -m tools.external_source.fantasypros_redraft --skip-unchanged
             source_id: fantasypros
-            content_path: fantasy-management/sources/external-rankings/expert-consensus/fantasypros
+            content_path: data-source/market/expert-consensus/fantasypros
             stage_paths: >-
-              fantasy-management/sources/external-rankings/expert-consensus/fantasypros
-              fantasy-management/sources/refresh-status/fantasypros.json
+              data-source/market/expert-consensus/fantasypros
+              data-source/providers/fantasypros
+              data-source/market/_status/fantasypros.json
             scope: fantasypros-rankings
+            status_path: data-source/market/_status/fantasypros.json
           - id: fantasycalc
             label: "FM • Ranking • FantasyCalc Market"
             test: >-
@@ -199,49 +200,56 @@ jobs:
             label: "FM • Ranking • FFC ADP"
             test: >-
               python -m unittest
-              fantasy-management/_ai/scripts/tests/test_fetch_fantasy_football_calculator_adp.py
-              fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py
+              tools/tests/test_external_source_ffc_adp.py
+              tools/tests/test_external_source_ffc_kicker_adp.py
+              tools/tests/test_external_source_ffc_source_quality.py
               -v
             fetch: |
-              python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py --skip-unchanged
+              python -m tools.external_source.fantasy_football_calculator --skip-unchanged
             source_id: fantasy-football-calculator
-            content_path: fantasy-management/sources/external-rankings/adp/fantasy-football-calculator
+            content_path: data-source/market/adp/fantasy-football-calculator
             stage_paths: >-
-              fantasy-management/sources/external-rankings/adp/fantasy-football-calculator
-              fantasy-management/sources/refresh-status/fantasy-football-calculator.json
+              data-source/market/adp/fantasy-football-calculator
+              data-source/providers/fantasy-football-calculator
+              data-source/market/_status/fantasy-football-calculator.json
             scope: ffc-adp-rankings
+            status_path: data-source/market/_status/fantasy-football-calculator.json
           - id: fftoday
             label: "FM • Projection • FFToday"
             test: >-
               python -m unittest
-              fantasy-management/_ai/scripts/tests/test_fetch_fftoday_kicker_projections.py
-              fantasy-management/_ai/scripts/tests/test_fetch_fftoday_offense_projections.py
+              tools/tests/test_external_source_fftoday_kicker.py
+              tools/tests/test_external_source_fftoday_offense.py
               -v
             fetch: |
-              python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --skip-unchanged
-              python fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py --skip-unchanged
+              python -m tools.external_source.fftoday_kicker --skip-unchanged
+              python -m tools.external_source.fftoday_offense --skip-unchanged
             source_id: fftoday
-            content_path: fantasy-management/sources/external-rankings/projections/fftoday
+            content_path: data-source/market/projection/fftoday
             stage_paths: >-
-              fantasy-management/sources/external-rankings/projections/fftoday
-              fantasy-management/sources/refresh-status/fftoday.json
+              data-source/market/projection/fftoday
+              data-source/providers/fftoday
+              data-source/market/_status/fftoday.json
+            status_path: data-source/market/_status/fftoday.json
             scope: fftoday-projections
           - id: cbs-sports
             label: "FM • Projection • CBS Sports"
             test: >-
               python -m unittest
-              fantasy-management/_ai/scripts/tests/test_fetch_cbs_sports_kicker_projections.py
-              fantasy-management/_ai/scripts/tests/test_fetch_cbs_sports_offense_projections.py
+              tools/tests/test_external_source_cbs_sports_kicker.py
+              tools/tests/test_external_source_cbs_sports_offense.py
               -v
             fetch: |
-              python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --skip-unchanged
-              python fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py --skip-unchanged
+              python -m tools.external_source.cbs_sports_kicker --skip-unchanged
+              python -m tools.external_source.cbs_sports_offense --skip-unchanged
             source_id: cbs-sports
-            content_path: fantasy-management/sources/external-rankings/projections/cbs-sports
+            content_path: data-source/market/projection/cbs-sports
             stage_paths: >-
-              fantasy-management/sources/external-rankings/projections/cbs-sports
-              fantasy-management/sources/refresh-status/cbs-sports.json
+              data-source/market/projection/cbs-sports
+              data-source/providers/cbs-sports
+              data-source/market/_status/cbs-sports.json
             scope: cbs-projections
+            status_path: data-source/market/_status/cbs-sports.json
           - id: sleeper-trending
             label: "FM • Signal • Sleeper Trending"
             test: >-
