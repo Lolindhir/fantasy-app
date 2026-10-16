@@ -133,6 +133,37 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
             "WroteOutput": check["Written"],
         }, sort_keys=True), flush=True)
 
+    def test_real_week3_verified_materializer_exports_deterministic_snapshot(self) -> None:
+        """Checkpoint export: exact producer bytes from a temp root, not hand-edited."""
+        result = materialize(REPO_ROOT, "nfl-reise", 2026, 3, write=False, require_pwf=True)
+        self.assertEqual(result["PlayerWeekFantasyParity"],
+                         {"State": "verified", "Compared": 202, "MissingZeroPoints": 0})
+        inputs = load_verified_week_inputs(REPO_ROOT, "nfl-reise", 2026, 3)
+        model = build_team_week_performance(**inputs)
+        self.assertEqual(result["BestManagerRosterIDs"], model["Awards"]["BestManagerRosterIDs"])
+        self.assertEqual(result["BestCoachRosterIDs"], model["Awards"]["BestCoachRosterIDs"])
+        with tempfile.TemporaryDirectory() as temp:
+            scratch = Path(temp)
+            self.assertTrue(save_team_week_performance(scratch, model))
+            self.assertFalse(save_team_week_performance(scratch, model))
+            data = output_path(scratch, model).read_bytes()
+            self.assertEqual(json.loads(data), model)
+            digest = hashlib.sha1(
+                b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+            ).hexdigest()
+            encoded = base64.b64encode(data).decode("ascii")
+            print("TWP_WEEK3_EXPORT_META=" + json.dumps({
+                "blobSha": digest, "bytes": len(data), "wireChars": len(encoded),
+                "teams": len(model["Teams"]), "parity": result["PlayerWeekFantasyParity"],
+                "manager": model["Awards"]["BestManagerRosterIDs"],
+                "coach": model["Awards"]["BestCoachRosterIDs"],
+                "points": max(x["PotentialPoints"] for x in model["Teams"]),
+                "efficiency": max(x["EfficiencyPercent"] for x in model["Teams"]),
+            }, sort_keys=True), flush=True)
+            for i in range(0, len(encoded), 3000):
+                print("TWP_WEEK3_EXPORT_PART=" + encoded[i:i + 3000], flush=True)
+
+
     def test_real_all_finalized_weeks_readonly_on_published_pwf(self) -> None:
         """Entire scored history passes when refreshed W03 PWF is present."""
         report = materialize_all_finalized(
