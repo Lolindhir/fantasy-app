@@ -1,6 +1,8 @@
 # External Rankings
 
-Dieser Bereich speichert externe geordnete Spieler- und Assetbewertungen. ADP, Expertenkonsens, Marktwerte und Projections sind unterschiedliche Ranking-Arten innerhalb desselben Oberbegriffs.
+Dieser Bereich beschreibt externe geordnete Spieler- und Assetbewertungen. ADP, Expertenkonsens, Marktwerte und Projections sind unterschiedliche Ranking-Arten innerhalb desselben Oberbegriffs.
+
+**Speicherort:** Die aktiven Provider (FantasyPros, FantasyCalc, Fantasy Football Calculator, FFToday, CBS Sports, Sleeper Trending) liegen seit Issue #988 / ADR-060 als Source Evidence unter `data-source/market/<ranking_kind>/<provider>/<format>/` (Snapshots) und `data-source/providers/<provider>/<dataset>/` (Raw, Doku, Audit, `analysis-metadata.json`); die Fetcher unter `tools/external_source/`. Hier bleiben nur Ranking-Art-Regeln, Audits nicht aktiver Quellen und manuelle Referenzen. Die Verzeichnisse unten beschreiben die Hierarchie, die jetzt unter `data-source/market/` gilt.
 
 ## Kanonische Hierarchie
 
@@ -57,7 +59,7 @@ Audits für geprüfte, aber nicht aktive Rankingquellen liegen zentral unter:
 
 Aktive Provider können zusätzlich einen Source-spezifischen Audit im Provider-Verzeichnis behalten, wenn der Produktionsvertrag davon abhängt, etwa bei einer öffentlichen HTML-Quelle ohne dokumentierte API.
 
-Provider-Verzeichnisse unter `expert-consensus/`, `market-value/`, `adp/` und `projections/` sind aktiven oder tatsächlich gespeicherten Quellen vorbehalten.
+Provider-Verzeichnisse unter `data-source/market/<ranking_kind>/` sind aktiven oder tatsächlich gespeicherten Quellen vorbehalten.
 
 ## Geprüfte, aber nicht aktive Quelle: Dynasty Data Lab
 

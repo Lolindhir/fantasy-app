@@ -17,17 +17,12 @@
     "not_league_specific_truth": true
   },
   "format_context": {
-    "actual_league_team_count": 6,
-    "actual_scoring": "ppr",
-    "actual_fixed_qb_starters": 2,
-    "actual_fixed_te_starters": 2,
-    "actual_fixed_kicker_starters": 1,
     "redraft-ppr-8-team": {
       "source_format": "ppr",
       "source_team_count": 8,
       "position_scope": ["QB", "RB", "WR", "TE"],
       "primary_signal": "small_league_full_ppr_draft_cost",
-      "limitation": "Normal one-QB mock drafts understate quarterback scarcity for Mighty Giants."
+      "limitation": "Normal one-QB mock drafts understate quarterback scarcity in leagues with a second quarterback slot."
     },
     "redraft-ppr-8-team-kicker": {
       "source_format": "ppr",
@@ -44,7 +39,7 @@
       "source_team_count": 10,
       "position_scope": ["QB", "RB", "WR", "TE"],
       "primary_signal": "two_qb_draft_cost_and_quarterback_scarcity",
-      "limitation": "Ten teams and source-default scoring are not the actual six-team Full-PPR league."
+      "limitation": "Ten teams and source-default scoring may differ from a consuming league's team count and scoring."
     },
     "fixed_two_te_modeled_by_source": false,
     "combine_formats_by_raw_average": false
@@ -128,17 +123,17 @@
       "warning": "Only compare Kicker-only lists; do not mix the Kicker list with offensive cross-position percentiles."
     }
   },
-  "league_adjustments": [
-    "Apply six-team replacement-level context after reading the eight-team PPR and ten-team 2-QB source formats.",
+  "consumer_notes": [
+    "Apply league-specific replacement-level context only downstream, after reading the eight-team PPR and ten-team 2-QB source formats.",
     "Use the 2-QB feed primarily to understand quarterback scarcity.",
-    "Use the PPR feed primarily to understand small-league Full-PPR draft cost.",
+    "The PPR feed describes small-league Full-PPR draft cost.",
     "Apply additional scarcity for two fixed tight-end starters separately.",
     "Evaluate the Kicker ranking in the context of one fixed K starter and high replacement availability.",
     "Do not turn ADP into an automatic draft, waiver or trade recommendation."
   ],
   "limitations": [
     "The public API does not expose one format combining six teams, Full PPR, two quarterbacks and two tight ends.",
-    "Mock-draft participants and sample sizes may not represent the Mighty Giants league.",
+    "Mock-draft participants and sample sizes may not represent a specific consuming league.",
     "ADP describes acquisition cost, not expected points or dynasty trade value.",
     "Kicker player-level samples can be materially smaller than the overall draft sample.",
     "NFL teams, player identities and optional fields can change without a published API schema version.",

@@ -10,17 +10,17 @@ Fantasy Football Calculator berechnet ADP aus menschlichen Picks in Mock Drafts.
 
 | Ranking-ID | API-Format | Teamzahl | Scope | Primäre Rolle |
 |---|---:|---:|---|---|
-| `redraft-ppr-8-team` | `ppr` | 8 | QB/RB/WR/TE | kleiner Liga- und Full-PPR-Draftmarkt |
+| `redraft-ppr-8-team` | `ppr` | 8 | QB/RB/WR/TE | kleiner Full-PPR-Draftmarkt |
 | `redraft-ppr-8-team-kicker` | `ppr` | 8 | K | Kicker-Draftmarkt |
 | `redraft-2qb-10-team` | `2qb` | 10 | QB/RB/WR/TE | 2-QB-Draftmarkt und QB-Knappheit |
 
-Die reale Liga hat sechs Teams, Full PPR, zwei feste QB-, zwei feste TE- und einen festen Kicker-Startplatz. Fantasy Football Calculator bietet kein einzelnes öffentliches ADP-Format, das diese Eigenschaften kombiniert.
+Fantasy Football Calculator bietet kein einzelnes öffentliches ADP-Format für jede Ligakonfiguration (Teamzahl, Full PPR, feste QB-/TE-/Kicker-Startplätze). Der Bezug auf eine konkrete Liga ist Consumer-Sache.
 
 Die offensiven PPR- und 2-QB-Feeds werden deshalb **nicht gemittelt**:
 
-- `redraft-ppr-8-team` ist der nächstgelegene unterstützte Proxy für kleine Liga und Full PPR, bildet aber normale 1-QB-Drafts ab.
+- `redraft-ppr-8-team` ist der nächstgelegene unterstützte Proxy für kleine Ligen und Full PPR, bildet aber normale 1-QB-Drafts ab.
 - `redraft-2qb-10-team` bildet die QB-Knappheit besser ab, verwendet aber zehn Teams und ist kein dokumentierter kombinierter PPR-Feed.
-- Zwei feste TE-Startplätze werden von keinem der beiden Feeds modelliert und müssen erst in der ligaindividuellen Analyse berücksichtigt werden.
+- Zwei feste TE-Startplätze werden von keinem der beiden Feeds modelliert und müssen erst in der Consumer-Analyse berücksichtigt werden.
 
 Das Kicker-Ranking wird **ohne zusätzlichen FFC-Request** aus demselben offiziellen `ppr`, 8-Team, `position=all`-Payload materialisiert, der bereits für `redraft-ppr-8-team` geladen wird. FFC kennzeichnet Kicker dort als `PK`; die normalisierte Kicker-Liste verwendet `K` passend zum internen Player-Modell.
 

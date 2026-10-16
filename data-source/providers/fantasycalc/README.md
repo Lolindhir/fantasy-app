@@ -19,7 +19,7 @@ Request-Konfiguration:
 - kein `tep`
 - ADP und Roster-Prozent werden angefordert
 
-Die reale Liga hat sechs Teams. Acht Teams sind der nächstgelegene unterstützte Proxy. Zwei feste TE-Startplätze werden nicht modelliert; TEP wird bewusst nicht als Ersatz verwendet.
+Der Abruf verwendet acht Teams als Format (`numTeams=8`). Ligaspezifische Abweichungen (Teamzahl, feste TE-Startplätze) werden nicht modelliert und gehören in die Consumer-Analyse; TEP wird bewusst nicht als Ersatz verwendet.
 
 ## Ablagestruktur und Speicherregeln
 

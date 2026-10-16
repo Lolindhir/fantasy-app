@@ -45,7 +45,7 @@ CBS veröffentlicht positionsbezogene Rest-of-Season-Projections. Für QB/RB/WR/
 
 Die Kicker-Distanz-Buckets können Dezimalwerte enthalten und werden deshalb als Source-Projections unverändert numerisch erhalten. Bei Spielern mit einer vollständigen Null-Projektion zeigt CBS die Distanz-Buckets teilweise als `—`; der Fetcher normalisiert diese ausschließlich dann auf 0, wenn auch FGM und FGA 0 sind.
 
-CBS-`FPTS` sind Provider-Werte und keine Mighty-Giants-Ligapunkte. Scoring-relevante Einzelstatistiken bleiben separat erhalten, damit Downstream-Operations bei vergleichbaren Feldern liga-spezifische Core Points ableiten können, ohne CBS-Providerpunkte als League Truth zu behandeln.
+CBS-`FPTS` sind Provider-Werte und keine Punkte einer konkreten Liga. Scoring-relevante Einzelstatistiken bleiben separat erhalten, damit Downstream-Operations bei vergleichbaren Feldern liga-spezifische Core Points ableiten können, ohne CBS-Providerpunkte als League Truth zu behandeln.
 
 ## Öffentlicher Zugriff
 
