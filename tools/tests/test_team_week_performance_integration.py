@@ -105,6 +105,58 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
                 print("TWP_WEEK5_PART=" + encoded[i:i+3000], flush=True)
 
 
+    def test_real_2026_week3_pwf_backfill_unblocks_awards_without_writing(self) -> None:
+        """#697 W03 final Actual backfill enables strict #355 source/parity gate."""
+        check = materialize(
+            REPO_ROOT, "nfl-reise", 2026, 3, write=False, require_pwf=True
+        )
+        self.assertEqual(check["TeamCount"], 6)
+        self.assertEqual(check["PlayerWeekFantasyParity"], {
+            "State": "verified", "Compared": 202, "MissingZeroPoints": 0,
+        })
+        self.assertFalse(check["Written"])
+        self.assertFalse(check["Changed"])
+        self.assertFalse((REPO_ROOT / check["Path"]).exists(),
+                         "Read-only validation must not create Week 3 awards")
+        inputs = load_verified_week_inputs(REPO_ROOT, "nfl-reise", 2026, 3)
+        model = build_team_week_performance(**inputs)
+        self.assertEqual(max(x["PotentialPoints"] for x in model["Teams"]), 258.38)
+        self.assertEqual(max(x["EfficiencyPercent"] for x in model["Teams"]), 92.7319)
+        self.assertTrue(model["Awards"]["BestManagerRosterIDs"])
+        self.assertTrue(model["Awards"]["BestCoachRosterIDs"])
+        print("TWP_W03_PARITY_AUDIT=" + json.dumps({
+            "PWF": check["PlayerWeekFantasyParity"],
+            "Teams": check["TeamCount"],
+            "BestPotential": max(x["PotentialPoints"] for x in model["Teams"]),
+            "BestEfficiency": max(x["EfficiencyPercent"] for x in model["Teams"]),
+            "Awards": model["Awards"],
+            "WroteOutput": check["Written"],
+        }, sort_keys=True), flush=True)
+
+    def test_real_all_finalized_weeks_readonly_on_published_pwf(self) -> None:
+        """Entire scored history passes when refreshed W03 PWF is present."""
+        report = materialize_all_finalized(
+            REPO_ROOT, league_id="nfl-reise", write=False
+        )
+        self.assertEqual(report["TargetCount"], 39)
+        self.assertEqual(report["ReadyCount"], 39)
+        self.assertEqual(report["BlockedCount"], 0, report["Weeks"])
+        self.assertFalse(report["WriteRequested"])
+        self.assertFalse(report["WriteAborted"])
+        self.assertEqual(report["ChangedCount"], 0)
+        self.assertTrue(all(x["Status"] == "ready" for x in report["Weeks"]))
+        week3 = next(x for x in report["Weeks"]
+                     if x["Season"] == 2026 and x["Week"] == 3)
+        self.assertEqual(week3["PlayerWeekFantasyParity"], {
+            "State": "verified", "Compared": 202, "MissingZeroPoints": 0,
+        })
+        print("TWP_FULL_READONLY_AUDIT=" + json.dumps({
+            "Targets": report["TargetCount"], "Ready": report["ReadyCount"],
+            "Blocked": report["BlockedCount"], "Written": report["ChangedCount"],
+            "Week3Parity": week3["PlayerWeekFantasyParity"],
+        }, sort_keys=True), flush=True)
+
+
     def test_clean_derived_root_rebuilds_all_weeks_and_second_run_is_noop(self) -> None:
         """Use a truly empty isolated derived root while reading real canonical inputs."""
         with tempfile.TemporaryDirectory(prefix=".twp-recovery-", dir=REPO_ROOT) as temp:
