@@ -229,7 +229,7 @@ Operational rules:
 - add source-specific pacing when repeated requests or pagination make provider throttling likely;
 - retries are resilience, not access-control circumvention: do not automate challenge solving, authentication bypasses or other mechanisms that evade a provider's access restrictions;
 - a 403 that carries an access challenge (Cloudflare `Just a moment...` body or `cf-mitigated: challenge` header) is not transient: it is raised as `HttpFetchBlockedError` without retries (Issue #1045);
-- a seasonal source (FFToday publishes preseason projections only) makes no request outside its active NFL phase, taken from the canonical season context (`fftoday_season_gate.py`), and ends successfully with a `skipped` message so the daily pipeline stays green;
+- a seasonal source (FFToday publishes preseason projections only) makes no request outside its active NFL phase, taken from the canonical season context (`tools/external_source/season_phase.py`, driven by the `seasonPolicy` of the dataset in `data-source/external-registry.json`), and ends successfully with a `skipped` message so the daily pipeline stays green;
 - when this contract is added or changed, audit existing automated fetchers separately for implementation drift instead of assuming documentation alone makes them compliant.
 
 ### External-ranking hierarchy
@@ -407,7 +407,7 @@ FFToday is an active automated Projection provider for QB, RB, WR, TE and K.
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/projections/fftoday/`
+`data-source/market/projection/fftoday/` (snapshots), `data-source/providers/fftoday/` (raw files and provider docs)
 
 Active ranking IDs:
 
@@ -422,8 +422,8 @@ The audited public Projection area also exposes DEF and IDP projections. Those p
 Refresh with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --skip-unchanged
-python fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py --skip-unchanged
+python -m tools.external_source.fftoday_kicker --skip-unchanged
+python -m tools.external_source.fftoday_offense --skip-unchanged
 ```
 
 The workflow `FM • Pipeline • Daily` (matrix job `Provider • fftoday`) refreshes the source daily before monitoring.
@@ -431,9 +431,9 @@ The workflow `FM • Pipeline • Daily` (matrix job `Provider • fftoday`) ref
 Canonical source documentation:
 
 - `fantasy-management/sources/external-rankings/projections/README.md`
-- `fantasy-management/sources/external-rankings/projections/fftoday/README.md`
-- `fantasy-management/sources/external-rankings/projections/fftoday/SOURCE_AUDIT.md`
-- `fantasy-management/sources/external-rankings/projections/fftoday/analysis-metadata.json`
+- `data-source/providers/fftoday/README.md`
+- `data-source/providers/fftoday/SOURCE_AUDIT.md`
+- `data-source/providers/fftoday/analysis-metadata.json`
 
 Operational rules:
 

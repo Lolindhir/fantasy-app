@@ -1005,14 +1005,14 @@ consumerReadClassification:
       reads:
         provider:fantasypros: provider-evidence-fetcher
       note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py:
+    tools/external_source/fftoday_kicker.py:
       reads:
         provider:fftoday: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py:
+      note: 'Shared external source layer acquisition of attributed FFToday kicker projection evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
+    tools/external_source/fftoday_offense.py:
       reads:
         provider:fftoday: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+      note: 'Shared external source layer acquisition of attributed FFToday offense projection evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py.'
     tools/external_source/sleeper_trending.py:
       reads:
         network: provider-evidence-fetcher

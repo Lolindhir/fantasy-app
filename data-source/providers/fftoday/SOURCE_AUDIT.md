@@ -124,11 +124,11 @@ Ein Parserfehler oder unvollständiger Feed darf den letzten guten Source-Stand 
 ## Aktive Source-Pfade
 
 ```text
-fantasy-management/sources/external-rankings/projections/fftoday/redraft-qb-preseason/
-fantasy-management/sources/external-rankings/projections/fftoday/redraft-rb-preseason/
-fantasy-management/sources/external-rankings/projections/fftoday/redraft-wr-preseason/
-fantasy-management/sources/external-rankings/projections/fftoday/redraft-te-preseason/
-fantasy-management/sources/external-rankings/projections/fftoday/redraft-kicker-preseason/
+data-source/market/projection/fftoday/redraft-qb-preseason/
+data-source/market/projection/fftoday/redraft-rb-preseason/
+data-source/market/projection/fftoday/redraft-wr-preseason/
+data-source/market/projection/fftoday/redraft-te-preseason/
+data-source/market/projection/fftoday/redraft-kicker-preseason/
 ```
 
 ## Produktionsnachweis vom 10. August 2026

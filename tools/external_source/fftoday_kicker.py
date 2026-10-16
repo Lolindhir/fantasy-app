@@ -10,6 +10,7 @@ import io
 import json
 import os
 import re
+import sys
 import tempfile
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
@@ -17,20 +18,29 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
-from fftoday_season_gate import skip_reason
-from http_fetch_resilience import HttpFetchError, fetch_text_with_retry
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+from data_roots import data_source_dir  # noqa: E402
+from external_source.http import HttpFetchError, fetch_text_with_retry  # noqa: E402
+from external_source.season_phase import skip_reason  # noqa: E402
+
+# Relative to the data-source root (tools/data_roots.py).
+MARKET_RELATIVE_DIR = Path("market/projection/fftoday")
+PROVIDER_RELATIVE_DIR = Path("providers/fftoday")
 
 SOURCE_ID = "fftoday"
 SOURCE_NAME = "FFToday"
 RANKING_KIND = "projections"
 RANKING_ID = "redraft-kicker-preseason"
 RANKING_NAME = "FFToday Preseason Kicker Projections"
-SCHEMA_VERSION = 1
+# Schema 2: no league context in the snapshot and the raw file lives in providers/.
+SCHEMA_VERSION = 2
 MIN_ROWS = 20
 DEFAULT_MAX_STALE_DAYS = 45
-SOURCE_ROOT = "fantasy-management/sources/external-rankings/projections/fftoday"
-ANALYSIS_METADATA = f"{SOURCE_ROOT}/analysis-metadata.json"
-DIRECT_FETCHER = "fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py"
+DIRECT_FETCHER = "tools/external_source/fftoday_kicker.py"
+DATASET_ID = "fftoday.projection.redraft-kicker-preseason"
 USER_AGENT = "Mozilla/5.0 (compatible; MightyGiantsFantasy/1.0)"
 CSV_FIELDS = [
     "name", "Rank", "source_rank", "position", "team", "source_player_id",
@@ -336,7 +346,11 @@ def _read_json(path: Path) -> dict[str, Any] | None:
 
 
 def ranking_root(repo_root: Path) -> Path:
-    return repo_root / SOURCE_ROOT / RANKING_ID
+    return data_source_dir(repo_root) / MARKET_RELATIVE_DIR / RANKING_ID
+
+
+def raw_root(repo_root: Path) -> Path:
+    return data_source_dir(repo_root) / PROVIDER_RELATIVE_DIR / RANKING_ID
 
 
 def write_projection(
@@ -352,7 +366,7 @@ def write_projection(
     skip_unchanged: bool,
 ) -> tuple[list[Path], bool]:
     root = ranking_root(repo_root)
-    raw_path = root / "raw-latest.html"
+    raw_path = raw_root(repo_root) / "raw-latest.html"
     latest_path = root / "latest.json"
     snapshot_dir = root / "snapshots" / fetched_at.date().isoformat()
     ranking_path = snapshot_dir / "ranking.csv"
@@ -398,14 +412,12 @@ def write_projection(
             "position": "K",
             "source_scoring_label": diagnostics["source_scoring_label"],
             "custom_scoring_used": False,
-            "actual_league_team_count": 6,
-            "actual_fixed_kicker_starters": 1,
         },
         "snapshot": {
             "snapshot_date": fetched_at.date().isoformat(),
             "ranking_file": "ranking.csv",
             "metadata_file": "metadata.json",
-            "raw_latest_file": "../../raw-latest.html",
+            "raw_latest_file": raw_path.relative_to(repo_root).as_posix(),
             "row_count": len(rows),
             "position_counts": {"K": len(rows)},
             "csv_columns": CSV_FIELDS,
@@ -459,7 +471,7 @@ def write_projection(
         "source_url": source_url_value,
         "freshness_status": "live_fetch",
         "direct_fetcher": DIRECT_FETCHER,
-        "analysis_metadata_file": ANALYSIS_METADATA,
+        "analysis_metadata_file": (data_source_dir(repo_root) / PROVIDER_RELATIVE_DIR / "analysis-metadata.json").relative_to(repo_root).as_posix(),
         "refresh_before_value_sensitive_analysis": True,
     }
     _atomic_write(ranking_path, csv_text)
@@ -474,7 +486,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--timeout", type=int, default=30)
     parser.add_argument("--max-stale-days", type=int, default=DEFAULT_MAX_STALE_DAYS)
     parser.add_argument(
-        "--repo-root", type=Path, default=Path(__file__).resolve().parents[3]
+        "--repo-root", type=Path, default=Path(__file__).resolve().parents[2]
     )
     parser.add_argument("--fetched-at")
     parser.add_argument("--input", type=Path)
@@ -491,7 +503,7 @@ def main(argv: list[str] | None = None) -> int:
         fetched_at = parse_timestamp(args.fetched_at)
         url = source_url(args.season)
         if not args.input:
-            reason = skip_reason(args.repo_root.resolve(), args.season, fetched_at)
+            reason = skip_reason(args.repo_root.resolve(), DATASET_ID, args.season, fetched_at)
             if reason:
                 print(f"[fftoday-projections:kicker] skipped: {reason}")
                 return 0

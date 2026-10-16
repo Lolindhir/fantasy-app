@@ -1,3 +1,4 @@
+import importlib.util
 import io
 import sys
 import unittest
@@ -6,13 +7,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-SCRIPT_DIR = Path(__file__).resolve().parents[1]
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 
-import fetch_fftoday_offense_projections as module
-import fftoday_season_gate as gate
-import http_fetch_resilience as http
+from external_source import http  # noqa: E402
+
+SCRIPT = TOOLS_DIR / "external_source" / "fftoday_offense.py"
+spec = importlib.util.spec_from_file_location("fftoday_offense_fetch", SCRIPT)
+module = importlib.util.module_from_spec(spec)
+assert spec and spec.loader
+spec.loader.exec_module(module)
+from external_source import season_phase as gate  # noqa: E402
+
+REPO_ROOT = TOOLS_DIR.parent
+DATASET_ID = "fftoday.projection.redraft-qb-preseason"
 
 
 def fixture(position: str, *, start: int = 0, next_page: bool = False, updated: str = "8/6/2026") -> str:
@@ -197,7 +206,7 @@ class FFTodayOffenseTests(unittest.TestCase):
                 http.fetch_text_with_retry("https://example.test", retry_delays=(0.0,))
         self.assertEqual(1, urlopen.call_count)
 
-    def test_season_gate_only_allows_the_preseason_phase(self):
+    def test_registry_season_policy_only_allows_the_preseason_phase(self):
         when = datetime(2026, 8, 10, tzinfo=timezone.utc)
         for phase, expect_skip in (
             ("pre_regular_season", False),
@@ -206,7 +215,7 @@ class FFTodayOffenseTests(unittest.TestCase):
             ("post_regular_season", True),
         ):
             with patch.object(gate, "resolve_nfl_season_context", return_value={"phase": phase}):
-                reason = gate.skip_reason(Path("."), 2026, when)
+                reason = gate.skip_reason(REPO_ROOT, DATASET_ID, 2026, when)
             self.assertEqual(expect_skip, reason is not None, phase)
 
     def test_season_gate_skips_a_season_without_canonical_schedule(self):
@@ -216,13 +225,13 @@ class FFTodayOffenseTests(unittest.TestCase):
             "resolve_nfl_season_context",
             side_effect=gate.NflSeasonContextError("missing"),
         ):
-            self.assertIn("no canonical NFL schedule", gate.skip_reason(Path("."), 2027, when))
+            self.assertIn("no canonical NFL schedule", gate.skip_reason(REPO_ROOT, DATASET_ID, 2027, when))
 
     def test_main_skips_without_request_outside_preseason(self):
         with (
             patch.object(module, "skip_reason", return_value="phase regular_season"),
             patch.object(module, "fetch_all_pages") as fetch_all,
-            patch("sys.argv", ["fetch_fftoday_offense_projections.py", "--skip-unchanged"]),
+            patch("sys.argv", ["fftoday_offense.py", "--skip-unchanged"]),
         ):
             self.assertEqual(0, module.main())
         fetch_all.assert_not_called()
