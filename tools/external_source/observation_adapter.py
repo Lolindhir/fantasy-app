@@ -312,26 +312,28 @@ def normalize_sleeper_activity_observations(
         raise ObservationAdapterError("Sleeper observation timestamp lacks UTC offset")
     season = resolve_season_for_date(repo_root, instant.astimezone(timezone.utc).date().isoformat())
     index = _mapping_index(repo_root, mapping_index)
-    return tuple(
-        NeutralObservationRow(
-            dataset_id=evidence.dataset_id,
-            provider=evidence.provider,
-            schema_version=evidence.source_version,
-            observation_season=season,
-            # Only latest is retained pre-4A.3. Do not pretend this is archived.
-            snapshot_key="latest",
-            source_row_number=i,
-            provider_player_id=player["sleeper_player_id"],
-            asset_type="player",
-            canonical_player_id=(
-                identity := resolve_entry(
-                    dataset["identity"]["providerKey"], player["sleeper_player_id"], "player", season, index
-                )
-            )["CanonicalPlayerID"],
-            identity_status=identity["Status"],
-            identity_method=identity["Method"],
-            provider_team_count=dataset["format"].get("providerTeamCount"),
-            provider_values=dict(player[action]),
+    rows: list[NeutralObservationRow] = []
+    for row_number, player in enumerate(evidence.players, start=1):
+        provider_id = player["sleeper_player_id"]
+        identity = resolve_entry(
+            dataset["identity"]["providerKey"], provider_id, "player", season, index
         )
-        for i, player in enumerate(evidence.players, start=1)
-    )
+        rows.append(
+            NeutralObservationRow(
+                dataset_id=evidence.dataset_id,
+                provider=evidence.provider,
+                schema_version=evidence.source_version,
+                observation_season=season,
+                # Only latest is retained pre-4A.3. Do not pretend this is archived.
+                snapshot_key="latest",
+                source_row_number=row_number,
+                provider_player_id=provider_id,
+                asset_type="player",
+                canonical_player_id=identity["CanonicalPlayerID"],
+                identity_status=identity["Status"],
+                identity_method=identity["Method"],
+                provider_team_count=dataset["format"].get("providerTeamCount"),
+                provider_values=dict(player[action]),
+            )
+        )
+    return tuple(rows)
