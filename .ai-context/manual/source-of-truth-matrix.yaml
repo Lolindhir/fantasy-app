@@ -898,11 +898,14 @@ playersReadModelFieldInventory:
         Canonical replacement exists since #347 F4a: data-source/nfl/qbr-week/<season>.json
         (ESPN QBR via nflverse); the consumer switch is G3.
     - id: historical-fgc-player-fallback-unmatched
-      verified: code-reading-only
+      verified: resolved-2026-10-16
       evidence: >
-        FantasyGameContextCore.ps1 keys the legacy past-season player map by
+        FantasyGameContextCore.ps1 keyed the legacy past-season player map by
         PlayerID/ID/SleeperID, but past_seasons/Players_<year>.json carries only
-        TankID, so the fallback never matches.
+        TankID, so the fallback never matched. In addition the canonical weekly roster
+        rung read no team (records carry the plain string Team), so every 2025 player was
+        unknown. Resolved in Issue #420: the Players_<year>.json fallback was removed and
+        the weekly roster rung reads Team; history no longer reads Players_<year>.json.
     - id: ops-inputs-legacy-status
       verified: code-reading-only
       evidence: >
