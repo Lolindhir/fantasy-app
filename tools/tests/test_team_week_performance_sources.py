@@ -73,7 +73,8 @@ class SourcesTest(unittest.TestCase):
         self.assertEqual(params["position_by_player"], {"a": "WR", "b": "RB"})
         self.assertEqual([s.slot_id for s in params["slots"]], ["WR-1", "FLEX-1", "REC_FLEX-1"])
         self.assertTrue(params["finalized"])
-        self.assertEqual(params["finality_evidence"],\n                         "data-source/nfl/game-finality/2024.json:REG-W4;league:scored-week-confirmed")
+        self.assertEqual(params["finality_evidence"],
+                         "data-source/nfl/game-finality/2024.json:REG-W4;league:scored-week-confirmed")
         self.assertEqual(self.calls, [{"season": 2024, "week": 4}])
         self.assertEqual(params["matchup_rows"], self.roster)
 
