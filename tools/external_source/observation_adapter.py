@@ -15,6 +15,9 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .snapshot_discovery import Snapshot
+from .identity import MappingIndex, resolve_entry
+from nfl_season_context import resolve_season_for_date
+from datetime import datetime, timezone
 
 # Only observed/published versions are accepted. An upstream parser contract
 # change must be registered and reviewed before consuming the new version.
@@ -211,4 +214,124 @@ def load_roster_activity_evidence(
         players=tuple(players),
         # Comparison is a consumer-side window delta, not provider observation.
         source_document={key: part for key, part in value.items() if key != "comparison"},
+    )
+
+
+@dataclass(frozen=True)
+class NeutralObservationRow:
+    """Provider-attributed neutral row, prior to #988 4B derived materialization.
+
+    The provider-specific values are preserved without invented consensus or
+    conversions. No league-local context is carried into global observations.
+    """
+
+    dataset_id: str
+    provider: str
+    schema_version: int
+    observation_season: int
+    snapshot_key: str
+    source_row_number: int
+    provider_player_id: str
+    asset_type: str
+    canonical_player_id: str | None
+    identity_status: str
+    identity_method: str | None
+    provider_team_count: int | None
+    provider_values: Mapping[str, Any]
+
+
+def _mapping_index(repo_root: Path, index: MappingIndex | None) -> MappingIndex:
+    return index if index is not None else MappingIndex.load(repo_root)
+
+
+def normalize_ranked_observations(
+    repo_root: Path,
+    dataset: Mapping[str, Any],
+    snapshot: Snapshot,
+    *,
+    mapping_index: MappingIndex | None = None,
+) -> tuple[NeutralObservationRow, ...]:
+    """Convert one verified ranked snapshot to provider-attributed neutral rows.
+
+    Reuses exactly the Source Identity mapping/status owner; no name/team join
+    and no fallbacks. Old actual_league_team_count is historical consumer context
+    and is excluded, while registry providerTeamCount remains the source format.
+    """
+    evidence = load_ranked_evidence(dataset, snapshot)
+    season = resolve_season_for_date(repo_root, snapshot.day.isoformat())
+    index = _mapping_index(repo_root, mapping_index)
+    field = dataset["identity"]["column"]
+    provider_key = dataset["identity"]["providerKey"]
+    format_team_count = dataset["format"].get("providerTeamCount")
+    results: list[NeutralObservationRow] = []
+    for row_number, row in enumerate(evidence.rows, start=1):
+        asset_type = (row.get("asset_type") or "player").strip()
+        provider_id = (row.get(field) or "").strip()
+        identity = resolve_entry(provider_key, provider_id, asset_type, season, index)
+        source_values = {
+            key: value for key, value in row.items()
+            if key != "actual_league_team_count"
+        }
+        results.append(
+            NeutralObservationRow(
+                dataset_id=evidence.dataset_id,
+                provider=evidence.provider,
+                schema_version=evidence.source_version,
+                observation_season=season,
+                snapshot_key=evidence.snapshot_key,
+                source_row_number=row_number,
+                provider_player_id=provider_id,
+                asset_type=asset_type,
+                canonical_player_id=identity["CanonicalPlayerID"],
+                identity_status=identity["Status"],
+                identity_method=identity["Method"],
+                provider_team_count=format_team_count,
+                provider_values=source_values,
+            )
+        )
+    return tuple(results)
+
+
+def normalize_sleeper_activity_observations(
+    repo_root: Path,
+    dataset: Mapping[str, Any],
+    latest_path: Path,
+    *,
+    mapping_index: MappingIndex | None = None,
+) -> tuple[NeutralObservationRow, ...]:
+    """Expose one action from the combined Source latest; no fictitious history."""
+    evidence = load_roster_activity_evidence(dataset, latest_path)
+    action = str(dataset["id"]).rsplit(".", 1)[-1]
+    if action not in ("add", "drop"):
+        raise ObservationAdapterError(f"Unknown Sleeper roster activity dataset action: {action}")
+    try:
+        instant = datetime.fromisoformat(evidence.observed_at.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ObservationAdapterError("Invalid Sleeper observation timestamp") from exc
+    if instant.tzinfo is None or instant.utcoffset() is None:
+        raise ObservationAdapterError("Sleeper observation timestamp lacks UTC offset")
+    season = resolve_season_for_date(repo_root, instant.astimezone(timezone.utc).date().isoformat())
+    index = _mapping_index(repo_root, mapping_index)
+    return tuple(
+        NeutralObservationRow(
+            dataset_id=evidence.dataset_id,
+            provider=evidence.provider,
+            schema_version=evidence.source_version,
+            observation_season=season,
+            # Only latest is retained pre-4A.3. Do not pretend this is archived.
+            snapshot_key="latest",
+            source_row_number=i,
+            provider_player_id=player["sleeper_player_id"],
+            asset_type="player",
+            canonical_player_id=(
+                identity := resolve_entry(
+                    dataset["identity"]["providerKey"], player["sleeper_player_id"], "player", season, index
+                )
+            )["CanonicalPlayerID"],
+            identity_status=identity["Status"],
+            identity_method=identity["Method"],
+            provider_team_count=dataset["format"].get("providerTeamCount"),
+            provider_values=dict(player[action]),
+        )
+        for i, player in enumerate(evidence.players, start=1)
     )
