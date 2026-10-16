@@ -126,11 +126,11 @@ class IdentityTests(unittest.TestCase):
             root = Path(tmp) / "snapshots"
             legacy = root / "2026-10-01"
             legacy.mkdir(parents=True)
-            (legacy / "ranking.csv").write_text("sleeper_id\\n1\\n", encoding="utf-8")
+            (legacy / "ranking.csv").write_text("sleeper_id\n1\n", encoding="utf-8")
             for instant, hash8 in (("090000", "11111111"), ("180000", "22222222")):
                 folder = legacy / f"{instant}Z-{hash8}"
                 folder.mkdir(parents=True)
-                (folder / "ranking.csv").write_text("sleeper_id\\n1\\n", encoding="utf-8")
+                (folder / "ranking.csv").write_text("sleeper_id\n1\n", encoding="utf-8")
                 (folder / "metadata.json").write_text(
                     json.dumps({"fetched_at": f"2026-10-01T{instant[:2]}:{instant[2:4]}:{instant[4:]}Z"}),
                     encoding="utf-8",
@@ -190,7 +190,7 @@ class IdentityTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp) / "snapshots" / "2026-10-01" / "120000Z-12345678"
             folder.mkdir(parents=True)
-            (folder / "ranking.csv").write_text("sleeper_id\\n1\\n", encoding="utf-8")
+            (folder / "ranking.csv").write_text("sleeper_id\n1\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "metadata missing"):
                 discover_snapshots(Path(tmp) / "snapshots")
 
