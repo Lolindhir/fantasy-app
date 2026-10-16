@@ -215,7 +215,7 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
     def test_historical_baseline_chooses_latest_intraday_snapshot_at_cutoff(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            source = self.source("wr-market", "market_value", "WR", "market", ["rank"])
+            source = self.source("wr-market", "expert_consensus", "WR", "market", ["rank"])
             base = "sources/wr-market/snapshots"
             current = f"{base}/2026-08-16/190000Z-33333333/ranking.csv"
             self.write_csv(root, current, [{"player_id": "fa-wr", "rank": 10}])
