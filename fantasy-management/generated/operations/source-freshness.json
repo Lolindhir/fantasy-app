@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "dataset_id": "source-freshness-gate",
-  "generated_at": "2026-10-16T15:37:18.239676Z",
+  "generated_at": "2026-10-16T17:37:32.979109Z",
   "berlin_date": "2026-10-16",
   "timezone": "Europe/Berlin",
   "domain_context": {
@@ -32,18 +32,18 @@
         "relevance": "required",
         "active": true,
         "reason": "phase_policy:regular_season",
-        "runtime_status": "active_degraded",
+        "runtime_status": "active_ready",
         "execution_allowed": true,
-        "no_event_conclusion_allowed": false
+        "no_event_conclusion_allowed": true
       },
       {
         "id": "kicker-daily-monitoring",
         "relevance": "required",
         "active": true,
         "reason": "phase_policy:regular_season",
-        "runtime_status": "active_degraded",
+        "runtime_status": "active_ready",
         "execution_allowed": true,
-        "no_event_conclusion_allowed": false
+        "no_event_conclusion_allowed": true
       }
     ],
     "required_module_ids": [
@@ -60,27 +60,21 @@
   },
   "population": {
     "source_count": 6,
-    "fresh_count": 5,
-    "stale_count": 1,
+    "fresh_count": 6,
+    "stale_count": 0,
     "missing_count": 0,
     "failed_count": 0,
     "invalid_count": 0
   },
-  "overall_status": "degraded",
+  "overall_status": "ok",
   "monitoring": {
-    "decision": "proceed_degraded",
+    "decision": "proceed",
     "allowed": true,
-    "no_event_conclusion_allowed": false,
-    "unfresh_source_ids": [
-      "fftoday"
-    ],
+    "no_event_conclusion_allowed": true,
+    "unfresh_source_ids": [],
     "blocking_source_ids": [],
-    "no_event_blocking_source_ids": [
-      "fftoday"
-    ],
-    "affected_signal_families": [
-      "season_projection"
-    ]
+    "no_event_blocking_source_ids": [],
+    "affected_signal_families": []
   },
   "sources": [
     {
@@ -96,10 +90,10 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-10-16T04:11:37.936111Z",
-      "age_minutes": 685.67,
+      "checked_at": "2026-10-16T17:31:40.750319Z",
+      "age_minutes": 5.87,
       "content_changed": true,
-      "trigger": "repository_dispatch"
+      "trigger": "workflow_dispatch"
     },
     {
       "id": "fantasycalc",
@@ -114,10 +108,10 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-10-16T04:10:29.341151Z",
-      "age_minutes": 686.81,
+      "checked_at": "2026-10-16T17:28:57.584256Z",
+      "age_minutes": 8.59,
       "content_changed": true,
-      "trigger": "repository_dispatch"
+      "trigger": "workflow_dispatch"
     },
     {
       "id": "fantasy-football-calculator",
@@ -131,10 +125,10 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-10-16T04:10:29.710270Z",
-      "age_minutes": 686.81,
+      "checked_at": "2026-10-16T17:29:59.129786Z",
+      "age_minutes": 7.56,
       "content_changed": true,
-      "trigger": "repository_dispatch"
+      "trigger": "workflow_dispatch"
     },
     {
       "id": "fftoday",
@@ -146,12 +140,12 @@
       "affected_signal_families": [
         "season_projection"
       ],
-      "status": "stale",
-      "reason": "heartbeat_exceeds_max_age",
-      "checked_at": "2026-10-13T03:25:02.048370Z",
-      "age_minutes": 5052.27,
-      "content_changed": true,
-      "trigger": "repository_dispatch"
+      "status": "fresh",
+      "reason": "successful_refresh_confirmed_for_current_morning_cycle",
+      "checked_at": "2026-10-16T17:31:03.743895Z",
+      "age_minutes": 6.49,
+      "content_changed": false,
+      "trigger": "workflow_dispatch"
     },
     {
       "id": "cbs-sports",
@@ -165,10 +159,10 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-10-16T04:11:00.684186Z",
-      "age_minutes": 686.29,
+      "checked_at": "2026-10-16T17:29:43.536868Z",
+      "age_minutes": 7.82,
       "content_changed": true,
-      "trigger": "repository_dispatch"
+      "trigger": "workflow_dispatch"
     },
     {
       "id": "sleeper-trending",
@@ -182,14 +176,14 @@
       ],
       "status": "fresh",
       "reason": "successful_refresh_confirmed_for_current_morning_cycle",
-      "checked_at": "2026-10-16T04:11:57.715558Z",
-      "age_minutes": 685.34,
+      "checked_at": "2026-10-16T17:30:34.281478Z",
+      "age_minutes": 6.98,
       "content_changed": true,
-      "trigger": "repository_dispatch"
+      "trigger": "workflow_dispatch"
     }
   ],
   "quality": {
-    "status": "degraded",
+    "status": "ok",
     "freshness_basis": "successful current-cycle refresh heartbeats for all monitored morning sources",
     "unchanged_content_policy": "a successful current-cycle heartbeat is fresh even when content_changed is false"
   }
