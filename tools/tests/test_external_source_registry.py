@@ -359,6 +359,7 @@ class VersionedObservationAdapterTests(unittest.TestCase):
             (root / "ranking.csv").write_text(csv_content, encoding="utf-8")
             metadata = {
                 "schema_version": 99,
+                "ranking_id": "dynasty-superflex-ppr-8-team",
                 "snapshot": {
                     "ranking_sha256": __import__("hashlib").sha256(csv_content.encode("utf-8")).hexdigest(),
                     "row_count": 1,
@@ -371,6 +372,12 @@ class VersionedObservationAdapterTests(unittest.TestCase):
             metadata["schema_version"] = 4
             (root / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
             self.assertEqual(1, len(load_ranked_evidence(dataset,snapshot).rows))
+            wrong_dataset = dict(metadata)
+            wrong_dataset["ranking_id"] = "redraft-superflex-ppr-8-team"
+            (root / "metadata.json").write_text(json.dumps(wrong_dataset), encoding="utf-8")
+            with self.assertRaisesRegex(ObservationAdapterError, "dataset identity mismatch"):
+                load_ranked_evidence(dataset,snapshot)
+            (root / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
             (root / "ranking.csv").write_text(csv_content.replace("99", "88"), encoding="utf-8")
             with self.assertRaisesRegex(ObservationAdapterError, "SHA-256 mismatch"):
                 load_ranked_evidence(dataset,snapshot)
