@@ -56,6 +56,13 @@ paths:
 
 snapshots:
   discovery: tools/external_source/snapshot_discovery.py
+  appendOnlyPlan: tools/external_source/snapshot_plan.py
+  appendOnlyPlanStatus: > 
+    Technical pure read-only path/semantic SHA-256 planning and immutable collision
+    inspection only. It is not called by any provider writer and does not enable
+    additional permanent archives. Step 4A.2 producer activation is blocked until
+    the relevant external-registry rights.storage and retention obligations have
+    been established under Issue #190.
   discoverySemantics: >
     Enumerate both historical daily folders and future UTC intraday folders by actual
     ranking/metadata paths. Order by date and authenticated observation instant, with
