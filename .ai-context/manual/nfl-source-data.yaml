@@ -629,7 +629,12 @@ operationalDatasetEvaluation:
     rule: >
       Season-Rosters ersetzen keine Weekly-Historie fuer In-Season-Teamwechsel.
       Rows ohne GSIS bleiben in Raw-Evidence, werden aber nicht per Name in die
-      kanonische Player-Zuordnung geraten.
+      kanonische Player-Zuordnung geraten. Historische Weekly-Roster-Raw-Partitionen
+      liefern GSIS-only-Evidenz fuer Spieler, die in heutigen Players/FF-Crosswalks
+      und historischen Stats fehlen. Nur echte GSIS-IDs (00-xxxxxxx) ohne
+      anderweitige Identitaetszuordnung koennen einen neuen kanonischen
+      Personen-Datensatz begruenden. Bereits per Weekly-Roster belegte
+      GSIS-Provenienz wird deterministisch wiederholt; nie via Namen verbinden.
 
   snapCounts:
     recommendedRole: primary-canonical
@@ -769,7 +774,11 @@ publication:
   semanticNoOpRequired: true
   normalRepairBehavior: >
     Normale Materialisierung/Raw-Synchronisierung darf eingefrorene historische
-    Partitionen nicht ersetzen. Bewusste Reparatur verwendet --force.
+    Partitionen nicht ersetzen. Eine begrenzte Ausnahme erlaubt bei frozen
+    Player-Stats und Weekly-Rosters ausschliesslich fehlende CanonicalPlayerIDs
+    von null auf eine eindeutige Source-belegte Identitaet anzureichern, wenn
+    alle anderen Fakten und bestehenden Identitaeten byte-semantisch unveraendert
+    bleiben. Bewusste andere Reparaturen verwenden weiterhin --force.
   workflow:
     path: .github/workflows/sync-nfl-source-data.yml
     rule: >
