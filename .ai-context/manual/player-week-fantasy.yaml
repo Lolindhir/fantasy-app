@@ -409,6 +409,13 @@ historicalBatch:
       Producing final PWF is only an upstream readiness gate for strict
       TeamWeekPerformance parity. The batch alone does not attest fantasy
       matchup player-point parity or user-facing award completeness.
+  historicalAcceptanceGate: >-
+    Full 39-week source-only reconstruction is an explicit opt-in CI check
+    (RUN_FULL_HISTORICAL_PWF_AUDIT=1). Its 2026-10-16 execution exposed
+    unresolved canonical weekly-roster identities in 2024/W01, 2024/W02
+    and 2025/W01 (source owner Issue #1061). This acceptance gate remains
+    NOT PASSED; ordinary fast producer regressions passing does not authorize
+    all-season publication or relaxing the original scoring/identity rules.
   activation: >-
     No Actions workflow, central scheduler cadence, main publication or App
     refresh change is included in this initial module. Cross-product
