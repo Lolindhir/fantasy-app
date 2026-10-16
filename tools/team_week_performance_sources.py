@@ -70,7 +70,7 @@ def validate_final_week(
     complete, game_ids = nfl_finality(repo_root, season=season, week=week)
     if complete is not True or not game_ids:
         raise WeekSourceNotReady(f"NFL regular season week {season}/{week} is not final")
-    return f"{DATA_SOURCE_ROOT}/nfl/game-finality/{season}.json:REG-W{week};league:LastScoredLeg={scored}"
+    return f"{DATA_SOURCE_ROOT}/nfl/game-finality/{season}.json:REG-W{week};league:scored-week-confirmed"
 
 
 def resolve_week_positions(
