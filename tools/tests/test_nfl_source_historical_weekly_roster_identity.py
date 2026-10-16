@@ -187,6 +187,68 @@ class CurrentRepositoryHistoricalIdentityAudit(unittest.TestCase):
         self.assertFalse(missing, sorted(missing)[:15])
         self.assertGreaterEqual(len(target), 100)
 
+    @unittest.skipUnless(
+        (TOOLS.parent / "data-source/nfl/identities/players.json").is_file(),
+        "Requires persisted canonical source data",
+    )
+    def test_read_only_identity_rebuild_impact_and_existing_gsis_owners(self):
+        """Inspect actual full-graph effects before publishing roster-only identities."""
+        from collections import defaultdict
+
+        from nfl_source_data_lib.common import load_registry
+        from nfl_source_data_lib.identity import build_identities
+
+        root = TOOLS.parent
+        datasets = {item.id: item for item in load_registry(root)}
+        previous = json.loads(
+            (root / "data-source/nfl/identities/players.json").read_text(encoding="utf-8")
+        )["Players"]
+        rebuilt, _, conflicts, provider_claims, mapping_conflicts = build_identities(
+            root, datasets,
+        )
+
+        def gsis_owners(rows):
+            owners = defaultdict(set)
+            for player in rows:
+                gsis = [
+                    (player.get("IDs") or {}).get("GSIS"),
+                    *((player.get("IDAliases") or {}).get("GSIS") or []),
+                ]
+                for value in gsis:
+                    if value:
+                        owners[value].add(player["CanonicalPlayerID"])
+            return owners
+
+        old_owners = gsis_owners(previous)
+        new_owners = gsis_owners(rebuilt)
+        previous_ids = {row["CanonicalPlayerID"] for row in previous}
+        rebuilt_ids = {row["CanonicalPlayerID"] for row in rebuilt}
+        new_only = rebuilt_ids - previous_ids
+        lost = previous_ids - rebuilt_ids
+        reassigned_gsis = {
+            token: (sorted(owners), sorted(new_owners.get(token, set())))
+            for token, owners in old_owners.items()
+            if owners != new_owners.get(token, set())
+        }
+        added_gsis = set(new_owners) - set(old_owners)
+        print(
+            "Historical weekly-roster full-graph impact (read-only): "
+            f"prior_players={len(previous_ids)} rebuilt_players={len(rebuilt_ids)} "
+            f"new_players={len(new_only)} lost_players={len(lost)} "
+            f"new_gsis={len(added_gsis)} changed_existing_gsis={len(reassigned_gsis)} "
+            f"provider_claims={len(provider_claims)} "
+            f"mapping_conflicts={len(mapping_conflicts)} "
+            f"source_conflicts={len(conflicts)}",
+            flush=True,
+        )
+        print(
+            f"New identity sample: {sorted(new_only)[:10]}; "
+            f"existing GSIS change sample: {list(sorted(reassigned_gsis.items()))[:10]}",
+            flush=True,
+        )
+        self.assertFalse(lost, sorted(lost)[:20])
+        self.assertFalse(reassigned_gsis, list(sorted(reassigned_gsis.items()))[:20])
+
 
 
 if __name__ == "__main__":
