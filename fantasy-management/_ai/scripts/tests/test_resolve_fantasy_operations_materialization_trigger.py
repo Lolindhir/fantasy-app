@@ -47,8 +47,8 @@ class MaterializationTriggerTests(unittest.TestCase):
                 "fantasy-management/sources/external-rankings/market-value/fantasycalc/latest.json",
                 "fantasy-management/sources/external-rankings/market-value/fantasycalc/snapshots/2026-08-17.json",
             ],
-            ["fantasy-management/sources/refresh-status/sleeper-trending.json"],
-            ["fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json"],
+            ["data-source/market/_status/sleeper.json"],
+            ["data-source/market/roster-activity/sleeper/latest.json"],
         ):
             with self.subTest(changed_files=changed_files):
                 decision = MODULE.decide(event_name="push", changed_files=changed_files)
@@ -59,7 +59,7 @@ class MaterializationTriggerTests(unittest.TestCase):
         decision = MODULE.decide(
             event_name="push",
             changed_files=[
-                "fantasy-management/sources/refresh-status/sleeper-trending.json",
+                "data-source/market/_status/sleeper.json",
                 "public/data/League.json",
             ],
         )

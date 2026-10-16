@@ -44,13 +44,13 @@ Trending data provided by Sleeper
 Run from the repository root:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_sleeper_trending.py
+python -m tools.external_source.sleeper_trending
 ```
 
 Optional parameters:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_sleeper_trending.py \
+python -m tools.external_source.sleeper_trending \
   --lookback-hours 24 \
   --limit 100 \
   --timeout 30 \

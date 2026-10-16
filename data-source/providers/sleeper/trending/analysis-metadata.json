@@ -20,7 +20,7 @@
     "limit": 100,
     "attribution": "Trending data provided by Sleeper"
   },
-  "fetcher": "fantasy-management/_ai/scripts/fetch_sleeper_trending.py",
+  "fetcher": "tools/external_source/sleeper_trending.py",
   "workflow": {
     "path": ".github/workflows/fm-daily.yml",
     "manual_dispatch": true,
@@ -31,8 +31,8 @@
     "dst_strategy": "paired_utc_crons_with_berlin_offset_gate"
   },
   "outputs": {
-    "raw_latest": "fantasy-management/sources/external-signals/roster-activity/sleeper/raw-latest.json",
-    "normalized_latest": "fantasy-management/sources/external-signals/roster-activity/sleeper/latest.json",
+    "raw_latest": "data-source/providers/sleeper/trending/raw-latest.json",
+    "normalized_latest": "data-source/market/roster-activity/sleeper/latest.json",
     "raw_retention": "latest_only",
     "normalized_retention": "latest_only"
   },

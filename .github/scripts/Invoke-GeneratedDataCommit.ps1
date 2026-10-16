@@ -43,7 +43,7 @@ function Get-GeneratedDataLabel {
         "^fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/" { return "Fantasy Football Calculator ADP" }
         "^fantasy-management/sources/external-rankings/projections/fftoday/" { return "FFToday projections" }
         "^fantasy-management/sources/external-rankings/projections/cbs-sports/" { return "CBS Sports projections" }
-        "^fantasy-management/sources/external-signals/roster-activity/sleeper/" { return "Sleeper trending" }
+        "^data-source/(market/roster-activity/sleeper|providers/sleeper/trending|market/_status/sleeper\.json)" { return "Sleeper trending" }
         "^fantasy-management/generated/operations/" { return "Fantasy Operations inputs" }
         "^data-derived/player-week-fantasy/" { return "PlayerWeekFantasy derived" }
         "/PlayerWeekFantasy\.json$" { return "PlayerWeekFantasy" }
