@@ -209,5 +209,6 @@ def load_roster_activity_evidence(
         observed_at=stamp,
         source_fingerprint=digest,
         players=tuple(players),
-        source_document=value,
+        # Comparison is a consumer-side window delta, not provider observation.
+        source_document={key: part for key, part in value.items() if key != "comparison"},
     )
