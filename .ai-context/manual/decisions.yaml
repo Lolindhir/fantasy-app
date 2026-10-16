@@ -1431,8 +1431,8 @@ decisions:
       Tank01 example payloads, the Tank01 join helpers in PlayerUtils.psm1 and all RapidAPI keys (ConfigUtils.psm1,
       config.ps1, examples) are removed. The static past_seasons/Games_<year>.json archives (about 255 MB of Tank01
       boxscores without a consumer) are removed from the tree and from the Games resource of PastSeasonsIndex.json; they
-      remain recoverable from git history. past_seasons/Players_<year>.json and Schedule_<year>.json stay as static
-      archives. update-teams.yml needs no change (no Tank01 call since #347 F3c). workflow-monitoring.yaml and
+      remain recoverable from git history. Schedule_<year>.json stays an archive (regenerated, ADR-058); past_seasons/Players_<year>.json was removed
+      later (Issue #999 step 7b, 2026-10-16). update-teams.yml needs no change (no Tank01 call since #347 F3c). workflow-monitoring.yaml and
       workflow-publication.yaml classifications stay valid because workflow names, triggers and publication class are unchanged.
     rationale: >
       A dead provider pipeline that needs API keys is a maintenance and security liability; keeping the workflow and its
@@ -1859,8 +1859,8 @@ decisions:
       file and raises a warning). It runs in the weekly update-transactions run before the Past Seasons index refresh.
       Archives keep all game types (the records carry seasonType), team fields use canonical abbreviations (ADR-042,
       consumers resolve LegacyIDs), and the cancelled 2022 week-17 game BUF@CIN, absent from nflverse, is a visible
-      hand-maintained supplement in the generator. Players_<year>.json stays a static Tank01 archive until its readers
-      (historical FantasyGameContext, FM salary simulation; Issue #420) are migrated to canonical sources.
+      hand-maintained supplement in the generator. Players_<year>.json (static Tank01 archive) was removed on 2026-10-16 (Robert, Issue #999 step 7b) after its readers
+      (historical FantasyGameContext, #420; FM salary simulation, dead TankID join) no longer needed it; recoverable from git history.
     rationale: >
       One implementation of the schedule conversion per language with a parity command, no archive as input, and
       archives that follow the canonical facts instead of freezing a provider's errors.

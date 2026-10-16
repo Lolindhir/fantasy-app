@@ -432,20 +432,13 @@ def dead_cap_simulation(league, salary_by_cycle, cap_by_cycle, cap_deadline_ms):
 
 def cycle_2025_performance(players):
     """3Y-Performance für Zyklus 2025 (Saisons 2024, 2023, 2022).
-    2022 nur als Tank01-PPR-Archiv verfügbar (Annahme, 17 mögliche Spiele)."""
-    archive = as_list(load(DATA / "past_seasons" / "Players_2022.json"), "Players")
-    perf_2022 = {}
-    for entry in archive:
-        games = [g for g in entry.get("Games", []) if g.get("Week", 0) <= 18]
-        if not games:
-            continue
-        total = sum(float(g.get("FantasyPoints") or 0) for g in games)
-        perf_2022[str(entry["TankID"])] = 0.5 * total / 17 + 0.5 * total / len(games)
+    2022 ist ohne Archiv nicht verfügbar (Players_2022.json mit Tank01-PPR wurde entfernt, Issue #999;
+    der TankID-Abgleich griff seit #347 H1b ohnehin nicht mehr): Anteil 2022 = 0.0."""
     result = {}
     for p in players:
         p2024 = season_performance(p["PointHistory"]["SeasonMinus2"])
         p2023 = season_performance(p["PointHistory"]["SeasonMinus3"])
-        p2022 = perf_2022.get(str(p.get("TankID")), 0.0)
+        p2022 = 0.0
         result[p["ID"]] = floored_three_year(p2024, p2023, p2022)
     return result
 
@@ -791,7 +784,7 @@ def main():
             "nfl_draft": "data-source/nfl/draft/<season>.json",
             "transactions": "public/data/past_seasons/Transactions/*.json + public/data/Transactions.json",
             "rosters_2025": "data-source/leagues/nfl-reise/seasons/2025/rosters.json",
-            "season_2022": "public/data/past_seasons/Players_2022.json (Tank01-PPR, nur für Zyklus 2025)",
+            "season_2022": "nicht verfügbar (Players_2022.json entfernt, Issue #999); Anteil 0.0",
         },
         "format": fmt,
         "baseline_check": {
