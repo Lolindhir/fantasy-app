@@ -44,8 +44,8 @@ class MaterializationTriggerTests(unittest.TestCase):
         # Provider commits come from the FM Daily chain, which materializes explicitly afterwards (#947).
         for changed_files in (
             [
-                "fantasy-management/sources/external-rankings/market-value/fantasycalc/latest.json",
-                "fantasy-management/sources/external-rankings/market-value/fantasycalc/snapshots/2026-08-17.json",
+                "data-source/market/market-value/fantasycalc/latest.json",
+                "data-source/market/market-value/fantasycalc/snapshots/2026-08-17.json",
             ],
             ["data-source/market/_status/sleeper.json"],
             ["data-source/market/roster-activity/sleeper/latest.json"],
@@ -124,7 +124,7 @@ class MaterializationTriggerTests(unittest.TestCase):
     def test_pull_request_context_never_requests_production_materialization(self) -> None:
         decision = MODULE.decide(
             event_name="pull_request",
-            changed_files=["fantasy-management/sources/refresh-status/fantasycalc.json"],
+            changed_files=["data-source/market/_status/fantasycalc.json"],
             now=datetime(2026, 8, 17, 5, 32, tzinfo=BERLIN),
         )
         self.assertFalse(decision.run)

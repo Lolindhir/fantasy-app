@@ -994,11 +994,10 @@ consumerReadClassification:
         network: provider-evidence-fetcher
         provider:cbssports: provider-evidence-fetcher
       note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/fetch_fantasycalc_rankings_impl.py:
+    tools/external_source/fantasycalc.py:
       reads:
-        network: provider-evidence-fetcher
         provider:fantasycalc: provider-evidence-fetcher
-      note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
+      note: 'Shared external source layer acquisition of attributed FantasyCalc market-value evidence (ADR-037 Source Evidence, ADR-060) through tools/external_source/http.py; also resolves the explicit UNK position sentinel from the canonical Sleeper player snapshot.'
     fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex_impl.py:
       reads:
         network: provider-evidence-fetcher

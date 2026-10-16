@@ -75,7 +75,7 @@ Für den seltenen Provider-Sonderfall `position=UNK` wird die Position ausschlie
 ## Aktualisierung
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py --skip-unchanged
+python -m tools.external_source.fantasycalc --skip-unchanged
 ```
 
 Der eigene GitHub-Actions-Workflow aktualisiert Dynasty und Redraft täglich im selben Job und veröffentlicht bei einem fehlgeschlagenen Teilabruf kein unvollständiges Ergebnis.
@@ -83,7 +83,7 @@ Der eigene GitHub-Actions-Workflow aktualisiert Dynasty und Redraft täglich im 
 Der maschinenlesbare Auswertungsvertrag liegt unter:
 
 ```text
-fantasy-management/sources/external-rankings/market-value/fantasycalc/analysis-metadata.json
+data-source/providers/fantasycalc/analysis-metadata.json
 ```
 
 ## Analysegrenzen

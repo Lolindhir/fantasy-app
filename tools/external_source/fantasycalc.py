@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Fetch FantasyCalc market values for the Mighty Giants league format.
+"""Fetch FantasyCalc market values into the shared market source layer.
 
-FantasyCalc is queried twice: Dynasty and Redraft. The source's nearest supported
-league-size proxy is eight teams for the actual six-team league. Each format keeps
-only the newest complete API response as ``raw-latest.json``. Historical snapshots
-contain only our normalized ``ranking.csv`` and the accompanying ``metadata.json``.
+FantasyCalc is queried twice: Dynasty and Redraft, each as a Superflex PPR request with the
+provider's nearest supported eight-team parameter. Each format keeps only the newest complete
+API response as ``raw-latest.json`` (data-source/providers/fantasycalc/<format>/). Historical
+snapshots under data-source/market/market-value/fantasycalc/<format>/ contain only our
+normalized ``ranking.csv`` and the accompanying ``metadata.json``.
 
 FantasyCalc's ``overallRank`` is retained as ``source_overall_rank`` and is not
 assumed to be globally unique. Our ``Rank`` column is a deterministic unique row
@@ -19,30 +20,37 @@ import hashlib
 import json
 import sys
 import tempfile
-import urllib.error
 import urllib.parse
-import urllib.request
 from collections import Counter
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Iterable
 
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+from data_roots import data_source_dir  # noqa: E402
+from external_source.http import HttpFetchError, fetch_text_with_retry  # noqa: E402
+
 API_URL = "https://api.fantasycalc.com/values/current"
 WEBSITE_URL = "https://fantasycalc.com/"
 SOURCE_ID = "fantasycalc"
-SCHEMA_VERSION = 2
-ACTUAL_LEAGUE_TEAMS = 6
+# Schema 4: the snapshot no longer carries league context and the raw file lives in providers/.
+SCHEMA_VERSION = 4
 SOURCE_TEAM_PROXY = 8
 NUM_QBS = 2
 PPR = 1
 MIN_NORMALIZED_ROWS = 100
 POSITIONS = frozenset({"QB", "RB", "WR", "TE", "PICK"})
 PLAYER_POSITIONS = frozenset({"QB", "RB", "WR", "TE"})
-DIRECT_FETCHER = "fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py"
-ANALYSIS_METADATA_FILE = (
-    "fantasy-management/sources/external-rankings/fantasycalc/analysis-metadata.json"
-)
+DIRECT_FETCHER = "tools/external_source/fantasycalc.py"
+# Relative to the data-source root (tools/data_roots.py).
+MARKET_RELATIVE_DIR = Path("market/market-value/fantasycalc")
+PROVIDER_RELATIVE_DIR = Path("providers/fantasycalc")
+CANONICAL_SLEEPER_PLAYERS_RELATIVE = Path("nfl/platform/sleeper/players.json")
+ANALYSIS_METADATA_RELATIVE = PROVIDER_RELATIVE_DIR / "analysis-metadata.json"
 USER_AGENT = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
@@ -118,26 +126,19 @@ def fetch_payload(
     config: dict[str, Any], *, base_url: str = API_URL, timeout: int = 30
 ) -> tuple[list[dict[str, Any]], dict[str, str], str]:
     source_url = build_source_url(config, base_url)
-    request = urllib.request.Request(
-        source_url,
-        headers={
-            "User-Agent": USER_AGENT,
-            "Accept": "application/json",
-            "Accept-Language": "en-US,en;q=0.9",
-        },
-    )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            charset = response.headers.get_content_charset() or "utf-8"
-            body = response.read().decode(charset, errors="replace")
-            headers = {
-                "etag": response.headers.get("ETag") or "",
-                "last_modified": response.headers.get("Last-Modified") or "",
-                "content_type": response.headers.get("Content-Type") or "",
-            }
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
-        raise FantasyCalcFetchError(f"FantasyCalc fetch failed: {exc}") from exc
-
+        body, headers = fetch_text_with_retry(
+            source_url,
+            timeout=timeout,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/json",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+            source_name="FantasyCalc",
+        )
+    except HttpFetchError as exc:
+        raise FantasyCalcFetchError(str(exc)) from exc
     if not body.strip():
         raise FantasyCalcFetchError("FantasyCalc returned an empty response")
     try:
@@ -192,9 +193,110 @@ def parse_optional_number(
     return float(parsed)
 
 
-def parse_assets(
-    payload: list[dict[str, Any]], config: dict[str, Any]
+def load_canonical_player_positions(repo_root: Path) -> dict[str, str]:
+    """Load supported canonical offense positions keyed by Sleeper player ID."""
+
+    players_path = data_source_dir(repo_root) / CANONICAL_SLEEPER_PLAYERS_RELATIVE
+    try:
+        payload = json.loads(players_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise FantasyCalcFetchError(
+            f"Cannot read canonical Sleeper player positions from {players_path}: {exc}"
+        ) from exc
+    if not isinstance(payload, dict):
+        raise FantasyCalcFetchError(
+            f"Canonical Sleeper player dataset is not an object: {players_path}"
+        )
+
+    records = payload.get("Records")
+    if not isinstance(records, list):
+        raise FantasyCalcFetchError(
+            f"Canonical Sleeper player dataset has no Records array: {players_path}"
+        )
+
+    positions: dict[str, str] = {}
+    for player in records:
+        if not isinstance(player, dict):
+            raise FantasyCalcFetchError(
+                f"Canonical Sleeper player dataset contains a non-object record: {players_path}"
+            )
+        sleeper_id = str(player.get("SleeperPlayerID") or "").strip()
+        position = str(player.get("Position") or "").strip().upper()
+        if not sleeper_id or position not in PLAYER_POSITIONS:
+            continue
+        previous = positions.get(sleeper_id)
+        if previous is not None and previous != position:
+            raise FantasyCalcFetchError(
+                "Conflicting canonical Sleeper positions for player "
+                f"{sleeper_id}: {previous!r} vs {position!r}"
+            )
+        positions[sleeper_id] = position
+    return positions
+
+
+def resolve_unknown_positions(
+    payload: list[dict[str, Any]], positions: dict[str, str]
 ) -> list[dict[str, Any]]:
+    """Resolve only the explicit ``UNK`` sentinel through canonical Sleeper positions.
+
+    FantasyCalc normally supplies one of QB/RB/WR/TE/PICK. A two-way player can be
+    emitted as ``UNK`` even though the repository already has a canonical fantasy
+    position for the same Sleeper ID. Every other unexpected provider position stays
+    fail-closed in the parser.
+    """
+
+    resolved: list[dict[str, Any]] = []
+    for entry in payload:
+        player = entry.get("player") if isinstance(entry, dict) else None
+        raw_position = (
+            str(player.get("position") or "").strip().upper()
+            if isinstance(player, dict)
+            else ""
+        )
+        if raw_position != "UNK":
+            resolved.append(entry)
+            continue
+
+        sleeper_id = str(player.get("sleeperId") or "").strip()
+        canonical_position = str(positions.get(sleeper_id) or "").strip().upper()
+        if canonical_position not in PLAYER_POSITIONS:
+            resolved.append(entry)
+            continue
+
+        player_copy = dict(player)
+        player_copy["position"] = canonical_position
+        entry_copy = dict(entry)
+        entry_copy["player"] = player_copy
+        resolved.append(entry_copy)
+        name = str(player.get("name") or sleeper_id).strip()
+        print(
+            "[fantasycalc] note: resolved provider position UNK for "
+            f"{name} via canonical Sleeper ID {sleeper_id} -> {canonical_position}",
+            file=sys.stderr,
+        )
+    return resolved
+
+
+def parse_assets(
+    payload: list[dict[str, Any]],
+    config: dict[str, Any],
+    *,
+    canonical_player_positions: dict[str, str] | None = None,
+    repo_root: Path | None = None,
+) -> list[dict[str, Any]]:
+    has_unknown = any(
+        isinstance(entry, dict)
+        and isinstance(entry.get("player"), dict)
+        and str(entry["player"].get("position") or "").strip().upper() == "UNK"
+        for entry in payload
+    )
+    if has_unknown:
+        positions = canonical_player_positions
+        if positions is None and repo_root is not None:
+            positions = load_canonical_player_positions(repo_root)
+        if positions:
+            payload = resolve_unknown_positions(payload, positions)
+
     rows: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
 
@@ -404,14 +506,15 @@ def atomic_write_text(path: Path, content: str) -> None:
 
 
 def ranking_root(repo_root: Path, config: dict[str, Any]) -> Path:
-    return (
-        repo_root
-        / "fantasy-management"
-        / "sources"
-        / "external-rankings"
-        / "fantasycalc"
-        / str(config["ranking_id"])
-    )
+    return data_source_dir(repo_root) / MARKET_RELATIVE_DIR / str(config["ranking_id"])
+
+
+def raw_root(repo_root: Path, config: dict[str, Any]) -> Path:
+    return data_source_dir(repo_root) / PROVIDER_RELATIVE_DIR / str(config["ranking_id"])
+
+
+def analysis_metadata_file(repo_root: Path) -> str:
+    return (data_source_dir(repo_root) / ANALYSIS_METADATA_RELATIVE).relative_to(repo_root).as_posix()
 
 
 def load_json(path: Path) -> dict[str, Any] | None:
@@ -472,6 +575,8 @@ def build_metadata(
     fetched_at: datetime,
     source_url: str,
     response_headers: dict[str, str],
+    raw_latest_file: str,
+    analysis_metadata: str,
 ) -> dict[str, Any]:
     position_counts = Counter(str(row["position"]) for row in rows)
     asset_counts = Counter(str(row["asset_type"]) for row in rows)
@@ -492,8 +597,6 @@ def build_metadata(
             "scoring": "ppr",
             "superflex": True,
             "source_team_count": SOURCE_TEAM_PROXY,
-            "actual_league_team_count": ACTUAL_LEAGUE_TEAMS,
-            "team_count_usage": "nearest_supported_proxy",
             "te_premium": False,
             "fixed_two_te_modeled_by_source": False,
         },
@@ -502,7 +605,7 @@ def build_metadata(
             "snapshot_date": fetched_at.date().isoformat(),
             "ranking_file": "ranking.csv",
             "metadata_file": "metadata.json",
-            "raw_latest_file": "../../raw-latest.json",
+            "raw_latest_file": raw_latest_file,
             "row_count": len(rows),
             "asset_type_counts": dict(sorted(asset_counts.items())),
             "position_counts": dict(sorted(position_counts.items())),
@@ -531,7 +634,7 @@ def build_metadata(
             "primary_use": config["primary_use"],
             "not_projection": True,
             "not_expert_consensus": True,
-            "comparison_contract": ANALYSIS_METADATA_FILE,
+            "comparison_contract": analysis_metadata,
             "preferred_player_join": [
                 "sleeper_id",
                 "source_asset_id",
@@ -548,8 +651,8 @@ def build_metadata(
                 ),
             },
             "league_adjustment": (
-                "FantasyCalc uses the nearest supported eight-team proxy for the actual "
-                "six-team league. It models Superflex and PPR, but not two fixed TE starters; "
+                "FantasyCalc is requested with its nearest supported eight-team parameter. "
+                "It models Superflex and PPR, but not two fixed TE starters; "
                 "apply additional replacement-level and TE-scarcity context during analysis."
             ),
         },
@@ -601,7 +704,7 @@ def write_format(
     skip_unchanged: bool,
 ) -> tuple[list[Path], bool]:
     root = ranking_root(repo_root, config)
-    raw_path = root / "raw-latest.json"
+    raw_path = raw_root(repo_root, config) / "raw-latest.json"
     raw_content = render_raw_json(payload)
     csv_content = render_csv(rows)
 
@@ -635,6 +738,8 @@ def write_format(
         fetched_at=fetched_at,
         source_url=source_url,
         response_headers=response_headers,
+        raw_latest_file=raw_path.relative_to(repo_root).as_posix(),
+        analysis_metadata=analysis_metadata_file(repo_root),
     )
     relative_snapshot = snapshot_dir.relative_to(repo_root).as_posix()
     latest = {
@@ -653,7 +758,7 @@ def write_format(
         "request_parameters": request_parameters(config),
         "freshness_status": "live_fetch",
         "direct_fetcher": DIRECT_FETCHER,
-        "analysis_metadata_file": ANALYSIS_METADATA_FILE,
+        "analysis_metadata_file": analysis_metadata_file(repo_root),
         "refresh_before_value_sensitive_analysis": True,
     }
 
@@ -683,7 +788,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Parse saved JSON; requires --format dynasty or --format redraft",
     )
     parser.add_argument(
-        "--repo-root", type=Path, default=Path(__file__).resolve().parents[3]
+        "--repo-root", type=Path, default=Path(__file__).resolve().parents[2]
     )
     parser.add_argument("--fetched-at", help="Override UTC timestamp for tests")
     parser.add_argument("--skip-unchanged", action="store_true")
@@ -714,7 +819,7 @@ def main(argv: list[str] | None = None) -> int:
                 payload, response_headers, source_url = fetch_payload(
                     config, base_url=args.url, timeout=args.timeout
                 )
-            rows = parse_assets(payload, config)
+            rows = parse_assets(payload, config, repo_root=repo_root)
             diagnostics = source_rank_diagnostics(rows)
             if diagnostics["duplicate_source_rank_group_count"]:
                 print(
