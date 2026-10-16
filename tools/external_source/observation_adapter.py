@@ -164,7 +164,7 @@ def load_roster_activity_evidence(
         raise ObservationAdapterError("Sleeper roster activity requires a roster-activity registry entry")
     value = _read_object(document_path)
     version = _version(value, JSON_VERSIONS["sleeper"], document_path)
-    if value.get("provider") != "sleeper" or value.get("signal_kind") != "add_drop":
+    if value.get("provider") != "sleeper" or value.get("signal_kind") != "roster_activity":
         raise ObservationAdapterError(f"Unexpected Sleeper Source provider/signal: {document_path}")
     stamp = value.get("generated_at")
     if not isinstance(stamp, str) or not stamp:
