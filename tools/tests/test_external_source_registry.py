@@ -17,6 +17,7 @@ if str(TOOLS) not in sys.path:
 
 from external_source import identity as ident  # noqa: E402
 from external_source import registry as reg  # noqa: E402
+from external_source.snapshot_discovery import discover_snapshots  # noqa: E402
 
 PROVIDERS = {"fantasypros", "fantasycalc", "fantasy-football-calculator", "fftoday", "cbs-sports", "sleeper"}
 
@@ -119,6 +120,79 @@ class IdentityTests(unittest.TestCase):
                 self.assertEqual([e["Status"] for e in built["Entries"]], ["resolved", "unresolved", "not-a-player"])
                 self.assertTrue(ident.write_if_changed(root, dataset, built))
                 self.assertFalse(ident.write_if_changed(root, dataset, ident.build_identity(root, dataset, index)))
+
+    def test_legacy_and_intraday_discovery_is_ordered_and_preserves_unknown_time(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "snapshots"
+            legacy = root / "2026-10-01"
+            legacy.mkdir(parents=True)
+            (legacy / "ranking.csv").write_text("sleeper_id\\n1\\n", encoding="utf-8")
+            for instant, hash8 in (("090000", "11111111"), ("180000", "22222222")):
+                folder = legacy / f"{instant}Z-{hash8}"
+                folder.mkdir(parents=True)
+                (folder / "ranking.csv").write_text("sleeper_id\\n1\\n", encoding="utf-8")
+                (folder / "metadata.json").write_text(
+                    json.dumps({"fetched_at": f"2026-10-01T{instant[:2]}:{instant[2:4]}:{instant[4:]}Z"}),
+                    encoding="utf-8",
+                )
+            found = discover_snapshots(root)
+            self.assertEqual([s.key for s in found], [
+                "2026-10-01", "2026-10-01/090000Z-11111111", "2026-10-01/180000Z-22222222",
+            ])
+            self.assertIsNone(found[0].observed_at)
+            self.assertEqual(found[-1].observed_at.isoformat(), "2026-10-01T18:00:00+00:00")
+            self.assertEqual(found[-1].ranking_file, legacy / "180000Z-22222222" / "ranking.csv")
+            self.assertEqual(found, discover_snapshots(root))
+
+    def test_intraday_and_legacy_identity_share_season_and_noop(self) -> None:
+        dataset = reg.get_dataset(real_registry(), "fantasycalc.value.dynasty-superflex-ppr-8-team")
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = Path(tmp)
+            root = reg.dataset_dir(repo, dataset) / "snapshots"
+            day = root / "2026-10-01"
+            early = day / "110000Z-12345678"
+            late = day / "170000Z-abcdef12"
+            for folder, rows in (
+                (day, [["100", "player"]]),
+                (early, [["3", "player"], ["200", "player"]]),
+                (late, [["2027-1", "draft_pick"], ["300", "player"]]),
+            ):
+                folder.mkdir(parents=True, exist_ok=True)
+                with (folder / "ranking.csv").open("w", encoding="utf-8", newline="") as handle:
+                    writer = csv.writer(handle)
+                    writer.writerow(["sleeper_id", "asset_type"])
+                    writer.writerows(rows)
+                if folder != day:
+                    (folder / "metadata.json").write_text(
+                        json.dumps({"fetched_at": "2026-10-01T17:00:00+00:00"}), encoding="utf-8"
+                    )
+            index = ident.MappingIndex([
+                {"Provider": "Sleeper", "ExternalID": "100", "CanonicalPlayerID": "c100",
+                 "FirstObservedSeason": 2026, "LastObservedSeason": 2026},
+                {"Provider": "Sleeper", "ExternalID": "3", "CanonicalPlayerID": "c3",
+                 "FirstObservedSeason": 2026, "LastObservedSeason": 2026},
+                {"Provider": "Sleeper", "ExternalID": "3", "CanonicalPlayerID": "other",
+                 "FirstObservedSeason": 2026, "LastObservedSeason": 2026},
+            ])
+            with patch.object(ident, "resolve_season_for_date", return_value=2026) as season:
+                result = ident.build_identity(repo, dataset, index)
+                self.assertEqual(season.call_count, 3)
+                self.assertEqual({call.args[1] for call in season.call_args_list}, {"2026-10-01"})
+            statuses = {row["ProviderPlayerID"]: row["Status"] for row in result["Entries"]}
+            self.assertEqual(statuses, {
+                "100": "resolved", "3": "ambiguous", "200": "unresolved",
+                "300": "unresolved", "2027-1": "not-a-player",
+            })
+            self.assertTrue(ident.write_if_changed(repo, dataset, result))
+            self.assertFalse(ident.write_if_changed(repo, dataset, result))
+
+    def test_intraday_missing_metadata_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "snapshots" / "2026-10-01" / "120000Z-12345678"
+            folder.mkdir(parents=True)
+            (folder / "ranking.csv").write_text("sleeper_id\\n1\\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "metadata missing"):
+                discover_snapshots(Path(tmp) / "snapshots")
 
     def test_missing_identity_column_fails(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
