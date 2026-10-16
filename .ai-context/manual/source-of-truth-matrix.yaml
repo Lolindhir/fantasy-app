@@ -1023,10 +1023,10 @@ consumerReadClassification:
         network: provider-evidence-fetcher
         provider:sleeper: provider-evidence-fetcher
       note: 'Fantasy Management acquisition of attributed external market/projection/signal evidence (ADR-037 Source Evidence); not a base-fact read.'
-    fantasy-management/_ai/scripts/http_fetch_resilience.py:
+    tools/external_source/http.py:
       reads:
         network: http-helper
-      note: 'Shared HTTP retry helper for the provider evidence fetchers; contains no provider-specific read.'
+      note: 'Shared bounded HTTP helper of the external source layer (ADR-060, moved from fantasy-management/_ai/scripts/http_fetch_resilience.py, which is now a shim); contains no provider-specific read.'
     fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py:
       reads:
         legacy:League: freshness-trigger

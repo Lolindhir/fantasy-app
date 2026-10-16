@@ -516,6 +516,20 @@ dataSources:
     timestamped: false
     backup: false
 
+  externalMarketSources:
+    path: data-source/external-registry.json
+    category: source-evidence
+    role: Registry of external market, ranking, ADP, projection and roster-activity datasets (ADR-060, Issue #988)
+    contract: .ai-context/manual/external-source-data.yaml
+    loaders:
+      - tools/external_source/registry.py
+      - tools/external_source_data.py
+    description: >
+      Foundation of the shared external market source layer: registry with mandatory rights fields, season-phase
+      policy and identity provider keys, plus the per-dataset identity index and the shared HTTP helper. Snapshots and
+      fetchers of FantasyPros, FantasyCalc, Fantasy Football Calculator, FFToday, CBS Sports and Sleeper Trending still
+      live under fantasy-management/ and move provider by provider to data-source/market (Issue #988 steps 3.1 to 3.6).
+
   angularFrontend:
     path: src/app
     category: frontend
