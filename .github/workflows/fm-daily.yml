@@ -245,16 +245,18 @@ jobs:
             label: "FM • Signal • Sleeper Trending"
             test: >-
               python -m unittest
-              fantasy-management/_ai/scripts/tests/test_fetch_sleeper_trending.py
+              tools/tests/test_external_source_sleeper_trending.py
               -v
             fetch: |
-              python fantasy-management/_ai/scripts/fetch_sleeper_trending.py
+              python -m tools.external_source.sleeper_trending
             source_id: sleeper-trending
-            content_path: fantasy-management/sources/external-signals/roster-activity/sleeper
+            content_path: data-source/market/roster-activity/sleeper
             stage_paths: >-
-              fantasy-management/sources/external-signals/roster-activity/sleeper
-              fantasy-management/sources/refresh-status/sleeper-trending.json
+              data-source/market/roster-activity/sleeper
+              data-source/providers/sleeper/trending
+              data-source/market/_status/sleeper.json
             scope: sleeper-trending
+            status_path: data-source/market/_status/sleeper.json
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -282,6 +284,7 @@ jobs:
           --workflow "${{ matrix.label }}"
           --trigger "${{ github.event_name }}"
           --content-path "${{ matrix.content_path }}"
+          --output "${{ matrix.status_path }}"
 
       - name: Commit and push updates
         if: github.event_name != 'pull_request'

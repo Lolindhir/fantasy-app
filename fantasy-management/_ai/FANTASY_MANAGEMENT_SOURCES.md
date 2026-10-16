@@ -257,10 +257,11 @@ The canonical hierarchy and common rules are documented in:
 
 ### External-signal hierarchy
 
-External activities and events that do not evaluate player or asset quality belong under:
+External activities and events that do not evaluate player or asset quality are shared Source Evidence (ADR-060). The Sleeper roster-activity signal moved to the shared source layer:
 
 ```text
-fantasy-management/sources/external-signals/<signal_kind>/<provider>/
+data-source/market/roster-activity/<provider>/   normalized latest.json
+data-source/providers/<provider>/<dataset>/      raw-latest.json, README, SOURCE_AUDIT, analysis-metadata
 ```
 
 The current active signal kind is:
@@ -271,7 +272,7 @@ Source signals remain provider-global. In the productive external-signal relevan
 
 The canonical hierarchy and common rules are documented in:
 
-`fantasy-management/sources/external-signals/README.md`
+`fantasy-management/sources/external-signals/README.md` (generic rules) and `.ai-context/manual/external-source-data.yaml` (contract)
 
 ### FantasyPros expert-consensus snapshots
 
@@ -497,7 +498,7 @@ Sleeper Trending Players is the active automated external roster-activity signal
 
 Stored source area:
 
-`fantasy-management/sources/external-signals/roster-activity/sleeper/`
+`data-source/market/roster-activity/sleeper/` (normalized `latest.json`) and `data-source/providers/sleeper/trending/` (raw evidence and documentation). The freshness heartbeat is `data-source/market/_status/sleeper.json`.
 
 Default signal configuration:
 
@@ -510,16 +511,16 @@ Default signal configuration:
 Refresh both activity types with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_sleeper_trending.py
+python -m tools.external_source.sleeper_trending
 ```
 
 The first successful run creates `raw-latest.json` and `latest.json` as a silent baseline. Later compatible runs compare source membership, ranks and counts with the previous successful state.
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-signals/roster-activity/sleeper/README.md`
-- `fantasy-management/sources/external-signals/roster-activity/sleeper/SOURCE_AUDIT.md`
-- `fantasy-management/sources/external-signals/roster-activity/sleeper/analysis-metadata.json`
+- `data-source/providers/sleeper/trending/README.md`
+- `data-source/providers/sleeper/trending/SOURCE_AUDIT.md`
+- `data-source/providers/sleeper/trending/analysis-metadata.json`
 
 Operational rules:
 

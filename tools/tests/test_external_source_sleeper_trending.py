@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-SCRIPT = Path(__file__).resolve().parents[1] / "fetch_sleeper_trending.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "external_source" / "sleeper_trending.py"
 spec = importlib.util.spec_from_file_location("sleeper_trending_fetch", SCRIPT)
 module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader

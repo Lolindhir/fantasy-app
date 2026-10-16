@@ -31,7 +31,7 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
             "fantasy-football-calculator": "fantasy-football-calculator.json",
             "fftoday": "fftoday.json",
             "cbs-sports": "cbs-sports.json",
-            "sleeper-trending": "sleeper-trending.json",
+            "sleeper-trending": "sleeper.json",
         }
         workflow = self._read(self.FM_DAILY)
         providers_job = workflow.split("  providers:\n", 1)[1].split("\n  materialize:\n", 1)[0]
@@ -44,7 +44,12 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
         for source_id, heartbeat_file in providers.items():
             with self.subTest(source=source_id):
                 self.assertIn(f"source_id: {source_id}\n", providers_job)
-                self.assertIn(f"fantasy-management/sources/refresh-status/{heartbeat_file}", providers_job)
+                heartbeat_dir = (
+                    "data-source/market/_status"
+                    if source_id == "sleeper-trending"
+                    else "fantasy-management/sources/refresh-status"
+                )
+                self.assertIn(f"{heartbeat_dir}/{heartbeat_file}", providers_job)
 
     def test_source_workflows_use_shared_race_safe_publisher(self) -> None:
         workflow = self._read(self.FM_DAILY)

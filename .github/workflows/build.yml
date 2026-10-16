@@ -64,7 +64,7 @@ jobs:
           python -m unittest discover -s tools/tests -p "test_schedule_archive.py" -v
 
       - name: Run external source registry tests
-        run: python -m unittest tools.tests.test_external_source_registry -v
+        run: python -m unittest tools.tests.test_external_source_registry tools.tests.test_external_source_sleeper_trending -v
 
       - name: Run consumer read classification test
         run: python -m unittest tools.tests.test_consumer_read_classification -v

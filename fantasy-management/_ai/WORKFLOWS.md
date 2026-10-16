@@ -338,7 +338,7 @@ Use owner registry, owner profiles, negotiation history and league-format notes 
 
 ## External signal refresh workflow
 
-1. Read `fantasy-management/sources/external-signals/README.md`, the source-specific README and machine-readable analysis metadata.
+1. Read `fantasy-management/sources/external-signals/README.md`, the source-specific README (shared providers: `data-source/providers/<provider>/<dataset>/`) and machine-readable analysis metadata.
 2. Fetch only the provider's documented public API with the source-specific query configuration.
 3. Keep the global source snapshot independent of `League.json`; league ownership and Mighty-Giants relevance belong to a downstream materialization step.
 4. Fetch and validate every required activity/profile payload before publishing any part of the new source state.

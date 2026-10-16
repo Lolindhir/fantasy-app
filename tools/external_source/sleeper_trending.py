@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch Sleeper platform-wide NFL add/drop activity for Fantasy Management.
+"""Fetch Sleeper platform-wide NFL add/drop activity into the shared market source layer.
 
 The public Sleeper trending endpoint returns a rolling top-N list. This module
 stores the latest raw response and a normalized union of add/drop activity. It
@@ -12,6 +12,7 @@ import argparse
 import hashlib
 import json
 import os
+import sys
 import tempfile
 import time
 import urllib.error
@@ -20,6 +21,12 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable
+
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+from data_roots import data_source_dir  # noqa: E402
 
 API_BASE_URL = "https://api.sleeper.app/v1/players/nfl/trending"
 SOURCE_ID = "sleeper"
@@ -34,10 +41,10 @@ DEFAULT_TIMEOUT = 30
 DEFAULT_ATTEMPTS = 3
 ACTIVITY_TYPES = ("add", "drop")
 ATTRIBUTION = "Trending data provided by Sleeper"
-SOURCE_ROOT = Path(
-    "fantasy-management/sources/external-signals/roster-activity/sleeper"
-)
-USER_AGENT = "fantasy-app-fantasy-management/1.0 (+https://github.com/Lolindhir/fantasy-app)"
+# Normalized combined latest.json (kind roster-activity) and provider raw evidence, below data_roots.
+LATEST_RELATIVE_DIR = Path("market/roster-activity/sleeper")
+RAW_RELATIVE_DIR = Path("providers/sleeper/trending")
+USER_AGENT = "fantasy-app-external-source/1.0 (+https://github.com/Lolindhir/fantasy-app)"
 
 
 class SleeperTrendingFetchError(RuntimeError):
@@ -536,8 +543,9 @@ def write_documents(
     *,
     raw_document: dict[str, Any],
     latest_document: dict[str, Any],
+    raw_root: Path | None = None,
 ) -> list[Path]:
-    raw_path = output_root / "raw-latest.json"
+    raw_path = (raw_root or output_root) / "raw-latest.json"
     latest_path = output_root / "latest.json"
     raw_content = render_json(raw_document)
     latest_content = render_json(latest_document)
@@ -547,7 +555,7 @@ def write_documents(
 
 
 def default_repo_root() -> Path:
-    return Path(__file__).resolve().parents[3]
+    return Path(__file__).resolve().parents[2]
 
 
 def run_refresh(
@@ -560,12 +568,16 @@ def run_refresh(
     base_url: str = API_BASE_URL,
     fetched_at: datetime | None = None,
     output_root: Path | None = None,
+    raw_root: Path | None = None,
     fetcher: Callable[
         ..., tuple[list[dict[str, Any]], dict[str, str], str]
     ] = fetch_activity,
 ) -> tuple[list[Path], dict[str, Any]]:
     fetched_at = fetched_at or utc_now()
-    destination = output_root or (repo_root / SOURCE_ROOT)
+    destination = output_root or (data_source_dir(repo_root) / LATEST_RELATIVE_DIR)
+    raw_destination = raw_root or (
+        destination if output_root else data_source_dir(repo_root) / RAW_RELATIVE_DIR
+    )
     previous = load_previous_latest(destination / "latest.json")
 
     activity_rows: dict[str, list[dict[str, Any]]] = {}
@@ -603,6 +615,7 @@ def run_refresh(
         destination,
         raw_document=raw_document,
         latest_document=latest_document,
+        raw_root=raw_destination,
     )
     return paths, latest_document
 
@@ -616,6 +629,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--attempts", type=int, default=DEFAULT_ATTEMPTS)
     parser.add_argument("--base-url", default=API_BASE_URL)
     parser.add_argument("--output-root", type=Path)
+    parser.add_argument("--raw-root", type=Path)
     return parser.parse_args(argv)
 
 
@@ -630,6 +644,7 @@ def main(argv: list[str] | None = None) -> int:
             attempts=args.attempts,
             base_url=args.base_url,
             output_root=args.output_root,
+            raw_root=args.raw_root,
         )
     except (SleeperTrendingFetchError, ValueError, OSError) as exc:
         print(f"Sleeper trending refresh failed: {exc}", file=os.sys.stderr)
