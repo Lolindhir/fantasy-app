@@ -97,9 +97,13 @@ stale/non-final PWF is a blocker. Rebuilding PlayerWeekFantasy first is a
 separate cross-product orchestration responsibility (#471/#697). Batch writes
 are deterministic and second runs are no-ops.
 
-The 2026 W04/W05 partition files are currently committed **only to Draft PR
-#993**, with canonical-source validation and real PWF parity, not to main.
-A historical 39-week audit confirmed all 17 scored weeks in each of 2024/2025,
-plus 2026 W01/W02/W04/W05; 2026 W03 has a stale PWF Actual snapshot and
-blocks the complete batch until upstream repair. No automatic producer
-workflow, App publisher or Angular consumer is activated yet.
+The 2026 W03/W04/W05 partition files are currently committed **only
+to Draft PR #993**, with canonical-source and PlayerWeekFantasy parity validation,
+not to main. W03 was generated after #697 restored its final PWF Actual evidence;
+its 202/202 canonical fantasy player scores agree with PWF, and the persisted
+Award JSON is byte-identical to the existing deterministic generator output.
+A historical read-only batch audit found all 39 scored weeks in 2024–2026
+ready, with zero blocked weeks. A separate empty-derived-root integration test
+regenerated all 39 weeks and confirmed a second full run changes zero files.
+No automatic producer workflow, App publisher or Angular consumer is
+activated yet.
