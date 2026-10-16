@@ -3,31 +3,36 @@
 from __future__ import annotations
 
 import json
-import urllib.error
 import urllib.parse
-import urllib.request
 from collections import Counter
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
+import sys
+from pathlib import Path
+
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+
+from data_roots import data_source_dir  # noqa: E402
+
+# Relative to the data-source root (tools/data_roots.py).
+MARKET_RELATIVE_DIR = Path("market/adp/fantasy-football-calculator")
+PROVIDER_RELATIVE_DIR = Path("providers/fantasy-football-calculator")
+from external_source.http import HttpFetchError, fetch_text_with_retry  # noqa: E402
+
 API_BASE = "https://fantasyfootballcalculator.com/api/v1/adp"
 WEBSITE = "https://fantasyfootballcalculator.com/"
 SOURCE_ID = "fantasy-football-calculator"
 SOURCE_NAME = "Fantasy Football Calculator"
-SCHEMA_VERSION = 1
-ACTUAL_TEAMS = 6
+# Schema 2: no league context in the snapshot and the raw file lives in providers/.
+SCHEMA_VERSION = 2
 DEFAULT_MAX_STALE_DAYS = 45
 POSITIONS = {"QB", "RB", "WR", "TE", "DEF", "PK"}
 OFFENSE = {"QB", "RB", "WR", "TE"}
-SOURCE_ROOT = (
-    "fantasy-management/sources/external-rankings/adp/"
-    "fantasy-football-calculator"
-)
-ANALYSIS_METADATA = f"{SOURCE_ROOT}/analysis-metadata.json"
-DIRECT_FETCHER = (
-    "fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py"
-)
+DIRECT_FETCHER = "tools/external_source/fantasy_football_calculator.py"
 USER_AGENT = "Mozilla/5.0 (compatible; MightyGiantsFantasy/1.0)"
 
 FORMAT_CONFIGS: dict[str, dict[str, Any]] = {
@@ -58,7 +63,7 @@ FORMAT_CONFIGS: dict[str, dict[str, Any]] = {
 CSV_FIELDS = [
     "name", "Rank", "source_rank", "position", "team", "source_player_id",
     "adp", "adp_formatted", "times_drafted", "high", "low", "stdev", "bye",
-    "source_format", "source_team_count", "actual_league_team_count",
+    "source_format", "source_team_count",
     "sample_total_drafts", "sample_start_date", "sample_end_date",
 ]
 
@@ -175,20 +180,14 @@ def fetch_payload(
     timeout: int,
 ) -> tuple[dict[str, Any], dict[str, str], str]:
     url = build_source_url(config, season)
-    request = urllib.request.Request(
-        url,
-        headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
-    )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            charset = response.headers.get_content_charset() or "utf-8"
-            body = response.read().decode(charset, errors="replace")
-            headers = {
-                "etag": response.headers.get("ETag") or "",
-                "last_modified": response.headers.get("Last-Modified") or "",
-                "content_type": response.headers.get("Content-Type") or "",
-            }
-    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        body, headers = fetch_text_with_retry(
+            url,
+            timeout=timeout,
+            headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+            source_name="FFC",
+        )
+    except HttpFetchError as exc:
         raise FantasyFootballCalculatorFetchError(
             f"FFC fetch failed for {config['ranking_id']}: {exc}"
         ) from exc
@@ -337,7 +336,6 @@ def parse_players(
             "bye": _bye(player.get("bye"), name),
             "source_format": config["api_format"],
             "source_team_count": config["teams"],
-            "actual_league_team_count": ACTUAL_TEAMS,
             "sample_total_drafts": sample["total_drafts"],
             "sample_start_date": sample["start_date"],
             "sample_end_date": sample["end_date"],
@@ -360,3 +358,15 @@ def parse_players(
         "excluded_position_counts": dict(sorted(excluded.items())),
         "normalized_rank_unique": len(rows) == len({row["Rank"] for row in rows}),
     }
+
+
+def market_dir(repo_root: Path) -> Path:
+    return data_source_dir(repo_root) / MARKET_RELATIVE_DIR
+
+
+def provider_dir(repo_root: Path) -> Path:
+    return data_source_dir(repo_root) / PROVIDER_RELATIVE_DIR
+
+
+def analysis_metadata_file(repo_root: Path) -> str:
+    return (provider_dir(repo_root) / "analysis-metadata.json").relative_to(repo_root).as_posix()

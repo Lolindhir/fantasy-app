@@ -13,25 +13,24 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
+from external_source.fantasy_football_calculator_adp_core import (
+    analysis_metadata_file,
+    market_dir,
+    provider_dir,
+)
+
 SOURCE_ID = "fantasy-football-calculator"
 SOURCE_NAME = "Fantasy Football Calculator"
-SOURCE_ROOT = (
-    "fantasy-management/sources/external-rankings/adp/"
-    "fantasy-football-calculator"
-)
 RANKING_ID = "redraft-ppr-8-team-kicker"
 RANKING_NAME = "Fantasy Football Calculator Redraft PPR 8-Team Kicker ADP"
-ANALYSIS_METADATA = f"{SOURCE_ROOT}/analysis-metadata.json"
-DIRECT_FETCHER = (
-    "fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py"
-)
-SCHEMA_VERSION = 1
-ACTUAL_TEAMS = 6
+DIRECT_FETCHER = "tools/external_source/fantasy_football_calculator.py"
+# Schema 2: no league context in the snapshot and the raw file lives in providers/.
+SCHEMA_VERSION = 2
 SOURCE_TEAMS = 8
 CSV_FIELDS = [
     "name", "Rank", "source_rank", "position", "team", "source_player_id",
     "adp", "adp_formatted", "times_drafted", "high", "low", "stdev", "bye",
-    "source_format", "source_team_count", "actual_league_team_count",
+    "source_format", "source_team_count",
     "sample_total_drafts", "sample_start_date", "sample_end_date",
 ]
 
@@ -142,7 +141,6 @@ def parse_kickers(
             "bye": _bye(player.get("bye"), name),
             "source_format": "ppr",
             "source_team_count": SOURCE_TEAMS,
-            "actual_league_team_count": ACTUAL_TEAMS,
             "sample_total_drafts": sample["total_drafts"],
             "sample_start_date": sample["start_date"],
             "sample_end_date": sample["end_date"],
@@ -205,7 +203,11 @@ def _read_json(path: Path) -> dict[str, Any] | None:
 
 
 def ranking_root(repo_root: Path) -> Path:
-    return repo_root / SOURCE_ROOT / RANKING_ID
+    return market_dir(repo_root) / RANKING_ID
+
+
+def raw_root(repo_root: Path) -> Path:
+    return provider_dir(repo_root) / RANKING_ID
 
 
 def write_kicker_format(
@@ -222,7 +224,7 @@ def write_kicker_format(
     skip_unchanged: bool,
 ) -> tuple[list[Path], bool]:
     root = ranking_root(repo_root)
-    raw_path = root / "raw-latest.json"
+    raw_path = raw_root(repo_root) / "raw-latest.json"
     latest_path = root / "latest.json"
     snapshot_dir = root / "snapshots" / fetched_at.date().isoformat()
     ranking_path = snapshot_dir / "ranking.csv"
@@ -276,16 +278,13 @@ def write_kicker_format(
             "position": "K",
             "source_position": "PK",
             "source_team_count": SOURCE_TEAMS,
-            "actual_league_team_count": ACTUAL_TEAMS,
-            "team_count_usage": "nearest_supported_proxy",
-            "actual_fixed_kicker_starters": 1,
         },
         "sample": sample,
         "snapshot": {
             "snapshot_date": fetched_at.date().isoformat(),
             "ranking_file": "ranking.csv",
             "metadata_file": "metadata.json",
-            "raw_latest_file": "../../raw-latest.json",
+            "raw_latest_file": raw_path.relative_to(repo_root).as_posix(),
             "row_count": len(rows),
             "position_counts": {"K": len(rows)},
             "csv_columns": CSV_FIELDS,
@@ -315,11 +314,8 @@ def write_kicker_format(
             "not_expert_consensus": True,
             "not_trade_market_value": True,
             "not_projection": True,
-            "comparison_contract": ANALYSIS_METADATA,
+            "comparison_contract": analysis_metadata_file(repo_root),
             "rank_comparison": "Compare K-only ranks through list-length-aware percentiles.",
-            "league_adjustment": (
-                "Apply six-team replacement level and one fixed kicker starter during analysis."
-            ),
         },
         "attribution": {
             "requested": True,
@@ -346,7 +342,7 @@ def write_kicker_format(
         "latest_sample": sample,
         "freshness_status": "live_fetch",
         "direct_fetcher": DIRECT_FETCHER,
-        "analysis_metadata_file": ANALYSIS_METADATA,
+        "analysis_metadata_file": analysis_metadata_file(repo_root),
         "refresh_before_value_sensitive_analysis": True,
         "reuses_source_payload_without_extra_request": True,
     }

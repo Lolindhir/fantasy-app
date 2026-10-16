@@ -18,14 +18,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = Path(__file__).resolve().parents[3]
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+TOOLS_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = TOOLS_DIR.parent
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
 
-from fantasy_football_calculator_adp_core import (  # noqa: E402
+from external_source.fantasy_football_calculator_adp_core import (  # noqa: E402
     CSV_FIELDS,
     DEFAULT_MAX_STALE_DAYS,
     FORMAT_CONFIGS,
@@ -38,23 +36,23 @@ from fantasy_football_calculator_adp_core import (  # noqa: E402
     request_parameters,
     validate_payload,
 )
-from fantasy_football_calculator_adp_storage import (  # noqa: E402
+from external_source.fantasy_football_calculator_adp_storage import (  # noqa: E402
     ranking_root,
     write_format,
 )
-from fantasy_football_calculator_kicker_adp import (  # noqa: E402
+from external_source.fantasy_football_calculator_kicker_adp import (  # noqa: E402
     FantasyFootballCalculatorKickerError,
     RANKING_ID as KICKER_RANKING_ID,
     parse_kickers,
     write_kicker_format,
 )
-from fantasy_football_calculator_source_quality import (  # noqa: E402
+from external_source.fantasy_football_calculator_source_quality import (  # noqa: E402
     FantasyFootballCalculatorQualityError,
     evaluate_dataset_coverage,
     load_contract,
     write_observation,
 )
-from tools.nfl_season_context import (  # noqa: E402
+from nfl_season_context import (  # noqa: E402
     NflSeasonContextError,
     resolve_nfl_season_context,
 )

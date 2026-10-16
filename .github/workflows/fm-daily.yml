@@ -90,7 +90,6 @@ on:
     paths:
       - fantasy-management/_ai/scripts/fetch_*.py
       - fantasy-management/_ai/scripts/tests/test_fetch_*.py
-      - fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py
       - .github/workflows/fm-daily.yml
   workflow_dispatch: # manueller Start
 
@@ -199,17 +198,20 @@ jobs:
             label: "FM • Ranking • FFC ADP"
             test: >-
               python -m unittest
-              fantasy-management/_ai/scripts/tests/test_fetch_fantasy_football_calculator_adp.py
-              fantasy-management/_ai/scripts/tests/test_fantasy_football_calculator_kicker_adp.py
+              tools/tests/test_external_source_ffc_adp.py
+              tools/tests/test_external_source_ffc_kicker_adp.py
+              tools/tests/test_external_source_ffc_source_quality.py
               -v
             fetch: |
-              python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py --skip-unchanged
+              python -m tools.external_source.fantasy_football_calculator --skip-unchanged
             source_id: fantasy-football-calculator
-            content_path: fantasy-management/sources/external-rankings/adp/fantasy-football-calculator
+            content_path: data-source/market/adp/fantasy-football-calculator
             stage_paths: >-
-              fantasy-management/sources/external-rankings/adp/fantasy-football-calculator
-              fantasy-management/sources/refresh-status/fantasy-football-calculator.json
+              data-source/market/adp/fantasy-football-calculator
+              data-source/providers/fantasy-football-calculator
+              data-source/market/_status/fantasy-football-calculator.json
             scope: ffc-adp-rankings
+            status_path: data-source/market/_status/fantasy-football-calculator.json
           - id: fftoday
             label: "FM • Projection • FFToday"
             test: >-

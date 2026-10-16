@@ -9,19 +9,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-SCRIPT = Path(__file__).resolve().parents[1] / "fetch_fantasy_football_calculator_adp.py"
+SCRIPT = Path(__file__).resolve().parents[1] / "external_source" / "fantasy_football_calculator.py"
 spec = importlib.util.spec_from_file_location("ffc_adp_fetch", SCRIPT)
 module = importlib.util.module_from_spec(spec)
 assert spec and spec.loader
 spec.loader.exec_module(module)
+
+import external_source.fantasy_football_calculator_adp_storage as storage  # noqa: E402
 
 
 class FantasyFootballCalculatorAdpTests(unittest.TestCase):
     def write_runtime_contracts(self, root: Path) -> None:
         contract_path = (
             root
-            / "fantasy-management/sources/external-rankings/adp/"
-            / "fantasy-football-calculator/source-contract.json"
+            / "data-source/providers/fantasy-football-calculator/source-contract.json"
         )
         contract_path.parent.mkdir(parents=True, exist_ok=True)
         contract_path.write_text(
@@ -287,8 +288,7 @@ class FantasyFootballCalculatorAdpTests(unittest.TestCase):
             observation = json.loads(
                 (
                     root
-                    / "fantasy-management/sources/external-rankings/adp/"
-                    / "fantasy-football-calculator/observation.json"
+                    / "data-source/providers/fantasy-football-calculator/observation.json"
                 ).read_text(encoding="utf-8")
             )
             self.assertEqual("regular_season", observation["season_context"]["phase"])
@@ -306,15 +306,13 @@ class FantasyFootballCalculatorAdpTests(unittest.TestCase):
             self.assertFalse(
                 (
                     root
-                    / "fantasy-management/sources/external-rankings/adp/"
-                    / "fantasy-football-calculator/redraft-ppr-8-team/latest.json"
+                    / "data-source/market/adp/fantasy-football-calculator/redraft-ppr-8-team/latest.json"
                 ).exists()
             )
             self.assertTrue(
                 (
                     root
-                    / "fantasy-management/sources/external-rankings/adp/"
-                    / "fantasy-football-calculator/redraft-2qb-10-team/latest.json"
+                    / "data-source/market/adp/fantasy-football-calculator/redraft-2qb-10-team/latest.json"
                 ).exists()
             )
 
@@ -395,7 +393,9 @@ class FantasyFootballCalculatorAdpTests(unittest.TestCase):
             root = module.ranking_root(repo_root, config)
             self.assertTrue((root / "snapshots" / "2026-07-18" / "ranking.csv").is_file())
             self.assertFalse((root / "snapshots" / "2026-07-19").exists())
-            raw = json.loads((root / "raw-latest.json").read_text(encoding="utf-8"))
+            raw_path = storage.raw_root(repo_root, config) / "raw-latest.json"
+            self.assertFalse((root / "raw-latest.json").exists())
+            raw = json.loads(raw_path.read_text(encoding="utf-8"))
             self.assertEqual("second", raw["raw_note"])
             latest = json.loads((root / "latest.json").read_text(encoding="utf-8"))
             self.assertEqual("2026-07-18", latest["snapshot_date"])
@@ -449,6 +449,14 @@ class FantasyFootballCalculatorAdpTests(unittest.TestCase):
             )
             self.assertEqual(module.SCHEMA_VERSION, metadata["schema_version"])
             self.assertEqual("adp", metadata["ranking_kind"])
+            self.assertEqual(2, metadata["schema_version"])
+            self.assertNotIn("actual_league_team_count", metadata["format"])
+            self.assertNotIn("actual_league_team_count", csv_rows[0])
+            self.assertEqual(
+                "data-source/providers/fantasy-football-calculator/"
+                "redraft-ppr-8-team/raw-latest.json",
+                metadata["snapshot"]["raw_latest_file"],
+            )
             self.assertEqual("latest_only", metadata["raw_retention"]["policy"])
             self.assertFalse(metadata["raw_retention"]["historical_raw_snapshots"])
 

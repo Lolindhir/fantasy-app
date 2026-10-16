@@ -46,7 +46,7 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
                 self.assertIn(f"source_id: {source_id}\n", providers_job)
                 heartbeat_dir = (
                     "data-source/market/_status"
-                    if source_id in {"sleeper-trending", "fantasycalc", "cbs-sports", "fftoday"}
+                    if source_id in {"sleeper-trending", "fantasycalc", "fantasy-football-calculator", "cbs-sports", "fftoday"}
                     else "fantasy-management/sources/refresh-status"
                 )
                 self.assertIn(f"{heartbeat_dir}/{heartbeat_file}", providers_job)

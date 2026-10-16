@@ -8,12 +8,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-SOURCE_ROOT = (
-    "fantasy-management/sources/external-rankings/adp/"
-    "fantasy-football-calculator"
-)
-SOURCE_CONTRACT = f"{SOURCE_ROOT}/source-contract.json"
-OBSERVATION_PATH = f"{SOURCE_ROOT}/observation.json"
+from external_source.fantasy_football_calculator_adp_core import provider_dir
+
 USABLE_STATUSES = {"usable", "reduced_coverage"}
 
 
@@ -22,7 +18,7 @@ class FantasyFootballCalculatorQualityError(RuntimeError):
 
 
 def load_contract(repo_root: Path) -> dict[str, Any]:
-    path = repo_root / SOURCE_CONTRACT
+    path = provider_dir(repo_root) / "source-contract.json"
     try:
         contract = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -75,7 +71,7 @@ def evaluate_dataset_coverage(
 
 
 def observation_path(repo_root: Path) -> Path:
-    return repo_root / OBSERVATION_PATH
+    return provider_dir(repo_root) / "observation.json"
 
 
 def write_observation(repo_root: Path, payload: dict[str, Any]) -> Path:
