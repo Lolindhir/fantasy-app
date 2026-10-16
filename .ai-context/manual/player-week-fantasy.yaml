@@ -382,3 +382,34 @@ productionMaterialization:
       The player Projection depends only on canonically final weeks < target week, so reruns during
       the week do not change it; it can only improve when an earlier week becomes canonically final.
   publication: shared-derived-plus-app-publication-bridge-consumed-by-fantasy-game-context
+
+# Issue #471 historical source-owned batch (initial, not scheduled)
+historicalBatch:
+  entryPoint: tools/historical_pwf_batch.py
+  ownership: >-
+    Inventory is derived from registered league metadata, canonical league season
+    manifests and each season's scored-week bounds; never infer target coverage
+    from existing data-derived snapshots or public/data app read models.
+  gate: >-
+    For each league/scored-week candidate require canonical NFL REG week-final
+    and game IDs, target-week roster (never provisional previous-week fallback),
+    and complete canonical Actual scoring evidence. Any blocked target prevents
+    all writes in the selected batch and returns nonzero.
+  calculation: >-
+    Delegate to player_week_fantasy_materialize.build_player_week_fantasy_dataset
+    and reuse its exact deterministic JSON serialization. The batch adds no
+    new player scoring or projection formulas; source changes can regenerate
+    older weeks and later projections when their inputs change.
+  interfaces:
+    readOnlyDefault: true
+    optInWrite: --write
+    isolatedRoot: --out-root
+    filters: ["--league", "--season", "--week"]
+    parity: >-
+      Producing final PWF is only an upstream readiness gate for strict
+      TeamWeekPerformance parity. The batch alone does not attest fantasy
+      matchup player-point parity or user-facing award completeness.
+  activation: >-
+    No Actions workflow, central scheduler cadence, main publication or App
+    refresh change is included in this initial module. Cross-product
+    incremental/full/check orchestration remains owned by Issue #471.
