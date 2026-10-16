@@ -18,6 +18,9 @@ if str(TOOLS) not in sys.path:
 from external_source import identity as ident  # noqa: E402
 from external_source import registry as reg  # noqa: E402
 from external_source.snapshot_discovery import discover_snapshots  # noqa: E402
+from external_source.snapshot_plan import (  # noqa: E402
+    SnapshotCollisionError, inspect_planned_snapshot, plan_snapshot,
+)
 
 PROVIDERS = {"fantasypros", "fantasycalc", "fantasy-football-calculator", "fftoday", "cbs-sports", "sleeper"}
 
@@ -208,6 +211,88 @@ class IdentityTests(unittest.TestCase):
     def test_repository_provider_mappings_load(self) -> None:
         index = ident.MappingIndex.load(REPO_ROOT)
         self.assertIsInstance(index.candidates("Sleeper", "0", 2026), list)
+
+
+
+class SnapshotPlanTests(unittest.TestCase):
+    def test_same_content_same_instant_is_identical_deterministic_plan(self) -> None:
+        from datetime import datetime, timezone
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "snapshots"
+            instant = datetime(2026, 10, 16, 17, 20, 3, tzinfo=timezone.utc)
+            first = plan_snapshot(root, observed_at=instant, csv_content="name,Rank\\nA,1\\n", schema_version=4)
+            second = plan_snapshot(root, observed_at=instant, csv_content="name,Rank\\nA,1\\n", schema_version=4)
+            self.assertEqual(first, second)
+            self.assertEqual(first.directory.parent.name, "2026-10-16")
+            self.assertRegex(first.directory.name, r"^172003Z-[0-9a-f]{8}$")
+            self.assertEqual(len(first.semantic_sha256), 64)
+            self.assertEqual(inspect_planned_snapshot(first, csv_content="name,Rank\\nA,1\\n"), "absent")
+            self.assertFalse(root.exists(), "Read-only planner must not create directories")
+
+    def test_same_second_modified_content_or_schema_gets_distinct_paths(self) -> None:
+        from datetime import datetime, timezone
+        instant = datetime(2026, 10, 16, 17, 20, 3, tzinfo=timezone.utc)
+        root = Path("snapshots")
+        a = plan_snapshot(root, observed_at=instant, csv_content="name,Rank\\nA,1\\n", schema_version=4)
+        b = plan_snapshot(root, observed_at=instant, csv_content="name,Rank\\nB,1\\n", schema_version=4)
+        c = plan_snapshot(root, observed_at=instant, csv_content="name,Rank\\nA,1\\n", schema_version=5)
+        self.assertEqual(3, len({a.key, b.key, c.key}))
+        self.assertNotEqual(a.semantic_sha256, c.semantic_sha256)
+
+    def test_timezone_is_normalized_and_naive_clock_fails(self) -> None:
+        from datetime import datetime, timedelta, timezone
+        utc = datetime(2026, 10, 16, 17, 20, 3, tzinfo=timezone.utc)
+        cet = datetime(2026, 10, 16, 19, 20, 3, tzinfo=timezone(timedelta(hours=2)))
+        a = plan_snapshot(Path("snapshots"), observed_at=utc, csv_content="a\\n", schema_version=1)
+        b = plan_snapshot(Path("snapshots"), observed_at=cet, csv_content="a\\n", schema_version=1)
+        self.assertEqual(a.key, b.key)
+        with self.assertRaisesRegex(ValueError, "timezone-aware"):
+            plan_snapshot(Path("snapshots"), observed_at=utc.replace(tzinfo=None), csv_content="a\\n", schema_version=1)
+        with self.assertRaisesRegex(ValueError, "positive integer"):
+            plan_snapshot(Path("snapshots"), observed_at=utc, csv_content="a\\n", schema_version=0)
+
+    def test_existing_identical_immutable_snapshot_is_reusable_without_write(self) -> None:
+        from datetime import datetime, timezone
+        with tempfile.TemporaryDirectory() as tmp:
+            content = "name,Rank\\nA,1\\n"
+            plan = plan_snapshot(
+                Path(tmp) / "snapshots",
+                observed_at=datetime(2026, 10, 16, 17, 20, 3, tzinfo=timezone.utc),
+                csv_content=content, schema_version=4,
+            )
+            plan.directory.mkdir(parents=True)
+            plan.ranking_file.write_text(content, encoding="utf-8")
+            plan.metadata_file.write_text(
+                json.dumps({"other_source_metadata": True, **plan.metadata_identity()}),
+                encoding="utf-8",
+            )
+            self.assertEqual("identical", inspect_planned_snapshot(plan, csv_content=content))
+            self.assertEqual(content, plan.ranking_file.read_text(encoding="utf-8"))
+
+    def test_collision_never_overwrites_wrong_or_partial_evidence(self) -> None:
+        from datetime import datetime, timezone
+        with tempfile.TemporaryDirectory() as tmp:
+            content = "name,Rank\\nA,1\\n"
+            plan = plan_snapshot(
+                Path(tmp) / "snapshots",
+                observed_at=datetime(2026, 10, 16, 17, 20, 3, tzinfo=timezone.utc),
+                csv_content=content, schema_version=4,
+            )
+            plan.directory.mkdir(parents=True)
+            plan.ranking_file.write_text(content, encoding="utf-8")
+            with self.assertRaisesRegex(SnapshotCollisionError, "Incomplete"):
+                inspect_planned_snapshot(plan, csv_content=content)
+            metadata = plan.metadata_identity()
+            plan.metadata_file.write_text(json.dumps(metadata), encoding="utf-8")
+            plan.ranking_file.write_text(content + "B,2\\n", encoding="utf-8")
+            with self.assertRaisesRegex(SnapshotCollisionError, "collision"):
+                inspect_planned_snapshot(plan, csv_content=content)
+            self.assertIn("B,2", plan.ranking_file.read_text(encoding="utf-8"))
+            plan.ranking_file.write_text(content, encoding="utf-8")
+            metadata["snapshot_semantic_sha256"] = "0" * 64
+            plan.metadata_file.write_text(json.dumps(metadata), encoding="utf-8")
+            with self.assertRaisesRegex(SnapshotCollisionError, "collision"):
+                inspect_planned_snapshot(plan, csv_content=content)
 
 
 if __name__ == "__main__":
