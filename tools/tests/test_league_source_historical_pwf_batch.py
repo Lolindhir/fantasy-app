@@ -137,5 +137,21 @@ class RealHistoricalPWFBatchTests(unittest.TestCase):
                               report["BlockedCount"]), (2, 2, 0), report["Weeks"])
 
 
+    def test_every_canonically_scored_historical_week_preflights_without_writes(self):
+        """Real source-only inventory: a missing or stale historical partition must not hide."""
+        expected = discover_scored_weeks(REPO_ROOT, league_id="nfl-reise")
+        self.assertGreaterEqual(len(expected), 39)
+        with tempfile.TemporaryDirectory() as output:
+            report = materialize_historical(
+                REPO_ROOT, league_id="nfl-reise", out_root=Path(output),
+            )
+            blocked = [week for week in report["Weeks"] if week["Status"] == "blocked"]
+            self.assertEqual(report["TargetCount"], len(expected))
+            self.assertEqual(report["BlockedCount"], 0, blocked)
+            self.assertEqual(report["ReadyCount"], len(expected))
+            self.assertFalse(list(Path(output).rglob("*.json")))
+
+
+
 if __name__ == "__main__":
     unittest.main()
