@@ -299,6 +299,17 @@ The source-first inventory is a separate editorial coverage check, not a replace
 - Record each obligation with exact cue/time evidence. It may refer to an unresolved name or even to a game/team/strategy with **no personal name**; no source claim may disappear because preflight A found no verified player.
 - The entity inventory and claim inventory are complementary coverage axes. Link claims to candidate occurrences when supported, but do not derive the claims inventory only from a name list or derive the name list only from generated takes.
 
+### Source inventory → Content Map → Take reconciliation (quality-pilot contract)
+
+For every source-first reviewed atomic claim, record its owning Content Map segment, and **one of two explicit dispositions**:
+
+- **Substantive:** add its stable claim ID to the segment's `substantive_claims`, plan the relevant reusable take ID in `planned_outputs.take_ids`, and link the same ID reciprocally in the authored take's `claim_ids`. Combine related claims into a take without dropping their distinct rankings, conditions, dissent or reasoning.
+- **Context-only:** record the justification for excluding a standalone take; do **not** silently discard a short recommendation, ranking, host dissent, strategic thesis or meaningful scheme hypothesis as mere context. Carry transitions into the correct adjacent segment rather than misclassifying the game.
+
+When a QA pass finds source omissions, do **not** leave stale `takes_complete` or `reconciled` flags as true. Update the affected segments' Content Map claims and take plans whenever a take is created, split or repaired; never change the frozen first pass to make the apparent recall better. Before editorially marking an affected segment complete, explicitly run the local source-SRT check with `--require-reviewed --work-dir` on its reviewed inventory; a passing JSON schema or take-to-planned-map check alone does **not** imply source recall.
+
+The work-package validator should warn about an authored but unplanned take during drafting and block completion if the same drift persists. The local source-claim CLI validates exact SRT spans and reviewed source claim links **when explicitly invoked**. Neither tool autonomously discovers statements omitted from both the inventory and the Takes, and neither proves audio fidelity. Retain an independent raw-source read, final mention sweep and human review.
+
 ### Distinct generation, review and repair passes
 
 1. **Pass 1 — inventory:** produce the entity candidates and source-statement inventory from raw transcript, separately from the finished takes and article.
