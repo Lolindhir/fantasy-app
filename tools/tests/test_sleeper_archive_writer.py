@@ -106,7 +106,8 @@ class SleeperAppendOnlyArchiveTests(unittest.TestCase):
 
     def test_invalid_fingerprint_and_backward_observation_fail_closed(self):
         doc = self.payload()
-        doc["players"][0]["add"]["count"] = 5 if doc["players"][0]["add"]["count"] != 5 else 6
+        player = next(p for p in doc["players"] if p["add"]["status"] == "listed")
+        player["add"]["count"] += 1
         with self.assertRaisesRegex(ValueError, "Source fingerprint"):
             self.write(doc)
         self.assertFalse(self.snapshots.exists())
