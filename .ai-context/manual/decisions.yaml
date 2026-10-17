@@ -1951,3 +1951,36 @@ decisions:
         - A third registry next to registry v3 and league-registry.json.
         - FFToday and Fantasy Football Calculator stay without CanonicalPlayerID until a provider ID mapping exists.
         - Acquisition remains orchestrated by an FM-named workflow until a later split.
+
+  - id: ADR-061
+    title: NFL betting lines are separate daily canonical season facts with market-implied team totals
+    status: accepted
+    context: >
+      Issue #946 separated nflverse schedule betting columns from low-churn schedule facts because
+      live finality refreshes had produced frequent raw commits. The raw-only odds dataset already
+      refreshes in the daily NFL Source Sync, but downstream consumers have no canonical season-wise
+      betting facts or reusable market-implied team scores (Issue #1073).
+    decision: >
+      On 2026-10-17 Robert approved step 1: ingest betting data without any UI work. Activate
+      nflverse.schedule-odds only in the normal full source materializer and write
+      data-source/nfl/schedule-odds/<season>.json keyed by canonical GameID. Keep schedule and
+      finality outputs unchanged and exclude the odds dataset from the live game-finality scope.
+      Derive ImpliedAwayPoints and ImpliedHomePoints only when both total_line and spread_line
+      are known: (total - spread)/2 and (total + spread)/2 (the source spread is the
+      away-team point spread; positive favors home). Preserve prices, missing/null fields
+      and season-finalization semantics. Reject duplicate, missing or unknown game IDs and
+      invalid numeric lines. The existing daily 04:00 Europe/Berlin source refresh is sufficient.
+      App Schedule.json, historical App Schedule archives, Fantasy prediction models and
+      frontend visuals remain unchanged in this bounded step.
+    rationale: >
+      Consumer-neutral, source-attributed NFL betting data and implied scores become available
+      without recreating the high-churn live schedule writer or mixing projections with actual scores.
+    consequences:
+      positive:
+        - Historical seasons and current games have typed, reusable team-market expectations.
+        - Existing daily source sync materializes the facts with deterministic no-op behavior.
+        - No new fetch schedule, permissions, branch writer or App contract is introduced.
+      negative:
+        - Initial backfill adds historical canonical season files to data-source.
+        - This captures only the source's latest line per game, not timestamped line movement.
+        - App and fantasy consumers require separate follow-up integration.
