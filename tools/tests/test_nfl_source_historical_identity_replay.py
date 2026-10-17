@@ -295,8 +295,14 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
             impact = audit_provider_mapping_and_possible_duplicates(
                 SOURCE, root, weekly_changed, old_players, new_players,
             )
+            self.assertFalse(impact["lost_prior_mapping_intervals"],
+                             "Existing provider mapping validity was lost in source replay")
             self.assertFalse(impact["new_conflicts_involving_new_identity"],
                              "New canonical identity appears in ambiguous provider claim")
+            self.assertFalse(impact["new_identity_season_valid_provider_overlap_count"],
+                             "New roster-only GSIS identity overlaps an existing provider owner in the same season; adjudication required")
+            self.assertFalse(impact["lost_historical_resolution_conflicts"],
+                             "Existing historical mapping conflict provenance was lost")
 
             for year, week in TARGETS:
                 path = root / f"data-source/nfl/weekly-rosters/{year}/{week:02d}.json"
