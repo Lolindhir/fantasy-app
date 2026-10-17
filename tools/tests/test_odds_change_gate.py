@@ -10,7 +10,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from odds_change_gate import OddsGateConfig, evaluate_game, evaluate_games
+from odds_change_gate import OddsGateConfig, evaluate_game, evaluate_games, next_pending_since
 
 
 NOW = datetime(2026, 10, 17, 12, 0, tzinfo=timezone.utc)
@@ -103,6 +103,38 @@ class SemanticOddsGateTests(unittest.TestCase):
         )
         self.assertEqual([x.publish for x in result], [False, True])
         self.assertEqual(result[1].reason, "maximum_age_with_pending_change")
+
+    def test_pending_buffer_starts_on_first_net_change_and_resets_on_reversion(self):
+        first = NOW - timedelta(minutes=50)
+        observed = {**BASE, "SpreadLine": 4.0}
+        pending = next_pending_since(
+            published=BASE, observed=observed,
+            previous_pending_since=None, observed_at=first,
+        )
+        self.assertEqual(pending, first)
+        pending = next_pending_since(
+            published=BASE, observed={**BASE, "SpreadLine": 4.5},
+            previous_pending_since=pending, observed_at=NOW,
+        )
+        self.assertEqual(pending, first)
+        self.assertFalse(decision({**BASE, "SpreadLine": 4.0},
+                                  minutes=180, pending_minutes=50).publish)
+        self.assertIsNone(next_pending_since(
+            published=BASE, observed={**BASE, "HomeMoneyline": -999},
+            previous_pending_since=pending, observed_at=NOW,
+        ))
+        again = next_pending_since(
+            published=BASE, observed=observed,
+            previous_pending_since=None, observed_at=NOW,
+        )
+        self.assertEqual(again, NOW)
+        self.assertFalse(decision(observed, minutes=180, pending_minutes=0).publish)
+
+    def test_pending_buffer_price_changes_never_start_clock(self):
+        self.assertIsNone(next_pending_since(
+            published=BASE, observed={**BASE, "OverOdds": -120},
+            previous_pending_since=None, observed_at=NOW,
+        ))
 
     def test_invalid_data_fail_closed(self):
         for value in (float("nan"), float("inf"), "3.5", True):
