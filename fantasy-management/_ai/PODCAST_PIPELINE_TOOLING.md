@@ -123,6 +123,30 @@ python fantasy-management/_ai/scripts/podcast_preflight.py check \
 
 The `check` command checks byte-level transcript provenance, literal offsets, unique candidate IDs, mandatory review classification and reciprocal links `claim_ids` in authored take files. It does **not** automatically compare every unobserved source claim with the take set. It is a pre-extraction **prototype** and is not wired into `validate_podcast_work.py`, the publication builder, CI writers or the repository's canonical work-package schemas. Existing package behavior and historical artifacts stay unchanged. Keep a frozen first-pass take set before source-first QA, then repair and recheck using the approved multi-pass editorial rules.
 
+## Semantic claim inventory: frozen first pass and independent audit
+
+The local, **non-publishing** CLI provides a stable JSON intake contract for independently authored semantic source claims. This is the next technical checkpoint following the manual 45/53-claim Commanders–49ers pilot; **the script does not itself run a language model or infer missing claims**.
+
+First ask an authorized model/human to read the raw SRT (cue by cue, not summary-first) and emit a `podcast-semantic-claim-inventory.schema.json` document with exact cue IDs, character offsets, literal `quote_hint`, one atomic `claim` per assertion, and `review_state: "unreviewed"`. Never normalize unsure names or convert suspicious ASR figures into verified NFL facts. Keep the raw source private.
+
+```bash
+python fantasy-management/_ai/scripts/podcast_semantic_claims.py freeze \
+  "/private/episode.srt" "/private/claim-first-pass.json" --output "/private/frozen"
+```
+
+Read every source cue **again** with a different QA objective. Save an audit JSON containing `base_frozen_sha256`, `review_method`, `corrections` (each with `id`, `reason`, optionally `review_state`, `corrected_claim`, `review_note` and `linked_take_ids`) and `new_claims` (complete claim objects). An existing quote/cue may not be silently rewritten via a correction: use a traceable replacement claim. The frozen original is preserved.
+
+```bash
+python fantasy-management/_ai/scripts/podcast_semantic_claims.py reconcile \
+  "/private/episode.srt" "/private/frozen" "/private/audit.json" --output "/private/reconciled"
+
+python fantasy-management/_ai/scripts/podcast_semantic_claims.py check \
+  "/private/episode.srt" "/private/reconciled/reconciled.json" --require-reviewed \
+  --takes "/private/episode/takes/items"
+```
+
+The last check requires an editorially reviewed status plus, for substantive verified claims, an existing take with reciprocal `claim_ids`. Intermediate `check` without `--require-reviewed` is **source-span and structure only**. It **cannot establish that every source claim exists**. The existing `validate_podcast_work.py` and publication builder are not altered; do not report these preflight checks as a publication-ready verdict or an independent recall score. No model provider, automatic scheduling, raw upload, identity registry modification or novel GitHub writer is enabled.
+
 ## Operational tracking
 
 This file documents implemented commands and tool behavior only. It does not maintain the mutable rollout roadmap.
