@@ -17,6 +17,8 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+from .sleeper_trending import semantic_fingerprint
+
 _DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _INTRADAY = re.compile(r"^(\d{6})Z-([0-9a-f]{8})$")
 _FINGERPRINT = re.compile(r"^[0-9a-f]{64}$")
@@ -66,6 +68,43 @@ def discover_sleeper_snapshots(root: Path) -> list[SleeperSnapshot]:
                 raise ValueError(f"Missing Sleeper Source fingerprint: {file}")
             if semantic[:8] != match.group(2):
                 raise ValueError(f"Sleeper path/source fingerprint mismatch: {file}")
+            players = doc.get("players")
+            if not isinstance(players, list) or not players:
+                raise ValueError(f"Empty or malformed Sleeper archive players: {file}")
+            activity: dict[str, list[dict[str, int | str]]] = {}
+            ids: set[str] = set()
+            for player in players:
+                if not isinstance(player, dict):
+                    raise ValueError(f"Invalid archived Sleeper player: {file}")
+                provider_id = player.get("sleeper_player_id")
+                if not isinstance(provider_id, str) or not provider_id or provider_id in ids:
+                    raise ValueError(f"Missing or duplicated archived Sleeper player identity: {file}")
+                ids.add(provider_id)
+            for kind in ("add", "drop"):
+                listed = []
+                for player in players:
+                    state = player.get(kind)
+                    if not isinstance(state, dict) or state.get("status") not in ("listed", "not_listed"):
+                        raise ValueError(f"Malformed Sleeper archived {kind} status: {file}")
+                    if state["status"] == "not_listed":
+                        if state.get("rank") is not None or state.get("count") is not None:
+                            raise ValueError(f"Sleeper not_listed does not mean zero: {file}")
+                        continue
+                    rank, count = state.get("rank"), state.get("count")
+                    if type(rank) is not int or type(count) is not int or rank < 1 or count < 0:
+                        raise ValueError(f"Malformed Sleeper archive rank/count: {file}")
+                    listed.append({
+                        "player_id": player["sleeper_player_id"], "rank": rank, "count": count,
+                    })
+                listed.sort(key=lambda row: row["rank"])
+                if [row["rank"] for row in listed] != list(range(1, len(listed) + 1)):
+                    raise ValueError(f"Non-contiguous Sleeper archive ranking: {file}")
+                activity[kind] = listed
+            lookback, limit = doc.get("lookback_hours"), doc.get("limit")
+            if type(lookback) is not int or type(limit) is not int or lookback < 1 or limit < 1:
+                raise ValueError(f"Invalid Sleeper archive query window: {file}")
+            if semantic_fingerprint(activity, lookback_hours=lookback, limit=limit) != semantic:
+                raise ValueError(f"Sleeper archived players do not match Source fingerprint: {file}")
             stamp = doc.get("generated_at")
             if not isinstance(stamp, str):
                 raise ValueError(f"Sleeper observation timestamp missing: {file}")
