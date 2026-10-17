@@ -50,6 +50,39 @@ identityModel:
       ID remains identical. It cannot rename people, alter facts or substitute
       display-name matches. A different repair still requires explicit --force.
 
+
+  historicalWeeklyRosterPlaceholderReconciliation:
+    status: implemented-pending-full-replay-1061
+    owner: data-source/nfl/identities
+    implementation:
+      - tools/nfl_source_data_lib/identity_sources.py::historical_weekly_roster_identity_candidates
+      - tools/nfl_source_data_lib/identity.py::_select_primary_provider_id
+    rule: >
+      A real 00-NNNNNNN GSIS in persisted NFL weekly-roster raw may attach to
+      an *existing* CanonicalPlayerID whose persisted GSIS is exactly an ESB-as-GSIS
+      placeholder (not a real GSIS), where the old record is owned by nflverse.players.
+      The roster ESB must be observed on exactly one real GSIS across all persisted
+      weekly roster raw, and exactly one existing canonical person must own that ESB.
+      A corroborated same-team compatible defensive/offensive position group, or
+      an independently matching nonempty birth date, is required. Any observed
+      nonempty DOB contradiction vetoes the attachment. Provider name matching is
+      forbidden; existing people with a real GSIS are never linked by ESB alone.
+      Where evidence is insufficient or a provider ESB was reused, leave the new
+      real-GSIS candidate separate for review; do not invent a person merge.
+    stability: >
+      Only an unclaimed real GSIS is added as provider evidence to the previously
+      stable CanonicalPlayerID, via the existing identity component builder. The
+      real GSIS becomes the active primary identifier and legacy placeholders
+      remain recognizable as aliases/history. Existing canonical owners are not
+      renamed or deleted. Replay is source-derived and deterministic; no per-player
+      exception table or hardcoded ID pairs.
+    nonGoals: >
+      This rule is separate from currentIdentityGapResolution.placeholderGsisUpgrade,
+      which deliberately preserves two *already persisted* people and moves only
+      current claims. It cannot silently collapse two existing canonical IDs.
+      Same-name/date duplicates without provider-corroborated evidence require
+      independent adjudication.
+
   currentAppIdentity:
     path: public/data/Players.json
     field: ID
