@@ -13,7 +13,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from nfl_source_data_lib import common as common_mod
-from nfl_source_data_lib.phase1 import _build_schedule_odds
+from nfl_source_data_lib.phase1 import _build_schedule_odds, _build_schedules
 from data_roots import DATA_SOURCE_ROOT
 from nfl_source_data_lib.source_projection import (
     SCHEDULE_ODDS_COLUMNS,
@@ -242,6 +242,19 @@ class CanonicalScheduleOddsMaterializationTests(unittest.TestCase):
             for row in rows
         }
         return odds, schedule_index
+
+    def test_committed_provider_odds_join_all_canonical_schedule_games(self) -> None:
+        """Production-sized source evidence must cover exactly the same game identities."""
+        datasets = {item.id: item for item in common_mod.load_registry(ROOT)}
+        _, _, _, game_index = _build_schedules(
+            ROOT, datasets["nflverse.schedules"], 2026, force=False
+        )
+        _, audit, _ = _build_schedule_odds(
+            ROOT, datasets["nflverse.schedule-odds"], game_index, 2026, force=False
+        )
+        self.assertEqual(len(game_index), audit["gameCount"])
+        self.assertGreater(audit["gameCount"], 7000)
+        self.assertGreater(audit["gamesWithCompleteLines"], 7000)
 
     def test_implied_team_points_join_and_source_lines(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
