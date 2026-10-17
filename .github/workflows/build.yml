@@ -56,6 +56,9 @@ jobs:
           python -m unittest tools.tests.test_player_valuation -v
           python -m unittest tools.tests.test_player_valuation_shadow -v
 
+      - name: Run global NFL Game Shared Derived regression tests
+        run: python -m unittest tools.tests.test_nfl_games_derived -v
+
       - name: Run League history regression tests
         run: |
           python -m unittest discover -s tools/tests -p "test_league_transactions.py" -v
