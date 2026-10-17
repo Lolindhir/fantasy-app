@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-signals",
-  "generated_at": "2026-10-17T12:08:17Z",
-  "input_fingerprint": "994a1ac3876525dd89d7c08173e5f23a593e08201877fb66d225e34bbba0c942",
+  "generated_at": "2026-10-17T20:27:04Z",
+  "input_fingerprint": "cf1d4e030523876cc846935e77d6bdf83503f6e87612592bb35d0ed37358ee42",
   "source": {
     "free_agent_signals": {
       "path": "fantasy-management/generated/operations/free-agent-signals.json",
       "dataset_id": "free-agent-signals",
-      "input_fingerprint": "f768fe0c827cbf3b641c34bc1f5dfa72100f328c011f1279b7cff10382f6035c"
+      "input_fingerprint": "27d2d677e783d735ab574e886444a8c65554b0905cd9e668197449ef0ced66f1"
     },
     "player_signals": {
       "path": "fantasy-management/generated/operations/player-signals.json",
       "dataset_id": "player-signals",
-      "input_fingerprint": "59b12325f2afaac29f587923e577c63285c2e9a90d9dd84fafb64b7a47e5e4d4"
+      "input_fingerprint": "7a7533ad05c9a9bdaaf57492560d0ca7d838c2fb6416450c0ca73da54963974c"
     },
     "canonical_league_scoring": {
       "canonical_league_id": "nfl-reise",
@@ -34,7 +34,7 @@
     "comparison_anchor_policy": "calendar windows are anchored to the evaluation date; each source uses the last available snapshot at or before the cutoff",
     "previous_free_agent_signals": {
       "status": "available",
-      "input_fingerprint": "5c3322a281afd5b28042306c50428b030b3b278c1dc3743ec007d01d526f3b37"
+      "input_fingerprint": "f768fe0c827cbf3b641c34bc1f5dfa72100f328c011f1279b7cff10382f6035c"
     },
     "ranking_histories": {
       "cbs-sports-redraft-kicker-preseason": {
@@ -462,11 +462,11 @@
         }
       },
       "WR": {
-        "league_owned_player_count": 79,
+        "league_owned_player_count": 78,
         "families": {
           "dynasty_market": {
-            "owned_player_count": 79,
-            "boundary_percentile": 52.03,
+            "owned_player_count": 78,
+            "boundary_percentile": 53.47,
             "owned_floor_percentile": 40.44
           },
           "redraft_adp": {
@@ -502,11 +502,13 @@
       "WR": 81
     },
     "priority_counts": {
-      "high": 108,
-      "medium": 132
+      "high": 111,
+      "medium": 129
     },
     "material_family_counts": {
       "dynasty_market": 207,
+      "injury_availability": 4,
+      "role_opportunity": 1,
       "season_projection": 93
     },
     "selection_rule": "all current fantasy free agents QB/RB/WR/TE/K are evaluated; only research-relevant movement discoveries are emitted"
@@ -1397,7 +1399,16 @@
           "team_comparison_status": "compared",
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
+          "changes": [
+            {
+              "family": "role_opportunity",
+              "kind": "depth_chart_order_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": 3,
+              "to": 4
+            }
+          ],
           "activity_changes": []
         }
       },
@@ -1413,6 +1424,7 @@
         "research_priority": "high",
         "material_families": [
           "dynasty_market",
+          "role_opportunity",
           "season_projection"
         ],
         "thresholds_crossed": [
@@ -1469,6 +1481,14 @@
             "delta": -24.22,
             "threshold": 20,
             "provider_count": 1
+          },
+          {
+            "family": "role_opportunity",
+            "kind": "depth_chart_order_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": 3,
+            "to": 4
           }
         ],
         "coverage_changes": [
@@ -7192,6 +7212,537 @@
       }
     },
     {
+      "player_id": "2307",
+      "name": "Marcus Mariota",
+      "position": "QB",
+      "nfl_team": "WAS",
+      "nfl_team_source": "canonical_sleeper_team",
+      "ownership": {
+        "status": "fantasy_free_agent",
+        "teams": []
+      },
+      "replacement_relevance": {
+        "classification": "below_rostered_boundary",
+        "family_percentiles": {
+          "dynasty_market": 26.88,
+          "redraft_adp": null,
+          "season_projection": 23.92
+        },
+        "distance_to_owned_boundary": {
+          "dynasty_market": -46.34,
+          "redraft_adp": null,
+          "season_projection": -33.55
+        },
+        "near_families": []
+      },
+      "movement": {
+        "redraft_adp": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "current_snapshot_date": "2026-10-16",
+          "current_listed": false,
+          "current_percentile": null,
+          "current_adp": null,
+          "current_times_drafted": null,
+          "windows": {
+            "1": {
+              "baseline_snapshot_date": "2026-10-16",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "3": {
+              "baseline_snapshot_date": "2026-10-12",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "7": {
+              "baseline_snapshot_date": "2026-10-09",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "14": {
+              "baseline_snapshot_date": "2026-10-02",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "30": {
+              "baseline_snapshot_date": "2026-09-16",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            }
+          }
+        },
+        "dynasty_market": {
+          "current_consensus_percentile": 26.88,
+          "providers": {
+            "fantasypros-dynasty-superflex-ppr": {
+              "source_kind": "expert_consensus",
+              "provider": "fantasypros",
+              "current_snapshot_date": "2026-10-17",
+              "current_listed": true,
+              "current_overall_rank": 313,
+              "current_position_rank": "QB45",
+              "current_percentile": 22.58,
+              "current_tier": "14",
+              "current_value": null,
+              "windows": {
+                "1": {
+                  "baseline_snapshot_date": "2026-10-16",
+                  "baseline_listed": true,
+                  "delta_overall_rank": 0.0,
+                  "standardized_overall_rank_delta": -0.0,
+                  "delta_position_rank": 0.0,
+                  "standardized_position_rank_delta": -0.0,
+                  "delta_percentile": 0.0,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "3": {
+                  "baseline_snapshot_date": "2026-10-14",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "7": {
+                  "baseline_snapshot_date": "2026-10-10",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "14": {
+                  "baseline_snapshot_date": "2026-10-03",
+                  "baseline_listed": true,
+                  "delta_overall_rank": -7.0,
+                  "standardized_overall_rank_delta": 7.0,
+                  "delta_position_rank": 0.0,
+                  "standardized_position_rank_delta": -0.0,
+                  "delta_percentile": -16.77,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "30": {
+                  "baseline_snapshot_date": "2026-09-17",
+                  "baseline_listed": true,
+                  "delta_overall_rank": -55.0,
+                  "standardized_overall_rank_delta": 55.0,
+                  "delta_position_rank": -11.0,
+                  "standardized_position_rank_delta": 11.0,
+                  "delta_percentile": 8.73,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": true
+                }
+              }
+            },
+            "fantasycalc-dynasty-superflex-ppr-8-team": {
+              "source_kind": "market_value",
+              "provider": "fantasycalc",
+              "current_snapshot_date": "2026-10-17",
+              "current_listed": true,
+              "current_overall_rank": 290,
+              "current_position_rank": 50,
+              "current_percentile": 31.19,
+              "current_tier": "34",
+              "current_value": 351,
+              "windows": {
+                "1": {
+                  "baseline_snapshot_date": "2026-10-16",
+                  "baseline_listed": true,
+                  "delta_overall_rank": 6.0,
+                  "standardized_overall_rank_delta": -6.0,
+                  "delta_position_rank": 3.0,
+                  "standardized_position_rank_delta": -3.0,
+                  "delta_percentile": -1.27,
+                  "delta_value": -22.0,
+                  "value_percent_change": -5.9,
+                  "tier_changed": true
+                },
+                "3": {
+                  "baseline_snapshot_date": "2026-10-14",
+                  "baseline_listed": true,
+                  "delta_overall_rank": 16.0,
+                  "standardized_overall_rank_delta": -16.0,
+                  "delta_position_rank": 5.0,
+                  "standardized_position_rank_delta": -5.0,
+                  "delta_percentile": -3.65,
+                  "delta_value": -109.0,
+                  "value_percent_change": -23.7,
+                  "tier_changed": false
+                },
+                "7": {
+                  "baseline_snapshot_date": "2026-10-10",
+                  "baseline_listed": true,
+                  "delta_overall_rank": 26.0,
+                  "standardized_overall_rank_delta": -26.0,
+                  "delta_position_rank": 5.0,
+                  "standardized_position_rank_delta": -5.0,
+                  "delta_percentile": -6.19,
+                  "delta_value": -207.0,
+                  "value_percent_change": -37.1,
+                  "tier_changed": true
+                },
+                "14": {
+                  "baseline_snapshot_date": "2026-10-03",
+                  "baseline_listed": true,
+                  "delta_overall_rank": 74.0,
+                  "standardized_overall_rank_delta": -74.0,
+                  "delta_position_rank": 13.0,
+                  "standardized_position_rank_delta": -13.0,
+                  "delta_percentile": -17.25,
+                  "delta_value": -631.0,
+                  "value_percent_change": -64.26,
+                  "tier_changed": true
+                },
+                "30": {
+                  "baseline_snapshot_date": "2026-09-17",
+                  "baseline_listed": true,
+                  "delta_overall_rank": -77.0,
+                  "standardized_overall_rank_delta": 77.0,
+                  "delta_position_rank": -9.0,
+                  "standardized_position_rank_delta": 9.0,
+                  "delta_percentile": 18.13,
+                  "delta_value": 244.0,
+                  "value_percent_change": 228.04,
+                  "tier_changed": true
+                }
+              }
+            }
+          }
+        },
+        "season_projection": {
+          "current_consensus_percentile": 23.92,
+          "current_provider_count": 2,
+          "current_percentile_spread": 18.81,
+          "providers": {
+            "fftoday": {
+              "sources": [
+                {
+                  "source_id": "fftoday-redraft-qb-preseason",
+                  "provider": "fftoday",
+                  "current_snapshot_date": "2026-09-07",
+                  "current_listed": true,
+                  "current_percentile": 14.52,
+                  "current_core_points": 6.02,
+                  "windows": {
+                    "1": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 6.02,
+                      "delta_core_points": 0.0
+                    },
+                    "3": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 6.02,
+                      "delta_core_points": 0.0
+                    },
+                    "7": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 6.02,
+                      "delta_core_points": 0.0
+                    },
+                    "14": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 6.02,
+                      "delta_core_points": 0.0
+                    },
+                    "30": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 6.02,
+                      "delta_core_points": 0.0
+                    }
+                  }
+                }
+              ]
+            },
+            "cbs_sports": {
+              "sources": [
+                {
+                  "source_id": "cbs-sports-redraft-qb-preseason",
+                  "provider": "cbs-sports",
+                  "current_snapshot_date": "2026-10-17",
+                  "current_listed": true,
+                  "current_percentile": 33.33,
+                  "current_core_points": 10.02,
+                  "windows": {
+                    "1": {
+                      "baseline_snapshot_date": "2026-10-16",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 10.02,
+                      "delta_core_points": 0.0
+                    },
+                    "3": {
+                      "baseline_snapshot_date": "2026-10-14",
+                      "baseline_listed": true,
+                      "delta_percentile": 6.06,
+                      "baseline_core_points": 9.98,
+                      "delta_core_points": 0.04
+                    },
+                    "7": {
+                      "baseline_snapshot_date": "2026-10-10",
+                      "baseline_listed": true,
+                      "delta_percentile": 12.74,
+                      "baseline_core_points": 9.96,
+                      "delta_core_points": 0.06
+                    },
+                    "14": {
+                      "baseline_snapshot_date": "2026-10-03",
+                      "baseline_listed": true,
+                      "delta_percentile": -15.15,
+                      "baseline_core_points": 28.8,
+                      "delta_core_points": -18.78
+                    },
+                    "30": {
+                      "baseline_snapshot_date": "2026-09-17",
+                      "baseline_listed": true,
+                      "delta_percentile": -15.24,
+                      "baseline_core_points": 24.68,
+                      "delta_core_points": -14.66
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "windows": {
+            "1": {
+              "baseline_consensus_percentile": 23.92,
+              "delta_consensus_percentile": 0.0,
+              "baseline_provider_count": 2,
+              "baseline_percentile_spread": 18.81
+            },
+            "3": {
+              "baseline_consensus_percentile": 20.89,
+              "delta_consensus_percentile": 3.03,
+              "baseline_provider_count": 2,
+              "baseline_percentile_spread": 12.75
+            },
+            "7": {
+              "baseline_consensus_percentile": 17.55,
+              "delta_consensus_percentile": 6.37,
+              "baseline_provider_count": 2,
+              "baseline_percentile_spread": 6.07
+            },
+            "14": {
+              "baseline_consensus_percentile": 31.5,
+              "delta_consensus_percentile": -7.58,
+              "baseline_provider_count": 2,
+              "baseline_percentile_spread": 33.96
+            },
+            "30": {
+              "baseline_consensus_percentile": 31.55,
+              "delta_consensus_percentile": -7.63,
+              "baseline_provider_count": 2,
+              "baseline_percentile_spread": 34.05
+            }
+          }
+        },
+        "cross_signal_patterns": [
+          {
+            "kind": "divergence",
+            "window_days": 7,
+            "up_families": [
+              "season_projection"
+            ],
+            "down_families": [
+              "dynasty_market"
+            ],
+            "deltas": {
+              "dynasty_market": -10.5,
+              "season_projection": 6.37
+            }
+          },
+          {
+            "kind": "confirmation_down",
+            "window_days": 14,
+            "families": [
+              "dynasty_market",
+              "season_projection"
+            ],
+            "deltas": {
+              "dynasty_market": -17.01,
+              "season_projection": -7.58
+            }
+          },
+          {
+            "kind": "divergence",
+            "window_days": 30,
+            "up_families": [
+              "dynasty_market"
+            ],
+            "down_families": [
+              "season_projection"
+            ],
+            "deltas": {
+              "dynasty_market": 13.42,
+              "season_projection": -7.63
+            }
+          }
+        ],
+        "structural_day_over_day": {
+          "comparison_status": "compared",
+          "team_comparison_status": "compared",
+          "previous_nfl_team_source": "canonical_sleeper_team",
+          "current_nfl_team_source": "canonical_sleeper_team",
+          "changes": [
+            {
+              "family": "injury_availability",
+              "kind": "injury_designation_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": "Doubtful",
+              "to": "Out"
+            }
+          ],
+          "activity_changes": []
+        }
+      },
+      "activity": {
+        "listed": false,
+        "add_rank": null,
+        "add_count": null,
+        "drop_rank": null,
+        "drop_count": null,
+        "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
+      },
+      "materiality": {
+        "research_priority": "high",
+        "material_families": [
+          "dynasty_market",
+          "injury_availability"
+        ],
+        "thresholds_crossed": [
+          {
+            "family": "dynasty_market",
+            "kind": "overall_rank_movement",
+            "severity": "medium",
+            "window_days": 30,
+            "delta": -55.0,
+            "threshold": 20,
+            "source_id": "fantasypros-dynasty-superflex-ppr"
+          },
+          {
+            "family": "dynasty_market",
+            "kind": "position_rank_movement",
+            "severity": "medium",
+            "window_days": 30,
+            "delta": -11.0,
+            "threshold": 8,
+            "source_id": "fantasypros-dynasty-superflex-ppr"
+          },
+          {
+            "family": "dynasty_market",
+            "kind": "tier_change",
+            "severity": "high",
+            "window_days": 30,
+            "source_id": "fantasypros-dynasty-superflex-ppr",
+            "from": "15",
+            "to": "14"
+          },
+          {
+            "family": "dynasty_market",
+            "kind": "fantasycalc_percentile_movement",
+            "severity": "high",
+            "window_days": 14,
+            "delta": -17.25,
+            "threshold": 15.0,
+            "source_id": "fantasycalc-dynasty-superflex-ppr-8-team"
+          },
+          {
+            "family": "dynasty_market",
+            "kind": "fantasycalc_value_movement",
+            "severity": "high",
+            "window_days": 14,
+            "delta": -631.0,
+            "value_percent_change": -64.26,
+            "threshold": {
+              "absolute_value_delta": 500.0,
+              "absolute_percent_change": 30.0
+            },
+            "source_id": "fantasycalc-dynasty-superflex-ppr-8-team"
+          },
+          {
+            "family": "dynasty_market",
+            "kind": "fantasycalc_percentile_movement",
+            "severity": "high",
+            "window_days": 30,
+            "delta": 18.13,
+            "threshold": 15.0,
+            "source_id": "fantasycalc-dynasty-superflex-ppr-8-team"
+          },
+          {
+            "family": "injury_availability",
+            "kind": "injury_designation_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": "Doubtful",
+            "to": "Out"
+          }
+        ],
+        "coverage_changes": [
+          {
+            "family": "dynasty_market",
+            "kind": "entered_source",
+            "window_days": 3,
+            "source_id": "fantasypros-dynasty-superflex-ppr"
+          },
+          {
+            "family": "dynasty_market",
+            "kind": "entered_source",
+            "window_days": 7,
+            "source_id": "fantasypros-dynasty-superflex-ppr"
+          }
+        ],
+        "reasons": [
+          "material_movement_threshold",
+          "cross_signal_pattern"
+        ],
+        "final_roster_recommendation": null
+      }
+    },
+    {
       "player_id": "12524",
       "name": "Shedeur Sanders",
       "position": "QB",
@@ -11455,7 +12006,24 @@
           "team_comparison_status": "compared",
           "previous_nfl_team_source": "canonical_sleeper_team",
           "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
+          "changes": [
+            {
+              "family": "injury_availability",
+              "kind": "injury_flag_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": true,
+              "to": false
+            },
+            {
+              "family": "injury_availability",
+              "kind": "injury_designation_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": "Questionable",
+              "to": null
+            }
+          ],
           "activity_changes": []
         }
       },
@@ -11471,6 +12039,7 @@
         "research_priority": "high",
         "material_families": [
           "dynasty_market",
+          "injury_availability",
           "season_projection"
         ],
         "thresholds_crossed": [
@@ -11500,6 +12069,22 @@
             "delta": 15.15,
             "threshold": 10,
             "provider_count": 1
+          },
+          {
+            "family": "injury_availability",
+            "kind": "injury_flag_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": true,
+            "to": false
+          },
+          {
+            "family": "injury_availability",
+            "kind": "injury_designation_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": "Questionable",
+            "to": null
           }
         ],
         "coverage_changes": [
@@ -20850,6 +21435,460 @@
         "reasons": [
           "material_movement_threshold",
           "cross_signal_pattern"
+        ],
+        "final_roster_recommendation": null
+      }
+    },
+    {
+      "player_id": "12531",
+      "name": "Trevor Etienne",
+      "position": "RB",
+      "nfl_team": "CAR",
+      "nfl_team_source": "canonical_sleeper_team",
+      "ownership": {
+        "status": "fantasy_free_agent",
+        "teams": []
+      },
+      "replacement_relevance": {
+        "classification": "below_rostered_boundary",
+        "family_percentiles": {
+          "dynasty_market": 22.76,
+          "redraft_adp": null,
+          "season_projection": 4.44
+        },
+        "distance_to_owned_boundary": {
+          "dynasty_market": -26.89,
+          "redraft_adp": null,
+          "season_projection": -34.17
+        },
+        "near_families": []
+      },
+      "movement": {
+        "redraft_adp": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "current_snapshot_date": "2026-09-20",
+          "current_listed": false,
+          "current_percentile": null,
+          "current_adp": null,
+          "current_times_drafted": null,
+          "windows": {
+            "1": {
+              "baseline_snapshot_date": "2026-09-20",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "3": {
+              "baseline_snapshot_date": "2026-09-20",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "7": {
+              "baseline_snapshot_date": "2026-09-20",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "14": {
+              "baseline_snapshot_date": "2026-09-20",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "30": {
+              "baseline_snapshot_date": "2026-09-16",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            }
+          }
+        },
+        "dynasty_market": {
+          "current_consensus_percentile": 22.76,
+          "providers": {
+            "fantasypros-dynasty-superflex-ppr": {
+              "source_kind": "expert_consensus",
+              "provider": "fantasypros",
+              "current_snapshot_date": "2026-10-17",
+              "current_listed": true,
+              "current_overall_rank": 306,
+              "current_position_rank": "RB89",
+              "current_percentile": 24.32,
+              "current_tier": "14",
+              "current_value": null,
+              "windows": {
+                "1": {
+                  "baseline_snapshot_date": "2026-10-16",
+                  "baseline_listed": true,
+                  "delta_overall_rank": 0.0,
+                  "standardized_overall_rank_delta": -0.0,
+                  "delta_position_rank": 0.0,
+                  "standardized_position_rank_delta": -0.0,
+                  "delta_percentile": 0.0,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "3": {
+                  "baseline_snapshot_date": "2026-10-14",
+                  "baseline_listed": true,
+                  "delta_overall_rank": 11.0,
+                  "standardized_overall_rank_delta": -11.0,
+                  "delta_position_rank": -4.0,
+                  "standardized_position_rank_delta": 4.0,
+                  "delta_percentile": 21.99,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "7": {
+                  "baseline_snapshot_date": "2026-10-10",
+                  "baseline_listed": true,
+                  "delta_overall_rank": -3.0,
+                  "standardized_overall_rank_delta": 3.0,
+                  "delta_position_rank": -1.0,
+                  "standardized_position_rank_delta": 1.0,
+                  "delta_percentile": 10.59,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "14": {
+                  "baseline_snapshot_date": "2026-10-03",
+                  "baseline_listed": true,
+                  "delta_overall_rank": -3.0,
+                  "standardized_overall_rank_delta": 3.0,
+                  "delta_position_rank": 1.0,
+                  "standardized_position_rank_delta": -1.0,
+                  "delta_percentile": -17.12,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": true
+                },
+                "30": {
+                  "baseline_snapshot_date": "2026-09-17",
+                  "baseline_listed": true,
+                  "delta_overall_rank": 39.0,
+                  "standardized_overall_rank_delta": -39.0,
+                  "delta_position_rank": 6.0,
+                  "standardized_position_rank_delta": -6.0,
+                  "delta_percentile": -13.24,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": true
+                }
+              }
+            },
+            "fantasycalc-dynasty-superflex-ppr-8-team": {
+              "source_kind": "market_value",
+              "provider": "fantasycalc",
+              "current_snapshot_date": "2026-10-17",
+              "current_listed": true,
+              "current_overall_rank": 332,
+              "current_position_rank": 86,
+              "current_percentile": 21.19,
+              "current_tier": "35",
+              "current_value": 178,
+              "windows": {
+                "1": {
+                  "baseline_snapshot_date": "2026-10-16",
+                  "baseline_listed": true,
+                  "delta_overall_rank": 13.0,
+                  "standardized_overall_rank_delta": -13.0,
+                  "delta_position_rank": 2.0,
+                  "standardized_position_rank_delta": -2.0,
+                  "delta_percentile": -2.92,
+                  "delta_value": -36.0,
+                  "value_percent_change": -16.82,
+                  "tier_changed": true
+                },
+                "3": {
+                  "baseline_snapshot_date": "2026-10-14",
+                  "baseline_listed": true,
+                  "delta_overall_rank": -29.0,
+                  "standardized_overall_rank_delta": 29.0,
+                  "delta_position_rank": -7.0,
+                  "standardized_position_rank_delta": 7.0,
+                  "delta_percentile": 7.11,
+                  "delta_value": 64.0,
+                  "value_percent_change": 56.14,
+                  "tier_changed": true
+                },
+                "7": {
+                  "baseline_snapshot_date": "2026-10-10",
+                  "baseline_listed": true,
+                  "delta_overall_rank": 12.0,
+                  "standardized_overall_rank_delta": -12.0,
+                  "delta_position_rank": 3.0,
+                  "standardized_position_rank_delta": -3.0,
+                  "delta_percentile": -2.86,
+                  "delta_value": -50.0,
+                  "value_percent_change": -21.93,
+                  "tier_changed": false
+                },
+                "14": {
+                  "baseline_snapshot_date": "2026-10-03",
+                  "baseline_listed": true,
+                  "delta_overall_rank": -54.0,
+                  "standardized_overall_rank_delta": 54.0,
+                  "delta_position_rank": -14.0,
+                  "standardized_position_rank_delta": 14.0,
+                  "delta_percentile": 13.52,
+                  "delta_value": 117.0,
+                  "value_percent_change": 191.8,
+                  "tier_changed": true
+                },
+                "30": {
+                  "baseline_snapshot_date": "2026-09-17",
+                  "baseline_listed": true,
+                  "delta_overall_rank": -28.0,
+                  "standardized_overall_rank_delta": 28.0,
+                  "delta_position_rank": -8.0,
+                  "standardized_position_rank_delta": 8.0,
+                  "delta_percentile": 6.46,
+                  "delta_value": 49.0,
+                  "value_percent_change": 37.98,
+                  "tier_changed": true
+                }
+              }
+            }
+          }
+        },
+        "season_projection": {
+          "current_consensus_percentile": 4.44,
+          "current_provider_count": 1,
+          "current_percentile_spread": null,
+          "providers": {
+            "fftoday": {
+              "sources": [
+                {
+                  "source_id": "fftoday-redraft-rb-preseason",
+                  "provider": "fftoday",
+                  "current_snapshot_date": "2026-09-07",
+                  "current_listed": true,
+                  "current_percentile": 4.44,
+                  "current_core_points": 14.7,
+                  "windows": {
+                    "1": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 14.7,
+                      "delta_core_points": 0.0
+                    },
+                    "3": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 14.7,
+                      "delta_core_points": 0.0
+                    },
+                    "7": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 14.7,
+                      "delta_core_points": 0.0
+                    },
+                    "14": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 14.7,
+                      "delta_core_points": 0.0
+                    },
+                    "30": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": true,
+                      "delta_percentile": 0.0,
+                      "baseline_core_points": 14.7,
+                      "delta_core_points": 0.0
+                    }
+                  }
+                }
+              ]
+            },
+            "cbs_sports": {
+              "sources": [
+                {
+                  "source_id": "cbs-sports-redraft-rb-preseason",
+                  "provider": "cbs-sports",
+                  "current_snapshot_date": "2026-10-17",
+                  "current_listed": false,
+                  "current_percentile": null,
+                  "current_core_points": null,
+                  "windows": {
+                    "1": {
+                      "baseline_snapshot_date": "2026-10-16",
+                      "baseline_listed": false,
+                      "delta_percentile": null,
+                      "baseline_core_points": null,
+                      "delta_core_points": null
+                    },
+                    "3": {
+                      "baseline_snapshot_date": "2026-10-14",
+                      "baseline_listed": false,
+                      "delta_percentile": null,
+                      "baseline_core_points": null,
+                      "delta_core_points": null
+                    },
+                    "7": {
+                      "baseline_snapshot_date": "2026-10-10",
+                      "baseline_listed": false,
+                      "delta_percentile": null,
+                      "baseline_core_points": null,
+                      "delta_core_points": null
+                    },
+                    "14": {
+                      "baseline_snapshot_date": "2026-10-03",
+                      "baseline_listed": false,
+                      "delta_percentile": null,
+                      "baseline_core_points": null,
+                      "delta_core_points": null
+                    },
+                    "30": {
+                      "baseline_snapshot_date": "2026-09-17",
+                      "baseline_listed": false,
+                      "delta_percentile": null,
+                      "baseline_core_points": null,
+                      "delta_core_points": null
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "windows": {
+            "1": {
+              "baseline_consensus_percentile": 4.44,
+              "delta_consensus_percentile": 0.0,
+              "baseline_provider_count": 1,
+              "baseline_percentile_spread": null
+            },
+            "3": {
+              "baseline_consensus_percentile": 4.44,
+              "delta_consensus_percentile": 0.0,
+              "baseline_provider_count": 1,
+              "baseline_percentile_spread": null
+            },
+            "7": {
+              "baseline_consensus_percentile": 4.44,
+              "delta_consensus_percentile": 0.0,
+              "baseline_provider_count": 1,
+              "baseline_percentile_spread": null
+            },
+            "14": {
+              "baseline_consensus_percentile": 4.44,
+              "delta_consensus_percentile": 0.0,
+              "baseline_provider_count": 1,
+              "baseline_percentile_spread": null
+            },
+            "30": {
+              "baseline_consensus_percentile": 4.44,
+              "delta_consensus_percentile": 0.0,
+              "baseline_provider_count": 1,
+              "baseline_percentile_spread": null
+            }
+          }
+        },
+        "cross_signal_patterns": [],
+        "structural_day_over_day": {
+          "comparison_status": "compared",
+          "team_comparison_status": "compared",
+          "previous_nfl_team_source": "canonical_sleeper_team",
+          "current_nfl_team_source": "canonical_sleeper_team",
+          "changes": [
+            {
+              "family": "injury_availability",
+              "kind": "injury_designation_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": "IR",
+              "to": "Questionable"
+            }
+          ],
+          "activity_changes": []
+        }
+      },
+      "activity": {
+        "listed": false,
+        "add_rank": null,
+        "add_count": null,
+        "drop_rank": null,
+        "drop_count": null,
+        "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
+      },
+      "materiality": {
+        "research_priority": "high",
+        "material_families": [
+          "dynasty_market",
+          "injury_availability"
+        ],
+        "thresholds_crossed": [
+          {
+            "family": "dynasty_market",
+            "kind": "tier_change",
+            "severity": "high",
+            "window_days": 14,
+            "source_id": "fantasypros-dynasty-superflex-ppr",
+            "from": "13",
+            "to": "14"
+          },
+          {
+            "family": "dynasty_market",
+            "kind": "overall_rank_movement",
+            "severity": "medium",
+            "window_days": 30,
+            "delta": 39.0,
+            "threshold": 20,
+            "source_id": "fantasypros-dynasty-superflex-ppr"
+          },
+          {
+            "family": "dynasty_market",
+            "kind": "tier_change",
+            "severity": "high",
+            "window_days": 30,
+            "source_id": "fantasypros-dynasty-superflex-ppr",
+            "from": "13",
+            "to": "14"
+          },
+          {
+            "family": "dynasty_market",
+            "kind": "fantasycalc_percentile_movement",
+            "severity": "medium",
+            "window_days": 14,
+            "delta": 13.52,
+            "threshold": 10.0,
+            "source_id": "fantasycalc-dynasty-superflex-ppr-8-team"
+          },
+          {
+            "family": "injury_availability",
+            "kind": "injury_designation_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": "IR",
+            "to": "Questionable"
+          }
+        ],
+        "coverage_changes": [],
+        "reasons": [
+          "material_movement_threshold"
         ],
         "final_roster_recommendation": null
       }
@@ -36251,6 +37290,467 @@
       }
     },
     {
+      "player_id": "10220",
+      "name": "Will Mallory",
+      "position": "TE",
+      "nfl_team": "IND",
+      "nfl_team_source": "canonical_sleeper_team",
+      "ownership": {
+        "status": "fantasy_free_agent",
+        "teams": []
+      },
+      "replacement_relevance": {
+        "classification": "below_rostered_boundary",
+        "family_percentiles": {
+          "dynasty_market": null,
+          "redraft_adp": null,
+          "season_projection": 2.02
+        },
+        "distance_to_owned_boundary": {
+          "dynasty_market": null,
+          "redraft_adp": null,
+          "season_projection": -63.52
+        },
+        "near_families": []
+      },
+      "movement": {
+        "redraft_adp": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "current_snapshot_date": "2026-09-20",
+          "current_listed": false,
+          "current_percentile": null,
+          "current_adp": null,
+          "current_times_drafted": null,
+          "windows": {
+            "1": {
+              "baseline_snapshot_date": "2026-09-20",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "3": {
+              "baseline_snapshot_date": "2026-09-20",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "7": {
+              "baseline_snapshot_date": "2026-09-20",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "14": {
+              "baseline_snapshot_date": "2026-09-20",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            },
+            "30": {
+              "baseline_snapshot_date": "2026-09-16",
+              "baseline_listed": false,
+              "baseline_percentile": null,
+              "delta_percentile": null,
+              "baseline_adp": null,
+              "delta_adp": null,
+              "listing_changed": false
+            }
+          }
+        },
+        "dynasty_market": {
+          "current_consensus_percentile": null,
+          "providers": {
+            "fantasypros-dynasty-superflex-ppr": {
+              "source_kind": "expert_consensus",
+              "provider": "fantasypros",
+              "current_snapshot_date": "2026-10-17",
+              "current_listed": false,
+              "current_overall_rank": null,
+              "current_position_rank": null,
+              "current_percentile": null,
+              "current_tier": null,
+              "current_value": null,
+              "windows": {
+                "1": {
+                  "baseline_snapshot_date": "2026-10-16",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "3": {
+                  "baseline_snapshot_date": "2026-10-14",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "7": {
+                  "baseline_snapshot_date": "2026-10-10",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "14": {
+                  "baseline_snapshot_date": "2026-10-03",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "30": {
+                  "baseline_snapshot_date": "2026-09-17",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                }
+              }
+            },
+            "fantasycalc-dynasty-superflex-ppr-8-team": {
+              "source_kind": "market_value",
+              "provider": "fantasycalc",
+              "current_snapshot_date": "2026-10-17",
+              "current_listed": false,
+              "current_overall_rank": null,
+              "current_position_rank": null,
+              "current_percentile": null,
+              "current_tier": null,
+              "current_value": null,
+              "windows": {
+                "1": {
+                  "baseline_snapshot_date": "2026-10-16",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "3": {
+                  "baseline_snapshot_date": "2026-10-14",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "7": {
+                  "baseline_snapshot_date": "2026-10-10",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "14": {
+                  "baseline_snapshot_date": "2026-10-03",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                },
+                "30": {
+                  "baseline_snapshot_date": "2026-09-17",
+                  "baseline_listed": false,
+                  "delta_overall_rank": null,
+                  "standardized_overall_rank_delta": null,
+                  "delta_position_rank": null,
+                  "standardized_position_rank_delta": null,
+                  "delta_percentile": null,
+                  "delta_value": null,
+                  "value_percent_change": null,
+                  "tier_changed": false
+                }
+              }
+            }
+          }
+        },
+        "season_projection": {
+          "current_consensus_percentile": 2.02,
+          "current_provider_count": 1,
+          "current_percentile_spread": null,
+          "providers": {
+            "fftoday": {
+              "sources": [
+                {
+                  "source_id": "fftoday-redraft-te-preseason",
+                  "provider": "fftoday",
+                  "current_snapshot_date": "2026-09-07",
+                  "current_listed": false,
+                  "current_percentile": null,
+                  "current_core_points": null,
+                  "windows": {
+                    "1": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": false,
+                      "delta_percentile": null,
+                      "baseline_core_points": null,
+                      "delta_core_points": null
+                    },
+                    "3": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": false,
+                      "delta_percentile": null,
+                      "baseline_core_points": null,
+                      "delta_core_points": null
+                    },
+                    "7": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": false,
+                      "delta_percentile": null,
+                      "baseline_core_points": null,
+                      "delta_core_points": null
+                    },
+                    "14": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": false,
+                      "delta_percentile": null,
+                      "baseline_core_points": null,
+                      "delta_core_points": null
+                    },
+                    "30": {
+                      "baseline_snapshot_date": "2026-09-07",
+                      "baseline_listed": false,
+                      "delta_percentile": null,
+                      "baseline_core_points": null,
+                      "delta_core_points": null
+                    }
+                  }
+                }
+              ]
+            },
+            "cbs_sports": {
+              "sources": [
+                {
+                  "source_id": "cbs-sports-redraft-te-preseason",
+                  "provider": "cbs-sports",
+                  "current_snapshot_date": "2026-10-17",
+                  "current_listed": true,
+                  "current_percentile": 2.02,
+                  "current_core_points": 15.6,
+                  "windows": {
+                    "1": {
+                      "baseline_snapshot_date": "2026-10-16",
+                      "baseline_listed": true,
+                      "delta_percentile": -25.25,
+                      "baseline_core_points": 21.7,
+                      "delta_core_points": -6.1
+                    },
+                    "3": {
+                      "baseline_snapshot_date": "2026-10-14",
+                      "baseline_listed": true,
+                      "delta_percentile": -24.24,
+                      "baseline_core_points": 21.6,
+                      "delta_core_points": -6.0
+                    },
+                    "7": {
+                      "baseline_snapshot_date": "2026-10-10",
+                      "baseline_listed": true,
+                      "delta_percentile": -10.1,
+                      "baseline_core_points": 21.6,
+                      "delta_core_points": -6.0
+                    },
+                    "14": {
+                      "baseline_snapshot_date": "2026-10-03",
+                      "baseline_listed": true,
+                      "delta_percentile": -9.09,
+                      "baseline_core_points": 23.7,
+                      "delta_core_points": -8.1
+                    },
+                    "30": {
+                      "baseline_snapshot_date": "2026-09-17",
+                      "baseline_listed": true,
+                      "delta_percentile": 1.01,
+                      "baseline_core_points": 23.7,
+                      "delta_core_points": -8.1
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "windows": {
+            "1": {
+              "baseline_consensus_percentile": 27.27,
+              "delta_consensus_percentile": -25.25,
+              "baseline_provider_count": 1,
+              "baseline_percentile_spread": null
+            },
+            "3": {
+              "baseline_consensus_percentile": 26.26,
+              "delta_consensus_percentile": -24.24,
+              "baseline_provider_count": 1,
+              "baseline_percentile_spread": null
+            },
+            "7": {
+              "baseline_consensus_percentile": 12.12,
+              "delta_consensus_percentile": -10.1,
+              "baseline_provider_count": 1,
+              "baseline_percentile_spread": null
+            },
+            "14": {
+              "baseline_consensus_percentile": 11.11,
+              "delta_consensus_percentile": -9.09,
+              "baseline_provider_count": 1,
+              "baseline_percentile_spread": null
+            },
+            "30": {
+              "baseline_consensus_percentile": 1.01,
+              "delta_consensus_percentile": 1.01,
+              "baseline_provider_count": 1,
+              "baseline_percentile_spread": null
+            }
+          }
+        },
+        "cross_signal_patterns": [],
+        "structural_day_over_day": {
+          "comparison_status": "compared",
+          "team_comparison_status": "compared",
+          "previous_nfl_team_source": "canonical_sleeper_team",
+          "current_nfl_team_source": "canonical_sleeper_team",
+          "changes": [
+            {
+              "family": "injury_availability",
+              "kind": "injury_flag_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": true,
+              "to": false
+            },
+            {
+              "family": "injury_availability",
+              "kind": "injury_designation_change",
+              "severity": "medium",
+              "window_days": 1,
+              "from": "IR",
+              "to": null
+            }
+          ],
+          "activity_changes": []
+        }
+      },
+      "activity": {
+        "listed": false,
+        "add_rank": null,
+        "add_count": null,
+        "drop_rank": null,
+        "drop_count": null,
+        "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
+      },
+      "materiality": {
+        "research_priority": "high",
+        "material_families": [
+          "injury_availability",
+          "season_projection"
+        ],
+        "thresholds_crossed": [
+          {
+            "family": "season_projection",
+            "kind": "consensus_percentile_movement",
+            "severity": "high",
+            "window_days": 1,
+            "delta": -25.25,
+            "threshold": 20,
+            "provider_count": 1
+          },
+          {
+            "family": "season_projection",
+            "kind": "consensus_percentile_movement",
+            "severity": "high",
+            "window_days": 3,
+            "delta": -24.24,
+            "threshold": 20,
+            "provider_count": 1
+          },
+          {
+            "family": "season_projection",
+            "kind": "consensus_percentile_movement",
+            "severity": "medium",
+            "window_days": 7,
+            "delta": -10.1,
+            "threshold": 10,
+            "provider_count": 1
+          },
+          {
+            "family": "injury_availability",
+            "kind": "injury_flag_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": true,
+            "to": false
+          },
+          {
+            "family": "injury_availability",
+            "kind": "injury_designation_change",
+            "severity": "medium",
+            "window_days": 1,
+            "from": "IR",
+            "to": null
+          }
+        ],
+        "coverage_changes": [],
+        "reasons": [
+          "material_movement_threshold"
+        ],
+        "final_roster_recommendation": null
+      }
+    },
+    {
       "player_id": "10226",
       "name": "Andrei Iosivas",
       "position": "WR",
@@ -36268,7 +37768,7 @@
           "season_projection": 20.97
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -32.24,
+          "dynasty_market": -33.68,
           "redraft_adp": null,
           "season_projection": -9.12
         },
@@ -36730,7 +38230,7 @@
           "season_projection": 26.52
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -22.17,
+          "dynasty_market": -23.61,
           "redraft_adp": null,
           "season_projection": -3.57
         },
@@ -37308,7 +38808,7 @@
           "season_projection": 32.32
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -21.29,
+          "dynasty_market": -22.73,
           "redraft_adp": null,
           "season_projection": 2.23
         },
@@ -37778,7 +39278,7 @@
           "season_projection": 38.64
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -16.37,
+          "dynasty_market": -17.81,
           "redraft_adp": null,
           "season_projection": 8.55
         },
@@ -38247,7 +39747,7 @@
           "season_projection": 22.58
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -4.21,
+          "dynasty_market": -5.65,
           "redraft_adp": null,
           "season_projection": -7.51
         },
@@ -38699,7 +40199,7 @@
           "season_projection": 23.71
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -22.89,
+          "dynasty_market": -24.33,
           "redraft_adp": null,
           "season_projection": -6.38
         },
@@ -39237,7 +40737,7 @@
           "season_projection": 25.93
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -12.62,
+          "dynasty_market": -14.06,
           "redraft_adp": null,
           "season_projection": -4.16
         },
@@ -39795,7 +41295,7 @@
           "season_projection": 40.4
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -26.99,
+          "dynasty_market": -28.43,
           "redraft_adp": null,
           "season_projection": 10.31
         },
@@ -40320,7 +41820,7 @@
           "season_projection": 27.27
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -22.01,
+          "dynasty_market": -23.45,
           "redraft_adp": null,
           "season_projection": -2.82
         },
@@ -40856,7 +42356,7 @@
           "season_projection": 19.68
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -11.67,
+          "dynasty_market": -13.11,
           "redraft_adp": null,
           "season_projection": -10.41
         },
@@ -41352,7 +42852,7 @@
           "season_projection": 41.26
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": 10.75,
+          "dynasty_market": 9.31,
           "redraft_adp": null,
           "season_projection": 11.17
         },
@@ -41954,7 +43454,7 @@
           "season_projection": 25.81
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -15.64,
+          "dynasty_market": -17.08,
           "redraft_adp": null,
           "season_projection": -4.28
         },
@@ -42477,7 +43977,7 @@
           "season_projection": 48.39
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -17.76,
+          "dynasty_market": -19.2,
           "redraft_adp": null,
           "season_projection": 18.3
         },
@@ -43026,7 +44526,7 @@
           "season_projection": 33.87
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -41.12,
+          "dynasty_market": -42.56,
           "redraft_adp": null,
           "season_projection": 3.78
         },
@@ -43514,7 +45014,7 @@
           "season_projection": 43.55
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -11.83,
+          "dynasty_market": -13.27,
           "redraft_adp": null,
           "season_projection": 13.46
         },
@@ -44012,7 +45512,7 @@
           "season_projection": 31.88
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -1.24,
+          "dynasty_market": -2.68,
           "redraft_adp": null,
           "season_projection": 1.79
         },
@@ -44437,7 +45937,7 @@
           "season_projection": 35.09
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -8.35,
+          "dynasty_market": -9.79,
           "redraft_adp": null,
           "season_projection": 5.0
         },
@@ -44958,7 +46458,7 @@
           "season_projection": 27.16
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -23.81,
+          "dynasty_market": -25.25,
           "redraft_adp": null,
           "season_projection": -2.93
         },
@@ -45496,7 +46996,7 @@
           "season_projection": 54.59
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -6.98,
+          "dynasty_market": -8.42,
           "redraft_adp": null,
           "season_projection": 24.5
         },
@@ -45967,7 +47467,7 @@
           "season_projection": 30.58
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -27.77,
+          "dynasty_market": -29.21,
           "redraft_adp": null,
           "season_projection": 0.49
         },
@@ -46565,7 +48065,7 @@
           "season_projection": 12.2
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -27.95,
+          "dynasty_market": -29.39,
           "redraft_adp": null,
           "season_projection": -17.89
         },
@@ -47074,7 +48574,7 @@
           "season_projection": 27.42
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -50.54,
+          "dynasty_market": -51.98,
           "redraft_adp": null,
           "season_projection": -2.67
         },
@@ -47543,7 +49043,7 @@
           "season_projection": 32.26
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": 7.56,
+          "dynasty_market": 6.12,
           "redraft_adp": null,
           "season_projection": 2.17
         },
@@ -47991,7 +49491,7 @@
           "season_projection": 47.82
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -1.44,
+          "dynasty_market": -2.88,
           "redraft_adp": null,
           "season_projection": 17.73
         },
@@ -48452,7 +49952,7 @@
           "season_projection": 55.51
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -7.76,
+          "dynasty_market": -9.2,
           "redraft_adp": null,
           "season_projection": 25.42
         },
@@ -48901,20 +50401,18 @@
         "teams": []
       },
       "replacement_relevance": {
-        "classification": "near_rostered_boundary",
+        "classification": "below_rostered_boundary",
         "family_percentiles": {
           "dynasty_market": 42.94,
           "redraft_adp": null,
           "season_projection": 6.06
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -9.09,
+          "dynasty_market": -10.53,
           "redraft_adp": null,
           "season_projection": -24.03
         },
-        "near_families": [
-          "dynasty_market"
-        ]
+        "near_families": []
       },
       "movement": {
         "redraft_adp": {
@@ -49380,9 +50878,7 @@
         ],
         "reasons": [
           "material_movement_threshold",
-          "cross_signal_pattern",
-          "relevant_source_coverage_change",
-          "activity_near_replacement_boundary"
+          "cross_signal_pattern"
         ],
         "final_roster_recommendation": null
       }
@@ -49405,7 +50901,7 @@
           "season_projection": 32.78
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -7.21,
+          "dynasty_market": -8.65,
           "redraft_adp": null,
           "season_projection": 2.69
         },
@@ -49915,7 +51411,7 @@
           "season_projection": 34.68
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -3.51,
+          "dynasty_market": -4.95,
           "redraft_adp": null,
           "season_projection": 4.59
         },
@@ -50439,7 +51935,7 @@
           "season_projection": 34.91
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": 8.32,
+          "dynasty_market": 6.88,
           "redraft_adp": null,
           "season_projection": 4.82
         },
@@ -50921,7 +52417,7 @@
           "season_projection": 55.61
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": 2.13,
+          "dynasty_market": 0.69,
           "redraft_adp": null,
           "season_projection": 25.52
         },
@@ -51344,7 +52840,7 @@
           "season_projection": 23.39
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -13.09,
+          "dynasty_market": -14.53,
           "redraft_adp": null,
           "season_projection": -6.7
         },
@@ -51827,7 +53323,7 @@
           "season_projection": 33.91
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -29.07,
+          "dynasty_market": -30.51,
           "redraft_adp": null,
           "season_projection": 3.82
         },
@@ -52264,7 +53760,7 @@
           "season_projection": 41.13
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -23.59,
+          "dynasty_market": -25.03,
           "redraft_adp": null,
           "season_projection": 11.04
         },
@@ -52729,7 +54225,7 @@
           "season_projection": 13.71
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -4.17,
+          "dynasty_market": -5.61,
           "redraft_adp": null,
           "season_projection": -16.38
         },
@@ -59000,519 +60496,6 @@
         ],
         "reasons": [
           "material_movement_threshold"
-        ],
-        "final_roster_recommendation": null
-      }
-    },
-    {
-      "player_id": "2307",
-      "name": "Marcus Mariota",
-      "position": "QB",
-      "nfl_team": "WAS",
-      "nfl_team_source": "canonical_sleeper_team",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "replacement_relevance": {
-        "classification": "below_rostered_boundary",
-        "family_percentiles": {
-          "dynasty_market": 26.88,
-          "redraft_adp": null,
-          "season_projection": 23.92
-        },
-        "distance_to_owned_boundary": {
-          "dynasty_market": -46.34,
-          "redraft_adp": null,
-          "season_projection": -33.55
-        },
-        "near_families": []
-      },
-      "movement": {
-        "redraft_adp": {
-          "source_id": "ffc-redraft-2qb-10-team",
-          "current_snapshot_date": "2026-10-16",
-          "current_listed": false,
-          "current_percentile": null,
-          "current_adp": null,
-          "current_times_drafted": null,
-          "windows": {
-            "1": {
-              "baseline_snapshot_date": "2026-10-16",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "3": {
-              "baseline_snapshot_date": "2026-10-12",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "7": {
-              "baseline_snapshot_date": "2026-10-09",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "14": {
-              "baseline_snapshot_date": "2026-10-02",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "30": {
-              "baseline_snapshot_date": "2026-09-16",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            }
-          }
-        },
-        "dynasty_market": {
-          "current_consensus_percentile": 26.88,
-          "providers": {
-            "fantasypros-dynasty-superflex-ppr": {
-              "source_kind": "expert_consensus",
-              "provider": "fantasypros",
-              "current_snapshot_date": "2026-10-17",
-              "current_listed": true,
-              "current_overall_rank": 313,
-              "current_position_rank": "QB45",
-              "current_percentile": 22.58,
-              "current_tier": "14",
-              "current_value": null,
-              "windows": {
-                "1": {
-                  "baseline_snapshot_date": "2026-10-16",
-                  "baseline_listed": true,
-                  "delta_overall_rank": 0.0,
-                  "standardized_overall_rank_delta": -0.0,
-                  "delta_position_rank": 0.0,
-                  "standardized_position_rank_delta": -0.0,
-                  "delta_percentile": 0.0,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "3": {
-                  "baseline_snapshot_date": "2026-10-14",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "7": {
-                  "baseline_snapshot_date": "2026-10-10",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "14": {
-                  "baseline_snapshot_date": "2026-10-03",
-                  "baseline_listed": true,
-                  "delta_overall_rank": -7.0,
-                  "standardized_overall_rank_delta": 7.0,
-                  "delta_position_rank": 0.0,
-                  "standardized_position_rank_delta": -0.0,
-                  "delta_percentile": -16.77,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "30": {
-                  "baseline_snapshot_date": "2026-09-17",
-                  "baseline_listed": true,
-                  "delta_overall_rank": -55.0,
-                  "standardized_overall_rank_delta": 55.0,
-                  "delta_position_rank": -11.0,
-                  "standardized_position_rank_delta": 11.0,
-                  "delta_percentile": 8.73,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": true
-                }
-              }
-            },
-            "fantasycalc-dynasty-superflex-ppr-8-team": {
-              "source_kind": "market_value",
-              "provider": "fantasycalc",
-              "current_snapshot_date": "2026-10-17",
-              "current_listed": true,
-              "current_overall_rank": 290,
-              "current_position_rank": 50,
-              "current_percentile": 31.19,
-              "current_tier": "34",
-              "current_value": 351,
-              "windows": {
-                "1": {
-                  "baseline_snapshot_date": "2026-10-16",
-                  "baseline_listed": true,
-                  "delta_overall_rank": 6.0,
-                  "standardized_overall_rank_delta": -6.0,
-                  "delta_position_rank": 3.0,
-                  "standardized_position_rank_delta": -3.0,
-                  "delta_percentile": -1.27,
-                  "delta_value": -22.0,
-                  "value_percent_change": -5.9,
-                  "tier_changed": true
-                },
-                "3": {
-                  "baseline_snapshot_date": "2026-10-14",
-                  "baseline_listed": true,
-                  "delta_overall_rank": 16.0,
-                  "standardized_overall_rank_delta": -16.0,
-                  "delta_position_rank": 5.0,
-                  "standardized_position_rank_delta": -5.0,
-                  "delta_percentile": -3.65,
-                  "delta_value": -109.0,
-                  "value_percent_change": -23.7,
-                  "tier_changed": false
-                },
-                "7": {
-                  "baseline_snapshot_date": "2026-10-10",
-                  "baseline_listed": true,
-                  "delta_overall_rank": 26.0,
-                  "standardized_overall_rank_delta": -26.0,
-                  "delta_position_rank": 5.0,
-                  "standardized_position_rank_delta": -5.0,
-                  "delta_percentile": -6.19,
-                  "delta_value": -207.0,
-                  "value_percent_change": -37.1,
-                  "tier_changed": true
-                },
-                "14": {
-                  "baseline_snapshot_date": "2026-10-03",
-                  "baseline_listed": true,
-                  "delta_overall_rank": 74.0,
-                  "standardized_overall_rank_delta": -74.0,
-                  "delta_position_rank": 13.0,
-                  "standardized_position_rank_delta": -13.0,
-                  "delta_percentile": -17.25,
-                  "delta_value": -631.0,
-                  "value_percent_change": -64.26,
-                  "tier_changed": true
-                },
-                "30": {
-                  "baseline_snapshot_date": "2026-09-17",
-                  "baseline_listed": true,
-                  "delta_overall_rank": -77.0,
-                  "standardized_overall_rank_delta": 77.0,
-                  "delta_position_rank": -9.0,
-                  "standardized_position_rank_delta": 9.0,
-                  "delta_percentile": 18.13,
-                  "delta_value": 244.0,
-                  "value_percent_change": 228.04,
-                  "tier_changed": true
-                }
-              }
-            }
-          }
-        },
-        "season_projection": {
-          "current_consensus_percentile": 23.92,
-          "current_provider_count": 2,
-          "current_percentile_spread": 18.81,
-          "providers": {
-            "fftoday": {
-              "sources": [
-                {
-                  "source_id": "fftoday-redraft-qb-preseason",
-                  "provider": "fftoday",
-                  "current_snapshot_date": "2026-09-07",
-                  "current_listed": true,
-                  "current_percentile": 14.52,
-                  "current_core_points": 6.02,
-                  "windows": {
-                    "1": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 6.02,
-                      "delta_core_points": 0.0
-                    },
-                    "3": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 6.02,
-                      "delta_core_points": 0.0
-                    },
-                    "7": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 6.02,
-                      "delta_core_points": 0.0
-                    },
-                    "14": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 6.02,
-                      "delta_core_points": 0.0
-                    },
-                    "30": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 6.02,
-                      "delta_core_points": 0.0
-                    }
-                  }
-                }
-              ]
-            },
-            "cbs_sports": {
-              "sources": [
-                {
-                  "source_id": "cbs-sports-redraft-qb-preseason",
-                  "provider": "cbs-sports",
-                  "current_snapshot_date": "2026-10-17",
-                  "current_listed": true,
-                  "current_percentile": 33.33,
-                  "current_core_points": 10.02,
-                  "windows": {
-                    "1": {
-                      "baseline_snapshot_date": "2026-10-16",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 10.02,
-                      "delta_core_points": 0.0
-                    },
-                    "3": {
-                      "baseline_snapshot_date": "2026-10-14",
-                      "baseline_listed": true,
-                      "delta_percentile": 6.06,
-                      "baseline_core_points": 9.98,
-                      "delta_core_points": 0.04
-                    },
-                    "7": {
-                      "baseline_snapshot_date": "2026-10-10",
-                      "baseline_listed": true,
-                      "delta_percentile": 12.74,
-                      "baseline_core_points": 9.96,
-                      "delta_core_points": 0.06
-                    },
-                    "14": {
-                      "baseline_snapshot_date": "2026-10-03",
-                      "baseline_listed": true,
-                      "delta_percentile": -15.15,
-                      "baseline_core_points": 28.8,
-                      "delta_core_points": -18.78
-                    },
-                    "30": {
-                      "baseline_snapshot_date": "2026-09-17",
-                      "baseline_listed": true,
-                      "delta_percentile": -15.24,
-                      "baseline_core_points": 24.68,
-                      "delta_core_points": -14.66
-                    }
-                  }
-                }
-              ]
-            }
-          },
-          "windows": {
-            "1": {
-              "baseline_consensus_percentile": 23.92,
-              "delta_consensus_percentile": 0.0,
-              "baseline_provider_count": 2,
-              "baseline_percentile_spread": 18.81
-            },
-            "3": {
-              "baseline_consensus_percentile": 20.89,
-              "delta_consensus_percentile": 3.03,
-              "baseline_provider_count": 2,
-              "baseline_percentile_spread": 12.75
-            },
-            "7": {
-              "baseline_consensus_percentile": 17.55,
-              "delta_consensus_percentile": 6.37,
-              "baseline_provider_count": 2,
-              "baseline_percentile_spread": 6.07
-            },
-            "14": {
-              "baseline_consensus_percentile": 31.5,
-              "delta_consensus_percentile": -7.58,
-              "baseline_provider_count": 2,
-              "baseline_percentile_spread": 33.96
-            },
-            "30": {
-              "baseline_consensus_percentile": 31.55,
-              "delta_consensus_percentile": -7.63,
-              "baseline_provider_count": 2,
-              "baseline_percentile_spread": 34.05
-            }
-          }
-        },
-        "cross_signal_patterns": [
-          {
-            "kind": "divergence",
-            "window_days": 7,
-            "up_families": [
-              "season_projection"
-            ],
-            "down_families": [
-              "dynasty_market"
-            ],
-            "deltas": {
-              "dynasty_market": -10.5,
-              "season_projection": 6.37
-            }
-          },
-          {
-            "kind": "confirmation_down",
-            "window_days": 14,
-            "families": [
-              "dynasty_market",
-              "season_projection"
-            ],
-            "deltas": {
-              "dynasty_market": -17.01,
-              "season_projection": -7.58
-            }
-          },
-          {
-            "kind": "divergence",
-            "window_days": 30,
-            "up_families": [
-              "dynasty_market"
-            ],
-            "down_families": [
-              "season_projection"
-            ],
-            "deltas": {
-              "dynasty_market": 13.42,
-              "season_projection": -7.63
-            }
-          }
-        ],
-        "structural_day_over_day": {
-          "comparison_status": "compared",
-          "team_comparison_status": "compared",
-          "previous_nfl_team_source": "canonical_sleeper_team",
-          "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
-          "activity_changes": []
-        }
-      },
-      "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
-        "drop_rank": null,
-        "drop_count": null,
-        "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
-      },
-      "materiality": {
-        "research_priority": "medium",
-        "material_families": [
-          "dynasty_market"
-        ],
-        "thresholds_crossed": [
-          {
-            "family": "dynasty_market",
-            "kind": "overall_rank_movement",
-            "severity": "medium",
-            "window_days": 30,
-            "delta": -55.0,
-            "threshold": 20,
-            "source_id": "fantasypros-dynasty-superflex-ppr"
-          },
-          {
-            "family": "dynasty_market",
-            "kind": "position_rank_movement",
-            "severity": "medium",
-            "window_days": 30,
-            "delta": -11.0,
-            "threshold": 8,
-            "source_id": "fantasypros-dynasty-superflex-ppr"
-          },
-          {
-            "family": "dynasty_market",
-            "kind": "tier_change",
-            "severity": "high",
-            "window_days": 30,
-            "source_id": "fantasypros-dynasty-superflex-ppr",
-            "from": "15",
-            "to": "14"
-          },
-          {
-            "family": "dynasty_market",
-            "kind": "fantasycalc_percentile_movement",
-            "severity": "high",
-            "window_days": 14,
-            "delta": -17.25,
-            "threshold": 15.0,
-            "source_id": "fantasycalc-dynasty-superflex-ppr-8-team"
-          },
-          {
-            "family": "dynasty_market",
-            "kind": "fantasycalc_value_movement",
-            "severity": "high",
-            "window_days": 14,
-            "delta": -631.0,
-            "value_percent_change": -64.26,
-            "threshold": {
-              "absolute_value_delta": 500.0,
-              "absolute_percent_change": 30.0
-            },
-            "source_id": "fantasycalc-dynasty-superflex-ppr-8-team"
-          },
-          {
-            "family": "dynasty_market",
-            "kind": "fantasycalc_percentile_movement",
-            "severity": "high",
-            "window_days": 30,
-            "delta": 18.13,
-            "threshold": 15.0,
-            "source_id": "fantasycalc-dynasty-superflex-ppr-8-team"
-          }
-        ],
-        "coverage_changes": [
-          {
-            "family": "dynasty_market",
-            "kind": "entered_source",
-            "window_days": 3,
-            "source_id": "fantasypros-dynasty-superflex-ppr"
-          },
-          {
-            "family": "dynasty_market",
-            "kind": "entered_source",
-            "window_days": 7,
-            "source_id": "fantasypros-dynasty-superflex-ppr"
-          }
-        ],
-        "reasons": [
-          "material_movement_threshold",
-          "cross_signal_pattern"
         ],
         "final_roster_recommendation": null
       }
@@ -73545,442 +74528,6 @@
             "source_id": "fantasycalc-dynasty-superflex-ppr-8-team"
           }
         ],
-        "reasons": [
-          "material_movement_threshold"
-        ],
-        "final_roster_recommendation": null
-      }
-    },
-    {
-      "player_id": "12531",
-      "name": "Trevor Etienne",
-      "position": "RB",
-      "nfl_team": "CAR",
-      "nfl_team_source": "canonical_sleeper_team",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "replacement_relevance": {
-        "classification": "below_rostered_boundary",
-        "family_percentiles": {
-          "dynasty_market": 22.76,
-          "redraft_adp": null,
-          "season_projection": 4.44
-        },
-        "distance_to_owned_boundary": {
-          "dynasty_market": -26.89,
-          "redraft_adp": null,
-          "season_projection": -34.17
-        },
-        "near_families": []
-      },
-      "movement": {
-        "redraft_adp": {
-          "source_id": "ffc-redraft-ppr-8-team",
-          "current_snapshot_date": "2026-09-20",
-          "current_listed": false,
-          "current_percentile": null,
-          "current_adp": null,
-          "current_times_drafted": null,
-          "windows": {
-            "1": {
-              "baseline_snapshot_date": "2026-09-20",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "3": {
-              "baseline_snapshot_date": "2026-09-20",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "7": {
-              "baseline_snapshot_date": "2026-09-20",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "14": {
-              "baseline_snapshot_date": "2026-09-20",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "30": {
-              "baseline_snapshot_date": "2026-09-16",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            }
-          }
-        },
-        "dynasty_market": {
-          "current_consensus_percentile": 22.76,
-          "providers": {
-            "fantasypros-dynasty-superflex-ppr": {
-              "source_kind": "expert_consensus",
-              "provider": "fantasypros",
-              "current_snapshot_date": "2026-10-17",
-              "current_listed": true,
-              "current_overall_rank": 306,
-              "current_position_rank": "RB89",
-              "current_percentile": 24.32,
-              "current_tier": "14",
-              "current_value": null,
-              "windows": {
-                "1": {
-                  "baseline_snapshot_date": "2026-10-16",
-                  "baseline_listed": true,
-                  "delta_overall_rank": 0.0,
-                  "standardized_overall_rank_delta": -0.0,
-                  "delta_position_rank": 0.0,
-                  "standardized_position_rank_delta": -0.0,
-                  "delta_percentile": 0.0,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "3": {
-                  "baseline_snapshot_date": "2026-10-14",
-                  "baseline_listed": true,
-                  "delta_overall_rank": 11.0,
-                  "standardized_overall_rank_delta": -11.0,
-                  "delta_position_rank": -4.0,
-                  "standardized_position_rank_delta": 4.0,
-                  "delta_percentile": 21.99,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "7": {
-                  "baseline_snapshot_date": "2026-10-10",
-                  "baseline_listed": true,
-                  "delta_overall_rank": -3.0,
-                  "standardized_overall_rank_delta": 3.0,
-                  "delta_position_rank": -1.0,
-                  "standardized_position_rank_delta": 1.0,
-                  "delta_percentile": 10.59,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "14": {
-                  "baseline_snapshot_date": "2026-10-03",
-                  "baseline_listed": true,
-                  "delta_overall_rank": -3.0,
-                  "standardized_overall_rank_delta": 3.0,
-                  "delta_position_rank": 1.0,
-                  "standardized_position_rank_delta": -1.0,
-                  "delta_percentile": -17.12,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": true
-                },
-                "30": {
-                  "baseline_snapshot_date": "2026-09-17",
-                  "baseline_listed": true,
-                  "delta_overall_rank": 39.0,
-                  "standardized_overall_rank_delta": -39.0,
-                  "delta_position_rank": 6.0,
-                  "standardized_position_rank_delta": -6.0,
-                  "delta_percentile": -13.24,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": true
-                }
-              }
-            },
-            "fantasycalc-dynasty-superflex-ppr-8-team": {
-              "source_kind": "market_value",
-              "provider": "fantasycalc",
-              "current_snapshot_date": "2026-10-17",
-              "current_listed": true,
-              "current_overall_rank": 332,
-              "current_position_rank": 86,
-              "current_percentile": 21.19,
-              "current_tier": "35",
-              "current_value": 178,
-              "windows": {
-                "1": {
-                  "baseline_snapshot_date": "2026-10-16",
-                  "baseline_listed": true,
-                  "delta_overall_rank": 13.0,
-                  "standardized_overall_rank_delta": -13.0,
-                  "delta_position_rank": 2.0,
-                  "standardized_position_rank_delta": -2.0,
-                  "delta_percentile": -2.92,
-                  "delta_value": -36.0,
-                  "value_percent_change": -16.82,
-                  "tier_changed": true
-                },
-                "3": {
-                  "baseline_snapshot_date": "2026-10-14",
-                  "baseline_listed": true,
-                  "delta_overall_rank": -29.0,
-                  "standardized_overall_rank_delta": 29.0,
-                  "delta_position_rank": -7.0,
-                  "standardized_position_rank_delta": 7.0,
-                  "delta_percentile": 7.11,
-                  "delta_value": 64.0,
-                  "value_percent_change": 56.14,
-                  "tier_changed": true
-                },
-                "7": {
-                  "baseline_snapshot_date": "2026-10-10",
-                  "baseline_listed": true,
-                  "delta_overall_rank": 12.0,
-                  "standardized_overall_rank_delta": -12.0,
-                  "delta_position_rank": 3.0,
-                  "standardized_position_rank_delta": -3.0,
-                  "delta_percentile": -2.86,
-                  "delta_value": -50.0,
-                  "value_percent_change": -21.93,
-                  "tier_changed": false
-                },
-                "14": {
-                  "baseline_snapshot_date": "2026-10-03",
-                  "baseline_listed": true,
-                  "delta_overall_rank": -54.0,
-                  "standardized_overall_rank_delta": 54.0,
-                  "delta_position_rank": -14.0,
-                  "standardized_position_rank_delta": 14.0,
-                  "delta_percentile": 13.52,
-                  "delta_value": 117.0,
-                  "value_percent_change": 191.8,
-                  "tier_changed": true
-                },
-                "30": {
-                  "baseline_snapshot_date": "2026-09-17",
-                  "baseline_listed": true,
-                  "delta_overall_rank": -28.0,
-                  "standardized_overall_rank_delta": 28.0,
-                  "delta_position_rank": -8.0,
-                  "standardized_position_rank_delta": 8.0,
-                  "delta_percentile": 6.46,
-                  "delta_value": 49.0,
-                  "value_percent_change": 37.98,
-                  "tier_changed": true
-                }
-              }
-            }
-          }
-        },
-        "season_projection": {
-          "current_consensus_percentile": 4.44,
-          "current_provider_count": 1,
-          "current_percentile_spread": null,
-          "providers": {
-            "fftoday": {
-              "sources": [
-                {
-                  "source_id": "fftoday-redraft-rb-preseason",
-                  "provider": "fftoday",
-                  "current_snapshot_date": "2026-09-07",
-                  "current_listed": true,
-                  "current_percentile": 4.44,
-                  "current_core_points": 14.7,
-                  "windows": {
-                    "1": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 14.7,
-                      "delta_core_points": 0.0
-                    },
-                    "3": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 14.7,
-                      "delta_core_points": 0.0
-                    },
-                    "7": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 14.7,
-                      "delta_core_points": 0.0
-                    },
-                    "14": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 14.7,
-                      "delta_core_points": 0.0
-                    },
-                    "30": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": true,
-                      "delta_percentile": 0.0,
-                      "baseline_core_points": 14.7,
-                      "delta_core_points": 0.0
-                    }
-                  }
-                }
-              ]
-            },
-            "cbs_sports": {
-              "sources": [
-                {
-                  "source_id": "cbs-sports-redraft-rb-preseason",
-                  "provider": "cbs-sports",
-                  "current_snapshot_date": "2026-10-17",
-                  "current_listed": false,
-                  "current_percentile": null,
-                  "current_core_points": null,
-                  "windows": {
-                    "1": {
-                      "baseline_snapshot_date": "2026-10-16",
-                      "baseline_listed": false,
-                      "delta_percentile": null,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "3": {
-                      "baseline_snapshot_date": "2026-10-14",
-                      "baseline_listed": false,
-                      "delta_percentile": null,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "7": {
-                      "baseline_snapshot_date": "2026-10-10",
-                      "baseline_listed": false,
-                      "delta_percentile": null,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "14": {
-                      "baseline_snapshot_date": "2026-10-03",
-                      "baseline_listed": false,
-                      "delta_percentile": null,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "30": {
-                      "baseline_snapshot_date": "2026-09-17",
-                      "baseline_listed": false,
-                      "delta_percentile": null,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    }
-                  }
-                }
-              ]
-            }
-          },
-          "windows": {
-            "1": {
-              "baseline_consensus_percentile": 4.44,
-              "delta_consensus_percentile": 0.0,
-              "baseline_provider_count": 1,
-              "baseline_percentile_spread": null
-            },
-            "3": {
-              "baseline_consensus_percentile": 4.44,
-              "delta_consensus_percentile": 0.0,
-              "baseline_provider_count": 1,
-              "baseline_percentile_spread": null
-            },
-            "7": {
-              "baseline_consensus_percentile": 4.44,
-              "delta_consensus_percentile": 0.0,
-              "baseline_provider_count": 1,
-              "baseline_percentile_spread": null
-            },
-            "14": {
-              "baseline_consensus_percentile": 4.44,
-              "delta_consensus_percentile": 0.0,
-              "baseline_provider_count": 1,
-              "baseline_percentile_spread": null
-            },
-            "30": {
-              "baseline_consensus_percentile": 4.44,
-              "delta_consensus_percentile": 0.0,
-              "baseline_provider_count": 1,
-              "baseline_percentile_spread": null
-            }
-          }
-        },
-        "cross_signal_patterns": [],
-        "structural_day_over_day": {
-          "comparison_status": "compared",
-          "team_comparison_status": "compared",
-          "previous_nfl_team_source": "canonical_sleeper_team",
-          "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
-          "activity_changes": []
-        }
-      },
-      "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
-        "drop_rank": null,
-        "drop_count": null,
-        "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
-      },
-      "materiality": {
-        "research_priority": "medium",
-        "material_families": [
-          "dynasty_market"
-        ],
-        "thresholds_crossed": [
-          {
-            "family": "dynasty_market",
-            "kind": "tier_change",
-            "severity": "high",
-            "window_days": 14,
-            "source_id": "fantasypros-dynasty-superflex-ppr",
-            "from": "13",
-            "to": "14"
-          },
-          {
-            "family": "dynasty_market",
-            "kind": "overall_rank_movement",
-            "severity": "medium",
-            "window_days": 30,
-            "delta": 39.0,
-            "threshold": 20,
-            "source_id": "fantasypros-dynasty-superflex-ppr"
-          },
-          {
-            "family": "dynasty_market",
-            "kind": "tier_change",
-            "severity": "high",
-            "window_days": 30,
-            "source_id": "fantasypros-dynasty-superflex-ppr",
-            "from": "13",
-            "to": "14"
-          },
-          {
-            "family": "dynasty_market",
-            "kind": "fantasycalc_percentile_movement",
-            "severity": "medium",
-            "window_days": 14,
-            "delta": 13.52,
-            "threshold": 10.0,
-            "source_id": "fantasycalc-dynasty-superflex-ppr-8-team"
-          }
-        ],
-        "coverage_changes": [],
         "reasons": [
           "material_movement_threshold"
         ],
@@ -88540,433 +89087,6 @@
       }
     },
     {
-      "player_id": "10220",
-      "name": "Will Mallory",
-      "position": "TE",
-      "nfl_team": "IND",
-      "nfl_team_source": "canonical_sleeper_team",
-      "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
-      },
-      "replacement_relevance": {
-        "classification": "below_rostered_boundary",
-        "family_percentiles": {
-          "dynasty_market": null,
-          "redraft_adp": null,
-          "season_projection": 2.02
-        },
-        "distance_to_owned_boundary": {
-          "dynasty_market": null,
-          "redraft_adp": null,
-          "season_projection": -63.52
-        },
-        "near_families": []
-      },
-      "movement": {
-        "redraft_adp": {
-          "source_id": "ffc-redraft-ppr-8-team",
-          "current_snapshot_date": "2026-09-20",
-          "current_listed": false,
-          "current_percentile": null,
-          "current_adp": null,
-          "current_times_drafted": null,
-          "windows": {
-            "1": {
-              "baseline_snapshot_date": "2026-09-20",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "3": {
-              "baseline_snapshot_date": "2026-09-20",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "7": {
-              "baseline_snapshot_date": "2026-09-20",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "14": {
-              "baseline_snapshot_date": "2026-09-20",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            },
-            "30": {
-              "baseline_snapshot_date": "2026-09-16",
-              "baseline_listed": false,
-              "baseline_percentile": null,
-              "delta_percentile": null,
-              "baseline_adp": null,
-              "delta_adp": null,
-              "listing_changed": false
-            }
-          }
-        },
-        "dynasty_market": {
-          "current_consensus_percentile": null,
-          "providers": {
-            "fantasypros-dynasty-superflex-ppr": {
-              "source_kind": "expert_consensus",
-              "provider": "fantasypros",
-              "current_snapshot_date": "2026-10-17",
-              "current_listed": false,
-              "current_overall_rank": null,
-              "current_position_rank": null,
-              "current_percentile": null,
-              "current_tier": null,
-              "current_value": null,
-              "windows": {
-                "1": {
-                  "baseline_snapshot_date": "2026-10-16",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "3": {
-                  "baseline_snapshot_date": "2026-10-14",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "7": {
-                  "baseline_snapshot_date": "2026-10-10",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "14": {
-                  "baseline_snapshot_date": "2026-10-03",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "30": {
-                  "baseline_snapshot_date": "2026-09-17",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                }
-              }
-            },
-            "fantasycalc-dynasty-superflex-ppr-8-team": {
-              "source_kind": "market_value",
-              "provider": "fantasycalc",
-              "current_snapshot_date": "2026-10-17",
-              "current_listed": false,
-              "current_overall_rank": null,
-              "current_position_rank": null,
-              "current_percentile": null,
-              "current_tier": null,
-              "current_value": null,
-              "windows": {
-                "1": {
-                  "baseline_snapshot_date": "2026-10-16",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "3": {
-                  "baseline_snapshot_date": "2026-10-14",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "7": {
-                  "baseline_snapshot_date": "2026-10-10",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "14": {
-                  "baseline_snapshot_date": "2026-10-03",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                },
-                "30": {
-                  "baseline_snapshot_date": "2026-09-17",
-                  "baseline_listed": false,
-                  "delta_overall_rank": null,
-                  "standardized_overall_rank_delta": null,
-                  "delta_position_rank": null,
-                  "standardized_position_rank_delta": null,
-                  "delta_percentile": null,
-                  "delta_value": null,
-                  "value_percent_change": null,
-                  "tier_changed": false
-                }
-              }
-            }
-          }
-        },
-        "season_projection": {
-          "current_consensus_percentile": 2.02,
-          "current_provider_count": 1,
-          "current_percentile_spread": null,
-          "providers": {
-            "fftoday": {
-              "sources": [
-                {
-                  "source_id": "fftoday-redraft-te-preseason",
-                  "provider": "fftoday",
-                  "current_snapshot_date": "2026-09-07",
-                  "current_listed": false,
-                  "current_percentile": null,
-                  "current_core_points": null,
-                  "windows": {
-                    "1": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": false,
-                      "delta_percentile": null,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "3": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": false,
-                      "delta_percentile": null,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "7": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": false,
-                      "delta_percentile": null,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "14": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": false,
-                      "delta_percentile": null,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    },
-                    "30": {
-                      "baseline_snapshot_date": "2026-09-07",
-                      "baseline_listed": false,
-                      "delta_percentile": null,
-                      "baseline_core_points": null,
-                      "delta_core_points": null
-                    }
-                  }
-                }
-              ]
-            },
-            "cbs_sports": {
-              "sources": [
-                {
-                  "source_id": "cbs-sports-redraft-te-preseason",
-                  "provider": "cbs-sports",
-                  "current_snapshot_date": "2026-10-17",
-                  "current_listed": true,
-                  "current_percentile": 2.02,
-                  "current_core_points": 15.6,
-                  "windows": {
-                    "1": {
-                      "baseline_snapshot_date": "2026-10-16",
-                      "baseline_listed": true,
-                      "delta_percentile": -25.25,
-                      "baseline_core_points": 21.7,
-                      "delta_core_points": -6.1
-                    },
-                    "3": {
-                      "baseline_snapshot_date": "2026-10-14",
-                      "baseline_listed": true,
-                      "delta_percentile": -24.24,
-                      "baseline_core_points": 21.6,
-                      "delta_core_points": -6.0
-                    },
-                    "7": {
-                      "baseline_snapshot_date": "2026-10-10",
-                      "baseline_listed": true,
-                      "delta_percentile": -10.1,
-                      "baseline_core_points": 21.6,
-                      "delta_core_points": -6.0
-                    },
-                    "14": {
-                      "baseline_snapshot_date": "2026-10-03",
-                      "baseline_listed": true,
-                      "delta_percentile": -9.09,
-                      "baseline_core_points": 23.7,
-                      "delta_core_points": -8.1
-                    },
-                    "30": {
-                      "baseline_snapshot_date": "2026-09-17",
-                      "baseline_listed": true,
-                      "delta_percentile": 1.01,
-                      "baseline_core_points": 23.7,
-                      "delta_core_points": -8.1
-                    }
-                  }
-                }
-              ]
-            }
-          },
-          "windows": {
-            "1": {
-              "baseline_consensus_percentile": 27.27,
-              "delta_consensus_percentile": -25.25,
-              "baseline_provider_count": 1,
-              "baseline_percentile_spread": null
-            },
-            "3": {
-              "baseline_consensus_percentile": 26.26,
-              "delta_consensus_percentile": -24.24,
-              "baseline_provider_count": 1,
-              "baseline_percentile_spread": null
-            },
-            "7": {
-              "baseline_consensus_percentile": 12.12,
-              "delta_consensus_percentile": -10.1,
-              "baseline_provider_count": 1,
-              "baseline_percentile_spread": null
-            },
-            "14": {
-              "baseline_consensus_percentile": 11.11,
-              "delta_consensus_percentile": -9.09,
-              "baseline_provider_count": 1,
-              "baseline_percentile_spread": null
-            },
-            "30": {
-              "baseline_consensus_percentile": 1.01,
-              "delta_consensus_percentile": 1.01,
-              "baseline_provider_count": 1,
-              "baseline_percentile_spread": null
-            }
-          }
-        },
-        "cross_signal_patterns": [],
-        "structural_day_over_day": {
-          "comparison_status": "compared",
-          "team_comparison_status": "compared",
-          "previous_nfl_team_source": "canonical_sleeper_team",
-          "current_nfl_team_source": "canonical_sleeper_team",
-          "changes": [],
-          "activity_changes": []
-        }
-      },
-      "activity": {
-        "listed": false,
-        "add_rank": null,
-        "add_count": null,
-        "drop_rank": null,
-        "drop_count": null,
-        "policy": "activity is corroboration/research context, not a discovery prerequisite or player-quality score"
-      },
-      "materiality": {
-        "research_priority": "medium",
-        "material_families": [
-          "season_projection"
-        ],
-        "thresholds_crossed": [
-          {
-            "family": "season_projection",
-            "kind": "consensus_percentile_movement",
-            "severity": "high",
-            "window_days": 1,
-            "delta": -25.25,
-            "threshold": 20,
-            "provider_count": 1
-          },
-          {
-            "family": "season_projection",
-            "kind": "consensus_percentile_movement",
-            "severity": "high",
-            "window_days": 3,
-            "delta": -24.24,
-            "threshold": 20,
-            "provider_count": 1
-          },
-          {
-            "family": "season_projection",
-            "kind": "consensus_percentile_movement",
-            "severity": "medium",
-            "window_days": 7,
-            "delta": -10.1,
-            "threshold": 10,
-            "provider_count": 1
-          }
-        ],
-        "coverage_changes": [],
-        "reasons": [
-          "material_movement_threshold"
-        ],
-        "final_roster_recommendation": null
-      }
-    },
-    {
       "player_id": "1339",
       "name": "Zach Ertz",
       "position": "TE",
@@ -89412,7 +89532,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -35.78,
+          "dynasty_market": -37.22,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -89882,7 +90002,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -35.6,
+          "dynasty_market": -37.04,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -90307,7 +90427,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -25.06,
+          "dynasty_market": -26.5,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -90759,7 +90879,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -13.6,
+          "dynasty_market": -15.04,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -91229,7 +91349,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -36.0,
+          "dynasty_market": -37.44,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -91720,7 +91840,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -29.2,
+          "dynasty_market": -30.64,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -92183,7 +92303,7 @@
           "season_projection": 3.23
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -23.11,
+          "dynasty_market": -24.55,
           "redraft_adp": null,
           "season_projection": -26.86
         },
@@ -92691,7 +92811,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -36.72,
+          "dynasty_market": -38.16,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -93167,7 +93287,7 @@
           "season_projection": 2.02
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -36.17,
+          "dynasty_market": -37.61,
           "redraft_adp": null,
           "season_projection": -28.07
         },
@@ -93619,7 +93739,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -37.92,
+          "dynasty_market": -39.36,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -94089,7 +94209,7 @@
           "season_projection": 17.17
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -37.51,
+          "dynasty_market": -38.95,
           "redraft_adp": null,
           "season_projection": -12.92
         },
@@ -94536,7 +94656,7 @@
           "season_projection": 11.5
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -36.4,
+          "dynasty_market": -37.84,
           "redraft_adp": null,
           "season_projection": -18.59
         },
@@ -95001,7 +95121,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -36.47,
+          "dynasty_market": -37.91,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -95491,7 +95611,7 @@
           "season_projection": 29.84
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -50.29,
+          "dynasty_market": -51.73,
           "redraft_adp": null,
           "season_projection": -0.25
         },
@@ -95916,7 +96036,7 @@
           "season_projection": 16.13
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -23.6,
+          "dynasty_market": -25.04,
           "redraft_adp": null,
           "season_projection": -13.96
         },
@@ -96406,7 +96526,7 @@
           "season_projection": 11.0
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -31.79,
+          "dynasty_market": -33.23,
           "redraft_adp": null,
           "season_projection": -19.09
         },
@@ -96842,7 +96962,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -43.84,
+          "dynasty_market": -45.28,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -97282,7 +97402,7 @@
           "season_projection": 9.28
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -37.17,
+          "dynasty_market": -38.61,
           "redraft_adp": null,
           "season_projection": -20.81
         },
@@ -97813,7 +97933,7 @@
           "season_projection": 2.42
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -50.84,
+          "dynasty_market": -52.28,
           "redraft_adp": null,
           "season_projection": -27.67
         },
@@ -98243,7 +98363,7 @@
           "season_projection": 10.1
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -24.37,
+          "dynasty_market": -25.81,
           "redraft_adp": null,
           "season_projection": -19.99
         },
@@ -98683,7 +98803,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -41.86,
+          "dynasty_market": -43.3,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -99155,7 +99275,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -45.08,
+          "dynasty_market": -46.52,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -99586,7 +99706,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -38.16,
+          "dynasty_market": -39.6,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -100047,7 +100167,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -41.11,
+          "dynasty_market": -42.55,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -100487,7 +100607,7 @@
           "season_projection": 11.29
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -40.88,
+          "dynasty_market": -42.32,
           "redraft_adp": null,
           "season_projection": -18.8
         },
@@ -100909,7 +101029,7 @@
           "season_projection": 7.07
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -26.73,
+          "dynasty_market": -28.17,
           "redraft_adp": null,
           "season_projection": -23.02
         },
@@ -101424,7 +101544,7 @@
           "season_projection": 17.16
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -28.48,
+          "dynasty_market": -29.92,
           "redraft_adp": null,
           "season_projection": -12.93
         },
@@ -101842,7 +101962,7 @@
           "season_projection": 4.03
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -42.6,
+          "dynasty_market": -44.04,
           "redraft_adp": null,
           "season_projection": -26.06
         },
@@ -102294,7 +102414,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -44.59,
+          "dynasty_market": -46.03,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -102737,7 +102857,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -15.94,
+          "dynasty_market": -17.38,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -103216,7 +103336,7 @@
           "season_projection": 9.68
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -24.08,
+          "dynasty_market": -25.52,
           "redraft_adp": null,
           "season_projection": -20.41
         },
@@ -103683,7 +103803,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -12.34,
+          "dynasty_market": -13.78,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -104101,7 +104221,7 @@
           "season_projection": 1.01
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -48.93,
+          "dynasty_market": -50.37,
           "redraft_adp": null,
           "season_projection": -29.08
         },
@@ -104535,7 +104655,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -36.65,
+          "dynasty_market": -38.09,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -105034,7 +105154,7 @@
           "season_projection": 15.32
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -36.82,
+          "dynasty_market": -38.26,
           "redraft_adp": null,
           "season_projection": -14.77
         },
@@ -105522,7 +105642,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -23.16,
+          "dynasty_market": -24.6,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -105985,7 +106105,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -30.36,
+          "dynasty_market": -31.8,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -106419,7 +106539,7 @@
           "season_projection": 6.45
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -41.42,
+          "dynasty_market": -42.86,
           "redraft_adp": null,
           "season_projection": -23.64
         },
@@ -106883,7 +107003,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -11.97,
+          "dynasty_market": -13.41,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -107344,7 +107464,7 @@
           "season_projection": 1.61
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -45.08,
+          "dynasty_market": -46.52,
           "redraft_adp": null,
           "season_projection": -28.48
         },
@@ -107802,7 +107922,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -27.1,
+          "dynasty_market": -28.54,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -108256,7 +108376,7 @@
           "season_projection": 17.74
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -13.81,
+          "dynasty_market": -15.25,
           "redraft_adp": null,
           "season_projection": -12.35
         },
@@ -108776,7 +108896,7 @@
           "season_projection": 7.26
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -45.61,
+          "dynasty_market": -47.05,
           "redraft_adp": null,
           "season_projection": -22.83
         },
@@ -109249,7 +109369,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -42.76,
+          "dynasty_market": -44.2,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -109692,7 +109812,7 @@
           "season_projection": 29.03
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -23.41,
+          "dynasty_market": -24.85,
           "redraft_adp": null,
           "season_projection": -1.06
         },
@@ -110111,7 +110231,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -46.07,
+          "dynasty_market": -47.51,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -110542,7 +110662,7 @@
           "season_projection": null
         },
         "distance_to_owned_boundary": {
-          "dynasty_market": -27.98,
+          "dynasty_market": -29.42,
           "redraft_adp": null,
           "season_projection": null
         },
@@ -110995,6 +111115,6 @@
     "fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db"
   },
   "evidence": {
-    "input_fingerprint": "ac75c360acb5fed82c3a941af12c0b935e7c014fd80ffc21ea4ab9608276642a"
+    "input_fingerprint": "27cdc44526b6d8129a57dca83ceb5603f6d5b59018b4d93829b6b3011b261dff"
   }
 }
