@@ -102,8 +102,13 @@ def build_nfl_games(
         if bool(state["Final"]) and (away is None or home is None):
             raise ValueError(f"{game_id}: Final without both scores")
         if any(not isinstance(source.get(k), str) or not source.get(k)
-               for k in ("AwayTeam", "HomeTeam", "GameDay", "GameTime")):
-            raise ValueError(f"{game_id}: missing schedule identity/time")
+               for k in ("AwayTeam", "HomeTeam", "GameDay")):
+            raise ValueError(f"{game_id}: missing schedule identity/date")
+        # Historical nflverse schedules (notably 1999) legitimately lack
+        # GameTime. Preserve null; never fabricate a kickoff clock value.
+        game_time = source.get("GameTime")
+        if game_time is not None and (not isinstance(game_time, str) or not game_time):
+            raise ValueError(f"{game_id}: invalid GameTime")
 
         games.append({
             "GameID": game_id,

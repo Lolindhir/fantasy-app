@@ -11,7 +11,7 @@ It is deliberately separate from:
 
 ## Global NFL Game
 
-Proposed consumer-neutral product (Issue #1077, no scheduler writer activated yet):
+Consumer-neutral product (Issue #1077; daily Derived publication activated after the #1082 acceptance gate):
 
 `data-derived/nfl-games/<season>.json`
 
@@ -24,10 +24,17 @@ Moneyline and bookmaker price changes do not enter the product or invalidate
 it. A missing entire odds partition is unavailable evidence; nullable fields
 are preserved as null.
 
-The generator `tools/nfl_games_materialize.py` is read-only by default. Its
-`--write` switch allows controlled isolated output; automatic publication
-and incremental/full integration are owned by #471 and not wired yet. Source
-snapshots do not provide historically proven pregame timestamps.
+The generator `tools/nfl_games_materialize.py` is read-only by default.
+A dedicated dependent job inside the **existing daily full NFL Source Sync**
+(`.github/workflows/sync-nfl-source-data.yml`) validates Source-only
+restoration and publishes all seasons via `tools/rebuild_and_publish.py`.
+The publisher is restricted to `data-derived/nfl-games/**`, rebuilds from
+latest main after publication races and creates **no commit on a no-op**.
+The NFL Live Finality scope and targeted source-dataset runs skip this job;
+there is no new Scheduler target and no odds-only cadence change.
+
+The 10-minute polling/Spread+Total delta gate activation remains owned by
+#471. Source snapshots do not provide historically proven pregame timestamps.
 
 ## PlayerWeekFantasy
 

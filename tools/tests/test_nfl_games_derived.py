@@ -63,6 +63,15 @@ class GlobalNflGamesTests(unittest.TestCase):
         changed[2]["Games"][0]["OverOdds"] = -120
         self.assertEqual(build_nfl_games(*source), build_nfl_games(*changed))
 
+    def test_historical_missing_game_time_is_preserved_as_null(self):
+        rows = inputs()
+        rows[0]["Games"][0]["GameTime"] = None
+        game = build_nfl_games(*rows)["Games"][0]
+        self.assertIsNone(game["GameTime"])
+        rows[0]["Games"][0]["GameTime"] = ""
+        with self.assertRaisesRegex(ValueError, "invalid GameTime"):
+            build_nfl_games(*rows)
+
     def test_nullable_lines_are_unknown_not_zero(self):
         rows = inputs()
         rows[2]["Games"][0]["SpreadLine"] = None

@@ -1,6 +1,6 @@
 schemaVersion: 1
 domain: nfl-games
-status: candidate
+status: active-upon-first-published-full-sync
 issue: 1077
 architecture: ADR-037/ADR-038
 ownership:
@@ -54,7 +54,11 @@ derived:
   interpretation: market-expected-points-not-a-prediction-or-actual-score
   marketPriceFields: omitted-from-product-and-ignored-for-invalidation
 temporal:
-  kickoff: canonical-source-GameDay/GameTime-as-is
+  kickoff: >
+    Canonical GameDay is required. GameTime is nullable for historical seasons
+    (1999 schedules have unknown times) and is preserved as null; no invented
+    kickoff instant/timezone or observation timestamp.
+  gameTime: nullable-canonical-source-string
   finality: canonical-nflverse.game-finality-only
   historicalMarketCaveat: latest-line-not-proven-original-pregame-line
   noInventedObservationTimestamp: true
@@ -76,9 +80,23 @@ operation:
   explicitWrite: python3 tools/nfl_games_materialize.py --season 2026 --write
   check: python3 tools/nfl_games_materialize.py --season 2026 --check
   full: python3 tools/nfl_games_materialize.py --all-seasons
-  publication: none-until-review-with-issue-471
+  publication: >
+    After a successful normal full nfl-source sync, the existing
+    sync-nfl-source-data.yml runs a dependent nfl_games_derived job that verifies
+    real-source clean-root restore, then executes the existing rebuild-and-retry
+    publisher from current main with scope nfl-games and only
+    data-derived/nfl-games as allowed write destination.
+  activation: gated-by-PR1082-green-CI-and-first-production-publish
+  workflow: .github/workflows/sync-nfl-source-data.yml
+  sourceTrigger: daily-full-only
+  excludedTriggers:
+    - nfl-live-game-finality
+    - targeted-NFL-source-dataset-refresh
+    - league-live
+  outputScope: data-derived/nfl-games/**
   noSeparateScheduler: true
-  outputOnMain: not-activated
+  commitOnNoop: false
+  rollback: revert-dependent-derived-job-and-commit-scope;preserve-published-history-pending-separate-cleanup-review
 guards:
   - validate-canonical-dataset-and-season
   - reject-missing-odds-source-not-fabricate-empty-market
