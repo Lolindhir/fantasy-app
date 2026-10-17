@@ -13,6 +13,7 @@ sys.path.insert(0, str(TOOLS))
 from odds_observation_buffer import (  # noqa: E402
     plan_observation, read_upstream_lines, serialize_state
 )
+from odds_observation import run as run_cli  # noqa: E402
 
 BASE_TIME = datetime(2026, 10, 17, 16, 0, tzinfo=timezone.utc)
 GAME = "2026_07_TB_CAR"
@@ -140,6 +141,41 @@ class OddsObservationBufferTests(unittest.TestCase):
                 stream.write(f"{GAME},3.5,44.5,-1000\n")
             with self.assertRaisesRegex(ValueError, "Duplicate"):
                 read_upstream_lines(path, 2026, {GAME})
+
+    def test_cli_strict_bootstrap_and_isolated_atomic_state(self):
+        schedule, canonical = inputs()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "main-repo"
+            source = root / "data-source" / "nfl"
+            for folder, document in (("schedules", schedule), ("schedule-odds", canonical)):
+                target = source / folder / "2026.json"
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(json.dumps(document), encoding="utf-8")
+            csvpath = Path(tmp) / "upstream.csv"
+            csvpath.write_text(
+                "game_id,spread_line,total_line\n"
+                f"{GAME},3.5,44.5\n", encoding="utf-8"
+            )
+            state_path = Path(tmp) / "isolated-state" / "state.json"
+            preview = run_cli(root, season=2026, upstream_csv=csvpath, observed_at=BASE_TIME)
+            self.assertEqual(preview["PublishableGameIDs"], [])
+            self.assertFalse(state_path.exists())
+            with self.assertRaisesRegex(ValueError, "missing"):
+                run_cli(root, season=2026, upstream_csv=csvpath,
+                        state_input=state_path, observed_at=BASE_TIME)
+            with self.assertRaisesRegex(ValueError, "main repository"):
+                run_cli(root, season=2026, upstream_csv=csvpath,
+                        state_output=root / "data-source" / "nfl" / "buffer.json",
+                        observed_at=BASE_TIME)
+            run_cli(root, season=2026, upstream_csv=csvpath,
+                    state_output=state_path, observed_at=BASE_TIME)
+            self.assertTrue(state_path.exists())
+            next_plan = run_cli(
+                root, season=2026, upstream_csv=csvpath,
+                state_input=state_path, state_output=state_path,
+                observed_at=BASE_TIME + timedelta(minutes=60),
+            )
+            self.assertEqual(next_plan["PublishableGameIDs"], [GAME])
 
     def test_serialized_state_is_byte_stable_after_recovery(self):
         _, state = plan()
