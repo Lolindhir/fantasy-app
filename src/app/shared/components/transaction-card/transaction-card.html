@@ -26,6 +26,7 @@
             [team]="team"
             size="small"
             [elements]="['logo', 'name']"
+            align="end"
           />
         } @else {
           <span class="transaction-card__unknown-team">Team {{ transaction.Participants[0].RosterID }}</span>
@@ -40,7 +41,7 @@
         @if (category === 'trade' || transaction.Participants.length > 1) {
           <div class="transaction-card__team">
             @if (participant.Team; as team) {
-              <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" />
+              <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" align="end" />
             } @else {
               <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
             }
@@ -89,9 +90,11 @@
     [class.transaction-card__asset-line--outgoing]="direction === 'outgoing'"
     [class.transaction-card__asset-line--pick]="asset.kind === 'pick'"
   >
-    <mat-icon class="transaction-card__movement" aria-hidden="true">
-      {{ direction === 'incoming' ? 'add' : 'remove' }}
-    </mat-icon>
+    @if (category !== 'trade') {
+      <mat-icon class="transaction-card__movement" aria-hidden="true">
+        {{ direction === 'incoming' ? 'add' : 'remove' }}
+      </mat-icon>
+    }
 
     @if (asset.kind === 'player') {
       <button
@@ -124,16 +127,29 @@
         </span>
       </button>
     } @else {
-      <span class="transaction-card__pick" [title]="'Original: ' + asset.originalOwner">
-        <span class="transaction-card__pick-shield" aria-hidden="true">
-          <small>RD</small>
-          <strong>{{ asset.pickRound }}</strong>
+      @if (pickContext(asset); as context) {
+        <button type="button" class="transaction-card__pick transaction-card__pick--interactive"
+          [matMenuTriggerFor]="pickInfoMenu" [attr.aria-label]="'Open ' + asset.label + ' draft pick details'">
+          <ng-container *ngTemplateOutlet="pickVisual; context: { $implicit: asset }" />
+        </button>
+        <mat-menu #pickInfoMenu="matMenu" class="draft-pick-trigger-menu">
+          <app-draft-pick-context-popover [context]="context" />
+        </mat-menu>
+      } @else {
+        <span class="transaction-card__pick">
+          <ng-container *ngTemplateOutlet="pickVisual; context: { $implicit: asset }" />
         </span>
-        <span class="transaction-card__asset-copy">
-          <strong>{{ asset.label }}</strong>
-          <small>{{ asset.secondary }}</small>
-        </span>
-      </span>
+      }
     }
   </div>
+</ng-template>
+
+<ng-template #pickVisual let-asset>
+  <span class="transaction-card__pick-shield" aria-hidden="true">
+    <small>RD</small>
+    <strong>{{ asset.pickRound }}</strong>
+  </span>
+  <span class="transaction-card__asset-copy">
+    <strong>{{ asset.label }}</strong>
+  </span>
 </ng-template>

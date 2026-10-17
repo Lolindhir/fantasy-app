@@ -1,9 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { BehaviorSubject, combineLatest, of } from 'rxjs';
+import { BehaviorSubject, combineLatest, forkJoin, of } from 'rxjs';
 import { catchError, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 
 import { DataService } from '../../core/services/data.service';
+import type { RawDraft } from '../../core/models/draft.models';
 import type {
   PastSeasonIndexEntry,
   PastSeasonsIndex
@@ -26,6 +27,7 @@ interface MovesSelectionContext {
   SeasonLabel: string;
   IncludeCurrent: boolean;
   HistoricalPaths: string[];
+  HistoricalDraftPaths: string[];
 }
 
 @Component({
@@ -102,16 +104,38 @@ export class LeagueActivityComponent {
     shareReplay({ bufferSize: 1, refCount: true })
   );
 
+  private readonly drafts$ = combineLatest([
+    this.selectionContext$,
+    this.leagueData$
+  ]).pipe(
+    switchMap(([context, leagueData]) => {
+      const historicDrafts$ = context.HistoricalDraftPaths.map(path =>
+        this.dataService.getPastDraftsRaw(path).pipe(catchError(() => of([] as RawDraft[])))
+      );
+      return (historicDrafts$.length ? forkJoin(historicDrafts$) : of([] as RawDraft[][])).pipe(
+        map(drafts => [
+          ...(context.IncludeCurrent ? leagueData.drafts : []),
+          ...drafts.flat()
+        ])
+      );
+    }),
+    shareReplay({ bufferSize: 1, refCount: true })
+  );
+
   readonly vm$ = combineLatest([
     this.transactions$,
     this.selectedFilter$,
-    this.selectionContext$
+    this.selectionContext$,
+    this.drafts$,
+    this.leagueData$
   ]).pipe(
-    map(([transactions, selectedFilter, context]) => ({
+    map(([transactions, selectedFilter, context, drafts, leagueData]) => ({
       ...buildMovesViewModel(transactions, selectedFilter),
       SeasonLabel: context.SeasonLabel,
       SeasonOptions: context.SeasonOptions,
-      SelectedSeason: context.SelectedSeason
+      SelectedSeason: context.SelectedSeason,
+      Drafts: drafts,
+      Teams: leagueData.teams
     })),
     shareReplay({ bufferSize: 1, refCount: true })
   );
@@ -178,6 +202,9 @@ export class LeagueActivityComponent {
         IncludeCurrent: true,
         HistoricalPaths: historicalOptions
           .map(option => option.TransactionPath)
+          .filter((path): path is string => !!path),
+        HistoricalDraftPaths: historicalSeasons
+          .map(entry => entry.Resources.Drafts?.Exists ? entry.Resources.Drafts.Path : null)
           .filter((path): path is string => !!path)
       };
     }
@@ -188,7 +215,8 @@ export class LeagueActivityComponent {
         SelectedSeason: selectedSeason,
         SeasonLabel: currentSeason,
         IncludeCurrent: true,
-        HistoricalPaths: []
+        HistoricalPaths: [],
+        HistoricalDraftPaths: []
       };
     }
 
@@ -201,7 +229,11 @@ export class LeagueActivityComponent {
       IncludeCurrent: false,
       HistoricalPaths: selectedHistoricalSeason?.TransactionPath
         ? [selectedHistoricalSeason.TransactionPath]
-        : []
+        : [],
+      HistoricalDraftPaths: historicalSeasons
+        .filter(entry => entry.Season === selectedSeason && entry.Resources.Drafts?.Exists)
+        .map(entry => entry.Resources.Drafts?.Path)
+        .filter((path): path is string => !!path)
     };
   }
 }
