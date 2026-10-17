@@ -38,26 +38,54 @@
   <div class="transaction-card__participants">
     @for (participant of transaction.Participants; track participant.RosterID) {
       <section class="transaction-card__participant">
-        @if (category === 'trade' || transaction.Participants.length > 1) {
-          <div class="transaction-card__team">
-            @if (participant.Team; as team) {
-              <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" align="end" />
-            } @else {
-              <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
-            }
+        @if (category === 'trade') {
+          <div class="transaction-card__trade-leading">
+            <div class="transaction-card__trade-first-asset">
+              @if (visibleAssets(participant, 'incoming')[0]; as firstAsset) {
+                <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: firstAsset, direction: 'incoming' }" />
+              } @else {
+                <span class="transaction-card__empty">No assets recorded</span>
+              }
+            </div>
+            <div class="transaction-card__team">
+              @if (participant.Team; as team) {
+                <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" align="end" />
+              } @else {
+                <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
+              }
+            </div>
           </div>
-        }
-
-        <div class="transaction-card__assets">
-          @for (asset of visibleAssets(participant, 'incoming'); track asset.key) {
-            <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'incoming' }" />
+          @if (visibleAssets(participant, 'incoming').length > 1 || hiddenAssets(participant, 'incoming') > 0) {
+            <div class="transaction-card__assets transaction-card__trade-remainder">
+              @for (asset of visibleAssets(participant, 'incoming').slice(1); track asset.key) {
+                <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'incoming' }" />
+              }
+              @if (hiddenAssets(participant, 'incoming') > 0) {
+                <button type="button" class="transaction-card__more" (click)="toggleExpanded()">
+                  +{{ hiddenAssets(participant, 'incoming') }} more
+                </button>
+              }
+            </div>
           }
-          @if (hiddenAssets(participant, 'incoming') > 0) {
-            <button type="button" class="transaction-card__more" (click)="toggleExpanded()">
-              +{{ hiddenAssets(participant, 'incoming') }} more
-            </button>
+        } @else {
+          @if (transaction.Participants.length > 1) {
+            <div class="transaction-card__team">
+              @if (participant.Team; as team) {
+                <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" align="end" />
+              } @else {
+                <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
+              }
+            </div>
           }
-          @if (category !== 'trade') {
+          <div class="transaction-card__assets">
+            @for (asset of visibleAssets(participant, 'incoming'); track asset.key) {
+              <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'incoming' }" />
+            }
+            @if (hiddenAssets(participant, 'incoming') > 0) {
+              <button type="button" class="transaction-card__more" (click)="toggleExpanded()">
+                +{{ hiddenAssets(participant, 'incoming') }} more
+              </button>
+            }
             @for (asset of visibleAssets(participant, 'outgoing'); track asset.key) {
               <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'outgoing' }" />
             }
@@ -66,12 +94,12 @@
                 +{{ hiddenAssets(participant, 'outgoing') }} more
               </button>
             }
-          }
-          @if (getAssets(participant, 'incoming').length === 0 &&
-               (category === 'trade' || getAssets(participant, 'outgoing').length === 0)) {
-            <span class="transaction-card__empty">No assets recorded</span>
-          }
-        </div>
+            @if (getAssets(participant, 'incoming').length === 0 &&
+                 getAssets(participant, 'outgoing').length === 0) {
+              <span class="transaction-card__empty">No assets recorded</span>
+            }
+          </div>
+        }
       </section>
     }
   </div>
