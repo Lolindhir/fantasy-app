@@ -69,6 +69,8 @@ def baseline_coverage(root: Path, paths: set[str]) -> dict[str, str]:
             coverage[path] = "build"
         elif path.endswith(".test.cjs") and path.startswith("tools/tests/run-workflow-scheduler"):
             coverage[path] = "build"
+        elif path == "tools/tests/test_ci_test_impact.py" and "test_ci_test_impact" in build:
+            coverage[path] = "shadow"
         elif path.startswith("tools/tests/") and (fnmatch.fnmatch(name, "test_nfl_source*")
               or fnmatch.fnmatch(name, "test_league_source*") or name in python_refs
               or any(fnmatch.fnmatch(Path(path).name, pat) for pat in discover_patterns)):
@@ -77,8 +79,6 @@ def baseline_coverage(root: Path, paths: set[str]) -> dict[str, str]:
             coverage[path] = "build-indirect"
         elif path.startswith("public/requests/") and ("./" + path) in build:
             coverage[path] = "build"
-        elif path == "tools/tests/test_ci_test_impact.py" and "test_ci_test_impact" in build:
-            coverage[path] = "shadow"
         else:
             coverage[path] = "not-in-current-pr-ci"
     return coverage
