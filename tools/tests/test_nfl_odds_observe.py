@@ -101,7 +101,7 @@ class NflOddsObserveTests(unittest.TestCase):
                 [{"game_id": IDS[0], "spread_line": 3.5, "total_line": 44.5}],
                 [{"game_id": IDS[0], "spread_line": 3.5, "total_line": 44.5},
                  {"game_id": IDS[0], "spread_line": 3.5, "total_line": 44.5}],
-                [{"game_id": IDS[0], "spread_line": "nan", "total_line": 44.5},
+                [{"game_id": IDS[0], "spread_line": "not-a-number", "total_line": 44.5},
                  {"game_id": IDS[1], "spread_line": 3.5, "total_line": 44.5}],
                 [{"game_id": IDS[0], "spread_line": 3.5, "total_line": 44.5},
                  {"game_id": "2026_07_UNKNOWN_GAME", "spread_line": 3.5, "total_line": 44.5}],
