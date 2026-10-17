@@ -97,6 +97,22 @@ class MarketProductPreflightTests(unittest.TestCase):
         self.assertEqual("allowed", changed["Partitions"][0]["Rights"]["Storage"])
         self.assertIs(False, changed["Partitions"][0]["Rights"]["WriterEnabled"])
 
+    def test_registry_phase_policy_changes_dirty_even_with_same_provider_rows(self) -> None:
+        baseline = self.plan()
+        self.fixture.dataset["seasonPolicy"]["regular_season"] = "inactive"
+        save_json(self.fixture.registry, {
+            "schemaVersion": 1, "datasets": [self.fixture.dataset],
+        })
+        changed = self.plan(baseline)
+        self.assertEqual(1, changed["Counts"]["changed"])
+        self.assertEqual(
+            baseline["Partitions"][0]["CandidateSHA256"],
+            changed["Partitions"][0]["CandidateSHA256"],
+        )
+        self.assertEqual(
+            "inactive", changed["Partitions"][0]["Dependencies"]["RegistrySeasonPolicy"]["regular_season"],
+        )
+
     def test_orphaned_prior_partition_is_reported_but_never_deleted(self) -> None:
         baseline = self.plan()
         stale = dict(baseline["Partitions"][0])
