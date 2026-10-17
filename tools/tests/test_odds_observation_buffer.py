@@ -1,0 +1,151 @@
+from __future__ import annotations
+
+import csv
+import json
+import sys
+import tempfile
+import unittest
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+TOOLS = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(TOOLS))
+from odds_observation_buffer import (  # noqa: E402
+    plan_observation, read_upstream_lines, serialize_state
+)
+
+BASE_TIME = datetime(2026, 10, 17, 16, 0, tzinfo=timezone.utc)
+GAME = "2026_07_TB_CAR"
+
+
+def inputs():
+    schedule = {
+        "Season": 2026, "Games": [{
+            "GameID": GAME, "GameType": "REG", "Week": 7,
+            "GameDay": "2026-10-18", "GameTime": "13:00",
+            "AwayTeam": "TB", "HomeTeam": "CAR",
+        }]
+    }
+    canonical = {
+        "Season": 2026, "Games": [{
+            "GameID": GAME, "SpreadLine": 3.0, "TotalLine": 44.5,
+            "HomeMoneyline": -200, "OverOdds": -115,
+        }]
+    }
+    return schedule, canonical
+
+
+def plan(observed=None, *, prior=None, canonical=None, now=BASE_TIME):
+    schedule, original = inputs()
+    return plan_observation(
+        season=2026, schedule=schedule,
+        canonical_odds=canonical or original,
+        observed_lines={GAME: observed or {"SpreadLine": 3.0, "TotalLine": 44.5}},
+        previous_state=prior, observed_at=now,
+    )
+
+
+class OddsObservationBufferTests(unittest.TestCase):
+    def test_first_small_change_waits_even_after_idle_source_snapshot(self):
+        changed = {"SpreadLine": 3.5, "TotalLine": 44.5}
+        p1, state = plan(changed)
+        self.assertEqual(p1["PublishableGameIDs"], [])
+        self.assertEqual(state["Games"][GAME]["PendingSince"], "2026-10-17T16:00:00Z")
+        p2, state = plan(changed, prior=state, now=BASE_TIME + timedelta(minutes=10))
+        self.assertEqual(p2["PublishableGameIDs"], [])
+        p3, state = plan(changed, prior=state, now=BASE_TIME + timedelta(minutes=60))
+        self.assertEqual(p3["PublishableGameIDs"], [GAME])
+        self.assertEqual(p3["PublicationReasons"][GAME], "maximum_age_with_pending_change")
+
+    def test_cumulative_change_is_immediate_but_state_does_not_claim_published(self):
+        p1, state = plan({"SpreadLine": 3.5, "TotalLine": 44.5})
+        self.assertFalse(p1["PublishableGameIDs"])
+        p2, state = plan({"SpreadLine": 4.0, "TotalLine": 44.5},
+                         prior=state, now=BASE_TIME + timedelta(minutes=10))
+        self.assertEqual(p2["PublicationReasons"][GAME], "large_cumulative_change")
+        self.assertEqual(state["Games"][GAME]["PublishedAt"], "2026-10-17T16:00:00Z")
+
+    def test_reversion_clears_buffer_and_fresh_move_restarts_clock(self):
+        _, state = plan({"SpreadLine": 3.5, "TotalLine": 44.5})
+        _, state = plan({"SpreadLine": 3.0, "TotalLine": 44.5},
+                        prior=state, now=BASE_TIME + timedelta(minutes=20))
+        self.assertIsNone(state["Games"][GAME]["PendingSince"])
+        proposal, state = plan({"SpreadLine": 3.5, "TotalLine": 44.5},
+                               prior=state, now=BASE_TIME + timedelta(minutes=50))
+        self.assertFalse(proposal["PublishableGameIDs"])
+        self.assertEqual(state["Games"][GAME]["PendingSince"], "2026-10-17T16:50:00Z")
+
+    def test_external_canonical_publish_rebases_checkpoint(self):
+        _, state = plan({"SpreadLine": 3.5, "TotalLine": 44.5})
+        schedule, canonical = inputs()
+        canonical["Games"][0]["SpreadLine"] = 3.5
+        p, state = plan({"SpreadLine": 3.5, "TotalLine": 44.5},
+                        prior=state, canonical=canonical,
+                        now=BASE_TIME + timedelta(minutes=40))
+        self.assertEqual(p["PublishableGameIDs"], [])
+        self.assertIsNone(state["Games"][GAME]["PendingSince"])
+        self.assertEqual(state["Games"][GAME]["PublishedAt"], "2026-10-17T16:40:00Z")
+
+    def test_price_only_canonical_change_not_source_baseline(self):
+        _, state = plan()
+        schedule, canonical = inputs()
+        canonical["Games"][0]["HomeMoneyline"] = -500
+        p, state2 = plan(prior=state, canonical=canonical,
+                         now=BASE_TIME + timedelta(minutes=40))
+        self.assertFalse(p["PublishableGameIDs"])
+        self.assertEqual(state["Games"][GAME]["PublishedAt"],
+                         state2["Games"][GAME]["PublishedAt"])
+
+    def test_kickoff_pregame_flush_and_past_game_excluded(self):
+        _, state = plan()
+        small = {"SpreadLine": 3.5, "TotalLine": 44.5}
+        kickoff = datetime(2026, 10, 18, 17, 0, tzinfo=timezone.utc)
+        p, state = plan(small, prior=state, now=kickoff - timedelta(minutes=10))
+        self.assertEqual(p["PublicationReasons"][GAME], "pregame_last_flush")
+        p, _ = plan(small, prior=state, now=kickoff + timedelta(minutes=1))
+        self.assertEqual(p["PublishableGameIDs"], [])
+
+    def test_invalid_state_or_feed_fails_closed(self):
+        _, state = plan()
+        for bad in (
+            {**state, "SchemaVersion": 99},
+            {**state, "Games": {}},
+        ):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    plan(prior=bad, now=BASE_TIME + timedelta(minutes=10))
+        with self.assertRaises(ValueError):
+            plan(prior=state, now=BASE_TIME - timedelta(minutes=1))
+        with self.assertRaises(ValueError):
+            plan({"SpreadLine": float("nan"), "TotalLine": 44.5})
+        with self.assertRaises(ValueError):
+            plan({"SpreadLine": 3.0, "TotalLine": -2.0})
+
+    def test_strict_upstream_csv_join_ignores_prices(self):
+        rows = [{
+            "game_id": GAME, "spread_line": "3.5", "total_line": "44.5",
+            "home_moneyline": "-1000",
+        }]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "games.csv"
+            with path.open("w", newline="", encoding="utf-8") as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+                writer.writeheader()
+                writer.writerows(rows)
+            observed = read_upstream_lines(path, 2026, {GAME})
+            self.assertEqual(observed[GAME], {"SpreadLine": 3.5, "TotalLine": 44.5})
+            with self.assertRaises(ValueError):
+                read_upstream_lines(path, 2026, {GAME, "2026_07_ARI_NE"})
+            with path.open("a", encoding="utf-8") as stream:
+                stream.write(f"{GAME},3.5,44.5,-1000\n")
+            with self.assertRaisesRegex(ValueError, "Duplicate"):
+                read_upstream_lines(path, 2026, {GAME})
+
+    def test_serialized_state_is_byte_stable_after_recovery(self):
+        _, state = plan()
+        raw = serialize_state(state)
+        self.assertEqual(raw, serialize_state(json.loads(raw)))
+
+
+if __name__ == "__main__":
+    unittest.main()
