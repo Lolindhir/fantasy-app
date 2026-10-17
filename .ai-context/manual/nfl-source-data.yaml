@@ -338,13 +338,13 @@ scheduleOddsContract:
     lines fail closed before output is written.
   fields: >
     Each game carries GameID, GameType, Week, AwayMoneyline, HomeMoneyline,
-    SpreadLine, AwaySpreadOdds, HomeSpreadOdds, TotalLine, UnderOdds, OverOdds,
-    ImpliedAwayPoints and ImpliedHomePoints. Missing lines remain null, never zero.
+    SpreadLine, AwaySpreadOdds, HomeSpreadOdds, TotalLine, UnderOdds, OverOdds.
+    Missing source lines remain null, never zero. The canonical market evidence
+    does not contain any modeled/derived team points.
   spreadConvention: >
     nflverse spread_line is the away point spread: positive = home favored.
-    When both SpreadLine and TotalLine exist, ImpliedAwayPoints=(TotalLine-SpreadLine)/2
-    and ImpliedHomePoints=(TotalLine+SpreadLine)/2, rounded to hundredths.
-    These are market-implied team totals, not a provider's exact-score predictions.
+    Keep that source convention attributed; calculations of implied team points
+    exclusively belong in the global shared-derived NFL Game product (#1077).
   historicity: >
     Only one latest line per game is available, not an intraday odds-movement
     history. Existing older-season canonical partitions are frozen by the standard
