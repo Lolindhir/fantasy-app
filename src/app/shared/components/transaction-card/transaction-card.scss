@@ -60,6 +60,30 @@
 .transaction-card__movement { width: 14px; height: 14px; flex: 0 0 14px; color: #139468; font-size: 14px; }
 .transaction-card__asset-line--outgoing .transaction-card__movement { color: #b85869; }
 
+/* A trade must not reserve a fixed-width team column on narrow screens.
+   Keep the full team identity readable, then let assets use the entire card. */
+.transaction-card--trade .transaction-card__participant {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding-block: 7px;
+}
+.transaction-card--trade .transaction-card__team {
+  flex: none;
+  min-width: 0;
+  max-width: 100%;
+}
+.transaction-card--trade .transaction-card__assets {
+  flex: none;
+  width: 100%;
+  gap: 5px 13px;
+}
+.transaction-card--trade .transaction-card__asset-line--pick {
+  flex: 1 1 100%;
+  width: 100%;
+}
+
+
 .transaction-card__player, .transaction-card__pick {
   display: inline-flex;
   align-items: center;
