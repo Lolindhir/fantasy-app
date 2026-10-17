@@ -54,7 +54,11 @@ derived:
   interpretation: market-expected-points-not-a-prediction-or-actual-score
   marketPriceFields: omitted-from-product-and-ignored-for-invalidation
 temporal:
-  kickoff: canonical-source-GameDay/GameTime-as-is
+  kickoff: >
+    Canonical GameDay is required. GameTime is nullable for historical seasons
+    (1999 schedules have unknown times) and is preserved as null; no invented
+    kickoff instant/timezone or observation timestamp.
+  gameTime: nullable-canonical-source-string
   finality: canonical-nflverse.game-finality-only
   historicalMarketCaveat: latest-line-not-proven-original-pregame-line
   noInventedObservationTimestamp: true
