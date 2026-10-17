@@ -58,6 +58,7 @@ def baseline_coverage(root: Path, paths: set[str]) -> dict[str, str]:
     if "unittest discover" not in fm or "fantasy-management/_ai/scripts/tests" not in fm:
         raise ValueError("Fantasy Management validation discovery changed")
     python_refs = set(re.findall(r"tools[./]tests[./](test_[a-zA-Z0-9_]+)", build))
+    discover_patterns = set(re.findall(r'-p "([^"]+\\.py)"', build))
     indirect = set(re.findall(r"tools\.tests\.(test_[a-zA-Z0-9_]+)", bridge))
     coverage = {}
     for path in paths:
@@ -69,7 +70,8 @@ def baseline_coverage(root: Path, paths: set[str]) -> dict[str, str]:
         elif path.endswith(".test.cjs") and path.startswith("tools/tests/run-workflow-scheduler"):
             coverage[path] = "build"
         elif path.startswith("tools/tests/") and (fnmatch.fnmatch(name, "test_nfl_source*")
-              or fnmatch.fnmatch(name, "test_league_source*") or name in python_refs):
+              or fnmatch.fnmatch(name, "test_league_source*") or name in python_refs
+              or any(fnmatch.fnmatch(Path(path).name, pat) for pat in discover_patterns)):
             coverage[path] = "build"
         elif path.startswith("tools/tests/") and name in indirect:
             coverage[path] = "build-indirect"
