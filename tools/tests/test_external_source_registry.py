@@ -23,6 +23,7 @@ from external_source.snapshot_plan import (  # noqa: E402
 )
 from external_source.observation_adapter import (  # noqa: E402
     ObservationAdapterError, load_ranked_evidence, load_roster_activity_evidence,
+    normalize_ranked_observations, normalize_sleeper_activity_observations,
 )
 from external_source.snapshot_discovery import Snapshot  # noqa: E402
 from datetime import date
@@ -411,6 +412,131 @@ class VersionedObservationAdapterTests(unittest.TestCase):
             doc.write_text(json.dumps(fixture), encoding="utf-8")
             with self.assertRaisesRegex(ObservationAdapterError, "cannot mean zero"):
                 load_roster_activity_evidence(dataset, doc)
+
+
+
+class NeutralObservationProjectionTests(unittest.TestCase):
+    def snapshot(self, dataset: dict, day: str) -> Snapshot:
+        folder = reg.dataset_dir(REPO_ROOT, dataset) / "snapshots" / day
+        return Snapshot(
+            day=date.fromisoformat(day), observed_at=None, key=day,
+            directory=folder, ranking_file=folder / "ranking.csv",
+            metadata_file=folder / "metadata.json",
+        )
+
+    def test_legacy_league_count_is_not_carried_into_global_provider_rows(self) -> None:
+        dataset = reg.get_dataset(
+            real_registry(), "fantasy-football-calculator.adp.redraft-ppr-8-team"
+        )
+        snapshot = self.snapshot(dataset, "2026-09-20")
+        raw = load_ranked_evidence(dataset, snapshot)
+        self.assertIn("actual_league_team_count", raw.columns)
+        output = normalize_ranked_observations(
+            REPO_ROOT, dataset, snapshot, mapping_index=ident.MappingIndex([])
+        )
+        self.assertEqual(len(raw.rows), len(output))
+        self.assertEqual(8, output[0].provider_team_count)
+        self.assertTrue(all(
+            "actual_league_team_count" not in row.provider_values for row in output
+        ))
+        self.assertTrue(all(
+            row.canonical_player_id is None and row.identity_status == "no-provider-key"
+            for row in output
+        ))
+        self.assertEqual(output, normalize_ranked_observations(
+            REPO_ROOT, dataset, snapshot, mapping_index=ident.MappingIndex([])
+        ))
+
+    def test_fantasycalc_draft_pick_is_never_a_player_and_mapping_conflicts_fail_closed(self) -> None:
+        dataset = reg.get_dataset(
+            real_registry(), "fantasycalc.value.dynasty-superflex-ppr-8-team"
+        )
+        snapshot = self.snapshot(dataset, "2026-10-16")
+        evidence = load_ranked_evidence(dataset, snapshot)
+        player_id = next(row["sleeper_id"] for row in evidence.rows if row["asset_type"] == "player")
+        index = ident.MappingIndex([
+            {"Provider": "Sleeper", "ExternalID": player_id, "CanonicalPlayerID": "NFLP-A",
+             "FirstObservedSeason": 2026, "LastObservedSeason": 2026},
+            {"Provider": "Sleeper", "ExternalID": player_id, "CanonicalPlayerID": "NFLP-B",
+             "FirstObservedSeason": 2026, "LastObservedSeason": 2026},
+        ])
+        result = normalize_ranked_observations(
+            REPO_ROOT, dataset, snapshot, mapping_index=index
+        )
+        player = next(row for row in result if row.provider_player_id == player_id)
+        self.assertEqual(("ambiguous", None), (player.identity_status, player.canonical_player_id))
+        self.assertTrue(any(row.asset_type == "draft_pick" for row in result))
+        self.assertTrue(all(
+            row.identity_status == "not-a-player" and row.canonical_player_id is None
+            for row in result if row.asset_type == "draft_pick"
+        ))
+        self.assertEqual(
+            [(i + 1, row.dataset_id) for i, row in enumerate(result)],
+            [(row.source_row_number, dataset["id"]) for row in result],
+        )
+
+    def test_sleeper_two_dataset_views_keep_top_n_unknown_distinct_from_zero(self) -> None:
+        doc = REPO_ROOT / "data-source/market/roster-activity/sleeper/latest.json"
+        for action in ("add", "drop"):
+            dataset = reg.get_dataset(real_registry(), f"sleeper.trending.{action}")
+            rows = normalize_sleeper_activity_observations(
+                REPO_ROOT, dataset, doc, mapping_index=ident.MappingIndex([])
+            )
+            self.assertGreater(len(rows), 0)
+            self.assertTrue(all(
+                row.dataset_id == dataset["id"]
+                and row.observation_season == 2026
+                and row.snapshot_key == "latest"
+                and row.canonical_player_id is None
+                for row in rows
+            ))
+            self.assertTrue(any(
+                row.provider_values["status"] == "not_listed"
+                and row.provider_values["rank"] is None
+                and row.provider_values["count"] is None
+                for row in rows
+            ))
+            self.assertFalse(any(
+                "comparison" in row.provider_values for row in rows
+            ))
+
+    def test_current_19_dataset_rows_have_stable_id_and_correct_version(self) -> None:
+        index = ident.MappingIndex([])
+        entries = real_registry()["datasets"]
+        self.assertEqual(19, len(entries))
+        for dataset in entries:
+            with self.subTest(dataset=dataset["id"]):
+                if dataset["provider"] == "sleeper":
+                    rows = normalize_sleeper_activity_observations(
+                        REPO_ROOT, dataset,
+                        REPO_ROOT / "data-source/market/roster-activity/sleeper/latest.json",
+                        mapping_index=index,
+                    )
+                else:
+                    pointer = json.loads(
+                        (reg.dataset_dir(REPO_ROOT, dataset) / "latest.json").read_text(encoding="utf-8")
+                    )
+                    day = Path(pointer["ranking_file"]).parent.name
+                    rows = normalize_ranked_observations(
+                        REPO_ROOT, dataset, self.snapshot(dataset, day), mapping_index=index
+                    )
+                self.assertGreater(len(rows), 0)
+                self.assertEqual(dataset["id"], rows[0].dataset_id)
+                self.assertEqual(
+                    [*range(1, len(rows) + 1)],
+                    [row.source_row_number for row in rows],
+                )
+                self.assertTrue(all(row.observation_season == 2026 for row in rows))
+                self.assertEqual(
+                    rows,
+                    (normalize_sleeper_activity_observations(
+                        REPO_ROOT, dataset,
+                        REPO_ROOT / "data-source/market/roster-activity/sleeper/latest.json",
+                        mapping_index=index,
+                    ) if dataset["provider"] == "sleeper" else normalize_ranked_observations(
+                        REPO_ROOT, dataset, self.snapshot(dataset, day), mapping_index=index
+                    )),
+                )
 
 
 if __name__ == "__main__":
