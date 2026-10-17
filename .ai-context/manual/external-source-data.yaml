@@ -113,6 +113,31 @@ readOnlyVersionedAdapters:
     archive writes or App publication. #190 still governs storage and rights,
     and 4A.2/4A.3 writer activation stays blocked while storage is unknown.
 
+marketObservationsPreview:
+  implementation: tools/external_source/market_observations.py
+  status: "4B read-only draft: NO new data-derived writer or App/FM publication"
+  commands:
+    inventory: "python tools/external_source/market_observations.py inventory"
+    preview: "python tools/external_source/market_observations.py preview --dataset-id <DatasetID> --season <NFLObservationSeason>"
+  partition: "market-observations/<DatasetID>/<NFLObservationSeason>.json (intended future path only)"
+  schemaVersion: 1
+  semantics: >
+    Read all persisted daily and future intraday ranking snapshots from Source
+    and group by actual observation NFL season. Validate original provider
+    schema version, ranking hash and player identity via the Source mapping
+    owner. Include original provider metrics, registry format, rights and
+    attribution. Preserve missing legacy observation instants as null.
+    Sleeper add/drop are two views of the single current latest observation
+    until 4A.3 adds lawful durable Source history; do not invent missing history.
+    A repeat preview with identical Source and mappings yields identical bytes
+    and candidate SHA-256. CLI prints only counts, fingerprint and rights,
+    never player observations.
+  safety: >
+    CLI has inventory and preview only, no write, publish, update, workflow or
+    scheduler entry point. Additional durable archive and Shared-Derived
+    publication are still gated by dataset rights under #190 and subsequent
+    checkpoint acceptance. #471 owns eventual scheduled orchestration.
+
 identity:
   file: identity.json per dataset
   producer: tools/external_source/identity.py (tools/external_source_data.py identity)
