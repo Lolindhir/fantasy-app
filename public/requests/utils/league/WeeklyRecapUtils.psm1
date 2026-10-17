@@ -448,9 +448,10 @@ function Get-WrTeamAwards {
         throw "WeeklyRecaps TeamAwards incomplete derived team population: $Season/W$Week"
     }
     $awards = Get-WrValue $derived @('Awards')
+    # An empty winner array is valid (e.g. zero potential), but absent fields are not.
     if ($null -eq $awards -or
-        $null -eq (Get-WrValue $awards @('BestManagerRosterIDs')) -or
-        $null -eq (Get-WrValue $awards @('BestCoachRosterIDs'))) {
+        $awards.PSObject.Properties.Name -notcontains 'BestManagerRosterIDs' -or
+        $awards.PSObject.Properties.Name -notcontains 'BestCoachRosterIDs') {
         throw "WeeklyRecaps TeamAwards derived winner evidence is missing: $Season/W$Week"
     }
     $result = [PSCustomObject][ordered]@{ State = 'available'; BestManager = @(); BestCoach = @() }
