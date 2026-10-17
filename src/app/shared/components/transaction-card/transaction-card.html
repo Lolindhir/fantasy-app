@@ -41,7 +41,7 @@
         @if (category === 'trade' || transaction.Participants.length > 1) {
           <div class="transaction-card__team">
             @if (participant.Team; as team) {
-              <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" />
+              <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" align="end" />
             } @else {
               <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
             }
@@ -92,7 +92,7 @@
   >
     @if (category !== 'trade') {
       <mat-icon class="transaction-card__movement" aria-hidden="true">
-      {{ direction === 'incoming' ? 'add' : 'remove' }}
+        {{ direction === 'incoming' ? 'add' : 'remove' }}
       </mat-icon>
     }
 
