@@ -136,6 +136,28 @@ rosterActivityHistoryReader:
     visibility remain separate controls and must not be inferred from the
     presence of a read-only parser.
 
+dormantSleeperArchiveWriter:
+  module: tools/external_source/sleeper_archive_writer.py
+  status: "4A.3 synthetic/isolated writer primitive ONLY, no producer cutover"
+  retention: >
+    Persist one combined Sleeper add/drop observation per UTC day even when
+    semantic ranks/counts match the last archived day. Append more observations
+    within the same day only when the provider semantic fingerprint changes.
+    Never replace old immutable data or infer backfill from latest.json.
+  sourceContract: >
+    Strip FM comparison deltas from immutable Source evidence, retain provider
+    attribution, Top-N rank/count semantics and generated_at instant. Validate
+    every candidate via the same fail-closed read-only Source history reader
+    before any canonical snapshot directory creation.
+  rightsGate: >
+    A future caller must independently verify both private repository storage
+    and explicit per-dataset allowed rights.storage; these are not currently
+    satisfied by the public repo/unknown rights. The writer is not called by
+    any Sleeper fetcher or GitHub Action, and no vendor archive is committed.
+  publication: >
+    Uses complete staged immutable directories; future Git publication still
+    requires branch CAS safety and approved output scopes, and this primitive
+    itself never updates Source latest, Derived or public/data paths.
 marketObservationsPreview:
   implementation: tools/external_source/market_observations.py
   status: "4B read-only draft: NO new data-derived writer or App/FM publication"
