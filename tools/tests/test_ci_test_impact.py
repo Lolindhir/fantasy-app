@@ -62,6 +62,16 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(set(ci.GROUPS), set(result["selected"]))
         self.assertTrue(result["uncertain"])  # CP3 semantic diff exception needs proof first
 
+    def test_new_python_typescript_javascript_powershell_tests_are_discoverable(self):
+        for path in ("tools/tests/feature_test.py", "src/app/new.test.ts",
+                     "src/app/new.spec.js", "tools/tests/runner.test.mjs",
+                     "public/requests/IdentityBoundaryTest.ps1"):
+            with self.subTest(path=path):
+                self.assertTrue(ci.is_test(path))
+                result = self.choose(path)
+                self.assertEqual(set(ci.GROUPS), set(result["selected"]))
+                self.assertTrue(result["uncertain"])
+
     def test_unclassified_new_test_requires_all_deep(self):
         result = self.choose("tools/tests/test_new_file.py")
         self.assertEqual(set(ci.GROUPS), set(result["selected"]))
