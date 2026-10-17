@@ -10,7 +10,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from odds_change_gate import OddsGateConfig, evaluate_game, evaluate_games
+from odds_change_gate import OddsGateConfig, evaluate_game, evaluate_games, next_pending_since
 
 
 NOW = datetime(2026, 10, 17, 12, 0, tzinfo=timezone.utc)
@@ -19,11 +19,12 @@ GAME = "2026_06_HOU_JAX"
 
 
 def decision(observed: dict, *, previous: dict | None = None, minutes: int = 10,
-             kickoff: datetime | None = None):
+             kickoff: datetime | None = None, pending_minutes: int | None = None):
     return evaluate_game(
         GAME, published=BASE if previous is None else previous,
         observed=observed, observed_at=NOW,
         published_at=NOW - timedelta(minutes=minutes),
+        pending_since=(NOW - timedelta(minutes=pending_minutes)) if pending_minutes is not None else None,
         kickoff_at=kickoff,
     )
 
@@ -59,11 +60,13 @@ class SemanticOddsGateTests(unittest.TestCase):
         self.assertTrue(decision({**BASE, "TotalLine": 46.5}).publish)
 
     def test_time_gates_only_when_actual_difference_remains(self):
-        self.assertFalse(decision({**BASE, "SpreadLine": 4.0}, minutes=59).publish)
-        result = decision({**BASE, "SpreadLine": 4.0}, minutes=60)
+        self.assertFalse(decision({**BASE, "SpreadLine": 4.0}, minutes=180, pending_minutes=59).publish)
+        result = decision({**BASE, "SpreadLine": 4.0}, minutes=180, pending_minutes=60)
         self.assertTrue(result.publish)
         self.assertEqual(result.reason, "maximum_age_with_pending_change")
         self.assertFalse(decision(BASE, minutes=120).publish)
+        self.assertFalse(decision({**BASE, "SpreadLine": 4.0}, minutes=180).publish)
+        self.assertFalse(decision({**BASE, "SpreadLine": 4.0}, minutes=180, pending_minutes=2).publish)
 
     def test_missing_to_known_and_known_to_missing_are_immediate(self):
         result = decision({**BASE, "SpreadLine": None})
@@ -93,12 +96,45 @@ class SemanticOddsGateTests(unittest.TestCase):
             observed={GAME: same, "2026_06_CAR_PHI": same},
             published_at_by_game={
                 GAME: NOW - timedelta(minutes=61),
-                "2026_06_CAR_PHI": NOW - timedelta(minutes=4),
+                "2026_06_CAR_PHI": NOW - timedelta(minutes=70),
             },
             observed_at=NOW,
+            pending_since_by_game={GAME: NOW - timedelta(minutes=61), "2026_06_CAR_PHI": NOW - timedelta(minutes=2)},
         )
         self.assertEqual([x.publish for x in result], [False, True])
         self.assertEqual(result[1].reason, "maximum_age_with_pending_change")
+
+    def test_pending_buffer_starts_on_first_net_change_and_resets_on_reversion(self):
+        first = NOW - timedelta(minutes=50)
+        observed = {**BASE, "SpreadLine": 4.0}
+        pending = next_pending_since(
+            published=BASE, observed=observed,
+            previous_pending_since=None, observed_at=first,
+        )
+        self.assertEqual(pending, first)
+        pending = next_pending_since(
+            published=BASE, observed={**BASE, "SpreadLine": 4.5},
+            previous_pending_since=pending, observed_at=NOW,
+        )
+        self.assertEqual(pending, first)
+        self.assertFalse(decision({**BASE, "SpreadLine": 4.0},
+                                  minutes=180, pending_minutes=50).publish)
+        self.assertIsNone(next_pending_since(
+            published=BASE, observed={**BASE, "HomeMoneyline": -999},
+            previous_pending_since=pending, observed_at=NOW,
+        ))
+        again = next_pending_since(
+            published=BASE, observed=observed,
+            previous_pending_since=None, observed_at=NOW,
+        )
+        self.assertEqual(again, NOW)
+        self.assertFalse(decision(observed, minutes=180, pending_minutes=0).publish)
+
+    def test_pending_buffer_price_changes_never_start_clock(self):
+        self.assertIsNone(next_pending_since(
+            published=BASE, observed={**BASE, "OverOdds": -120},
+            previous_pending_since=None, observed_at=NOW,
+        ))
 
     def test_invalid_data_fail_closed(self):
         for value in (float("nan"), float("inf"), "3.5", True):
