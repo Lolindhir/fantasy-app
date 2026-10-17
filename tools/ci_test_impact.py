@@ -27,8 +27,12 @@ VALID_STATES = {"added", "modified", "changed", "renamed", "removed", "deleted",
 def is_test(path: str) -> bool:
     name = path.rsplit("/", 1)[-1]
     return (bool(re.fullmatch(r"test_[\w-]+\.py", name))
-            or name.endswith(".spec.ts") or name.endswith(".test.cjs")
-            or bool(re.fullmatch(r"[\w-]+Regression(?:Legacy)?Test\.ps1", name)))
+            or name.endswith("_test.py")
+            or any(name.endswith(suffix) for suffix in (
+                ".spec.ts", ".test.ts", ".spec.tsx", ".test.tsx",
+                ".spec.js", ".test.js", ".spec.mjs", ".test.mjs",
+                ".spec.cjs", ".test.cjs"))
+            or bool(re.fullmatch(r"[\w-]+(?:Test|Tests)\.ps1", name)))
 
 
 def discover(root: Path) -> set[str]:
