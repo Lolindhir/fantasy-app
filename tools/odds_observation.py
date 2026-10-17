@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from data_roots import DATA_SOURCE_ROOT
+from nfl_source_data_lib.common import download
 from odds_observation_buffer import plan_observation, read_upstream_lines, serialize_state
 
 
@@ -39,6 +40,19 @@ def _atomic_write(path: Path, value: str) -> None:
     finally:
         if os.path.exists(temp):
             os.unlink(temp)
+
+
+def fetch_registered_odds(root: Path, destination: Path) -> None:
+    """Fetch just the existing registered nflverse games.csv Source artifact."""
+    registry = _load(root / DATA_SOURCE_ROOT / "registry.json")
+    matches = [row for row in registry.get("datasets", [])
+               if row.get("id") == "nflverse.schedule-odds"]
+    if len(matches) != 1:
+        raise ValueError("Exactly one canonical nflverse.schedule-odds registry entry required")
+    source_url = matches[0].get("sourceUrl")
+    if source_url != "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv":
+        raise ValueError("Unexpected registered NFL odds origin")
+    download(source_url, destination)
 
 
 def run(
@@ -73,7 +87,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--season", type=int, required=True)
-    parser.add_argument("--upstream-csv", type=Path, required=True)
+    upstream = parser.add_mutually_exclusive_group(required=True)
+    upstream.add_argument("--upstream-csv", type=Path, help="existing upstream games.csv file")
+    upstream.add_argument("--fetch-registered-odds", action="store_true",
+                          help="download only the declared nflverse schedule odds Source artifact")
     parser.add_argument("--state-input", type=Path)
     parser.add_argument("--write-state", type=Path,
                         help="explicit durable technical state path, not canonical or App data")
@@ -82,11 +99,16 @@ def main() -> int:
     try:
         at = (datetime.fromisoformat(args.observed_at.replace("Z", "+00:00"))
               if args.observed_at else datetime.now(timezone.utc))
-        plan = run(
-            args.repo_root.resolve(), season=args.season,
-            upstream_csv=args.upstream_csv, state_input=args.state_input,
-            state_output=args.write_state, observed_at=at,
-        )
+        with tempfile.TemporaryDirectory(prefix="nfl-odds-observe-") as tmp:
+            upstream_csv = args.upstream_csv
+            if args.fetch_registered_odds:
+                upstream_csv = Path(tmp) / "games.csv"
+                fetch_registered_odds(args.repo_root.resolve(), upstream_csv)
+            plan = run(
+                args.repo_root.resolve(), season=args.season,
+                upstream_csv=upstream_csv, state_input=args.state_input,
+                state_output=args.write_state, observed_at=at,
+            )
     except (ValueError, TypeError, KeyError, OSError, json.JSONDecodeError) as error:
         print(f"odds_observation failed: {error}", file=sys.stderr)
         return 1
