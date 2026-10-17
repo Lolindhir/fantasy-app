@@ -5,13 +5,17 @@ import json
 import shutil
 import tempfile
 import unittest
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
-from tools.nfl_source_data_lib import common as common_mod
-from tools.nfl_source_data_lib.phase1 import _build_schedule_odds
+TOOLS = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(TOOLS))
+
+from nfl_source_data_lib import common as common_mod
+from nfl_source_data_lib.phase1 import _build_schedule_odds
 from data_roots import DATA_SOURCE_ROOT
-from tools.nfl_source_data_lib.source_projection import (
+from nfl_source_data_lib.source_projection import (
     SCHEDULE_ODDS_COLUMNS,
     SCHEDULE_ODDS_PROJECTION_ID,
     SCHEDULE_ODDS_PROJECTION_VERSION,
