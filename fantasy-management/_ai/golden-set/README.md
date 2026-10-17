@@ -67,6 +67,13 @@ Evaluation should review at least:
 
 Schema validation alone cannot prove editorial quality.
 
+
+## Weekly pilot coverage review
+
+For `game-matchup-preview` and `weekly-fantasy-start-sit`, selection of the right profile is necessary but not sufficient. Independently enumerate each *source-spoken* game call, Start/Sit answer, player-vs-player ranking, injury contingency, streaming/waiver strategy and longer-horizon trade recommendation before accepting authored takes as complete. Preserve the distinct source confidence behind each game; never merge games because both have the same O/U. Short explicit Q&A answers require a reusable take even when source depth is `brief`.
+
+Golden Set dimensions are conditional; they do not require the source to support invented details. Transcription identity uncertainty may remain unresolved with `entity: null` and must not suppress a source claim. Cue-level literal evidence and neutral labels for unconfirmed speaker differences are required for meaningful editorial review. Follow `PODCAST_EXTRACTION_RULES.md` for source-first coverage and evidence QA.
+
 ## Controlled extension
 
 Every completed extraction performs a process review and may propose:

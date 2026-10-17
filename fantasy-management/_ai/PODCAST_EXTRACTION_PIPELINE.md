@@ -133,6 +133,13 @@ A builder may copy the complete working package into the published location and 
 
 The active `game-matchup-preview` and `weekly-fantasy-start-sit` Golden Set profiles cover genuine NFL week/game previews and player-specific fantasy calls. A `game` may be the independent primary subject of a source take. For the listed weekly segment/take types, `weekly_context` records the **season and week**; attach verified matchup home/away teams and canonical game ID if available. Keep game-wide claims independent of but linked to affected players, preserve timing and host differences, and never rewrite original predictions with later scores or injuries. A podcast start/sit call is source evidence and never automatically a Mighty Giants lineup recommendation.
 
+
+### In-season source-first completion checkpoint
+
+For weekly and game-by-game episodes, `takes_complete` for a Content Map segment requires an independent **raw-cue source-claim/question inventory**, checking every separate game forecast, start/sit comparison, streaming option, source condition, longer-horizon market action and late Q&A against a corresponding take. A three-claim summary plus internally consistent take links is not proof of completeness. The inventory should preserve distinct source conviction and matchups, and may live in private pilot QA artifacts prior to final publication.
+
+The evidence gate requires literal SRT-backed excerpt hints and source-local timestamps for each materially separate argument; neither placeholders nor unrelated cue windows qualify. Keep source risks and speaker opinions apart from extractor QA notes, and avoid assuming verified identity just from a plausible ASR name. Do not promote unverified raw transcripts to the public repository.
+
 ## Content Map
 
 The Content Map is a required durable planning and completeness artifact for new pipeline packages.

@@ -246,6 +246,41 @@ The audit is complete only when:
 
 A package is complete only when `coverage_audit.status` is `completed`.
 
+
+## In-season source-first coverage and evidence QA (approved pilot refinement)
+
+These requirements apply to weekly matchups, Start/Sit shows, Q&A and mixed episodes in addition to the independent full entity mention sweep. **Unresolved identities are acceptable intermediate work state; missing source statements are not.**
+
+### Source-first claim and question sweep
+
+Before marking any Content Map segment `takes_complete`:
+
+1. Read every original SRT/raw cue in the segment **again**, independently of its draft take IDs, planned claims or generated summary.
+2. Inventory every explicit start/sit, player-vs-player question and answer, weekly rank, winner/score/game-script call, materially reasoned positive/negative outlook, and source-expressed injury/usage condition.
+3. Inventory standalone *non-weekly* trade/acquire/avoid/waiver-budget or other strategic statements independently, even if the player has an existing weekly take.
+4. Record a traceable source obligation and matching take ID for each such statement. Passing teammate references do not automatically require new takes; however a brief explicit recommendation does.
+5. Reconcile **source inventory -> authored takes**, not merely **planned takes -> authored takes**. The latter validates internal consistency but cannot prove source recall.
+6. A complete segment includes its late questions, follow-up answers and sidebars; do not omit content after a nominal outro.
+
+The source-first inventory is a separate editorial coverage check, not a replacement for the full second-pass `mentions.json` entity audit. Schema-valid packages can still fail this editorial review. Never declare a segment complete solely because its original three broad claims or IDs were covered.
+
+### Evidence and source/QA separation
+
+- Every substantive take must include a literal, non-placeholder source quote hint and the original raw part/cue-range. A take with several independent statements needs multiple evidence points when one cue cannot support them all.
+- Anchor the evidence to the actual relevant cue; do not use the first cue of an entire several-minute discussion merely for convenience. Preserve SRT timing precision as *cue precision*, not as proof of audio accuracy.
+- Quote hints must be substrings of unchanged source text. Fabricated or paraphrased hints, `TODO`, or pointers saying only 'see raw part' do not qualify.
+- `risks`, `conditions`, `uncertainties` and `host_views` describe **what the source expressed**. Extraction-only concerns (ASR distortion, unverified name, absence of audio, suspicious chronology, weak attribution or missing external fact verification) belong in `entity_resolution.reason`, `notes` or a separate QA report.
+- Never assign named speakers from an unverified automatic diarization label. Distinct but unattributed speaker positions may be represented with explicit neutral labels and an attribution warning.
+- Classify `source_depth` by the source's actual reasoning (passing / brief / substantive / deep / structural), not by the length of JSON or topic importance. A one-sentence Q&A start decision is often `brief`; a multi-mechanism game argument may be `deep`.
+
+### Temporal, matchup and identity boundaries
+
+- One structured `game` subject denotes **one game**; don't join two games simply because they share a betting total or weekly rubric. Retain different source confidence between games.
+- A weekly lineup preference and a longer-term buy/sell/hold/avoid thesis can be two independent takes for the same player. Preserve their time horizon and reason separately.
+- A transcript-context identity hypothesis is not a confirmed canonical identity. Use `entity: null` with `ambiguous` or `unresolved` status until the claimed identity is sufficiently verified. Preserve raw mentions and plausible candidates in QA notes instead of silently resolving them.
+- Identity-resolution status can remain open during a pilot. Do not discard the original source call simply because identity is unresolved; also do not publish an unsupported alias or treat source news as verified NFL fact.
+- Maintain extraction fidelity separately from later source-calibration and Mighty Giants lineup decisions.
+
 ## `index.json` rule
 
 `index.json` is the local technical map. It may contain:
