@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import math
 import os
 import re
 import sys
@@ -56,13 +57,20 @@ def validate_state(state: object, season: int) -> dict:
             _stamp(entry.get(field))
         if entry.get("PendingSince") is not None:
             _stamp(entry["PendingSince"])
-        if not isinstance(entry.get("PublishedFingerprint"), str) or len(entry["PublishedFingerprint"]) != 64:
+        if not isinstance(entry.get("PublishedFingerprint"), str) or not re.fullmatch(r"[0-9a-f]{64}", entry["PublishedFingerprint"]):
             raise StatePublicationError(f"{game_id}: invalid published baseline fingerprint")
         for field in ("ObservedSpreadLine", "ObservedTotalLine"):
             if entry.get(field) is not None and (
                 isinstance(entry[field], bool) or not isinstance(entry[field], (int, float))
+                or not math.isfinite(entry[field])
             ):
                 raise StatePublicationError(f"{game_id}: invalid observed line")
+        if _stamp(entry["PublishedAt"]) > _stamp(entry["ObservedAt"]):
+            raise StatePublicationError(f"{game_id}: published checkpoint after observation")
+        if entry.get("PendingSince") is not None and not (
+            _stamp(entry["PublishedAt"]) <= _stamp(entry["PendingSince"]) <= _stamp(entry["ObservedAt"])
+        ):
+            raise StatePublicationError(f"{game_id}: pending timestamp outside published/observed bounds")
     return state
 
 
@@ -72,7 +80,7 @@ def _decode_file(item: Mapping[str, Any], season: int) -> tuple[dict, str]:
     if not isinstance(sha, str) or not sha or not isinstance(encoded, str):
         raise StatePublicationError("Remote state response has no blob SHA or Base64 content")
     try:
-        raw = base64.b64decode(encoded, validate=False)
+        raw = base64.b64decode("".join(encoded.split()), validate=True)
         state = validate_state(json.loads(raw.decode("utf-8")), season)
     except (ValueError, UnicodeError) as exc:
         raise StatePublicationError("Remote state is corrupt") from exc
