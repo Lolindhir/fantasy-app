@@ -160,6 +160,27 @@ marketObservationsRestorePreflight:
     acceptance gates. #471 owns cross-product dependency orchestration.
 
 
+
+marketObservationsFullSourceAudit:
+  suite: tools/tests/test_market_observations_full_restore.py
+  command: "python -m unittest tools.tests.test_market_observations_full_restore -v"
+  semantics: >
+    In an isolated temporary root, byte-copy only existing real Source registry,
+    NFL schedule evidence, canonical provider mappings, all persisted ranking
+    snapshots and the existing Sleeper add/drop latest view. Do not copy
+    data-derived or App outputs. Enumerate every registry DatasetID and actual
+    observation NFL season, render each source-only candidate twice, compare
+    canonical JSON SHA-256 aggregates and enforce absence of derived writes.
+    Emit a compact CI audit with dataset/partition/observation/row counts and
+    two aggregate hashes, never raw provider rankings.
+  limits: >
+    This is a genuine all-registered-dataset read-only candidate rebuild, but
+    it is NOT the eventual persistent materializer's second-run/no-op check,
+    provider archive-retention approval or #471 generic orchestration proof.
+    Sleeper remains latest-only until a lawfully authorized durable source
+    archive exists. Historical mapping and source correction invalidation is
+    covered by the independent synthetic Source-only preflight fixture.
+
 identity:
   file: identity.json per dataset
   producer: tools/external_source/identity.py (tools/external_source_data.py identity)
