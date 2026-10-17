@@ -67,20 +67,26 @@ def evaluate_game(
     observed: Mapping[str, Any],
     published_at: datetime | None,
     observed_at: datetime,
+    pending_since: datetime | None = None,
     kickoff_at: datetime | None = None,
     config: OddsGateConfig = OddsGateConfig(),
 ) -> GameGateDecision:
     """Compare the latest observation to the last *published* game lines.
 
-    published_at is a per-GAME publication checkpoint, NOT the last time any
-    game in the season changed (which could starve small changes indefinitely).
-    The caller must persist this technical checkpoint across job invocations.
+    published_at is the last published checkpoint for this game. pending_since
+    marks when the CURRENT net line difference first arose, so a tiny change
+    following hours of inactivity does not immediately publish. The executor
+    must persist pending_since across polls, and clear it on reversal/publication.
     """
     _aware(observed_at, "observed_at")
     if published_at is not None:
         _aware(published_at, "published_at")
         if observed_at < published_at:
             raise ValueError("Observation predates the published checkpoint")
+    if pending_since is not None:
+        _aware(pending_since, "pending_since")
+        if pending_since > observed_at or (published_at is not None and pending_since < published_at):
+            raise ValueError("Pending start outside published/observed interval")
     if kickoff_at is not None:
         _aware(kickoff_at, "kickoff_at")
     if not game_id:
@@ -120,7 +126,7 @@ def evaluate_game(
         kickoff_at - observed_at <= timedelta(minutes=config.pre_kickoff_flush_minutes)
     ):
         return GameGateDecision(game_id, True, "pregame_last_flush", spread, total)
-    if observed_at - published_at >= timedelta(minutes=config.maximum_delay_minutes):
+    if pending_since is not None and observed_at - pending_since >= timedelta(minutes=config.maximum_delay_minutes):
         return GameGateDecision(game_id, True, "maximum_age_with_pending_change", spread, total)
     return GameGateDecision(game_id, False, "debounce_small_change", spread, total)
 
@@ -131,6 +137,7 @@ def evaluate_games(
     observed: Mapping[str, Mapping[str, Any]],
     published_at_by_game: Mapping[str, datetime],
     observed_at: datetime,
+    pending_since_by_game: Mapping[str, datetime] | None = None,
     kickoff_by_game: Mapping[str, datetime] | None = None,
     config: OddsGateConfig = OddsGateConfig(),
 ) -> list[GameGateDecision]:
@@ -145,6 +152,7 @@ def evaluate_games(
             observed=observed[game_id],
             published_at=published_at_by_game.get(game_id),
             observed_at=observed_at,
+            pending_since=(pending_since_by_game or {}).get(game_id),
             kickoff_at=(kickoff_by_game or {}).get(game_id),
             config=config,
         ))
