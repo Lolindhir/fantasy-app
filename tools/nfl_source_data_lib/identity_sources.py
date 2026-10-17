@@ -169,6 +169,176 @@ def _persisted_player_stats_gsis_ids(dataset: Dataset) -> set[str]:
     return ids
 
 
+def _historical_roster_position_group(position: str | None) -> str | None:
+    """Broad role compatibility is a veto, never an identity link on its own."""
+    value = (clean(position) or "").upper()
+    groups = {
+        "OL": {"OL", "C", "G", "T", "OT", "OG", "LT", "RT", "LG", "RG"},
+        "DL": {"DL", "DE", "DT", "NT", "EDGE"},
+        "DB": {"DB", "CB", "SAF", "S", "FS", "SS"},
+        "LB": {"LB", "ILB", "OLB", "MLB"},
+    }
+    for group, members in groups.items():
+        if value in members:
+            return group
+    return value or None
+
+
+def historical_weekly_roster_identity_candidates(
+    repo_root: Path,
+    datasets: dict[str, Dataset],
+    known_candidates: list[IdentityCandidate],
+) -> list[IdentityCandidate]:
+    """Restore roster-only GSIS and conservatively upgrade existing GSIS placeholders.
+
+    Only a genuine GSIS token creates roster evidence. For an already-persisted
+    person with nflverse's ESB-as-GSIS placeholder, we may attach the genuine
+    token to their *existing* CanonicalPlayerID if that ESB is exclusive to one
+    canonical person AND exactly one real GSIS across the persisted weekly raw.
+    A matching current team and compatible position (or independently matching
+    DOB) must corroborate it. A conflicting DOB is an unconditional veto.
+
+    ESB overlaps with existing real-GSIS people are never auto-linked. Names
+    cannot establish a match. Uncertain cases remain separate for audit.
+    """
+    dataset = datasets.get("nflverse.weekly-rosters")
+    if dataset is None or not dataset.is_season_partitioned:
+        return []
+
+    known_gsis = {
+        value
+        for candidate in known_candidates
+        if (value := candidate.ids.get("GSIS"))
+    }
+    existing = load_json(
+        repo_root / DATA_SOURCE_ROOT / "nfl/identities/players.json", {}
+    ) or {}
+    existing_players = existing.get("Players", []) or []
+    roster_owned_gsis: set[str] = set()
+    esb_owners: dict[str, set[str]] = defaultdict(set)
+    placeholder_by_id: dict[str, dict[str, Any]] = {}
+    for row in existing_players:
+        internal_id = clean(row.get("CanonicalPlayerID"))
+        ids = row.get("IDs") or {}
+        gsis = clean(ids.get("GSIS"))
+        esb = clean(ids.get("ESB"))
+        if internal_id:
+            if esb:
+                esb_owners[esb].add(internal_id)
+            for alias in (row.get("IDAliases") or {}).get("ESB") or []:
+                if (value := clean(alias)):
+                    esb_owners[value].add(internal_id)
+            if esb and (gsis == esb and not _VALID_GSIS_PLAYER_ID.fullmatch(gsis)
+                    and "nflverse.players" in (row.get("Sources") or [])
+                    and not any(_VALID_GSIS_PLAYER_ID.fullmatch(str(alias))
+                                for alias in (row.get("IDAliases") or {}).get("GSIS") or [])):
+                placeholder_by_id[internal_id] = row
+        if "nflverse.weekly-rosters" not in (row.get("Sources") or []):
+            continue
+        if gsis:
+            roster_owned_gsis.add(gsis)
+        for alias in (row.get("IDAliases") or {}).get("GSIS") or []:
+            if (value := clean(alias)):
+                roster_owned_gsis.add(value)
+
+    pattern = dataset.raw_path.name.replace("{season}", "*")
+    observed: set[str] = set()
+    raw_esb_by_gsis: dict[str, set[str]] = defaultdict(set)
+    gsis_by_esb: dict[str, set[str]] = defaultdict(set)
+    profile_by_gsis: dict[str, set[tuple[str | None, str | None, str | None]]] = defaultdict(set)
+    birth_dates_by_gsis: dict[str, set[str]] = defaultdict(set)
+    roster_seasons_by_gsis: dict[str, set[int]] = defaultdict(set)
+    for path in sorted(dataset.raw_path.parent.glob(pattern)):
+        if not path.is_file():
+            continue
+        for row in iter_csv(path):
+            gsis = clean(row.get("gsis_id"))
+            if not gsis or not _VALID_GSIS_PLAYER_ID.fullmatch(gsis):
+                continue
+            observed.add(gsis)
+            esb = clean(row.get("esb_id"))
+            if not esb:
+                continue
+            raw_esb_by_gsis[gsis].add(esb)
+            gsis_by_esb[esb].add(gsis)
+            roster_seasons_by_gsis[gsis].add(
+                int(clean(row.get("season")) or path.stem.rsplit("-", 1)[-1])
+            )
+            profile_by_gsis[gsis].add((
+                clean(row.get("team")),
+                _historical_roster_position_group(row.get("position"))
+                or _historical_roster_position_group(row.get("depth_chart_position")),
+                clean(row.get("depth_chart_position")),
+            ))
+            if (birth_date := clean(row.get("birth_date"))):
+                birth_dates_by_gsis[gsis].add(birth_date)
+
+    # An ESB may have a retired/season-scoped owner that is absent from active
+    # canonical IDs. Never bridge a real roster GSIS across a conflicting
+    # historical provider-ownership interval.
+    prior_provider_mappings = load_json(
+        repo_root / DATA_SOURCE_ROOT / "nfl/identities/provider-mappings.json", {}
+    ) or {}
+    historical_esb: dict[str, list[tuple[str, int, int]]] = defaultdict(list)
+    for mapping in prior_provider_mappings.get("Mappings", []) or []:
+        if mapping.get("Provider") != "ESB":
+            continue
+        token = clean(mapping.get("ExternalID"))
+        internal_id = clean(mapping.get("CanonicalPlayerID"))
+        if not token or not internal_id:
+            continue
+        first = int(mapping.get("FirstObservedSeason") or 0)
+        last = int(mapping.get("LastObservedSeason") or first)
+        historical_esb[token].append((internal_id, first, last))
+
+    candidates: list[IdentityCandidate] = []
+    for gsis in sorted(observed):
+        if gsis in known_gsis and gsis not in roster_owned_gsis:
+            continue
+        existing_internal_id = None
+        esbs = raw_esb_by_gsis.get(gsis, set())
+        if gsis not in known_gsis and len(esbs) == 1:
+            esb = next(iter(esbs))
+            owners = esb_owners.get(esb, set())
+            if len(owners) == 1 and gsis_by_esb.get(esb) == {gsis}:
+                owner = next(iter(owners))
+                seasons = roster_seasons_by_gsis.get(gsis, set())
+                conflicting_historical_owner = any(
+                    prior_id != owner and any(first <= year <= last for year in seasons)
+                    for prior_id, first, last in historical_esb.get(esb, [])
+                )
+                placeholder = placeholder_by_id.get(owner)
+                if placeholder is not None and not conflicting_historical_owner:
+                    old_dob = clean(placeholder.get("BirthDate"))
+                    raw_dobs = birth_dates_by_gsis.get(gsis, set())
+                    dob_conflict = bool(old_dob and raw_dobs and raw_dobs != {old_dob})
+                    dob_match = bool(old_dob and raw_dobs == {old_dob})
+                    team = clean(placeholder.get("LatestTeam"))
+                    position = _historical_roster_position_group(placeholder.get("Position"))
+                    profile_match = bool(team and position and any(
+                        team == raw_team and position == raw_position
+                        for raw_team, raw_position, _ in profile_by_gsis.get(gsis, set())
+                    ))
+                    if not dob_conflict and (dob_match or profile_match):
+                        existing_internal_id = owner
+
+        candidates.append(
+            IdentityCandidate(
+                ids={"GSIS": gsis},
+                name=None,
+                first_name=None,
+                last_name=None,
+                birth_date=None,
+                position=None,
+                latest_team=None,
+                source="nflverse.weekly-rosters",
+                priority=40,
+                existing_internal_id=existing_internal_id,
+            )
+        )
+    return candidates
+
+
 def raw_identity_candidates(
     repo_root: Path,
     datasets: dict[str, Dataset],
