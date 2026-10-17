@@ -138,6 +138,28 @@ marketObservationsPreview:
     publication are still gated by dataset rights under #190 and subsequent
     checkpoint acceptance. #471 owns eventual scheduled orchestration.
 
+
+marketObservationsRestorePreflight:
+  test: tools/tests/test_market_observations_restore_preflight.py
+  status: "4C targeted read-only clean-root and input-invalidation evidence, NOT 4C full restoration acceptance"
+  execution: "python -m unittest tools.tests.test_market_observations_restore_preflight -v"
+  guaranteesTested:
+    - "Source-only temp root with no preexisting data-derived dependencies yields the same deterministic candidate twice"
+    - "Injected stale derived candidate does not affect source-only rendering or get overwritten"
+    - "Ranked latest pointer and heartbeat-only refresh cannot cause semantic candidate dirty"
+    - "Earlier historical Source evidence corrections with matching recorded SHA-256 alter the affected candidate partition"
+    - "Identity mapping corrections/season validity, versioned Source schema, registry format/rights and renderer-version changes alter the candidate"
+    - "New UTC intraday observations extend observed history without synthetic dates; partial or corrupted Source fails closed"
+    - "Corrections to one observation season leave another existing season partition unchanged in the same isolated source fixture"
+  boundaries: >
+    The fixture uses synthetic ephemeral Source Evidence under an isolated
+    temporary root; no actual vendor ranking bytes are persisted or published.
+    No production data-derived writer, publisher, scheduler, FM reader or
+    Source fetch behavior changes. Full 19-dataset clean-root restore,
+    end-to-end no-op writer parity and rights approval from #190 are separate
+    acceptance gates. #471 owns cross-product dependency orchestration.
+
+
 identity:
   file: identity.json per dataset
   producer: tools/external_source/identity.py (tools/external_source_data.py identity)
