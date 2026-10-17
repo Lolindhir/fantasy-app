@@ -28,7 +28,7 @@ describe('transaction-card presenter', () => {
     const received = getTransactionCardAssets(participant, 'incoming');
     expect(received[0].player).toBeUndefined();
     expect(received[1].originalOwner).toBe('Team 2');
-    expect(received[1].secondary).toBe('Original: Team 2');
+    expect(received[1].secondary).toBe('');
   });
 
   it('keeps portrait, natural position and NFL identity together for immediate recognition', () => {
@@ -51,6 +51,7 @@ describe('transaction-card presenter', () => {
     expect(asset.nflTeamAbv).toBe('PHI');
     expect(asset.nflTeamLogo).toBe('/eagles.svg');
   });
+
   it('keeps traded pick summary free from selected player and original owner', () => {
     const [asset] = getTransactionCardAssets(participant, 'incoming').filter(asset => asset.kind === 'pick');
     expect(asset.label).toBe('2028 FA · R4');
@@ -63,22 +64,40 @@ describe('transaction-card presenter', () => {
     const recorded = {
       PickKey: '2028_FA:4:2',
       DraftKey: '2028_FA',
+      Season: '2028',
+      DraftType: 'free_agent',
+      DraftInstance: 1,
       Round: 4,
+      PositionInRound: 2,
+      OverallPick: 20,
       OriginalOwnerRosterID: 2,
       CurrentOwnerRosterID: 1,
+      IsCurrentlyTraded: true,
       DisplayPick: '4.02',
       PlayerID: null,
       PlayerName: null,
-      TradeHistory: []
-    } as DraftPick;
+      TradeHistory: [],
+      Status: 'upcoming',
+      SleeperPickNo: null,
+      SleeperPickedBy: null
+    } satisfies DraftPick;
     const draft = {
       DraftKey: '2028_FA',
       Season: '2028',
       DraftType: 'free_agent',
+      DraftInstance: 1,
       DisplayDraftKey: '2028 Free Agent',
+      DisplayAbrDraftKey: '2028 FA',
+      DisplayDraftType: 'Free Agent',
+      DraftNo: 1,
+      SleeperStatus: null,
+      SleeperStartTime: null,
+      DraftStartTimeUtc: null,
+      Status: 'upcoming',
+      DisplayStatus: 'Upcoming',
       Picks: [recorded],
       Settings: { Rounds: 4, Type: 'linear' }
-    } as RawDraft;
+    } satisfies RawDraft;
     const asset = getTransactionCardAssets({
       ...participant,
       AcquiredDraftPicks: [{ ...transactionPick, PickKey: recorded.PickKey }]
@@ -94,13 +113,23 @@ describe('transaction-card presenter', () => {
 
   it('does not guess a pick from another draft when an explicit DraftKey differs', () => {
     const asset = getTransactionCardAssets(participant, 'incoming').find(asset => asset.kind === 'pick')!;
-    const wrongDraft = {
+    const wrongDraft: RawDraft = {
       DraftKey: '2028_Rookie',
       Season: '2028',
       DraftType: 'Rookie',
-      Picks: [{ PickKey: 'wrong', Round: 4, OriginalOwnerRosterID: 2 }]
-    } as RawDraft;
+      DraftInstance: 1,
+      DisplayDraftKey: '2028 Rookie',
+      DisplayAbrDraftKey: '2028 Rookie',
+      DisplayDraftType: 'Rookie',
+      DraftNo: 1,
+      SleeperStatus: null,
+      SleeperStartTime: null,
+      DraftStartTimeUtc: null,
+      Status: 'upcoming',
+      DisplayStatus: 'Upcoming',
+      Settings: { Rounds: 5, Type: 'linear' },
+      Picks: []
+    };
     expect(buildTransactionPickContext(asset, [wrongDraft], [])).toBeNull();
   });
-
 });
