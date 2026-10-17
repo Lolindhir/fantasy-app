@@ -90,6 +90,36 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
                 "data-source/audits/nfl-source-data-audit.json",
             }
             prefixes = ("data-source/nfl/weekly-rosters/", "data-source/nfl/player-stats/")
+            # Current-season roster output is not frozen, but identity-only
+            # enrichment must still preserve all other fields and existing owners.
+            current_roster = "data-source/nfl/rosters/2026.json"
+            if current_roster in changed:
+                old_current = json.loads((SOURCE / current_roster).read_text(encoding="utf-8"))
+                new_current = json.loads((root / current_roster).read_text(encoding="utf-8"))
+                current_safe, current_filled = safe_frozen_enrichment(old_current, new_current)
+                print(
+                    f"#1061 current roster 2026: identity_only={current_safe}, "
+                    f"newly_filled={current_filled}",
+                    flush=True,
+                )
+                self.assertTrue(current_safe, "Current roster 2026 changed non-identity facts")
+                self.assertGreater(current_filled, 0, "Current roster changed without identity enrichment")
+                fixed.add(current_roster)
+
+            weekly_changed = [p for p in changed if p.startswith("data-source/nfl/weekly-rosters/")]
+            weekly_filled = 0
+            for relative_path in weekly_changed:
+                old_week = json.loads((SOURCE / relative_path).read_text(encoding="utf-8"))
+                new_week = json.loads((root / relative_path).read_text(encoding="utf-8"))
+                safe, filled = safe_frozen_enrichment(old_week, new_week)
+                self.assertTrue(safe, f"Unexpected factual/identity drift in {relative_path}")
+                weekly_filled += filled
+            print(
+                f"#1061 all changed weekly rosters: "
+                f"partitions={len(weekly_changed)}, newly_filled={weekly_filled}, "
+                "non_identity_drift=0",
+                flush=True,
+            )
             unexpected = [p for p in changed if p not in fixed and not p.startswith(prefixes)]
             print(
                 "#1061 real isolated materialization: "
