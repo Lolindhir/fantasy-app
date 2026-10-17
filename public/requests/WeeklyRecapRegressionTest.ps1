@@ -165,6 +165,8 @@ try {
     $awardsAgain = Get-WrTeamAwards -CanonicalLeagueID 'test-league' -Season 2026 -Week 4 -MatchupRows $sourceWeek -MatchupsWeek $matchupsWeek -RepoRoot $scratch
     Assert-Equal ($awards | ConvertTo-Json -Depth 20 -Compress) ($awardsAgain | ConvertTo-Json -Depth 20 -Compress) 'derived projection is deterministic'
 
+    $original = $derivedTest | ConvertTo-Json -Depth 20 -Compress
+
     # A scoreless final week can legitimately have NO winners; this is
     # different from an absent Derived partition or missing award fields.
     $derivedTest.Awards.BestManagerRosterIDs = @()
@@ -179,7 +181,6 @@ try {
 
     # Invalid data is NOT swallowed as unavailable, including season/week mismatch,
     # invalid finality, missing winners, duplicate winners or owner join drift.
-    $original = $derivedTest | ConvertTo-Json -Depth 20 -Compress
     $derivedTest.Week = 3
     $derivedTest | ConvertTo-Json -Depth 20 | Set-Content -Path $file -Encoding UTF8
     $failed = $false
