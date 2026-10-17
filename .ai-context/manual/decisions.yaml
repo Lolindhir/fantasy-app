@@ -1995,3 +1995,38 @@ decisions:
           historical pregame backtests need real contemporary observations.
         - More frequent odds-only sync may require future scoped scheduling/writer
           changes after #471 evaluation.
+
+  - id: ADR-062
+    title: Global NFL Game shared derivation is separately owned from Source and scheduler
+    status: accepted
+    context: >
+      On 2026-10-17 Robert authorized a global NFL Game product and a separate
+      smarter Source/Derived publishing gate. #1073 owns odds evidence and
+      #471 owns scheduling and durable change gates; neither may duplicate
+      the global NFL Game domain computation.
+    decision: >
+      #1077 owns the consumer-neutral global season-partitioned NFL Game product
+      under data-derived/nfl-games/<season>.json. Inputs are only normalized
+      canonical Schedule, Game Finality and Schedule Odds partitions. The product
+      is keyed by Season and GameID, preserves canonical scores and Finality, and
+      derives rounded market-implied team points from SpreadLine and TotalLine.
+      Never include provider moneyline/price fields in this v1 product; changes
+      only to those fields do not invalidate the shared game model. Missing
+      entire Source Odds partitions fail closed instead of masquerading as zero
+      market expectations; missing individual SpreadLine/TotalLine remain null.
+      Store no fabricated historical pregame observation time. The domain builder
+      is deterministic and read-only by default; workflow/publisher integration
+      is owned by #471 and requires a reviewed write/rollback scope.
+    rationale: >
+      A versioned single-owner shared model prevents a second game predictor in
+      Source or in Angular/Fantasy Management. Separating semantic valuation
+      from polling and Git publication prevents bookmaker price churn from
+      re-triggering unrelated NFL Live and fantasy App builds.
+    consequences:
+      positive:
+        - Deterministic league-independent NFL game truth plus attributed market estimates.
+        - Reproducible output under a completely empty Shared Derived root.
+        - Pure odds price changes cause no global NFL game data diffs.
+      negative:
+        - A new derived output and future scheduler adapter require explicit safety validation.
+        - Historical latest-line market values must not be reused as ex-ante pregame evidence.
