@@ -27,6 +27,7 @@ from external_source import market_observations as market  # noqa: E402
 from external_source.registry import get_dataset, load_registry  # noqa: E402
 
 PLAN_SCHEMA_VERSION = 1
+PRODUCT_ADAPTER_VERSION = 1
 _SHA = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -121,7 +122,11 @@ def plan_partitions(
         original = prior.get(key)
         change = (
             "new" if original is None
-            else "unchanged" if original["CandidateSHA256"] == sha
+            else "unchanged" if (
+                original["CandidateSHA256"] == sha
+                and isinstance(original.get("Dependencies"), dict)
+                and original["Dependencies"].get("ProductAdapterVersion") == PRODUCT_ADAPTER_VERSION
+            )
             else "changed"
         )
         sources = candidate["Observations"]
@@ -152,6 +157,10 @@ def plan_partitions(
                 ).relative_to(repo_root).as_posix(),
                 "ObservationSchemaVersion": candidate["SchemaVersion"],
                 "RendererVersion": candidate["RendererVersion"],
+                "ProductAdapterVersion": PRODUCT_ADAPTER_VERSION,
+                "SeasonScheduleFile": (
+                    data_source_dir(repo_root) / "nfl" / "schedules" / f"{season}.json"
+                ).relative_to(repo_root).as_posix(),
                 "IdentityProviderKey": dataset["identity"]["providerKey"],
                 "SourceEvidenceMode": candidate["HistoryMode"],
             },
