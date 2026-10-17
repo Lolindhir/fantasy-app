@@ -1481,5 +1481,83 @@
       "deepGroups": [],
       "currentPrCoverage": "build"
     }
+  ],
+  "prWorkflows": [
+    ".github/workflows/build.yml",
+    ".github/workflows/fantasy-management-validation.yml",
+    ".github/workflows/fm-daily.yml",
+    ".github/workflows/sync-league-source-data.yml"
+  ],
+  "mandatoryCommands": [
+    {
+      "workflow": ".github/workflows/build.yml",
+      "snippet": "python tools/players_league_scoring_shadow.py gate",
+      "reason": "Published Players/League scorer exact parity"
+    },
+    {
+      "workflow": ".github/workflows/build.yml",
+      "snippet": "node --test tools/tests/run-workflow-scheduler*.test.cjs",
+      "reason": "Scheduler regression entry"
+    },
+    {
+      "workflow": ".github/workflows/build.yml",
+      "snippet": "npx ng test --watch=false --browsers=ChromeHeadless",
+      "reason": "Angular tests including full suite"
+    },
+    {
+      "workflow": ".github/workflows/build.yml",
+      "snippet": "./deploy_action.ps1",
+      "reason": "Angular production packaging"
+    },
+    {
+      "workflow": ".github/workflows/build.yml",
+      "snippet": "./public/requests/ProviderJoinInvariantRegressionTest.ps1",
+      "reason": "Join invariants"
+    },
+    {
+      "workflow": ".github/workflows/build.yml",
+      "snippet": "python -m unittest tools.tests.test_workflow_publication_contracts",
+      "reason": "Publication safety writer classification"
+    },
+    {
+      "workflow": ".github/workflows/fantasy-management-validation.yml",
+      "snippet": "python fantasy-management/_ai/scripts/validate_automation.py",
+      "reason": "FM runtime config guard"
+    },
+    {
+      "workflow": ".github/workflows/fantasy-management-validation.yml",
+      "snippet": "python fantasy-management/_ai/scripts/validate_json_format.py",
+      "reason": "Canonical state JSON format"
+    },
+    {
+      "workflow": ".github/workflows/fantasy-management-validation.yml",
+      "snippet": "python fantasy-management/_ai/scripts/validate_observation_state_shards.py",
+      "reason": "FM observation shards"
+    },
+    {
+      "workflow": ".github/workflows/fantasy-management-validation.yml",
+      "snippet": "python fantasy-management/_ai/scripts/validate_observation_state_configuration.py",
+      "reason": "FM observation configuration"
+    },
+    {
+      "workflow": ".github/workflows/fantasy-management-validation.yml",
+      "snippet": "python fantasy-management/_ai/scripts/validate_episode_package.py --all",
+      "reason": "Podcast data contract"
+    },
+    {
+      "workflow": ".github/workflows/fantasy-management-validation.yml",
+      "snippet": "python fantasy-management/_ai/scripts/validate_episode_coverage.py --all",
+      "reason": "Podcast entity coverage"
+    },
+    {
+      "workflow": ".github/workflows/fantasy-management-validation.yml",
+      "snippet": "python fantasy-management/_ai/scripts/validate_draft_analyses.py --all",
+      "reason": "Draft analysis schema"
+    },
+    {
+      "workflow": ".github/workflows/sync-league-source-data.yml",
+      "snippet": "python tools/league_source_data.py validate",
+      "reason": "Independent League Source PR registry validation"
+    }
   ]
 }
