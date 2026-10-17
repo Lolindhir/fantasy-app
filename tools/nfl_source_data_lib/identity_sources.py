@@ -169,19 +169,37 @@ def _persisted_player_stats_gsis_ids(dataset: Dataset) -> set[str]:
     return ids
 
 
+def _historical_roster_position_group(position: str | None) -> str | None:
+    """Broad role compatibility is a veto, never an identity link on its own."""
+    value = (clean(position) or "").upper()
+    groups = {
+        "OL": {"OL", "C", "G", "T", "OT", "OG", "LT", "RT", "LG", "RG"},
+        "DL": {"DL", "DE", "DT", "NT", "EDGE"},
+        "DB": {"DB", "CB", "SAF", "S", "FS", "SS"},
+        "LB": {"LB", "ILB", "OLB", "MLB"},
+    }
+    for group, members in groups.items():
+        if value in members:
+            return group
+    return value or None
+
+
 def historical_weekly_roster_identity_candidates(
     repo_root: Path,
     datasets: dict[str, Dataset],
     known_candidates: list[IdentityCandidate],
 ) -> list[IdentityCandidate]:
-    """Restore identity for real GSIS tokens evidenced by persisted weekly roster raw.
+    """Restore roster-only GSIS and conservatively upgrade existing GSIS placeholders.
 
-    Current nflverse.players / ff-player-ids plus historical stat participation
-    already cover most GSIS IDs. Past preseason cuts and non-scoring reserve
-    players may only occur in immutable weekly roster evidence. A real GSIS ID
-    is a direct, provider-owned identity token; names/teams are *not* used to
-    invent a link. Preserve previous roster-only source provenance on replay,
-    otherwise the second materialization would drop that Source and not no-op.
+    Only a genuine GSIS token creates roster evidence. For an already-persisted
+    person with nflverse's ESB-as-GSIS placeholder, we may attach the genuine
+    token to their *existing* CanonicalPlayerID if that ESB is exclusive to one
+    canonical person AND exactly one real GSIS across the persisted weekly raw.
+    A matching current team and compatible position (or independently matching
+    DOB) must corroborate it. A conflicting DOB is an unconditional veto.
+
+    ESB overlaps with existing real-GSIS people are never auto-linked. Names
+    cannot establish a match. Uncertain cases remain separate for audit.
     """
     dataset = datasets.get("nflverse.weekly-rosters")
     if dataset is None or not dataset.is_season_partitioned:
@@ -195,11 +213,24 @@ def historical_weekly_roster_identity_candidates(
     existing = load_json(
         repo_root / DATA_SOURCE_ROOT / "nfl/identities/players.json", {}
     ) or {}
+    existing_players = existing.get("Players", []) or []
     roster_owned_gsis: set[str] = set()
-    for row in existing.get("Players", []) or []:
+    esb_owners: dict[str, set[str]] = defaultdict(set)
+    placeholder_by_id: dict[str, dict[str, Any]] = {}
+    for row in existing_players:
+        internal_id = clean(row.get("CanonicalPlayerID"))
+        ids = row.get("IDs") or {}
+        gsis = clean(ids.get("GSIS"))
+        esb = clean(ids.get("ESB"))
+        if internal_id and esb:
+            esb_owners[esb].add(internal_id)
+            if (gsis == esb and not _VALID_GSIS_PLAYER_ID.fullmatch(gsis)
+                    and "nflverse.players" in (row.get("Sources") or [])
+                    and not any(_VALID_GSIS_PLAYER_ID.fullmatch(str(alias))
+                                for alias in (row.get("IDAliases") or {}).get("GSIS") or [])):
+                placeholder_by_id[internal_id] = row
         if "nflverse.weekly-rosters" not in (row.get("Sources") or []):
             continue
-        gsis = clean((row.get("IDs") or {}).get("GSIS"))
         if gsis:
             roster_owned_gsis.add(gsis)
         for alias in (row.get("IDAliases") or {}).get("GSIS") or []:
@@ -208,29 +239,73 @@ def historical_weekly_roster_identity_candidates(
 
     pattern = dataset.raw_path.name.replace("{season}", "*")
     observed: set[str] = set()
+    raw_esb_by_gsis: dict[str, set[str]] = defaultdict(set)
+    gsis_by_esb: dict[str, set[str]] = defaultdict(set)
+    profile_by_gsis: dict[str, set[tuple[str | None, str | None, str | None]]] = defaultdict(set)
+    birth_dates_by_gsis: dict[str, set[str]] = defaultdict(set)
     for path in sorted(dataset.raw_path.parent.glob(pattern)):
         if not path.is_file():
             continue
         for row in iter_csv(path):
             gsis = clean(row.get("gsis_id"))
-            if gsis and _VALID_GSIS_PLAYER_ID.fullmatch(gsis):
-                observed.add(gsis)
+            if not gsis or not _VALID_GSIS_PLAYER_ID.fullmatch(gsis):
+                continue
+            observed.add(gsis)
+            esb = clean(row.get("esb_id"))
+            if not esb:
+                continue
+            raw_esb_by_gsis[gsis].add(esb)
+            gsis_by_esb[esb].add(gsis)
+            profile_by_gsis[gsis].add((
+                clean(row.get("team")),
+                _historical_roster_position_group(row.get("position"))
+                or _historical_roster_position_group(row.get("depth_chart_position")),
+                clean(row.get("depth_chart_position")),
+            ))
+            if (birth_date := clean(row.get("birth_date"))):
+                birth_dates_by_gsis[gsis].add(birth_date)
 
-    return [
-        IdentityCandidate(
-            ids={"GSIS": gsis},
-            name=None,
-            first_name=None,
-            last_name=None,
-            birth_date=None,
-            position=None,
-            latest_team=None,
-            source="nflverse.weekly-rosters",
-            priority=40,
+    candidates: list[IdentityCandidate] = []
+    for gsis in sorted(observed):
+        if gsis in known_gsis and gsis not in roster_owned_gsis:
+            continue
+        existing_internal_id = None
+        esbs = raw_esb_by_gsis.get(gsis, set())
+        if gsis not in known_gsis and len(esbs) == 1:
+            esb = next(iter(esbs))
+            owners = esb_owners.get(esb, set())
+            if len(owners) == 1 and gsis_by_esb.get(esb) == {gsis}:
+                owner = next(iter(owners))
+                placeholder = placeholder_by_id.get(owner)
+                if placeholder is not None:
+                    old_dob = clean(placeholder.get("BirthDate"))
+                    raw_dobs = birth_dates_by_gsis.get(gsis, set())
+                    dob_conflict = bool(old_dob and raw_dobs and raw_dobs != {old_dob})
+                    dob_match = bool(old_dob and raw_dobs == {old_dob})
+                    team = clean(placeholder.get("LatestTeam"))
+                    position = _historical_roster_position_group(placeholder.get("Position"))
+                    profile_match = bool(team and position and any(
+                        team == raw_team and position == raw_position
+                        for raw_team, raw_position, _ in profile_by_gsis.get(gsis, set())
+                    ))
+                    if not dob_conflict and (dob_match or profile_match):
+                        existing_internal_id = owner
+
+        candidates.append(
+            IdentityCandidate(
+                ids={"GSIS": gsis},
+                name=None,
+                first_name=None,
+                last_name=None,
+                birth_date=None,
+                position=None,
+                latest_team=None,
+                source="nflverse.weekly-rosters",
+                priority=40,
+                existing_internal_id=existing_internal_id,
+            )
         )
-        for gsis in sorted(observed)
-        if gsis not in known_gsis or gsis in roster_owned_gsis
-    ]
+    return candidates
 
 
 def raw_identity_candidates(
