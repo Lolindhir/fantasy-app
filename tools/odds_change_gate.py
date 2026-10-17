@@ -68,13 +68,18 @@ def evaluate_game(
     published_at: datetime | None,
     observed_at: datetime,
     kickoff_at: datetime | None = None,
+    pending_since: datetime | None = None,
+    batch_window_due: bool = False,
     config: OddsGateConfig = OddsGateConfig(),
 ) -> GameGateDecision:
     """Compare the latest observation to the last *published* game lines.
 
-    published_at is a per-GAME publication checkpoint, NOT the last time any
-    game in the season changed (which could starve small changes indefinitely).
-    The caller must persist this technical checkpoint across job invocations.
+    published_at is a per-GAME publication checkpoint, NOT the start time of
+    a pending change. An old publication must not instantly promote a *new*
+    small change. For time-based debouncing provide a durable pending_since;
+    alternatively, a scheduler may explicitly pass batch_window_due at a
+    fixed hourly publication slot (no durable change buffer necessary).
+    Neither path writes a checkpoint on an unchanged poll.
     """
     _aware(observed_at, "observed_at")
     if published_at is not None:
@@ -83,6 +88,14 @@ def evaluate_game(
             raise ValueError("Observation predates the published checkpoint")
     if kickoff_at is not None:
         _aware(kickoff_at, "kickoff_at")
+    if pending_since is not None:
+        _aware(pending_since, "pending_since")
+        if pending_since > observed_at:
+            raise ValueError("Pending change begins after observation")
+        if published_at is not None and pending_since < published_at:
+            raise ValueError("Pending change predates last publication")
+    if not isinstance(batch_window_due, bool):
+        raise ValueError("batch_window_due must be bool")
     if not game_id:
         raise ValueError("Missing GameID")
     if not isinstance(observed, Mapping):
@@ -120,7 +133,11 @@ def evaluate_game(
         kickoff_at - observed_at <= timedelta(minutes=config.pre_kickoff_flush_minutes)
     ):
         return GameGateDecision(game_id, True, "pregame_last_flush", spread, total)
-    if observed_at - published_at >= timedelta(minutes=config.maximum_delay_minutes):
+    if batch_window_due:
+        return GameGateDecision(game_id, True, "scheduled_batch_window", spread, total)
+    if pending_since is not None and (
+        observed_at - pending_since >= timedelta(minutes=config.maximum_delay_minutes)
+    ):
         return GameGateDecision(game_id, True, "maximum_age_with_pending_change", spread, total)
     return GameGateDecision(game_id, False, "debounce_small_change", spread, total)
 
@@ -132,6 +149,8 @@ def evaluate_games(
     published_at_by_game: Mapping[str, datetime],
     observed_at: datetime,
     kickoff_by_game: Mapping[str, datetime] | None = None,
+    pending_since_by_game: Mapping[str, datetime] | None = None,
+    batch_window_due: bool = False,
     config: OddsGateConfig = OddsGateConfig(),
 ) -> list[GameGateDecision]:
     """Pure multi-game policy; scheduler may coalesce publishable rows in one commit."""
@@ -146,6 +165,8 @@ def evaluate_games(
             published_at=published_at_by_game.get(game_id),
             observed_at=observed_at,
             kickoff_at=(kickoff_by_game or {}).get(game_id),
+            pending_since=(pending_since_by_game or {}).get(game_id),
+            batch_window_due=batch_window_due,
             config=config,
         ))
     missing = set(published) - set(observed)
