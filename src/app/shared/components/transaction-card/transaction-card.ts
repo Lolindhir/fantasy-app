@@ -16,6 +16,7 @@ import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-deta
 import {
   buildTransactionPickContext,
   getTransactionCardAssets,
+  getTransactionPreviewLimit,
   type TransactionAssetDirection,
   type TransactionCardAsset,
   type TransactionDisplayCategory,
@@ -64,8 +65,7 @@ export class TransactionCardComponent {
   }
 
   get previewLimit(): number {
-    if (this.expanded || this.density === 'detail') return Number.POSITIVE_INFINITY;
-    return this.density === 'mini' ? 1 : 3;
+    return getTransactionPreviewLimit(this.category, this.density, this.expanded);
   }
 
   getAssets(participant: TransactionParticipant, direction: TransactionAssetDirection): TransactionCardAsset[] {

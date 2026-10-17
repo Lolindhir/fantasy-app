@@ -38,7 +38,10 @@
 
   <div class="transaction-card__participants">
     @for (participant of transaction.Participants; track participant.RosterID; let first = $first) {
-      <section class="transaction-card__participant">
+      <section
+        class="transaction-card__participant"
+        [class.transaction-card__participant--mirror]="category === 'trade' && transaction.Participants.length === 2 && density !== 'detail' && !first"
+      >
         @if (category === 'trade' && transaction.Participants.length === 2 && density !== 'detail') {
           <div class="transaction-card__compare-team" [class.transaction-card__compare-team--right]="!first">
             @if (participant.Team; as team) {
