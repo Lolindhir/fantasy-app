@@ -281,6 +281,36 @@ The source-first inventory is a separate editorial coverage check, not a replace
 - Identity-resolution status can remain open during a pilot. Do not discard the original source call simply because identity is unresolved; also do not publish an unsupported alias or treat source news as verified NFL fact.
 - Maintain extraction fidelity separately from later source-calibration and Mighty Giants lineup decisions.
 
+## Multi-pass extraction and entity-first preflight (approved pilot guidance)
+
+**Primary quality goal:** maximize source-statement and mention recall before optimizing a readable synthesis. A fluent or schema-valid summary is not proof that nothing was omitted. Do not ask one generative pass to both select the "important" material and prove its own completeness.
+
+### Preflight A: high-recall raw entity candidates
+
+- Scan the **complete immutable raw transcript**, in short cue-bounded windows with overlap where discussion boundaries require it, for all potential player, coach, staff, host, team, league and other fantasy-relevant named entities. Include first names, surnames, partial names, ambiguous proper nouns, nicknames, phonetic ASR distortions and possible false positives.
+- Preserve each **exact original text span**, raw-part/cue/time reference and occurrence, together with a *candidate* kind and uncertainty. Do not silently replace a raw form with a cleaned canonical name. A normal-looking dictionary word can be a surname, while an unusual word is not necessarily a name; use context, not merely German/English dictionary membership.
+- Keep candidate detection **independent of resolution**. Only after the raw candidate register exists should the identity registry, verified league/NFL facts or external references be used to resolve entities. If unresolved or ambiguous, retain the raw candidate with a null canonical entity and appropriate status; this does not block collecting its claims.
+- A mention is **not** automatically a standalone take. Ranking subjects, explicit Start/Sit recommendations, materially evaluated players, news subjects and meaningful independent theses require takes. Passing comparisons, teammates and other context-only mentions can be technical mentions without fabricated evaluations.
+- This preflight candidate register complements but does **not** replace the later independent full `mentions.json` audit. The final audit must reread the raw source, including names missed in preflight.
+
+### Preflight B: independent source-statement inventory
+
+- In a separate task, enumerate all individually testable spoken claims, questions and answers: rankings, Start/Sit preferences, score/winner calls, direct comparisons, news, injury/usage contingencies, relevant figures, host dissent, structural team/scheme arguments and independent long-term trade or waiver theses. Do **not** collapse a contrary host view into the majority view.
+- Record each obligation with exact cue/time evidence. It may refer to an unresolved name or even to a game/team/strategy with **no personal name**; no source claim may disappear because preflight A found no verified player.
+- The entity inventory and claim inventory are complementary coverage axes. Link claims to candidate occurrences when supported, but do not derive the claims inventory only from a name list or derive the name list only from generated takes.
+
+### Distinct generation, review and repair passes
+
+1. **Pass 1 — inventory:** produce the entity candidates and source-statement inventory from raw transcript, separately from the finished takes and article.
+2. **Pass 2 — extraction:** author source-faithful Content Map/takes using Golden Set dimensions and both inventories; evidence, separate time horizons and dissent remain explicit. Freeze the first-pass result for calibration before any quality fixes.
+3. **Pass 3 — independent QA:** reread the raw cues with the *different* objective of discovering omissions, over-merges, invented statements, unsupported identities and misplaced evidence. Independently sweep named entities **and** claims, then reconcile raw -> inventories -> takes/article as well as takes -> raw. Preserve an audit of what was absent or partial; do not score only internal planned-take links.
+4. **Pass 4 — targeted repair:** if QA finds defects, add or correct affected inventories, takes and related content without silently changing the frozen first-pass baseline. Rerun deterministic linkage, exact-span/quote checks, and a source-focused QA pass on the changed source ranges and their context. Repeat repair/review **as needed**, rather than rerunning identical broad summaries without new objectives.
+5. **Final gate:** no unaddressed **required** claim/mention, invented source statement, untraceable evidence or conflated host stance. Record unresolved ASR identities, source-audio uncertainties and ambiguous passages as bounded review items; unresolved identity alone need not block an intermediate extraction, but never claim full fidelity or publication readiness with blocking uncertainties.
+
+Different prompts, read order or independent reviewers/models may expose additional gaps. Repeated passes by the same model are **not statistically independent** and cannot establish a measured 100% recall rate for unknown, undiscovered source statements. Prefer a separate reviewer or blind/holdout segment for production-readiness evaluation; compare results to the original source, not to the model's own summary.
+
+**Implementation boundary:** these are required *editorial* passes for new/reworked packages. Current work-package schemas, Golden Set profiles and deterministic validator do not yet implement a first-class preflight inventory or automatically detect omitted raw claims. Until tooling is explicitly designed and validated, preserve the preflight inventories and QA findings in private pilot working artifacts/process review; do not assert automated enforcement, change storage/publication targets, or upload unlicensed raw transcripts to a public repository.
+
 ## `index.json` rule
 
 `index.json` is the local technical map. It may contain:

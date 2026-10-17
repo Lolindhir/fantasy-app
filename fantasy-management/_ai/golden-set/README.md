@@ -74,6 +74,10 @@ For `game-matchup-preview` and `weekly-fantasy-start-sit`, selection of the righ
 
 Golden Set dimensions are conditional; they do not require the source to support invented details. Transcription identity uncertainty may remain unresolved with `entity: null` and must not suppress a source claim. Cue-level literal evidence and neutral labels for unconfirmed speaker differences are required for meaningful editorial review. Follow `PODCAST_EXTRACTION_RULES.md` for source-first coverage and evidence QA.
 
+### Multiple review objectives
+
+The Golden Set guides **depth and content fidelity after source coverage inventory**, not whether a source-spoken name or short explicit recommendation deserves to be remembered. For new/reworked podcast packages, retain an early high-recall entity-candidate inventory and a separate claim/question inventory, then cross-check both independently against the final takes/article. QA findings should trigger targeted extraction and re-review; the preserved first-pass snapshot must remain available for honest quality measurement. An unresolved identity does not excuse an omitted source claim, and a passing mention does not justify inventing a standalone evaluation.
+
 ## Controlled extension
 
 Every completed extraction performs a process review and may propose:
