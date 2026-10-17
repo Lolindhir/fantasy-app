@@ -256,7 +256,7 @@ class CanonicalScheduleOddsMaterializationTests(unittest.TestCase):
         self.assertGreater(audit["gameCount"], 7000)
         self.assertGreater(audit["gamesWithCompleteLines"], 7000)
 
-    def test_implied_team_points_join_and_source_lines(self) -> None:
+    def test_source_only_lines_join_without_derived_expectations(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             odds, index = self._fixture(root, [game()])
@@ -272,10 +272,9 @@ class CanonicalScheduleOddsMaterializationTests(unittest.TestCase):
             self.assertEqual("2026_01_AAA_BBB", row["GameID"])
             self.assertEqual(3.5, row["SpreadLine"])
             self.assertEqual(44.5, row["TotalLine"])
-            self.assertEqual(20.5, row["ImpliedAwayPoints"])
-            self.assertEqual(24.0, row["ImpliedHomePoints"])
             self.assertEqual(-180.0, row["HomeMoneyline"])
-            self.assertEqual(44.5, row["ImpliedAwayPoints"] + row["ImpliedHomePoints"])
+            self.assertNotIn("ImpliedAwayPoints", row)
+            self.assertNotIn("ImpliedHomePoints", row)
 
     def test_missing_prices_and_incomplete_lines_are_null_not_zero(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -288,10 +287,9 @@ class CanonicalScheduleOddsMaterializationTests(unittest.TestCase):
             outputs, audit, _ = _build_schedule_odds(root, odds, index, 2026, force=False)
             records = {v["GameID"]: v for v in outputs[0][1]["Games"]}
             self.assertEqual(0, audit["gamesWithCompleteLines"])
-            self.assertIsNone(records["2026_01_AAA_BBB"]["ImpliedAwayPoints"])
             self.assertIsNone(records["2026_01_AAA_BBB"]["TotalLine"])
             self.assertIsNone(records["2026_01_AAA_BBB"]["AwayMoneyline"])
-            self.assertIsNone(records["2026_01_CCC_DDD"]["ImpliedHomePoints"])
+            self.assertIsNone(records["2026_01_CCC_DDD"]["SpreadLine"])
             self.assertEqual(45.5, records["2026_01_CCC_DDD"]["TotalLine"])
 
     def test_unknown_duplicate_and_missing_schedule_game_fail_closed(self) -> None:
