@@ -4,10 +4,10 @@ from __future__ import annotations
 import contextlib
 import io
 import json
-import shutil
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 TOOLS = ROOT / "tools"
@@ -121,6 +121,38 @@ class MarketProductPreflightTests(unittest.TestCase):
         invalid = dict(baseline, Partitions=[dict(baseline["Partitions"][0], CandidateSHA256="bad")])
         with self.assertRaisesRegex(product.ProductPlanError, "invalid partition"):
             self.plan(invalid)
+
+    def test_product_adapter_version_bump_invalidates_without_source_change(self) -> None:
+        baseline = self.plan()
+        with patch.object(product, "PRODUCT_ADAPTER_VERSION", product.PRODUCT_ADAPTER_VERSION + 1):
+            bumped = self.plan(baseline)
+            self.assertEqual(1, bumped["Counts"]["changed"])
+            self.assertEqual(
+                baseline["Partitions"][0]["CandidateSHA256"],
+                bumped["Partitions"][0]["CandidateSHA256"],
+            )
+
+    def test_historical_snapshot_correction_dirties_only_its_season_partition(self) -> None:
+        save_json(
+            self.root / "data-source" / "nfl" / "schedules" / "2027.json",
+            {"Season": 2027, "Games": [
+                {"GameType": "REG", "GameDay": "2027-09-06"},
+                {"GameType": "REG", "GameDay": "2027-12-31"},
+            ]},
+        )
+        self.fixture.snapshot("2027-10-01", 50)
+        initial = self.plan()
+        self.assertEqual(2, initial["Counts"]["new"])
+        self.fixture.snapshot("2026-10-01", 77)
+        changed = self.plan(initial)
+        self.assertEqual(1, changed["Counts"]["changed"])
+        self.assertEqual(1, changed["Counts"]["unchanged"])
+        by_season = {row["ObservationSeason"]: row for row in changed["Partitions"]}
+        self.assertEqual("changed", by_season[2026]["Change"])
+        self.assertEqual("unchanged", by_season[2027]["Change"])
+        self.assertTrue(
+            by_season[2027]["Dependencies"]["SeasonScheduleFile"].endswith("/2027.json")
+        )
 
     def test_dataset_filter_and_cli_never_output_raw_player_data(self) -> None:
         with self.assertRaises(ValueError):
