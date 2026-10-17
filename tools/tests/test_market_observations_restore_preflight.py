@@ -192,5 +192,29 @@ class SourceOnlyRestoreFixture(unittest.TestCase):
             self.candidate()
 
 
+
+    def test_source_correction_is_limited_to_discovered_season_partition(self) -> None:
+        save_json(
+            self.root / "data-source" / "nfl" / "schedules" / "2027.json",
+            {"Season": 2027, "Games": [
+                {"GameType": "REG", "GameDay": "2027-09-06"},
+                {"GameType": "REG", "GameDay": "2027-12-31"},
+            ]},
+        )
+        self.snapshot("2027-10-01", 50)
+        listing = market.inventory(self.root)
+        self.assertEqual(
+            [(2026, 2), (2027, 1)],
+            [(row["ObservationSeason"], row["ObservationCount"]) for row in listing],
+        )
+        before_2026 = market.digest(self.candidate())
+        before_2027 = market.digest(market.render_partition(self.root, DATASET, 2027))
+        self.snapshot("2026-10-01", 44)
+        self.assertNotEqual(before_2026, market.digest(self.candidate()))
+        self.assertEqual(
+            before_2027, market.digest(market.render_partition(self.root, DATASET, 2027))
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
