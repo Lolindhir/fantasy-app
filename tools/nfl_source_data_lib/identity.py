@@ -650,6 +650,13 @@ def _apply_placeholder_gsis_upgrades(
 
 
 def _select_primary_provider_id(key: str, values: set[str], members: list[IdentityCandidate]) -> str:
+    # Prefer a real GSIS when a legacy ESB-as-GSIS placeholder and a real
+    # roster GSIS now belong to the same preserved canonical person.
+    # Keep placeholder values as aliases for historical lookup/ownership.
+    if key == "GSIS":
+        real = {value for value in values if _VALID_GSIS_RE.fullmatch(value)}
+        if real:
+            values = real
     for source in PRIMARY_SOURCE_PREFERENCE:
         selected = sorted(
             member.ids[key]
