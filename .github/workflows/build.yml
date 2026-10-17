@@ -40,6 +40,9 @@ jobs:
       - name: Run durable odds observation buffer tests
         run: python -m unittest tools.tests.test_odds_observation_buffer -v
 
+      - name: Run isolated odds state publisher contract tests
+        run: python -m unittest tools.tests.test_odds_state_publish -v
+
       - name: Run NFL data-source regression tests
         run: |
           python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
