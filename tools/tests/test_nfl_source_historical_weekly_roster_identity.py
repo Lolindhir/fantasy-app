@@ -171,6 +171,58 @@ class HistoricalWeeklyRosterIdentityTests(unittest.TestCase):
         )
         self.assertIsNone(found[0].existing_internal_id)
 
+    def test_historical_provider_esb_overlap_blocks_placeholder_link(self):
+        self.placeholder_owner()
+        mappings = self.root / "data-source/nfl/identities/provider-mappings.json"
+        mappings.write_text(json.dumps({"Mappings": [{
+            "Provider": "ESB", "ExternalID": "BEA416041",
+            "CanonicalPlayerID": "NFLP-another", "FirstObservedSeason": 2026,
+            "LastObservedSeason": 2026,
+        }]}), encoding="utf-8")
+        self.roster_with_metadata(2026, [
+            {"gsis_id": "00-0040835", "esb_id": "BEA416041", "team": "MIN",
+             "position": "DB", "birth_date": ""},
+        ])
+        found = historical_weekly_roster_identity_candidates(
+            self.root, self.datasets, [],
+        )
+        self.assertIsNone(found[0].existing_internal_id)
+
+    def test_historical_nonoverlapping_esb_is_not_false_veto(self):
+        self.placeholder_owner()
+        mappings = self.root / "data-source/nfl/identities/provider-mappings.json"
+        mappings.write_text(json.dumps({"Mappings": [{
+            "Provider": "ESB", "ExternalID": "BEA416041",
+            "CanonicalPlayerID": "NFLP-another", "FirstObservedSeason": 2010,
+            "LastObservedSeason": 2011,
+        }]}), encoding="utf-8")
+        self.roster_with_metadata(2026, [
+            {"gsis_id": "00-0040835", "esb_id": "BEA416041", "team": "MIN",
+             "position": "DB", "birth_date": ""},
+        ])
+        found = historical_weekly_roster_identity_candidates(
+            self.root, self.datasets, [],
+        )
+        self.assertEqual(found[0].existing_internal_id, "NFLP-original")
+
+    def test_legacy_esb_alias_on_other_person_blocks_link(self):
+        self.persisted([
+            {"CanonicalPlayerID": "NFLP-original", "Position": "SAF", "LatestTeam": "MIN",
+             "IDs": {"GSIS": "BEA416041", "ESB": "BEA416041"},
+             "Sources": ["nflverse.players"]},
+            {"CanonicalPlayerID": "NFLP-other", "Position": "OL", "LatestTeam": "TEN",
+             "IDs": {"GSIS": "OTH919199", "ESB": "DIFFERENT"},
+             "IDAliases": {"ESB": ["BEA416041"]}, "Sources": ["nflverse.players"]},
+        ])
+        self.roster_with_metadata(2026, [
+            {"gsis_id": "00-0040835", "esb_id": "BEA416041", "team": "MIN",
+             "position": "DB", "birth_date": ""},
+        ])
+        found = historical_weekly_roster_identity_candidates(
+            self.root, self.datasets, [],
+        )
+        self.assertIsNone(found[0].existing_internal_id)
+
     def test_new_real_weekly_roster_gsis_becomes_provider_only_candidate(self):
         self.raw(2024, ["00-0039723", "00-0039723", "0", "XX-3"])
         self.raw(2025, ["00-0040381"])
