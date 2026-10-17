@@ -330,6 +330,7 @@ class CurrentRepositoryHistoricalIdentityAudit(unittest.TestCase):
         )
         fallback_ids = {row.ids["GSIS"] for row in fallback}
         target: set[str] = set()
+        remaining_unresolved: list[tuple[int, int, str | None]] = []
         for season, week in ((2024, 1), (2024, 2), (2025, 1)):
             payload = json.loads((root / (
                 f"data-source/nfl/weekly-rosters/{season}/{week:02d}.json"
@@ -339,15 +340,26 @@ class CurrentRepositoryHistoricalIdentityAudit(unittest.TestCase):
                         and row.get("Status") != "RET"
                         and not row.get("CanonicalPlayerID")):
                     gsis = row.get("SourceIDs", {}).get("GSIS")
+                    remaining_unresolved.append((season, week, gsis))
                     if gsis not in existing_gsis:
                         target.add(gsis)
         missing = target - fallback_ids
         print(
-            f"Historical roster-only identity candidate impact: total={len(fallback_ids)} "
-            f"target={len(target)} missing={len(missing)}", flush=True,
+            f"Historical roster-only identity coverage: unresolved={len(remaining_unresolved)} "
+            f"roster-only candidates={len(fallback_ids)} "
+            f"unmapped target={len(target)} missing fallback={len(missing)}", flush=True,
         )
         self.assertFalse(missing, sorted(missing)[:15])
-        self.assertGreaterEqual(len(target), 100)
+        # After the accepted #1061 source-owner repair was materialized by the
+        # productive full NFL Source Sync, the historical gap is expected to be
+        # CLOSED. The old '>= 100 unresolved' threshold described pre-backfill
+        # evidence and started failing as soon as canonical data was published.
+        # Synthetic tests above still exercise roster-only candidate acquisition.
+        self.assertFalse(
+            remaining_unresolved,
+            f"Unresolved fantasy-relevant historical roster identities: "
+            f"{remaining_unresolved[:15]}",
+        )
 
     @unittest.skipUnless(
         (TOOLS.parent / "data-source/nfl/identities/players.json").is_file(),
