@@ -13,6 +13,13 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 from nfl_source_data_lib.common import load_registry  # noqa: E402
 from nfl_source_data_lib.materialize import materialize  # noqa: E402
+from player_week_fantasy_materialize import (  # noqa: E402
+    _week_finality, build_player_week_fantasy_dataset,
+    output_path as pwf_output_path, write_dataset,
+)
+from team_week_performance_materialize import (  # noqa: E402
+    discover_finalized_weeks, materialize_all_finalized,
+)
 
 SOURCE = TOOLS.parent
 TARGETS = ((2024, 1), (2024, 2), (2025, 1))
@@ -220,6 +227,12 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
                 for file in sorted(past.glob("Players_*.json")):
                     shutil.copy2(file, app / "past_seasons" / file.name)
 
+            # Downstream producers also need canonical manual league metadata and
+            # the unchanged FantasyRelevance PowerShell slot-eligibility bridge.
+            # These are disposable test copies, never production write targets.
+            shutil.copytree(SOURCE / "data-meta", root / "data-meta")
+            shutil.copytree(SOURCE / "public/requests/utils", root / "public/requests/utils")
+
             baseline = snapshot(root)
             old_rosters = {
                 (year, week): json.loads((root /
@@ -343,6 +356,75 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
             )
             self.assertFalse(drift, f"Second run not a no-op: {drift[:30]}")
             self.assertFalse(unexpected, f"Unexpected canonical outputs: {unexpected[:30]}")
+
+            # Cross-PR acceptance: #1060's historical producer is not merged,
+            # so exercise its existing PWF calculation/finality primitives on
+            # this safely corrected Source copy, then the real strict TWP
+            # materializer. No derived data or app output leaves the scratch root.
+            targets = discover_finalized_weeks(root, league_id="nfl-reise")
+            self.assertGreaterEqual(len(targets), 39, "Expected at least 39 finalized league weeks")
+            pwf_blocked = []
+            pwf_ready = 0
+            pwf_compared = 0
+            for league_id, year, week in targets:
+                try:
+                    complete, game_ids = _week_finality(root, season=year, week=week)
+                    if complete is not True or not game_ids:
+                        raise ValueError("NFL week finality not proven")
+                    payload = build_player_week_fantasy_dataset(
+                        root, league_id=league_id, season=year, week=week,
+                    )
+                    metadata = payload.get("Materialization") or {}
+                    if (
+                        metadata.get("ActualScoringEvidenceFinalized") is not True
+                        or metadata.get("TargetRosterProvisional") is not False
+                        or not isinstance(payload.get("Records"), list)
+                        or not payload["Records"]
+                    ):
+                        raise ValueError("PWF final actual or target roster evidence incomplete")
+                    target = pwf_output_path(
+                        root, league_id=league_id, season=year, week=week,
+                    )
+                    write_dataset(target, payload)
+                    pwf_compared += len(payload["Records"])
+                    pwf_ready += 1
+                except (ValueError, TypeError, KeyError, OSError) as error:
+                    pwf_blocked.append((year, week, str(error)))
+            print(
+                f"#1061 downstream historical PWF strict preflight: "
+                f"targets={len(targets)}, ready={pwf_ready}, "
+                f"blocked={len(pwf_blocked)}, records={pwf_compared}, "
+                f"blockers={pwf_blocked[:10]}",
+                flush=True,
+            )
+            self.assertFalse(pwf_blocked, f"Historical PWF source preflight blocked: {pwf_blocked[:10]}")
+
+            # Explicitly require the just-rebuilt final PWF records for every
+            # week; never substitute existing published Derived/App snapshots.
+            twp = materialize_all_finalized(
+                root, league_id="nfl-reise", require_pwf=True, write=False,
+            )
+            failed_parity = [
+                (row["Season"], row["Week"], row.get("Reason"))
+                for row in twp["Weeks"] if row["Status"] != "ready"
+            ]
+            unverified = [
+                (row["Season"], row["Week"], row.get("PlayerWeekFantasyParity"))
+                for row in twp["Weeks"]
+                if (row.get("PlayerWeekFantasyParity") or {}).get("State") != "verified"
+            ]
+            print(
+                f"#1061 downstream TWP strict PWF parity: "
+                f"targets={twp['TargetCount']}, ready={twp['ReadyCount']}, "
+                f"blocked={twp['BlockedCount']}, "
+                f"unverified={len(unverified)}, blockers={failed_parity[:12]}, "
+                f"unverified_sample={unverified[:5]}",
+                flush=True,
+            )
+            self.assertEqual(twp["TargetCount"], len(targets))
+            self.assertFalse(failed_parity, f"TWP parity blocked: {failed_parity[:12]}")
+            self.assertFalse(unverified, f"TWP PWF parity was not verified: {unverified[:10]}")
+
 
 
 if __name__ == "__main__":
