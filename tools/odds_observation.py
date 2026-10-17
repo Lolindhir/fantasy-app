@@ -54,17 +54,17 @@ def run(
     odds = _load(source / "schedule-odds" / f"{season}.json")
     expected = {row["GameID"] for row in schedule["Games"]}
     upstream = read_upstream_lines(upstream_csv, season, expected)
-    state = _load(state_input) if state_input is not None and state_input.exists() else None
+    if state_input is not None and not state_input.is_file():
+        raise ValueError("Persisted odds state is missing; explicit bootstrap is required")
+    state = _load(state_input) if state_input is not None else None
     plan, next_state = plan_observation(
         season=season, schedule=schedule, canonical_odds=odds,
         observed_lines=upstream, previous_state=state, observed_at=observed_at,
     )
     if state_output is not None:
         # Technical state may live in a dedicated isolated branch checkout only.
-        # Refuse the canonical repository roots even when supplied explicitly.
-        for protected in (root / DATA_SOURCE_ROOT, root / "data-derived", root / "public"):
-            if state_output.resolve().is_relative_to(protected.resolve()):
-                raise ValueError("Refusing to persist change-buffer state in canonical/app data")
+        if state_output.resolve().is_relative_to(root.resolve()):
+            raise ValueError("Odds-buffer state must not be written into the main repository checkout")
         _atomic_write(state_output, serialize_state(next_state))
     return plan
 
