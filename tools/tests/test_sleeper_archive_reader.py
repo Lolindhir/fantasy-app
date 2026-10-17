@@ -117,6 +117,16 @@ class SleeperArchivedHistoryReaderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "comparison leaked"):
             market.inventory(self.root)
 
+    def test_mutated_player_count_without_fingerprint_change_fails_closed(self) -> None:
+        base = datetime(2026, 10, 17, 10, 1, 2, tzinfo=timezone.utc)
+        path = self.append_fixture(base)
+        doc = json.loads(path.read_text(encoding="utf-8"))
+        current = next(x for x in doc["players"] if x["add"]["status"] == "listed")
+        current["add"]["count"] += 1
+        path.write_text(json.dumps(doc), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "do not match Source fingerprint"):
+            market.inventory(self.root)
+
     def test_utc_clock_fingerprint_and_provider_identity_must_match_path(self) -> None:
         base = datetime(2026, 10, 17, 10, 1, 2, tzinfo=timezone.utc)
         path = self.append_fixture(base)
