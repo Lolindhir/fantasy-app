@@ -1,3 +1,4 @@
+import type { Player } from '../../../core/models/player.models';
 import type { TransactionParticipant, TransactionDraftPick } from '../../../core/models/transaction.models';
 import { getTransactionCardAssets } from './transaction-card.presenter';
 
@@ -27,5 +28,26 @@ describe('transaction-card presenter', () => {
     expect(received[0].player).toBeUndefined();
     expect(received[1].originalOwner).toBe('Team 2');
     expect(received[1].secondary).toBe('Original: Team 2');
+  });
+
+  it('keeps portrait, natural position and NFL identity together for immediate recognition', () => {
+    const player = {
+      Name: 'Darius Cooper',
+      Picture: '/player.png',
+      Position: 'WR',
+      TeamNFL: { Abv: 'PHI', Logo: '/eagles.svg' }
+    } as Player;
+    const withIdentifiedPlayer: TransactionParticipant = {
+      ...participant,
+      AddedPlayers: [{ PlayerID: 'resolved', Player: player }]
+    };
+
+    const [asset] = getTransactionCardAssets(withIdentifiedPlayer, 'incoming');
+
+    expect(asset.label).toBe('Darius Cooper');
+    expect(asset.portrait).toBe('/player.png');
+    expect(asset.position).toBe('WR');
+    expect(asset.nflTeamAbv).toBe('PHI');
+    expect(asset.nflTeamLogo).toBe('/eagles.svg');
   });
 });

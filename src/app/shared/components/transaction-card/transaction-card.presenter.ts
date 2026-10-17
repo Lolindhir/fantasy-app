@@ -16,6 +16,7 @@ export interface TransactionCardAsset {
   secondary: string;
   portrait?: string;
   nflTeamLogo?: string;
+  nflTeamAbv?: string;
   position?: string;
   player?: Player;
   pickRound?: number;
@@ -48,6 +49,7 @@ function presentPlayerAsset(asset: TransactionPlayerAsset): TransactionCardAsset
     secondary: [player?.Position, player?.TeamNFL?.Abv].filter(Boolean).join(' · '),
     portrait: player?.Picture,
     nflTeamLogo: player?.TeamNFL?.Logo,
+    nflTeamAbv: player?.TeamNFL?.Abv,
     position: player?.Position,
     player
   };
