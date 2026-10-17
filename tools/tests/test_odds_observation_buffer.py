@@ -7,13 +7,14 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 from odds_observation_buffer import (  # noqa: E402
     plan_observation, read_upstream_lines, serialize_state
 )
-from odds_observation import run as run_cli  # noqa: E402
+from odds_observation import run as run_cli, fetch_registered_odds  # noqa: E402
 
 BASE_TIME = datetime(2026, 10, 17, 16, 0, tzinfo=timezone.utc)
 GAME = "2026_07_TB_CAR"
@@ -195,6 +196,26 @@ class OddsObservationBufferTests(unittest.TestCase):
         self.assertEqual(plan_result["PublishableGameIDs"], [])
         self.assertEqual(plan_result["RelevantNetChanges"], 0)
         self.assertEqual(len(state["Games"]), 272)
+
+    def test_scoped_fetch_uses_only_registered_nflverse_odds_origin(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            manifest = root / "data-source" / "registry.json"
+            manifest.parent.mkdir(parents=True, exist_ok=True)
+            url = "https://raw.githubusercontent.com/nflverse/nfldata/master/data/games.csv"
+            manifest.write_text(json.dumps({"datasets": [
+                {"id": "nflverse.schedule-odds", "sourceUrl": url},
+                {"id": "nflverse.schedules", "sourceUrl": "https://example.invalid/schedules"}
+            ]}), encoding="utf-8")
+            dest = root / "games.csv"
+            with patch("odds_observation.download") as downloader:
+                fetch_registered_odds(root, dest)
+                downloader.assert_called_once_with(url, dest)
+            manifest.write_text(json.dumps({"datasets": [
+                {"id": "nflverse.schedule-odds", "sourceUrl": "http://attacker.invalid/data"}
+            ]}), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "Unexpected registered"):
+                fetch_registered_odds(root, dest)
 
     def test_serialized_state_is_byte_stable_after_recovery(self):
         _, state = plan()
