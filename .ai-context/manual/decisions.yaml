@@ -2030,3 +2030,43 @@ decisions:
       negative:
         - A new derived output and future scheduler adapter require explicit safety validation.
         - Historical latest-line market values must not be reused as ex-ante pregame evidence.
+
+  - id: ADR-063
+    title: Weekly team awards reuse the existing App WeeklyRecaps publisher
+    status: accepted
+    context: >
+      The existing weekly recap generator owns the App-facing editorial
+      KeyGames and KeyPlayers read model. Best Manager and Best Coach are
+      already canonical Shared Derived TeamWeekPerformance facts for completed
+      weeks; a parallel App publisher would duplicate its ownership.
+    decision: >
+      Reuse RequestLeaguePublication.ps1, RequestWeeklyRecaps.ps1 and
+      WeeklyRecapUtils.psm1 to project existing TeamWeekPerformance winner
+      facts into public/data/WeeklyRecaps.json and historical WeeklyRecaps
+      archives. Derived owns scoring, best-ball optimization and winner ties.
+      WeeklyRecaps does no second calculation. Winner CanonicalLeagueRosterID
+      values map to FantasyTeamID exclusively through the exact season/week
+      canonical league matchup ProviderRosterID and matching final Matchups
+      participants; no current owner or mutable current roster lookup.
+      Missing Derived partitions remain explicitly unavailable, not zero;
+      incompatible or contradictory present partitions fail closed. The
+      established 2 KeyGames/3 KeyPlayers contract remains unchanged.
+      Future incremental migration of those legacy calculations to Shared
+      Derived retains the existing public/data WeeklyRecaps projection
+      boundary and is not performed in this checkpoint.
+    rationale: >
+      A single existing App publisher avoids a second scheduler/writer,
+      preserves source-of-truth boundaries and supplies a stable consumer
+      schema while Shared Derived expands.
+    consequences:
+      positive:
+        - One App projection and no reimplementation of Best Ball scoring.
+        - Historical roster identity is joined in its original week.
+        - Independent Derived backfills become visible on the next App chain
+          without introducing a new publication writer.
+      negative:
+        - A matching Derived partition is not guaranteed for every finalized
+          recap week until separately gated historical backfill finishes.
+        - The current recap generator temporarily mixes legacy editorial
+          calculations with shared-derived team award projection.
+
