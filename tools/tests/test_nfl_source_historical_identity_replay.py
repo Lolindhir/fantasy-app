@@ -52,6 +52,153 @@ def safe_frozen_enrichment(old: dict, new: dict) -> tuple[bool, int]:
     return before == after, filled
 
 
+
+def audit_provider_mapping_and_possible_duplicates(source, root, weekly_changed, previous, rebuilt):
+    """Read-only provider mapping and potential cross-provider duplicate risk audit."""
+    from collections import defaultdict
+
+    old_ids = {row["CanonicalPlayerID"] for row in previous}
+    fresh = {row["CanonicalPlayerID"] for row in rebuilt if row["CanonicalPlayerID"] not in old_ids}
+
+    def provider_index(rows):
+        index = defaultdict(set)
+        for row in rows:
+            cid = row["CanonicalPlayerID"]
+            for provider, token in (row.get("IDs") or {}).items():
+                if token:
+                    index[(provider, str(token))].add(cid)
+            for provider, aliases in (row.get("IDAliases") or {}).items():
+                for token in aliases or []:
+                    if token:
+                        index[(provider, str(token))].add(cid)
+        return index
+
+    old_tokens = provider_index(previous)
+    relative_mapping = "data-source/nfl/identities/provider-mappings.json"
+    oldmap = json.loads((source / relative_mapping).read_text(encoding="utf-8"))
+    newmap = json.loads((root / relative_mapping).read_text(encoding="utf-8"))
+
+    def claim_intervals(rows):
+        claims = defaultdict(list)
+        for row in rows:
+            key = (str(row.get("Provider")), str(row.get("ExternalID")),
+                   str(row.get("CanonicalPlayerID")))
+            low = int(row.get("FirstObservedSeason") or 0)
+            high = int(row.get("LastObservedSeason") or low)
+            claims[key].append((low, high))
+        return claims
+
+    before = claim_intervals(oldmap.get("Mappings", []))
+    after = claim_intervals(newmap.get("Mappings", []))
+
+    def covered(low, high, intervals):
+        cursor = low
+        for first, last in sorted(intervals):
+            if first > cursor:
+                break
+            cursor = max(cursor, last + 1)
+            if cursor > high:
+                return True
+        return False
+
+    lost_claims = [
+        (key, interval) for key, spans in before.items()
+        for interval in spans if not covered(*interval, after.get(key, []))
+    ]
+    old_by_token = defaultdict(list)
+    for (provider, token, cid), intervals in before.items():
+        for low, high in intervals:
+            old_by_token[(provider, token)].append((cid, low, high))
+
+    def conflict_signature(row):
+        return (str(row.get("Provider")), str(row.get("ExternalID")),
+                tuple(sorted(row.get("CanonicalPlayerIDs") or [])),
+                int(row.get("FirstObservedSeason") or 0),
+                int(row.get("LastObservedSeason") or 0))
+
+    oldconf = {conflict_signature(row) for row in oldmap.get("Conflicts", [])}
+    newconf = {conflict_signature(row) for row in newmap.get("Conflicts", [])}
+    new_ambiguous = newconf - oldconf
+    new_ambiguous_for_fresh = [entry for entry in new_ambiguous
+                               if any(owner in fresh for owner in entry[2])]
+    old_history = {json.dumps(row, sort_keys=True)
+                   for row in oldmap.get("HistoricalResolutionConflicts", [])}
+    new_history = {json.dumps(row, sort_keys=True)
+                   for row in newmap.get("HistoricalResolutionConflicts", [])}
+    old_name_dob = defaultdict(set)
+    for row in previous:
+        name = " ".join(str(row.get("Name") or "").casefold().split())
+        dob = str(row.get("BirthDate") or "").strip()
+        if name and dob:
+            old_name_dob[(name, dob)].add(row["CanonicalPlayerID"])
+
+    active_overlaps = {}
+    season_overlaps = {}
+    name_dob_matches = {}
+    gsis_birthdays = defaultdict(set)
+    seen_new = set()
+    for relative_path in weekly_changed:
+        year = int(relative_path.split("/")[3])
+        records = json.loads((root / relative_path).read_text(encoding="utf-8"))["Records"]
+        for row in records:
+            cid = row.get("CanonicalPlayerID")
+            if cid not in fresh:
+                continue
+            seen_new.add(cid)
+            src = row.get("SourceIDs") or {}
+            gsis = src.get("GSIS")
+            dob = str(row.get("BirthDate") or "").strip()
+            name = " ".join(str(row.get("PlayerName") or "").casefold().split())
+            if gsis and dob:
+                gsis_birthdays[gsis].add(dob)
+            if name and dob and (matches := old_name_dob.get((name, dob))):
+                name_dob_matches.setdefault(cid, [gsis, name, dob, sorted(matches)])
+            for provider, token in src.items():
+                if provider == "GSIS" or not token:
+                    continue
+                key = (provider, str(token))
+                matches = old_tokens.get(key, set())
+                if matches:
+                    active_overlaps.setdefault((cid, provider, str(token)),
+                                               [gsis, year, sorted(matches)])
+                historical = sorted({owner for owner, low, high in old_by_token.get(key, [])
+                                     if low <= year <= high})
+                if historical:
+                    season_overlaps.setdefault((cid, provider, str(token)),
+                                               [gsis, year, historical])
+
+    conflicting_birthdays = {gsis: sorted(dobs)
+                             for gsis, dobs in gsis_birthdays.items() if len(dobs) > 1}
+    report = {
+        "old_mapping_count": len(oldmap.get("Mappings", [])),
+        "new_mapping_count": len(newmap.get("Mappings", [])),
+        "old_conflict_count": len(oldmap.get("Conflicts", [])),
+        "new_conflict_count": len(newmap.get("Conflicts", [])),
+        "lost_prior_mapping_intervals": len(lost_claims),
+        "lost_prior_mapping_sample": lost_claims[:8],
+        "new_ambiguous_conflict_keys": len(new_ambiguous),
+        "removed_ambiguous_conflict_keys": len(oldconf - newconf),
+        "new_conflicts_involving_new_identity": len(new_ambiguous_for_fresh),
+        "new_identity_conflict_sample": new_ambiguous_for_fresh[:8],
+        "prior_historical_resolution_conflicts": len(old_history),
+        "rebuilt_historical_resolution_conflicts": len(new_history),
+        "new_historical_resolution_conflicts": len(new_history - old_history),
+        "lost_historical_resolution_conflicts": len(old_history - new_history),
+        "new_identities_present_in_rewritten_rosters": len(seen_new),
+        "new_identity_provider_overlap_count": len(active_overlaps),
+        "new_identity_provider_overlap_sample": list(active_overlaps.items())[:12],
+        "new_identity_season_valid_provider_overlap_count": len(season_overlaps),
+        "new_identity_season_valid_provider_overlap_sample": list(season_overlaps.items())[:12],
+        "name_and_dob_possible_duplicate_count": len(name_dob_matches),
+        "name_and_dob_possible_duplicate_sample": list(name_dob_matches.items())[:12],
+        "same_gsis_contradictory_birthdays_count": len(conflicting_birthdays),
+        "same_gsis_contradictory_birthdays_sample": list(conflicting_birthdays.items())[:8],
+    }
+    print("#1061 provider and potential-duplicate audit: "
+          + json.dumps(report, ensure_ascii=False), flush=True)
+    return report
+
+
 class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
     @unittest.skipUnless(
         (SOURCE / "data-source/nfl/identities/players.json").is_file(),
@@ -141,6 +288,15 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
             }
             self.assertFalse(prior_ids - replay_ids, "Previously issued identities disappeared")
             print(f"#1061 newly added canonical identities={len(replay_ids - prior_ids)}", flush=True)
+            old_players = json.loads((SOURCE / "data-source/nfl/identities/players.json")
+                                     .read_text(encoding="utf-8"))["Players"]
+            new_players = json.loads((root / "data-source/nfl/identities/players.json")
+                                     .read_text(encoding="utf-8"))["Players"]
+            impact = audit_provider_mapping_and_possible_duplicates(
+                SOURCE, root, weekly_changed, old_players, new_players,
+            )
+            self.assertFalse(impact["new_conflicts_involving_new_identity"],
+                             "New canonical identity appears in ambiguous provider claim")
 
             for year, week in TARGETS:
                 path = root / f"data-source/nfl/weekly-rosters/{year}/{week:02d}.json"
