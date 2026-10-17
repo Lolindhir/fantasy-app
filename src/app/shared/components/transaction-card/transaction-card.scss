@@ -83,6 +83,37 @@
   width: auto;
 }
 
+/* The team is contextual: show it beside the first received asset, not on
+   its own empty row. Remaining trade assets keep the full available width. */
+.transaction-card__trade-leading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+  width: 100%;
+  min-width: 0;
+}
+.transaction-card__trade-first-asset {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.transaction-card--trade .transaction-card__trade-leading .transaction-card__team {
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  margin-left: auto;
+}
+.transaction-card--trade .transaction-card__trade-remainder {
+  align-items: center;
+  width: 100%;
+  gap: 3px 12px;
+}
+
+
 
 .transaction-card__player, .transaction-card__pick {
   display: inline-flex;
