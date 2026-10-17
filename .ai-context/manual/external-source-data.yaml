@@ -8,13 +8,14 @@ purpose: >
   later in the same registry with domain media; this contract only keeps the structure open for them.
 
 state: >
-  Issue #988 step 3.0-3.7 was completed on main: six external provider fetchers, their
-  normalized ranking/ADP/projection snapshots, identity indexes, raw-latest provenance,
-  retrieval resilience and Sleeper Trending latest now live in data-source with producer
-  modules under tools/external_source. Step 4A.1 adds a read-only common discovery for
-  legacy daily and future append-only intraday ranking snapshots. The append-only writer,
-  Sleeper durable activity archive, schema adapters and shared market-observations
-  derived product are planned separately in steps 4A.2-4D and do not yet exist.
+  Issue #988 step 3 moved all six provider fetchers and their Source Evidence to
+  data-source. 4A.1 legacy/intraday snapshot discovery, 4A.4 versioned read-only
+  provider adapters and neutral identity rows, the 4B in-memory market candidate
+  renderer, and the 4C synthetic and real 19-dataset clean-root audits are
+  merged. The 4A.2 append-only snapshot planner remains dormant; no ranked
+  writer cutover, Sleeper durable archive, persisted market-observations
+  Shared-Derived publisher, or FM consumer migration has been enabled. All 19
+  dataset storage/publication rights are still unknown under #190.
 
 layerPosition: >
   Level 1 of the six-level target (global facts and market observations). The observations are global
@@ -180,6 +181,33 @@ marketObservationsFullSourceAudit:
     Sleeper remains latest-only until a lawfully authorized durable source
     archive exists. Historical mapping and source correction invalidation is
     covered by the independent synthetic Source-only preflight fixture.
+
+
+marketObservationsProductAdapter:
+  implementation: tools/external_source/market_observations_product.py
+  cli: "python tools/external_source/market_observations_product.py --dataset-id <DatasetID> --previous-plan <ExistingPlanJSON>"
+  status: "4D read-only partition/dirty planner; NOT #471 scheduler or publisher activation"
+  identity: "DatasetID + NFLObservationSeason, from canonical external-registry and discovered Source Evidence"
+  semantics: >
+    Build exact source-only candidate hashes with the existing 4B renderer for
+    every discovered dataset-season partition. Compare with an optional
+    previously supplied plan: new, changed, unchanged, orphaned. A ranked
+    latest.json pointer or provider heartbeat update cannot dirty candidate
+    content without a new durable snapshot; older Source corrections and
+    season-valid canonical identity mapping corrections must change the
+    applicable partition. Report orphaned partitions; NEVER auto-delete.
+  dependencies: >
+    Registry dataset format/rights/identity, actual Source snapshot IDs,
+    rankings plus Source metadata/version, canonical NFL season schedule,
+    source identity provider mappings and renderer/adapter version. Candidate
+    SHA-256 captures the actual derived content semantics. The planning scan
+    is comprehensive and not a 10-minute polling/refresh trigger.
+  safety: >
+    Print only identifiers, counts, source paths, hashes and status; not raw
+    provider rows. No source, derived, App or FM writes; no scheduler, new
+    workflow, fetch cadence, branch publisher or permission change. Rights
+    remain unknown under #190; WriterEnabled remains false even if synthetic
+    test rights switch to allowed. #471 alone owns DAG orchestration.
 
 identity:
   file: identity.json per dataset
