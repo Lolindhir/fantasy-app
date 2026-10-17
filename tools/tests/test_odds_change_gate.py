@@ -19,12 +19,15 @@ GAME = "2026_06_HOU_JAX"
 
 
 def decision(observed: dict, *, previous: dict | None = None, minutes: int = 10,
-             kickoff: datetime | None = None):
+             kickoff: datetime | None = None, pending_minutes: int | None = None,
+             batch_window_due: bool = False):
     return evaluate_game(
         GAME, published=BASE if previous is None else previous,
         observed=observed, observed_at=NOW,
         published_at=NOW - timedelta(minutes=minutes),
         kickoff_at=kickoff,
+        pending_since=(NOW - timedelta(minutes=pending_minutes)) if pending_minutes is not None else None,
+        batch_window_due=batch_window_due,
     )
 
 
@@ -59,11 +62,39 @@ class SemanticOddsGateTests(unittest.TestCase):
         self.assertTrue(decision({**BASE, "TotalLine": 46.5}).publish)
 
     def test_time_gates_only_when_actual_difference_remains(self):
-        self.assertFalse(decision({**BASE, "SpreadLine": 4.0}, minutes=59).publish)
-        result = decision({**BASE, "SpreadLine": 4.0}, minutes=60)
+        self.assertFalse(decision({**BASE, "SpreadLine": 4.0}, minutes=59, pending_minutes=59).publish)
+        result = decision({**BASE, "SpreadLine": 4.0}, minutes=60, pending_minutes=60)
         self.assertTrue(result.publish)
         self.assertEqual(result.reason, "maximum_age_with_pending_change")
         self.assertFalse(decision(BASE, minutes=120).publish)
+
+    def test_old_baseline_does_not_make_new_small_change_immediately_due(self):
+        fresh_delta = {**BASE, "SpreadLine": 4.0}
+        self.assertFalse(decision(fresh_delta, minutes=1440).publish)
+        self.assertFalse(decision(fresh_delta, minutes=1440, pending_minutes=10).publish)
+        self.assertTrue(decision(fresh_delta, minutes=1440, pending_minutes=60).publish)
+
+    def test_hourly_batch_window_without_persisted_buffer(self):
+        fresh_delta = {**BASE, "SpreadLine": 4.0}
+        result = decision(fresh_delta, minutes=1440, batch_window_due=True)
+        self.assertTrue(result.publish)
+        self.assertEqual(result.reason, "scheduled_batch_window")
+        self.assertFalse(decision(BASE, minutes=1440, batch_window_due=True).publish)
+        self.assertFalse(decision({**BASE, "HomeMoneyline": -400},
+                                  minutes=1440, batch_window_due=True).publish)
+        self.assertFalse(decision(fresh_delta, minutes=1440, batch_window_due=False).publish)
+
+    def test_invalid_pending_checkpoint_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "predates last publication"):
+            decision({**BASE, "SpreadLine": 4.0}, minutes=10, pending_minutes=11)
+        with self.assertRaisesRegex(ValueError, "after observation"):
+            evaluate_game(GAME, published=BASE, observed=BASE,
+                          published_at=NOW - timedelta(minutes=10), observed_at=NOW,
+                          pending_since=NOW + timedelta(minutes=1))
+        with self.assertRaisesRegex(ValueError, "batch_window_due must be bool"):
+            evaluate_game(GAME, published=BASE, observed=BASE,
+                          published_at=NOW - timedelta(minutes=10), observed_at=NOW,
+                          batch_window_due="true")
 
     def test_missing_to_known_and_known_to_missing_are_immediate(self):
         result = decision({**BASE, "SpreadLine": None})
@@ -96,6 +127,10 @@ class SemanticOddsGateTests(unittest.TestCase):
                 "2026_06_CAR_PHI": NOW - timedelta(minutes=4),
             },
             observed_at=NOW,
+            pending_since_by_game={
+                GAME: NOW - timedelta(minutes=60),
+                "2026_06_CAR_PHI": NOW - timedelta(minutes=4),
+            },
         )
         self.assertEqual([x.publish for x in result], [False, True])
         self.assertEqual(result[1].reason, "maximum_age_with_pending_change")
