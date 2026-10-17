@@ -281,7 +281,7 @@ class CanonicalScheduleOddsMaterializationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             odds, index = self._fixture(root, [game()])
-            with self.assertRaisesRegex(ValueError, "no canonical NFL schedule match"):
+            with self.assertRaisesRegex(ValueError, "requires nflverse.schedules"):
                 _build_schedule_odds(root, odds, {}, 2026, force=False)
             index2 = {**index, "2026_01_CCC_DDD": {
                 "Season": 2026, "GameType": "REG", "Week": 1
@@ -317,7 +317,7 @@ class CanonicalScheduleOddsMaterializationTests(unittest.TestCase):
             self.assertEqual(first, second)
             path, original = first[0]
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(original) + "\\n", encoding="utf-8")
+            path.write_text(json.dumps(original) + "\n", encoding="utf-8")
             write_upstream(odds.raw_path, [game("2025_01_AAA_BBB", spread_line="7.5")])
             frozen, _, preserved = _build_schedule_odds(root, odds, index, 2026, force=False)
             self.assertEqual(1, preserved)
