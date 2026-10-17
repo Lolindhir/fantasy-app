@@ -1953,34 +1953,45 @@ decisions:
         - Acquisition remains orchestrated by an FM-named workflow until a later split.
 
   - id: ADR-061
-    title: NFL betting lines are separate daily canonical season facts with market-implied team totals
+    title: NFL betting source observations remain separate from global NFL Game derived expectations
     status: accepted
     context: >
-      Issue #946 separated nflverse schedule betting columns from low-churn schedule facts because
-      live finality refreshes had produced frequent raw commits. The raw-only odds dataset already
-      refreshes in the daily NFL Source Sync, but downstream consumers have no canonical season-wise
-      betting facts or reusable market-implied team scores (Issue #1073).
+      Issue #946 separated nflverse betting columns from the schedule facts because
+      live finality polling caused frequent Raw commits without an odds consumer.
+      #1073 enables canonical NFL betting source observations; #1077 introduces
+      a reusable global NFL Game product. Upstream games.csv changed repeatedly
+      during 2026-10-16/17, sometimes ten minutes apart, while the repository
+      odds snapshot was refreshed only once per normal daily source run.
     decision: >
-      On 2026-10-17 Robert approved step 1: ingest betting data without any UI work. Activate
-      nflverse.schedule-odds only in the normal full source materializer and write
-      data-source/nfl/schedule-odds/<season>.json keyed by canonical GameID. Keep schedule and
-      finality outputs unchanged and exclude the odds dataset from the live game-finality scope.
-      Derive ImpliedAwayPoints and ImpliedHomePoints only when both total_line and spread_line
-      are known: (total - spread)/2 and (total + spread)/2 (the source spread is the
-      away-team point spread; positive favors home). Preserve prices, missing/null fields
-      and season-finalization semantics. Reject duplicate, missing or unknown game IDs and
-      invalid numeric lines. The existing daily 04:00 Europe/Berlin source refresh is sufficient.
-      App Schedule.json, historical App Schedule archives, Fantasy prediction models and
-      frontend visuals remain unchanged in this bounded step.
+      On 2026-10-17 Robert approved an explicit Source/Derived split: keep the
+      original low-churn schedules materialization and materialize separately
+      data-source/nfl/schedule-odds/<season>.json keyed by canonical GameID with
+      attributed Moneyline, Spread, Total and quoted odds as nullable source
+      observations; do not store derived expected scores in canonical Source.
+      The shared-derived global NFL Game product is owned separately by #1077
+      under data-derived/nfl-games/<season>.json, joins Schedule, Finality and
+      canonical Odds, and computes ImpliedAwayPoints=(TotalLine-SpreadLine)/2 and
+      ImpliedHomePoints=(TotalLine+SpreadLine)/2 (positive away spread favors home).
+      It is a market expectation, not a provider exact-score forecast. The odds
+      dataset stays excluded from the ten-minute game-finality materialization.
+      The daily odds cadence is *provisional*: #471 owns a data-driven reassessment
+      of pregame freshness versus Source/Derived publication cost, and any scoped
+      refresh cadence or writer change must first pass operational impact, rollback,
+      monitoring and race-safety review. This decision alone does not authorize
+      changing the scheduler, publication path or live pipeline.
     rationale: >
-      Consumer-neutral, source-attributed NFL betting data and implied scores become available
-      without recreating the high-churn live schedule writer or mixing projections with actual scores.
+      Betting evidence needs its own provenance and low-noise source pipeline,
+      while common cross-input derivation belongs to the dedicated shared-derived
+      NFL Game domain. A future consumer justifies revisiting source freshness
+      rather than automatically restoring noisy ten-minute full pipeline runs.
     consequences:
       positive:
-        - Historical seasons and current games have typed, reusable team-market expectations.
-        - Existing daily source sync materializes the facts with deterministic no-op behavior.
-        - No new fetch schedule, permissions, branch writer or App contract is introduced.
+        - Historical/current source odds are normalized without being recast as model truth.
+        - One consumer-neutral global NFL Game product can serve multiple future consumers.
+        - Existing finality and schedule contracts remain stable.
       negative:
-        - Initial backfill adds historical canonical season files to data-source.
-        - This captures only the source's latest line per game, not timestamped line movement.
-        - App and fantasy consumers require separate follow-up integration.
+        - First-time canonical Odds and future NFL Game backfill add stored files.
+        - nflverse latest rows have no per-game publication time or odds movements;
+          historical pregame backtests need real contemporary observations.
+        - More frequent odds-only sync may require future scoped scheduling/writer
+          changes after #471 evaluation.
