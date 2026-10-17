@@ -4,6 +4,7 @@
   [class.transaction-card--compact]="density === 'compact'"
   [class.transaction-card--detail]="density === 'detail'"
   [class.transaction-card--trade]="category === 'trade'"
+  [class.transaction-card--comparison]="category === 'trade' && transaction.Participants.length === 2 && density !== 'detail'"
   [class.transaction-card--add]="category === 'add'"
   [class.transaction-card--cut]="category === 'cut'"
 >
@@ -36,9 +37,35 @@
   </header>
 
   <div class="transaction-card__participants">
-    @for (participant of transaction.Participants; track participant.RosterID) {
+    @for (participant of transaction.Participants; track participant.RosterID; let first = $first) {
       <section class="transaction-card__participant">
-        @if (category === 'trade') {
+        @if (category === 'trade' && transaction.Participants.length === 2 && density !== 'detail') {
+          <div class="transaction-card__compare-team" [class.transaction-card__compare-team--right]="!first">
+            @if (participant.Team; as team) {
+              <app-team-identity
+                [team]="team"
+                size="small"
+                [elements]="['logo', 'name']"
+                [align]="first ? 'start' : 'end'"
+              />
+            } @else {
+              <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
+            }
+          </div>
+          <div class="transaction-card__assets transaction-card__compare-assets">
+            @for (asset of visibleAssets(participant, 'incoming'); track asset.key) {
+              <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'incoming' }" />
+            }
+            @if (hiddenAssets(participant, 'incoming') > 0) {
+              <button type="button" class="transaction-card__more" (click)="toggleExpanded()">
+                +{{ hiddenAssets(participant, 'incoming') }} more
+              </button>
+            }
+            @if (getAssets(participant, 'incoming').length === 0) {
+              <span class="transaction-card__empty">No assets recorded</span>
+            }
+          </div>
+        } @else if (category === 'trade') {
           <div class="transaction-card__trade-leading">
             <div class="transaction-card__trade-first-asset">
               @if (visibleAssets(participant, 'incoming')[0]; as firstAsset) {

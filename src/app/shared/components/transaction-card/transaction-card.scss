@@ -214,3 +214,92 @@
 }
 .transaction-card__pick-shield strong { font-size: 0.83rem; }
 .transaction-card__pick-shield small { font-size: 0.34rem; }
+
+/* Two-team trades: comparison columns with one continuous center divider.
+   The existing Trade fallback is retained for multi-team / detail screens. */
+.transaction-card--comparison .transaction-card__participants {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.transaction-card--comparison .transaction-card__participant {
+  min-width: 0;
+  padding: 8px 9px 9px;
+  gap: 7px;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+.transaction-card--comparison .transaction-card__participant + .transaction-card__participant {
+  border-top: 0;
+  border-left: 1px solid #dce4ee;
+}
+.transaction-card--comparison .transaction-card__compare-team {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  min-height: 26px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #eef2f6;
+}
+.transaction-card--comparison .transaction-card__compare-team--right {
+  justify-content: flex-end;
+}
+.transaction-card--comparison .transaction-card__compare-team app-team-identity {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  --team-identity-avatar-size: 22px;
+  --team-identity-title-font-size: 0.64rem;
+}
+.transaction-card--comparison .transaction-card__compare-assets {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+}
+.transaction-card--comparison .transaction-card__asset-line,
+.transaction-card--comparison .transaction-card__asset-line--pick {
+  display: flex;
+  flex: none;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+.transaction-card--comparison .transaction-card__player,
+.transaction-card--comparison .transaction-card__pick {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  align-items: center;
+  gap: 5px;
+}
+.transaction-card--comparison .transaction-card__asset-copy {
+  min-width: 0;
+  flex: 1;
+}
+.transaction-card--comparison .transaction-card__asset-copy > strong {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  line-height: 1.18;
+  font-size: 0.73rem;
+}
+.transaction-card--comparison .transaction-card__portrait {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+}
+.transaction-card--comparison .transaction-card__pick-shield {
+  width: 27px;
+  height: 30px;
+  flex-basis: 27px;
+}
+.transaction-card--comparison .transaction-card__more {
+  align-self: flex-start;
+  margin-top: 0;
+  padding: 1px 0;
+}
