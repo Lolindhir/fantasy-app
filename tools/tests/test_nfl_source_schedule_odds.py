@@ -5,11 +5,17 @@ import json
 import shutil
 import tempfile
 import unittest
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
-from tools.nfl_source_data_lib import common as common_mod
-from tools.nfl_source_data_lib.source_projection import (
+TOOLS = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(TOOLS))
+
+from nfl_source_data_lib import common as common_mod
+from nfl_source_data_lib.phase1 import _build_schedule_odds, _build_schedules
+from data_roots import DATA_SOURCE_ROOT
+from nfl_source_data_lib.source_projection import (
     SCHEDULE_ODDS_COLUMNS,
     SCHEDULE_ODDS_PROJECTION_ID,
     SCHEDULE_ODDS_PROJECTION_VERSION,
@@ -204,20 +210,133 @@ class RegistrySplitTests(unittest.TestCase):
             (odds.source_projection_id, odds.source_projection_version),
         )
 
-    def test_odds_are_raw_only_and_schedule_requires_no_odds_column(self) -> None:
-        self.assertFalse(self.datasets["nflverse.schedule-odds"].materialize)
+    def test_odds_are_materialized_separately_and_schedule_requires_no_odds_column(self) -> None:
+        self.assertTrue(self.datasets["nflverse.schedule-odds"].materialize)
         self.assertTrue(self.datasets["nflverse.schedules"].materialize)
         for column in SCHEDULE_ODDS_COLUMNS:
             self.assertNotIn(column, self.datasets["nflverse.schedules"].required_columns)
 
-    def test_no_canonical_materializer_reads_odds_columns(self) -> None:
-        lib = ROOT / "tools/nfl_source_data_lib"
-        for path in lib.glob("*.py"):
-            if path.name == "source_projection.py":
-                continue
-            text = path.read_text(encoding="utf-8")
-            for column in SCHEDULE_ODDS_COLUMNS:
-                self.assertNotIn(column, text, f"{path.name} must not read odds column {column}")
+    def test_only_separate_canonical_odds_builder_consumes_odds_columns(self) -> None:
+        phase1 = (ROOT / "tools/nfl_source_data_lib/phase1.py").read_text(encoding="utf-8")
+        scoped = (ROOT / "tools/nfl_source_data_lib/finality_materialize.py").read_text(encoding="utf-8")
+        self.assertIn("def _build_schedule_odds(", phase1)
+        self.assertIn('audit["scheduleOdds"]', phase1)
+        self.assertNotIn("_build_schedule_odds", scoped)
+
+
+class CanonicalScheduleOddsMaterializationTests(unittest.TestCase):
+    def _fixture(
+        self,
+        root: Path,
+        rows: list[dict[str, str]],
+        season: int = 2026,
+    ) -> tuple[common_mod.Dataset, dict[str, dict]]:
+        source_root = root / DATA_SOURCE_ROOT
+        odds = dataset(
+            source_root, "nflverse.schedule-odds", SCHEDULE_ODDS_PROJECTION_ID, ("game_id", "spread_line")
+        )
+        odds.raw_path.parent.mkdir(parents=True, exist_ok=True)
+        write_upstream(odds.raw_path, rows)
+        schedule_index = {
+            row["game_id"]: {"Season": season, "GameType": "REG", "Week": 1}
+            for row in rows
+        }
+        return odds, schedule_index
+
+    def test_committed_provider_odds_join_all_canonical_schedule_games(self) -> None:
+        """Production-sized source evidence must cover exactly the same game identities."""
+        datasets = {item.id: item for item in common_mod.load_registry(ROOT)}
+        _, _, _, game_index = _build_schedules(
+            ROOT, datasets["nflverse.schedules"], 2026, force=False
+        )
+        _, audit, _ = _build_schedule_odds(
+            ROOT, datasets["nflverse.schedule-odds"], game_index, 2026, force=False
+        )
+        self.assertEqual(len(game_index), audit["gameCount"])
+        self.assertGreater(audit["gameCount"], 7000)
+        self.assertGreater(audit["gamesWithCompleteLines"], 7000)
+
+    def test_source_only_lines_join_without_derived_expectations(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            odds, index = self._fixture(root, [game()])
+            result, audit, preserved = _build_schedule_odds(root, odds, index, 2026, force=False)
+            self.assertEqual(0, preserved)
+            self.assertEqual(1, audit["gamesWithCompleteLines"])
+            self.assertEqual(0, audit["gamesWithoutCompleteLines"])
+            path, payload = result[0]
+            self.assertEqual(root / DATA_SOURCE_ROOT / "nfl/schedule-odds/2026.json", path)
+            self.assertEqual("nflverse.schedule-odds", payload["SourceDataset"])
+            self.assertFalse(payload["Finalized"])
+            row = payload["Games"][0]
+            self.assertEqual("2026_01_AAA_BBB", row["GameID"])
+            self.assertEqual(3.5, row["SpreadLine"])
+            self.assertEqual(44.5, row["TotalLine"])
+            self.assertEqual(-180.0, row["HomeMoneyline"])
+            self.assertNotIn("ImpliedAwayPoints", row)
+            self.assertNotIn("ImpliedHomePoints", row)
+
+    def test_missing_prices_and_incomplete_lines_are_null_not_zero(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            odds, index = self._fixture(root, [
+                game("2026_01_AAA_BBB", total_line="", away_moneyline=""),
+                game("2026_01_CCC_DDD", spread_line="", total_line="45.5",
+                     away_team="CCC", home_team="DDD"),
+            ])
+            outputs, audit, _ = _build_schedule_odds(root, odds, index, 2026, force=False)
+            records = {v["GameID"]: v for v in outputs[0][1]["Games"]}
+            self.assertEqual(0, audit["gamesWithCompleteLines"])
+            self.assertIsNone(records["2026_01_AAA_BBB"]["TotalLine"])
+            self.assertIsNone(records["2026_01_AAA_BBB"]["AwayMoneyline"])
+            self.assertIsNone(records["2026_01_CCC_DDD"]["SpreadLine"])
+            self.assertEqual(45.5, records["2026_01_CCC_DDD"]["TotalLine"])
+
+    def test_unknown_duplicate_and_missing_schedule_game_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            odds, index = self._fixture(root, [game()])
+            with self.assertRaisesRegex(ValueError, "requires nflverse.schedules"):
+                _build_schedule_odds(root, odds, {}, 2026, force=False)
+            index2 = {**index, "2026_01_CCC_DDD": {
+                "Season": 2026, "GameType": "REG", "Week": 1
+            }}
+            with self.assertRaisesRegex(ValueError, "missing from odds source"):
+                _build_schedule_odds(root, odds, index2, 2026, force=False)
+            write_upstream(odds.raw_path, [game(), game()])
+            with self.assertRaisesRegex(ValueError, "Duplicate NFL schedule odds"):
+                _build_schedule_odds(root, odds, index, 2026, force=False)
+            write_upstream(odds.raw_path, [game("2026_01_CCC_DDD")])
+            with self.assertRaisesRegex(ValueError, "no canonical NFL schedule match"):
+                _build_schedule_odds(root, odds, index, 2026, force=False)
+
+    def test_invalid_numeric_lines_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            odds, index = self._fixture(root, [game(spread_line="infinite")])
+            with self.assertRaisesRegex(ValueError, "Invalid NFL odds number"):
+                _build_schedule_odds(root, odds, index, 2026, force=False)
+            write_upstream(odds.raw_path, [game(total_line="-1")])
+            with self.assertRaisesRegex(ValueError, "Non-positive NFL odds total"):
+                _build_schedule_odds(root, odds, index, 2026, force=False)
+            write_upstream(odds.raw_path, [game(total_line="2", spread_line="10")])
+            with self.assertRaisesRegex(ValueError, "Impossible NFL odds line"):
+                _build_schedule_odds(root, odds, index, 2026, force=False)
+
+    def test_deterministic_output_and_past_season_freeze(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            odds, index = self._fixture(root, [game("2025_01_AAA_BBB")], season=2025)
+            first, _, _ = _build_schedule_odds(root, odds, index, 2026, force=False)
+            second, _, _ = _build_schedule_odds(root, odds, index, 2026, force=False)
+            self.assertEqual(first, second)
+            path, original = first[0]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(original) + "\n", encoding="utf-8")
+            write_upstream(odds.raw_path, [game("2025_01_AAA_BBB", spread_line="7.5")])
+            frozen, _, preserved = _build_schedule_odds(root, odds, index, 2026, force=False)
+            self.assertEqual(1, preserved)
+            self.assertEqual(original, frozen[0][1])
 
 
 class FinalityScopeExcludesOddsTests(unittest.TestCase):

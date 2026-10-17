@@ -1951,3 +1951,47 @@ decisions:
         - A third registry next to registry v3 and league-registry.json.
         - FFToday and Fantasy Football Calculator stay without CanonicalPlayerID until a provider ID mapping exists.
         - Acquisition remains orchestrated by an FM-named workflow until a later split.
+
+  - id: ADR-061
+    title: NFL betting source observations remain separate from global NFL Game derived expectations
+    status: accepted
+    context: >
+      Issue #946 separated nflverse betting columns from the schedule facts because
+      live finality polling caused frequent Raw commits without an odds consumer.
+      #1073 enables canonical NFL betting source observations; #1077 introduces
+      a reusable global NFL Game product. Upstream games.csv changed repeatedly
+      during 2026-10-16/17, sometimes ten minutes apart, while the repository
+      odds snapshot was refreshed only once per normal daily source run.
+    decision: >
+      On 2026-10-17 Robert approved an explicit Source/Derived split: keep the
+      original low-churn schedules materialization and materialize separately
+      data-source/nfl/schedule-odds/<season>.json keyed by canonical GameID with
+      attributed Moneyline, Spread, Total and quoted odds as nullable source
+      observations; do not store derived expected scores in canonical Source.
+      The shared-derived global NFL Game product is owned separately by #1077
+      under data-derived/nfl-games/<season>.json, joins Schedule, Finality and
+      canonical Odds, and computes ImpliedAwayPoints=(TotalLine-SpreadLine)/2 and
+      ImpliedHomePoints=(TotalLine+SpreadLine)/2 (positive away spread favors home).
+      It is a market expectation, not a provider exact-score forecast. The odds
+      dataset stays excluded from the ten-minute game-finality materialization.
+      The daily odds cadence is *provisional*: #471 owns a data-driven reassessment
+      of pregame freshness versus Source/Derived publication cost, and any scoped
+      refresh cadence or writer change must first pass operational impact, rollback,
+      monitoring and race-safety review. This decision alone does not authorize
+      changing the scheduler, publication path or live pipeline.
+    rationale: >
+      Betting evidence needs its own provenance and low-noise source pipeline,
+      while common cross-input derivation belongs to the dedicated shared-derived
+      NFL Game domain. A future consumer justifies revisiting source freshness
+      rather than automatically restoring noisy ten-minute full pipeline runs.
+    consequences:
+      positive:
+        - Historical/current source odds are normalized without being recast as model truth.
+        - One consumer-neutral global NFL Game product can serve multiple future consumers.
+        - Existing finality and schedule contracts remain stable.
+      negative:
+        - First-time canonical Odds and future NFL Game backfill add stored files.
+        - nflverse latest rows have no per-game publication time or odds movements;
+          historical pregame backtests need real contemporary observations.
+        - More frequent odds-only sync may require future scoped scheduling/writer
+          changes after #471 evaluation.

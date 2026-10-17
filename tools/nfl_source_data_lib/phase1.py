@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import math
 import re
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -16,6 +17,7 @@ from data_roots import DATA_SOURCE_ROOT
 
 _PHASE1_DATASET_IDS = {
     "nflverse.schedules",
+    "nflverse.schedule-odds",
     "nflverse.game-finality",
     "nflverse.rosters",
     "nflverse.weekly-rosters",
@@ -191,6 +193,116 @@ def _build_schedules(
         "latestSeason": max(grouped) if grouped else None,
     }
     return outputs, audit, preserved, game_index
+
+
+# nflverse spread_line is the away-team spread: positive favors home.
+# Preserve provider facts here; market-implied point calculations belong to #1077.
+_ODDS_FIELD_NAMES = {
+    "away_moneyline": "AwayMoneyline",
+    "home_moneyline": "HomeMoneyline",
+    "spread_line": "SpreadLine",
+    "away_spread_odds": "AwaySpreadOdds",
+    "home_spread_odds": "HomeSpreadOdds",
+    "total_line": "TotalLine",
+    "under_odds": "UnderOdds",
+    "over_odds": "OverOdds",
+}
+
+
+def _build_schedule_odds(
+    repo_root: Path,
+    dataset: Dataset,
+    schedule_index: dict[str, dict[str, Any]],
+    observation_season: int,
+    *,
+    force: bool,
+) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
+    """Join odds by canonical GameID without changing the low-churn schedule facts."""
+    if not schedule_index:
+        raise ValueError("nflverse.schedule-odds materialization requires nflverse.schedules")
+    grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    seen: set[str] = set()
+    complete_lines = 0
+    games_with_any_odds = 0
+
+    for row in _iter_csv_path(dataset.raw_path):
+        game_id = clean(row.get("game_id"))
+        if not game_id:
+            raise ValueError("NFL schedule odds row is missing game_id")
+        if game_id in seen:
+            raise ValueError(f"Duplicate NFL schedule odds game_id: {game_id}")
+        seen.add(game_id)
+        schedule = schedule_index.get(game_id)
+        if schedule is None:
+            raise ValueError(f"Odds game_id has no canonical NFL schedule match: {game_id}")
+
+        values: dict[str, float | None] = {}
+        for raw_name, canonical_name in _ODDS_FIELD_NAMES.items():
+            raw_value = clean(row.get(raw_name))
+            number = as_float(raw_value) if raw_value is not None else None
+            if raw_value is not None and (number is None or not math.isfinite(number)):
+                raise ValueError(f"Invalid NFL odds number for game {game_id}: {raw_name}={raw_value}")
+            values[canonical_name] = number
+
+        spread = values["SpreadLine"]
+        total = values["TotalLine"]
+        if total is not None and total <= 0:
+            raise ValueError(f"Non-positive NFL odds total for game {game_id}: {total}")
+        if spread is not None and total is not None and abs(spread) > total:
+            raise ValueError(f"Impossible NFL odds line for game {game_id}: spread={spread} total={total}")
+        has_line = spread is not None and total is not None
+        complete_lines += int(has_line)
+        games_with_any_odds += int(any(v is not None for v in values.values()))
+
+        grouped[int(schedule["Season"])].append({
+            "GameID": game_id,
+            "GameType": schedule["GameType"],
+            "Week": schedule["Week"],
+            **values,
+        })
+
+    missing_games = sorted(set(schedule_index) - seen)
+    if missing_games:
+        raise ValueError(
+            "Canonical NFL schedule games missing from odds source: "
+            + ", ".join(missing_games[:10])
+        )
+
+    outputs: list[tuple[Path, dict[str, Any]]] = []
+    preserved = 0
+    for season, games in sorted(grouped.items()):
+        games.sort(key=lambda item: (item["Week"], item["GameType"], item["GameID"]))
+        payload = {
+            "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+            "Season": season,
+            "SourceDataset": dataset.id,
+            "ScheduleDataset": "nflverse.schedules",
+            "Finalized": _finalized_for_season(season, observation_season),
+            "SpreadConvention": "away spread; positive favors home",
+            "Games": games,
+        }
+        path, effective, was_preserved = _canonical_partition(
+            repo_root,
+            dataset,
+            relative_path=f"schedule-odds/{season}.json",
+            season=season,
+            observation_season=observation_season,
+            payload=payload,
+            force=force,
+        )
+        outputs.append((path, effective))
+        preserved += int(was_preserved)
+
+    audit = {
+        "seasonCount": len(grouped),
+        "gameCount": len(seen),
+        "gamesWithAnyOdds": games_with_any_odds,
+        "gamesWithCompleteLines": complete_lines,
+        "gamesWithoutCompleteLines": len(seen) - complete_lines,
+        "earliestSeason": min(grouped) if grouped else None,
+        "latestSeason": max(grouped) if grouped else None,
+    }
+    return outputs, audit, preserved
 
 
 def _build_game_finality(
@@ -1321,6 +1433,15 @@ def build_phase1_outputs(
         )
         outputs.extend(built)
         audit["schedules"] = coverage
+        preserved += count
+
+    odds_dataset = datasets.get("nflverse.schedule-odds")
+    if odds_dataset is not None:
+        built, coverage, count = _build_schedule_odds(
+            repo_root, odds_dataset, schedule_index, observation_season, force=force
+        )
+        outputs.extend(built)
+        audit["scheduleOdds"] = coverage
         preserved += count
 
     finality_dataset = datasets.get("nflverse.game-finality")
