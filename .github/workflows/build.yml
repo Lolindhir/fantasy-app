@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read  # CP1 advisory-only changed-file inventory
 
 jobs:
   build:
@@ -24,6 +25,17 @@ jobs:
 
       - name: Install workflow-health test dependency
         run: python -m pip install "PyYAML>=6,<7"
+
+      # CP1 shadow-only: advisory, non-blocking, and never substitutes a test.
+      # The entire existing sequential CI stays unchanged and mandatory.
+      - name: CP1 CI test inventory and impact preview (shadow only)
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python -m unittest tools.tests.test_ci_test_impact -v
+          python tools/ci_test_impact.py shadow
 
       - name: Run workflow-health regression tests
         run: python -m unittest tools/tests/test_build_workflow_health_snapshot.py -v
