@@ -35,6 +35,7 @@ class PodcastPreflightTests(unittest.TestCase):
         raw_names = [entry["raw"] for entry in result["entities"]]
         self.assertTrue(any("Romo Dunze" in name for name in raw_names))
         self.assertTrue(any("Ferguson" in name for name in raw_names))
+        self.assertFalse(any(". Die" in name for name in raw_names))
         self.assertGreaterEqual(len(result["claims"]), 2)
         self.assertTrue(check(cues, digest, result)["ok"])
 

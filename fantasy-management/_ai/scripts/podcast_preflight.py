@@ -15,7 +15,8 @@ import sys
 from pathlib import Path
 
 CUE_TIME = re.compile(r"^\d{2}:\d{2}:\d{2}[,.]\d{3}$")
-CAPITALIZED = re.compile(r"\b[A-ZÄÖÜ][A-Za-zÄÖÜäöüß0-9'’.-]*(?:[ \t]+[A-ZÄÖÜ][A-Za-zÄÖÜäöüß0-9'’.-]*){0,2}")
+NAME_TOKEN = r"(?:[A-ZÄÖÜ]\.){2,}|[A-ZÄÖÜ][A-Za-zÄÖÜäöüß0-9'’-]*"
+CAPITALIZED = re.compile(rf"\b(?:{NAME_TOKEN})(?:[ \t]+(?:{NAME_TOKEN})){{0,2}}")
 CLAIM_PATTERN = re.compile(
     r"\b(?:start(?:en|et|e)?|sit(?:ten)?|bench|flex|rank(?:ing|ed)?|"
     r"(?:QB|RB|WR|TE)\s*[-#]?\s*\d{1,3}|besser|schlechter|vor|über|"
@@ -24,7 +25,8 @@ CLAIM_PATTERN = re.compile(
     r"Verletzung|verletzt|concussion|out|questionable|"
     r"Targets?|Snaps?|Carries|Touches|Blitz|Pressure|Defense|"
     r"Offensive.Line|Matchup|Punkte|Touchdown|gewinnen|"
-    r"Over.Under|O.Line)\b",
+    r"Over.Under|O.Line|Bye|verfügbar|gesund|schonen|Einsatz|"
+    r"ausfallen|spielt|spielen|könnte|vielleicht|sollten|Aufstellung)\b",
     re.I,
 )
 SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+(?=[A-ZÄÖÜ])")
@@ -176,6 +178,8 @@ def check(cues: list[dict], digest: str, data: dict,
                 continue
             if cue["text"][lo:hi] != entry.get("raw"):
                 issues.append(f"{ident}: raw text is not an exact source span")
+            if entry.get("review_status") not in ("unreviewed", "required", "context", "false_positive", "needs_review"):
+                issues.append(f"{ident}: unknown review_status")
             if entry.get("review_status") == "unreviewed":
                 unreviewed += 1
             if require_reviewed and entry.get("review_status") in ("unreviewed", None):
