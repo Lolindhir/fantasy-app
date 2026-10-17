@@ -211,13 +211,24 @@ def plan_observation(
         if should_publish:
             publish_ids.append(game_id)
         reasons[game_id] = reason
+        pending_stamp = _stamp(pending) if pending else None
+        # An unchanged *semantic* observation must produce identical state
+        # bytes. Otherwise a 10-minute observer would cause ~144 technical
+        # branch commits/day even when Spread/Total have not changed.
+        state_unchanged = bool(
+            old and not baseline_changed
+            and old.get("ObservedSpreadLine") == observed["SpreadLine"]
+            and old.get("ObservedTotalLine") == observed["TotalLine"]
+            and old.get("PendingSince") == pending_stamp
+            and old.get("PublishedAt") == _stamp(published_at)
+        )
         next_games[game_id] = {
             "PublishedFingerprint": fingerprint,
             "PublishedAt": _stamp(published_at),
             "ObservedSpreadLine": observed["SpreadLine"],
             "ObservedTotalLine": observed["TotalLine"],
-            "ObservedAt": stamp,
-            "PendingSince": _stamp(pending) if pending else None,
+            "ObservedAt": old["ObservedAt"] if state_unchanged else stamp,
+            "PendingSince": pending_stamp,
         }
     plan = {
         "SchemaVersion": SCHEMA_VERSION,
