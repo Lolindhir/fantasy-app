@@ -177,6 +177,25 @@ class OddsObservationBufferTests(unittest.TestCase):
             )
             self.assertEqual(next_plan["PublishableGameIDs"], [GAME])
 
+    def test_real_2026_canonical_source_projection_is_semantic_noop(self):
+        root = TOOLS.parent
+        source = root / "data-source" / "nfl"
+        schedule = json.loads((source / "schedules" / "2026.json").read_text(encoding="utf-8"))
+        canonical = json.loads((source / "schedule-odds" / "2026.json").read_text(encoding="utf-8"))
+        ids = {game["GameID"] for game in schedule["Games"]}
+        observed = read_upstream_lines(
+            root / "data-source" / "providers" / "nflverse" / "schedule-odds" / "raw-latest.csv",
+            2026, ids,
+        )
+        plan_result, state = plan_observation(
+            season=2026, schedule=schedule, canonical_odds=canonical,
+            observed_lines=observed, previous_state=None, observed_at=BASE_TIME,
+        )
+        self.assertEqual(plan_result["TotalGames"], 272)
+        self.assertEqual(plan_result["PublishableGameIDs"], [])
+        self.assertEqual(plan_result["RelevantNetChanges"], 0)
+        self.assertEqual(len(state["Games"]), 272)
+
     def test_serialized_state_is_byte_stable_after_recovery(self):
         _, state = plan()
         raw = serialize_state(state)
