@@ -61,6 +61,116 @@ class HistoricalWeeklyRosterIdentityTests(unittest.TestCase):
         target.parent.mkdir(parents=True)
         target.write_text(json.dumps({"Players": players}), encoding="utf-8")
 
+    def roster_with_metadata(self, year: int, rows: list[dict[str, str]]):
+        fields = ["gsis_id", "esb_id", "team", "position", "depth_chart_position", "birth_date"]
+        with (self.root / f"raw-weekly-{year}.csv").open(
+            "w", newline="", encoding="utf-8"
+        ) as handle:
+            writer = csv.DictWriter(handle, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(rows)
+
+    def placeholder_owner(self, *, gsis="BEA416041", esb="BEA416041",
+                          team="MIN", position="SAF", dob="2000-05-12"):
+        self.persisted([{
+            "CanonicalPlayerID": "NFLP-original", "Name": "Maceo Beard-Aigret",
+            "BirthDate": dob, "Position": position, "LatestTeam": team,
+            "IDs": {"GSIS": gsis, "ESB": esb},
+            "Sources": ["nflverse.players"],
+        }])
+
+    def test_unique_roster_esb_matches_existing_placeholder_dynamic_identity(self):
+        self.placeholder_owner()
+        self.roster_with_metadata(2026, [
+            {"gsis_id": "00-0040835", "esb_id": "BEA416041", "team": "MIN",
+             "position": "DB", "depth_chart_position": "FS", "birth_date": ""},
+        ])
+        found = historical_weekly_roster_identity_candidates(
+            self.root, self.datasets, [],
+        )
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0].ids, {"GSIS": "00-0040835"})
+        self.assertEqual(found[0].existing_internal_id, "NFLP-original")
+        self.assertIsNone(found[0].name)
+
+    def test_real_gsis_existing_esb_owner_must_not_merge(self):
+        # Jarran Reed is a real-GSIS existing person; raw ESB reuse is unsafe.
+        self.placeholder_owner(gsis="00-0032387", esb="REE257783",
+                               team="TEN", position="G", dob=None)
+        self.roster_with_metadata(2024, [
+            {"gsis_id": "00-0039642", "esb_id": "REE257783", "team": "TEN",
+             "position": "OL", "depth_chart_position": "G", "birth_date": ""},
+        ])
+        found = historical_weekly_roster_identity_candidates(
+            self.root, self.datasets, [],
+        )
+        self.assertEqual([row.existing_internal_id for row in found], [None])
+
+    def test_reused_esb_across_real_gsis_must_not_merge(self):
+        self.placeholder_owner()
+        self.roster_with_metadata(2026, [
+            {"gsis_id": "00-0040835", "esb_id": "BEA416041", "team": "MIN",
+             "position": "DB", "birth_date": ""},
+            {"gsis_id": "00-0040836", "esb_id": "BEA416041", "team": "MIN",
+             "position": "DB", "birth_date": ""},
+        ])
+        found = historical_weekly_roster_identity_candidates(
+            self.root, self.datasets, [],
+        )
+        self.assertEqual(len(found), 2)
+        self.assertTrue(all(row.existing_internal_id is None for row in found))
+
+    def test_team_and_position_mismatch_blocks_placeholder_link(self):
+        self.placeholder_owner(dob=None)
+        self.roster_with_metadata(2026, [
+            {"gsis_id": "00-0040835", "esb_id": "BEA416041", "team": "TEN",
+             "position": "OL", "depth_chart_position": "G", "birth_date": ""},
+        ])
+        found = historical_weekly_roster_identity_candidates(
+            self.root, self.datasets, [],
+        )
+        self.assertIsNone(found[0].existing_internal_id)
+
+    def test_conflicting_dob_vetoes_even_consistent_roster_role(self):
+        self.placeholder_owner()
+        self.roster_with_metadata(2026, [
+            {"gsis_id": "00-0040835", "esb_id": "BEA416041", "team": "MIN",
+             "position": "DB", "birth_date": "1999-01-01"},
+        ])
+        found = historical_weekly_roster_identity_candidates(
+            self.root, self.datasets, [],
+        )
+        self.assertIsNone(found[0].existing_internal_id)
+
+    def test_matching_name_without_provider_esb_never_attaches(self):
+        self.placeholder_owner()
+        self.roster_with_metadata(2026, [
+            {"gsis_id": "00-0040835", "esb_id": "OTHER123", "team": "MIN",
+             "position": "DB", "birth_date": "2000-05-12"},
+        ])
+        found = historical_weekly_roster_identity_candidates(
+            self.root, self.datasets, [],
+        )
+        self.assertIsNone(found[0].existing_internal_id)
+
+    def test_existing_esb_claimed_by_two_people_blocks_link(self):
+        self.persisted([
+            {"CanonicalPlayerID": "NFLP-original", "Position": "SAF", "LatestTeam": "MIN",
+             "IDs": {"GSIS": "BEA416041", "ESB": "BEA416041"},
+             "Sources": ["nflverse.players"]},
+            {"CanonicalPlayerID": "NFLP-other", "Position": "OL", "LatestTeam": "TEN",
+             "IDs": {"GSIS": "OTH191919", "ESB": "BEA416041"},
+             "Sources": ["nflverse.players"]},
+        ])
+        self.roster_with_metadata(2026, [
+            {"gsis_id": "00-0040835", "esb_id": "BEA416041", "team": "MIN",
+             "position": "DB", "birth_date": ""},
+        ])
+        found = historical_weekly_roster_identity_candidates(
+            self.root, self.datasets, [],
+        )
+        self.assertIsNone(found[0].existing_internal_id)
+
     def test_new_real_weekly_roster_gsis_becomes_provider_only_candidate(self):
         self.raw(2024, ["00-0039723", "00-0039723", "0", "XX-3"])
         self.raw(2025, ["00-0040381"])
