@@ -12,7 +12,6 @@ import argparse
 import hashlib
 import json
 import sys
-from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
@@ -146,7 +145,7 @@ def _ranked_observation(
         "SnapshotID": f"{dataset['id']}:{snapshot.key}",
         "ObservedAtUtc": snapshot.observed_at.isoformat() if snapshot.observed_at else None,
         "SourceUpdatedAtUtc": _source_updated_at(evidence.source_metadata),
-        "SourcePath": _relative(repo_root, evidence_path := snapshot.ranking_file),
+        "SourcePath": _relative(repo_root, snapshot.ranking_file),
         "MetadataPath": _relative(repo_root, snapshot.metadata_file),
         "SourceHash": evidence.ranking_sha256,
         "SourceSchemaVersion": evidence.source_version,
