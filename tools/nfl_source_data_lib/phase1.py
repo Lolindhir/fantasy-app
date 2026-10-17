@@ -195,9 +195,8 @@ def _build_schedules(
     return outputs, audit, preserved, game_index
 
 
-# nflverse spread_line is the away-team spread: positive means the home team
-# is favored. The market-implied points are a *derived expectation*, not a
-# provider-published exact-score prediction.
+# nflverse spread_line is the away-team spread: positive favors home.
+# Preserve provider facts here; market-implied point calculations belong to #1077.
 _ODDS_FIELD_NAMES = {
     "away_moneyline": "AwayMoneyline",
     "home_moneyline": "HomeMoneyline",
@@ -260,8 +259,6 @@ def _build_schedule_odds(
             "GameType": schedule["GameType"],
             "Week": schedule["Week"],
             **values,
-            "ImpliedAwayPoints": round((total - spread) / 2, 2) if has_line else None,
-            "ImpliedHomePoints": round((total + spread) / 2, 2) if has_line else None,
         })
 
     missing_games = sorted(set(schedule_index) - seen)
