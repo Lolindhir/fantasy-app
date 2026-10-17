@@ -114,6 +114,28 @@ readOnlyVersionedAdapters:
     archive writes or App publication. #190 still governs storage and rights,
     and 4A.2/4A.3 writer activation stays blocked while storage is unknown.
 
+rosterActivityHistoryReader:
+  module: tools/external_source/sleeper_snapshot_discovery.py
+  status: "4A.3 Source-only archive reader and 4B consumer compatibility; no writer activation"
+  layout: "data-source/market/roster-activity/sleeper/snapshots/YYYY-MM-DD/HHmmssZ-<semantic-hash8>/observation.json"
+  semantics: >
+    Combined Source add/drop document, original provider attribution, schema v1,
+    canonical UTC instant and validated semantic source fingerprint. Persisted
+    history supersedes transient latest-only in the read-only 4B candidate, never
+    including any unarchived latest refresh as invented history. Existing latest
+    is retained for current FM compatibility and remains the only view before
+    the first durable archive. Source comparisons are not archived.
+  validation: >
+    Reject missing, partial, timestamp-mismatched, wrong-provider or unsupported
+    schema snapshots and any mismatched normalized player/add/drop ranks,
+    counts and Source semantic fingerprints. Preserve not_listed nulls rather
+    than zero. Test fixtures only; all real durable archives still absent.
+  activationGate: >
+    Does not provide or activate an archive writer, fetcher, scheduled source
+    publication or private storage. Source-retention permissions and public-repo
+    visibility remain separate controls and must not be inferred from the
+    presence of a read-only parser.
+
 marketObservationsPreview:
   implementation: tools/external_source/market_observations.py
   status: "4B read-only draft: NO new data-derived writer or App/FM publication"
