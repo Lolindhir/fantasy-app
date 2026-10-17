@@ -178,6 +178,17 @@ class OddsObservationBufferTests(unittest.TestCase):
             )
             self.assertEqual(next_plan["PublishableGameIDs"], [GAME])
 
+    def test_identical_polls_do_not_write_technical_state_again(self):
+        _, state = plan()
+        previous = serialize_state(state)
+        next_plan, after = plan(prior=state, now=BASE_TIME + timedelta(minutes=10))
+        self.assertFalse(next_plan["PublishableGameIDs"])
+        self.assertEqual(serialize_state(after), previous)
+        # Quotenpreise werden nicht eingelesen; sie dürfen den State nicht verändern.
+        changed = {"SpreadLine": 3.5, "TotalLine": 44.5}
+        _, after = plan(changed, prior=after, now=BASE_TIME + timedelta(minutes=20))
+        self.assertNotEqual(serialize_state(after), previous)
+
     def test_real_2026_canonical_source_projection_is_semantic_noop(self):
         root = TOOLS.parent
         source = root / "data-source" / "nfl"
