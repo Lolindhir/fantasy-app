@@ -34,6 +34,9 @@ jobs:
           python -m unittest tools.tests.test_git_transient -v
           python -m unittest tools.tests.test_workflow_publication_contracts -v
 
+      - name: Run semantic market line publishing gate tests
+        run: python -m unittest tools.tests.test_odds_change_gate -v
+
       - name: Run NFL data-source regression tests
         run: |
           python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
