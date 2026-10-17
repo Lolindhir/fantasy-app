@@ -99,7 +99,7 @@ class SemanticOddsGateTests(unittest.TestCase):
                 "2026_06_CAR_PHI": NOW - timedelta(minutes=70),
             },
             observed_at=NOW,
-            pending_since_by_game={GAME: NOW - timedelta(minutes=2), "2026_06_CAR_PHI": NOW - timedelta(minutes=61)},
+            pending_since_by_game={GAME: NOW - timedelta(minutes=61), "2026_06_CAR_PHI": NOW - timedelta(minutes=2)},
         )
         self.assertEqual([x.publish for x in result], [False, True])
         self.assertEqual(result[1].reason, "maximum_age_with_pending_change")
