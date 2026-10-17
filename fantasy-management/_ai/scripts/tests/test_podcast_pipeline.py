@@ -123,6 +123,30 @@ class PodcastPipelineTests(unittest.TestCase):
         self.assertTrue(list(Draft202012Validator(schema("content_map_segment")).iter_errors(segment)))
         self.assertTrue(list(Draft202012Validator(schema("take_item")).iter_errors(take)))
 
+    def test_extra_authored_take_warns_while_in_progress_and_blocks_completion(self) -> None:
+        original_path = self.work / "takes/items/take-test-player.json"
+        original = json.loads(original_path.read_text(encoding="utf-8"))
+        extra = dict(original, id="take-extra")
+        write_json(self.work / "takes/items/take-extra.json", extra)
+        segment_path = self.work / "content-map/segments/segment-001.json"
+        segment = json.loads(segment_path.read_text(encoding="utf-8"))
+        segment["status"]["takes_complete"] = False
+        segment["status"]["reconciled"] = False
+        write_json(segment_path, segment)
+        status_path = self.work / "work-status.json"
+        status = json.loads(status_path.read_text(encoding="utf-8"))
+        status["phase"] = "takes_in_progress"
+        for key in ("takes_complete", "content_map_reconciled", "ready_for_publish"):
+            status["gates"][key] = False
+        write_json(status_path, status)
+        report, _ = validate_work_package(self.work, self.repo_root)
+        self.assertTrue(any("not planned by Content Map segment" in w.message for w in report.warnings))
+        self.assertFalse(any("not planned by Content Map segment" in e.message for e in report.errors))
+        segment["status"]["takes_complete"] = True
+        write_json(segment_path, segment)
+        report, _ = validate_work_package(self.work, self.repo_root)
+        self.assertTrue(any("not planned by Content Map segment" in e.message for e in report.errors))
+
     def test_legacy_takes_require_no_weekly_context(self) -> None:
         from jsonschema import Draft202012Validator
         from podcast_pipeline_schema import schema_path

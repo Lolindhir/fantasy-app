@@ -160,6 +160,10 @@ A single model may perform separate passes, but should receive **different expli
 
 For now these are **normative editorial stages**, not a claim that new automated jobs, a first-class source-claim-inventory JSON contract, an entity-extraction service, or new validator rules are implemented. Their technical contract, tests, cost/performance, storage location, deterministic cross-links and gates require a separate implementation checkpoint. Existing independent final mention-audit and builder publication constraints stay intact. See `PODCAST_EXTRACTION_RULES.md` for precise fidelity and unresolved-name handling.
 
+### Reconciliation before segment completion
+
+After the raw-first claim and entity inventories, compare each reviewed source claim in both directions: source→Content Map segment→planned/authored Take and Take→source. Record justified context-only statements rather than creating filler takes. A new or split Take must update `planned_outputs.take_ids` at the time of drafting; stale planned-output lists are a visible QA defect even before the final ready gate. If a second raw-source read discovers omissions, unset premature segment completion/reconciliation statuses and preserve the frozen extraction baseline. These semantic reviews cannot be inferred from schema-valid JSON, and legacy packages need no retrospective migration.
+
 ## Content Map
 
 The Content Map is a required durable planning and completeness artifact for new pipeline packages.

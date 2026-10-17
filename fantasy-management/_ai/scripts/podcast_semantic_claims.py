@@ -159,9 +159,79 @@ def reconcile(source, frozen, audit_path, output):
     return {"first_pass": len(original["claims"]), "added": len(additions),
             "corrections": len(fixes), "reconciled": len(out["claims"])}
 
-def check(source, inventory_path, *, require_reviewed=False, takes_path=None):
+def check_work_links(inventory, work_dir, takes, *, require_reviewed=False):
+    """Check source-claim IDs against the authored Content Map and Takes.
+
+    This is an explicit local QA operation, NOT discovery of omitted transcript
+    statements and NOT an automatic production publication gate.
+    """
+    from podcast_pipeline_types import load_json, safe_relative_path
+
+    manifest = load_json(work_dir / "content-map/manifest.json")
+    segments = {}
+    errors = []
+    for desc in manifest.get("segments", []):
+        segment_id = desc.get("segment_id")
+        path = safe_relative_path(work_dir, desc.get("path"), "content-map")
+        segment = load_json(path)
+        if segment_id in segments or segment.get("segment_id") != segment_id:
+            errors.append(f"Duplicate/mismatched Content Map segment: {segment_id!r}")
+        segments[segment_id] = segment
+
+    take_index = {take.get("id"): take for take in takes if isinstance(take, dict)}
+    if len(take_index) != len(takes):
+        errors.append("Duplicate/missing authored take ID")
+    for claim in inventory.get("claims", []):
+        claim_id = claim.get("id")
+        segment_id = claim.get("segment_id")
+        segment = segments.get(segment_id)
+        if segment is None:
+            errors.append(f"{claim_id}: segment_id missing or not in Content Map: {segment_id!r}")
+            continue
+        state = claim.get("review_state")
+        links = claim.get("linked_take_ids", [])
+        if state == "context_only":
+            if links:
+                errors.append(f"{claim_id}: context-only claim must not link a substantive take")
+            continue
+        if state != "verified":
+            continue  # unreviewed/needs_review is blocked by --require-reviewed
+        mapped = {
+            entry.get("claim_id")
+            for entry in segment.get("substantive_claims", [])
+            if isinstance(entry, dict)
+        }
+        if claim_id not in mapped:
+            errors.append(f"{claim_id}: reviewed claim missing from Content Map {segment_id!r}")
+        if require_reviewed and not links:
+            errors.append(f"{claim_id}: reviewed claim has no take link")
+        planned = set(segment.get("planned_outputs", {}).get("take_ids", []))
+        for take_id in links:
+            take = take_index.get(take_id)
+            if take is None:
+                errors.append(f"{claim_id}: linked take {take_id!r} not authored")
+                continue
+            if segment_id not in take.get("segment_ids", []):
+                errors.append(f"{claim_id}: linked take {take_id!r} omits segment {segment_id!r}")
+            if take_id not in planned:
+                errors.append(f"{claim_id}: linked take {take_id!r} not planned by segment {segment_id!r}")
+            if claim_id not in take.get("claim_ids", []):
+                errors.append(f"{claim_id}: linked take {take_id!r} lacks reciprocal claim ID")
+    for take_id, take in take_index.items():
+        for segment_id in take.get("segment_ids", []):
+            segment = segments.get(segment_id)
+            if segment is not None and take_id not in segment.get("planned_outputs", {}).get("take_ids", []):
+                errors.append(f"{take_id}: authored take not planned by segment {segment_id!r}")
+    return errors
+
+
+def check(source, inventory_path, *, require_reviewed=False, takes_path=None, work_dir=None):
     inventory = read(inventory_path)
     errors = validate(source, inventory, require_reviewed=require_reviewed)
+    if work_dir is not None and takes_path is not None:
+        errors.append("Specify --work-dir or --takes, not both")
+    if work_dir is not None:
+        takes_path = work_dir / "takes/items"
     if takes_path is not None:
         takes = _take_files(takes_path)
         index = {take.get("id"): take for take in takes if isinstance(take, dict)}
@@ -175,6 +245,8 @@ def check(source, inventory_path, *, require_reviewed=False, takes_path=None):
                 take = index.get(take_id)
                 if take is None or claim["id"] not in take.get("claim_ids", []):
                     errors.append(f"{claim['id']}: take {take_id} missing reciprocal claim_id")
+    if work_dir is not None:
+        errors.extend(check_work_links(inventory, work_dir, takes, require_reviewed=require_reviewed))
     claims = inventory.get("claims", [])
     return {"ok": not errors, "claims": len(claims),
             "editorially_reviewed": sum(c.get("review_state") in {"verified", "context_only"} for c in claims),
@@ -193,6 +265,7 @@ def main(argv=None):
     c.add_argument("srt", type=Path); c.add_argument("inventory", type=Path)
     c.add_argument("--require-reviewed", action="store_true")
     c.add_argument("--takes", type=Path)
+    c.add_argument("--work-dir", type=Path, help="Cross-check Content Map, authored Takes and source claims")
     args = parser.parse_args(argv)
     try:
         if args.cmd == "freeze":
@@ -200,7 +273,8 @@ def main(argv=None):
         elif args.cmd == "reconcile":
             result = reconcile(args.srt, args.frozen, args.audit, args.output)
         else:
-            result = check(args.srt, args.inventory, require_reviewed=args.require_reviewed, takes_path=args.takes)
+            result = check(args.srt, args.inventory, require_reviewed=args.require_reviewed,
+                           takes_path=args.takes, work_dir=args.work_dir)
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0 if result.get("ok", True) else 1
     except (ValueError, OSError, UnicodeError, KeyError, json.JSONDecodeError) as exc:

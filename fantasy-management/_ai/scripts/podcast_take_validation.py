@@ -53,6 +53,29 @@ def validate_takes(
 
     if not data.segments:
         return
+    # Detect stale Content Maps before the episode-wide completion phase. A new
+    # authored draft can be legitimate during work-in-progress, so warn first;
+    # claiming a completed/reconciled segment without planning the draft is a hard error.
+    for take_id, take in data.takes.items():
+        for segment_id in take.get("segment_ids", []):
+            segment = data.segments.get(segment_id)
+            if segment is None:
+                continue  # unknown segment is already reported above
+            planned = segment.get("planned_outputs") or {}
+            if take_id in planned.get("take_ids", []):
+                continue
+            path = take_dir / f"{take_id}.json"
+            message = (
+                f"authored take {take_id!r} is not planned by Content Map segment "
+                f"{segment_id!r}; reconcile planned_outputs.take_ids before completion."
+            )
+            status = segment.get("status") or {}
+            if (status.get("takes_complete") or status.get("reconciled")
+                    or phase_requires(work_status, "content_map_reconciled") or require_ready):
+                report.error(path, message)
+            else:
+                report.warn(path, message)
+
     planned_take_ids: set[str] = set()
     for segment_id, segment in data.segments.items():
         planned = segment.get("planned_outputs") if isinstance(segment.get("planned_outputs"), dict) else {}
