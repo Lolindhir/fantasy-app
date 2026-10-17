@@ -13,6 +13,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 from nfl_source_data_lib.common import load_registry  # noqa: E402
 from nfl_source_data_lib.materialize import materialize  # noqa: E402
+from nfl_source_data_lib.phase1 import _ODDS_FIELD_NAMES  # noqa: E402
 from historical_fantasy_scoring_parity import build_parity_report  # noqa: E402
 from player_week_fantasy_materialize import (  # noqa: E402
     _week_finality, build_player_week_fantasy_dataset,
@@ -59,6 +60,39 @@ def safe_frozen_enrichment(old: dict, new: dict) -> tuple[bool, int]:
             filled += 1
     return before == after, filled
 
+
+
+
+def safe_current_odds_refresh(old: dict, new: dict) -> bool:
+    """A live odds refresh may update market quotes, never schedule identity."""
+    before = json.loads(json.dumps(old))
+    after = json.loads(json.dumps(new))
+    if not isinstance(before.get("Games"), list) or not isinstance(after.get("Games"), list):
+        return False
+    for payload in (before, after):
+        for game in payload["Games"]:
+            for field in _ODDS_FIELD_NAMES.values():
+                game.pop(field, None)
+    return before == after
+
+
+def safe_current_sleeper_refresh(old: dict, new: dict) -> bool:
+    """Provider roster refresh must not reassign previously owned Sleeper IDs."""
+    before, after = old.get("Records"), new.get("Records")
+    if not isinstance(before, list) or not isinstance(after, list):
+        return False
+    new_by_id = {row.get("SleeperPlayerID"): row for row in after}
+    if len(new_by_id) != len(after) or None in new_by_id:
+        return False
+    old_by_id = {row.get("SleeperPlayerID"): row for row in before}
+    if len(old_by_id) != len(before) or None in old_by_id:
+        return False
+    return all(
+        not record.get("CanonicalPlayerID")
+        or player_id not in new_by_id
+        or record["CanonicalPlayerID"] == new_by_id[player_id].get("CanonicalPlayerID")
+        for player_id, record in old_by_id.items()
+    )
 
 
 def audit_provider_mapping_and_possible_duplicates(source, root, weekly_changed, previous, rebuilt):
@@ -279,6 +313,36 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
                 f"#1061 all changed weekly rosters: "
                 f"partitions={len(weekly_changed)}, newly_filled={weekly_filled}, "
                 "non_identity_drift=0",
+                flush=True,
+            )
+            # This test compares a live repository snapshot with a full rebuild.
+            # Concurrent NFL Source raw updates can leave *other* canonical
+            # read models temporarily stale while the identity fix remains
+            # isolated. Classify only the two known independently owned live
+            # producer outputs, and validate their unaffected invariant fields:
+            # never ignore arbitrary new changed paths or identity reassignment.
+            live_odds = "data-source/nfl/schedule-odds/2026.json"
+            if live_odds in changed:
+                old_odds = json.loads((SOURCE / live_odds).read_text(encoding="utf-8"))
+                new_odds = json.loads((root / live_odds).read_text(encoding="utf-8"))
+                self.assertTrue(
+                    safe_current_odds_refresh(old_odds, new_odds),
+                    "Odds refresh changed schedule facts, not just market quotes",
+                )
+                fixed.add(live_odds)
+            live_sleeper = "data-source/nfl/platform/sleeper/players.json"
+            if live_sleeper in changed:
+                old_sleeper = json.loads((SOURCE / live_sleeper).read_text(encoding="utf-8"))
+                new_sleeper = json.loads((root / live_sleeper).read_text(encoding="utf-8"))
+                self.assertTrue(
+                    safe_current_sleeper_refresh(old_sleeper, new_sleeper),
+                    "Sleeper raw refresh re-mapped a previously owned provider ID",
+                )
+                fixed.add(live_sleeper)
+            print(
+                "#1061 independent live raw refresh outputs: "
+                f"odds={live_odds in changed}, sleeper={live_sleeper in changed}, "
+                "schedule_identity_and_sleeper_owner_safe=True",
                 flush=True,
             )
             unexpected = [p for p in changed if p not in fixed and not p.startswith(prefixes)]
