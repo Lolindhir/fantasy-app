@@ -301,3 +301,17 @@
   margin-top: 0;
   padding: 1px 0;
 }
+
+/* Mirror only the right side of a two-team comparison. The asset's portrait
+   or shield sits on the outer edge; the label and NFL metadata face the center. */
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__player,
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__pick {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__asset-copy {
+  text-align: right;
+}
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__player-meta {
+  justify-content: flex-end;
+}
