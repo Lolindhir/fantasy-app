@@ -723,10 +723,6 @@ playersReadModelFieldInventory:
       matrixKey: nflPersonIdentity
       targetOwner: ID stays Sleeper player_id (App contract); provider mappings resolve through CanonicalPlayerID
       consumers:
-    tools/odds_observation.py:
-      reads:
-        provider:nflverse: source-layer-acquisition
-      note: 'Scoped NFL odds candidate acquisition from the fixed nflverse games.csv URL declared in canonical Source registry; writes only to a temporary directory during observation, no App or Source publication. #471.'
         - App join key for rosters, transactions, drafts, FantasyGameContext (ID); TankID not read by Angular
         - tools/nfl_source_data_lib identity.py, audit.py, mapping_history.py (ID, TankID as identity evidence)
         - FM build_player_signal_dataset.py and build_fantasy_operations_inputs.py (ID join)
@@ -969,6 +965,10 @@ consumerReadClassification:
     mention-only: the token appears in a comment or docstring, not in an executed read
     legacy-read-model-pending: a base fact is still read from a published read model; open migration or review item
   consumers:
+    tools/odds_observation.py:
+      reads:
+        provider:nflverse: source-layer-acquisition
+      note: 'Scoped NFL odds candidate acquisition from the fixed nflverse games.csv URL declared in canonical Source registry; writes only to a temporary directory during observation, no App or Source publication. #471.'
     fantasy-management/_ai/scripts/build_kicker_weekly_research_plan.py:
       reads:
         provider:cbssports: display-link-construction
