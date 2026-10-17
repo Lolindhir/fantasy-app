@@ -222,9 +222,13 @@ def historical_weekly_roster_identity_candidates(
         ids = row.get("IDs") or {}
         gsis = clean(ids.get("GSIS"))
         esb = clean(ids.get("ESB"))
-        if internal_id and esb:
-            esb_owners[esb].add(internal_id)
-            if (gsis == esb and not _VALID_GSIS_PLAYER_ID.fullmatch(gsis)
+        if internal_id:
+            if esb:
+                esb_owners[esb].add(internal_id)
+            for alias in (row.get("IDAliases") or {}).get("ESB") or []:
+                if (value := clean(alias)):
+                    esb_owners[value].add(internal_id)
+            if esb and (gsis == esb and not _VALID_GSIS_PLAYER_ID.fullmatch(gsis)
                     and "nflverse.players" in (row.get("Sources") or [])
                     and not any(_VALID_GSIS_PLAYER_ID.fullmatch(str(alias))
                                 for alias in (row.get("IDAliases") or {}).get("GSIS") or [])):
@@ -243,6 +247,7 @@ def historical_weekly_roster_identity_candidates(
     gsis_by_esb: dict[str, set[str]] = defaultdict(set)
     profile_by_gsis: dict[str, set[tuple[str | None, str | None, str | None]]] = defaultdict(set)
     birth_dates_by_gsis: dict[str, set[str]] = defaultdict(set)
+    roster_seasons_by_gsis: dict[str, set[int]] = defaultdict(set)
     for path in sorted(dataset.raw_path.parent.glob(pattern)):
         if not path.is_file():
             continue
@@ -256,6 +261,9 @@ def historical_weekly_roster_identity_candidates(
                 continue
             raw_esb_by_gsis[gsis].add(esb)
             gsis_by_esb[esb].add(gsis)
+            roster_seasons_by_gsis[gsis].add(
+                int(clean(row.get("season")) or path.stem.rsplit("-", 1)[-1])
+            )
             profile_by_gsis[gsis].add((
                 clean(row.get("team")),
                 _historical_roster_position_group(row.get("position"))
@@ -264,6 +272,24 @@ def historical_weekly_roster_identity_candidates(
             ))
             if (birth_date := clean(row.get("birth_date"))):
                 birth_dates_by_gsis[gsis].add(birth_date)
+
+    # An ESB may have a retired/season-scoped owner that is absent from active
+    # canonical IDs. Never bridge a real roster GSIS across a conflicting
+    # historical provider-ownership interval.
+    prior_provider_mappings = load_json(
+        repo_root / DATA_SOURCE_ROOT / "nfl/identities/provider-mappings.json", {}
+    ) or {}
+    historical_esb: dict[str, list[tuple[str, int, int]]] = defaultdict(list)
+    for mapping in prior_provider_mappings.get("Mappings", []) or []:
+        if mapping.get("Provider") != "ESB":
+            continue
+        token = clean(mapping.get("ExternalID"))
+        internal_id = clean(mapping.get("CanonicalPlayerID"))
+        if not token or not internal_id:
+            continue
+        first = int(mapping.get("FirstObservedSeason") or 0)
+        last = int(mapping.get("LastObservedSeason") or first)
+        historical_esb[token].append((internal_id, first, last))
 
     candidates: list[IdentityCandidate] = []
     for gsis in sorted(observed):
@@ -276,8 +302,13 @@ def historical_weekly_roster_identity_candidates(
             owners = esb_owners.get(esb, set())
             if len(owners) == 1 and gsis_by_esb.get(esb) == {gsis}:
                 owner = next(iter(owners))
+                seasons = roster_seasons_by_gsis.get(gsis, set())
+                conflicting_historical_owner = any(
+                    prior_id != owner and any(first <= year <= last for year in seasons)
+                    for prior_id, first, last in historical_esb.get(esb, [])
+                )
                 placeholder = placeholder_by_id.get(owner)
-                if placeholder is not None:
+                if placeholder is not None and not conflicting_historical_owner:
                     old_dob = clean(placeholder.get("BirthDate"))
                     raw_dobs = birth_dates_by_gsis.get(gsis, set())
                     dob_conflict = bool(old_dob and raw_dobs and raw_dobs != {old_dob})
