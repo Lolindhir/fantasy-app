@@ -19,11 +19,12 @@ GAME = "2026_06_HOU_JAX"
 
 
 def decision(observed: dict, *, previous: dict | None = None, minutes: int = 10,
-             kickoff: datetime | None = None):
+             kickoff: datetime | None = None, pending_minutes: int | None = None):
     return evaluate_game(
         GAME, published=BASE if previous is None else previous,
         observed=observed, observed_at=NOW,
         published_at=NOW - timedelta(minutes=minutes),
+        pending_since=(NOW - timedelta(minutes=pending_minutes)) if pending_minutes is not None else None,
         kickoff_at=kickoff,
     )
 
@@ -59,11 +60,13 @@ class SemanticOddsGateTests(unittest.TestCase):
         self.assertTrue(decision({**BASE, "TotalLine": 46.5}).publish)
 
     def test_time_gates_only_when_actual_difference_remains(self):
-        self.assertFalse(decision({**BASE, "SpreadLine": 4.0}, minutes=59).publish)
-        result = decision({**BASE, "SpreadLine": 4.0}, minutes=60)
+        self.assertFalse(decision({**BASE, "SpreadLine": 4.0}, minutes=180, pending_minutes=59).publish)
+        result = decision({**BASE, "SpreadLine": 4.0}, minutes=180, pending_minutes=60)
         self.assertTrue(result.publish)
         self.assertEqual(result.reason, "maximum_age_with_pending_change")
         self.assertFalse(decision(BASE, minutes=120).publish)
+        self.assertFalse(decision({**BASE, "SpreadLine": 4.0}, minutes=180).publish)
+        self.assertFalse(decision({**BASE, "SpreadLine": 4.0}, minutes=180, pending_minutes=2).publish)
 
     def test_missing_to_known_and_known_to_missing_are_immediate(self):
         result = decision({**BASE, "SpreadLine": None})
@@ -93,9 +96,10 @@ class SemanticOddsGateTests(unittest.TestCase):
             observed={GAME: same, "2026_06_CAR_PHI": same},
             published_at_by_game={
                 GAME: NOW - timedelta(minutes=61),
-                "2026_06_CAR_PHI": NOW - timedelta(minutes=4),
+                "2026_06_CAR_PHI": NOW - timedelta(minutes=70),
             },
             observed_at=NOW,
+            pending_since_by_game={GAME: NOW - timedelta(minutes=2), "2026_06_CAR_PHI": NOW - timedelta(minutes=61)},
         )
         self.assertEqual([x.publish for x in result], [False, True])
         self.assertEqual(result[1].reason, "maximum_age_with_pending_change")
