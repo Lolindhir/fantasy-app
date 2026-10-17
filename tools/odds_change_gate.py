@@ -131,6 +131,40 @@ def evaluate_game(
     return GameGateDecision(game_id, False, "debounce_small_change", spread, total)
 
 
+
+def next_pending_since(
+    *,
+    published: Mapping[str, Any] | None,
+    observed: Mapping[str, Any],
+    previous_pending_since: datetime | None,
+    observed_at: datetime,
+) -> datetime | None:
+    """Pure pending-buffer transition; persist returned time after observing.
+
+    Net-zero (including reversal to the published line) clears the buffer.
+    First nonzero observation starts the clock. Price-only changes are ignored.
+    Publishing a changed game must independently reset its pending clock and
+    replace its published baseline in the durable state.
+    """
+    _aware(observed_at, "observed_at")
+    if previous_pending_since is not None:
+        _aware(previous_pending_since, "previous_pending_since")
+        if previous_pending_since > observed_at:
+            raise ValueError("Pending change starts after observation")
+    if published is None:
+        return None
+    if not isinstance(published, Mapping) or not isinstance(observed, Mapping):
+        raise ValueError("Invalid published or observed line")
+    changed = any(
+        _decimal(published.get(field), f"{field}.published")
+        != _decimal(observed.get(field), f"{field}.observed")
+        for field in TRIGGER_FIELDS
+    )
+    if not changed:
+        return None
+    return previous_pending_since or observed_at
+
+
 def evaluate_games(
     *,
     published: Mapping[str, Mapping[str, Any]],
