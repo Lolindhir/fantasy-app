@@ -102,6 +102,24 @@ def validate(root: Path, inventory: dict) -> dict[str, int]:
         if (entry["tier"] == "deep") != bool(groups):
             raise ValueError(f"Deep tests require a group; fast/audit tests must not claim one: {path}")
         indexed[path] = entry
+    # Inventory the real PR-triggered workflow surface and direct non-test
+    # guards; otherwise a future CI refactor could silently omit one.
+    actual_workflows = sorted(
+        p.relative_to(root).as_posix()
+        for p in (root / ".github/workflows").glob("*.yml")
+        if re.search(r"(?m)^  pull_request:", p.read_text(encoding="utf-8"))
+    )
+    if inventory.get("prWorkflows") != actual_workflows:
+        raise ValueError(f"PR workflow inventory drift: actual={actual_workflows}")
+    commands = inventory.get("mandatoryCommands")
+    if not isinstance(commands, list) or not commands:
+        raise ValueError("Mandatory non-test command inventory missing")
+    for item in commands:
+        if not isinstance(item, dict) or set(item) != {"workflow", "snippet", "reason"}:
+            raise ValueError(f"Invalid mandatory command record: {item}")
+        target = root / item["workflow"]
+        if not item["snippet"] or not target.is_file() or item["snippet"] not in target.read_text(encoding="utf-8"):
+            raise ValueError(f"Existing mandatory CI command changed: {item['workflow']}: {item['snippet']}")
     tracked = discover(root)
     absent = sorted(tracked - set(indexed))
     stale = sorted(set(indexed) - tracked)
