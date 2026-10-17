@@ -119,13 +119,28 @@ def plan_partitions(
             repo_root, dataset_id, season, mapping_index=mapping
         )
         sha = market.digest(candidate)
+        dependencies = {
+            "RegistryDatasetID": dataset_id,
+            "RegistrySeasonPolicy": dict(dataset["seasonPolicy"]),
+            "CanonicalMappingFile": (
+                data_source_dir(repo_root) / PROVIDER_MAPPINGS_RELATIVE
+            ).relative_to(repo_root).as_posix(),
+            "ObservationSchemaVersion": candidate["SchemaVersion"],
+            "RendererVersion": candidate["RendererVersion"],
+            "ProductAdapterVersion": PRODUCT_ADAPTER_VERSION,
+            "SeasonScheduleFile": (
+                data_source_dir(repo_root) / "nfl" / "schedules" / f"{season}.json"
+            ).relative_to(repo_root).as_posix(),
+            "IdentityProviderKey": dataset["identity"]["providerKey"],
+            "SourceEvidenceMode": candidate["HistoryMode"],
+        }
         original = prior.get(key)
         change = (
             "new" if original is None
             else "unchanged" if (
                 original["CandidateSHA256"] == sha
                 and isinstance(original.get("Dependencies"), dict)
-                and original["Dependencies"].get("ProductAdapterVersion") == PRODUCT_ADAPTER_VERSION
+                and original["Dependencies"] == dependencies
             )
             else "changed"
         )
@@ -150,20 +165,7 @@ def plan_partitions(
                 }
                 for obs in sources
             ],
-            "Dependencies": {
-                "RegistryDatasetID": dataset_id,
-                "CanonicalMappingFile": (
-                    data_source_dir(repo_root) / PROVIDER_MAPPINGS_RELATIVE
-                ).relative_to(repo_root).as_posix(),
-                "ObservationSchemaVersion": candidate["SchemaVersion"],
-                "RendererVersion": candidate["RendererVersion"],
-                "ProductAdapterVersion": PRODUCT_ADAPTER_VERSION,
-                "SeasonScheduleFile": (
-                    data_source_dir(repo_root) / "nfl" / "schedules" / f"{season}.json"
-                ).relative_to(repo_root).as_posix(),
-                "IdentityProviderKey": dataset["identity"]["providerKey"],
-                "SourceEvidenceMode": candidate["HistoryMode"],
-            },
+            "Dependencies": dependencies,
             "Rights": {
                 "Storage": dataset["rights"]["storage"],
                 "Publication": dataset["rights"]["publication"],
