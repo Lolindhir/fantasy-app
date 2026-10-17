@@ -31,12 +31,16 @@ from external_source.observation_adapter import (  # noqa: E402
 )
 from external_source.registry import dataset_dir, get_dataset, load_registry  # noqa: E402
 from external_source.snapshot_discovery import Snapshot, discover_snapshots  # noqa: E402
+from external_source.sleeper_snapshot_discovery import (  # noqa: E402
+    SleeperSnapshot, discover_sleeper_snapshots,
+)
 from nfl_season_context import resolve_season_for_date  # noqa: E402
 
 PRODUCT = "market-observations"
 SCHEMA_VERSION = 1
 PREVIEW_RENDERER_VERSION = 1
 SLEEPER_LATEST = Path("market/roster-activity/sleeper/latest.json")
+SLEEPER_SNAPSHOTS = Path("market/roster-activity/sleeper/snapshots")
 
 
 class MarketObservationError(ValueError):
@@ -76,12 +80,23 @@ def _snapshots(repo_root: Path, dataset: Mapping[str, Any]) -> list[Snapshot]:
     return discover_snapshots(dataset_dir(repo_root, dict(dataset)) / "snapshots")
 
 
-def _dataset_inventory(repo_root: Path, dataset: Mapping[str, Any]) -> dict[int, list[Snapshot]]:
+def _dataset_inventory(
+    repo_root: Path, dataset: Mapping[str, Any],
+) -> dict[int, list[Snapshot] | list[SleeperSnapshot]]:
     if dataset["provider"] == "sleeper":
+        archived = discover_sleeper_snapshots(data_source_dir(repo_root) / SLEEPER_SNAPSHOTS)
+        if archived:
+            by_season: dict[int, list[SleeperSnapshot]] = {}
+            for observation in archived:
+                season = resolve_season_for_date(repo_root, observation.day.isoformat())
+                by_season.setdefault(season, []).append(observation)
+            return by_season
+        # Historical archive genuinely absent. Preview latest only, never
+        # invent older observations from latest.json or from git history.
         path = data_source_dir(repo_root) / SLEEPER_LATEST
         doc = load_roster_activity_evidence(dataset, path)
         season = resolve_season_for_date(repo_root, _sleeper_instant(doc.source_document).date().isoformat())
-        return {season: []}  # current latest is one observation, not archived snapshots
+        return {season: []}
     discovered = _snapshots(repo_root, dataset)
     if not discovered:
         raise MarketObservationError(f"No durable ranking Source Evidence for {dataset['id']}")
@@ -102,8 +117,11 @@ def inventory(repo_root: Path) -> list[dict[str, Any]]:
             result.append({
                 "DatasetID": dataset["id"],
                 "ObservationSeason": season,
-                "ObservationCount": 1 if dataset["provider"] == "sleeper" else len(snapshots),
-                "HistoryMode": "latest-only" if dataset["provider"] == "sleeper" else "persisted-snapshots",
+                "ObservationCount": len(snapshots) if snapshots else 1,
+                "HistoryMode": (
+                    "latest-only" if dataset["provider"] == "sleeper" and not snapshots
+                    else "persisted-snapshots"
+                ),
             })
     return result
 
@@ -155,15 +173,19 @@ def _ranked_observation(
 
 def _sleeper_observation(
     repo_root: Path, dataset: Mapping[str, Any], index: MappingIndex,
+    *, snapshot: SleeperSnapshot | None = None,
 ) -> dict[str, Any]:
-    path = data_source_dir(repo_root) / SLEEPER_LATEST
+    path = snapshot.observation_file if snapshot else data_source_dir(repo_root) / SLEEPER_LATEST
     evidence = load_roster_activity_evidence(dataset, path)
     observed = _sleeper_instant(evidence.source_document)
     neutral = normalize_sleeper_activity_observations(
         repo_root, dataset, path, mapping_index=index
     )
     return {
-        "SnapshotID": f"{dataset['id']}:{observed.date().isoformat()}:{evidence.source_fingerprint[:12]}",
+        "SnapshotID": (
+            f"{dataset['id']}:{snapshot.key}" if snapshot
+            else f"{dataset['id']}:{observed.date().isoformat()}:{evidence.source_fingerprint[:12]}"
+        ),
         "ObservedAtUtc": observed.isoformat(),
         "SourceUpdatedAtUtc": None,
         "SourcePath": _relative(repo_root, path),
@@ -187,7 +209,8 @@ def render_partition(
         raise MarketObservationError(f"No observed Source partition for {dataset_id}/{season}")
     index = mapping_index if mapping_index is not None else MappingIndex.load(repo_root)
     observations = (
-        [_sleeper_observation(repo_root, dataset, index)]
+        ([_sleeper_observation(repo_root, dataset, index, snapshot=s) for s in partitions[season]]
+         if partitions[season] else [_sleeper_observation(repo_root, dataset, index)])
         if dataset["provider"] == "sleeper"
         else [_ranked_observation(repo_root, dataset, s, index) for s in partitions[season]]
     )
@@ -201,7 +224,10 @@ def render_partition(
         "Provider": dataset["provider"],
         "Kind": dataset["kind"],
         "ObservationSeason": season,
-        "HistoryMode": "latest-only" if dataset["provider"] == "sleeper" else "persisted-snapshots",
+        "HistoryMode": (
+            "latest-only" if dataset["provider"] == "sleeper" and not partitions[season]
+            else "persisted-snapshots"
+        ),
         "Format": dataset["format"],
         "Attribution": dataset["rights"]["attribution"],
         "Rights": dataset["rights"],
