@@ -1,6 +1,7 @@
+import type { RawDraft, DraftPick } from '../../../core/models/draft.models';
 import type { Player } from '../../../core/models/player.models';
 import type { TransactionParticipant, TransactionDraftPick } from '../../../core/models/transaction.models';
-import { getTransactionCardAssets } from './transaction-card.presenter';
+import { buildTransactionPickContext, getTransactionCardAssets } from './transaction-card.presenter';
 
 describe('transaction-card presenter', () => {
   const participant: TransactionParticipant = {
@@ -50,4 +51,56 @@ describe('transaction-card presenter', () => {
     expect(asset.nflTeamAbv).toBe('PHI');
     expect(asset.nflTeamLogo).toBe('/eagles.svg');
   });
+  it('keeps traded pick summary free from selected player and original owner', () => {
+    const [asset] = getTransactionCardAssets(participant, 'incoming').filter(asset => asset.kind === 'pick');
+    expect(asset.label).toBe('2028 FA · R4');
+    expect(asset.secondary).toBe('');
+    expect(asset.pick?.OriginalOwnerRosterID).toBe(2);
+  });
+
+  it('opens the existing draft context only for one exactly identifiable pick', () => {
+    const transactionPick = participant.AcquiredDraftPicks[0];
+    const recorded = {
+      PickKey: '2028_FA:4:2',
+      DraftKey: '2028_FA',
+      Round: 4,
+      OriginalOwnerRosterID: 2,
+      CurrentOwnerRosterID: 1,
+      DisplayPick: '4.02',
+      PlayerID: null,
+      PlayerName: null,
+      TradeHistory: []
+    } as DraftPick;
+    const draft = {
+      DraftKey: '2028_FA',
+      Season: '2028',
+      DraftType: 'free_agent',
+      DisplayDraftKey: '2028 Free Agent',
+      Picks: [recorded],
+      Settings: { Rounds: 4, Type: 'linear' }
+    } as RawDraft;
+    const asset = getTransactionCardAssets({
+      ...participant,
+      AcquiredDraftPicks: [{ ...transactionPick, PickKey: recorded.PickKey }]
+    }, 'incoming').find(asset => asset.kind === 'pick')!;
+    const context = buildTransactionPickContext(asset, [draft], []);
+    expect(context?.pick).toBe(recorded);
+    expect(context?.draft).toBe(draft);
+    expect(context?.currentOwner?.id).toBe(1);
+    expect(context?.originalOwner?.id).toBe(2);
+    expect(buildTransactionPickContext(asset, [draft, draft], [])).toBeNull();
+    expect(buildTransactionPickContext(asset, [], [])).toBeNull();
+  });
+
+  it('does not guess a pick from another draft when an explicit DraftKey differs', () => {
+    const asset = getTransactionCardAssets(participant, 'incoming').find(asset => asset.kind === 'pick')!;
+    const wrongDraft = {
+      DraftKey: '2028_Rookie',
+      Season: '2028',
+      DraftType: 'Rookie',
+      Picks: [{ PickKey: 'wrong', Round: 4, OriginalOwnerRosterID: 2 }]
+    } as RawDraft;
+    expect(buildTransactionPickContext(asset, [wrongDraft], [])).toBeNull();
+  });
+
 });
