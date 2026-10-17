@@ -271,7 +271,7 @@ activeDatasets:
     lifecycle: seasonal-finalizable
     sourceMode: fixed
     sourceProjection: nflverse-schedule-odds@1
-    materialize: false
+    materialize: true
   - id: nflverse.game-finality
     lifecycle: seasonal-finalizable
     sourceMode: fixed
@@ -320,6 +320,37 @@ plannedDatasets:
     lifecycle: snapshot
   - id: nflverse.contracts
     lifecycle: snapshot
+
+scheduleOddsContract:
+  issue: 1073
+  providerDataset: nflverse.schedule-odds
+  rawPath: data-source/providers/nflverse/schedule-odds/raw-latest.csv
+  canonicalPath: data-source/nfl/schedule-odds/<season>.json
+  scope: >
+    Daily full NFL Source Sync materializes season partitions from the existing raw source.
+    NFL Live scoped game-finality sync never fetches or materializes odds. The normal
+    schedule and game-finality datasets remain separate, low-churn products.
+    Application Schedule.json / historical archives and Angular do not consume this
+    dataset in step 1; a consumer join is a separate later work package.
+  join: >
+    Each provider game_id must uniquely match one canonical schedules GameID; the
+    complete source must cover every schedule GameID. Mismatch or invalid numeric
+    lines fail closed before output is written.
+  fields: >
+    Each game carries GameID, GameType, Week, AwayMoneyline, HomeMoneyline,
+    SpreadLine, AwaySpreadOdds, HomeSpreadOdds, TotalLine, UnderOdds, OverOdds,
+    ImpliedAwayPoints and ImpliedHomePoints. Missing lines remain null, never zero.
+  spreadConvention: >
+    nflverse spread_line is the away point spread: positive = home favored.
+    When both SpreadLine and TotalLine exist, ImpliedAwayPoints=(TotalLine-SpreadLine)/2
+    and ImpliedHomePoints=(TotalLine+SpreadLine)/2, rounded to hundredths.
+    These are market-implied team totals, not a provider's exact-score predictions.
+  historicity: >
+    Only one latest line per game is available, not an intraday odds-movement
+    history. Existing older-season canonical partitions are frozen by the standard
+    seasonal-finalizable contract; first-time historical backfill uses current raw
+    historical evidence. No guarantee of snapshot/line publication time per game.
+  audit: phase1Datasets.scheduleOdds (seasonCount, gameCount, gamesWithAnyOdds, gamesWithCompleteLines, gamesWithoutCompleteLines, earliestSeason, latestSeason)
 
 qbrWeekContract:
   issue: 347
@@ -372,6 +403,7 @@ playerProfilesContract:
 
 canonicalOutputs:
   schedules: data-source/nfl/schedules/<season>.json
+  scheduleOdds: data-source/nfl/schedule-odds/<season>.json
   gameFinality: data-source/nfl/game-finality/<season>.json
   rosters: data-source/nfl/rosters/<season>.json
   weeklyRosters: data-source/nfl/weekly-rosters/<season>/<week>.json
