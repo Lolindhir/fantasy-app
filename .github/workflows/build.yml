@@ -11,6 +11,115 @@ permissions:
   pull-requests: read  # CP1 advisory-only changed-file inventory
 
 jobs:
+  # CP2 additive lanes: run independently and in parallel. The original
+  # sequential 'build' job below remains a mandatory, unmodified full gate.
+  # Never gate/skip a Deep suite based on these Fast-lane results in CP2.
+  fast-contracts:
+    name: CI Fast • Contracts & Publication Safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install workflow-health test dependency
+        run: python -m pip install "PyYAML>=6,<7"
+      - name: Validate CI inventory and parallel-lane contracts
+        run: python -m unittest tools.tests.test_ci_test_impact -v
+      - name: Validate workflow, publisher and repository contracts
+        run: |
+          python -m unittest tools.tests.test_build_workflow_health_snapshot -v
+          python -m unittest tools.tests.test_workflow_publication_contracts -v
+          python -m unittest tools.tests.test_rebuild_and_publish -v
+          python -m unittest tools.tests.test_git_transient -v
+          python -m unittest tools.tests.test_publish_generated_commit -v
+          python -m unittest tools.tests.test_validate_work_tracking -v
+          python -m unittest tools.tests.test_consumer_read_classification -v
+          python -m unittest tools.tests.test_odds_change_gate -v
+
+  fast-source:
+    name: CI Fast • Source & PowerShell
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run small deterministic source and scoring tests
+        run: |
+          python -m unittest tools.tests.test_nfl_source_identity_rules -v
+          python -m unittest tools.tests.test_league_source_identity -v
+          python -m unittest tools.tests.test_historical_fantasy_scoring -v
+          python -m unittest tools.tests.test_player_scoring_reconciliation -v
+          python -m unittest tools.tests.test_team_week_performance_materialize -v
+          python -m unittest tools.tests.test_market_observations_restore_preflight -v
+          python -m unittest tools.tests.test_espn_player_availability -v
+          python -m unittest tools.tests.test_players_league_scoring_shadow -v
+          python tools/players_league_scoring_shadow.py gate
+      - name: Run existing PowerShell data regression contracts
+        shell: pwsh
+        run: |
+          ./public/requests/LeagueReadModelRegressionTest.ps1
+          ./public/requests/ProviderJoinInvariantRegressionTest.ps1
+          ./public/requests/WaiverScheduleRegressionTest.ps1
+          ./public/requests/DecisionWindowRegressionTest.ps1
+          ./public/requests/StandingsWeeklyMovementRegressionTest.ps1
+          ./public/requests/PlayersChangeDetectionRegressionTest.ps1
+
+  fast-scheduler:
+    name: CI Fast • Scheduler
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run complete central scheduler regression tests
+        run: node --test tools/tests/run-workflow-scheduler*.test.cjs
+
+  fast-angular:
+    name: CI Fast • Angular Tests & Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run fantasy-team ordering regression tests
+        run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=fantasy-team-order --include=src/app/shared/utils/fantasy-team-order.util.spec.ts
+      - name: Run PlayerWeekFantasy consumer regression tests
+        run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=player-week-fantasy --include=src/app/core/services/data.service.spec.ts
+      - name: Run Overview weekly-dashboard regression tests
+        run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=overview-weekly-dashboard --include=src/app/testing/overview-weekly-dashboard.karma.spec.ts
+      - name: Run full Angular unit test suite
+        run: npx ng test --watch=false --browsers=ChromeHeadless
+      - name: Build Angular app
+        shell: pwsh
+        run: ./deploy_action.ps1
+
   build:
     runs-on: ubuntu-latest
 

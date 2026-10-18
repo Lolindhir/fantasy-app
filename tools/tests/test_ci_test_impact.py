@@ -1,4 +1,4 @@
-"""CP1 classifier regression fixtures; no production CI routing is changed."""
+"""CP1 classifier and CP2 parallel Fast-lane safety regressions."""
 from __future__ import annotations
 
 import json
@@ -98,6 +98,77 @@ class RoutingTests(unittest.TestCase):
         result = self.choose("scripts/surprise_pipeline.js")
         self.assertTrue(result["uncertain"])
         self.assertEqual(set(ci.GROUPS), set(result["selected"]))
+
+
+class FastLaneContractTests(unittest.TestCase):
+    """Protect CP2's additive/non-skipping design until CP3 is authorized."""
+
+    @classmethod
+    def setUpClass(cls):
+        import yaml
+        cls.workflow = yaml.safe_load((ci.ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8"))
+        cls.jobs = cls.workflow["jobs"]
+
+    def test_all_four_fast_lanes_are_unconditionally_present_and_read_only(self):
+        names = ("fast-contracts", "fast-source", "fast-scheduler", "fast-angular")
+        for name in names:
+            with self.subTest(job=name):
+                self.assertIn(name, self.jobs)
+                job = self.jobs[name]
+                self.assertNotIn("needs", job)  # no serialized Fast lane / legacy dependency
+                self.assertNotIn("if", job)  # every PR and manual validation
+                self.assertNotIn("continue-on-error", job)
+                self.assertEqual({"contents": "read"}, job["permissions"])
+                self.assertLessEqual(job["timeout-minutes"], 15)
+
+    def test_full_legacy_build_is_still_always_present_with_deep_suites(self):
+        job = self.jobs["build"]
+        self.assertNotIn("if", job)
+        self.assertNotIn("needs", job)
+        self.assertNotIn("continue-on-error", job)
+        all_commands = "\\n".join(
+            str(step.get("run", "")) for step in job["steps"]
+        )
+        for required in (
+            'test_nfl_source*.py', 'test_league_source*.py',
+            "test_market_observations_full_restore",
+            "test_workflow_publication_contracts",
+            "test_consumer_read_classification",
+            "test_player_scoring_reconciliation",
+            "Run historical scoring reconciliation regression tests",
+            "node --test tools/tests/run-workflow-scheduler*.test.cjs",
+            "npx ng test --watch=false --browsers=ChromeHeadless",
+            "./deploy_action.ps1",
+        ):
+            if required.startswith("Run historical"):
+                labels = {step.get("name") for step in job["steps"]}
+                self.assertIn(required, labels)
+            else:
+                self.assertIn(required, all_commands)
+        legacy_steps = {s.get("name") for s in job["steps"]}
+        self.assertIn("Run NFL data-source regression tests", legacy_steps)
+        self.assertIn("Run League data-source regression tests", legacy_steps)
+
+    def test_fast_lanes_never_execute_full_historical_restore(self):
+        for name in ("fast-contracts", "fast-source", "fast-scheduler", "fast-angular"):
+            cmd = "\\n".join(str(step.get("run", "")) for step in self.jobs[name]["steps"])
+            with self.subTest(job=name):
+                self.assertNotIn("test_nfl_source_historical_identity_replay", cmd)
+                self.assertNotIn("test_market_observations_full_restore", cmd)
+                self.assertNotIn("test_team_week_performance_integration", cmd)
+                self.assertNotIn("unittest discover -s tools/tests", cmd)
+
+    def test_fast_lanes_copy_stable_old_safety_and_frontend_entrypoints(self):
+        legacy = self.jobs["build"]
+        legacy_commands = "\\n".join(str(s.get("run", "")) for s in legacy["steps"])
+        for name in ("fast-contracts", "fast-source", "fast-scheduler", "fast-angular"):
+            for s in self.jobs[name]["steps"]:
+                cmd = str(s.get("run", ""))
+                for line in cmd.splitlines():
+                    line = line.strip()
+                    if line.startswith(("./public/requests/", "node --test", "npx ng test", "./deploy_action.ps1",
+                                        "python tools/players_league_scoring_shadow.py gate")):
+                        self.assertIn(line, legacy_commands)
 
 
 class InventoryTests(unittest.TestCase):
