@@ -517,10 +517,7 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
                 f"league={divergence['LeaguePoints']}, "
                 f"pwf={divergence['DerivedPoints']}"
             )
-            self.assertEqual(
-                failed_parity, [(2025, 6, expected_reason)],
-                "Strict TWP parity has unexpected blockers besides #698",
-            )
+            self.assertEqual(failed_parity, [], "Unexpected TWP blocker with documented #698 exception")
             self.assertEqual(
                 [(year, week) for year, week, _ in unverified], [(2025, 6)],
                 "Unexpected weeks lack verified PWF parity",
