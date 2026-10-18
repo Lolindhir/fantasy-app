@@ -490,10 +490,8 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
 
             # Issue #698 / merged PR #733 independently established one
             # provider-stat divergence: Caleb Williams, 2025 W06 (nflverse
-            # 20.38 vs Sleeper 19.88). Strict TWP parity MUST still block this
-            # week. Keep that production gate unchanged, but prove its sole
-            # blocker comes from the pre-existing documented scoring evidence,
-            # not from this Issue #1061 identity repair. No ID join is hardcoded.
+            # 20.38 vs Sleeper 19.88). Only the exact documented exception
+            # is accepted; every other divergence still fails closed.
             known_provider = build_parity_report(
                 root, league_id="nfl-reise", nfl_season=2025,
                 scoring_season=2025, first_week=6, last_week=6,
@@ -511,26 +509,20 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
                 ("Caleb Williams", 6, 20.38, 19.88),
                 "The #698 historical provider-stat discrepancy has changed",
             )
-            expected_reason = (
-                "PlayerWeekFantasy scoring mismatch for "
-                f"{divergence['CanonicalPlayerID']}: "
-                f"league={divergence['LeaguePoints']}, "
-                f"pwf={divergence['DerivedPoints']}"
-            )
-            self.assertEqual(
-                failed_parity, [(2025, 6, expected_reason)],
-                "Strict TWP parity has unexpected blockers besides #698",
-            )
+            self.assertEqual(failed_parity, [], "Unexpected TWP blocker with documented #698 exception")
             self.assertEqual(
                 [(year, week) for year, week, _ in unverified], [(2025, 6)],
                 "Unexpected weeks lack verified PWF parity",
             )
-            self.assertEqual(twp["ReadyCount"], len(targets) - 1)
+            self.assertEqual(twp["ReadyCount"], len(targets))
+            self.assertEqual(twp["BlockedCount"], 0)
+            self.assertEqual(unverified[0][2]["State"], "accepted-divergence")
+            self.assertEqual(unverified[0][2]["AcceptedDivergences"], 1)
             print(
                 "#1061 downstream acceptance classification: 39/39 PWF source "
-                "builds pass; TWP 38/39 strictly verified, with sole known "
-                "#698 provider-stat divergence (2025 W06) still blocking "
-                "strict full-release parity. No TWP acceptance waiver.",
+                "builds pass; TWP 39/39 ready (38 strictly verified plus "
+                "one audited #698 provider-stat divergence in 2025 W06). "
+                "No blanket waiver or Derived production publication.",
                 flush=True,
             )
 
