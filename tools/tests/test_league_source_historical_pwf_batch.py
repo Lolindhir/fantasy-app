@@ -138,9 +138,36 @@ class RealHistoricalPWFBatchTests(unittest.TestCase):
                               report["BlockedCount"]), (2, 2, 0), report["Weeks"])
 
 
+    def test_repaired_historical_source_identity_gaps_preflight_without_writes(self):
+        """#1061 accepted Source repair: formerly blocked 2024 W01/W02 + 2025 W01."""
+        with tempfile.TemporaryDirectory() as output:
+            root = Path(output)
+            week_2024 = materialize_historical(
+                REPO_ROOT, league_id="nfl-reise", seasons=[2024],
+                weeks=[1, 2], out_root=root,
+            )
+            week_2025 = materialize_historical(
+                REPO_ROOT, league_id="nfl-reise", seasons=[2025],
+                weeks=[1], out_root=root,
+            )
+            self.assertEqual(
+                (week_2024["TargetCount"], week_2024["ReadyCount"],
+                 week_2024["BlockedCount"]), (2, 2, 0),
+                week_2024["Weeks"],
+            )
+            self.assertEqual(
+                (week_2025["TargetCount"], week_2025["ReadyCount"],
+                 week_2025["BlockedCount"]), (1, 1, 0),
+                week_2025["Weeks"],
+            )
+            self.assertEqual(week_2024["WouldChangeCount"], 2)
+            self.assertEqual(week_2025["WouldChangeCount"], 1)
+            self.assertFalse(list(root.rglob("*.json")),
+                             "Read-only repaired-source PWF preflight may not persist data")
+
     @unittest.skipUnless(
         os.environ.get("RUN_FULL_HISTORICAL_PWF_AUDIT") == "1",
-        "Full 39-week gate is expensive and currently blocked by canonical NFL IDs (#1061)",
+        "Full historical PWF generation is expensive; run with RUN_FULL_HISTORICAL_PWF_AUDIT=1",
     )
     def test_every_canonically_scored_historical_week_preflights_without_writes(self):
         """Real source-only inventory: a missing or stale historical partition must not hide."""
