@@ -1,4 +1,4 @@
-"""CP1 classifier and CP2 parallel Fast-lane safety regressions."""
+"""Regression contracts for CP1 inventory, CP2 Fast and CP3 fail-closed Deep."""
 from __future__ import annotations
 
 import json
@@ -101,7 +101,7 @@ class RoutingTests(unittest.TestCase):
 
 
 class FastLaneContractTests(unittest.TestCase):
-    """Protect CP2's additive/non-skipping design until CP3 is authorized."""
+    """CP3: all Fast lanes obligatory; full legacy only for full Deep cases."""
 
     @classmethod
     def setUpClass(cls):
@@ -109,66 +109,285 @@ class FastLaneContractTests(unittest.TestCase):
         cls.workflow = yaml.safe_load((ci.ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8"))
         cls.jobs = cls.workflow["jobs"]
 
-    def test_all_four_fast_lanes_are_unconditionally_present_and_read_only(self):
-        names = ("fast-contracts", "fast-source", "fast-scheduler", "fast-angular")
+    def test_all_fast_lanes_are_unconditionally_present_and_read_only(self):
+        names = ("fast-contracts", "fast-source", "fast-scheduler",
+                 "fast-angular", "fast-python")
         for name in names:
             with self.subTest(job=name):
                 self.assertIn(name, self.jobs)
                 job = self.jobs[name]
-                self.assertNotIn("needs", job)  # no serialized Fast lane / legacy dependency
-                self.assertNotIn("if", job)  # every PR and manual validation
+                self.assertNotIn("needs", job)
+                self.assertNotIn("if", job)
                 self.assertNotIn("continue-on-error", job)
                 self.assertEqual({"contents": "read"}, job["permissions"])
                 self.assertLessEqual(job["timeout-minutes"], 15)
 
-    def test_full_legacy_build_is_still_always_present_with_deep_suites(self):
+    def test_historical_legacy_build_remains_full_when_all_deep(self):
         job = self.jobs["build"]
-        self.assertNotIn("if", job)
-        self.assertNotIn("needs", job)
+        self.assertEqual("selector", job["needs"])
+        self.assertIn("needs.selector.outputs.full == 'true'", job["if"])
         self.assertNotIn("continue-on-error", job)
-        all_commands = "\\n".join(
-            str(step.get("run", "")) for step in job["steps"]
-        )
+        all_commands = "\n".join(str(step.get("run", "")) for step in job["steps"])
         for required in (
             'test_nfl_source*.py', 'test_league_source*.py',
             "test_market_observations_full_restore",
             "test_workflow_publication_contracts",
             "test_consumer_read_classification",
             "test_player_scoring_reconciliation",
-            "Run historical scoring reconciliation regression tests",
             "node --test tools/tests/run-workflow-scheduler*.test.cjs",
             "npx ng test --watch=false --browsers=ChromeHeadless",
             "./deploy_action.ps1",
         ):
-            if required.startswith("Run historical"):
-                labels = {step.get("name") for step in job["steps"]}
-                self.assertIn(required, labels)
-            else:
-                self.assertIn(required, all_commands)
-        legacy_steps = {s.get("name") for s in job["steps"]}
-        self.assertIn("Run NFL data-source regression tests", legacy_steps)
-        self.assertIn("Run League data-source regression tests", legacy_steps)
+            self.assertIn(required, all_commands)
+
+    def test_deep_lanes_are_all_routed_by_verified_selector(self):
+        for name, flag in (
+            ("deep-nfl", "nfl"), ("deep-league", "league"),
+            ("deep-market", "market"), ("deep-consumer", "consumer"),
+        ):
+            with self.subTest(job=name):
+                job = self.jobs[name]
+                self.assertEqual("selector", job["needs"])
+                self.assertIn(f"needs.selector.outputs.{flag} == 'true'", job["if"])
+                self.assertNotIn("continue-on-error", job)
+                self.assertEqual({"contents": "read"}, job["permissions"])
+                self.assertIn("tools/ci_suite_runner.py", " ".join(
+                    str(s.get("run", "")) for s in job["steps"]))
+
+    def test_merge_gate_always_present_and_checks_all_results(self):
+        gate = self.jobs["merge-gate"]
+        self.assertEqual("CI / Merge Gate", gate["name"])
+        self.assertIn("always()", gate["if"])
+        self.assertNotIn("continue-on-error", gate)
+        self.assertEqual({"contents": "read"}, gate["permissions"])
+        self.assertEqual(
+            {"selector", "build", "fast-contracts", "fast-source",
+             "fast-scheduler", "fast-angular", "fast-python",
+             "deep-nfl", "deep-league", "deep-market", "deep-consumer"},
+            set(gate["needs"]))
+        self.assertIn("toJSON(needs)", str(gate["steps"]))
+        self.assertIn("tools/ci_merge_gate.py", str(gate["steps"]))
 
     def test_fast_lanes_never_execute_full_historical_restore(self):
-        for name in ("fast-contracts", "fast-source", "fast-scheduler", "fast-angular"):
-            cmd = "\\n".join(str(step.get("run", "")) for step in self.jobs[name]["steps"])
+        for name in ("fast-contracts", "fast-source", "fast-scheduler",
+                     "fast-angular", "fast-python"):
+            commands = "\n".join(str(x.get("run", "")) for x in self.jobs[name]["steps"])
             with self.subTest(job=name):
-                self.assertNotIn("test_nfl_source_historical_identity_replay", cmd)
-                self.assertNotIn("test_market_observations_full_restore", cmd)
-                self.assertNotIn("test_team_week_performance_integration", cmd)
-                self.assertNotIn("unittest discover -s tools/tests", cmd)
+                self.assertNotIn("test_nfl_source_historical_identity_replay", commands)
+                self.assertNotIn("test_market_observations_full_restore", commands)
+                self.assertNotIn("test_team_week_performance_integration", commands)
 
-    def test_fast_lanes_copy_stable_old_safety_and_frontend_entrypoints(self):
+    def test_fast_lanes_keep_original_safety_and_angular_entrypoints(self):
         legacy = self.jobs["build"]
-        legacy_commands = "\\n".join(str(s.get("run", "")) for s in legacy["steps"])
+        original = "\n".join(str(s.get("run", "")) for s in legacy["steps"])
         for name in ("fast-contracts", "fast-source", "fast-scheduler", "fast-angular"):
-            for s in self.jobs[name]["steps"]:
-                cmd = str(s.get("run", ""))
-                for line in cmd.splitlines():
+            for step in self.jobs[name]["steps"]:
+                for line in str(step.get("run", "")).splitlines():
                     line = line.strip()
-                    if line.startswith(("./public/requests/", "node --test", "npx ng test", "./deploy_action.ps1",
-                                        "python tools/players_league_scoring_shadow.py gate")):
-                        self.assertIn(line, legacy_commands)
+                    if line.startswith(("./public/requests/", "node --test",
+                        "npx ng test", "./deploy_action.ps1",
+                        "python tools/players_league_scoring_shadow.py gate")):
+                        self.assertIn(line, original)
+
+
+class Cp3SelectionAndGateTests(unittest.TestCase):
+    def test_routing_new_scripts_enforces_all_deep(self):
+        for path in ("tools/ci_suite_runner.py", "tools/ci_merge_gate.py",
+                     ".github/workflows/build.yml"):
+            with self.subTest(path=path):
+                chosen = ci.select([{"filename": path, "status": "modified"}], {"tests": []})
+                self.assertEqual(set(ci.GROUPS), set(chosen["selected"]))
+
+    def test_verified_timeout_only_is_strict_structural_yaml(self):
+        base = """
+name: Source Sync
+on: [pull_request]
+permissions: {contents: read}
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - run: python tools/validator.py
+"""
+        valid = base.replace("timeout-minutes: 10", "timeout-minutes: 20")
+        self.assertTrue(ci.timeout_only_yaml(base, valid))
+        self.assertFalse(ci.timeout_only_yaml(base, valid.replace(
+            "python tools/validator.py", "python tools/skip_validator.py")))
+        self.assertFalse(ci.timeout_only_yaml(base, valid.replace(
+            "contents: read", "contents: write")))
+        self.assertFalse(ci.timeout_only_yaml(base, valid.replace(
+            "timeout-minutes: 20", "timeout-minutes: 500")))
+        self.assertFalse(ci.timeout_only_yaml(base, valid.replace(
+            "pull_request", "push")))
+        self.assertFalse(ci.timeout_only_yaml(base, base))
+        self.assertFalse(ci.timeout_only_yaml(base, base.replace(
+            "timeout-minutes: 10", "")))
+
+    def test_timeout_only_event_routing_does_not_hide_other_changes(self):
+        from unittest.mock import patch
+        path = ".github/workflows/sync-nfl-source-data.yml"
+        original = ("jobs:\n  validate:\n    runs-on: ubuntu-latest\n"
+                    "    timeout-minutes: 20\n    steps:\n      - run: echo safe\n")
+        bumped = original.replace("timeout-minutes: 20", "timeout-minutes: 30")
+        event = {
+            "repository": {"full_name": "Lolindhir/fantasy-app"},
+            "pull_request": {
+                "number": 7,
+                "base": {"sha": "a" * 40},
+                "head": {"sha": "b" * 40},
+                "changed_files": 1,
+            },
+        }
+        changed = [{"filename": path, "status": "modified"}]
+        with patch.object(ci, "pr_changes", return_value=changed), \
+             patch.object(ci, "_repo_file_at", side_effect=[original, bumped]), \
+             patch.dict("os.environ", {"GITHUB_TOKEN": "test"}):
+            result = ci.select_from_event(event, {"tests": []})
+        self.assertEqual([], result["selected"])
+        self.assertFalse(result["uncertain"])
+
+        with patch.object(ci, "pr_changes", return_value=changed), \
+             patch.object(ci, "_repo_file_at", side_effect=[
+                 original, bumped.replace("echo safe", "echo unsafe")]), \
+             patch.dict("os.environ", {"GITHUB_TOKEN": "test"}):
+            result = ci.select_from_event(event, {"tests": []})
+        self.assertEqual(set(ci.GROUPS), set(result["selected"]))
+
+        with patch.object(ci, "pr_changes", return_value=changed), \
+             patch.object(ci, "_repo_file_at", side_effect=OSError("API down")), \
+             patch.dict("os.environ", {"GITHUB_TOKEN": "test"}):
+            result = ci.select_from_event(event, {"tests": []})
+        self.assertEqual(set(ci.GROUPS), set(result["selected"]))
+
+        both = changed + [{"filename": "tools/external_source/adapter.py",
+                           "status": "modified"}]
+        with patch.object(ci, "pr_changes", return_value=both):
+            result = ci.select_from_event(event, {"tests": []})
+        self.assertIn("market-restore", result["selected"])
+        self.assertEqual(set(ci.GROUPS), set(result["selected"]))
+
+
+    def test_measured_slow_repository_integrations_must_remain_deep(self):
+        # Run #39149258131: the ten tests below collectively cost > 6 min
+        # within the 8m41s sequential Fast Python job. Classify by semantic
+        # source dependencies, never silently remove them from CI coverage.
+        expected = {
+          "test_market_observations_preview.py": [
+                    "market-restore"
+          ],
+          "test_nfl_source_historical_identity_coverage.py": [
+                    "nfl-identity-replay"
+          ],
+          "test_nfl_source_projection_intervals.py": [
+                    "nfl-identity-replay"
+          ],
+          "test_nfl_source_historical_weekly_roster_identity.py": [
+                    "nfl-identity-replay",
+                    "league-pwf-twp"
+          ],
+          "test_nfl_source_app_espn_identity_bridge_repository.py": [
+                    "nfl-identity-replay",
+                    "consumer-restore"
+          ],
+          "test_nfl_source_current_adjudication_builder.py": [
+                    "nfl-identity-replay"
+          ],
+          "test_nfl_source_placeholder_gsis_upgrade.py": [
+                    "nfl-identity-replay"
+          ],
+          "test_nfl_source_projection_team_v4_2025.py": [
+                    "nfl-identity-replay"
+          ],
+          "test_player_valuation.py": [
+                    "league-pwf-twp",
+                    "consumer-restore"
+          ],
+          "test_nfl_source_projection_v4.py": [
+                    "nfl-identity-replay"
+          ]
+}
+        registered = {entry["path"].rsplit("/", 1)[-1]: entry
+                      for entry in ci.read_inventory()["tests"]}
+        from tools import ci_suite_runner
+        fast_paths = set(ci_suite_runner.modules_for_lane(ci.read_inventory(), "fast"))
+        deep_paths = set()
+        for group in ci.GROUPS:
+            deep_paths.update(ci_suite_runner.modules_for_lane(ci.read_inventory(), group))
+        for name, groups in expected.items():
+            with self.subTest(test=name):
+                row = registered[name]
+                self.assertEqual("deep", row["tier"])
+                self.assertEqual(set(groups), set(row["deepGroups"]))
+                self.assertNotIn(row["path"], fast_paths)
+                self.assertIn(row["path"], deep_paths)
+
+    def test_full_registry_python_coverage_is_partitioned(self):
+        from tools import ci_suite_runner as runner
+        inv = ci.read_inventory()
+        fast = set(runner.modules_for_lane(inv, "fast"))
+        deep = set()
+        for group in ci.GROUPS:
+            deep.update(runner.modules_for_lane(inv, group))
+        tracked = {row["path"] for row in inv["tests"]
+                   if row["path"].startswith("tools/tests/test_")
+                   and row["path"].endswith(".py")
+                   and row["currentPrCoverage"] in runner.COVERED}
+        self.assertEqual(tracked, fast | deep)
+        self.assertFalse(fast & deep)
+        self.assertIn("tools/tests/test_nfl_source_historical_identity_replay.py", deep)
+        self.assertNotIn("tools/tests/test_nfl_source_historical_identity_replay.py", fast)
+        self.assertIn("tools/tests/test_market_observations_full_restore.py", deep)
+
+    @staticmethod
+    def good_needs(enabled=()):
+        from tools import ci_merge_gate as gate
+        selected = set(enabled)
+        assert set(enabled) <= set(gate.DEEP)
+        full = set(gate.DEEP) == selected
+        flags = {name: "true" if name in selected else "false" for name in gate.DEEP}
+        flags["full"] = "true" if full else "false"
+        needs = {"selector": {"result": "success", "outputs": flags}}
+        for name in gate.FAST:
+            needs[name] = {"result": "success"}
+        for flag, job in gate.GROUPS.items():
+            needs[job] = {"result": "success" if (full if flag == "full" else flag in selected)
+                          else "skipped"}
+        return needs
+
+    def test_merge_gate_accepts_verified_subset_full_and_none(self):
+        from tools import ci_merge_gate as gate
+        for selection in ((), ("market",), ("league", "consumer"),
+                          ("nfl", "league", "market", "consumer")):
+            with self.subTest(selection=selection):
+                self.assertEqual([], gate.verify(self.good_needs(selection)))
+
+    def test_merge_gate_rejects_skipped_failed_cancelled_or_missing_selected(self):
+        from tools import ci_merge_gate as gate
+        for value in ("skipped", "failure", "cancelled", "neutral", None):
+            with self.subTest(value=value):
+                needs = self.good_needs(("market",))
+                needs["deep-market"]["result"] = value
+                self.assertTrue(gate.verify(needs))
+
+    def test_merge_gate_rejects_fast_failure_selector_failure_or_rogue_skip(self):
+        from tools import ci_merge_gate as gate
+        for key in ("fast-angular", "fast-python", "fast-source", "selector"):
+            needs = self.good_needs(())
+            needs[key]["result"] = "failure"
+            self.assertTrue(gate.verify(needs))
+        needs = self.good_needs(())
+        needs["deep-nfl"]["result"] = "success"  # unselected must be skipped
+        self.assertTrue(gate.verify(needs))
+        needs = self.good_needs(())
+        needs["selector"]["outputs"]["full"] = "true"  # incoherent decision
+        self.assertTrue(gate.verify(needs))
+        needs = self.good_needs(())
+        del needs["fast-contracts"]  # missing required job never passes
+        self.assertTrue(gate.verify(needs))
+        needs = self.good_needs(())
+        del needs["selector"]["outputs"]["consumer"]
+        self.assertTrue(gate.verify(needs))
 
 
 class InventoryTests(unittest.TestCase):

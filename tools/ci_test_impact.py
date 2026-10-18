@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""CP1 read-only CI impact inventory and conservative shadow Deep-Gate router.
+"""Fail-closed PR impact selection for CP3 Deep Gates (Issue #1095).
 
-No test is executed or skipped by this program. Never use its output as a
-required check before a separately reviewed CP3 activation (Issue #1095).
+Selection requires a complete PR changed-file inventory and a validated test
+registry. Unknown/ambiguous inputs force ALL Deep suites and the legacy full
+gate. No dependency on untrusted PR code to authorize publication.
 """
 from __future__ import annotations
 
 import argparse
+import base64
 import fnmatch
 import json
 import os
@@ -155,7 +157,7 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
         return set(entry["deepGroups"]), "registered-test:" + entry["tier"]
     if is_test(path):
         return ALL.copy(), "unclassified-test:fail-closed"
-    if path.startswith((".github/workflows/", ".github/ci-test-", "tools/ci_test_impact.py",
+    if path.startswith((".github/workflows/", ".github/ci-test-", "tools/ci_",
                         ".github/workflow-schedules.json", "AGENTS.md", "CHAT_START.md")):
         return ALL.copy(), "CI-or-policy:fail-closed"
     if path.startswith((".ai-context/manual/", ".ai-context/ai-context.yaml")):
@@ -257,13 +259,108 @@ def pr_changes(event: dict) -> list[dict]:
     return result
 
 
+
+TIMEOUT_ALLOWLIST = {".github/workflows/sync-nfl-source-data.yml"}
+
+
+def _repo_file_at(repo: str, path: str, sha: str, token: str) -> str:
+    """Read exact immutable version from GitHub, not a mutable checkout ref."""
+    from urllib.parse import quote
+    api = os.environ.get("GITHUB_API_URL", "https://api.github.com").rstrip("/")
+    url = f"{api}/repos/{repo}/contents/{quote(path, safe='/')}?ref={sha}"
+    req = Request(url, headers={"Authorization": f"Bearer {token}",
+                                "Accept": "application/vnd.github+json",
+                                "X-GitHub-Api-Version": "2022-11-28"})
+    with urlopen(req, timeout=20) as response:
+        payload = json.load(response)
+    if (not isinstance(payload, dict) or payload.get("encoding") != "base64"
+            or not isinstance(payload.get("content"), str)):
+        raise ValueError("Unverifiable workflow blob")
+    return base64.b64decode(payload["content"], validate=False).decode("utf-8")
+
+
+def timeout_only_yaml(before: str, after: str) -> bool:
+    """Allow ONLY an existing job-level numeric timeout to change.
+
+    YAML semantic comparison also detects permissions, events, env, commands,
+    concurrency, job additions and nested timeout-like properties.
+    """
+    import yaml
+    old, new = yaml.safe_load(before), yaml.safe_load(after)
+    if not isinstance(old, dict) or not isinstance(new, dict):
+        return False
+    if not isinstance(old.get("jobs"), dict) or not isinstance(new.get("jobs"), dict):
+        return False
+    old_copy = json.loads(json.dumps(old))
+    new_copy = json.loads(json.dumps(new))
+    # json dict keys force YAML 1.1 bool coercion of 'on' into strings; both
+    # sides transform identically and all non-timeout fields remain compared.
+    old_jobs, new_jobs = old_copy["jobs"], new_copy["jobs"]
+    if set(old_jobs) != set(new_jobs):
+        return False
+    changes = 0
+    for name in old_jobs:
+        old_job, new_job = old_jobs[name], new_jobs[name]
+        if not isinstance(old_job, dict) or not isinstance(new_job, dict):
+            return False
+        if "timeout-minutes" in old_job and "timeout-minutes" in new_job:
+            a, b = old_job["timeout-minutes"], new_job["timeout-minutes"]
+            if type(a) is not int or type(b) is not int or not (1 <= a <= 360 and 1 <= b <= 360):
+                return False
+            if a != b:
+                changes += 1
+                old_job["timeout-minutes"] = b
+    return changes > 0 and old_copy == new_copy
+
+
+def select_from_event(event: dict, inventory: dict) -> dict:
+    if "pull_request" not in event:
+        return {"selected": list(GROUPS), "uncertain": False, "reasons": [
+            {"path": "(manual full validation)", "rule": "full-audit", "groups": list(GROUPS)}]}
+    changes = pr_changes(event)
+    result = select(changes, inventory)
+    if (len(changes) == 1 and changes[0].get("status") == "modified"
+            and changes[0]["filename"] in TIMEOUT_ALLOWLIST):
+        path = changes[0]["filename"]
+        pr = event["pull_request"]
+        repo = event["repository"]["full_name"]
+        try:
+            before = _repo_file_at(repo, path, pr["base"]["sha"], os.environ["GITHUB_TOKEN"])
+            after = _repo_file_at(repo, path, pr["head"]["sha"], os.environ["GITHUB_TOKEN"])
+            if timeout_only_yaml(before, after):
+                return {"selected": [], "uncertain": False, "reasons": [
+                    {"path": path, "rule": "verified-job-timeout-only", "groups": []}]}
+        except (OSError, ValueError, KeyError, TypeError, UnicodeError):
+            # Never accept an unverified timeout exception.
+            pass
+    return result
+
+
+def emit_route_outputs(result: dict) -> None:
+    selected = set(result["selected"])
+    flags = {
+        "nfl": "true" if "nfl-identity-replay" in selected else "false",
+        "league": "true" if "league-pwf-twp" in selected else "false",
+        "market": "true" if "market-restore" in selected else "false",
+        "consumer": "true" if "consumer-restore" in selected else "false",
+        "full": "true" if selected == ALL else "false",
+    }
+    dest = os.environ.get("GITHUB_OUTPUT")
+    if not dest:
+        raise ValueError("Missing GITHUB_OUTPUT; cannot publish safe routing")
+    with open(dest, "a", encoding="utf-8") as out:
+        for key, value in flags.items():
+            out.write(f"{key}={value}\n")
+    print("CP3 selected job flags:", flags, flush=True)
+
+
 def write_summary(result: dict, counts: dict | None, error: str | None) -> None:
-    print(json.dumps({"mode": "shadow-only", "inventory": counts, "selection": result,
+    print(json.dumps({"mode": "ci-impact", "inventory": counts, "selection": result,
                       "error": error}, ensure_ascii=False, sort_keys=True))
     target = os.environ.get("GITHUB_STEP_SUMMARY")
     if target:
         with open(target, "a", encoding="utf-8") as out:
-            out.write("\n### CI impact — CP1 shadow only (no tests skipped)\n")
+            out.write("\n### CI impact — CP3 decision (fail closed)\n")
             if counts:
                 out.write(f"- Inventory: {counts['total']} registered; {counts['currentlyInPr']} already in PR suites; {counts['currentlyNotInPr']} outside present PR suites.\n")
             out.write(f"- Proposed Deep groups: {', '.join(result['selected']) or 'none'}\n")
@@ -275,12 +372,12 @@ def write_summary(result: dict, counts: dict | None, error: str | None) -> None:
                 out.write(f"| {x['path'].replace('|', '/')} | {x['rule']} | {', '.join(x['groups'])} |\n")
             if len(result["reasons"]) > 120:
                 out.write(f"\n{len(result['reasons']) - 120} additional files omitted from summary; full JSON in log.\n")
-            out.write("\n**This is advisory only. The pre-existing entire build CI remains mandatory.**\n")
+            out.write("\n**Selected Deep suites and the Merge Gate enforce this decision.**\n")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("validate", "shadow", "select"))
+    parser.add_argument("mode", choices=("validate", "shadow", "select", "route"))
     parser.add_argument("--changes-json", type=Path, help="Local changed-file JSON for a dry run")
     parser.add_argument("--root", type=Path, default=ROOT)
     options = parser.parse_args()
@@ -293,20 +390,29 @@ def main() -> int:
         counts = validate(options.root, inventory)
         if options.changes_json:
             changes = json.loads(options.changes_json.read_text(encoding="utf-8"))
+            result = select(changes, inventory)
         else:
             if options.mode == "select":
                 raise ValueError("select requires --changes-json")
             event_path = os.environ.get("GITHUB_EVENT_PATH", "")
             event = json.loads(Path(event_path).read_text(encoding="utf-8"))
-            changes = pr_changes(event)
-        result = select(changes, inventory)
+            result = select_from_event(event, inventory)
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
-        if options.mode == "select":
-            raise
-        error = f"{type(exc).__name__}: {exc}"
-        result = select([], inventory)
+        if options.mode in {"select", "route"}:
+            # Unknown input is acceptable only if all Deep + full legacy run;
+            # invalid inventory itself is NOT acceptable and failed above.
+            if options.mode == "route":
+                error = f"{type(exc).__name__}: {exc}"
+                result = select([], inventory)
+            else:
+                raise
+        else:
+            error = f"{type(exc).__name__}: {exc}"
+            result = select([], inventory)
     write_summary(result, counts, error)
-    # shadow-only MUST NOT alter the current mandatory build result.
+    if options.mode == "route":
+        emit_route_outputs(result)
+        return 0
     return 0 if options.mode == "shadow" else int(result["uncertain"])
 
 
