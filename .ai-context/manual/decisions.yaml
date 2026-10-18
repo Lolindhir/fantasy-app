@@ -2030,3 +2030,85 @@ decisions:
       negative:
         - A new derived output and future scheduler adapter require explicit safety validation.
         - Historical latest-line market values must not be reused as ex-ante pregame evidence.
+
+  - id: ADR-063
+    title: Weekly team awards reuse the existing App WeeklyRecaps publisher
+    status: accepted
+    context: >
+      The existing weekly recap generator owns the App-facing editorial
+      KeyGames and KeyPlayers read model. Best Manager and Best Coach are
+      already canonical Shared Derived TeamWeekPerformance facts for completed
+      weeks; a parallel App publisher would duplicate its ownership.
+    decision: >
+      Reuse RequestLeaguePublication.ps1, RequestWeeklyRecaps.ps1 and
+      WeeklyRecapUtils.psm1 to project existing TeamWeekPerformance winner
+      facts into public/data/WeeklyRecaps.json and historical WeeklyRecaps
+      archives. Derived owns scoring, best-ball optimization and winner ties.
+      WeeklyRecaps does no second calculation. Winner CanonicalLeagueRosterID
+      values map to FantasyTeamID exclusively through the exact season/week
+      canonical league matchup ProviderRosterID and matching final Matchups
+      participants; no current owner or mutable current roster lookup.
+      Missing Derived partitions remain explicitly unavailable, not zero;
+      incompatible or contradictory present partitions fail closed. The
+      established 2 KeyGames/3 KeyPlayers contract remains unchanged.
+      Future incremental migration of those legacy calculations to Shared
+      Derived retains the existing public/data WeeklyRecaps projection
+      boundary and is not performed in this checkpoint.
+    rationale: >
+      A single existing App publisher avoids a second scheduler/writer,
+      preserves source-of-truth boundaries and supplies a stable consumer
+      schema while Shared Derived expands.
+    consequences:
+      positive:
+        - One App projection and no reimplementation of Best Ball scoring.
+        - Historical roster identity is joined in its original week.
+        - Independent Derived backfills become visible on the next App chain
+          without introducing a new publication writer.
+      negative:
+        - A matching Derived partition is not guaranteed for every finalized
+          recap week until separately gated historical backfill finishes.
+        - The current recap generator temporarily mixes legacy editorial
+          calculations with shared-derived team award projection.
+
+
+  - id: ADR-064
+    title: Keep league-provider points and canonical NFL scoring separate with auditable reconciliation
+    status: accepted
+    context: >
+      Sleeper League PlayerPoints and independent canonical NFL-derived
+      PlayerWeekFantasy Actual sometimes disagree because provider scoring
+      evidence differs. League awards and canonical player analyses answer
+      different questions. Overwriting either point value, globally widening
+      scoring tolerances, or duplicating divergence gates across downstream
+      consumers would hide evidence or make historic awards unreliable.
+    decision: >
+      Retain both values in their existing authoritative sources and add one
+      read-only-by-default Shared Derived player-scoring reconciliation.
+      Identify a comparison by canonical league, season, week, player and
+      scoring-profile fingerprint. The reconciliation output contains both
+      values, null when one is absent, numerical difference and explicit
+      verification status. Allow only versioned, provenance-backed, exact
+      player/week/value-pair exceptions from manual data-meta policy.
+      Exception publication must remain auditable and stale exceptions fail
+      closed. This does not relax the normal ~0.01-point parity tolerance.
+      TeamWeekPerformance uses Sleeper League matchup PlayerPoints for both
+      actual starters and retrospective all-roster Best Ball; it consumes
+      reconciliation only as a quality gate. PWF continues to calculate
+      independent canonical NFL scores without using provider fantasy totals
+      as its source of truth.
+    rationale: >
+      A single reconciling fact creates future consumer choice without
+      merging two independent scoring facts or creating a second scorer.
+      The known Caleb Williams 2025 W06 difference (#698: 19.88 League
+      versus 20.38 PWF) has an explicit narrow exception, not a waiver.
+    consequences:
+      positive:
+        - Consumers can select a scoring source and inspect provenance.
+        - Unknown, stale or inconsistent scoring remains fail-closed.
+        - Accepted provider differences are not disguised as exact parity.
+      negative:
+        - An additional Shared Derived output requires later classified,
+          race-safe publication and explicit historical backfill validation.
+        - Players absent from the league matchup roster cannot have
+          invented Sleeper points and are marked unavailable on that side.
+

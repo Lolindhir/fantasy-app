@@ -18,11 +18,17 @@ physicalOwner:
     optimizer: tools/weekly_lineup_optimizer.py::maximize_lineup
     canonicalInputAdapter: tools/team_week_performance_sources.py::load_verified_week_inputs
     lineupEligibilityBridge: public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1
-  status: draft-pr-993-week-03-04-05-only-no-main-publication
+  status: current-2026-weeks-03-05-on-main-app-projection-355
   delivery: >
-    An App publisher/read-model projection must be separately implemented.
-    No scheduled workflow or public/data output has been changed in this
-    checkpoint. This is NOT yet a populated production dataset.
+    Current App projection checkpoint #355: existing
+    public/requests/utils/league/WeeklyRecapUtils.psm1 reads finalized
+    TeamWeekPerformance and maps canonical roster IDs to week-specific
+    FantasyTeamIDs in public/data/WeeklyRecaps.json. An absent partition is
+    explicitly unavailable; a present invalid one fails closed. Existing
+    league-live.yml / RequestLeaguePublication.ps1 retains publication
+    ownership; this adds no second App publisher or cron. Initial shared
+    Derived persisted weeks are 2026 W03-W05; bulk historical backfill remains
+    separately gated under #1061/#471 and known #698 scoring evidence.
 
 identity:
   root:
@@ -110,7 +116,12 @@ inputs:
       Points is retained separately as OfficialMatchupPoints because manual
       commissioner adjustments may be distinct from player production.
       Reconcile against finalized Shared PlayerWeekFantasy Actual where
-      available before approving production backfills.
+      available before approving production backfills. The canonical
+      player-scoring reconciliation (#355, #698) retains both values and
+      accepts only exact, provenance-backed provider-stat exceptions; unknown
+      player/week divergences remain blocking. TWP optimization continues
+      using canonical League matchup PlayerPoints and StarterPoints, not
+      substituting PWF Actual for Sleeper fantasy league points.
 
 contract:
   version: 1
