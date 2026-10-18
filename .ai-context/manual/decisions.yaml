@@ -2112,3 +2112,55 @@ decisions:
         - Players absent from the league matchup roster cannot have
           invented Sleeper points and are marked unavailable on that side.
 
+  - id: ADR-065
+    title: Fail-closed risk-selected CI for pull requests with permanent merge result
+    status: accepted
+    context: >
+      The single mandatory GitHub Actions build serially executed every
+      historical source replay and full market restore on every pull request,
+      regardless of risk or touched dependencies. Its measured runtime was
+      approximately 39 minutes, mostly in NFL identity and market restoration.
+      CP1 registered existing tests and a read-only dependency impact selector;
+      CP2 proved independent read-only Fast validation can complete in roughly
+      2 minutes while retaining the complete legacy suite. Moving to selected
+      Deep tests must never silently drop existing checks or turn a skipped
+      GitHub Actions job into false evidence of validation.
+    decision: >
+      The existing build.yml remains the sole central PR CI entry point.
+      Run Fast contract/source/PowerShell/scheduler/Angular lanes on every PR
+      and execute the remaining previously required Python Fast modules from
+      a strict versioned registry. Select four Deep families using a complete
+      verified PR changed-file inventory plus conservative dependency closure.
+      Unknown paths, newly unclassified tests, renames/deletes, API uncertainty,
+      CI/selector/contract changes and broad provider or identity dependencies
+      require all Deep families; full legacy historical build remains mandatory
+      for these all-Deep cases and for manual validation. A single job-level
+      timeout-minutes-only change in an explicit allowlisted workflow may avoid
+      Deep only after comparing immutable base/head YAML semantic trees;
+      event, permission, command, environment or writer changes can never be
+      exempted. A stable always-present CI / Merge Gate inspects every Fast,
+      selector, selected and unselected Deep and conditional legacy job result;
+      missing, failed, cancelled, neutral or unexpected skip outcomes fail.
+      Existing independent production publication and Fantasy Management
+      validation remain intact. Branch protection activation is a separate
+      administrative step owned by Issue #243, and until then a named Merge
+      Gate is not itself a server-enforced required check.
+    rationale: >
+      Risk-based execution avoids unrelated 25-minute identity replays while
+      preserving full coverage of test modules previously invoked by the old
+      build. A separate strict result gate prevents the GitHub Actions default
+      'skipped' status from being mistaken for validated critical tests.
+      Running the full old build on CI changes guards the cutover itself.
+    consequences:
+      positive:
+        - Unrelated PRs can obtain bounded read-only Fast checks without full historical restore.
+        - Source, identity, scoring, market and consumer risk retains explicit Deep regressions.
+        - All selector errors and unexpected job outcomes are visible and fail closed.
+        - Existing scheduler, state ownership and publication writers are unaffected.
+      negative:
+        - More individual jobs and test registry updates are now necessary.
+        - Conservative cases still incur the full legacy historical runtime.
+        - Until Issue #243 activates branch protection for CI / Merge Gate,
+          GitHub does not make this check a server-enforced merge requirement.
+        - Periodic complete audit and performance-distribution measurement are
+          follow-up checkpoints CP4 and CP6, not part of this decision.
