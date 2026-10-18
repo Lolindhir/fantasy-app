@@ -240,22 +240,22 @@ jobs:
             },
         }
         changed = [{"filename": path, "status": "modified"}]
-        with patch.object(ci, "pr_changes", return_value=changed), \\
-             patch.object(ci, "_repo_file_at", side_effect=[original, bumped]), \\
+        with patch.object(ci, "pr_changes", return_value=changed), \
+             patch.object(ci, "_repo_file_at", side_effect=[original, bumped]), \
              patch.dict("os.environ", {"GITHUB_TOKEN": "test"}):
             result = ci.select_from_event(event, {"tests": []})
         self.assertEqual([], result["selected"])
         self.assertFalse(result["uncertain"])
 
-        with patch.object(ci, "pr_changes", return_value=changed), \\
+        with patch.object(ci, "pr_changes", return_value=changed), \
              patch.object(ci, "_repo_file_at", side_effect=[
-                 original, bumped.replace("echo safe", "echo unsafe")]), \\
+                 original, bumped.replace("echo safe", "echo unsafe")]), \
              patch.dict("os.environ", {"GITHUB_TOKEN": "test"}):
             result = ci.select_from_event(event, {"tests": []})
         self.assertEqual(set(ci.GROUPS), set(result["selected"]))
 
-        with patch.object(ci, "pr_changes", return_value=changed), \\
-             patch.object(ci, "_repo_file_at", side_effect=OSError("API down")), \\
+        with patch.object(ci, "pr_changes", return_value=changed), \
+             patch.object(ci, "_repo_file_at", side_effect=OSError("API down")), \
              patch.dict("os.environ", {"GITHUB_TOKEN": "test"}):
             result = ci.select_from_event(event, {"tests": []})
         self.assertEqual(set(ci.GROUPS), set(result["selected"]))
