@@ -215,6 +215,21 @@
 .transaction-card__pick-shield strong { font-size: 0.83rem; }
 .transaction-card__pick-shield small { font-size: 0.34rem; }
 
+/* Keep the compact Trade label recognizable without a tall standalone header.
+   This does not affect Adds, Cuts or multi-team/detail fallbacks. */
+.transaction-card--comparison .transaction-card__header {
+  min-height: 24px;
+  padding: 2px 9px;
+}
+.transaction-card--comparison .transaction-card__type {
+  font-size: 0.71rem;
+}
+.transaction-card--comparison .transaction-card__type mat-icon {
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+
 /* Two-team trades: comparison columns with one continuous center divider.
    The existing Trade fallback is retained for multi-team / detail screens. */
 .transaction-card--comparison .transaction-card__participants {
