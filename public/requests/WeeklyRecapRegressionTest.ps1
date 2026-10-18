@@ -109,4 +109,99 @@ Assert-True $failedOpen 'non-final Matchups week must never materialize a recap'
 $again = New-WeeklyRecapWeekReadModel -Week 4 -MatchupsWeek $matchupsWeek -FantasyMatchups $facts -IdentitySchedule $identitySchedule -CanonicalSchedule $canonicalSchedule -RosterIdentityMap $identityMap -TeamOrder $teamOrder
 Assert-Equal ($recap | ConvertTo-Json -Depth 30 -Compress) ($again | ConvertTo-Json -Depth 30 -Compress) 'WeeklyRecaps output must be deterministic'
 
+# Awards come from finalized Shared Derived snapshots, never recalculated by this module.
+# Missing partitions are explicitly unknown; corrupted or mismatched available partitions fail closed.
+$scratch = Join-Path ([System.IO.Path]::GetTempPath()) ("weekly-recaps-awards-" + [guid]::NewGuid().ToString('N'))
+try {
+    New-Item -ItemType Directory -Path $scratch -Force | Out-Null
+    $sourceWeek = @(
+        1..6 | ForEach-Object {
+            [PSCustomObject]@{
+                Week = 4
+                CanonicalLeagueRosterID = "roster-$_"
+                ProviderMappings = @([PSCustomObject]@{ Provider = 'Sleeper'; ProviderRosterID = [string]$_ })
+            }
+        }
+    )
+    $missing = Get-WrTeamAwards -CanonicalLeagueID 'test-league' -Season 2026 -Week 4 -MatchupRows $sourceWeek -MatchupsWeek $matchupsWeek -RepoRoot $scratch
+    Assert-Equal 'unavailable' $missing.State 'missing derived awards remain explicitly unavailable'
+    Assert-Equal 0 @($missing.BestManager).Count 'missing award is not a zero-score winner'
+
+    $directory = Join-Path $scratch 'data-derived/team-week-performance/test-league/2026'
+    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    $file = Join-Path $directory '04.json'
+    $derivedTest = [PSCustomObject]@{
+        ContractVersion = 1
+        CanonicalLeagueID = 'test-league'
+        Season = 2026
+        Week = 4
+        FinalityEvidence = 'data-source/nfl/game-finality/2026.json:REG-W4;league:scored-week-confirmed'
+        LineupDefinitionHash = 'sha256:lineup'
+        ScoringProfile = [PSCustomObject]@{ SettingsHash = 'sha256:scoring' }
+        Teams = @(1..6 | ForEach-Object {
+            [PSCustomObject]@{
+                CanonicalLeagueRosterID = "roster-$_"
+                PotentialPoints = (100 + $_)
+                ActualStarterPoints = (80 + $_)
+                MissedPoints = 20
+                EfficiencyPercent = 80
+            }
+        })
+        Awards = [PSCustomObject]@{
+            BestManagerRosterIDs = @('roster-2')
+            BestCoachRosterIDs = @('roster-4','roster-6')
+        }
+    }
+    $derivedTest | ConvertTo-Json -Depth 20 | Set-Content -Path $file -Encoding UTF8
+    $awards = Get-WrTeamAwards -CanonicalLeagueID 'test-league' -Season 2026 -Week 4 -MatchupRows $sourceWeek -MatchupsWeek $matchupsWeek -RepoRoot $scratch
+    Assert-Equal 'available' $awards.State 'final derived award is available'
+    Assert-Equal 1 @($awards.BestManager).Count 'Best Manager count comes from derived owner'
+    Assert-Equal 2 $awards.BestManager[0].FantasyTeamID 'canonical week roster -> historical app team ID'
+    Assert-Equal 102 $awards.BestManager[0].PotentialPoints 'Best Manager points copied without recalculation'
+    Assert-Equal 2 @($awards.BestCoach).Count 'all exact-tie coaches are kept'
+    Assert-Equal 4 $awards.BestCoach[0].FantasyTeamID 'tied coaches sort deterministically'
+    Assert-Equal 6 $awards.BestCoach[1].FantasyTeamID 'second coach preserved'
+    Assert-True (-not ($awards.BestManager[0].PSObject.Properties.Name -contains 'Owner')) 'no current owner/manager name is backdated'
+    $awardsAgain = Get-WrTeamAwards -CanonicalLeagueID 'test-league' -Season 2026 -Week 4 -MatchupRows $sourceWeek -MatchupsWeek $matchupsWeek -RepoRoot $scratch
+    Assert-Equal ($awards | ConvertTo-Json -Depth 20 -Compress) ($awardsAgain | ConvertTo-Json -Depth 20 -Compress) 'derived projection is deterministic'
+
+    $original = $derivedTest | ConvertTo-Json -Depth 20 -Compress
+
+    # A scoreless final week can legitimately have NO winners; this is
+    # different from an absent Derived partition or missing award fields.
+    $derivedTest.Awards.BestManagerRosterIDs = @()
+    $derivedTest.Awards.BestCoachRosterIDs = @()
+    $derivedTest | ConvertTo-Json -Depth 20 | Set-Content -Path $file -Encoding UTF8
+    $emptyWinners = Get-WrTeamAwards -CanonicalLeagueID 'test-league' -Season 2026 -Week 4 -MatchupRows $sourceWeek -MatchupsWeek $matchupsWeek -RepoRoot $scratch
+    Assert-Equal 'available' $emptyWinners.State 'available final derived snapshot may have no winning team'
+    Assert-Equal 0 @($emptyWinners.BestManager).Count 'legitimately empty manager winners'
+    Assert-Equal 0 @($emptyWinners.BestCoach).Count 'legitimately empty coach winners'
+    $derivedTest = $original | ConvertFrom-Json
+    $derivedTest | ConvertTo-Json -Depth 20 | Set-Content -Path $file -Encoding UTF8
+
+    # Invalid data is NOT swallowed as unavailable, including season/week mismatch,
+    # invalid finality, missing winners, duplicate winners or owner join drift.
+    $derivedTest.Week = 3
+    $derivedTest | ConvertTo-Json -Depth 20 | Set-Content -Path $file -Encoding UTF8
+    $failed = $false
+    try { Get-WrTeamAwards -CanonicalLeagueID 'test-league' -Season 2026 -Week 4 -MatchupRows $sourceWeek -MatchupsWeek $matchupsWeek -RepoRoot $scratch | Out-Null } catch { $failed = $true }
+    Assert-True $failed 'derived week mismatch fails closed'
+    $derivedTest = $original | ConvertFrom-Json
+    $derivedTest.Awards.BestManagerRosterIDs = @('unknown-roster')
+    $derivedTest | ConvertTo-Json -Depth 20 | Set-Content -Path $file -Encoding UTF8
+    $failed = $false
+    try { Get-WrTeamAwards -CanonicalLeagueID 'test-league' -Season 2026 -Week 4 -MatchupRows $sourceWeek -MatchupsWeek $matchupsWeek -RepoRoot $scratch | Out-Null } catch { $failed = $true }
+    Assert-True $failed 'unknown canonical award winner fails closed'
+    $derivedTest = $original | ConvertFrom-Json
+    $derivedTest | ConvertTo-Json -Depth 20 | Set-Content -Path $file -Encoding UTF8
+    $badRosterRows = $sourceWeek | ConvertTo-Json -Depth 20 | ConvertFrom-Json
+    $badRosterRows[0].ProviderMappings[0].ProviderRosterID = '99'
+    $failed = $false
+    try { Get-WrTeamAwards -CanonicalLeagueID 'test-league' -Season 2026 -Week 4 -MatchupRows $badRosterRows -MatchupsWeek $matchupsWeek -RepoRoot $scratch | Out-Null } catch { $failed = $true }
+    Assert-True $failed 'provider roster ID missing in exact Matchups participants fails closed'
+}
+finally {
+    if (Test-Path $scratch) { Remove-Item -Path $scratch -Recurse -Force }
+}
+
 Write-Host 'WeeklyRecaps regression suite passed.' -ForegroundColor Green
