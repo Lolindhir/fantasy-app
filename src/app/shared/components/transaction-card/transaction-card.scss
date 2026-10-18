@@ -215,6 +215,21 @@
 .transaction-card__pick-shield strong { font-size: 0.83rem; }
 .transaction-card__pick-shield small { font-size: 0.34rem; }
 
+/* Keep the compact Trade label recognizable without a tall standalone header.
+   This does not affect Adds, Cuts or multi-team/detail fallbacks. */
+.transaction-card--comparison .transaction-card__header {
+  min-height: 24px;
+  padding: 2px 9px;
+}
+.transaction-card--comparison .transaction-card__type {
+  font-size: 0.71rem;
+}
+.transaction-card--comparison .transaction-card__type mat-icon {
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+
 /* Two-team trades: comparison columns with one continuous center divider.
    The existing Trade fallback is retained for multi-team / detail screens. */
 .transaction-card--comparison .transaction-card__participants {
@@ -224,7 +239,7 @@
 .transaction-card--comparison .transaction-card__participant {
   min-width: 0;
   padding: 8px 9px 9px;
-  gap: 7px;
+  gap: 4px;
   align-items: stretch;
   justify-content: flex-start;
 }
@@ -238,8 +253,6 @@
   justify-content: flex-start;
   min-width: 0;
   min-height: 26px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #eef2f6;
 }
 .transaction-card--comparison .transaction-card__compare-team--right {
   justify-content: flex-end;
@@ -302,4 +315,18 @@
   align-self: flex-start;
   margin-top: 0;
   padding: 1px 0;
+}
+
+/* Mirror only the right side of a two-team comparison. The asset's portrait
+   or shield sits on the outer edge; the label and NFL metadata face the center. */
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__player,
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__pick {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__asset-copy {
+  text-align: right;
+}
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__player-meta {
+  justify-content: flex-end;
 }
