@@ -14,24 +14,25 @@
       {{ label }}
     </span>
 
+    @if (category !== 'trade' && transaction.Participants.length === 1) {
+      @if (transaction.Participants[0].Team; as team) {
+        <app-team-identity
+          class="transaction-card__header-team"
+          [team]="team"
+          size="small"
+          [elements]="['logo', 'name']"
+          align="start"
+        />
+      } @else {
+        <span class="transaction-card__unknown-team">Team {{ transaction.Participants[0].RosterID }}</span>
+      }
+    }
+
     <span class="transaction-card__header-context">
       @if (density !== 'compact' && transaction.CreatedAtDate) {
         <time [attr.datetime]="transaction.CreatedAtDate.toISOString()">
           {{ transaction.CreatedAtDate | date: 'd MMM' }}
         </time>
-      }
-      @if (category !== 'trade' && transaction.Participants.length === 1) {
-        @if (transaction.Participants[0].Team; as team) {
-          <app-team-identity
-            class="transaction-card__header-team"
-            [team]="team"
-            size="small"
-            [elements]="['logo', 'name']"
-            align="end"
-          />
-        } @else {
-          <span class="transaction-card__unknown-team">Team {{ transaction.Participants[0].RosterID }}</span>
-        }
       }
     </span>
   </header>
@@ -101,7 +102,7 @@
           @if (transaction.Participants.length > 1) {
             <div class="transaction-card__team">
               @if (participant.Team; as team) {
-                <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" align="end" />
+                <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" align="start" />
               } @else {
                 <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
               }
