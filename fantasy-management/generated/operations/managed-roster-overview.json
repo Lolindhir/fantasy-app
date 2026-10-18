@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-10-18T08:56:47Z",
-  "input_fingerprint": "24844c9f65288b8040f7af687be861f0e64467504da421d0ff41dd643a6700b6",
+  "generated_at": "2026-10-18T12:15:53Z",
+  "input_fingerprint": "3830638a98c03a41ec4c8b1ed078770b64f291d20aa43537619103e1313418a4",
   "sources": [
     {
       "id": "league_enrichment",
       "path": "public/data/League.json",
-      "content_sha256": "42ce4162b3ef80af665e91b99ce24a290d422760b1136b88b70f2cc41c753f08"
+      "content_sha256": "9ccd70895e7a5277184d087f50d2decb50900ade3be29dd9565fb77c2b001d0c"
     },
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "a252f0e2e15a4c63ba22bb6722273a10e38c1aff9ace902a7fcb78a5ea21dfb5"
+      "content_sha256": "565028adcabb40cbb991e8712598ee4d585ad050f8b236451a551bcd9190eb39"
     },
     {
       "id": "roster_evaluation_state",
@@ -42,7 +42,7 @@
       "boundary_priority"
     ],
     "user_override_count": 0,
-    "unclassified_count": 3,
+    "unclassified_count": 4,
     "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
   },
   "team": {
@@ -246,7 +246,7 @@
       "target_general_slots": 2,
       "assignment_status": "current_locked_roster",
       "decision_readiness": "review_required",
-      "active_unclassified_count": 3,
+      "active_unclassified_count": 4,
       "current_active_candidate_count": 2,
       "current_active_general_churn_count": 0,
       "candidate_pool_count": 2,
@@ -1630,69 +1630,6 @@
       "potential_churn_after_taxi_reassignment": false
     },
     {
-      "player_id": "13296",
-      "name": "Caleb Douglas",
-      "position": "WR",
-      "nfl_team": "MIA",
-      "roster_area": "active",
-      "roster_sections": [
-        "roster"
-      ],
-      "is_current_active": true,
-      "is_current_taxi": false,
-      "is_current_reserve": false,
-      "roster_role": "prospect",
-      "roster_security": "strong_hold",
-      "structural_function": "development",
-      "classification": {
-        "roster_role": "prospect",
-        "roster_security": "strong_hold",
-        "boundary_priority": null,
-        "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
-        "user_override": false,
-        "notes": [
-          "Week-1 91% offensive snap share materially raises current role confidence; preserve rookie upside."
-        ],
-        "evidence": [],
-        "review_status": "seeded_manual"
-      },
-      "app_data": {
-        "status": "Active",
-        "age": 23.1,
-        "years_experience": 1,
-        "salary": 0,
-        "salary_projected": 2279113,
-        "is_free_agent": false
-      },
-      "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Out",
-        "description": "Ankle",
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "high",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "market": {
-        "fantasypros_overall_rank": 153,
-        "fantasypros_position_rank": "WR64",
-        "fantasycalc_overall_rank": 186,
-        "fantasycalc_value": 1220
-      },
-      "coverage_role": "development",
-      "coverage_protected": false,
-      "comparison_boundary_eligible": false,
-      "potential_comparison_boundary_after_taxi_reassignment": false,
-      "churn_eligible": false,
-      "potential_churn_after_taxi_reassignment": false
-    },
-    {
       "player_id": "13311",
       "name": "Chris Bell",
       "position": "WR",
@@ -2001,6 +1938,67 @@
         "fantasycalc_value": 4148
       },
       "coverage_role": "fixed_starter_pool",
+      "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "13274",
+      "name": "Germie Bernard",
+      "position": "WR",
+      "nfl_team": "PIT",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 22.9,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 1668356,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 169,
+        "fantasypros_position_rank": "WR69",
+        "fantasycalc_overall_rank": 116,
+        "fantasycalc_value": 1806
+      },
+      "coverage_role": "unclassified",
       "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -2566,7 +2564,7 @@
   ],
   "quality": {
     "status": "warning",
-    "issue_count": 6,
+    "issue_count": 8,
     "issues": [
       {
         "severity": "warning",
@@ -2603,6 +2601,18 @@
         "kind": "active_unclassified_boundary_review_required",
         "player_id": "11625",
         "name": "Adonai Mitchell"
+      },
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "13274",
+        "name": "Germie Bernard"
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "13274",
+        "name": "Germie Bernard"
       }
     ],
     "limitations": [

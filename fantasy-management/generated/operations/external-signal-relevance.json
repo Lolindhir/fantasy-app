@@ -2,7 +2,7 @@
   "schema_version": 1,
   "dataset_id": "external-signal-relevance",
   "generated_at": "2026-10-18T03:27:07.580182Z",
-  "input_fingerprint": "36940d89f81f088e3c369d47dc137c731ecef11ea87e637d155cad39c511787a",
+  "input_fingerprint": "233a610991670a60e00001a6db3dfbaa6d8b8f0460170cc1d8ebc83f115bb9b4",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -12,7 +12,7 @@
     {
       "id": "league_display",
       "path": "public/data/League.json",
-      "content_sha256": "42ce4162b3ef80af665e91b99ce24a290d422760b1136b88b70f2cc41c753f08",
+      "content_sha256": "9ccd70895e7a5277184d087f50d2decb50900ade3be29dd9565fb77c2b001d0c",
       "source_timestamp": null
     },
     {
@@ -24,7 +24,7 @@
     {
       "id": "canonical_league",
       "path": "data-source/leagues/nfl-reise/seasons/2026/league.json",
-      "content_sha256": "36010050b681eb1cfce5308b656ac89920b55f09226010c9f3094764ca418765",
+      "content_sha256": "4383c636369fcefceee023c714414b32b02d8a8ce03c17d0fcc640d19fad702b",
       "source_timestamp": null
     },
     {
@@ -36,7 +36,7 @@
     {
       "id": "canonical_league_rosters",
       "path": "data-source/leagues/nfl-reise/seasons/2026/rosters.json",
-      "content_sha256": "d01a0a2e3124378299662a37600ccb785ed665e11541ac65efb7211ab259cd96",
+      "content_sha256": "7e31b6f7ea1b42d9d9c731377b0b0f758ce12a6e55f8f8d3b35c2c05a0ea306c",
       "source_timestamp": null
     },
     {
@@ -107,9 +107,9 @@
       "resolved_players": 141,
       "unresolved_players": 0,
       "ownership": {
-        "fantasy_free_agent": 66,
+        "fantasy_free_agent": 65,
         "mighty_giants": 10,
-        "opponent_rostered": 65
+        "opponent_rostered": 66
       }
     }
   ],
@@ -122,9 +122,9 @@
       "team_defense": 15
     },
     "ownership": {
-      "fantasy_free_agent": 66,
+      "fantasy_free_agent": 65,
       "mighty_giants": 10,
-      "opponent_rostered": 65
+      "opponent_rostered": 66
     }
   },
   "views": {
@@ -224,8 +224,17 @@
           "position": "QB",
           "nfl_team": "LV",
           "count": 114712,
-          "ownership_status": "fantasy_free_agent",
-          "owner_teams": []
+          "ownership_status": "opponent_rostered",
+          "owner_teams": [
+            {
+              "team_id": 3,
+              "team_name": "Just Bill",
+              "team_abbreviation": "JuB",
+              "roster_sections": [
+                "roster"
+              ]
+            }
+          ]
         },
         {
           "rank": 8,
@@ -884,8 +893,17 @@
           "position": "RB",
           "nfl_team": "NYJ",
           "count": 18700,
-          "ownership_status": "fantasy_free_agent",
-          "owner_teams": []
+          "ownership_status": "opponent_rostered",
+          "owner_teams": [
+            {
+              "team_id": 3,
+              "team_name": "Just Bill",
+              "team_abbreviation": "JuB",
+              "roster_sections": [
+                "roster"
+              ]
+            }
+          ]
         },
         {
           "rank": 61,
@@ -1048,8 +1066,17 @@
           "position": "WR",
           "nfl_team": "PIT",
           "count": 14223,
-          "ownership_status": "fantasy_free_agent",
-          "owner_teams": []
+          "ownership_status": "mighty_giants",
+          "owner_teams": [
+            {
+              "team_id": 1,
+              "team_name": "Mighty Giants",
+              "team_abbreviation": "MiG",
+              "roster_sections": [
+                "roster"
+              ]
+            }
+          ]
         },
         {
           "rank": 75,
@@ -1058,17 +1085,8 @@
           "position": "WR",
           "nfl_team": "JAX",
           "count": 14060,
-          "ownership_status": "opponent_rostered",
-          "owner_teams": [
-            {
-              "team_id": 3,
-              "team_name": "Just Bill",
-              "team_abbreviation": "JuB",
-              "roster_sections": [
-                "roster"
-              ]
-            }
-          ]
+          "ownership_status": "fantasy_free_agent",
+          "owner_teams": []
         },
         {
           "rank": 76,
@@ -1962,16 +1980,6 @@
           "position": "QB",
           "nfl_team": "LV",
           "count": 33536,
-          "ownership_status": "fantasy_free_agent",
-          "owner_teams": []
-        },
-        {
-          "rank": 33,
-          "player_id": "11631",
-          "name": "Brian Thomas Jr.",
-          "position": "WR",
-          "nfl_team": "JAX",
-          "count": 33005,
           "ownership_status": "opponent_rostered",
           "owner_teams": [
             {
@@ -1983,6 +1991,16 @@
               ]
             }
           ]
+        },
+        {
+          "rank": 33,
+          "player_id": "11631",
+          "name": "Brian Thomas Jr.",
+          "position": "WR",
+          "nfl_team": "JAX",
+          "count": 33005,
+          "ownership_status": "fantasy_free_agent",
+          "owner_teams": []
         },
         {
           "rank": 34,
@@ -2455,17 +2473,8 @@
           "position": "WR",
           "nfl_team": "MIA",
           "count": 21776,
-          "ownership_status": "mighty_giants",
-          "owner_teams": [
-            {
-              "team_id": 1,
-              "team_name": "Mighty Giants",
-              "team_abbreviation": "MiG",
-              "roster_sections": [
-                "roster"
-              ]
-            }
-          ]
+          "ownership_status": "fantasy_free_agent",
+          "owner_teams": []
         },
         {
           "rank": 71,
@@ -3306,8 +3315,17 @@
       "nfl_team": "NYJ",
       "identity_status": "resolved",
       "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
+        "status": "opponent_rostered",
+        "teams": [
+          {
+            "team_id": 3,
+            "team_name": "Just Bill",
+            "team_abbreviation": "JuB",
+            "roster_sections": [
+              "roster"
+            ]
+          }
+        ]
       },
       "source_signals": {
         "sleeper-trending": {
@@ -3541,17 +3559,8 @@
       "nfl_team": "JAX",
       "identity_status": "resolved",
       "ownership": {
-        "status": "opponent_rostered",
-        "teams": [
-          {
-            "team_id": 3,
-            "team_name": "Just Bill",
-            "team_abbreviation": "JuB",
-            "roster_sections": [
-              "roster"
-            ]
-          }
-        ]
+        "status": "fantasy_free_agent",
+        "teams": []
       },
       "source_signals": {
         "sleeper-trending": {
@@ -3783,17 +3792,8 @@
       "nfl_team": "MIA",
       "identity_status": "resolved",
       "ownership": {
-        "status": "mighty_giants",
-        "teams": [
-          {
-            "team_id": 1,
-            "team_name": "Mighty Giants",
-            "team_abbreviation": "MiG",
-            "roster_sections": [
-              "roster"
-            ]
-          }
-        ]
+        "status": "fantasy_free_agent",
+        "teams": []
       },
       "source_signals": {
         "sleeper-trending": {
@@ -5411,8 +5411,17 @@
       "nfl_team": "PIT",
       "identity_status": "resolved",
       "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
+        "status": "mighty_giants",
+        "teams": [
+          {
+            "team_id": 1,
+            "team_name": "Mighty Giants",
+            "team_abbreviation": "MiG",
+            "roster_sections": [
+              "roster"
+            ]
+          }
+        ]
       },
       "source_signals": {
         "sleeper-trending": {
@@ -7625,8 +7634,17 @@
       "nfl_team": "LV",
       "identity_status": "resolved",
       "ownership": {
-        "status": "fantasy_free_agent",
-        "teams": []
+        "status": "opponent_rostered",
+        "teams": [
+          {
+            "team_id": 3,
+            "team_name": "Just Bill",
+            "team_abbreviation": "JuB",
+            "roster_sections": [
+              "roster"
+            ]
+          }
+        ]
       },
       "source_signals": {
         "sleeper-trending": {

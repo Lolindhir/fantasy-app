@@ -196,7 +196,8 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix=".twp-recovery-", dir=REPO_ROOT) as temp:
             derived_root = Path(temp).relative_to(REPO_ROOT).as_posix()
             with patch("team_week_performance_materialize.DATA_DERIVED_ROOT", derived_root), \
-                 patch("team_week_performance.DATA_DERIVED_ROOT", derived_root):
+                 patch("team_week_performance.DATA_DERIVED_ROOT", derived_root), \
+                 patch("player_scoring_reconciliation.DATA_DERIVED_ROOT", derived_root):
                 first = materialize_all_finalized(REPO_ROOT, league_id="nfl-reise", write=True)
                 self.assertEqual((first["TargetCount"], first["ReadyCount"],
                                   first["BlockedCount"], first["ChangedCount"]), (39, 39, 0, 39))

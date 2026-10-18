@@ -116,7 +116,12 @@ inputs:
       Points is retained separately as OfficialMatchupPoints because manual
       commissioner adjustments may be distinct from player production.
       Reconcile against finalized Shared PlayerWeekFantasy Actual where
-      available before approving production backfills.
+      available before approving production backfills. The canonical
+      player-scoring reconciliation (#355, #698) retains both values and
+      accepts only exact, provenance-backed provider-stat exceptions; unknown
+      player/week divergences remain blocking. TWP optimization continues
+      using canonical League matchup PlayerPoints and StarterPoints, not
+      substituting PWF Actual for Sleeper fantasy league points.
 
 contract:
   version: 1
