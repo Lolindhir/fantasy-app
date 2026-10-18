@@ -101,6 +101,52 @@ The current synthetic test package covers:
 
 Synthetic fixtures test the process without imposing new rules on historical episodes.
 
+
+## Private SRT preflight prototype (local, manual)
+
+The bounded CLI below produces **candidate proposals** for the two independent pre-extraction inventories. It does **not** use an LLM and cannot claim full entity detection, semantic claim recall, verified player identities or autonomous multiple extraction runs. Its regex hints intentionally over-include German nouns and may miss lowercase/garbled ASR names. A human or model reviewing the complete source must complete both inventories. Raw SRT must remain in a rights-appropriate private workspace, never automatically committed to public GitHub.
+
+```bash
+python fantasy-management/_ai/scripts/podcast_preflight.py propose \
+  "/private/episode.srt" --output "/private/episode-preflight"
+```
+
+To limit a dry-run to specific cue numbers, add `--start-cue 165 --end-cue 208`. This produces `manifest.json`, `entities.json` and `claims.json` in an empty output directory. The original SRT stays unchanged and is identified via SHA256.
+
+**Required review:** verify each exact raw span/cue, manually mark `review_status`; in `claims.json`, set `required` true/false, split joined questions/claims into atomic cue-grounded entries as needed, and populate `linked_take_ids` for each required claim. Do not mark a proposal as reviewed only because a heuristic matched. For every real source-spoken claim missed by the hints, add a cue-grounded entry with a unique ID. Context-only mentions do not mandate standalone takes. Unverified canonical IDs stay null.
+
+```bash
+python fantasy-management/_ai/scripts/podcast_preflight.py check \
+  "/private/episode.srt" --input "/private/episode-preflight" \
+  --takes "/private/episode/takes/items" --require-reviewed
+```
+
+The `check` command checks byte-level transcript provenance, literal offsets, unique candidate IDs, mandatory review classification and reciprocal links `claim_ids` in authored take files. It does **not** automatically compare every unobserved source claim with the take set. It is a pre-extraction **prototype** and is not wired into `validate_podcast_work.py`, the publication builder, CI writers or the repository's canonical work-package schemas. Existing package behavior and historical artifacts stay unchanged. Keep a frozen first-pass take set before source-first QA, then repair and recheck using the approved multi-pass editorial rules.
+
+## Semantic claim inventory: frozen first pass and independent audit
+
+The local, **non-publishing** CLI provides a stable JSON intake contract for independently authored semantic source claims. This is the next technical checkpoint following the manual 45/53-claim Commanders–49ers pilot; **the script does not itself run a language model or infer missing claims**.
+
+First ask an authorized model/human to read the raw SRT (cue by cue, not summary-first) and emit a `podcast-semantic-claim-inventory.schema.json` document with exact cue IDs, character offsets, literal `quote_hint`, one atomic `claim` per assertion, and `review_state: "unreviewed"`. Never normalize unsure names or convert suspicious ASR figures into verified NFL facts. Keep the raw source private.
+
+```bash
+python fantasy-management/_ai/scripts/podcast_semantic_claims.py freeze \
+  "/private/episode.srt" "/private/claim-first-pass.json" --output "/private/frozen"
+```
+
+Read every source cue **again** with a different QA objective. Save an audit JSON containing `base_frozen_sha256`, `review_method`, `corrections` (each with `id`, `reason`, optionally `review_state`, `corrected_claim`, `review_note` and `linked_take_ids`) and `new_claims` (complete claim objects). An existing quote/cue may not be silently rewritten via a correction: use a traceable replacement claim. The frozen original is preserved.
+
+```bash
+python fantasy-management/_ai/scripts/podcast_semantic_claims.py reconcile \
+  "/private/episode.srt" "/private/frozen" "/private/audit.json" --output "/private/reconciled"
+
+python fantasy-management/_ai/scripts/podcast_semantic_claims.py check \
+  "/private/episode.srt" "/private/reconciled/reconciled.json" --require-reviewed \
+  --takes "/private/episode/takes/items"
+```
+
+The last check requires an editorially reviewed status plus, for substantive verified claims, an existing take with reciprocal `claim_ids`. Intermediate `check` without `--require-reviewed` is **source-span and structure only**. It **cannot establish that every source claim exists**. The existing `validate_podcast_work.py` and publication builder are not altered; do not report these preflight checks as a publication-ready verdict or an independent recall score. No model provider, automatic scheduling, raw upload, identity registry modification or novel GitHub writer is enabled.
+
 ## Operational tracking
 
 This file documents implemented commands and tool behavior only. It does not maintain the mutable rollout roadmap.

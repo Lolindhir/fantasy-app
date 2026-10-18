@@ -1,0 +1,110 @@
+schemaVersion: 1
+domain: nfl-games
+status: active-upon-first-published-full-sync
+issue: 1077
+architecture: ADR-037/ADR-038
+ownership:
+  producer: tools/nfl_games_materialize.py
+  pureBuilder: tools/derived_data_lib/nfl_games.py
+  output: data-derived/nfl-games/<season>.json
+  scope: global-NFL-independent-of-league
+  format: deterministic-json-season-partition
+  authority: canonical-Source-plus-versioned-derivation
+inputSources:
+  schedule: data-source/nfl/schedules/<season>.json
+  finality: data-source/nfl/game-finality/<season>.json
+  odds: data-source/nfl/schedule-odds/<season>.json
+identity:
+  season: Season
+  game: GameID
+  schema: SchemaVersion
+  join: exact-canonical-GameID-and-GameType/Week
+  missingPartition: unavailable-not-empty
+  missingGame: fail-closed
+  duplicateGame: fail-closed
+schema:
+  SchemaVersion: 1
+  Season: integer
+  SourceDatasets: [nflverse.schedules, nflverse.game-finality, nflverse.schedule-odds]
+  Games:
+    fields:
+      - GameID
+      - GameType
+      - Week
+      - GameDay
+      - GameTime
+      - AwayTeam
+      - HomeTeam
+      - AwayScore
+      - HomeScore
+      - Final
+      - Market
+    market:
+      SourceDataset: nflverse.schedule-odds
+      SpreadLine: nullable-finite-number
+      TotalLine: nullable-positive-number
+      ImpliedAwayPoints: nullable-two-decimal-number
+      ImpliedHomePoints: nullable-two-decimal-number
+derived:
+  spreadConvention: nflverse-away-spread-positive-favors-home
+  impliedAway: (TotalLine-SpreadLine)/2
+  impliedHome: (TotalLine+SpreadLine)/2
+  rounding: decimal-half-up-to-two-places
+  incompleteLines: null-both-implied-scores
+  interpretation: market-expected-points-not-a-prediction-or-actual-score
+  marketPriceFields: omitted-from-product-and-ignored-for-invalidation
+temporal:
+  kickoff: >
+    Canonical GameDay is required. GameTime is nullable for historical seasons
+    (1999 schedules have unknown times) and is preserved as null; no invented
+    kickoff instant/timezone or observation timestamp.
+  gameTime: nullable-canonical-source-string
+  finality: canonical-nflverse.game-finality-only
+  historicalMarketCaveat: latest-line-not-proven-original-pregame-line
+  noInventedObservationTimestamp: true
+invalidation:
+  - schedule
+  - finality
+  - spread-or-total-value-including-null-transition
+  - pureBuilderImplementation
+  - schemaContractVersion
+  ignoreForThisProduct:
+    - Moneyline
+    - AwaySpreadOdds
+    - HomeSpreadOdds
+    - UnderOdds
+    - OverOdds
+operation:
+  cli: python3 tools/nfl_games_materialize.py --season 2026
+  default: read-only-preview
+  explicitWrite: python3 tools/nfl_games_materialize.py --season 2026 --write
+  check: python3 tools/nfl_games_materialize.py --season 2026 --check
+  full: python3 tools/nfl_games_materialize.py --all-seasons
+  publication: >
+    After a successful normal full nfl-source sync, the existing
+    sync-nfl-source-data.yml runs a dependent nfl_games_derived job that verifies
+    real-source clean-root restore, then executes the existing rebuild-and-retry
+    publisher from current main with scope nfl-games and only
+    data-derived/nfl-games as allowed write destination.
+  activation: gated-by-PR1082-green-CI-and-first-production-publish
+  workflow: .github/workflows/sync-nfl-source-data.yml
+  sourceTrigger: daily-full-only
+  excludedTriggers:
+    - nfl-live-game-finality
+    - targeted-NFL-source-dataset-refresh
+    - league-live
+  outputScope: data-derived/nfl-games/**
+  noSeparateScheduler: true
+  commitOnNoop: false
+  rollback: revert-dependent-derived-job-and-commit-scope;preserve-published-history-pending-separate-cleanup-review
+guards:
+  - validate-canonical-dataset-and-season
+  - reject-missing-odds-source-not-fabricate-empty-market
+  - reject-duplicate-or-unknown-game-ids
+  - reject-missing-finality-and-inconsistent-type-or-week
+  - reject-nonfinite-spread-or-total-and-impossible-lines
+  - reject-final-score-without-both-scores
+  - stable-sort-game-id-week-type
+  - no-op-on-identical-content
+  - clean-root-restorable-from-three-canonical-inputs
+  - no-UI-or-fantasy-projection-consumer-in-this-issue

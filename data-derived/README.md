@@ -9,6 +9,33 @@ It is deliberately separate from:
 - `public/data/**`: generated App delivery/read-model contracts;
 - `fantasy-management/**`: consumer-specific Operations, analysis and decisions.
 
+## Global NFL Game
+
+Consumer-neutral product (Issue #1077; daily Derived publication activated after the #1082 acceptance gate):
+
+`data-derived/nfl-games/<season>.json`
+
+Contract: `.ai-context/manual/nfl-games.yaml`.
+
+The product joins `data-source/nfl/schedules`, `game-finality`, and
+`schedule-odds` by canonical GameID. It exposes football scores/finality and
+market-implied expected team points from **only SpreadLine and TotalLine**.
+Moneyline and bookmaker price changes do not enter the product or invalidate
+it. A missing entire odds partition is unavailable evidence; nullable fields
+are preserved as null.
+
+The generator `tools/nfl_games_materialize.py` is read-only by default.
+A dedicated dependent job inside the **existing daily full NFL Source Sync**
+(`.github/workflows/sync-nfl-source-data.yml`) validates Source-only
+restoration and publishes all seasons via `tools/rebuild_and_publish.py`.
+The publisher is restricted to `data-derived/nfl-games/**`, rebuilds from
+latest main after publication races and creates **no commit on a no-op**.
+The NFL Live Finality scope and targeted source-dataset runs skip this job;
+there is no new Scheduler target and no odds-only cadence change.
+
+The 10-minute polling/Spread+Total delta gate activation remains owned by
+#471. Source snapshots do not provide historically proven pregame timestamps.
+
 ## PlayerWeekFantasy
 
 The first product is:

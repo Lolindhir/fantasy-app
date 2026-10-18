@@ -19,6 +19,7 @@ param(
         "sleeper-trending",
         "fantasy-operations",
         "player-week-fantasy",
+        "nfl-games",
         "nfl-player-availability"
     )]
     [string]$Scope
@@ -46,6 +47,7 @@ function Get-GeneratedDataLabel {
         "^data-source/(market/roster-activity/sleeper|providers/sleeper/trending|market/_status/sleeper\.json)" { return "Sleeper trending" }
         "^fantasy-management/generated/operations/" { return "Fantasy Operations inputs" }
         "^data-derived/player-week-fantasy/" { return "PlayerWeekFantasy derived" }
+        "^data-derived/nfl-games/" { return "NFL Games derived" }
         "/PlayerWeekFantasy\.json$" { return "PlayerWeekFantasy" }
         "/MatchupProjections\.json$" { return "MatchupProjections" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }

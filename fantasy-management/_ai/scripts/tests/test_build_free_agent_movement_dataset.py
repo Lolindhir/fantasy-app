@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 import jsonschema
@@ -210,6 +211,39 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
         self.assertEqual(scoring, legacy)
         self.assertEqual(source["canonical_league_id"], "nfl-reise")
         self.assertEqual(source["season"], 2026)
+
+    def test_historical_baseline_chooses_latest_intraday_snapshot_at_cutoff(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = self.source("wr-market", "expert_consensus", "WR", "market", ["rank"])
+            base = "sources/wr-market/snapshots"
+            current = f"{base}/2026-08-16/190000Z-33333333/ranking.csv"
+            self.write_csv(root, current, [{"player_id": "fa-wr", "rank": 10}])
+            self.write_json(root, current.replace("ranking.csv", "metadata.json"), {
+                "fetched_at": "2026-08-16T19:00:00Z",
+            })
+            self.write_json(root, "sources/wr-market/latest.json", {
+                "snapshot_date": "2026-08-16", "ranking_file": current,
+            })
+            self.write_csv(root, f"{base}/2026-08-09/ranking.csv", [
+                {"player_id": "fa-wr", "rank": 90},
+            ])
+            for stamp, hash8, rank in (
+                ("090000", "11111111", 80),
+                ("180000", "22222222", 70),
+            ):
+                directory = f"{base}/2026-08-09/{stamp}Z-{hash8}"
+                self.write_csv(root, f"{directory}/ranking.csv", [
+                    {"player_id": "fa-wr", "rank": rank},
+                ])
+                self.write_json(root, f"{directory}/metadata.json", {
+                    "fetched_at": f"2026-08-09T{stamp[:2]}:{stamp[2:4]}:{stamp[4:]}Z",
+                })
+            history = MODULE._build_source_history(root, source, [7, 14], date(2026, 8, 16))
+            self.assertEqual(history.current_snapshot_date, date(2026, 8, 16))
+            self.assertEqual(history.baseline_dates[7], "2026-08-09")
+            self.assertEqual(history.baselines[7].rows[0]["rank"], "70")
+            self.assertIsNone(history.baselines[14])
 
     def test_current_repository_inputs_build_and_validate(self) -> None:
         root = SCRIPT_PATH.parents[3]

@@ -4,11 +4,17 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 
 import type { Transaction, TransactionParticipant } from '../../../core/models/transaction.models';
+import type { RawDraft } from '../../../core/models/draft.models';
+import type { FantasyTeam } from '../../../core/models/league.models';
+import { MatMenuModule } from '@angular/material/menu';
+import { DraftPickContextPopoverComponent } from '../draft-pick-context/draft-pick-context-popover';
+import type { DraftPickContext } from '../draft-pick-context/draft-pick-context.models';
 import type { Player } from '../../../core/models/player.models';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { TeamIdentityComponent } from '../team-identity/team-identity';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 import {
+  buildTransactionPickContext,
   getTransactionCardAssets,
   type TransactionAssetDirection,
   type TransactionCardAsset,
@@ -19,7 +25,7 @@ import {
 @Component({
   selector: 'app-transaction-card',
   standalone: true,
-  imports: [CommonModule, MatIconModule, PositionStylePipe, TeamIdentityComponent],
+  imports: [CommonModule, MatIconModule, MatMenuModule, PositionStylePipe, TeamIdentityComponent, DraftPickContextPopoverComponent],
   templateUrl: './transaction-card.html',
   styleUrl: './transaction-card.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -28,6 +34,8 @@ export class TransactionCardComponent {
   @Input({ required: true }) transaction!: Transaction;
   @Input({ required: true }) category!: TransactionDisplayCategory;
   @Input() density: TransactionDisplayDensity = 'compact';
+  @Input() drafts: readonly RawDraft[] = [];
+  @Input() teams: readonly FantasyTeam[] = [];
 
   private readonly dialog = inject(MatDialog);
   private readonly cache = new WeakMap<TransactionParticipant, {
@@ -78,6 +86,10 @@ export class TransactionCardComponent {
 
   hiddenAssets(participant: TransactionParticipant, direction: TransactionAssetDirection): number {
     return Math.max(0, this.getAssets(participant, direction).length - this.previewLimit);
+  }
+
+  pickContext(asset: TransactionCardAsset): DraftPickContext | null {
+    return buildTransactionPickContext(asset, this.drafts, this.teams);
   }
 
   toggleExpanded(): void {

@@ -34,6 +34,9 @@ jobs:
           python -m unittest tools.tests.test_git_transient -v
           python -m unittest tools.tests.test_workflow_publication_contracts -v
 
+      - name: Run semantic market line publishing gate tests
+        run: python -m unittest tools.tests.test_odds_change_gate -v
+
       - name: Run NFL data-source regression tests
         run: |
           python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
@@ -56,6 +59,12 @@ jobs:
           python -m unittest tools.tests.test_player_valuation -v
           python -m unittest tools.tests.test_player_valuation_shadow -v
 
+      - name: Run global NFL Game Shared Derived regression tests
+        run: |
+          python -m unittest tools.tests.test_nfl_games_derived -v
+          python -m unittest tools.tests.test_nfl_games_real_source_restore -v
+          python -m unittest tools.tests.test_nfl_games_publisher_contract -v
+
       - name: Run League history regression tests
         run: |
           python -m unittest discover -s tools/tests -p "test_league_transactions.py" -v
@@ -64,7 +73,7 @@ jobs:
           python -m unittest discover -s tools/tests -p "test_schedule_archive.py" -v
 
       - name: Run external source registry tests
-        run: python -m unittest tools.tests.test_external_source_registry tools.tests.test_external_source_sleeper_trending tools.tests.test_external_source_fantasycalc tools.tests.test_external_source_fantasypros_dynasty tools.tests.test_external_source_fantasypros_redraft tools.tests.test_external_source_cbs_sports_kicker tools.tests.test_external_source_cbs_sports_offense tools.tests.test_external_source_ffc_adp tools.tests.test_external_source_ffc_kicker_adp tools.tests.test_external_source_ffc_source_quality tools.tests.test_external_source_fftoday_kicker tools.tests.test_external_source_fftoday_offense -v
+        run: python -m unittest tools.tests.test_external_source_registry tools.tests.test_external_source_sleeper_trending tools.tests.test_external_source_fantasycalc tools.tests.test_external_source_fantasypros_dynasty tools.tests.test_external_source_fantasypros_redraft tools.tests.test_external_source_cbs_sports_kicker tools.tests.test_external_source_cbs_sports_offense tools.tests.test_external_source_ffc_adp tools.tests.test_external_source_ffc_kicker_adp tools.tests.test_external_source_ffc_source_quality tools.tests.test_external_source_fftoday_kicker tools.tests.test_external_source_fftoday_offense tools.tests.test_market_observations_preview tools.tests.test_market_observations_restore_preflight tools.tests.test_market_observations_full_restore tools.tests.test_market_observations_product -v
 
       - name: Run consumer read classification test
         run: python -m unittest tools.tests.test_consumer_read_classification -v

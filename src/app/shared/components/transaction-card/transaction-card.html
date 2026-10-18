@@ -4,6 +4,7 @@
   [class.transaction-card--compact]="density === 'compact'"
   [class.transaction-card--detail]="density === 'detail'"
   [class.transaction-card--trade]="category === 'trade'"
+  [class.transaction-card--comparison]="category === 'trade' && transaction.Participants.length === 2 && density !== 'detail'"
   [class.transaction-card--add]="category === 'add'"
   [class.transaction-card--cut]="category === 'cut'"
 >
@@ -12,36 +13,106 @@
       <mat-icon aria-hidden="true">{{ icon }}</mat-icon>
       {{ label }}
     </span>
-    @if (transaction.CreatedAtDate) {
-      <time [attr.datetime]="transaction.CreatedAtDate.toISOString()">
-        {{ transaction.CreatedAtDate | date: (density === 'mini' ? 'd MMM' : 'HH:mm') }}
-      </time>
-    }
-  </header>
-  <div class="transaction-card__participants">
-    @for (participant of transaction.Participants; track participant.RosterID) {
-      <section class="transaction-card__participant">
-        <div class="transaction-card__team">
-          @if (participant.Team; as team) {
-            <app-team-identity [team]="team" size="small" [elements]="['logo','name']" />
-          } @else {
-            <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
-          }
-          @if (category === 'trade') {
-            <span class="transaction-card__direction">Receives</span>
-          }
-        </div>
-        <div class="transaction-card__assets">
-          @for (asset of visibleAssets(participant, 'incoming'); track asset.key) {
-            <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'incoming' }" />
-          }
-          @if (hiddenAssets(participant, 'incoming') > 0) {
-            <button type="button" class="transaction-card__more" (click)="toggleExpanded()">
-              +{{ hiddenAssets(participant, 'incoming') }} more
-            </button>
-          }
 
-          @if (category !== 'trade') {
+    <span class="transaction-card__header-context">
+      @if (density !== 'compact' && transaction.CreatedAtDate) {
+        <time [attr.datetime]="transaction.CreatedAtDate.toISOString()">
+          {{ transaction.CreatedAtDate | date: 'd MMM' }}
+        </time>
+      }
+      @if (category !== 'trade' && transaction.Participants.length === 1) {
+        @if (transaction.Participants[0].Team; as team) {
+          <app-team-identity
+            class="transaction-card__header-team"
+            [team]="team"
+            size="small"
+            [elements]="['logo', 'name']"
+            align="end"
+          />
+        } @else {
+          <span class="transaction-card__unknown-team">Team {{ transaction.Participants[0].RosterID }}</span>
+        }
+      }
+    </span>
+  </header>
+
+  <div class="transaction-card__participants">
+    @for (participant of transaction.Participants; track participant.RosterID; let first = $first) {
+      <section class="transaction-card__participant">
+        @if (category === 'trade' && transaction.Participants.length === 2 && density !== 'detail') {
+          <div class="transaction-card__compare-team" [class.transaction-card__compare-team--right]="!first">
+            @if (participant.Team; as team) {
+              <app-team-identity
+                [team]="team"
+                size="small"
+                [elements]="['logo', 'name']"
+                [align]="first ? 'start' : 'end'"
+              />
+            } @else {
+              <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
+            }
+          </div>
+          <div class="transaction-card__assets transaction-card__compare-assets">
+            @for (asset of visibleAssets(participant, 'incoming'); track asset.key) {
+              <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'incoming' }" />
+            }
+            @if (hiddenAssets(participant, 'incoming') > 0) {
+              <button type="button" class="transaction-card__more" (click)="toggleExpanded()">
+                +{{ hiddenAssets(participant, 'incoming') }} more
+              </button>
+            }
+            @if (getAssets(participant, 'incoming').length === 0) {
+              <span class="transaction-card__empty">No assets recorded</span>
+            }
+          </div>
+        } @else if (category === 'trade') {
+          <div class="transaction-card__trade-leading">
+            <div class="transaction-card__trade-first-asset">
+              @if (visibleAssets(participant, 'incoming')[0]; as firstAsset) {
+                <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: firstAsset, direction: 'incoming' }" />
+              } @else {
+                <span class="transaction-card__empty">No assets recorded</span>
+              }
+            </div>
+            <div class="transaction-card__team">
+              @if (participant.Team; as team) {
+                <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" align="end" />
+              } @else {
+                <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
+              }
+            </div>
+          </div>
+          @if (visibleAssets(participant, 'incoming').length > 1 || hiddenAssets(participant, 'incoming') > 0) {
+            <div class="transaction-card__assets transaction-card__trade-remainder">
+              @for (asset of visibleAssets(participant, 'incoming').slice(1); track asset.key) {
+                <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'incoming' }" />
+              }
+              @if (hiddenAssets(participant, 'incoming') > 0) {
+                <button type="button" class="transaction-card__more" (click)="toggleExpanded()">
+                  +{{ hiddenAssets(participant, 'incoming') }} more
+                </button>
+              }
+            </div>
+          }
+        } @else {
+          @if (transaction.Participants.length > 1) {
+            <div class="transaction-card__team">
+              @if (participant.Team; as team) {
+                <app-team-identity [team]="team" size="small" [elements]="['logo', 'name']" align="end" />
+              } @else {
+                <span class="transaction-card__unknown-team">Team {{ participant.RosterID }}</span>
+              }
+            </div>
+          }
+          <div class="transaction-card__assets">
+            @for (asset of visibleAssets(participant, 'incoming'); track asset.key) {
+              <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'incoming' }" />
+            }
+            @if (hiddenAssets(participant, 'incoming') > 0) {
+              <button type="button" class="transaction-card__more" (click)="toggleExpanded()">
+                +{{ hiddenAssets(participant, 'incoming') }} more
+              </button>
+            }
             @for (asset of visibleAssets(participant, 'outgoing'); track asset.key) {
               <ng-container *ngTemplateOutlet="assetLine; context: { $implicit: asset, direction: 'outgoing' }" />
             }
@@ -50,15 +121,16 @@
                 +{{ hiddenAssets(participant, 'outgoing') }} more
               </button>
             }
-          }
-          @if (getAssets(participant, 'incoming').length === 0 &&
-               (category === 'trade' || getAssets(participant, 'outgoing').length === 0)) {
-            <span class="transaction-card__empty">No assets recorded</span>
-          }
-        </div>
+            @if (getAssets(participant, 'incoming').length === 0 &&
+                 getAssets(participant, 'outgoing').length === 0) {
+              <span class="transaction-card__empty">No assets recorded</span>
+            }
+          </div>
+        }
       </section>
     }
   </div>
+
   @if (expanded && density !== 'detail') {
     <button type="button" class="transaction-card__collapse" (click)="toggleExpanded()">Show less</button>
   }
@@ -68,10 +140,17 @@
 </article>
 
 <ng-template #assetLine let-asset let-direction="direction">
-  <div class="transaction-card__asset-line" [class.transaction-card__asset-line--outgoing]="direction === 'outgoing'">
-    <mat-icon class="transaction-card__movement" aria-hidden="true">
-      {{ direction === 'incoming' ? 'add' : 'remove' }}
-    </mat-icon>
+  <div
+    class="transaction-card__asset-line"
+    [class.transaction-card__asset-line--outgoing]="direction === 'outgoing'"
+    [class.transaction-card__asset-line--pick]="asset.kind === 'pick'"
+  >
+    @if (category !== 'trade') {
+      <mat-icon class="transaction-card__movement" aria-hidden="true">
+        {{ direction === 'incoming' ? 'add' : 'remove' }}
+      </mat-icon>
+    }
+
     @if (asset.kind === 'player') {
       <button
         type="button"
@@ -86,23 +165,46 @@
           } @else {
             <mat-icon aria-hidden="true">person</mat-icon>
           }
-          @if (asset.nflTeamLogo) {
-            <img class="transaction-card__nfl-logo" [src]="asset.nflTeamLogo" alt="" loading="lazy" decoding="async" />
-          }
         </span>
         <span class="transaction-card__asset-copy">
           <strong>{{ asset.label }}</strong>
-          <small>{{ asset.secondary }}</small>
+          <span class="transaction-card__player-meta">
+            @if (asset.position) {
+              <b class="transaction-card__position" [ngStyle]="asset.position | positionStyle">{{ asset.position }}</b>
+            }
+            @if (asset.nflTeamLogo) {
+              <img class="transaction-card__nfl-logo" [src]="asset.nflTeamLogo" alt="" loading="lazy" decoding="async" />
+            }
+            @if (asset.nflTeamAbv) {
+              <small>{{ asset.nflTeamAbv }}</small>
+            }
+          </span>
         </span>
       </button>
     } @else {
-      <span class="transaction-card__pick" [title]="'Original: ' + asset.originalOwner">
-        <b class="transaction-card__pick-round">R{{ asset.pickRound }}</b>
-        <span class="transaction-card__asset-copy">
-          <strong>{{ asset.label }}</strong>
-          <small>{{ asset.secondary }}</small>
+      @if (pickContext(asset); as context) {
+        <button type="button" class="transaction-card__pick transaction-card__pick--interactive"
+          [matMenuTriggerFor]="pickInfoMenu" [attr.aria-label]="'Open ' + asset.label + ' draft pick details'">
+          <ng-container *ngTemplateOutlet="pickVisual; context: { $implicit: asset }" />
+        </button>
+        <mat-menu #pickInfoMenu="matMenu" class="draft-pick-trigger-menu">
+          <app-draft-pick-context-popover [context]="context" />
+        </mat-menu>
+      } @else {
+        <span class="transaction-card__pick">
+          <ng-container *ngTemplateOutlet="pickVisual; context: { $implicit: asset }" />
         </span>
-      </span>
+      }
     }
   </div>
+</ng-template>
+
+<ng-template #pickVisual let-asset>
+  <span class="transaction-card__pick-shield" aria-hidden="true">
+    <small>RD</small>
+    <strong>{{ asset.pickRound }}</strong>
+  </span>
+  <span class="transaction-card__asset-copy">
+    <strong>{{ asset.label }}</strong>
+  </span>
 </ng-template>
