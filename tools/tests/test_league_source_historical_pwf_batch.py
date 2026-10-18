@@ -165,7 +165,10 @@ class RealHistoricalPWFBatchTests(unittest.TestCase):
             self.assertFalse(list(root.rglob("*.json")),
                              "Read-only repaired-source PWF preflight may not persist data")
 
-    @unittest.skipUnless(True, "PR #1060 complete historical preflight; revert to opt-in before merge")
+    @unittest.skipUnless(
+        os.environ.get("RUN_FULL_HISTORICAL_PWF_AUDIT") == "1",
+        "Full historical PWF generation is expensive; run with RUN_FULL_HISTORICAL_PWF_AUDIT=1",
+    )
     def test_every_canonically_scored_historical_week_preflights_without_writes(self):
         """Real source-only inventory: a missing or stale historical partition must not hide."""
         expected = discover_scored_weeks(REPO_ROOT, league_id="nfl-reise")
