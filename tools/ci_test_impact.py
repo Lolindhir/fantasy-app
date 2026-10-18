@@ -350,7 +350,7 @@ def emit_route_outputs(result: dict) -> None:
         raise ValueError("Missing GITHUB_OUTPUT; cannot publish safe routing")
     with open(dest, "a", encoding="utf-8") as out:
         for key, value in flags.items():
-            out.write(f"{key}={value}\\n")
+            out.write(f"{key}={value}\n")
     print("CP3 selected job flags:", flags, flush=True)
 
 
