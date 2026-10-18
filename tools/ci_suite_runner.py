@@ -8,6 +8,7 @@ are retained in their original Fast jobs and publication workflows.
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 
@@ -54,7 +55,15 @@ def main() -> int:
         # isolated. No shell interpolation or source data writes.
         cmd = [sys.executable, "-m", "unittest", "discover", "-s",
                "tools/tests", "-p", path.rsplit("/", 1)[1], "-v"]
-        result = subprocess.run(cmd, cwd=ci.ROOT, check=False)
+        # Existing repository modules historically rely on the tools package
+        # directory appearing on sys.path because earlier unittest modules
+        # modified it as a global side-effect. Make that prerequisite explicit
+        # for every isolated subprocess, irrespective of execution order.
+        env = os.environ.copy()
+        env["PYTHONPATH"] = os.pathsep.join(
+            [str(ci.ROOT / "tools"), str(ci.ROOT), env.get("PYTHONPATH", "")]
+        )
+        result = subprocess.run(cmd, cwd=ci.ROOT, env=env, check=False)
         if result.returncode:
             failed.append((path, result.returncode))
     if failed:
