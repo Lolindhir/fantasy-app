@@ -986,6 +986,10 @@ consumerReadClassification:
     mention-only: the token appears in a comment or docstring, not in an executed read
     legacy-read-model-pending: a base fact is still read from a published read model; open migration or review item
   consumers:
+    tools/ci_test_impact.py:
+      reads:
+        network: repository-infrastructure
+      note: 'CP1 GitHub PR changed-file pagination via read-only REST GET. No fantasy provider reads, source data or publication rights (#1095).'
     fantasy-management/_ai/scripts/build_kicker_weekly_research_plan.py:
       reads:
         provider:cbssports: display-link-construction
