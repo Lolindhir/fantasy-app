@@ -522,7 +522,10 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
                 [(year, week) for year, week, _ in unverified], [(2025, 6)],
                 "Unexpected weeks lack verified PWF parity",
             )
-            self.assertEqual(twp["ReadyCount"], len(targets) - 1)
+            self.assertEqual(twp["ReadyCount"], len(targets))
+            self.assertEqual(twp["BlockedCount"], 0)
+            self.assertEqual(unverified[0][2]["State"], "accepted-divergence")
+            self.assertEqual(unverified[0][2]["AcceptedDivergences"], 1)
             print(
                 "#1061 downstream acceptance classification: 39/39 PWF source "
                 "builds pass; TWP 38/39 strictly verified, with sole known "
