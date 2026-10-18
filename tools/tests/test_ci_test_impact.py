@@ -267,6 +267,61 @@ jobs:
         self.assertIn("market-restore", result["selected"])
         self.assertEqual(set(ci.GROUPS), set(result["selected"]))
 
+
+    def test_measured_slow_repository_integrations_must_remain_deep(self):
+        # Run #39149258131: the ten tests below collectively cost > 6 min
+        # within the 8m41s sequential Fast Python job. Classify by semantic
+        # source dependencies, never silently remove them from CI coverage.
+        expected = {
+          "test_market_observations_preview.py": [
+                    "market-restore"
+          ],
+          "test_nfl_source_historical_identity_coverage.py": [
+                    "nfl-identity-replay"
+          ],
+          "test_nfl_source_projection_intervals.py": [
+                    "nfl-identity-replay"
+          ],
+          "test_nfl_source_historical_weekly_roster_identity.py": [
+                    "nfl-identity-replay",
+                    "league-pwf-twp"
+          ],
+          "test_nfl_source_app_espn_identity_bridge_repository.py": [
+                    "nfl-identity-replay",
+                    "consumer-restore"
+          ],
+          "test_nfl_source_current_adjudication_builder.py": [
+                    "nfl-identity-replay"
+          ],
+          "test_nfl_source_placeholder_gsis_upgrade.py": [
+                    "nfl-identity-replay"
+          ],
+          "test_nfl_source_projection_team_v4_2025.py": [
+                    "nfl-identity-replay"
+          ],
+          "test_player_valuation.py": [
+                    "league-pwf-twp",
+                    "consumer-restore"
+          ],
+          "test_nfl_source_projection_v4.py": [
+                    "nfl-identity-replay"
+          ]
+}
+        registered = {entry["path"].rsplit("/", 1)[-1]: entry
+                      for entry in ci.read_inventory()["tests"]}
+        from tools import ci_suite_runner
+        fast_paths = set(ci_suite_runner.modules_for_lane(ci.read_inventory(), "fast"))
+        deep_paths = set()
+        for group in ci.GROUPS:
+            deep_paths.update(ci_suite_runner.modules_for_lane(ci.read_inventory(), group))
+        for name, groups in expected.items():
+            with self.subTest(test=name):
+                row = registered[name]
+                self.assertEqual("deep", row["tier"])
+                self.assertEqual(set(groups), set(row["deepGroups"]))
+                self.assertNotIn(row["path"], fast_paths)
+                self.assertIn(row["path"], deep_paths)
+
     def test_full_registry_python_coverage_is_partitioned(self):
         from tools import ci_suite_runner as runner
         inv = ci.read_inventory()
