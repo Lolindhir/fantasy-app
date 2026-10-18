@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -23,20 +22,6 @@ from team_week_performance import (
 )
 from team_week_performance_sources import load_verified_week_inputs, _league_source
 from player_scoring_reconciliation import reconcile
-
-PARITY_TOLERANCE = Decimal("0.010001")
-
-
-def _value(value: Any, label: str) -> Decimal:
-    if value is None or isinstance(value, bool):
-        raise ValueError(f"Missing or invalid {label}")
-    try:
-        number = Decimal(str(value))
-    except (InvalidOperation, ValueError) as exc:
-        raise ValueError(f"Invalid {label}") from exc
-    if not number.is_finite():
-        raise ValueError(f"Non-finite {label}")
-    return number
 
 
 def verify_pwf_actual_parity(
@@ -65,6 +50,7 @@ def verify_pwf_actual_parity(
     if report["AcceptedDivergences"]:
         result["AcceptedDivergences"] = report["AcceptedDivergences"]
     return result
+
 
 def _checked_week(
     repo_root: Path, league_id: str, season: int, week: int, *,
