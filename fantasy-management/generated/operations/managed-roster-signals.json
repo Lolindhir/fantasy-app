@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-signals",
-  "generated_at": "2026-10-18T10:06:31Z",
-  "input_fingerprint": "da7438015b4bba8537221be526a0f52b41166f6e7a4db322c7716be553ff1bf2",
+  "generated_at": "2026-10-18T10:16:53Z",
+  "input_fingerprint": "ee1f5fd0817a8f3350583566120ac7747fe800d373d7df676245ff0e3af06b49",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants",
@@ -13,8 +13,8 @@
     {
       "id": "league_display",
       "path": "public/data/League.json",
-      "content_sha256": "83b9f97d6a36ca2a673ef2fabeab95d8651d752c40723a1c8353479779cbc918",
-      "source_timestamp": "2026-10-18T10:06:31Z"
+      "content_sha256": "fb5b62580751e0aca55563d348cb462bb7c644a9d14a061003af5f63568c8e75",
+      "source_timestamp": "2026-10-18T10:16:53Z"
     },
     {
       "id": "canonical_league_manifest",
@@ -37,7 +37,7 @@
     {
       "id": "canonical_league_rosters",
       "path": "data-source/leagues/nfl-reise/seasons/2026/rosters.json",
-      "content_sha256": "d01a0a2e3124378299662a37600ccb785ed665e11541ac65efb7211ab259cd96",
+      "content_sha256": "7e31b6f7ea1b42d9d9c731377b0b0f758ce12a6e55f8f8d3b35c2c05a0ea306c",
       "source_timestamp": null
     },
     {
@@ -115,8 +115,8 @@
     {
       "id": "timestamps",
       "path": "public/data/Timestamps.json",
-      "content_sha256": "6d6de2bbaa392014623ac8117ddd5515fbd0f991c7fc5b10b4812f1d19dc4ce9",
-      "source_timestamp": "2026-10-18T10:06:31Z"
+      "content_sha256": "38d7b18f0c1f881228a2590a15e1c1b0252534231a1afc2c21a2ae0671b3aeed",
+      "source_timestamp": "2026-10-18T10:16:53Z"
     },
     {
       "id": "operations_source_catalog",
@@ -7941,6 +7941,253 @@
       }
     },
     {
+      "player_id": "13274",
+      "name": "Germie Bernard",
+      "position": "WR",
+      "nfl_team": "PIT",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_starter": false,
+      "app_data": {
+        "status": "Active",
+        "age": 22.9,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 1668356,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "source_signals": {
+        "fantasypros-dynasty-superflex-ppr": {
+          "source_id": "fantasypros-dynasty-superflex-ppr",
+          "source_kind": "expert_consensus",
+          "provider": "fantasypros",
+          "dataset_id": "dynasty-superflex-ppr",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "signals": {
+            "overall_rank": 169,
+            "percentile": 60.19,
+            "position_rank": "WR69",
+            "tier": "11"
+          },
+          "format_context": {
+            "horizon": "dynasty",
+            "scoring": "ppr",
+            "quarterback_mode": "superflex"
+          }
+        },
+        "fantasycalc-dynasty-superflex-ppr-8-team": {
+          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+          "source_kind": "market_value",
+          "provider": "fantasycalc",
+          "dataset_id": "dynasty-superflex-ppr-8-team",
+          "applicable": true,
+          "coverage_status": "listed",
+          "listed": true,
+          "join_method": "sleeper_id",
+          "signals": {
+            "overall_rank": 116,
+            "percentile": 72.68,
+            "position_rank": 40,
+            "tier": "25",
+            "value": 1806,
+            "trend_30_day": 580,
+            "roster_percent": 0.9787,
+            "trade_frequency": 0.0116
+          },
+          "format_context": {
+            "horizon": "dynasty",
+            "scoring": "ppr",
+            "quarterback_mode": "superflex",
+            "team_count": 8
+          }
+        },
+        "ffc-redraft-2qb-10-team": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "source_kind": "adp",
+          "provider": "fantasy-football-calculator",
+          "dataset_id": "redraft-2qb-10-team",
+          "applicable": true,
+          "coverage_status": "not_listed",
+          "listed": false,
+          "join_method": "missing",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null
+          },
+          "format_context": {
+            "horizon": "redraft",
+            "scoring": "source_default",
+            "quarterback_mode": "two_qb",
+            "team_count": 10,
+            "actual_league_team_count": 6
+          }
+        },
+        "fftoday-redraft-kicker-preseason": {
+          "source_id": "fftoday-redraft-kicker-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-kicker-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "bye": null,
+            "fgm": null,
+            "fga": null,
+            "fg_pct": null,
+            "epm": null,
+            "epa": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "K",
+            "scoring": "provider_default"
+          }
+        },
+        "cbs-sports-redraft-kicker-preseason": {
+          "source_id": "cbs-sports-redraft-kicker-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-kicker-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "games_played": null,
+            "fgm": null,
+            "fga": null,
+            "longest_field_goal": null,
+            "fg_1_19_made": null,
+            "fg_1_19_attempts": null,
+            "fg_20_29_made": null,
+            "fg_20_29_attempts": null,
+            "fg_30_39_made": null,
+            "fg_30_39_attempts": null,
+            "fg_40_49_made": null,
+            "fg_40_49_attempts": null,
+            "fg_50_plus_made": null,
+            "fg_50_plus_attempts": null,
+            "xpm": null,
+            "xpa": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "K",
+            "scoring": "provider_default",
+            "source_format": "nonppr"
+          }
+        }
+      },
+      "market": {
+        "fantasypros": {
+          "source_id": "fantasypros-dynasty-superflex-ppr",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "normalized_name_position",
+          "overall_rank": 169,
+          "percentile": 60.19,
+          "position_rank": "WR69",
+          "tier": "11"
+        },
+        "fantasycalc": {
+          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+          "coverage_status": "listed",
+          "applicable": true,
+          "listed": true,
+          "join_method": "sleeper_id",
+          "overall_rank": 116,
+          "percentile": 72.68,
+          "position_rank": 40,
+          "tier": "25",
+          "value": 1806,
+          "trend_30_day": 580,
+          "roster_percent": 0.9787,
+          "trade_frequency": 0.0116
+        }
+      },
+      "redraft_adp": {
+        "primary_format": null,
+        "primary_source_id": null,
+        "primary_applicability": "not_applicable",
+        "primary_listed": false,
+        "primary": null,
+        "formats": {
+          "two_qb_10_team": {
+            "source_id": "ffc-redraft-2qb-10-team",
+            "coverage_status": "not_listed",
+            "applicable": true,
+            "listed": false,
+            "join_method": "missing",
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null
+          }
+        },
+        "format_gap": null,
+        "two_qb_10_team": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "coverage_status": "not_listed",
+          "applicable": true,
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null
+        }
+      },
+      "external_research": {
+        "injury_priority": "routine",
+        "role_opportunity_priority": "routine",
+        "reasons": [
+          "role_opportunity_requires_qualitative_context"
+        ]
+      }
+    },
+    {
       "player_id": "13285",
       "name": "Malachi Fields",
       "position": "WR",
@@ -8424,254 +8671,6 @@
           "sample_total_drafts": 187,
           "sample_start_date": "2026-09-08",
           "sample_end_date": "2026-10-08"
-        }
-      },
-      "external_research": {
-        "injury_priority": "high",
-        "role_opportunity_priority": "routine",
-        "reasons": [
-          "current_structured_injury_signal_requires_verification",
-          "role_opportunity_requires_qualitative_context"
-        ]
-      }
-    },
-    {
-      "player_id": "13296",
-      "name": "Caleb Douglas",
-      "position": "WR",
-      "nfl_team": "MIA",
-      "roster_sections": [
-        "roster"
-      ],
-      "is_starter": false,
-      "app_data": {
-        "status": "Active",
-        "age": 23.1,
-        "years_experience": 1,
-        "salary": 0,
-        "salary_projected": 2279113,
-        "is_free_agent": false
-      },
-      "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Out",
-        "description": "Ankle",
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "high",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "source_signals": {
-        "fantasypros-dynasty-superflex-ppr": {
-          "source_id": "fantasypros-dynasty-superflex-ppr",
-          "source_kind": "expert_consensus",
-          "provider": "fantasypros",
-          "dataset_id": "dynasty-superflex-ppr",
-          "applicable": true,
-          "coverage_status": "listed",
-          "listed": true,
-          "join_method": "normalized_name_position",
-          "signals": {
-            "overall_rank": 153,
-            "percentile": 63.98,
-            "position_rank": "WR64",
-            "tier": "10"
-          },
-          "format_context": {
-            "horizon": "dynasty",
-            "scoring": "ppr",
-            "quarterback_mode": "superflex"
-          }
-        },
-        "fantasycalc-dynasty-superflex-ppr-8-team": {
-          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
-          "source_kind": "market_value",
-          "provider": "fantasycalc",
-          "dataset_id": "dynasty-superflex-ppr-8-team",
-          "applicable": true,
-          "coverage_status": "listed",
-          "listed": true,
-          "join_method": "sleeper_id",
-          "signals": {
-            "overall_rank": 186,
-            "percentile": 56.06,
-            "position_rank": 63,
-            "tier": "29",
-            "value": 1220,
-            "trend_30_day": -325,
-            "roster_percent": 0.9813,
-            "trade_frequency": 0.0073
-          },
-          "format_context": {
-            "horizon": "dynasty",
-            "scoring": "ppr",
-            "quarterback_mode": "superflex",
-            "team_count": 8
-          }
-        },
-        "ffc-redraft-2qb-10-team": {
-          "source_id": "ffc-redraft-2qb-10-team",
-          "source_kind": "adp",
-          "provider": "fantasy-football-calculator",
-          "dataset_id": "redraft-2qb-10-team",
-          "applicable": true,
-          "coverage_status": "not_listed",
-          "listed": false,
-          "join_method": "missing",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "adp": null,
-            "times_drafted": null,
-            "stdev": null,
-            "sample_total_drafts": null,
-            "sample_start_date": null,
-            "sample_end_date": null
-          },
-          "format_context": {
-            "horizon": "redraft",
-            "scoring": "source_default",
-            "quarterback_mode": "two_qb",
-            "team_count": 10,
-            "actual_league_team_count": 6
-          }
-        },
-        "fftoday-redraft-kicker-preseason": {
-          "source_id": "fftoday-redraft-kicker-preseason",
-          "source_kind": "projection",
-          "provider": "fftoday",
-          "dataset_id": "redraft-kicker-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "bye": null,
-            "fgm": null,
-            "fga": null,
-            "fg_pct": null,
-            "epm": null,
-            "epa": null,
-            "projected_fantasy_points": null,
-            "source_updated_date": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "K",
-            "scoring": "provider_default"
-          }
-        },
-        "cbs-sports-redraft-kicker-preseason": {
-          "source_id": "cbs-sports-redraft-kicker-preseason",
-          "source_kind": "projection",
-          "provider": "cbs-sports",
-          "dataset_id": "redraft-kicker-preseason",
-          "applicable": false,
-          "coverage_status": "not_applicable",
-          "listed": false,
-          "join_method": "not_applicable",
-          "signals": {
-            "rank": null,
-            "percentile": null,
-            "games_played": null,
-            "fgm": null,
-            "fga": null,
-            "longest_field_goal": null,
-            "fg_1_19_made": null,
-            "fg_1_19_attempts": null,
-            "fg_20_29_made": null,
-            "fg_20_29_attempts": null,
-            "fg_30_39_made": null,
-            "fg_30_39_attempts": null,
-            "fg_40_49_made": null,
-            "fg_40_49_attempts": null,
-            "fg_50_plus_made": null,
-            "fg_50_plus_attempts": null,
-            "xpm": null,
-            "xpa": null,
-            "projected_fantasy_points": null,
-            "projected_fantasy_points_per_game": null
-          },
-          "format_context": {
-            "horizon": "season",
-            "position_scope": "K",
-            "scoring": "provider_default",
-            "source_format": "nonppr"
-          }
-        }
-      },
-      "market": {
-        "fantasypros": {
-          "source_id": "fantasypros-dynasty-superflex-ppr",
-          "coverage_status": "listed",
-          "applicable": true,
-          "listed": true,
-          "join_method": "normalized_name_position",
-          "overall_rank": 153,
-          "percentile": 63.98,
-          "position_rank": "WR64",
-          "tier": "10"
-        },
-        "fantasycalc": {
-          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
-          "coverage_status": "listed",
-          "applicable": true,
-          "listed": true,
-          "join_method": "sleeper_id",
-          "overall_rank": 186,
-          "percentile": 56.06,
-          "position_rank": 63,
-          "tier": "29",
-          "value": 1220,
-          "trend_30_day": -325,
-          "roster_percent": 0.9813,
-          "trade_frequency": 0.0073
-        }
-      },
-      "redraft_adp": {
-        "primary_format": null,
-        "primary_source_id": null,
-        "primary_applicability": "not_applicable",
-        "primary_listed": false,
-        "primary": null,
-        "formats": {
-          "two_qb_10_team": {
-            "source_id": "ffc-redraft-2qb-10-team",
-            "coverage_status": "not_listed",
-            "applicable": true,
-            "listed": false,
-            "join_method": "missing",
-            "rank": null,
-            "percentile": null,
-            "adp": null,
-            "times_drafted": null,
-            "stdev": null,
-            "sample_total_drafts": null,
-            "sample_start_date": null,
-            "sample_end_date": null
-          }
-        },
-        "format_gap": null,
-        "two_qb_10_team": {
-          "source_id": "ffc-redraft-2qb-10-team",
-          "coverage_status": "not_listed",
-          "applicable": true,
-          "listed": false,
-          "join_method": "missing",
-          "rank": null,
-          "percentile": null,
-          "adp": null,
-          "times_drafted": null,
-          "stdev": null,
-          "sample_total_drafts": null,
-          "sample_start_date": null,
-          "sample_end_date": null
         }
       },
       "external_research": {
@@ -9450,7 +9449,7 @@
     "coverage": {
       "managed_roster_ids": 37,
       "resolved_players": 37,
-      "players_with_current_injury_signal": 14,
+      "players_with_current_injury_signal": 13,
       "primary_adp_applicable": 5,
       "primary_adp_listed": 4,
       "sources": {

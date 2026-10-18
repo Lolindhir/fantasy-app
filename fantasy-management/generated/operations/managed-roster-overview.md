@@ -1,6 +1,6 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-10-18T10:06:31Z`  
+Generated: `2026-10-18T10:16:53Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
@@ -49,12 +49,12 @@ Taxi phase: `locked`
 | WR | Adonai Mitchell | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | WR | Alec Pierce | active | backup | hold | coverage_reserve | positional_coverage | no | no |
 | WR | Antonio Williams | taxi | prospect | hold | development | development | no | no |
-| WR | Caleb Douglas | active | prospect | strong_hold | development | development | no | no |
 | WR | Chris Bell | taxi | prospect | hold | development | development | no | no |
 | WR | Davante Adams | active | starter_rotation | hold | starter_core | fixed_starter_pool | no | no |
 | WR | De'Zhaun Stribling | reserve | prospect | strong_hold | development | development | no | no |
 | WR | Dontayvion Wicks | active | backup | hold | coverage_reserve | positional_coverage | yes | no |
 | WR | George Pickens | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Germie Bernard | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | WR | Jakobi Meyers | active | backup | hold | coverage_reserve | positional_coverage | no | no |
 | WR | Jaylen Waddle | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Ladd McConkey | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
