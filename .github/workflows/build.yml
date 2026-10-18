@@ -11,9 +11,9 @@ permissions:
   pull-requests: read  # CP1 advisory-only changed-file inventory
 
 jobs:
-  # CP2 additive lanes: run independently and in parallel. The original
-  # sequential 'build' job below remains a mandatory, unmodified full gate.
-  # Never gate/skip a Deep suite based on these Fast-lane results in CP2.
+  # CP3: existing CP2 Fast jobs stay unconditional. The historical full build
+  # runs on all unknown/CI-critical/all-Deep cases and manual audits; selected
+  # Deep suites and the always-present merge gate protect ordinary PRs.
   fast-contracts:
     name: CI Fast • Contracts & Publication Safety
     runs-on: ubuntu-latest
@@ -120,7 +120,140 @@ jobs:
         shell: pwsh
         run: ./deploy_action.ps1
 
+  # CP3 fail-closed selector: determines ALL four Deep gates unless a complete,
+  # validated PR diff and registered dependency closure prove a narrower set.
+  selector:
+    name: CI • Deep Selection
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      nfl: ${{ steps.route.outputs.nfl }}
+      league: ${{ steps.route.outputs.league }}
+      market: ${{ steps.route.outputs.market }}
+      consumer: ${{ steps.route.outputs.consumer }}
+      full: ${{ steps.route.outputs.full }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install YAML dependency
+        run: python -m pip install "PyYAML>=6,<7"
+      - name: Validate complete PR diff and select Deep lanes
+        id: route
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/ci_test_impact.py route
+
+  # Supplemental full coverage of all registered Fast Python modules previously
+  # run by the legacy build; the four CP2 Fast jobs remain unchanged.
+  fast-python:
+    name: CI Fast • All Python Unit Suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install YAML dependency
+        run: python -m pip install "PyYAML>=6,<7"
+      - name: Run all registered previously mandatory Fast Python modules
+        run: python tools/ci_suite_runner.py fast
+
+  deep-nfl:
+    name: CI Deep • NFL Identity Replay
+    needs: selector
+    if: ${{ needs.selector.outputs.nfl == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python tools/ci_suite_runner.py nfl-identity-replay
+
+  deep-league:
+    name: CI Deep • League PWF & TWP
+    needs: selector
+    if: ${{ needs.selector.outputs.league == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python tools/ci_suite_runner.py league-pwf-twp
+
+  deep-market:
+    name: CI Deep • Market Restore
+    needs: selector
+    if: ${{ needs.selector.outputs.market == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python tools/ci_suite_runner.py market-restore
+
+  deep-consumer:
+    name: CI Deep • Consumer Restore
+    needs: selector
+    if: ${{ needs.selector.outputs.consumer == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python tools/ci_suite_runner.py consumer-restore
+
+  # Stable check present on every PR, regardless of selected/omitted Deep jobs.
+  merge-gate:
+    name: CI / Merge Gate
+    if: ${{ always() }}
+    needs: [selector, fast-contracts, fast-source, fast-scheduler, fast-angular, fast-python, deep-nfl, deep-league, deep-market, deep-consumer, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Validate every selected Deep and mandatory Fast result
+        env:
+          CI_NEEDS_JSON: ${{ toJSON(needs) }}
+        run: python tools/ci_merge_gate.py
+
   build:
+    needs: selector
+    if: ${{ needs.selector.outputs.full == 'true' }}
     runs-on: ubuntu-latest
 
     steps:
