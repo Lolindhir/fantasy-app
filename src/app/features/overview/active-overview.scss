@@ -9,15 +9,14 @@
   display: none;
 }
 
-// #965: restore the original compact move-card hierarchy without reviving #500's
-// superseded Season Pulse, standings or leaders cards.
+// #965: retain Recent Moves as the only active-season snapshot card.
+// #200 CP3: use the shared TransactionCard instead of duplicating move markup.
 .recent-moves-card {
   margin: 0 5px 12px;
-  padding: 14px;
-  border: 1px solid rgba(148, 163, 184, 0.35);
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .recent-moves-card .active-card-heading {
@@ -44,6 +43,7 @@
 
 .recent-moves-heading {
   align-items: center;
+  padding: 0 2px 4px;
 }
 
 .recent-moves-link {
@@ -58,93 +58,8 @@
 
 .recent-move-list {
   display: grid;
-  margin-top: 8px;
-}
-
-.recent-move-row {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
-  gap: 10px;
-  align-items: start;
-  padding: 9px 0;
-  border-top: 1px solid rgba(148, 163, 184, 0.2);
-}
-
-.recent-move-row:first-child {
-  border-top: 0;
-}
-
-.recent-move-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.recent-move-icon--trade {
-  background: #ede9fe;
-  color: #6d28d9;
-}
-
-.recent-move-icon--add {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.recent-move-icon--cut {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-.recent-move-icon mat-icon {
-  width: 20px;
-  height: 20px;
-  font-size: 20px;
-}
-
-.recent-move-content {
-  min-width: 0;
-}
-
-.recent-move-title-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
   gap: 8px;
-}
-
-.recent-move-type {
-  font-size: 0.84rem;
-  font-weight: 800;
-}
-
-.recent-move-date {
-  flex: 0 0 auto;
-  color: #94a3b8;
-  font-size: 0.72rem;
-  white-space: nowrap;
-}
-
-.recent-move-teams {
-  margin-top: 1px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 0.9rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.recent-move-summary {
-  margin-top: 2px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #64748b;
-  font-size: 0.78rem;
-  white-space: nowrap;
+  margin-top: 8px;
 }
 
 .recent-moves-card .active-empty-state {
