@@ -163,6 +163,24 @@ class PlayerScoringReconciliationTests(unittest.TestCase):
 
 
 class RealCanonicalLeagueEvidenceTest(unittest.TestCase):
+    def test_2025_w06_caleb_canonical_nfl_scoring_matches_expected_exception(self):
+        if not (REPO_ROOT / "data-source/nfl/player-stats/2025").exists():
+            self.skipTest("Full canonical NFL source not mounted")
+        from historical_fantasy_scoring_parity import build_parity_report
+
+        audit = build_parity_report(
+            REPO_ROOT, league_id="nfl-reise", nfl_season=2025,
+            scoring_season=2025, first_week=6, last_week=6,
+        )
+        matches = [
+            x for x in audit["Mismatches"]
+            if x["CanonicalPlayerID"] == "NFLP-3c5ddc5072f6fe8f9b77"
+        ]
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0]["LeaguePoints"], 19.88)
+        self.assertEqual(matches[0]["DerivedPoints"], 20.38)
+        self.assertEqual(matches[0]["Difference"], 0.5)
+
     def test_2025_w06_caleb_sleeper_source_matches_exception_exactly(self):
         matchup_path = (REPO_ROOT /
                         "data-source/leagues/nfl-reise/seasons/2025/matchups/week-6.json")
