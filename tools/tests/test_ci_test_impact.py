@@ -224,6 +224,49 @@ jobs:
         self.assertFalse(ci.timeout_only_yaml(base, base.replace(
             "timeout-minutes: 10", "")))
 
+    def test_timeout_only_event_routing_does_not_hide_other_changes(self):
+        from unittest.mock import patch
+        path = ".github/workflows/sync-nfl-source-data.yml"
+        original = ("jobs:\n  validate:\n    runs-on: ubuntu-latest\n"
+                    "    timeout-minutes: 20\n    steps:\n      - run: echo safe\n")
+        bumped = original.replace("timeout-minutes: 20", "timeout-minutes: 30")
+        event = {
+            "repository": {"full_name": "Lolindhir/fantasy-app"},
+            "pull_request": {
+                "number": 7,
+                "base": {"sha": "a" * 40},
+                "head": {"sha": "b" * 40},
+                "changed_files": 1,
+            },
+        }
+        changed = [{"filename": path, "status": "modified"}]
+        with patch.object(ci, "pr_changes", return_value=changed), \\
+             patch.object(ci, "_repo_file_at", side_effect=[original, bumped]), \\
+             patch.dict("os.environ", {"GITHUB_TOKEN": "test"}):
+            result = ci.select_from_event(event, {"tests": []})
+        self.assertEqual([], result["selected"])
+        self.assertFalse(result["uncertain"])
+
+        with patch.object(ci, "pr_changes", return_value=changed), \\
+             patch.object(ci, "_repo_file_at", side_effect=[
+                 original, bumped.replace("echo safe", "echo unsafe")]), \\
+             patch.dict("os.environ", {"GITHUB_TOKEN": "test"}):
+            result = ci.select_from_event(event, {"tests": []})
+        self.assertEqual(set(ci.GROUPS), set(result["selected"]))
+
+        with patch.object(ci, "pr_changes", return_value=changed), \\
+             patch.object(ci, "_repo_file_at", side_effect=OSError("API down")), \\
+             patch.dict("os.environ", {"GITHUB_TOKEN": "test"}):
+            result = ci.select_from_event(event, {"tests": []})
+        self.assertEqual(set(ci.GROUPS), set(result["selected"]))
+
+        both = changed + [{"filename": "tools/external_source/adapter.py",
+                           "status": "modified"}]
+        with patch.object(ci, "pr_changes", return_value=both):
+            result = ci.select_from_event(event, {"tests": []})
+        self.assertIn("market-restore", result["selected"])
+        self.assertEqual(set(ci.GROUPS), set(result["selected"]))
+
     def test_full_registry_python_coverage_is_partitioned(self):
         from tools import ci_suite_runner as runner
         inv = ci.read_inventory()
