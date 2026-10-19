@@ -405,18 +405,25 @@ def evaluate_workflow(
                     })
                     result["incidentKeys"].append(key)
         else:
-            onset = "no-success-in-run-window"
-            key = incident_key(path, "missing-success-evidence", onset)
-            incidents.append({
-                "incidentKey": key,
-                "type": "missing-success-evidence",
-                "workflow": path,
-                "category": entry.get("category"),
-                "onset": onset,
-                "staleAfterMinutes": stale_after,
-                "details": "No successful relevant completed run was found in the configured run window.",
-            })
-            result["incidentKeys"].append(key)
+            # A newly activated weekly audit has no success before the first
+            # scheduled due slot; don't page until that slot can finish.
+            first_due = parse_time(entry.get("firstDueAt"))
+            grace = int(entry.get("firstDueGraceMinutes", 0))
+            if first_due is None or now >= first_due + timedelta(minutes=grace):
+                onset = "no-success-in-run-window"
+                key = incident_key(path, "missing-success-evidence", onset)
+                incidents.append({
+                    "incidentKey": key,
+                    "type": "missing-success-evidence",
+                    "workflow": path,
+                    "category": entry.get("category"),
+                    "onset": onset,
+                    "staleAfterMinutes": stale_after,
+                    "details": "No successful relevant completed run was found in the configured run window.",
+                })
+                result["incidentKeys"].append(key)
+            else:
+                result["awaitingFirstScheduledAudit"] = True
 
     if incidents:
         result["status"] = "incident"
@@ -511,7 +518,14 @@ def build_snapshot(
 
         runs: list[JsonDict] = []
         if api_workflow.get("state") == "active" and (entry.get("relevantEvents") or []):
-            runs_data = api_get(f"/actions/workflows/{api_workflow['id']}/runs?per_page={run_limit}")
+            event_filter = entry.get("runListEvent")
+            if event_filter and event_filter not in (entry.get("relevantEvents") or []):
+                raise ValueError(f"Invalid runListEvent for {path}: {event_filter!r}")
+            query = f"/actions/workflows/{api_workflow['id']}/runs?per_page={run_limit}"
+            if event_filter:
+                from urllib.parse import quote
+                query += f"&event={quote(event_filter, safe='')}"
+            runs_data = api_get(query)
             runs = runs_data.get("workflow_runs", [])
         result, workflow_incidents = evaluate_workflow(path, entry, category, api_workflow, runs, evaluation, now)
         workflow_results[path] = result
