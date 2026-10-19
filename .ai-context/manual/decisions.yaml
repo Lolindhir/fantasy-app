@@ -2133,8 +2133,9 @@ decisions:
       verified PR changed-file inventory plus conservative dependency closure.
       Unknown paths, newly unclassified tests, renames/deletes, API uncertainty,
       CI/selector/contract changes and broad provider or identity dependencies
-      require all Deep families; full legacy historical build remains mandatory
-      for these all-Deep cases and for manual validation. A single job-level
+      require all affected Deep families; the unchanged legacy historical build is
+      invoked only by workflow_dispatch manual full validation, never
+      redundantly on a pull request. A single job-level
       timeout-minutes-only change in an explicit allowlisted workflow may avoid
       Deep only after comparing immutable base/head YAML semantic trees;
       event, permission, command, environment or writer changes can never be
@@ -2150,7 +2151,9 @@ decisions:
       preserving full coverage of test modules previously invoked by the old
       build. A separate strict result gate prevents the GitHub Actions default
       'skipped' status from being mistaken for validated critical tests.
-      Running the full old build on CI changes guards the cutover itself.
+      The tested Deep-test union replaces the redundant old build on CI-change
+      pull requests, with all four Deep suites still required on those changes.
+      Explicit full manual audits preserve the original complete command chain.
     consequences:
       positive:
         - Unrelated PRs can obtain bounded read-only Fast checks without full historical restore.
@@ -2159,7 +2162,10 @@ decisions:
         - Existing scheduler, state ownership and publication writers are unaffected.
       negative:
         - More individual jobs and test registry updates are now necessary.
-        - Conservative cases still incur the full legacy historical runtime.
+        - Conservative cases still incur long NFL Deep replay when needed, but
+          never the redundant sequential legacy build on pull requests.
+        - The old full historical build is available only via operator dispatch;
+          automatic scheduled full audits remain deferred to CP4.
         - Until Issue #243 activates branch protection for CI / Merge Gate,
           GitHub does not make this check a server-enforced merge requirement.
         - Periodic complete audit and performance-distribution measurement are

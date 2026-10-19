@@ -2,8 +2,9 @@
 """Fail-closed PR impact selection for CP3 Deep Gates (Issue #1095).
 
 Selection requires a complete PR changed-file inventory and a validated test
-registry. Unknown/ambiguous inputs force ALL Deep suites and the legacy full
-gate. No dependency on untrusted PR code to authorize publication.
+registry. Unknown/ambiguous inputs force all Deep suites on PRs; the legacy
+full build runs exclusively during explicit manual audits. No dependency on
+untrusted PR code authorizes publication.
 """
 from __future__ import annotations
 

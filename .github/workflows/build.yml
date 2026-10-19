@@ -11,9 +11,9 @@ permissions:
   pull-requests: read  # CP1 advisory-only changed-file inventory
 
 jobs:
-  # CP3: existing CP2 Fast jobs stay unconditional. The historical full build
-  # runs on all unknown/CI-critical/all-Deep cases and manual audits; selected
-  # Deep suites and the always-present merge gate protect ordinary PRs.
+  # CP3.5: all five Fast jobs always run on PRs; selected Deep suites
+  # validate affected dependencies. The legacy full build is MANUAL only;
+  # all historical test commands are preserved for explicit operator audits.
   fast-contracts:
     name: CI Fast • Contracts & Publication Safety
     runs-on: ubuntu-latest
@@ -249,11 +249,13 @@ jobs:
       - name: Validate every selected Deep and mandatory Fast result
         env:
           CI_NEEDS_JSON: ${{ toJSON(needs) }}
+          CI_EVENT_NAME: ${{ github.event_name }}
         run: python tools/ci_merge_gate.py
 
+  # Manual full audit only. PR CI uses Fast, selected Deep and Merge Gate.
   build:
     needs: selector
-    if: ${{ needs.selector.outputs.full == 'true' }}
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -268,8 +270,8 @@ jobs:
       - name: Install workflow-health test dependency
         run: python -m pip install "PyYAML>=6,<7"
 
-      # CP1 shadow-only: advisory, non-blocking, and never substitutes a test.
-      # The entire existing sequential CI stays unchanged and mandatory.
+      # Historical CP1 shadow diagnostic remains only for a manual audit.
+      # Fast Contracts runs the inventory and gating regressions on every PR.
       - name: CP1 CI test inventory and impact preview (shadow only)
         if: github.event_name == 'pull_request'
         continue-on-error: true

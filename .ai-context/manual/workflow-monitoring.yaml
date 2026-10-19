@@ -281,7 +281,11 @@ workflows:
   .github/workflows/build.yml:
     category: non-paging
     relevantEvents: []
-    rationale: PR/manual CI; failures are handled in the active development/review context.
+    rationale: >-
+      Central read-only PR CI runs the always-present Fast/Deep Merge Gate;
+      the unchanged full legacy build is an explicit workflow_dispatch manual
+      audit only (CP3.5, Issue #1095). PR failures remain non-paging and
+      are handled by the active development/review context.
   .github/workflows/deploy.yml:
     category: critical
     relevantEvents:
