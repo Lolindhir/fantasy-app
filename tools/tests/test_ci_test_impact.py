@@ -396,7 +396,10 @@ jobs:
         import re
         from tools import ci_suite_runner as runner
 
-        workflow = self.jobs
+        import yaml
+        workflow = yaml.safe_load(
+            (ci.ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
+        )["jobs"]
         legacy = "\n".join(str(step.get("run", "")) for step in workflow["build"]["steps"])
         fast_job_names = ("fast-contracts", "fast-source", "fast-scheduler", "fast-angular")
         fast = "\n".join(str(step.get("run", ""))
