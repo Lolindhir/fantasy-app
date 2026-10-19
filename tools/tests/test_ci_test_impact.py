@@ -122,10 +122,11 @@ class FastLaneContractTests(unittest.TestCase):
                 self.assertEqual({"contents": "read"}, job["permissions"])
                 self.assertLessEqual(job["timeout-minutes"], 15)
 
-    def test_historical_legacy_build_remains_full_when_all_deep(self):
+    def test_historical_legacy_build_remains_complete_manual_audit_only(self):
         job = self.jobs["build"]
         self.assertEqual("selector", job["needs"])
-        self.assertIn("needs.selector.outputs.full == 'true'", job["if"])
+        self.assertIn("github.event_name == 'workflow_dispatch'", job["if"])
+        self.assertNotIn("needs.selector.outputs.full", job["if"])
         self.assertNotIn("continue-on-error", job)
         all_commands = "\n".join(str(step.get("run", "")) for step in job["steps"])
         for required in (
@@ -166,6 +167,7 @@ class FastLaneContractTests(unittest.TestCase):
              "deep-nfl", "deep-league", "deep-market", "deep-consumer"},
             set(gate["needs"]))
         self.assertIn("toJSON(needs)", str(gate["steps"]))
+        self.assertIn("github.event_name", str(gate["steps"]))
         self.assertIn("tools/ci_merge_gate.py", str(gate["steps"]))
 
     def test_fast_lanes_never_execute_full_historical_restore(self):
@@ -350,9 +352,9 @@ jobs:
         needs = {"selector": {"result": "success", "outputs": flags}}
         for name in gate.FAST:
             needs[name] = {"result": "success"}
-        for flag, job in gate.GROUPS.items():
-            needs[job] = {"result": "success" if (full if flag == "full" else flag in selected)
-                          else "skipped"}
+        for flag, job in gate.DEEP.items():
+            needs[job] = {"result": "success" if flag in selected else "skipped"}
+        needs["build"] = {"result": "skipped"}
         return needs
 
     def test_merge_gate_accepts_verified_subset_full_and_none(self):
@@ -361,6 +363,84 @@ jobs:
                           ("nfl", "league", "market", "consumer")):
             with self.subTest(selection=selection):
                 self.assertEqual([], gate.verify(self.good_needs(selection)))
+
+    def test_manual_full_audit_requires_all_deep_and_successful_legacy(self):
+        from tools import ci_merge_gate as gate
+        all_four = tuple(gate.DEEP)
+        manual = self.good_needs(all_four)
+        manual["build"]["result"] = "success"
+        self.assertEqual([], gate.verify(manual, "workflow_dispatch"))
+        self.assertTrue(gate.verify(self.good_needs(all_four), "workflow_dispatch"))
+        for result in ("skipped", "failure", "cancelled", "neutral", None):
+            manual = self.good_needs(all_four)
+            manual["build"]["result"] = result
+            self.assertTrue(gate.verify(manual, "workflow_dispatch"))
+        partial = self.good_needs(("nfl",))
+        partial["build"]["result"] = "success"
+        self.assertTrue(gate.verify(partial, "workflow_dispatch"))
+
+    def test_pr_requires_legacy_skipped_even_with_all_deep(self):
+        from tools import ci_merge_gate as gate
+        all_four = tuple(gate.DEEP)
+        needs = self.good_needs(all_four)
+        self.assertEqual([], gate.verify(needs, "pull_request"))
+        for outcome in ("success", "failure", "cancelled", "neutral", None):
+            needs = self.good_needs(all_four)
+            needs["build"]["result"] = outcome
+            self.assertTrue(gate.verify(needs, "pull_request"))
+        for invalid in ("push", "repository_dispatch", "", None):
+            self.assertTrue(gate.verify(self.good_needs(()), invalid))
+
+    def test_unmodified_legacy_obligations_have_fast_and_deep_equivalents(self):
+        import fnmatch
+        import re
+        from tools import ci_suite_runner as runner
+
+        import yaml
+        workflow = yaml.safe_load(
+            (ci.ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8")
+        )["jobs"]
+        legacy = "\n".join(str(step.get("run", "")) for step in workflow["build"]["steps"])
+        fast_job_names = ("fast-contracts", "fast-source", "fast-scheduler", "fast-angular")
+        fast = "\n".join(str(step.get("run", ""))
+                           for name in fast_job_names for step in workflow[name]["steps"])
+        manifest = ci.read_inventory()
+        # Every historical *non-test* safety contract must be on an always
+        # present Fast lane, not hidden in manual-only build.
+        for command in manifest["mandatoryCommands"]:
+            if command["workflow"] == ".github/workflows/build.yml":
+                with self.subTest(command=command["snippet"]):
+                    self.assertIn(command["snippet"], fast)
+
+        # Preserve every old PowerShell / Node / Angular command entrypoint.
+        for line in legacy.splitlines():
+            command = line.strip()
+            if command.startswith(("./public/requests/", "node --test",
+                                   "npx ng test", "./deploy_action.ps1",
+                                   "python tools/players_league_scoring_shadow.py gate")):
+                with self.subTest(legacy_command=command):
+                    self.assertIn(command, fast)
+
+        # Cover all previous direct Python tests, including all glob expansions,
+        # through the union of registered Fast and selected Deep lanes.
+        all_modules = set(runner.modules_for_lane(manifest, "fast"))
+        for group in ci.GROUPS:
+            all_modules.update(runner.modules_for_lane(manifest, group))
+        all_modules.add("tools/tests/test_ci_test_impact.py")  # fast-contracts
+        indexed = {row["path"] for row in manifest["tests"]
+                   if row["path"].startswith("tools/tests/test_")
+                   and row["path"].endswith(".py")}
+        for name in set(re.findall(r"tools[./]tests[./](test_[a-zA-Z0-9_]+)", legacy)):
+            path = f"tools/tests/{name}.py"
+            self.assertIn(path, all_modules)
+        for pattern in re.findall(r'-p "([^"]+\.py)"', legacy):
+            for path in indexed:
+                if fnmatch.fnmatch(path.rsplit("/", 1)[-1], pattern):
+                    self.assertIn(path, all_modules)
+        # An absent Fast runner or a missing Deep runner must be fatal.
+        self.assertIn("tools/ci_suite_runner.py fast", str(workflow["fast-python"]))
+        for name in ("deep-nfl", "deep-league", "deep-market", "deep-consumer"):
+            self.assertIn("tools/ci_suite_runner.py", str(workflow[name]))
 
     def test_merge_gate_rejects_skipped_failed_cancelled_or_missing_selected(self):
         from tools import ci_merge_gate as gate
