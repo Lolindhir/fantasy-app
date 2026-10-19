@@ -397,9 +397,9 @@ jobs:
         from tools import ci_suite_runner as runner
 
         workflow = self.jobs
-        legacy = "\\n".join(str(step.get("run", "")) for step in workflow["build"]["steps"])
+        legacy = "\n".join(str(step.get("run", "")) for step in workflow["build"]["steps"])
         fast_job_names = ("fast-contracts", "fast-source", "fast-scheduler", "fast-angular")
-        fast = "\\n".join(str(step.get("run", ""))
+        fast = "\n".join(str(step.get("run", ""))
                            for name in fast_job_names for step in workflow[name]["steps"])
         manifest = ci.read_inventory()
         # Every historical *non-test* safety contract must be on an always
@@ -430,7 +430,7 @@ jobs:
         for name in set(re.findall(r"tools[./]tests[./](test_[a-zA-Z0-9_]+)", legacy)):
             path = f"tools/tests/{name}.py"
             self.assertIn(path, all_modules)
-        for pattern in re.findall(r'-p "([^"]+\\.py)"', legacy):
+        for pattern in re.findall(r'-p "([^"]+\.py)"', legacy):
             for path in indexed:
                 if fnmatch.fnmatch(path.rsplit("/", 1)[-1], pattern):
                     self.assertIn(path, all_modules)
