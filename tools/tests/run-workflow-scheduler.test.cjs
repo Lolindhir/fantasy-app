@@ -24,6 +24,7 @@ const EXPECTED = {
   'fm-daily.yml': { timezone: 'Europe/Berlin', cron: ['20 5 * * *'] },
   'clean-backups.yml': { timezone: 'Europe/Berlin', cron: ['0 17 * * 3'] },
   'workflow-health-snapshot.yml': { timezone: 'Etc/UTC', cron: ['7-59/30 * * * *'] },
+  'build.yml': { timezone: 'Europe/Berlin', cron: ['15 2 * * 6'] },
 };
 
 function loadConfig() {
@@ -64,10 +65,10 @@ test('central config preserves all migrated schedules, profiles and state contra
   const config = loadConfig();
   scheduler.validateConfig(config);
   assert.equal(config.schemaVersion, 2);
-  assert.equal(config.targets.length, 13);
+  assert.equal(config.targets.length, 14);
   const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
-  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 13);
+  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 14);
   assert.deepEqual(config.state, {
     schemaVersion: 1,
     branch: 'workflow-scheduler-state',
@@ -78,6 +79,30 @@ test('central config preserves all migrated schedules, profiles and state contra
   assert.equal(config.targets.find((item) => item.id === 'workflow-health').profile, 'observer');
   assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 10);
   assert.deepEqual(config.targets.find((item) => item.id === 'workflow-health').deferUntilOtherTargetsSettled, { maxMinutes: 20 });
+});
+
+test('CP4 full audit is weekly, read-only and never retried after a failure', () => {
+  const config = loadConfig();
+  const audit = config.targets.find((item) => item.id === 'ci-full-audit');
+  assert.ok(audit);
+  assert.equal(audit.workflow, 'build.yml');
+  assert.equal(audit.eventType, 'scheduler-ci-full-audit');
+  assert.equal(audit.profile, 'audit');
+  assert.deepEqual(audit.cron, ['15 2 * * 6']);
+  assert.deepEqual(audit.satisfyingEvents, ['repository_dispatch', 'workflow_dispatch']);
+  assert.equal(config.profiles.audit.healthBarrier, false);
+  assert.deepEqual(config.retryPolicies['audit-once'],
+    { maxAttempts: 1, backoffMinutes: [], cooldownMinutes: 60 });
+  const due = new Date('2026-10-24T00:15:00Z');
+  const started = run(17, '2026-10-24T00:16:00Z', 'in_progress', null);
+  const inflight = scheduler.evaluateTarget(audit, 'main', new Date('2026-10-24T00:20:00Z'), 180, [started]);
+  assert.notEqual(inflight.decision, 'dispatch');
+  const failed = run(17, '2026-10-24T00:16:00Z', 'completed', 'failure');
+  const retry = scheduler.evaluateTargetWithRetry(audit, config.profiles.audit,
+    config.retryPolicies['audit-once'], 'main', new Date('2026-10-24T00:25:00Z'), 180,
+    [failed], { dueAt: due.toISOString(), attemptsDispatched: 1, lastDispatchAt: '2026-10-24T00:16:00Z' });
+  assert.notEqual(retry.result.decision, 'dispatch');
+  assert.equal(retry.result.decision, 'retry-exhausted');
 });
 
 test('FM Daily is one daily pipeline target replacing the former seven provider and materializer targets', () => {
