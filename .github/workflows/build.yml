@@ -1,4 +1,5 @@
-name: CI • Angular Build
+name: CI • Repository Validation
+run-name: "${{ github.event_name == 'pull_request' && 'CI • Repository Validation' || 'CI • Full Repository Audit' }}"
 
 on:
   workflow_dispatch:
