@@ -90,11 +90,11 @@ class WorkflowEvaluationTests(unittest.TestCase):
         entry = {
             "category": "important", "relevantEvents": ["repository_dispatch"],
             "staleAfterMinutes": 11520,
-            "firstDueAt": "2026-10-24T00:15:00Z", "firstDueGraceMinutes": 120,
+            "firstDueAt": "2026-10-22T00:15:00Z", "firstDueGraceMinutes": 120,
         }
         category = {"notify": True, "consecutiveFailures": 1}
-        before = datetime.fromisoformat("2026-10-24T01:00:00+00:00")
-        after = datetime.fromisoformat("2026-10-24T02:20:00+00:00")
+        before = datetime.fromisoformat("2026-10-22T01:00:00+00:00")
+        after = datetime.fromisoformat("2026-10-22T02:20:00+00:00")
         waiting, incidents = module.evaluate_workflow(
             ".github/workflows/build.yml", entry, category, API_WORKFLOW, [], EVALUATION, before)
         self.assertTrue(waiting["awaitingFirstScheduledAudit"])
@@ -104,13 +104,13 @@ class WorkflowEvaluationTests(unittest.TestCase):
         self.assertIn("missing-success-evidence", [x["type"] for x in missing])
         _, failures = module.evaluate_workflow(
             ".github/workflows/build.yml", entry, category, API_WORKFLOW,
-            [run(4, "failure", "2026-10-24T00:55:00Z", event="repository_dispatch")],
+            [run(4, "failure", "2026-10-22T00:55:00Z", event="repository_dispatch")],
             EVALUATION, before)
         self.assertIn("failure-streak", [x["type"] for x in failures])
         _, healed = module.evaluate_workflow(
             ".github/workflows/build.yml", entry, category, API_WORKFLOW,
-            [run(5, "success", "2026-10-24T01:25:00Z", event="repository_dispatch"),
-             run(4, "failure", "2026-10-24T00:55:00Z", event="repository_dispatch")],
+            [run(5, "success", "2026-10-22T01:25:00Z", event="repository_dispatch"),
+             run(4, "failure", "2026-10-22T00:55:00Z", event="repository_dispatch")],
             EVALUATION, after)
         self.assertEqual([], healed)
 
@@ -122,7 +122,7 @@ class WorkflowEvaluationTests(unittest.TestCase):
         _, incidents = module.evaluate_workflow(
             ".github/workflows/build.yml", entry, category, API_WORKFLOW,
             [run(2, "success", "2026-11-01T23:30:00Z", event="workflow_dispatch"),
-             run(1, "success", "2026-10-24T00:45:00Z", event="repository_dispatch")],
+             run(1, "success", "2026-10-22T00:45:00Z", event="repository_dispatch")],
             EVALUATION, now)
         self.assertIn("stale-success", [x["type"] for x in incidents])
 
@@ -144,6 +144,7 @@ class SnapshotTests(unittest.TestCase):
         policy = module.load_policy(REPOSITORY_ROOT / ".ai-context/manual/workflow-monitoring.yaml")
         self.assertEqual(policy["ownership"]["canonicalFile"], ".ai-context/manual/workflow-monitoring.yaml")
         self.assertEqual(policy["snapshot"]["cadence"]["observationBarrier"]["deadlineAnchor"], "productive-blocker-start-or-dispatch-time")
+        self.assertEqual(policy["workflows"][".github/workflows/build.yml"]["firstDueAt"], "2026-10-22T00:15:00Z")
 
     def test_configuration_drift_is_fail_closed(self):
         policy = {
@@ -171,7 +172,7 @@ class SnapshotTests(unittest.TestCase):
         entry = {
             "category": "important", "consecutiveFailures": 1,
             "relevantEvents": ["repository_dispatch"], "runListEvent": "repository_dispatch",
-            "staleAfterMinutes": 11520, "firstDueAt": "2026-10-24T00:15:00Z",
+            "staleAfterMinutes": 11520, "firstDueAt": "2026-10-22T00:15:00Z",
             "firstDueGraceMinutes": 120,
         }
         policy = {
@@ -190,8 +191,8 @@ class SnapshotTests(unittest.TestCase):
                 if path.startswith("/actions/workflows?"):
                     return {"workflows": [{"id": 10, "path": ".github/workflows/build.yml", "state": "active"}]}
                 return {"workflow_runs": [
-                    run(123, "failure", "2026-10-24T01:00:00Z", event="repository_dispatch")]}
-            observed = datetime.fromisoformat("2026-10-24T01:05:00+00:00")
+                    run(123, "failure", "2026-10-22T01:00:00Z", event="repository_dispatch")]}
+            observed = datetime.fromisoformat("2026-10-22T01:05:00+00:00")
             snapshot = module.build_snapshot(policy, "owner/repo", root, api_get, observed)
             self.assertIn("/actions/workflows/10/runs?per_page=20&event=repository_dispatch", queries)
             self.assertIn("failure-streak", [x["type"] for x in snapshot["incidents"]])
