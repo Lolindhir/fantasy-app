@@ -34,7 +34,7 @@ LEGACY_UNCOVERED_FNV32 = "586b39fa"
 def uncovered_baseline_fingerprint(paths: list[str]) -> str:
     """Stable compact fingerprint so new tests cannot silently become 'legacy'."""
     value = 2166136261
-    for ch in "\\n".join(paths):
+    for ch in "\n".join(paths):
         value = (value ^ ord(ch)) * 16777619 & 0xffffffff
     return f"{value:08x}"
 
@@ -410,7 +410,7 @@ def write_summary(result: dict, counts: dict | None, error: str | None) -> None:
         with open(target, "a", encoding="utf-8") as out:
             out.write("\n### CI impact — CP3 decision (fail closed)\n")
             if counts:
-                out.write(f"- Inventory: {counts['total']} registered; {counts['currentlyInPr']} already in PR suites; {counts['currentlyNotInPr']} outside present PR suites (legacy baseline: {counts['legacyUncovered']}; issue-backed exceptions: {counts['explicitlyExceptedUncovered']}).\\n")
+                out.write(f"- Inventory: {counts['total']} registered; {counts['currentlyInPr']} already in PR suites; {counts['currentlyNotInPr']} outside present PR suites (legacy baseline: {counts['legacyUncovered']}; issue-backed exceptions: {counts['explicitlyExceptedUncovered']}).\n")
             out.write(f"- Proposed Deep groups: {', '.join(result['selected']) or 'none'}\n")
             out.write(f"- Confidence: {'FAIL-CLOSED / UNCERTAIN' if result['uncertain'] else 'rules matched'}\n")
             if error:
