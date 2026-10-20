@@ -24,7 +24,7 @@ const EXPECTED = {
   'fm-daily.yml': { timezone: 'Europe/Berlin', cron: ['20 5 * * *'] },
   'clean-backups.yml': { timezone: 'Europe/Berlin', cron: ['0 17 * * 3'] },
   'workflow-health-snapshot.yml': { timezone: 'Etc/UTC', cron: ['7-59/30 * * * *'] },
-  'build.yml': { timezone: 'Europe/Berlin', cron: ['15 2 * * 6'] },
+  'build.yml': { timezone: 'Europe/Berlin', cron: ['15 2 * * 4'] },
 };
 
 function loadConfig() {
@@ -81,26 +81,46 @@ test('central config preserves all migrated schedules, profiles and state contra
   assert.deepEqual(config.targets.find((item) => item.id === 'workflow-health').deferUntilOtherTargetsSettled, { maxMinutes: 20 });
 });
 
-test('CP4 full audit is weekly, read-only and never retried after a failure', () => {
+test('CP4.2 Thursday full audit is weekly, read-only and never retried after a failure', () => {
   const config = loadConfig();
   const audit = config.targets.find((item) => item.id === 'ci-full-audit');
   assert.ok(audit);
   assert.equal(audit.workflow, 'build.yml');
   assert.equal(audit.eventType, 'scheduler-ci-full-audit');
   assert.equal(audit.profile, 'audit');
-  assert.deepEqual(audit.cron, ['15 2 * * 6']);
+  assert.deepEqual(audit.cron, ['15 2 * * 4']);
+  assert.equal(audit.timezone, 'Europe/Berlin');
+  // A past Thursday remains inside the 8-day lookback immediately after migration.
+  // The successful operator full audit on Tuesday satisfies that old slot.
+  const migrationNow = new Date('2026-10-20T18:00:00Z');
+  const oldThursday = scheduler.latestDueSlot(audit.cron, audit.timezone,
+    migrationNow, config.lookbackMinutes);
+  assert.equal(oldThursday.toISOString(), '2026-10-15T00:15:00.000Z');
+  const manualAudit = run(39436714737, '2026-10-20T14:09:37Z', 'completed', 'success',
+    { event: 'workflow_dispatch' });
+  const migrated = scheduler.evaluateTargetWithRetry(audit, config.profiles.audit,
+    config.retryPolicies['audit-once'], 'main', migrationNow, config.lookbackMinutes, [manualAudit]);
+  assert.equal(migrated.result.decision, 'satisfied');
+  assert.equal(migrated.result.satisfyingRunId, 39436714737);
+  assert.equal(scheduler.latestDueSlot(audit.cron, audit.timezone,
+    new Date('2026-10-22T00:20:00Z'), config.lookbackMinutes).toISOString(),
+    '2026-10-22T00:15:00.000Z');
+  // After the fall DST change, the same Berlin local time shifts by one UTC hour.
+  assert.equal(scheduler.latestDueSlot(audit.cron, audit.timezone,
+    new Date('2026-10-29T01:20:00Z'), config.lookbackMinutes).toISOString(),
+    '2026-10-29T01:15:00.000Z');
   assert.deepEqual(audit.satisfyingEvents, ['repository_dispatch', 'workflow_dispatch']);
   assert.equal(config.profiles.audit.healthBarrier, false);
   assert.deepEqual(config.retryPolicies['audit-once'],
     { maxAttempts: 1, backoffMinutes: [], cooldownMinutes: 60 });
-  const due = new Date('2026-10-24T00:15:00Z');
-  const started = run(17, '2026-10-24T00:16:00Z', 'in_progress', null);
-  const inflight = scheduler.evaluateTarget(audit, 'main', new Date('2026-10-24T00:20:00Z'), 180, [started]);
+  const due = new Date('2026-10-22T00:15:00Z');
+  const started = run(17, '2026-10-22T00:16:00Z', 'in_progress', null);
+  const inflight = scheduler.evaluateTarget(audit, 'main', new Date('2026-10-22T00:20:00Z'), 180, [started]);
   assert.notEqual(inflight.decision, 'dispatch');
-  const failed = run(17, '2026-10-24T00:16:00Z', 'completed', 'failure');
+  const failed = run(17, '2026-10-22T00:16:00Z', 'completed', 'failure');
   const retry = scheduler.evaluateTargetWithRetry(audit, config.profiles.audit,
-    config.retryPolicies['audit-once'], 'main', new Date('2026-10-24T00:25:00Z'), 180,
-    [failed], { dueAt: due.toISOString(), attemptsDispatched: 1, lastDispatchAt: '2026-10-24T00:16:00Z' });
+    config.retryPolicies['audit-once'], 'main', new Date('2026-10-22T00:25:00Z'), 180,
+    [failed], { dueAt: due.toISOString(), attemptsDispatched: 1, lastDispatchAt: '2026-10-22T00:16:00Z' });
   assert.notEqual(retry.result.decision, 'dispatch');
   assert.equal(retry.result.decision, 'retry-exhausted');
 });
