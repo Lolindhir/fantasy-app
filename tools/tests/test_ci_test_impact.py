@@ -121,6 +121,31 @@ class FastLaneContractTests(unittest.TestCase):
         self.assertEqual("CI / Merge Gate", self.jobs["merge-gate"]["name"])
         self.assertIn("always()", self.jobs["merge-gate"]["if"])
 
+    def test_architecture_reviewer_checks_ci_impact_for_pr_and_periodic_audit(self):
+        """Both independent review scopes must assess CI inventory, routing and actual execution."""
+        import yaml
+
+        contract = yaml.safe_load(
+            (ci.ROOT / ".ai-context/manual/architecture-review.yaml").read_text(encoding="utf-8")
+        )
+        independent = contract["modes"]["independentReview"]
+        self.assertEqual("read-only", independent["defaultMode"])
+        contexts = independent["reviewContexts"]
+        self.assertEqual({"changeFocused", "periodicRepositoryAudit"}, set(contexts))
+        for name in contexts:
+            with self.subTest(context=name):
+                evidence = "\n".join(contexts[name]["ciImpactEvidence"])
+                self.assertIn("Deep", evidence)
+                self.assertIn("test", evidence.lower())
+                self.assertIn("Issue", evidence)
+        dimensions = contract["dimensions"]["ciImpactAndTestCoverage"]
+        checks = "\n".join(dimensions["checks"])
+        self.assertIn("actual", checks)
+        self.assertIn("uncovered", checks.lower())
+        self.assertIn("four Deep", checks)
+        self.assertIn("both change-focused reviews and periodic", dimensions["reviewRule"])
+        self.assertIn("ci-impact-and-coverage", contract["reviewOutput"]["requiredSections"])
+
     def test_all_fast_lanes_are_unconditionally_present_and_read_only(self):
         names = ("fast-contracts", "fast-source", "fast-scheduler",
                  "fast-angular", "fast-python")
