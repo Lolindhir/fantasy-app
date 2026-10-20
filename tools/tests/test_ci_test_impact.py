@@ -126,6 +126,7 @@ class FastLaneContractTests(unittest.TestCase):
         job = self.jobs["build"]
         self.assertEqual("selector", job["needs"])
         self.assertIn("github.event_name == 'workflow_dispatch'", job["if"])
+        self.assertIn("github.event.action == 'scheduler-ci-full-audit'", job["if"])
         self.assertNotIn("needs.selector.outputs.full", job["if"])
         self.assertNotIn("continue-on-error", job)
         all_commands = "\n".join(str(step.get("run", "")) for step in job["steps"])
@@ -168,6 +169,7 @@ class FastLaneContractTests(unittest.TestCase):
             set(gate["needs"]))
         self.assertIn("toJSON(needs)", str(gate["steps"]))
         self.assertIn("github.event_name", str(gate["steps"]))
+        self.assertIn("github.event.action", str(gate["steps"]))
         self.assertIn("tools/ci_merge_gate.py", str(gate["steps"]))
 
     def test_fast_lanes_never_execute_full_historical_restore(self):
@@ -379,6 +381,34 @@ jobs:
         partial["build"]["result"] = "success"
         self.assertTrue(gate.verify(partial, "workflow_dispatch"))
 
+    def test_weekly_scheduler_dispatch_requires_complete_success(self):
+        from tools import ci_merge_gate as gate
+        selected = self.good_needs(tuple(gate.DEEP))
+        selected["build"]["result"] = "success"
+        self.assertEqual([], gate.verify(selected, "repository_dispatch", "scheduler-ci-full-audit"))
+        for outcome in ("skipped", "failure", "cancelled", "neutral", None):
+            changed = self.good_needs(tuple(gate.DEEP))
+            changed["build"]["result"] = outcome
+            self.assertTrue(gate.verify(changed, "repository_dispatch", "scheduler-ci-full-audit"))
+        partial = self.good_needs(("nfl",))
+        partial["build"]["result"] = "success"
+        self.assertTrue(gate.verify(partial, "repository_dispatch", "scheduler-ci-full-audit"))
+        for action in (None, "", "external-scheduler-tick", "scheduler-workflow-health"):
+            self.assertTrue(gate.verify(selected, "repository_dispatch", action))
+        self.assertTrue(gate.verify(selected, "push"))
+
+    def test_weekly_audit_event_preserves_read_only_legacy_commands(self):
+        import yaml
+        workflow = yaml.safe_load((ci.ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8"))
+        self.assertEqual(["scheduler-ci-full-audit"],
+                         workflow[True]["repository_dispatch"]["types"])
+        self.assertEqual({"contents": "read", "pull-requests": "read"}, workflow["permissions"])
+        legacy = workflow["jobs"]["build"]
+        self.assertNotIn("continue-on-error", legacy)
+        self.assertIn("scheduler-ci-full-audit", legacy["if"])
+        self.assertFalse(any(str(x.get("run", "")).strip().startswith(("git push", "git commit"))
+                             for x in legacy["steps"]))
+
     def test_pr_requires_legacy_skipped_even_with_all_deep(self):
         from tools import ci_merge_gate as gate
         all_four = tuple(gate.DEEP)
@@ -388,7 +418,7 @@ jobs:
             needs = self.good_needs(all_four)
             needs["build"]["result"] = outcome
             self.assertTrue(gate.verify(needs, "pull_request"))
-        for invalid in ("push", "repository_dispatch", "", None):
+        for invalid in ("push", "", None):
             self.assertTrue(gate.verify(self.good_needs(()), invalid))
 
     def test_unmodified_legacy_obligations_have_fast_and_deep_equivalents(self):

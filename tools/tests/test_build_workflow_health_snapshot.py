@@ -86,6 +86,46 @@ class WorkflowEvaluationTests(unittest.TestCase):
         self.assertEqual(result["latestRelevantRun"]["event"], "repository_dispatch")
         self.assertEqual(incidents, [])
 
+    def test_weekly_audit_first_due_grace_then_missing_or_failed(self):
+        entry = {
+            "category": "important", "relevantEvents": ["repository_dispatch"],
+            "staleAfterMinutes": 11520,
+            "firstDueAt": "2026-10-24T00:15:00Z", "firstDueGraceMinutes": 120,
+        }
+        category = {"notify": True, "consecutiveFailures": 1}
+        before = datetime.fromisoformat("2026-10-24T01:00:00+00:00")
+        after = datetime.fromisoformat("2026-10-24T02:20:00+00:00")
+        waiting, incidents = module.evaluate_workflow(
+            ".github/workflows/build.yml", entry, category, API_WORKFLOW, [], EVALUATION, before)
+        self.assertTrue(waiting["awaitingFirstScheduledAudit"])
+        self.assertEqual([], incidents)
+        _, missing = module.evaluate_workflow(
+            ".github/workflows/build.yml", entry, category, API_WORKFLOW, [], EVALUATION, after)
+        self.assertIn("missing-success-evidence", [x["type"] for x in missing])
+        _, failures = module.evaluate_workflow(
+            ".github/workflows/build.yml", entry, category, API_WORKFLOW,
+            [run(4, "failure", "2026-10-24T00:55:00Z", event="repository_dispatch")],
+            EVALUATION, before)
+        self.assertIn("failure-streak", [x["type"] for x in failures])
+        _, healed = module.evaluate_workflow(
+            ".github/workflows/build.yml", entry, category, API_WORKFLOW,
+            [run(5, "success", "2026-10-24T01:25:00Z", event="repository_dispatch"),
+             run(4, "failure", "2026-10-24T00:55:00Z", event="repository_dispatch")],
+            EVALUATION, after)
+        self.assertEqual([], healed)
+
+    def test_weekly_audit_stale_result_ignores_operator_manual_success(self):
+        entry = {"category": "important", "relevantEvents": ["repository_dispatch"],
+                 "staleAfterMinutes": 11520}
+        category = {"notify": True, "consecutiveFailures": 1}
+        now = datetime.fromisoformat("2026-11-02T00:00:00+00:00")
+        _, incidents = module.evaluate_workflow(
+            ".github/workflows/build.yml", entry, category, API_WORKFLOW,
+            [run(2, "success", "2026-11-01T23:30:00Z", event="workflow_dispatch"),
+             run(1, "success", "2026-10-24T00:45:00Z", event="repository_dispatch")],
+            EVALUATION, now)
+        self.assertIn("stale-success", [x["type"] for x in incidents])
+
     def test_inflight_run_is_exposed_without_affecting_completed_health_evaluation(self):
         runs = [
             run(2, None, "2026-08-29T23:55:00Z", status="in_progress"),
@@ -126,6 +166,35 @@ class SnapshotTests(unittest.TestCase):
             snapshot = module.build_snapshot(policy, "owner/repo", root, api_get, NOW)
             self.assertEqual(snapshot["overall"], "incident")
             self.assertIn("unclassified-workflow", [i["type"] for i in snapshot["configurationDrift"]])
+
+    def test_weekly_audit_run_query_is_server_filtered_despite_many_prs(self):
+        entry = {
+            "category": "important", "consecutiveFailures": 1,
+            "relevantEvents": ["repository_dispatch"], "runListEvent": "repository_dispatch",
+            "staleAfterMinutes": 11520, "firstDueAt": "2026-10-24T00:15:00Z",
+            "firstDueGraceMinutes": 120,
+        }
+        policy = {
+            "ownership": {"canonicalFile": ".ai-context/manual/workflow-monitoring.yaml"},
+            "runEvaluation": {**EVALUATION, "recentRunsToInspect": 20},
+            "categories": {"important": {"notify": True, "consecutiveFailures": 2}},
+            "workflows": {".github/workflows/build.yml": entry},
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".github/workflows").mkdir(parents=True)
+            (root / ".github/workflows/build.yml").write_text("name: CI\n", encoding="utf-8")
+            queries = []
+            def api_get(path):
+                queries.append(path)
+                if path.startswith("/actions/workflows?"):
+                    return {"workflows": [{"id": 10, "path": ".github/workflows/build.yml", "state": "active"}]}
+                return {"workflow_runs": [
+                    run(123, "failure", "2026-10-24T01:00:00Z", event="repository_dispatch")]}
+            observed = datetime.fromisoformat("2026-10-24T01:05:00+00:00")
+            snapshot = module.build_snapshot(policy, "owner/repo", root, api_get, observed)
+            self.assertIn("/actions/workflows/10/runs?per_page=20&event=repository_dispatch", queries)
+            self.assertIn("failure-streak", [x["type"] for x in snapshot["incidents"]])
 
     def test_notification_due_only_on_first_observation(self):
         incident = {"incidentKey": "abc", "type": "failure-streak", "workflow": "w.yml"}

@@ -2,6 +2,9 @@ name: CI • Angular Build
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types:
+      - scheduler-ci-full-audit
   pull_request:
     branches:
       - main
@@ -250,12 +253,14 @@ jobs:
         env:
           CI_NEEDS_JSON: ${{ toJSON(needs) }}
           CI_EVENT_NAME: ${{ github.event_name }}
+          CI_EVENT_ACTION: ${{ github.event.action }}
         run: python tools/ci_merge_gate.py
 
-  # Manual full audit only. PR CI uses Fast, selected Deep and Merge Gate.
+  # Complete read-only audit only for operator dispatch or the exact weekly
+  # scheduler event. Pull requests retain only Fast + selected Deep lanes.
   build:
     needs: selector
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'repository_dispatch' && github.event.action == 'scheduler-ci-full-audit') }}
     runs-on: ubuntu-latest
 
     steps:

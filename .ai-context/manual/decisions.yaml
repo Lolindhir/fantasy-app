@@ -2135,7 +2135,15 @@ decisions:
       CI/selector/contract changes and broad provider or identity dependencies
       require all affected Deep families; the unchanged legacy historical build is
       invoked only by workflow_dispatch manual full validation, never
-      redundantly on a pull request. A single job-level
+      redundantly on a pull request. CP4 additionally schedules one weekly
+      read-only full audit through the existing central scheduler using the
+      narrowly declared repository_dispatch scheduler-ci-full-audit event.
+      The audit has one attempt per weekly slot; its strict CI gate requires
+      all Fast, all Deep and the intact historical full build to succeed.
+      Health monitoring separately queries repository_dispatch runs (not
+      frequently generated PR runs), alerts on the first failed audit,
+      checks for stale success and provides a bounded first-due grace period.
+      A single job-level
       timeout-minutes-only change in an explicit allowlisted workflow may avoid
       Deep only after comparing immutable base/head YAML semantic trees;
       event, permission, command, environment or writer changes can never be
@@ -2164,8 +2172,8 @@ decisions:
         - More individual jobs and test registry updates are now necessary.
         - Conservative cases still incur long NFL Deep replay when needed, but
           never the redundant sequential legacy build on pull requests.
-        - The old full historical build is available only via operator dispatch;
-          automatic scheduled full audits remain deferred to CP4.
+        - The historical build runs only via manual operator dispatch or
+          the once-weekly CP4 scheduler audit, not automatically on PRs.
         - Until Issue #243 activates branch protection for CI / Merge Gate,
           GitHub does not make this check a server-enforced merge requirement.
         - Periodic complete audit and performance-distribution measurement are
