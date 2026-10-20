@@ -120,6 +120,32 @@ class FastLaneContractTests(unittest.TestCase):
         self.assertEqual("CI / Merge Gate", self.jobs["merge-gate"]["name"])
         self.assertIn("always()", self.jobs["merge-gate"]["if"])
 
+    def test_cp5_fantasy_management_required_check_is_present_on_every_pr(self):
+        """The FM state-format guard must never be stuck Pending on unrelated PRs."""
+        import yaml
+
+        workflow = yaml.load(
+            (ci.ROOT / ".github/workflows/fantasy-management-validation.yml")
+            .read_text(encoding="utf-8"), Loader=yaml.BaseLoader,
+        )
+        triggers = workflow["on"]
+        # Filters on pull_request would suppress the required job on other PRs.
+        self.assertEqual({}, triggers["pull_request"])
+        self.assertIn("paths", triggers["push"])  # keep existing push semantics
+        self.assertEqual("main", triggers["push"]["branches"][0])
+        self.assertEqual({"contents": "read"}, workflow["permissions"])
+        jobs = workflow["jobs"]
+        self.assertEqual(["validate-fantasy-management"], list(jobs))
+        job = jobs["validate-fantasy-management"]
+        self.assertEqual("Validate Fantasy Management artifacts", job["name"])
+        self.assertNotIn("if", job)
+        self.assertNotIn("continue-on-error", job)
+        commands = "\\n".join(step.get("run", "") for step in job["steps"])
+        self.assertIn("validate_json_format.py", commands)
+        self.assertIn("fantasy-management/automation/state/entity-observation.json", commands)
+        self.assertIn("validate_observation_state_shards.py", commands)
+        self.assertIn("validate_observation_state_configuration.py", commands)
+
     def test_all_fast_lanes_are_unconditionally_present_and_read_only(self):
         names = ("fast-contracts", "fast-source", "fast-scheduler",
                  "fast-angular", "fast-python")

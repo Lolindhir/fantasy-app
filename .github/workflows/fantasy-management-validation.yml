@@ -22,24 +22,9 @@ on:
       - "fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md"
       - "fantasy-management/AGENTS.md"
       - ".github/workflows/fantasy-management-validation.yml"
-  pull_request:
-    paths:
-      - "fantasy-management/automation/**"
-      - "fantasy-management/sources/podcasts/**"
-      - "fantasy-management/analyses/**/drafts/**"
-      - "fantasy-management/_ai/schemas/**"
-      - "fantasy-management/_ai/templates/podcast/**"
-      - "fantasy-management/_ai/templates/draft-analysis/**"
-      - "fantasy-management/_ai/entity-resolution/**"
-      - "fantasy-management/_ai/scripts/**"
-      - "fantasy-management/_ai/schema-list.json"
-      - "fantasy-management/_ai/PODCAST_SOURCE_MODEL.md"
-      - "fantasy-management/_ai/PODCAST_EXTRACTION_RULES.md"
-      - "fantasy-management/_ai/WORKFLOWS.md"
-      - "fantasy-management/_ai/OBSERVATION_STATE_STORAGE.md"
-      - "fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md"
-      - "fantasy-management/AGENTS.md"
-      - ".github/workflows/fantasy-management-validation.yml"
+  # CP5: required check must exist on every PR, including unrelated changes.
+  # Keep the existing push paths filter to avoid redundant bot-triggered runs.
+  pull_request: {}
   workflow_dispatch:
 
 permissions:
