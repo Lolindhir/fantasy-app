@@ -109,6 +109,17 @@ class FastLaneContractTests(unittest.TestCase):
         cls.workflow = yaml.safe_load((ci.ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8"))
         cls.jobs = cls.workflow["jobs"]
 
+    def test_cp41_display_names_do_not_change_required_job_checks(self):
+        self.assertEqual("CI • Repository Validation", self.workflow["name"])
+        self.assertEqual(
+            "${{ github.event_name == 'pull_request' && 'CI • Repository Validation' || 'CI • Full Repository Audit' }}",
+            self.workflow["run-name"],
+        )
+        # Required check uses an independent, stable job name, never a
+        # workflow-display label.
+        self.assertEqual("CI / Merge Gate", self.jobs["merge-gate"]["name"])
+        self.assertIn("always()", self.jobs["merge-gate"]["if"])
+
     def test_all_fast_lanes_are_unconditionally_present_and_read_only(self):
         names = ("fast-contracts", "fast-source", "fast-scheduler",
                  "fast-angular", "fast-python")
