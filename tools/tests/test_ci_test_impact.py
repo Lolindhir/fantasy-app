@@ -574,8 +574,11 @@ class InventoryTests(unittest.TestCase):
             counts = ci.validate(ci.ROOT, data)
             self.assertEqual(1, counts["explicitlyExceptedUncovered"])
             self.assertEqual(28, counts["currentlyNotInPr"])
-            # Stale exceptions must also block the CI contract.
-            data["tests"].pop()
+            # A waiver for an already-covered test is stale and must fail.
+            data["coveragePolicy"]["exceptions"]["tools/tests/test_ci_test_impact.py"] = {
+                "issue": "#1113",
+                "reason": "Deliberately stale waiver for test already covered by the Fast job",
+            }
             with self.assertRaisesRegex(ValueError, "Unreviewed PR-CI coverage gap"):
                 ci.validate(ci.ROOT, data)
 
