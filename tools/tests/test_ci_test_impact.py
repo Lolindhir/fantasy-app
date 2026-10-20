@@ -140,7 +140,7 @@ class FastLaneContractTests(unittest.TestCase):
                 self.assertIn("Issue", evidence)
         dimensions = contract["dimensions"]["ciImpactAndTestCoverage"]
         checks = "\n".join(dimensions["checks"])
-        self.assertIn("actual", checks)
+        self.assertIn("really invoke", checks)
         self.assertIn("uncovered", checks.lower())
         self.assertIn("four Deep", checks)
         self.assertIn("both change-focused reviews and periodic", dimensions["reviewRule"])
