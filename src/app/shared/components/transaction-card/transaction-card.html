@@ -29,9 +29,9 @@
     }
 
     <span class="transaction-card__header-context">
-      @if (density !== 'compact' && transaction.CreatedAtDate) {
-        <time [attr.datetime]="transaction.CreatedAtDate.toISOString()">
-          {{ transaction.CreatedAtDate | date: 'd MMM' }}
+      @if (density !== 'compact' && transaction.EffectiveAtDate) {
+        <time [attr.datetime]="transaction.EffectiveAtDate.toISOString()">
+          {{ transaction.EffectiveAtDate | date: 'd MMM' }}
         </time>
       }
       @if (category === 'other' && transaction.Participants.length === 1) {

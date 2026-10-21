@@ -54,13 +54,13 @@ identity:
     the App TeamID); player and draft IDs in Adds, Drops and pick results are Sleeper IDs, as
     in the App contract. CanonicalPlayerID is added next to them where unique. Sleeper IDs are
     join keys, never the canonical identity.
-  noWallClock: No timestamp, run ID or commit hash appears in the content. CreatedAt/CreatedDate are provider event times, not generation times.
+  noWallClock: No run ID, commit hash or clock-of-materialization timestamp appears in the content. CreatedAt/CreatedDate retain submission provenance; EffectiveAt is deterministically derived from the provider status transition or the documented fallback.
 
 contract:
-  version: 1
+  version: 2  # LeagueTransactions only. LeagueDrafts remains v1.
   transactionsRootShape: |
     {
-      "ContractVersion": 1,
+      "ContractVersion": 2,
       "CanonicalLeagueID": "nfl-reise",
       "Season": 2026,
       "PlayerIdentities": { "<SleeperPlayerID>": "<CanonicalPlayerID>" | null },
@@ -69,7 +69,7 @@ contract:
   transactionShape: >
     All fields of the current Transactions.json entry in the same order: Source
     (Sleeper | Sleeper_Manual | Manual), TransactionID, Type, Status, Season, Week,
-    CreatedAt, CreatedDate, RosterIDs, Adds, Drops, DraftPicks, Notes. Adds and Drops map
+    CreatedAt, CreatedDate, EffectiveAt, RosterIDs, Adds, Drops, DraftPicks, Notes. Adds and Drops map
     Sleeper PlayerID to RosterID. DraftPicks entries carry the movement
     (Season, Round, OriginalOwnerRosterID, PreviousOwnerRosterID, NewOwnerRosterID), the
     canonical draft identity (DraftType, DraftInstance, DraftCode, DraftKey, SleeperDraftID,
@@ -81,7 +81,14 @@ contract:
     pick result of the file, resolved to the CanonicalPlayerID valid for the file's season
     through data-source/nfl/identities. null means no unique resolution (missing, never
     guessed). The map is additive: no existing field is removed or renamed.
-  transactionOrdering: league_transactions.py (ported from the former TransactionUtils.psm1::Get-SortedTransactions) (newest first) and the pick sort of Merge-CanonicalTransactionsWithManual are kept; keys inside objects have a fixed order so equal content is byte-equal.
+  transactionOrdering: >
+    Newest EffectiveAt first, tied deterministically by TransactionID, within a
+    season. StatusUpdatedAt (canonical Sleeper status_updated) is effective when a
+    valid positive millisecond timestamp; otherwise preserve CreatedAt as fallback.
+    CreatedDate always describes submission provenance and is not a sort key.
+    Pick-ownership transfers use EffectiveAt instead of CreatedAt. Manual-only
+    transactions use their manually supplied Date as both CreatedAt and EffectiveAt.
+    This rule applies throughout the Shared Derived product and its consumers.
   draftsRootShape: |
     {
       "ContractVersion": 1,

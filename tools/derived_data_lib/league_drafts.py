@@ -40,8 +40,8 @@ GUARD_LIMIT = 30
 
 
 def _sort_key_tx(entry: dict[str, Any]) -> tuple[int, str]:
-    # Sort-Object CreatedAt, TransactionID: numeric first, then culture-insensitive text.
-    return (int(entry["CreatedAt"]), ps_string(entry["TransactionID"]).casefold())
+    # Effective chronology controls pick ownership transfers, not submission order.
+    return (int(entry.get("EffectiveAt") or entry["CreatedAt"]), ps_string(entry["TransactionID"]).casefold())
 
 
 def draft_status(provider_draft: dict[str, Any] | None) -> str:
@@ -231,6 +231,7 @@ def _history_entry(transaction: dict[str, Any], movement: dict[str, Any]) -> dic
         "TransactionID": ps_string(transaction["TransactionID"]),
         "Source": ps_string(transaction.get("Source")),
         "CreatedAt": int(transaction["CreatedAt"]),
+        "EffectiveAt": int(transaction.get("EffectiveAt") or transaction["CreatedAt"]),
         "CreatedDate": ps_string(transaction.get("CreatedDate")),
         "DraftSource": ps_string(movement.get("DraftSource")),
         "PreviousOwnerRosterID": int(movement["PreviousOwnerRosterID"]),
@@ -270,7 +271,7 @@ def apply_pick_trades(picks: list[dict[str, Any]], transactions: list[dict[str, 
         target["IsCurrentlyTraded"] = target["CurrentOwnerRosterID"] != target["OriginalOwnerRosterID"]
         target["TradeSource"] = movement["Source"]
         target["TradeHistory"].append({k: movement[k] for k in (
-            "TransactionID", "Source", "CreatedAt", "CreatedDate", "DraftSource", "PreviousOwnerRosterID", "NewOwnerRosterID")})
+            "TransactionID", "Source", "CreatedAt", "EffectiveAt", "CreatedDate", "DraftSource", "PreviousOwnerRosterID", "NewOwnerRosterID")})
     for pick in picks:
         pick["IsCurrentlyTraded"] = pick["CurrentOwnerRosterID"] != pick["OriginalOwnerRosterID"]
 

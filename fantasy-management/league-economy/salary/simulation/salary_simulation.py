@@ -359,9 +359,9 @@ def acquisition_events():
                 continue
             transactions.append((season, tx))
             for pid, roster in (tx.get("Drops") or {}).items():
-                events.append((season, tx["CreatedAt"] - 1, str(pid), int(roster), "drop:" + tx["Type"]))
+                events.append((season, (tx.get("EffectiveAt") or tx["CreatedAt"]) - 1, str(pid), int(roster), "drop:" + tx["Type"]))
             for pid, roster in (tx.get("Adds") or {}).items():
-                events.append((season, tx["CreatedAt"], str(pid), int(roster), "add:" + tx["Type"]))
+                events.append((season, (tx.get("EffectiveAt") or tx["CreatedAt"]), str(pid), int(roster), "add:" + tx["Type"]))
     events.sort(key=lambda e: (e[0], e[1]))
     return events, transactions
 

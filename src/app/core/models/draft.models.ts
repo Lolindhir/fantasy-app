@@ -23,7 +23,8 @@ export interface DraftSettings {
 
 export interface DraftPickTradeHistoryEntry {
   TransactionID: string;
-  CreatedAt: number;
+  CreatedAt: number; // Original submission timestamp.
+  EffectiveAt?: number; // Primary historical trade timestamp (newer generated files).
   CreatedDate: string;
   PreviousOwnerRosterID: number;
   NewOwnerRosterID: number;
