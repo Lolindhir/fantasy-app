@@ -386,6 +386,14 @@ class RepositoryInvariantTests(unittest.TestCase):
                         self.assertTrue(pick["DraftKey"], (path.name, transaction["TransactionID"]))
             self.assertEqual(len(ids), len(set(ids)))
 
+            # Exact source-level regression: the drop still exists after the
+            # current Players.json population no longer contains Sleeper 3321.
+            current = json.loads((Path(out) / "league-transactions/nfl-reise/2026.json").read_text(encoding="utf-8"))
+            self.assertTrue(any("3321" in row["Drops"] for row in current["Transactions"]))
+            ref = current["PlayerRefs"]["3321"]
+            self.assertEqual("NFLP-3e3947dc88db6fc570fc", ref["CanonicalPlayerID"])
+            self.assertEqual("Tyreek Hill", ref["Name"])
+
 
 if __name__ == "__main__":
     unittest.main()
