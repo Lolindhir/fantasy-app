@@ -201,7 +201,8 @@ def drafts_document(league_id: str, season: int, drafts: list[dict[str, Any]]) -
     return {"ContractVersion": CONTRACT_VERSION, "CanonicalLeagueID": league_id, "Season": season, "Drafts": drafts}
 
 
-CONTRACT_VERSION = 1
+CONTRACT_VERSION = 1  # LeagueDrafts stays on version 1.
+TRANSACTION_CONTRACT_VERSION = 2  # Adds authoritative EffectiveAt to LeagueTransactions.
 
 
 def _player_ids(transactions: list[dict[str, Any]]) -> list[str]:
@@ -223,7 +224,7 @@ def transactions_document(
 ) -> dict[str, Any]:
     """Root object of data-derived/league-transactions/<CanonicalLeagueID>/<season>.json."""
     return {
-        "ContractVersion": CONTRACT_VERSION,
+        "ContractVersion": TRANSACTION_CONTRACT_VERSION,
         "CanonicalLeagueID": league_id,
         "Season": season,
         "PlayerIdentities": {player: resolve_player(player, season) for player in _player_ids(transactions)},

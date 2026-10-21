@@ -18,9 +18,9 @@ export function mapRawTransactions(
   return (rawTransactions ?? [])
     .map(raw => mapRawTransaction(raw, teams, players))
     .sort((a, b) => {
-      const createdAtDifference = b.CreatedAt - a.CreatedAt;
-      return createdAtDifference !== 0
-        ? createdAtDifference
+      const effectiveAtDifference = b.EffectiveAt - a.EffectiveAt;
+      return effectiveAtDifference !== 0
+        ? effectiveAtDifference
         : b.TransactionID.localeCompare(a.TransactionID);
     });
 }
@@ -40,10 +40,17 @@ export function mapRawTransaction(
     playerById
   ));
   const rosterIDs = collectRosterIDs(raw, adds, drops, draftPicks);
+  // Transitional fallback for old published JSON while the canonical source and
+  // Shared Derived artifacts are being re-materialized. The generator owns EffectiveAt.
+  const effectiveAt = Number.isFinite(raw.EffectiveAt) && (raw.EffectiveAt ?? 0) > 0
+    ? raw.EffectiveAt!
+    : raw.CreatedAt;
 
   return {
     ...raw,
+    EffectiveAt: effectiveAt,
     CreatedAtDate: Number.isFinite(raw.CreatedAt) ? new Date(raw.CreatedAt) : null,
+    EffectiveAtDate: Number.isFinite(effectiveAt) ? new Date(effectiveAt) : null,
     RosterIDs: rosterIDs,
     Participants: rosterIDs.map(rosterID => mapParticipant(
       rosterID,

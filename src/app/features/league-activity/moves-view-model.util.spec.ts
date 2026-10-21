@@ -58,6 +58,22 @@ describe('moves-view-model.util', () => {
     expect(viewModel.AddCount).toBe(2);
   });
 
+  it('groups a completed waiver on its effective day, not its submission day', () => {
+    const waiver = createTransaction('waiver-time', 'waiver', 1, 1);
+    waiver.CreatedAt = 1792268727874; // 17 Oct 2026
+    waiver.CreatedDate = '2026-10-17';
+    waiver.EffectiveAt = 1792317947771; // 18 Oct 2026
+    waiver.EffectiveAtDate = new Date(waiver.EffectiveAt);
+    const earlier = createTransaction('cut-time', 'free_agent', 0, 1);
+    earlier.CreatedAt = 1792312508118;
+    earlier.CreatedDate = '2026-10-18';
+    earlier.EffectiveAt = earlier.CreatedAt;
+    earlier.EffectiveAtDate = new Date(earlier.EffectiveAt);
+    const result = buildMovesViewModel([earlier, waiver]);
+    expect(result.Groups.map(group => group.DateKey)).toEqual(['2026-10-18']);
+    expect(result.Groups[0].Transactions.map(transaction => transaction.TransactionID)).toEqual(['waiver-time', 'cut-time']);
+  });
+
   it('filters the visible feed without changing the season summary', () => {
     const transactions = [
       createTransaction('trade-1', 'trade', 1, 1),
@@ -161,7 +177,9 @@ describe('moves-view-model.util', () => {
       Week: 1,
       CreatedAt: 1781261326971,
       CreatedDate: '2026-06-12',
+      EffectiveAt: 1781261326971,
       CreatedAtDate: new Date(1781261326971),
+      EffectiveAtDate: new Date(1781261326971),
       RosterIDs: [1],
       Participants: [
         {

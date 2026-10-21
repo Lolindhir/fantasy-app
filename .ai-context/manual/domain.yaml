@@ -204,6 +204,7 @@ coreConcepts:
       - Week
       - CreatedAt
       - CreatedDate
+      - EffectiveAt
       - RosterIDs
       - Adds
       - Drops
@@ -320,7 +321,7 @@ coreConcepts:
       - expose mapped Transaction objects through DataService instead of raw generated transaction JSON
       - resolve participant teams and player assets while preserving unresolved assets through ID fallbacks
       - assign players and draft picks per participant as acquired or sent from the generated owner fields
-      - group completed transactions chronologically by CreatedDate
+      - group completed transactions chronologically by the UTC day of EffectiveAt
       - show current-season summary counts, transaction metadata, participant teams and asset chips
       - identify traded picks by season, draft type, round and original owner so equal-round pick swaps remain distinguishable
       - keep /league-activity as compatibility redirect to /moves
@@ -332,6 +333,14 @@ coreConcepts:
       - pending transaction derivation
 
 transactions:
+  effectiveTimePolicy: >
+    EffectiveAt (Unix milliseconds) is the single authoritative transaction
+    chronology field in Shared Derived, computed from canonical StatusUpdatedAt
+    (Sleeper status_updated) where positive and valid, else CreatedAt. CreatedAt
+    and CreatedDate are retained only as original submission provenance. Manual
+    transactions without provider status time take their recorded manual date.
+    Consumer event sorting, grouping, pick ownership playback and salary simulation
+    must use EffectiveAt; never infer a timestamp from pipeline wall clock.
   sourceOfTruth:
     currentOutput: public/data/Transactions.json
     manualInput: data-meta/<CanonicalLeagueID>/transactions-manual.json

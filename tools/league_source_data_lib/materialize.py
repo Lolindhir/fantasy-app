@@ -532,6 +532,7 @@ def _canonicalize_transactions(
                 "Status": item.get("status"),
                 "Week": week,
                 "CreatedAt": item.get("created"),
+                "StatusUpdatedAt": item.get("status_updated"),
                 "CreatorCanonicalLeagueMemberID": member_by_provider.get(creator_provider_id) if creator_provider_id else None,
                 "CreatorProviderUserID": creator_provider_id,
                 "CanonicalLeagueRosterIDs": [_resolve_roster(roster_by_provider, value, f"transaction.{provider_transaction_id}.roster_ids") for value in roster_values],
