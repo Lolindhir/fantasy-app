@@ -277,7 +277,8 @@ class RepositoryInvariantTests(unittest.TestCase):
             draft_keys, pick_keys = set(), set()
             for path in sorted(Path(out, "league-drafts").rglob("*.json")):
                 payload = json.loads(path.read_text(encoding="utf-8"))
-                self.assertEqual(1, payload["ContractVersion"])
+                self.assertEqual(2, payload["ContractVersion"])
+                self.assertIn("PlayerRefs", payload)
                 for draft in payload["Drafts"]:
                     self.assertEqual(str(payload["Season"]), draft["Season"])
                     self.assertNotIn(draft["DraftKey"], draft_keys)
