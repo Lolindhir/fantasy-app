@@ -346,7 +346,33 @@ class CurrentRepositoryTransactionScopeIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(len(outputs), 1)
         existing = json.loads(outputs[0].path.read_text(encoding="utf-8"))
-        self.assertEqual(outputs[0].value, existing)
+        # The schema migration intentionally adds StatusUpdatedAt to canonical facts.
+        # Every pre-existing field still has to match the published partition exactly.
+        without_new_timestamp = [
+            {key: value for key, value in transaction.items() if key != "StatusUpdatedAt"}
+            for transaction in outputs[0].value
+        ]
+        self.assertEqual(without_new_timestamp, existing)
+
+        # Independently verify the new field against its owning Sleeper raw input,
+        # rather than ignoring it as a harmless mismatch.
+        provider_raw = json.loads((
+            repo_root / "data-source" / "providers" / "sleeper" / "leagues"
+            / "1354177383984267264" / "transactions" / "week-1.json"
+        ).read_text(encoding="utf-8"))
+        updated_by_id = {
+            str(item["transaction_id"]): item.get("status_updated")
+            for item in provider_raw
+        }
+        self.assertEqual(len(updated_by_id), len(outputs[0].value))
+        for transaction in outputs[0].value:
+            provider_id = next(
+                mapping["ProviderTransactionID"]
+                for mapping in transaction["ProviderMappings"]
+                if mapping["Provider"] == "Sleeper"
+            )
+            self.assertIn(provider_id, updated_by_id)
+            self.assertEqual(transaction["StatusUpdatedAt"], updated_by_id[provider_id])
 
 
 if __name__ == "__main__":
