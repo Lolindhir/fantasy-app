@@ -352,7 +352,11 @@ class CurrentRepositoryTransactionScopeIntegrationTests(unittest.TestCase):
             {key: value for key, value in transaction.items() if key != "StatusUpdatedAt"}
             for transaction in outputs[0].value
         ]
-        self.assertEqual(without_new_timestamp, existing)
+        existing_without_new_timestamp = [
+            {key: value for key, value in transaction.items() if key != "StatusUpdatedAt"}
+            for transaction in existing
+        ]
+        self.assertEqual(without_new_timestamp, existing_without_new_timestamp)
 
         # Independently verify the new field against its owning Sleeper raw input,
         # rather than ignoring it as a harmless mismatch.
@@ -373,6 +377,17 @@ class CurrentRepositoryTransactionScopeIntegrationTests(unittest.TestCase):
             )
             self.assertIn(provider_id, updated_by_id)
             self.assertEqual(transaction["StatusUpdatedAt"], updated_by_id[provider_id])
+        # Once the source publisher has backfilled the new field, the tracked
+        # canonical snapshot must agree with the same independently checked raw
+        # status timestamp. Before that publication, legacy snapshots lack it.
+        existing_by_id = {
+            next(mapping["ProviderTransactionID"] for mapping in transaction["ProviderMappings"]
+                 if mapping["Provider"] == "Sleeper"): transaction
+            for transaction in existing
+        }
+        for provider_id, transaction in existing_by_id.items():
+            if "StatusUpdatedAt" in transaction:
+                self.assertEqual(transaction["StatusUpdatedAt"], updated_by_id[provider_id])
 
 
 if __name__ == "__main__":
