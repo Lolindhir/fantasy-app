@@ -93,8 +93,8 @@ def safe_current_roster_refresh(old: dict, new: dict) -> tuple[bool, int, int]:
                 return None  # Cannot audit an existing owner without its provider key.
             if gsis:
                 key = str(gsis)
-                if key in result:
-                    return None  # No ambiguous row-to-owner comparison.
+                if key in result and result[key] != owner:
+                    return None  # A player on multiple teams must retain one owner.
                 result[key] = owner
         return result if result else None
 
@@ -313,13 +313,21 @@ class MutableCurrentRosterRefreshTests(unittest.TestCase):
                 new = self.roster([self.player("00-001", owner, "INA")])
                 self.assertFalse(safe_current_roster_refresh(old, new)[0])
 
-    def test_duplicate_or_unkeyed_resolved_player_fails_closed(self):
+    def test_same_gsis_can_move_teams_without_losing_stable_identity(self):
         old = self.roster([self.player("00-001", "NFLP-one")])
-        duplicates = self.roster([self.player("00-001", "NFLP-one"),
-                                  self.player("00-001", "NFLP-one")])
+        # The canonical season roster is keyed by (Team, GSIS), so a trade
+        # can legitimately leave two rows for one player across teams.
+        new = self.roster([self.player("00-001", "NFLP-one", "ACT"),
+                           self.player("00-001", "NFLP-one", "INA")])
+        self.assertEqual(safe_current_roster_refresh(old, new), (True, 0, 1))
+
+    def test_conflicting_duplicate_or_unkeyed_resolved_player_fails_closed(self):
+        old = self.roster([self.player("00-001", "NFLP-one")])
+        conflicts = self.roster([self.player("00-001", "NFLP-one"),
+                                 self.player("00-001", "NFLP-other")])
         unkeyed = self.roster([self.player("00-001", "NFLP-one"),
                                self.player("", "NFLP-two")])
-        self.assertFalse(safe_current_roster_refresh(old, duplicates)[0])
+        self.assertFalse(safe_current_roster_refresh(old, conflicts)[0])
         self.assertFalse(safe_current_roster_refresh(old, unkeyed)[0])
 
     def test_source_identity_and_season_contract_must_stay_equal(self):
