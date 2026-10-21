@@ -57,12 +57,13 @@ def select_targets(
             year = int(weekly.group(1) or weekly.group(4))
             leg = int(weekly.group(2) or weekly.group(5))
             league = weekly.group(3)
-            # NFL player/roster evidence for week N can influence projections
-            # in later scored weeks. Rebuild N and every subsequent week of
-            # that season; league matchups are week-local by contrast.
+            # NFL history feeds rolling projections and calibration across
+            # seasons. Rebuild this week and all later scored weeks, including
+            # future seasons; league matchups are week-local by contrast.
             forward = league is None
-            chosen.update(t for t in targets if t[1] == year
-                          and (t[2] >= leg if forward else t[2] == leg)
+            chosen.update(t for t in targets
+                          if ((t[1] > year or (t[1] == year and t[2] >= leg))
+                              if forward else t[1:] == (year, leg))
                           and (league is None or t[0] == league))
             continue
         season_match = _SEASON_INPUT.fullmatch(path)

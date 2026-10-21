@@ -31,7 +31,7 @@ class HistoricalDerivedSelectionTests(unittest.TestCase):
     def test_incremental_exact_week_season_and_unknown_full_fallback(self):
         self.assertEqual(pipeline.select_targets(
             self.targets, mode="incremental",
-            changed_paths=["data-source/nfl/player-stats/2024/01.json"]), self.targets[:2])
+            changed_paths=["data-source/nfl/player-stats/2024/01.json"]), self.targets)
         self.assertEqual(pipeline.select_targets(
             self.targets, mode="incremental",
             changed_paths=["data-source/leagues/nfl-reise/seasons/2026/matchups/week-2.json"]),
