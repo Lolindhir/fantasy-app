@@ -40,6 +40,7 @@ class TransactionCanonicalShadowTests(unittest.TestCase):
             ],
             "CanonicalLeagueRosterIDs": ["clr-b", "clr-a"],
             "CreatedAt": 1788949592892,
+            "StatusUpdatedAt": 1788953192892,
             "DraftPicks": [
                 {
                     "OriginalCanonicalLeagueRosterID": "clr-a",
@@ -70,6 +71,7 @@ class TransactionCanonicalShadowTests(unittest.TestCase):
         self.assertEqual(converted["Source"], "Sleeper")
         self.assertEqual(converted["Season"], "2026")
         self.assertEqual(converted["CreatedDate"], "2026-09-09")
+        self.assertEqual(converted["StatusUpdatedAt"], 1788953192892)
         self.assertEqual(converted["RosterIDs"], [1, 5])
         self.assertEqual(converted["Adds"], {"13414": 5})
         self.assertEqual(converted["Drops"], {"13414": 1})
