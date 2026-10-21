@@ -1,7 +1,7 @@
 import type { RawDraft, DraftPick } from '../../../core/models/draft.models';
 import type { Player } from '../../../core/models/player.models';
 import type { TransactionParticipant, TransactionDraftPick } from '../../../core/models/transaction.models';
-import { buildTransactionPickContext, getTransactionCardAssets } from './transaction-card.presenter';
+import { buildTransactionPickContext, getTransactionCardAssets, getTransactionPreviewLimit } from './transaction-card.presenter';
 
 describe('transaction-card presenter', () => {
   const participant: TransactionParticipant = {
@@ -14,6 +14,17 @@ describe('transaction-card presenter', () => {
     } as TransactionDraftPick],
     SentDraftPicks: []
   };
+
+  it('always shows every traded asset, regardless of card density', () => {
+    for (const density of ['mini', 'compact', 'detail'] as const) {
+      expect(getTransactionPreviewLimit('trade', density, false))
+        .toBe(Number.POSITIVE_INFINITY);
+    }
+    expect(getTransactionPreviewLimit('add', 'compact', false)).toBe(3);
+    expect(getTransactionPreviewLimit('cut', 'mini', false)).toBe(1);
+    expect(getTransactionPreviewLimit('add', 'compact', true))
+      .toBe(Number.POSITIVE_INFINITY);
+  });
 
   it('preserves an add with a simultaneous drop as one participant, with both directions', () => {
     expect(getTransactionCardAssets(participant, 'incoming').map(asset => asset.label)).toEqual([

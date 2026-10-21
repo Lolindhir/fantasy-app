@@ -115,9 +115,28 @@ class ManualOverlayTests(unittest.TestCase):
         with self.assertRaises(TransactionHistoryError):
             merge_manual_overlay([tx("100")], rows, "2026", OWNERS, CONFIGS)
 
-    def test_sort_is_descending_by_season_week_created_id(self):
+    def test_sort_is_descending_by_effective_time_independent_of_submission_and_week(self):
         items = [tx("a", week=1, created=5), tx("b", week=2, created=1), tx("c", week=2, created=1)]
+        items[1]["EffectiveAt"] = 9
+        items[2]["EffectiveAt"] = 9
         self.assertEqual(["c", "b", "a"], [item["TransactionID"] for item in sort_transactions(items)])
+
+    def test_waiver_processing_time_beats_submission_and_manual_falls_back(self):
+        first = tx("waiver", created=1792268727874)
+        first["Type"] = "waiver"
+        first["StatusUpdatedAt"] = 1792317947771  # 18 Oct, 12:05 local vs 17 Oct, 22:25 submitted
+        later_submitted = tx("cut", created=1792312508118)
+        later_submitted["StatusUpdatedAt"] = 1792312508118
+        merged = merge_manual_overlay([first, later_submitted], [], "2026", OWNERS, CONFIGS)
+        self.assertEqual(["waiver", "cut"], [item["TransactionID"] for item in merged])
+        self.assertEqual(1792317947771, merged[0]["EffectiveAt"])
+        self.assertEqual(1792268727874, merged[0]["CreatedAt"])
+        self.assertNotIn("StatusUpdatedAt", merged[0])
+        legacy = merge_manual_overlay([tx("old", created=1234)], [], "2026", OWNERS, CONFIGS)
+        self.assertEqual(1234, legacy[0]["EffectiveAt"])
+        manual = merge_manual_overlay([], [{"Season": "2026", "Date": "2026-01-02",
+            "Week": 1, "Picks": []}], "2026", OWNERS, CONFIGS)
+        self.assertEqual(manual[0]["CreatedAt"], manual[0]["EffectiveAt"])
 
 
 class PickIdentityTests(unittest.TestCase):
@@ -263,7 +282,7 @@ class StageTests(unittest.TestCase):
     def test_document_lists_player_identities_of_the_file(self):
         document = transactions_document("L", 2026, [tx("1", adds={"p1": 1}, drops={"p2": 2})], lambda p, s: None if p == "p2" else f"C-{p}")
         self.assertEqual({"p1": "C-p1", "p2": None}, document["PlayerIdentities"])
-        self.assertEqual(1, document["ContractVersion"])
+        self.assertEqual(2, document["ContractVersion"])
 
 
 class RepositoryInvariantTests(unittest.TestCase):
@@ -279,7 +298,7 @@ class RepositoryInvariantTests(unittest.TestCase):
             ids = []
             for path in sorted(Path(out, "league-transactions").rglob("*.json")):
                 payload = json.loads(path.read_text(encoding="utf-8"))
-                self.assertEqual(1, payload["ContractVersion"])
+                self.assertEqual(2, payload["ContractVersion"])
                 for transaction in payload["Transactions"]:
                     ids.append(transaction["TransactionID"])
                     for pick in transaction["DraftPicks"]:

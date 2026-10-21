@@ -178,6 +178,17 @@ class OddsObservationBufferTests(unittest.TestCase):
             )
             self.assertEqual(next_plan["PublishableGameIDs"], [GAME])
 
+    def test_identical_polls_do_not_write_technical_state_again(self):
+        _, state = plan()
+        previous = serialize_state(state)
+        next_plan, after = plan(prior=state, now=BASE_TIME + timedelta(minutes=10))
+        self.assertFalse(next_plan["PublishableGameIDs"])
+        self.assertEqual(serialize_state(after), previous)
+        # Quotenpreise werden nicht eingelesen; sie dürfen den State nicht verändern.
+        changed = {"SpreadLine": 3.5, "TotalLine": 44.5}
+        _, after = plan(changed, prior=after, now=BASE_TIME + timedelta(minutes=20))
+        self.assertNotEqual(serialize_state(after), previous)
+
     def test_real_2026_canonical_source_projection_is_semantic_noop(self):
         root = TOOLS.parent
         source = root / "data-source" / "nfl"
@@ -193,8 +204,15 @@ class OddsObservationBufferTests(unittest.TestCase):
             observed_lines=observed, previous_state=None, observed_at=BASE_TIME,
         )
         self.assertEqual(plan_result["TotalGames"], 272)
-        self.assertEqual(plan_result["PublishableGameIDs"], [])
-        self.assertEqual(plan_result["RelevantNetChanges"], 0)
+        # The registered raw evidence may legitimately be newer than the daily
+        # canonical partition. Compare semantic counts, not a brittle no-drift
+        # assumption about independently refreshed source snapshots.
+        canonical_by_id = {g["GameID"]: g for g in canonical["Games"]}
+        expected_changed = {game_id for game_id, values in observed.items()
+                            if any(values.get(field) != canonical_by_id[game_id].get(field)
+                                   for field in ("SpreadLine", "TotalLine"))}
+        self.assertEqual(plan_result["RelevantNetChanges"], len(expected_changed))
+        self.assertTrue(set(plan_result["PublishableGameIDs"]) <= expected_changed)
         self.assertEqual(len(state["Games"]), 272)
 
     def test_scoped_fetch_uses_only_registered_nflverse_odds_origin(self):

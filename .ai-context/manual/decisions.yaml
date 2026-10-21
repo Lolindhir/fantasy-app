@@ -2030,3 +2030,185 @@ decisions:
       negative:
         - A new derived output and future scheduler adapter require explicit safety validation.
         - Historical latest-line market values must not be reused as ex-ante pregame evidence.
+
+  - id: ADR-063
+    title: Weekly team awards reuse the existing App WeeklyRecaps publisher
+    status: accepted
+    context: >
+      The existing weekly recap generator owns the App-facing editorial
+      KeyGames and KeyPlayers read model. Best Manager and Best Coach are
+      already canonical Shared Derived TeamWeekPerformance facts for completed
+      weeks; a parallel App publisher would duplicate its ownership.
+    decision: >
+      Reuse RequestLeaguePublication.ps1, RequestWeeklyRecaps.ps1 and
+      WeeklyRecapUtils.psm1 to project existing TeamWeekPerformance winner
+      facts into public/data/WeeklyRecaps.json and historical WeeklyRecaps
+      archives. Derived owns scoring, best-ball optimization and winner ties.
+      WeeklyRecaps does no second calculation. Winner CanonicalLeagueRosterID
+      values map to FantasyTeamID exclusively through the exact season/week
+      canonical league matchup ProviderRosterID and matching final Matchups
+      participants; no current owner or mutable current roster lookup.
+      Missing Derived partitions remain explicitly unavailable, not zero;
+      incompatible or contradictory present partitions fail closed. The
+      established 2 KeyGames/3 KeyPlayers contract remains unchanged.
+      Future incremental migration of those legacy calculations to Shared
+      Derived retains the existing public/data WeeklyRecaps projection
+      boundary and is not performed in this checkpoint.
+    rationale: >
+      A single existing App publisher avoids a second scheduler/writer,
+      preserves source-of-truth boundaries and supplies a stable consumer
+      schema while Shared Derived expands.
+    consequences:
+      positive:
+        - One App projection and no reimplementation of Best Ball scoring.
+        - Historical roster identity is joined in its original week.
+        - Independent Derived backfills become visible on the next App chain
+          without introducing a new publication writer.
+      negative:
+        - A matching Derived partition is not guaranteed for every finalized
+          recap week until separately gated historical backfill finishes.
+        - The current recap generator temporarily mixes legacy editorial
+          calculations with shared-derived team award projection.
+
+
+  - id: ADR-064
+    title: Keep league-provider points and canonical NFL scoring separate with auditable reconciliation
+    status: accepted
+    context: >
+      Sleeper League PlayerPoints and independent canonical NFL-derived
+      PlayerWeekFantasy Actual sometimes disagree because provider scoring
+      evidence differs. League awards and canonical player analyses answer
+      different questions. Overwriting either point value, globally widening
+      scoring tolerances, or duplicating divergence gates across downstream
+      consumers would hide evidence or make historic awards unreliable.
+    decision: >
+      Retain both values in their existing authoritative sources and add one
+      read-only-by-default Shared Derived player-scoring reconciliation.
+      Identify a comparison by canonical league, season, week, player and
+      scoring-profile fingerprint. The reconciliation output contains both
+      values, null when one is absent, numerical difference and explicit
+      verification status. Allow only versioned, provenance-backed, exact
+      player/week/value-pair exceptions from manual data-meta policy.
+      Exception publication must remain auditable and stale exceptions fail
+      closed. This does not relax the normal ~0.01-point parity tolerance.
+      TeamWeekPerformance uses Sleeper League matchup PlayerPoints for both
+      actual starters and retrospective all-roster Best Ball; it consumes
+      reconciliation only as a quality gate. PWF continues to calculate
+      independent canonical NFL scores without using provider fantasy totals
+      as its source of truth.
+    rationale: >
+      A single reconciling fact creates future consumer choice without
+      merging two independent scoring facts or creating a second scorer.
+      The known Caleb Williams 2025 W06 difference (#698: 19.88 League
+      versus 20.38 PWF) has an explicit narrow exception, not a waiver.
+    consequences:
+      positive:
+        - Consumers can select a scoring source and inspect provenance.
+        - Unknown, stale or inconsistent scoring remains fail-closed.
+        - Accepted provider differences are not disguised as exact parity.
+      negative:
+        - An additional Shared Derived output requires later classified,
+          race-safe publication and explicit historical backfill validation.
+        - Players absent from the league matchup roster cannot have
+          invented Sleeper points and are marked unavailable on that side.
+
+  - id: ADR-065
+    title: Fail-closed risk-selected CI for pull requests with permanent merge result
+    status: accepted
+    context: >
+      The single mandatory GitHub Actions build serially executed every
+      historical source replay and full market restore on every pull request,
+      regardless of risk or touched dependencies. Its measured runtime was
+      approximately 39 minutes, mostly in NFL identity and market restoration.
+      CP1 registered existing tests and a read-only dependency impact selector;
+      CP2 proved independent read-only Fast validation can complete in roughly
+      2 minutes while retaining the complete legacy suite. Moving to selected
+      Deep tests must never silently drop existing checks or turn a skipped
+      GitHub Actions job into false evidence of validation.
+    decision: >
+      The existing build.yml remains the sole central PR CI entry point.
+      Run Fast contract/source/PowerShell/scheduler/Angular lanes on every PR
+      and execute the remaining previously required Python Fast modules from
+      a strict versioned registry. Select four Deep families using a complete
+      verified PR changed-file inventory plus conservative dependency closure.
+      Unknown paths, newly unclassified tests, renames/deletes, API uncertainty,
+      CI/selector/contract changes and broad provider or identity dependencies
+      require all affected Deep families; the unchanged legacy historical build is
+      invoked only by workflow_dispatch manual full validation, never
+      redundantly on a pull request. CP4 additionally schedules one weekly
+      read-only full audit through the existing central scheduler using the
+      narrowly declared repository_dispatch scheduler-ci-full-audit event.
+      The audit has one attempt per weekly slot; its strict CI gate requires
+      all Fast, all Deep and the intact historical full build to succeed.
+      Health monitoring separately queries repository_dispatch runs (not
+      frequently generated PR runs), alerts on the first failed audit,
+      checks for stale success and provides a bounded first-due grace period.
+      A single job-level
+      timeout-minutes-only change in an explicit allowlisted workflow may avoid
+      Deep only after comparing immutable base/head YAML semantic trees;
+      event, permission, command, environment or writer changes can never be
+      exempted. A stable always-present CI / Merge Gate inspects every Fast,
+      selector, selected and unselected Deep and conditional legacy job result;
+      missing, failed, cancelled, neutral or unexpected skip outcomes fail.
+      Existing independent production publication and Fantasy Management
+      validation remain intact. Branch protection activation is a separate
+      administrative step owned by Issue #243, and until then a named Merge
+      Gate is not itself a server-enforced required check.
+    rationale: >
+      Risk-based execution avoids unrelated 25-minute identity replays while
+      preserving full coverage of test modules previously invoked by the old
+      build. A separate strict result gate prevents the GitHub Actions default
+      'skipped' status from being mistaken for validated critical tests.
+      The tested Deep-test union replaces the redundant old build on CI-change
+      pull requests, with all four Deep suites still required on those changes.
+      Explicit full manual audits preserve the original complete command chain.
+    consequences:
+      positive:
+        - Unrelated PRs can obtain bounded read-only Fast checks without full historical restore.
+        - Source, identity, scoring, market and consumer risk retains explicit Deep regressions.
+        - All selector errors and unexpected job outcomes are visible and fail closed.
+        - Existing scheduler, state ownership and publication writers are unaffected.
+      negative:
+        - More individual jobs and test registry updates are now necessary.
+        - Conservative cases still incur long NFL Deep replay when needed, but
+          never the redundant sequential legacy build on pull requests.
+        - The historical build runs only via manual operator dispatch or
+          the once-weekly CP4 scheduler audit, not automatically on PRs.
+        - Until Issue #243 activates branch protection for CI / Merge Gate,
+          GitHub does not make this check a server-enforced merge requirement.
+        - Periodic complete audit and performance-distribution measurement are
+          follow-up checkpoints CP4 and CP6, not part of this decision.
+
+  - id: ADR-066
+    title: Effective transaction chronology is derived from provider status update
+    status: accepted
+    context: >
+      Sleeper waiver creation may precede successful processing by a calendar day.
+      The prior CreatedAt-based chronology presented pending submission as though
+      it were the effective completed league move and also ordered draft ownership
+      transfers and salary simulation incorrectly in that case (Issue #1117).
+    decision: >
+      Preserve Sleeper created and status_updated as CreatedAt and StatusUpdatedAt
+      in canonical League transaction facts. Shared Derived LeagueTransactions
+      computes a single principal EffectiveAt timestamp from valid positive
+      StatusUpdatedAt, falling back deterministically to CreatedAt for legacy
+      missing provider evidence and manual-only records; there is no wall-clock
+      interpolation. Keep CreatedAt and CreatedDate only as submission provenance.
+      Transaction consumers (App timeline/recent moves, draft pick trade ordering,
+      Fantasy Management salary simulation) use EffectiveAt as the event timestamp.
+      The additive LeagueTransactions product schema is v2; LeagueDrafts remains v1.
+      The existing source/canonical and derived publisher pipelines own regeneration;
+      no hand-authored generated-data corrections or new workflows.
+    rationale: >
+      One effective event time eliminates separate consumer-specific guesses and
+      prevents a previously queued waiver claim from being dated before its outcome.
+    consequences:
+      positive:
+        - Chronological league events align with successful status transitions.
+        - Manual and legacy records have an explicit deterministic fallback.
+        - Submission provenance is still available for historical audit.
+      negative:
+        - Previously generated timelines and historical draft trade ordering may change.
+        - Canonical historical sources and consumer outputs need controlled republishing.
+        - A later Sleeper status_updated edit cannot reveal historical prior status
+          transitions; the provider timestamp is treated as best available evidence.

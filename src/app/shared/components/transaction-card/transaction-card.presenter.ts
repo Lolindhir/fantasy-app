@@ -13,6 +13,18 @@ export type TransactionDisplayDensity = 'mini' | 'compact' | 'detail';
 export type TransactionDisplayCategory = 'trade' | 'add' | 'cut' | 'other';
 export type TransactionAssetDirection = 'incoming' | 'outgoing';
 
+/** A trade is one indivisible exchange: never conceal received assets in the Moves feed. */
+export function getTransactionPreviewLimit(
+  category: TransactionDisplayCategory,
+  density: TransactionDisplayDensity,
+  expanded: boolean
+): number {
+  if (category === 'trade' || density === 'detail' || expanded) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return density === 'mini' ? 1 : 3;
+}
+
 export interface TransactionCardAsset {
   kind: 'player' | 'pick';
   key: string;

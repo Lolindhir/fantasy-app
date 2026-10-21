@@ -521,6 +521,7 @@ matrix:
       - owner/member/roster cardinality follows provider-join-invariants.yaml
 
   fantasyLeagueTransactions:
+    eventTimestamp: EffectiveAt from Shared Derived LeagueTransactions v2; Canonical stores source evidence CreatedAt and StatusUpdatedAt, with CreatedAt fallback only for missing provider status timestamp.
     facts:
       - completed fantasy trades/adds/drops
       - player movement
@@ -671,6 +672,27 @@ playerWeekFantasy:
     materialization/publication checkpoint explicitly migrates them. The new shared
     contract is the target owner; no consumer may create a second independent
     scoring/projection truth once the shared value is productively available.
+
+
+playerScoringReconciliation:
+  status: implementation-checkpoint-no-productively-published-history
+  trackingIssues: [355, 471, 698]
+  contract: .ai-context/manual/player-scoring-reconciliation.yaml
+  targetOwner: Shared Derived Data
+  physicalOwner: data-derived/player-scoring-reconciliation/<CanonicalLeagueID>/<season>/<week>.json
+  manualPolicy: data-meta/<CanonicalLeagueID>/scoring-divergences.json
+  sharedProducer: tools/player_scoring_reconciliation.py
+  factOwners:
+    leaguePoints: canonical league/season/week matchup PlayerPoints from Sleeper
+    calculatedPoints: Shared Derived PlayerWeekFantasy Actual from canonical NFL stats
+    divergenceDecision: exact opt-in incident and point pair, verified by shared producer
+  consumer: tools/team_week_performance_materialize.py parity preflight
+  noNewScoringTruth: both upstream point values remain independent and unchanged
+  releaseGate: >-
+    Strict source/finality/fingerprint/identity parity and approved exact
+    divergences only; missing nonzero scores and unexplained mismatches fail
+    closed. Explicit manual write is not automated publication; later
+    Shared Derived writer activation requires approved classification.
 
 
 playersReadModelFieldInventory:
@@ -965,6 +987,14 @@ consumerReadClassification:
     mention-only: the token appears in a comment or docstring, not in an executed read
     legacy-read-model-pending: a base fact is still read from a published read model; open migration or review item
   consumers:
+    tools/odds_observation.py:
+      reads:
+        provider:nflverse: source-layer-acquisition
+      note: 'Scoped NFL odds candidate acquisition from the fixed registry-approved nflverse games.csv origin; temporary fetch only, never Source/App publication. #471.'
+    tools/ci_test_impact.py:
+      reads:
+        network: repository-infrastructure
+      note: 'CP1 GitHub PR changed-file pagination via read-only REST GET. No fantasy provider reads, source data or publication rights (#1095).'
     fantasy-management/_ai/scripts/build_kicker_weekly_research_plan.py:
       reads:
         provider:cbssports: display-link-construction
@@ -1088,7 +1118,7 @@ consumerReadClassification:
         legacy:Schedule: app-read-model-chain
         legacy:Standings: app-read-model-chain
         legacy:WeeklyRecaps: app-output-owner
-      note: 'Weekly recaps derive from the published Matchups, Schedule and Standings read models inside the App chain.'
+      note: 'Weekly recaps derive KeyGames/KeyPlayers from published Matchups, Schedule, Standings and canonical season/week facts; TeamAwards are projected from data-derived/team-week-performance for that exact finalized week, with historical canonical roster to app-team identity verified against the canonical weekly matchup source. No award recalculation, current-owner joins or parallel publisher (#355).'
     public/requests/utils/general/AvatarUtils.psm1:
       reads:
         provider:sleeper: display-link-construction

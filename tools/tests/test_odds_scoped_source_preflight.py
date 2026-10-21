@@ -11,6 +11,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 ROOT = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 from odds_scoped_source_preflight import source_candidate  # noqa: E402
+from odds_observation_buffer import read_upstream_lines  # noqa: E402
 
 
 class OddsSourcePreflightTests(unittest.TestCase):
@@ -20,9 +21,21 @@ class OddsSourcePreflightTests(unittest.TestCase):
         before = odds_path.read_bytes(), raw_path.read_bytes()
         candidate, audit = source_candidate(ROOT, raw_path, 2026)
         original = json.loads(odds_path.read_text(encoding="utf-8"))
-        self.assertEqual(candidate, original)
-        self.assertEqual(audit["seasonCount"], 28)
+        self.assertEqual(candidate["Season"], 2026)
+        self.assertGreaterEqual(audit["seasonCount"], 28)
         self.assertEqual(len(candidate["Games"]), 272)
+        original_by_id = {game["GameID"]: game for game in original["Games"]}
+        observed = read_upstream_lines(raw_path, 2026, set(original_by_id))
+        self.assertEqual({game["GameID"] for game in candidate["Games"]}, set(original_by_id))
+        for game in candidate["Games"]:
+            game_id = game["GameID"]
+            self.assertEqual((game["GameType"], game["Week"]),
+                             (original_by_id[game_id]["GameType"], original_by_id[game_id]["Week"]))
+            self.assertEqual(
+                (game["SpreadLine"], game["TotalLine"]),
+                (observed[game_id]["SpreadLine"], observed[game_id]["TotalLine"]),
+                f"{game_id}: candidate does not reflect the registered raw line source",
+            )
         self.assertEqual(before, (odds_path.read_bytes(), raw_path.read_bytes()))
 
     def test_price_only_movement_is_derived_noop(self):
@@ -30,9 +43,11 @@ class OddsSourcePreflightTests(unittest.TestCase):
         first, _ = source_candidate(ROOT, raw, 2026)
         with tempfile.TemporaryDirectory() as tmp:
             second_path = Path(tmp) / "games.csv"
-            rows = list(csv.DictReader(raw.open(encoding="utf-8", newline="")))
-            game = next(row for row in rows if row["game_id"].startswith("2026_"))
-            game["home_moneyline"] = "9999"
+            with raw.open(encoding="utf-8", newline="") as source:
+                rows = list(csv.DictReader(source))
+            game = next(row for row in rows if row["game_id"].startswith("2026_")
+                        and row["home_moneyline"].strip())
+            game["home_moneyline"] = str(int(game["home_moneyline"]) + 1)
             with second_path.open("w", encoding="utf-8", newline="") as writer_file:
                 writer = csv.DictWriter(writer_file, fieldnames=list(rows[0]))
                 writer.writeheader()
