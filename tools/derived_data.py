@@ -14,6 +14,8 @@ Second product family: league-transactions and league-drafts (league-history.yam
 written to <derived root>/league-transactions|league-drafts/<CanonicalLeagueID>/<season>.json. Both come
 from one in-memory run in ADR-026 order (the transaction picks carry the draft pick results). The App consumer generator already publishes its own in-memory history
 result; the additive CP2 PlayerRefs do not alter that App delivery until Issue #1100 CP3.
+The optional --hold-seed-players-file explicitly reads the last published
+public/data/Players.json, not a new canonical identity source.
 
 Usage:
   derived_data.py materialize --product player-valuation|league-transactions|league-drafts [--league nfl-reise]
