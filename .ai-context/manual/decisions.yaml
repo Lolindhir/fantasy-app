@@ -2189,3 +2189,37 @@ decisions:
           GitHub does not make this check a server-enforced merge requirement.
         - Periodic complete audit and performance-distribution measurement are
           follow-up checkpoints CP4 and CP6, not part of this decision.
+
+  - id: ADR-066
+    title: Effective transaction chronology is derived from provider status update
+    status: accepted
+    context: >
+      Sleeper waiver creation may precede successful processing by a calendar day.
+      The prior CreatedAt-based chronology presented pending submission as though
+      it were the effective completed league move and also ordered draft ownership
+      transfers and salary simulation incorrectly in that case (Issue #1117).
+    decision: >
+      Preserve Sleeper created and status_updated as CreatedAt and StatusUpdatedAt
+      in canonical League transaction facts. Shared Derived LeagueTransactions
+      computes a single principal EffectiveAt timestamp from valid positive
+      StatusUpdatedAt, falling back deterministically to CreatedAt for legacy
+      missing provider evidence and manual-only records; there is no wall-clock
+      interpolation. Keep CreatedAt and CreatedDate only as submission provenance.
+      Transaction consumers (App timeline/recent moves, draft pick trade ordering,
+      Fantasy Management salary simulation) use EffectiveAt as the event timestamp.
+      The additive LeagueTransactions and LeagueDrafts product schemas are v2; LeagueDrafts additionally includes season-aware PlayerRefs per ADR-057/Issue #1100.
+      The existing source/canonical and derived publisher pipelines own regeneration;
+      no hand-authored generated-data corrections or new workflows.
+    rationale: >
+      One effective event time eliminates separate consumer-specific guesses and
+      prevents a previously queued waiver claim from being dated before its outcome.
+    consequences:
+      positive:
+        - Chronological league events align with successful status transitions.
+        - Manual and legacy records have an explicit deterministic fallback.
+        - Submission provenance is still available for historical audit.
+      negative:
+        - Previously generated timelines and historical draft trade ordering may change.
+        - Canonical historical sources and consumer outputs need controlled republishing.
+        - A later Sleeper status_updated edit cannot reveal historical prior status
+          transitions; the provider timestamp is treated as best available evidence.

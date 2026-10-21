@@ -220,7 +220,8 @@ def drafts_document(
     }
 
 
-CONTRACT_VERSION = 2
+CONTRACT_VERSION = 2  # LeagueDrafts: historical PlayerRefs.
+TRANSACTION_CONTRACT_VERSION = 2  # LeagueTransactions: EffectiveAt and PlayerRefs.
 
 
 def _player_ids(transactions: list[dict[str, Any]]) -> list[str]:
@@ -250,7 +251,7 @@ def transactions_document(
 
     refs = player_refs(_player_ids(transactions), season, resolve_reference, event_names)
     return {
-        "ContractVersion": CONTRACT_VERSION,
+        "ContractVersion": TRANSACTION_CONTRACT_VERSION,
         "CanonicalLeagueID": league_id,
         "Season": season,
         "PlayerIdentities": {player: ref["CanonicalPlayerID"] for player, ref in refs.items()},

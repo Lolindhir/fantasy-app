@@ -150,6 +150,18 @@ class TradeAndResultTests(unittest.TestCase):
         self.assertEqual(["a", "b"], [e["TransactionID"] for e in pick["TradeHistory"]])
         self.assertEqual((True, True, "Sleeper"), (pick["WasTraded"], pick["IsCurrentlyTraded"], pick["TradeSource"]))
 
+    def test_effective_order_overrides_submission_order_for_pick_ownership(self):
+        first = movement("a", "2026_Rookie", 1, 2, 2, 3, created=200)
+        second = movement("b", "2026_Rookie", 1, 2, 3, 1, created=100)
+        first["EffectiveAt"] = 300
+        second["EffectiveAt"] = 400
+        rookie = by_key(build([provider_draft("d1", "2026", "pre_draft", name="rookie")],
+                              transactions=[first, second]))["2026_Rookie"]
+        pick = next(p for p in rookie["Picks"] if p["PickKey"] == "2026_Rookie_R1_OO2")
+        self.assertEqual(1, pick["CurrentOwnerRosterID"])
+        self.assertEqual(["a", "b"], [row["TransactionID"] for row in pick["TradeHistory"]])
+        self.assertEqual([300, 400], [row["EffectiveAt"] for row in pick["TradeHistory"]])
+
     def test_pick_traded_back_is_not_currently_traded(self):
         txs = [movement("a", "2026_Rookie", 1, 2, 2, 3, created=1), movement("b", "2026_Rookie", 1, 2, 3, 2, created=2)]
         rookie = by_key(build([provider_draft("d1", "2026", "pre_draft", name="rookie")], transactions=txs))["2026_Rookie"]
