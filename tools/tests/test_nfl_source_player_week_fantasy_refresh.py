@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-import hashlib
 import json
 import sys
 import tempfile
@@ -311,14 +309,7 @@ class RealFinalWeekScoringRegression(unittest.TestCase):
         self.assertEqual(player["Actual"], {"Points": 4.7, "State": "final"})
         self.assertTrue(dataset["Materialization"]["ActualScoringEvidenceFinalized"])
         self.assertFalse(dataset["Materialization"]["TargetRosterProvisional"])
-        # Temporary exact-source CI snapshot export for reproducible generated
-        # PWF W06 recovery. Will be reverted before the final merge.
-        payload = (json.dumps(dataset, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
-        git_sha = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii") + b"\x00" + payload).hexdigest()
-        encoded = base64.b64encode(payload).decode("ascii")
-        print(f"PWF_W06_EXPORT_BLOB_SHA={git_sha} BYTECOUNT={len(payload)}", flush=True)
-        for offset in range(0, len(encoded), 3000):
-            print("PWF_W06_EXPORT_PART=" + encoded[offset:offset + 3000], flush=True)
+
 
 
 class TargetWeeklyRosterFallbackTests(unittest.TestCase):
