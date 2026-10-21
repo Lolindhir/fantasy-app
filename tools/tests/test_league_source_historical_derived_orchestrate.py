@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 import tempfile
 import unittest
@@ -170,6 +171,23 @@ class HistoricalDerivedIsolatedTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "not idempotent"):
                 pipeline.preflight(self.root)
         self.assertFalse((self.root / "data-derived").exists())
+
+
+@unittest.skipUnless(shutil.which("pwsh"), "Real historical TWP requires PowerShell")
+class HistoricalDerivedRealSourceSmokeTests(unittest.TestCase):
+    def test_completed_week_rebuild_is_read_only_and_idempotent(self):
+        root = TOOLS.parent
+        original = root / "data-derived/team-week-performance/nfl-reise/2026/03.json"
+        self.assertTrue(original.is_file(), "Existing W03 Awards must be published")
+        before = original.read_bytes()
+        report = pipeline.preflight(
+            root, mode="week", season=2026, week=3, league_id="nfl-reise",
+        )
+        self.assertEqual(report["TargetCount"], 1)
+        self.assertTrue(report["SecondPassNoop"])
+        self.assertEqual(report["TWPWouldChange"], 0)
+        self.assertFalse(report["Published"])
+        self.assertEqual(before, original.read_bytes())
 
 
 if __name__ == "__main__":
