@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-10-21T08:40:36Z",
-  "input_fingerprint": "b05550f702882600c569f0b6c347593e0183fd295d5311d2987c062ae4e37e24",
+  "generated_at": "2026-10-21T10:11:54Z",
+  "input_fingerprint": "d40267443aed97bcbb3257e59e7c06d0aa45f3dc834f0e9774037d6da5709f0e",
   "sources": [
     {
       "id": "league_enrichment",
       "path": "public/data/League.json",
-      "content_sha256": "ec44fa034ce91b57d44802e779c18799e7b2027368f7295eaa9365944b96a487"
+      "content_sha256": "b74f6d2c9f2f2a1866fd99333130d9bde1056f3c9eec9a7ceb81e37f61dbd79b"
     },
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "d46abfd95f1c6ec00534bf4cbe3d29c33643e766d5e5f6a81b5fc8d201aa91b1"
+      "content_sha256": "c99311cceec250a7793aeb35c9eef130d0a4c669fc38c8902ea2b37da9cb6e89"
     },
     {
       "id": "roster_evaluation_state",
@@ -42,7 +42,7 @@
       "boundary_priority"
     ],
     "user_override_count": 0,
-    "unclassified_count": 4,
+    "unclassified_count": 6,
     "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
   },
   "team": {
@@ -139,7 +139,7 @@
         "current_active_count": 14,
         "effective_prelock_or_locked_count": 14,
         "startable_count": 8,
-        "backup_count": 3,
+        "backup_count": 1,
         "coverage_floor": null,
         "preferred_coverage": null,
         "status": "pool_managed"
@@ -246,10 +246,10 @@
       "target_general_slots": 2,
       "assignment_status": "current_locked_roster",
       "decision_readiness": "review_required",
-      "active_unclassified_count": 4,
-      "current_active_candidate_count": 2,
+      "active_unclassified_count": 6,
+      "current_active_candidate_count": 1,
       "current_active_general_churn_count": 0,
-      "candidate_pool_count": 2,
+      "candidate_pool_count": 1,
       "guardrail_status": "review_required",
       "candidate_pool": [
         {
@@ -259,15 +259,6 @@
           "security": "hold",
           "current_area": "active",
           "boundary_priority": 10,
-          "counts_as_general_churn": false
-        },
-        {
-          "player_id": "9486",
-          "name": "Dontayvion Wicks",
-          "position": "WR",
-          "security": "hold",
-          "current_area": "active",
-          "boundary_priority": 20,
           "counts_as_general_churn": false
         }
       ],
@@ -1509,13 +1500,14 @@
       "name": "Alec Pierce",
       "position": "WR",
       "nfl_team": "IND",
-      "roster_area": "active",
+      "roster_area": "reserve",
       "roster_sections": [
+        "reserve",
         "roster"
       ],
-      "is_current_active": true,
+      "is_current_active": false,
       "is_current_taxi": false,
-      "is_current_reserve": false,
+      "is_current_reserve": true,
       "roster_role": "backup",
       "roster_security": "hold",
       "structural_function": "coverage_reserve",
@@ -1623,6 +1615,67 @@
         "fantasycalc_value": 1554
       },
       "coverage_role": "development",
+      "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "11631",
+      "name": "Brian Thomas Jr.",
+      "position": "WR",
+      "nfl_team": "JAX",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 24,
+        "years_experience": 3,
+        "salary": 13603415,
+        "salary_projected": 12537528,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 94,
+        "fantasypros_position_rank": "WR35",
+        "fantasycalc_overall_rank": 118,
+        "fantasycalc_value": 1827
+      },
+      "coverage_role": "unclassified",
       "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -1816,69 +1869,6 @@
       "coverage_role": "development",
       "coverage_protected": false,
       "comparison_boundary_eligible": false,
-      "potential_comparison_boundary_after_taxi_reassignment": false,
-      "churn_eligible": false,
-      "potential_churn_after_taxi_reassignment": false
-    },
-    {
-      "player_id": "9486",
-      "name": "Dontayvion Wicks",
-      "position": "WR",
-      "nfl_team": "PHI",
-      "roster_area": "active",
-      "roster_sections": [
-        "roster"
-      ],
-      "is_current_active": true,
-      "is_current_taxi": false,
-      "is_current_reserve": false,
-      "roster_role": "backup",
-      "roster_security": "hold",
-      "structural_function": "coverage_reserve",
-      "classification": {
-        "roster_role": "backup",
-        "roster_security": "hold",
-        "boundary_priority": 20,
-        "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
-        "user_override": false,
-        "notes": [
-          "Second active comparison-boundary player; Week-1 91% offensive snap share prevents clean churn classification."
-        ],
-        "evidence": [],
-        "review_status": "seeded_manual"
-      },
-      "app_data": {
-        "status": "Active",
-        "age": 25.3,
-        "years_experience": 4,
-        "salary": 4385735,
-        "salary_projected": 5703753,
-        "is_free_agent": false
-      },
-      "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Questionable",
-        "description": "Undisclosed",
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "high",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "market": {
-        "fantasypros_overall_rank": 174,
-        "fantasypros_position_rank": "WR72",
-        "fantasycalc_overall_rank": 222,
-        "fantasycalc_value": 985
-      },
-      "coverage_role": "positional_coverage",
-      "coverage_protected": false,
-      "comparison_boundary_eligible": true,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
@@ -2435,70 +2425,6 @@
       "potential_churn_after_taxi_reassignment": false
     },
     {
-      "player_id": "11638",
-      "name": "Ricky Pearsall",
-      "position": "WR",
-      "nfl_team": "SF",
-      "roster_area": "reserve",
-      "roster_sections": [
-        "reserve",
-        "roster"
-      ],
-      "is_current_active": false,
-      "is_current_taxi": false,
-      "is_current_reserve": true,
-      "roster_role": "prospect",
-      "roster_security": "hold",
-      "structural_function": "development",
-      "classification": {
-        "roster_role": "prospect",
-        "roster_security": "hold",
-        "boundary_priority": null,
-        "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
-        "user_override": false,
-        "notes": [
-          "Season-ending injury lowers current utility, but Reserve status removes active slot cost."
-        ],
-        "evidence": [],
-        "review_status": "seeded_manual"
-      },
-      "app_data": {
-        "status": "Inactive",
-        "age": 26.1,
-        "years_experience": 3,
-        "salary": 4299778,
-        "salary_projected": 3684572,
-        "is_free_agent": false
-      },
-      "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "IR",
-        "description": "Knee - PCL",
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "high",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "market": {
-        "fantasypros_overall_rank": 146,
-        "fantasypros_position_rank": "WR62",
-        "fantasycalc_overall_rank": 183,
-        "fantasycalc_value": 1260
-      },
-      "coverage_role": "development",
-      "coverage_protected": false,
-      "comparison_boundary_eligible": false,
-      "potential_comparison_boundary_after_taxi_reassignment": false,
-      "churn_eligible": false,
-      "potential_churn_after_taxi_reassignment": false
-    },
-    {
       "player_id": "12526",
       "name": "Tetairoa McMillan",
       "position": "WR",
@@ -2560,11 +2486,72 @@
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
+    },
+    {
+      "player_id": "10213",
+      "name": "Tre Tucker",
+      "position": "WR",
+      "nfl_team": "LV",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 25.6,
+        "years_experience": 4,
+        "salary": 6965778,
+        "salary_projected": 12996501,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 180,
+        "fantasypros_position_rank": "WR75",
+        "fantasycalc_overall_rank": 171,
+        "fantasycalc_value": 1336
+      },
+      "coverage_role": "unclassified",
+      "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
     }
   ],
   "quality": {
     "status": "warning",
-    "issue_count": 8,
+    "issue_count": 12,
     "issues": [
       {
         "severity": "warning",
@@ -2581,6 +2568,18 @@
       {
         "severity": "warning",
         "kind": "unclassified_managed_player",
+        "player_id": "10213",
+        "name": "Tre Tucker"
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "10213",
+        "name": "Tre Tucker"
+      },
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
         "player_id": "11559",
         "name": "Michael Penix Jr."
       },
@@ -2601,6 +2600,18 @@
         "kind": "active_unclassified_boundary_review_required",
         "player_id": "11625",
         "name": "Adonai Mitchell"
+      },
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "11631",
+        "name": "Brian Thomas Jr."
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "11631",
+        "name": "Brian Thomas Jr."
       },
       {
         "severity": "warning",
