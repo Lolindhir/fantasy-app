@@ -109,6 +109,22 @@ def safe_current_roster_refresh(old: dict, new: dict) -> tuple[bool, int, int]:
     return True, filled, len(protected)
 
 
+def safe_weekly_roster_replay(old: dict, new: dict) -> tuple[bool, int, bool]:
+    """Frozen weekly facts must match; mutable current-season weeks keep GSIS owners."""
+    if old.get("Finalized") is True or new.get("Finalized") is True:
+        # Source partitions frozen after season close: only null -> player ID.
+        safe, filled = safe_frozen_enrichment(old, new)
+        return safe, filled, False
+    if (old.get("Finalized") is not False or new.get("Finalized") is not False or
+            old.get("Week") != new.get("Week") or
+            not isinstance(old.get("Week"), int) or
+            old.get("SourceDataset") != "nflverse.weekly-rosters" or
+            new.get("SourceDataset") != "nflverse.weekly-rosters"):
+        return False, 0, True
+    safe, filled, _ = safe_current_roster_refresh(old, new)
+    return safe, filled, True
+
+
 def safe_current_odds_refresh(old: dict, new: dict) -> bool:
     """A live odds refresh may update market quotes, never schedule identity."""
     before = json.loads(json.dumps(old))
@@ -338,6 +354,26 @@ class MutableCurrentRosterRefreshTests(unittest.TestCase):
                 bad = {**changed, field: value}
                 self.assertFalse(safe_current_roster_refresh(old, bad)[0])
 
+    def test_nonfinal_current_week_may_refresh_facts_not_gsis_owner(self):
+        old = {**self.roster([self.player("00-001", "NFLP-one")]),
+               "Week": 1, "Finalized": False,
+               "SourceDataset": "nflverse.weekly-rosters"}
+        new = {**old, "Records": [self.player("00-001", "NFLP-one", "INA")]}
+        self.assertEqual(safe_weekly_roster_replay(old, new), (True, 0, True))
+        switched = {**new, "Records": [self.player("00-001", "NFLP-other", "INA")]}
+        self.assertFalse(safe_weekly_roster_replay(old, switched)[0])
+        different_week = {**new, "Week": 2}
+        self.assertFalse(safe_weekly_roster_replay(old, different_week)[0])
+
+    def test_finalized_week_requires_full_nonidentity_parity(self):
+        old = {**self.roster([self.player("00-001", "NFLP-one")]),
+               "Season": 2025, "Week": 1, "Finalized": True,
+               "SourceDataset": "nflverse.weekly-rosters"}
+        changed_facts = {**old, "Records": [self.player("00-001", "NFLP-one", "INA")]}
+        self.assertFalse(safe_weekly_roster_replay(old, changed_facts)[0])
+        enriched = {**old, "Records": [self.player("00-001", "NFLP-one")]}
+        self.assertEqual(safe_weekly_roster_replay(old, enriched), (True, 0, False))
+
 
 class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
     @unittest.skipUnless(
@@ -413,16 +449,19 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
 
             weekly_changed = [p for p in changed if p.startswith("data-source/nfl/weekly-rosters/")]
             weekly_filled = 0
+            live_weekly_refreshes = 0
             for relative_path in weekly_changed:
                 old_week = json.loads((SOURCE / relative_path).read_text(encoding="utf-8"))
                 new_week = json.loads((root / relative_path).read_text(encoding="utf-8"))
-                safe, filled = safe_frozen_enrichment(old_week, new_week)
+                safe, filled, is_live = safe_weekly_roster_replay(old_week, new_week)
                 self.assertTrue(safe, f"Unexpected factual/identity drift in {relative_path}")
                 weekly_filled += filled
+                live_weekly_refreshes += int(is_live)
             print(
                 f"#1061 all changed weekly rosters: "
-                f"partitions={len(weekly_changed)}, newly_filled={weekly_filled}, "
-                "non_identity_drift=0",
+                f"partitions={len(weekly_changed)}, "
+                f"mutable_current_partitions={live_weekly_refreshes}, "
+                f"newly_filled={weekly_filled}, frozen_non_identity_drift=0",
                 flush=True,
             )
             # This test compares a live repository snapshot with a full rebuild.
