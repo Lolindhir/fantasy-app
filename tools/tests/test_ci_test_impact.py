@@ -49,6 +49,10 @@ class RoutingTests(unittest.TestCase):
         self.assertIn("nfl-identity-replay", groups)
         self.assertIn("league-pwf-twp", groups)
 
+    def test_historical_cross_product_orchestrator_uses_strict_deep_closure(self):
+        groups = set(self.choose("tools/historical_derived_orchestrate.py")["selected"])
+        self.assertEqual({"nfl-identity-replay", "league-pwf-twp", "consumer-restore"}, groups)
+
     def test_market_changes_require_market_restore(self):
         groups = self.choose("tools/external_source/market_observations.py")["selected"]
         self.assertEqual({"market-restore", "consumer-restore"}, set(groups))
