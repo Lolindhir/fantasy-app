@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-"""Refresh the App PlayerWeekFantasy and MatchupProjections publications for the current App week.
+"""Refresh current App PlayerWeekFantasy and safely catch up its preceding scored week.
 
-The target league/season/week is read from the published FantasyGameContext, so
-the PlayerWeekFantasy snapshot always matches the week the Angular consumer
-joins against. The step materializes the Shared-Derived snapshot and then
-publishes the App delivery adapter; both writes are deterministic no-ops when
-nothing changed.
+The current week follows FantasyGameContext and feeds PlayerWeekFantasy.json
+and MatchupProjections. Once the preceding week is *both* canonically league
+scored and NFL finalized, rebuild its source-owned Shared-Derived snapshot as
+well. This prevents late-arriving final NFL statistics from being frozen as
+zero when the App advances to a new week. The preceding-week repair never
+publishes an App model or rebuilds older/historical seasons.
 
-A target week whose canonical weekly-roster partition is not synced yet is
-skipped without touching the existing publication. Every other failure is
-fail-closed.
-"""
+A target week with no usable canonical roster is skipped. An inconsistent
+finished-week gate or incomplete materialization is fail-closed. Writes use
+the existing classified League Live rebuild-and-retry scope.
+""
 from __future__ import annotations
 
 import argparse
@@ -26,6 +27,7 @@ if str(TOOLS) not in sys.path:
 from matchup_projection import publish_matchup_projections  # noqa: E402
 from player_week_fantasy_app_publish import materialize_app_player_week_fantasy  # noqa: E402
 from player_week_fantasy_materialize import (  # noqa: E402
+    _week_finality,
     build_player_week_fantasy_dataset,
     output_path,
     write_dataset,
@@ -90,6 +92,56 @@ def weekly_roster_path(repo_root: Path, season: int, week: int) -> Path:
     return repo_root / DATA_SOURCE_ROOT / "nfl" / "weekly-rosters" / str(season) / f"{week:02d}.json"
 
 
+def refresh_previous_scored_week(
+    repo_root: Path, *, league_id: str, season: int, current_week: int,
+) -> dict[str, Any] | None:
+    """Repair only the immediate previous week, never unscored/live/historical weeks.
+
+    The Sleeper scored-week bound is necessary but not sufficient: independent
+    canonical NFL game finality and actual evidence must also be complete.
+    Unlike live projections, this strict replay never allows a provisional
+    target-week roster.
+    """
+    if current_week <= 1:
+        return None
+    league = _read_object(
+        repo_root / DATA_SOURCE_ROOT / "leagues" / league_id
+        / "seasons" / str(season) / "league.json"
+    )
+    bounds = league.get("WeekStructure")
+    if (league.get("CanonicalLeagueID") != league_id or league.get("Season") != season
+            or not isinstance(bounds, dict) or bounds.get("Season") != season
+            or type(bounds.get("LastScoredLeg")) is not int):
+        raise ValueError("Cannot safely determine canonical league scored-week boundary")
+    previous = current_week - 1
+    if bounds["LastScoredLeg"] != previous:
+        return None
+
+    final, game_ids = _week_finality(repo_root, season=season, week=previous)
+    if final is not True or not game_ids:
+        raise ValueError(
+            f"League-scored week {season}/W{previous} lacks canonical NFL finality"
+        )
+    candidate = build_player_week_fantasy_dataset(
+        repo_root, league_id=league_id, season=season, week=previous,
+    )
+    metadata = candidate.get("Materialization")
+    if (not isinstance(metadata, dict)
+            or metadata.get("ActualScoringEvidenceFinalized") is not True
+            or metadata.get("TargetRosterProvisional") is not False
+            or not isinstance(candidate.get("Records"), list)
+            or not candidate["Records"]):
+        raise ValueError(
+            f"Finished-week PWF snapshot is incomplete: {league_id}/{season}/W{previous}"
+        )
+    changed = write_dataset(
+        output_path(repo_root, league_id=league_id, season=season, week=previous),
+        candidate,
+    )
+    return {"Season": season, "Week": previous, "DerivedChanged": changed,
+            "RecordCount": len(candidate["Records"])}
+
+
 def refresh(repo_root: Path) -> dict[str, Any]:
     root = repo_root.resolve()
     league_id, season, week = resolve_target(root)
@@ -113,6 +165,9 @@ def refresh(repo_root: Path) -> dict[str, Any]:
     )
     published, app_changed = materialize_app_player_week_fantasy(root, league_id, season, week)
     matchup_projections = publish_matchup_projections(root)
+    previous_scored = refresh_previous_scored_week(
+        root, league_id=league_id, season=season, current_week=week,
+    )
     return {
         **target,
         "Status": "published",
@@ -122,6 +177,7 @@ def refresh(repo_root: Path) -> dict[str, Any]:
         "AppChanged": app_changed,
         "RecordCount": len(published["Records"]),
         "MatchupProjections": matchup_projections,
+        "FinalizedPreviousWeek": previous_scored,
     }
 
 

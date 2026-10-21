@@ -29,6 +29,8 @@ def build_repo(root: Path, *, context: dict | None = None, mappings: list | None
         root / "data-source" / "leagues" / "league-a" / "seasons" / "2026" / "league.json",
         {
             "CanonicalLeagueID": "league-a",
+            "Season": 2026,
+            "WeekStructure": {"Season": 2026, "LastScoredLeg": 2},
             "ProviderMappings": mappings
             if mappings is not None
             else [{"Provider": "Sleeper", "ProviderLeagueID": "999"}],
@@ -166,6 +168,147 @@ class RefreshTests(unittest.TestCase):
             build_repo(root, context={"LeagueID": "999", "Season": 2026, "Week": 1})
             result = refresh.refresh(root)
             self.assertEqual(result["Status"], "skipped-weekly-roster-not-synced")
+
+
+class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
+    def _root(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        build_repo(root, context={"LeagueID": "999", "Season": "2026", "Week": 7})
+        path = root / "data-source/leagues/league-a/seasons/2026/league.json"
+        league = json.loads(path.read_text(encoding="utf-8"))
+        league["WeekStructure"]["LastScoredLeg"] = 6
+        write_json(path, league)
+        write_json(refresh.weekly_roster_path(root, 2026, 6), {"Records": []})
+        return root
+
+    def test_replays_exact_prior_final_scored_week_without_app_republication(self):
+        root = self._root()
+        calls = []
+        candidate = {
+            "Records": [{"CanonicalPlayerID": "player",
+                         "Actual": {"State": "final", "Points": 4.7}}],
+            "Materialization": {
+                "ActualScoringEvidenceFinalized": True,
+                "TargetRosterProvisional": False,
+            },
+        }
+
+        def build(repo_root, **kwargs):
+            calls.append(("build", kwargs))
+            return candidate
+
+        def write(path, payload):
+            calls.append(("write", path.relative_to(root).as_posix()))
+            return path.name == "06.json"
+
+        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \\
+             mock.patch.object(refresh, "build_player_week_fantasy_dataset", side_effect=build), \\
+             mock.patch.object(refresh, "write_dataset", side_effect=write), \\
+             mock.patch.object(refresh, "materialize_app_player_week_fantasy",
+                               return_value=({"Records": []}, False)) as app_publish, \\
+             mock.patch.object(refresh, "publish_matchup_projections", return_value={"Status": "ok"}):
+            result = refresh.refresh(root)
+
+        self.assertEqual([x[1]["week"] for x in calls if x[0] == "build"], [7, 6])
+        self.assertEqual([x[1] for x in calls if x[0] == "write"], [
+            "data-derived/player-week-fantasy/league-a/2026/07.json",
+            "data-derived/player-week-fantasy/league-a/2026/06.json",
+        ])
+        self.assertEqual(result["FinalizedPreviousWeek"], {
+            "Season": 2026, "Week": 6, "DerivedChanged": True, "RecordCount": 1,
+        })
+        app_publish.assert_called_once_with(root, "league-a", 2026, 7)
+        self.assertFalse(result["AppChanged"])
+
+    def test_no_replay_if_provider_has_not_scored_predecessor(self):
+        root = self._root()
+        path = root / "data-source/leagues/league-a/seasons/2026/league.json"
+        league = json.loads(path.read_text(encoding="utf-8"))
+        league["WeekStructure"]["LastScoredLeg"] = 5
+        write_json(path, league)
+        with mock.patch.object(refresh, "_week_finality") as final, \\
+             mock.patch.object(refresh, "build_player_week_fantasy_dataset") as build:
+            self.assertIsNone(refresh.refresh_previous_scored_week(
+                root, league_id="league-a", season=2026, current_week=7))
+            build.assert_not_called()
+            final.assert_not_called()
+
+    def test_unfinalized_nfl_week_fails_closed_even_when_league_scored(self):
+        root = self._root()
+        with mock.patch.object(refresh, "_week_finality", return_value=(False, set())), \\
+             mock.patch.object(refresh, "build_player_week_fantasy_dataset") as build, \\
+             mock.patch.object(refresh, "write_dataset") as write:
+            with self.assertRaisesRegex(ValueError, "lacks canonical NFL finality"):
+                refresh.refresh_previous_scored_week(
+                    root, league_id="league-a", season=2026, current_week=7)
+            build.assert_not_called()
+            write.assert_not_called()
+
+    def test_incomplete_final_actual_never_writes_derived(self):
+        root = self._root()
+        payload = {
+            "Records": [{"CanonicalPlayerID": "p"}],
+            "Materialization": {"ActualScoringEvidenceFinalized": False,
+                                "TargetRosterProvisional": False},
+        }
+        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \\
+             mock.patch.object(refresh, "build_player_week_fantasy_dataset", return_value=payload), \\
+             mock.patch.object(refresh, "write_dataset") as write:
+            with self.assertRaisesRegex(ValueError, "incomplete"):
+                refresh.refresh_previous_scored_week(
+                    root, league_id="league-a", season=2026, current_week=7)
+            write.assert_not_called()
+
+    def test_finished_snapshot_can_be_a_noop(self):
+        root = self._root()
+        payload = {"Records": [{"CanonicalPlayerID": "p"}],
+                   "Materialization": {"ActualScoringEvidenceFinalized": True,
+                                       "TargetRosterProvisional": False}}
+        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \\
+             mock.patch.object(refresh, "build_player_week_fantasy_dataset", return_value=payload), \\
+             mock.patch.object(refresh, "write_dataset", return_value=False) as write:
+            first = refresh.refresh_previous_scored_week(root, league_id="league-a", season=2026, current_week=7)
+            second = refresh.refresh_previous_scored_week(root, league_id="league-a", season=2026, current_week=7)
+        self.assertFalse(first["DerivedChanged"])
+        self.assertEqual(first, second)
+        self.assertEqual(write.call_count, 2)
+
+    def test_replay_rejects_missing_canonical_league_scoring_bounds(self):
+        root = self._root()
+        path = root / "data-source/leagues/league-a/seasons/2026/league.json"
+        league = json.loads(path.read_text(encoding="utf-8"))
+        del league["WeekStructure"]
+        write_json(path, league)
+        with mock.patch.object(refresh, "_week_finality") as final:
+            with self.assertRaisesRegex(ValueError, "scored-week boundary"):
+                refresh.refresh_previous_scored_week(
+                    root, league_id="league-a", season=2026, current_week=7)
+            final.assert_not_called()
+
+    def test_week_one_never_replays_previous_season(self):
+        root = self._root()
+        with mock.patch.object(refresh, "build_player_week_fantasy_dataset") as build:
+            self.assertIsNone(refresh.refresh_previous_scored_week(
+                root, league_id="league-a", season=2026, current_week=1))
+            build.assert_not_called()
+
+
+class RealFinalWeekScoringRegression(unittest.TestCase):
+    def test_w06_canonical_source_scores_kaelon_black_four_point_seven(self):
+        from player_week_fantasy_materialize import build_player_week_fantasy_dataset
+        root = TOOLS.parent
+        dataset = build_player_week_fantasy_dataset(
+            root, league_id="nfl-reise", season=2026, week=6,
+        )
+        player = next(
+            row for row in dataset["Records"]
+            if row["CanonicalPlayerID"] == "NFLP-1756c2a36e6d88906258"
+        )
+        self.assertEqual(player["Actual"], {"Points": 4.7, "State": "final"})
+        self.assertTrue(dataset["Materialization"]["ActualScoringEvidenceFinalized"])
+        self.assertFalse(dataset["Materialization"]["TargetRosterProvisional"])
 
 
 class TargetWeeklyRosterFallbackTests(unittest.TestCase):
