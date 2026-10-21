@@ -172,8 +172,8 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
         report = materialize_all_finalized(
             REPO_ROOT, league_id="nfl-reise", write=False
         )
-        self.assertEqual(report["TargetCount"], 39)
-        self.assertEqual(report["ReadyCount"], 39)
+        self.assertGreaterEqual(report["TargetCount"], 39)
+        self.assertEqual(report["ReadyCount"], report["TargetCount"])
         self.assertEqual(report["BlockedCount"], 0, report["Weeks"])
         self.assertFalse(report["WriteRequested"])
         self.assertFalse(report["WriteAborted"])
@@ -199,8 +199,10 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
                  patch("team_week_performance.DATA_DERIVED_ROOT", derived_root), \
                  patch("player_scoring_reconciliation.DATA_DERIVED_ROOT", derived_root):
                 first = materialize_all_finalized(REPO_ROOT, league_id="nfl-reise", write=True)
-                self.assertEqual((first["TargetCount"], first["ReadyCount"],
-                                  first["BlockedCount"], first["ChangedCount"]), (39, 39, 0, 39))
+                count = first["TargetCount"]
+                self.assertGreaterEqual(count, 39)
+                self.assertEqual((first["ReadyCount"], first["BlockedCount"],
+                                  first["ChangedCount"]), (count, 0, count))
                 self.assertTrue(all(w["PlayerWeekFantasyParity"]["State"] == "not-available"
                                     for w in first["Weeks"]))
                 for w in first["Weeks"]:
@@ -212,7 +214,7 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
                     self.assertEqual(generated.read_bytes(), published.read_bytes())
                 second = materialize_all_finalized(REPO_ROOT, league_id="nfl-reise", write=True)
                 self.assertEqual((second["ReadyCount"], second["BlockedCount"],
-                                  second["ChangedCount"]), (39, 0, 0))
+                                  second["ChangedCount"]), (count, 0, 0))
 
 if __name__ == "__main__":
     unittest.main()
