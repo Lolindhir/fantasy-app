@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest import mock
 import subprocess
 import tempfile
 import unittest
@@ -119,6 +120,31 @@ class FastLaneContractTests(unittest.TestCase):
         # workflow-display label.
         self.assertEqual("CI / Merge Gate", self.jobs["merge-gate"]["name"])
         self.assertIn("always()", self.jobs["merge-gate"]["if"])
+
+    def test_architecture_reviewer_checks_ci_impact_for_pr_and_periodic_audit(self):
+        """Both independent review scopes must assess CI inventory, routing and actual execution."""
+        import yaml
+
+        contract = yaml.safe_load(
+            (ci.ROOT / ".ai-context/manual/architecture-review.yaml").read_text(encoding="utf-8")
+        )
+        independent = contract["modes"]["independentReview"]
+        self.assertEqual("read-only", independent["defaultMode"])
+        contexts = independent["reviewContexts"]
+        self.assertEqual({"changeFocused", "periodicRepositoryAudit"}, set(contexts))
+        for name in contexts:
+            with self.subTest(context=name):
+                evidence = "\n".join(contexts[name]["ciImpactEvidence"])
+                self.assertIn("Deep", evidence)
+                self.assertIn("test", evidence.lower())
+                self.assertIn("Issue", evidence)
+        dimensions = contract["dimensions"]["ciImpactAndTestCoverage"]
+        checks = "\n".join(dimensions["checks"])
+        self.assertIn("really invoke", checks)
+        self.assertIn("uncovered", checks.lower())
+        self.assertIn("four Deep", checks)
+        self.assertIn("both change-focused reviews and periodic", dimensions["reviewRule"])
+        self.assertIn("ci-impact-and-coverage", contract["reviewOutput"]["requiredSections"])
 
     def test_all_fast_lanes_are_unconditionally_present_and_read_only(self):
         names = ("fast-contracts", "fast-source", "fast-scheduler",
@@ -532,6 +558,72 @@ class InventoryTests(unittest.TestCase):
         data["tests"][0]["deepGroups"] = []
         with self.assertRaisesRegex(ValueError, "Deep tests require"):
             ci.validate(ci.ROOT, data)
+
+    def test_existing_uncovered_baseline_is_frozen_and_auditable(self):
+        data = ci.read_inventory()
+        report = ci.validate(ci.ROOT, data)
+        self.assertEqual(27, report["legacyUncovered"])
+        self.assertEqual(0, report["explicitlyExceptedUncovered"])
+        self.assertEqual(27, report["currentlyNotInPr"])
+        # Merely adding to the baseline in the manifest must not legitimize a gap.
+        data["coveragePolicy"]["legacyUncoveredTests"].append("tools/tests/test_unreviewed.py")
+        with self.assertRaisesRegex(ValueError, "Legacy uncovered-test baseline drift"):
+            ci.validate(ci.ROOT, data)
+
+    def test_new_uncovered_test_needs_explicit_issue_backed_exception(self):
+        data = ci.read_inventory()
+        new_path = "tools/tests/test_future_uncovered.py"
+        data["tests"].append({
+            "path": new_path, "tier": "fast", "deepGroups": [],
+            "currentPrCoverage": "not-in-current-pr-ci",
+        })
+        tracked = ci.discover(ci.ROOT) | {new_path}
+        original_coverage = ci.baseline_coverage(ci.ROOT, tracked - {new_path})
+
+        def coverage(_root, _paths):
+            return {**original_coverage, new_path: "not-in-current-pr-ci"}
+
+        with (mock.patch.object(ci, "discover", return_value=tracked),
+              mock.patch.object(ci, "baseline_coverage", side_effect=coverage)):
+            with self.assertRaisesRegex(ValueError, "Unreviewed PR-CI coverage gap"):
+                ci.validate(ci.ROOT, data)
+            data["coveragePolicy"]["exceptions"][new_path] = {
+                "issue": "", "reason": "Too short"
+            }
+            with self.assertRaisesRegex(ValueError, "Invalid uncovered-test exception"):
+                ci.validate(ci.ROOT, data)
+            data["coveragePolicy"]["exceptions"][new_path] = {
+                "issue": "#1113",
+                "reason": "Requires integration environment unavailable on standard CI runners",
+            }
+            counts = ci.validate(ci.ROOT, data)
+            self.assertEqual(1, counts["explicitlyExceptedUncovered"])
+            self.assertEqual(28, counts["currentlyNotInPr"])
+            # A waiver for an already-covered test is stale and must fail.
+            data["coveragePolicy"]["exceptions"]["tools/tests/test_ci_test_impact.py"] = {
+                "issue": "#1113",
+                "reason": "Deliberately stale waiver for test already covered by the Fast job",
+            }
+            with self.assertRaisesRegex(ValueError, "Unreviewed PR-CI coverage gap"):
+                ci.validate(ci.ROOT, data)
+
+    def test_deep_group_and_routing_remain_explicit(self):
+        data = ci.read_inventory()
+        candidate = data["tests"][0].copy()
+        candidate["tier"] = "deep"
+        candidate["deepGroups"] = ["imaginary-group"]
+        data["tests"][0] = candidate
+        with self.assertRaisesRegex(ValueError, "Invalid deep groups"):
+            ci.validate(ci.ROOT, data)
+        for path, groups in (
+            ("tools/external_source/new_provider.py", {"market-restore", "consumer-restore"}),
+            ("tools/team_week_performance_new.py",
+             {"nfl-identity-replay", "league-pwf-twp", "consumer-restore"}),
+            ("tools/surprise_new_module.py", set(ci.GROUPS)),
+        ):
+            with self.subTest(path=path):
+                selected = ci.select([{"filename": path, "status": "added"}], ci.read_inventory())
+                self.assertEqual(groups, set(selected["selected"]))
 
 
 if __name__ == "__main__":

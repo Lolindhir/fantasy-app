@@ -25,6 +25,50 @@ ALL = set(GROUPS)
 VALID_TIERS = {"fast", "deep", "audit"}
 VALID_COVERAGE = {"build", "build-indirect", "fm-validation", "shadow", "not-in-current-pr-ci"}
 VALID_STATES = {"added", "modified", "changed", "renamed", "removed", "deleted", "copied"}
+# Frozen 2026-10-20 existing uncovered-test debt (Issue #1113).
+# This is a drift detector, not a security hash. To retire legacy debt or replace
+# it with actual PR coverage, review the inventory change and update this anchor.
+LEGACY_UNCOVERED_FNV32 = "586b39fa"
+
+
+def uncovered_baseline_fingerprint(paths: list[str]) -> str:
+    """Stable compact fingerprint so new tests cannot silently become 'legacy'."""
+    value = 2166136261
+    for ch in "\n".join(paths):
+        value = (value ^ ord(ch)) * 16777619 & 0xffffffff
+    return f"{value:08x}"
+
+
+def validate_coverage_policy(inventory: dict, indexed: dict[str, dict]) -> tuple[int, int]:
+    policy = inventory.get("coveragePolicy")
+    if not isinstance(policy, dict) or set(policy) != {"legacyUncoveredTests", "exceptions"}:
+        raise ValueError("Missing/invalid CI uncovered-test policy")
+    legacy, exceptions = policy["legacyUncoveredTests"], policy["exceptions"]
+    if (not isinstance(legacy, list) or not all(isinstance(p, str) for p in legacy)
+            or legacy != sorted(set(legacy))
+            or uncovered_baseline_fingerprint(legacy) != LEGACY_UNCOVERED_FNV32):
+        raise ValueError("Legacy uncovered-test baseline drift: explicit CI review required")
+    if not isinstance(exceptions, dict):
+        raise ValueError("CI uncovered-test exceptions must be a path-keyed object")
+    for path, exception in exceptions.items():
+        if (not isinstance(path, str) or not isinstance(exception, dict)
+                or set(exception) != {"issue", "reason"}
+                or not isinstance(exception["issue"], str)
+                or not re.fullmatch(r"#[1-9][0-9]*", exception["issue"])
+                or not isinstance(exception["reason"], str)
+                or len(exception["reason"].strip()) < 30):
+            raise ValueError(f"Invalid uncovered-test exception (issue + concrete reason required): {path}")
+    legacy_set = set(legacy)
+    exceptions_set = set(exceptions)
+    if legacy_set & exceptions_set:
+        raise ValueError("Legacy uncovered tests cannot also have new exceptions")
+    uncovered = {path for path, entry in indexed.items()
+                 if entry["currentPrCoverage"] == "not-in-current-pr-ci"}
+    if uncovered != legacy_set | exceptions_set:
+        raise ValueError(
+            f"Unreviewed PR-CI coverage gap: added={sorted(uncovered - legacy_set - exceptions_set)}; "
+            f"stale={sorted((legacy_set | exceptions_set) - uncovered)}")
+    return len(legacy), len(exceptions)
 
 
 def is_test(path: str) -> bool:
@@ -139,7 +183,10 @@ def validate(root: Path, inventory: dict) -> dict[str, int]:
     ]
     if mismatches:
         raise ValueError(f"Current CI coverage drift: {mismatches[:12]}")
+    legacy_uncovered, explicitly_excepted = validate_coverage_policy(inventory, indexed)
     return {
+        "legacyUncovered": legacy_uncovered,
+        "explicitlyExceptedUncovered": explicitly_excepted,
         "total": len(indexed),
         "fast": sum(e["tier"] == "fast" for e in indexed.values()),
         "deep": sum(e["tier"] == "deep" for e in indexed.values()),
@@ -363,7 +410,7 @@ def write_summary(result: dict, counts: dict | None, error: str | None) -> None:
         with open(target, "a", encoding="utf-8") as out:
             out.write("\n### CI impact — CP3 decision (fail closed)\n")
             if counts:
-                out.write(f"- Inventory: {counts['total']} registered; {counts['currentlyInPr']} already in PR suites; {counts['currentlyNotInPr']} outside present PR suites.\n")
+                out.write(f"- Inventory: {counts['total']} registered; {counts['currentlyInPr']} already in PR suites; {counts['currentlyNotInPr']} outside present PR suites (legacy baseline: {counts['legacyUncovered']}; issue-backed exceptions: {counts['explicitlyExceptedUncovered']}).\n")
             out.write(f"- Proposed Deep groups: {', '.join(result['selected']) or 'none'}\n")
             out.write(f"- Confidence: {'FAIL-CLOSED / UNCERTAIN' if result['uncertain'] else 'rules matched'}\n")
             if error:
