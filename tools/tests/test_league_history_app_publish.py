@@ -118,10 +118,11 @@ class SlimContractTests(unittest.TestCase):
 
     def test_trade_history_entries_lose_only_the_source_fields(self):
         pick = {"PickKey": "k", "Round": 1, "TradeHistory": [
-            {"TransactionID": "t", "Source": "Sleeper", "DraftSource": "Sleeper", "CreatedAt": 1, "CreatedDate": "d",
+            {"TransactionID": "t", "Source": "Sleeper", "DraftSource": "Sleeper", "CreatedAt": 1, "EffectiveAt": 2, "CreatedDate": "d",
              "PreviousOwnerRosterID": 1, "NewOwnerRosterID": 2}]}
         entry = publish._app_pick(pick)["TradeHistory"][0]
-        self.assertEqual({"TransactionID", "CreatedAt", "CreatedDate", "PreviousOwnerRosterID", "NewOwnerRosterID"}, set(entry))
+        self.assertEqual({"TransactionID", "CreatedAt", "EffectiveAt", "CreatedDate", "PreviousOwnerRosterID", "NewOwnerRosterID"}, set(entry))
+        self.assertEqual(2, entry["EffectiveAt"])
 
 
 class TransactionFileTests(unittest.TestCase):

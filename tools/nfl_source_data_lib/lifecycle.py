@@ -24,18 +24,20 @@ def partition_is_frozen(
     return False
 
 
-def _player_stats_identity_only_enrichment(
+def _frozen_identity_only_enrichment(
     existing: dict[str, Any],
     candidate: dict[str, Any],
 ) -> bool:
     """Allow null -> CanonicalPlayerID enrichment without reopening frozen facts.
 
-    Historical stat facts stay immutable. A later identity bridge may only repair a
-    frozen partition when every non-identity byte of the semantic payload is still
-    equal and no existing non-null CanonicalPlayerID would change.
+    Applies to player stats and NFL weekly rosters only. A later identity bridge
+    may repair a frozen partition only when every non-identity semantic field is
+    identical and no previously resolved ID changes or disappears.
     """
 
-    if candidate.get("SourceDataset") != "nflverse.player-stats":
+    if (candidate.get("SourceDataset") not in {
+        "nflverse.player-stats", "nflverse.weekly-rosters",
+    } or existing.get("SourceDataset") != candidate.get("SourceDataset")):
         return False
     existing_records = existing.get("Records")
     candidate_records = candidate.get("Records")
@@ -91,7 +93,7 @@ def effective_partition_payload(
         observation_season=observation_season,
         existing_payload=existing if isinstance(existing, dict) else None,
     ):
-        if isinstance(existing, dict) and _player_stats_identity_only_enrichment(existing, candidate):
+        if isinstance(existing, dict) and _frozen_identity_only_enrichment(existing, candidate):
             return candidate, False
         return existing, True
     return candidate, False

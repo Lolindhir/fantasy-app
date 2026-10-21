@@ -45,11 +45,24 @@ def _pick_sort_key(pick: dict[str, Any]) -> tuple[Any, ...]:
     )
 
 
+def effective_at(transaction: dict[str, Any]) -> int:
+    """One authoritative occurrence time: provider status transition, else submission/manual date.
+
+    StatusUpdatedAt exists only in the canonical-to-derived adapter. A missing,
+    zero or malformed historical provider value falls back to CreatedAt; never
+    substitute the current build clock or infer a completion time.
+    """
+    updated = transaction.get("StatusUpdatedAt")
+    if type(updated) is int and updated > 0:
+        return updated
+    return int(transaction["CreatedAt"])
+
+
 def sort_transactions(transactions: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-    """TransactionUtils.psm1::Get-SortedTransactions: Season, Week, CreatedAt, TransactionID, newest first."""
+    """Chronological by EffectiveAt, with TransactionID as deterministic tie-breaker."""
     return sorted(
         transactions,
-        key=lambda item: (ps_string(item["Season"]), int(item["Week"]), int(item["CreatedAt"]), ps_string(item["TransactionID"])),
+        key=lambda item: (ps_string(item["Season"]), int(item.get("EffectiveAt") or effective_at(item)), ps_string(item["TransactionID"])),
         reverse=True,
     )
 
@@ -191,6 +204,11 @@ def merge_manual_overlay(
             continue
         result.append(manual_only_transaction(row, season, owners, configs))
 
+    for transaction in result:
+        transaction["EffectiveAt"] = effective_at(transaction)
+        # Only one principal chronology field is persisted in Shared Derived;
+        # CreatedAt / CreatedDate remain submission-time provenance.
+        transaction.pop("StatusUpdatedAt", None)
     result = sort_transactions(result)
     assert_unique_transaction_ids(result, f"canonical plus manual transactions for season {season}")
     return result

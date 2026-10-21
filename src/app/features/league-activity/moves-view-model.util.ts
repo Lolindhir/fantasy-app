@@ -38,7 +38,8 @@ export function buildMovesViewModel(
   selectedFilter: MovesFilter = 'all'
 ): MovesViewModel {
   const normalizedTransactions = [...(transactions ?? [])].sort(
-    (left, right) => right.CreatedAt - left.CreatedAt
+    (left, right) => right.EffectiveAt - left.EffectiveAt
+      || right.TransactionID.localeCompare(left.TransactionID)
   );
   const tradeCount = normalizedTransactions.filter(
     transaction => getMoveCategory(transaction) === 'trade'
@@ -55,7 +56,11 @@ export function buildMovesViewModel(
   const groupsByDate = new Map<string, Transaction[]>();
 
   for (const transaction of filteredTransactions) {
-    const dateKey = transaction.CreatedDate || 'Unknown date';
+    // UTC grouping matches the former CreatedDate semantics, but now uses
+    // the authoritative effective event time (not the day the claim was submitted).
+    const dateKey = Number.isFinite(transaction.EffectiveAt) && transaction.EffectiveAt > 0
+      ? new Date(transaction.EffectiveAt).toISOString().slice(0, 10)
+      : transaction.CreatedDate || 'Unknown date';
     const group = groupsByDate.get(dateKey) ?? [];
     group.push(transaction);
     groupsByDate.set(dateKey, group);

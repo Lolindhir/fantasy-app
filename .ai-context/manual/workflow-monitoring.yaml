@@ -279,9 +279,21 @@ categories:
       is the main backstop.
 workflows:
   .github/workflows/build.yml:
-    category: non-paging
-    relevantEvents: []
-    rationale: PR/manual CI; failures are handled in the active development/review context.
+    category: important
+    consecutiveFailures: 1
+    relevantEvents:
+    - repository_dispatch
+    runListEvent: repository_dispatch
+    staleAfterMinutes: 11520
+    firstDueAt: "2026-10-22T00:15:00Z"
+    firstDueGraceMinutes: 120
+    rationale: >-
+      CP4 weekly read-only full test audit from the central scheduler
+      (Thursday 02:15 Europe/Berlin). Filter the GitHub Actions run list by
+      repository_dispatch server-side: frequent PR runs must never hide audits.
+      Alert after the first failed scheduled audit or stale/missing successful
+      audit; initial missing-success alarm starts only after the first due slot
+      plus 120-minute grace. PR and manual operator runs are non-paging.
   .github/workflows/deploy.yml:
     category: critical
     relevantEvents:

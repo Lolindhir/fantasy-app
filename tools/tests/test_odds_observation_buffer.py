@@ -139,7 +139,8 @@ class OddsObservationBufferTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 read_upstream_lines(path, 2026, {GAME, "2026_07_ARI_NE"})
             with path.open("a", encoding="utf-8") as stream:
-                stream.write(f"{GAME},3.5,44.5,-1000\n")
+                stream.write(f"{GAME},3.5,44.5,-1000
+")
             with self.assertRaisesRegex(ValueError, "Duplicate"):
                 read_upstream_lines(path, 2026, {GAME})
 
@@ -154,8 +155,10 @@ class OddsObservationBufferTests(unittest.TestCase):
                 target.write_text(json.dumps(document), encoding="utf-8")
             csvpath = Path(tmp) / "upstream.csv"
             csvpath.write_text(
-                "game_id,spread_line,total_line\n"
-                f"{GAME},3.5,44.5\n", encoding="utf-8"
+                "game_id,spread_line,total_line
+"
+                f"{GAME},3.5,44.5
+", encoding="utf-8"
             )
             state_path = Path(tmp) / "isolated-state" / "state.json"
             preview = run_cli(root, season=2026, upstream_csv=csvpath, observed_at=BASE_TIME)
@@ -204,7 +207,16 @@ class OddsObservationBufferTests(unittest.TestCase):
             observed_lines=observed, previous_state=None, observed_at=BASE_TIME,
         )
         self.assertEqual(plan_result["TotalGames"], 272)
-        # The registered raw evidence may legitimately be newer than the daily\n        # canonical partition. Compare semantic counts, not a brittle no-drift\n        # assumption about independently refreshed source snapshots.\n        canonical_by_id = {g["GameID"]: g for g in canonical["Games"]}\n        expected_changed = {game_id for game_id, values in observed.items()\n                            if any(values.get(field) != canonical_by_id[game_id].get(field)\n                                   for field in ("SpreadLine", "TotalLine"))}\n        self.assertEqual(plan_result["RelevantNetChanges"], len(expected_changed))\n        self.assertTrue(set(plan_result["PublishableGameIDs"]) <= expected_changed)\n        self.assertEqual(len(state["Games"]), 272)
+        # The registered raw evidence may legitimately be newer than the daily
+        # canonical partition. Compare semantic counts, not a brittle no-drift
+        # assumption about independently refreshed source snapshots.
+        canonical_by_id = {g["GameID"]: g for g in canonical["Games"]}
+        expected_changed = {game_id for game_id, values in observed.items()
+                            if any(values.get(field) != canonical_by_id[game_id].get(field)
+                                   for field in ("SpreadLine", "TotalLine"))}
+        self.assertEqual(plan_result["RelevantNetChanges"], len(expected_changed))
+        self.assertTrue(set(plan_result["PublishableGameIDs"]) <= expected_changed)
+        self.assertEqual(len(state["Games"]), 272)
 
     def test_scoped_fetch_uses_only_registered_nflverse_odds_origin(self):
         with tempfile.TemporaryDirectory() as tmp:

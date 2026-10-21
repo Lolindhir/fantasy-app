@@ -24,8 +24,9 @@ export interface RawTransaction {
   Status: string;
   Season: string;
   Week: number;
-  CreatedAt: number;
+  CreatedAt: number; // Submission provenance, not the effective league event time.
   CreatedDate: string;
+  EffectiveAt?: number; // Shared Derived v2; optional when reading pre-migration app files.
   RosterIDs: Array<number | string>;
   Adds: TransactionPlayerRosterMap | null;
   Drops: TransactionPlayerRosterMap | null;
@@ -59,6 +60,8 @@ export interface TransactionParticipant {
 
 export interface Transaction extends Omit<RawTransaction, 'RosterIDs' | 'Adds' | 'Drops' | 'DraftPicks'> {
   CreatedAtDate: Date | null;
+  EffectiveAt: number;
+  EffectiveAtDate: Date | null;
   RosterIDs: number[];
   Participants: TransactionParticipant[];
   DraftPicks: TransactionDraftPick[];

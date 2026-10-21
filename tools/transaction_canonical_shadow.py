@@ -229,6 +229,8 @@ def convert_canonical_transaction(
         "Season": str(season),
         "Week": week,
         "CreatedAt": created_at,
+        # Provenance only: shared-derived computes EffectiveAt from this value.
+        "StatusUpdatedAt": transaction.get("StatusUpdatedAt"),
         "CreatedDate": _created_date(created_at),
         "RosterIDs": roster_ids,
         "Adds": _asset_map(transaction.get("Adds"), roster_lookup, label=f"transaction {transaction_id} Adds"),

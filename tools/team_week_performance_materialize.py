@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -22,20 +21,7 @@ from team_week_performance import (
     save_team_week_performance,
 )
 from team_week_performance_sources import load_verified_week_inputs, _league_source
-
-PARITY_TOLERANCE = Decimal("0.010001")
-
-
-def _value(value: Any, label: str) -> Decimal:
-    if value is None or isinstance(value, bool):
-        raise ValueError(f"Missing or invalid {label}")
-    try:
-        number = Decimal(str(value))
-    except (InvalidOperation, ValueError) as exc:
-        raise ValueError(f"Invalid {label}") from exc
-    if not number.is_finite():
-        raise ValueError(f"Non-finite {label}")
-    return number
+from player_scoring_reconciliation import reconcile
 
 
 def verify_pwf_actual_parity(
@@ -45,75 +31,25 @@ def verify_pwf_actual_parity(
     *,
     require_pwf: bool = False,
 ) -> dict[str, Any]:
-    """Compare canonical week matchup points with persisted final PWF Actuals.
+    """Shared one-player reconciliation is the single parity decision owner.
 
-    PWF's weekly NFL roster population differs from the fantasy ownership
-    population. A missing zero-point roster candidate is acceptable; a
-    missing nonzero scorer, stale non-final row, contradictory score, stale
-    scoring fingerprint or duplicate ID fails the materialization gate.
+    This preserves the existing compact TWP validation result, while making
+    every compared League/PWF point and narrowly accepted exception available
+    through player_scoring_reconciliation.reconcile().
     """
-    season, week = model["Season"], model["Week"]
-    path = (repo_root / DATA_DERIVED_ROOT / "player-week-fantasy"
-            / model["CanonicalLeagueID"] / str(season) / f"{week:02d}.json")
-    if not path.is_file():
-        if require_pwf:
-            raise ValueError(f"Required PlayerWeekFantasy parity source is missing: {path}")
-        return {"State": "not-available", "Compared": 0, "MissingZeroPoints": 0}
-
-    try:
-        pwf = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"Invalid PlayerWeekFantasy parity source: {path}") from exc
-    if not isinstance(pwf, dict):
-        raise ValueError("PlayerWeekFantasy snapshot must be an object")
-    if any(pwf.get(key) != model[key]
-           for key in ("CanonicalLeagueID", "Season", "Week")):
-        raise ValueError("PlayerWeekFantasy league/season/week mismatch")
-    profile = pwf.get("ScoringProfile")
-    if not isinstance(profile, dict) or profile.get("SettingsHash") != model["ScoringProfile"]["SettingsHash"]:
-        raise ValueError("PlayerWeekFantasy scoring fingerprint mismatch")
-
-    rows = pwf.get("Records")
-    if not isinstance(rows, list):
-        raise ValueError("PlayerWeekFantasy has no Records array")
-    records: dict[str, Mapping[str, Any]] = {}
-    for row in rows:
-        if not isinstance(row, dict):
-            raise ValueError("Invalid PlayerWeekFantasy record")
-        player_id = row.get("CanonicalPlayerID")
-        if not isinstance(player_id, str) or not player_id or player_id in records:
-            raise ValueError("Missing or duplicate PlayerWeekFantasy player identity")
-        records[player_id] = row
-
-    compared, zero_missing = 0, 0
-    seen_matchups: set[str] = set()
-    for team in matchup_rows:
-        player_points = team.get("PlayerPoints")
-        if not isinstance(player_points, list):
-            raise ValueError("Missing canonical matchup PlayerPoints")
-        for row in player_points:
-            if not isinstance(row, dict) or not isinstance(row.get("Player"), dict):
-                raise ValueError("Invalid canonical matchup PlayerPoints reference")
-            player_id = row["Player"].get("CanonicalPlayerID")
-            if not isinstance(player_id, str) or not player_id or player_id in seen_matchups:
-                raise ValueError("Missing or duplicate canonical matchup player identity")
-            seen_matchups.add(player_id)
-            league_points = _value(row.get("Points"), f"matchup {player_id}")
-            record = records.get(player_id)
-            if record is None:
-                if league_points != 0:
-                    raise ValueError(f"PlayerWeekFantasy is missing nonzero scorer {player_id}")
-                zero_missing += 1
-                continue
-            actual = record.get("Actual")
-            if not isinstance(actual, dict) or actual.get("State") != "final":
-                raise ValueError(f"PlayerWeekFantasy Actual is not final for {player_id}")
-            materialized = _value(actual.get("Points"), f"PWF {player_id}")
-            if abs(materialized - league_points) > PARITY_TOLERANCE:
-                raise ValueError(f"PlayerWeekFantasy scoring mismatch for {player_id}: "
-                                 f"league={league_points}, pwf={materialized}")
-            compared += 1
-    return {"State": "verified", "Compared": compared, "MissingZeroPoints": zero_missing}
+    report = reconcile(
+        repo_root, model, matchup_rows, require_pwf=require_pwf,
+    )
+    if report["Errors"]:
+        raise ValueError(report["Errors"][0])
+    result = {
+        "State": report["State"],
+        "Compared": report["Compared"],
+        "MissingZeroPoints": report["MissingZeroPoints"],
+    }
+    if report["AcceptedDivergences"]:
+        result["AcceptedDivergences"] = report["AcceptedDivergences"]
+    return result
 
 
 def _checked_week(
