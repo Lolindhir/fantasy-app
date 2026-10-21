@@ -11,7 +11,7 @@ publishes an App model or rebuilds older/historical seasons.
 A target week with no usable canonical roster is skipped. An inconsistent
 finished-week gate or incomplete materialization is fail-closed. Writes use
 the existing classified League Live rebuild-and-retry scope.
-""
+"""
 from __future__ import annotations
 
 import argparse
