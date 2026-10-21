@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Refresh current App PlayerWeekFantasy and safely catch up its preceding scored week.
 
-The current week follows FantasyGameContext and feeds PlayerWeekFantasy.json
-and MatchupProjections. Once the preceding week is *both* canonically league
+The current week follows FantasyGameContext and feeds the App PWF delivery
+model and MatchupProjections. Once the preceding week is *both* canonically league
 scored and NFL finalized, rebuild its source-owned Shared-Derived snapshot as
 well. This prevents late-arriving final NFL statistics from being frozen as
 zero when the App advances to a new week. The preceding-week repair never
