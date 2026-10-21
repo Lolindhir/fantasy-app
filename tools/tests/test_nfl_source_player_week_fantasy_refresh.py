@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import hashlib
 import json
 import sys
 import tempfile
@@ -203,11 +205,11 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
             calls.append(("write", path.relative_to(root).as_posix()))
             return path.name == "06.json"
 
-        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \\
-             mock.patch.object(refresh, "build_player_week_fantasy_dataset", side_effect=build), \\
-             mock.patch.object(refresh, "write_dataset", side_effect=write), \\
+        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \
+             mock.patch.object(refresh, "build_player_week_fantasy_dataset", side_effect=build), \
+             mock.patch.object(refresh, "write_dataset", side_effect=write), \
              mock.patch.object(refresh, "materialize_app_player_week_fantasy",
-                               return_value=({"Records": []}, False)) as app_publish, \\
+                               return_value=({"Records": []}, False)) as app_publish, \
              mock.patch.object(refresh, "publish_matchup_projections", return_value={"Status": "ok"}):
             result = refresh.refresh(root)
 
@@ -228,7 +230,7 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
         league = json.loads(path.read_text(encoding="utf-8"))
         league["WeekStructure"]["LastScoredLeg"] = 5
         write_json(path, league)
-        with mock.patch.object(refresh, "_week_finality") as final, \\
+        with mock.patch.object(refresh, "_week_finality") as final, \
              mock.patch.object(refresh, "build_player_week_fantasy_dataset") as build:
             self.assertIsNone(refresh.refresh_previous_scored_week(
                 root, league_id="league-a", season=2026, current_week=7))
@@ -237,8 +239,8 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
 
     def test_unfinalized_nfl_week_fails_closed_even_when_league_scored(self):
         root = self._root()
-        with mock.patch.object(refresh, "_week_finality", return_value=(False, set())), \\
-             mock.patch.object(refresh, "build_player_week_fantasy_dataset") as build, \\
+        with mock.patch.object(refresh, "_week_finality", return_value=(False, set())), \
+             mock.patch.object(refresh, "build_player_week_fantasy_dataset") as build, \
              mock.patch.object(refresh, "write_dataset") as write:
             with self.assertRaisesRegex(ValueError, "lacks canonical NFL finality"):
                 refresh.refresh_previous_scored_week(
@@ -253,8 +255,8 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
             "Materialization": {"ActualScoringEvidenceFinalized": False,
                                 "TargetRosterProvisional": False},
         }
-        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \\
-             mock.patch.object(refresh, "build_player_week_fantasy_dataset", return_value=payload), \\
+        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \
+             mock.patch.object(refresh, "build_player_week_fantasy_dataset", return_value=payload), \
              mock.patch.object(refresh, "write_dataset") as write:
             with self.assertRaisesRegex(ValueError, "incomplete"):
                 refresh.refresh_previous_scored_week(
@@ -266,8 +268,8 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
         payload = {"Records": [{"CanonicalPlayerID": "p"}],
                    "Materialization": {"ActualScoringEvidenceFinalized": True,
                                        "TargetRosterProvisional": False}}
-        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \\
-             mock.patch.object(refresh, "build_player_week_fantasy_dataset", return_value=payload), \\
+        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \
+             mock.patch.object(refresh, "build_player_week_fantasy_dataset", return_value=payload), \
              mock.patch.object(refresh, "write_dataset", return_value=False) as write:
             first = refresh.refresh_previous_scored_week(root, league_id="league-a", season=2026, current_week=7)
             second = refresh.refresh_previous_scored_week(root, league_id="league-a", season=2026, current_week=7)
@@ -309,6 +311,14 @@ class RealFinalWeekScoringRegression(unittest.TestCase):
         self.assertEqual(player["Actual"], {"Points": 4.7, "State": "final"})
         self.assertTrue(dataset["Materialization"]["ActualScoringEvidenceFinalized"])
         self.assertFalse(dataset["Materialization"]["TargetRosterProvisional"])
+        # Temporary exact-source CI snapshot export for reproducible generated
+        # PWF W06 recovery. Will be reverted before the final merge.
+        payload = (json.dumps(dataset, indent=2, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
+        git_sha = hashlib.sha1(b"blob " + str(len(payload)).encode("ascii") + b"\x00" + payload).hexdigest()
+        encoded = base64.b64encode(payload).decode("ascii")
+        print(f"PWF_W06_EXPORT_BLOB_SHA={git_sha} BYTECOUNT={len(payload)}", flush=True)
+        for offset in range(0, len(encoded), 3000):
+            print("PWF_W06_EXPORT_PART=" + encoded[offset:offset + 3000], flush=True)
 
 
 class TargetWeeklyRosterFallbackTests(unittest.TestCase):
