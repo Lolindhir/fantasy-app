@@ -217,8 +217,10 @@ historicalOrchestrationPreflight:
     week: One explicitly requested finalized league season/week.
     incremental: >-
       Select affected scored weeks from explicit changed canonical paths. Known
-      week-scoped inputs constrain week, known season-scoped inputs constrain
-      season; any unknown or shared input conservatively triggers full rebuild.
+      League matchups constrain their own week. NFL weekly stats and roster
+      evidence invalidate their week and all later scored weeks of that season.
+      Season-scoped inputs constrain the season; any unknown or shared input
+      conservatively triggers full rebuild.
       No automatic Scheduler source-diff feed is activated at this checkpoint.
   safety:
     - Uses original PWF source-owned materializer and TeamWeekPerformance materializer; no parallel scorer or award logic.

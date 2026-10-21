@@ -31,7 +31,7 @@ class HistoricalDerivedSelectionTests(unittest.TestCase):
     def test_incremental_exact_week_season_and_unknown_full_fallback(self):
         self.assertEqual(pipeline.select_targets(
             self.targets, mode="incremental",
-            changed_paths=["data-source/nfl/player-stats/2024/01.json"]), [self.targets[0]])
+            changed_paths=["data-source/nfl/player-stats/2024/01.json"]), self.targets[:2])
         self.assertEqual(pipeline.select_targets(
             self.targets, mode="incremental",
             changed_paths=["data-source/leagues/nfl-reise/seasons/2026/matchups/week-2.json"]),
@@ -132,7 +132,7 @@ class HistoricalDerivedIsolatedTests(unittest.TestCase):
     def test_incremental_target_does_not_touch_other_week(self):
         result = pipeline.preflight(
             self.root, mode="incremental",
-            changed_paths=["data-source/nfl/player-stats/2024/01.json"],
+            changed_paths=["data-source/leagues/nfl-reise/seasons/2024/matchups/week-1.json"],
         )
         self.assertEqual(result["TargetCount"], 1)
         self.assertEqual({call[1:] for call in self.calls}, {(2024, 1)})
