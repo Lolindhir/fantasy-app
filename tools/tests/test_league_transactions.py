@@ -378,7 +378,8 @@ class RepositoryInvariantTests(unittest.TestCase):
             ids = []
             for path in sorted(Path(out, "league-transactions").rglob("*.json")):
                 payload = json.loads(path.read_text(encoding="utf-8"))
-                self.assertEqual(1, payload["ContractVersion"])
+                self.assertEqual(2, payload["ContractVersion"])
+                self.assertIn("PlayerRefs", payload)
                 for transaction in payload["Transactions"]:
                     ids.append(transaction["TransactionID"])
                     for pick in transaction["DraftPicks"]:
