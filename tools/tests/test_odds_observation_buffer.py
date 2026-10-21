@@ -139,8 +139,7 @@ class OddsObservationBufferTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 read_upstream_lines(path, 2026, {GAME, "2026_07_ARI_NE"})
             with path.open("a", encoding="utf-8") as stream:
-                stream.write(f"{GAME},3.5,44.5,-1000
-")
+                stream.write(f"{GAME},3.5,44.5,-1000\n")
             with self.assertRaisesRegex(ValueError, "Duplicate"):
                 read_upstream_lines(path, 2026, {GAME})
 
@@ -155,10 +154,8 @@ class OddsObservationBufferTests(unittest.TestCase):
                 target.write_text(json.dumps(document), encoding="utf-8")
             csvpath = Path(tmp) / "upstream.csv"
             csvpath.write_text(
-                "game_id,spread_line,total_line
-"
-                f"{GAME},3.5,44.5
-", encoding="utf-8"
+                "game_id,spread_line,total_line\n"
+                f"{GAME},3.5,44.5\n", encoding="utf-8"
             )
             state_path = Path(tmp) / "isolated-state" / "state.json"
             preview = run_cli(root, season=2026, upstream_csv=csvpath, observed_at=BASE_TIME)
