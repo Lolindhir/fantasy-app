@@ -173,7 +173,8 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
             REPO_ROOT, league_id="nfl-reise", write=False
         )
         self.assertGreaterEqual(report["TargetCount"], 39)
-        self.assertEqual(report["ReadyCount"], report["TargetCount"])
+        self.assertEqual(report["ReadyCount"], report["TargetCount"],
+                         [week for week in report["Weeks"] if week["Status"] != "ready"])
         self.assertEqual(report["BlockedCount"], 0, report["Weeks"])
         self.assertFalse(report["WriteRequested"])
         self.assertFalse(report["WriteAborted"])
