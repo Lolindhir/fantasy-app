@@ -402,7 +402,8 @@ export class OverviewComponent {
   private buildRecentMoves(transactions: Transaction[], season: string): Transaction[] {
     return [...transactions]
       .filter(transaction => transaction.Season === season)
-      .sort((left, right) => right.CreatedAt - left.CreatedAt)
+      .sort((left, right) => right.EffectiveAt - left.EffectiveAt
+        || right.TransactionID.localeCompare(left.TransactionID))
       .slice(0, 4);
   }
 
