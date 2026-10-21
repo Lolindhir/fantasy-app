@@ -70,7 +70,10 @@ def select_targets(
         if season_match:
             year = int(season_match.group(1) or season_match.group(3))
             league = season_match.group(2)
-            chosen.update(t for t in targets if t[1] == year
+            # NFL season evidence can be a historical projection/calibration
+            # dependency for future seasons; a league's own settings are local.
+            chosen.update(t for t in targets
+                          if (t[1] >= year if league is None else t[1] == year)
                           and (league is None or t[0] == league))
             continue
         # Unexpected source, code, metadata or scoring change: recompute all.

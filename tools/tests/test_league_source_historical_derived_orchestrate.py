@@ -38,7 +38,7 @@ class HistoricalDerivedSelectionTests(unittest.TestCase):
             [self.targets[3]])
         self.assertEqual(pipeline.select_targets(
             self.targets, mode="incremental",
-            changed_paths=["data-source/nfl/game-finality/2024.json"]), self.targets[:2])
+            changed_paths=["data-source/nfl/game-finality/2024.json"]), self.targets)
         self.assertEqual(pipeline.select_targets(
             self.targets, mode="incremental",
             changed_paths=["data-meta/nfl-reise/metadata.json"]), self.targets)
@@ -48,6 +48,17 @@ class HistoricalDerivedSelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Invalid changed path"):
             pipeline.select_targets(self.targets, mode="incremental",
                                     changed_paths=["../data-source/nfl/foo.json"])
+
+
+class HistoricalDerivedWorkflowSafetyTests(unittest.TestCase):
+    def test_manual_audit_skips_every_live_writer_and_cannot_push(self):
+        text = (TOOLS.parent / ".github/workflows/league-live.yml").read_text(encoding="utf-8")
+        self.assertIn("historical_preflight:", text)
+        self.assertIn("if: ${{ inputs.historical_preflight == true }}", text)
+        self.assertIn("if: ${{ !inputs.historical_preflight }}", text)
+        self.assertEqual(text.count("if: ${{ !cancelled() && !inputs.historical_preflight }}"), 2)
+        self.assertIn("contents: read", text)
+        self.assertIn("persist-credentials: false", text)
 
 
 class HistoricalDerivedIsolatedTests(unittest.TestCase):
