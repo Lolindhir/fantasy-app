@@ -10,7 +10,7 @@ responsibility: >
   data is available.
 
 owns:
-  - completed transaction identity and chronology
+  - completed transaction identity and chronology via EffectiveAt, not CreatedAt
   - participant roster IDs
   - player adds and drops
   - draft-pick movement from previous owner to new owner
@@ -40,6 +40,7 @@ generation:
     - .github/workflows/update-drafts.yml
 
 notes:
+  - EffectiveAt is the authoritative timestamp of a completed move (Shared Derived LeagueTransactions v2). Source/Canonical preserve Sleeper created and status_updated; CreatedAt/CreatedDate remain submission provenance. Manual and legacy missing updated time use CreatedAt deterministically.
   - Angular must consume the generated draft-pick facts instead of deriving draft identity, concrete position or selected player from unrelated frontend state.
   - Draft-pick enrichment is intentionally optional while a future pick has no exact order or while a draft result is not yet available.
   - PlayerName is stored as a historical fallback when PlayerID no longer resolves against the current Players.json.

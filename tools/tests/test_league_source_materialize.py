@@ -258,6 +258,8 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
                             "leg": 3,
                             "type": "trade",
                             "status": "complete",
+                            "created": 1712000000000,
+                            "status_updated": 1712003600000,
                             "creator": "u1",
                             "roster_ids": [1],
                             "adds": {"p1": 1},
@@ -308,6 +310,8 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             transaction = json.loads((season_root / "transactions" / "week-3.json").read_text(encoding="utf-8"))[0]
             draft_result = json.loads((season_root / "drafts.json").read_text(encoding="utf-8"))[0]
             self.assertTrue(transaction["CanonicalLeagueTransactionID"].startswith("clt-"))
+            self.assertEqual(transaction["CreatedAt"], 1712000000000)
+            self.assertEqual(transaction["StatusUpdatedAt"], 1712003600000)
             self.assertEqual(transaction["Adds"][0]["Player"]["CanonicalPlayerID"], "cp-one")
             self.assertTrue(draft_result["CanonicalLeagueDraftID"].startswith("cld-"))
             self.assertEqual(draft_result["Picks"][0]["Player"]["CanonicalPlayerID"], "cp-one")
