@@ -85,6 +85,20 @@ describe('transaction-card presenter', () => {
       expect(asset.nflTeamAbv).toBeUndefined();
     }
     expect(assets[0].player).toBeUndefined();
+    expect(assets[1].player).toBeUndefined();
+
+    const noPortrait = getTransactionCardAssets({
+      ...participant,
+      DroppedPlayers: [{
+        PlayerID: '9',
+        Player: stale,
+        PlayerRef: { Name: 'Older Historical Player', Position: null, Picture: null }
+      }]
+    }, 'outgoing')[0];
+    expect(noPortrait.label).toBe('Older Historical Player');
+    expect(noPortrait.portrait).toBeUndefined();
+    expect(noPortrait.position).toBeUndefined();
+    expect(noPortrait.player).toBeUndefined();
   });
 
   it('keeps traded pick summary free from selected player and original owner', () => {
