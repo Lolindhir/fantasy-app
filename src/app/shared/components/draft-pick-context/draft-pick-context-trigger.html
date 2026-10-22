@@ -3,7 +3,7 @@
   [variant]="variant"
   [isTradedPick]="context.isTradedPick"
   [interactive]="true"
-  [pillStyle]="usePositionColor ? (context.selectedPlayer?.Position | positionStyle) : { background: context.roundColor }"
+  [pillStyle]="usePositionColor ? (positionForColor | positionStyle) : { background: context.roundColor }"
   [matMenuTriggerFor]="pickInfoMenu" />
 
 <mat-menu #pickInfoMenu="matMenu" class="draft-pick-trigger-menu">
