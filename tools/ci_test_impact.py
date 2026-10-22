@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-"""Fail-closed PR impact selection for CP3 Deep Gates (Issue #1095).
+"""Fail-closed PR impact selection for Core + Fast blocks (Issues #1095, #1122).
+
+Pull requests always run Core and only the Fast blocks the change can affect:
+the four Fast families (named like the Deep groups they mirror) plus the
+Angular, Scheduler and PowerShell blocks. Deep suites never run on a pull
+request; they run in the periodic full audit or through a manual dispatch.
 
 Selection requires a complete PR changed-file inventory and a validated test
-registry. Unknown/ambiguous inputs force all Deep suites on PRs; the legacy
-full build runs exclusively during explicit manual audits. No dependency on
-untrusted PR code authorizes publication.
+registry. Unknown/ambiguous inputs select every Fast block, never zero. No
+dependency on untrusted PR code authorizes publication.
 """
 from __future__ import annotations
 
@@ -22,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 INVENTORY = ROOT / ".github/ci-test-inventory.json"
 GROUPS = ("nfl-identity-replay", "league-pwf-twp", "market-restore", "consumer-restore")
 ALL = set(GROUPS)
+BLOCKS = ("angular", "scheduler", "powershell")
 VALID_TIERS = {"fast", "deep", "audit"}
 VALID_COVERAGE = {"build", "build-indirect", "fm-validation", "shadow", "not-in-current-pr-ci"}
 VALID_STATES = {"added", "modified", "changed", "renamed", "removed", "deleted", "copied"}
@@ -95,8 +100,13 @@ def read_inventory(path: Path = INVENTORY) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def baseline_coverage(root: Path, paths: set[str]) -> dict[str, str]:
-    """Derived from ACTUAL existing PR workflows, not from aspirational classes."""
+def baseline_coverage(root: Path, paths: set[str], inventory: dict | None = None) -> dict[str, str]:
+    """Derived from ACTUAL existing PR workflows, not from aspirational classes.
+
+    Python modules executed by ``tools/ci_suite_runner.py`` are covered by
+    construction (the runner executes exactly the registered covered modules)
+    as long as build.yml still invokes the Core lane and every Fast/Deep family.
+    """
     build = (root / ".github/workflows/build.yml").read_text(encoding="utf-8")
     fm = (root / ".github/workflows/fantasy-management-validation.yml").read_text(encoding="utf-8")
     bridge_path = root / "tools/tests/test_league_source_team_week_performance_ci.py"
@@ -108,6 +118,14 @@ def baseline_coverage(root: Path, paths: set[str]) -> dict[str, str]:
         raise ValueError("Existing build discovery changed: re-audit baseline before classification")
     if "unittest discover" not in fm or "fantasy-management/_ai/scripts/tests" not in fm:
         raise ValueError("Fantasy Management validation discovery changed")
+    runner_covered: dict[str, str] = {}
+    if inventory is not None and "ci_suite_runner.py core" in build and all(
+            f"ci_suite_runner.py {lane} {group}" in build for lane in ("fast", "deep") for group in GROUPS):
+        runner_covered = {
+            e["path"]: e["currentPrCoverage"] for e in inventory["tests"]
+            if e["path"].startswith("tools/tests/test_") and e["path"].endswith(".py")
+            and e["tier"] in {"fast", "deep"} and e["currentPrCoverage"] in {"build", "build-indirect"}
+        }
     python_refs = set(re.findall(r"tools[./]tests[./](test_[a-zA-Z0-9_]+)", build))
     discover_patterns = set(re.findall(r'-p "([^"]+\.py)"', build))
     indirect = set(re.findall(r"tools\.tests\.(test_[a-zA-Z0-9_]+)", bridge))
@@ -122,6 +140,8 @@ def baseline_coverage(root: Path, paths: set[str]) -> dict[str, str]:
             coverage[path] = "build"
         elif path == "tools/tests/test_ci_test_impact.py" and "test_ci_test_impact" in build:
             coverage[path] = "shadow"
+        elif path in runner_covered:
+            coverage[path] = runner_covered[path]
         elif path.startswith("tools/tests/") and (fnmatch.fnmatch(name, "test_nfl_source*")
               or fnmatch.fnmatch(name, "test_league_source*") or name in python_refs
               or any(fnmatch.fnmatch(Path(path).name, pat) for pat in discover_patterns)):
@@ -140,7 +160,7 @@ def validate(root: Path, inventory: dict) -> dict[str, int]:
         raise ValueError("Unknown CI inventory schema")
     indexed = {}
     for entry in inventory["tests"]:
-        if not isinstance(entry, dict) or set(entry) != {"path", "tier", "deepGroups", "currentPrCoverage"}:
+        if not isinstance(entry, dict) or set(entry) != {"path", "tier", "deepGroups", "fastGroups", "currentPrCoverage"}:
             raise ValueError(f"Malformed test entry: {entry}")
         path = entry["path"]
         if not isinstance(path, str) or not is_test(path) or path in indexed:
@@ -152,6 +172,13 @@ def validate(root: Path, inventory: dict) -> dict[str, int]:
             raise ValueError(f"Invalid deep groups: {path}")
         if (entry["tier"] == "deep") != bool(groups):
             raise ValueError(f"Deep tests require a group; fast/audit tests must not claim one: {path}")
+        fast_groups = entry["fastGroups"]
+        if (not isinstance(fast_groups, list) or len(fast_groups) != len(set(fast_groups))
+                or not set(fast_groups) <= ALL):
+            raise ValueError(f"Invalid fast groups: {path}")
+        if fast_groups and not (path.startswith("tools/tests/test_") and path.endswith(".py")
+                                and entry["tier"] in {"fast", "deep"}):
+            raise ValueError(f"Only Python fast/deep modules may claim a Fast family: {path}")
         indexed[path] = entry
     # Inventory the real PR-triggered workflow surface and direct non-test
     # guards; otherwise a future CI refactor could silently omit one.
@@ -176,7 +203,7 @@ def validate(root: Path, inventory: dict) -> dict[str, int]:
     stale = sorted(set(indexed) - tracked)
     if absent or stale:
         raise ValueError(f"Inventory drift: unclassified={absent[:20]}; removed={stale[:20]}")
-    current = baseline_coverage(root, tracked)
+    current = baseline_coverage(root, tracked, inventory)
     mismatches = [
         (path, indexed[path]["currentPrCoverage"], current[path])
         for path in sorted(tracked) if indexed[path]["currentPrCoverage"] != current[path]
@@ -202,9 +229,11 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
     """Return conservative transitive group closure and matching rule."""
     if path in tests:
         entry = tests[path]
-        return set(entry["deepGroups"]), "registered-test:" + entry["tier"]
+        return set(entry["deepGroups"]) | set(entry["fastGroups"]), "registered-test:" + entry["tier"]
     if is_test(path):
         return ALL.copy(), "unclassified-test:fail-closed"
+    if path.startswith(SCHEDULER_PATHS[:3]) and path != ".github/workflow-schedules.json":
+        return set(), "Scheduler-implementation"
     if path.startswith((".github/workflows/", ".github/ci-test-", "tools/ci_",
                         ".github/workflow-schedules.json", "AGENTS.md", "CHAT_START.md")):
         return ALL.copy(), "CI-or-policy:fail-closed"
@@ -255,14 +284,54 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
     return ALL.copy(), "unknown-path:fail-closed"
 
 
+ANGULAR_PATHS = ("src/", "public/assets/", "public/images/", "angular.json", "tsconfig",
+                 "package.json", "package-lock.json", "deploy_action.ps1", ".prettierrc")
+SCHEDULER_PATHS = ("tools/run-workflow-scheduler", "tools/run-project-field-sync-scheduler",
+                   "tools/nfl-game-window.cjs", "tools/tests/run-workflow-scheduler",
+                   ".github/workflow-schedules.json")
+
+
+def blocks_for(path: str, groups: set[str], rule: str) -> set[str]:
+    """Non-family Fast blocks (Angular, Scheduler, PowerShell) a change can affect.
+
+    Anything fail-closed selects every block; only documented, narrow
+    path families select fewer. Core always runs and is not a block.
+    """
+    if rule.startswith("registered-test"):
+        if path.startswith("src/"):
+            return {"angular"}
+        if path.startswith("tools/tests/run-workflow-scheduler"):
+            return {"scheduler"}
+        if path.startswith("public/requests/"):
+            return {"powershell"}
+        return set()
+    if rule.startswith("canonical-contract"):
+        return set()
+    if path == ".github/workflow-schedules.json":
+        return {"scheduler"}
+    if "fail-closed" in rule:
+        return set(BLOCKS)
+    if path.startswith(SCHEDULER_PATHS):
+        return {"scheduler"}
+    if path.startswith(ANGULAR_PATHS):
+        return {"angular"}
+    if path.startswith("public/data/"):
+        return {"angular", "powershell"}
+    if path.startswith(("public/requests/", "data-meta/")) or groups:
+        return {"powershell"}
+    return set()
+
+
 def select(changes: list[dict], inventory: dict) -> dict:
     tests = {entry["path"]: entry for entry in inventory["tests"]}
     selected: set[str] = set()
+    blocks: set[str] = set()
     reasons: list[dict] = []
     uncertain = False
     if not changes:
-        return {"selected": list(GROUPS), "uncertain": True, "reasons": [
-            {"path": "(none)", "rule": "missing-or-empty-diff:fail-closed", "groups": list(GROUPS)}]}
+        return {"selected": list(GROUPS), "blocks": list(BLOCKS), "uncertain": True, "reasons": [
+            {"path": "(none)", "rule": "missing-or-empty-diff:fail-closed", "groups": list(GROUPS),
+             "blocks": list(BLOCKS)}]}
     for item in changes:
         path = item.get("filename")
         status = item.get("status")
@@ -276,9 +345,13 @@ def select(changes: list[dict], inventory: dict) -> dict:
             groups, rule = affected(path, tests)
         if "fail-closed" in rule:
             uncertain = True
+        chosen_blocks = blocks_for(path, groups, rule)
         selected.update(groups)
-        reasons.append({"path": path, "rule": rule, "groups": sorted(groups)})
-    return {"selected": sorted(selected), "uncertain": uncertain, "reasons": reasons}
+        blocks.update(chosen_blocks)
+        reasons.append({"path": path, "rule": rule, "groups": sorted(groups),
+                        "blocks": sorted(chosen_blocks)})
+    return {"selected": sorted(selected), "blocks": sorted(blocks),
+            "uncertain": uncertain, "reasons": reasons}
 
 
 def pr_changes(event: dict) -> list[dict]:
@@ -303,7 +376,7 @@ def pr_changes(event: dict) -> list[dict]:
         if len(files) < 100:
             break
     if not result or len(result) != int(pr["changed_files"]) or len(result) > 3000:
-        raise ValueError("Incomplete/truncated PR diff; route all Deep Groups")
+        raise ValueError("Incomplete/truncated PR diff; select every Fast block")
     return result
 
 
@@ -361,12 +434,32 @@ def timeout_only_yaml(before: str, after: str) -> bool:
     return changes > 0 and old_copy == new_copy
 
 
+DISPATCH_SCOPES = ("full", *GROUPS)
+
+
+def dispatch_scope(event: dict) -> str:
+    """Manual dispatch scope; scheduled audits and unknown input mean the full audit."""
+    scope = (event.get("inputs") or {}).get("scope") or "full"
+    if scope not in DISPATCH_SCOPES:
+        raise ValueError(f"Unknown dispatch scope {scope!r}")
+    return scope
+
+
 def select_from_event(event: dict, inventory: dict) -> dict:
     if "pull_request" not in event:
-        return {"selected": list(GROUPS), "uncertain": False, "reasons": [
-            {"path": "(manual full validation)", "rule": "full-audit", "groups": list(GROUPS)}]}
+        scope = dispatch_scope(event)
+        if scope == "full":
+            return {"mode": "full", "selected": list(GROUPS), "blocks": list(BLOCKS),
+                    "deep": list(GROUPS), "uncertain": False, "reasons": [
+                        {"path": "(full audit)", "rule": "full-audit", "groups": list(GROUPS),
+                         "blocks": list(BLOCKS)}]}
+        return {"mode": "deep", "selected": [], "blocks": [], "deep": [scope],
+                "uncertain": False, "reasons": [
+                    {"path": f"(manual Deep: {scope})", "rule": "manual-deep",
+                     "groups": [scope], "blocks": []}]}
     changes = pr_changes(event)
     result = select(changes, inventory)
+    result.update(mode="pr", deep=[])
     if (len(changes) == 1 and changes[0].get("status") == "modified"
             and changes[0]["filename"] in TIMEOUT_ALLOWLIST):
         path = changes[0]["filename"]
@@ -376,8 +469,10 @@ def select_from_event(event: dict, inventory: dict) -> dict:
             before = _repo_file_at(repo, path, pr["base"]["sha"], os.environ["GITHUB_TOKEN"])
             after = _repo_file_at(repo, path, pr["head"]["sha"], os.environ["GITHUB_TOKEN"])
             if timeout_only_yaml(before, after):
-                return {"selected": [], "uncertain": False, "reasons": [
-                    {"path": path, "rule": "verified-job-timeout-only", "groups": []}]}
+                return {"mode": "pr", "selected": [], "blocks": [], "deep": [],
+                        "uncertain": False, "reasons": [
+                            {"path": path, "rule": "verified-job-timeout-only",
+                             "groups": [], "blocks": []}]}
         except (OSError, ValueError, KeyError, TypeError, UnicodeError):
             # Never accept an unverified timeout exception.
             pass
@@ -385,13 +480,21 @@ def select_from_event(event: dict, inventory: dict) -> dict:
 
 
 def emit_route_outputs(result: dict) -> None:
-    selected = set(result["selected"])
+    mode = result.get("mode", "pr")
+    selected, blocks, deep = set(result["selected"]), set(result["blocks"]), set(result.get("deep", []))
     flags = {
+        "mode": mode,
         "nfl": "true" if "nfl-identity-replay" in selected else "false",
         "league": "true" if "league-pwf-twp" in selected else "false",
         "market": "true" if "market-restore" in selected else "false",
         "consumer": "true" if "consumer-restore" in selected else "false",
-        "full": "true" if selected == ALL else "false",
+        "angular": "true" if "angular" in blocks else "false",
+        "scheduler": "true" if "scheduler" in blocks else "false",
+        "powershell": "true" if "powershell" in blocks else "false",
+        "deep_nfl": "true" if "nfl-identity-replay" in deep else "false",
+        "deep_league": "true" if "league-pwf-twp" in deep else "false",
+        "deep_market": "true" if "market-restore" in deep else "false",
+        "deep_consumer": "true" if "consumer-restore" in deep else "false",
     }
     dest = os.environ.get("GITHUB_OUTPUT")
     if not dest:
@@ -399,7 +502,7 @@ def emit_route_outputs(result: dict) -> None:
     with open(dest, "a", encoding="utf-8") as out:
         for key, value in flags.items():
             out.write(f"{key}={value}\n")
-    print("CP3 selected job flags:", flags, flush=True)
+    print("Selected job flags:", flags, flush=True)
 
 
 def write_summary(result: dict, counts: dict | None, error: str | None) -> None:
@@ -408,19 +511,21 @@ def write_summary(result: dict, counts: dict | None, error: str | None) -> None:
     target = os.environ.get("GITHUB_STEP_SUMMARY")
     if target:
         with open(target, "a", encoding="utf-8") as out:
-            out.write("\n### CI impact — CP3 decision (fail closed)\n")
+            out.write(f"\n### CI impact — {result.get('mode', 'pr')} decision (fail closed)\n")
             if counts:
                 out.write(f"- Inventory: {counts['total']} registered; {counts['currentlyInPr']} already in PR suites; {counts['currentlyNotInPr']} outside present PR suites (legacy baseline: {counts['legacyUncovered']}; issue-backed exceptions: {counts['explicitlyExceptedUncovered']}).\n")
-            out.write(f"- Proposed Deep groups: {', '.join(result['selected']) or 'none'}\n")
+            out.write(f"- Core: always. Fast families: {', '.join(result['selected']) or 'none'}\n")
+            out.write(f"- Fast blocks: {', '.join(result.get('blocks', [])) or 'none'}\n")
+            out.write(f"- Deep (never automatic on pull requests): {', '.join(result.get('deep', [])) or 'none'}\n")
             out.write(f"- Confidence: {'FAIL-CLOSED / UNCERTAIN' if result['uncertain'] else 'rules matched'}\n")
             if error:
                 out.write(f"- Shadow warning: {error}\n")
-            out.write("| File | Rule | Groups |\n| --- | --- | --- |\n")
+            out.write("| File | Rule | Families | Blocks |\n| --- | --- | --- | --- |\n")
             for x in result["reasons"][:120]:
-                out.write(f"| {x['path'].replace('|', '/')} | {x['rule']} | {', '.join(x['groups'])} |\n")
+                out.write(f"| {x['path'].replace('|', '/')} | {x['rule']} | {', '.join(x['groups'])} | {', '.join(x.get('blocks', []))} |\n")
             if len(result["reasons"]) > 120:
                 out.write(f"\n{len(result['reasons']) - 120} additional files omitted from summary; full JSON in log.\n")
-            out.write("\n**Selected Deep suites and the Merge Gate enforce this decision.**\n")
+            out.write("\n**Core and the selected Fast blocks are enforced by the Merge Gate; a block that was not selected is 'not required', not 'passed'.**\n")
 
 
 def main() -> int:
@@ -447,11 +552,15 @@ def main() -> int:
             result = select_from_event(event, inventory)
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
         if options.mode in {"select", "route"}:
-            # Unknown input is acceptable only if all Deep + full legacy run;
+            # Unknown input selects every Fast block (never zero);
             # invalid inventory itself is NOT acceptable and failed above.
             if options.mode == "route":
                 error = f"{type(exc).__name__}: {exc}"
                 result = select([], inventory)
+                if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+                    result.update(mode="pr", deep=[])
+                else:
+                    result.update(mode="full", deep=list(GROUPS))
             else:
                 raise
         else:

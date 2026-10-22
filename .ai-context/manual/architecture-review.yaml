@@ -224,7 +224,7 @@ dimensions:
     checks:
       - Does the current test inventory include every discovered test, with truthful tier, Deep group(s) and current PR coverage classification?
       - Do declared Fast/Deep/independent-FM or other validation entry points really invoke the tests, rather than merely list them in the manifest?
-      - Have introduced, moved or removed code paths and producer-to-consumer dependencies been assessed for their effect on the four Deep routing families?
+      - Have introduced, moved or removed code paths and producer-to-consumer dependencies been assessed for their effect on the four Deep routing families and their Fast counterparts (Deep runs only in the audit or by manual dispatch, ADR-067; is a manual Deep run recommended for this change)?
       - Does a change require new regression fixtures, a new Deep classification or a justified existing grouping, without weakening formerly required checks?
       - Are uncovered legacy tests and issue-backed new exceptions explicit and honestly classified, with a plan or rationale for continued non-PR coverage?
       - Does the CI impact decision appear in the owning Issue, or does a periodic audit document concrete cumulative drift and the appropriate follow-up ownership?

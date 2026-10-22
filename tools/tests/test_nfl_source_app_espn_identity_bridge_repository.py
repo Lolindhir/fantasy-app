@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from tools.nfl_source_data_lib.common import load_registry
 from tools.nfl_source_data_lib.identity import build_identities
+from tools.ci_tier import deep_only
 
 ROOT = Path(__file__).resolve().parents[2]
 FM_SCRIPTS = ROOT / "fantasy-management" / "_ai" / "scripts"
@@ -32,6 +33,7 @@ SKIP_ENV = "NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT"
     os.environ.get(SKIP_ENV) == "1",
     f"{SKIP_ENV}=1: repo-state audit runs after materialization in the sync workflow",
 )
+@deep_only("rebuilds all repository identities against the App population (~45 s)")
 class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
     def test_rebuilt_identities_do_not_regress_current_population_identity_gap(self) -> None:
         config_path = (

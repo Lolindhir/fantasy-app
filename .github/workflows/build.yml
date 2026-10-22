@@ -3,6 +3,17 @@ run-name: "${{ github.event_name == 'pull_request' && 'CI • Repository Validat
 
 on:
   workflow_dispatch:
+    inputs:
+      scope:
+        description: "full = complete audit (all Fast, all Deep, legacy build); a Deep group runs only that Deep category on the selected ref"
+        type: choice
+        default: full
+        options:
+          - full
+          - nfl-identity-replay
+          - league-pwf-twp
+          - market-restore
+          - consumer-restore
   repository_dispatch:
     types:
       - scheduler-ci-full-audit
@@ -12,14 +23,51 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read  # CP1 advisory-only changed-file inventory
+  pull-requests: read  # advisory-only changed-file inventory
 
 jobs:
-  # CP3.5: all five Fast jobs always run on PRs; selected Deep suites
-  # validate affected dependencies. The legacy full build is MANUAL only;
-  # all historical test commands are preserved for explicit operator audits.
+  # Issue #1122: a pull request runs Core (always) plus the Fast blocks the
+  # change can affect. Deep suites never run on a pull request; they run in the
+  # weekly full audit or through a manual dispatch of one Deep category. The
+  # legacy full build is part of the full audit only.
+  selector:
+    name: CI • Selection
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      mode: ${{ steps.route.outputs.mode }}
+      nfl: ${{ steps.route.outputs.nfl }}
+      league: ${{ steps.route.outputs.league }}
+      market: ${{ steps.route.outputs.market }}
+      consumer: ${{ steps.route.outputs.consumer }}
+      angular: ${{ steps.route.outputs.angular }}
+      scheduler: ${{ steps.route.outputs.scheduler }}
+      powershell: ${{ steps.route.outputs.powershell }}
+      deep_nfl: ${{ steps.route.outputs.deep_nfl }}
+      deep_league: ${{ steps.route.outputs.deep_league }}
+      deep_market: ${{ steps.route.outputs.deep_market }}
+      deep_consumer: ${{ steps.route.outputs.deep_consumer }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install YAML dependency
+        run: python -m pip install "PyYAML>=6,<7"
+      - name: Validate complete PR diff and select Fast blocks
+        id: route
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python tools/ci_test_impact.py route
+
+  # Core: small mandatory checks that run on every change.
   fast-contracts:
-    name: CI Fast • Contracts & Publication Safety
+    name: CI Core • Contracts & Publication Safety
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -33,22 +81,81 @@ jobs:
           python-version: "3.12"
       - name: Install workflow-health test dependency
         run: python -m pip install "PyYAML>=6,<7"
-      - name: Validate CI inventory and parallel-lane contracts
+      - name: Validate CI inventory and routing contracts
         run: python -m unittest tools.tests.test_ci_test_impact -v
       - name: Validate workflow, publisher and repository contracts
-        run: |
-          python -m unittest tools.tests.test_build_workflow_health_snapshot -v
-          python -m unittest tools.tests.test_workflow_publication_contracts -v
-          python -m unittest tools.tests.test_rebuild_and_publish -v
-          python -m unittest tools.tests.test_git_transient -v
-          python -m unittest tools.tests.test_publish_generated_commit -v
-          python -m unittest tools.tests.test_validate_work_tracking -v
-          python -m unittest tools.tests.test_consumer_read_classification -v
-          python -m unittest tools.tests.test_odds_change_gate -v
-          python -m unittest tools.tests.test_odds_observation_buffer -v
+        run: python tools/ci_suite_runner.py core
 
-  fast-source:
-    name: CI Fast • Source & PowerShell
+  fast-nfl:
+    name: CI Fast • NFL Source & Identity
+    needs: selector
+    if: ${{ needs.selector.outputs.nfl == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python tools/ci_suite_runner.py fast nfl-identity-replay
+
+  fast-league:
+    name: CI Fast • League, Scoring & PWF/TWP
+    needs: selector
+    if: ${{ needs.selector.outputs.league == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python tools/ci_suite_runner.py fast league-pwf-twp
+      - name: Players league-scoring shadow and Sleeper gate
+        run: python tools/players_league_scoring_shadow.py gate
+
+  fast-market:
+    name: CI Fast • External Market Sources
+    needs: selector
+    if: ${{ needs.selector.outputs.market == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python tools/ci_suite_runner.py fast market-restore
+
+  fast-consumer:
+    name: CI Fast • Shared Derived & Consumers
+    needs: selector
+    if: ${{ needs.selector.outputs.consumer == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "PyYAML>=6,<7"
+      - run: python tools/ci_suite_runner.py fast consumer-restore
+
+  fast-powershell:
+    name: CI Fast • PowerShell Data Regressions
+    needs: selector
+    if: ${{ needs.selector.outputs.powershell == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -60,17 +167,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Run small deterministic source and scoring tests
-        run: |
-          python -m unittest tools.tests.test_nfl_source_identity_rules -v
-          python -m unittest tools.tests.test_league_source_identity -v
-          python -m unittest tools.tests.test_historical_fantasy_scoring -v
-          python -m unittest tools.tests.test_player_scoring_reconciliation -v
-          python -m unittest tools.tests.test_team_week_performance_materialize -v
-          python -m unittest tools.tests.test_market_observations_restore_preflight -v
-          python -m unittest tools.tests.test_espn_player_availability -v
-          python -m unittest tools.tests.test_players_league_scoring_shadow -v
-          python tools/players_league_scoring_shadow.py gate
       - name: Run existing PowerShell data regression contracts
         shell: pwsh
         run: |
@@ -83,6 +179,8 @@ jobs:
 
   fast-scheduler:
     name: CI Fast • Scheduler
+    needs: selector
+    if: ${{ needs.selector.outputs.scheduler == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -99,6 +197,8 @@ jobs:
 
   fast-angular:
     name: CI Fast • Angular Tests & Build
+    needs: selector
+    if: ${{ needs.selector.outputs.angular == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -125,60 +225,12 @@ jobs:
         shell: pwsh
         run: ./deploy_action.ps1
 
-  # CP3 fail-closed selector: determines ALL four Deep gates unless a complete,
-  # validated PR diff and registered dependency closure prove a narrower set.
-  selector:
-    name: CI • Deep Selection
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      nfl: ${{ steps.route.outputs.nfl }}
-      league: ${{ steps.route.outputs.league }}
-      market: ${{ steps.route.outputs.market }}
-      consumer: ${{ steps.route.outputs.consumer }}
-      full: ${{ steps.route.outputs.full }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install YAML dependency
-        run: python -m pip install "PyYAML>=6,<7"
-      - name: Validate complete PR diff and select Deep lanes
-        id: route
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: python tools/ci_test_impact.py route
-
-  # Supplemental full coverage of all registered Fast Python modules previously
-  # run by the legacy build; the four CP2 Fast jobs remain unchanged.
-  fast-python:
-    name: CI Fast • All Python Unit Suites
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install YAML dependency
-        run: python -m pip install "PyYAML>=6,<7"
-      - name: Run all registered previously mandatory Fast Python modules
-        run: python tools/ci_suite_runner.py fast
-
+  # Deep: full historical replays and clean-root restores. Never selected by a
+  # pull request; weekly full audit or manual dispatch of one category only.
   deep-nfl:
     name: CI Deep • NFL Identity Replay
     needs: selector
-    if: ${{ needs.selector.outputs.nfl == 'true' }}
+    if: ${{ needs.selector.outputs.deep_nfl == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
     permissions:
@@ -189,12 +241,12 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install "PyYAML>=6,<7"
-      - run: python tools/ci_suite_runner.py nfl-identity-replay
+      - run: python tools/ci_suite_runner.py deep nfl-identity-replay
 
   deep-league:
     name: CI Deep • League PWF & TWP
     needs: selector
-    if: ${{ needs.selector.outputs.league == 'true' }}
+    if: ${{ needs.selector.outputs.deep_league == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -205,12 +257,12 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install "PyYAML>=6,<7"
-      - run: python tools/ci_suite_runner.py league-pwf-twp
+      - run: python tools/ci_suite_runner.py deep league-pwf-twp
 
   deep-market:
     name: CI Deep • Market Restore
     needs: selector
-    if: ${{ needs.selector.outputs.market == 'true' }}
+    if: ${{ needs.selector.outputs.deep_market == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -221,12 +273,12 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install "PyYAML>=6,<7"
-      - run: python tools/ci_suite_runner.py market-restore
+      - run: python tools/ci_suite_runner.py deep market-restore
 
   deep-consumer:
     name: CI Deep • Consumer Restore
     needs: selector
-    if: ${{ needs.selector.outputs.consumer == 'true' }}
+    if: ${{ needs.selector.outputs.deep_consumer == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -237,13 +289,14 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install "PyYAML>=6,<7"
-      - run: python tools/ci_suite_runner.py consumer-restore
+      - run: python tools/ci_suite_runner.py deep consumer-restore
 
-  # Stable check present on every PR, regardless of selected/omitted Deep jobs.
+  # Stable check present on every run. It requires Core, every selected Fast
+  # block and, in audits, the selected Deep jobs; "not selected" is not "passed".
   merge-gate:
     name: CI / Merge Gate
     if: ${{ always() }}
-    needs: [selector, fast-contracts, fast-source, fast-scheduler, fast-angular, fast-python, deep-nfl, deep-league, deep-market, deep-consumer, build]
+    needs: [selector, fast-contracts, fast-nfl, fast-league, fast-market, fast-consumer, fast-powershell, fast-scheduler, fast-angular, deep-nfl, deep-league, deep-market, deep-consumer, build]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -251,18 +304,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Validate every selected Deep and mandatory Fast result
+      - name: Validate Core, selected Fast and audit results
         env:
           CI_NEEDS_JSON: ${{ toJSON(needs) }}
           CI_EVENT_NAME: ${{ github.event_name }}
           CI_EVENT_ACTION: ${{ github.event.action }}
         run: python tools/ci_merge_gate.py
 
-  # Complete read-only audit only for operator dispatch or the exact weekly
-  # scheduler event. Pull requests retain only Fast + selected Deep lanes.
+  # Complete read-only audit only for a "full" operator dispatch or the exact
+  # weekly scheduler event. Pull requests never run it.
   build:
     needs: selector
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'repository_dispatch' && github.event.action == 'scheduler-ci-full-audit') }}
+    if: ${{ needs.selector.outputs.mode == 'full' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'repository_dispatch' && github.event.action == 'scheduler-ci-full-audit')) }}
     runs-on: ubuntu-latest
 
     steps:

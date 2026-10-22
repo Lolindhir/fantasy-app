@@ -12,8 +12,10 @@ and written only on a semantic difference (a second run is a file-level no-op). 
 
 Second product family: league-transactions and league-drafts (league-history.yaml, ADR-057, Issue #999),
 written to <derived root>/league-transactions|league-drafts/<CanonicalLeagueID>/<season>.json. Both come
-from one in-memory run in ADR-026 order (the transaction picks carry the draft pick results). Nothing
-publishes them yet; the App files in public/data stay produced by the PowerShell rebuild until the cutover.
+from one in-memory run in ADR-026 order (the transaction picks carry the draft pick results). The App consumer generator already publishes its own in-memory history
+result; the additive CP2 PlayerRefs do not alter that App delivery until Issue #1100 CP3.
+The optional --hold-seed-players-file explicitly reads the last published
+public/data/Players.json, not a new canonical identity source.
 
 Usage:
   derived_data.py materialize --product player-valuation|league-transactions|league-drafts [--league nfl-reise]
@@ -43,7 +45,7 @@ from league_metadata import (  # noqa: E402
 import player_valuation_sources as sources  # noqa: E402
 from derived_data_lib.league_history import build_history, drafts_document, transactions_document  # noqa: E402
 from league_history_sources import LeagueHistorySourceError, load_inputs  # noqa: E402
-from players_league_scoring import SleeperIdentityResolver  # noqa: E402
+from derived_data_lib.league_player_refs import LeaguePlayerReferenceResolver, provider_draft_names  # noqa: E402
 
 LEAGUE_TRANSACTIONS = "league-transactions"
 LEAGUE_DRAFTS = "league-drafts"
@@ -206,16 +208,20 @@ def materialize_league_history(
     if history.unresolved:
         raise sources.SourceError(f"Transaction picks without a unique draft identity: {history.unresolved}")
     documents: dict[int, tuple[dict[str, Any], int]] = {}
+    resolver = LeaguePlayerReferenceResolver.from_repo(repo_root)
     if product == LEAGUE_TRANSACTIONS:
-        resolver = SleeperIdentityResolver.from_repo(repo_root)
         for season in inputs.seasons:
+            names = provider_draft_names(history.drafts.get(season, []))
             document = transactions_document(
-                league_id, season, history.transactions[season], lambda player, year: resolver.resolve(player, year)[0]
+                league_id, season, history.transactions[season], resolver.resolve, names
             )
             documents[season] = (document, len(document["Transactions"]))
     else:
         for season, drafts in sorted(history.drafts.items()):
-            documents[season] = (drafts_document(league_id, season, drafts), len(drafts))
+            names = provider_draft_names(drafts)
+            documents[season] = (
+                drafts_document(league_id, season, drafts, resolver.resolve, names), len(drafts)
+            )
     wanted = sorted(documents) if not seasons else [s for s in sorted(set(seasons)) if s in documents]
     summary: dict[str, Any] = {"Product": product, "CanonicalLeagueID": league_id, "Seasons": []}
     for season in wanted:

@@ -22,8 +22,11 @@ if str(TOOLS) not in sys.path:
 from derived_data_lib.league_history import (  # noqa: E402
     LeagueHistoryInputs,
     build_transaction_stage,
+    drafts_document,
     transactions_document,
 )
+from derived_data_lib.league_player_refs import LeaguePlayerReferenceResolver, provider_draft_names  # noqa: E402
+from players_league_scoring import SleeperIdentityResolver  # noqa: E402
 from derived_data_lib.league_transactions import (  # noqa: E402
     TransactionHistoryError,
     enrich_pick_details,
@@ -280,9 +283,105 @@ class StageTests(unittest.TestCase):
             build_transaction_stage(self.inputs(transactions, payloads))
 
     def test_document_lists_player_identities_of_the_file(self):
-        document = transactions_document("L", 2026, [tx("1", adds={"p1": 1}, drops={"p2": 2})], lambda p, s: None if p == "p2" else f"C-{p}")
+        def ref(player, season, name):
+            cid = None if player == "p2" else f"C-{player}"
+            return {"CanonicalPlayerID": cid, "Name": name, "Position": None, "Picture": None,
+                    "ResolutionStatus": "resolved" if cid else "unmapped", "Provenance": {}}
+        document = transactions_document("L", 2026, [tx("1", adds={"p1": 1}, drops={"p2": 2})], ref)
         self.assertEqual({"p1": "C-p1", "p2": None}, document["PlayerIdentities"])
         self.assertEqual(2, document["ContractVersion"])
+        self.assertEqual("C-p1", document["PlayerRefs"]["p1"]["CanonicalPlayerID"])
+
+
+class HistoricalPlayerReferenceTests(unittest.TestCase):
+    """Issue #1100: old players do not depend on the current Players.json population."""
+
+    def resolver(self):
+        identity = SleeperIdentityResolver(
+            {"Mappings": [
+                {"Provider": "Sleeper", "ExternalID": "3321", "CanonicalPlayerID": "NFLP-tyreek",
+                 "FirstObservedSeason": 2021, "LastObservedSeason": 2026},
+                {"Provider": "Sleeper", "ExternalID": "167", "CanonicalPlayerID": "NFLP-brady",
+                 "FirstObservedSeason": 2021, "LastObservedSeason": 2026},
+                {"Provider": "Sleeper", "ExternalID": "9", "CanonicalPlayerID": "NFLP-old",
+                 "FirstObservedSeason": 2020, "LastObservedSeason": 2024},
+                {"Provider": "Sleeper", "ExternalID": "9", "CanonicalPlayerID": "NFLP-new",
+                 "FirstObservedSeason": 2026, "LastObservedSeason": 2026},
+            ], "Conflicts": [
+                {"Provider": "Sleeper", "ExternalID": "42", "CanonicalPlayerIDs": ["NFLP-brady", "NFLP-tyreek"],
+                 "FirstObservedSeason": 2024, "LastObservedSeason": 2026},
+            ]},
+            {"Players": [{"CanonicalPlayerID": cid, "IDs": {"Sleeper": cid}} for cid in
+                         ("NFLP-tyreek", "NFLP-brady", "NFLP-old", "NFLP-new")]},
+        )
+        return LeaguePlayerReferenceResolver(
+            identity,
+            [{"CanonicalPlayerID": "NFLP-tyreek", "DisplayName": "Tyreek Hill", "Position": "WR",
+              "Headshot": "https://images.example/tyreek.png"},
+             {"CanonicalPlayerID": "NFLP-brady", "DisplayName": "Tom Brady", "Position": "QB", "Headshot": None},
+             {"CanonicalPlayerID": "NFLP-old", "DisplayName": "Old Player", "Position": "RB", "Headshot": None}],
+            [{"SleeperPlayerID": "3321", "CanonicalPlayerID": "NFLP-tyreek",
+              "FullName": "Tyreek Hill", "Position": "WR"},
+             {"SleeperPlayerID": "167", "CanonicalPlayerID": "NFLP-brady",
+              "FullName": "Tom Brady", "Position": "QB"},
+             {"SleeperPlayerID": "9", "CanonicalPlayerID": "NFLP-new",
+              "FullName": "New Player", "Position": "TE"}],
+        )
+
+    def test_tyreek_drop_survives_absent_current_player_and_brady_draft_is_resolved(self):
+        resolver = self.resolver()
+        transaction = tx("1417280596463394816", drops={"3321": 3})
+        moves = transactions_document("nfl-reise", 2026, [transaction], resolver.resolve)
+        tyreek = moves["PlayerRefs"]["3321"]
+        self.assertEqual(("NFLP-tyreek", "Tyreek Hill", "WR", "resolved"),
+                         (tyreek["CanonicalPlayerID"], tyreek["Name"], tyreek["Position"], tyreek["ResolutionStatus"]))
+        self.assertEqual({"3321": "NFLP-tyreek"}, moves["PlayerIdentities"])
+        self.assertNotIn("Team", tyreek)
+        self.assertEqual("nflverse.players", tyreek["Provenance"]["Picture"])
+
+        picks = [{"PlayerID": "167", "PlayerName": "Tom Brady"}]
+        draft = {"DraftKey": "2024_Free_Agent", "Picks": picks}
+        names = provider_draft_names([draft])
+        result = drafts_document("nfl-reise", 2024, [draft], resolver.resolve, names)
+        self.assertEqual(("Tom Brady", "QB", "resolved"),
+                         (result["PlayerRefs"]["167"]["Name"], result["PlayerRefs"]["167"]["Position"],
+                          result["PlayerRefs"]["167"]["ResolutionStatus"]))
+        self.assertEqual("Tom Brady", result["Drafts"][0]["Picks"][0]["PlayerName"])
+
+    def test_temporal_id_reuse_does_not_leak_current_sleeper_snapshot(self):
+        old = self.resolver().resolve("9", 2024)
+        self.assertEqual(("NFLP-old", "Old Player", "RB"), (old["CanonicalPlayerID"], old["Name"], old["Position"]))
+        self.assertNotEqual("New Player", old["Name"])
+        gap = self.resolver().resolve("9", 2025)
+        self.assertEqual("unmapped", gap["ResolutionStatus"])
+        self.assertIsNone(gap["Position"])
+
+    def test_unknown_ambiguous_and_provider_name_fallback(self):
+        resolver = self.resolver()
+        unknown = resolver.resolve("missing", 2024, "Original Draft Name")
+        self.assertIsNone(unknown["CanonicalPlayerID"])
+        self.assertEqual("Original Draft Name", unknown["Name"])
+        self.assertEqual("league.draft.pick.PlayerName", unknown["Provenance"]["Name"])
+        self.assertIsNone(unknown["Position"])
+        self.assertIsNone(unknown["Picture"])
+        ambiguous = resolver.resolve("42", 2024)
+        self.assertEqual("ambiguous", ambiguous["ResolutionStatus"])
+        self.assertIsNone(ambiguous["Name"])
+        self.assertIsNone(ambiguous["CanonicalPlayerID"])
+
+    def test_conflicting_provider_pick_names_do_not_become_shared_identity(self):
+        drafts = [{"Picks": [{"PlayerID": "q", "PlayerName": "One"},
+                             {"PlayerID": "q", "PlayerName": "Another"}]}]
+        self.assertNotIn("q", provider_draft_names(drafts))
+        self.assertEqual("One", drafts[0]["Picks"][0]["PlayerName"])
+        self.assertEqual("Another", drafts[0]["Picks"][1]["PlayerName"])
+
+    def test_duplicate_snapshot_player_id_is_not_arbitrarily_selected(self):
+        identity = self.resolver().identity
+        with self.assertRaisesRegex(ValueError, "Duplicate Sleeper snapshot identity"):
+            LeaguePlayerReferenceResolver(identity, [], [
+                {"SleeperPlayerID": "x"}, {"SleeperPlayerID": "x"},
+            ])
 
 
 class RepositoryInvariantTests(unittest.TestCase):
@@ -299,11 +398,20 @@ class RepositoryInvariantTests(unittest.TestCase):
             for path in sorted(Path(out, "league-transactions").rglob("*.json")):
                 payload = json.loads(path.read_text(encoding="utf-8"))
                 self.assertEqual(2, payload["ContractVersion"])
+                self.assertIn("PlayerRefs", payload)
                 for transaction in payload["Transactions"]:
                     ids.append(transaction["TransactionID"])
                     for pick in transaction["DraftPicks"]:
                         self.assertTrue(pick["DraftKey"], (path.name, transaction["TransactionID"]))
             self.assertEqual(len(ids), len(set(ids)))
+
+            # Exact source-level regression: the drop still exists after the
+            # current Players.json population no longer contains Sleeper 3321.
+            current = json.loads((Path(out) / "league-transactions/nfl-reise/2026.json").read_text(encoding="utf-8"))
+            self.assertTrue(any("3321" in row["Drops"] for row in current["Transactions"]))
+            ref = current["PlayerRefs"]["3321"]
+            self.assertEqual("NFLP-3e3947dc88db6fc570fc", ref["CanonicalPlayerID"])
+            self.assertEqual("Tyreek Hill", ref["Name"])
 
 
 if __name__ == "__main__":

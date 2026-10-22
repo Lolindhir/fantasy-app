@@ -196,13 +196,32 @@ def build_history(inputs: LeagueHistoryInputs) -> HistoryResult:
     return HistoryResult(transactions=stage.transactions, drafts=by_season, unresolved=stage.unresolved)
 
 
-def drafts_document(league_id: str, season: int, drafts: list[dict[str, Any]]) -> dict[str, Any]:
-    """Root object of data-derived/league-drafts/<CanonicalLeagueID>/<season>.json."""
-    return {"ContractVersion": CONTRACT_VERSION, "CanonicalLeagueID": league_id, "Season": season, "Drafts": drafts}
+def drafts_document(
+    league_id: str,
+    season: int,
+    drafts: list[dict[str, Any]],
+    resolve_reference: Callable[[str, int, str | None], dict[str, Any]],
+    event_names: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Shared-derived draft product with references for picked Sleeper players."""
+    from .league_player_refs import player_refs, provider_draft_names
+
+    ids = [
+        ps_string(pick["PlayerID"]) for draft in drafts for pick in draft["Picks"]
+        if pick.get("PlayerID") is not None and ps_string(pick["PlayerID"]).strip()
+    ]
+    refs = player_refs(ids, season, resolve_reference, event_names or provider_draft_names(drafts))
+    return {
+        "ContractVersion": CONTRACT_VERSION,
+        "CanonicalLeagueID": league_id,
+        "Season": season,
+        "PlayerRefs": refs,
+        "Drafts": drafts,
+    }
 
 
-CONTRACT_VERSION = 1  # LeagueDrafts stays on version 1.
-TRANSACTION_CONTRACT_VERSION = 2  # Adds authoritative EffectiveAt to LeagueTransactions.
+CONTRACT_VERSION = 2  # LeagueDrafts: historical PlayerRefs.
+TRANSACTION_CONTRACT_VERSION = 2  # LeagueTransactions: EffectiveAt and PlayerRefs.
 
 
 def _player_ids(transactions: list[dict[str, Any]]) -> list[str]:
@@ -220,14 +239,23 @@ def transactions_document(
     league_id: str,
     season: int,
     transactions: list[dict[str, Any]],
-    resolve_player: Callable[[str, int], str | None],
+    resolve_reference: Callable[[str, int, str | None], dict[str, Any]],
+    event_names: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    """Root object of data-derived/league-transactions/<CanonicalLeagueID>/<season>.json."""
+    """Root object of shared-derived league-transactions for one league/season.
+
+    PlayerIdentities is retained for existing consumers and is projected from
+    exactly the same resolved references, not a second independent identity join.
+    """
+    from .league_player_refs import player_refs
+
+    refs = player_refs(_player_ids(transactions), season, resolve_reference, event_names)
     return {
         "ContractVersion": TRANSACTION_CONTRACT_VERSION,
         "CanonicalLeagueID": league_id,
         "Season": season,
-        "PlayerIdentities": {player: resolve_player(player, season) for player in _player_ids(transactions)},
+        "PlayerIdentities": {player: ref["CanonicalPlayerID"] for player, ref in refs.items()},
+        "PlayerRefs": refs,
         "Transactions": transactions,
     }
 
