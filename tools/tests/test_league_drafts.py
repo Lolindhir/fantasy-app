@@ -289,7 +289,8 @@ class RepositoryInvariantTests(unittest.TestCase):
             draft_keys, pick_keys = set(), set()
             for path in sorted(Path(out, "league-drafts").rglob("*.json")):
                 payload = json.loads(path.read_text(encoding="utf-8"))
-                self.assertEqual(1, payload["ContractVersion"])
+                self.assertEqual(2, payload["ContractVersion"])
+                self.assertIn("PlayerRefs", payload)
                 for draft in payload["Drafts"]:
                     self.assertEqual(str(payload["Season"]), draft["Season"])
                     self.assertNotIn(draft["DraftKey"], draft_keys)
@@ -305,6 +306,16 @@ class RepositoryInvariantTests(unittest.TestCase):
                             self.assertTrue(pick["PlayerID"])
                         if draft["OrderMode"] == "RoundOnly":
                             self.assertIsNone(pick["OverallPick"])
+            # Exact historical source regression, independent of current Players.json.
+            past = json.loads((Path(out) / "league-drafts/nfl-reise/2024.json").read_text(encoding="utf-8"))
+            self.assertTrue(any(
+                pick.get("PlayerID") == "167" and pick.get("PlayerName") == "Tom Brady"
+                for draft in past["Drafts"] for pick in draft["Picks"]
+            ))
+            brady = past["PlayerRefs"]["167"]
+            self.assertEqual("NFLP-c2ccbe304851ede41925", brady["CanonicalPlayerID"])
+            self.assertEqual("Tom Brady", brady["Name"])
+
             for path in sorted(Path(out, "league-transactions").rglob("*.json")):
                 for transaction in json.loads(path.read_text(encoding="utf-8"))["Transactions"]:
                     for pick in transaction["DraftPicks"]:

@@ -1824,7 +1824,18 @@ decisions:
       field list. No new transaction, draft-order or ownership rule is introduced. Exact parity is proven
       by a shadow run before the cutover. The only temporary non-canonical input is the Standings placement for
       configured draft orders, replaced by the league-standings product of Issue #987. Contract:
-      .ai-context/manual/league-history.yaml.
+      .ai-context/manual/league-history.yaml. Amendment (Issue #1100, CP2,
+      2026-10-21): historical player display references belong to those same
+      Shared Derived league-history products, not to a new identity owner or a
+      join in the App consumer. Both product families carry season-aware
+      PlayerRefs resolved through the existing canonical provider mappings and
+      qualified NFL/profile/provider-event evidence; the transactions product
+      keeps its PlayerIdentities compatibility map generated from that same
+      resolver. Source names, positions and portraits are explicitly attributed,
+      unknown/ambiguous player identities remain unresolved and a current
+      NFL team is never projected into a historical event. ContractVersion 2
+      is additive at the product level; the App delivery and Angular fallbacks
+      remain unchanged until separate CP3 integration.
     rationale: >
       A reproducible history owned by one deterministic implementation removes the generated-file feedback
       loop, serves all consumers from the same facts and lets the App receive a slim, App-specific delivery.
@@ -2196,7 +2207,7 @@ decisions:
       interpolation. Keep CreatedAt and CreatedDate only as submission provenance.
       Transaction consumers (App timeline/recent moves, draft pick trade ordering,
       Fantasy Management salary simulation) use EffectiveAt as the event timestamp.
-      The additive LeagueTransactions product schema is v2; LeagueDrafts remains v1.
+      The additive LeagueTransactions and LeagueDrafts product schemas are v2; LeagueDrafts additionally includes season-aware PlayerRefs per ADR-057/Issue #1100.
       The existing source/canonical and derived publisher pipelines own regeneration;
       no hand-authored generated-data corrections or new workflows.
     rationale: >
