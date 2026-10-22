@@ -14,6 +14,8 @@ sys.path.insert(0, str(TOOLS))
 from nfl_source_data_lib.common import load_registry  # noqa: E402
 from nfl_source_data_lib.materialize import materialize  # noqa: E402
 from nfl_source_data_lib.phase1 import _ODDS_FIELD_NAMES  # noqa: E402
+from nfl_source_data_lib.player_profiles import _PROFILE_FIELDS  # noqa: E402
+from nfl_source_data_lib.common import CANONICAL_SCHEMA_VERSION  # noqa: E402
 from historical_fantasy_scoring_parity import build_parity_report  # noqa: E402
 from player_week_fantasy_materialize import (  # noqa: E402
     _week_finality, build_player_week_fantasy_dataset,
@@ -61,6 +63,113 @@ def safe_frozen_enrichment(old: dict, new: dict) -> tuple[bool, int]:
     return before == after, filled
 
 
+
+
+def safe_current_roster_refresh(old: dict, new: dict) -> tuple[bool, int, int]:
+    """Accept mutable live roster facts, never reassignment of an existing GSIS owner.
+
+    Historical/finalized weekly rosters still use safe_frozen_enrichment and
+    require exact non-identity parity. The current-season roster is not frozen:
+    a newer persisted provider raw snapshot can legitimately change its facts.
+    """
+    if (old.get("Season") != new.get("Season") or
+            old.get("Season") != 2026 or
+            old.get("SourceDataset") != new.get("SourceDataset") or
+            not old.get("SourceDataset")):
+        return False, 0, 0
+
+    def by_gsis(payload: dict) -> dict[str, str | None] | None:
+        rows = payload.get("Records")
+        if not isinstance(rows, list) or not rows:
+            return None
+        result: dict[str, str | None] = {}
+        for row in rows:
+            if not isinstance(row, dict):
+                return None
+            source_ids = row.get("SourceIDs") or {}
+            if not isinstance(source_ids, dict):
+                return None
+            gsis = source_ids.get("GSIS")
+            owner = row.get("CanonicalPlayerID")
+            if owner and not gsis:
+                return None  # Cannot audit an existing owner without its provider key.
+            if gsis:
+                key = str(gsis)
+                if key in result and result[key] != owner:
+                    return None  # A player on multiple teams must retain one owner.
+                result[key] = owner
+        return result if result else None
+
+    before, after = by_gsis(old), by_gsis(new)
+    if before is None or after is None:
+        return False, 0, 0
+    shared = before.keys() & after.keys()
+    protected = [key for key in shared if before[key]]
+    if not protected or any(before[key] != after[key] for key in protected):
+        return False, 0, len(protected)
+    filled = sum(1 for key in shared if not before[key] and after[key])
+    return True, filled, len(protected)
+
+
+def safe_weekly_roster_replay(old: dict, new: dict) -> tuple[bool, int, bool]:
+    """Frozen weekly facts must match; mutable current-season weeks keep GSIS owners."""
+    if old.get("Finalized") is True or new.get("Finalized") is True:
+        # Source partitions frozen after season close: only null -> player ID.
+        safe, filled = safe_frozen_enrichment(old, new)
+        return safe, filled, False
+    if (old.get("Finalized") is not False or new.get("Finalized") is not False or
+            old.get("Week") != new.get("Week") or
+            not isinstance(old.get("Week"), int) or
+            old.get("SourceDataset") != "nflverse.weekly-rosters" or
+            new.get("SourceDataset") != "nflverse.weekly-rosters"):
+        return False, 0, True
+    safe, filled, _ = safe_current_roster_refresh(old, new)
+    return safe, filled, True
+
+
+def safe_current_profile_refresh(old: dict, new: dict) -> tuple[bool, int]:
+    """Permit refreshed nflverse profile *facts*, never reassigned player identities.
+
+    A profile is a derived projection of mutable provider raw facts, not a
+    canonical identity owner. Its GSIS <-> CanonicalPlayerID pairs are stable for
+    all continuing IDs; adding/removing provider rows is allowed.
+    """
+    expected_fields = {"CanonicalPlayerID", "GSISID"} | {
+        output_field for output_field, _, _ in _PROFILE_FIELDS
+    }
+
+    def index(payload: dict) -> tuple[dict[str, str], dict[str, str]] | None:
+        if (payload.get("SchemaVersion") != CANONICAL_SCHEMA_VERSION
+                or payload.get("SourceDataset") != "nflverse.players"
+                or set(payload) != {"SchemaVersion", "SourceDataset", "Records"}):
+            return None
+        records = payload.get("Records")
+        if not isinstance(records, list) or not records:
+            return None
+        by_canonical: dict[str, str] = {}
+        by_gsis: dict[str, str] = {}
+        for row in records:
+            if not isinstance(row, dict) or set(row) != expected_fields:
+                return None
+            cid, gsis = row["CanonicalPlayerID"], row["GSISID"]
+            if not isinstance(cid, str) or not cid or not isinstance(gsis, str) or not gsis:
+                return None
+            if cid in by_canonical or gsis in by_gsis:
+                return None
+            by_canonical[cid] = gsis
+            by_gsis[gsis] = cid
+        return by_canonical, by_gsis
+
+    previous, rebuilt = index(old), index(new)
+    if previous is None or rebuilt is None:
+        return False, 0
+    old_canonical, old_gsis = previous
+    new_canonical, new_gsis = rebuilt
+    if any(old_canonical[cid] != new_canonical[cid] for cid in old_canonical.keys() & new_canonical.keys()):
+        return False, 0
+    if any(old_gsis[gsis] != new_gsis[gsis] for gsis in old_gsis.keys() & new_gsis.keys()):
+        return False, 0
+    return True, len(old_canonical.keys() & new_canonical.keys())
 
 
 def safe_current_odds_refresh(old: dict, new: dict) -> bool:
@@ -241,6 +350,128 @@ def audit_provider_mapping_and_possible_duplicates(source, root, weekly_changed,
     return report
 
 
+class MutableProfileRefreshTests(unittest.TestCase):
+    @staticmethod
+    def profile(records: list[dict]) -> dict:
+        return {"SchemaVersion": CANONICAL_SCHEMA_VERSION,
+                "SourceDataset": "nflverse.players", "Records": records}
+
+    @staticmethod
+    def row(cid: str, gsis: str, status: str = "ACT") -> dict:
+        return {
+            "CanonicalPlayerID": cid, "GSISID": gsis,
+            **{field: None for field, _, _ in _PROFILE_FIELDS},
+            "Status": status,
+        }
+
+    def test_mutable_facts_and_new_or_retired_profiles_do_not_change_owners(self):
+        before = self.profile([self.row("NFLP-one", "00-001"),
+                               self.row("NFLP-retired", "00-002")])
+        after = self.profile([self.row("NFLP-one", "00-001", "INA"),
+                              self.row("NFLP-new", "00-003")])
+        self.assertEqual(safe_current_profile_refresh(before, after), (True, 1))
+
+    def test_existing_canonical_or_gsis_identity_reassignment_is_rejected(self):
+        old = self.profile([self.row("NFLP-one", "00-001")])
+        for changed in (self.row("NFLP-one", "00-002"),
+                        self.row("NFLP-two", "00-001")):
+            with self.subTest(changed=changed):
+                self.assertFalse(safe_current_profile_refresh(old, self.profile([changed]))[0])
+
+    def test_duplicate_profile_keys_and_malformed_records_are_rejected(self):
+        old = self.profile([self.row("NFLP-one", "00-001")])
+        variants = [
+            [self.row("NFLP-one", "00-001"), self.row("NFLP-one", "00-002")],
+            [self.row("NFLP-one", "00-001"), self.row("NFLP-two", "00-001")],
+            [{**self.row("NFLP-one", "00-001"), "Other": "unclassified"}],
+            [{**self.row("NFLP-one", "00-001"), "GSISID": ""}],
+        ]
+        for rows in variants:
+            with self.subTest(rows=rows):
+                self.assertFalse(safe_current_profile_refresh(old, self.profile(rows))[0])
+
+    def test_schema_and_source_contract_mismatch_fail_closed(self):
+        old = self.profile([self.row("NFLP-one", "00-001")])
+        for key, value in (("SourceDataset", "other"),
+                           ("SchemaVersion", CANONICAL_SCHEMA_VERSION + 1),
+                           ("Unclassified", "value")):
+            with self.subTest(key=key):
+                changed = {**old, key: value}
+                self.assertFalse(safe_current_profile_refresh(old, changed)[0])
+
+
+class MutableCurrentRosterRefreshTests(unittest.TestCase):
+    @staticmethod
+    def roster(records: list[dict]) -> dict:
+        return {"Season": 2026, "SourceDataset": "nflverse.rosters", "Records": records}
+
+    @staticmethod
+    def player(gsis: str, owner: str | None, status: str = "ACT") -> dict:
+        return {"SourceIDs": {"GSIS": gsis}, "CanonicalPlayerID": owner,
+                "Status": status}
+
+    def test_live_fact_and_population_changes_preserve_existing_owners(self):
+        old = self.roster([self.player("00-001", "NFLP-one"),
+                           self.player("00-002", None)])
+        new = self.roster([self.player("00-001", "NFLP-one", "INA"),
+                           self.player("00-002", "NFLP-two"),
+                           self.player("00-003", "NFLP-three")])
+        self.assertEqual(safe_current_roster_refresh(old, new), (True, 1, 1))
+        self.assertFalse(safe_frozen_enrichment(old, new)[0])
+
+    def test_previous_gsis_owner_cannot_be_reassigned_or_lost(self):
+        old = self.roster([self.player("00-001", "NFLP-one")])
+        for owner in ("NFLP-other", None):
+            with self.subTest(owner=owner):
+                new = self.roster([self.player("00-001", owner, "INA")])
+                self.assertFalse(safe_current_roster_refresh(old, new)[0])
+
+    def test_same_gsis_can_move_teams_without_losing_stable_identity(self):
+        old = self.roster([self.player("00-001", "NFLP-one")])
+        # The canonical season roster is keyed by (Team, GSIS), so a trade
+        # can legitimately leave two rows for one player across teams.
+        new = self.roster([self.player("00-001", "NFLP-one", "ACT"),
+                           self.player("00-001", "NFLP-one", "INA")])
+        self.assertEqual(safe_current_roster_refresh(old, new), (True, 0, 1))
+
+    def test_conflicting_duplicate_or_unkeyed_resolved_player_fails_closed(self):
+        old = self.roster([self.player("00-001", "NFLP-one")])
+        conflicts = self.roster([self.player("00-001", "NFLP-one"),
+                                 self.player("00-001", "NFLP-other")])
+        unkeyed = self.roster([self.player("00-001", "NFLP-one"),
+                               self.player("", "NFLP-two")])
+        self.assertFalse(safe_current_roster_refresh(old, conflicts)[0])
+        self.assertFalse(safe_current_roster_refresh(old, unkeyed)[0])
+
+    def test_source_identity_and_season_contract_must_stay_equal(self):
+        old = self.roster([self.player("00-001", "NFLP-one")])
+        changed = self.roster([self.player("00-001", "NFLP-one", "INA")])
+        for field, value in (("Season", 2025), ("SourceDataset", "different")):
+            with self.subTest(field=field):
+                bad = {**changed, field: value}
+                self.assertFalse(safe_current_roster_refresh(old, bad)[0])
+
+    def test_nonfinal_current_week_may_refresh_facts_not_gsis_owner(self):
+        old = {**self.roster([self.player("00-001", "NFLP-one")]),
+               "Week": 1, "Finalized": False,
+               "SourceDataset": "nflverse.weekly-rosters"}
+        new = {**old, "Records": [self.player("00-001", "NFLP-one", "INA")]}
+        self.assertEqual(safe_weekly_roster_replay(old, new), (True, 0, True))
+        switched = {**new, "Records": [self.player("00-001", "NFLP-other", "INA")]}
+        self.assertFalse(safe_weekly_roster_replay(old, switched)[0])
+        different_week = {**new, "Week": 2}
+        self.assertFalse(safe_weekly_roster_replay(old, different_week)[0])
+
+    def test_finalized_week_requires_full_nonidentity_parity(self):
+        old = {**self.roster([self.player("00-001", "NFLP-one")]),
+               "Season": 2025, "Week": 1, "Finalized": True,
+               "SourceDataset": "nflverse.weekly-rosters"}
+        changed_facts = {**old, "Records": [self.player("00-001", "NFLP-one", "INA")]}
+        self.assertFalse(safe_weekly_roster_replay(old, changed_facts)[0])
+        enriched = {**old, "Records": [self.player("00-001", "NFLP-one")]}
+        self.assertEqual(safe_weekly_roster_replay(old, enriched), (True, 0, False))
+
+
 class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
     @unittest.skipUnless(
         (SOURCE / "data-source/nfl/identities/players.json").is_file(),
@@ -285,34 +516,49 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
                 "data-source/audits/nfl-source-data-audit.json",
             }
             prefixes = ("data-source/nfl/weekly-rosters/", "data-source/nfl/player-stats/")
-            # Current-season roster output is not frozen, but identity-only
-            # enrichment must still preserve all other fields and existing owners.
+            # Current-season roster facts are mutable between provider raw
+            # fetch and canonical publication. Preserve the strict identity-only
+            # check when facts are equal; otherwise require unchanged ownership
+            # for every continuing GSIS rather than rejecting legitimate facts.
+            # Frozen historical weekly rosters below retain full field parity.
             current_roster = "data-source/nfl/rosters/2026.json"
             if current_roster in changed:
                 old_current = json.loads((SOURCE / current_roster).read_text(encoding="utf-8"))
                 new_current = json.loads((root / current_roster).read_text(encoding="utf-8"))
-                current_safe, current_filled = safe_frozen_enrichment(old_current, new_current)
+                identity_only, current_filled = safe_frozen_enrichment(old_current, new_current)
+                if identity_only:
+                    self.assertGreater(current_filled, 0, "Current roster changed without identity enrichment")
+                    preserved = None
+                else:
+                    current_safe, current_filled, preserved = safe_current_roster_refresh(
+                        old_current, new_current,
+                    )
+                    self.assertTrue(
+                        current_safe,
+                        "Current roster 2026 changed an existing GSIS identity or its source contract",
+                    )
                 print(
-                    f"#1061 current roster 2026: identity_only={current_safe}, "
-                    f"newly_filled={current_filled}",
+                    f"#1061 current roster 2026: identity_only={identity_only}, "
+                    f"newly_filled={current_filled}, preserved_owners={preserved}",
                     flush=True,
                 )
-                self.assertTrue(current_safe, "Current roster 2026 changed non-identity facts")
-                self.assertGreater(current_filled, 0, "Current roster changed without identity enrichment")
                 fixed.add(current_roster)
 
             weekly_changed = [p for p in changed if p.startswith("data-source/nfl/weekly-rosters/")]
             weekly_filled = 0
+            live_weekly_refreshes = 0
             for relative_path in weekly_changed:
                 old_week = json.loads((SOURCE / relative_path).read_text(encoding="utf-8"))
                 new_week = json.loads((root / relative_path).read_text(encoding="utf-8"))
-                safe, filled = safe_frozen_enrichment(old_week, new_week)
+                safe, filled, is_live = safe_weekly_roster_replay(old_week, new_week)
                 self.assertTrue(safe, f"Unexpected factual/identity drift in {relative_path}")
                 weekly_filled += filled
+                live_weekly_refreshes += int(is_live)
             print(
                 f"#1061 all changed weekly rosters: "
-                f"partitions={len(weekly_changed)}, newly_filled={weekly_filled}, "
-                "non_identity_drift=0",
+                f"partitions={len(weekly_changed)}, "
+                f"mutable_current_partitions={live_weekly_refreshes}, "
+                f"newly_filled={weekly_filled}, frozen_non_identity_drift=0",
                 flush=True,
             )
             # This test compares a live repository snapshot with a full rebuild.
@@ -345,6 +591,24 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
                 "schedule_identity_and_sleeper_owner_safe=True",
                 flush=True,
             )
+            # nflverse.players raw is refreshed independently of the last
+            # canonical profile projection. Mutable profile attributes (e.g.
+            # Status/LatestTeam) are not identity drift; all continuing source
+            # GSIS-to-canonical assignments must remain unchanged.
+            live_profiles = "data-source/nfl/player-profiles/nflverse.json"
+            if live_profiles in changed:
+                old_profiles = json.loads((SOURCE / live_profiles).read_text(encoding="utf-8"))
+                new_profiles = json.loads((root / live_profiles).read_text(encoding="utf-8"))
+                safe_profiles, preserved_profiles = safe_current_profile_refresh(
+                    old_profiles, new_profiles,
+                )
+                self.assertTrue(safe_profiles, "Live NFL profile refresh changed an existing GSIS identity or schema")
+                print(
+                    f"#1061 independent live nflverse player profiles: "
+                    f"stable_existing_owners={preserved_profiles}",
+                    flush=True,
+                )
+                fixed.add(live_profiles)
             unexpected = [p for p in changed if p not in fixed and not p.startswith(prefixes)]
             print(
                 "#1061 real isolated materialization: "
