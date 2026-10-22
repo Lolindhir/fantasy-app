@@ -262,7 +262,7 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
                         "tools/historical_fantasy_scoring", "tools/players_league_scoring")):
         return {"nfl-identity-replay", "league-pwf-twp", "consumer-restore"}, "Scoring-PWF-TWP-implementation"
     if path.startswith(("tools/external_source/", "tools/market_observations",
-                        "tools/odds_change_gate")):
+                        "tools/odds_change_gate", "tools/odds_observation")):
         return {"market-restore", "consumer-restore"}, "Market-source-implementation"
     if path.startswith(("tools/nfl_games", "tools/derived_data", "tools/player_valuation",
                         "tools/league_history", "tools/schedule_archive")):

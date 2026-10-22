@@ -27,6 +27,14 @@ class RoutingTests(unittest.TestCase):
     def choose(self, *paths):
         return ci.select([{"filename": p, "status": "modified"} for p in paths], self.inventory)
 
+    def test_odds_observation_code_selects_market_and_consumer_fast(self):
+        for path in ("tools/odds_observation.py", "tools/odds_observation_buffer.py"):
+            with self.subTest(path=path):
+                result = self.choose(path)
+                self.assertEqual({"market-restore", "consumer-restore"},
+                                 set(result["selected"]))
+                self.assertFalse(result["uncertain"])
+
     def test_docs_and_angular_are_fast_only(self):
         self.assertEqual([], self.choose("docs/contributing.md")["selected"])
         self.assertEqual([], self.choose("src/app/app.component.ts")["selected"])

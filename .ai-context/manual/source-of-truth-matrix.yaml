@@ -987,6 +987,10 @@ consumerReadClassification:
     mention-only: the token appears in a comment or docstring, not in an executed read
     legacy-read-model-pending: a base fact is still read from a published read model; open migration or review item
   consumers:
+    tools/odds_observation.py:
+      reads:
+        provider:nflverse: source-layer-acquisition
+      note: 'Scoped NFL odds candidate acquisition from fixed registered nflverse games.csv; temp-fetch only, no Source/App publication (#471).'
     tools/ci_test_impact.py:
       reads:
         network: repository-infrastructure
