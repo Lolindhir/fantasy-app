@@ -206,3 +206,31 @@ recomputation:
     Stable JSON key ordering, no generation-time timestamp, byte-identical
     semantic no-op. Recalculate and publish only after all input requirements
     hold; historical awards can change with legitimate canonical corrections.
+
+historicalOrchestrationPreflight:
+  trackingIssue: 471
+  implementation: tools/historical_derived_orchestrate.py
+  entrypoint: .github/workflows/league-live.yml::historical_preflight
+  status: read-only-manual-audit-no-historical-publication
+  modes:
+    full: Discover every canonically scored league week; always derive final PWF then strict TWP.
+    week: One explicitly requested finalized league season/week.
+    incremental: >-
+      Select affected scored weeks from explicit changed canonical paths. Known
+      League matchups constrain their own week. NFL weekly stats and roster
+      evidence invalidate their week and all later scored weeks across seasons.
+      NFL season-scoped evidence invalidates that and later seasons. League\n      settings constrain their own season; any unknown or shared input
+      conservatively triggers full rebuild.
+      No automatic Scheduler source-diff feed is activated at this checkpoint.
+  safety:
+    - Uses original PWF source-owned materializer and TeamWeekPerformance materializer; no parallel scorer or award logic.
+    - Stages derivation in temporary Shared-Derived storage with Source, metadata and App context as read-only inputs; never persists Derived/App/Source or pushes a branch.
+    - NFL game finality, final roster, canonical identity, historical scoring profile, official Sleeper actual points and the narrowly versioned 2025/W06 exception remain required.
+    - Fails when any selected week is the active App week, any existing published TeamWeekPerformance payload would change, any PWF/TWP parity is unverified, or a second staged pass is not a no-op.
+    - A manual historical preflight skips all League Live writer jobs and checks out main without writable credentials, with job-level contents: read.
+    - New historical publication destinations, scheduled incremental runs and full historical persistence are separately elevated and not activated by this checkpoint.
+  publicationHandoff: >-
+    Before historical backfill publication, independently approve the exact
+    Derived write prefixes, immutable main snapshot/rebuild-and-retry semantics,
+    before/after hash manifest, strict all-target acceptance, protected current
+    consumer invariants and revert plan. Never use a one-off migration workflow.

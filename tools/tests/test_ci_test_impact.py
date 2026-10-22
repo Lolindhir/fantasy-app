@@ -29,7 +29,7 @@ class RoutingTests(unittest.TestCase):
 
     def test_odds_observation_code_selects_market_and_consumer_fast(self):
         for path in ("tools/odds_observation.py", "tools/odds_observation_buffer.py",
-                     "tools/odds_state_publish.py"):
+                     "tools/odds_scoped_source_preflight.py", "tools/odds_state_publish.py"):
             with self.subTest(path=path):
                 result = self.choose(path)
                 self.assertEqual({"market-restore", "consumer-restore"},
@@ -129,6 +129,14 @@ class RoutingTests(unittest.TestCase):
         groups = self.choose("tools/player_week_fantasy_materialize.py")["selected"]
         self.assertIn("nfl-identity-replay", groups)
         self.assertIn("league-pwf-twp", groups)
+
+    def test_historical_cross_product_orchestrator_uses_strict_fast_closure(self):
+        result = self.choose("tools/historical_derived_orchestrate.py")
+        self.assertEqual(
+            {"nfl-identity-replay", "league-pwf-twp", "consumer-restore"},
+            set(result["selected"]),
+        )
+        self.assertFalse(result["uncertain"])
 
     def test_market_changes_require_market_restore(self):
         groups = self.choose("tools/external_source/market_observations.py")["selected"]

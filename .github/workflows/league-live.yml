@@ -17,6 +17,32 @@ on:
         required: false
         type: boolean
         default: false
+      historical_preflight:
+        description: "Read-only isolated historical PWF + TeamWeekPerformance audit (skip all live writers)"
+        required: false
+        type: boolean
+        default: false
+      historical_mode:
+        description: "Historical target selection"
+        required: false
+        type: choice
+        options:
+          - full
+          - week
+          - incremental
+        default: full
+      historical_season:
+        description: "Season (only for week mode)"
+        required: false
+        type: string
+      historical_week:
+        description: "Week (only for week mode)"
+        required: false
+        type: string
+      historical_changed_path:
+        description: "Changed canonical path (only for incremental mode)"
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -29,7 +55,45 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  historical_preflight:
+    if: ${{ inputs.historical_preflight == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout coherent Source snapshot without write credentials
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Run isolated historical PWF and TWP preflight (no publication)
+        shell: bash
+        env:
+          MODE: ${{ inputs.historical_mode }}
+          YEAR: ${{ inputs.historical_season }}
+          WEEK: ${{ inputs.historical_week }}
+          CHANGED_PATH: ${{ inputs.historical_changed_path }}
+        run: |
+          set -euo pipefail
+          args=(--league nfl-reise --mode "${MODE:-full}")
+          if [[ "${MODE:-full}" == "week" ]]; then
+            [[ "${YEAR:-}" =~ ^[0-9]{4}$ && "${WEEK:-}" =~ ^[0-9]{1,2}$ ]] || {
+              echo "Historical week mode requires valid season and week" >&2
+              exit 2
+            }
+            args+=(--season "$YEAR" --week "$WEEK")
+          elif [[ "${MODE:-full}" == "incremental" ]]; then
+            [[ -n "${CHANGED_PATH:-}" ]] || {
+              echo "Incremental mode requires a changed canonical path" >&2
+              exit 2
+            }
+            args+=(--changed-path "$CHANGED_PATH")
+          fi
+          python3 tools/historical_derived_orchestrate.py "${args[@]}"
+
   source:
+    if: ${{ !inputs.historical_preflight }}
     uses: ./.github/workflows/sync-league-source-data.yml
     with:
       materialization_scope: current
@@ -37,7 +101,7 @@ jobs:
 
   standings:
     needs: source
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && !inputs.historical_preflight }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -99,7 +163,7 @@ jobs:
 
   league:
     needs: [source, standings]
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && !inputs.historical_preflight }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

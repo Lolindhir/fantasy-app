@@ -990,7 +990,7 @@ consumerReadClassification:
     tools/odds_state_publish.py:
       reads:
         network: repository-infrastructure
-      note: 'GitHub Contents API technical state CAS read/write for isolated odds-refresh-state branch only; no source/provider or App publication; CLI dormant unless invoked (#471).'
+      note: 'GitHub Contents API isolated odds-refresh-state CAS reader/writer; technical state only, CLI remains dormant (#471).'
     tools/odds_observation.py:
       reads:
         provider:nflverse: source-layer-acquisition
@@ -1220,6 +1220,10 @@ consumerReadClassification:
       reads:
         legacy:PlayerWeekFantasy: app-output-owner
       note: 'Publishes PlayerWeekFantasy.json from the shared-derived product.'
+    tools/historical_derived_orchestrate.py:
+      reads:
+        legacy:FantasyGameContext: validation-shadow
+      note: 'Read-only check of the currently published App week to reject historical rebuild overlap; no App scoring input or output publication (#471).'
     tools/player_week_fantasy_refresh.py:
       reads:
         legacy:FantasyGameContext: app-read-model-chain
