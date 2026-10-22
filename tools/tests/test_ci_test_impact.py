@@ -28,7 +28,8 @@ class RoutingTests(unittest.TestCase):
         return ci.select([{"filename": p, "status": "modified"} for p in paths], self.inventory)
 
     def test_odds_observation_code_selects_market_and_consumer_fast(self):
-        for path in ("tools/odds_observation.py", "tools/odds_observation_buffer.py"):
+        for path in ("tools/odds_observation.py", "tools/odds_observation_buffer.py",
+                     "tools/odds_scoped_source_preflight.py", "tools/odds_state_publish.py"):
             with self.subTest(path=path):
                 result = self.choose(path)
                 self.assertEqual({"market-restore", "consumer-restore"},
