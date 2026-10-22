@@ -19,6 +19,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+from ci_tier import deep_only  # noqa: E402
 from team_week_performance_materialize import materialize, materialize_all_finalized, verify_pwf_actual_parity
 from team_week_performance import build_team_week_performance, save_team_week_performance, output_path  # noqa: E402
 from team_week_performance_sources import (  # noqa: E402
@@ -29,6 +30,7 @@ from team_week_performance_sources import (  # noqa: E402
 REPO_ROOT = TOOLS.parent
 
 
+@deep_only("real-source TeamWeekPerformance replay through PowerShell")
 @unittest.skipUnless(shutil.which("pwsh"), "PowerShell CLI is required for real-source integration")
 class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
     def test_real_2024_slot_bridge_preserves_special_flex(self) -> None:
@@ -216,6 +218,21 @@ class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
                 second = materialize_all_finalized(REPO_ROOT, league_id="nfl-reise", write=True)
                 self.assertEqual((second["ReadyCount"], second["BlockedCount"],
                                   second["ChangedCount"]), (count, 0, 0))
+
+class PersistedTeamWeekPerformanceGuardTests(unittest.TestCase):
+    """Fast counterpart of the real-source replay: persisted snapshots keep their identity."""
+
+    def test_persisted_snapshots_match_path_identity_and_are_complete(self) -> None:
+        files = sorted((REPO_ROOT / "data-derived/team-week-performance").glob("*/*/*.json"))
+        self.assertTrue(files, "no persisted TeamWeekPerformance snapshot found")
+        for path in files:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            league, season, week = path.parts[-3], int(path.parts[-2]), int(path.stem)
+            self.assertEqual((data["CanonicalLeagueID"], data["Season"], data["Week"]), (league, season, week), path)
+            self.assertTrue(data["Teams"], path)
+            self.assertTrue(data["FinalityEvidence"], path)
+            self.assertTrue(str(data["LineupDefinitionHash"]).startswith("sha256:"), path)
+
 
 if __name__ == "__main__":
     unittest.main()
