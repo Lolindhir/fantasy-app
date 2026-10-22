@@ -11,6 +11,7 @@ from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
+from ci_tier import deep_only  # noqa: E402
 from nfl_source_data_lib.common import load_registry  # noqa: E402
 from nfl_source_data_lib.materialize import materialize  # noqa: E402
 from nfl_source_data_lib.phase1 import _ODDS_FIELD_NAMES  # noqa: E402
@@ -472,6 +473,7 @@ class MutableCurrentRosterRefreshTests(unittest.TestCase):
         self.assertEqual(safe_weekly_roster_replay(old, enriched), (True, 0, False))
 
 
+@deep_only("full real-source scratch replay (15-20 min)")
 class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
     @unittest.skipUnless(
         (SOURCE / "data-source/nfl/identities/players.json").is_file(),
