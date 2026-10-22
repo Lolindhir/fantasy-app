@@ -11,6 +11,7 @@ TOOLS = ROOT / "tools"
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+from ci_tier import deep_only  # noqa: E402
 from historical_projection_interval_calibration import (  # noqa: E402
     INTERVAL_LEVELS,
     STRATEGIES,
@@ -92,6 +93,7 @@ class ProjectionIntervalCalibrationTests(unittest.TestCase):
         self.assertAlmostEqual(expected_week_2, result[(2025, 2, "A")])
         self.assertNotEqual(result[(2025, 1, "A")], result[(2025, 2, "A")])
 
+    @deep_only("full real-source interval calibration (~55 s)")
     def test_real_interval_calibration_and_2025_holdout_are_reproducible(self) -> None:
         report = build_interval_report(
             ROOT,

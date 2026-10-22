@@ -15,6 +15,7 @@ from nfl_source_data_lib.common import Dataset
 from nfl_source_data_lib.identity_model import IdentityCandidate
 from nfl_source_data_lib.identity_sources import historical_weekly_roster_identity_candidates
 from nfl_source_data_lib.lifecycle import effective_partition_payload
+from ci_tier import deep_only
 
 
 def weekly_dataset(root: Path) -> Dataset:
@@ -304,6 +305,7 @@ class HistoricalWeeklyRosterIdentityTests(unittest.TestCase):
         )
 
 
+@deep_only("read-only identity rebuild over the whole repository (~45 s)")
 class CurrentRepositoryHistoricalIdentityAudit(unittest.TestCase):
     @unittest.skipUnless(
         (TOOLS.parent / "data-source/nfl/identities/players.json").is_file(),
