@@ -987,6 +987,10 @@ consumerReadClassification:
     mention-only: the token appears in a comment or docstring, not in an executed read
     legacy-read-model-pending: a base fact is still read from a published read model; open migration or review item
   consumers:
+    tools/odds_state_publish.py:
+      reads:
+        network: repository-infrastructure
+      note: 'GitHub Contents API isolated odds-refresh-state CAS reader/writer; technical state only, CLI remains dormant (#471).'
     tools/odds_observation.py:
       reads:
         provider:nflverse: source-layer-acquisition
