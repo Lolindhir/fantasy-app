@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-10-22T12:06:07Z",
-  "input_fingerprint": "e6981206b5256030bdf1ffb23f0eb15a63db5e6622351d5ec0fa9992f453e357",
+  "generated_at": "2026-10-22T15:51:09Z",
+  "input_fingerprint": "1a7fd72689cc2820258f69593facf0e0a8f126405c508a6e9a56325aac746bc4",
   "sources": [
     {
       "id": "league_enrichment",
       "path": "public/data/League.json",
-      "content_sha256": "a72d9d2033c58f6cd75200a192eec795d6d9ccbd39e38f4f141cfeb375599af2"
+      "content_sha256": "a88e96c6a7c2a12b490955546e6c108317d9a626f706836a58c61d0bb0157eec"
     },
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "16b2d1fd4d9c50cfd91862fcd2e4de67466bffe3912bfef7c11761f9c274975a"
+      "content_sha256": "e2339f2b1bf002060fa35d153880c5ba746b3fcb084035eb03cfb0389fa4bd5b"
     },
     {
       "id": "roster_evaluation_state",
@@ -114,8 +114,8 @@
       "RB": {
         "fixed_starter_requirement": 2,
         "held_count": 9,
-        "current_active_count": 7,
-        "effective_prelock_or_locked_count": 7,
+        "current_active_count": 8,
+        "effective_prelock_or_locked_count": 8,
         "startable_count": 6,
         "backup_count": 1,
         "coverage_floor": null,
@@ -136,9 +136,9 @@
       "WR": {
         "fixed_starter_requirement": 2,
         "held_count": 18,
-        "current_active_count": 14,
-        "effective_prelock_or_locked_count": 14,
-        "startable_count": 8,
+        "current_active_count": 13,
+        "effective_prelock_or_locked_count": 13,
+        "startable_count": 7,
         "backup_count": 1,
         "coverage_floor": null,
         "preferred_coverage": null,
@@ -152,14 +152,9 @@
         "TE"
       ],
       "required_skill_lineup_slots": 10,
-      "startable_skill_pool": 17,
-      "skill_pool_margin": 7,
+      "startable_skill_pool": 16,
+      "skill_pool_margin": 6,
       "startable_players": [
-        {
-          "player_id": "2133",
-          "name": "Davante Adams",
-          "position": "WR"
-        },
         {
           "player_id": "4866",
           "name": "Saquon Barkley",
@@ -247,9 +242,9 @@
       "assignment_status": "current_locked_roster",
       "decision_readiness": "review_required",
       "active_unclassified_count": 6,
-      "current_active_candidate_count": 1,
+      "current_active_candidate_count": 2,
       "current_active_general_churn_count": 0,
-      "candidate_pool_count": 1,
+      "candidate_pool_count": 2,
       "guardrail_status": "review_required",
       "candidate_pool": [
         {
@@ -259,6 +254,15 @@
           "security": "hold",
           "current_area": "active",
           "boundary_priority": 10,
+          "counts_as_general_churn": false
+        },
+        {
+          "player_id": "12469",
+          "name": "Dylan Sampson",
+          "position": "RB",
+          "security": "conditional",
+          "current_area": "active",
+          "boundary_priority": 30,
           "counts_as_general_churn": false
         }
       ],
@@ -821,14 +825,13 @@
       "name": "Dylan Sampson",
       "position": "RB",
       "nfl_team": "CLE",
-      "roster_area": "reserve",
+      "roster_area": "active",
       "roster_sections": [
-        "reserve",
         "roster"
       ],
-      "is_current_active": false,
+      "is_current_active": true,
       "is_current_taxi": false,
-      "is_current_reserve": true,
+      "is_current_reserve": false,
       "roster_role": "prospect",
       "roster_security": "conditional",
       "structural_function": "development",
@@ -875,7 +878,7 @@
       },
       "coverage_role": "development",
       "coverage_protected": false,
-      "comparison_boundary_eligible": false,
+      "comparison_boundary_eligible": true,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
@@ -1751,13 +1754,14 @@
       "name": "Davante Adams",
       "position": "WR",
       "nfl_team": "LAR",
-      "roster_area": "active",
+      "roster_area": "reserve",
       "roster_sections": [
+        "reserve",
         "roster"
       ],
-      "is_current_active": true,
+      "is_current_active": false,
       "is_current_taxi": false,
-      "is_current_reserve": false,
+      "is_current_reserve": true,
       "roster_role": "starter_rotation",
       "roster_security": "hold",
       "structural_function": "starter_core",

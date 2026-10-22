@@ -1,6 +1,6 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-10-22T12:06:07Z`  
+Generated: `2026-10-22T15:51:09Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
@@ -9,9 +9,9 @@ Taxi phase: `locked`
 - Active: **30 / 30** (delta +0)
 - Taxi: **2 / 2**; binding: **yes**
 - Reserve: **5 / 5**
-- Startable Skill Pool: **17 / 10** (margin +7)
+- Startable Skill Pool: **16 / 10** (margin +6)
 - General churn target: **2**; active general churn: **0**; status: `review_required`
-- Comparison boundary candidates: **1**; decision readiness: `review_required`
+- Comparison boundary candidates: **2**; decision readiness: `review_required`
 
 ## Position coverage
 
@@ -19,9 +19,9 @@ Taxi phase: `locked`
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
 | QB | 5 | 4 | 2 | 2 | 1 | 3 | 4 | preferred_met |
-| RB | 9 | 7 | 2 | 6 | 1 | – | – | pool_managed |
+| RB | 9 | 8 | 2 | 6 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 18 | 14 | 2 | 8 | 1 | – | – | pool_managed |
+| WR | 18 | 13 | 2 | 7 | 1 | – | – | pool_managed |
 
 ## Players
 
@@ -36,7 +36,7 @@ Taxi phase: `locked`
 | RB | Breece Hall | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | RB | Cam Skattebo | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | RB | Chase Brown | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
-| RB | Dylan Sampson | reserve | prospect | conditional | development | development | no | no |
+| RB | Dylan Sampson | active | prospect | conditional | development | development | yes | no |
 | RB | Jeremiyah Love | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | RB | Jonathon Brooks | reserve | prospect | hold | development | development | no | no |
 | RB | Kenneth Walker III | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
@@ -51,7 +51,7 @@ Taxi phase: `locked`
 | WR | Antonio Williams | taxi | prospect | hold | development | development | no | no |
 | WR | Brian Thomas Jr. | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | WR | Chris Bell | taxi | prospect | hold | development | development | no | no |
-| WR | Davante Adams | active | starter_rotation | hold | starter_core | fixed_starter_pool | no | no |
+| WR | Davante Adams | reserve | starter_rotation | hold | starter_core | fixed_starter_pool | no | no |
 | WR | De'Zhaun Stribling | reserve | prospect | strong_hold | development | development | no | no |
 | WR | George Pickens | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Germie Bernard | active | unclassified | unclassified | unclassified | unclassified | no | no |
@@ -68,6 +68,7 @@ Taxi phase: `locked`
 ## Comparison boundary pool
 
 - Malachi Fields (WR) — `hold` — area `active` — priority `10` — general churn: `no`
+- Dylan Sampson (RB) — `conditional` — area `active` — priority `30` — general churn: `no`
 
 ## Interpretation
 
