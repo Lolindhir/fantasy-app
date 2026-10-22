@@ -143,6 +143,55 @@ class TransactionFileTests(unittest.TestCase):
         self.assertEqual({2025}, set(result["past"]))
 
 
+class HistoricalReferenceDeliveryTests(unittest.TestCase):
+    def test_tyreek_drop_and_brady_draft_are_delivered_without_current_players(self):
+        from derived_data_lib.league_history import build_history
+        from league_history_sources import load_inputs
+
+        root = TOOLS.parent
+        inputs = load_inputs(root, "nfl-reise")
+        history = build_history(inputs)
+        self.assertFalse(history.unresolved)
+        references = publish.build_player_references(root, "nfl-reise", history)
+        rendered = publish.render(history, inputs.league_year, references)
+
+        tyreek = [
+            transaction["PlayerRefs"]["3321"]
+            for transaction in rendered["Transactions"]["current"]
+            if "3321" in (transaction.get("Drops") or {})
+        ]
+        self.assertTrue(tyreek, "Historical Tyreek Hill drop is missing")
+        self.assertTrue(all(ref["Name"] == "Tyreek Hill" and ref["Position"] == "WR" for ref in tyreek))
+        self.assertTrue(all(set(ref) == {"Name", "Position", "Picture"} for ref in tyreek))
+
+        picks = [
+            pick for draft in rendered["Drafts"]["past"][2024] for pick in draft["Picks"]
+            if pick.get("PlayerID") == "167" and pick.get("PlayerName") == "Tom Brady"
+        ]
+        self.assertTrue(picks, "Canonical 2024 Brady draft pick must remain published")
+        self.assertTrue(all(pick["PlayerRef"]["Name"] == "Tom Brady" and
+                            pick["PlayerRef"]["Position"] == "QB" for pick in picks))
+        self.assertTrue(all("Team" not in pick["PlayerRef"] for pick in picks))
+
+    def test_transaction_pick_uses_draft_season_not_transaction_season(self):
+        old = {"Name": "Old Player", "Position": "RB", "Picture": None}
+        new = {"Name": "New Player", "Position": "TE", "Picture": None}
+        transaction = {"TransactionID": "trade", "Adds": {}, "Drops": {}, "DraftPicks": [
+            {"PickKey": "2024_Rookie_R1_OO1", "Round": 1, "Season": "2024",
+             "DraftKey": "2024_Rookie", "PlayerID": "9", "PlayerName": "Old Player"}
+        ]}
+        result = publish.app_transaction(transaction, {},
+                                         {2024: {"9": old}, 2026: {"9": new}})
+        self.assertEqual(old, result["DraftPicks"][0]["PlayerRef"])
+        self.assertEqual("Old Player", result["DraftPicks"][0]["PlayerName"])
+
+    def test_unknown_player_never_becomes_an_invented_name(self):
+        transaction = {"TransactionID": "x", "Adds": {}, "Drops": {"q": 1}, "DraftPicks": []}
+        result = publish.app_transaction(
+            transaction, {"q": {"Name": None, "Position": None, "Picture": None}})
+        self.assertNotIn("PlayerRefs", result)
+
+
 class ComparisonTests(unittest.TestCase):
     def test_comparison_is_exact_about_types_and_list_order_but_not_key_order(self):
         self.assertEqual([], publish._difference({"a": 1, "b": [1, 2]}, {"b": [1, 2], "a": 1}))

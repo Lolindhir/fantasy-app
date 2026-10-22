@@ -58,6 +58,7 @@ export function mapRawTransaction(
       playerById,
       adds,
       drops,
+      raw.PlayerRefs,
       draftPicks
     )),
     DraftPicks: draftPicks
@@ -70,13 +71,14 @@ function mapParticipant(
   playerById: Map<string, Player>,
   adds: TransactionPlayerRosterMap,
   drops: TransactionPlayerRosterMap,
+  historicalRefs: RawTransaction['PlayerRefs'],
   draftPicks: TransactionDraftPick[]
 ): TransactionParticipant {
   return {
     RosterID: rosterID,
     Team: teamByRosterId.get(rosterID),
-    AddedPlayers: mapPlayerAssets(adds, rosterID, playerById),
-    DroppedPlayers: mapPlayerAssets(drops, rosterID, playerById),
+    AddedPlayers: mapPlayerAssets(adds, rosterID, playerById, historicalRefs),
+    DroppedPlayers: mapPlayerAssets(drops, rosterID, playerById, historicalRefs),
     AcquiredDraftPicks: draftPicks.filter(pick => pick.NewOwnerRosterID === rosterID),
     SentDraftPicks: draftPicks.filter(pick => pick.PreviousOwnerRosterID === rosterID)
   };
@@ -85,13 +87,15 @@ function mapParticipant(
 function mapPlayerAssets(
   playerRosterMap: TransactionPlayerRosterMap,
   rosterID: number,
-  playerById: Map<string, Player>
+  playerById: Map<string, Player>,
+  historicalRefs: RawTransaction['PlayerRefs']
 ): TransactionPlayerAsset[] {
   return Object.entries(playerRosterMap)
     .filter(([, targetRosterID]) => normalizeRosterID(targetRosterID) === rosterID)
     .map(([playerID]) => ({
       PlayerID: playerID,
-      Player: playerById.get(playerID)
+      Player: playerById.get(playerID),
+      ...(historicalRefs?.[playerID] ? { PlayerRef: historicalRefs[playerID] } : {})
     }))
     .sort((a, b) => {
       const aName = a.Player?.Name ?? a.PlayerID;

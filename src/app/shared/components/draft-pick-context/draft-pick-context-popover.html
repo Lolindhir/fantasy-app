@@ -20,7 +20,19 @@
       </span>
     </button>
   } @else if (selectedPlayerName; as playerName) {
-    <span class="picked-player-fallback">{{ playerName }}</span>
+    <span class="picked-player-fallback">
+      @if (selectedPlayerRef?.Picture; as picture) {
+        <img class="picked-player-picture" [src]="picture" alt="" loading="lazy" decoding="async" />
+      }
+      <span class="picked-player-main">
+        <strong>{{ playerName }}</strong>
+        @if (selectedPlayerRef?.Position; as position) {
+          <span class="picked-player-meta">
+            <span class="picked-player-position" [ngStyle]="position | positionStyle">{{ position }}</span>
+          </span>
+        }
+      </span>
+    </span>
   } @else if (showOpenPickLabel) {
     <span class="open-pick-label">Pick Open</span>
   }

@@ -59,15 +59,17 @@ export function getTransactionCardAssets(
 
 function presentPlayerAsset(asset: TransactionPlayerAsset): TransactionCardAsset {
   const player = asset.Player;
+  const historical = asset.PlayerRef;
+  // Historical facts win over today's player snapshot. Never infer past NFL team.
   return {
     kind: 'player',
     key: `player:${asset.PlayerID}`,
-    label: player?.Name || `Player ${asset.PlayerID}`,
-    secondary: [player?.Position, player?.TeamNFL?.Abv].filter(Boolean).join(' · '),
-    portrait: player?.Picture,
-    nflTeamLogo: player?.TeamNFL?.Logo,
-    nflTeamAbv: player?.TeamNFL?.Abv,
-    position: player?.Position,
+    label: historical?.Name || player?.Name || `Player ${asset.PlayerID}`,
+    secondary: [historical?.Position || player?.Position, historical ? null : player?.TeamNFL?.Abv].filter(Boolean).join(' · '),
+    portrait: historical?.Picture || player?.Picture,
+    nflTeamLogo: historical ? undefined : player?.TeamNFL?.Logo,
+    nflTeamAbv: historical ? undefined : player?.TeamNFL?.Abv,
+    position: historical?.Position || player?.Position,
     player
   };
 }

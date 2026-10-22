@@ -1,5 +1,6 @@
 import type { FantasyTeam } from './league.models';
 import type { Player } from './player.models';
+import type { HistoricalPlayerRef } from './draft.models';
 
 export type TransactionPlayerRosterMap = Record<string, number | string>;
 
@@ -12,6 +13,7 @@ export interface RawTransactionDraftPick {
   DisplayPick?: string | null;
   PlayerID?: string | null;
   PlayerName?: string | null;
+  PlayerRef?: HistoricalPlayerRef;
   OriginalOwnerRosterID: number | string;
   PreviousOwnerRosterID: number | string;
   NewOwnerRosterID: number | string;
@@ -30,6 +32,7 @@ export interface RawTransaction {
   RosterIDs: Array<number | string>;
   Adds: TransactionPlayerRosterMap | null;
   Drops: TransactionPlayerRosterMap | null;
+  PlayerRefs?: Record<string, HistoricalPlayerRef>;
   DraftPicks: RawTransactionDraftPick[] | null;
   Notes: string | null;
 }
@@ -37,6 +40,7 @@ export interface RawTransaction {
 export interface TransactionPlayerAsset {
   PlayerID: string;
   Player?: Player;
+  PlayerRef?: HistoricalPlayerRef;
 }
 
 export interface TransactionDraftPick extends RawTransactionDraftPick {

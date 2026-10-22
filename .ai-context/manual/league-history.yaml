@@ -128,7 +128,20 @@ contract:
     TradeSource, TradeHistory, PlayerID, PlayerName, Status, SleeperPickNo, SleeperPickedBy.
     Display* fields are not part of the product. PlayerName is the provider value of the
     completed pick and is never overwritten; the common PlayerRefs enrichment is
-    independent of current Players.json. App delivery of references is Issue #1100 CP3.
+    independent of current Players.json.
+  appHistoricalPlayerReferences: >
+    Issue #1100 CP3 consumes these same source-owned, season-aware PlayerRefs in the
+    existing league_history_app_publish.py App consumer. App transaction entries carry
+    only the relevant Adds/Drops PlayerRefs keyed by Sleeper ID; draft and transaction
+    pick results carry an optional PlayerRef resolved against their DRAFT season,
+    never their transaction season. Only Name, Position, Picture are delivered.
+    The App never projects a current NFL team, roster, status or an invented
+    linkable Player into historical events. Angular uses the historical evidence
+    first, then its legacy current-player/provider-PlayerName/ID fallbacks.
+    The publisher rebuilds references using the same CP2 Shared Derived resolver
+    directly from canonical source evidence during its in-memory history run,
+    without persisted Derived or old public/data archives as inputs. All unknown
+    fields stay absent/null, not guessed.
   fieldRules:
     - Unknown is null, never 0 or an empty string (PositionInRound and OverallPick of RoundOnly picks, PlayerID of open picks, SleeperStartTime of drafts without a start time).
     - Status values keep their current meaning (Open, Picked for picks; Virtual, PreDraft, Drafting, Complete for drafts, other provider statuses passed through).

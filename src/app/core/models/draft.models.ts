@@ -1,3 +1,10 @@
+/** Historical display evidence only. It does not imply current NFL team or clickable Player. */
+export interface HistoricalPlayerRef {
+  Name: string | null;
+  Position: string | null;
+  Picture: string | null;
+}
+
 export interface RawDraft {
   DraftKey: string;
   DisplayDraftKey: string;
@@ -46,6 +53,7 @@ export interface DraftPick {
   TradeHistory: DraftPickTradeHistoryEntry[];
   PlayerID: string | null;
   PlayerName: string | null;
+  PlayerRef?: HistoricalPlayerRef;
   Status: string;
   SleeperPickNo: number | null;
   SleeperPickedBy: string | null;
