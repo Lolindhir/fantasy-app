@@ -14,6 +14,7 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 import historical_derived_orchestrate as pipeline
+from tools.ci_tier import deep_only
 
 
 class HistoricalDerivedSelectionTests(unittest.TestCase):
@@ -173,6 +174,7 @@ class HistoricalDerivedIsolatedTests(unittest.TestCase):
         self.assertFalse((self.root / "data-derived").exists())
 
 
+@deep_only("Real historical TWP rebuild belongs to Deep audit, not Fast PR CI")
 @unittest.skipUnless(shutil.which("pwsh"), "Real historical TWP requires PowerShell")
 class HistoricalDerivedRealSourceSmokeTests(unittest.TestCase):
     def test_completed_week_rebuild_is_read_only_and_idempotent(self):

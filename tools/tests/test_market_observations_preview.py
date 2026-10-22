@@ -23,6 +23,7 @@ from external_source.market_observations import (  # noqa: E402
     render_partition,
 )
 from external_source.registry import load_registry  # noqa: E402
+from ci_tier import deep_only  # noqa: E402
 
 
 class MarketObservationsReadOnlyTests(unittest.TestCase):
@@ -31,6 +32,11 @@ class MarketObservationsReadOnlyTests(unittest.TestCase):
         cls.datasets = load_registry(REPO_ROOT)["datasets"]
         cls.empty_mappings = MappingIndex([])
 
+    def test_registry_declares_19_datasets_with_rights_fields(self) -> None:
+        self.assertEqual(19, len(self.datasets))
+        self.assertTrue(all(d["rights"].get("storage") and d["rights"].get("publication") for d in self.datasets))
+
+    @deep_only("full real-source market preview")
     def test_19_dataset_inventory_is_source_discovered_and_deterministic(self) -> None:
         entries = inventory(REPO_ROOT)
         self.assertEqual(19, len({e["DatasetID"] for e in entries}))
@@ -41,6 +47,7 @@ class MarketObservationsReadOnlyTests(unittest.TestCase):
         self.assertEqual(2, sum(e["HistoryMode"] == "latest-only" for e in entries))
         self.assertTrue(all(e["ObservationSeason"] == 2026 for e in entries))
 
+    @deep_only("full real-source market preview")
     def test_full_real_fftoday_history_is_deterministic_and_never_written(self) -> None:
         dataset_id = "fftoday.projection.redraft-qb-preseason"
         expected = next(e for e in inventory(REPO_ROOT) if e["DatasetID"] == dataset_id)
@@ -60,6 +67,7 @@ class MarketObservationsReadOnlyTests(unittest.TestCase):
         self.assertEqual(existed, before.exists())
         self.assertEqual(digest(data), digest(data))
 
+    @deep_only("full real-source market preview")
     def test_fantasycalc_pick_identity_provider_ownership_and_rights(self) -> None:
         data = render_partition(
             REPO_ROOT, "fantasycalc.value.dynasty-superflex-ppr-8-team", 2026,
@@ -77,6 +85,7 @@ class MarketObservationsReadOnlyTests(unittest.TestCase):
         ))
         self.assertTrue(all("actual_league_team_count" not in row["ProviderValues"] for row in observed))
 
+    @deep_only("full real-source market preview")
     def test_sleeper_actions_share_existing_latest_without_inventing_archive(self) -> None:
         results = {
             action: render_partition(
@@ -102,6 +111,7 @@ class MarketObservationsReadOnlyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             render_partition(REPO_ROOT, "does.not.exist", 2026)
 
+    @deep_only("full real-source market preview")
     def test_cli_preview_outputs_only_counts_hash_and_rights_no_player_content(self) -> None:
         # Avoid writing even to temporary folders: this is a pure in-memory CLI.
         from contextlib import redirect_stdout

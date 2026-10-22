@@ -17,6 +17,7 @@ from nfl_source_data_lib.identity import (
     _placeholder_gsis_upgrades,
 )
 from nfl_source_data_lib.provider_mappings import _retire_transferred_claims
+from ci_tier import deep_only
 
 SEASON = 2026
 
@@ -276,6 +277,7 @@ class TransferredClaimRetirementTests(unittest.TestCase):
         self.assertEqual(1, len(mappings))
 
 
+@deep_only("rebuilds all repository identities (~30 s)")
 class PlaceholderGsisUpgradeRepositoryTests(unittest.TestCase):
     def test_rebuilt_identities_leave_no_current_app_claim_on_a_placeholder_record(self):
         """Derived from repository data: no player names are wired in.
