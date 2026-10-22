@@ -114,6 +114,25 @@ describe('transaction.mapper', () => {
     });
   });
 
+  it('keeps Tyreek Hill history when the current Players list omits him', () => {
+    const historical = { Name: 'Tyreek Hill', Position: 'WR', Picture: '/historical-tyreek.png' };
+    const transaction = mapRawTransaction(createRawTransaction({
+      RosterIDs: [3], Drops: { '3321': 3 }, PlayerRefs: { '3321': historical }
+    }), [], []);
+    expect(transaction.Participants[0].DroppedPlayers[0]).toEqual({
+      PlayerID: '3321', Player: undefined, PlayerRef: historical
+    });
+  });
+
+  it('does not invent identities for unknown historical players', () => {
+    const transaction = mapRawTransaction(createRawTransaction({
+      RosterIDs: [3], Drops: { unknown: 3 }, PlayerRefs: {}
+    }), [], []);
+    expect(transaction.Participants[0].DroppedPlayers[0]).toEqual({
+      PlayerID: 'unknown', Player: undefined
+    });
+  });
+
   it('orders by effective status time rather than waiver submission time', () => {
     const completedWaiver = createRawTransaction({
       TransactionID: 'waiver',

@@ -63,6 +63,44 @@ describe('transaction-card presenter', () => {
     expect(asset.nflTeamLogo).toBe('/eagles.svg');
   });
 
+  it('shows historical names, portraits and positions without a phantom current Player or team', () => {
+    const stale = {
+      Name: 'Wrong Current Name', Picture: '/current.png', Position: 'TE',
+      TeamNFL: { Abv: 'SEA', Logo: '/sea.png' }
+    } as Player;
+    const ref = { Name: 'Tyreek Hill', Position: 'WR', Picture: '/tyreek.png' };
+    const archived: TransactionParticipant = {
+      ...participant,
+      DroppedPlayers: [
+        { PlayerID: '3321', PlayerRef: ref },
+        { PlayerID: '3321', Player: stale, PlayerRef: ref }
+      ]
+    };
+    const assets = getTransactionCardAssets(archived, 'outgoing');
+    for (const asset of assets) {
+      expect(asset.label).toBe('Tyreek Hill');
+      expect(asset.portrait).toBe('/tyreek.png');
+      expect(asset.position).toBe('WR');
+      expect(asset.nflTeamLogo).toBeUndefined();
+      expect(asset.nflTeamAbv).toBeUndefined();
+    }
+    expect(assets[0].player).toBeUndefined();
+    expect(assets[1].player).toBeUndefined();
+
+    const noPortrait = getTransactionCardAssets({
+      ...participant,
+      DroppedPlayers: [{
+        PlayerID: '9',
+        Player: stale,
+        PlayerRef: { Name: 'Older Historical Player', Position: null, Picture: null }
+      }]
+    }, 'outgoing')[0];
+    expect(noPortrait.label).toBe('Older Historical Player');
+    expect(noPortrait.portrait).toBeUndefined();
+    expect(noPortrait.position).toBeUndefined();
+    expect(noPortrait.player).toBeUndefined();
+  });
+
   it('keeps traded pick summary free from selected player and original owner', () => {
     const [asset] = getTransactionCardAssets(participant, 'incoming').filter(asset => asset.kind === 'pick');
     expect(asset.label).toBe('2028 FA · R4');

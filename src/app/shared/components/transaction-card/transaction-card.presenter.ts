@@ -59,16 +59,20 @@ export function getTransactionCardAssets(
 
 function presentPlayerAsset(asset: TransactionPlayerAsset): TransactionCardAsset {
   const player = asset.Player;
+  const historical = asset.PlayerRef;
+  // Historical facts win over today's player snapshot. Never infer past NFL team.
   return {
     kind: 'player',
     key: `player:${asset.PlayerID}`,
-    label: player?.Name || `Player ${asset.PlayerID}`,
-    secondary: [player?.Position, player?.TeamNFL?.Abv].filter(Boolean).join(' · '),
-    portrait: player?.Picture,
-    nflTeamLogo: player?.TeamNFL?.Logo,
-    nflTeamAbv: player?.TeamNFL?.Abv,
-    position: player?.Position,
-    player
+    label: historical ? (historical.Name || `Player ${asset.PlayerID}`) : (player?.Name || `Player ${asset.PlayerID}`),
+    secondary: [historical ? historical.Position : player?.Position, historical ? null : player?.TeamNFL?.Abv].filter(Boolean).join(' · '),
+    portrait: historical ? historical.Picture ?? undefined : player?.Picture,
+    nflTeamLogo: historical ? undefined : player?.TeamNFL?.Logo,
+    nflTeamAbv: historical ? undefined : player?.TeamNFL?.Abv,
+    position: historical ? historical.Position ?? undefined : player?.Position,
+    // Current snapshots carry no temporal identity proof. Do not open the
+    // wrong current Player when a historical provider ID has been reused.
+    player: historical ? undefined : player
   };
 }
 

@@ -32,7 +32,12 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from derived_data_lib.league_drafts import DraftBuildError  # noqa: E402
-from derived_data_lib.league_history import HistoryResult, build_history  # noqa: E402
+from derived_data_lib.league_history import (  # noqa: E402
+    HistoryResult, build_history, transactions_document, drafts_document,
+)
+from derived_data_lib.league_player_refs import (  # noqa: E402
+    LeaguePlayerReferenceResolver, provider_draft_names,
+)
 from league_history_sources import load_inputs  # noqa: E402
 
 # Slim App contract (Issue #999 step 6, field list approved by Robert 2026-10-15). Fields the products carry but
@@ -40,7 +45,7 @@ from league_history_sources import load_inputs  # noqa: E402
 # Transaction.Status stays: Angular (mergeCompletedRawTransactions) filters on it.
 TRANSACTION_PICK_ORDER = (
     "DraftType", "DraftKey", "Season", "Round", "OriginalOwnerRosterID", "PreviousOwnerRosterID",
-    "NewOwnerRosterID", "PickKey", "DisplayPick", "PlayerID", "PlayerName",
+    "NewOwnerRosterID", "PickKey", "DisplayPick", "PlayerID", "PlayerName", "PlayerRef",
 )
 TRANSACTION_PICK_DROPPED = (
     "DraftCode", "DraftSource", "PickStatus", "SleeperDraftID", "DraftInstance", "PositionInRound", "OverallPick",
@@ -56,7 +61,7 @@ DRAFT_SETTINGS_DROPPED = ("Teams",)
 PICK_FIELD_ORDER = (
     "PickKey", "DraftKey", "Season", "DraftType", "DraftInstance", "Round", "PositionInRound", "OverallPick",
     "DisplayPick", "OriginalOwnerRosterID", "CurrentOwnerRosterID", "IsCurrentlyTraded", "TradeHistory",
-    "PlayerID", "PlayerName", "Status", "SleeperPickNo", "SleeperPickedBy",
+    "PlayerID", "PlayerName", "PlayerRef", "Status", "SleeperPickNo", "SleeperPickedBy",
 )
 PICK_DROPPED = ("LeagueID", "DraftCode", "TradeSource", "WasTraded")
 TRADE_HISTORY_DROPPED = ("Source", "DraftSource")
@@ -100,26 +105,79 @@ def _ordered(source: dict[str, Any], order: tuple[str, ...]) -> dict[str, Any]:
     return {key: source[key] for key in order if key in source}
 
 
+# ---------------------------------------------------------------------------- historical player references
+
+def build_player_references(
+    repo_root: Path, league_id: str, history: HistoryResult,
+) -> tuple[dict[int, dict[str, dict[str, Any]]], dict[int, dict[str, dict[str, Any]]]]:
+    """Reuse CP2's Shared Derived product contracts and resolver for App delivery.
+
+    No independent identity matching, present-day App player lookup or generated archive inputs.
+    Draft pick references always belong to the draft's season, not a trade event year.
+    """
+    resolver = LeaguePlayerReferenceResolver.from_repo(repo_root)
+    draft_refs = {
+        season: drafts_document(league_id, season, drafts, resolver.resolve)["PlayerRefs"]
+        for season, drafts in sorted(history.drafts.items())
+    }
+    transaction_refs = {
+        season: transactions_document(
+            league_id, season, transactions, resolver.resolve,
+            provider_draft_names(history.drafts.get(season, [])),
+        )["PlayerRefs"]
+        for season, transactions in sorted(history.transactions.items())
+    }
+    return transaction_refs, draft_refs
+
+
+def _app_player_ref(ref: dict[str, Any] | None) -> dict[str, str | None] | None:
+    """Keep only established display evidence; never deliver current team/status."""
+    if not ref:
+        return None
+    display = {key: ref.get(key) for key in ("Name", "Position", "Picture")}
+    return display if any(display.values()) else None
+
+
 # ---------------------------------------------------------------------------- transactions
 
 
-def app_transaction(transaction: dict[str, Any]) -> dict[str, Any]:
+def app_transaction(
+    transaction: dict[str, Any],
+    player_refs: dict[str, dict[str, Any]] | None = None,
+    draft_refs_by_season: dict[int, dict[str, dict[str, Any]]] | None = None,
+) -> dict[str, Any]:
     result = dict(transaction)
+    if player_refs is not None:
+        ids = sorted(set(transaction.get("Adds") or {}) | set(transaction.get("Drops") or {}))
+        refs = {pid: display for pid in ids if (display := _app_player_ref(player_refs.get(pid))) is not None}
+        if refs:
+            result["PlayerRefs"] = refs
     picks = []
     for pick in transaction["DraftPicks"]:
         entry = dict(pick)
         if entry.get("PickKey"):
             entry["DisplayPick"] = display_pick(int(entry["Round"]), entry.get("PositionInRound"))
+        player_id = entry.get("PlayerID")
+        if player_id and draft_refs_by_season is not None:
+            # Temporal scope comes from the selected draft, not the transaction file.
+            ref = _app_player_ref(draft_refs_by_season.get(int(entry["Season"]), {}).get(str(player_id)))
+            if ref is not None:
+                entry["PlayerRef"] = ref
         picks.append(_ordered(_slim(entry, TRANSACTION_PICK_DROPPED), TRANSACTION_PICK_ORDER))
     result["DraftPicks"] = picks
     return result
 
 
-def app_transactions(transactions_by_season: dict[int, list[dict[str, Any]]], league_year: int) -> dict[str, Any]:
+def app_transactions(
+    transactions_by_season: dict[int, list[dict[str, Any]]], league_year: int,
+    transaction_refs: dict[int, dict[str, dict[str, Any]]] | None = None,
+    draft_refs: dict[int, dict[str, dict[str, Any]]] | None = None,
+) -> dict[str, Any]:
+    refs = transaction_refs or {}
     return {
-        "current": [app_transaction(item) for item in transactions_by_season.get(league_year, [])],
+        "current": [app_transaction(item, refs.get(league_year), draft_refs) for item in transactions_by_season.get(league_year, [])],
         "past": {
-            season: [app_transaction(item) for item in items]
+            season: [app_transaction(item, refs.get(season), draft_refs) for item in items]
             for season, items in sorted(transactions_by_season.items()) if season < league_year
         },
     }
@@ -135,15 +193,20 @@ def _app_draft_base(draft: dict[str, Any], excluded: tuple[str, ...] = ()) -> di
     return entry
 
 
-def _app_pick(pick: dict[str, Any]) -> dict[str, Any]:
+def _app_pick(pick: dict[str, Any], player_refs: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     entry = _slim(pick, PICK_DROPPED)
+    player_id = pick.get("PlayerID")
+    if player_id and player_refs is not None:
+        ref = _app_player_ref(player_refs.get(str(player_id)))
+        if ref is not None:
+            entry["PlayerRef"] = ref
     entry["DisplayPick"] = display_pick(int(pick["Round"]), pick.get("PositionInRound"))
     if "TradeHistory" in entry:
         entry["TradeHistory"] = [_slim(item, TRADE_HISTORY_DROPPED) for item in entry["TradeHistory"]]
     return _ordered(entry, PICK_FIELD_ORDER)
 
 
-def app_current_draft(draft: dict[str, Any], league_year: int) -> dict[str, Any]:
+def app_current_draft(draft: dict[str, Any], league_year: int, player_refs: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     entry = _app_draft_base(draft)
     entry["DisplayDraftKey"] = f"{draft['Season']} {display_type(draft['DraftType'])}" + (
         f" #{draft['DraftInstance']}" if int(draft["DraftInstance"]) > 1 else "")
@@ -151,11 +214,13 @@ def app_current_draft(draft: dict[str, Any], league_year: int) -> dict[str, Any]
         f" #{draft['DraftInstance']}" if int(draft["DraftInstance"]) > 1 else "")
     entry["DisplayDraftType"] = display_type(draft["DraftType"])
     entry["DisplayStatus"] = display_status(draft["Status"], draft["Season"], league_year)
-    entry["Picks"] = [_app_pick(pick) for pick in draft["Picks"]]
+    entry["Picks"] = [_app_pick(pick, player_refs) for pick in draft["Picks"]]
     return _ordered(entry, DRAFT_FIELD_ORDER)
 
 
-def app_history_draft(draft: dict[str, Any], occurrence: int, count: int) -> dict[str, Any]:
+def app_history_draft(
+    draft: dict[str, Any], occurrence: int, count: int, player_refs: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """New-DraftHistoryOutputOrderAware: no start-time fields, occurrence-based display keys."""
     suffix = f" #{occurrence}" if count > 1 else ""
     entry = _app_draft_base(draft, ("SleeperStartTime", "DraftStartTimeUtc"))
@@ -163,13 +228,17 @@ def app_history_draft(draft: dict[str, Any], occurrence: int, count: int) -> dic
     entry["DisplayAbrDraftKey"] = f"{draft['Season']} {type_abbreviation(draft['DraftType'])}{suffix}"
     entry["DisplayDraftType"] = display_type(draft["DraftType"])
     entry["DisplayStatus"] = display_status(draft["Status"], draft["Season"], 0)
-    entry["Picks"] = [_app_pick(pick) for pick in draft["Picks"]]
+    entry["Picks"] = [_app_pick(pick, player_refs) for pick in draft["Picks"]]
     return _ordered(entry, DRAFT_FIELD_ORDER)
 
 
-def app_drafts(drafts_by_season: dict[int, list[dict[str, Any]]], league_year: int) -> dict[str, Any]:
+def app_drafts(
+    drafts_by_season: dict[int, list[dict[str, Any]]], league_year: int,
+    draft_refs: dict[int, dict[str, dict[str, Any]]] | None = None,
+) -> dict[str, Any]:
+    refs = draft_refs or {}
     current = [
-        app_current_draft(draft, league_year)
+        app_current_draft(draft, league_year, refs.get(season))
         for season, drafts in sorted(drafts_by_season.items()) if season >= league_year
         for draft in sorted(drafts, key=lambda d: d["DraftNo"])
     ]
@@ -187,15 +256,19 @@ def app_drafts(drafts_by_season: dict[int, list[dict[str, Any]]], league_year: i
         entries = []
         for draft in completed:
             seen[draft["DraftType"]] = seen.get(draft["DraftType"], 0) + 1
-            entries.append(app_history_draft(draft, seen[draft["DraftType"]], counts[draft["DraftType"]]))
+            entries.append(app_history_draft(draft, seen[draft["DraftType"]], counts[draft["DraftType"]], refs.get(season)))
         past[season] = entries
     return {"current": current, "past": past}
 
 
-def render(history: HistoryResult, league_year: int) -> dict[str, Any]:
+def render(
+    history: HistoryResult, league_year: int,
+    references: tuple[dict[int, dict[str, dict[str, Any]]], dict[int, dict[str, dict[str, Any]]]] | None = None,
+) -> dict[str, Any]:
+    transaction_refs, draft_refs = references if references is not None else ({}, {})
     return {
-        "Transactions": app_transactions(history.transactions, league_year),
-        "Drafts": app_drafts(history.drafts, league_year),
+        "Transactions": app_transactions(history.transactions, league_year, transaction_refs, draft_refs),
+        "Drafts": app_drafts(history.drafts, league_year, draft_refs),
     }
 
 
@@ -316,7 +389,7 @@ def run_write(args: argparse.Namespace) -> int:
         history = build_history(inputs)
         if history.unresolved:
             raise DraftBuildError(f"Transaction picks without a unique draft identity: {history.unresolved}")
-        rendered = render(history, inputs.league_year)
+        rendered = render(history, inputs.league_year, build_player_references(args.repo_root, args.league, history))
     except Exception as error:  # fail-closed product: keep the last good files, report visibly
         print(f"::warning title=League history not published::{type(error).__name__}: {error}", file=sys.stderr)
         print("League history could not be built; the last good App files stay unchanged.", file=sys.stderr)
@@ -335,7 +408,10 @@ def main() -> int:
     if history.unresolved:
         print(f"Transaction picks without a unique draft identity: {history.unresolved}", file=sys.stderr)
         return 1
-    results = shadow_compare(args.repo_root, render(history, inputs.league_year))
+    results = shadow_compare(
+        args.repo_root,
+        render(history, inputs.league_year, build_player_references(args.repo_root, args.league, history)),
+    )
     failed = 0
     for name, differences in sorted(results.items()):
         print(f"{'OK  ' if not differences else 'DIFF'} {name}" + (f" ({len(differences)} differences)" if differences else ""))
