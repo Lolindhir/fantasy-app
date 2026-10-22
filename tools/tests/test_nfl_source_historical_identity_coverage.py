@@ -10,6 +10,7 @@ from tools.nfl_source_data_lib.canonical_identity import identity_lookup
 from tools.nfl_source_data_lib.common import load_registry
 from tools.nfl_source_data_lib.coverage import build_player_stats_identity_coverage
 from tools.nfl_source_data_lib.identity import build_identities
+from tools.ci_tier import deep_only
 
 
 class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
@@ -182,6 +183,7 @@ class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
 
 
 class RealCareerIdentityRegressionTests(unittest.TestCase):
+    @deep_only("rebuilds all historical identities (~55 s)")
     def test_repository_historical_unresolved_ids_are_repairable_from_provider_identity(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
@@ -199,6 +201,7 @@ class RealCareerIdentityRegressionTests(unittest.TestCase):
             "historical player-stat identities must be repairable from authoritative provider evidence",
         )
 
+    @deep_only("scans all raw historical stat partitions (~25 s)")
     def test_repository_raw_missing_player_ids_are_provider_aggregate_buckets(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)

@@ -14,6 +14,7 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 from historical_pwf_batch import discover_scored_weeks, materialize_historical  # noqa: E402
+from ci_tier import deep_only  # noqa: E402
 
 REPO_ROOT = TOOLS.parent
 
@@ -117,6 +118,7 @@ class HistoricalPWFBatchTests(unittest.TestCase):
 @unittest.skipUnless((REPO_ROOT / "data-source/leagues/nfl-reise/manifest.json").is_file(),
                      "Canonical league sources are required for historical PWF smoke tests")
 class RealHistoricalPWFBatchTests(unittest.TestCase):
+    @deep_only("real-source PWF reconstruction (~25 s)")
     def test_real_missing_2026_weeks_1_and_2_are_reconstructible(self):
         with tempfile.TemporaryDirectory() as output:
             report = materialize_historical(
@@ -128,6 +130,7 @@ class RealHistoricalPWFBatchTests(unittest.TestCase):
             self.assertEqual(report["WouldChangeCount"], 2)
             self.assertFalse(list(Path(output).rglob("*.json")))
 
+    @deep_only("real-source PWF reconstruction (~25 s)")
     def test_real_2024_and_2025_sample_weeks_are_reconstructible(self):
         with tempfile.TemporaryDirectory() as output:
             report = materialize_historical(
@@ -138,6 +141,7 @@ class RealHistoricalPWFBatchTests(unittest.TestCase):
                               report["BlockedCount"]), (2, 2, 0), report["Weeks"])
 
 
+    @deep_only("real-source historical preflight (~30 s)")
     def test_repaired_historical_source_identity_gaps_preflight_without_writes(self):
         """#1061 accepted Source repair: formerly blocked 2024 W01/W02 + 2025 W01."""
         with tempfile.TemporaryDirectory() as output:
@@ -169,6 +173,7 @@ class RealHistoricalPWFBatchTests(unittest.TestCase):
         os.environ.get("RUN_FULL_HISTORICAL_PWF_AUDIT") == "1",
         "Full historical PWF generation is expensive; run with RUN_FULL_HISTORICAL_PWF_AUDIT=1",
     )
+    @deep_only("preflights every canonically scored historical week")
     def test_every_canonically_scored_historical_week_preflights_without_writes(self):
         """Real source-only inventory: a missing or stale historical partition must not hide."""
         expected = discover_scored_weeks(REPO_ROOT, league_id="nfl-reise")

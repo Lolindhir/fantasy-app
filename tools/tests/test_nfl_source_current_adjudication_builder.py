@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 TOOLS = ROOT / "tools"
 sys.path.insert(0, str(TOOLS))
 
+from ci_tier import deep_only  # noqa: E402
 from nfl_source_data_lib.common import load_registry  # noqa: E402
 from nfl_source_data_lib.materialize import _observation_season  # noqa: E402
 from nfl_source_data_lib.identity import (  # noqa: E402
@@ -195,6 +196,7 @@ class TransferReasonTests(unittest.TestCase):
         self.assertEqual([PLACEHOLDER_GSIS_UPGRADE_REASON], [item["Reason"] for item in reconciliations])
 
 
+@deep_only("rebuilds all repository identities in setUpClass (~30 s)")
 class RepositoryAdjudicationBuilderTests(unittest.TestCase):
     """The confirmed repository decisions are applied by the productive builder.
 
