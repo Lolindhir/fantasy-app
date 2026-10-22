@@ -112,7 +112,7 @@ def build_player_references(
 ) -> tuple[dict[int, dict[str, dict[str, Any]]], dict[int, dict[str, dict[str, Any]]]]:
     """Reuse CP2's Shared Derived product contracts and resolver for App delivery.
 
-    No independent identity matching, current Players.json lookup or generated archive inputs.
+    No independent identity matching, present-day App player lookup or generated archive inputs.
     Draft pick references always belong to the draft's season, not a trade event year.
     """
     resolver = LeaguePlayerReferenceResolver.from_repo(repo_root)
