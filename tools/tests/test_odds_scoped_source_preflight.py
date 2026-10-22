@@ -58,6 +58,25 @@ class OddsSourcePreflightTests(unittest.TestCase):
             self.assertEqual(before, after)
             self.assertNotEqual(first, second, "Source price evidence did change")
 
+    def test_missing_current_season_game_fails_closed_without_writes(self):
+        raw = ROOT / "data-source/providers/nflverse/schedule-odds/raw-latest.csv"
+        canonical = ROOT / "data-source/nfl/schedule-odds/2026.json"
+        baseline = canonical.read_bytes()
+        with tempfile.TemporaryDirectory() as tmp:
+            incomplete = Path(tmp) / "incomplete.csv"
+            with raw.open(encoding="utf-8", newline="") as source:
+                rows = list(csv.DictReader(source))
+            removed = next(i for i, row in enumerate(rows)
+                           if row["game_id"].startswith("2026_"))
+            rows.pop(removed)
+            with incomplete.open("w", encoding="utf-8", newline="") as output:
+                writer = csv.DictWriter(output, fieldnames=list(rows[0]))
+                writer.writeheader()
+                writer.writerows(rows)
+            with self.assertRaisesRegex(ValueError, "Upstream season GameIDs differ"):
+                source_candidate(ROOT, incomplete, 2026)
+            self.assertEqual(canonical.read_bytes(), baseline)
+
     def test_duplicate_upstream_game_fails_closed(self):
         raw = ROOT / "data-source/providers/nflverse/schedule-odds/raw-latest.csv"
         with tempfile.TemporaryDirectory() as tmp:
