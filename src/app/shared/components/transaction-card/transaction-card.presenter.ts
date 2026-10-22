@@ -64,13 +64,15 @@ function presentPlayerAsset(asset: TransactionPlayerAsset): TransactionCardAsset
   return {
     kind: 'player',
     key: `player:${asset.PlayerID}`,
-    label: historical?.Name || player?.Name || `Player ${asset.PlayerID}`,
-    secondary: [historical?.Position || player?.Position, historical ? null : player?.TeamNFL?.Abv].filter(Boolean).join(' · '),
-    portrait: historical?.Picture || player?.Picture,
+    label: historical ? (historical.Name || `Player ${asset.PlayerID}`) : (player?.Name || `Player ${asset.PlayerID}`),
+    secondary: [historical ? historical.Position : player?.Position, historical ? null : player?.TeamNFL?.Abv].filter(Boolean).join(' · '),
+    portrait: historical ? historical.Picture ?? undefined : player?.Picture,
     nflTeamLogo: historical ? undefined : player?.TeamNFL?.Logo,
     nflTeamAbv: historical ? undefined : player?.TeamNFL?.Abv,
-    position: historical?.Position || player?.Position,
-    player
+    position: historical ? historical.Position ?? undefined : player?.Position,
+    // Current snapshots carry no temporal identity proof. Do not open the
+    // wrong current Player when a historical provider ID has been reused.
+    player: historical ? undefined : player
   };
 }
 
