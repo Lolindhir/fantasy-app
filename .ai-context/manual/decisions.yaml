@@ -2115,6 +2115,7 @@ decisions:
   - id: ADR-065
     title: Fail-closed risk-selected CI for pull requests with permanent merge result
     status: accepted
+    amendedBy: ADR-067
     context: >
       The single mandatory GitHub Actions build serially executed every
       historical source replay and full market restore on every pull request,
@@ -2174,8 +2175,7 @@ decisions:
           never the redundant sequential legacy build on pull requests.
         - The historical build runs only via manual operator dispatch or
           the once-weekly CP4 scheduler audit, not automatically on PRs.
-        - Until Issue #243 activates branch protection for CI / Merge Gate,
-          GitHub does not make this check a server-enforced merge requirement.
+        - 'Until Issue #243 activates branch protection for CI / Merge Gate, GitHub does not make this check a server-enforced merge requirement.'
         - Periodic complete audit and performance-distribution measurement are
           follow-up checkpoints CP4 and CP6, not part of this decision.
 
@@ -2212,3 +2212,50 @@ decisions:
         - Canonical historical sources and consumer outputs need controlled republishing.
         - A later Sleeper status_updated edit cannot reveal historical prior status
           transitions; the provider timestamp is treated as best available evidence.
+
+  - id: ADR-067
+    title: Pull requests run Core plus selected Fast blocks; Deep runs only in the audit or by manual dispatch
+    status: accepted
+    amends: ADR-065
+    context: >
+      ADR-065 kept the four Deep families (NFL identity replay, League PWF/TWP,
+      market restore, consumer restore) as automatically selected pull-request
+      jobs. In practice the conservative dependency closure selected most or all
+      of them for any change to shared code, so ordinary pull requests still waited
+      for the 25 to 40 minute historical replays. Measured in Issue #1122 (CP6.0):
+      a pull request without Deep finishes in about 2.5 minutes of wall-clock time.
+    decision: >
+      Robert approved the scope on 2026-10-22 (Issue #1122). A pull request runs
+      Core (small mandatory contracts and publication-safety tests, always) plus
+      exactly the Fast blocks the selector derives from the complete verified diff:
+      the four Fast families (named like the Deep categories), Angular, Scheduler
+      and PowerShell. Deep never runs on a pull request. It runs in the weekly full
+      audit (together with every Fast block and the legacy build), and one Deep
+      category can be started individually through the workflow_dispatch input
+      `scope`. Every Deep category has Fast counterparts: modules mix cheap
+      deterministic cases with one expensive real-source replay, and the expensive
+      case carries the `deep_only` marker (tools/ci_tier.py) that the Fast lane
+      skips through CI_TEST_TIER=fast; the Deep lane and local runs execute it.
+      Additional read-only persisted-state guards (identity and derived references)
+      check the most common regressions in seconds. The selector stays fail-closed:
+      unknown, renamed, deleted, CI or policy paths select every Fast family and
+      block; the unchanged historical Deep proofs keep their safety value in the
+      audit. Fast families run when their own code or dependencies change, not on
+      unrelated changes. The CI / Merge Gate requires Core and exactly the selected
+      Fast blocks on a pull request, forbids Deep and the legacy build there, and
+      requires every Fast block, every Deep category and the legacy build in a full
+      audit. A Deep recommendation is a normal dialog rule, not a gate engine (see
+      ai-guidance ciMaintenance). No new writers, permissions or branch protection.
+    rationale: >
+      Fast feedback for normal changes and full historical proof on a regular
+      cadence. A bug that only a historical replay finds is caught at the latest by
+      the weekly audit, while the persisted-state guards and the cheap parts of the
+      Deep modules catch the common cases in the pull request.
+    consequences:
+      positive:
+        - Normal pull requests finish in minutes instead of waiting for historical replays.
+        - Deep is never skipped silently; it is audit or explicitly dispatched, and the audit gate requires it.
+        - Fast counterparts grow with each Deep-found defect class.
+      negative:
+        - A defect only visible in a full replay can reach main and is found by the next weekly audit.
+        - Modules with a deep_only case need the marker kept current; the inventory validation checks Fast family registration but not marker coverage.
