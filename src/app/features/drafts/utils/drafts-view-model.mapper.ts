@@ -121,8 +121,13 @@ function createPickViewModel(
   playerById: Map<string, Player>,
   maxRound: number
 ): DraftPickViewModel {
-  const selectedPlayer = pick.PlayerID ? playerById.get(pick.PlayerID) : undefined;
-  const selectedPlayerName = selectedPlayer?.NameShort || selectedPlayer?.Name || pick.PlayerName || undefined;
+  // A present historical ref takes precedence over the current roster snapshot.
+  // A Sleeper player ID may have been reused for another person.
+  const historical = pick.PlayerRef;
+  const selectedPlayer = !historical && pick.PlayerID ? playerById.get(pick.PlayerID) : undefined;
+  const selectedPlayerName = historical
+    ? historical.Name || pick.PlayerName || undefined
+    : pick.PlayerName || selectedPlayer?.NameShort || selectedPlayer?.Name || undefined;
   const currentOwnerRosterId = normalizeRosterId(pick.CurrentOwnerRosterID);
   const originalOwnerRosterId = normalizeRosterId(pick.OriginalOwnerRosterID);
 
@@ -132,9 +137,9 @@ function createPickViewModel(
     originalOwner: getTeamDisplay(teamByRosterId, originalOwnerRosterId),
     isCurrentlyTraded: wasPickTraded(pick),
     roundColor: getDraftRoundColor(pick.Round, maxRound),
-    isPicked: pick.Status === 'Picked' || !!pick.PlayerName || !!selectedPlayer,
+    isPicked: pick.Status === 'Picked' || !!pick.PlayerName || !!historical?.Name || !!selectedPlayer,
     selectedPlayerName,
-    selectedPlayerPosition: selectedPlayer?.Position,
+    selectedPlayerPosition: historical ? historical.Position ?? undefined : selectedPlayer?.Position,
     selectedPlayer
   };
 }

@@ -33,10 +33,18 @@ export class DraftPickCardComponent {
   }
 
   get hasSelectedPlayer(): boolean {
-    return !!this.item.selectedPlayer;
+    return this.item.isPicked;
+  }
+
+  get selectedPlayerPicture(): string | undefined {
+    const ref = this.item.pick.PlayerRef;
+    return ref ? ref.Picture ?? undefined : this.item.selectedPlayer?.Picture;
   }
 
   get tileContextLabel(): string {
+    if (this.item.pick.PlayerRef) {
+      return this.item.pick.PlayerRef.Name || this.item.selectedPlayerName || this.item.currentOwner.abbr;
+    }
     if (this.item.selectedPlayer) {
       return this.item.selectedPlayer.NameLast
         || this.item.selectedPlayer.NameShort
