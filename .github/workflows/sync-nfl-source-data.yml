@@ -191,7 +191,7 @@ jobs:
 
           materialization_scope="${MATERIALIZATION_SCOPE:-full}"
           case "$materialization_scope" in
-            full|game-finality) ;;
+            full|game-finality|schedule-odds) ;;
             *)
               echo "Unsupported materialization scope: $materialization_scope" >&2
               exit 2
@@ -204,6 +204,17 @@ jobs:
             fi
             if [[ -n "${SEASON:-}" ]]; then
               echo "game-finality scope does not accept a season filter; schedules and released evidence are fixed datasets" >&2
+              exit 2
+            fi
+          fi
+
+          if [[ "$materialization_scope" == "schedule-odds" ]]; then
+            if [[ "${DATASET:-}" != "nflverse.schedule-odds" ]]; then
+              echo "schedule-odds scope requires dataset=nflverse.schedule-odds" >&2
+              exit 2
+            fi
+            if [[ -n "${SEASON:-}" ]]; then
+              echo "schedule-odds scope does not accept a season filter; odds upstream is fixed" >&2
               exit 2
             fi
           fi
@@ -235,6 +246,8 @@ jobs:
           materialize_args=(materialize)
           if [[ "$materialization_scope" == "game-finality" ]]; then
             materialize_args+=(--scope game-finality)
+          elif [[ "$materialization_scope" == "schedule-odds" ]]; then
+            materialize_args+=(--scope schedule-odds)
           fi
 
           {
@@ -244,6 +257,10 @@ jobs:
             if [[ "$materialization_scope" == "game-finality" ]]; then
               echo "- Scoped raw datasets: nflverse.schedules + nflverse.game-finality"
               echo "- Canonical write-set: data-source/nfl/schedules/** + data-source/nfl/game-finality/**"
+              echo "- Full NFL audit: read/write disabled for scoped materialization"
+            elif [[ "$materialization_scope" == "schedule-odds" ]]; then
+              echo "- Scoped read dependencies: schedule raw + published canonical schedule"
+              echo "- Canonical write-set: data-source/nfl/schedule-odds/** only"
               echo "- Full NFL audit: read/write disabled for scoped materialization"
             else
               echo "- Canonical write-set: full NFL source materialization"
@@ -289,6 +306,20 @@ jobs:
             .github/workflows/sync-nfl-source-data.yml
           )
 
+          # Odds-only materialization does not read player/roster/identity data.
+          # Keep producer tools as a conservative race input.
+          if [[ "$materialization_scope" == "schedule-odds" ]]; then
+            materialize_input_pathspecs=(
+              data-source/registry.json
+              data-source/providers/nflverse/schedules
+              data-source/providers/nflverse/schedule-odds
+              data-source/nfl/schedules
+              data-source/nfl/schedule-odds
+              tools
+              .github/workflows/sync-nfl-source-data.yml
+            )
+          fi
+
           # Returns 0 after a successful push. Returns 1 when a materialization input
           # changed on main (caller must rebuild). Fails closed on rebase conflicts.
           publish_canonical_commit() {
@@ -331,17 +362,20 @@ jobs:
           }
 
           assert_scoped_canonical_write_set() {
-            if [[ "$materialization_scope" != "game-finality" ]]; then
+            if [[ "$materialization_scope" == "full" ]]; then
               return 0
             fi
             mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
             unexpected=()
             for path in "${changed[@]}"; do
-              if [[ "$path" == data-source/nfl/schedules/* ]]; then
-                continue
-              fi
-              if [[ "$path" == data-source/nfl/game-finality/* ]]; then
-                continue
+              if [[ "$materialization_scope" == "game-finality" ]]; then
+                if [[ "$path" == data-source/nfl/schedules/* || "$path" == data-source/nfl/game-finality/* ]]; then
+                  continue
+                fi
+              elif [[ "$materialization_scope" == "schedule-odds" ]]; then
+                if [[ "$path" == data-source/nfl/schedule-odds/* ]]; then
+                  continue
+                fi
               fi
               if [[ "$path" == "data-source/_sync/last-failure.json" ]]; then
                 continue
@@ -349,7 +383,7 @@ jobs:
               unexpected+=("$path")
             done
             if (( ${#unexpected[@]} > 0 )); then
-              printf 'Scoped game-finality materialization touched an unexpected path:\n' >&2
+              printf 'Scoped %s materialization touched unexpected paths:\n' "$materialization_scope" >&2
               printf ' - %s\n' "${unexpected[@]}" >&2
               return 1
             fi
@@ -473,7 +507,7 @@ jobs:
             set -e
             materialize_seconds=$(( $(date +%s) - materialize_start ))
             phase_label="Full Materialization"
-            if [[ "$materialization_scope" == "game-finality" ]]; then
+            if [[ "$materialization_scope" != "full" ]]; then
               phase_label="Scoped Materialization"
             fi
             echo "- ${phase_label} (attempt $attempt): ${materialize_seconds}s" >> "$GITHUB_STEP_SUMMARY"
@@ -510,6 +544,17 @@ jobs:
                   f"final={diagnostics.get('finalGameCount')}, "
                   f"weekFinal={diagnostics.get('weekFinalCount')}"
               )
+          elif scope == "schedule-odds":
+              print(f"- Scoped canonical files evaluated: {result.get('oddsCanonicalFileCount')}")
+              print(f"- Scoped canonical files changed: {result.get('oddsFilesChanged')}")
+              print("- Scoped changed paths: " + (", ".join(result.get("oddsChangedPaths") or []) or "none"))
+              diagnostics = result.get("oddsDiagnostics") or {}
+              print(
+                  "- Odds coverage: "
+                  f"games={diagnostics.get('gameCount')}, "
+                  f"complete={diagnostics.get('gamesWithCompleteLines')}, "
+                  f"incomplete={diagnostics.get('gamesWithoutCompleteLines')}"
+              )
           else:
               print(
                   "- Full materialization change flags: "
@@ -542,6 +587,11 @@ jobs:
                   "gameFinalityFilesChanged": 0,
                   "gameFinalityChangedPaths": [],
               }
+          elif scope == "schedule-odds":
+              expected = {
+                  "oddsFilesChanged": 0,
+                  "oddsChangedPaths": [],
+              }
           else:
               expected = {
                   "identityChanged": False,
@@ -571,10 +621,8 @@ jobs:
             assert_scoped_canonical_write_set
 
             # The repo-state identity audit reads Players.json, persisted identities
-            # and Sleeper platform data. It is skipped in the pre-materialization
-            # test gate (it fails closed while persisted identities lag behind
-            # Players.json, which this sync repairs) and runs here against the
-            # freshly materialized canonical state instead (Issue #814, ADR-039).
+            # and Sleeper platform data. It runs after materialization
+            # to check freshly rebuilt canonical identities (Issue #814, ADR-039).
             # A failure publishes no canonical data; raw evidence is already on main.
             if [[ "$materialization_scope" == "full" ]]; then
               post_audit_log="$(mktemp)"
@@ -593,7 +641,7 @@ jobs:
             fi
 
             # The complete NFL audit belongs only to the full materializer. Scoped
-            # finality diagnostics remain execution output and never overwrite it.
+            # scoped diagnostics remain execution output and never overwrite it.
             if [[ "$materialization_scope" == "full" ]]; then
               python tools/nfl_source_data.py audit | tee -a "$materialize_log"
             fi

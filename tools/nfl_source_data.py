@@ -24,6 +24,11 @@ from nfl_source_data_lib.finality_materialize import (
 from nfl_source_data_lib.historical_crosswalk import sync_historical_crosswalk_evidence
 from nfl_source_data_lib.history import select_missing_historical_partitions
 from nfl_source_data_lib.materialize import materialize
+from nfl_source_data_lib.schedule_odds_materialize import (
+    ODDS_DATASET_ID,
+    SCHEDULE_ODDS_SCOPE,
+    materialize_schedule_odds,
+)
 from data_roots import DATA_SOURCE_ROOT
 
 # Keep this entry point side-effect free until main() is invoked; CI imports the
@@ -63,11 +68,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--raw-only", action="store_true", help="For sync, stop after validated provider raw data is persisted")
     parser.add_argument(
         "--scope",
-        choices=("full", GAME_FINALITY_SCOPE),
+        choices=("full", GAME_FINALITY_SCOPE, SCHEDULE_ODDS_SCOPE),
         default="full",
         help=(
             "Materialization scope. 'full' preserves the complete NFL materializer; "
-            "'game-finality' writes only canonical game-finality outputs."
+            "'game-finality' writes schedules/finality; 'schedule-odds' writes only canonical odds."
         ),
     )
     return parser.parse_args()
@@ -184,6 +189,13 @@ def main() -> int:
             if dataset_id in datasets
         }
         result = materialize_game_finality(repo_root, scoped_datasets, force=args.force)
+    elif args.scope == SCHEDULE_ODDS_SCOPE:
+        scoped_datasets = {
+            dataset_id: datasets[dataset_id]
+            for dataset_id in (SCHEDULE_DATASET_ID, ODDS_DATASET_ID)
+            if dataset_id in datasets
+        }
+        result = materialize_schedule_odds(repo_root, scoped_datasets, force=args.force)
     else:
         materialize_datasets = {dataset.id: dataset for dataset in registry if dataset.materialize}
         result = materialize(repo_root, materialize_datasets, force=args.force)

@@ -351,6 +351,20 @@ scheduleOddsContract:
     seasonal-finalizable contract; first-time historical backfill uses current raw
     historical evidence. No guarantee of snapshot/line publication time per game.
   audit: phase1Datasets.scheduleOdds (seasonCount, gameCount, gamesWithAnyOdds, gamesWithCompleteLines, gamesWithoutCompleteLines, earliestSeason, latestSeason)
+  incrementalPublishing: >
+    The intelligent Odds observer delegates to the existing NFL Source Sync with
+    dataset=nflverse.schedule-odds and materialization_scope=schedule-odds.
+    This mode uses the same canonical schedule and odds builders as the full
+    source materializer, but only publishes data-source/nfl/schedule-odds/**.
+    Before writing odds, the evaluated source schedule must match the already
+    published canonical schedules; a mismatch fails closed and requires the
+    normal full Source Sync to reconcile schedule evidence.
+    The per-season freeze, strict canonical write-set guard and second semantic
+    no-op verification remain intact. It does not rewrite player identities,
+    other canonical NFL datasets or the persisted full NFL audit.
+    The downstream nfl-games Derived publisher keeps its own scoped writer and
+    runtime checks. The Source concurrency group is unchanged; removing that
+    queue bottleneck requires a separate authorized step.
 
 qbrWeekContract:
   issue: 347
