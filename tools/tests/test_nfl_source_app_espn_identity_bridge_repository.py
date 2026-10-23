@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import sys
 import unittest
 from pathlib import Path
@@ -19,20 +18,10 @@ if str(FM_SCRIPTS) not in sys.path:
 import audit_player_signal_population_policy as population_policy  # noqa: E402
 
 
-# This test audits the live repository state (Players.json, persisted canonical
-# identities, Sleeper platform data), which independent workflows write. It
-# fails closed while persisted identities lag behind Players.json, which is
-# exactly the state the NFL source sync repairs. The sync workflow therefore
-# skips it in its pre-materialization gate and runs it against the freshly
-# materialized result instead (Issue #814, ADR-039). Everywhere else, including
-# PR CI, the variable is unset and the test runs.
-SKIP_ENV = "NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT"
-
-
-@unittest.skipIf(
-    os.environ.get(SKIP_ENV) == "1",
-    f"{SKIP_ENV}=1: repo-state audit runs after materialization in the sync workflow",
-)
+# This test audits live repository state (Players.json, canonical identities,
+# Sleeper platform data) that independent workflows may change. The production
+# full Source Sync runs it only AFTER rebuilding canonical data (Issue #814,
+# ADR-039); PR Fast runs its cheap cases and periodic Deep runs this replay.
 @deep_only("rebuilds all repository identities against the App population (~45 s)")
 class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
     def test_rebuilt_identities_do_not_regress_current_population_identity_gap(self) -> None:

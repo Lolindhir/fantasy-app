@@ -2271,3 +2271,39 @@ decisions:
         - A defect only visible in a full replay can reach main and is found by the next weekly audit.
         - Modules with a deep_only case need the marker kept current; the inventory validation checks Fast family registration but not marker coverage.
         - The Fast budget (about 3 minutes per block) and the question whether Deep parts can be extracted as Fast are working rules in ai-guidance ciMaintenance and the architecture review, not gates.
+
+  - id: ADR-068
+    title: Separate NFL regression suites from production source validation
+    status: accepted
+    amends: ADR-039
+    context: >
+      The shared NFL Source Sync workflow executed the broad test_nfl_source*.py
+      suite before every production refresh, including targeted schedule-odds.
+      This cost about 25 minutes in recent live runs before the source-to-derived
+      transaction could proceed. ADR-067 already owns PR Fast and full Deep
+      regression scheduling.
+    decision: >
+      Production NFL source and game-finality refreshes no longer invoke a
+      regression test suite before fetching current provider data. Regression
+      ownership remains with PR Core and selected Fast tests, plus periodic
+      full/Deep audit or manually dispatched Deep. Runtime fail-closed guards
+      remain unchanged: provider acquisition and schema validation, raw-first
+      publication, canonical materialization and integrity checks, scoped
+      write-set guards, repeated semantic no-op verification, and race-safe
+      publication. The full-scope repository-state identity audit (ADR-039)
+      still runs against the freshly materialized state before canonical commit;
+      it is a data-dependent publication guard, not redundant pre-sync testing.
+      No data ownership, published output schema or write destination changes.
+    rationale: >
+      Code regressions belong in CI, whereas live provider evidence and
+      materialized canonical state require direct checks on every production run.
+      A dedicated odds-only materialization scope is separate follow-up work.
+    consequences:
+      positive:
+        - Production Source refreshes avoid the expensive duplicate pre-sync suite.
+        - The live data-integrity guards and identity check remain fail-closed.
+      negative:
+        - Historical-only Deep regressions may be detected first by the
+          periodic audit, as accepted in ADR-067.
+        - Targeted Odds publishing still performs full canonical materialization
+          until the independent scoped-publishing change is implemented.

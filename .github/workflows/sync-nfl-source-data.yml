@@ -169,20 +169,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Test NFL data-source tooling
+      # Regression tests run in PR CI and the periodic full audit.
+      # Keep real-data and canonical-state validation in the publisher.
+      - name: Report production validation boundary
         shell: bash
         run: |
-          set -euo pipefail
-          test_start="$(date +%s)"
-          if [[ "${MATERIALIZATION_SCOPE:-full}" == "game-finality" ]]; then
-            python -m unittest tools.tests.test_nfl_source_game_finality_scope -v
-          else
-            # The repo-state identity audit runs after materialization inside the
-            # publish step instead (Issue #814, ADR-039).
-            NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT=1 python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
-          fi
-          test_seconds=$(( $(date +%s) - test_start ))
-          echo "- Tests (${MATERIALIZATION_SCOPE:-full}): ${test_seconds}s" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Regression suites: PR Fast / periodic full audit; not run during data sync" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Runtime safeguards: provider validation, canonical materialization, semantic no-op, and scoped write guards" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Full scope: post-materialization identity audit before canonical publication" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Sync, validate and publish NFL source data
         shell: bash
