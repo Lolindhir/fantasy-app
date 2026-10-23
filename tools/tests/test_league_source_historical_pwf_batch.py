@@ -199,7 +199,8 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         workflow = (root / ".github/workflows/update-standings.yml").read_text(encoding="utf-8")
         self.assertIn("historical_pwf:", workflow)
         self.assertEqual(1, workflow.count("historical_pwf:"))
-        self.assertIn("--scope historical-pwf", workflow)
+        self.assertIn("--scope player-week-fantasy", workflow)
+        self.assertNotIn("--scope historical-pwf", workflow)
         self.assertIn("--path data-derived/player-week-fantasy", workflow)
         self.assertIn("python3 tools/historical_pwf_batch.py --write", workflow)
         self.assertNotIn("tools/team_week_performance", workflow)
@@ -207,6 +208,19 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         self.assertIn("pwsh ./public/requests/RequestStandings.ps1", workflow)
         self.assertIn("--path public/data", workflow)
         self.assertIn("tools/rebuild_and_publish.py", workflow)
+
+    def test_weekly_publication_scope_matches_commit_helper_validateset(self):
+        import re
+        root = TOOLS.parent
+        workflow = (root / ".github/workflows/update-standings.yml").read_text(encoding="utf-8")
+        helper = (root / ".github/scripts/Invoke-GeneratedDataCommit.ps1").read_text(encoding="utf-8")
+        match = re.search(r"\\[ValidateSet\\((.*?)\\)\\]", helper, re.DOTALL)
+        self.assertIsNotNone(match, "Commit helper Scope ValidateSet must be present")
+        allowed = set(re.findall(r'"([^"]+)"', match.group(1)))
+        scopes = re.findall(r"--scope\\s+([A-Za-z0-9_-]+)", workflow)
+        self.assertEqual(["standings", "player-week-fantasy"], scopes)
+        self.assertTrue(set(scopes).issubset(allowed),
+                        f"Unsupported publication scopes: {set(scopes) - allowed}")
 
     def test_no_new_scheduler_and_live_pwf_keeps_existing_publication(self):
         root = TOOLS.parent
