@@ -388,7 +388,7 @@ workflows:
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly transaction/history rebuild dispatched by the central scheduler; surface a missed weekly cycle without paging on a single transient run immediately.
+    rationale: Weekly transaction/history rebuild dispatched by the central scheduler; the same rebuild-and-retry run now also publishes all canonical league seasons of Shared Derived LeagueTransactions and LeagueDrafts in one scoped commit with App data. Surface a missed weekly cycle without paging on a single transient run immediately.
   .github/workflows/update-standings.yml:
     category: routine
     relevantEvents:
