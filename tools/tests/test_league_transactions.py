@@ -348,6 +348,23 @@ class HistoricalPlayerReferenceTests(unittest.TestCase):
                           result["PlayerRefs"]["167"]["ResolutionStatus"]))
         self.assertEqual("Tom Brady", result["Drafts"][0]["Picks"][0]["PlayerName"])
 
+    def test_known_fantasy_position_wins_over_non_fantasy_profile_position(self):
+        identity = SleeperIdentityResolver(
+            {"Mappings": [{"Provider": "Sleeper", "ExternalID": "5", "CanonicalPlayerID": "NFLP-dual",
+                           "FirstObservedSeason": 2024, "LastObservedSeason": 2026}], "Conflicts": []},
+            {"Players": [{"CanonicalPlayerID": "NFLP-dual", "IDs": {"Sleeper": "5"}}]},
+        )
+        profile = {"CanonicalPlayerID": "NFLP-dual", "DisplayName": "Dual Player", "Position": "CB", "Headshot": None}
+        snapshot = {"SleeperPlayerID": "5", "CanonicalPlayerID": "NFLP-dual", "FullName": "Dual Player",
+                    "Position": "DB", "FantasyPositions": ["DB", "WR"]}
+        ref = LeaguePlayerReferenceResolver(identity, [profile], [snapshot]).resolve("5", 2025)
+        self.assertEqual("WR", ref["Position"])
+        self.assertEqual("sleeper.players.fantasy-position", ref["Provenance"]["Position"])
+        # Without a fantasy position anywhere the profile position stays the fallback.
+        snapshot = {**snapshot, "Position": "DB", "FantasyPositions": ["DB"]}
+        ref = LeaguePlayerReferenceResolver(identity, [profile], [snapshot]).resolve("5", 2025)
+        self.assertEqual(("CB", "nflverse.players"), (ref["Position"], ref["Provenance"]["Position"]))
+
     def test_temporal_id_reuse_does_not_leak_current_sleeper_snapshot(self):
         old = self.resolver().resolve("9", 2024)
         self.assertEqual(("NFLP-old", "Old Player", "RB"), (old["CanonicalPlayerID"], old["Name"], old["Position"]))
