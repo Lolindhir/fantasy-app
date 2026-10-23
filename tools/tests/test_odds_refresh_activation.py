@@ -33,7 +33,7 @@ class OddsRefreshActivationContractTests(unittest.TestCase):
         # The registry declares this as one fixed games.csv origin: passing a
         # Source --season filter would fail closed before acquisition.
         self.assertNotIn("season", source["with"])
-        self.assertEqual("full", source["with"]["materialization_scope"])
+        self.assertEqual("schedule-odds", source["with"]["materialization_scope"])
         self.assertIn("needs.observe.outputs.publish == 'true'", source["if"])
 
     def test_producer_writer_guard_and_derived_after_success(self):
