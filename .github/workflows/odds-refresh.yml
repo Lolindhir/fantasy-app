@@ -83,7 +83,8 @@ jobs:
     uses: ./.github/workflows/sync-nfl-source-data.yml
     with:
       dataset: nflverse.schedule-odds
-      season: ${{ needs.observe.outputs.season }}
+      # Fixed upstream games.csv dataset: --season is valid only for partitioned datasets.
+      # Season is scoped solely by the observer and canonical materialization.
       historical_backfill_limit: 0
       force: false
       materialization_scope: full
