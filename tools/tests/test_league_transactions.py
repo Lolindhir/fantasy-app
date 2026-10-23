@@ -355,6 +355,18 @@ class HistoricalPlayerReferenceTests(unittest.TestCase):
         self.assertEqual("https://static.www.nfl.com/image/upload/f_auto,q_auto,w_160/league/abc123",
                          resolver.resolve("3321", 2026)["Picture"])
 
+    def test_published_history_has_no_unsized_nfl_headshots(self):
+        """Persisted-state guard: an NFL image link without a width serves a multi-MB original."""
+        import re
+        root = Path(__file__).resolve().parents[2] / "public" / "data"
+        pattern = re.compile(r'https://static\.www\.nfl\.com/image/(?:upload|private)/([^/"]+)/')
+        files = [root / "Drafts.json", root / "Transactions.json",
+                 *(root / "past_seasons" / "Drafts").glob("*.json"),
+                 *(root / "past_seasons" / "Transactions").glob("*.json")]
+        for file in files:
+            for transform in pattern.findall(file.read_text(encoding="utf-8")):
+                self.assertIn("w_", transform, f"{file.name}: unsized NFL headshot")
+
     def test_known_fantasy_position_wins_over_non_fantasy_profile_position(self):
         identity = SleeperIdentityResolver(
             {"Mappings": [{"Provider": "Sleeper", "ExternalID": "5", "CanonicalPlayerID": "NFLP-dual",
