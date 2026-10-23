@@ -72,7 +72,7 @@ aborts the PWF batch before any write; the publisher scopes the commit to
 `data-derived/player-week-fantasy/**` and retries from latest `main` on a
 publication race. No new scheduler or special restore system is involved.
 
-## TeamWeekPerformance (in progress, not yet published)
+## TeamWeekPerformance (historical weekly publisher configured)
 
 Target dataset:
 
@@ -109,37 +109,41 @@ team's canonical matchup-week Players array is its complete retrospective
 candidate pool under ADR-036; no intraweek transfer replay is required.
 The adapter does not publish derived records.
 
-**Controlled producer (Draft PR #993 only):**
+**Controlled producer (merged PR #993):**
 
 ```shell
 # Single-week canonical audit; read-only by default.
 python3 tools/team_week_performance_materialize.py --league nfl-reise --season 2026 --week 5 --require-pwf
 
-# All registered leagues and seasons, all canonically scored weeks: read-only report.
-python3 tools/team_week_performance_materialize.py --all-finalized
+# All registered leagues and seasons, strict finalized-week PWF parity, read-only.
+python3 tools/team_week_performance_materialize.py --all-finalized --require-pwf
 
-# Explicit full write only after every candidate week passes preflight.
-python3 tools/team_week_performance_materialize.py --all-finalized --write
+# The established weekly update-standings.yml job invokes this behind its
+# dedicated rebuild-and-retry publisher, after the historical PWF job succeeds:
+python3 tools/team_week_performance_materialize.py --all-finalized --write --require-pwf
 ```
 
-The historical batch discovers leagues from `data-meta` and season identities
-from canonical League manifests, not App delivery or existing derived JSON.
-It determines potential weeks from League `WeekStructure` and independently
-validates finality, scoring, historical roster positions and PowerShell slot
-rules for every selected week. With `--write`, **all selected weeks are
-preflight-verified before any writes**, and a blocked week exits nonzero with
-no writes. Missing PWF snapshots report `not-available` parity; existing
-stale/non-final PWF is a blocker. Rebuilding PlayerWeekFantasy first is a
-separate cross-product orchestration responsibility (#471/#697). Batch writes
-are deterministic and second runs are no-ops.
+All target weeks are discovered from canonical `data-meta` / league
+manifests, never from the App's existing output inventory. NFL game finality,
+league scored-week bounds, historical player positions, real historical
+lineup eligibility, official matchup scoring and final PWF parity must pass
+for every week before any output is written. The narrowly versioned 2025/W06
+exception is accepted without rewriting either score. A blocked candidate
+prevents the entire batch write; unchanged output is a semantic no-op.
 
-The 2026 W03/W04/W05 partition files are currently committed **only
-to Draft PR #993**, with canonical-source and PlayerWeekFantasy parity validation,
-not to main. W03 was generated after #697 restored its final PWF Actual evidence;
-its 202/202 canonical fantasy player scores agree with PWF, and the persisted
-Award JSON is byte-identical to the existing deterministic generator output.
-A historical read-only batch audit found all 39 scored weeks in 2024–2026
-ready, with zero blocked weeks. A separate empty-derived-root integration test
-regenerated all 39 weeks and confirmed a second full run changes zero files.
-No automatic producer workflow, App publisher or Angular consumer is
-activated yet.
+The existing weekly `APP • Data • Standings` target schedules three jobs:
+Standings independently, historical PlayerWeekFantasy, then historical
+TeamWeekPerformance (dependent on successful PWF publication). The TWP
+publisher uses `tools/rebuild_and_publish.py` with **only**
+`data-derived/team-week-performance/**` allowed, rechecks on the latest
+`main` after publication races and does not alter Source, App, UI, live League
+refresh or Scheduler configuration.
+
+Acceptance baseline: the manual read-only historical Derived preflight
+[run #40030010930](https://github.com/Lolindhir/fantasy-app/actions/runs/40030010930)
+passed **40/40** completed league weeks, `PWFWouldChange=0`,
+`TWPWouldChange=37`, one approved scoring divergence and `SecondPassNoop=true`.
+Only 2026 W03-W05 were published on `main` before this weekly writer activation.
+A successful first real TWP publication followed by an unchanged no-op run and
+a complete 40-file inventory is required for production acceptance. This is
+not an App publisher or a second scheduled workflow.

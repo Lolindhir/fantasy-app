@@ -203,7 +203,6 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         self.assertNotIn("--scope historical-pwf", workflow)
         self.assertIn("--path data-derived/player-week-fantasy", workflow)
         self.assertIn("python3 tools/historical_pwf_batch.py --write", workflow)
-        self.assertNotIn("tools/team_week_performance", workflow)
         self.assertNotIn("tools/derived_data.py", workflow)
         self.assertIn("pwsh ./public/requests/RequestStandings.ps1", workflow)
         self.assertIn("--path public/data", workflow)
@@ -218,9 +217,46 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         self.assertIsNotNone(match, "Commit helper Scope ValidateSet must be present")
         allowed = set(re.findall(r'"([^"]+)"', match.group(1)))
         scopes = re.findall(r"--scope\s+([A-Za-z0-9_-]+)", workflow)
-        self.assertEqual(["standings", "player-week-fantasy"], scopes)
+        self.assertEqual(["standings", "player-week-fantasy", "team-week-performance"], scopes)
         self.assertTrue(set(scopes).issubset(allowed),
                         f"Unsupported publication scopes: {set(scopes) - allowed}")
+
+    def test_historical_twp_follows_successful_pwf_with_strict_scoped_writer(self):
+        root = TOOLS.parent
+        workflow = (root / ".github/workflows/update-standings.yml").read_text(encoding="utf-8")
+        self.assertEqual(workflow.count("\n  update:\n"), 1)
+        self.assertEqual(workflow.count("\n  historical_pwf:\n"), 1)
+        self.assertEqual(workflow.count("\n  historical_twp:\n"), 1)
+        independent_standings = workflow.split("\n  update:\n", 1)[1].split(
+            "\n  historical_pwf:\n", 1)[0]
+        twp = workflow.split("\n  historical_twp:\n", 1)[1]
+        self.assertNotIn("\n    needs:", independent_standings,
+                         "Independent Standings must not depend on historical outputs")
+        self.assertIn("\n    needs: historical_pwf\n", twp)
+        publisher = twp.split(
+            "      - name: Rebuild and publish every finalized TeamWeekPerformance partition\n",
+            1,
+        )[1].split("      - name:", 1)[0]
+        self.assertIn("tools/rebuild_and_publish.py", publisher)
+        self.assertIn("--scope team-week-performance", publisher)
+        self.assertIn("--path data-derived/team-week-performance", publisher)
+        self.assertIn("team_week_performance_materialize.py --all-finalized --write --require-pwf",
+                      publisher)
+        self.assertNotIn("--path public/data", publisher)
+        self.assertNotIn("data-source", publisher)
+        self.assertNotIn("git push", workflow)
+        self.assertEqual(workflow.count("historical_twp:"), 1)
+
+    def test_twp_scope_commit_label_and_pwf_order_are_not_accidental(self):
+        root = TOOLS.parent
+        helper = (root / ".github/scripts/Invoke-GeneratedDataCommit.ps1").read_text(
+            encoding="utf-8")
+        self.assertIn('"team-week-performance"', helper)
+        self.assertIn('^data-derived/team-week-performance/', helper)
+        workflow = (root / ".github/workflows/update-standings.yml").read_text(
+            encoding="utf-8")
+        self.assertLess(workflow.index("historical_pwf:"), workflow.index("historical_twp:"))
+        self.assertIn("needs: historical_pwf", workflow)
 
     def test_no_new_scheduler_and_live_pwf_keeps_existing_publication(self):
         root = TOOLS.parent
