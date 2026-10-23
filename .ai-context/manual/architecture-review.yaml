@@ -237,6 +237,9 @@ dimensions:
       Apply in both change-focused reviews and periodic repository-wide architecture audits.
       For non-code reviews, explicitly record not-applicable with rationale rather than
       treating a green CI result as proof. Never silently approve gaps in executed coverage.
+      Also compare Fast block run times from CI runs with the roughly 3-minute budget and name Deep
+      modules that contain cheap deterministic parts as Fast candidates (ai-guidance ciMaintenance).
+      Record findings in the owning Issue, not in a parallel list.
 
   validationAndInvariants:
     intent: Make architecture claims testable.
