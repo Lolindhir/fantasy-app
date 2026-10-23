@@ -343,7 +343,11 @@ class FinalityScopeExcludesOddsTests(unittest.TestCase):
     def test_finality_scope_syncs_the_schedule_but_never_the_odds_dataset(self) -> None:
         source = (ROOT / ".github/workflows/sync-nfl-source-data.yml").read_text(encoding="utf-8")
         self.assertIn('raw_sync_args+=(--dataset "nflverse.schedules")', source)
-        self.assertNotIn("schedule-odds", source)
+        # A scoped Odds-only caller can appear elsewhere in the workflow, but
+        # the game-finality raw dataset set itself must never include Odds.
+        self.assertNotIn('raw_sync_args+=(--dataset "nflverse.schedule-odds")', source)
+        self.assertIn('if [[ "${DATASET:-}" != "nflverse.game-finality" ]]', source)
+        self.assertIn("inputs.materialization_scope != 'game-finality'", source)
 
 
 if __name__ == "__main__":

@@ -190,5 +190,48 @@ class RealHistoricalPWFBatchTests(unittest.TestCase):
 
 
 
+
+class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
+    """Fast topology regression; real-source historical reconstruction remains Deep."""
+
+    def test_weekly_existing_standings_target_owns_isolated_historical_pwf_job(self):
+        root = TOOLS.parent
+        workflow = (root / ".github/workflows/update-standings.yml").read_text(encoding="utf-8")
+        self.assertIn("historical_pwf:", workflow)
+        self.assertEqual(1, workflow.count("historical_pwf:"))
+        self.assertIn("--scope player-week-fantasy", workflow)
+        self.assertNotIn("--scope historical-pwf", workflow)
+        self.assertIn("--path data-derived/player-week-fantasy", workflow)
+        self.assertIn("python3 tools/historical_pwf_batch.py --write", workflow)
+        self.assertNotIn("tools/team_week_performance", workflow)
+        self.assertNotIn("tools/derived_data.py", workflow)
+        self.assertIn("pwsh ./public/requests/RequestStandings.ps1", workflow)
+        self.assertIn("--path public/data", workflow)
+        self.assertIn("tools/rebuild_and_publish.py", workflow)
+
+    def test_weekly_publication_scope_matches_commit_helper_validateset(self):
+        import re
+        root = TOOLS.parent
+        workflow = (root / ".github/workflows/update-standings.yml").read_text(encoding="utf-8")
+        helper = (root / ".github/scripts/Invoke-GeneratedDataCommit.ps1").read_text(encoding="utf-8")
+        match = re.search(r"\[ValidateSet\((.*?)\)\]", helper, re.DOTALL)
+        self.assertIsNotNone(match, "Commit helper Scope ValidateSet must be present")
+        allowed = set(re.findall(r'"([^"]+)"', match.group(1)))
+        scopes = re.findall(r"--scope\s+([A-Za-z0-9_-]+)", workflow)
+        self.assertEqual(["standings", "player-week-fantasy"], scopes)
+        self.assertTrue(set(scopes).issubset(allowed),
+                        f"Unsupported publication scopes: {set(scopes) - allowed}")
+
+    def test_no_new_scheduler_and_live_pwf_keeps_existing_publication(self):
+        root = TOOLS.parent
+        schedule = json.loads((root / ".github/workflow-schedules.json").read_text(encoding="utf-8"))
+        targets = [x for x in schedule["targets"] if x["id"] == "standings"]
+        self.assertEqual(1, len(targets))
+        self.assertEqual("update-standings.yml", targets[0]["workflow"])
+        self.assertEqual(["35 3 * * 3"], targets[0]["cron"])
+        live = (root / ".github/workflows/league-live.yml").read_text(encoding="utf-8")
+        self.assertIn("python3 tools/player_week_fantasy_refresh.py", live)
+        self.assertNotIn("python3 tools/historical_pwf_batch.py --write", live)
+
 if __name__ == "__main__":
     unittest.main()

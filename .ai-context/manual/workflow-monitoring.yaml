@@ -322,6 +322,12 @@ workflows:
     consecutiveFailures: 1
     staleAfterMinutes: 1800
     rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes, while failures or a missed daily cycle should surface promptly. Manual repair runs remain non-paging.
+  .github/workflows/odds-refresh.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    consecutiveFailures: 1
+    rationale: Central game-window Odds observer uses a dedicated CAS technical branch and delegates any approved Spread/Total Source publication to the existing validated NFL Source Sync; source and Derived failures are actionable, idle ticks do not create main commits.
   .github/workflows/nfl-live.yml:
     category: important
     relevantEvents:
@@ -388,13 +394,13 @@ workflows:
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly transaction/history rebuild dispatched by the central scheduler; surface a missed weekly cycle without paging on a single transient run immediately.
+    rationale: Weekly transaction/history rebuild dispatched by the central scheduler; the same rebuild-and-retry run now also publishes all canonical league seasons of Shared Derived LeagueTransactions and LeagueDrafts in one scoped commit with App data. Surface a missed weekly cycle without paging on a single transient run immediately.
   .github/workflows/update-standings.yml:
     category: routine
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly between-week standings refresh as scheduler fallback and manual repair path. Current Standings are rebuilt by the League Live pipeline (league-live.yml) whenever canonical nfl-reise league/member/roster/playoff-bracket inputs change; this workflow no longer has push triggers (Issue #945). The long staleness threshold reflects the weekly fallback cadence.
+    rationale: Weekly Standings fallback and separately scoped all-finalized PlayerWeekFantasy materialization run as independent jobs of the same existing scheduler target. The PWF job owns only data-derived/player-week-fantasy via rebuild-and-retry, after source/finality preflight; failure is visible without suppressing Standings output. Current Standings and live PWF are separately handled by ten-minute League Live. The long staleness threshold reflects the weekly cadence.
   .github/workflows/update-teams.yml:
     category: routine
     relevantEvents:

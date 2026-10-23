@@ -649,9 +649,9 @@ jobs:
   nfl_games_derived:
     name: Publish global NFL Game Shared Derived
     needs: sync
-    # Only after the full daily Source sync, never for NFL Live game-finality
-    # or a single targeted Source dataset. No new schedule or branch writer.
-    if: ${{ needs.sync.result == 'success' && inputs.materialization_scope != 'game-finality' && !inputs.dataset }}
+    # After full daily Source or scoped nflverse.schedule-odds refresh only.
+    # NFL Live game-finality and all other targeted datasets remain excluded.
+    if: ${{ needs.sync.result == 'success' && inputs.materialization_scope != 'game-finality' && (!inputs.dataset || inputs.dataset == 'nflverse.schedule-odds') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

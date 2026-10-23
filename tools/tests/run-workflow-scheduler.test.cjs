@@ -18,6 +18,7 @@ const EXPECTED = {
   'update-teams.yml': { timezone: 'America/New_York', cron: ['35 4 * * 3'] },
   'sync-nfl-source-data.yml': { timezone: 'Europe/Berlin', cron: ['0 4 * * *'] },
   'nfl-live.yml': { timezone: 'Europe/Berlin', cron: ['*/10 * * * *'] },
+  'odds-refresh.yml': { timezone: 'Etc/UTC', cron: ['*/10 * * * *'] },
   'sync-nfl-player-availability.yml': { timezone: 'Europe/Berlin', cron: ['9-59/10 * * 9-12,1 *'] },
   'sync-league-source-data.yml': { timezone: 'Europe/Berlin', cron: ['30 4 * * *'] },
   'source-data-readiness.yml': { timezone: 'Europe/Berlin', cron: ['0 5 * * *'] },
@@ -65,10 +66,10 @@ test('central config preserves all migrated schedules, profiles and state contra
   const config = loadConfig();
   scheduler.validateConfig(config);
   assert.equal(config.schemaVersion, 2);
-  assert.equal(config.targets.length, 14);
+  assert.equal(config.targets.length, 15);
   const actual = Object.fromEntries(config.targets.map((item) => [item.workflow, { timezone: item.timezone, cron: item.cron }]));
   assert.deepEqual(actual, EXPECTED);
-  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 14);
+  assert.equal(new Set(config.targets.map((item) => item.eventType)).size, 15);
   assert.deepEqual(config.state, {
     schemaVersion: 1,
     branch: 'workflow-scheduler-state',
@@ -77,7 +78,7 @@ test('central config preserves all migrated schedules, profiles and state contra
   assert.deepEqual(config.retryPolicies.standard, retryPolicy);
   assert.equal(config.targets.find((item) => item.id === 'backup-cleanup').profile, 'maintenance');
   assert.equal(config.targets.find((item) => item.id === 'workflow-health').profile, 'observer');
-  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 10);
+  assert.equal(config.targets.filter((item) => item.profile === 'productive').length, 11);
   assert.deepEqual(config.targets.find((item) => item.id === 'workflow-health').deferUntilOtherTargetsSettled, { maxMinutes: 20 });
 });
 

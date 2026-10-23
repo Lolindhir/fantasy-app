@@ -253,3 +253,23 @@ openPoints:
     text: The overlay stays in public/data until step 5; its move is coordinated with Issue #986.
   - id: product-size
     text: Estimated from the current consumer files (about 0.2 MB Transactions and 0.4 MB Drafts for all seasons, measured in step 2/3); whether the history is committed stays a step 5 decision.
+
+weeklyDerivedPublication:
+  trackingIssue: 471
+  workflow: .github/workflows/update-transactions.yml
+  cadence: existing central weekly transactions scheduler, no additional scheduler target
+  producers:
+    - "tools/derived_data.py materialize --product league-transactions --league nfl-reise"
+    - "tools/derived_data.py materialize --product league-drafts --league nfl-reise"
+  behavior: >-
+    The pre-existing weekly transaction pipeline rederives the historical
+    transaction and draft products for every season in the canonical league
+    manifest, then runs its established App history and past-seasons generators.
+    Both data-derived prefixes and public/data are committed by one
+    rebuild-and-retry publisher, with semantic no-op behavior. Both producer
+    calls and the App renderer must succeed before anything is committed.
+    The transitional public/data/Standings.json dependency for draft placement
+    is unchanged; this is not a claim of source-only restoration.
+  exclusions: >-
+    No new workflow, cron, source/model policy, App contract, historical
+    PlayerWeekFantasy/TeamWeekPerformance writer or UI activation.
