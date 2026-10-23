@@ -231,7 +231,7 @@
                       } @else {
                         <span class="historical-player-ref">
                           @if (pick.PlayerRef?.Picture; as picture) {
-                            <img class="historical-player-portrait" [src]="picture" alt="" loading="lazy" decoding="async" />
+                            <img class="historical-player-portrait" [src]="picture | playerPicture" alt="" loading="lazy" decoding="async" />
                           }
                           <span>{{ historicalPlayerName(pick) }}</span>
                           @if (pick.PlayerRef?.Position; as position) {

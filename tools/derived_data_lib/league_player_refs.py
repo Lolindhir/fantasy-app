@@ -12,7 +12,7 @@ from typing import Any, Callable
 from data_roots import DATA_SOURCE_ROOT
 from historical_fantasy_scoring import read_json
 from players_league_scoring import SleeperIdentityResolver
-from players_population import app_fantasy_position
+from players_population import app_fantasy_position, sized_headshot
 
 
 def _clean(value: Any) -> str | None:
@@ -107,7 +107,8 @@ class LeaguePlayerReferenceResolver:
         if position is None and snapshot:
             position = _clean(snapshot.get("Position"))
             position_source = "sleeper.players" if position else None
-        picture = _clean(profile.get("Headshot")) if profile else None
+        # An unsized NFL image link serves the 1 to 5 MB original; display needs a small rendition.
+        picture = sized_headshot(_clean(profile.get("Headshot"))) if profile else None
 
         return {
             "CanonicalPlayerID": canonical_id,

@@ -1,3 +1,4 @@
+import { sizedPlayerPicture } from '../../utils/player-picture.util';
 import type {
   TransactionDraftPick,
   TransactionParticipant,
@@ -66,7 +67,7 @@ function presentPlayerAsset(asset: TransactionPlayerAsset): TransactionCardAsset
     key: `player:${asset.PlayerID}`,
     label: historical ? (historical.Name || `Player ${asset.PlayerID}`) : (player?.Name || `Player ${asset.PlayerID}`),
     secondary: [historical ? historical.Position : player?.Position, historical ? null : player?.TeamNFL?.Abv].filter(Boolean).join(' · '),
-    portrait: historical ? historical.Picture ?? undefined : player?.Picture,
+    portrait: sizedPlayerPicture(historical ? historical.Picture : player?.Picture) ?? undefined,
     nflTeamLogo: historical ? undefined : player?.TeamNFL?.Logo,
     nflTeamAbv: historical ? undefined : player?.TeamNFL?.Abv,
     position: historical ? historical.Position ?? undefined : player?.Position,

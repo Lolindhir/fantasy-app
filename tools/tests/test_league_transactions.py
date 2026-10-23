@@ -348,6 +348,13 @@ class HistoricalPlayerReferenceTests(unittest.TestCase):
                           result["PlayerRefs"]["167"]["ResolutionStatus"]))
         self.assertEqual("Tom Brady", result["Drafts"][0]["Picks"][0]["PlayerName"])
 
+    def test_nfl_headshot_in_player_refs_is_sized(self):
+        unsized = "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/abc123"
+        resolver = self.resolver()
+        resolver.profiles["NFLP-tyreek"]["Headshot"] = unsized
+        self.assertEqual("https://static.www.nfl.com/image/upload/f_auto,q_auto,w_160/league/abc123",
+                         resolver.resolve("3321", 2026)["Picture"])
+
     def test_known_fantasy_position_wins_over_non_fantasy_profile_position(self):
         identity = SleeperIdentityResolver(
             {"Mappings": [{"Provider": "Sleeper", "ExternalID": "5", "CanonicalPlayerID": "NFLP-dual",
