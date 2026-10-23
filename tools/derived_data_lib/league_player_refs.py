@@ -12,7 +12,7 @@ from typing import Any, Callable
 from data_roots import DATA_SOURCE_ROOT
 from historical_fantasy_scoring import read_json
 from players_league_scoring import SleeperIdentityResolver
-from players_population import sized_headshot
+from players_population import app_fantasy_position, sized_headshot
 
 
 def _clean(value: Any) -> str | None:
@@ -97,8 +97,13 @@ class LeaguePlayerReferenceResolver:
             name = _clean(event_name)
             name_source = "league.draft.pick.PlayerName" if name else None
 
-        position = _clean(profile.get("Position")) if profile else None
-        position_source = "nflverse.players" if position else None
+        # Same rule as Players.json (Get-AppFantasyPosition): a known fantasy position of the
+        # identified player wins over a non-fantasy primary position such as CB for a WR/CB player.
+        position = app_fantasy_position(snapshot.get("Position"), snapshot.get("FantasyPositions")) if snapshot else None
+        position_source = "sleeper.players.fantasy-position" if position else None
+        if position is None and profile:
+            position = _clean(profile.get("Position"))
+            position_source = "nflverse.players" if position else None
         if position is None and snapshot:
             position = _clean(snapshot.get("Position"))
             position_source = "sleeper.players" if position else None
