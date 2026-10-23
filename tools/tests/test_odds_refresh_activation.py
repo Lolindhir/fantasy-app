@@ -30,6 +30,9 @@ class OddsRefreshActivationContractTests(unittest.TestCase):
         source = doc["jobs"]["publish_source"]
         self.assertEqual("./.github/workflows/sync-nfl-source-data.yml", source["uses"])
         self.assertEqual("nflverse.schedule-odds", source["with"]["dataset"])
+        # The registry declares this as one fixed games.csv origin: passing a
+        # Source --season filter would fail closed before acquisition.
+        self.assertNotIn("season", source["with"])
         self.assertEqual("full", source["with"]["materialization_scope"])
         self.assertIn("needs.observe.outputs.publish == 'true'", source["if"])
 
