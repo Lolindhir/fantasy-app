@@ -10,6 +10,7 @@ import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../../
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
+import { PlayerPicturePipe } from '../../pipes/player-picture.pipe';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { formatDecisionWindowsUpdatedAt } from '../../utils/decision-window-view.util';
 import { getDraftRoundColor } from '../../utils/draft-ui.util';
@@ -85,6 +86,7 @@ interface TeamHistoryRow {
     CommonModule,
     MatDialogModule,
     MatTabsModule,
+    PlayerPicturePipe,
     MatButtonToggleModule,
     SharedMaterialImports,
     PositionStylePipe,

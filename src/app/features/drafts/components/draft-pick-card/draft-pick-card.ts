@@ -5,6 +5,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { DraftPickContextPopoverComponent } from '../../../../shared/components/draft-pick-context/draft-pick-context-popover';
 import type { DraftPickContext } from '../../../../shared/components/draft-pick-context/draft-pick-context.models';
 import { PositionStylePipe } from '../../../../shared/pipes/position-style.pipe';
+import { sizedPlayerPicture } from '../../../../shared/utils/player-picture.util';
 import type { DraftPickViewModel, DraftViewModel } from '../../models/drafts-view.models';
 
 @Component({
@@ -38,7 +39,7 @@ export class DraftPickCardComponent {
 
   get selectedPlayerPicture(): string | undefined {
     const ref = this.item.pick.PlayerRef;
-    return ref ? ref.Picture ?? undefined : this.item.selectedPlayer?.Picture;
+    return sizedPlayerPicture(ref ? ref.Picture : this.item.selectedPlayer?.Picture) ?? undefined;
   }
 
   get tileContextLabel(): string {

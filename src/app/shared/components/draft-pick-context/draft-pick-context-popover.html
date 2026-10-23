@@ -22,7 +22,7 @@
   } @else if (selectedPlayerName; as playerName) {
     <span class="picked-player-fallback">
       @if (selectedPlayerRef?.Picture; as picture) {
-        <img class="picked-player-picture" [src]="picture" alt="" loading="lazy" decoding="async" />
+        <img class="picked-player-picture" [src]="picture | playerPicture" alt="" loading="lazy" decoding="async" />
       }
       <span class="picked-player-main">
         <strong>{{ playerName }}</strong>

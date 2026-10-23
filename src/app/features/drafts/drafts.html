@@ -79,7 +79,7 @@
                             @if (item.pick.PlayerRef?.Name || item.pick.PlayerName) {
                               <div class="picked-player">
                                 @if (item.pick.PlayerRef?.Picture; as picture) {
-                                  <img class="picked-player-portrait" [src]="picture" alt="" loading="lazy" decoding="async" />
+                                  <img class="picked-player-portrait" [src]="picture | playerPicture" alt="" loading="lazy" decoding="async" />
                                 }
                                 <span>{{ item.pick.PlayerRef?.Name || item.pick.PlayerName }}</span>
                                 @if (item.pick.PlayerRef?.Position; as position) {
