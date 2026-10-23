@@ -265,7 +265,7 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
     if path.startswith(("tools/external_source/", "tools/market_observations",
                         "tools/odds_")):
         return {"market-restore", "consumer-restore"}, "Market-source-implementation"
-    if path.startswith(("tools/nfl_games", "tools/derived_data", "tools/player_valuation",
+    if path.startswith(("tools/nfl_games", "tools/derived_data", "tools/derived_clean_root_audit", "tools/player_valuation",
                         "tools/league_history", "tools/schedule_archive")):
         return {"league-pwf-twp", "consumer-restore"}, "Derived-consumer-implementation"
     if path.startswith("public/requests/") and path.endswith((".ps1", ".psm1")):
