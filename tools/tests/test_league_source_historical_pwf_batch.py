@@ -214,10 +214,10 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         root = TOOLS.parent
         workflow = (root / ".github/workflows/update-standings.yml").read_text(encoding="utf-8")
         helper = (root / ".github/scripts/Invoke-GeneratedDataCommit.ps1").read_text(encoding="utf-8")
-        match = re.search(r"\\[ValidateSet\\((.*?)\\)\\]", helper, re.DOTALL)
+        match = re.search(r"\[ValidateSet\((.*?)\)\]", helper, re.DOTALL)
         self.assertIsNotNone(match, "Commit helper Scope ValidateSet must be present")
         allowed = set(re.findall(r'"([^"]+)"', match.group(1)))
-        scopes = re.findall(r"--scope\\s+([A-Za-z0-9_-]+)", workflow)
+        scopes = re.findall(r"--scope\s+([A-Za-z0-9_-]+)", workflow)
         self.assertEqual(["standings", "player-week-fantasy"], scopes)
         self.assertTrue(set(scopes).issubset(allowed),
                         f"Unsupported publication scopes: {set(scopes) - allowed}")
