@@ -63,6 +63,15 @@ Consumer-specific publication and identity adaptation happen downstream. The
 shared layer remains keyed by `CanonicalPlayerID`; App/Sleeper identity joins
 belong to the later App publisher.
 
+The existing weekly `APP • Data • Standings` scheduler target runs a separate
+`historical_pwf` job. It re-generates every registered league's **finalized**
+PlayerWeekFantasy week from canonical NFL and League inputs using
+`tools/historical_pwf_batch.py --write`. The original Standings and current-week
+League Live jobs stay independent. A non-final or incomplete historical week
+aborts the PWF batch before any write; the publisher scopes the commit to
+`data-derived/player-week-fantasy/**` and retries from latest `main` on a
+publication race. No new scheduler or special restore system is involved.
+
 ## TeamWeekPerformance (in progress, not yet published)
 
 Target dataset:
