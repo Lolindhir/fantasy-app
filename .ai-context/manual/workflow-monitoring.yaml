@@ -394,7 +394,7 @@ workflows:
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly between-week standings refresh as scheduler fallback and manual repair path. Current Standings are rebuilt by the League Live pipeline (league-live.yml) whenever canonical nfl-reise league/member/roster/playoff-bracket inputs change; this workflow no longer has push triggers (Issue #945). The long staleness threshold reflects the weekly fallback cadence.
+    rationale: Weekly Standings fallback and separately scoped all-finalized PlayerWeekFantasy materialization run as independent jobs of the same existing scheduler target. The PWF job owns only data-derived/player-week-fantasy via rebuild-and-retry, after source/finality preflight; failure is visible without suppressing Standings output. Current Standings and live PWF are separately handled by ten-minute League Live. The long staleness threshold reflects the weekly cadence.
   .github/workflows/update-teams.yml:
     category: routine
     relevantEvents:

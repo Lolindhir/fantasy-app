@@ -421,6 +421,24 @@ historicalBatch:
     historical partial audit do not authorize all-season publication or
     relaxing the original scoring/identity rules.
   activation: >-
-    No Actions workflow, central scheduler cadence, main publication or App
-    refresh change is included in this initial module. Cross-product
-    incremental/full/check orchestration remains owned by Issue #471.
+    The existing weekly APP Data Standings workflow has an independent
+    historical_pwf job that materializes every canonical scored/finalized week
+    with the original deterministic generator and publishes changed snapshots
+    through a scoped rebuild-and-retry writer. The 10-minute League Live current
+    week App/Shared-Derived bridge remains unchanged. No added scheduler target,
+    new scoring formula, TeamWeekPerformance publication or App contract.
+    A blocked week prevents every write in that weekly historical batch.
+  weeklyPublisher:
+    workflow: .github/workflows/update-standings.yml::historical_pwf
+    schedule: existing central standings scheduler, Wednesday 03:35 America/New_York
+    entrypoint: python3 tools/historical_pwf_batch.py --write
+    registeredLeagues: from data-meta and canonical manifests, no fixed Sleeper league ID
+    allowedPaths:
+      - data-derived/player-week-fantasy/**
+    safety: >-
+      Source and canonical NFL finality are checked for the complete historical
+      target inventory before the materializer writes. A blocked target exits
+      nonzero and prevents a publication. The classified publisher rebuilds from
+      latest main on race and commits only changed PWF snapshots.
+      The live producer may concurrently publish a current-week partition;
+      both use rebuild-and-retry on the same prefix without force pushing.
