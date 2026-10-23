@@ -322,6 +322,12 @@ workflows:
     consecutiveFailures: 1
     staleAfterMinutes: 1800
     rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes, while failures or a missed daily cycle should surface promptly. Manual repair runs remain non-paging.
+  .github/workflows/odds-refresh.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    consecutiveFailures: 1
+    rationale: Central game-window Odds observer uses a dedicated CAS technical branch and delegates any approved Spread/Total Source publication to the existing validated NFL Source Sync; source and Derived failures are actionable, idle ticks do not create main commits.
   .github/workflows/nfl-live.yml:
     category: important
     relevantEvents:

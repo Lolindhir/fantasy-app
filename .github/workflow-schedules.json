@@ -177,6 +177,29 @@
       ]
     },
     {
+      "id": "nfl-odds-refresh",
+      "workflow": "odds-refresh.yml",
+      "path": ".github/workflows/odds-refresh.yml",
+      "eventType": "scheduler-nfl-odds-refresh",
+      "profile": "productive",
+      "timezone": "Etc/UTC",
+      "cron": [
+        "*/10 * * * *"
+      ],
+      "mode": "game-window",
+      "gameWindow": {
+        "preKickoffMinutes": 2880,
+        "postFinalMinutes": 60,
+        "idleCron": [
+          "7 */6 * 9-12,1 *"
+        ]
+      },
+      "satisfyingEvents": [
+        "repository_dispatch",
+        "workflow_dispatch"
+      ]
+    },
+    {
       "id": "nfl-player-availability",
       "workflow": "sync-nfl-player-availability.yml",
       "path": ".github/workflows/sync-nfl-player-availability.yml",
