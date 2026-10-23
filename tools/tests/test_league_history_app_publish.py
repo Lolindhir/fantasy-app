@@ -228,5 +228,37 @@ class WriteTests(unittest.TestCase):
             self.assertNotIn("public/data/past_seasons/Drafts/Drafts_2025.json", second)
 
 
+
+class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
+    """Keep both existing LeagueHistory products inside one classified weekly writer."""
+
+    def test_existing_weekly_writer_publishes_both_derived_families_and_app(self):
+        workflow = (TOOLS.parent / ".github/workflows/update-transactions.yml").read_text(encoding="utf-8")
+        self.assertIn("--scope transactions", workflow)
+        self.assertIn("--path public/data", workflow)
+        self.assertIn("--path data-derived/league-transactions", workflow)
+        self.assertIn("--path data-derived/league-drafts", workflow)
+        self.assertIn("bash -euo pipefail -c", workflow)
+        first = workflow.index("materialize --product league-transactions --league nfl-reise")
+        second = workflow.index("materialize --product league-drafts --league nfl-reise")
+        consumer = workflow.index("league_history_app_publish.py write --fail-on-error")
+        self.assertLess(first, second)
+        self.assertLess(second, consumer)
+        self.assertIn("schedule_archive.py write", workflow)
+        self.assertIn("RequestPastSeasonsIndex.ps1", workflow)
+
+    def test_no_new_scheduler_target_or_live_ten_minute_history_job(self):
+        import json
+        schedules = json.loads(
+            (TOOLS.parent / ".github/workflow-schedules.json").read_text(encoding="utf-8")
+        )
+        targets = [item for item in schedules["targets"] if item["id"] == "transactions"]
+        self.assertEqual(1, len(targets))
+        self.assertEqual("update-transactions.yml", targets[0]["workflow"])
+        self.assertEqual(["5 4 * * 3"], targets[0]["cron"])
+        league_live = (TOOLS.parent / ".github/workflows/league-live.yml").read_text(encoding="utf-8")
+        self.assertNotIn("derived_data.py materialize --product league-transactions", league_live)
+        self.assertNotIn("derived_data.py materialize --product league-drafts", league_live)
+
 if __name__ == "__main__":
     unittest.main()
