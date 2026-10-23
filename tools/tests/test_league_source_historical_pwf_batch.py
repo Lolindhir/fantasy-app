@@ -222,18 +222,21 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
                         f"Unsupported publication scopes: {set(scopes) - allowed}")
 
     def test_historical_twp_follows_successful_pwf_with_strict_scoped_writer(self):
-        import yaml
         root = TOOLS.parent
         workflow = (root / ".github/workflows/update-standings.yml").read_text(encoding="utf-8")
-        parsed = yaml.safe_load(workflow)
-        jobs = parsed["jobs"]
-        self.assertEqual(set(jobs), {"update", "historical_pwf", "historical_twp"})
-        self.assertEqual(jobs["historical_twp"]["needs"], "historical_pwf")
-        self.assertNotIn("needs", jobs["update"],
+        self.assertEqual(workflow.count("\n  update:\n"), 1)
+        self.assertEqual(workflow.count("\n  historical_pwf:\n"), 1)
+        self.assertEqual(workflow.count("\n  historical_twp:\n"), 1)
+        independent_standings = workflow.split("\n  update:\n", 1)[1].split(
+            "\n  historical_pwf:\n", 1)[0]
+        twp = workflow.split("\n  historical_twp:\n", 1)[1]
+        self.assertNotIn("\n    needs:", independent_standings,
                          "Independent Standings must not depend on historical outputs")
-        steps = jobs["historical_twp"]["steps"]
-        publisher = next(step["run"] for step in steps
-                         if step["name"].startswith("Rebuild and publish"))
+        self.assertIn("\n    needs: historical_pwf\n", twp)
+        publisher = twp.split(
+            "      - name: Rebuild and publish every finalized TeamWeekPerformance partition\n",
+            1,
+        )[1].split("      - name:", 1)[0]
         self.assertIn("tools/rebuild_and_publish.py", publisher)
         self.assertIn("--scope team-week-performance", publisher)
         self.assertIn("--path data-derived/team-week-performance", publisher)
