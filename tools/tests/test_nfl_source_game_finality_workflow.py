@@ -70,23 +70,23 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertIn("python tools/nfl_source_data.py audit", source)
         self.assertIn("Full NFL audit: read/write disabled for scoped materialization", source)
 
-    def test_scoped_workflow_uses_shallow_checkout_and_targeted_tests(self) -> None:
+    def test_production_source_sync_skips_regressions_but_keeps_data_guards(self) -> None:
         source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
         self.assertIn("inputs.materialization_scope == 'game-finality' && 1 || 0", source)
-        self.assertIn("python -m unittest tools.tests.test_nfl_source_game_finality_scope -v", source)
-        self.assertIn('discover -s tools/tests -p "test_nfl_source*.py" -v', source)
+        self.assertIn("- name: Report production validation boundary", source)
+        self.assertNotIn("- name: Test NFL data-source tooling", source)
+        self.assertNotIn('discover -s tools/tests -p "test_nfl_source*.py" -v', source)
+        self.assertNotIn("python -m unittest tools.tests.test_nfl_source_game_finality_scope -v", source)
+        self.assertIn('python tools/nfl_source_data.py "${raw_sync_args[@]}"', source)
+        self.assertIn('python tools/nfl_source_data.py "${materialize_args[@]}"', source)
+        self.assertIn("Second idempotency check (attempt", source)
+        self.assertIn("assert_scoped_canonical_write_set", source)
 
-    def test_repo_state_audit_runs_after_materialization_not_in_pre_gate(self) -> None:
-        # Issue #814 / ADR-039: the repo-state identity audit fails closed while
-        # persisted identities lag behind Players.json, which the sync repairs.
+    def test_repo_state_audit_runs_after_materialization_without_pre_gate(self) -> None:
+        # The real-data identity audit belongs after materialization (ADR-039).
         source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
-        skip = "NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT=1"
-        self.assertEqual(source.count(skip), 1)
-        self.assertLess(
-            source.index(skip),
-            source.index("- name: Sync, validate and publish NFL source data"),
-        )
-        self.assertNotIn("NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT:", source)
+        self.assertNotIn("NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT", source)
+        self.assertEqual(source.count("python -m unittest "), 1)
 
         audit_cmd = (
             "python -m unittest "
@@ -107,7 +107,7 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         for marker in (
             "Queue before job start",
             "Checkout:",
-            "Tests (",
+            "Regression suites: PR Fast / periodic full audit",
             "Raw Fetch",
             "Scoped Materialization",
             "Second idempotency check",
