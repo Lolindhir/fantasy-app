@@ -2307,3 +2307,46 @@ decisions:
           periodic audit, as accepted in ADR-067.
         - Targeted Odds publishing still performs full canonical materialization
           until the independent scoped-publishing change is implemented.
+
+  - id: ADR-069
+    title: Scope intelligent Odds canonical materialization to schedule-odds
+    status: accepted
+    context: >
+      The 10-minute intelligent Odds observer previously delegated to the
+      full NFL Source materializer. The full identity, roster, draft,
+      Combine and historical pipeline was rebuilt twice even for an
+      odds-only update. ADR-068 separated unit regressions from runtime
+      but did not address this materialization cost.
+    decision: >
+      Extend the existing NFL Source CLI and reusable workflow with a
+      schedule-odds scope restricted to dataset=nflverse.schedule-odds
+      (fixed raw source, no season argument). Reuse the full canonical
+      schedule and odds builders to preserve GameID joins, validation,
+      output schema and lifecycle rules. Evaluate the schedule raw
+      evidence but require its canonical effective partitions to match
+      previously published canonical schedules; a mismatch fails closed
+      until a normal full Source Sync reconciles the schedules.
+      Publish only data-source/nfl/schedule-odds/** as a scoped canonical
+      writer. Keep the existing two-phase raw-first transaction,
+      deterministic second semantic no-op pass, guarded path set and
+      race-safe publication. Narrow the scoped materialization's Git
+      input paths to schedules, odds and their producer code; unrelated
+      player and league updates cannot change this output.
+      The existing Source concurrency group and dependent NFL Game
+      Derived publisher stay unchanged. Do not introduce a new workflow
+      or another owner of canonical Odds.
+    rationale: >
+      Odds changes do not invalidate player identity or weekly source
+      products. Reusing the canonical builders avoids second-source
+      computation, while strict schedule parity prevents odds from
+      referring to unpublished schedule revisions.
+    consequences:
+      positive:
+        - The Odds-specific publish path avoids full identity/roster rebuilds.
+        - The scoped writer cannot modify unrelated canonical data.
+        - Unrelated updates need not trigger expensive Odds rebuild retries.
+      negative:
+        - Missing or stale published schedules block scoped Odds until
+          reconciled by full Source Sync.
+        - Odds may still queue behind the full Source publisher because
+          concurrency is unchanged in this checkpoint.

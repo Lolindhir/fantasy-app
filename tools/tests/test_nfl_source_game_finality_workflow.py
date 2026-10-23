@@ -70,6 +70,23 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertIn("python tools/nfl_source_data.py audit", source)
         self.assertIn("Full NFL audit: read/write disabled for scoped materialization", source)
 
+    def test_schedule_odds_scope_uses_existing_safe_publisher(self) -> None:
+        source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        odds = (WORKFLOWS / "odds-refresh.yml").read_text(encoding="utf-8")
+        self.assertIn("materialization_scope: schedule-odds", odds)
+        self.assertIn('if [[ "${DATASET:-}" != "nflverse.schedule-odds" ]]', source)
+        self.assertIn("schedule-odds scope does not accept a season filter", source)
+        self.assertIn("materialize_args+=(--scope schedule-odds)", source)
+        self.assertIn('data-source/nfl/schedule-odds/*', source)
+        self.assertIn('"oddsFilesChanged": 0', source)
+        self.assertIn('"oddsChangedPaths": []', source)
+        self.assertIn("data-source/providers/nflverse/schedules", source)
+        self.assertIn("data-source/providers/nflverse/schedule-odds", source)
+        self.assertIn("data-source/nfl/schedules", source)
+        self.assertIn("data-source/nfl/schedule-odds", source)
+        self.assertIn("inputs.materialization_scope != 'game-finality'", source)
+        self.assertIn("data-derived/nfl-games", source)
+
     def test_production_source_sync_skips_regressions_but_keeps_data_guards(self) -> None:
         source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
         self.assertIn("inputs.materialization_scope == 'game-finality' && 1 || 0", source)

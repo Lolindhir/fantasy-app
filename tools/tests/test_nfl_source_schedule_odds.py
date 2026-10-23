@@ -14,6 +14,7 @@ sys.path.insert(0, str(TOOLS))
 
 from nfl_source_data_lib import common as common_mod
 from nfl_source_data_lib.phase1 import _build_schedule_odds, _build_schedules
+from nfl_source_data_lib.schedule_odds_materialize import materialize_schedule_odds
 from data_roots import DATA_SOURCE_ROOT
 from nfl_source_data_lib.source_projection import (
     SCHEDULE_ODDS_COLUMNS,
@@ -337,6 +338,129 @@ class CanonicalScheduleOddsMaterializationTests(unittest.TestCase):
             frozen, _, preserved = _build_schedule_odds(root, odds, index, 2026, force=False)
             self.assertEqual(1, preserved)
             self.assertEqual(original, frozen[0][1])
+
+
+class ScopedOddsMaterializationTests(unittest.TestCase):
+    def _fixture(self, root: Path, rows: list[dict[str, str]]) -> dict[str, common_mod.Dataset]:
+        source_root = root / DATA_SOURCE_ROOT
+        datasets = {
+            "nflverse.schedules": dataset(
+                source_root, "nflverse.schedules",
+                SCHEDULE_WITHOUT_ODDS_PROJECTION_ID, ("game_id", "season", "away_team"),
+            ),
+            "nflverse.schedule-odds": dataset(
+                source_root, "nflverse.schedule-odds",
+                SCHEDULE_ODDS_PROJECTION_ID, ("game_id", "spread_line"),
+            ),
+        }
+        for item in datasets.values():
+            item.raw_path.parent.mkdir(parents=True, exist_ok=True)
+            write_upstream(item.raw_path, rows)
+        schedules, _, _, _ = _build_schedules(
+            root, datasets["nflverse.schedules"], 2026, force=False
+        )
+        for path, payload in schedules:
+            self.assertTrue(common_mod.write_json_if_changed(path, payload))
+        return datasets
+
+    def _run(self, root: Path, datasets: dict) -> dict:
+        with patch(
+            "nfl_source_data_lib.schedule_odds_materialize._observation_season",
+            return_value=2026,
+        ):
+            return materialize_schedule_odds(root, datasets)
+
+    def test_odds_only_writes_and_second_pass_is_noop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            datasets = self._fixture(root, [game()])
+            schedule = root / DATA_SOURCE_ROOT / "nfl/schedules/2026.json"
+            before = schedule.read_bytes()
+            first = self._run(root, datasets)
+            self.assertEqual(1, first["oddsFilesChanged"])
+            self.assertEqual(
+                ["data-source/nfl/schedule-odds/2026.json"], first["oddsChangedPaths"]
+            )
+            self.assertEqual(before, schedule.read_bytes())
+            second = self._run(root, datasets)
+            self.assertEqual(0, second["oddsFilesChanged"])
+            self.assertEqual([], second["oddsChangedPaths"])
+            self.assertEqual(before, schedule.read_bytes())
+
+    def test_odd_changes_match_existing_full_builder(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            datasets = self._fixture(root, [game()])
+            self._run(root, datasets)
+            odds = datasets["nflverse.schedule-odds"]
+            write_upstream(odds.raw_path, [game(spread_line="4.5")])
+            result = self._run(root, datasets)
+            self.assertEqual(1, result["oddsFilesChanged"])
+            _, _, _, idx = _build_schedules(
+                root, datasets["nflverse.schedules"], 2026, force=False
+            )
+            expected, _, _ = _build_schedule_odds(
+                root, odds, idx, 2026, force=False
+            )
+            actual = json.loads(
+                (root / DATA_SOURCE_ROOT / "nfl/schedule-odds/2026.json").read_text()
+            )
+            self.assertEqual(expected[0][1], actual)
+            self.assertEqual(4.5, actual["Games"][0]["SpreadLine"])
+
+    def test_stale_or_missing_published_schedule_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            datasets = self._fixture(root, [game()])
+            write_upstream(
+                datasets["nflverse.schedules"].raw_path, [game(gametime="20:20")]
+            )
+            with self.assertRaisesRegex(ValueError, "missing or stale"):
+                self._run(root, datasets)
+            self.assertFalse(
+                (root / DATA_SOURCE_ROOT / "nfl/schedule-odds/2026.json").exists()
+            )
+            (root / DATA_SOURCE_ROOT / "nfl/schedules/2026.json").unlink()
+            with self.assertRaisesRegex(ValueError, "missing or stale"):
+                self._run(root, datasets)
+
+    def test_invalid_or_incomplete_odds_never_publish_partial_output(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            datasets = self._fixture(
+                root, [game(), game("2026_01_CCC_DDD")]
+            )
+            odds = datasets["nflverse.schedule-odds"]
+            write_upstream(odds.raw_path, [game()])
+            with self.assertRaisesRegex(ValueError, "missing from odds source"):
+                self._run(root, datasets)
+            write_upstream(
+                odds.raw_path,
+                [game(spread_line="inf"), game("2026_01_CCC_DDD")],
+            )
+            with self.assertRaisesRegex(ValueError, "Invalid NFL odds number"):
+                self._run(root, datasets)
+            self.assertFalse(
+                (root / DATA_SOURCE_ROOT / "nfl/schedule-odds/2026.json").exists()
+            )
+
+    def test_historical_partition_stays_frozen(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            datasets = self._fixture(
+                root, [game("2025_01_AAA_BBB", season="2025")]
+            )
+            odds = datasets["nflverse.schedule-odds"]
+            self.assertEqual(1, self._run(root, datasets)["oddsFilesChanged"])
+            path = root / DATA_SOURCE_ROOT / "nfl/schedule-odds/2025.json"
+            before = path.read_bytes()
+            write_upstream(
+                odds.raw_path, [game("2025_01_AAA_BBB", season="2025", spread_line="9")]
+            )
+            result = self._run(root, datasets)
+            self.assertEqual(0, result["oddsFilesChanged"])
+            self.assertEqual(1, result["oddsPartitionsPreserved"])
+            self.assertEqual(before, path.read_bytes())
 
 
 class FinalityScopeExcludesOddsTests(unittest.TestCase):
