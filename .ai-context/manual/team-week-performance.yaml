@@ -1,6 +1,6 @@
 schemaVersion: 1
 domain: team-week-performance
-status: draft-validated-core-batch-under-review
+status: weekly-historical-publisher-configured-pending-live-acceptance
 trackingIssue: 355
 
 purpose: >
@@ -18,17 +18,18 @@ physicalOwner:
     optimizer: tools/weekly_lineup_optimizer.py::maximize_lineup
     canonicalInputAdapter: tools/team_week_performance_sources.py::load_verified_week_inputs
     lineupEligibilityBridge: public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1
-  status: current-2026-weeks-03-05-on-main-app-projection-355
+  status: current-2026-weeks-03-05-on-main-full-history-publication-pending
   delivery: >
     Current App projection checkpoint #355: existing
     public/requests/utils/league/WeeklyRecapUtils.psm1 reads finalized
     TeamWeekPerformance and maps canonical roster IDs to week-specific
     FantasyTeamIDs in public/data/WeeklyRecaps.json. An absent partition is
     explicitly unavailable; a present invalid one fails closed. Existing
-    league-live.yml / RequestLeaguePublication.ps1 retains publication
-    ownership; this adds no second App publisher or cron. Initial shared
-    Derived persisted weeks are 2026 W03-W05; bulk historical backfill remains
-    separately gated under #1061/#471 and known #698 scoring evidence.
+    league-live.yml / RequestLeaguePublication.ps1 retains App publication
+    ownership; the independent weekly Shared-Derived backfill adds no second App
+    publisher or cron. As of activation the existing Shared Derived partitions
+    are 2026 W03-W05; 37 further scored weeks require productive publication.
+    The strictly accepted 2025/W06 scoring divergence remains governed by #698.
 
 identity:
   root:
@@ -195,13 +196,17 @@ recomputation:
     an existing stale/non-final PWF snapshot is a real blocker. During a future
     platform-wide clean rebuild (#471), upstream PWF must be rebuilt before
     TeamWeekPerformance. This CLI does not orchestrate other derived products.
-    Finalized 2026 W03/W04/W05 snapshots exist only on Draft PR #993, not main.
-    The W03 snapshot was reconstructed after #697 restored final PlayerWeekFantasy
-    Actuals; its strict 202/202 player scoring parity was checked and the
-    generator's exact bytes were persisted without manual modifications.
-    All 39 canonically scored weeks passed a read-only historical audit;
-    the cross-product all-derived rebuild is still owned by #471.
-    No scheduled workflow or App publisher is part of this checkpoint.
+    Existing TeamWeekPerformance snapshots for 2026 W03-W05 are published on
+    main following merged PR #993. The read-only complete PWF -> TWP audit
+    (manual League Live #40030010930, 2026-10-23) passed 40/40 scored weeks:
+    PWF would change 0, TWP would change 37, exactly one policy-accepted
+    divergence (#698), and the staged second pass was a semantic no-op.
+    The existing weekly APP Data Standings workflow now runs the original PWF
+    writer first and the strict TWP --all-finalized --write --require-pwf
+    publisher as a dependent, separately scoped rebuild-and-retry job.
+    Historical TWP publishes only data-derived/team-week-performance; this
+    does not add any App, UI, Source or League Live writer. First actual
+    publication, 40/40 file inventory and subsequent no-op remain live gates.
   persistence: >
     Stable JSON key ordering, no generation-time timestamp, byte-identical
     semantic no-op. Recalculate and publish only after all input requirements
@@ -228,9 +233,11 @@ historicalOrchestrationPreflight:
     - NFL game finality, final roster, canonical identity, historical scoring profile, official Sleeper actual points and the narrowly versioned 2025/W06 exception remain required.
     - Fails when any selected week is the active App week, any existing published TeamWeekPerformance payload would change, any PWF/TWP parity is unverified, or a second staged pass is not a no-op.
     - A manual historical preflight skips all League Live writer jobs and checks out main without writable credentials, with job-level contents: read.
-    - New historical publication destinations, scheduled incremental runs and full historical persistence are separately elevated and not activated by this checkpoint.
+    - The manual preflight itself never publishes. The separately approved weekly TWP Shared-Derived writer is tracked in #471; App publication and state-aware incremental scheduling remain separately gated.
   publicationHandoff: >-
-    Before historical backfill publication, independently approve the exact
-    Derived write prefixes, immutable main snapshot/rebuild-and-retry semantics,
-    before/after hash manifest, strict all-target acceptance, protected current
-    consumer invariants and revert plan. Never use a one-off migration workflow.
+    Weekly historical TWP publication was approved with exact
+    data-derived/team-week-performance/** scope following successful 40-week
+    read-only PWF/TWP preflight (#40030010930). The standalone weekly job uses
+    latest-main rebuild-and-retry and strict --require-pwf; its first live
+    40-week publication and follow-up semantic no-op require independent
+    acceptance before #471 Step 2 is closed. Never use a one-off migration workflow.

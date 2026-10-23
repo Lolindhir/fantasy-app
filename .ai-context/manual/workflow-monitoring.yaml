@@ -400,7 +400,7 @@ workflows:
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly Standings fallback and separately scoped all-finalized PlayerWeekFantasy materialization run as independent jobs of the same existing scheduler target. The PWF job owns only data-derived/player-week-fantasy via rebuild-and-retry, after source/finality preflight; failure is visible without suppressing Standings output. Current Standings and live PWF are separately handled by ten-minute League Live. The long staleness threshold reflects the weekly cadence.
+    rationale: Weekly Standings fallback and all-finalized PlayerWeekFantasy remain independent jobs; historical TeamWeekPerformance runs only after the PWF job succeeds and publishes exclusively data-derived/team-week-performance using the same classified rebuild-and-retry helper. A blocked or failed PWF/TWP producer fails the weekly workflow without suppressing independent Standings output. Current Standings and live PWF remain owned by ten-minute League Live. The long staleness threshold reflects the weekly cadence.
   .github/workflows/update-teams.yml:
     category: routine
     relevantEvents:
