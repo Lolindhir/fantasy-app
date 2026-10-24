@@ -1,7 +1,7 @@
 # Team Windows – Reload, Rebuild oder Hybrid?
 
 > **Status:** offenes Research-/Designpapier  
-> **Stand:** 29.09.2026
+> **Stand:** 02.10.2026
 >
 > Dieses Dokument untersucht eine grundlegende Frage der Ligaökonomie. Es trifft **keine** Entscheidung zugunsten von Reload, Rebuild oder Hybrid und führt **keine** neue Ligaregel ein.
 
@@ -44,6 +44,66 @@ Stand 29.09.2026:
 - die Playoff-Runden werden als Zwei-Wochen-Runden gespielt.
 
 Diese Kombination unterscheidet sich strukturell stark von einer größeren 10-, 12- oder 14-Team-Dynasty-Liga.
+
+### Bestätigtes Incentive-Design: Rookie-Draft und All-Time-Standings gemeinsam betrachten
+
+Die Rookie-Draft-Reihenfolge ist bewusst nicht nur eine Competitive-Balance-Regel. Sie ist zusammen mit den All-Time-Standings als gekoppeltes Anreizsystem gedacht.
+
+Aus der finalen Vorjahresplatzierung ergibt sich:
+
+| Vorjahresplatz | eigener Rookie-Pick |
+| ---: | ---: |
+| 5. | 1.01 |
+| 6. | 1.02 |
+| 4. | 1.03 |
+| 3. | 1.04 |
+| 2. | 1.05 |
+| 1. | 1.06 |
+
+Die Reihenfolge verfolgt zwei Ziele gleichzeitig.
+
+**Außerhalb der Playoffs bleibt Gewinnen wertvoll.** Platz 5 erhält 1.01 und Platz 6 nur 1.02. Maximales Verlieren wird damit nicht automatisch maximal belohnt.
+
+**Innerhalb der Playoffs bleibt auch das Spiel um Platz 3 relevant.** Platz 4 erhält zwar mit 1.03 den etwas besseren Rookie-Pick als Platz 3 mit 1.04, aber der Third Place besitzt dauerhaften Franchise-/Legacy-Wert.
+
+Vom User bestätigte gewünschte Reihenfolge der All-Time-Erfolgskriterien:
+
+```text
+Championships
+-> Runner-Ups
+-> Third Places
+-> Regular Season Kings
+```
+
+Damit ist der Unterschied zwischen Platz 3 und Platz 4 bewusst ein Tausch zwischen zwei Arten von Wert:
+
+```text
+Platz 3:
+mehr dauerhafter Franchise-/Legacy-Erfolg
++ 1.04
+
+Platz 4:
+kein Third Place
++ 1.03
+```
+
+Die Draftorder verteilt also Zukunftsassets an weniger erfolgreiche Teams, ohne sportlichen Erfolg auf den relevanten Platzierungsstufen wertlos zu machen.
+
+### Konsequenz für die Rebuild-Diskussion
+
+Die Rookie-Draft-Reihenfolge soll **nicht isoliert als zusätzlicher Rebuild-Hebel optimiert werden**.
+
+Bevor an ihr etwas verändert würde, müsste die Liga ausdrücklich auch die gekoppelte Achievement-/All-Time-Logik neu öffnen.
+
+Für die aktuelle League-Economy-Forschung gilt deshalb als Arbeitsschutz:
+
+> Erst prüfen, ob Rookie-Pick-Akkumulation, dreijährige Rookie Contracts, Salary/Cap und offene Trades bereits genügend freiwillige Zukunftsanreize erzeugen. Die bestehende Draft-/Achievement-Struktur wird dabei zunächst als bewusst zu bewahrender Teil des Systems behandelt.
+
+### Technischer Abgleich
+
+Die hier beschriebene All-Time-Reihenfolge ist die vom User bestätigte **beabsichtigte Ligalogik**.
+
+Der aktuelle Standings-Generator verwendet nach Championships, Runner-Ups und Third Places derzeit offenbar kumulierte Regular-Season-Wins statt der Anzahl der Regular Season Kings. Diese technische Abweichung wird separat in **#810** untersucht und ist keine Änderung dieses Research-Papiers.
 
 ---
 
