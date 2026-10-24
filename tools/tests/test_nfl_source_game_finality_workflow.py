@@ -110,7 +110,9 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
             '&& [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then',
             publisher,
         )
-        self.assertIn("git fetch --unshallow origin main", publisher)
+        self.assertIn("if ! git fetch --unshallow origin main; then", publisher)
+        self.assertIn("Cannot restore complete schedule-odds ancestry; failing closed.", publisher)
+        self.assertIn("Schedule-odds history remains shallow after fetch; failing closed.", publisher)
         self.assertIn("else\n                git fetch origin main\n              fi", publisher)
         self.assertLess(
             publisher.index("git fetch --unshallow origin main"),
@@ -122,7 +124,7 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         )
 
     def test_schedule_odds_real_git_shallow_race_classification(self) -> None:
-        """Exercise no-race and two competing-writer cases with real Git."""
+        """Exercise no-race, two writer races, and a failed ancestry fetch."""
         import subprocess
         import tempfile
 
@@ -138,7 +140,7 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
             )
             return result.stdout.strip()
 
-        for race in ("none", "outside-inputs", "inside-inputs"):
+        for race in ("none", "outside-inputs", "inside-inputs", "fetch-failure"):
             with self.subTest(race=race), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 remote = root / "remote.git"
@@ -172,6 +174,8 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
                     git(writer, "add", ".")
                     git(writer, "commit", "-m", "concurrent writer")
                     git(writer, "push", "origin", "HEAD:main")
+                if race == "fetch-failure":
+                    git(shallow, "remote", "set-url", "origin", str(root / "missing.git"))
 
                 script = (
                     "set -euo pipefail\n"
@@ -182,9 +186,14 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
                     "if publish_canonical_commit; then echo PUBLISHED; else echo REBUILD; fi\n"
                 )
                 result = subprocess.run(
-                    ["bash", "-c", script], cwd=shallow, check=True,
+                    ["bash", "-c", script], cwd=shallow,
                     capture_output=True, text=True, timeout=30,
                 )
+                if race == "fetch-failure":
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertIn("failing closed", result.stderr)
+                    continue
+                self.assertEqual(0, result.returncode, result.stderr)
                 self.assertEqual(
                     "true" if race == "none" else "false",
                     git(shallow, "rev-parse", "--is-shallow-repository"),
