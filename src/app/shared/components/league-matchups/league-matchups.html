@@ -516,7 +516,7 @@
                     <span class="weekly-recap-award-team" *ngIf="awardTeamName(winner.FantasyTeamID) as teamName">{{ teamName }}</span>
                   </span>
                 </button>
-                <strong class="weekly-recap-award-value" [attr.aria-label]="formatFantasyPoints(winner.PotentialPoints) + ' points'">{{ formatFantasyPoints(winner.PotentialPoints) }}<span class="weekly-recap-award-unit"> pts</span></strong>
+                <strong class="weekly-recap-award-value">{{ formatFantasyPoints(winner.PotentialPoints) }}<span class="weekly-recap-award-unit"> pts</span></strong>
                 <span class="weekly-recap-award-extra">Highest roster potential</span>
               </div>
               <div *ngIf="awards.BestManager.length === 0" class="weekly-recap-award-empty">No eligible winner</div>
