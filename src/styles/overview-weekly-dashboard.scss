@@ -657,7 +657,14 @@ app-league-matchups {
 .weekly-recap-shell--compact .weekly-recap-award-team,
 .weekly-recap-shell--compact .weekly-recap-award-extra { display: none; }
 .weekly-recap-shell--compact .weekly-recap-award-value { font-size: 0.82rem; white-space: nowrap; }
-.weekly-recap-shell--compact .weekly-recap-award-unit { display: none; }
+.weekly-recap-shell--compact .weekly-recap-award-unit {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 .weekly-recap-empty {
   margin-top: 10px;
