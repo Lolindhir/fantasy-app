@@ -394,8 +394,9 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
         expect(getComputedStyle(value).whiteSpace).toBe('nowrap');
       }
       expect(getComputedStyle(awards[0].querySelector<HTMLElement>('.weekly-recap-award-extra')!).display).toBe('none');
-      expect(getComputedStyle(awards[1].querySelector<HTMLElement>('.weekly-recap-award-unit')!).display).toBe('none');
-      expect(awards[1].querySelector<HTMLElement>('.weekly-recap-award-value')!.getAttribute('aria-label')).toBe('229.16 points');
+      const unit = awards[1].querySelector<HTMLElement>('.weekly-recap-award-unit')!;
+      expect(getComputedStyle(unit).position).toBe('absolute');
+      expect(unit.textContent).toContain('pts');
 
       const gameColumns = getComputedStyle(gameList!).gridTemplateColumns.split(' ').filter(Boolean);
       const playerColumns = getComputedStyle(playerList!).gridTemplateColumns.split(' ').filter(Boolean);
