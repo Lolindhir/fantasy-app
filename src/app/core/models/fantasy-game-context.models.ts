@@ -59,6 +59,14 @@ export interface FantasyGameRemainingRelevance {
   MustWatchRank?: number;
 }
 
+/** Latest available betting-market expectation, not an NFL or fantasy score prediction. */
+export interface FantasyGameMarket {
+  SpreadLine: number | null;
+  TotalLine: number | null;
+  ImpliedAwayPoints: number | null;
+  ImpliedHomePoints: number | null;
+}
+
 export interface FantasyGameContextGame {
   GameID: string;
   DecisionWindowID: string;
@@ -70,6 +78,7 @@ export interface FantasyGameContextGame {
   Status: string | null;
   AwayScore?: number | null;
   HomeScore?: number | null;
+  Market?: FantasyGameMarket | null;
   Relevance: FantasyGameRelevance;
   Impact: FantasyGameImpact;
   FantasyTeams: FantasyGameContextTeam[];

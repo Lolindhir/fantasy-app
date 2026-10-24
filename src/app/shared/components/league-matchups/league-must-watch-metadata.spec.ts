@@ -184,6 +184,30 @@ function makeFinalContext(): FantasyGameContextReadModel {
   };
 }
 
+function makeMarketContext(final: boolean): FantasyGameContextReadModel {
+  const context = makeContext();
+  return {
+    ...context,
+    SchemaVersion: 6,
+    Games: context.Games.map(game => ({
+      ...game,
+      Status: final ? 'Final' : 'Scheduled',
+      AwayScore: final ? 24 : null,
+      HomeScore: final ? 30 : null,
+      AwayTeamID: 'PIT',
+      AwayTeamAbbr: 'PIT',
+      HomeTeamID: 'NO',
+      HomeTeamAbbr: 'NO',
+      Market: {
+        SpreadLine: -3,
+        TotalLine: 44.5,
+        ImpliedAwayPoints: 23.75,
+        ImpliedHomePoints: 20.75
+      }
+    }))
+  };
+}
+
 describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
   let fixture: ComponentFixture<LeagueMatchupsComponent>;
   let dataService: jasmine.SpyObj<DataService>;
@@ -275,6 +299,95 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
       finalFixture.destroy();
     }
   });
+
+  it('shows compact team-specific implied NFL points, total and away favorite before Final', () => {
+    dataService.getFantasyGameContext.and.returnValue(of(makeMarketContext(false)));
+    const marketFixture = TestBed.createComponent(LeagueMatchupsComponent);
+    marketFixture.componentInstance.league = makeLeague();
+    marketFixture.detectChanges();
+
+    try {
+      const host: HTMLElement = marketFixture.nativeElement;
+      const market = host.querySelector<HTMLElement>('.fantasy-pulse-market');
+      const estimate = market?.querySelector<HTMLElement>('.fantasy-pulse-market-expectation');
+      const lines = market?.querySelector<HTMLElement>('.fantasy-pulse-market-lines');
+      expect(estimate?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Market est. PIT 23.75 · NO 20.75');
+      expect(lines?.textContent?.replace(/\s+/g, ' ').trim()).toBe('O/U 44.5 PIT −3');
+      expect(host.querySelector('.fantasy-pulse-final-nfl-score')).toBeNull();
+      expect(marketFixture.componentInstance.favoriteSpreadLabel({
+        ...makeMarketContext(false).Games[0],
+        Market: { SpreadLine: 2.5, TotalLine: 46.5, ImpliedAwayPoints: 22, ImpliedHomePoints: 24.5 }
+      })).toBe('NO −2.5');
+      expect(marketFixture.componentInstance.favoriteSpreadLabel({
+        ...makeMarketContext(false).Games[0],
+        Market: { SpreadLine: 0, TotalLine: 44, ImpliedAwayPoints: 22, ImpliedHomePoints: 22 }
+      })).toBe('PK');
+    } finally {
+      marketFixture.destroy();
+    }
+  });
+
+  it('switches to the real NFL final score and hides market expectations for a final game', () => {
+    dataService.getFantasyGameContext.and.returnValue(of(makeMarketContext(true)));
+    const finalFixture = TestBed.createComponent(LeagueMatchupsComponent);
+    finalFixture.componentInstance.league = makeLeague();
+    finalFixture.detectChanges();
+    try {
+      const host: HTMLElement = finalFixture.nativeElement;
+      expect(host.querySelector('.fantasy-pulse-final-nfl-score')?.textContent?.trim()).toBe('24–30');
+      expect(host.querySelector('.fantasy-pulse-market')).toBeNull();
+      expect(host.querySelector('[aria-label="Final"]')).not.toBeNull();
+      expect(host.querySelector('.fantasy-pulse-card--final')).not.toBeNull();
+    } finally {
+      finalFixture.destroy();
+    }
+  });
+
+  it('omits the market row when no canonical market data is available', () => {
+    const host: HTMLElement = fixture.nativeElement;
+    expect(host.querySelector('.fantasy-pulse-market')).toBeNull();
+    expect(host.querySelector('.fantasy-pulse-game-lockup')).not.toBeNull();
+  });
+
+  for (const width of [360, 390, 430, 1280]) {
+    it(`keeps the added market row readable and compact at ${width}px`, () => {
+      dataService.getFantasyGameContext.and.returnValue(of(makeMarketContext(false)));
+      const marketFixture = TestBed.createComponent(LeagueMatchupsComponent);
+      marketFixture.componentInstance.league = makeLeague();
+      marketFixture.detectChanges();
+      const sourceCard = (marketFixture.nativeElement as HTMLElement)
+        .querySelector<HTMLElement>('.fantasy-pulse-card--remaining')!;
+      const frame = document.createElement('iframe');
+      frame.style.position = 'absolute';
+      frame.style.left = '-2000px';
+      frame.style.width = `${width}px`;
+      frame.style.height = '400px';
+      document.body.appendChild(frame);
+
+      try {
+        const frameDocument = frame.contentDocument!;
+        for (const style of Array.from(document.head.querySelectorAll('style'))) {
+          frameDocument.head.appendChild(style.cloneNode(true));
+        }
+        const reset = frameDocument.createElement('style');
+        reset.textContent = 'html,body{box-sizing:border-box;width:100%;min-width:0;margin:0;overflow:hidden;}*,*::before,*::after{box-sizing:border-box;}';
+        frameDocument.head.appendChild(reset);
+        frameDocument.body.appendChild(sourceCard.cloneNode(true));
+
+        const card = frameDocument.querySelector<HTMLElement>('.fantasy-pulse-card--remaining')!;
+        const market = card.querySelector<HTMLElement>('.fantasy-pulse-market')!;
+        const cardRect = card.getBoundingClientRect();
+        const marketRect = market.getBoundingClientRect();
+        expect(card.scrollWidth).withContext(`${width}px card overflow`).toBeLessThanOrEqual(card.clientWidth + 1);
+        expect(market.scrollWidth).withContext(`${width}px market overflow`).toBeLessThanOrEqual(market.clientWidth + 1);
+        expect(marketRect.right).withContext(`${width}px market containment`).toBeLessThanOrEqual(cardRect.right + 1);
+        expect(cardRect.height).withContext(`${width}px compact card`).toBeLessThanOrEqual(116);
+      } finally {
+        frame.remove();
+        marketFixture.destroy();
+      }
+    });
+  }
 
   it('keeps the existing Team Detail interaction separate from the NFL game-detail target', () => {
     const host: HTMLElement = fixture.nativeElement;

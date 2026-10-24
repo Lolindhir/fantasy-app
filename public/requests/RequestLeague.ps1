@@ -377,6 +377,11 @@ try {
             if ([int]$decisionWindowsAsJson.LineupWeek -eq $matchupWeek) {
                 $fantasyMatchupFacts = @(ConvertTo-FgcCurrentMatchupFacts -Season ([string]$league.season) -Week $matchupWeek -MatchupRows $matchupRows)
                 $weekIsFinal = $lastScoredLeg -ge $matchupWeek
+                $nflGameDerived = $null
+                $nflGameDerivedFile = Join-Path $config.DataDerivedDir "nfl-games/$($league.season).json"
+                if (Test-Path $nflGameDerivedFile) {
+                    $nflGameDerived = Get-Content $nflGameDerivedFile -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
+                }
                 $fantasyGameContextAsJson = New-FantasyGameContextReadModel `
                     -LeagueID $LeagueID `
                     -Season ([string]$league.season) `
@@ -384,7 +389,8 @@ try {
                     -DecisionFacts $decisionWindowsAsJson `
                     -FantasyMatchups $fantasyMatchupFacts `
                     -Schedule @($schedule) `
-                    -WeekIsFinal $weekIsFinal
+                    -WeekIsFinal $weekIsFinal `
+                    -NflGameDerived $nflGameDerived
             }
             else {
                 Write-Warning "FantasyGameContext not overwritten because matchup Week $matchupWeek differs from DecisionWindows lineup Week $($decisionWindowsAsJson.LineupWeek)."
