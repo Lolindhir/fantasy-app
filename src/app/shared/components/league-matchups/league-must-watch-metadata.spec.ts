@@ -311,8 +311,14 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
       const market = host.querySelector<HTMLElement>('.fantasy-pulse-market');
       const estimate = market?.querySelector<HTMLElement>('.fantasy-pulse-market-expectation');
       const lines = market?.querySelector<HTMLElement>('.fantasy-pulse-market-lines');
-      expect(estimate?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Market est. PIT 23.75 · NO 20.75');
-      expect(lines?.textContent?.replace(/\s+/g, ' ').trim()).toBe('O/U 44.5 PIT −3');
+      // Flex-gap separates sibling elements visually; textContent does not
+      // invent whitespace between their adjacent text nodes.
+      expect(Array.from(estimate?.children ?? []).map(element => element.textContent?.trim())).toEqual([
+        'Market est.', 'PIT 23.75', '·', 'NO 20.75'
+      ]);
+      expect(Array.from(lines?.children ?? []).map(element => element.textContent?.trim())).toEqual([
+        'O/U 44.5', 'PIT −3'
+      ]);
       expect(host.querySelector('.fantasy-pulse-final-nfl-score')).toBeNull();
       expect(marketFixture.componentInstance.favoriteSpreadLabel({
         ...makeMarketContext(false).Games[0],
