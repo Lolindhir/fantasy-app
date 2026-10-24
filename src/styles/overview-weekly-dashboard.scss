@@ -640,8 +640,13 @@ app-league-matchups {
   flex-basis: 14px;
   font-size: 14px;
 }
-.weekly-recap-shell--compact .weekly-recap-award-winner { gap: 2px; padding-top: 4px; }
-.weekly-recap-shell--compact .weekly-recap-award-owner { gap: 5px; }
+.weekly-recap-shell--compact .weekly-recap-award-winner {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+  padding-top: 4px;
+}
+.weekly-recap-shell--compact .weekly-recap-award-owner { gap: 4px; }
 .weekly-recap-shell--compact .weekly-recap-award-avatar {
   flex-basis: 24px;
   width: 24px;
@@ -651,7 +656,8 @@ app-league-matchups {
 .weekly-recap-shell--compact .weekly-recap-award-identity strong { font-size: 0.68rem; }
 .weekly-recap-shell--compact .weekly-recap-award-team,
 .weekly-recap-shell--compact .weekly-recap-award-extra { display: none; }
-.weekly-recap-shell--compact .weekly-recap-award-value { font-size: 0.9rem; }
+.weekly-recap-shell--compact .weekly-recap-award-value { font-size: 0.82rem; white-space: nowrap; }
+.weekly-recap-shell--compact .weekly-recap-award-unit { display: none; }
 
 .weekly-recap-empty {
   margin-top: 10px;
