@@ -418,6 +418,32 @@ export class LeagueMatchupsComponent {
       && game.HomeScore !== undefined;
   }
 
+  /** Awards describe the Owner, not the franchise logo or mixed team Avatar. */
+  awardOwnerName(teamID: string | number): string {
+    return this.teamForID(teamID)?.Owner?.trim() || `Team ${teamID}`;
+  }
+
+  awardOwnerAvatar(teamID: string | number): string | null {
+    return this.teamForID(teamID)?.OwnerAvatar?.trim() || null;
+  }
+
+  awardTeamName(teamID: string | number): string | null {
+    return this.teamForID(teamID)?.Team?.trim() || null;
+  }
+
+  awardTeamExists(teamID: string | number): boolean {
+    return this.teamForID(teamID) !== null;
+  }
+
+  openAwardTeamDetails(teamID: string | number): void {
+    const team = this.teamForID(teamID);
+    if (team) this.teamDialog.open(team.TeamID);
+  }
+
+  formatAwardEfficiency(value: number): string {
+    return Number.isFinite(value) ? this.pointsForFormatter.format(value) : '–';
+  }
+
   formatFantasyPoints(value: number | null | undefined): string {
     if (value === null || value === undefined || !Number.isFinite(Number(value))) return '–';
     return this.matchupScoreFormatter.format(Number(value));

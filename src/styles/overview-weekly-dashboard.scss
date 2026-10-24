@@ -518,6 +518,141 @@ app-league-matchups {
 
 .weekly-recap-shell--compact .weekly-recap-player-points { font-size: 0.76rem; }
 
+
+/* #355: two weekly manager/coach awards, with Owner identity kept distinct
+   from team logo and the historic Shared Derived scoring calculation. */
+.weekly-recap-group--awards { grid-column: 1 / -1; }
+
+.weekly-recap-awards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.weekly-recap-award {
+  min-width: 0;
+  overflow: hidden;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.weekly-recap-award-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  margin: 0;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.weekly-recap-award-title mat-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  font-size: 16px;
+}
+
+.weekly-recap-award-winner {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding-top: 9px;
+}
+
+.weekly-recap-award-winner + .weekly-recap-award-winner {
+  margin-top: 8px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.weekly-recap-award-owner {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.weekly-recap-award-owner:not(:disabled):hover .weekly-recap-award-identity strong { text-decoration: underline; }
+.weekly-recap-award-owner:focus-visible { outline: 2px solid var(--weekly-accent); outline-offset: 3px; }
+.weekly-recap-award-owner:disabled { cursor: default; }
+
+.weekly-recap-award-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.weekly-recap-award-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.weekly-recap-award-identity { display: flex; flex-direction: column; min-width: 0; }
+.weekly-recap-award-identity strong {
+  overflow: hidden;
+  color: var(--weekly-text);
+  font-size: 0.79rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.weekly-recap-award-team {
+  overflow: hidden;
+  color: var(--weekly-muted);
+  font-size: 0.67rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekly-recap-award-value {
+  color: var(--weekly-text);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  line-height: 1.15;
+}
+.weekly-recap-award-unit { font-size: 0.65em; }
+.weekly-recap-award-extra { color: var(--weekly-muted); font-size: 0.67rem; }
+.weekly-recap-award-empty { margin-top: 8px; color: var(--weekly-muted); font-size: 0.67rem; }
+
+.weekly-recap-shell--compact .weekly-recap-awards { gap: 6px; }
+.weekly-recap-shell--compact .weekly-recap-award { padding: 6px; }
+.weekly-recap-shell--compact .weekly-recap-award-title { gap: 3px; font-size: 0.65rem; }
+.weekly-recap-shell--compact .weekly-recap-award-title mat-icon {
+  width: 14px;
+  height: 14px;
+  flex-basis: 14px;
+  font-size: 14px;
+}
+.weekly-recap-shell--compact .weekly-recap-award-winner { gap: 4px; padding-top: 6px; }
+.weekly-recap-shell--compact .weekly-recap-award-owner { gap: 5px; }
+.weekly-recap-shell--compact .weekly-recap-award-avatar {
+  flex-basis: 24px;
+  width: 24px;
+  height: 24px;
+  font-size: 0.67rem;
+}
+.weekly-recap-shell--compact .weekly-recap-award-identity strong { font-size: 0.68rem; }
+.weekly-recap-shell--compact .weekly-recap-award-team,
+.weekly-recap-shell--compact .weekly-recap-award-extra { display: none; }
+.weekly-recap-shell--compact .weekly-recap-award-value { font-size: 0.95rem; }
+
 .weekly-recap-empty {
   margin-top: 10px;
   padding: 12px;

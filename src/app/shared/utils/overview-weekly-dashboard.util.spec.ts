@@ -649,6 +649,11 @@ describe('Overview weekly dashboard presentation', () => {
 
   it('preserves WeeklyRecaps ranking while keeping 2 games and 3 players in every density', () => {
     const source = recaps();
+    source.Weeks[0].TeamAwards = {
+      State: 'available',
+      BestCoach: [{ CanonicalLeagueRosterID: 'coach', FantasyTeamID: 2, EfficiencyPercent: 89.49, ActualStarterPoints: 179, PotentialPoints: 200, MissedPoints: 21 }],
+      BestManager: [{ CanonicalLeagueRosterID: 'manager', FantasyTeamID: 1, PotentialPoints: 229.16 }]
+    };
     const prominent = selectOverviewRecap(source, '2026', 1, 'recap');
     const prep = selectOverviewRecap(source, '2026', 1, 'prep');
     const live = selectOverviewRecap(source, '2026', 1, 'live');
@@ -656,10 +661,21 @@ describe('Overview weekly dashboard presentation', () => {
     for (const selection of [prominent, prep, live]) {
       expect(selection?.games.map(game => game.GameID)).toEqual(['g1', 'g2']);
       expect(selection?.players.map(player => player.PlayerID)).toEqual(['p1', 'p2', 'p3']);
+      expect(selection?.awards?.BestCoach.map(winner => winner.FantasyTeamID)).toEqual([2]);
+      expect(selection?.awards?.BestManager.map(winner => winner.FantasyTeamID)).toEqual([1]);
     }
     expect(prominent?.prominent).toBeTrue();
     expect(prep?.prominent).toBeFalse();
     expect(live?.prominent).toBeFalse();
+  });
+
+  it('does not invent winners for unavailable or legacy weekly awards', () => {
+    const source = recaps();
+    source.Weeks[0].TeamAwards = { State: 'unavailable', BestCoach: [], BestManager: [] };
+    expect(selectOverviewRecap(source, '2026', 1, 'recap')?.awards).toBeNull();
+    delete source.Weeks[0].TeamAwards;
+    expect(selectOverviewRecap(source, '2026', 1, 'recap')?.awards).toBeNull();
+    expect(selectOverviewRecap(source, '2025', 1, 'recap')).toBeNull();
   });
 
   it('rejects an unknown/non-final LastCompletedWeek instead of inferring recap finality', () => {
