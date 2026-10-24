@@ -333,7 +333,14 @@ jobs:
               # ancestry only after a rejected push so input comparison and
               # rebase retain the original race-safe semantics.
               if [[ "$materialization_scope" == "schedule-odds" ]] && [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
-                git fetch --unshallow origin main
+                if ! git fetch --unshallow origin main; then
+                  echo "Cannot restore complete schedule-odds ancestry; failing closed." >&2
+                  exit 1
+                fi
+                if [[ "$(git rev-parse --is-shallow-repository)" != "false" ]]; then
+                  echo "Schedule-odds history remains shallow after fetch; failing closed." >&2
+                  exit 1
+                fi
               else
                 git fetch origin main
               fi
@@ -735,3 +742,4 @@ jobs:
           echo "- Trigger: successful full NFL Source sync only (not game-finality live)" >> "$GITHUB_STEP_SUMMARY"
           echo "- Generated write-set: data-derived/nfl-games/** only" >> "$GITHUB_STEP_SUMMARY"
           echo "- Publisher: rebuild-and-retry from latest main, no-op on unchanged content" >> "$GITHUB_STEP_SUMMARY"
+
