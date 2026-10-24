@@ -359,6 +359,8 @@ Mindestens:
 
    Diese Signale sind ein eigenständiger Evidenzblock und dürfen eine Abweichung von Consensus Rankings oder Projektionen begründen, ersetzen diese aber nicht automatisch. Ein einzelnes Spiel bleibt eine kleine Stichprobe; Game Script, Verletzungen oder Ausfälle von Mitspielern, Opportunity-Provenance, aktuelle Practice-/Availability-Evidenz und das Matchup müssen gemeinsam berücksichtigt werden. Alte Preseason-, Camp- oder nominale Depth-Chart-Annahmen dürfen aktuelle belastbare Regular-Season-Usage nicht ungeprüft überstimmen. Wenn Usage und Rankings/Projektionen materiell auseinanderlaufen, muss die Weekly-Analyse den Konflikt und die daraus entstehende Unsicherheit sichtbar machen. Neue Usage-Evidenz darf außerdem nicht nur den gerade diskutierten Spieler verschieben; der vollständige relevante Start/Sit-Vergleichspool ist konsistent neu zu bewerten.
 
+   **Experten- und Evidenzgewichtung:** Bei knappen Weekly-Entscheidungen neben liga-spezifischen Projections möglichst mehrere aktuelle, nachvollziehbar begründete und tatsächlich voneinander unabhängige Redraft-/Week-/Start-Sit-Einschätzungen heranziehen. Entscheidend ist die Begründung im Licht von Usage, Rolle, Injury, Matchup, Floor/Median/Ceiling und Scoring-Fit – nicht die bloße Anzahl gleichlautender Listen. Geteilte Konsensgrundlagen oder voneinander übernommene Rankings zählen nicht als unabhängige Bestätigung. Widersprüchliche Analystenmeinungen und abweichende Projections explizit erklären, nicht blind mitteln. Sleeper-Expected-Points sind ein ergänzender Plausibilitätscheck, keine alleinige Entscheidungsautorität; ein kleiner numerischer Vorsprung überstimmt keine besser gestützte qualitative These. Bei fehlender oder nicht unabhängig verifizierbarer Quellenevidenz die Konfidenz entsprechend begrenzen.
+
    **Starter-Boundary-Stresstest für Grenzentscheidungen:** Vor Festlegung der finalen Startaufstellung müssen Spieler an der Start/Sit-Grenze als gemeinsamer Kandidatenpool neu bewertet werden. Die aktuell gesetzte Sleeper-Aufstellung erhält dabei keinen Bestandsschutz oder Incumbency-Bonus.
 
    Mindestens die letzten zwei bis drei voraussichtlichen Starter und die ersten zwei bis drei realistischen Bench-Alternativen sollen bei einem engen Grenzfall nach denselben Kriterien direkt gegeneinander geprüft werden. Soweit für die jeweilige Position sinnvoll und belastbar verfügbar, gehören dazu:
@@ -373,6 +375,8 @@ Mindestens:
 
    Bei einer echten Grenzentscheidung muss zusätzlich mindestens eine plausible Gegenhypothese geprüft werden: **Unter welchen realistischen Annahmen wäre der aktuell zurückliegende Kandidat die bessere Startentscheidung?** Wird diese Gegenhypothese durch aktuelle Evidenz plausibel gestützt, muss die Unsicherheit sichtbar gemacht und der vollständige Boundary-Pool erneut konsistent geprüft werden. Narrative Faktoren ohne belastbare Evidenz dürfen eine Entscheidung nicht allein drehen.
 
+   **Reversal Gate für Start/Sit-Grenzen:** Eine zuvor mit demselben Maßstab begründete Empfehlung bleibt bei unverändertem Entscheidungskontext stabil – auch wenn ein einzelner Kandidat nachträglich im Gespräch hervorgehoben wird. Eine Umkehr erfordert materiell neue oder korrigierte Informationen, einen nachgewiesenen Analysefehler oder ausdrücklich geänderte Entscheidungskriterien. Bei jeder Umkehr Ausgangsempfehlung, konkretes Evidenz-/Kriterien-Delta, Neubewertung des gesamten relevanten Boundary-Pools und daraus resultierende Empfehlung samt Konfidenz dokumentieren. Eine kleine Projektionsabweichung oder bloße Umformulierung ist für sich kein Reversal-Grund.
+
 4. **Beste legale Startaufstellung gemeinsam optimieren**
    - feste Positionsslots und FLEX-Slots als Gesamtproblem behandeln statt relevante Spieler positionsweise isoliert zu entscheiden;
    - die aktuelle Starter-/FLEX-Struktur dynamisch aus den aktuellen Ligaregeln im Repo ableiten;
@@ -382,11 +386,14 @@ Mindestens:
    - die resultierende Aufstellung muss positions- und FLEX-legal sein.
 
 5. **Matchup-State und Risikobudget kalibrieren**
+   - **Pregame-Gegneranalyse verpflichtend:** vor der ersten Weekly-Aufstellung die tatsächliche Gegnermannschaft mit Saisonleistung und jüngster Form, aktuell gesetzten und plausiblen alternativen Startern, NFL-Byes, Verletzungen, verfügbarer Positions-Coverage und möglichen Lineup-Reparaturen prüfen. Den konkreten Week-Spielerpool bewerten, nicht bloß Record, Teamnamen oder vergangene Gesamtscores; unvollständig auflösbare Gegner-Spieler und Prognosen als Unsicherheit sichtbar machen;
+   - aus Gegner- und eigenem verfügbaren Week-Pool die vorläufige Favoriten-/Außenseiterlage und den realistischen Entscheidungsspielraum ableiten, ohne aus einer schwachen Saisonbilanz, dem Saison-Punkteschnitt oder einer unkalibrierten Projektion eine präzise Siegchance vorzutäuschen; neue Availability-Evidenz bis zum Lock nachziehen;
    - den aktuellen Rohpunktestand nie isoliert als Begründung für konservativere oder aggressivere Start/Sit-Entscheidungen verwenden;
    - für beide Teams die bereits abgeschlossenen Starter, deren erzielte Punkte und die verbleibenden Starter-/Lineup-Slots bestimmen;
    - Punkte pro bereits abgeschlossenem Starter und die erwartbare verbleibende Produktion gemeinsam mit dem absoluten Punktestand betrachten;
    - einen optischen Rückstand, der primär daraus entsteht, dass der Gegner mehr Spieler bereits absolviert hat, nicht als echten Comeback-Zwang behandeln;
    - Floor-/Median-orientierte Entscheidungen bleiben der Default, solange kein materiell belastbarer Rückstand in der verbleibenden Siegchance vorliegt;
+   - bei begründetem Vorteil gegen den konkreten Gegner für enge Boundary-Entscheidungen stabilen Floor und belastbare Opportunity etwas höher gewichten, unnötige Inactive-/Workload-Varianz reduzieren, aber keinen klaren Erwartungswertvorteil allein für vermeintliche Sicherheit opfern; bei belastbarem Aufholbedarf gezielt mehr Ceiling/Varianz zulassen;
    - Varianz und Ceiling gezielt erhöhen, wenn Gegner-Outperformance und verbleibende Projektionen einen echten Aufholbedarf zeigen; bei einem belastbaren Vorsprung darf unnötige Downside stärker vermieden werden;
    - kleine Stichproben einzelner bereits gespielter Spieler nicht übergewichten: Matchup-State ist ein Kalibrierungsfaktor für enge Entscheidungen, kein Ersatz für Player-, Usage-, Injury- und Projection-Evaluation.
 
@@ -399,6 +406,7 @@ Mindestens:
    - die Plattformmechanik des AutoSub-Triggers ausdrücklich von verbleibendem Injury-Risiko trennen: ein AutoSub kann einen nach den geltenden Plattformregeln nicht spielenden Starter absichern, schützt aber nicht automatisch vor einem aktiven, jedoch limitierten Spieler oder einer Verletzung während des Spiels;
    - dieselbe Bench-Alternative nicht gleichzeitig als Versicherung mehrerer Starter einplanen, wenn die Plattformmechanik dies nicht tatsächlich zulässt;
    - Kickoff- und Lock-Zeit von Starter und Substitute gemeinsam berücksichtigen; erlaubt die Liga einen früher spielenden Substitute, darf dieser nur unter Berücksichtigung des dadurch früher eintretenden Lock- bzw. Flexibilitätsverlusts verwendet werden;
+   - **Early-Lock-Optionswert ausdrücklich vergleichen:** bei einem frühen startbaren Kandidaten und einer späteren fraglichen Alternative drei legale Pfade gegenüberstellen: (a) den frühen Spieler direkt starten, (b) den späteren Spieler starten und den frühen Spieler als AutoSub verwenden, sofern die aktuelle Sleeper-Mechanik das erlaubt, (c) den frühen Spieler benchen und die spätere Start/Sit-/AutoSub-Entscheidung offenlassen. Erwartete Punkte, Inactive-Risiko, Active-but-limited-Restrisiko, möglicher Ausfall trotz AutoSub, freie FLEX-/Positionsalternativen und den durch frühes Pairing verlorenen Informations-/Wechselwert gemeinsam beurteilen; keine frühen Locks allein für nominelle Upside erzwingen;
    - einen unsicheren späten Starter nur dann bevorzugen, wenn entweder ein realistisch startbarer Backup-/AutoSub-Pfad mit passender Positions-/FLEX-Berechtigung und nach aktueller Ligaregel nutzbarem Timing verfügbar ist oder der Erwartungswertvorteil das zusätzliche Null-/Limitierungsrisiko klar rechtfertigt;
    - ohne belastbaren Late-Swap-/AutoSub-Pfad einen früheren gesunden Spieler mit etwas niedrigerer Ceiling bevorzugen, wenn der erwartete Floor-/Median-Verlust kleiner ist als das Downside-Risiko des späten unsicheren Spielers;
    - Practice Participation, offizielle Game Designation, glaubwürdige Snap-/Workload-Berichte und finale Inactive-Meldungen unterscheiden; `Questionable` allein ist weder automatische Bench- noch automatische Start-Begründung;
@@ -434,12 +442,14 @@ Der spätere Workflow soll mindestens liefern:
 
 - empfohlene Startaufstellung;
 - wichtigste Start/Sit- und Boundary-Entscheidungen einschließlich relevanter Alternativen und Entscheidungskonfidenz;
+- tragende externe Experten-/Usage-Evidenz, wesentliche Quellendivergenzen und die Begründung eines etwaigen Reversal-Gates;
 - empfohlene AutoSub-/Substitute-Paarungen einschließlich Trigger, Lock-/Timing-Punkt und nicht abgesichertem Residual Risk;
 - empfohlene Waiver Adds;
 - zugehörige Drops;
 - priorisierte Alternativen;
 - Injury-/Bye-Risiken;
 - aktueller Matchup-State einschließlich absolvierte Starter und verbleibende Slots beider Teams, wenn bereits Spiele gelaufen sind;
+- Pregame-Gegnerprofil einschließlich tatsächlicher verfügbarer Starter-/Bench-Alternativen, Byes, Injury-Risiken und Grenzen der Datenlage;
 - das daraus abgeleitete Risikobudget für enge Start/Sit-Entscheidungen;
 - konkreter Late-Swap-/AutoSub-Backup-Pfad für bewusst gestartete späte Questionable-/Game-Time-Decision-Spieler;
 - relevanter nächster Recheck-Zeitpunkt für Injury-/Inactive-/Lock-Evidenz, wenn die Entscheidung zeitabhängig bleibt;
