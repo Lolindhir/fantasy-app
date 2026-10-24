@@ -77,6 +77,38 @@ snapshots:
     - Historical snapshots move byte-identical with git mv. Paths inside old metadata.json files stay as historical provenance.
     - New snapshots and metadata do not carry actual_league_team_count or team_count_usage.
 
+dormantAppendOnlyRankedWriter:
+  module: tools/external_source/append_only_snapshot.py
+  status: "4A.2 rights-and-private gated primitive only; NO production cutover"
+  sourcePlanner: tools/external_source/snapshot_plan.py
+  repositoryGate: >
+    Future caller must independently verify that the GitHub repository is
+    private before attesting repository_visibility=private; never infer from
+    configured destination. This repository is currently public.
+  licenseGate: >
+    Dataset-specific rights.storage must explicitly be allowed under #190.
+    Private repository visibility is not a provider-storage license.
+  testOnlyUse: >
+    Current tests use synthetic temporary roots and synthetic rights=allowed.
+    No provider fetcher or workflow imports this writer. No additional
+    permanent vendor data or Generated/Derived products are written.
+  immutableRules: >
+    Rank/content + Source schema determine semantic hash and UTC-second
+    directory identity. Full staged contents are renamed into a new
+    intraday snapshot directory; identical replay returns identical and
+    conflicting or partial previous destinations fail closed. Original
+    legacy daily evidence, ranked latest pointers and provider raw latest
+    are never altered by this primitive. Caller separately owns semantic
+    no-op eligibility, latest pointer publication, and rebase/race-safe
+    workflow integration. Concrete collision/rights/storage review still
+    required before activation.
+  approvedSequence: >
+    Move website deployment away from public-repository dependence (or
+    verify support for private-source Pages) and convert repo privacy in a
+    separately approved high-impact migration. Complete per-dataset
+    retention license/attribution review (#190). Only then enable
+    provider-by-provider snapshot cutover with live-parity and rollback.
+
 readOnlyVersionedAdapters:
   implementation: tools/external_source/observation_adapter.py
   status: "4A.4 read-only parser/validator; not yet a published market-observations product"
