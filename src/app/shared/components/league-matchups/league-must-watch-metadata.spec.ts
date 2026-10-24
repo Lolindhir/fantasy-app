@@ -408,7 +408,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
         expect(card.scrollWidth).withContext(`${width}px card overflow`).toBeLessThanOrEqual(card.clientWidth + 1);
         expect(lockup.scrollWidth).withContext(`${width}px score overflow`).toBeLessThanOrEqual(lockup.clientWidth + 1);
         expect(lockupRect.right).withContext(`${width}px score containment`).toBeLessThanOrEqual(cardRect.right + 1);
-        expect(getComputedStyle(lockup).display).toBe('inline-grid');
+        expect(getComputedStyle(lockup).display).toBe('grid');
         for (let index = 0; index < 2; index++) {
           const teamRect = teams[index].getBoundingClientRect();
           const scoreRect = scores[index].getBoundingClientRect();
