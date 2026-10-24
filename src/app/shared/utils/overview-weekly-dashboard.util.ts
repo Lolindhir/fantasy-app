@@ -9,6 +9,7 @@ import type {
 import type {
   WeeklyRecapKeyGame,
   WeeklyRecapKeyPlayer,
+  WeeklyRecapTeamAwards,
   WeeklyRecapsReadModel,
   WeeklyRecapWeek
 } from '../../core/models/weekly-recap.models';
@@ -59,6 +60,7 @@ export interface OverviewRecapSelection {
   week: number;
   games: WeeklyRecapKeyGame[];
   players: WeeklyRecapKeyPlayer[];
+  awards: WeeklyRecapTeamAwards | null;
   prominent: boolean;
 }
 
@@ -483,6 +485,7 @@ function selectRecapDensity(recap: WeeklyRecapWeek, prominent: boolean): Overvie
     week: recap.Week,
     games: recap.KeyGames.slice(0, 2),
     players: recap.KeyPlayers.slice(0, 3),
+    awards: recap.TeamAwards?.State === 'available' ? recap.TeamAwards : null,
     prominent
   };
 }
