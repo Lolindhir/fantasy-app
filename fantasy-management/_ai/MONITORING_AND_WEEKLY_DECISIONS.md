@@ -387,6 +387,7 @@ Mindestens:
 
 5. **Matchup-State und Risikobudget kalibrieren**
    - **Pregame-Gegneranalyse verpflichtend:** vor der ersten Weekly-Aufstellung die tatsächliche Gegnermannschaft mit Saisonleistung und jüngster Form, aktuell gesetzten und plausiblen alternativen Startern, NFL-Byes, Verletzungen, verfügbarer Positions-Coverage und möglichen Lineup-Reparaturen prüfen. Den konkreten Week-Spielerpool bewerten, nicht bloß Record, Teamnamen oder vergangene Gesamtscores; unvollständig auflösbare Gegner-Spieler und Prognosen als Unsicherheit sichtbar machen;
+   - **Interne Matchup-Prognose bleibt nachrangig:** Repo-eigene Team-/Matchup-Projektionen (z. B. `public/data/MatchupProjections.json`) sind modellabhängige Plausibilitäts- und Szenariohinweise, **niemals das primäre Kriterium** für Start/Sit, Favoritenlage oder das Floor-/Ceiling-Risikobudget. Vorrang haben der überprüfte aktuelle Starter-/Bench-/Bye-/Injury-State beider Teams, belastbare Usage/Opportunity, konkretes Matchup und nachvollziehbar begründete unabhängige Experteneinschätzungen. Bei Abweichungen Modellannahmen, tatsächliche Kalibrierung/Prognosegüte, Aktualität, fehlende Inputs und Unsicherheit offenlegen. Einen numerischen Team-Projektionsvorsprung oder modelliertes Intervall nicht automatisch als belastbare Siegchance oder Grund für eine konservative Aufstellung interpretieren;
    - aus Gegner- und eigenem verfügbaren Week-Pool die vorläufige Favoriten-/Außenseiterlage und den realistischen Entscheidungsspielraum ableiten, ohne aus einer schwachen Saisonbilanz, dem Saison-Punkteschnitt oder einer unkalibrierten Projektion eine präzise Siegchance vorzutäuschen; neue Availability-Evidenz bis zum Lock nachziehen;
    - den aktuellen Rohpunktestand nie isoliert als Begründung für konservativere oder aggressivere Start/Sit-Entscheidungen verwenden;
    - für beide Teams die bereits abgeschlossenen Starter, deren erzielte Punkte und die verbleibenden Starter-/Lineup-Slots bestimmen;
@@ -451,6 +452,7 @@ Der spätere Workflow soll mindestens liefern:
 - aktueller Matchup-State einschließlich absolvierte Starter und verbleibende Slots beider Teams, wenn bereits Spiele gelaufen sind;
 - Pregame-Gegnerprofil einschließlich tatsächlicher verfügbarer Starter-/Bench-Alternativen, Byes, Injury-Risiken und Grenzen der Datenlage;
 - das daraus abgeleitete Risikobudget für enge Start/Sit-Entscheidungen;
+- falls dargestellt, Repo-Matchup-Projektionen ausdrücklich als sekundäre Modellorientierung getrennt von tragender Wochen-Evidenz ausweisen;
 - konkreter Late-Swap-/AutoSub-Backup-Pfad für bewusst gestartete späte Questionable-/Game-Time-Decision-Spieler;
 - relevanter nächster Recheck-Zeitpunkt für Injury-/Inactive-/Lock-Evidenz, wenn die Entscheidung zeitabhängig bleibt;
 - Kicker Hold/Stream;
