@@ -380,8 +380,22 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
       expect(shell!.getBoundingClientRect().height).toBeLessThan(305);
       expect(awardGrid!.scrollWidth).toBeLessThanOrEqual(awardGrid!.clientWidth + 1);
       expect(getComputedStyle(awardGrid!).gridTemplateColumns.split(' ').filter(Boolean).length).toBe(2);
-      for (const award of awards) expect(award.scrollWidth).toBeLessThanOrEqual(award.clientWidth + 1);
+      for (const award of awards) {
+        expect(award.scrollWidth).toBeLessThanOrEqual(award.clientWidth + 1);
+        const winner = award.querySelector<HTMLElement>('.weekly-recap-award-winner')!;
+        const owner = winner.querySelector<HTMLElement>('.weekly-recap-award-owner')!;
+        const value = winner.querySelector<HTMLElement>('.weekly-recap-award-value')!;
+        const ownerRect = owner.getBoundingClientRect();
+        const valueRect = value.getBoundingClientRect();
+        const ownerCenterY = (ownerRect.top + ownerRect.bottom) / 2;
+        const valueCenterY = (valueRect.top + valueRect.bottom) / 2;
+        expect(Math.abs(ownerCenterY - valueCenterY)).toBeLessThan(2);
+        expect(valueRect.right).toBeLessThanOrEqual(winner.getBoundingClientRect().right + 1);
+        expect(getComputedStyle(value).whiteSpace).toBe('nowrap');
+      }
       expect(getComputedStyle(awards[0].querySelector<HTMLElement>('.weekly-recap-award-extra')!).display).toBe('none');
+      expect(getComputedStyle(awards[1].querySelector<HTMLElement>('.weekly-recap-award-unit')!).display).toBe('none');
+      expect(awards[1].querySelector<HTMLElement>('.weekly-recap-award-value')!.getAttribute('aria-label')).toBe('229.16 points');
 
       const gameColumns = getComputedStyle(gameList!).gridTemplateColumns.split(' ').filter(Boolean);
       const playerColumns = getComputedStyle(playerList!).gridTemplateColumns.split(' ').filter(Boolean);
