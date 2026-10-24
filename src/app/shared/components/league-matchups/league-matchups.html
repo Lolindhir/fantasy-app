@@ -346,6 +346,7 @@
                   *ngFor="let game of mustWatch"
                   class="fantasy-pulse-card fantasy-pulse-card--remaining"
                   [class.fantasy-pulse-card--live]="gameIsLiveForFantasy(game)"
+                  [class.fantasy-pulse-card--final]="gameIsFinal(game)"
                 >
                   <span class="fantasy-pulse-rank" *ngIf="game.RemainingRelevance?.MustWatchRank as rank">#{{ rank }}</span>
                   <button
@@ -372,6 +373,18 @@
                       <span *ngIf="gameIsLiveForFantasy(game)" class="fantasy-pulse-live-dot">Live</span>
                       <span *ngIf="gameIsFinal(game)" role="img" aria-label="Final">🏁</span>
                       <span>{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
+                    </span>
+                    <span *ngIf="!gameIsFinal(game) && game.Market as market" class="fantasy-pulse-market">
+                      <span *ngIf="hasImpliedNflScores(market)" class="fantasy-pulse-market-expectation">
+                        <span class="fantasy-pulse-market-label">Market est.</span>
+                        <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }} {{ formatNflMarketNumber(market.ImpliedAwayPoints) }}</strong>
+                        <span class="fantasy-pulse-market-separator">·</span>
+                        <strong>{{ game.HomeTeamAbbr || game.HomeTeamID }} {{ formatNflMarketNumber(market.ImpliedHomePoints) }}</strong>
+                      </span>
+                      <span *ngIf="hasNflMarketLine(market)" class="fantasy-pulse-market-lines">
+                        <span *ngIf="market.TotalLine !== null">O/U {{ formatNflMarketNumber(market.TotalLine) }}</span>
+                        <span *ngIf="favoriteSpreadLabel(game) as spreadLabel">{{ spreadLabel }}</span>
+                      </span>
                     </span>
                     <span class="fantasy-pulse-metrics">
                       <strong *ngIf="game.Relevance.StarterCount > 0" class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--starter">

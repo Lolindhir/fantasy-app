@@ -13,9 +13,10 @@ contract:
   current_output: public/data/FantasyGameContext.json
   historical_output: public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json
   historical_index: public/data/PastSeasonsIndex.json
-  schema_version: 5
+  schema_version: 6
   ownership: generator-owned
   angular_role: presentation-only
+  historical_schema: existing-compatible-version-no-modern-odds-backfill
 
 semantic_chain:
   - NFL Game
@@ -80,6 +81,23 @@ impact:
     partial: league-scored facts exist but the NFL game is not final
     final: league-scored facts exist and the NFL game is final
   ordering: StarterPoints descending, then relevance ordering
+
+current_nfl_market:
+  owner: data-derived/nfl-games/<season>.json
+  delivery: current Games[].Market, nullable, added in schema v6 by Issue #1148
+  exact_join: App Schedule.gameID -> Schedule.CanonicalGameID -> Derived GameID
+  fields: [SpreadLine, TotalLine, ImpliedAwayPoints, ImpliedHomePoints]
+  guard: >-
+    Matching season, week and away/home teams are required; mismatched canonical
+    identity or malformed numbers fail closed. Absent Derived data remains null.
+  semantics: >-
+    Market-derived NFL points are not actual NFL scores, Fantasy projections or a
+    time-stamped historical bookmaker snapshot. Current values are latest available
+    lines; do not imply a 10-minute refresh for bookmaker price odds.
+  ui: >-
+    In Overview Must Watch, show compact market expectations and O/U/spread before
+    Final; once Final, show actual NFL scores instead. Preserve existing ranking.
+  historical: no latest-line backfill and no schema promotion for existing archives
 
 counterfactual:
   statement: >-

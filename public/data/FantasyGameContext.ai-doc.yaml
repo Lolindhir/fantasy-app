@@ -1,4 +1,4 @@
-schemaVersion: 5
+schemaVersion: 6
 
 file:
   path: public/data/FantasyGameContext.json
@@ -9,6 +9,7 @@ file:
   matchupPreviewDerivation: public/requests/utils/league/FantasyMatchupPreviewUtils.psm1
   weeklyWatchDerivation: public/requests/utils/league/FantasyWeeklyWatchUtils.psm1
   scoreProjectionDerivation: public/requests/utils/league/FantasyGameContextUtils.psm1::Add-FantasyGameScoreContext
+  marketProjectionDerivation: public/requests/utils/league/FantasyGameContextUtils.psm1::Add-FantasyGameMarketContext
   predecessorIssue: 346
   v2Issue: 432
   v2RefinementIssue: 437
@@ -18,6 +19,7 @@ file:
   scorePresentationIssue: 453
   weeklyWatchRefinementIssue: 467
   liveAndNextScoringWindowsIssue: 520
+  currentNflMarketIssue: 1148
 
 contract:
   purpose: >
@@ -31,6 +33,9 @@ contract:
     relevance. Schema v5 separates the currently active direct-Starter scoring
     window from the next future direct-Starter scoring window so both temporal
     horizons can be presented simultaneously without using lineup-decision facts.
+    Current schema v6 adds an optional NFL-game market projection to support the
+    compact Must Watch display; historical read models retain their original
+    published schemas and are not retroactively filled with modern odds.
   topLevel:
     - SchemaVersion
     - LeagueID
@@ -68,6 +73,9 @@ contract:
       mean the next future direct-Starter scoring window only. Angular keeps an
       explicit schema-v4 compatibility path where the legacy NextScoringWindow may
       itself be live, but schema-v4 data cannot prove FINAL SCORING WINDOW.
+    market: >
+      Schema-v6 Market is nullable, additive current-week display evidence; older
+      consumers and historical contexts may omit it safely.
 
 remainingScoringPaths:
   source: DecisionWindows.json.FantasyRelevance
@@ -165,6 +173,7 @@ game:
   fields:
     - AwayScore
     - HomeScore
+    - Market
     - HasRemainingRelevance
     - LockedActiveStarterCount
     - UnlockedStarterCount
@@ -216,6 +225,33 @@ nflGameScore:
   conflictRule: >
     Conflicting complete score evidence for the same GameID fails closed in the
     score merge helper instead of selecting a value silently.
+
+nflGameMarket:
+  currentFields:
+    - Games[].Market.SpreadLine
+    - Games[].Market.TotalLine
+    - Games[].Market.ImpliedAwayPoints
+    - Games[].Market.ImpliedHomePoints
+  owner: data-derived/nfl-games/<season>.json
+  join: >
+    Current RequestLeague reads the matching season's global NFL Games Derived
+    product and joins Schedule.gameID -> Schedule.CanonicalGameID -> Derived.Games[].GameID.
+    Season, week, away team and home team must agree; no abbreviation/date guessing.
+  missingRule: >
+    If the Derived partition or matching game/market is missing, project null
+    without inventing 0. A present incompatible season, malformed number or
+    mismatched canonical team/week is a publication error and fails closed.
+  semantics: >
+    Market implied points are provider-line-derived NFL team expectations, not actual
+    scores and not Fantasy projections. SpreadLine is the signed away spread
+    (positive favors home). Angular only formats it as a human-readable favorite.
+  freshness: >
+    The latest-line market is not a proven historical pregame observation.
+    Do not label it as a closing line or live, 10-minute price updates.
+  mustWatchDisplay: >
+    Show market expectations and O/U/spread only before Final and label them clearly
+    as Market estimates. After Final the actual NFL score is primary and the market
+    row is hidden. Fantasy Must Watch ranking and player impact stay unchanged.
 
 mustWatchGames:
   purpose: >
