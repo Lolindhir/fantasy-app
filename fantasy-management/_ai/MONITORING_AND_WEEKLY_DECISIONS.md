@@ -387,7 +387,7 @@ Mindestens:
 
 5. **Matchup-State und Risikobudget kalibrieren**
    - **Pregame-Gegneranalyse verpflichtend:** vor der ersten Weekly-Aufstellung die tatsächliche Gegnermannschaft mit Saisonleistung und jüngster Form, aktuell gesetzten und plausiblen alternativen Startern, NFL-Byes, Verletzungen, verfügbarer Positions-Coverage und möglichen Lineup-Reparaturen prüfen. Den konkreten Week-Spielerpool bewerten, nicht bloß Record, Teamnamen oder vergangene Gesamtscores; unvollständig auflösbare Gegner-Spieler und Prognosen als Unsicherheit sichtbar machen;
-   - aus Gegner- und eigenem verfügbaren Week-Pool die vorläufige Favoriten-/Außenseiterlage und den realistischen Entscheidungsspielraum ableiten, ohne aus einem 0–6-Record, Saison-Punkteschnitt oder einer unkalibrierten Projektion eine präzise Siegchance vorzutäuschen; neue Availability-Evidenz bis zum Lock nachziehen;
+   - aus Gegner- und eigenem verfügbaren Week-Pool die vorläufige Favoriten-/Außenseiterlage und den realistischen Entscheidungsspielraum ableiten, ohne aus einer schwachen Saisonbilanz, dem Saison-Punkteschnitt oder einer unkalibrierten Projektion eine präzise Siegchance vorzutäuschen; neue Availability-Evidenz bis zum Lock nachziehen;
    - den aktuellen Rohpunktestand nie isoliert als Begründung für konservativere oder aggressivere Start/Sit-Entscheidungen verwenden;
    - für beide Teams die bereits abgeschlossenen Starter, deren erzielte Punkte und die verbleibenden Starter-/Lineup-Slots bestimmen;
    - Punkte pro bereits abgeschlossenem Starter und die erwartbare verbleibende Produktion gemeinsam mit dem absoluten Punktestand betrachten;
