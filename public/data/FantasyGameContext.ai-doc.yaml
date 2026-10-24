@@ -244,14 +244,17 @@ nflGameMarket:
   semantics: >
     Market implied points are provider-line-derived NFL team expectations, not actual
     scores and not Fantasy projections. SpreadLine is the signed away spread
-    (positive favors home). Angular only formats it as a human-readable favorite.
+    (positive favors home). Angular only rounds implied points for compact display;
+    original market values remain unchanged in this read model.
   freshness: >
     The latest-line market is not a proven historical pregame observation.
     Do not label it as a closing line or live, 10-minute price updates.
   mustWatchDisplay: >
-    Show market expectations and O/U/spread only before Final and label them clearly
-    as Market estimates. After Final the actual NFL score is primary and the market
-    row is hidden. Fantasy Must Watch ranking and player impact stay unchanged.
+    Show rounded approximate implied points beneath their respective teams before
+    Final, with a Vegas/market cue. After Final the actual NFL scores occupy those
+    same positions with a Final cue. O/U and spread remain available in Market but
+    are not displayed on the compact Must Watch cards. Fantasy ranking and impact
+    remain primary and unchanged.
 
 mustWatchGames:
   purpose: >

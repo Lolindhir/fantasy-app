@@ -28,48 +28,35 @@
   padding-right: 160px;
 }
 
-/* #1148: one compact market-evidence line, independent of live/final NFL scores. */
-.fantasy-pulse-market {
-  grid-column: 1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 10px;
-  min-width: 0;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.2;
+/* #1148: pair row and score row share columns, so neither score needs a repeated team label. */
+.fantasy-pulse-card--remaining .fantasy-pulse-game-lockup {
+  display: inline-grid;
+  grid-template-columns: max-content max-content max-content;
+  align-items: center;
+  justify-items: center;
+  gap: 2px 6px;
+  width: max-content;
+  max-width: 100%;
 }
 
-.fantasy-pulse-market-expectation,
-.fantasy-pulse-market-lines {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 5px;
-}
-
-.fantasy-pulse-market-label {
-  color: #64748b;
-  font-size: 0.53rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.fantasy-pulse-market-expectation strong {
+.fantasy-pulse-score-value {
   color: #172033;
-  font-size: 0.73rem;
-  font-weight: 900;
+  font-size: 0.85rem;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   white-space: nowrap;
 }
 
-.fantasy-pulse-market-separator { color: #a0a9b7; }
-
-.fantasy-pulse-market-lines {
-  color: #64748b;
-  font-size: 0.58rem;
-  font-weight: 700;
+.fantasy-pulse-score-label {
+  font-size: 0.55rem;
+  font-weight: 800;
+  line-height: 1.1;
   white-space: nowrap;
 }
+
+.fantasy-pulse-score-label--market { color: var(--lifecycle-neutral-fg); }
+.fantasy-pulse-score-label--final { color: var(--lifecycle-final-fg); }
 
 .fantasy-pulse-team-strip {
   position: absolute;

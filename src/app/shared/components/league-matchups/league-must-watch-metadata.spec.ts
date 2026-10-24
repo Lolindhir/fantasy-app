@@ -300,7 +300,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
     }
   });
 
-  it('shows compact team-specific implied NFL points, total and away favorite before Final', () => {
+  it('shows rounded Vegas-implied NFL points beneath their teams without O/U or spread', () => {
     dataService.getFantasyGameContext.and.returnValue(of(makeMarketContext(false)));
     const marketFixture = TestBed.createComponent(LeagueMatchupsComponent);
     marketFixture.componentInstance.league = makeLeague();
@@ -308,26 +308,16 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
 
     try {
       const host: HTMLElement = marketFixture.nativeElement;
-      const market = host.querySelector<HTMLElement>('.fantasy-pulse-market');
-      const estimate = market?.querySelector<HTMLElement>('.fantasy-pulse-market-expectation');
-      const lines = market?.querySelector<HTMLElement>('.fantasy-pulse-market-lines');
-      // Flex-gap separates sibling elements visually; textContent does not
-      // invent whitespace between their adjacent text nodes.
-      expect(Array.from(estimate?.children ?? []).map(element => element.textContent?.trim())).toEqual([
-        'Market est.', 'PIT 23.75', '·', 'NO 20.75'
-      ]);
-      expect(Array.from(lines?.children ?? []).map(element => element.textContent?.trim())).toEqual([
-        'O/U 44.5', 'PIT −3'
-      ]);
-      expect(host.querySelector('.fantasy-pulse-final-nfl-score')).toBeNull();
-      expect(marketFixture.componentInstance.favoriteSpreadLabel({
-        ...makeMarketContext(false).Games[0],
-        Market: { SpreadLine: 2.5, TotalLine: 46.5, ImpliedAwayPoints: 22, ImpliedHomePoints: 24.5 }
-      })).toBe('NO −2.5');
-      expect(marketFixture.componentInstance.favoriteSpreadLabel({
-        ...makeMarketContext(false).Games[0],
-        Market: { SpreadLine: 0, TotalLine: 44, ImpliedAwayPoints: 22, ImpliedHomePoints: 22 }
-      })).toBe('PK');
+      const lockup = host.querySelector<HTMLElement>('.fantasy-pulse-game-lockup')!;
+      const scores = lockup.querySelectorAll<HTMLElement>('.fantasy-pulse-score-value');
+      expect(Array.from(scores).map(score => score.textContent?.trim())).toEqual(['≈24', '≈21']);
+      expect(lockup.querySelector('.fantasy-pulse-score-label--market')?.textContent?.trim()).toBe('🎰 Vegas');
+      expect(lockup.querySelectorAll('.fantasy-pulse-nfl-team').length).toBe(2);
+      expect(lockup.textContent).not.toContain('O/U');
+      expect(lockup.textContent).not.toContain('44.5');
+      expect(lockup.textContent).not.toContain('−3');
+      expect(marketFixture.componentInstance.formatImpliedNflScore(24.5)).toBe('≈25');
+      expect(marketFixture.componentInstance.formatImpliedNflScore(null)).toBe('–');
     } finally {
       marketFixture.destroy();
     }
@@ -340,8 +330,10 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
     finalFixture.detectChanges();
     try {
       const host: HTMLElement = finalFixture.nativeElement;
-      expect(host.querySelector('.fantasy-pulse-final-nfl-score')?.textContent?.trim()).toBe('24–30');
-      expect(host.querySelector('.fantasy-pulse-market')).toBeNull();
+      const lockup = host.querySelector<HTMLElement>('.fantasy-pulse-game-lockup')!;
+      expect(Array.from(lockup.querySelectorAll('.fantasy-pulse-score-value')).map(score => score.textContent?.trim())).toEqual(['24', '30']);
+      expect(lockup.querySelector('.fantasy-pulse-score-label--final')?.textContent?.trim()).toBe('🏁 Final');
+      expect(lockup.querySelector('.fantasy-pulse-score-label--market')).toBeNull();
       expect(host.querySelector('[aria-label="Final"]')).not.toBeNull();
       expect(host.querySelector('.fantasy-pulse-card--final')).not.toBeNull();
     } finally {
@@ -349,14 +341,41 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
     }
   });
 
-  it('omits the market row when no canonical market data is available', () => {
+  it('keeps scheduled and final games side by side in the same Must Watch ranking', () => {
+    const scheduled = makeMarketContext(false);
+    const final = makeMarketContext(true);
+    dataService.getFantasyGameContext.and.returnValue(of({
+      ...scheduled,
+      Games: [scheduled.Games[0], { ...final.Games[0], GameID: 'g2' }],
+      MustWatchGames: [scheduled.MustWatchGames![0], { ...scheduled.MustWatchGames![0], GameID: 'g2', Rank: 2 }]
+    }));
+    const mixedFixture = TestBed.createComponent(LeagueMatchupsComponent);
+    mixedFixture.componentInstance.league = makeLeague();
+    mixedFixture.detectChanges();
+    try {
+      const cards = (mixedFixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.fantasy-pulse-card--remaining');
+      expect(cards.length).toBe(2);
+      expect(cards[0].querySelector('.fantasy-pulse-score-label--market')?.textContent?.trim()).toBe('🎰 Vegas');
+      expect(cards[0].querySelectorAll('.fantasy-pulse-score-value').length).toBe(2);
+      expect(cards[1].querySelector('.fantasy-pulse-score-label--final')?.textContent?.trim()).toBe('🏁 Final');
+      expect(cards[1].querySelectorAll('.fantasy-pulse-score-value').length).toBe(2);
+      expect(cards[1].querySelector('.fantasy-pulse-score-label--market')).toBeNull();
+      expect(cards[0].querySelector('.fantasy-pulse-metrics')?.textContent).toContain('starter');
+      expect(cards[1].querySelector('.fantasy-pulse-metrics')?.textContent).toContain('starter');
+    } finally {
+      mixedFixture.destroy();
+    }
+  });
+
+  it('omits the score row when no canonical market data is available', () => {
     const host: HTMLElement = fixture.nativeElement;
-    expect(host.querySelector('.fantasy-pulse-market')).toBeNull();
+    expect(host.querySelector('.fantasy-pulse-score-value')).toBeNull();
+    expect(host.querySelector('.fantasy-pulse-score-label')).toBeNull();
     expect(host.querySelector('.fantasy-pulse-game-lockup')).not.toBeNull();
   });
 
   for (const width of [360, 390, 430, 1280]) {
-    it(`keeps the added market row readable and compact at ${width}px`, () => {
+    it(`keeps the team-aligned score row readable and compact at ${width}px`, () => {
       dataService.getFantasyGameContext.and.returnValue(of(makeMarketContext(false)));
       const marketFixture = TestBed.createComponent(LeagueMatchupsComponent);
       marketFixture.componentInstance.league = makeLeague();
@@ -381,12 +400,21 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
         frameDocument.body.appendChild(sourceCard.cloneNode(true));
 
         const card = frameDocument.querySelector<HTMLElement>('.fantasy-pulse-card--remaining')!;
-        const market = card.querySelector<HTMLElement>('.fantasy-pulse-market')!;
+        const lockup = card.querySelector<HTMLElement>('.fantasy-pulse-game-lockup')!;
+        const teams = lockup.querySelectorAll<HTMLElement>('.fantasy-pulse-nfl-team');
+        const scores = lockup.querySelectorAll<HTMLElement>('.fantasy-pulse-score-value');
         const cardRect = card.getBoundingClientRect();
-        const marketRect = market.getBoundingClientRect();
+        const lockupRect = lockup.getBoundingClientRect();
         expect(card.scrollWidth).withContext(`${width}px card overflow`).toBeLessThanOrEqual(card.clientWidth + 1);
-        expect(market.scrollWidth).withContext(`${width}px market overflow`).toBeLessThanOrEqual(market.clientWidth + 1);
-        expect(marketRect.right).withContext(`${width}px market containment`).toBeLessThanOrEqual(cardRect.right + 1);
+        expect(lockup.scrollWidth).withContext(`${width}px score overflow`).toBeLessThanOrEqual(lockup.clientWidth + 1);
+        expect(lockupRect.right).withContext(`${width}px score containment`).toBeLessThanOrEqual(cardRect.right + 1);
+        expect(getComputedStyle(lockup).display).toBe('inline-grid');
+        for (let index = 0; index < 2; index++) {
+          const teamRect = teams[index].getBoundingClientRect();
+          const scoreRect = scores[index].getBoundingClientRect();
+          expect(Math.abs((teamRect.left + teamRect.right) / 2 - (scoreRect.left + scoreRect.right) / 2))
+            .withContext(`${width}px team ${index} score alignment`).toBeLessThanOrEqual(2);
+        }
         expect(cardRect.height).withContext(`${width}px compact card`).toBeLessThanOrEqual(116);
       } finally {
         frame.remove();
