@@ -87,9 +87,124 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertIn("inputs.materialization_scope != 'game-finality'", source)
         self.assertIn("data-derived/nfl-games", source)
 
+    def test_schedule_odds_checkout_depth_is_an_isolated_pilot(self) -> None:
+        source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        checkout = source.split("      - name: Checkout main\n", 1)[1].split(
+            "\n      - name:", 1
+        )[0]
+        self.assertIn(
+            "(inputs.materialization_scope == 'game-finality' || "
+            "inputs.materialization_scope == 'schedule-odds') && 1 || 0",
+            checkout,
+        )
+        self.assertIn("ref: main", checkout)
+        self.assertIn("token:", checkout)
+
+    def test_schedule_odds_rejected_push_unshallows_before_diff_and_rebase(self) -> None:
+        source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        publisher = source.split("          publish_canonical_commit() {\n", 1)[1].split(
+            "\n          }\n", 1
+        )[0]
+        self.assertIn(
+            'if [[ "$materialization_scope" == "schedule-odds" ]] '
+            '&& [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then',
+            publisher,
+        )
+        self.assertIn("git fetch --unshallow origin main", publisher)
+        self.assertIn("else\n                git fetch origin main\n              fi", publisher)
+        self.assertLess(
+            publisher.index("git fetch --unshallow origin main"),
+            publisher.index('git diff --quiet "$base_sha" origin/main'),
+        )
+        self.assertLess(
+            publisher.index('git diff --quiet "$base_sha" origin/main'),
+            publisher.index("git rebase origin/main"),
+        )
+
+    def test_schedule_odds_real_git_shallow_race_classification(self) -> None:
+        """Exercise no-race and two competing-writer cases with real Git."""
+        import subprocess
+        import tempfile
+
+        source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        publisher = source.split("          publish_canonical_commit() {\n", 1)[1].split(
+            "\n          }\n", 1
+        )[0]
+
+        def git(cwd: Path, *args: str) -> str:
+            result = subprocess.run(
+                ["git", *args], cwd=cwd, check=True, capture_output=True,
+                text=True, timeout=30,
+            )
+            return result.stdout.strip()
+
+        for race in ("none", "outside-inputs", "inside-inputs"):
+            with self.subTest(race=race), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                remote = root / "remote.git"
+                git(root, "init", "--bare", "--initial-branch=main", str(remote))
+                writer = root / "writer"
+                git(root, "clone", str(remote), str(writer))
+                git(writer, "config", "user.name", "Workflow Test")
+                git(writer, "config", "user.email", "workflow-test@example.invalid")
+                odds_path = Path("data-source/nfl/schedule-odds/2026.json")
+                (writer / odds_path).parent.mkdir(parents=True)
+                (writer / odds_path).write_text("original\n", encoding="utf-8")
+                (writer / "other.txt").write_text("original\n", encoding="utf-8")
+                git(writer, "add", ".")
+                git(writer, "commit", "-m", "initial state")
+                git(writer, "push", "origin", "HEAD:main")
+
+                shallow = root / "shallow"
+                git(root, "clone", "--depth=1", remote.as_uri(), str(shallow))
+                self.assertEqual("true", git(shallow, "rev-parse", "--is-shallow-repository"))
+                git(shallow, "config", "user.name", "Workflow Test")
+                git(shallow, "config", "user.email", "workflow-test@example.invalid")
+                (shallow / odds_path).write_text("published odds\n", encoding="utf-8")
+                git(shallow, "add", str(odds_path))
+                git(shallow, "commit", "-m", "validated odds materialization")
+
+                if race != "none":
+                    if race == "inside-inputs":
+                        (writer / odds_path).write_text("changed upstream\n", encoding="utf-8")
+                    else:
+                        (writer / "other.txt").write_text("changed elsewhere\n", encoding="utf-8")
+                    git(writer, "add", ".")
+                    git(writer, "commit", "-m", "concurrent writer")
+                    git(writer, "push", "origin", "HEAD:main")
+
+                script = (
+                    "set -euo pipefail\n"
+                    "push_url=origin\n"
+                    "materialization_scope=schedule-odds\n"
+                    "materialize_input_pathspecs=(data-source/nfl/schedule-odds)\n"
+                    "publish_canonical_commit() {\n" + publisher + "\n}\n"
+                    "if publish_canonical_commit; then echo PUBLISHED; else echo REBUILD; fi\n"
+                )
+                result = subprocess.run(
+                    ["bash", "-c", script], cwd=shallow, check=True,
+                    capture_output=True, text=True, timeout=30,
+                )
+                self.assertEqual(
+                    "true" if race == "none" else "false",
+                    git(shallow, "rev-parse", "--is-shallow-repository"),
+                )
+                git(writer, "fetch", "origin", "main")
+                actual_odds = git(writer, "show", f"origin/main:{odds_path}")
+                if race == "inside-inputs":
+                    self.assertIn("REBUILD", result.stdout)
+                    self.assertEqual("changed upstream", actual_odds)
+                else:
+                    self.assertIn("PUBLISHED", result.stdout)
+                    self.assertEqual("published odds", actual_odds)
+                    self.assertEqual(
+                        "original" if race == "none" else "changed elsewhere",
+                        git(writer, "show", "origin/main:other.txt"),
+                    )
+
     def test_production_source_sync_skips_regressions_but_keeps_data_guards(self) -> None:
         source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
-        self.assertIn("inputs.materialization_scope == 'game-finality' && 1 || 0", source)
+        self.assertIn("inputs.materialization_scope == 'schedule-odds') && 1 || 0", source)
         self.assertIn("- name: Report production validation boundary", source)
         self.assertNotIn("- name: Test NFL data-source tooling", source)
         self.assertNotIn('discover -s tools/tests -p "test_nfl_source*.py" -v', source)
@@ -139,3 +254,4 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
