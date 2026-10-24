@@ -187,11 +187,6 @@ export class LeagueMatchupsComponent {
     maximumFractionDigits: 0
   });
 
-  private readonly marketFormatter = new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2
-  });
-
   get weeklyDashboardEnabled(): boolean {
     return !this.league?.Status || ['Pre-Season', 'In-Season', 'Playoffs'].includes(this.league.Status);
   }
@@ -429,23 +424,8 @@ export class LeagueMatchupsComponent {
       && market.ImpliedHomePoints !== null && Number.isFinite(market.ImpliedHomePoints);
   }
 
-  hasNflMarketLine(market: FantasyGameMarket): boolean {
-    return (market.TotalLine !== null && Number.isFinite(market.TotalLine))
-      || (market.SpreadLine !== null && Number.isFinite(market.SpreadLine));
-  }
-
-  formatNflMarketNumber(value: number | null): string {
-    return value === null || !Number.isFinite(value) ? '–' : this.marketFormatter.format(value);
-  }
-
-  favoriteSpreadLabel(game: FantasyGameContextGame): string | null {
-    const spread = game.Market?.SpreadLine;
-    if (spread === null || spread === undefined || !Number.isFinite(spread)) return null;
-    if (spread === 0) return 'PK';
-    const favorite = spread > 0
-      ? game.HomeTeamAbbr || game.HomeTeamID
-      : game.AwayTeamAbbr || game.AwayTeamID;
-    return `${favorite} −${this.formatNflMarketNumber(Math.abs(spread))}`;
+  formatImpliedNflScore(value: number | null): string {
+    return value === null || !Number.isFinite(value) ? '–' : `≈${this.nflScoreFormatter.format(value)}`;
   }
 
   /** Awards describe the Owner, not the franchise logo or mixed team Avatar. */

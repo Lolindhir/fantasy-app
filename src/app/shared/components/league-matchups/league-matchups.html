@@ -365,26 +365,23 @@
                         <img *ngIf="nflLogo(game.HomeTeamID) as homeLogo" [src]="homeLogo" alt="" />
                         <strong>{{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
                       </span>
-                      <strong *ngIf="hasNflScore(game)" class="fantasy-pulse-final-nfl-score">
-                        {{ formatNflScore(game.AwayScore) }}–{{ formatNflScore(game.HomeScore) }}
-                      </strong>
+                      <ng-container *ngIf="hasNflScore(game)">
+                        <strong class="fantasy-pulse-score-value fantasy-pulse-score-value--away">{{ formatNflScore(game.AwayScore) }}</strong>
+                        <span class="fantasy-pulse-score-label fantasy-pulse-score-label--final"><span role="img" aria-label="Final">🏁</span> Final</span>
+                        <strong class="fantasy-pulse-score-value fantasy-pulse-score-value--home">{{ formatNflScore(game.HomeScore) }}</strong>
+                      </ng-container>
+                      <ng-container *ngIf="!gameIsFinal(game) && game.Market as market">
+                        <ng-container *ngIf="hasImpliedNflScores(market)">
+                          <strong class="fantasy-pulse-score-value fantasy-pulse-score-value--away">{{ formatImpliedNflScore(market.ImpliedAwayPoints) }}</strong>
+                          <span class="fantasy-pulse-score-label fantasy-pulse-score-label--market">🎰 Vegas</span>
+                          <strong class="fantasy-pulse-score-value fantasy-pulse-score-value--home">{{ formatImpliedNflScore(market.ImpliedHomePoints) }}</strong>
+                        </ng-container>
+                      </ng-container>
                     </span>
                     <span class="fantasy-pulse-game-meta">
                       <span *ngIf="gameIsLiveForFantasy(game)" class="fantasy-pulse-live-dot">Live</span>
-                      <span *ngIf="gameIsFinal(game)" role="img" aria-label="Final">🏁</span>
+                      <span *ngIf="gameIsFinal(game) && !hasNflScore(game)" role="img" aria-label="Final">🏁</span>
                       <span>{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
-                    </span>
-                    <span *ngIf="!gameIsFinal(game) && game.Market as market" class="fantasy-pulse-market">
-                      <span *ngIf="hasImpliedNflScores(market)" class="fantasy-pulse-market-expectation">
-                        <span class="fantasy-pulse-market-label">Market est.</span>
-                        <strong>{{ game.AwayTeamAbbr || game.AwayTeamID }} {{ formatNflMarketNumber(market.ImpliedAwayPoints) }}</strong>
-                        <span class="fantasy-pulse-market-separator">·</span>
-                        <strong>{{ game.HomeTeamAbbr || game.HomeTeamID }} {{ formatNflMarketNumber(market.ImpliedHomePoints) }}</strong>
-                      </span>
-                      <span *ngIf="hasNflMarketLine(market)" class="fantasy-pulse-market-lines">
-                        <span *ngIf="market.TotalLine !== null">O/U {{ formatNflMarketNumber(market.TotalLine) }}</span>
-                        <span *ngIf="favoriteSpreadLabel(game) as spreadLabel">{{ spreadLabel }}</span>
-                      </span>
                     </span>
                     <span class="fantasy-pulse-metrics">
                       <strong *ngIf="game.Relevance.StarterCount > 0" class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--starter">
