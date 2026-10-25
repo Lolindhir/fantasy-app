@@ -4,7 +4,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { Subscription } from 'rxjs';
 
 import type { DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
-import type { League } from '../../../core/models/league.models';
+import type { FantasyTeam, League } from '../../../core/models/league.models';
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { createAdaptiveCountdownClock } from '../../utils/countdown-clock.util';
@@ -15,6 +15,7 @@ import {
 } from '../../utils/league-timeline-view.util';
 import { DecisionWindowContextPopoverComponent } from '../decision-window-context-popover/decision-window-context-popover';
 import { DecisionWindowMatchupContextComponent } from '../decision-window-matchup-context/decision-window-matchup-context';
+import { TeamIdentityComponent } from '../team-identity/team-identity';
 
 @Component({
   selector: 'app-league-timeline',
@@ -23,7 +24,8 @@ import { DecisionWindowMatchupContextComponent } from '../decision-window-matchu
     CommonModule,
     MatDialogModule,
     DecisionWindowContextPopoverComponent,
-    DecisionWindowMatchupContextComponent
+    DecisionWindowMatchupContextComponent,
+    TeamIdentityComponent
   ],
   templateUrl: './league-timeline.html',
   styleUrl: './league-timeline.scss'
@@ -37,6 +39,7 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
   decisionWindowsUnavailable = false;
   decisionWindowsUpdatedAt: string | undefined;
   nflTeams: NFLTeam[] = [];
+  readonly waiverTeamIdentityElements = ['logo', 'name'] as const;
 
   private subscriptions = new Subscription();
 
@@ -101,6 +104,27 @@ export class LeagueTimelineComponent implements OnInit, OnDestroy {
       decisionWindowsUnavailable: this.decisionWindowsUnavailable,
       now: this.now,
       nflTeams: this.nflTeams
+    });
+  }
+
+  get waiverPriorityTeams(): FantasyTeam[] {
+    return [...this.league.Teams].sort(
+      (a, b) => a.WaiverPosition - b.WaiverPosition || a.TeamID - b.TeamID
+    );
+  }
+
+  trackWaiverTeam(_index: number, team: FantasyTeam): number {
+    return team.TeamID;
+  }
+
+  openWaiverPriority(template: TemplateRef<unknown>): void {
+    this.dialog.open(template, {
+      width: '500px',
+      maxWidth: 'calc(100vw - 24px)',
+      maxHeight: 'calc(100dvh - 24px)',
+      ariaLabel: 'Waiver priority',
+      autoFocus: false,
+      restoreFocus: true
     });
   }
 

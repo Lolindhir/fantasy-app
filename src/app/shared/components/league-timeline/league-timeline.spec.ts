@@ -95,6 +95,51 @@ describe('LeagueTimelineComponent', () => {
     expect(component.timeline?.operational[0].kind).toBe('lineup');
   });
 
+  it('orders current waiver priorities without mutating league team order', () => {
+    component = new LeagueTimelineComponent(createDataService(createModel([])), createDialog());
+    const teams = [createTeam(3), createTeam(1), createTeam(2)];
+    teams[0].WaiverPosition = 2;
+    teams[1].WaiverPosition = 3;
+    teams[2].WaiverPosition = 1;
+    component.league = createLeague({ Teams: teams });
+
+    expect(component.waiverPriorityTeams.map(team => team.TeamID)).toEqual([2, 3, 1]);
+    expect(component.waiverPriorityTeams.map(team => team.WaiverPosition)).toEqual([1, 2, 3]);
+    expect(component.league.Teams.map(team => team.TeamID)).toEqual([3, 1, 2]);
+  });
+
+  it('includes every team in leagues larger than six teams', () => {
+    component = new LeagueTimelineComponent(createDataService(createModel([])), createDialog());
+    const teams = Array.from({ length: 10 }, (_, index) => {
+      const team = createTeam(index + 1);
+      team.WaiverPosition = 10 - index;
+      return team;
+    });
+    component.league = createLeague({ Teams: teams, TotalTeams: 10 });
+
+    expect(component.waiverPriorityTeams).toHaveSize(10);
+    expect(component.waiverPriorityTeams.map(team => team.WaiverPosition))
+      .toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it('opens waiver priority through a viewport-bounded dialog', () => {
+    const open = jasmine.createSpy('open');
+    component = new LeagueTimelineComponent(
+      createDataService(createModel([])),
+      { open } as unknown as MatDialog
+    );
+    const template = {} as TemplateRef<unknown>;
+
+    component.openWaiverPriority(template);
+
+    expect(open).toHaveBeenCalledWith(template, jasmine.objectContaining({
+      width: '500px',
+      maxWidth: 'calc(100vw - 24px)',
+      maxHeight: 'calc(100dvh - 24px)',
+      ariaLabel: 'Waiver priority'
+    }));
+  });
+
   it('opens Decision Window details through a viewport-bounded dialog', () => {
     const open = jasmine.createSpy('open');
     component = new LeagueTimelineComponent(
