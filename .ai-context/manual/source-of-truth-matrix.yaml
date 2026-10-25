@@ -1250,6 +1250,11 @@ consumerReadClassification:
         legacy:League: mention-only
         legacy:Players: legacy-read-model-pending
       note: 'League.json is only named in the docstring. The optional --hold-seed-players-file reads the last published Players.json solely to seed identity-hold rows that no PlayerValuation snapshot knows yet (Issue #919 step 5, same values as the predecessor generator); transitional, because every snapshot persists its hold rows afterwards.'
+    tools/derived_clean_root_audit.py:
+      reads:
+        legacy:Players: validation-shadow
+        legacy:Standings: validation-shadow
+      note: 'Read-only restore probe of the Shared Derived products (Issue #471). Copies the published Standings.json and Players.json only into the temporary productive-like root to compare it with a clean root; the clean root sees neither. Never an input of a published product and never writes public/data.'
     tools/transaction_canonical_shadow.py:
       reads:
         legacy:Transactions: validation-shadow
