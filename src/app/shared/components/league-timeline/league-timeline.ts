@@ -33,6 +33,7 @@ import { TeamIdentityComponent } from '../team-identity/team-identity';
 export class LeagueTimelineComponent implements OnInit, OnDestroy {
   @Input({ required: true }) league!: League;
   @Input() drafts: LeagueTimelineDraft[] = [];
+  @Input() lastWaiverPickAt: Readonly<Record<number, number>> = {};
 
   now = new Date();
   decisionWindows: DecisionWindowsReadModel | null = null;

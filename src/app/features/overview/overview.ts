@@ -26,6 +26,7 @@ import {
   compareDraftPicksByDraftThenOrder
 } from '../../shared/utils/draft-capital.util';
 import { getDraftRoundColor } from '../../shared/utils/draft-ui.util';
+import { buildLastWaiverPickByTeam } from '../../shared/utils/waiver-last-pick.util';
 import {
   buildAllTimeStandings,
   buildCurrentStandings,
@@ -219,6 +220,7 @@ export class OverviewComponent {
       const seasonPulse = activeLeague ? this.buildSeasonPulse(league) : null;
       const seasonLeaders = activeLeague ? this.buildSeasonLeaders(league, teams) : [];
       const recentMoves = activeLeague ? this.buildRecentMoves(transactions, currentSeason) : [];
+      const lastWaiverPickAt = buildLastWaiverPickByTeam(transactions, currentSeason);
       const awards = getCurrentSeasonAwards(league);
       const deadline = this.parseDeadline(league.CapDeadline);
       const deadlineDisplay = deadline.toLocaleDateString();
@@ -245,6 +247,7 @@ export class OverviewComponent {
         seasonPulse,
         seasonLeaders,
         recentMoves,
+        lastWaiverPickAt,
         awards,
         deadlineDisplay,
         deadlineInfo,
