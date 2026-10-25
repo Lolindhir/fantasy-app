@@ -288,12 +288,14 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
 
     try {
       const host: HTMLElement = finalFixture.nativeElement;
-      const meta = host.querySelector<HTMLElement>('.fantasy-pulse-game-meta');
-      const finalMarker = meta?.querySelector<HTMLElement>('[role="img"][aria-label="Final"]');
+      const lockup = host.querySelector<HTMLElement>('.fantasy-pulse-game-lockup');
+      const finalMarker = lockup?.querySelector<HTMLElement>('[role="img"][aria-label="Final"]');
 
       expect(finalMarker).not.toBeNull();
       expect(finalMarker!.textContent?.trim()).toBe('🏁');
-      expect(meta?.textContent).not.toContain('Final');
+      expect(lockup?.querySelector('.fantasy-pulse-score-label--final')?.textContent?.trim()).toBe('🏁 Final');
+      expect(Array.from(lockup?.querySelectorAll('.fantasy-pulse-score-value') ?? []).map(score => score.textContent?.trim())).toEqual(['–', '–']);
+      expect(host.querySelector('.fantasy-pulse-score-label--live')).toBeNull();
       expect(host.querySelector('.fantasy-pulse-state')).toBeNull();
     } finally {
       finalFixture.destroy();
@@ -311,8 +313,13 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
       const lockup = host.querySelector<HTMLElement>('.fantasy-pulse-game-lockup')!;
       const scores = lockup.querySelectorAll<HTMLElement>('.fantasy-pulse-score-value');
       expect(Array.from(scores).map(score => score.textContent?.trim())).toEqual(['≈24', '≈21']);
-      expect(lockup.querySelector('.fantasy-pulse-score-label--market')?.textContent?.trim()).toBe('🎰 Vegas');
+      expect(lockup.querySelector('.fantasy-pulse-score-label--market')?.textContent?.trim()).toBe('🎰 Proj.');
       expect(lockup.querySelectorAll('.fantasy-pulse-nfl-team').length).toBe(2);
+      expect(lockup.querySelectorAll('.fantasy-pulse-score-value--projected').length).toBe(2);
+      expect(lockup.querySelector('.fantasy-pulse-status-emoji')?.getAttribute('aria-label')).toBe('Betting market');
+      expect(host.querySelector('.fantasy-pulse-side-meta .fantasy-pulse-rank')?.textContent?.trim()).toBe('#1');
+      expect(host.querySelector('.fantasy-pulse-game-kickoff')).not.toBeNull();
+      expect(host.querySelector('.fantasy-pulse-game-meta')).toBeNull();
       expect(lockup.textContent).not.toContain('O/U');
       expect(lockup.textContent).not.toContain('44.5');
       expect(lockup.textContent).not.toContain('−3');
@@ -321,6 +328,43 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
     } finally {
       marketFixture.destroy();
     }
+  });
+
+  it('renders an accessible blue radio-wave Live cue without fabricating NFL live scores', () => {
+    const current = makeMarketContext(false);
+    dataService.getFantasyGameContext.and.returnValue(of({
+      ...current,
+      Games: current.Games.map(game => ({
+        ...game,
+        Status: 'In Progress',
+        RemainingRelevance: { ...game.RemainingRelevance!, LockedActiveStarterCount: 2 }
+      }))
+    }));
+    const liveFixture = TestBed.createComponent(LeagueMatchupsComponent);
+    liveFixture.componentInstance.league = makeLeague();
+    liveFixture.detectChanges();
+    try {
+      const host: HTMLElement = liveFixture.nativeElement;
+      const lockup = host.querySelector<HTMLElement>('.fantasy-pulse-game-lockup')!;
+      expect(host.querySelector('.fantasy-pulse-card--live')).not.toBeNull();
+      expect(lockup.querySelector('.fantasy-pulse-score-label--live')?.textContent?.trim()).toBe('Live');
+      expect(lockup.querySelector('.fantasy-pulse-live-icon circle')).not.toBeNull();
+      expect(Array.from(lockup.querySelectorAll('.fantasy-pulse-score-value')).map(value => value.textContent?.trim())).toEqual(['–', '–']);
+      expect(lockup.querySelector('.fantasy-pulse-score-label--market')).toBeNull();
+      expect(lockup.querySelector('.fantasy-pulse-score-label--final')).toBeNull();
+    } finally {
+      liveFixture.destroy();
+    }
+  });
+
+  it('prioritizes canonical Final over stale locked-active starter evidence', () => {
+    const current = makeMarketContext(true);
+    const finalGame = {
+      ...current.Games[0],
+      RemainingRelevance: { ...current.Games[0].RemainingRelevance!, LockedActiveStarterCount: 3 }
+    };
+    expect(fixture.componentInstance.gameIsLiveForFantasy(finalGame)).toBeFalse();
+    expect(fixture.componentInstance.gameIsFinal(finalGame)).toBeTrue();
   });
 
   it('switches to the real NFL final score and hides market expectations for a final game', () => {
@@ -355,7 +399,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
     try {
       const cards = (mixedFixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.fantasy-pulse-card--remaining');
       expect(cards.length).toBe(2);
-      expect(cards[0].querySelector('.fantasy-pulse-score-label--market')?.textContent?.trim()).toBe('🎰 Vegas');
+      expect(cards[0].querySelector('.fantasy-pulse-score-label--market')?.textContent?.trim()).toBe('🎰 Proj.');
       expect(cards[0].querySelectorAll('.fantasy-pulse-score-value').length).toBe(2);
       expect(cards[1].querySelector('.fantasy-pulse-score-label--final')?.textContent?.trim()).toBe('🏁 Final');
       expect(cards[1].querySelectorAll('.fantasy-pulse-score-value').length).toBe(2);
@@ -405,6 +449,13 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
         const scores = lockup.querySelectorAll<HTMLElement>('.fantasy-pulse-score-value');
         const cardRect = card.getBoundingClientRect();
         const lockupRect = lockup.getBoundingClientRect();
+        const side = card.querySelector<HTMLElement>('.fantasy-pulse-side-meta')!;
+        const rankRect = side.querySelector<HTMLElement>('.fantasy-pulse-rank')!.getBoundingClientRect();
+        const kickoffRect = side.querySelector<HTMLElement>('.fantasy-pulse-game-kickoff')!.getBoundingClientRect();
+        const metricsRect = card.querySelector<HTMLElement>('.fantasy-pulse-metrics')!.getBoundingClientRect();
+        expect(rankRect.bottom).withContext(`${width}px rank above kickoff`).toBeLessThanOrEqual(kickoffRect.top + 1);
+        expect(side.getBoundingClientRect().left).withContext(`${width}px side-meta overlap`).toBeGreaterThanOrEqual(lockupRect.right + 3);
+        expect(kickoffRect.bottom).withContext(`${width}px kickoff above fantasy metrics`).toBeLessThanOrEqual(metricsRect.top + 2);
         expect(card.scrollWidth).withContext(`${width}px card overflow`).toBeLessThanOrEqual(card.clientWidth + 1);
         expect(lockup.scrollWidth).withContext(`${width}px score overflow`).toBeLessThanOrEqual(lockup.clientWidth + 1);
         expect(lockupRect.right).withContext(`${width}px score containment`).toBeLessThanOrEqual(cardRect.right + 1);
@@ -415,7 +466,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
           expect(Math.abs((teamRect.left + teamRect.right) / 2 - (scoreRect.left + scoreRect.right) / 2))
             .withContext(`${width}px team ${index} score alignment`).toBeLessThanOrEqual(2);
         }
-        expect(cardRect.height).withContext(`${width}px compact card`).toBeLessThanOrEqual(116);
+        expect(cardRect.height).withContext(`${width}px compact card`).toBeLessThanOrEqual(100);
       } finally {
         frame.remove();
         marketFixture.destroy();
