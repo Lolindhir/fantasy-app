@@ -294,7 +294,8 @@ workflows:
       Alert after the first failed scheduled audit or stale/missing successful
       audit; initial missing-success alarm starts only after the first due slot
       plus 120-minute grace. The audit is the only automatic Deep run (pull
-      requests run Core and selected Fast blocks, ADR-067). PR and manual operator
+      requests run Core and selected Fast blocks, ADR-067) and also runs the read-only Derived Restore Gate
+      (Issue #471); a restore defect, nondeterminism or blocked source fails the audit. PR and manual operator
       runs, including a single-category Deep dispatch, are non-paging.
   .github/workflows/deploy.yml:
     category: critical

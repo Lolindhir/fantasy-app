@@ -281,6 +281,17 @@ class FastLaneContractTests(unittest.TestCase):
         ):
             self.assertIn(required, all_commands)
 
+    def test_restore_gate_is_read_only_and_audit_only(self):
+        job = self.jobs["restore-gate"]
+        self.assertEqual("selector", job["needs"])
+        self.assertEqual(self.jobs["build"]["if"], job["if"])
+        self.assertNotIn("continue-on-error", job)
+        self.assertEqual({"contents": "read"}, job["permissions"])
+        commands = "\n".join(str(s.get("run", "")) for s in job["steps"])
+        self.assertIn("tools/derived_clean_root_audit.py", commands)
+        self.assertNotIn("git push", commands)
+        self.assertNotIn("git commit", commands)
+
     def test_deep_lanes_are_routed_only_by_deep_selector_outputs(self):
         for name, flag, group in (
             ("deep-nfl", "deep_nfl", "nfl-identity-replay"),
@@ -308,7 +319,7 @@ class FastLaneContractTests(unittest.TestCase):
         self.assertNotIn("continue-on-error", gate)
         self.assertEqual({"contents": "read"}, gate["permissions"])
         self.assertEqual(
-            {"selector", "build", "fast-contracts", "fast-nfl", "fast-league", "fast-market",
+            {"selector", "build", "restore-gate", "fast-contracts", "fast-nfl", "fast-league", "fast-market",
              "fast-consumer", "fast-powershell", "fast-scheduler", "fast-angular",
              "deep-nfl", "deep-league", "deep-market", "deep-consumer"},
             set(gate["needs"]))
@@ -514,7 +525,8 @@ jobs:
             needs[job] = {"result": "success" if name in fast_flags else "skipped"}
         for name, job in gate.DEEP.items():
             needs[job] = {"result": "success" if name in deep_flags else "skipped"}
-        needs["build"] = {"result": "success" if mode == "full" else "skipped"}
+        for audit_job in gate.AUDIT_JOBS:
+            needs[audit_job] = {"result": "success" if mode == "full" else "skipped"}
         return needs
 
     def test_merge_gate_accepts_core_plus_exactly_the_selected_fast_blocks(self):
@@ -530,10 +542,11 @@ jobs:
         needs = self.good_needs("pr")
         needs["deep-nfl"]["result"] = "success"
         self.assertTrue(gate.verify(needs, "pull_request"))
-        for outcome in ("success", "failure", "cancelled", "neutral", None):
-            needs = self.good_needs("pr")
-            needs["build"]["result"] = outcome
-            self.assertTrue(gate.verify(needs, "pull_request"))
+        for job in gate.AUDIT_JOBS:
+            for outcome in ("success", "failure", "cancelled", "neutral", None):
+                needs = self.good_needs("pr")
+                needs[job]["result"] = outcome
+                self.assertTrue(gate.verify(needs, "pull_request"))
         for invalid in ("push", "", None):
             self.assertTrue(gate.verify(self.good_needs("pr"), invalid))
 
@@ -567,11 +580,15 @@ jobs:
         full = self.good_needs("full", every_fast, every_deep)
         self.assertEqual([], gate.verify(full, "workflow_dispatch"))
         self.assertEqual([], gate.verify(full, "repository_dispatch", "scheduler-ci-full-audit"))
-        for outcome in ("skipped", "failure", "cancelled", "neutral", None):
-            changed = self.good_needs("full", every_fast, every_deep)
-            changed["build"]["result"] = outcome
-            self.assertTrue(gate.verify(changed, "workflow_dispatch"))
-            self.assertTrue(gate.verify(changed, "repository_dispatch", "scheduler-ci-full-audit"))
+        for job in gate.AUDIT_JOBS:
+            for outcome in ("skipped", "failure", "cancelled", "neutral", None):
+                changed = self.good_needs("full", every_fast, every_deep)
+                changed[job]["result"] = outcome
+                self.assertTrue(gate.verify(changed, "workflow_dispatch"))
+                self.assertTrue(gate.verify(changed, "repository_dispatch", "scheduler-ci-full-audit"))
+        missing = self.good_needs("full", every_fast, every_deep)
+        del missing["restore-gate"]
+        self.assertTrue(gate.verify(missing, "workflow_dispatch"))
         self.assertTrue(gate.verify(self.good_needs("full", every_fast, ("deep_nfl",)), "workflow_dispatch"))
         self.assertTrue(gate.verify(self.good_needs("full", ("nfl",), every_deep), "workflow_dispatch"))
         for action in (None, "", "external-scheduler-tick", "scheduler-workflow-health"):

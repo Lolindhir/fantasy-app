@@ -47,5 +47,22 @@ status; hints keep exit code 0 (`HintProducts` in the JSON).
   hold row that only the seed can supply shows up as `restore-defect`; resolving it is an owner
   decision, not a silent model change.
 
-Not covered: the market product (waits for Issue #988) and any publishing cadence. The weekly
-CI gate that runs this probe is a separate step of Issue #471.
+## Weekly CI gate (Issue #471, step 2)
+
+The job `restore-gate` ("CI Audit • Derived Restore Gate") in `.github/workflows/build.yml` runs
+`python tools/derived_clean_root_audit.py --github-summary` in the weekly full audit
+(`scheduler-ci-full-audit`, Thursday 02:15 Europe/Berlin) and in a manual `full` dispatch. It has
+`contents: read` only, no writer, no scheduler target and never runs on a pull request or a
+Deep-scope dispatch. `CI / Merge Gate` requires it in a full audit and requires it skipped
+everywhere else.
+
+* Red: `restore-defect`, `nondeterministic` and `blocked`. `blocked` stays red on purpose: if a
+  source is not ready or a build fails, restorability is not proven, and the audit is weekly, so a
+  transient source gap surfaces as an alert instead of silently passing.
+* Green with hint: `stale-published` and `latent-blocker` (named in the Job Summary only).
+* The Job Summary table lists every unit, errors first. Workflow Health already alerts on the
+  first failed audit (`build.yml`, category important).
+* Timeout 60 minutes (a local full run takes about 23 minutes, almost all PlayerWeekFantasy).
+  TeamWeekPerformance needs `pwsh`, which the hosted runner provides.
+
+Not covered: the market product (waits for Issue #988) and any publishing cadence.
