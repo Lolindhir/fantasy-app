@@ -1,34 +1,51 @@
-# CP03 restore safety probe (Issue #471)
+# Shared Derived restore probe (Issue #471)
 
-The immediate restore acceptance target is to recreate the **existing** Shared Derived
-products from canonical `data-source` and `data-meta`, independently of old
-`data-derived` or generated `public/data`. This file is a scoped diagnostic,
-not a new publisher, scheduler, product contract or authorization to backfill.
+`tools/derived_clean_root_audit.py` proves that the existing Shared Derived products can be
+recreated from canonical `data-source` and `data-meta` alone. It is a read-only diagnostic, not a
+publisher, scheduler, product contract or authorization to backfill. It writes nothing in the
+repository (only two temporary roots).
 
-Run `python3 tools/derived_clean_root_audit.py` in a full local checkout.
-It regenerates PlayerValuation and the existing LeagueTransactions/LeagueDrafts
-models into an ephemeral root with only `data-source` and `data-meta` visible.
-Each product gets a second pass, a byte parity comparison against currently
-published snapshots and a machine-readable status. Exit 2 means **not ready**.
-No repository data or App content is written.
+Run `python3 tools/derived_clean_root_audit.py [--league <CanonicalLeagueID>]` in a full checkout.
+Leagues come from `data-meta`; without `--league` every league is audited. Rebuilding PWF/TWP for
+the whole history takes several minutes, and TeamWeekPerformance needs `pwsh` (existing
+FantasyRelevance slot bridge).
 
-Expected open owner decisions until proven otherwise:
+## Products
 
-- PlayerValuation may require existing older/same-week persisted Inputs for
-  Identity Holds. The probe must report any clean-root byte difference rather
-  than quietly accepting null/zero or seeding from published App Players.
-  Fix belongs to the valuation model/owner contract; no silent model change.
-- LeagueHistory may require `public/data/Standings.json` for placement-based
-  draft order. That is an App-derived circular dependency, and the source-owned
-  predecessor must be established by #987 or another explicit owner decision.
-  Do not treat temporarily copying Standings as source-only restoration.
+PlayerValuation, LeagueTransactions, LeagueDrafts, PlayerWeekFantasy and TeamWeekPerformance per
+league, plus the global NFL Games product. They are built with the productive generators
+(`derived_data.py`, `historical_pwf_batch.py`, `team_week_performance_materialize.py
+--all-finalized --require-pwf`, `nfl_games_materialize.py`); there is no second implementation.
 
-Separately, `tools/historical_derived_orchestrate.py --mode full` already
-stages finalized PlayerWeekFantasy then strict TeamWeekPerformance parity and
-second-pass no-op. `nfl-games` already has an all-seasons source-only publisher.
-This probe **does not** claim that those products or the full weekly end-to-end
-restore have passed or that production writers may be activated.
+## Three-way comparison
 
-Next gate after this diagnostic: resolve demonstrated owner-specific blockers,
-run all-product empty-root parity + second no-op, then separately approve
-the race-safe published full and incremental cadence. No App/UI work.
+* empty root: only `data-source`, `data-meta` and `public/requests` are visible; each product is built twice.
+* productive-like root: a copy of the published `data-derived` plus the published
+  `public/data/Standings.json` and `Players.json` (identity-hold seed, as in `update-players.yml`); built once.
+* published: the files in the repository.
+
+| Status | Meaning | Severity |
+|---|---|---|
+| `ready` | empty = productive-like = published, second empty pass is a no-op | ok |
+| `stale-published` | empty = productive-like, published files are behind or orphaned | hint |
+| `latent-blocker` | builds only with the transitional Standings input (Issue #987) | hint |
+| `restore-defect` | empty differs from productive-like: the product silently depends on earlier output (including a hold seed) | error |
+| `nondeterministic` | the second empty pass changed output | error |
+| `blocked` | a source is not ready or a build failed (including a missing `pwsh`) | error |
+
+A published file that the productive-like run leaves untouched and the empty run cannot build is an
+orphan and is reported as `stale-published`, not as a defect. Exit code 2 means at least one error
+status; hints keep exit code 0 (`HintProducts` in the JSON).
+
+## Known open owner decisions
+
+* LeagueDrafts needs `public/data/Standings.json` only when a current-season draft has no
+  Sleeper order (`league_drafts.py`, typically at the next season change). The probe reports this
+  as `latent-blocker`; the source-owned predecessor belongs to Issue #987 (LeagueStandings as
+  Shared Derived). Do not treat copying Standings as source-only restoration.
+* Identity hold: the productive PlayerValuation run seeds holds from `public/data/Players.json`. A
+  hold row that only the seed can supply shows up as `restore-defect`; resolving it is an owner
+  decision, not a silent model change.
+
+Not covered: the market product (waits for Issue #988) and any publishing cadence. The weekly
+CI gate that runs this probe is a separate step of Issue #471.
