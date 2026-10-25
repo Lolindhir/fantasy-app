@@ -1,6 +1,6 @@
 # Mighty Giants – Current Roster Overview
 
-Generated: `2026-10-25T05:21:23Z`  
+Generated: `2026-10-25T10:01:51Z`  
 Evaluation mode: `hybrid_manual_v1`  
 Taxi phase: `locked`
 
@@ -11,7 +11,7 @@ Taxi phase: `locked`
 - Reserve: **5 / 5**
 - Startable Skill Pool: **16 / 10** (margin +6)
 - General churn target: **2**; active general churn: **0**; status: `review_required`
-- Comparison boundary candidates: **2**; decision readiness: `review_required`
+- Comparison boundary candidates: **1**; decision readiness: `review_required`
 
 ## Position coverage
 
@@ -19,9 +19,9 @@ Taxi phase: `locked`
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
 | QB | 5 | 4 | 2 | 2 | 1 | 3 | 4 | preferred_met |
-| RB | 9 | 8 | 2 | 6 | 1 | – | – | pool_managed |
+| RB | 10 | 9 | 2 | 6 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 18 | 13 | 2 | 7 | 1 | – | – | pool_managed |
+| WR | 17 | 12 | 2 | 7 | 1 | – | – | pool_managed |
 
 ## Players
 
@@ -42,11 +42,11 @@ Taxi phase: `locked`
 | RB | Kenneth Walker III | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | RB | Kyle Monangai | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | RB | Saquon Barkley | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| RB | Seth McGowan | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | TE | Colston Loveland | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | TE | Harold Fannin Jr. | active | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | TE | Trey McBride | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | TE | Tyler Warren | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
-| WR | Adonai Mitchell | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | WR | Alec Pierce | reserve | backup | hold | coverage_reserve | positional_coverage | no | no |
 | WR | Antonio Williams | taxi | prospect | hold | development | development | no | no |
 | WR | Brian Thomas Jr. | active | unclassified | unclassified | unclassified | unclassified | no | no |
@@ -58,16 +58,15 @@ Taxi phase: `locked`
 | WR | Jakobi Meyers | active | backup | hold | coverage_reserve | positional_coverage | no | no |
 | WR | Jaylen Waddle | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Ladd McConkey | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
-| WR | Malachi Fields | active | prospect | hold | development | development | yes | no |
 | WR | Malik Nabers | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | WR | Marvin Harrison Jr. | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Puka Nacua | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | WR | Tetairoa McMillan | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Travis Hunter | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | WR | Tre Tucker | active | unclassified | unclassified | unclassified | unclassified | no | no |
 
 ## Comparison boundary pool
 
-- Malachi Fields (WR) — `hold` — area `active` — priority `10` — general churn: `no`
 - Dylan Sampson (RB) — `conditional` — area `active` — priority `30` — general churn: `no`
 
 ## Interpretation

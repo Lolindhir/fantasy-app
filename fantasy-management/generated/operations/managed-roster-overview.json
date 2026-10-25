@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-10-25T05:21:23Z",
-  "input_fingerprint": "28edeab02fb6201394ebb225d7ab3d1f5ad62718c7cde4d5139745959ab84cb0",
+  "generated_at": "2026-10-25T10:01:51Z",
+  "input_fingerprint": "77d7f6c1b6fbd92ebc74eadf31dfb68a4117367bb16893c4ce5aeacca78d464d",
   "sources": [
     {
       "id": "league_enrichment",
       "path": "public/data/League.json",
-      "content_sha256": "c164a87b83b704cd037453228237bb8ddcbd644e9cf63ebceadc79b1b8be63ca"
+      "content_sha256": "8ee03572312d3cb32aa5bc1fd4a8a9d9f87a177b2bb68639317a32dcbe876573"
     },
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "40e55ffe1ec099936b70d4fe0ff453a7fde91b931c33f3156f9bdc1ef2eb14cf"
+      "content_sha256": "0f0848cd2c15ba3cf1034c5bab68c824205aa5b8e25bbaf2366e1604619e3231"
     },
     {
       "id": "roster_evaluation_state",
@@ -42,7 +42,7 @@
       "boundary_priority"
     ],
     "user_override_count": 0,
-    "unclassified_count": 6,
+    "unclassified_count": 7,
     "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
   },
   "team": {
@@ -113,9 +113,9 @@
       },
       "RB": {
         "fixed_starter_requirement": 2,
-        "held_count": 9,
-        "current_active_count": 8,
-        "effective_prelock_or_locked_count": 8,
+        "held_count": 10,
+        "current_active_count": 9,
+        "effective_prelock_or_locked_count": 9,
         "startable_count": 6,
         "backup_count": 1,
         "coverage_floor": null,
@@ -135,9 +135,9 @@
       },
       "WR": {
         "fixed_starter_requirement": 2,
-        "held_count": 18,
-        "current_active_count": 13,
-        "effective_prelock_or_locked_count": 13,
+        "held_count": 17,
+        "current_active_count": 12,
+        "effective_prelock_or_locked_count": 12,
         "startable_count": 7,
         "backup_count": 1,
         "coverage_floor": null,
@@ -241,21 +241,12 @@
       "target_general_slots": 2,
       "assignment_status": "current_locked_roster",
       "decision_readiness": "review_required",
-      "active_unclassified_count": 6,
-      "current_active_candidate_count": 2,
+      "active_unclassified_count": 7,
+      "current_active_candidate_count": 1,
       "current_active_general_churn_count": 0,
-      "candidate_pool_count": 2,
+      "candidate_pool_count": 1,
       "guardrail_status": "review_required",
       "candidate_pool": [
-        {
-          "player_id": "13285",
-          "name": "Malachi Fields",
-          "position": "WR",
-          "security": "hold",
-          "current_area": "active",
-          "boundary_priority": 10,
-          "counts_as_general_churn": false
-        },
         {
           "player_id": "12469",
           "name": "Dylan Sampson",
@@ -1194,6 +1185,67 @@
       "potential_churn_after_taxi_reassignment": false
     },
     {
+      "player_id": "13424",
+      "name": "Seth McGowan",
+      "position": "RB",
+      "nfl_team": "IND",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 25,
+        "years_experience": 1,
+        "salary": 0,
+        "salary_projected": 252050,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 254,
+        "fantasypros_position_rank": "RB71",
+        "fantasycalc_overall_rank": 206,
+        "fantasycalc_value": 1135
+      },
+      "coverage_role": "unclassified",
+      "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
       "player_id": "12517",
       "name": "Colston Loveland",
       "position": "TE",
@@ -1431,67 +1483,6 @@
         "fantasycalc_value": 4086
       },
       "coverage_role": "fixed_starter_pool",
-      "coverage_protected": false,
-      "comparison_boundary_eligible": false,
-      "potential_comparison_boundary_after_taxi_reassignment": false,
-      "churn_eligible": false,
-      "potential_churn_after_taxi_reassignment": false
-    },
-    {
-      "player_id": "11625",
-      "name": "Adonai Mitchell",
-      "position": "WR",
-      "nfl_team": "NYJ",
-      "roster_area": "active",
-      "roster_sections": [
-        "roster"
-      ],
-      "is_current_active": true,
-      "is_current_taxi": false,
-      "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
-      "classification": {
-        "roster_role": null,
-        "roster_security": null,
-        "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
-        "user_override": false,
-        "notes": [],
-        "evidence": [],
-        "review_status": "needs_classification"
-      },
-      "app_data": {
-        "status": "Active",
-        "age": 24,
-        "years_experience": 3,
-        "salary": 1957726,
-        "salary_projected": 3701467,
-        "is_free_agent": false
-      },
-      "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "market": {
-        "fantasypros_overall_rank": 141,
-        "fantasypros_position_rank": "WR61",
-        "fantasycalc_overall_rank": 189,
-        "fantasycalc_value": 1220
-      },
-      "coverage_role": "unclassified",
       "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -2183,69 +2174,6 @@
       "potential_churn_after_taxi_reassignment": false
     },
     {
-      "player_id": "13285",
-      "name": "Malachi Fields",
-      "position": "WR",
-      "nfl_team": "NYG",
-      "roster_area": "active",
-      "roster_sections": [
-        "roster"
-      ],
-      "is_current_active": true,
-      "is_current_taxi": false,
-      "is_current_reserve": false,
-      "roster_role": "prospect",
-      "roster_security": "hold",
-      "structural_function": "development",
-      "classification": {
-        "roster_role": "prospect",
-        "roster_security": "hold",
-        "boundary_priority": 10,
-        "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
-        "user_override": false,
-        "notes": [
-          "First active comparison-boundary player; hold does not equal general churn."
-        ],
-        "evidence": [],
-        "review_status": "seeded_manual"
-      },
-      "app_data": {
-        "status": "Active",
-        "age": 23.2,
-        "years_experience": 1,
-        "salary": 0,
-        "salary_projected": 1836806,
-        "is_free_agent": false
-      },
-      "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "market": {
-        "fantasypros_overall_rank": 187,
-        "fantasypros_position_rank": "WR76",
-        "fantasycalc_overall_rank": 183,
-        "fantasycalc_value": 1253
-      },
-      "coverage_role": "development",
-      "coverage_protected": false,
-      "comparison_boundary_eligible": true,
-      "potential_comparison_boundary_after_taxi_reassignment": false,
-      "churn_eligible": false,
-      "potential_churn_after_taxi_reassignment": false
-    },
-    {
       "player_id": "11632",
       "name": "Malik Nabers",
       "position": "WR",
@@ -2492,6 +2420,67 @@
       "potential_churn_after_taxi_reassignment": false
     },
     {
+      "player_id": "12530",
+      "name": "Travis Hunter",
+      "position": "WR",
+      "nfl_team": "JAX",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.4,
+        "years_experience": 2,
+        "salary": 2383472,
+        "salary_projected": 2380380,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 173,
+        "fantasypros_position_rank": "WR71",
+        "fantasycalc_overall_rank": 137,
+        "fantasycalc_value": 1632
+      },
+      "coverage_role": "unclassified",
+      "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
       "player_id": "10213",
       "name": "Tre Tucker",
       "position": "WR",
@@ -2555,7 +2544,7 @@
   ],
   "quality": {
     "status": "warning",
-    "issue_count": 12,
+    "issue_count": 14,
     "issues": [
       {
         "severity": "warning",
@@ -2596,18 +2585,6 @@
       {
         "severity": "warning",
         "kind": "unclassified_managed_player",
-        "player_id": "11625",
-        "name": "Adonai Mitchell"
-      },
-      {
-        "severity": "warning",
-        "kind": "active_unclassified_boundary_review_required",
-        "player_id": "11625",
-        "name": "Adonai Mitchell"
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
         "player_id": "11631",
         "name": "Brian Thomas Jr."
       },
@@ -2620,6 +2597,18 @@
       {
         "severity": "warning",
         "kind": "unclassified_managed_player",
+        "player_id": "12530",
+        "name": "Travis Hunter"
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "12530",
+        "name": "Travis Hunter"
+      },
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
         "player_id": "13274",
         "name": "Germie Bernard"
       },
@@ -2628,6 +2617,18 @@
         "kind": "active_unclassified_boundary_review_required",
         "player_id": "13274",
         "name": "Germie Bernard"
+      },
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "13424",
+        "name": "Seth McGowan"
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "13424",
+        "name": "Seth McGowan"
       }
     ],
     "limitations": [
