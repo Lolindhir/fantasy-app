@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -285,16 +286,43 @@ def audit(repo_root: Path, *, leagues: list[str] | None = None) -> dict[str, Any
     }
 
 
+def render_summary(result: dict[str, Any]) -> str:
+    """Markdown for the GitHub Job Summary: one row per unit, errors first, hints named."""
+    failed = set(result["FailedProducts"])
+    lines = [
+        "### Shared Derived restore gate",
+        "",
+        f"Result: **{'FAIL' if failed else 'PASS'}** ({len(result['Products'])} units, leagues: "
+        f"{', '.join(result['Leagues']) or 'none'}). Read-only; nothing was written.",
+        "",
+        "| Unit | Status | Detail |",
+        "|---|---|---|",
+    ]
+    for key, item in sorted(result["Products"].items(), key=lambda kv: (kv[0] not in failed, kv[0])):
+        detail = str(item.get("Reason") or "").replace("|", "/").replace("\n", " ")
+        lines.append(f"| {key} | {item['Status']} | {detail} |")
+    if result["HintProducts"]:
+        lines += ["", "Hints (no failure): " + ", ".join(
+            f"{k} = {v}" for k, v in result["HintProducts"].items())]
+    return "\n".join(lines) + "\n"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--league", action="append", help="CanonicalLeagueID (repeatable); default: every league in data-meta")
+    parser.add_argument("--github-summary", action="store_true",
+                        help="append a Markdown table to $GITHUB_STEP_SUMMARY (CI restore gate)")
     args = parser.parse_args()
     try:
         result = audit(args.repo_root, leagues=args.league)
     except (OSError, ValueError) as exc:
         parser.exit(2, f"Clean-root probe could not start: {exc}\n")
     print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if args.github_summary and summary:
+        with open(summary, "a", encoding="utf-8") as fp:
+            fp.write(render_summary(result))
     return 0 if result["ReadyForFullRestore"] else 2
 
 

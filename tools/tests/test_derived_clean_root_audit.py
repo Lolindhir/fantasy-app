@@ -261,6 +261,24 @@ class CleanRootProbeTests(unittest.TestCase):
         self.assertEqual([LEAGUE], result["Leagues"])
         self.assertFalse(any(key.endswith("league-b") for key in result["Products"]))
 
+    def test_summary_lists_errors_first_and_names_hints(self):
+        result = {
+            "Leagues": [LEAGUE], "FailedProducts": ["b/league-a"],
+            "HintProducts": {"c/league-a": "stale-published"},
+            "Products": {
+                "a/league-a": {"Status": "ready"},
+                "b/league-a": {"Status": "restore-defect", "Reason": "differs | here"},
+                "c/league-a": {"Status": "stale-published", "Reason": "behind"},
+            },
+        }
+        text = probe.render_summary(result)
+        self.assertIn("**FAIL**", text)
+        self.assertLess(text.index("b/league-a"), text.index("a/league-a"))
+        self.assertIn("c/league-a = stale-published", text)
+        self.assertNotIn("differs | here", text)
+        result.update(FailedProducts=[], HintProducts={})
+        self.assertIn("**PASS**", probe.render_summary(result))
+
     def test_missing_canonical_root_denies_execution(self):
         (self.root / "data-meta" / LEAGUE / "metadata.json").unlink()
         (self.root / "data-meta" / LEAGUE).rmdir()

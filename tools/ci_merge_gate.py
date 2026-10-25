@@ -4,7 +4,7 @@
 Pull requests require Core and exactly the Fast blocks the selector chose;
 Deep jobs and the legacy build must be skipped. A full audit (weekly scheduler
 event or a "full" operator dispatch) must select and pass every Fast block,
-every Deep category and the legacy build. A Deep-scope dispatch runs Core plus
+every Deep category, the restore gate and the legacy build. A Deep-scope dispatch runs Core plus
 exactly one Deep category. Unknown events fail. A block that was not selected is
 "not required", never "passed": only the exact expected outcome is accepted.
 """
@@ -30,6 +30,8 @@ DEEP = {
     "deep_market": "deep-market",
     "deep_consumer": "deep-consumer",
 }
+# Audit-only jobs: required in a full audit, skipped everywhere else.
+AUDIT_JOBS = ("restore-gate", "build")
 MODES = ("pr", "full", "deep")
 
 
@@ -41,7 +43,7 @@ def verify(needs: dict, event_name: str = "pull_request",
         event_name, ("full",) if scheduled_audit else ())
     if not allowed_modes:
         return [f"Unsupported CI event/action {event_name!r}/{event_action!r}: fail closed"]
-    expected = {"selector", CORE, *FAST.values(), *DEEP.values(), "build"}
+    expected = {"selector", CORE, *FAST.values(), *DEEP.values(), *AUDIT_JOBS}
     if set(needs) != expected:
         errors.append(f"Unexpected/Missing CI jobs: missing={sorted(expected-set(needs))}, extra={sorted(set(needs)-expected)}")
     if needs.get("selector", {}).get("result") != "success":
@@ -78,11 +80,11 @@ def verify(needs: dict, event_name: str = "pull_request",
         allowed = "success" if wanted else "skipped"
         if outcome != allowed:
             errors.append(f"{job}: selected={wanted}, expected {allowed}, got {outcome!r}")
-    legacy_expected = "success" if mode == "full" else "skipped"
-    legacy_actual = needs.get("build", {}).get("result")
-    if legacy_actual != legacy_expected:
-        errors.append(
-            f"Legacy build in mode {mode!r}: expected {legacy_expected}, got {legacy_actual!r}")
+    audit_expected = "success" if mode == "full" else "skipped"
+    for job in AUDIT_JOBS:
+        actual = needs.get(job, {}).get("result")
+        if actual != audit_expected:
+            errors.append(f"Audit job {job} in mode {mode!r}: expected {audit_expected}, got {actual!r}")
     return errors
 
 
@@ -106,7 +108,7 @@ def main() -> int:
     if summary:
         with open(summary, "a", encoding="utf-8") as fp:
             fp.write("### CI / Merge Gate: " + ("PASS" if not errors else "FAIL") + "\n")
-            fp.write("Core and every selected Fast block must succeed; unselected blocks are 'not required'. Pull requests run no Deep job and no legacy build; a full audit requires every Fast block, every Deep category and the legacy build.\n")
+            fp.write("Core and every selected Fast block must succeed; unselected blocks are 'not required'. Pull requests run no Deep job and no legacy build; a full audit requires every Fast block, every Deep category, the restore gate and the legacy build.\n")
             if errors:
                 fp.write("\n".join("- " + item.replace("|", "/") for item in errors) + "\n")
     return int(bool(errors))
