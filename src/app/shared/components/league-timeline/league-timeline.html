@@ -99,12 +99,20 @@
                 <ol class="waiver-priority-list" aria-label="Current waiver priority order">
                   <li *ngFor="let team of waiverPriorityTeams; trackBy: trackWaiverTeam" class="waiver-priority-row">
                     <span class="waiver-priority-position">{{ team.WaiverPosition }}</span>
-                    <app-team-identity
-                      [team]="team"
-                      [elements]="waiverTeamIdentityElements"
-                      size="small"
-                      [interactive]="false"
-                    />
+                    <span class="waiver-priority-team-copy">
+                      <app-team-identity
+                        [team]="team"
+                        [elements]="waiverTeamIdentityElements"
+                        size="small"
+                        [interactive]="false"
+                      />
+                      <span class="waiver-priority-last-pick">
+                        <ng-container *ngIf="lastWaiverPickAt[team.TeamID] as lastPick; else noWaiverPick">
+                          Last waiver pick · {{ lastPick | date:'dd.MM.yyyy':'UTC' }}
+                        </ng-container>
+                        <ng-template #noWaiverPick>No waiver pick this season</ng-template>
+                      </span>
+                    </span>
                   </li>
                 </ol>
               </section>

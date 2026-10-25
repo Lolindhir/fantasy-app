@@ -389,11 +389,27 @@ button.league-timeline-operational-item {
   text-align: center;
 }
 
-.waiver-priority-row app-team-identity {
+.waiver-priority-team-copy {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  flex: 1 1 auto;
   --team-identity-avatar-size: 30px;
   --team-identity-avatar-radius: 50%;
   --team-identity-title-font-size: 0.8rem;
+  --team-identity-gap: 6px;
+}
+
+.waiver-priority-team-copy app-team-identity {
+  min-width: 0;
+}
+
+.waiver-priority-last-pick {
+  margin-top: 2px;
+  margin-left: calc(var(--team-identity-avatar-size) + var(--team-identity-gap));
+  color: #64748b;
+  font-size: 0.68rem;
+  line-height: 1.25;
 }
 
 .league-timeline-milestones {
