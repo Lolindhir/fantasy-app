@@ -60,10 +60,14 @@ coreConcepts:
         hard-code the league's current weekdays, local clock time or a fixed
         timezone offset.
       publicUiBoundary: >
-        Waiver order type and Team.WaiverPosition are not part of the public UI
-        target for Issue #328. Waiver priority is strategically sensitive and may
-        remain available to private Fantasy Management consumers without being
-        surfaced to every app user.
+        The provider-reported Team.WaiverPosition is allowed in the public UI as
+        a read-only, on-demand list of current waiver priorities (Issue #1151).
+        Present the last synchronized positions in ascending priority order,
+        with team identities; do not infer submitted claims or future processing
+        order from this snapshot. This explicitly supersedes the former public
+        waiver-priority restriction in Issue #328. The waiver order rule type
+        (Rolling, Standing, etc.) remains out of public UI scope until its
+        provider interpretation is validated.
       movesBoundary: >
         Pending waiver claims do not belong in Moves. Moves remains completed
         chronological transaction history.
