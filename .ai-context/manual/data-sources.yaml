@@ -756,3 +756,5 @@ sharedDerivedLeagueHistory:
     (update-transactions, update-drafts and League Live); no generated archive is an input. The PowerShell
     rebuild modules described above remain in the repository until step 7 but are no longer called by the
     productive workflows.
+    Since Issue #471 step 3 the League Live league job also rematerializes the current season of both products
+    every ten minutes (tools/league_live_derived_refresh.py, ADR-070); older seasons stay with the weekly run.

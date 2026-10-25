@@ -2350,3 +2350,33 @@ decisions:
           reconciled by full Source Sync.
         - Odds may still queue behind the full Source publisher because
           concurrency is unchanged in this checkpoint.
+
+  - id: ADR-070
+    title: League Live refreshes the current-season Shared Derived products incrementally
+    status: accepted
+    amends: ADR-057
+    context: >
+      LeagueTransactions/LeagueDrafts were rederived only weekly while League Live rendered the App
+      files every ten minutes, so the Shared Derived product lagged the App by up to a week. Best Manager
+      and Best Coach (TeamWeekPerformance, ADR-063) of a just-final week appeared only with the next
+      weekly run (Issue #471, measured 2026-10-25).
+    decision: >
+      Robert approved the plan and, as an elevated effect, this step on 2026-10-25 (Issue #471, step 3).
+      The League Live league job runs tools/league_live_derived_refresh.py after the PlayerWeekFantasy
+      refresh and inside the same rebuild-and-retry publication: league-transactions and league-drafts of
+      the current season per league, and TeamWeekPerformance of the newest league-scored week (strict
+      --require-pwf). The publication gains the prefixes data-derived/team-week-performance,
+      league-transactions and league-drafts, which the weekly runs already write. No fingerprint engine,
+      no new workflow, scheduler target, credential or permission. The helper is fail-soft per product
+      (warning, last good file stays) so an unfinished week cannot block the App League publication;
+      corrections of older weeks still arrive with the weekly runs. Fast tests: tools/tests/test_league_live_derived_refresh.py.
+    rationale: >
+      The App and its Shared Derived source stay equally fresh using the existing materializers, with
+      failure isolation and without new infrastructure.
+    consequences:
+      positive:
+        - Product and App are equally fresh; awards of a final week are available within one tick.
+      negative:
+        - League Live writes three more data-derived prefixes and runs a few seconds longer; the
+          runtime was measured after the merge (Issue #471).
+        - A persistently unready product only shows as a warning until the weekly run fails loudly.

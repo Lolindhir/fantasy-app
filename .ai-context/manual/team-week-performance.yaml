@@ -205,7 +205,7 @@ recomputation:
     writer first and the strict TWP --all-finalized --write --require-pwf
     publisher as a dependent, separately scoped rebuild-and-retry job.
     Historical TWP publishes only data-derived/team-week-performance; this
-    does not add any App, UI, Source or League Live writer. First actual
+    does not add any App, UI or Source writer. (Issue #471 step 3 later added the newest scored week of the current season to the League Live league job, tools/league_live_derived_refresh.py, strict --require-pwf, same prefix, fail-soft; older weeks stay with the weekly job.) First actual
     publication, 40/40 file inventory and subsequent no-op remain live gates.
   persistence: >
     Stable JSON key ordering, no generation-time timestamp, byte-identical
