@@ -254,6 +254,19 @@ openPoints:
   - id: product-size
     text: Estimated from the current consumer files (about 0.2 MB Transactions and 0.4 MB Drafts for all seasons, measured in step 2/3); whether the history is committed stays a step 5 decision.
 
+leagueLiveIncrementalRefresh:
+  trackingIssue: 471
+  workflow: .github/workflows/league-live.yml (league job, same rebuild-and-retry publication)
+  implementation: tools/league_live_derived_refresh.py
+  behavior: >-
+    Every ten minutes the products league-transactions and league-drafts of each league's current
+    season (CurrentCanonicalLeagueSeasonID of the canonical manifest) are rematerialized with the
+    same materializer as the weekly run, so the Shared Derived product is as fresh as
+    public/data/Transactions.json and Drafts.json rendered in the same run. Written only on a
+    semantic difference. Leagues are iterated from data-meta; no league ID is hard-coded.
+    Older seasons stay with the weekly run below. A product that cannot be built keeps its last
+    good file and raises a warning; the chain is not failed.
+
 weeklyDerivedPublication:
   trackingIssue: 471
   workflow: .github/workflows/update-transactions.yml
