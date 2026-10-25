@@ -404,7 +404,9 @@ export class LeagueMatchupsComponent {
   }
 
   gameIsLiveForFantasy(game: FantasyGameContextGame): boolean {
-    return (game.RemainingRelevance?.LockedActiveStarterCount ?? 0) > 0;
+    // Generated locked-active starters are evidence of the live NFL window, not
+    // a real-time NFL score. Final is authoritative even for stale locked paths.
+    return !this.gameIsFinal(game) && (game.RemainingRelevance?.LockedActiveStarterCount ?? 0) > 0;
   }
 
   gameIsFinal(game: FantasyGameContextGame): boolean {

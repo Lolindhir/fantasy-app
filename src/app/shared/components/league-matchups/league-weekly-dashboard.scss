@@ -28,34 +28,90 @@
   padding-right: 160px;
 }
 
-/* #1148: pair row and score row share columns, so neither score needs a repeated team label. */
+/* #1148: compact game lockup and right-hand rank/kickoff orientation. */
+.fantasy-pulse-card--remaining .fantasy-pulse-card-main {
+  min-height: 72px;
+  gap: 3px 9px;
+  padding-block: 9px 7px;
+}
+
 .fantasy-pulse-card--remaining .fantasy-pulse-game-lockup {
   display: grid;
   grid-template-columns: max-content max-content max-content;
   align-items: center;
   justify-items: center;
-  gap: 2px 6px;
+  column-gap: 5px;
+  row-gap: 0;
   width: max-content;
   max-width: 100%;
 }
 
-.fantasy-pulse-score-value {
-  color: #172033;
-  font-size: 0.85rem;
-  font-weight: 950;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+.fantasy-pulse-side-meta {
+  position: absolute;
+  top: 9px;
+  right: 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
   white-space: nowrap;
 }
 
-.fantasy-pulse-score-label {
-  font-size: 0.55rem;
-  font-weight: 800;
+.fantasy-pulse-card--remaining .fantasy-pulse-side-meta .fantasy-pulse-rank {
+  position: static;
+  color: #9066ed;
+  font-size: 0.77rem;
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.fantasy-pulse-game-kickoff {
+  color: #64748b;
+  font-size: 0.59rem;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.fantasy-pulse-score-value {
+  color: #172033;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: -0.015em;
   line-height: 1.1;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.fantasy-pulse-score-value--projected,
+.fantasy-pulse-score-value--unavailable { color: var(--lifecycle-neutral-fg); }
+
+.fantasy-pulse-score-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 0.54rem;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+  transform: translateY(-1px);
+}
+
+.fantasy-pulse-status-emoji {
+  display: inline-block;
+  font-size: 0.84rem;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.fantasy-pulse-live-icon {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
 }
 
 .fantasy-pulse-score-label--market { color: var(--lifecycle-neutral-fg); }
+.fantasy-pulse-score-label--live { color: var(--lifecycle-active-fg); }
 .fantasy-pulse-score-label--final { color: var(--lifecycle-final-fg); }
 
 .fantasy-pulse-team-strip {
@@ -81,6 +137,8 @@
 }
 
 @media (max-width: 360px) {
+  .fantasy-pulse-side-meta { right: 30px; }
+  .fantasy-pulse-game-kickoff { font-size: 0.55rem; }
   .fantasy-pulse-metrics { gap: 3px; padding-right: 135px; }
   .fantasy-pulse-metric-chip { padding-inline: 5px; font-size: 0.51rem; }
   .fantasy-pulse-team-strip { right: 30px; left: 140px; }
