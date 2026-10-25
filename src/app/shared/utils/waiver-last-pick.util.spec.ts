@@ -20,7 +20,10 @@ describe('buildLastWaiverPickByTeam', () => {
       makeTransaction(1, 100),
       makeTransaction(1, 200, { Status: 'failed' }),
       makeTransaction(1, 300, { Type: 'free_agent' }),
-      makeTransaction(1, 400, { Participants: [{ RosterID: 1, AddedPlayers: [], DroppedPlayers: [] }] as Transaction['Participants'] }),
+      makeTransaction(1, 400, { Participants: [{
+        RosterID: 1, AddedPlayers: [], DroppedPlayers: [],
+        AcquiredDraftPicks: [], SentDraftPicks: []
+      }] }),
       makeTransaction(1, 500, { Season: '2025' }),
       makeTransaction(3, 800, { Status: 'failed' })
     ];
@@ -31,9 +34,9 @@ describe('buildLastWaiverPickByTeam', () => {
   it('assigns an acquisition only to the participant actually receiving a player', () => {
     const transactions = [makeTransaction(1, 100, {
       Participants: [
-        { RosterID: 1, AddedPlayers: [], DroppedPlayers: [] },
-        { RosterID: 2, AddedPlayers: [{ PlayerID: '42' }], DroppedPlayers: [] }
-      ] as Transaction['Participants']
+        { RosterID: 1, AddedPlayers: [], DroppedPlayers: [], AcquiredDraftPicks: [], SentDraftPicks: [] },
+        { RosterID: 2, AddedPlayers: [{ PlayerID: '42' }], DroppedPlayers: [], AcquiredDraftPicks: [], SentDraftPicks: [] }
+      ]
     })];
 
     expect(buildLastWaiverPickByTeam(transactions, '2026')).toEqual({ 2: 100 });
