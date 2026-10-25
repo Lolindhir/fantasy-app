@@ -133,8 +133,8 @@ describe('LeagueTimelineComponent', () => {
     component.openWaiverPriority(template);
 
     expect(open).toHaveBeenCalledWith(template, jasmine.objectContaining({
-      width: '500px',
-      maxWidth: 'calc(100vw - 24px)',
+      width: '420px',
+      maxWidth: 'calc(100vw - 40px)',
       maxHeight: 'calc(100dvh - 24px)',
       ariaLabel: 'Waiver priority'
     }));
