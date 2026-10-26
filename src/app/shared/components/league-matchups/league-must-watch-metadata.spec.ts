@@ -449,8 +449,17 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
   });
 
   for (const width of [360, 390, 430, 1280]) {
-    it(`keeps the team-aligned score row readable and compact at ${width}px`, () => {
-      dataService.getFantasyGameContext.and.returnValue(of(makeMarketContext(false)));
+    for (const isLive of [false, true]) {
+    it(`keeps team-aligned estimates and right-hand status compact at ${width}px (${isLive ? 'Live' : 'Pregame'})`, () => {
+      const current = makeMarketContext(false);
+      dataService.getFantasyGameContext.and.returnValue(of(isLive ? {
+        ...current,
+        Games: current.Games.map(game => ({
+          ...game,
+          Status: 'In Progress',
+          RemainingRelevance: { ...game.RemainingRelevance!, LockedActiveStarterCount: 2 }
+        }))
+      } : current));
       const marketFixture = TestBed.createComponent(LeagueMatchupsComponent);
       marketFixture.componentInstance.league = makeLeague();
       marketFixture.detectChanges();
@@ -480,6 +489,11 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
         const cardRect = card.getBoundingClientRect();
         const lockupRect = lockup.getBoundingClientRect();
         const side = card.querySelector<HTMLElement>('.fantasy-pulse-side-meta')!;
+        expect(side.querySelector('.fantasy-pulse-side-live') !== null).toBe(isLive);
+        if (isLive) {
+          expect(side.querySelector('.fantasy-pulse-side-live .fantasy-pulse-live-icon')).not.toBeNull();
+          expect(lockup.querySelector('.fantasy-pulse-score-label--market')?.textContent?.trim()).toBe('🎰 Proj.');
+        }
         const rankRect = side.querySelector<HTMLElement>('.fantasy-pulse-rank')!.getBoundingClientRect();
         const kickoffRect = side.querySelector<HTMLElement>('.fantasy-pulse-game-kickoff')!.getBoundingClientRect();
         const metricsRect = card.querySelector<HTMLElement>('.fantasy-pulse-metrics')!.getBoundingClientRect();
@@ -502,6 +516,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
         marketFixture.destroy();
       }
     });
+    }
   }
 
   it('keeps the existing Team Detail interaction separate from the NFL game-detail target', () => {
