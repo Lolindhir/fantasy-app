@@ -295,7 +295,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
       expect(finalMarker!.textContent?.trim()).toBe('🏁');
       expect(lockup?.querySelector('.fantasy-pulse-score-label--final')?.textContent?.trim()).toBe('🏁 Final');
       expect(Array.from(lockup?.querySelectorAll('.fantasy-pulse-score-value') ?? []).map(score => score.textContent?.trim())).toEqual(['–', '–']);
-      expect(host.querySelector('.fantasy-pulse-score-label--live')).toBeNull();
+      expect(host.querySelector('.fantasy-pulse-side-live')).toBeNull();
       expect(host.querySelector('.fantasy-pulse-state')).toBeNull();
     } finally {
       finalFixture.destroy();
@@ -330,7 +330,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
     }
   });
 
-  it('renders an accessible blue radio-wave Live cue without fabricating NFL live scores', () => {
+  it('keeps gray rounded market estimates during Live and moves the blue radio cue beside kickoff', () => {
     const current = makeMarketContext(false);
     dataService.getFantasyGameContext.and.returnValue(of({
       ...current,
@@ -347,11 +347,40 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
       const host: HTMLElement = liveFixture.nativeElement;
       const lockup = host.querySelector<HTMLElement>('.fantasy-pulse-game-lockup')!;
       expect(host.querySelector('.fantasy-pulse-card--live')).not.toBeNull();
-      expect(lockup.querySelector('.fantasy-pulse-score-label--live')?.textContent?.trim()).toBe('Live');
-      expect(lockup.querySelector('.fantasy-pulse-live-icon circle')).not.toBeNull();
-      expect(Array.from(lockup.querySelectorAll('.fantasy-pulse-score-value')).map(value => value.textContent?.trim())).toEqual(['–', '–']);
-      expect(lockup.querySelector('.fantasy-pulse-score-label--market')).toBeNull();
+      const right = host.querySelector<HTMLElement>('.fantasy-pulse-side-meta')!;
+      const live = right.querySelector<HTMLElement>('.fantasy-pulse-side-live');
+      expect(live?.textContent?.trim()).toBe('Live');
+      expect(live?.querySelector('.fantasy-pulse-live-icon circle')).not.toBeNull();
+      expect(right.querySelector('.fantasy-pulse-game-kickoff')).not.toBeNull();
+      expect(Array.from(lockup.querySelectorAll('.fantasy-pulse-score-value')).map(value => value.textContent?.trim())).toEqual(['≈24', '≈21']);
+      expect(lockup.querySelectorAll('.fantasy-pulse-score-value--projected').length).toBe(2);
+      expect(lockup.querySelector('.fantasy-pulse-score-label--market')?.textContent?.trim()).toBe('🎰 Proj.');
       expect(lockup.querySelector('.fantasy-pulse-score-label--final')).toBeNull();
+    } finally {
+      liveFixture.destroy();
+    }
+  });
+
+  it('keeps the Live cue without inventing projected values when market evidence is unavailable', () => {
+    const current = makeMarketContext(false);
+    dataService.getFantasyGameContext.and.returnValue(of({
+      ...current,
+      Games: current.Games.map(game => ({
+        ...game,
+        Status: 'In Progress',
+        Market: null,
+        RemainingRelevance: { ...game.RemainingRelevance!, LockedActiveStarterCount: 2 }
+      }))
+    }));
+    const liveFixture = TestBed.createComponent(LeagueMatchupsComponent);
+    liveFixture.componentInstance.league = makeLeague();
+    liveFixture.detectChanges();
+    try {
+      const host: HTMLElement = liveFixture.nativeElement;
+      expect(host.querySelector('.fantasy-pulse-card--live')).not.toBeNull();
+      expect(host.querySelector('.fantasy-pulse-side-live')?.textContent?.trim()).toBe('Live');
+      expect(host.querySelector('.fantasy-pulse-score-value')).toBeNull();
+      expect(host.querySelector('.fantasy-pulse-score-label--market')).toBeNull();
     } finally {
       liveFixture.destroy();
     }
@@ -378,6 +407,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
       expect(Array.from(lockup.querySelectorAll('.fantasy-pulse-score-value')).map(score => score.textContent?.trim())).toEqual(['24', '30']);
       expect(lockup.querySelector('.fantasy-pulse-score-label--final')?.textContent?.trim()).toBe('🏁 Final');
       expect(lockup.querySelector('.fantasy-pulse-score-label--market')).toBeNull();
+      expect(host.querySelector('.fantasy-pulse-side-live')).toBeNull();
       expect(host.querySelector('[aria-label="Final"]')).not.toBeNull();
       expect(host.querySelector('.fantasy-pulse-card--final')).not.toBeNull();
     } finally {
