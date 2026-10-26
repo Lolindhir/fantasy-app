@@ -370,19 +370,8 @@
                         <span class="fantasy-pulse-score-label fantasy-pulse-score-label--final"><span class="fantasy-pulse-status-emoji" role="img" aria-label="Final">🏁</span> Final</span>
                         <strong class="fantasy-pulse-score-value fantasy-pulse-score-value--home">{{ hasNflScore(game) ? formatNflScore(game.HomeScore) : '–' }}</strong>
                       </ng-container>
-                      <ng-container *ngIf="gameIsLiveForFantasy(game)">
-                        <!-- Schema v6 has no live NFL scores: never substitute betting-market expectations. -->
-                        <span class="fantasy-pulse-score-value fantasy-pulse-score-value--unavailable" aria-label="Live score unavailable">–</span>
-                        <span class="fantasy-pulse-score-label fantasy-pulse-score-label--live">
-                          <svg class="fantasy-pulse-live-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="2" />
-                            <path d="M16.24 7.76a6 6 0 0 1 0 8.48M7.76 7.76a6 6 0 0 0 0 8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
-                          </svg>
-                          Live
-                        </span>
-                        <span class="fantasy-pulse-score-value fantasy-pulse-score-value--unavailable" aria-label="Live score unavailable">–</span>
-                      </ng-container>
-                      <ng-container *ngIf="!gameIsFinal(game) && !gameIsLiveForFantasy(game) && game.Market as market">
+                      <!-- Live has no reliable NFL score; the gray Proj. row remains a market estimate until Final. -->
+                      <ng-container *ngIf="!gameIsFinal(game) && game.Market as market">
                         <ng-container *ngIf="hasImpliedNflScores(market)">
                           <strong class="fantasy-pulse-score-value fantasy-pulse-score-value--away fantasy-pulse-score-value--projected">{{ formatImpliedNflScore(market.ImpliedAwayPoints) }}</strong>
                           <span class="fantasy-pulse-score-label fantasy-pulse-score-label--market"><span class="fantasy-pulse-status-emoji" role="img" aria-label="Betting market">🎰</span> Proj.</span>
@@ -392,7 +381,16 @@
                     </span>
                     <span class="fantasy-pulse-side-meta">
                       <span class="fantasy-pulse-rank" *ngIf="game.RemainingRelevance?.MustWatchRank as rank">#{{ rank }}</span>
-                      <span class="fantasy-pulse-game-kickoff">{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
+                      <span class="fantasy-pulse-side-kickoff-row">
+                        <span *ngIf="gameIsLiveForFantasy(game)" class="fantasy-pulse-side-live">
+                          <svg class="fantasy-pulse-live-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="2" />
+                            <path d="M16.24 7.76a6 6 0 0 1 0 8.48M7.76 7.76a6 6 0 0 0 0 8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
+                          </svg>
+                          Live
+                        </span>
+                        <span class="fantasy-pulse-game-kickoff">{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
+                      </span>
                     </span>
                     <span class="fantasy-pulse-metrics">
                       <strong *ngIf="game.Relevance.StarterCount > 0" class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--starter">
