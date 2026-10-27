@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: main
-          fetch-depth: 0
+          fetch-depth: 1
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git fetch origin workflow-health-state:refs/remotes/origin/workflow-health-state; then
+          if git fetch --depth=1 origin workflow-health-state:refs/remotes/origin/workflow-health-state; then
             git show origin/workflow-health-state:workflow-health.json > /tmp/previous-workflow-health.json || true
           else
             echo "workflow-health-state branch is missing; the publish step will initialize it."
@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git fetch origin workflow-health-state:refs/remotes/origin/workflow-health-state; then
+          if git fetch --depth=1 origin workflow-health-state:refs/remotes/origin/workflow-health-state; then
             git switch -C workflow-health-state origin/workflow-health-state
           else
             git switch --orphan workflow-health-state
