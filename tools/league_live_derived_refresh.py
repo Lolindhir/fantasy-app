@@ -7,7 +7,7 @@ For every league in data-meta this keeps the products that the App already shows
   (same materializer as the weekly update-transactions run, tools/derived_data.py),
 * TeamWeekPerformance (Best Manager / Best Coach) of the newest league-scored week of the current
   season (same strict materializer as the weekly run, tools/team_week_performance_materialize.py,
-  with --require-pwf parity).
+  with an independent, non-blocking PWF parity diagnostic).
 
 Older seasons and weeks stay with the weekly runs; no new calculation lives here. Everything is
 written only on a semantic difference. A product that cannot be built (a week whose NFL finality or
@@ -74,12 +74,19 @@ def refresh_team_week_performance(repo_root: Path, league_id: str, season: int) 
             return entry
         week = max(weeks)
         entry["Week"] = week
-        report = materialize(repo_root, league_id, season, week, write=True, require_pwf=True)
+        report = materialize(repo_root, league_id, season, week, write=True, require_pwf=False)
     except Exception as error:  # fail-closed product: keep the last good file, report visibly
         entry.update(Status="blocked", Reason=f"{type(error).__name__}: {error}")
         _warn("TeamWeekPerformance not refreshed", f"{league_id}/{season}: {entry['Reason']}")
     else:
         entry.update(Status="changed" if report["Changed"] else "unchanged")
+        parity = report.get("PlayerWeekFantasyParity")
+        if isinstance(parity, dict):
+            entry["PlayerWeekFantasyParity"] = parity
+            if parity.get("State") not in ("verified", "accepted-divergence"):
+                _warn("Independent player scoring differs from Sleeper",
+                      f"{league_id}/{season}/W{week}: {parity.get('State')}: "
+                      f"{parity.get('Reason', 'PWF evidence unavailable')}")
     return entry
 
 

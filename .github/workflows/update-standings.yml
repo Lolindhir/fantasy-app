@@ -63,15 +63,14 @@ jobs:
           echo "- Generator: source-only preflight of every candidate before any changed partition is written" >> "$GITHUB_STEP_SUMMARY"
           echo "- On failure, no historical PWF commit is published" >> "$GITHUB_STEP_SUMMARY"
 
-  # Historical TeamWeekPerformance depends on finalized PlayerWeekFantasy
-  # publication, but never blocks the independent Standings job.
+  # Official Sleeper-scored awards are independent of the NFL/PWF scoring
+  # publisher: a missing or divergent NFL stat cannot suppress league awards.
   historical_twp:
     name: Weekly finalized TeamWeekPerformance
-    needs: historical_pwf
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Checkout latest published PlayerWeekFantasy inputs
+      - name: Checkout latest canonical league inputs
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -83,14 +82,14 @@ jobs:
           --scope team-week-performance
           --path data-derived/team-week-performance
           --
-          python3 tools/team_week_performance_materialize.py --all-finalized --write --require-pwf
+          python3 tools/team_week_performance_materialize.py --all-finalized --write
 
       - name: Describe weekly TWP publication scope
         if: ${{ always() }}
         run: |
           echo "## Historical TeamWeekPerformance" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Dependency: successful historical PWF publication from the same workflow run" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Dependency: finalized canonical Sleeper league facts; NFL/PWF parity diagnostic only" >> "$GITHUB_STEP_SUMMARY"
           echo "- Scope: all canonically scored, NFL-finalized league weeks; no App/Source writes" >> "$GITHUB_STEP_SUMMARY"
           echo "- Output: data-derived/team-week-performance only; live League producer untouched" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Gate: all weeks preflighted with strict --require-pwf parity before any output" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Gate: strict league identity, roster, starter, lineup and finality preflight; PWF disagreement does not veto official awards" >> "$GITHUB_STEP_SUMMARY"
           echo "- Publisher: rebuild from latest main, scoped push, semantic no-op" >> "$GITHUB_STEP_SUMMARY"

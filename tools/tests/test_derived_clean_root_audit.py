@@ -82,8 +82,7 @@ class CleanRootProbeTests(unittest.TestCase):
         return {"BlockedCount": 0, "ChangedCount": written, "Weeks": []}
 
     def fake_twp(self, root, *, league_id, write, require_pwf):
-        self.assertTrue(require_pwf)
-        self.assertTrue((root / "data-derived/player-week-fantasy" / league_id / "2024/01.json").is_file())
+        self.assertFalse(require_pwf)  # Official Sleeper awards must restore without PWF.
         self.calls.append(("team-week-performance", league_id))
         target = root / "data-derived/team-week-performance" / league_id / "2024/01.json"
         existing = target.read_text() if target.is_file() else None
@@ -195,7 +194,7 @@ class CleanRootProbeTests(unittest.TestCase):
         self.assertEqual("nondeterministic", entry["Status"])
         self.assertEqual(["nfl-games"], result["FailedProducts"])
 
-    def test_failed_build_blocks_the_product_and_its_dependent(self):
+    def test_failed_pwf_build_does_not_block_official_sleeper_award_restore(self):
         self.publish_all_stable()
         self.hooks["player-week-fantasy"] = "blocked"
         result = self.run_audit()
@@ -203,11 +202,8 @@ class CleanRootProbeTests(unittest.TestCase):
         self.assertEqual("blocked", pwf["Status"])
         self.assertIn("week not final", pwf["Reason"])
         twp = result["Products"][f"team-week-performance/{LEAGUE}"]
-        self.assertEqual("blocked", twp["Status"])
-        self.assertIn("player-week-fantasy", twp["Reason"])
-        self.assertEqual(
-            [f"player-week-fantasy/{LEAGUE}", f"team-week-performance/{LEAGUE}"], result["FailedProducts"],
-        )
+        self.assertEqual("ready", twp["Status"])
+        self.assertEqual([f"player-week-fantasy/{LEAGUE}"], result["FailedProducts"])
 
     def test_latent_standings_dependency_is_reported_as_hint_for_issue_987(self):
         self.publish_all_stable()

@@ -13,7 +13,7 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 from team_week_performance_materialize import (  # noqa: E402
-    discover_finalized_weeks, materialize_all_finalized, verify_pwf_actual_parity,
+    discover_finalized_weeks, materialize_all_finalized, materialize, verify_pwf_actual_parity,
 )
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT, DATA_META_ROOT  # noqa: E402
 
@@ -95,6 +95,38 @@ class MaterializerParityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate canonical matchup"):
             verify_pwf_actual_parity(self.root, self.model, self.matchups)
 
+
+
+    def test_official_sleeper_awards_publish_despite_independent_nfl_parity_mismatch(self) -> None:
+        # The scorer already uses canonical Sleeper PlayerPoints/StarterPoints;
+        # NFL-based PlayerWeekFantasy is an optional quality signal, not a veto.
+        model = {
+            **self.model,
+            "Teams": [{"CanonicalLeagueRosterID": "roster-a"}],
+            "Awards": {"BestManagerRosterIDs": ["roster-a"],
+                       "BestCoachRosterIDs": ["roster-a"]},
+            "LineupDefinitionHash": "sha256:slots",
+        }
+        with patch("team_week_performance_materialize.load_verified_week_inputs",
+                   return_value={"matchup_rows": self.matchups}), patch(
+                       "team_week_performance_materialize.build_team_week_performance",
+                       return_value=model), patch(
+                       "team_week_performance_materialize.verify_pwf_actual_parity",
+                       side_effect=ValueError("scoring mismatch: Sleeper=26.28 PWF=26.18")), patch(
+                       "team_week_performance_materialize.save_team_week_performance",
+                       return_value=True) as save:
+            result = materialize(self.root, "nfl-reise", 2026, 5, write=True)
+            self.assertTrue(result["Changed"])
+            self.assertEqual(result["BestManagerRosterIDs"], ["roster-a"])
+            self.assertEqual(result["PlayerWeekFantasyParity"], {
+                "State": "mismatch",
+                "Reason": "scoring mismatch: Sleeper=26.28 PWF=26.18",
+            })
+            save.assert_called_once_with(self.root, model)
+            with self.assertRaisesRegex(ValueError, "scoring mismatch"):
+                materialize(self.root, "nfl-reise", 2026, 5,
+                            write=False, require_pwf=True)
+            self.assertEqual(save.call_count, 1)
 
 
 class BatchMaterializerTests(unittest.TestCase):

@@ -45,7 +45,7 @@ PLAYER_WEEK_FANTASY = "player-week-fantasy"
 TEAM_WEEK_PERFORMANCE = "team-week-performance"
 NFL_GAMES = "nfl-games"
 
-# Dependency order: TeamWeekPerformance needs PlayerWeekFantasy of the same league.
+# Stable report order; official TeamWeekPerformance is independent of PWF score parity.
 PRODUCTS = (
     PLAYER_VALUATION, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS,
     PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES,
@@ -110,7 +110,7 @@ def _build(unit: Unit, root: Path, hold_seed: Callable[[], dict[str, Any] | None
             raise ValueError(_blocked_reason(report))
         return int(report.get("ChangedCount", 0)), 0
     if product == TEAM_WEEK_PERFORMANCE:
-        report = materialize_all_finalized(root, league_id=league, write=True, require_pwf=True)
+        report = materialize_all_finalized(root, league_id=league, write=True, require_pwf=False)
         if report["BlockedCount"]:
             raise ValueError(_blocked_reason(report))
         return int(report["ChangedCount"]), 0
@@ -139,9 +139,6 @@ def _run_variant(
         product, league = unit
         entry: dict[str, Any] = {"error": None, "writes": [], "files": [], "held": 0}
         results[unit] = entry
-        if product == TEAM_WEEK_PERFORMANCE and results[(PLAYER_WEEK_FANTASY, league)]["error"]:
-            entry["error"] = f"Depends on {PLAYER_WEEK_FANTASY}, which failed in this root"
-            continue
         try:
             for index in range(passes):
                 writes, held = _build(unit, shadow, hold_seed)

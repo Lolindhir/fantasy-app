@@ -119,8 +119,9 @@ inputs:
       Reconcile against finalized Shared PlayerWeekFantasy Actual where
       available before approving production backfills. The canonical
       player-scoring reconciliation (#355, #698) retains both values and
-      accepts only exact, provenance-backed provider-stat exceptions; unknown
-      player/week divergences remain blocking. TWP optimization continues
+      accepts only exact, provenance-backed provider-stat exceptions in its
+      strict independent audit. Provider-stat divergences never silently
+      override or veto official Sleeper-based awards. TWP optimization continues
       using canonical League matchup PlayerPoints and StarterPoints, not
       substituting PWF Actual for Sleeper fantasy league points.
 
@@ -181,32 +182,29 @@ recomputation:
     - contract/algorithm version change
   publicationGate: >
     tools/team_week_performance_materialize.py is read-only unless --write is supplied.
-    It uses the canonical finality/position/slot adapter and reconciles canonical
-    fantasy matchup PlayerPoints with persisted final PlayerWeekFantasy Actual
-    where available. Missing zero-point candidates are permitted, missing nonzero,
-    scoring hash mismatch, stale zero or nonfinal PWF Actual fails closed.
-    Use --require-pwf to enforce the dataset's presence for weeks such as 2026 W5.
-    The read-only --all-finalized batch mode discovers registered leagues from
-    data-meta and all seasons from canonical league manifests; finalized
-    fantasy-week bounds come from each season league.json and NFL week finality
-    remains an independent per-week gate. With --write, the entire selected
-    batch passes all source/optimizer/parity checks before any output is written;
-    a blocked finalized week aborts ALL batch writes and the CLI exits nonzero.
-    A missing PWF snapshot reports not-available rather than inventing parity;
-    an existing stale/non-final PWF snapshot is a real blocker. During a future
-    platform-wide clean rebuild (#471), upstream PWF must be rebuilt before
-    TeamWeekPerformance. This CLI does not orchestrate other derived products.
-    Existing TeamWeekPerformance snapshots for 2026 W03-W05 are published on
-    main following merged PR #993. The read-only complete PWF -> TWP audit
-    (manual League Live #40030010930, 2026-10-23) passed 40/40 scored weeks:
-    PWF would change 0, TWP would change 37, exactly one policy-accepted
-    divergence (#698), and the staged second pass was a semantic no-op.
-    The existing weekly APP Data Standings workflow now runs the original PWF
-    writer first and the strict TWP --all-finalized --write --require-pwf
-    publisher as a dependent, separately scoped rebuild-and-retry job.
-    Historical TWP publishes only data-derived/team-week-performance; this
-    does not add any App, UI or Source writer. (Issue #471 step 3 later added the newest scored week of the current season to the League Live league job, tools/league_live_derived_refresh.py, strict --require-pwf, same prefix, fail-soft; older weeks stay with the weekly job.) First actual
-    publication, 40/40 file inventory and subsequent no-op remain live gates.
+    Official Fantasy League awards use verified, completed Sleeper league matchups
+    (including exact historical roster ownership, complete PlayerPoints/StarterPoints,
+    lineup/position eligibility, league team count and game/league finality).
+    Only these league-owned facts gate official award publication. PlayerWeekFantasy
+    is a separate NFL/nflverse-based data product: missing or discrepant actual
+    scores are returned as explicit parity diagnostics (not-available/mismatch),
+    not as an official Sleeper-awards blocker. The opt-in --require-pwf switch
+    retains the original strict PWF presence, fingerprint, finalized-Actual and
+    exact-score reconciliation for independent quality/historical replay audits.
+    Missing or stale NFL stats must not be silently normalized to valid final zero
+    in the PWF product; its own finality/completeness hardening is tracked in #697.
+    The --all-finalized mode discovers registered leagues/seasons from canonical
+    manifests. Before writes, every selected week must pass the strict league,
+    lineup and finality verification; any invalid league week aborts ALL batch
+    writes. The existing weekly APP Data Standings workflow now publishes
+    historical TWP independently of the PWF publisher, both with their original
+    output scopes and rebuild-and-retry publication safety. The ten-minute
+    League Live producer handles newest scored-week TWP the same way and emits
+    a non-blocking GitHub warning on independent parity anomalies. Historical
+    TWP publishes data-derived/team-week-performance only; no second App
+    publisher, schedule or output path was added. For earlier strict historical
+    replay see the legacy 40-week audit (#355/#471), which remains reproducible
+    with --require-pwf explicitly requested.
   persistence: >
     Stable JSON key ordering, no generation-time timestamp, byte-identical
     semantic no-op. Recalculate and publish only after all input requirements
