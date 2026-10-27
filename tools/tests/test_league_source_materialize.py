@@ -13,6 +13,7 @@ if str(TOOLS) not in sys.path:
 from league_source_data_lib.core import canonical_league_season_id, normalize_sleeper_player_id  # noqa: E402
 from league_source_data_lib.materialize import (  # noqa: E402
     PlayerMappingResolver,
+    _canonicalize_matchups,
     _player_refs,
     persist_canonical_outputs,
     plan_canonical_materialization,
@@ -202,6 +203,41 @@ class LeagueSourceMaterializeTests(unittest.TestCase):
             self.assertEqual(len(refs), 1, label)
         with self.assertRaisesRegex(ValueError, "Duplicate Sleeper player id p1"):
             _player_refs(resolver, ["p1", "0", "p1"], 2025, "matchups.week-5.starters")
+
+    def test_canonical_matchup_preserves_only_explicit_empty_starter_slots(self) -> None:
+        temporary, root, _, _ = self._repo()
+        try:
+            resolver = PlayerMappingResolver.load(root)
+            base = {
+                "matchup_id": 1,
+                "roster_id": 1,
+                "players": ["p1"],
+                "players_points": {"p1": 10.0},
+                "points": 10.0,
+            }
+
+            def canonical(starters: list, points: list) -> dict:
+                raw = [{**base, "starters": starters, "starters_points": points}]
+                return _canonicalize_matchups(raw, "season-fixture", {"1": "clr-1"}, resolver, 2025, 7)[0]
+
+            with_empty = canonical(["p1", "0"], [10.0, 0.0])
+            self.assertEqual(with_empty["EmptyStarterSlots"], 1)
+            self.assertEqual(len(with_empty["Starters"]), 1)
+            self.assertEqual(len(with_empty["StarterPoints"]), 1)
+            self.assertEqual(with_empty["Points"], 10.0)
+
+            with_two_empty = canonical(["p1", 0, "0"], [10.0, 0.0, 0.0])
+            self.assertEqual(with_two_empty["EmptyStarterSlots"], 2)
+
+            normal = canonical(["p1"], [10.0])
+            self.assertNotIn("EmptyStarterSlots", normal)
+            # Ambiguous missing/null player evidence must never become an empty-slot credit.
+            missing = canonical(["p1", None], [10.0, 0.0])
+            self.assertNotIn("EmptyStarterSlots", missing)
+            whitespace = canonical(["p1", " "], [10.0, 0.0])
+            self.assertNotIn("EmptyStarterSlots", whitespace)
+        finally:
+            temporary.cleanup()
 
     def test_normalize_sleeper_player_id(self) -> None:
         self.assertEqual(normalize_sleeper_player_id(" 4046 "), "4046")

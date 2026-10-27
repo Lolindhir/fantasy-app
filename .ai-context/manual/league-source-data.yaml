@@ -836,3 +836,19 @@ acceptanceOrder:
   - Phase 1B materializes normalized league facts and validates historical season linkage
   - unchanged Phase 1B sync/materialization has proven semantic total no-op productively
   - Phase 2 may now migrate App and Fantasy Management consumers under separate authorization; that migration is in progress and tracked in Issue 347
+
+matchupEmptyStarterSlots:
+  issue: 1164
+  canonicalField: EmptyStarterSlots
+  appliesTo: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-<n>.json
+  semantics: >
+    Optional positive integer on a canonical roster/matchup row, counting only
+    explicit Sleeper "0" entries in the week-specific starter list. The placeholder
+    is not a player and contributes no scoring; actual Starters and StarterPoints
+    remain exclusively real player identities. Zero/no placeholders omit the field.
+    Null/blank/unmapped actual player data must not be reinterpreted as empty slots.
+  consumer: >
+    The non-active Matchups.json finality derivation requires the count of real
+    starters plus canonical EmptyStarterSlots to equal the configured league starter
+    positions. Real starters still require unambiguous NFL game-finality evidence;
+    an absent/invalid count cannot authorize finalization.

@@ -84,8 +84,11 @@ finality:
   nonActivePastWeek: >
     Resolves actual canonical starters to their NFL games using season/week roster
     evidence (including the team-defense provider identity fallback) and checks only
-    those games against canonical NFL finality. Unrelated later NFL games do not block
-    a matchup from becoming final.
+    those games against canonical NFL finality. An explicit optional integer
+    EmptyStarterSlots from the canonical league matchup (Sleeper "0" placeholders)
+    counts toward expected configured lineup positions without creating a player
+    or scoring points. Missing, invalid or inconsistent slot evidence remains unknown.
+    Unrelated later NFL games do not block a matchup from becoming final.
   futureWeek: >
     A known future regular-season matchup with starter evidence is open. Missing
     starter evidence fails closed to unknown.
