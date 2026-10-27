@@ -20,7 +20,6 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 FULL_HISTORY_ALLOWED = {
     ("source-data-readiness.yml", "audit"): "tools/source_data_readiness.py reads git log per file (group D)",
     ("sync-nfl-source-data.yml", "sync"): "full scope uses HEAD~1, git diff and rebase (group D); schedule-odds/game-finality are shallow",
-    ("workflow-health-snapshot.yml", "snapshot"): "pending review of the state-branch fetch/push (group C)",
     ("update-transactions.yml", "update"): "pending conversion (group A)",
 }
 
