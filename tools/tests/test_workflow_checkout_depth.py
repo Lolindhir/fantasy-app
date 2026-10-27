@@ -23,9 +23,6 @@ FULL_HISTORY_ALLOWED = {
     ("workflow-health-snapshot.yml", "snapshot"): "pending review of the state-branch fetch/push (group C)",
     ("fm-daily.yml", "providers"): "pending real-git test for publish_generated_commit.py (group B)",
     ("fm-daily.yml", "materialize"): "pending conversion (group A)",
-    ("update-standings.yml", "update"): "pending conversion (group A)",
-    ("update-standings.yml", "historical_pwf"): "pending conversion (group A)",
-    ("update-standings.yml", "historical_twp"): "pending conversion (group A)",
     ("update-transactions.yml", "update"): "pending conversion (group A)",
 }
 
