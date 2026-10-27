@@ -2,7 +2,7 @@
 """Controlled historical TeamWeekPerformance materialization.
 
 Read-only by default. Single-week and all-finalized batch modes use the same
-canonical source, scoring, finality and parity gates. Batch writes preflight
+canonical league source, scoring and finality gates. Strict PWF parity is an optional audit. Batch writes preflight
 all selected weeks before touching derived output. No App/workflow publication.
 """
 from __future__ import annotations
@@ -59,9 +59,16 @@ def _checked_week(
     """Single owner for canonical input, calculation and optional PWF parity."""
     inputs = load_verified_week_inputs(repo_root, league_id, season, week)
     model = build_team_week_performance(**inputs)
-    parity = verify_pwf_actual_parity(
-        repo_root, model, inputs["matchup_rows"], require_pwf=require_pwf,
-    )
+    try:
+        parity = verify_pwf_actual_parity(
+            repo_root, model, inputs["matchup_rows"], require_pwf=require_pwf,
+        )
+    except ValueError as error:
+        if require_pwf:
+            raise  # Explicit strict audit still fails on PWF scoring discrepancies.
+        # League/Sleeper PlayerPoints own official awards. An independently
+        # calculated NFL score must not veto a valid league-scored week.
+        parity = {"State": "mismatch", "Reason": str(error)}
     return model, parity
 
 
@@ -139,9 +146,9 @@ def materialize_all_finalized(
 ) -> dict[str, Any]:
     """Audit every scored week; publish nothing when a preflight gate fails.
 
-    A complete empty data-derived directory is supported: a missing PWF file
-    yields an explicitly unverified parity state unless --require-pwf is set.
-    The later cross-product orchestrator will rebuild PWF first.
+    A complete empty data-derived directory is supported. Normal official
+    award publication reports PWF differences without blocking valid league
+    evidence; --require-pwf retains strict, independently invoked auditing.
     """
     targets = discover_finalized_weeks(repo_root, league_id=league_id, seasons=seasons)
     checked: list[tuple[dict[str, Any], dict[str, Any]]] = []
@@ -222,7 +229,7 @@ def main() -> int:
     parser.add_argument("--write", action="store_true",
                         help="Opt in to persisting verified Shared Derived partitions")
     parser.add_argument("--require-pwf", action="store_true",
-                        help="Require a final PlayerWeekFantasy parity snapshot for every selected week")
+                        help="Strict PWF auditing: require final PlayerWeekFantasy and exact validated scoring parity")
     args = parser.parse_args()
     root = args.repo_root.resolve()
     if args.all_finalized:
