@@ -432,8 +432,16 @@ def _canonicalize_matchups(
             raise ValueError(f"Duplicate Sleeper matchup roster_id {provider_roster_id} in week {week}")
         seen_rosters.add(provider_roster_id)
         provider_matchup_id = item.get("matchup_id")
-        result.append(
-            {
+        raw_starters = item.get("starters") or []
+        if not isinstance(raw_starters, list):
+            raise ValueError(f"Sleeper matchup week {week} starters must be an array")
+        # Sleeper encodes an explicitly unfilled lineup slot as "0". Preserve
+        # that fact separately from real players; blanks/null are not evidence.
+        empty_starter_slots = sum(
+            1 for starter in raw_starters
+            if isinstance(starter, (str, int)) and str(starter).strip() == "0"
+        )
+        canonical = {
                 "CanonicalLeagueMatchupID": canonical_matchup_id(season_id, week, provider_matchup_id),
                 "CanonicalLeagueRosterID": _resolve_roster(roster_by_provider, provider_roster_id, f"matchups.week-{week}.roster_id"),
                 "Week": week,
@@ -441,11 +449,13 @@ def _canonicalize_matchups(
                 "Points": item.get("points"),
                 "CustomPoints": item.get("custom_points"),
                 "Players": _player_refs(resolver, item.get("players") or [], season, f"matchups.week-{week}.players"),
-                "Starters": _player_refs(resolver, item.get("starters") or [], season, f"matchups.week-{week}.starters"),
+                "Starters": _player_refs(resolver, raw_starters, season, f"matchups.week-{week}.starters"),
                 "PlayerPoints": _points_entries(resolver, item.get("players_points"), item.get("players") or [], season, f"matchups.week-{week}.players_points"),
-                "StarterPoints": _points_entries(resolver, item.get("starters_points"), item.get("starters") or [], season, f"matchups.week-{week}.starters_points"),
-            }
-        )
+                "StarterPoints": _points_entries(resolver, item.get("starters_points"), raw_starters, season, f"matchups.week-{week}.starters_points"),
+        }
+        if empty_starter_slots:
+            canonical["EmptyStarterSlots"] = empty_starter_slots
+        result.append(canonical)
     result.sort(key=lambda item: item["CanonicalLeagueRosterID"])
     return result
 

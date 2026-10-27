@@ -450,7 +450,16 @@ function Resolve-MrmNonActiveCompletionState {
     $unknown = $false
     foreach ($participant in @($Pairing.Participants)) {
         $starters = @(Get-MrmCollection (Get-MrmValue -Object $participant.SourceRow -Names @('StarterPoints')))
-        if ($starters.Count -lt $expectedStarterCount) { $unknown = $true }
+        $emptySlots = Get-MrmValue -Object $participant.SourceRow -Names @('EmptyStarterSlots')
+        if ($null -eq $emptySlots) { $emptySlots = 0 }
+        # Only an explicit canonical integer from a provider "0" slot counts as
+        # empty; missing/unresolved real starter evidence remains unknown.
+        if (($emptySlots -isnot [int] -and $emptySlots -isnot [long]) -or $emptySlots -lt 0 -or $emptySlots -gt $expectedStarterCount) {
+            $unknown = $true
+        }
+        elseif (($starters.Count + [int]$emptySlots) -ne $expectedStarterCount) {
+            $unknown = $true
+        }
         foreach ($starter in $starters) {
             $resolution = Get-MrmStarterGameResolution -Starter $starter -WeekGames $WeekGames -WeeklyAssignments $WeeklyAssignments -FinalityMap $FinalityMap
             if ($resolution -eq 'open') { return 'open' }
