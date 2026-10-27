@@ -26,11 +26,9 @@ FULL_HISTORY_ALLOWED = {
     ("clean-backups.yml", "cleanup"): "pending conversion (group A)",
     ("update-drafts.yml", "update"): "pending conversion (group A)",
     ("update-past-seasons-index.yml", "update"): "pending conversion (group A)",
-    ("update-players.yml", "update"): "pending conversion (group A)",
     ("update-standings.yml", "update"): "pending conversion (group A)",
     ("update-standings.yml", "historical_pwf"): "pending conversion (group A)",
     ("update-standings.yml", "historical_twp"): "pending conversion (group A)",
-    ("update-teams.yml", "update"): "pending conversion (group A)",
     ("update-transactions.yml", "update"): "pending conversion (group A)",
 }
 
