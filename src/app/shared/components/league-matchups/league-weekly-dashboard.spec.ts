@@ -431,6 +431,17 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(awards[0].textContent).toContain('179 / 200.02 possible pts');
     expect(awards[1].textContent).toContain('Best Manager');
     expect(awards[1].textContent).toContain('Long Fantasy Team 1');
+    // Prominent awards must not overwhelm the adjacent Key Fantasy Players.
+    // Keep the already-accepted Compact variant on its own CSS overrides.
+    const playerPoints = shell!.querySelector<HTMLElement>('.weekly-recap-player-points')!;
+    const playerName = shell!.querySelector<HTMLElement>('.weekly-recap-player-copy strong')!;
+    const awardPoints = awards[0].querySelector<HTMLElement>('.weekly-recap-award-value')!;
+    const awardName = awards[0].querySelector<HTMLElement>('.weekly-recap-award-identity strong')!;
+    const awardAvatar = awards[0].querySelector<HTMLElement>('.weekly-recap-award-avatar')!;
+    expect(getComputedStyle(awardPoints).fontSize).toBe(getComputedStyle(playerPoints).fontSize);
+    expect(getComputedStyle(awardName).fontSize).toBe(getComputedStyle(playerName).fontSize);
+    expect(getComputedStyle(awardAvatar).width).toBe('28px');
+    expect(getComputedStyle(awards[0]).paddingTop).toBe('7px');
     const ownerButton = awards[1].querySelector<HTMLButtonElement>('.weekly-recap-award-owner')!;
     ownerButton.click();
     const dialog = TestBed.inject(TeamDetailDialogService) as jasmine.SpyObj<TeamDetailDialogService>;
