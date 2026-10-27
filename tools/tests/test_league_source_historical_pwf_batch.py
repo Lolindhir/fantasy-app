@@ -221,7 +221,7 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         self.assertTrue(set(scopes).issubset(allowed),
                         f"Unsupported publication scopes: {set(scopes) - allowed}")
 
-    def test_historical_twp_follows_successful_pwf_with_strict_scoped_writer(self):
+    def test_historical_twp_independent_of_pwf_with_scoped_writer(self):
         root = TOOLS.parent
         workflow = (root / ".github/workflows/update-standings.yml").read_text(encoding="utf-8")
         self.assertEqual(workflow.count("\n  update:\n"), 1)
@@ -232,7 +232,7 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         twp = workflow.split("\n  historical_twp:\n", 1)[1]
         self.assertNotIn("\n    needs:", independent_standings,
                          "Independent Standings must not depend on historical outputs")
-        self.assertIn("\n    needs: historical_pwf\n", twp)
+        self.assertNotIn("\n    needs:", twp, "Official Sleeper awards cannot depend on PWF job status")
         publisher = twp.split(
             "      - name: Rebuild and publish every finalized TeamWeekPerformance partition\n",
             1,
@@ -240,14 +240,14 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         self.assertIn("tools/rebuild_and_publish.py", publisher)
         self.assertIn("--scope team-week-performance", publisher)
         self.assertIn("--path data-derived/team-week-performance", publisher)
-        self.assertIn("team_week_performance_materialize.py --all-finalized --write --require-pwf",
-                      publisher)
+        self.assertIn("team_week_performance_materialize.py --all-finalized --write", publisher)
+        self.assertNotIn("--require-pwf", publisher)
         self.assertNotIn("--path public/data", publisher)
         self.assertNotIn("data-source", publisher)
         self.assertNotIn("git push", workflow)
         self.assertEqual(workflow.count("historical_twp:"), 1)
 
-    def test_twp_scope_commit_label_and_pwf_order_are_not_accidental(self):
+    def test_twp_scope_commit_label_and_independent_job_are_not_accidental(self):
         root = TOOLS.parent
         helper = (root / ".github/scripts/Invoke-GeneratedDataCommit.ps1").read_text(
             encoding="utf-8")
@@ -256,7 +256,8 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         workflow = (root / ".github/workflows/update-standings.yml").read_text(
             encoding="utf-8")
         self.assertLess(workflow.index("historical_pwf:"), workflow.index("historical_twp:"))
-        self.assertIn("needs: historical_pwf", workflow)
+        twp = workflow.split("\n  historical_twp:\n", 1)[1]
+        self.assertNotIn("\n    needs:", twp)
 
     def test_no_new_scheduler_and_live_pwf_keeps_existing_publication(self):
         root = TOOLS.parent
