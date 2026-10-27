@@ -442,6 +442,15 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(getComputedStyle(awardName).fontSize).toBe(getComputedStyle(playerName).fontSize);
     expect(getComputedStyle(awardAvatar).width).toBe('28px');
     expect(getComputedStyle(awards[0]).paddingTop).toBe('7px');
+    // Score and muted explanation are centered; title and identity remain left-aligned.
+    for (const award of awards) {
+      const value = award.querySelector<HTMLElement>('.weekly-recap-award-value')!;
+      const extra = award.querySelector<HTMLElement>('.weekly-recap-award-extra')!;
+      const owner = award.querySelector<HTMLElement>('.weekly-recap-award-owner')!;
+      expect(getComputedStyle(value).textAlign).toBe('center');
+      expect(getComputedStyle(extra).textAlign).toBe('center');
+      expect(getComputedStyle(owner).textAlign).toBe('left');
+    }
     const ownerButton = awards[1].querySelector<HTMLButtonElement>('.weekly-recap-award-owner')!;
     ownerButton.click();
     const dialog = TestBed.inject(TeamDetailDialogService) as jasmine.SpyObj<TeamDetailDialogService>;
