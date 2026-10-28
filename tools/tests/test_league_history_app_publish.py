@@ -239,13 +239,20 @@ class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
         self.assertIn("--path data-derived/league-transactions", workflow)
         self.assertIn("--path data-derived/league-drafts", workflow)
         self.assertIn("bash -euo pipefail -c", workflow)
-        first = workflow.index("materialize --product league-transactions --league nfl-reise")
-        second = workflow.index("materialize --product league-drafts --league nfl-reise")
+        first = workflow.index("materialize --product league-transactions")
+        second = workflow.index("materialize --product league-drafts")
         consumer = workflow.index("league_history_app_publish.py write --fail-on-error")
         self.assertLess(first, second)
         self.assertLess(second, consumer)
         self.assertIn("schedule_archive.py write", workflow)
         self.assertIn("RequestPastSeasonsIndex.ps1", workflow)
+
+    def test_weekly_writer_covers_every_league_and_summarizes_each_product(self):
+        workflow = (TOOLS.parent / ".github/workflows/update-transactions.yml").read_text(encoding="utf-8")
+        self.assertNotIn("--league", workflow)
+        self.assertIn("Summarize Derived products", workflow)
+        for product in ("league-transactions", "league-drafts"):
+            self.assertIn(f"derived-summary/{product}.json", workflow)
 
     def test_no_new_scheduler_target_or_live_ten_minute_history_job(self):
         import json
