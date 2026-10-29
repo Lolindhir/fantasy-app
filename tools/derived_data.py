@@ -251,30 +251,38 @@ def materialize_league_history(
     return summary
 
 
-def materialize_league_standings(
-    repo_root: Path, out_root: Path, league_id: str, seasons: list[int] | None, check_only: bool,
-) -> dict[str, Any]:
+def build_league_standings(repo_root: Path, league_id: str) -> dict[int, dict[str, Any]]:
+    """Product documents of every manifest season, built chronologically (Most Improved and all-time chain on earlier seasons)."""
     manifest = standings_sources.manifest(repo_root, league_id)
     metadata = load_league_metadata(league_id, data_meta_root(repo_root))
     validate_against_manifest(metadata, manifest)
-    available = standings_sources.manifest_seasons(manifest)
-    unknown = [s for s in (seasons or []) if s not in available]
-    if unknown:
-        raise standings_sources.StandingsSourceError(f"Seasons not in the league manifest: {unknown}; available: {available}")
-    wanted = set(seasons or available)
     current = standings_sources.current_season(manifest)
-
-    summary: dict[str, Any] = {"Product": LEAGUE_STANDINGS, "CanonicalLeagueID": league_id, "Seasons": []}
+    documents: dict[int, dict[str, Any]] = {}
     previous: dict[str, Any] | None = None
     completed_newest_first: list[dict[str, Any]] = []
-    for season in available:
+    for season in standings_sources.manifest_seasons(manifest):
         inputs = standings_sources.load_season_inputs(repo_root, league_id, season, current)
         standings_model = get_model(model_for(metadata, season, "Standings"), "standings")
         awards_model = get_model(model_for(metadata, season, "Awards"), "awards")
         document = build_season(inputs, standings_model, awards_model, previous, completed_newest_first)
+        documents[season] = document
         previous = document
         if document["IsCompleted"]:
             completed_newest_first.insert(0, document)
+    return documents
+
+
+def materialize_league_standings(
+    repo_root: Path, out_root: Path, league_id: str, seasons: list[int] | None, check_only: bool,
+) -> dict[str, Any]:
+    documents = build_league_standings(repo_root, league_id)
+    unknown = [s for s in (seasons or []) if s not in documents]
+    if unknown:
+        raise standings_sources.StandingsSourceError(f"Seasons not in the league manifest: {unknown}; available: {sorted(documents)}")
+    wanted = set(seasons or documents)
+
+    summary: dict[str, Any] = {"Product": LEAGUE_STANDINGS, "CanonicalLeagueID": league_id, "Seasons": []}
+    for season, document in sorted(documents.items()):
         if season not in wanted:
             continue
         text = serialize(document)
