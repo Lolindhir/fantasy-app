@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 987
 architectureDecision: ADR-072
-implementationState: models and materializer done (#987 step 2; tools/derived_data.py materialize --product league-standings writes data-derived/league-standings, not yet scheduled and read by no consumer); shadow parity follows in step 3, cutover (elevated, separate approval) in step 4
+implementationState: models and materializer done (#987 step 2); exact shadow comparison with the published Standings.json and League.json placements done (#987 step 3, tools/league_standings_app_publish.py compare) and the product is part of the restore gate; not yet scheduled and read by no consumer; cutover (elevated, separate approval) in step 4
 
 purpose: >
   Define the Shared Derived Data product LeagueStandings: for one league and one season the
@@ -178,6 +178,13 @@ implementation:
 validation:
   step2: Unit tests with constructed leagues; no real teams or owners are hard-wired in tests.
   step3: Exact shadow comparison against Standings.json and the League.json Placements for every season and every week of the current season (WeeklyMovements), then the product joins the restore gate.
+  shadow: >
+    tools/league_standings_app_publish.py compare renders the product in the shape of Standings.json and the League.json Standings and
+    Teams[].Placements and compares by value (numbers equal regardless of integer/double, keys, types and list order exact). Result on the
+    data of 2026-10-29: Standings.json, League.json Standings and the placements except Awards are identical for all seasons, including the
+    current weekly movement. Known legacy deviation: the published Placements.<key>.Awards are empty for every team although the season
+    awards exist (the lookup by TeamID in RequestLeague.ps1 does not hit). The comparison reports it as its own entry; the cutover (step 4)
+    decides whether Placements.Awards deliver the real awards, which Angular would then display.
   tests:
     - tools/tests/test_league_standings_models.py (step 2)
     - tools/tests/test_league_standings_product.py (step 2)

@@ -72,6 +72,14 @@ class CleanRootProbeTests(unittest.TestCase):
         written = emit(target, self.body(product, root, existing))
         return {"Seasons": [{"Written": written}]}
 
+    def fake_standings(self, root, out_root, league, seasons, check_only):
+        self.check_isolation(root)
+        self.calls.append(("league-standings", league))
+        target = out_root / "league-standings" / league / "2024.json"
+        existing = target.read_text() if target.is_file() else None
+        written = emit(target, self.body("league-standings", root, existing))
+        return {"Seasons": [{"Written": written}]}
+
     def fake_pwf(self, root, *, league_id, write):
         self.calls.append(("player-week-fantasy", league_id))
         target = root / "data-derived/player-week-fantasy" / league_id / "2024/01.json"
@@ -100,6 +108,7 @@ class CleanRootProbeTests(unittest.TestCase):
             for name, fake in (
                 ("materialize_player_valuation", self.fake_valuation),
                 ("materialize_league_history", self.fake_history),
+                ("materialize_league_standings", self.fake_standings),
                 ("materialize_historical", self.fake_pwf),
                 ("materialize_all_finalized", self.fake_twp),
                 ("materialize_nfl_games", self.fake_nfl_games),
@@ -111,7 +120,7 @@ class CleanRootProbeTests(unittest.TestCase):
     def publish_all_stable(self):
         for relative in (
             f"player-valuation/{LEAGUE}/2024/week-00.json", f"league-transactions/{LEAGUE}/2024.json",
-            f"league-drafts/{LEAGUE}/2024.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
+            f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
             f"team-week-performance/{LEAGUE}/2024/01.json", "nfl-games/2024.json",
         ):
             self.publish(relative, "stable")
@@ -237,7 +246,7 @@ class CleanRootProbeTests(unittest.TestCase):
         for league in (LEAGUE, "league-b"):
             for relative in (
                 f"player-valuation/{league}/2024/week-00.json", f"league-transactions/{league}/2024.json",
-                f"league-drafts/{league}/2024.json", f"player-week-fantasy/{league}/2024/01.json",
+                f"league-drafts/{league}/2024.json", f"league-standings/{league}/2024.json", f"player-week-fantasy/{league}/2024/01.json",
                 f"team-week-performance/{league}/2024/01.json",
             ):
                 self.publish(relative, "stable")
@@ -245,7 +254,7 @@ class CleanRootProbeTests(unittest.TestCase):
         result = self.run_audit()
         self.assertEqual([LEAGUE, "league-b"], result["Leagues"])
         self.assertTrue(result["ReadyForFullRestore"])
-        for product in ("player-valuation", "league-transactions", "league-drafts",
+        for product in ("player-valuation", "league-transactions", "league-drafts", "league-standings",
                         "player-week-fantasy", "team-week-performance"):
             self.assertIn(f"{product}/league-b", result["Products"])
         self.assertEqual(3, self.calls.count(("nfl-games", None)))  # global product: once per pass, not per league
