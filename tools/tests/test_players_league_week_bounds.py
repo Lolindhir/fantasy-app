@@ -23,7 +23,10 @@ def write(root: Path, structure, final_weeks, incomplete_stats_weeks=()) -> None
     (league_dir / "league.json").write_text(json.dumps(payload), encoding="utf-8")
     finality = root / "data-source/nfl/game-finality"
     finality.mkdir(parents=True)
-    weeks = [{"GameType": "REG", "Week": w, "WeekFinal": final} for w, final in final_weeks]
+    weeks = [
+        {"GameType": "REG", "Week": w, "ApplicableGameCount": 1, "FinalGameCount": 1 if final else 0, "WeekFinal": final}
+        for w, final in final_weeks
+    ]
     (finality / f"{SEASON}.json").write_text(json.dumps({"Weeks": weeks}), encoding="utf-8")
     schedules = root / "data-source/nfl/schedules"
     schedules.mkdir(parents=True)

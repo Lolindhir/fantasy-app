@@ -72,26 +72,14 @@ def _structure(repo_root: Path, league_id: str, season: int) -> dict[str, int]:
     }
 
 
-def _games_final(repo_root: Path, season: int, weeks: range, league_complete: bool) -> dict[int, bool]:
-    path = repo_root / DATA_SOURCE_ROOT / "nfl/game-finality" / f"{season}.json"
-    if not path.is_file():
-        if league_complete:
-            raise WeekFinalityError(f"Game finality missing for completed season: {path}")
-        return {week: False for week in weeks}
+def _games_final_rows(path: Path, season: int) -> tuple[dict[int, bool], bool]:
+    """REG WeekFinal per week with the final-game consistency check, plus the payload's Finalized flag."""
     payload = _read(path)
-    rows = {
-        int(row["Week"]): row
-        for row in payload.get("Weeks") or []
-        if str(row.get("GameType") or "REG").upper() == "REG"
-    }
     result: dict[int, bool] = {}
-    for week in weeks:
-        row = rows.get(week)
-        if row is None:
-            if league_complete or payload.get("Finalized") is True:
-                raise WeekFinalityError(f"No REG game-finality row for {season}/W{week}: {path}")
-            result[week] = False
+    for row in payload.get("Weeks") or []:
+        if str(row.get("GameType") or "REG").upper() != "REG":
             continue
+        week = int(row["Week"])
         final = row.get("WeekFinal")
         if not isinstance(final, bool):
             raise WeekFinalityError(f"WeekFinal is not a boolean for {season}/W{week}: {path}")
@@ -100,7 +88,30 @@ def _games_final(repo_root: Path, season: int, weeks: range, league_complete: bo
             if not isinstance(applicable, int) or applicable <= 0 or done != applicable:
                 raise WeekFinalityError(f"WeekFinal=true without complete final-game evidence for {season}/W{week}")
         result[week] = final
+    return result, payload.get("Finalized") is True
+
+
+def _games_final(repo_root: Path, season: int, weeks: range, league_complete: bool) -> dict[int, bool]:
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/game-finality" / f"{season}.json"
+    if not path.is_file():
+        if league_complete:
+            raise WeekFinalityError(f"Game finality missing for completed season: {path}")
+        return {week: False for week in weeks}
+    rows, finalized = _games_final_rows(path, season)
+    result: dict[int, bool] = {}
+    for week in weeks:
+        if week not in rows and (league_complete or finalized):
+            raise WeekFinalityError(f"No REG game-finality row for {season}/W{week}: {path}")
+        result[week] = rows.get(week, False)
     return result
+
+
+def games_final_weeks(repo_root: Path, season: int) -> set[int]:
+    """Regular-season weeks whose NFL games are all final (NflGamesFinal alone, any season)."""
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/game-finality" / f"{season}.json"
+    if not path.is_file():
+        raise WeekFinalityError(f"Game finality missing: {path}")
+    return {week for week, final in _games_final_rows(path, season)[0].items() if final}
 
 
 def _playing_teams(repo_root: Path, season: int) -> dict[int, set[str]] | None:
@@ -126,6 +137,12 @@ def _stats_complete(repo_root: Path, season: int, week: int, playing: dict[int, 
         if record.get("SeasonType", "REG") == "REG"
     }
     return bool(playing.get(week)) and playing[week] <= covered
+
+
+def stats_complete_weeks(repo_root: Path, season: int, weeks: set[int] | range) -> set[int]:
+    """Weeks (of the given ones) whose player-stats partition covers every playing team (NflStatsComplete)."""
+    playing = _playing_teams(repo_root, season)
+    return {week for week in weeks if _stats_complete(repo_root, season, week, playing)}
 
 
 def _milestone(weeks: list[dict[str, Any]], *needed: str) -> int:
