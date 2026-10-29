@@ -1,0 +1,248 @@
+schemaVersion: 1
+status: accepted-contract-v1
+trackingIssue: 919
+architectureDecision: ADR-055
+implementationState: cutover done (#919 step 5); RequestPlayers.ps1 materializes the product (tools/derived_data.py, all seasons and weeks, committed under data-derived by the update-players workflow) and fills Salary, SalaryProjected, Ranking and the Rank grading of Players.json from the snapshot of the final scored week; RequestLeague.ps1 takes SalaryCap and SalaryCapProjected from the newest snapshot of the season; Players.json and League.json are unchanged in content and type (byte-identical Players.json, semantically identical League.json against the pre-cutover generator); PowerShell valuation code is removed from RequestPlayers.ps1 for Ranking and Grading, the PowerShell Salary functions, Add-PreviousSeasonCombinedRanking and the ConfigUtils weights/team-size constants are removed (step 8); RequestLeague takes SalaryRelevantTeamSize from the snapshot
+
+purpose: >
+  Define the Shared Derived Data product PlayerValuation: for one league and one
+  season, per week, the league-valued state of every NFL player in the league
+  population - Salary, SalaryProjected, Ranking, rank Grading - plus the league
+  Salary Cap. It replaces the Salary/Ranking/Grading/Salary-Cap logic that lives in
+  public/requests/RequestPlayers.ps1 and RequestLeague.ps1 with versioned central
+  models (derived-models.yaml) and keeps the full history reproducible.
+
+architecture:
+  decisionBasis:
+    - ADR-037
+    - ADR-038
+    - ADR-041
+    - ADR-043
+    - ADR-055
+  logicalLayer: Shared Derived Data
+  physicalStorage: data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json
+  physicalStorageTransition: >
+    The product root was renamed from derived-data/ to data-derived/ in #788 SA; the root is addressed
+    only through the central root constant (#788 step 0).
+  models: .ai-context/manual/derived-models.yaml
+  rules:
+    - The product is consumer-neutral. App, Fantasy Operations, Fantasy Management and the salary simulation read the same snapshot; consumer shapes are produced by consumer generators.
+    - public/data/Players.json and League.json keep their current contract. They are filled from the snapshot by the Players/League consumer generators (step 5) and stay byte-identical for unchanged inputs.
+    - Mighty-Giants-specific valuation, roster fit and decisions stay FM insights and never enter this product.
+    - The Form grading row is a copy of GameHistory and stays in the Players consumer generator.
+
+identity:
+  snapshotTuple:
+    - CanonicalLeagueID
+    - Season
+    - AsOfFinalScoredWeek
+    - ScoringProfile.SettingsHash
+    - Models (Salary, SalaryCap, Grading model IDs)
+  rowKey: >
+    CanonicalPlayerID when present; otherwise the Sleeper PlayerID. Exactly one row
+    per key per snapshot; a duplicate key fails the snapshot.
+  asOfFinalScoredWeek: >
+    NN in the file name. 00 means before week 1 of the season. NN is the last
+    regular-season week that is final in the uninterrupted run of final weeks
+    (resolve_league_week_bounds semantics) at the time the snapshot describes,
+    capped at LastLeagueWeek. A snapshot for week NN uses only current-season
+    results of weeks <= NN.
+  scope:
+    seasons: every season listed in data-source/leagues/<CanonicalLeagueID>/manifest.json
+    weeks: "00 up to the last scored week of the season (completed seasons: all weeks; current season: up to the current AsOfFinalScoredWeek)"
+    rule: Any snapshot can be regenerated at any time from data-source plus data-meta; no snapshot is a source of truth.
+  providerBoundary: >
+    Sleeper PlayerID is a join key for the App, not the identity. It may be null when
+    no active Sleeper mapping exists for that season (completed seasons).
+
+contract:
+  version: 1
+  rootShape: |
+    {
+      "ContractVersion": 1,
+      "CanonicalLeagueID": "nfl-reise",
+      "Season": 2026,
+      "AsOfFinalScoredWeek": 4,
+      "ScoringProfile": { "Season": 2026, "SettingsHash": "sha256:...", "FingerprintVersion": 1, "ActiveSettingsCount": 41 },
+      "Models": { "Salary": "salary-v1", "SalaryCap": "salary-cap-v1", "Grading": "grading-v1" },
+      "League": {
+        "TeamCount": 12,
+        "SalaryRelevantTeamSize": 20,
+        "TopN": 240,
+        "SalaryCap": 430186369,
+        "SalaryCapProjected": 462661278
+      },
+      "Players": []
+    }
+  playerRowShape: |
+    {
+      "CanonicalPlayerID": "NFLP-...",
+      "PlayerID": "10215",
+      "Position": "QB",
+      "Population": ["nfl_roster_current_season"],
+      "Hold": null,
+      "Inputs": {
+        "Current":      { "AvgPotentialGame": 0.0, "AvgGame": 0.0 },
+        "SeasonMinus1": { "AvgPotentialGame": 0.0, "AvgGame": 0.0 },
+        "SeasonMinus2": { "AvgPotentialGame": 0.0, "AvgGame": 0.0 },
+        "SeasonMinus3": { "AvgPotentialGame": 0.0, "AvgGame": 0.0 }
+      },
+      "Salary": 0,
+      "SalaryProjected": 0,
+      "Ranking": [ { "Type": "Total", "Value": 1 } ],
+      "Grading": [ { "Type": "Rank", "Value": 1, "Rank": 1, "Grade": "A" } ]
+    }
+  fieldRules:
+    - Salary and SalaryProjected are whole-dollar integers from the selected salary model.
+    - Ranking uses the types and order of derived-models.yaml rankingFunctions; inactive players have an empty list.
+    - Grading contains exactly the Rank row of the selected grading model. The Form row is not part of the product.
+    - Inputs make every row self-describing so models can be re-run and audited without re-reading data-source; they are copies of the league-scored values and carry no extra rounding.
+    - Players are sorted by row key (ordinal) and keys inside objects have a fixed order, so equal content is byte-equal.
+    - No wall-clock timestamp, run ID or commit hash appears in the content (semantic no-op).
+  missingVersusZero: >
+    Unknown is never written as 0. A value that cannot be derived (no usable input,
+    no hold source) is null. A real 0 (for example Salary 0 by the two-newest-seasons
+    rule) is a model result.
+
+inputs:
+  points:
+    owner: tools/players_league_scoring.py (in-process, ADR-041)
+    rule: >
+      League-scored weekly points of the snapshot season (weeks <= AsOfFinalScoredWeek)
+      and the three previous seasons from canonical player-stats and snap-counts with
+      the canonical ScoringSettings of the snapshot season, applied to all four seasons as
+      RequestPlayers.ps1 does today. AvgGame is points per played game, AvgPotentialGame
+      is points per potential game. Current season: unrounded point sum, averages rounded
+      half-to-even to two decimals, potential = as-of week minus one when the team bye week
+      is <= the as-of week (bye 0 without a team, legacy parity). Previous seasons: total
+      rounded to two decimals first, then the averages, potential = LastLeagueWeek - 1 of
+      the snapshot season. Implementation: tools/derived_data_lib/player_valuation.py.
+  scoringProfile:
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
+    fingerprint: tools/player_week_fantasy.py scoring_settings_fingerprint (SettingsHash)
+  population:
+    owner: tools/players_population.py (ADR-043)
+    rule: >
+      The population rule of ADR-043 evaluated for the snapshot season: app fantasy
+      position, valid birth date and at least one reason (season roster, season draft,
+      league owned). Population lists the reasons per row.
+    historicalSeasons: >
+      For a completed season the roster and draft reasons come from that season's
+      canonical weekly rosters and draft; the Sleeper snapshot is current-only and is
+      not used. Position and birth date come from the canonical NFL player profile and
+      roster of that season. league_owned is evaluated against the persisted
+      rosters.json of that league season, which is the end-of-season state; it is
+      therefore marked and never reconstructs a mid-season roster. A player that cannot
+      be assigned unambiguously is omitted and counted in the materialization report
+      (Missing, not zero).
+  weekBounds:
+    owner: tools/players_league_scoring.py::resolve_league_week_bounds (delegates to tools/derived_data_lib/week_finality.py)
+    rule: LastLeagueWeek, PlayoffStartWeek from the canonical league-season WeekStructure; AsOfFinalScoredWeek is the shared StatsFinalWeek milestone (games final and stats coverage, week-finality.yaml, ADR-071).
+  teamCount:
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::Settings.num_teams
+  modelSelection:
+    owner: data-meta/<CanonicalLeagueID>/metadata.json (#986, loader in #986 step 2)
+    rule: Seasons.<season>.Models; unknown or missing choice for a season fails the snapshot.
+
+identityHold:
+  rule: >
+    A population player without a unique CanonicalPlayerID for the snapshot season
+    (identity hold, ambiguous special-teams evidence) keeps the last published Inputs.
+    Salary, Ranking and Grading are recomputed from the held Inputs together with all
+    other players, as RequestPlayers.ps1 does today.
+  holdSource: the existing snapshot file of the same league, season and week; if absent, the newest earlier week of that season; if absent, Inputs and all derived values are null and the row carries the hold reason.
+  marking: 'Hold is an object with Reason (identity status) and SourceWeek (NN or null); it is null for normal rows.'
+  consequence: >
+    Hold rows depend on earlier snapshot content and are the only part that cannot be
+    rebuilt from data-source alone. They are limited to the current season and are
+    reported by the materializer. Completed-season snapshots with holds are rebuilt
+    with the hold rows as persisted.
+
+invalidation:
+  triggers:
+    - league-scored points or stat corrections of the snapshot season or the three previous seasons
+    - ScoringSettings / SettingsHash change of any of these seasons
+    - population change (rosters, draft, league rosters, identity resolution)
+    - AsOfFinalScoredWeek or week structure change
+    - model choice or model version change for a season
+    - TeamCount change
+  rule: >
+    A change in any trigger is detected by recomputation, not by a cache key; the
+    materializer recomputes the affected snapshots and writes only on semantic
+    difference. A later week snapshot of the same season does not depend on an earlier
+    one except through hold rows.
+  noOp: unchanged inputs produce no file change, no commit
+
+consumers:
+  app:
+    path: public/data/Players.json, public/data/League.json (unchanged contract)
+    fields: Salary, SalaryProjected, Ranking, Grading[Rank], League.SalaryCap, SalaryCapProjected
+    step: 5
+  fantasyOperations:
+    path: fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py, build_player_signal_dataset.py, audit_player_signal_population_relevance.py (all via canonical_player_inputs.py)
+    fields: Salary, SalaryProjected from the newest snapshot of the current season; population, Age, Year, IsFreeAgent, Status and injury from tools/players_population.py
+    ageRule: Age = round(days between BirthDate and the date of Timestamps.json Players / 365.2425, 1), the formula of RequestPlayers.ps1 with an explicit reference date so the result is deterministic
+    step: 6
+    state: done 2026-10-15; public/data/Players.json is no input of the Operations builders anymore (parity on repository data, 945 players, 0 differing rows)
+  fantasyManagement:
+    path: fantasy-management/league-economy/salary/simulation/salary_simulation.py
+    step: 7
+    state: done 2026-10-15; curve, floor, season-points weights and cap come from the registered salary-v1 and salary-cap-v1 modules (curve_dollars, floored_average, raw_cap; unrounded variants with unchanged behaviour of the productive functions); simulation output (md, json, csv) is byte-identical before and after on the same input data; the draft-concept parameters (minimum percentages, rookie scale, dead cap) stay simulation-local because they belong to the unadopted redesign
+  legacyPowerShellRemoval:
+    path: public/requests (RequestPlayers.ps1, PlayerUtils.psm1, ConfigUtils.psm1, RequestLeague.ps1)
+    step: 8
+    state: done 2026-10-15; leftover PowerShell Salary functions (MapSalaryToDollarsLinear through AdjustSalaryWithMeta), Add-PreviousSeasonCombinedRanking and the constants SalaryRelevantTeamSize, WeightTotal, WeightGame are removed; the snapshot is the only source; players_league_scoring_shadow keeps the legacy weights as fixed oracle constants
+
+failClosed:
+  - unknown model ID or model not chosen for the season
+  - duplicate row key
+  - non-finite input value
+  - AsOfFinalScoredWeek beyond what canonical finality proves
+  - team count missing or not a positive integer
+  - ambiguous league-owned identity (as in tools/players_league_scoring.py)
+
+ciWiring: .github/workflows/build.yml step 'Run PlayerValuation model and materializer tests' (test_derived_data_models, test_player_valuation, test_player_valuation_shadow; approved by Robert 2026-10-15)
+openPoints:
+  - id: historical-population
+    text: >
+      Implemented in tools/player_valuation_sources.py (canonical rosters plus weekly rosters,
+      Sleeper source ID, app position, valid birth date). FB players are not in the historical
+      population, which matches the current population rule (ADR-043: app positions QB, RB,
+      WR, TE, K only), so this is no gap against the published Players.json. A league-owned
+      player without roster record is skipped and counted. The step 4 plausibility report
+      (tools/player_valuation_shadow.py) states coverage per snapshot: the position mix of
+      2024 and 2025 matches 2026 in order of magnitude and no snapshot contains a hold row.
+  - id: snapshot-size
+    text: >
+      Measured in step 3 (compact JSON, about 0.54 MB per snapshot) and decided in step 5: the full
+      history (2024 to 2026, about 22 MB) is committed under data-derived. The materializer writes
+      only semantically changed snapshots, so a daily run rewrites at most the snapshots of the
+      current season; past seasons change only after a stat or scoring correction.
+  - id: hold-seeding
+    text: >
+      Identity-hold rows take Inputs from the existing snapshot (same week, else the newest
+      earlier week of the season). Without any snapshot, tools/derived_data.py
+      --hold-seed-players-file takes the values of the last published Players.json (current season,
+      final scored week only, matched by Sleeper player ID, which is the row key of a hold row
+      without CanonicalPlayerID), exactly as RequestPlayers.ps1 held them before the cutover.
+      A hold row that no source knows keeps null Inputs and RequestPlayers.ps1 fails closed
+      for it (the previous behaviour was to publish zeros).
+  - id: players-run-materializes-all-seasons
+    text: >
+      RequestPlayers.ps1 materializes every season on each run (about 25 seconds). Past seasons
+      therefore follow corrections of canonical stats automatically; the League refresh does not
+      materialize and reads the newest committed snapshot, which is the state the last Players run
+      published together with Players.json.
+  - id: non-contiguous-final-weeks
+    text: >
+      Legacy scores all final weeks while a snapshot uses only weeks <= AsOfFinalScoredWeek.
+      Both agree while final weeks are contiguous. The step 4 shadow confirmed exact parity for
+      2026 week 5 (weeks 1 to 5 contiguous). A season with a gap in its final weeks is not
+      covered by that evidence and must be re-checked when it occurs.
+  - id: unranked-grade
+    text: >
+      Resolved 2026-10-15 (Robert): a player without a rank gets Grade null in grading-v1 instead of A
+      (defect fix in place, no grading-v2). Players.json carries Grade null for these players from the
+      first Players run after the fix; no app or Fantasy Management consumer reads Grade. The
+      shadow treats published A versus snapshot null for an unranked player as the intended deviation
+      until the file is republished.

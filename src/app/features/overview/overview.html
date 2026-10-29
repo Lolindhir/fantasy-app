@@ -100,6 +100,7 @@
           <app-league-timeline
             [league]="vm.league"
             [drafts]="vm.draftSeasonDashboard?.drafts ?? []"
+            [lastWaiverPickAt]="vm.lastWaiverPickAt"
           ></app-league-timeline>
 
         </div>
@@ -239,7 +240,7 @@
       </div>
     </section>
 
-    <section class="active-overview-card">
+    <section class="active-overview-card recent-moves-card">
       <div class="active-card-heading recent-moves-heading">
         <div>
           <div class="active-card-eyebrow">League Activity</div>
@@ -252,25 +253,15 @@
       </div>
 
       <div *ngIf="vm.recentMoves.length > 0; else noRecentMoves" class="recent-move-list">
-        <article *ngFor="let move of vm.recentMoves" class="recent-move-row">
-          <span
-            class="recent-move-icon"
-            [class.recent-move-icon--trade]="move.category === 'trade'"
-            [class.recent-move-icon--add]="move.category === 'add'"
-            [class.recent-move-icon--cut]="move.category === 'cut'"
-          >
-            <mat-icon>{{ move.icon }}</mat-icon>
-          </span>
-
-          <div class="recent-move-content">
-            <div class="recent-move-title-row">
-              <span class="recent-move-type">{{ move.typeLabel }}</span>
-              <span class="recent-move-date">{{ move.dateLabel }}</span>
-            </div>
-            <div class="recent-move-teams">{{ move.teamLabel }}</div>
-            <div class="recent-move-summary">{{ move.summary }}</div>
-          </div>
-        </article>
+        @for (transaction of vm.recentMoves; track transaction.Season + '_' + transaction.TransactionID) {
+          <app-transaction-card
+            [transaction]="transaction"
+            [category]="moveCategory(transaction)"
+            density="mini"
+            [drafts]="vm.drafts"
+            [teams]="vm.teams"
+          />
+        }
       </div>
 
       <ng-template #noRecentMoves>
@@ -417,11 +408,12 @@
   <app-season-results
     *ngIf="vm.league.IsFinished"
     [results]="vm.seasonResults"
+    [bannerSeason]="vm.league.Season"
   ></app-season-results>
 
   <!-- 🔥 Awards -->
-  <section class="awards" *ngIf="vm.league.IsFinished">
-    <h3>Regular Season Awards</h3>
+  <section class="awards" *ngIf="vm.league.IsFinished && vm.awards.length > 0">
+    <h3>Season Awards</h3>
     <div class="awards-grid">
       <div *ngFor="let award of vm.awards" class="award-card">
         <div class="award-icon">{{award.Icon}}</div>

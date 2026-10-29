@@ -16,6 +16,7 @@ from historical_fantasy_scoring import (
     read_json,
     score_record,
 )
+from data_roots import DATA_SOURCE_ROOT
 
 FANTASY_POSITIONS = {"QB", "RB", "WR", "TE", "FB", "K"}
 
@@ -46,7 +47,7 @@ def _snap_totals_by_player(
     season: int,
     week: int,
 ) -> dict[str, dict[str, float]]:
-    path = repo_root / "source-data/nfl/snap-counts" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/snap-counts" / str(season) / f"{week:02d}.json"
     payload = _require_finalized_partition(path, season, week)
     rows = payload.get("Records")
     if not isinstance(rows, list):
@@ -73,7 +74,7 @@ def _events_by_player(
 ) -> dict[str, list[dict[str, Any]]]:
     path = (
         repo_root
-        / "source-data/nfl/special-teams-fumble-events"
+        / DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events"
         / str(season)
         / f"{week:02d}.json"
     )
@@ -116,7 +117,7 @@ def build_scored_played_games(
     relevant_stat_records = 0
 
     for week in range(first_week, last_week + 1):
-        stats_path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+        stats_path = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
         stats_payload = _require_finalized_partition(stats_path, season, week)
         stat_rows = stats_payload.get("Records")
         if not isinstance(stat_rows, list):

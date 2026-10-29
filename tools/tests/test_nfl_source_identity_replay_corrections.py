@@ -11,6 +11,22 @@ sys.path.insert(0, str(TOOLS))
 from nfl_source_data_lib import common as common_mod
 from nfl_source_data_lib.materialize import materialize
 
+def _write_league_manifest(root: Path, season: int) -> None:
+    """Canonical League fact that owns the current season of the NFL source layer."""
+    path = root / "data-source/leagues/test-league/manifest.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "CanonicalLeagueID": "test-league",
+                "CurrentCanonicalLeagueSeasonID": f"test-league-{season}",
+                "Seasons": [{"CanonicalLeagueSeasonID": f"test-league-{season}", "Season": season}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 
 def write_csv(path: Path, rows, fieldnames):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -94,13 +110,13 @@ def write_registry(root: Path):
             },
         ],
     }
-    (root / "source-data").mkdir(parents=True, exist_ok=True)
-    (root / "source-data/registry.json").write_text(json.dumps(registry), encoding="utf-8")
+    (root / "data-source").mkdir(parents=True, exist_ok=True)
+    (root / "data-source/registry.json").write_text(json.dumps(registry), encoding="utf-8")
 
 
 def write_supporting_files(root: Path):
     write_csv(
-        root / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv",
+        root / "data-source/providers/nflverse/ff-player-ids/raw-latest.csv",
         [
             {
                 "mfl_id": "dummy",
@@ -135,7 +151,7 @@ def write_supporting_files(root: Path):
         ],
     )
     write_csv(
-        root / "source-data/providers/nflverse/draft-picks/raw-latest.csv",
+        root / "data-source/providers/nflverse/draft-picks/raw-latest.csv",
         [
             {
                 "season": "2025",
@@ -162,11 +178,11 @@ def write_supporting_files(root: Path):
     (root / "public/data").mkdir(parents=True, exist_ok=True)
     (root / "public/data/Players.json").write_text("[]", encoding="utf-8")
     (root / "public/data/Players_Relevant.json").write_text("[]", encoding="utf-8")
-    (root / "public/data/League.json").write_text(json.dumps({"Season": 2026}), encoding="utf-8")
+    _write_league_manifest(root, 2026)
 
 
 def write_existing_identity_state(root: Path, players, mappings):
-    path = root / "source-data/nfl/identities"
+    path = root / "data-source/nfl/identities"
     path.mkdir(parents=True, exist_ok=True)
     (path / "players.json").write_text(
         json.dumps(
@@ -198,7 +214,7 @@ class NflSourceIdentityReplayCorrectionTests(unittest.TestCase):
             write_registry(root)
             write_supporting_files(root)
             write_csv(
-                root / "source-data/providers/nflverse/players/raw-latest.csv",
+                root / "data-source/providers/nflverse/players/raw-latest.csv",
                 [
                     {
                         "gsis_id": "00-A",
@@ -306,7 +322,7 @@ class NflSourceIdentityReplayCorrectionTests(unittest.TestCase):
 
             result = materialize(root, datasets)
             payload = json.loads(
-                (root / "source-data/nfl/identities/players.json").read_text(encoding="utf-8")
+                (root / "data-source/nfl/identities/players.json").read_text(encoding="utf-8")
             )
             rows = {row["CanonicalPlayerID"]: row for row in payload["Players"]}
             self.assertEqual("PlayerA02", rows["NFLP-a"]["IDs"]["PFR"])
@@ -320,7 +336,7 @@ class NflSourceIdentityReplayCorrectionTests(unittest.TestCase):
             )
 
             mapping_payload = json.loads(
-                (root / "source-data/nfl/identities/provider-mappings.json").read_text(
+                (root / "data-source/nfl/identities/provider-mappings.json").read_text(
                     encoding="utf-8"
                 )
             )
@@ -346,7 +362,7 @@ class NflSourceIdentityReplayCorrectionTests(unittest.TestCase):
             write_registry(root)
             write_supporting_files(root)
             write_csv(
-                root / "source-data/providers/nflverse/players/raw-latest.csv",
+                root / "data-source/providers/nflverse/players/raw-latest.csv",
                 [
                     {
                         "gsis_id": "00-E",
@@ -403,7 +419,7 @@ class NflSourceIdentityReplayCorrectionTests(unittest.TestCase):
 
             result = materialize(root, datasets)
             payload = json.loads(
-                (root / "source-data/nfl/identities/players.json").read_text(encoding="utf-8")
+                (root / "data-source/nfl/identities/players.json").read_text(encoding="utf-8")
             )
             row = next(item for item in payload["Players"] if item["CanonicalPlayerID"] == "NFLP-e")
             self.assertEqual("2002-08-07", row["BirthDate"])

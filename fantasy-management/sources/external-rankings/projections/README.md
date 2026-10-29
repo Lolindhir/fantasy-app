@@ -1,12 +1,12 @@
 # Projection Rankings
 
-`projections` ist eine aktive `ranking_kind` unter `external-rankings`.
+`projections` ist eine aktive `ranking_kind`. Die Provider-Daten liegen unter `data-source/market/projection/<provider>/<format>/` und `data-source/providers/<provider>/` (Issue #988); dieses README hält die Regeln der Ranking-Art und den Derived-Operations-Kontext.
 
 Die Reihenfolge entsteht aus erwarteter statistischer oder Fantasy-Produktion für einen definierten Horizont. Projection Rankings sind damit Rankings, messen aber etwas anderes als Expert Consensus, Market Value oder ADP.
 
 ## Regeln
 
-- Provider und Format bleiben getrennt unter `projections/<provider>/<format>/`.
+- Provider und Format bleiben getrennt unter `data-source/market/projection/<provider>/<format>/`.
 - Nach Möglichkeit werden die zugrunde liegenden Stat-Projections zusammen mit dem Ranking gespeichert.
 - Provider-Fantasy-Punkte sind nicht automatisch Mighty-Giants-Ligapunkte; Scoring-Kontext muss in den Metadaten sichtbar bleiben.
 - Für QB/RB/WR/TE werden aus den gespeicherten Rohstats zusätzlich liga-spezifische `core_points` im Derived Layer berechnet. Dabei werden ausschließlich von den aktiven Providern vergleichbar projizierte und im aktuellen `League.json -> ScoringType` bewertbare Komponenten verwendet.

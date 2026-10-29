@@ -2,7 +2,7 @@
 """Canonical League ownership adapter for Fantasy Management consumers.
 
 This module exposes only shared league basis facts that already belong to
-`source-data/leagues/**`. It deliberately does not reproduce App/Fantasy
+`data-source/leagues/**`. It deliberately does not reproduce App/Fantasy
 derived fields such as salary, standings, awards, draft-pick readmodels or team
 windows.
 
@@ -97,7 +97,7 @@ def resolve_current_canonical_season(
     """Resolve the active season only from the Canonical League manifest."""
 
     root = repo_root.resolve()
-    manifest_path = root / "source-data" / "leagues" / canonical_league_id / "manifest.json"
+    manifest_path = root / "data-source" / "leagues" / canonical_league_id / "manifest.json"
     manifest = _require_object(_read_json(manifest_path), "manifest.json")
 
     if manifest.get("CanonicalLeagueID") != canonical_league_id:
@@ -139,6 +139,35 @@ def resolve_current_canonical_season(
     return season
 
 
+def load_canonical_league_scoring_settings(
+    repo_root: Path,
+    *,
+    canonical_league_id: str,
+) -> dict[str, Any]:
+    """Return the current season's league ScoringSettings from Canonical League data."""
+
+    root = repo_root.resolve()
+    season = resolve_current_canonical_season(root, canonical_league_id=canonical_league_id)
+    league_path = (
+        root / "data-source" / "leagues" / canonical_league_id / "seasons" / str(season) / "league.json"
+    )
+    league = _require_object(_read_json(league_path), "league.json")
+    if league.get("CanonicalLeagueID") != canonical_league_id:
+        raise CanonicalOwnershipError(
+            "Canonical league scoring source identity mismatch: "
+            f"expected {canonical_league_id!r}, found {league.get('CanonicalLeagueID')!r}."
+        )
+    try:
+        source_season = int(league.get("Season"))
+    except (TypeError, ValueError) as exc:
+        raise CanonicalOwnershipError("Canonical league scoring source has invalid Season.") from exc
+    if source_season != season:
+        raise CanonicalOwnershipError(
+            f"Canonical league scoring season mismatch: expected {season}, found {league.get('Season')!r}."
+        )
+    return _require_object(league.get("ScoringSettings"), "league.json.ScoringSettings")
+
+
 def build_canonical_ownership_snapshot(
     repo_root: Path,
     *,
@@ -150,7 +179,7 @@ def build_canonical_ownership_snapshot(
 
     The returned team records intentionally preserve the current Sleeper player
     ID surface because Players.json still uses Sleeper player_id as its public ID
-    contract. Canonical player identity remains available in source-data and can
+    contract. Canonical player identity remains available in data-source and can
     be migrated independently under the player-contract guardrails.
     """
 
@@ -169,7 +198,7 @@ def build_canonical_ownership_snapshot(
 
     season_root = (
         root
-        / "source-data"
+        / "data-source"
         / "leagues"
         / canonical_league_id
         / "seasons"

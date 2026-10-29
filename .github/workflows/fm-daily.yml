@@ -1,0 +1,449 @@
+name: FM • Pipeline • Daily
+run-name: "FM • Pipeline • Daily • ${{ github.event.head_commit.message || github.event.pull_request.title || github.event_name }}"
+
+# Daily Fantasy Operations chain (Issue #947, step S4 of #471), woken by the scheduler target fm-daily:
+#   providers    six external source refreshes as matrix legs (fail-fast: false); each leg publishes its own
+#                self-contained snapshot through tools/publish_generated_commit.py (rebase-and-retry)
+#   materialize  Fantasy Operations inputs, after all providers even when one failed (uses the last good source
+#                state); published through tools/rebuild_and_publish.py (rebuild-and-retry)
+#   report       Job Summary table with the result of every provider leg and the materializer
+# A push to main that changes League/Players/Metadata/drafts or a materialization definition runs only the
+# gate and materialize jobs (providers are skipped). Provider commits do not push-trigger the materializer;
+# the chain materializes explicitly after them. Pull requests only run the provider fetcher tests.
+
+on:
+  repository_dispatch:
+    types:
+      - scheduler-fm-daily
+  push:
+    branches:
+      - main
+    paths:
+      - public/data/League.json
+      - public/data/Players.json
+      - data-meta/*/metadata.json
+      - data-source/leagues/*/seasons/*/drafts.json
+      - fantasy-management/automation/input-materialization.json
+      - fantasy-management/automation/external-signal-materialization.json
+      - fantasy-management/automation/player-signal-materialization.json
+      - fantasy-management/automation/managed-roster-overview.json
+      - fantasy-management/automation/roster-evaluation-state.json
+      - fantasy-management/automation/free-agent-materialization.json
+      - fantasy-management/automation/fa-board-materialization.json
+      - fantasy-management/automation/free-agent-movement-materialization.json
+      - fantasy-management/automation/free-agent-movement-event-materialization.json
+      - fantasy-management/automation/kicker-streaming-input-materialization.json
+      - fantasy-management/automation/source-freshness-gate.json
+      - fantasy-management/_ai/operations-source-catalog.json
+      - fantasy-management/_ai/operations-source-catalog-offense-projections.json
+      - fantasy-management/_ai/operations-external-signal-catalog.json
+      - fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py
+      - fantasy-management/_ai/scripts/materialize_external_signals.py
+      - fantasy-management/_ai/scripts/build_player_signal_dataset.py
+      - fantasy-management/_ai/scripts/build_player_signal_dataset_with_projection_extensions.py
+      - fantasy-management/_ai/scripts/build_managed_roster_overview.py
+      - fantasy-management/_ai/scripts/build_free_agent_dataset.py
+      - fantasy-management/_ai/scripts/build_fa_board_readmodel.py
+      - fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py
+      - fantasy-management/_ai/scripts/build_free_agent_movement_events.py
+      - fantasy-management/_ai/scripts/build_kicker_streaming_inputs.py
+      - fantasy-management/_ai/scripts/build_source_freshness_gate.py
+      - fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
+      - fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py
+      - fantasy-management/_ai/scripts/summarize_fantasy_operations_materialization_observability.py
+      - fantasy-management/_ai/scripts/tests/test_build_fantasy_operations_inputs.py
+      - fantasy-management/_ai/scripts/tests/test_materialize_external_signals.py
+      - fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py
+      - fantasy-management/_ai/scripts/tests/test_build_player_signal_projection_extensions.py
+      - fantasy-management/_ai/scripts/tests/test_build_managed_roster_overview.py
+      - fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py
+      - fantasy-management/_ai/scripts/tests/test_build_fa_board_readmodel.py
+      - fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_dataset.py
+      - fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_events.py
+      - fantasy-management/_ai/scripts/tests/test_build_kicker_streaming_inputs.py
+      - fantasy-management/_ai/scripts/tests/test_build_source_freshness_gate.py
+      - fantasy-management/_ai/scripts/tests/test_source_refresh_freshness_workflows.py
+      - fantasy-management/_ai/scripts/tests/test_kicker_streaming_workflow.py
+      - fantasy-management/_ai/scripts/tests/test_resolve_fantasy_operations_materialization_trigger.py
+      - fantasy-management/_ai/scripts/tests/test_summarize_fantasy_operations_materialization_observability.py
+      - fantasy-management/_ai/schemas/fantasy-operations-inputs.schema.json
+      - fantasy-management/_ai/schemas/operations-source-catalog.schema.json
+      - fantasy-management/_ai/schemas/operations-external-signal-catalog.schema.json
+      - fantasy-management/_ai/schemas/external-signal-relevance.schema.json
+      - fantasy-management/_ai/schemas/player-signal-dataset.schema.json
+      - fantasy-management/_ai/schemas/managed-roster-overview.schema.json
+      - fantasy-management/_ai/schemas/free-agent-dataset.schema.json
+      - fantasy-management/_ai/schemas/fa-board-readmodel.schema.json
+      - fantasy-management/_ai/schemas/free-agent-movement-dataset.schema.json
+      - fantasy-management/_ai/schemas/free-agent-movement-events.schema.json
+      - fantasy-management/_ai/schemas/kicker-streaming-inputs.schema.json
+      - fantasy-management/_ai/schemas/source-freshness-gate.schema.json
+      - fantasy-management/_ai/schema-list.json
+      - fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md
+      - fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md
+      - fantasy-management/_ai/MANAGED_ROSTER_OVERVIEW.md
+      - fantasy-management/_ai/scripts/materialize_operations_inputs.sh
+      - .github/workflows/fm-daily.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - fantasy-management/_ai/scripts/fetch_*.py
+      - fantasy-management/_ai/scripts/tests/test_fetch_*.py
+      - .github/workflows/fm-daily.yml
+  workflow_dispatch: # manueller Start
+
+permissions:
+  contents: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.trigger_gate.outputs.run }}
+      reason: ${{ steps.trigger_gate.outputs.reason }}
+    steps:
+      - name: Checkout repository for trigger classification
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Resolve materialization trigger
+        id: trigger_gate
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
+        run: |
+          set -euo pipefail
+
+          args=(
+            --event-name "$EVENT_NAME"
+            --schedule-expression "$SCHEDULE_EXPRESSION"
+          )
+
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            push_size="$(jq -r 'if (.size | type) == "number" then .size else (.commits | length) end' "$GITHUB_EVENT_PATH")"
+            included_commit_count="$(jq -r '.commits | length' "$GITHUB_EVENT_PATH")"
+            changed_files=()
+
+            if [[ "$push_size" == "$included_commit_count" ]]; then
+              mapfile -t changed_files < <(
+                jq -r '.commits[] | (.added[]?, .modified[]?, .removed[]?)' "$GITHUB_EVENT_PATH" | sort -u
+              )
+
+              if [[ "${#changed_files[@]}" -eq 0 && "$push_size" == "1" ]]; then
+                if git rev-parse HEAD^ >/dev/null 2>&1; then
+                  mapfile -t changed_files < <(git diff --name-only HEAD^ HEAD)
+                  echo "Push payload contained no file list; used shallow parent diff."
+                fi
+              fi
+
+              for changed_file in "${changed_files[@]}"; do
+                args+=(--changed-file "$changed_file")
+              done
+            else
+              echo "Push payload is truncated (${included_commit_count}/${push_size} commits); failing open to materialization."
+            fi
+          fi
+
+          decision="$(python3 fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py "${args[@]}")"
+          echo "$decision"
+          while IFS= read -r output_line; do
+            echo "$output_line" >> "$GITHUB_OUTPUT"
+          done <<< "$decision"
+
+  providers:
+    name: Provider • ${{ matrix.id }}
+    if: ${{ github.event_name != 'push' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: fantasypros
+            label: "FM • Ranking • FantasyPros ECR"
+            test: >-
+              python -m unittest
+              tools/tests/test_external_source_fantasypros_dynasty.py
+              tools/tests/test_external_source_fantasypros_redraft.py
+              -v
+            fetch: |
+              python -m tools.external_source.fantasypros --skip-unchanged
+              python -m tools.external_source.fantasypros_redraft --skip-unchanged
+            source_id: fantasypros
+            content_path: data-source/market/expert-consensus/fantasypros
+            stage_paths: >-
+              data-source/market/expert-consensus/fantasypros
+              data-source/providers/fantasypros
+              data-source/market/_status/fantasypros.json
+            scope: fantasypros-rankings
+            status_path: data-source/market/_status/fantasypros.json
+          - id: fantasycalc
+            label: "FM • Ranking • FantasyCalc Market"
+            test: >-
+              python -m unittest
+              tools/tests/test_external_source_fantasycalc.py
+              -v
+            fetch: |
+              python -m tools.external_source.fantasycalc --skip-unchanged
+            source_id: fantasycalc
+            content_path: data-source/market/market-value/fantasycalc
+            stage_paths: >-
+              data-source/market/market-value/fantasycalc
+              data-source/providers/fantasycalc
+              data-source/market/_status/fantasycalc.json
+            scope: fantasycalc-rankings
+            status_path: data-source/market/_status/fantasycalc.json
+          - id: ffc-adp
+            label: "FM • Ranking • FFC ADP"
+            test: >-
+              python -m unittest
+              tools/tests/test_external_source_ffc_adp.py
+              tools/tests/test_external_source_ffc_kicker_adp.py
+              tools/tests/test_external_source_ffc_source_quality.py
+              -v
+            fetch: |
+              python -m tools.external_source.fantasy_football_calculator --skip-unchanged
+            source_id: fantasy-football-calculator
+            content_path: data-source/market/adp/fantasy-football-calculator
+            stage_paths: >-
+              data-source/market/adp/fantasy-football-calculator
+              data-source/providers/fantasy-football-calculator
+              data-source/market/_status/fantasy-football-calculator.json
+            scope: ffc-adp-rankings
+            status_path: data-source/market/_status/fantasy-football-calculator.json
+          - id: fftoday
+            label: "FM • Projection • FFToday"
+            test: >-
+              python -m unittest
+              tools/tests/test_external_source_fftoday_kicker.py
+              tools/tests/test_external_source_fftoday_offense.py
+              -v
+            fetch: |
+              python -m tools.external_source.fftoday_kicker --skip-unchanged
+              python -m tools.external_source.fftoday_offense --skip-unchanged
+            source_id: fftoday
+            content_path: data-source/market/projection/fftoday
+            stage_paths: >-
+              data-source/market/projection/fftoday
+              data-source/providers/fftoday
+              data-source/market/_status/fftoday.json
+            status_path: data-source/market/_status/fftoday.json
+            scope: fftoday-projections
+          - id: cbs-sports
+            label: "FM • Projection • CBS Sports"
+            test: >-
+              python -m unittest
+              tools/tests/test_external_source_cbs_sports_kicker.py
+              tools/tests/test_external_source_cbs_sports_offense.py
+              -v
+            fetch: |
+              python -m tools.external_source.cbs_sports_kicker --skip-unchanged
+              python -m tools.external_source.cbs_sports_offense --skip-unchanged
+            source_id: cbs-sports
+            content_path: data-source/market/projection/cbs-sports
+            stage_paths: >-
+              data-source/market/projection/cbs-sports
+              data-source/providers/cbs-sports
+              data-source/market/_status/cbs-sports.json
+            scope: cbs-projections
+            status_path: data-source/market/_status/cbs-sports.json
+          - id: sleeper-trending
+            label: "FM • Signal • Sleeper Trending"
+            test: >-
+              python -m unittest
+              tools/tests/test_external_source_sleeper_trending.py
+              -v
+            fetch: |
+              python -m tools.external_source.sleeper_trending
+            source_id: sleeper-trending
+            content_path: data-source/market/roster-activity/sleeper
+            stage_paths: >-
+              data-source/market/roster-activity/sleeper
+              data-source/providers/sleeper/trending
+              data-source/market/_status/sleeper.json
+            scope: sleeper-trending
+            status_path: data-source/market/_status/sleeper.json
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test ${{ matrix.id }} fetchers
+        run: ${{ matrix.test }}
+
+      - name: Update ${{ matrix.id }} source
+        if: github.event_name != 'pull_request'
+        run: ${{ matrix.fetch }}
+
+      - name: Record successful ${{ matrix.id }} refresh
+        if: github.event_name != 'pull_request'
+        run: >-
+          python fantasy-management/_ai/scripts/write_source_refresh_heartbeat.py
+          --source-id "${{ matrix.source_id }}"
+          --workflow "${{ matrix.label }}"
+          --trigger "${{ github.event_name }}"
+          --content-path "${{ matrix.content_path }}"
+          --output "${{ matrix.status_path }}"
+
+      - name: Commit and push updates
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add -A -- ${{ matrix.stage_paths }}
+          pwsh ./.github/scripts/Invoke-GeneratedDataCommit.ps1 -Scope "${{ matrix.scope }}"
+          python tools/publish_generated_commit.py --remote origin --branch main
+
+  materialize:
+    needs: [gate, providers]
+    # Runs after the providers whether they succeeded, failed or were skipped (push), using the last good
+    # source state; never on pull requests (the gate returns false there).
+    if: ${{ !cancelled() && needs.gate.outputs.run == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: fantasy-operations-input-materialization
+      # Queue instead of cancelling: a League/Players push must never kill the daily chain, and the queued
+      # run materializes the latest main anyway.
+      cancel-in-progress: false
+    steps:
+      - name: Capture materialization observability start
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TRIGGER_REASON: ${{ needs.gate.outputs.reason }}
+        run: |
+          set -euo pipefail
+
+          materializer_started_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          echo "MATERIALIZER_STARTED_AT=$materializer_started_at" >> "$GITHUB_ENV"
+          echo "MATERIALIZATION_EVENT_NAME=$EVENT_NAME" >> "$GITHUB_ENV"
+          echo "MATERIALIZATION_TRIGGER_REASON=$TRIGGER_REASON" >> "$GITHUB_ENV"
+
+          if [[ "$EVENT_NAME" == "push" ]]; then
+            trigger_commit_sha="$(jq -r '.after // empty' "$GITHUB_EVENT_PATH")"
+            trigger_commit_at="$(jq -r '.head_commit.timestamp // empty' "$GITHUB_EVENT_PATH")"
+            echo "TRIGGER_COMMIT_SHA=$trigger_commit_sha" >> "$GITHUB_ENV"
+            echo "TRIGGER_COMMIT_AT=$trigger_commit_at" >> "$GITHUB_ENV"
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install validation dependencies
+        run: python -m pip install jsonschema
+
+      - name: Run focused unit tests
+        run: |
+          python -m unittest \
+            fantasy-management/_ai/scripts/tests/test_build_fantasy_operations_inputs.py \
+            fantasy-management/_ai/scripts/tests/test_materialize_external_signals.py \
+            fantasy-management/_ai/scripts/tests/test_build_player_signal_dataset.py \
+            fantasy-management/_ai/scripts/tests/test_build_player_signal_projection_extensions.py \
+            fantasy-management/_ai/scripts/tests/test_build_managed_roster_overview.py \
+            fantasy-management/_ai/scripts/tests/test_build_free_agent_dataset.py \
+            fantasy-management/_ai/scripts/tests/test_build_fa_board_readmodel.py \
+            fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_dataset.py \
+            fantasy-management/_ai/scripts/tests/test_build_free_agent_movement_events.py \
+            fantasy-management/_ai/scripts/tests/test_build_kicker_streaming_inputs.py \
+            fantasy-management/_ai/scripts/tests/test_build_source_freshness_gate.py \
+            fantasy-management/_ai/scripts/tests/test_source_refresh_freshness_workflows.py \
+            fantasy-management/_ai/scripts/tests/test_kicker_streaming_workflow.py \
+            fantasy-management/_ai/scripts/tests/test_resolve_fantasy_operations_materialization_trigger.py \
+            fantasy-management/_ai/scripts/tests/test_summarize_fantasy_operations_materialization_observability.py \
+            -v
+
+      - name: Rebuild and publish Fantasy Operations inputs
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope fantasy-operations
+          --path fantasy-management/generated/operations
+          --
+          bash fantasy-management/_ai/scripts/materialize_operations_inputs.sh
+
+      - name: Report materialization observability
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # The helper leaves HEAD on the commit it pushed, or on the latest main when nothing changed.
+          # A materialization commit created after this run started is therefore this run's publication.
+          started_epoch="$(date -u -d "$MATERIALIZER_STARTED_AT" +%s)"
+          head_epoch="$(git log -1 --format=%ct HEAD)"
+          head_subject="$(git log -1 --format=%s HEAD)"
+
+          if [[ "$head_subject" == data\(fantasy-operations\):* && "$head_epoch" -ge "$started_epoch" ]]; then
+            python fantasy-management/_ai/scripts/summarize_fantasy_operations_materialization_observability.py \
+              --event-name "$MATERIALIZATION_EVENT_NAME" \
+              --trigger-reason "$MATERIALIZATION_TRIGGER_REASON" \
+              --trigger-commit-sha "${TRIGGER_COMMIT_SHA:-}" \
+              --trigger-commit-at "${TRIGGER_COMMIT_AT:-}" \
+              --materializer-started-at "$MATERIALIZER_STARTED_AT" \
+              --published-at "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+              --published-commit-sha "$(git rev-parse HEAD)" \
+              --outcome published \
+              --summary-path "$GITHUB_STEP_SUMMARY"
+          else
+            python fantasy-management/_ai/scripts/summarize_fantasy_operations_materialization_observability.py \
+              --event-name "$MATERIALIZATION_EVENT_NAME" \
+              --trigger-reason "$MATERIALIZATION_TRIGGER_REASON" \
+              --trigger-commit-sha "${TRIGGER_COMMIT_SHA:-}" \
+              --trigger-commit-at "${TRIGGER_COMMIT_AT:-}" \
+              --materializer-started-at "$MATERIALIZER_STARTED_AT" \
+              --outcome no_changes \
+              --summary-path "$GITHUB_STEP_SUMMARY"
+          fi
+
+  report:
+    needs: [providers, materialize]
+    if: ${{ !cancelled() && github.event_name != 'push' && github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - name: Summarize provider and materializer results
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.run_id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          jobs_json="$(gh api "repos/${REPOSITORY}/actions/runs/${RUN_ID}/jobs?filter=latest&per_page=100")"
+
+          {
+            echo "### FM Daily pipeline"
+            echo
+            echo "| Step | Result |"
+            echo "| --- | --- |"
+            jq -r '.jobs[] | select(.name | startswith("Provider • ") or . == "materialize") | "| \(.name) | `\(.conclusion // .status)` |"' <<< "$jobs_json"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          failed="$(jq -r '[.jobs[] | select(.name | startswith("Provider • ")) | select(.conclusion != "success") | .name] | join(", ")' <<< "$jobs_json")"
+          if [[ -n "$failed" ]]; then
+            echo "::warning title=FM Daily partial failure::Provider legs not successful: ${failed}. The materializer used the last good source state."
+            {
+              echo
+              echo "**Partial failure:** ${failed}. The materializer ran on the last good source state; the run is marked failed so the scheduler and workflow health see it."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -1,4 +1,6 @@
+Import-Module "$PSScriptRoot\..\general\SleeperPlayerIdUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\LineupRepairabilityUtils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 
 function Get-LreValue {
     param(
@@ -23,11 +25,7 @@ function Get-LreCollection {
 
 function ConvertTo-LrePlayerID {
     param([AllowNull()][object]$Value)
-
-    if ($null -eq $Value) { return $null }
-    $text = ([string]$Value).Trim()
-    if ([string]::IsNullOrWhiteSpace($text) -or $text -eq '0') { return $null }
-    return $text
+    return ConvertTo-SleeperPlayerID -Value $Value
 }
 
 function ConvertTo-LreUtc {
@@ -140,14 +138,17 @@ function Get-LineupExternalRepairEvidence {
 
         $home = ([string](Get-LreValue -Object $game -Names @('teamIDHome','HomeTeamID','homeTeamID'))).Trim()
         $away = ([string](Get-LreValue -Object $game -Names @('teamIDAway','AwayTeamID','awayTeamID'))).Trim()
-        foreach ($id in @($home, $away)) {
+        # Join on the canonical team key so schedule and player team IDs may use different key forms.
+        $homeKey = Get-NflTeamJoinKey -Value $home
+        $awayKey = Get-NflTeamJoinKey -Value $away
+        foreach ($id in @($homeKey, $awayKey)) {
             if (-not [string]::IsNullOrWhiteSpace($id)) { $knownTeams[$id] = $true }
         }
 
         $week = Get-LreWeek -Game $game
         if ($null -eq $week -or [int]$week -ne $LineupWeek) { continue }
 
-        foreach ($id in @($home, $away)) {
+        foreach ($id in @($homeKey, $awayKey)) {
             if ([string]::IsNullOrWhiteSpace($id)) { continue }
             if (-not $gamesByTeam.ContainsKey($id)) { $gamesByTeam[$id] = @() }
             $gamesByTeam[$id] += $game
@@ -185,7 +186,7 @@ function Get-LineupExternalRepairEvidence {
         ).Count -gt 0
         if (-not [string]::IsNullOrWhiteSpace($position) -and -not $positionRelevant) { continue }
 
-        $nflTeam = ([string](Get-LreValue -Object $player -Names @('TeamID','NFLTeamID'))).Trim()
+        $nflTeam = Get-NflTeamJoinKey -Value (Get-LreValue -Object $player -Names @('TeamID','NFLTeamID'))
         if ([string]::IsNullOrWhiteSpace($nflTeam)) { continue }
         if (-not $knownTeams.ContainsKey($nflTeam)) {
             $evidenceUnknown = $true

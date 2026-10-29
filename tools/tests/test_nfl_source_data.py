@@ -57,7 +57,7 @@ class NflSourceDataTests(unittest.TestCase):
     def test_end_to_end_materialization_uses_identity_bridge_and_draft_evidence(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            (root / "source-data").mkdir(parents=True)
+            (root / "data-source").mkdir(parents=True)
             registry = {
                 "schemaVersion": 1,
                 "datasets": [
@@ -90,9 +90,9 @@ class NflSourceDataTests(unittest.TestCase):
                     }
                 ]
             }
-            (root / "source-data/registry.json").write_text(json.dumps(registry), encoding="utf-8")
+            (root / "data-source/registry.json").write_text(json.dumps(registry), encoding="utf-8")
             write_csv(
-                root / "source-data/providers/nflverse/players/raw-latest.csv",
+                root / "data-source/providers/nflverse/players/raw-latest.csv",
                 [
                     {"gsis_id": "00-1", "display_name": "Drafted Player", "pfr_id": "DrafPl00", "position": "WR", "espn_id": "111", "nfl_id": "41405", "birth_date": "2000-01-01"},
                     {"gsis_id": "00-2", "display_name": "Undrafted Player", "pfr_id": "UndrPl00", "position": "RB", "espn_id": "22", "birth_date": "2001-01-01"},
@@ -100,7 +100,7 @@ class NflSourceDataTests(unittest.TestCase):
                 ["gsis_id", "display_name", "pfr_id", "position", "espn_id", "nfl_id", "birth_date"]
             )
             write_csv(
-                root / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv",
+                root / "data-source/providers/nflverse/ff-player-ids/raw-latest.csv",
                 [
                     {"mfl_id": "1", "gsis_id": "00-1", "sleeper_id": "S1", "espn_id": "11", "pfr_id": "DrafPl00", "nfl_id": "2543774", "cbs_id": "shared-cbs", "name": "Drafted Player", "birthdate": "2000-01-01", "position": "WR", "draft_year": "2025", "draft_round": "2", "draft_pick": "5", "draft_ovr": "37"},
                     {"mfl_id": "2", "gsis_id": "00-2", "sleeper_id": "S2", "espn_id": "22", "pfr_id": "UndrPl00", "cbs_id": "shared-cbs", "name": "Undrafted Player", "birthdate": "2001-01-01", "position": "RB", "draft_year": "2025", "draft_round": "", "draft_pick": "", "draft_ovr": ""},
@@ -109,11 +109,12 @@ class NflSourceDataTests(unittest.TestCase):
                 ["mfl_id", "gsis_id", "sleeper_id", "espn_id", "pfr_id", "nfl_id", "cbs_id", "name", "birthdate", "position", "draft_year", "draft_round", "draft_pick", "draft_ovr"]
             )
             write_csv(
-                root / "source-data/providers/nflverse/draft-picks/raw-latest.csv",
+                root / "data-source/providers/nflverse/draft-picks/raw-latest.csv",
                 [{"season": "2025", "round": "2", "pick": "37", "team": "ABC", "gsis_id": "00-1", "pfr_player_id": "DrafPl00", "pfr_player_name": "Drafted Player", "position": "WR"}],
                 ["season", "round", "pick", "team", "gsis_id", "pfr_player_id", "pfr_player_name", "position"]
             )
             (root / "public/data").mkdir(parents=True)
+            # public/data/Players.json is a consumer output and no identity evidence (#347 H1a).
             players = [
                 {"ID": "S1", "TankID": "T1", "Name": "Drafted Player", "Position": "WR"},
                 {"ID": "S2", "TankID": "T2", "Name": "Undrafted Player", "Position": "RB"},
@@ -136,13 +137,13 @@ class NflSourceDataTests(unittest.TestCase):
             self.assertEqual("birthdate_conflict_with_nflverse_players", conflict["Reason"])
             self.assertIn("Sleeper", conflict["SuppressedIDs"])
 
-            canonical = json.loads((root / "source-data/nfl/identities/players.json").read_text())
+            canonical = json.loads((root / "data-source/nfl/identities/players.json").read_text())
             self.assertEqual(common_mod.CANONICAL_SCHEMA_VERSION, canonical["SchemaVersion"])
             self.assertEqual("CanonicalPlayerID", canonical["IdentityPolicy"]["InternalKey"])
             self.assertEqual("fantasy-app", canonical["IdentityPolicy"]["CanonicalPlayerIDNamespace"])
             self.assertTrue(canonical["IdentityPolicy"]["CanonicalPlayerIDIsApplicationDefined"])
             by_sleeper = {row["IDs"]["Sleeper"]: row for row in canonical["Players"] if row["IDs"].get("Sleeper")}
-            self.assertEqual("T1", by_sleeper["S1"]["IDs"]["Tank01"])
+            self.assertNotIn("Tank01", by_sleeper["S1"]["IDs"])
             self.assertEqual("41405", by_sleeper["S1"]["IDs"]["NFL"])
             self.assertEqual("2543774", by_sleeper["S1"]["IDs"]["NFLCom"])
             self.assertEqual("11", by_sleeper["S1"]["IDs"]["ESPN"])
@@ -155,7 +156,7 @@ class NflSourceDataTests(unittest.TestCase):
             self.assertTrue(all("CanonicalPlayerID" in row for row in canonical["Players"]))
             self.assertTrue(all("NFLPlayerID" not in row for row in canonical["Players"]))
 
-            draft = json.loads((root / "source-data/nfl/draft/2025.json").read_text())
+            draft = json.loads((root / "data-source/nfl/draft/2025.json").read_text())
             self.assertEqual(by_sleeper["S1"]["CanonicalPlayerID"], draft["Picks"][0]["CanonicalPlayerID"])
             self.assertNotIn("NFLPlayerID", draft["Picks"][0])
             self.assertEqual(1, draft["Picks"][0]["PositionInRound"])

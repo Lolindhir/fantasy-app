@@ -1,0 +1,41 @@
+:host {
+  display: inline-flex;
+  flex: 0 0 auto;
+  vertical-align: middle;
+}
+
+.standing-rank-badge {
+  position: relative;
+  isolation: isolate;
+  display: inline-grid;
+  box-sizing: border-box;
+  place-items: center;
+  width: max-content;
+  min-width: 32px;
+  height: 30px;
+  padding: 0 9px 5px;
+  white-space: nowrap;
+  color: #f3f6fa;
+  background: linear-gradient(145deg, #b8c2cf, #8192a5);
+  clip-path: polygon(0 0, 100% 0, 100% 76%, 50% 100%, 0 76%);
+}
+
+.standing-rank-badge::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 1.5px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px),
+    linear-gradient(to bottom, #243b56, #192e49);
+  clip-path: polygon(0 0, 100% 0, 100% 76%, 50% 100%, 0 76%);
+}
+
+.standing-rank-badge__number {
+  position: relative;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}

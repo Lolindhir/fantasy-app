@@ -25,6 +25,7 @@ describe('LeagueTimelineComponent', () => {
     const getDecisionWindows = jasmine.createSpy('getDecisionWindows').and.returnValue(of(createModel([])));
     const getDecisionWindowsTimestamp = jasmine.createSpy('getDecisionWindowsTimestamp').and.returnValue(of(undefined));
     component = new LeagueTimelineComponent({
+      getNflTeams: () => of([]),
       getDecisionWindows,
       getDecisionWindowsTimestamp
     } as unknown as DataService, createDialog());
@@ -54,6 +55,7 @@ describe('LeagueTimelineComponent', () => {
 
   it('isolates a DecisionWindows load failure from the rest of the timeline', () => {
     const dataService = {
+      getNflTeams: () => of([]),
       getDecisionWindows: () => throwError(() => new Error('DecisionWindows unavailable')),
       getDecisionWindowsTimestamp: () => throwError(() => new Error('timestamps unavailable'))
     } as unknown as DataService;
@@ -79,6 +81,7 @@ describe('LeagueTimelineComponent', () => {
 
   it('keeps a missing DecisionWindows timestamp non-fatal', () => {
     const dataService = {
+      getNflTeams: () => of([]),
       getDecisionWindows: () => of(createModel([createWindow('2026-09-04T12:00:00Z')])),
       getDecisionWindowsTimestamp: () => throwError(() => new Error('timestamp unavailable'))
     } as unknown as DataService;
@@ -90,6 +93,51 @@ describe('LeagueTimelineComponent', () => {
     expect(component.decisionWindowsUnavailable).toBeFalse();
     expect(component.decisionWindowsUpdatedAt).toBeUndefined();
     expect(component.timeline?.operational[0].kind).toBe('lineup');
+  });
+
+  it('orders current waiver priorities without mutating league team order', () => {
+    component = new LeagueTimelineComponent(createDataService(createModel([])), createDialog());
+    const teams = [createTeam(3), createTeam(1), createTeam(2)];
+    teams[0].WaiverPosition = 2;
+    teams[1].WaiverPosition = 3;
+    teams[2].WaiverPosition = 1;
+    component.league = createLeague({ Teams: teams });
+
+    expect(component.waiverPriorityTeams.map(team => team.TeamID)).toEqual([2, 3, 1]);
+    expect(component.waiverPriorityTeams.map(team => team.WaiverPosition)).toEqual([1, 2, 3]);
+    expect(component.league.Teams.map(team => team.TeamID)).toEqual([3, 1, 2]);
+  });
+
+  it('includes every team in leagues larger than six teams', () => {
+    component = new LeagueTimelineComponent(createDataService(createModel([])), createDialog());
+    const teams = Array.from({ length: 10 }, (_, index) => {
+      const team = createTeam(index + 1);
+      team.WaiverPosition = 10 - index;
+      return team;
+    });
+    component.league = createLeague({ Teams: teams, TotalTeams: 10 });
+
+    expect(component.waiverPriorityTeams).toHaveSize(10);
+    expect(component.waiverPriorityTeams.map(team => team.WaiverPosition))
+      .toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it('opens waiver priority through a viewport-bounded dialog', () => {
+    const open = jasmine.createSpy('open');
+    component = new LeagueTimelineComponent(
+      createDataService(createModel([])),
+      { open } as unknown as MatDialog
+    );
+    const template = {} as TemplateRef<unknown>;
+
+    component.openWaiverPriority(template);
+
+    expect(open).toHaveBeenCalledWith(template, jasmine.objectContaining({
+      width: '420px',
+      maxWidth: 'calc(100vw - 40px)',
+      maxHeight: 'calc(100dvh - 24px)',
+      ariaLabel: 'Waiver priority'
+    }));
   });
 
   it('opens Decision Window details through a viewport-bounded dialog', () => {
@@ -118,6 +166,7 @@ function createDialog(): MatDialog {
 
 function createDataService(model: DecisionWindowsReadModel): DataService {
   return {
+    getNflTeams: () => of([]),
     getDecisionWindows: () => of(model),
     getDecisionWindowsTimestamp: () => of('2026-09-04T09:58:00Z')
   } as unknown as DataService;

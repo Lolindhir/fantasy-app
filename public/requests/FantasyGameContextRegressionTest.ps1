@@ -84,14 +84,28 @@ $historicalMatchups = @(
     }
 )
 $historicalSchedule = @([PSCustomObject]@{ gameID='hist-game'; gameWeek='Week 1'; gameTime_epoch=1789000000; teamIDAway='OLD'; teamIDHome='NEW'; teamAbvAway='OLD'; teamAbvHome='NEW' })
-$weekly = @([PSCustomObject]@{ CanonicalPlayerID='cp1'; CanonicalTeamID='NEW'; TeamAbbr='NEW' })
-$historicalDecision = New-FgcHistoricalDecisionFacts -Week 1 -Schedule $historicalSchedule -FantasyMatchups $historicalMatchups -HistoricalPlayers @() -WeeklyRosterDocument $weekly
+# Real canonical weekly roster records carry the team as the plain string Team (data-source/nfl/weekly-rosters), not CanonicalTeamID/TeamAbbr.
+$weekly = [PSCustomObject]@{ Records = @([PSCustomObject]@{ CanonicalPlayerID='cp1'; Team='NEW'; Status='ACT' }) }
+$historicalDecision = New-FgcHistoricalDecisionFacts -Week 1 -Schedule $historicalSchedule -FantasyMatchups $historicalMatchups -WeeklyRosterDocument $weekly
 Assert-Equal 'hist-game' (@($historicalDecision.PlayerLockFacts | Where-Object PlayerID -eq 'hp1')[0].GameID) 'historical canonical weekly membership must resolve the actual week team/game'
 Assert-Equal 'unknown' (@($historicalDecision.PlayerLockFacts | Where-Object PlayerID -eq 'inactive')[0].Kind) 'inactive player without week evidence must remain unknown instead of using current roster membership'
+Assert-Equal 'NEW' (@($historicalDecision.PlayerLockFacts | Where-Object PlayerID -eq 'hp1')[0].NFLTeamID) 'historical NFL team must come from the canonical week record'
+
+# A player on two teams in the same week (two different games) must stay unknown instead of picking one game.
+$splitSchedule = @(
+    [PSCustomObject]@{ gameID='g-a'; gameWeek='Week 1'; gameTime_epoch=1789000000; teamIDAway='AAA'; teamIDHome='BBB' },
+    [PSCustomObject]@{ gameID='g-b'; gameWeek='Week 1'; gameTime_epoch=1789086400; teamIDAway='CCC'; teamIDHome='DDD' }
+)
+$splitWeekly = [PSCustomObject]@{ Records = @(
+    [PSCustomObject]@{ CanonicalPlayerID='cp1'; Team='AAA'; Status='CUT' },
+    [PSCustomObject]@{ CanonicalPlayerID='cp1'; Team='CCC'; Status='ACT' }
+) }
+$splitDecision = New-FgcHistoricalDecisionFacts -Week 1 -Schedule $splitSchedule -FantasyMatchups $historicalMatchups -WeeklyRosterDocument $splitWeekly
+Assert-Equal 'unknown' (@($splitDecision.PlayerLockFacts | Where-Object PlayerID -eq 'hp1')[0].Kind) 'a player with two different games from week evidence must remain unknown'
 
 # Real 2025 canonical matchup fixture: pairing identity and league-scored points must be deterministic.
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-$weekOneFile = Join-Path $repoRoot 'source-data\leagues\nfl-reise\seasons\2025\matchups\week-1.json'
+$weekOneFile = Join-Path $repoRoot 'data-source\leagues\nfl-reise\seasons\2025\matchups\week-1.json'
 if (Test-Path $weekOneFile) {
     $weekOneRows = @(Get-Content $weekOneFile -Raw | ConvertFrom-Json)
     $historyA = @(ConvertTo-FgcCanonicalMatchupFacts -Season '2025' -Week 1 -MatchupRows $weekOneRows)

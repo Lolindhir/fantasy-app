@@ -7,9 +7,24 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable
+from data_roots import DATA_SOURCE_ROOT, data_meta_dir
+from league_metadata import METADATA_FILE_NAME, list_league_ids, load_league_metadata
 
 CANONICAL_LEAGUE_ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 SUPPORTED_PROVIDERS = {"Sleeper"}
+
+# Sleeper marks an unfilled lineup slot with the player id "0"; no real player has that id.
+SLEEPER_EMPTY_PLAYER_ID = "0"
+
+
+def normalize_sleeper_player_id(value: object) -> str | None:
+    """Return the trimmed Sleeper player id, or None for "no player" (None, blank or "0")."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or text == SLEEPER_EMPTY_PLAYER_ID:
+        return None
+    return text
 
 
 @dataclass(frozen=True)
@@ -55,40 +70,25 @@ def write_json_if_changed(path: Path, value: object) -> bool:
 
 
 def load_bootstraps(repo_root: Path) -> list[LeagueBootstrap]:
-    bootstrap_dir = repo_root / "source-data/leagues/_bootstrap"
-    if not bootstrap_dir.exists():
+    """Read the leagues to sync from the hand-maintained league metadata (ADR-054, Issue #986).
+
+    The function name is kept for its callers; the former data-source/leagues/_bootstrap files
+    are replaced by data-meta/<CanonicalLeagueID>/metadata.json, validated fail-closed.
+    """
+    meta_root = data_meta_dir(repo_root)
+    if not meta_root.exists():
         return []
     result: list[LeagueBootstrap] = []
-    seen_ids: set[str] = set()
-    for path in sorted(bootstrap_dir.glob("*.json")):
-        raw = _read_json(path)
-        if not isinstance(raw, dict):
-            raise ValueError(f"Bootstrap must be a JSON object: {path}")
-        expected = {"CanonicalLeagueID", "Provider", "CurrentProviderLeagueID"}
-        missing = expected - set(raw)
-        extra = set(raw) - expected
-        if missing or extra:
-            raise ValueError(
-                f"Bootstrap {path} must contain exactly {sorted(expected)}; "
-                f"missing={sorted(missing)}, extra={sorted(extra)}"
+    for league_id in list_league_ids(meta_root):
+        metadata = load_league_metadata(league_id, meta_root)
+        result.append(
+            LeagueBootstrap(
+                metadata["CanonicalLeagueID"],
+                metadata["Provider"],
+                metadata["CurrentProviderLeagueID"],
+                meta_root / league_id / METADATA_FILE_NAME,
             )
-        canonical_id = str(raw["CanonicalLeagueID"]).strip()
-        provider = str(raw["Provider"]).strip()
-        current_id = str(raw["CurrentProviderLeagueID"]).strip()
-        if not CANONICAL_LEAGUE_ID_PATTERN.fullmatch(canonical_id):
-            raise ValueError(f"Invalid CanonicalLeagueID in {path}: {canonical_id}")
-        if provider not in SUPPORTED_PROVIDERS:
-            raise ValueError(f"Unsupported league provider in {path}: {provider}")
-        if not current_id.isdigit():
-            raise ValueError(f"Invalid CurrentProviderLeagueID in {path}: {current_id}")
-        if canonical_id in seen_ids:
-            raise ValueError(f"Duplicate CanonicalLeagueID bootstrap: {canonical_id}")
-        seen_ids.add(canonical_id)
-        if path.stem != canonical_id:
-            raise ValueError(
-                f"Bootstrap filename must equal CanonicalLeagueID: {path.name} != {canonical_id}.json"
-            )
-        result.append(LeagueBootstrap(canonical_id, provider, current_id, path))
+        )
     return result
 
 
@@ -138,7 +138,7 @@ def persisted_sleeper_fetcher(repo_root: Path) -> Callable[[str], dict]:
     def fetch(provider_league_id: str) -> dict:
         path = (
             repo_root
-            / "source-data/providers/sleeper/leagues"
+            / DATA_SOURCE_ROOT / "providers/sleeper/leagues"
             / provider_league_id
             / "league.json"
         )
@@ -180,13 +180,11 @@ def discover_sleeper_lineage(
 
 
 def _load_existing_manifests(repo_root: Path) -> dict[str, dict]:
-    league_root = repo_root / "source-data/leagues"
+    league_root = repo_root / DATA_SOURCE_ROOT / "leagues"
     result: dict[str, dict] = {}
     if not league_root.exists():
         return result
     for path in sorted(league_root.glob("*/manifest.json")):
-        if path.parent.name == "_bootstrap":
-            continue
         raw = _read_json(path)
         if not isinstance(raw, dict):
             raise ValueError(f"League manifest must be a JSON object: {path}")
@@ -384,14 +382,14 @@ def sync_bootstrap(
     for instance in lineage:
         base = (
             repo_root
-            / "source-data/providers/sleeper/leagues"
+            / DATA_SOURCE_ROOT / "providers/sleeper/leagues"
             / instance.provider_league_id
         )
         raw_outputs.append((base / "league.json", instance.payload))
         raw_outputs.append((base / "league.metadata.json", _raw_metadata(instance)))
 
     raw_changed = sum(write_json_if_changed(path, value) for path, value in raw_outputs)
-    manifest_path = repo_root / "source-data/leagues" / bootstrap.canonical_league_id / "manifest.json"
+    manifest_path = repo_root / DATA_SOURCE_ROOT / "leagues" / bootstrap.canonical_league_id / "manifest.json"
     manifest_changed = write_json_if_changed(manifest_path, manifest)
     return {
         "CanonicalLeagueID": bootstrap.canonical_league_id,

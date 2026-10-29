@@ -18,7 +18,7 @@ Important files:
 - `public/data/Drafts.json`
 - `public/data/Transactions.json`
 - `public/data/Timestamps.json`
-- `public/data/Metadata.json`
+- `data-meta/nfl-reise/metadata.json`
 
 ## League source rules
 
@@ -52,13 +52,13 @@ Checkpoint 6P established the fail-closed Canonical League ownership adapter at:
 
 It resolves the active League season from:
 
-- `source-data/leagues/nfl-reise/manifest.json`
+- `data-source/leagues/nfl-reise/manifest.json`
 
 and reads the accepted current-season basis facts from:
 
-- `source-data/leagues/nfl-reise/seasons/<season>/league.json`
-- `source-data/leagues/nfl-reise/seasons/<season>/members.json`
-- `source-data/leagues/nfl-reise/seasons/<season>/rosters.json`
+- `data-source/leagues/nfl-reise/seasons/<season>/league.json`
+- `data-source/leagues/nfl-reise/seasons/<season>/members.json`
+- `data-source/leagues/nfl-reise/seasons/<season>/rosters.json`
 
 The stable Fantasy Management `TeamID` remains an application/Fantasy-owned identity. Its bridge to Canonical League data is explicit through
 `fantasy-management/league-context/owner-registry.json -> owners[].canonical_league_member_id`.
@@ -69,29 +69,31 @@ The adapter exposes current member/ownership basis facts such as
 It intentionally does **not** own or reproduce salary/cap fields, standings, awards, draft-pick readmodels,
 team windows or other App/Fantasy-derived state.
 
-Checkpoint 6Q activated this adapter for `managed-roster-signals.json`, which gets TeamID 1 membership and starter facts from Canonical League Source Data. Checkpoint 6X additionally moves the managed-roster consumer player identity surface and the identity fields used by its ranking/ADP joins to Canonical NFL Source Data: `Name` comes from `source-data/nfl/identities/players.json`, while fantasy-relevant `Position` and current NFL team come from `source-data/nfl/platform/sleeper/players.json` using the same `FantasyPositions` preference established in 6W. `public/data/Players.json` remains an explicit legacy enrichment only for Status, Age/Experience, Salary, SalaryProjected, IsFreeAgent and the existing structured Injury contract.
+Checkpoint 6Q activated this adapter for `managed-roster-signals.json`, which gets TeamID 1 membership and starter facts from Canonical League Source Data. Checkpoint 6X additionally moves the managed-roster consumer player identity surface and the identity fields used by its ranking/ADP joins to Canonical NFL Source Data: `Name` comes from `data-source/nfl/identities/players.json`, while fantasy-relevant `Position` and current NFL team come from `data-source/nfl/platform/sleeper/players.json` using the same `FantasyPositions` preference established in 6W. `public/data/Players.json` remains an explicit legacy enrichment only for Status, Age/Experience, Salary, SalaryProjected, IsFreeAgent and the existing structured Injury contract.
+
+Issue #919 step 6 (2026-10-15) removes `public/data/Players.json` as an input of `managed-roster-signals.json`, `data-quality.json` and `player-signals.json`. `fantasy-management/_ai/scripts/canonical_player_inputs.py` now supplies the player list: population, Age/Experience, `IsFreeAgent`, Status and the structured Injury contract come from `tools/players_population.py` (ADR-043), Salary/SalaryProjected from the newest PlayerValuation snapshot under `data-derived/player-valuation` (ADR-055). Age uses the date of `Timestamps.json -> Players` as reference date. The earlier statements in this document that `Players.json` remains enrichment for those fields are historical.
 
 Checkpoint 6R activates the same canonical ownership basis for `external-signal-relevance.json`:
 the complete league-wide Roster/Reserve/Taxi union is now read from Canonical League Source Data,
 while `public/data/League.json` supplies only `Team`/`TeamAbbr` display enrichment and the existing
 League-trigger/freshness bridge for that materializer.
 
-Checkpoint 6S extends the same Canonical League ownership union to `player-signals.json`. Its ownership status and `league_owned` population reason are canonical-derived. Checkpoint 6Y additionally moves `Name`, fantasy-relevant `Position`, Sleeper `Status`, `IDs.ESPN` and nominal Sleeper depth-chart fields to Canonical NFL Identity/Platform sources. External name+position joins use the Canonical Identity display name first and, only when that join is missing, may fall back to the Canonical Identity `FirstName + LastName` form; they never fall back to the legacy App name, and ambiguous alias matches remain fail-closed. Checkpoint 6Z.1 moves `player-signals.nfl_team` and team-assisted external-source evaluation to Canonical Sleeper `Team`, while deliberately keeping `Players.json -> TeamAbbr` only as the compatibility source for the existing `has_nfl_team` population reason. That reason is a temporary population bridge, not evidence of a current NFL contract and not the source of `nfl_team`. `Players.json` otherwise remains enrichment for Age/Experience, Salary/SalaryProjected, Tank01 `IsFreeAgent` and the structured Injury contract. `League.json` remains a non-membership enrichment input for managed-team display and `ScoringType` used to reconcile projection components to league scoring.
+Checkpoint 6S extends the same Canonical League ownership union to `player-signals.json`. Its ownership status and `league_owned` population reason are canonical-derived. Checkpoint 6Y additionally moves `Name`, fantasy-relevant `Position`, Sleeper `Status`, `IDs.ESPN` and nominal Sleeper depth-chart fields to Canonical NFL Identity/Platform sources. External name+position joins use the Canonical Identity display name first and, only when that join is missing, may fall back to the Canonical Identity `FirstName + LastName` form; they never fall back to the legacy App name, and ambiguous alias matches remain fail-closed. Checkpoint 6Z.1 moves `player-signals.nfl_team` and team-assisted external-source evaluation to Canonical Sleeper `Team`, and Checkpoint C2 (Issue #347, 2026-10-05) replaces the former `has_nfl_team` population reason, which was sourced from `Players.json -> TeamAbbr`, with Canonical NFL roster evidence resolved by CanonicalPlayerID: `canonical_nfl_membership` (latest materialized weekly roster) and `canonical_nfl_recent_history` (current-season season roster or any current-season weekly roster). Provider team fields (Sleeper Team, Tank01 `TeamAbbr`/`IsFreeAgent`) never create population membership. The cutover removed 304 players without NFL roster membership in 2026, no external source or signal and no league ownership, and added none. `Players.json` otherwise remains enrichment for Age/Experience, Salary/SalaryProjected, Tank01 `IsFreeAgent` and the structured Injury contract. `League.json` remains a non-membership enrichment input for managed-team display and `ScoringType` used to reconcile projection components to league scoring.
 
 Checkpoint 6T extends Canonical League ownership to `fa-board-readmodel.json`: availability ownership, owner/bucket attribution and Managed-Team Roster/Reserve/Taxi occupancy now come from Canonical League Source Data. `League.json` remains non-membership enrichment for FA-board rules/status/capacity settings and display. `Drafts.json` remains the independent current Free-Agent-Draft assignment axis.
 
 Checkpoint 6U removes the Managed-Roster-Overview's duplicate direct membership read from `League.json`. `managed-roster-overview.json` now derives held/active/reserve/taxi membership exclusively from `managed-roster-signals.json`; `League.json` remains non-membership enrichment for team display, `RosterSize`, lineup settings, Reserve-/Taxi slot counts and phase/status.
 
-Checkpoint 6V moves the Free-Agent Movement consumer's league-scoring input from `public/data/League.json -> ScoringType` to the active Canonical League `league.json -> ScoringSettings`. This is a scoring-only cutover: Movement population and ownership remain inherited from canonical-active `player-signals.json` / `free-agent-signals.json`; `player-signals` projection reconciliation and Kicker Streaming retain their separately documented App `League.json` scoring enrichment until their own checkpoints.
+Checkpoint 6V moves the Free-Agent Movement consumer's league-scoring input from `public/data/League.json -> ScoringType` to the active Canonical League `league.json -> ScoringSettings`. This is a scoring-only cutover: Movement population and ownership remain inherited from canonical-active `player-signals.json` / `free-agent-signals.json`; `player-signals` projection reconciliation followed in #347 step A2 and now reads league scoring from the same canonical `ScoringSettings` (via `canonical_league_ownership.load_canonical_league_scoring_settings`; the previous silent empty-scoring fallback is now a fail-closed error). Kicker Streaming inputs followed in #347 step A1 and now read kicker scoring from the same canonical `ScoringSettings` (team, season and phase context still come from `League.json`).
 
-Checkpoint 6W removes the direct `public/data/Players.json` dependency from `external-signal-relevance.json`. Sleeper signal IDs resolve through the active `IDs.Sleeper` bridge in `source-data/nfl/identities/players.json`; player names come from that Canonical Identity contract, while fantasy-relevant position and current NFL team come from `source-data/nfl/platform/sleeper/players.json`. Position prefers the first provider-ordered QB/RB/WR/TE/K entry from `FantasyPositions` and falls back to raw `Position` when no such fantasy role exists (so dual-role players such as Travis Hunter remain WR rather than inheriting Sleeper's raw DB primary position). Duplicate active Sleeper identity links, duplicate platform Sleeper IDs and cross-source CanonicalPlayerID disagreement fail closed. Checkpoint 6Y later applies the same Canonical Identity/`FantasyPositions` contract to selected non-team player-signal fields; App-owned Salary/SalaryProjected/Grading and `RequestPlayers.ps1` remain outside that cutover.
+Checkpoint 6W removes the direct `public/data/Players.json` dependency from `external-signal-relevance.json`. Sleeper signal IDs resolve through the active `IDs.Sleeper` bridge in `data-source/nfl/identities/players.json`; player names come from that Canonical Identity contract, while fantasy-relevant position and current NFL team come from `data-source/nfl/platform/sleeper/players.json`. Position prefers the first provider-ordered QB/RB/WR/TE/K entry from `FantasyPositions` and falls back to raw `Position` when no such fantasy role exists (so dual-role players such as Travis Hunter remain WR rather than inheriting Sleeper's raw DB primary position). Duplicate active Sleeper identity links, duplicate platform Sleeper IDs and cross-source CanonicalPlayerID disagreement fail closed. Checkpoint 6Y later applies the same Canonical Identity/`FantasyPositions` contract to selected non-team player-signal fields; App-owned Salary/SalaryProjected/Grading and `RequestPlayers.ps1` remain outside that cutover.
 
 This is **not** a wholesale Fantasy Management source cutover. `free-agent-signals.json` is already downstream of canonical-active `player-signals` and therefore inherits canonical fantasy ownership without its own direct League read. Draft metadata, Transactions, Salary/Grading and other unmigrated source domains retain their currently documented contracts until separately migrated.
 
 
 ## Metadata source rules
 
-`public/data/Metadata.json` is the canonical source for owner/team mapping and league-specific manual inputs.
+`data-meta/<CanonicalLeagueID>/metadata.json` is the canonical source for owner/team mapping and league-specific manual inputs.
 
 Known mapping may include:
 
@@ -104,7 +106,7 @@ Known mapping may include:
 | Dennis | 5 |
 | Tim | 6 |
 
-Always re-check `Metadata.json` when exact owner mapping matters.
+Always re-check the league metadata (`data-meta/<CanonicalLeagueID>/metadata.json`) when exact owner mapping matters.
 
 ## Player source rules
 
@@ -131,7 +133,7 @@ Important player fields may include ID, name fields, NFL team, position, age, sa
 
 Operational rules:
 
-For `player-signals.json`, Checkpoint 6Y no longer reads these mirrored identity/role values from `Players.json`: ESPN identity comes from `source-data/nfl/identities/players.json -> IDs.ESPN`, while Sleeper status and nominal depth-chart fields come from `source-data/nfl/platform/sleeper/players.json`. The mirrored App fields may remain for other App consumers until their own contracts migrate.
+For `player-signals.json`, Checkpoint 6Y no longer reads these mirrored identity/role values from `Players.json`: ESPN identity comes from `data-source/nfl/identities/players.json -> IDs.ESPN`, while Sleeper status and nominal depth-chart fields come from `data-source/nfl/platform/sleeper/players.json`. The mirrored App fields may remain for other App consumers until their own contracts migrate.
 
 - Treat `ESPNID` as optional supplemental identity metadata. Sleeper does not populate it reliably for every current player, so it must not be the sole identity key or automatically override an already confirmed player mapping.
 - Treat `SleeperDepthChartPosition` as the source-provided nominal football slot or alignment. For wide receivers this can distinguish values such as `LWR`, `RWR` and `SWR`.
@@ -226,15 +228,21 @@ Operational rules:
 - run source-identity, schema, completeness, freshness and plausibility validation only on a successful response and never relax those checks merely because retries were needed;
 - add source-specific pacing when repeated requests or pagination make provider throttling likely;
 - retries are resilience, not access-control circumvention: do not automate challenge solving, authentication bypasses or other mechanisms that evade a provider's access restrictions;
+- a 403 that carries an access challenge (Cloudflare `Just a moment...` body or `cf-mitigated: challenge` header) is not transient: it is raised as `HttpFetchBlockedError` without retries (Issue #1045);
+- a seasonal source (FFToday publishes preseason projections only) makes no request outside its active NFL phase, taken from the canonical season context (`tools/external_source/season_phase.py`, driven by the `seasonPolicy` of the dataset in `data-source/external-registry.json`), and ends successfully with a `skipped` message so the daily pipeline stays green;
 - when this contract is added or changed, audit existing automated fetchers separately for implementation drift instead of assuming documentation alone makes them compliant.
 
 ### External-ranking hierarchy
 
-All ordered external player or asset evaluations belong under:
+Active external ranking, ADP, market-value and projection providers are shared Source Evidence (ADR-060, Issue #988) and live in the shared source layer, not in `fantasy-management`:
 
 ```text
-fantasy-management/sources/external-rankings/<ranking_kind>/<provider>/<format>/
+data-source/market/<ranking_kind>/<provider>/<format>/   normalized snapshots, latest.json
+data-source/providers/<provider>/<dataset>/               raw-latest.*, README, SOURCE_AUDIT, analysis-metadata
+data-source/market/_status/<provider>.json                refresh heartbeat
 ```
+
+`fantasy-management/sources/external-rankings/` keeps only audits of inspected but inactive sources and manual-reference notes (KeepTradeCut, Dynasty Data Lab, FantasyPros ADP) plus the ranking-kind rules below. Fetchers live in `tools/external_source/`; Fantasy Management reads the moved snapshots only as a transitional consumer until the `market-observations` product exists.
 
 The first level describes how the ordering is produced, not who publishes it.
 
@@ -253,10 +261,11 @@ The canonical hierarchy and common rules are documented in:
 
 ### External-signal hierarchy
 
-External activities and events that do not evaluate player or asset quality belong under:
+External activities and events that do not evaluate player or asset quality are shared Source Evidence (ADR-060). The Sleeper roster-activity signal moved to the shared source layer:
 
 ```text
-fantasy-management/sources/external-signals/<signal_kind>/<provider>/
+data-source/market/roster-activity/<provider>/   normalized latest.json
+data-source/providers/<provider>/<dataset>/      raw-latest.json, README, SOURCE_AUDIT, analysis-metadata
 ```
 
 The current active signal kind is:
@@ -267,34 +276,34 @@ Source signals remain provider-global. In the productive external-signal relevan
 
 The canonical hierarchy and common rules are documented in:
 
-`fantasy-management/sources/external-signals/README.md`
+`fantasy-management/sources/external-signals/README.md` (generic rules) and `.ai-context/manual/external-source-data.yaml` (contract)
 
 ### FantasyPros expert-consensus snapshots
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/expert-consensus/fantasypros/`
+`data-source/market/expert-consensus/fantasypros/`
 
 Available ranking IDs:
 
 - `dynasty-superflex-ppr`: long-term asset and expert-consensus context
 - `redraft-ppr-superflex`: current-season lineup, production and win-now context
 
-For each ranking, use `latest.json` to resolve the newest successful snapshot. Load `ranking.csv` as the compact analysis table, `raw-ecr-data.json` when additional source fields or schema inspection matter, and `metadata.json` for provenance, freshness and ranking-specific interpretation.
+For each ranking, use `latest.json` to resolve the newest successful snapshot. Load `ranking.csv` as the compact analysis table, `data-source/providers/fantasypros/<ranking-id>/raw-latest.json` when additional source fields or schema inspection matter, and `metadata.json` for provenance, freshness and ranking-specific interpretation.
 
 Refresh directly from the official FantasyPros pages with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasypros_dynasty_superflex.py --skip-unchanged
-python fantasy-management/_ai/scripts/fetch_fantasypros_redraft_ppr_superflex.py --skip-unchanged
+python -m tools.external_source.fantasypros --skip-unchanged
+python -m tools.external_source.fantasypros_redraft --skip-unchanged
 ```
 
 Both fetchers must fail closed after network, source-identity, schema, row-count or rank-validation errors. A successful refresh retains the complete parsed `ecrData` payload and writes the normalized consensus fields.
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-rankings/expert-consensus/fantasypros/README.md`
-- `fantasy-management/sources/external-rankings/expert-consensus/fantasypros/analysis-metadata.json`
+- `data-source/providers/fantasypros/README.md`
+- `data-source/providers/fantasypros/analysis-metadata.json`
 
 Operational rules:
 
@@ -313,34 +322,34 @@ FantasyPros ECR is expert consensus. It is not ADP, a projection or league-speci
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/market-value/fantasycalc/`
+`data-source/market/market-value/fantasycalc/` (snapshots and `latest.json`), raw responses and documentation under `data-source/providers/fantasycalc/`, heartbeat `data-source/market/_status/fantasycalc.json` (shared source layer, ADR-060)
 
 Available ranking IDs:
 
 - `dynasty-superflex-ppr-8-team`: observed long-term trade-market values including source draft-pick assets
 - `redraft-superflex-ppr-8-team`: observed current-season trade-market values
 
-FantasyCalc is queried with two quarterbacks, full PPR and the nearest supported eight-team proxy for the actual six-team league. No TEP parameter is used because two fixed TE starters are not equivalent to Tight-End-Premium scoring.
+FantasyCalc is queried with two quarterbacks, full PPR and the provider's nearest supported eight-team parameter. New snapshots carry no league team count. No TEP parameter is used because two fixed TE starters are not equivalent to Tight-End-Premium scoring.
 
 For each ranking, use `latest.json` to resolve the newest normalized snapshot and current `raw-latest.json`. Historical snapshots contain only `ranking.csv` and `metadata.json`; the complete API payload is retained only as the latest Raw response.
 
 Refresh both formats with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasycalc_rankings.py --skip-unchanged
+python -m tools.external_source.fantasycalc --skip-unchanged
 ```
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-rankings/market-value/fantasycalc/README.md`
-- `fantasy-management/sources/external-rankings/market-value/fantasycalc/analysis-metadata.json`
+- `data-source/providers/fantasycalc/README.md`
+- `data-source/providers/fantasycalc/analysis-metadata.json`
 
 Operational rules:
 
 - treat FantasyCalc as observed trade-market context, not expert consensus or a projection
 - use normalized `Rank` for ordering and per-centile comparisons; retain `source_overall_rank` as an audit field with permitted ties
 - join players primarily through `sleeper_id`, then `source_asset_id`, then normalized name plus position
-- resolve only FantasyCalc's explicit `UNK` player-position sentinel through matching `SleeperPlayerID -> Position` from `source-data/nfl/platform/sleeper/players.json`; do not use `public/data/Players.json` for that fallback and keep all other unexpected provider positions fail-closed
+- resolve only FantasyCalc's explicit `UNK` player-position sentinel through matching `SleeperPlayerID -> Position` from `data-source/nfl/platform/sleeper/players.json`; do not use `public/data/Players.json` for that fallback and keep all other unexpected provider positions fail-closed
 - treat FantasyCalc draft-pick IDs as source-only synthetic identifiers
 - resolve real pick identity and ownership from `League.json` and `Drafts.json`
 - apply six-team replacement-level context after reading the eight-team proxy
@@ -362,7 +371,7 @@ Fantasy Football Calculator is the active automated ADP provider.
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/`
+`data-source/market/adp/fantasy-football-calculator/`
 
 Available ranking IDs:
 
@@ -370,18 +379,18 @@ Available ranking IDs:
 - `redraft-ppr-8-team-kicker`: Kicker-only ADP derived from the same PPR 8-team all-position API payload without an additional network request
 - `redraft-2qb-10-team`: observed 2-QB mock-draft cost used primarily for quarterback-scarcity context
 
-For each ranking, use `latest.json` to resolve the newest normalized snapshot and the current Raw-fetch state. Load `ranking.csv` as the compact analysis table, `metadata.json` for source format, sample quality, provenance and freshness, and `raw-latest.json` only when the complete latest API payload or excluded source positions matter.
+For each ranking, use `latest.json` to resolve the newest normalized snapshot and the current Raw-fetch state. Load `ranking.csv` as the compact analysis table, `metadata.json` for source format, sample quality, provenance and freshness, and `data-source/providers/fantasy-football-calculator/<ranking-id>/raw-latest.json` only when the complete latest API payload or excluded source positions matter.
 
 Refresh all active FFC rankings together with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fantasy_football_calculator_adp.py --skip-unchanged
+python -m tools.external_source.fantasy_football_calculator --skip-unchanged
 ```
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/README.md`
-- `fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/analysis-metadata.json`
+- `data-source/providers/fantasy-football-calculator/README.md`
+- `data-source/providers/fantasy-football-calculator/analysis-metadata.json`
 
 Operational rules:
 
@@ -402,7 +411,7 @@ FFToday is an active automated Projection provider for QB, RB, WR, TE and K.
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/projections/fftoday/`
+`data-source/market/projection/fftoday/` (snapshots), `data-source/providers/fftoday/` (raw files and provider docs)
 
 Active ranking IDs:
 
@@ -417,18 +426,18 @@ The audited public Projection area also exposes DEF and IDP projections. Those p
 Refresh with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_fftoday_kicker_projections.py --skip-unchanged
-python fantasy-management/_ai/scripts/fetch_fftoday_offense_projections.py --skip-unchanged
+python -m tools.external_source.fftoday_kicker --skip-unchanged
+python -m tools.external_source.fftoday_offense --skip-unchanged
 ```
 
-The workflow `FM • Projection • FFToday` refreshes the source daily before monitoring and also runs once after a fetcher, fetcher test or workflow-contract change reaches `main`.
+The workflow `FM • Pipeline • Daily` (matrix job `Provider • fftoday`) refreshes the source daily before monitoring.
 
 Canonical source documentation:
 
 - `fantasy-management/sources/external-rankings/projections/README.md`
-- `fantasy-management/sources/external-rankings/projections/fftoday/README.md`
-- `fantasy-management/sources/external-rankings/projections/fftoday/SOURCE_AUDIT.md`
-- `fantasy-management/sources/external-rankings/projections/fftoday/analysis-metadata.json`
+- `data-source/providers/fftoday/README.md`
+- `data-source/providers/fftoday/SOURCE_AUDIT.md`
+- `data-source/providers/fftoday/analysis-metadata.json`
 
 Operational rules:
 
@@ -443,11 +452,11 @@ Operational rules:
 
 ### CBS Sports projection snapshots
 
-CBS Sports is an active automated Projection provider for QB, RB, WR, TE and K. The GitHub-Actions workflow `FM • Projection • CBS Sports` refreshes the source daily at 06:08 Europe/Berlin, supports manual `workflow_dispatch` runs and also runs once after its fetcher, fetcher test or workflow contract changes on `main`.
+CBS Sports is an active automated Projection provider for QB, RB, WR, TE and K. The GitHub-Actions workflow `FM • Pipeline • Daily` (matrix job `Provider • cbs-sports`) refreshes the source daily from 05:20 Europe/Berlin and supports manual `workflow_dispatch` runs.
 
 Stored source area:
 
-`fantasy-management/sources/external-rankings/projections/cbs-sports/`
+`data-source/market/projection/cbs-sports/` (normalized snapshots) and `data-source/providers/cbs-sports/` (latest raw HTML and source documentation)
 
 Active ranking IDs:
 
@@ -462,16 +471,16 @@ The audited public Projection area also exposes DST projections. DST remains out
 Refresh directly with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_cbs_sports_kicker_projections.py --skip-unchanged
-python fantasy-management/_ai/scripts/fetch_cbs_sports_offense_projections.py --skip-unchanged
+python -m tools.external_source.cbs_sports_kicker --skip-unchanged
+python -m tools.external_source.cbs_sports_offense --skip-unchanged
 ```
 
 Canonical source documentation:
 
 - `fantasy-management/sources/external-rankings/projections/README.md`
-- `fantasy-management/sources/external-rankings/projections/cbs-sports/README.md`
-- `fantasy-management/sources/external-rankings/projections/cbs-sports/SOURCE_AUDIT.md`
-- `fantasy-management/sources/external-rankings/projections/cbs-sports/analysis-metadata.json`
+- `data-source/providers/cbs-sports/README.md`
+- `data-source/providers/cbs-sports/SOURCE_AUDIT.md`
+- `data-source/providers/cbs-sports/analysis-metadata.json`
 
 Operational rules:
 
@@ -493,7 +502,7 @@ Sleeper Trending Players is the active automated external roster-activity signal
 
 Stored source area:
 
-`fantasy-management/sources/external-signals/roster-activity/sleeper/`
+`data-source/market/roster-activity/sleeper/` (normalized `latest.json`) and `data-source/providers/sleeper/trending/` (raw evidence and documentation). The freshness heartbeat is `data-source/market/_status/sleeper.json`.
 
 Default signal configuration:
 
@@ -506,16 +515,16 @@ Default signal configuration:
 Refresh both activity types with:
 
 ```bash
-python fantasy-management/_ai/scripts/fetch_sleeper_trending.py
+python -m tools.external_source.sleeper_trending
 ```
 
 The first successful run creates `raw-latest.json` and `latest.json` as a silent baseline. Later compatible runs compare source membership, ranks and counts with the previous successful state.
 
 Canonical source documentation:
 
-- `fantasy-management/sources/external-signals/roster-activity/sleeper/README.md`
-- `fantasy-management/sources/external-signals/roster-activity/sleeper/SOURCE_AUDIT.md`
-- `fantasy-management/sources/external-signals/roster-activity/sleeper/analysis-metadata.json`
+- `data-source/providers/sleeper/trending/README.md`
+- `data-source/providers/sleeper/trending/SOURCE_AUDIT.md`
+- `data-source/providers/sleeper/trending/analysis-metadata.json`
 
 Operational rules:
 

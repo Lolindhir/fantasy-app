@@ -1,3 +1,4 @@
+Import-Module "$PSScriptRoot\..\general\SleeperPlayerIdUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\LineupRepairabilityUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\LineupRepairabilityEvidenceUtils.psm1" -ErrorAction Stop -Force
 
@@ -24,11 +25,7 @@ function Get-LrdCollection {
 
 function ConvertTo-LrdPlayerID {
     param([AllowNull()][object]$Value)
-
-    if ($null -eq $Value) { return $null }
-    $text = ([string]$Value).Trim()
-    if ([string]::IsNullOrWhiteSpace($text) -or $text -eq '0') { return $null }
-    return $text
+    return ConvertTo-SleeperPlayerID -Value $Value
 }
 
 function New-LrdRepairability {
@@ -152,7 +149,7 @@ function Add-LineupRepairabilityDecisionFacts {
                 if ($problems.ContainsKey($slotID)) {
                     $resolvedProblem = if (
                         $problems[$slotID] -eq 'STARTER_UNAVAILABLE' -and
-                        [string](Get-LrdValue -Object $slot -Names @('State')) -ne 'unlocked'
+                        @('locked-active','completed') -contains [string](Get-LrdValue -Object $slot -Names @('State'))
                     ) { $lockedUnavailable } else { $unknown }
                     $slot.Repairability = New-LrdRepairability -ProblemCode $problems[$slotID] -Resolved $resolvedProblem
                 }
@@ -178,7 +175,10 @@ function Add-LineupRepairabilityDecisionFacts {
                 else {
                     'unknown'
                 }
-                $mutable = $kind -eq 'bye' -or $state -eq 'unlocked'
+                $mutable = $kind -eq 'bye' -or $state -eq 'unlocked' -or (
+                    $problems[$slotID] -eq 'STARTER_UNAVAILABLE' -and
+                    @('locked-active','completed') -notcontains $state
+                )
             }
 
             if ($mutable) {
@@ -271,7 +271,7 @@ function Add-LineupRepairabilityDecisionFacts {
             if ($problems.ContainsKey($slotID)) {
                 $resolvedProblem = if (
                     $problems[$slotID] -eq 'STARTER_UNAVAILABLE' -and
-                    [string](Get-LrdValue -Object $slot -Names @('State')) -ne 'unlocked'
+                    @('locked-active','completed') -contains [string](Get-LrdValue -Object $slot -Names @('State'))
                 ) { $lockedUnavailable } else { $resolved }
                 $slot.Repairability = New-LrdRepairability -ProblemCode $problems[$slotID] -Resolved $resolvedProblem
             }

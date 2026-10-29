@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Setup Node.js
@@ -25,10 +25,43 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Rebuild and publish Transaction data
+      - name: Rebuild and publish historical League Derived and Transaction data
         run: >-
           python3 tools/rebuild_and_publish.py
           --scope transactions
           --path public/data
+          --path data-derived/league-transactions
+          --path data-derived/league-drafts
           --
-          pwsh ./public/requests/RequestTransactions.ps1
+          bash -euo pipefail -c
+          'mkdir -p "$RUNNER_TEMP/derived-summary" &&
+           rm -f "$RUNNER_TEMP"/derived-summary/*.json &&
+           python3 tools/derived_data.py materialize --product league-transactions | tee "$RUNNER_TEMP/derived-summary/league-transactions.json" &&
+           python3 tools/derived_data.py materialize --product league-drafts | tee "$RUNNER_TEMP/derived-summary/league-drafts.json" &&
+           python3 tools/league_history_app_publish.py write --fail-on-error &&
+           python3 tools/schedule_archive.py write &&
+           pwsh ./public/requests/RequestPastSeasonsIndex.ps1'
+
+      - name: Summarize Derived products
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"]) / "derived-summary"
+          print("## Shared Derived products")
+          print()
+          print("| Product | League | Seasons checked | Changed | Status |")
+          print("|---|---|---|---|---|")
+          for product in ("league-transactions", "league-drafts"):
+              path = root / f"{product}.json"
+              try:
+                  results = json.loads(path.read_text(encoding="utf-8"))
+              except (OSError, ValueError):
+                  print(f"| {product} | - | - | - | blocked (no result, see job log) |")
+                  continue
+              for result in results:
+                  seasons = result.get("Seasons", [])
+                  changed = sum(season.get("Written", 0) for season in seasons)
+                  print(f"| {product} | {result.get('CanonicalLeagueID')} | {len(seasons)} | {changed} | {'changed' if changed else 'unchanged'} |")
+          PY

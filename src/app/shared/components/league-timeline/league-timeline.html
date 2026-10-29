@@ -71,18 +71,68 @@
         </ng-container>
 
         <ng-template #passiveOperational>
-          <div
-            class="league-timeline-operational-item"
-            [class.league-timeline-operational-item--unavailable]="item.kind === 'lineup-unavailable'"
-            [ngClass]="item.tone ? 'league-timeline-tone--' + item.tone : null"
-          >
-            <span class="league-timeline-operational-heading">
-              <span aria-hidden="true">{{ item.icon }}</span>
-              <span>{{ item.label }}</span>
-            </span>
-            <strong class="league-timeline-operational-value">{{ item.value }}</strong>
-            <span *ngIf="item.detail" class="league-timeline-operational-detail">{{ item.detail }}</span>
-          </div>
+          <ng-container *ngIf="item.kind === 'waiver'; else staticOperational">
+            <button
+              type="button"
+              class="league-timeline-operational-item league-timeline-operational-item--interactive league-timeline-operational-item--waiver"
+              [attr.aria-label]="item.label + ': ' + item.value + '. Open Waiver priority'"
+              (click)="openWaiverPriority(waiverPriorityDialog)"
+            >
+              <span class="league-timeline-operational-heading">
+                <span aria-hidden="true">{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+              </span>
+              <strong class="league-timeline-operational-value">{{ item.value }}</strong>
+              <span *ngIf="item.detail" class="league-timeline-operational-detail">{{ item.detail }}</span>
+              <span class="league-timeline-affordance" aria-hidden="true">›</span>
+            </button>
+
+            <ng-template #waiverPriorityDialog>
+              <section class="waiver-priority-dialog">
+                <header class="waiver-priority-header">
+                  <div>
+                    <div class="waiver-priority-eyebrow">Waiver Wire</div>
+                    <h2 class="waiver-priority-title">Waiver priority</h2>
+                  </div>
+                  <button type="button" class="waiver-priority-close" mat-dialog-close aria-label="Close dialog">&times;</button>
+                </header>
+                <ol class="waiver-priority-list" aria-label="Current waiver priority order">
+                  <li *ngFor="let team of waiverPriorityTeams; trackBy: trackWaiverTeam" class="waiver-priority-row">
+                    <span class="waiver-priority-position">{{ team.WaiverPosition }}</span>
+                    <span class="waiver-priority-team-copy">
+                      <app-team-identity
+                        [team]="team"
+                        [elements]="waiverTeamIdentityElements"
+                        size="small"
+                        [interactive]="false"
+                      />
+                      <span class="waiver-priority-last-pick">
+                        <ng-container *ngIf="lastWaiverPickAt[team.TeamID] as lastPick; else noWaiverPick">
+                          Last waiver pick · {{ lastPick | date:'dd.MM.yyyy':'UTC' }}
+                        </ng-container>
+                        <ng-template #noWaiverPick>No waiver pick this season</ng-template>
+                      </span>
+                    </span>
+                  </li>
+                </ol>
+              </section>
+            </ng-template>
+          </ng-container>
+
+          <ng-template #staticOperational>
+            <div
+              class="league-timeline-operational-item"
+              [class.league-timeline-operational-item--unavailable]="item.kind === 'lineup-unavailable'"
+              [ngClass]="item.tone ? 'league-timeline-tone--' + item.tone : null"
+            >
+              <span class="league-timeline-operational-heading">
+                <span aria-hidden="true">{{ item.icon }}</span>
+                <span>{{ item.label }}</span>
+              </span>
+              <strong class="league-timeline-operational-value">{{ item.value }}</strong>
+              <span *ngIf="item.detail" class="league-timeline-operational-detail">{{ item.detail }}</span>
+            </div>
+          </ng-template>
         </ng-template>
       </ng-container>
     </div>

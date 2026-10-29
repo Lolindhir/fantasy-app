@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "registrySchemaVersion": 3,
+  "dataset": "nflverse.player-game-long-gains",
+  "provider": "nflverse",
+  "upstream": "nflverse/nflverse-data",
+  "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz",
+  "sourceFormat": "json",
+  "sourceMode": "season-partitioned",
+  "availabilityStatus": "available",
+  "kind": "player-game-long-gain-evidence",
+  "refreshPolicy": "current-season",
+  "retentionPolicy": "permanent-by-season",
+  "lifecycle": {
+    "class": "seasonal-finalizable",
+    "partitionKey": "season",
+    "finalization": "freeze-prior-seasons",
+    "repairPolicy": "explicit-force"
+  },
+  "license": "CC BY 4.0",
+  "attribution": "nflverse play-by-play data",
+  "sourceProjection": {
+    "id": "nflverse-player-game-long-gains",
+    "version": 1,
+    "upstreamFormat": "csv.gz"
+  },
+  "partition": {
+    "season": 2026
+  },
+  "retrievedAtUtc": "2026-10-28T03:07:04Z",
+  "contentHashSha256": "1de7caa15b2683097dc4c55a601dbee65eee5fb59f4aca0ddbde982e173e5ef2",
+  "rowCount": 2383,
+  "columns": [
+    "gain_type",
+    "game_id",
+    "play_id",
+    "player_id",
+    "season",
+    "season_type",
+    "team",
+    "week",
+    "yards"
+  ],
+  "upstreamContentHashSha256": "30f31f1faf184be5a3014395c6830ed81ac5f60a03790e3e4a849dc020a70396",
+  "upstreamByteSize": 7359431,
+  "projectionStats": {
+    "sourceRowCount": 18738,
+    "gameCount": 107,
+    "projectedRowCount": 2383
+  }
+}

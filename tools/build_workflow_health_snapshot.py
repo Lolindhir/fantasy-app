@@ -7,11 +7,15 @@ import argparse
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+import random
+import sys
+import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from zoneinfo import ZoneInfo
 
 
 JsonDict = dict[str, Any]
@@ -28,7 +32,31 @@ def iso_time(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def github_getter(repository: str, token: str) -> ApiGet:
+TRANSIENT_HTTP_STATUSES = frozenset({429, 500, 502, 503, 504})
+DEFAULT_RETRY_DELAYS_SECONDS = (2.0, 5.0, 10.0)
+MAX_RETRY_AFTER_SECONDS = 30.0
+JITTER_MAX_SECONDS = 1.0
+
+
+def retry_after_seconds(headers: Any) -> float:
+    try:
+        value = float(headers.get("Retry-After")) if headers is not None else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+    return min(max(value, 0.0), MAX_RETRY_AFTER_SECONDS)
+
+
+def github_getter(
+    repository: str,
+    token: str,
+    *,
+    opener: Callable[..., Any] = urlopen,
+    sleep: Callable[[float], None] = time.sleep,
+    jitter: Callable[[], float] = lambda: random.uniform(0.0, JITTER_MAX_SECONDS),
+    retry_delays: tuple[float, ...] = DEFAULT_RETRY_DELAYS_SECONDS,
+) -> ApiGet:
+    """Read-only GitHub API getter. Transient failures (5xx, 429, network aborts, timeouts) are retried with
+    backoff; 401/403/404/422 and other client errors fail immediately."""
     base = f"https://api.github.com/repos/{repository}"
 
     def get(path: str) -> JsonDict:
@@ -41,14 +69,31 @@ def github_getter(repository: str, token: str) -> ApiGet:
                 "User-Agent": "fantasy-app-workflow-health-snapshot",
             },
         )
-        try:
-            with urlopen(request, timeout=30) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"GitHub API {exc.code} for {path}: {body}") from exc
-        except URLError as exc:
-            raise RuntimeError(f"GitHub API request failed for {path}: {exc}") from exc
+        for attempt in range(len(retry_delays) + 1):
+            wait = 0.0
+            try:
+                with opener(request, timeout=30) as response:
+                    return json.loads(response.read().decode("utf-8"))
+            except HTTPError as exc:
+                body = exc.read().decode("utf-8", errors="replace")
+                error = RuntimeError(f"GitHub API {exc.code} for {path}: {body}")
+                if exc.code not in TRANSIENT_HTTP_STATUSES or attempt >= len(retry_delays):
+                    raise error from exc
+                reason = f"HTTP {exc.code}"
+                wait = retry_after_seconds(exc.headers)
+            except (URLError, TimeoutError, ConnectionError) as exc:
+                error = RuntimeError(f"GitHub API request failed for {path}: {exc}")
+                if attempt >= len(retry_delays):
+                    raise error from exc
+                reason = type(exc).__name__
+            delay = max(retry_delays[attempt], wait) + jitter()
+            print(
+                f"::warning::GitHub API read {path} failed transiently ({reason}); "
+                f"retrying in {delay:.1f} s (attempt {attempt + 2}/{len(retry_delays) + 1}).",
+                file=sys.stderr,
+            )
+            sleep(delay)
+        raise AssertionError("unreachable")  # pragma: no cover
 
     return get
 
@@ -77,6 +122,108 @@ def workflow_files(root: Path) -> set[str]:
 def incident_key(workflow_path: str, incident_type: str, onset: str) -> str:
     raw = f"{workflow_path}|{incident_type}|{onset}".encode("utf-8")
     return hashlib.sha256(raw).hexdigest()[:24]
+
+
+def _cron_field(spec: str, low: int, high: int) -> set[int]:
+    values: set[int] = set()
+    for part in spec.split(","):
+        base, _, step_text = part.partition("/")
+        step = int(step_text) if step_text else 1
+        if base == "*":
+            start, end = low, high
+        elif "-" in base:
+            first, last = base.split("-", 1)
+            start, end = int(first), int(last)
+        else:
+            start = int(base)
+            end = high if step_text else start
+        values.update(range(start, end + 1, step))
+    return values
+
+
+def parse_cron(expression: str) -> tuple[set[int], set[int], set[int], set[int], set[int], bool, bool]:
+    fields = expression.split()
+    if len(fields) != 5:
+        raise ValueError(f"Unsupported cron expression: {expression!r}")
+    minutes = _cron_field(fields[0], 0, 59)
+    hours = _cron_field(fields[1], 0, 23)
+    days = _cron_field(fields[2], 1, 31)
+    months = _cron_field(fields[3], 1, 12)
+    weekdays = {value % 7 for value in _cron_field(fields[4], 0, 7)}
+    return minutes, hours, days, months, weekdays, fields[2] != "*", fields[4] != "*"
+
+
+def count_cron_slots(expressions: list[str], timezone_name: str, start: datetime, end: datetime) -> int:
+    """Count distinct minutes in (start, end] matching any expression, evaluated in the target timezone."""
+    zone = ZoneInfo(timezone_name)
+    parsed = [parse_cron(item) for item in expressions]
+    count = 0
+    cursor = start.replace(second=0, microsecond=0) + timedelta(minutes=1)
+    while cursor <= end:
+        local = cursor.astimezone(zone)
+        weekday = (local.weekday() + 1) % 7
+        for minutes, hours, days, months, weekdays, day_restricted, weekday_restricted in parsed:
+            if local.minute not in minutes or local.hour not in hours or local.month not in months:
+                continue
+            if day_restricted and weekday_restricted:
+                day_ok = local.day in days or weekday in weekdays
+            else:
+                day_ok = local.day in days and weekday in weekdays
+            if day_ok:
+                count += 1
+                break
+        cursor += timedelta(minutes=1)
+    return count
+
+
+def load_scheduler_targets(root: Path, config_path: str) -> dict[str, JsonDict]:
+    path = root / config_path
+    if not path.is_file():
+        return {}
+    config = json.loads(path.read_text(encoding="utf-8"))
+    return {item["path"]: item for item in config.get("targets", []) if item.get("path")}
+
+
+def evaluate_run_volume(target: JsonDict, runs: list[JsonDict], settings: JsonDict, evaluation: JsonDict, now: datetime) -> JsonDict | None:
+    """Compare scheduler-dispatched runs of the last window with the planned slots (informational, never paging)."""
+    window_hours = int(settings.get("windowHours", 24))
+    factor = float(settings.get("warningFactor", 2))
+    offset = int(settings.get("warningOffset", 2))
+    cancelled_min = int(settings.get("cancelledWarningMinimum", 5))
+    start = now - timedelta(hours=window_hours)
+    default_branch = evaluation.get("defaultBranch", "main")
+
+    observed = 0
+    cancelled = 0
+    for item in runs:
+        if item.get("event") != "repository_dispatch":
+            continue
+        head_branch = item.get("head_branch")
+        if head_branch and head_branch != default_branch:
+            continue
+        created = parse_time(item.get("created_at"))
+        if not created or created < start:
+            continue
+        observed += 1
+        if item.get("conclusion") == "cancelled":
+            cancelled += 1
+
+    # A game-window target is bounded by its dense cron; the idle cron is never denser.
+    expected = count_cron_slots(target.get("cron") or [], target.get("timezone", "UTC"), start, now)
+    ratio = round(observed / expected, 2) if expected else None
+    warning = observed > factor * expected + offset
+    cancelled_warning = cancelled >= cancelled_min and cancelled > expected
+    return {
+        "windowHours": window_hours,
+        "observed24h": observed,
+        "expected24h": expected,
+        "ratio": ratio,
+        "warning": warning,
+        "cancelled24h": cancelled,
+        "cancelledWarning": cancelled_warning,
+        "warningThreshold": factor * expected + offset,
+        "truncated": len(runs) >= 100 and bool(runs) and (parse_time(runs[-1].get("created_at")) or now) >= start,
+    }
 
 
 def run_summary(run: JsonDict | None) -> JsonDict | None:
@@ -258,18 +405,25 @@ def evaluate_workflow(
                     })
                     result["incidentKeys"].append(key)
         else:
-            onset = "no-success-in-run-window"
-            key = incident_key(path, "missing-success-evidence", onset)
-            incidents.append({
-                "incidentKey": key,
-                "type": "missing-success-evidence",
-                "workflow": path,
-                "category": entry.get("category"),
-                "onset": onset,
-                "staleAfterMinutes": stale_after,
-                "details": "No successful relevant completed run was found in the configured run window.",
-            })
-            result["incidentKeys"].append(key)
+            # A newly activated weekly audit has no success before the first
+            # scheduled due slot; don't page until that slot can finish.
+            first_due = parse_time(entry.get("firstDueAt"))
+            grace = int(entry.get("firstDueGraceMinutes", 0))
+            if first_due is None or now >= first_due + timedelta(minutes=grace):
+                onset = "no-success-in-run-window"
+                key = incident_key(path, "missing-success-evidence", onset)
+                incidents.append({
+                    "incidentKey": key,
+                    "type": "missing-success-evidence",
+                    "workflow": path,
+                    "category": entry.get("category"),
+                    "onset": onset,
+                    "staleAfterMinutes": stale_after,
+                    "details": "No successful relevant completed run was found in the configured run window.",
+                })
+                result["incidentKeys"].append(key)
+            else:
+                result["awaitingFirstScheduledAudit"] = True
 
     if incidents:
         result["status"] = "incident"
@@ -324,6 +478,13 @@ def build_snapshot(
 
     incidents: list[JsonDict] = []
     drift: list[JsonDict] = []
+    warnings: list[JsonDict] = []
+    volume_settings = evaluation.get("runVolume") or {}
+    scheduler_targets = (
+        load_scheduler_targets(root, volume_settings["scheduleConfig"])
+        if volume_settings.get("scheduleConfig")
+        else {}
+    )
 
     for path in sorted(local_files - configured_files):
         key = incident_key(path, "unclassified-workflow", path)
@@ -357,11 +518,34 @@ def build_snapshot(
 
         runs: list[JsonDict] = []
         if api_workflow.get("state") == "active" and (entry.get("relevantEvents") or []):
-            runs_data = api_get(f"/actions/workflows/{api_workflow['id']}/runs?per_page={run_limit}")
+            event_filter = entry.get("runListEvent")
+            if event_filter and event_filter not in (entry.get("relevantEvents") or []):
+                raise ValueError(f"Invalid runListEvent for {path}: {event_filter!r}")
+            query = f"/actions/workflows/{api_workflow['id']}/runs?per_page={run_limit}"
+            if event_filter:
+                from urllib.parse import quote
+                query += f"&event={quote(event_filter, safe='')}"
+            runs_data = api_get(query)
             runs = runs_data.get("workflow_runs", [])
         result, workflow_incidents = evaluate_workflow(path, entry, category, api_workflow, runs, evaluation, now)
         workflow_results[path] = result
         incidents.extend(workflow_incidents)
+
+        target = scheduler_targets.get(path)
+        if target and runs and api_workflow.get("state") == "active":
+            volume = evaluate_run_volume(target, runs, volume_settings, evaluation, now)
+            if volume:
+                result["runVolume"] = volume
+                for kind, flag in (("multiple-starts", "warning"), ("many-cancelled-runs", "cancelledWarning")):
+                    if volume[flag]:
+                        warnings.append({
+                            "type": kind,
+                            "workflow": path,
+                            "targetId": target.get("id"),
+                            "observed24h": volume["observed24h"],
+                            "expected24h": volume["expected24h"],
+                            "cancelled24h": volume["cancelled24h"],
+                        })
 
     incidents = drift + incidents
     renotify = int((evaluation.get("notificationDeduplication") or {}).get("reNotifyAfterHours", 24))
@@ -377,6 +561,7 @@ def build_snapshot(
         "overall": "incident" if incidents else "healthy",
         "configurationDrift": [item for item in incidents if item.get("type") in {"unclassified-workflow", "configured-workflow-missing", "workflow-not-in-actions-api", "unknown-category"}],
         "incidents": incidents,
+        "warnings": warnings,
         "workflows": workflow_results,
     }
 

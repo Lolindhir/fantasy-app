@@ -1,19 +1,6 @@
 name: APP • Data • Standings
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/update-standings.yml"
-      - "public/requests/RequestStandings.ps1"
-      - "public/requests/utils/league/CanonicalStandingUtils.psm1"
-      - "public/requests/utils/league/StandingUtils.psm1"
-      - "source-data/leagues/nfl-reise/seasons/*/league.json"
-      - "source-data/leagues/nfl-reise/seasons/*/members.json"
-      - "source-data/leagues/nfl-reise/seasons/*/rosters.json"
-      - "source-data/leagues/nfl-reise/seasons/*/winners-bracket.json"
-      - "source-data/leagues/nfl-reise/seasons/*/losers-bracket.json"
   repository_dispatch:
     types:
       - scheduler-update-standings
@@ -29,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Setup Node.js
@@ -43,5 +30,67 @@ jobs:
           python3 tools/rebuild_and_publish.py
           --scope standings
           --path public/data
+          --path data-derived/league-standings
           --
-          pwsh ./public/requests/RequestStandings.ps1
+          python3 tools/league_standings_app_publish.py write
+
+  # Run the same weekly scheduler tick as Standings, but in a separate job
+  # so historical PWF failures never suppress the original App Standings build.
+  historical_pwf:
+    name: Weekly finalized PlayerWeekFantasy
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout latest repository inputs
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Rebuild and publish every finalized PlayerWeekFantasy partition
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope player-week-fantasy
+          --path data-derived/player-week-fantasy
+          --
+          python3 tools/historical_pwf_batch.py --write
+
+      - name: Describe weekly PWF publication scope
+        if: ${{ always() }}
+        run: |
+          echo "## Historical PlayerWeekFantasy" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Scope: all registered league manifests and canonically scored, NFL-finalized weeks" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Output: data-derived/player-week-fantasy only; live App generator untouched" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Generator: source-only preflight of every candidate before any changed partition is written" >> "$GITHUB_STEP_SUMMARY"
+          echo "- On failure, no historical PWF commit is published" >> "$GITHUB_STEP_SUMMARY"
+
+  # Official Sleeper-scored awards are independent of the NFL/PWF scoring
+  # publisher: a missing or divergent NFL stat cannot suppress league awards.
+  historical_twp:
+    name: Weekly finalized TeamWeekPerformance
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout latest canonical league inputs
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Rebuild and publish every finalized TeamWeekPerformance partition
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope team-week-performance
+          --path data-derived/team-week-performance
+          --
+          python3 tools/team_week_performance_materialize.py --all-finalized --write
+
+      - name: Describe weekly TWP publication scope
+        if: ${{ always() }}
+        run: |
+          echo "## Historical TeamWeekPerformance" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Dependency: finalized canonical Sleeper league facts; NFL/PWF parity diagnostic only" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Scope: all canonically scored, NFL-finalized league weeks; no App/Source writes" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Output: data-derived/team-week-performance only; live League producer untouched" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Gate: strict league identity, roster, starter, lineup and finality preflight; PWF disagreement does not veto official awards" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Publisher: rebuild from latest main, scoped push, semantic no-op" >> "$GITHUB_STEP_SUMMARY"

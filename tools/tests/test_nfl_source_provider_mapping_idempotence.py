@@ -13,7 +13,7 @@ from tools.nfl_source_data_lib.provider_mappings import build_provider_mapping_p
 class ProviderMappingIdempotenceTests(unittest.TestCase):
     @staticmethod
     def _write_mapping_payload(root: Path, mappings: list[dict[str, object]]) -> Path:
-        path = root / "source-data/nfl/identities/provider-mappings.json"
+        path = root / "data-source/nfl/identities/provider-mappings.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps(

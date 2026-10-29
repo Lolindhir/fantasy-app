@@ -1,3 +1,4 @@
+Import-Module "$PSScriptRoot\..\general\SleeperPlayerIdUtils.psm1" -ErrorAction Stop -Force
 function Get-FrvPropertyValue {
     param([AllowNull()][object]$Object, [Parameter(Mandatory = $true)][string[]]$Names)
     if ($null -eq $Object) { return $null }
@@ -16,10 +17,7 @@ function Get-FrvCollection {
 
 function ConvertTo-FrvPlayerID {
     param([AllowNull()][object]$Value)
-    if ($null -eq $Value) { return $null }
-    $text = ([string]$Value).Trim()
-    if ([string]::IsNullOrWhiteSpace($text) -or $text -eq '0') { return $null }
-    return $text
+    return ConvertTo-SleeperPlayerID -Value $Value
 }
 
 function ConvertTo-FrvUtcString {
@@ -86,7 +84,9 @@ function Get-FrvGameState {
         [Parameter(Mandatory = $true)][DateTimeOffset]$AsOfUtc
     )
 
-    if ($null -eq $LockFact -or [string](Get-FrvPropertyValue -Object $LockFact -Names @('Kind')) -ne 'scheduled') {
+    $lockKind = if ($null -eq $LockFact) { $null } else { [string](Get-FrvPropertyValue -Object $LockFact -Names @('Kind')) }
+    if ($lockKind -eq 'bye') { return 'bye' }
+    if ($lockKind -ne 'scheduled') {
         return 'unknown'
     }
     if (-not [string]::IsNullOrWhiteSpace($GameStatus) -and $GameStatus -match '^Final') {

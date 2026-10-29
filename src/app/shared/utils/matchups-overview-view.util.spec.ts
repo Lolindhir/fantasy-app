@@ -202,6 +202,28 @@ describe('matchups overview view utility', () => {
     expect(view?.groups[0].segments.length).toBe(10);
   });
 
+  it('keeps an OUT starter red even when slot and repairability evidence are unknown', () => {
+    const out = slot('WR-1', 'unknown', {
+      ScoringAvailability: { State: 'out', ProviderStatus: 'OUT', Source: 'ESPN' } as never,
+      Repairability: {
+        ProblemCode: 'STARTER_UNAVAILABLE' as never, State: 'unknown' as const, Path: null,
+        ReasonCode: 'LINEUP_EVIDENCE_UNKNOWN' as const, InternalCandidateCount: 0, ExternalCandidateCount: 0
+      }
+    });
+    const progress = buildMatchupStarterProgress(team([out]), 'next', 'left');
+    expect(progress?.groups[0].kind).toBe('repairable');
+    expect(progress?.groups[0].outline).toBe('repairable');
+  });
+
+  it('shows a bye slot as a red problem while unknown evidence stays unknown', () => {
+    const progress = buildMatchupStarterProgress(
+      team([slot('QB-1', 'bye'), slot('RB-2', 'unknown')]), 'next', 'left'
+    );
+    expect(progress?.groups.map(group => group.kind)).toEqual(['repairable', 'unknown']);
+    expect(progress?.groups[0].outline).toBe('repairable');
+    expect(progress?.groups[1].outline).toBe('unknown');
+  });
+
   it('renders completed, live, next, later and problem semantics concurrently with precedence intact', () => {
     const repairable = {
       ProblemCode: 'OPEN_STARTER_SLOT' as const,
@@ -239,14 +261,48 @@ describe('matchups overview view utility', () => {
     const right = buildMatchupStarterProgress(team(slots), 'next', 'right');
 
     expect(left?.groups.map(group => group.kind)).toEqual([
-      'irreparable', 'final', 'locked', 'next', 'future', 'repairable', 'unknown'
+      'final', 'locked', 'next', 'future', 'repairable', 'irreparable', 'unknown'
     ]);
     expect(right?.groups.map(group => group.kind)).toEqual([
-      'unknown', 'repairable', 'future', 'next', 'locked', 'final', 'irreparable'
+      'unknown', 'irreparable', 'repairable', 'future', 'next', 'locked', 'final'
     ]);
     expect(left?.groups.find(group => group.kind === 'next')?.outline).toBe('next');
     expect(left?.groups.find(group => group.kind === 'repairable')?.outline).toBe('repairable');
+    expect(left?.groups.find(group => group.kind === 'irreparable')?.outline).toBe('repairable');
     expect(left?.groups.find(group => group.kind === 'unknown')?.outline).toBe('unknown');
+  });
+
+  it('marks questionable starters with their own outline, separate from unknown review states', () => {
+    const uncertain = { State: 'uncertain' as const, ProviderStatus: 'Questionable', Source: 'ESPN', ObservedAtUtc: null };
+    const slots = [
+      slot('WR-1', 'unlocked', { DecisionWindowID: 'next', ScoringAvailability: uncertain }),
+      slot('WR-2', 'unlocked', { DecisionWindowID: 'next' }),
+      slot('RB-3', 'locked-active', { ScoringAvailability: uncertain }),
+      slot('TE-4', 'unknown', { ScoringAvailability: uncertain })
+    ];
+
+    const view = buildMatchupStarterProgress(team(slots), 'next', 'left');
+
+    expect(view?.groups.map(group => group.kind)).toEqual(['locked', 'next', 'questionable', 'unknown']);
+    expect(view?.groups.find(group => group.kind === 'questionable')?.outline).toBe('questionable');
+    expect(view?.groups.find(group => group.kind === 'questionable')?.segments.map(item => item.slotID)).toEqual(['WR-1']);
+  });
+
+  it('orders started starters red, green, blue outermost and puts open problems innermost', () => {
+    const uncertain = { State: 'uncertain' as const, ProviderStatus: 'Questionable', Source: 'ESPN', ObservedAtUtc: null };
+    const slots = [
+      slot('WR-1', 'unlocked', { DecisionWindowID: 'later', ScoringAvailability: uncertain }),
+      slot('WR-2', 'unlocked', { DecisionWindowID: 'next' }),
+      slot('QB-3', 'completed'),
+      slot('RB-4', 'unlocked', { DecisionWindowID: 'later' }),
+      slot('TE-5', 'locked-active', { Repairability: { ProblemCode: 'OPEN_STARTER_SLOT', State: 'irreparable', Path: null, ReasonCode: 'NO_LEGAL_REPAIR_PATH', InternalCandidateCount: 0, ExternalCandidateCount: 0 } })
+    ];
+
+    const left = buildMatchupStarterProgress(team(slots), 'next', 'left');
+    const right = buildMatchupStarterProgress(team(slots), 'next', 'right');
+
+    expect(left?.groups.map(group => group.kind)).toEqual(['irreparable', 'final', 'next', 'future', 'questionable']);
+    expect(right?.groups.map(group => group.kind)).toEqual(['questionable', 'future', 'next', 'final', 'irreparable']);
   });
 
   it('keeps missing lifecycle states out of the group list so styling adds only one inter-group gap', () => {

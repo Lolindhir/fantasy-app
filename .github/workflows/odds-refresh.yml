@@ -1,0 +1,92 @@
+name: Data • NFL Odds Intelligent Refresh
+
+on:
+  repository_dispatch:
+    types:
+      - scheduler-nfl-odds-refresh
+  workflow_dispatch:
+
+# One active observer/producer chain at a time. No cancellation of Source writes.
+concurrency:
+  group: nfl-odds-intelligent-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  observe:
+    name: Observe market lines and persist isolated state
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      season: ${{ steps.observe.outputs.season }}
+      publish: ${{ steps.observe.outputs.publish }}
+    steps:
+      - name: Checkout canonical main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Observe and persist technical CAS state (never main)
+        id: observe
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          season="$(python3 -c 'from datetime import datetime; from zoneinfo import ZoneInfo; now=datetime.now(ZoneInfo("America/New_York")); print(now.year - int(now.month <= 2))')"
+          echo "season=$season" >> "$GITHUB_OUTPUT"
+          gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/odds-refresh-state" >/dev/null
+          state_file="$RUNNER_TEMP/odds-state.json"
+          plan_file="$RUNNER_TEMP/odds-plan.json"
+          old_file="$RUNNER_TEMP/odds-prior.json"
+          args=()
+          bootstrap=()
+          if gh api "repos/${GITHUB_REPOSITORY}/contents/odds-buffer/${season}.json?ref=odds-refresh-state" --jq '.content' > "$RUNNER_TEMP/odds-base64.txt" 2>"$RUNNER_TEMP/odds-read-error.txt"; then
+            base64 --decode "$RUNNER_TEMP/odds-base64.txt" > "$old_file"
+            args+=(--state-input "$old_file")
+          elif grep -q "HTTP 404" "$RUNNER_TEMP/odds-read-error.txt"; then
+            bootstrap=(--bootstrap)
+          else
+            cat "$RUNNER_TEMP/odds-read-error.txt" >&2
+            exit 1
+          fi
+          python3 tools/odds_observation.py --repo-root . --season "$season" --fetch-registered-odds "${args[@]}" --write-state "$state_file" > "$plan_file"
+          # Always persist pending timers; unchanged state produces no git commit.
+          python3 tools/odds_state_publish.py --season "$season" --state "$state_file" "${bootstrap[@]}"
+          python3 - "$plan_file" "$GITHUB_OUTPUT" "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json, sys
+          from pathlib import Path
+          plan = json.loads(Path(sys.argv[1]).read_text())
+          changed = plan["RelevantNetChanges"]
+          due = len(plan["PublishableGameIDs"])
+          with open(sys.argv[2], "a", encoding="utf-8") as out:
+              out.write(f"publish={'true' if due else 'false'}\n")
+          with open(sys.argv[3], "a", encoding="utf-8") as summary:
+              summary.write("## Intelligent NFL Odds observation\n")
+              summary.write(f"- Season: {plan['Season']}\n- Semantic net changes: {changed}\n")
+              summary.write(f"- Publishable pregame GameIDs: {due}\n")
+              summary.write("- Technical state: isolated CAS branch; no-op if semantically identical\n")
+              summary.write("- Trigger fields: SpreadLine, TotalLine; prices ignored\n")
+          PY
+
+  publish_source:
+    name: Source-validated scoped Odds publication
+    needs: observe
+    if: ${{ needs.observe.outputs.publish == 'true' }}
+    uses: ./.github/workflows/sync-nfl-source-data.yml
+    with:
+      dataset: nflverse.schedule-odds
+      # Fixed upstream games.csv dataset: --season is valid only for partitioned datasets.
+      # Season is scoped solely by the observer and canonical materialization.
+      historical_backfill_limit: 0
+      force: false
+      materialization_scope: schedule-odds
+    secrets:
+      PAT_PUSH: ${{ secrets.PAT_PUSH }}

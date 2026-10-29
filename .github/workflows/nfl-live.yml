@@ -1,0 +1,110 @@
+name: APP • Pipeline • NFL Live
+
+# NFL live chain (Issue #946, step S3 of #471), woken by the scheduler target nfl-live
+# (game-window mode: dense cadence only around NFL games, sparse idle cadence otherwise):
+#   finality  canonical game finality (plus the schedule snapshot without odds)
+#   publish-schedule  Schedule.json, only when finality or the canonical schedule changed
+#   league    wake the League Live chain, only when finality changed
+# Player Availability keeps its own ten-minute target (sync-nfl-player-availability.yml).
+
+on:
+  repository_dispatch:
+    types:
+      - scheduler-nfl-live
+  workflow_dispatch:
+    inputs:
+      force_schedule:
+        description: "Publish Schedule.json even if finality and schedule did not change"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: nfl-live
+  cancel-in-progress: false
+
+jobs:
+  finality:
+    uses: ./.github/workflows/sync-nfl-source-data.yml
+    with:
+      dataset: nflverse.game-finality
+      historical_backfill_limit: 0
+      materialization_scope: game-finality
+    secrets: inherit
+
+  detect:
+    needs: finality
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    outputs:
+      finality_changed: ${{ steps.detect.outputs.finality_changed }}
+      schedule_changed: ${{ steps.detect.outputs.schedule_changed }}
+      run_schedule: ${{ steps.detect.outputs.run_schedule }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Detect changed NFL inputs
+        id: detect
+        env:
+          BASE: ${{ needs.finality.outputs.main_before_sync }}
+          FORCE: ${{ inputs.force_schedule }}
+        run: |
+          set -euo pipefail
+          finality=false
+          schedule=false
+          run=false
+          reason=""
+          if [[ "${FORCE:-false}" == "true" ]]; then
+            finality=true; schedule=true; run=true
+            reason="forced by workflow_dispatch input"
+          elif [[ -z "${BASE:-}" ]]; then
+            finality=true; schedule=true; run=true
+            reason="no base commit reported by the finality job; running conservatively"
+          elif ! git fetch --no-tags --depth=1 origin "$BASE"; then
+            finality=true; schedule=true; run=true
+            reason="base commit $BASE could not be fetched; running conservatively"
+          else
+            if [[ -n "$(git diff --name-only "$BASE" HEAD -- data-source/nfl/game-finality)" ]]; then finality=true; fi
+            if [[ -n "$(git diff --name-only "$BASE" HEAD -- data-source/nfl/schedules)" ]]; then schedule=true; fi
+            if [[ "$finality" == "true" || "$schedule" == "true" ]]; then run=true; fi
+            reason="finality_changed=$finality schedule_changed=$schedule since $BASE"
+          fi
+          {
+            echo "finality_changed=$finality"
+            echo "schedule_changed=$schedule"
+            echo "run_schedule=$run"
+          } >> "$GITHUB_OUTPUT"
+          echo "- NFL Live: schedule publication run=$run, league wake=$finality ($reason)" >> "$GITHUB_STEP_SUMMARY"
+
+  publish-schedule:
+    needs: detect
+    if: ${{ !cancelled() && needs.detect.outputs.run_schedule == 'true' }}
+    uses: ./.github/workflows/update-games.yml
+    secrets: inherit
+
+  league:
+    needs: [detect, publish-schedule]
+    if: ${{ !cancelled() && needs.detect.outputs.finality_changed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake the League Live chain
+        env:
+          GH_TOKEN: ${{ secrets.PAT_PUSH }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          curl -fsS -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${REPO}/dispatches" \
+            -d '{"event_type":"scheduler-league-live","client_payload":{"source":"nfl-live"}}'
+          echo "- League Live chain dispatched (finality changed)" >> "$GITHUB_STEP_SUMMARY"

@@ -3,15 +3,8 @@
   margin: 0 auto;
 }
 
-.podium {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 0.5rem;
-  margin: 1rem 0;
-}
-
 .rest {
+  width: min(352px, calc(100vw - 32px));
   margin: 1rem 0;
   display: flex;
   flex-direction: column;
@@ -20,116 +13,94 @@
 
 .team-row {
   display: grid;
-  grid-template-columns: 40px 1fr 40px;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
   align-items: center;
-  padding: 0.5rem 0.75rem;
+  column-gap: 0.6rem;
+  box-sizing: border-box;
+  height: 58px;
+  padding: 0 0.75rem;
   border-radius: 8px;
   background: linear-gradient(to right, #eff2f5, #e2e8f0);
 }
 
 .place {
-  font-size: 1.25rem;
-}
-
-.placement-icon {
-  display: block;
-  object-fit: contain;
-}
-
-.medal {
-  width: 2.75rem;
-  height: 2.75rem;
-}
-
-.cup {
-  width: 4rem;
-  height: 4rem;
-}
-
-.podium-item {
-  min-width: 80px;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: center;
-  border-radius: 8px 8px 0 0;
-  position: relative;
-  padding: 8px;
-}
-
-.first {
-  height: 130px;
-  background: linear-gradient(to top, #d4af37, #f7e27d);
-}
-
-.second {
-  height: 110px;
-  background: linear-gradient(to top, #c0c0c0, #e0e0e0);
-}
-
-.second .medal {
-  width: 3.25rem;
-  height: 3.25rem;
-}
-
-.third {
-  height: 90px;
-  background: linear-gradient(to top, #cd7f32, #e6a15c);
-}
-
-.team {
-  text-align: center;
-  padding: 0 4px;
-  margin-bottom: 4px;
-}
-
-.owner {
-  font-weight: bold;
-  font-size: large;
-  text-align: center;
-}
-
-.owner.runner-up {
-  padding-top: 0.65rem;
-}
-
-.owner.champ {
-  font-size: larger;
-  padding-top: 0.75rem;
-}
-
-.owner-awards {
-  font-size: smaller;
-}
-
-.result-awards {
-  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 1px;
-  min-height: 1em;
+  min-width: 0;
 }
 
-.result-award-icon {
-  width: 1.5em;
-  height: 1.5em;
-  object-fit: contain;
+.team-row__identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
 }
 
+.team-row__avatar-stack {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+}
 
-.honor-banner-preview {
+.team-row__primary-avatar {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
+  color: #2f3742;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.team-row__primary-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.team-row__secondary-avatar {
+  position: absolute;
+  right: -4px;
+  bottom: -3px;
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.96);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+}
+
+.team-row__secondary-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.team-row__name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  font-size: 0.96rem;
+  font-weight: 800;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.honor-podium {
   width: min(352px, calc(100vw - 32px));
   margin: 0.5rem auto 1rem;
-}
-
-.honor-banner-preview__label {
-  margin-bottom: 0.45rem;
-  color: rgba(15, 23, 42, 0.58);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-align: center;
-  text-transform: uppercase;
 }
 
 .honor-banners {
@@ -137,4 +108,29 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(0.3rem, 1.8vw, 0.5rem);
   align-items: start;
+}
+
+.team-row__achievement-badge {
+  position: absolute;
+  z-index: 2;
+  top: -6px;
+  right: -9px;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  background: #e8d5a9;
+  border: 1px solid #8e7541;
+  border-radius: 50%;
+}
+.team-row__achievement-badge img {
+  width: 21px;
+  height: 21px;
+  object-fit: contain;
+}
+.regular-season-achievement {
+  display: block;
+  box-sizing: border-box;
+  width: min(270px, calc(100vw - 32px));
+  margin: 1.15rem auto 1.25rem;
 }

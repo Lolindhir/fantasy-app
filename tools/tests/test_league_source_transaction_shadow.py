@@ -40,6 +40,7 @@ class TransactionCanonicalShadowTests(unittest.TestCase):
             ],
             "CanonicalLeagueRosterIDs": ["clr-b", "clr-a"],
             "CreatedAt": 1788949592892,
+            "StatusUpdatedAt": 1788953192892,
             "DraftPicks": [
                 {
                     "OriginalCanonicalLeagueRosterID": "clr-a",
@@ -70,6 +71,7 @@ class TransactionCanonicalShadowTests(unittest.TestCase):
         self.assertEqual(converted["Source"], "Sleeper")
         self.assertEqual(converted["Season"], "2026")
         self.assertEqual(converted["CreatedDate"], "2026-09-09")
+        self.assertEqual(converted["StatusUpdatedAt"], 1788953192892)
         self.assertEqual(converted["RosterIDs"], [1, 5])
         self.assertEqual(converted["Adds"], {"13414": 5})
         self.assertEqual(converted["Drops"], {"13414": 1})
@@ -206,7 +208,7 @@ class TransactionCanonicalShadowTests(unittest.TestCase):
     def test_repository_fixture_proves_week_partition_loading_without_hardcoded_ceiling(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            season_dir = root / "source-data" / "leagues" / "test-league" / "seasons" / "2026"
+            season_dir = root / "data-source" / "leagues" / "test-league" / "seasons" / "2026"
             transaction_dir = season_dir / "transactions"
             transaction_dir.mkdir(parents=True)
             (root / "public" / "data").mkdir(parents=True)
@@ -248,7 +250,9 @@ class TransactionCanonicalShadowTests(unittest.TestCase):
                 }
             ]
             (root / "public" / "data" / "Transactions.json").write_text(json.dumps(legacy), encoding="utf-8")
-            (root / "public" / "data" / "Transactions_Manual.json").write_text("[]", encoding="utf-8")
+            manual_dir = root / "data-meta" / "test-league"
+            manual_dir.mkdir(parents=True)
+            (manual_dir / "transactions-manual.json").write_text("[]", encoding="utf-8")
             report = build_repo_shadow_report(root, canonical_league_id="test-league", season=2026)
             self.assertTrue(report["StrictParity"])
             self.assertEqual(report["Counts"]["CanonicalAdapted"], 1)
@@ -262,13 +266,13 @@ class CurrentRepositoryTransactionShadowIntegrationTests(unittest.TestCase):
 
     def test_historical_nfl_reise_transactions_match_canonical_owned_fields(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
-        manual = load_json(repo_root / "public" / "data" / "Transactions_Manual.json")
+        manual = load_json(repo_root / "data-meta" / "nfl-reise" / "transactions-manual.json")
 
         for season in (2024, 2025):
             with self.subTest(season=season):
                 season_dir = (
                     repo_root
-                    / "source-data"
+                    / "data-source"
                     / "leagues"
                     / "nfl-reise"
                     / "seasons"

@@ -40,9 +40,77 @@ _EVENT_PLAYER_FIELDS = (
     "fumble_recovery_2_player_id",
 )
 
+PLAYER_GAME_LONG_GAINS_PROJECTION_ID = "nflverse-player-game-long-gains"
+PLAYER_GAME_LONG_GAINS_PROJECTION_VERSION = 1
+
+# One projected record per player and game and gain type: the provider play row with the
+# maximum yards (lowest play_id on ties). Games lists every game present in the upstream
+# play-by-play so that "no record" stays distinguishable from "game not published".
+PLAYER_GAME_LONG_GAINS_FIELDS = (
+    "season",
+    "season_type",
+    "week",
+    "game_id",
+    "gain_type",
+    "player_id",
+    "team",
+    "play_id",
+    "yards",
+)
+
+_LONG_GAINS_SOURCE_FIELDS = (
+    "season",
+    "season_type",
+    "week",
+    "game_id",
+    "play_id",
+    "home_team",
+    "away_team",
+    "posteam",
+    "two_point_attempt",
+    "complete_pass",
+    "rusher_player_id",
+    "rushing_yards",
+    "receiver_player_id",
+    "receiving_yards",
+)
+
+SCHEDULE_WITHOUT_ODDS_PROJECTION_ID = "nflverse-schedule-without-odds"
+SCHEDULE_WITHOUT_ODDS_PROJECTION_VERSION = 1
+SCHEDULE_ODDS_PROJECTION_ID = "nflverse-schedule-odds"
+SCHEDULE_ODDS_PROJECTION_VERSION = 1
+
+# Betting-line columns of the nflverse games.csv. They change continuously while the
+# remaining schedule columns (kickoff, teams, scores, venue) change rarely, so the raw
+# schedule snapshot and the odds snapshot are persisted as two independent datasets.
+SCHEDULE_ODDS_COLUMNS = (
+    "away_moneyline",
+    "home_moneyline",
+    "spread_line",
+    "away_spread_odds",
+    "home_spread_odds",
+    "total_line",
+    "under_odds",
+    "over_odds",
+)
+SCHEDULE_ODDS_KEY_COLUMN = "game_id"
+
 SUPPORTED_SOURCE_PROJECTIONS = {
     (SPECIAL_TEAMS_FUMBLE_PROJECTION_ID, SPECIAL_TEAMS_FUMBLE_PROJECTION_VERSION): "csv.gz",
+    (PLAYER_GAME_LONG_GAINS_PROJECTION_ID, PLAYER_GAME_LONG_GAINS_PROJECTION_VERSION): "csv.gz",
+    (SCHEDULE_WITHOUT_ODDS_PROJECTION_ID, SCHEDULE_WITHOUT_ODDS_PROJECTION_VERSION): "csv",
+    (SCHEDULE_ODDS_PROJECTION_ID, SCHEDULE_ODDS_PROJECTION_VERSION): "csv",
 }
+
+# Persisted format of a projection result; projections not listed here persist JSON.
+SOURCE_PROJECTION_OUTPUT_FORMATS = {
+    (SCHEDULE_WITHOUT_ODDS_PROJECTION_ID, SCHEDULE_WITHOUT_ODDS_PROJECTION_VERSION): "csv",
+    (SCHEDULE_ODDS_PROJECTION_ID, SCHEDULE_ODDS_PROJECTION_VERSION): "csv",
+}
+
+
+def projection_output_format(projection_id: str, projection_version: int) -> str:
+    return SOURCE_PROJECTION_OUTPUT_FORMATS.get((projection_id, projection_version), "json")
 
 
 def _is_one(value: Any) -> bool:
@@ -113,6 +181,159 @@ def project_special_teams_fumble_events(upstream_path: Path, output_path: Path) 
     }
 
 
+def _int_or_none(value: Any) -> int | None:
+    text = str(value if value is not None else "").strip()
+    if not text:
+        return None
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    return int(number) if number == int(number) else None
+
+
+def project_player_game_long_gains(upstream_path: Path, output_path: Path) -> dict[str, Any]:
+    best: dict[tuple[str, str, str], dict[str, Any]] = {}
+    games: dict[str, dict[str, str]] = {}
+    source_rows = 0
+    with gzip.open(upstream_path, "rt", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        missing = sorted(set(_LONG_GAINS_SOURCE_FIELDS) - set(reader.fieldnames or []))
+        if missing:
+            raise ValueError(
+                "nflverse PBP is missing fields required for player-game long-gains projection: "
+                + ", ".join(missing)
+            )
+        for row in reader:
+            source_rows += 1
+            game_id = (row.get("game_id") or "").strip()
+            if not game_id:
+                continue
+            games.setdefault(
+                game_id,
+                {
+                    "game_id": game_id,
+                    "season_type": (row.get("season_type") or "").strip(),
+                    "week": (row.get("week") or "").strip(),
+                    "home_team": (row.get("home_team") or "").strip(),
+                    "away_team": (row.get("away_team") or "").strip(),
+                },
+            )
+            # Two-point attempts are not regular plays from scrimmage for long-gain statistics.
+            if _is_one(row.get("two_point_attempt")):
+                continue
+            play_id = _int_or_none(row.get("play_id"))
+            if play_id is None:
+                continue
+            candidates = []
+            rusher = (row.get("rusher_player_id") or "").strip()
+            rushing_yards = _int_or_none(row.get("rushing_yards"))
+            if rusher and rushing_yards is not None:
+                candidates.append(("rush", rusher, rushing_yards))
+            receiver = (row.get("receiver_player_id") or "").strip()
+            receiving_yards = _int_or_none(row.get("receiving_yards"))
+            if receiver and receiving_yards is not None and _is_one(row.get("complete_pass")):
+                candidates.append(("reception", receiver, receiving_yards))
+            for gain_type, player_id, yards in candidates:
+                key = (game_id, gain_type, player_id)
+                current = best.get(key)
+                if current is None or (yards, -play_id) > (current["yards"], -current["play_id"]):
+                    best[key] = {
+                        "season": (row.get("season") or "").strip(),
+                        "season_type": (row.get("season_type") or "").strip(),
+                        "week": (row.get("week") or "").strip(),
+                        "game_id": game_id,
+                        "gain_type": gain_type,
+                        "player_id": player_id,
+                        "team": (row.get("posteam") or "").strip(),
+                        "play_id": play_id,
+                        "yards": yards,
+                    }
+
+    records = sorted(
+        best.values(),
+        key=lambda item: (item["game_id"], item["gain_type"], item["player_id"]),
+    )
+    game_rows = sorted(games.values(), key=lambda item: item["game_id"])
+    payload = {
+        "SchemaVersion": 1,
+        "Projection": {
+            "ID": PLAYER_GAME_LONG_GAINS_PROJECTION_ID,
+            "Version": PLAYER_GAME_LONG_GAINS_PROJECTION_VERSION,
+        },
+        "Columns": list(PLAYER_GAME_LONG_GAINS_FIELDS),
+        "Games": game_rows,
+        "Records": records,
+    }
+    output_path.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return {
+        "sourceRowCount": source_rows,
+        "gameCount": len(game_rows),
+        "projectedRowCount": len(records),
+    }
+
+
+def _project_schedule_csv(
+    upstream_path: Path,
+    output_path: Path,
+    *,
+    keep: tuple[str, ...] | None,
+    drop: tuple[str, ...],
+) -> dict[str, Any]:
+    """Write the upstream schedule CSV restricted to `keep` or without `drop`, row order unchanged."""
+    with upstream_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.reader(handle)
+        header = next(reader, None)
+        if not header:
+            raise ValueError("nflverse schedule CSV has no header")
+        missing = sorted((set(drop) | set(keep or ())) - set(header))
+        if missing:
+            raise ValueError(
+                "nflverse schedule CSV is missing columns required for projection: " + ", ".join(missing)
+            )
+        indexes = [
+            index
+            for index, name in enumerate(header)
+            if (name in keep if keep is not None else name not in drop)
+        ]
+        if keep is not None:
+            indexes.sort(key=lambda index: keep.index(header[index]))
+        with output_path.open("w", encoding="utf-8", newline="") as output:
+            writer = csv.writer(output, lineterminator="\n")
+            writer.writerow([header[index] for index in indexes])
+            row_count = 0
+            for row in reader:
+                if not row:
+                    continue
+                if len(row) != len(header):
+                    raise ValueError(
+                        f"nflverse schedule CSV row {row_count + 2} has {len(row)} fields, expected {len(header)}"
+                    )
+                writer.writerow([row[index] for index in indexes])
+                row_count += 1
+    return {
+        "sourceColumnCount": len(header),
+        "projectedColumnCount": len(indexes),
+        "projectedRowCount": row_count,
+    }
+
+
+def project_schedule_without_odds(upstream_path: Path, output_path: Path) -> dict[str, Any]:
+    return _project_schedule_csv(upstream_path, output_path, keep=None, drop=SCHEDULE_ODDS_COLUMNS)
+
+
+def project_schedule_odds(upstream_path: Path, output_path: Path) -> dict[str, Any]:
+    return _project_schedule_csv(
+        upstream_path,
+        output_path,
+        keep=(SCHEDULE_ODDS_KEY_COLUMN, *SCHEDULE_ODDS_COLUMNS),
+        drop=(),
+    )
+
+
 def project_source(
     projection_id: str,
     projection_version: int,
@@ -125,6 +346,15 @@ def project_source(
         SPECIAL_TEAMS_FUMBLE_PROJECTION_VERSION,
     ):
         return project_special_teams_fumble_events(upstream_path, output_path)
+    if key == (
+        PLAYER_GAME_LONG_GAINS_PROJECTION_ID,
+        PLAYER_GAME_LONG_GAINS_PROJECTION_VERSION,
+    ):
+        return project_player_game_long_gains(upstream_path, output_path)
+    if key == (SCHEDULE_WITHOUT_ODDS_PROJECTION_ID, SCHEDULE_WITHOUT_ODDS_PROJECTION_VERSION):
+        return project_schedule_without_odds(upstream_path, output_path)
+    if key == (SCHEDULE_ODDS_PROJECTION_ID, SCHEDULE_ODDS_PROJECTION_VERSION):
+        return project_schedule_odds(upstream_path, output_path)
     raise ValueError(
         f"Unsupported source projection: id={projection_id} version={projection_version}"
     )

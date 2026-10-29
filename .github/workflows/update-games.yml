@@ -1,14 +1,14 @@
 name: APP • Data • Games
 
+# Publishes Schedule.json from the canonical NFL schedule and game finality. Called by
+# APP • Pipeline • NFL Live (Issue #946, step S3 of #471); no push or scheduler trigger of its own.
+# workflow_dispatch stays as the manual repair path.
+
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "source-data/nfl/game-finality/**"
-  repository_dispatch:
-    types:
-      - scheduler-update-games
+  workflow_call:
+    secrets:
+      PAT_PUSH:
+        required: true
   workflow_dispatch:
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Setup Node.js
@@ -30,10 +30,10 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Rebuild and publish Games data
+      - name: Rebuild and publish Schedule data
         run: >-
           python3 tools/rebuild_and_publish.py
           --scope games
           --path public/data
           --
-          pwsh ./public/requests/RequestGames.ps1
+          pwsh ./public/requests/RequestSchedule.ps1

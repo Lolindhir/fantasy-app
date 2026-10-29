@@ -1,3 +1,4 @@
+Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 . "$PSScriptRoot\FantasyGameContextCore.ps1"
 Import-Module "$PSScriptRoot\FantasyRelevanceV2Utils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\PlayerScoringAvailabilityUtils.psm1" -ErrorAction Stop -Force
@@ -69,6 +70,85 @@ function Add-FantasyGameScoreContext {
     return $BaseContext
 }
 
+# The App schedule owns its display GameID; CanonicalGameID is the exact bridge
+# to the league-independent NFL Game product. Markets are optional display data,
+# never a replacement for the existing final NFL scores or fantasy projections.
+function Add-FantasyGameMarketContext {
+    param(
+        [Parameter(Mandatory = $true)][object]$BaseContext,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Schedule,
+        [Parameter(Mandatory = $true)][string]$Season,
+        [Parameter(Mandatory = $true)][int]$Week,
+        [AllowNull()][object]$NflGameDerived = $null
+    )
+
+    $scheduleByGameID = @{}
+    foreach ($row in @($Schedule)) {
+        if ($null -eq $row) { continue }
+        $appGameID = [string](Get-FgcPropertyValue -Object $row -Names @('gameID','GameID'))
+        if ([string]::IsNullOrWhiteSpace($appGameID)) { continue }
+        if ($scheduleByGameID.ContainsKey($appGameID)) {
+            throw "Duplicate App schedule GameID '$appGameID' in NFL market projection."
+        }
+        $scheduleByGameID[$appGameID] = $row
+    }
+
+    $derivedByGameID = @{}
+    if ($null -ne $NflGameDerived) {
+        if ([int]$NflGameDerived.SchemaVersion -ne 1 -or [string]$NflGameDerived.Season -ne $Season -or $null -eq $NflGameDerived.Games) {
+            throw "NFL Game Derived schema/season mismatch for FantasyGameContext $Season Week $Week."
+        }
+        foreach ($row in @($NflGameDerived.Games)) {
+            $canonicalGameID = [string]$row.GameID
+            if ([string]::IsNullOrWhiteSpace($canonicalGameID) -or $derivedByGameID.ContainsKey($canonicalGameID)) {
+                throw "Missing or duplicate canonical GameID '$canonicalGameID' in NFL Game Derived."
+            }
+            $derivedByGameID[$canonicalGameID] = $row
+        }
+    }
+
+    foreach ($game in @($BaseContext.Games)) {
+        $market = $null
+        $appGameID = [string]$game.GameID
+        if ($scheduleByGameID.ContainsKey($appGameID)) {
+            $canonicalGameID = [string](Get-FgcPropertyValue -Object $scheduleByGameID[$appGameID] -Names @('CanonicalGameID'))
+            if (-not [string]::IsNullOrWhiteSpace($canonicalGameID) -and $derivedByGameID.ContainsKey($canonicalGameID)) {
+                $derived = $derivedByGameID[$canonicalGameID]
+                if ([int]$derived.Week -ne $Week -or
+                    [string]$derived.AwayTeam -ne [string]$game.AwayTeamID -or
+                    [string]$derived.HomeTeam -ne [string]$game.HomeTeamID) {
+                    throw "NFL market identity mismatch for '$appGameID' -> '$canonicalGameID'."
+                }
+                if ($null -ne $derived.Market) {
+                    $values = @{}
+                    foreach ($field in @('SpreadLine','TotalLine','ImpliedAwayPoints','ImpliedHomePoints')) {
+                        $value = Get-FgcPropertyValue -Object $derived.Market -Names @($field)
+                        if ($null -ne $value) {
+                            $number = ConvertTo-FgcOptionalScore $value
+                            if ($null -eq $number -or [double]::IsNaN($number) -or [double]::IsInfinity($number)) {
+                                throw "Invalid NFL market $field for '$canonicalGameID'."
+                            }
+                            $values[$field] = [double]$number
+                        }
+                        else { $values[$field] = $null }
+                    }
+                    $market = [PSCustomObject][ordered]@{
+                        SpreadLine        = $values.SpreadLine
+                        TotalLine         = $values.TotalLine
+                        ImpliedAwayPoints = $values.ImpliedAwayPoints
+                        ImpliedHomePoints = $values.ImpliedHomePoints
+                    }
+                }
+            }
+        }
+        if ($game.PSObject.Properties.Name -contains 'Market') { $game.Market = $market }
+        else { $game | Add-Member -NotePropertyName Market -NotePropertyValue $market }
+    }
+
+    $BaseContext.SchemaVersion = [Math]::Max(6, [int]$BaseContext.SchemaVersion)
+    return $BaseContext
+}
+
 # RequestLeague imports DecisionWindowUtils before this module. This compatibility
 # wrapper enriches the stable DecisionWindows baseline with the v2 lineup model
 # without moving the existing exact-kickoff derivation into Angular.
@@ -126,7 +206,8 @@ function New-FantasyGameContextReadModel {
         [Parameter(Mandatory = $true)][object]$DecisionFacts,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$FantasyMatchups,
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Schedule,
-        [Parameter(Mandatory = $true)][bool]$WeekIsFinal
+        [Parameter(Mandatory = $true)][bool]$WeekIsFinal,
+        [AllowNull()][object]$NflGameDerived = $null
     )
 
     $baseContext = & $script:BaseNewFantasyGameContextReadModel `
@@ -141,7 +222,14 @@ function New-FantasyGameContextReadModel {
     $relevanceContext = Add-FantasyRelevanceContext -BaseContext $baseContext -DecisionFacts $DecisionFacts
     $previewContext = Add-FantasyMatchupPreviewContext -BaseContext $relevanceContext -DecisionFacts $DecisionFacts
     $scoreContext = Add-FantasyGameScoreContext -BaseContext $previewContext -Schedule $Schedule
-    return Add-FantasyWeeklyWatchContext -BaseContext $scoreContext
+    $weeklyContext = Add-FantasyWeeklyWatchContext -BaseContext $scoreContext
+    # Historical callers intentionally retain their prior schema and do not
+    # acquire today's latest-line market values retroactively.
+    if ($PSBoundParameters.ContainsKey('NflGameDerived')) {
+        return Add-FantasyGameMarketContext -BaseContext $weeklyContext -Schedule $Schedule `
+            -Season $Season -Week $Week -NflGameDerived $NflGameDerived
+    }
+    return $weeklyContext
 }
 
 # Sleeper currently publishes players_points as a PlayerID-keyed object but

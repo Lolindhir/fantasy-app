@@ -15,13 +15,14 @@ REBUILD_HELPER = "tools/rebuild_and_publish.py"
 REBASE_HELPER = "tools/publish_generated_commit.py"
 
 REBUILD_WRITERS = {
-    "update-league.yml",
+    "league-live.yml",
     "update-players.yml",
     "update-games.yml",
     "update-drafts.yml",
     "update-transactions.yml",
     "update-standings.yml",
     "update-teams.yml",
+    "sync-nfl-player-availability.yml",
     "update-past-seasons-index.yml",
     "clean-backups.yml",
 }
@@ -30,25 +31,18 @@ WORKFLOW_LOCAL_REBUILD_WRITERS = {
     "source-data-readiness.yml",
     "sync-nfl-source-data.yml",
     "sync-league-source-data.yml",
-    "materialize-fantasy-operations-inputs.yml",
 }
 
 DELEGATED_REBUILD_WRITERS = {
-    "sync-nfl-game-finality.yml": "sync-nfl-source-data.yml",
-    "sync-league-transactions.yml": "sync-league-source-data.yml",
-    "sync-league-drafts.yml": "sync-league-source-data.yml",
-    "sync-league-core.yml": "sync-league-source-data.yml",
+    "nfl-live.yml": "sync-nfl-source-data.yml",
+    "league-live.yml": "sync-league-source-data.yml",
 }
 
-REBASE_WRITERS = {
-    "update-fantasypros-rankings.yml",
-    "update-fantasycalc-rankings.yml",
-    "update-fantasy-football-calculator-adp.yml",
-    "update-fftoday-projections.yml",
-    "update-cbs-sports-projections.yml",
-    "update-sleeper-trending.yml",
+# Mixed pipeline (Issue #947): provider matrix legs publish self-contained snapshots (rebase-and-retry),
+# the materialize job rebuilds from the latest main (rebuild-and-retry). Classified as rebuild-and-retry.
+MIXED_REBUILD_WRITERS = {
+    "fm-daily.yml",
 }
-
 BRANCH_PUBLICATION_PATTERNS = (
     re.compile(r"\bgit\s+push\b"),
     re.compile(r"\bgit\s+update-ref\b"),
@@ -168,16 +162,25 @@ class WorkflowPublicationContractTests(unittest.TestCase):
                 self.assertNotIn("pages: write", text)
                 self.assertNotIn("id-token: write", text)
 
-    def test_self_contained_fm_writers_use_rebase_helper(self) -> None:
-        for name in sorted(REBASE_WRITERS):
+    def test_mixed_pipeline_writers_use_both_helpers_and_are_rebuild_classified(self) -> None:
+        for name in sorted(MIXED_REBUILD_WRITERS):
             with self.subTest(workflow=name):
-                self.assertIn(REBASE_HELPER, self.read(name))
+                text = self.read(name)
+                self.assertIn(REBUILD_HELPER, text)
+                self.assertIn(REBASE_HELPER, text)
+                self.assertNotIn("git push", text)
+                self.assertNotIn("HEAD:main", text)
+                self.assertEqual(self.classifications.get(f".github/workflows/{name}"), "rebuild-and-retry")
 
     def test_workflow_local_rebuild_writers_have_retry_and_reset_contract(self) -> None:
         for name in sorted(WORKFLOW_LOCAL_REBUILD_WRITERS):
             with self.subTest(workflow=name):
                 text = self.read(name)
-                self.assertIn("git fetch", text)
+                # git_transient.py wraps `git fetch`/`git push` with the shared transient retry.
+                self.assertTrue(
+                    "git fetch" in text or "tools/git_transient.py fetch" in text,
+                    f"{name} must fetch the latest target before rebuilding",
+                )
                 self.assertIn("git reset --hard", text)
                 self.assertTrue(
                     "max_attempts=" in text or "for attempt in 1 2 3" in text,

@@ -36,13 +36,13 @@ contract:
 
 sourceOfTruth:
   pairingAndScoreBase: >
-    source-data/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-*.json
+    data-source/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-*.json
     owns durable pairing and score evidence. During the active lineup week RequestLeague
     consumes the productively refreshed canonical partition through CanonicalMatchupUtils;
     there is no direct Sleeper matchup overlay in the app consumer.
-  nflSchedule: source-data/nfl/schedules/<season>.json
-  nflFinality: source-data/nfl/game-finality/<season>.json
-  weeklyRosterEvidence: source-data/nfl/weekly-rosters/<season>/<week>.json
+  nflSchedule: data-source/nfl/schedules/<season>.json
+  nflFinality: data-source/nfl/game-finality/<season>.json
+  weeklyRosterEvidence: data-source/nfl/weekly-rosters/<season>/<week>.json
   currentLineupEvidence: public/data/DecisionWindows.json generation facts in-memory
   ordering: >
     Existing generated All-Time Overall Standings sequence. Current-season storage
@@ -84,8 +84,11 @@ finality:
   nonActivePastWeek: >
     Resolves actual canonical starters to their NFL games using season/week roster
     evidence (including the team-defense provider identity fallback) and checks only
-    those games against canonical NFL finality. Unrelated later NFL games do not block
-    a matchup from becoming final.
+    those games against canonical NFL finality. An explicit optional integer
+    EmptyStarterSlots from the canonical league matchup (Sleeper "0" placeholders)
+    counts toward expected configured lineup positions without creating a player
+    or scoring points. Missing, invalid or inconsistent slot evidence remains unknown.
+    Unrelated later NFL games do not block a matchup from becoming final.
   futureWeek: >
     A known future regular-season matchup with starter evidence is open. Missing
     starter evidence fails closed to unknown.

@@ -6,8 +6,17 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "fantasy-management/**"
+    # Positivliste: nur Dateien, die der Build (deploy_action.ps1 / ng build) liest oder ausliefert.
+    # Neue Datenwurzeln (data-source, data-derived, fantasy-management, ...) loesen bewusst keinen Deploy aus.
+    paths:
+      - "src/**"
+      - "public/**"
+      - "angular.json"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig*.json"
+      - "deploy_action.ps1"
+      - ".github/workflows/deploy.yml"
   workflow_call:
 
 permissions:

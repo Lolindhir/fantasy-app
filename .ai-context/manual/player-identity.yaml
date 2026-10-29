@@ -1,7 +1,7 @@
 schemaVersion: 2
 
 purpose: >
-  Defines the durable player-identity architecture shared by the NFL source-data
+  Defines the durable player-identity architecture shared by the NFL data-source
   layer, generated app data and historical consumers. It separates the
   application-defined canonical person identity from provider-specific identifiers
   and from the current Sleeper-based application contract.
@@ -9,7 +9,7 @@ purpose: >
 identityModel:
   canonicalPerson:
     key: CanonicalPlayerID
-    owner: source-data/nfl
+    owner: data-source/nfl
     namespace: fantasy-app
     issuer: fantasy-app
     semantics: >
@@ -23,7 +23,7 @@ identityModel:
       - Never use a display name as an authoritative merge key.
       - Do not rename or regenerate an existing CanonicalPlayerID merely because a new provider ID becomes available.
       - Preserve historical facts that already reference a CanonicalPlayerID.
-      - The source-data/nfl path describes the NFL data domain, not the issuer or namespace of CanonicalPlayerID.
+      - The data-source/nfl path describes the NFL data domain, not the issuer or namespace of CanonicalPlayerID.
       - Any future official NFL-issued player identifier is another external/provider mapping and does not replace or rename CanonicalPlayerID.
     valueCompatibility: >
       Existing opaque canonical ID values remain unchanged during the
@@ -37,14 +37,53 @@ identityModel:
     canonicalSchemaVersion: 2
     rule: >
       NFLPlayerID is a legacy schema label only. Readers may temporarily accept it
-      to migrate already persisted v1 source-data, but all new canonical output,
+      to migrate already persisted v1 data-source, but all new canonical output,
       provider-mapping output, Draft/Combine records, audits and documentation use
       CanonicalPlayerID. Migration changes the field name, not the canonical ID
       value or the person it identifies.
     frozenHistory: >
       Frozen historical partitions may be schema-normalized from the legacy field
       name to CanonicalPlayerID without --force because no historical fact changes.
-      Their canonical ID values and all other semantic facts remain unchanged.
+      A frozen nflverse player-stats or weekly-rosters partition may also enrich
+      a missing (null) CanonicalPlayerID from durable, non-ambiguous GSIS evidence
+      only when every other semantic fact and every existing non-null canonical
+      ID remains identical. It cannot rename people, alter facts or substitute
+      display-name matches. A different repair still requires explicit --force.
+
+
+  historicalWeeklyRosterPlaceholderReconciliation:
+    status: implemented-pending-full-replay-1061
+    owner: data-source/nfl/identities
+    implementation:
+      - tools/nfl_source_data_lib/identity_sources.py::historical_weekly_roster_identity_candidates
+      - tools/nfl_source_data_lib/identity.py::_select_primary_provider_id
+    rule: >
+      A real 00-NNNNNNN GSIS in persisted NFL weekly-roster raw may attach to
+      an *existing* CanonicalPlayerID whose persisted GSIS is exactly an ESB-as-GSIS
+      placeholder (not a real GSIS), where the old record is owned by nflverse.players.
+      The roster ESB must be observed on exactly one real GSIS across all persisted
+      weekly roster raw, and exactly one existing canonical person may claim it,
+      including all canonical ESB aliases. No historical ESB provider mapping may
+      point to a different person during the roster's observed season(s).
+      A corroborated same-team compatible defensive/offensive position group, or
+      an independently matching nonempty birth date, is required. Any observed
+      nonempty DOB contradiction vetoes the attachment. Provider name matching is
+      forbidden; existing people with a real GSIS are never linked by ESB alone.
+      Where evidence is insufficient or a provider ESB was reused, leave the new
+      real-GSIS candidate separate for review; do not invent a person merge.
+    stability: >
+      Only an unclaimed real GSIS is added as provider evidence to the previously
+      stable CanonicalPlayerID, via the existing identity component builder. The
+      real GSIS becomes the active primary identifier and legacy placeholders
+      remain recognizable as aliases/history. Existing canonical owners are not
+      renamed or deleted. Replay is source-derived and deterministic; no per-player
+      exception table or hardcoded ID pairs.
+    nonGoals: >
+      This rule is separate from currentIdentityGapResolution.placeholderGsisUpgrade,
+      which deliberately preserves two *already persisted* people and moves only
+      current claims. It cannot silently collapse two existing canonical IDs.
+      Same-name/date duplicates without provider-corroborated evidence require
+      independent adjudication.
 
   currentAppIdentity:
     path: public/data/Players.json
@@ -56,7 +95,7 @@ identityModel:
       current Angular and generated-data contracts. This is an app-facing source
       contract, not the permanent cross-provider identity of a person.
     requirements:
-      - Do not migrate Players.json[].ID away from Sleeper as part of the source-data identity work.
+      - Do not migrate Players.json[].ID away from Sleeper as part of the data-source identity work.
       - Current Sleeper roster, draft and transaction facts remain authoritative for what happened in the fantasy league where the app currently relies on Sleeper.
       - A Sleeper ID must not be assumed to identify the same person for all historical time without temporal evidence.
 
@@ -84,17 +123,48 @@ identityModel:
         intervals later.
     activeVsHistoricalLinks:
       rule: >
-        source-data/nfl/identities/players.json represents the active canonical
+        data-source/nfl/identities/players.json represents the active canonical
         provider bridge, not an append-only bag of every identifier ever observed.
         If current corroborated evidence for a CanonicalPlayerID supplies a
         different value for the same provider, the stale persisted latest-snapshot
         value is not promoted to an active IDAlias. Historical validity belongs in
         provider-mappings.json with a non-overlapping interval when it is actually
         supported by earlier observations.
+    sleeperPlatformEvidence:
+      status: implemented-347-h1a
+      architectureDecision: ADR-043
+      replaces: app.Players and app.Players.git.* as live identity evidence
+      source: data-source/providers/sleeper/players/raw-latest.json (dataset sleeper.players, provider evidence, not an app output)
+      implementation: tools/nfl_source_data_lib/identity_sources.py::sleeper_player_candidates
+      rule: >
+        The identity builder no longer reads public/data/Players.json or its git
+        history, which closes the cycle Players.json -> identities -> Players.json.
+        Sleeper snapshot records with an app fantasy position (QB, RB, WR, TE, K)
+        and a valid birth date become candidates with source sleeper.players when
+        they carry a current NFL team or already have a persisted Sleeper mapping.
+        Evidence is the Sleeper ID plus Sleeper espn_id only when current external
+        evidence corroborates it. Tank01 is no attach key any more; persisted
+        Tank01 values stay as historical mappings. A Sleeper ID that other evidence
+        already holds identifies the person on its own, so Sleeper's birth date is
+        not used for that attachment.
+      sleeperCurrentRosterAttributeBridge:
+        provenance: auto.sleeper-roster-attribute-bridge:<GSIS>
+        rule: >
+          A Sleeper record whose Sleeper ID is new (held by no other source and no
+          persisted identity) attaches to exactly one current-season nflverse roster
+          record when exact birth date, current team and position match, the match
+          is unique on both sides and no provider ID contradicts it. Names play no
+          role. Sleeper LAR and WSH are normalized to LA and WAS (interim alias table
+          until the team registry of #347 F3a). An ambiguous match is reported as
+          identity diagnostic sleeper_attribute_bridge_not_unique and the record
+          stays provisional or goes to human adjudication (splitIdentity). A Sleeper
+          ID already persisted on a provisional identity is never bridged, because
+          that would merge two persisted CanonicalPlayerIDs.
     provisionalAppReconciliation:
       provisionalSources:
-        - app.Players
-        - app.Players.git.*
+        - app.Players (persisted provenance only since #347 H1a)
+        - app.Players.git.* (persisted provenance only since #347 H1a)
+        - sleeper.players
       replacementEvidence:
         - corroborated external historical crosswalk claim
         - unique current claim jointly observed by app.Players and at least one non-app source
@@ -120,11 +190,11 @@ identityModel:
       - Quarantining one provider mapping must not discard unrelated corroborated mappings for the same person unless those mappings are independently contradictory.
       - Do not choose a winner silently and do not add provider-specific or player-specific hard-coded identity exceptions as the primary conflict strategy.
     currentAdjudication:
-      source: source-data/nfl/identities/current-identity-adjudications.json
-      documentation: source-data/nfl/identities/current-identity-adjudications.md
+      source: data-source/nfl/identities/current-identity-adjudications.json
+      documentation: data-source/nfl/identities/current-identity-adjudications.md
       provenancePrefix: manual.current-identity-adjudication
       role: bounded-human-reviewed-current-provider-reassignment
-      runtimeStatus: contract-only-not-yet-consumed
+      runtimeStatus: consumed-by-identity-builder
       rule: >
         Rare current-season provider identity gaps that remain unresolved after the
         ordinary automated corroboration rules may be represented by an explicit,
@@ -134,22 +204,194 @@ identityModel:
         tokens may be reassigned for one NFL season. It never creates or renames a
         CanonicalPlayerID, never bulk-merges two identity records, never turns
         display names into merge evidence and never rewrites raw provider evidence.
-        Checkpoint 6Z.7 establishes the source contract and fail-closed validator
-        only; productive identity materialization does not consume this source yet.
+        Checkpoint 6Z.7 established the source contract and fail-closed validator;
+        Issue #347 B5 integrates the confirmed decisions into the productive
+        identity builder (see integration below).
+      integration:
+        status: implemented-347-b5
+        implementation: >
+          tools/nfl_source_data_lib/identity.py (current_identity_adjudication_state,
+          _apply_current_adjudications, called from build_identities before the app
+          candidates and components are built) and provider_mappings.py
+          (_retire_transferred_claims with reason
+          current_identity_adjudication_transfers_current_claim).
+        rule: >
+          Before components are built the builder loads the confirmed decisions for
+          the observation season and validates them against the persisted pre-build
+          identity graph and provider mappings (any contradiction raises and fails
+          the materialization closed). Decisions reported obsolete are not applied.
+          An applicable decision is applied to the candidate evidence, not by an
+          ad-hoc merge: the declared source records give up the assigned provider
+          tokens, the target's persisted record carries them (an existing different
+          value is never replaced), and for upstream-claim-override the named
+          upstream claim is removed from the named upstream source and from the
+          target. The ordinary component builder then attaches the current provider
+          evidence to the target. No CanonicalPlayerID is created, renamed, merged
+          or deleted, and raw provider evidence is not rewritten.
+        movableTokens: >
+          The decision's ProviderAssignments. For upstream-claim-override
+          additionally the token under an independent anchor's SourceProvider (the
+          link between the two records, for example Tank01 on the replacement record
+          equal to ESPN on the target); no other unlisted token transfers.
+        provenanceAndDiagnostics:
+          - Every moved provider claim carries manual.current-identity-adjudication:<AdjudicationID> in its Sources and TransferredFromCanonicalPlayerIDs.
+          - The previous owner's current-season mapping and conflict for a moved token are retired with a HistoricalMappingReconciliations entry (reason current_identity_adjudication_transfers_current_claim); earlier seasons stay.
+          - An overridden upstream claim stays visible as an identity source conflict with reason upstream_claim_overridden_by_current_adjudication. The historical mapping interval of that claim is not rewritten.
+        replay: >
+          A replay finds the tokens already on the target; the result is identical.
+          A decision whose replacement token the target already carries is reported
+          superseded-by-upstream and keeps suppressing the overridden upstream claim
+          for as long as the upstream still makes it.
       requirements:
         - Status must be confirmed; unresolved review candidates do not belong in the canonical current-adjudication source.
-        - ResolutionKind must be current-provider-reassignment and ConflictPolicy must be reject-active-conflict.
+        - ResolutionKind is either current-provider-reassignment with ConflictPolicy reject-active-conflict, or upstream-claim-override with ConflictPolicy override-named-upstream-claim (see currentIdentityGapResolution.classes.wrongUpstreamClaim).
         - Every decision requires a stable AdjudicationID, exact Season, DecisionAuthority, DecisionDate, rationale and non-empty evidence references.
         - TargetCanonicalPlayerID and every SourceCanonicalPlayerID must already exist in the persisted canonical identity graph, and the target must not also be listed as a source.
         - ProviderAssignments enumerate the only Provider plus ExternalID tokens the decision may reassign; no unlisted provider value transfers implicitly.
         - A decision is active only for its exact observation season and must not silently carry into a later season.
-        - The target must not already carry a different active value for an assigned provider.
+        - For current-provider-reassignment, the target must not already carry a different active value for an assigned provider.
         - An assigned provider token must not be owned by an undeclared third CanonicalPlayerID.
-        - An adjudication must fail closed rather than override an active provider conflict.
-        - Future productive materialization must retain manual.current-identity-adjudication:<AdjudicationID> provenance and must be replay-idempotent.
+        - A current-provider-reassignment must fail closed rather than override an active provider conflict, with one exception: a conflict whose parties are exactly the declared target and declared sources is the split the decision resolves (a persisted empty provisional record and the full record both claiming the token). Any third party in an active conflict for the token keeps it fail-closed. Otherwise only upstream-claim-override may resolve a conflict, and only the exact upstream claim it names.
+        - Productive materialization retains manual.current-identity-adjudication:<AdjudicationID> provenance on every moved provider claim and is replay-idempotent.
         - Any future reversal or correction must be explicit and versioned; generated canonical identity or provider-mapping output must never be hand-edited as the source of truth.
+    currentIdentityGapResolution:
+      status: accepted-partially-implemented
+      implementedSteps:
+        - upstream-claim-override loader and state validator (tools/nfl_source_data_lib/current_identity_adjudications.py) (#347 B3)
+        - productive consumption of the confirmed adjudication entries in the identity builder (#347 B5)
+        - openGapHold and gap classification in the population audit (fantasy-management/_ai/scripts/audit_player_signal_population_policy.py with identity_gap_classification.py), analysis only (#347 B3)
+      trackingIssue: 347
+      decidedAt: 2026-10-04
+      purpose: >
+        A current identity gap is a current-season player whose provisional
+        CanonicalPlayerID differs from a durable CanonicalPlayerID that current
+        canonical NFL data attributes to the same real person. Gaps are found by the
+        player-signal population audit through an exact normalized name plus
+        fantasy position diagnostic; that diagnostic only detects candidates and is
+        never merge evidence. This contract classifies every gap, assigns one
+        resolution mechanism per class and defines how an open gap behaves until it
+        is resolved, so that a single case can neither block the whole Phase 2
+        migration nor be silently removed or merged.
+      classes:
+        placeholderGsisUpgrade:
+          resolution: automatic
+          pattern: >
+            One record carries a placeholder GSIS value (not matching ^00-\d{7}$; in
+            nflverse this is the player's ESB value repeated in the GSIS field) or no
+            GSIS, while the other record carries a valid GSIS. Both records carry the
+            same ESB value.
+          rule: >
+            The identity builder may treat the shared ESB value as the bridge between
+            the two records only in this pattern, only when the ESB value occurs on
+            exactly these two records, and only when no other provider ID present on
+            both records disagrees. The provider tokens of the placeholder record
+            transfer to the record with the valid GSIS for the current season, with
+            provenance auto.placeholder-gsis-upgrade:<ESB>. Neither CanonicalPlayerID
+            is renamed, regenerated or deleted. Placeholder GSIS values in general
+            stay untouched; this rule does not reinterpret them as conflicts.
+          implementation: >
+            Implemented in tools/nfl_source_data_lib/identity.py
+            (_placeholder_gsis_upgrades, _apply_placeholder_gsis_upgrades). Components
+            are matched after ordinary merging. In addition to the rule above, both
+            components must carry exactly the shared ESB value and no contradicting
+            birth date. Only current candidates move; persisted canonical-existing
+            candidates stay, so no CanonicalPlayerID is merged. The placeholder GSIS
+            value itself is not transferred. Moved claims carry the source
+            auto.placeholder-gsis-upgrade:<ESB>. provider_mappings.py retires the
+            previous owner's current-season mapping and conflicts for each moved token
+            and records a HistoricalMappingReconciliations entry with reason
+            placeholder_gsis_upgrade_transfers_current_claim; earlier seasons stay.
+            The rule is re-evaluated on every materialization and is idempotent: once
+            the transferred ESPN/PFR/Sleeper tokens link both persisted records into one
+            component again, _split_merged_placeholder_components splits it back along
+            the two persisted CanonicalPlayerIDs when the pair still satisfies the rule;
+            any other component with two persisted IDs keeps failing closed.
+          observedOn2026-10-04: 8 ESB pairs repository-wide, among them current gap Layne Pryor
+          effectOn2026-10-04: >
+            Only two of the eight pairs carry current evidence on the placeholder
+            record (Layne Pryor, Paschal Ekeji); for the other six the persisted
+            identities do not change.
+        splitIdentity:
+          resolution: human-reviewed adjudication (ResolutionKind current-provider-reassignment)
+          pattern: >
+            Two partial records of the same person share no provider ID. Typically
+            nflverse.players or rosters know GSIS/PFR/NFL IDs while the app/Sleeper
+            record knows Sleeper/Tank01/ESPN IDs, because the external crosswalk has
+            not yet caught up with a young or newly signed player.
+          rule: >
+            Use the existing current adjudication. Evidence must go beyond name and
+            position (for example matching team in current canonical rosters, matching
+            ESPN/Tank01 token, birth date). An adjudication whose assignments the
+            automatic rules later reproduce on their own is reported as
+            superseded-by-upstream and may then be retired by an explicit versioned
+            change.
+          observedOn2026-10-04: Grant Finley, Gregory Desrosiers, Roydell Williams
+        wrongUpstreamClaim:
+          resolution: human-reviewed adjudication (ResolutionKind upstream-claim-override)
+          pattern: >
+            An upstream crosswalk assigns a provider token to the durable record that
+            the provider's own platform data contradicts, which creates an active
+            provider conflict.
+          rule: >
+            An upstream-claim-override names exactly one upstream claim (Source,
+            Provider, ExternalID, TargetCanonicalPlayerID) that is declared wrong for
+            one Season, and the replacement token for the same provider. It requires
+            at least one independent strong anchor (GSIS, ESPN, PFR or PFF) that ties
+            the replacement token's record to the durable record, plus platform-data
+            consistency of the replacement token (position and current team) and
+            documented inconsistency of the overridden token. Raw upstream evidence is
+            never rewritten; the overridden claim stays visible in conflict
+            diagnostics with provenance manual.current-identity-adjudication:<AdjudicationID>.
+            If the upstream claim changes or disappears, the override is reported as
+            obsolete instead of being applied silently.
+          observedOn2026-10-04: >
+            Sam Hartman. nflverse ff-player-ids assigns Sleeper 11376 to the durable
+            record; Sleeper lists 11376 as an OL without team. Sleeper 11558 is the QB
+            at WAS, and its Tank01 ID 4361994 equals the durable record's ESPN ID.
+      openGapHold:
+        rule: >
+          A gap that matches one of the classes but is not yet resolved is
+          classified-open. A classified-open player keeps the population membership
+          it had before the cutover (status identity_hold) and does not block a
+          consumer cutover. Only unclassified gaps block, and they keep blocking
+          until they are classified. A hold never merges, never removes and never
+          grants new canonical facts.
+        reporting: >
+          The population audit reports classified-open and unclassified gaps
+          separately, with class and age in days, so a long-standing hold stays
+          visible. Age counts days since the class contract was accepted
+          (2026-10-04) until a persisted first-seen state exists. The audit
+          decision_status is blocked_on_current_canonical_identity_coverage only
+          while an unclassified gap exists, and
+          policy_ready_for_runtime_cutover_design_with_identity_hold while only
+          classified-open gaps remain. Classification is structural (provider ID
+          tokens of the provisional and the durable record, never names); a gap
+          that matches no class stays unclassified and keeps blocking.
+        upstreamClaimOverrideEntryShape:
+          requiredFields:
+            - ResolutionKind upstream-claim-override with ConflictPolicy override-named-upstream-claim
+            - ProviderAssignments with exactly one replacement token
+            - OverriddenUpstreamClaim (Source, Provider, ExternalID); Provider equals the replacement provider, ExternalID differs from the replacement
+            - IndependentAnchors (non-empty); Provider is one of GSIS, ESPN, PFR, PFF and differs from the overridden provider; optional SourceProvider names the provider key under which the replacement record carries the same value (for example ESPN on the target equals Tank01 on the source)
+            - ReplacementTokenConsistency (Position, Team, Summary)
+            - OverriddenTokenInconsistency (Summary)
+          stateValidation: >
+            Reports each decision as active, obsolete (the named upstream claim
+            changed or disappeared) or superseded-by-upstream (the target already
+            carries the replacement token). For an active override it fails closed on
+            an active conflict or undeclared owner of the replacement token, a
+            replacement token not carried by a declared source record, an anchor not
+            carried by the target (or its value missing on the source), and a
+            declared position that differs from the target. Declared team and the
+            platform consistency itself are reviewed evidence and are verified by the
+            productive integration step, not by this validator.
+      implementationOrder:
+        - placeholderGsisUpgrade rule in the identity builder with an identity diff limited to the observed ESB pairs (implemented, Issue #347 B2)
+        - upstream-claim-override loader/validator and the openGapHold rule in the population audit
+        - reviewed adjudication entries for the open splitIdentity and wrongUpstreamClaim cases
+        - productive consumption in the identity builder (current adjudication integration steps 1-7; implemented, Issue #347 B5)
     historicalAdjudication:
-      source: source-data/nfl/identities/historical-identity-adjudications.json
+      source: data-source/nfl/identities/historical-identity-adjudications.json
       provenancePrefix: manual.identity-adjudication
       role: bounded-human-reviewed-evidence
       rule: >
@@ -257,7 +499,7 @@ metadataSeparation:
       semantic payload comparison of those datasets.
 
 boundaries:
-  - source-data/nfl owns provider-independent NFL-domain identities and historical provider mappings; the path name does not imply NFL-issued identifiers.
+  - data-source/nfl owns provider-independent NFL-domain identities and historical provider mappings; the path name does not imply NFL-issued identifiers.
   - public/data remains generated app output and is not the source of truth for cross-provider identity history.
   - fantasy-management may consume the canonical identity bridge but does not own the app player identity contract.
   - public/data/PlayerWeekFantasy.json is the first explicitly designed App publication carrying CanonicalPlayerID beside the existing Sleeper-based PlayerID; unresolved active Sleeper identity stays PlayerID=null, duplicate/conflicting mappings fail closed, and no name fallback is allowed.

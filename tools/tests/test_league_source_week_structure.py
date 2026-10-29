@@ -29,7 +29,7 @@ class LeagueSourceWeekStructureTests(unittest.TestCase):
                     "Week": week,
                 }
             )
-        path = root / "source-data" / "nfl" / "schedules" / f"{season}.json"
+        path = root / "data-source" / "nfl" / "schedules" / f"{season}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps({"SchemaVersion": 2, "Season": season, "Games": games}),

@@ -18,12 +18,11 @@ try {
     if ($Season -le 0) { $Season = [int]$config.LeagueYear - 1 }
 
     $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-    $seasonSourceDir = Join-Path $repoRoot "source-data\leagues\$CanonicalLeagueID\seasons\$Season"
+    $seasonSourceDir = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues\$CanonicalLeagueID\seasons\$Season"
     $leagueSourceFile = Join-Path $seasonSourceDir 'league.json'
     $matchupDirectory = Join-Path $seasonSourceDir 'matchups'
     $scheduleFile = Join-Path $config.PastSeasonsDir "Schedule_$Season.json"
-    $playersFile = Join-Path $config.PastSeasonsDir "Players_$Season.json"
-    $weeklyRosterDirectory = Join-Path $repoRoot "source-data\nfl\weekly-rosters\$Season"
+    $weeklyRosterDirectory = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "nfl\weekly-rosters\$Season"
     $targetDir = Join-Path $config.PastSeasonsDir 'FantasyGameContext'
     $targetFile = Join-Path $targetDir "FantasyGameContext_$Season.json"
 
@@ -33,7 +32,6 @@ try {
         -LeagueSourceFile $leagueSourceFile `
         -MatchupDirectory $matchupDirectory `
         -ScheduleFile $scheduleFile `
-        -HistoricalPlayersFile $playersFile `
         -WeeklyRosterDirectory $weeklyRosterDirectory
 
     if (-not (Test-Path $targetDir)) { New-Item -ItemType Directory -Path $targetDir -Force | Out-Null }

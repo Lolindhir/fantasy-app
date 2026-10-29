@@ -178,6 +178,18 @@ Assert-LrrEqual 'STARTER_UNAVAILABLE' $repair.ProblemCode 'Explicit OUT must cre
 Assert-LrrEqual 'irreparable' $repair.State 'OUT after lock cannot be repaired'
 Assert-LrrEqual 'NO_LEGAL_REPAIR_PATH' $repair.ReasonCode 'Locked OUT reason must remain objective'
 
+# ESPN OUT on a starter whose team is on bye is not locked (slot state unknown) and stays repairable from the bench.
+$byeOutSlot = New-LrrSlot 'WR-1' 'WR' 'wr-bye-out' 'unknown'
+$byeOutSlot | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $outAvailability -Force
+$byeOutStarter = New-LrrPlayer 'wr-bye-out' 'starter' 'WR' 'unknown' 'WR-1'
+$byeOutStarter | Add-Member -NotePropertyName ScoringAvailability -NotePropertyValue $outAvailability -Force
+$benchWr = New-LrrPlayer 'wr-bench' 'bench' 'WR' 'unlocked'
+$model = New-LrrReadModel -Slots @($byeOutSlot) -Players @($byeOutStarter, $benchWr) -Locks @((New-LrrLock 'wr-bye-out' 'bye' $null), (New-LrrLock 'wr-bench' 'scheduled' '2026-09-13T17:00:00Z'))
+$result = Invoke-Lrr $model @([PSCustomObject]@{ TeamID = 1; Roster = @('wr-bye-out', 'wr-bench') }) @() @() $unavailable
+$repair = $result.FantasyRelevance.Teams[0].Slots[0].Repairability
+Assert-LrrEqual 'STARTER_UNAVAILABLE' $repair.ProblemCode 'OUT on bye keeps the availability problem'
+Assert-LrrEqual 'repairable' $repair.State 'OUT on bye is unlocked and must be repairable from the bench'
+
 # Review/data-quality state must not be converted into manager-fault repairability.
 $model = New-LrrReadModel -Slots @((New-LrrSlot 'WR-1' 'WR' $null)) -Players @() -Locks @() -Evaluation 'review'
 $result = Invoke-Lrr $model $teams @() @() $unavailable

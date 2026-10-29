@@ -39,7 +39,6 @@ describe('transaction.mapper', () => {
       DraftPicks: [
         {
           DraftType: 'Rookie',
-          DraftSource: 'Sleeper',
           DraftKey: '2027_Rookie',
           Season: '2027',
           Round: 2,
@@ -72,7 +71,6 @@ describe('transaction.mapper', () => {
       DraftPicks: [
         {
           DraftType: 'Rookie',
-          DraftSource: 'Sleeper',
           DraftKey: '2026_Rookie',
           Season: '2026',
           Round: 2,
@@ -82,7 +80,6 @@ describe('transaction.mapper', () => {
         },
         {
           DraftType: 'Rookie',
-          DraftSource: 'Sleeper',
           DraftKey: '2026_Rookie',
           Season: '2026',
           Round: 2,
@@ -115,6 +112,46 @@ describe('transaction.mapper', () => {
       PlayerID: 'missing',
       Player: undefined
     });
+  });
+
+  it('keeps Tyreek Hill history when the current Players list omits him', () => {
+    const historical = { Name: 'Tyreek Hill', Position: 'WR', Picture: '/historical-tyreek.png' };
+    const transaction = mapRawTransaction(createRawTransaction({
+      RosterIDs: [3], Drops: { '3321': 3 }, PlayerRefs: { '3321': historical }
+    }), [], []);
+    expect(transaction.Participants[0].DroppedPlayers[0]).toEqual({
+      PlayerID: '3321', Player: undefined, PlayerRef: historical
+    });
+  });
+
+  it('does not invent identities for unknown historical players', () => {
+    const transaction = mapRawTransaction(createRawTransaction({
+      RosterIDs: [3], Drops: { unknown: 3 }, PlayerRefs: {}
+    }), [], []);
+    expect(transaction.Participants[0].DroppedPlayers[0]).toEqual({
+      PlayerID: 'unknown', Player: undefined
+    });
+  });
+
+  it('orders by effective status time rather than waiver submission time', () => {
+    const completedWaiver = createRawTransaction({
+      TransactionID: 'waiver',
+      CreatedAt: 1792268727874,
+      CreatedDate: '2026-10-17',
+      EffectiveAt: 1792317947771
+    });
+    const sameDayCut = createRawTransaction({
+      TransactionID: 'cut',
+      CreatedAt: 1792312508118,
+      CreatedDate: '2026-10-18',
+      EffectiveAt: 1792312508118
+    });
+    const ordered = mapRawTransactions([sameDayCut, completedWaiver], [], []);
+    expect(ordered.map(transaction => transaction.TransactionID)).toEqual(['waiver', 'cut']);
+    expect(ordered[0].EffectiveAtDate?.toISOString()).toBe('2026-10-18T10:05:47.771Z');
+    expect(ordered[0].CreatedAtDate?.toISOString()).toBe('2026-10-17T20:25:27.874Z');
+    const legacy = mapRawTransaction(createRawTransaction({ EffectiveAt: undefined }), [], []);
+    expect(legacy.EffectiveAt).toBe(legacy.CreatedAt);
   });
 
   it('sorts mapped transactions newest first', () => {

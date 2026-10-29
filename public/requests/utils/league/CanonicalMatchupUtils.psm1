@@ -2,6 +2,8 @@
 # Canonical current matchup adapter
 # ===========================================================================
 
+Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+
 function Get-CmuRepoRoot {
     return (Resolve-Path (Join-Path $PSScriptRoot "../../../..")).Path
 }
@@ -156,7 +158,7 @@ function Get-CanonicalCurrentMatchupRows {
     if ($Week -lt 1) { throw "Canonical current matchup Week must be positive." }
 
     $repoRoot = Get-CmuRepoRoot
-    $path = Join-Path $repoRoot "source-data/leagues/$CanonicalLeagueID/seasons/$Season/matchups/week-$Week.json"
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues/$CanonicalLeagueID/seasons/$Season/matchups/week-$Week.json"
     if (-not (Test-Path $path)) {
         throw "Canonical current matchup source is missing for $CanonicalLeagueID/$Season Week $Week at '$path'."
     }

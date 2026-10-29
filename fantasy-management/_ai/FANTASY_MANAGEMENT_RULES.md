@@ -115,6 +115,20 @@ Core question:
 
 Can this player regularly provide a meaningful weekly contribution in the currently derived league format, serve as valuable scarce-position backup, or be used as a trade asset for an upgrade?
 
+### Marginal backup and injury-insurance roster-slot guardrail
+
+For marginal quarterbacks and comparable scarce-position backups in a shallow league, evaluate the **actual path to Mighty Giants lineup utility** before treating generic Dynasty rank or an additional rostered QB as sufficient retention value.
+
+- Derive the healthy, currently usable starter/backup group from current roster, injury/IR designations, bye weeks and NFL roles. Count unavailable IR assets separately from active coverage; do not confuse total controlled QBs with usable QBs.
+- For the rest of the current regular season and playoffs, identify realistic scenarios in which the additional backup would actually start: overlap of byes/injuries, an extended starter absence, material role improvement or a verified week-specific start advantage. Separate theoretical emergency eligibility from plausible lineup usage; do not invent exact injury probabilities.
+- Value **current-season incremental lineup contribution and injury insurance**, **credible future development or eventual starter utility**, and **realistically liquid trade/asset value** separately. Generic Dynasty ECR or market value is context, not proof that another manager will pay or that Mighty Giants will start the player.
+- Compare those paths with the player's active slot cost, coverage floor, actual fantasy free-agent replacement level, current comparison boundary, cap implications when material, and the best alternative use of that roster spot.
+- Extra QB coverage justified by a temporarily injured or unavailable core player is **conditional insurance**, not an automatic permanent hold once the core recovers. Recheck the surplus QB when availability changes, relevant byes pass, the NFL role changes or roster pressure increases. Conversely, do not eliminate necessary insurance before the current exposure is resolved.
+- If realistic Mighty Giants start opportunities remain negligible both now and on a credible future horizon, retaining the player requires enough believable development or trade-option value to beat the roster opportunity cost; a generic dynasty premium alone is insufficient.
+- A speculative one-week projection difference does not by itself justify exchanging a meaningful long-term asset for a short-term QB, especially if neither would enter the preferred starting lineup.
+
+Apply the detailed structural test in `ROSTER_ARCHITECTURE.md` together with the current league-format notes; this is a decision guardrail, not a fixed QB-count cap or a player-specific cut instruction.
+
 ### Free-Agent Draft pick opportunity-cost guardrail
 
 Free-Agent Draft picks are a distinct asset type and must not inherit the value of a same-numbered Rookie Draft pick or a generic external pick label.

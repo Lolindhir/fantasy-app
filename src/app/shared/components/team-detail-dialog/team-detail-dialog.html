@@ -229,7 +229,15 @@
                       @if (historicalPlayer(pick); as player) {
                         <app-draft-pick-player-card [player]="player" />
                       } @else {
-                        <span>{{ historicalPlayerName(pick) }}</span>
+                        <span class="historical-player-ref">
+                          @if (pick.PlayerRef?.Picture; as picture) {
+                            <img class="historical-player-portrait" [src]="picture | playerPicture" alt="" loading="lazy" decoding="async" />
+                          }
+                          <span>{{ historicalPlayerName(pick) }}</span>
+                          @if (pick.PlayerRef?.Position; as position) {
+                            <small>{{ position }}</small>
+                          }
+                        </span>
                       }
                     </div>
                   }

@@ -1,0 +1,80 @@
+schemaVersion: 1
+status: active
+
+purpose: >
+  Canonical contract for hand-maintained league metadata under
+  data-meta/<CanonicalLeagueID>/ (ADR-054, Issue #986). Metadata describes what a league
+  is and which central model it uses per season. It contains no calculation logic.
+
+ownership:
+  root: data-meta
+  fileGlob: data-meta/<CanonicalLeagueID>/metadata.json
+  maintainedBy: hand
+  rules:
+    - No workflow, generator or AI-driven sync writes into data-meta; changes are reviewed commits.
+    - One directory per league, named exactly like CanonicalLeagueID. Multiple leagues are normal; nothing may assume exactly one.
+    - The root comes from the central root constants (tools/data_roots.py, Get-DataMetaRoot in ConfigUtils.psm1, Issue #788 step 0); DATA_META_ROOT overrides it for tests and fixtures only.
+
+layerPosition: >
+  Level 3 of the six-level target (global NFL facts, league facts, league metadata, central
+  logic, derived data, consumer delivery). Metadata is read by consumers and by the central
+  models; it does not read other layers except for validation against the league manifest.
+
+fields:
+  SchemaVersion: Integer, currently 1.
+  CanonicalLeagueID: fantasy-app-issued slug, equals the directory name (league-source-data.yaml leagueIdentity).
+  Provider: Currently Sleeper only.
+  CurrentProviderLeagueID: Provider league ID of the newest season; starting point of the League source sync (replaces _bootstrap).
+  LeagueTimeZone: IANA time zone of the league; used for calendar semantics such as the Cap Deadline.
+  Owners: Name to numeric owner ID, moved 1:1 from the former Metadata.json OwnerIDs. Values are unique. Owner semantics (manager versus franchise) stay with Issues #777 and #774.
+  Drafts: Moved 1:1 from the former Metadata.json Drafts (UpcomingDraftCount, UpcomingDraftCountMode PerDraftType, Types with DraftType, DraftInstance, DraftNo, Rounds, SleeperDraftIDs per season, order configuration). Semantics follow draft-identity.yaml.
+  Seasons:
+    key: Four-digit season string. Every season in the league manifest needs an entry.
+    CapDeadline: ISO timestamp; optional per season, but together with CapDeadlineBufferDays. The current season needs it.
+    CapDeadlineBufferDays: Exactly one value per season; there is no code fallback.
+    Models: Exactly Salary, SalaryCap, Grading, Standings and Awards with a known model ID (salary-v1, salary-cap-v1, grading-v1, standings-v1, awards-v1 for all current seasons; Standings and Awards since Issue #987, ADR-072).
+
+notInMetadata:
+  alreadyCanonical:
+    - LeagueYear (data-source/leagues/<liga>/manifest.json CurrentCanonicalLeagueSeasonID)
+    - TeamCount (canonical league.json Settings.num_teams)
+    - earlier provider league IDs (manifest lineage via previous_league_id)
+  modelParameters:
+    - SalaryRelevantTeamSize, cap factor, WeightTotal, WeightGame, salary curve, floor, ramp-in, grading thresholds
+    - These belong to the central models (Issue #919) and live in the central models under tools/derived_data_lib/models (the PowerShell constants were removed with #919 step 8).
+
+modelChoice:
+  rule: >
+    A league chooses a model ID per season; the models are central, versioned and immutable
+    after first productive use. A new version applies from the season the metadata names;
+    earlier seasons keep their model and stay reproducible.
+  catalogue: >
+    Interim: KNOWN_MODEL_IDS in tools/league_metadata.py and $script:KnownModelIds in
+    LeagueMetadataUtils.psm1. Replaced by the model registry of Issue #919; both loaders must
+    then check against it. Until then a new model ID needs a loader change.
+
+loaders:
+  python: tools/league_metadata.py
+  powershell: public/requests/utils/LeagueMetadataUtils.psm1
+  failClosed:
+    - missing root, league file or season
+    - unknown or missing top-level or season keys
+    - CanonicalLeagueID differing from the directory name
+    - unknown model kind or model ID, missing model choice
+    - invalid time zone, duplicate owner IDs, duplicate draft slots
+    - validate_against_manifest: manifest season without metadata entry or differing provider league ID
+  multiLeague: Loaders iterate every data-meta/*/metadata.json (list_league_ids, load_all_league_metadata, Get-AllLeagueMetadata).
+
+migration:
+  issue: 986
+  steps:
+    1: Contract and ADR-054.
+    2: "File, loaders, tests and parity test (done, PR 1000)."
+    3: "Switch consumers: ConfigUtils Get-Config (LeagueYear from the League source manifest, CapDeadlineBufferDays without fallback), RequestLeague/RequestPlayers/RequestSchedule (config.ps1 removed), league_source_data.py (load_bootstraps now reads data-meta), source_data_readiness.py, Fantasy Management FA board config and trigger resolver, plus the path triggers of fm-daily.yml and sync-league-source-data.yml (workflow approval recorded in the Issue)."
+    4: "Done: public/data/Metadata.json, its ai-doc, _bootstrap removed; AGENTS.md and remaining documentation updated; parity test replaced by a retirement check."
+  retirementSafeguard: tools/tests/test_league_source_metadata.py asserts that the legacy Metadata.json, its ai-doc, _bootstrap and config.ps1 do not exist.
+
+validation:
+  tests: tools/tests/test_league_source_metadata.py
+  powershell: public/requests/LeagueMetadataRegressionTest.ps1 (run by the Python test when pwsh exists, as in CI)
+  ci: matched by the existing league-source test discovery (test_league_source*.py); no workflow change.

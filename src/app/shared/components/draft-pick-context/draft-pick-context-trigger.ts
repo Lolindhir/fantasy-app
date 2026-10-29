@@ -18,7 +18,12 @@ export class DraftPickContextTriggerComponent {
   @Input() variant: DraftPickPillVariant = 'chip';
   @Input() usePickedPositionColor = false;
 
+  get positionForColor(): string | undefined {
+    const historical = this.context.pick?.PlayerRef;
+    return historical ? historical.Position ?? undefined : this.context.selectedPlayer?.Position;
+  }
+
   get usePositionColor(): boolean {
-    return this.usePickedPositionColor && !!this.context.selectedPlayer?.Position;
+    return this.usePickedPositionColor && !!this.positionForColor;
   }
 }

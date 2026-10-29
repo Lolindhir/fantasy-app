@@ -1,0 +1,829 @@
+{
+  "schemaVersion": 1,
+  "datasets": [
+    {
+      "id": "fantasypros.ecr.dynasty-superflex-ppr",
+      "domain": "market",
+      "provider": "fantasypros",
+      "kind": "expert-consensus",
+      "acquisition": {
+        "mode": "html-embedded-json",
+        "fetcher": "tools/external_source/fantasypros.py"
+      },
+      "format": {
+        "horizon": "dynasty",
+        "scoring": "ppr",
+        "quarterbackMode": "superflex",
+        "providerTeamCount": null,
+        "positions": [
+          "QB",
+          "RB",
+          "WR",
+          "TE"
+        ],
+        "window": null
+      },
+      "identity": {
+        "providerKey": "FantasyPros",
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": 150
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "FantasyPros",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": null
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fantasypros.ecr.redraft-ppr-superflex",
+      "domain": "market",
+      "provider": "fantasypros",
+      "kind": "expert-consensus",
+      "acquisition": {
+        "mode": "html-embedded-json",
+        "fetcher": "tools/external_source/fantasypros_redraft.py"
+      },
+      "format": {
+        "horizon": "redraft",
+        "scoring": "ppr",
+        "quarterbackMode": "superflex",
+        "providerTeamCount": null,
+        "positions": [
+          "QB",
+          "RB",
+          "WR",
+          "TE"
+        ],
+        "window": null
+      },
+      "identity": {
+        "providerKey": "FantasyPros",
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": 150
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "FantasyPros",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": null
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fantasycalc.value.dynasty-superflex-ppr-8-team",
+      "domain": "market",
+      "provider": "fantasycalc",
+      "kind": "market-value",
+      "acquisition": {
+        "mode": "json-api",
+        "fetcher": "tools/external_source/fantasycalc.py"
+      },
+      "format": {
+        "horizon": "dynasty",
+        "scoring": "ppr",
+        "quarterbackMode": "superflex",
+        "providerTeamCount": 8,
+        "positions": [
+          "QB",
+          "RB",
+          "WR",
+          "TE"
+        ],
+        "window": null
+      },
+      "identity": {
+        "providerKey": "Sleeper",
+        "column": "sleeper_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": 100
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "FantasyCalc",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": null
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fantasycalc.value.redraft-superflex-ppr-8-team",
+      "domain": "market",
+      "provider": "fantasycalc",
+      "kind": "market-value",
+      "acquisition": {
+        "mode": "json-api",
+        "fetcher": "tools/external_source/fantasycalc.py"
+      },
+      "format": {
+        "horizon": "redraft",
+        "scoring": "ppr",
+        "quarterbackMode": "superflex",
+        "providerTeamCount": 8,
+        "positions": [
+          "QB",
+          "RB",
+          "WR",
+          "TE"
+        ],
+        "window": null
+      },
+      "identity": {
+        "providerKey": "Sleeper",
+        "column": "sleeper_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": 100
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "FantasyCalc",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": null
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fantasy-football-calculator.adp.redraft-ppr-8-team",
+      "domain": "market",
+      "provider": "fantasy-football-calculator",
+      "kind": "adp",
+      "acquisition": {
+        "mode": "json-api",
+        "fetcher": "tools/external_source/fantasy_football_calculator.py"
+      },
+      "format": {
+        "horizon": "redraft",
+        "scoring": "ppr",
+        "quarterbackMode": "standard",
+        "providerTeamCount": 8,
+        "positions": [
+          "QB",
+          "RB",
+          "WR",
+          "TE"
+        ],
+        "window": null
+      },
+      "identity": {
+        "providerKey": null,
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": 50
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "optional",
+        "postseason": "inactive",
+        "post_regular_season": "inactive"
+      },
+      "rights": {
+        "license": "provider-terms-readme",
+        "attribution": "Fantasy Football Calculator",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/README.md: personal and commercial use of the ADP API allowed, attribution requested, visible source credit in user-facing display"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fantasy-football-calculator.adp.redraft-2qb-10-team",
+      "domain": "market",
+      "provider": "fantasy-football-calculator",
+      "kind": "adp",
+      "acquisition": {
+        "mode": "json-api",
+        "fetcher": "tools/external_source/fantasy_football_calculator.py"
+      },
+      "format": {
+        "horizon": "redraft",
+        "scoring": "ppr",
+        "quarterbackMode": "2qb",
+        "providerTeamCount": 10,
+        "positions": [
+          "QB",
+          "RB",
+          "WR",
+          "TE"
+        ],
+        "window": null
+      },
+      "identity": {
+        "providerKey": null,
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": 50
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "optional",
+        "postseason": "inactive",
+        "post_regular_season": "inactive"
+      },
+      "rights": {
+        "license": "provider-terms-readme",
+        "attribution": "Fantasy Football Calculator",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/README.md: personal and commercial use of the ADP API allowed, attribution requested, visible source credit in user-facing display"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fantasy-football-calculator.adp.redraft-ppr-8-team-kicker",
+      "domain": "market",
+      "provider": "fantasy-football-calculator",
+      "kind": "adp",
+      "acquisition": {
+        "mode": "json-api",
+        "fetcher": "tools/external_source/fantasy_football_calculator.py"
+      },
+      "format": {
+        "horizon": "redraft",
+        "scoring": "ppr",
+        "quarterbackMode": "standard",
+        "providerTeamCount": 8,
+        "positions": [
+          "K"
+        ],
+        "window": null
+      },
+      "identity": {
+        "providerKey": null,
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": 10
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "optional",
+        "postseason": "inactive",
+        "post_regular_season": "inactive"
+      },
+      "rights": {
+        "license": "provider-terms-readme",
+        "attribution": "Fantasy Football Calculator",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/adp/fantasy-football-calculator/README.md: personal and commercial use of the ADP API allowed, attribution requested, visible source credit in user-facing display"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fftoday.projection.redraft-qb-preseason",
+      "domain": "market",
+      "provider": "fftoday",
+      "kind": "projection",
+      "acquisition": {
+        "mode": "html-table",
+        "fetcher": "tools/external_source/fftoday_offense.py"
+      },
+      "format": {
+        "horizon": "redraft",
+        "scoring": "provider-default",
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "QB"
+        ],
+        "window": "preseason"
+      },
+      "identity": {
+        "providerKey": null,
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": null
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "inactive",
+        "postseason": "inactive",
+        "post_regular_season": "inactive"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "FFToday",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/projections/README.md and SOURCE_AUDIT.md: active public HTML source without login; no statement on storage or publication rights"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fftoday.projection.redraft-rb-preseason",
+      "domain": "market",
+      "provider": "fftoday",
+      "kind": "projection",
+      "acquisition": {
+        "mode": "html-table",
+        "fetcher": "tools/external_source/fftoday_offense.py"
+      },
+      "format": {
+        "horizon": "redraft",
+        "scoring": "provider-default",
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "RB"
+        ],
+        "window": "preseason"
+      },
+      "identity": {
+        "providerKey": null,
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": null
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "inactive",
+        "postseason": "inactive",
+        "post_regular_season": "inactive"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "FFToday",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/projections/README.md and SOURCE_AUDIT.md: active public HTML source without login; no statement on storage or publication rights"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fftoday.projection.redraft-wr-preseason",
+      "domain": "market",
+      "provider": "fftoday",
+      "kind": "projection",
+      "acquisition": {
+        "mode": "html-table",
+        "fetcher": "tools/external_source/fftoday_offense.py"
+      },
+      "format": {
+        "horizon": "redraft",
+        "scoring": "provider-default",
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "WR"
+        ],
+        "window": "preseason"
+      },
+      "identity": {
+        "providerKey": null,
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": null
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "inactive",
+        "postseason": "inactive",
+        "post_regular_season": "inactive"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "FFToday",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/projections/README.md and SOURCE_AUDIT.md: active public HTML source without login; no statement on storage or publication rights"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fftoday.projection.redraft-te-preseason",
+      "domain": "market",
+      "provider": "fftoday",
+      "kind": "projection",
+      "acquisition": {
+        "mode": "html-table",
+        "fetcher": "tools/external_source/fftoday_offense.py"
+      },
+      "format": {
+        "horizon": "redraft",
+        "scoring": "provider-default",
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "TE"
+        ],
+        "window": "preseason"
+      },
+      "identity": {
+        "providerKey": null,
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": null
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "inactive",
+        "postseason": "inactive",
+        "post_regular_season": "inactive"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "FFToday",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/projections/README.md and SOURCE_AUDIT.md: active public HTML source without login; no statement on storage or publication rights"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "fftoday.projection.redraft-kicker-preseason",
+      "domain": "market",
+      "provider": "fftoday",
+      "kind": "projection",
+      "acquisition": {
+        "mode": "html-table",
+        "fetcher": "tools/external_source/fftoday_kicker.py"
+      },
+      "format": {
+        "horizon": "redraft",
+        "scoring": "provider-default",
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "K"
+        ],
+        "window": "preseason"
+      },
+      "identity": {
+        "providerKey": null,
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": 20
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "inactive",
+        "postseason": "inactive",
+        "post_regular_season": "inactive"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "FFToday",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/projections/README.md and SOURCE_AUDIT.md: active public HTML source without login; no statement on storage or publication rights"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "cbs-sports.projection.redraft-qb-preseason",
+      "domain": "market",
+      "provider": "cbs-sports",
+      "kind": "projection",
+      "acquisition": {
+        "mode": "html-table",
+        "fetcher": "tools/external_source/cbs_sports_offense.py"
+      },
+      "format": {
+        "horizon": "rest-of-season",
+        "scoring": "provider-default",
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "QB"
+        ],
+        "window": "rest_of_season"
+      },
+      "identity": {
+        "providerKey": "CBS",
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": null
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "CBS Sports",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/projections/README.md and SOURCE_AUDIT.md: active public HTML source without login; no statement on storage or publication rights"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "cbs-sports.projection.redraft-rb-preseason",
+      "domain": "market",
+      "provider": "cbs-sports",
+      "kind": "projection",
+      "acquisition": {
+        "mode": "html-table",
+        "fetcher": "tools/external_source/cbs_sports_offense.py"
+      },
+      "format": {
+        "horizon": "rest-of-season",
+        "scoring": "provider-default",
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "RB"
+        ],
+        "window": "rest_of_season"
+      },
+      "identity": {
+        "providerKey": "CBS",
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": null
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "CBS Sports",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/projections/README.md and SOURCE_AUDIT.md: active public HTML source without login; no statement on storage or publication rights"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "cbs-sports.projection.redraft-wr-preseason",
+      "domain": "market",
+      "provider": "cbs-sports",
+      "kind": "projection",
+      "acquisition": {
+        "mode": "html-table",
+        "fetcher": "tools/external_source/cbs_sports_offense.py"
+      },
+      "format": {
+        "horizon": "rest-of-season",
+        "scoring": "provider-default",
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "WR"
+        ],
+        "window": "rest_of_season"
+      },
+      "identity": {
+        "providerKey": "CBS",
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": null
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "CBS Sports",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/projections/README.md and SOURCE_AUDIT.md: active public HTML source without login; no statement on storage or publication rights"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "cbs-sports.projection.redraft-te-preseason",
+      "domain": "market",
+      "provider": "cbs-sports",
+      "kind": "projection",
+      "acquisition": {
+        "mode": "html-table",
+        "fetcher": "tools/external_source/cbs_sports_offense.py"
+      },
+      "format": {
+        "horizon": "rest-of-season",
+        "scoring": "provider-default",
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "TE"
+        ],
+        "window": "rest_of_season"
+      },
+      "identity": {
+        "providerKey": "CBS",
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": null
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "CBS Sports",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/projections/README.md and SOURCE_AUDIT.md: active public HTML source without login; no statement on storage or publication rights"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "cbs-sports.projection.redraft-kicker-preseason",
+      "domain": "market",
+      "provider": "cbs-sports",
+      "kind": "projection",
+      "acquisition": {
+        "mode": "html-table",
+        "fetcher": "tools/external_source/cbs_sports_kicker.py"
+      },
+      "format": {
+        "horizon": "rest-of-season",
+        "scoring": "provider-default",
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "K"
+        ],
+        "window": "rest_of_season"
+      },
+      "identity": {
+        "providerKey": "CBS",
+        "column": "source_player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": 20
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "unknown",
+        "attribution": "CBS Sports",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "fantasy-management/sources/external-rankings/projections/README.md and SOURCE_AUDIT.md: active public HTML source without login; no statement on storage or publication rights"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "sleeper.trending.add",
+      "domain": "market",
+      "provider": "sleeper",
+      "kind": "roster-activity",
+      "acquisition": {
+        "mode": "json-api",
+        "fetcher": "tools/external_source/sleeper_trending.py"
+      },
+      "format": {
+        "horizon": null,
+        "scoring": null,
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "QB",
+          "RB",
+          "WR",
+          "TE",
+          "K"
+        ],
+        "window": "24h-lookback"
+      },
+      "identity": {
+        "providerKey": "Sleeper",
+        "column": "player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": null
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "provider-terms-audit",
+        "attribution": "Sleeper",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "data-source/providers/sleeper/trending/SOURCE_AUDIT.md: documented public endpoint, attribution to Sleeper required in every stored document and user-facing display"
+      },
+      "lifecycle": "active"
+    },
+    {
+      "id": "sleeper.trending.drop",
+      "domain": "market",
+      "provider": "sleeper",
+      "kind": "roster-activity",
+      "acquisition": {
+        "mode": "json-api",
+        "fetcher": "tools/external_source/sleeper_trending.py"
+      },
+      "format": {
+        "horizon": null,
+        "scoring": null,
+        "quarterbackMode": null,
+        "providerTeamCount": null,
+        "positions": [
+          "QB",
+          "RB",
+          "WR",
+          "TE",
+          "K"
+        ],
+        "window": "24h-lookback"
+      },
+      "identity": {
+        "providerKey": "Sleeper",
+        "column": "player_id"
+      },
+      "retentionPolicy": "latest-with-git-history",
+      "quality": {
+        "minimumRows": null
+      },
+      "seasonPolicy": {
+        "pre_regular_season": "expected",
+        "regular_season": "expected",
+        "postseason": "expected",
+        "post_regular_season": "expected"
+      },
+      "rights": {
+        "license": "provider-terms-audit",
+        "attribution": "Sleeper",
+        "storage": "unknown",
+        "publication": "unknown",
+        "evidence": "data-source/providers/sleeper/trending/SOURCE_AUDIT.md: documented public endpoint, attribution to Sleeper required in every stored document and user-facing display"
+      },
+      "lifecycle": "active"
+    }
+  ]
+}

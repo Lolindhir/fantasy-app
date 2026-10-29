@@ -8,6 +8,8 @@ import type { RawDraft } from '../models/draft.models';
 import type { FantasyGameContextReadModel, HistoricalFantasyGameContextSeason } from '../models/fantasy-game-context.models';
 import type { DataTimestamps, RawLeague } from '../models/league.models';
 import type { MatchupsReadModel } from '../models/matchup.models';
+import type { MatchupProjectionsReadModel } from '../models/matchup-projections.models';
+import type { PlayerWeekFantasyReadModel } from '../models/player-week-fantasy.models';
 import type { RawNFLTeam, RawPlayer } from '../models/player.models';
 import type { RawTransaction } from '../models/transaction.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
@@ -92,6 +94,14 @@ export class DataApiService {
 
   getFantasyGameContextRaw(): Observable<FantasyGameContextReadModel> {
     return this.http.get<FantasyGameContextReadModel>('data/FantasyGameContext.json');
+  }
+
+  getPlayerWeekFantasyRaw(): Observable<PlayerWeekFantasyReadModel> {
+    return this.http.get<PlayerWeekFantasyReadModel>('data/PlayerWeekFantasy.json');
+  }
+
+  getMatchupProjectionsRaw(): Observable<MatchupProjectionsReadModel> {
+    return this.http.get<MatchupProjectionsReadModel>('data/MatchupProjections.json');
   }
 
   getWeeklyRecapsRaw(): Observable<WeeklyRecapsReadModel> {

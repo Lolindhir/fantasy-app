@@ -1,15 +1,23 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import { mapRawLeagueData } from '../mappers/league.mapper';
 import { mapRawPlayerToPlayer } from '../mappers/player.mapper';
 import { mapRawTransactions } from '../mappers/transaction.mapper';
 import type { DecisionWindowsReadModel } from '../models/decision-window.models';
 import type { RawDraft } from '../models/draft.models';
-import type { FantasyGameContextReadModel } from '../models/fantasy-game-context.models';
+import type {
+  FantasyGameContextProjectionDisplay,
+  FantasyGameContextReadModel
+} from '../models/fantasy-game-context.models';
 import type { FantasyTeam, League, RawLeague } from '../models/league.models';
+import type { MatchupProjectionsReadModel } from '../models/matchup-projections.models';
 import type { MatchupsReadModel } from '../models/matchup.models';
+import type {
+  PlayerWeekFantasyProjection,
+  PlayerWeekFantasyReadModel
+} from '../models/player-week-fantasy.models';
 import type {
   NFLTeam,
   Player,
@@ -40,6 +48,84 @@ export interface LeagueWithPlayers {
 
 export interface LeagueWithPlayersAndTransactions extends LeagueWithPlayers {
   transactions: Transaction[];
+}
+
+function buildProjectionByPlayerID(
+  playerWeekFantasy: PlayerWeekFantasyReadModel
+): Map<string, PlayerWeekFantasyProjection> | null {
+  const result = new Map<string, PlayerWeekFantasyProjection>();
+
+  for (const record of playerWeekFantasy.Records ?? []) {
+    if (record.PlayerID === null || record.PlayerID === undefined || String(record.PlayerID).trim() === '') continue;
+    const playerID = String(record.PlayerID);
+    if (result.has(playerID)) return null;
+    result.set(playerID, record.Projection);
+  }
+
+  return result;
+}
+
+function sameTarget(
+  context: FantasyGameContextReadModel,
+  snapshot: { Season: string | number; Week: number }
+): boolean {
+  return String(context.Season) === String(snapshot.Season)
+    && Number(context.Week) === Number(snapshot.Week);
+}
+
+/**
+ * Joins published projection data onto the current FantasyGameContext. This is a pure join:
+ * projections, ranges, display level and axes are published data and are never calculated here.
+ * Each snapshot joins only when its Season and Week match; otherwise the context is left as is.
+ */
+function enrichFantasyGameContextWithProjections(
+  context: FantasyGameContextReadModel,
+  playerWeekFantasy: PlayerWeekFantasyReadModel | null,
+  matchupProjections: MatchupProjectionsReadModel | null
+): FantasyGameContextReadModel {
+  let result = context;
+  const display: FantasyGameContextProjectionDisplay = {
+    PlayerRangeLevel: null,
+    PlayerRangeAxis: null,
+    TeamRangeLevel: null
+  };
+
+  const projectionByPlayerID = playerWeekFantasy && sameTarget(context, playerWeekFantasy)
+    ? buildProjectionByPlayerID(playerWeekFantasy)
+    : null;
+  if (projectionByPlayerID && playerWeekFantasy) {
+    display.PlayerRangeLevel = playerWeekFantasy.Display?.RangeLevel ?? null;
+    display.PlayerRangeAxis = playerWeekFantasy.Display?.RangeAxis ?? null;
+    result = {
+      ...result,
+      Games: result.Games.map(game => ({
+        ...game,
+        FantasyTeams: game.FantasyTeams.map(team => ({
+          ...team,
+          Players: team.Players.map(player => ({
+            ...player,
+            Prediction: projectionByPlayerID.get(String(player.PlayerID)) ?? null
+          }))
+        }))
+      }))
+    };
+  }
+
+  if (matchupProjections && sameTarget(context, matchupProjections)) {
+    const projectionByMatchupID = new Map(
+      matchupProjections.Matchups.map(matchup => [matchup.FantasyMatchupID, matchup])
+    );
+    display.TeamRangeLevel = matchupProjections.DisplayLevel;
+    result = {
+      ...result,
+      FantasyMatchups: result.FantasyMatchups.map(matchup => ({
+        ...matchup,
+        Projection: projectionByMatchupID.get(matchup.FantasyMatchupID) ?? null
+      }))
+    };
+  }
+
+  return result === context ? context : { ...result, ProjectionDisplay: display };
 }
 
 @Injectable({
@@ -123,8 +209,23 @@ export class DataService {
     return this.dataApiService.getMatchupsRaw();
   }
 
+  getPlayerWeekFantasy(): Observable<PlayerWeekFantasyReadModel> {
+    return this.dataApiService.getPlayerWeekFantasyRaw();
+  }
+
+  getMatchupProjections(): Observable<MatchupProjectionsReadModel> {
+    return this.dataApiService.getMatchupProjectionsRaw();
+  }
+
   getFantasyGameContext(): Observable<FantasyGameContextReadModel> {
-    return this.dataApiService.getFantasyGameContextRaw();
+    return forkJoin({
+      context: this.dataApiService.getFantasyGameContextRaw(),
+      playerWeekFantasy: this.getPlayerWeekFantasy().pipe(catchError(() => of(null))),
+      matchupProjections: this.getMatchupProjections().pipe(catchError(() => of(null)))
+    }).pipe(
+      map(({ context, playerWeekFantasy, matchupProjections }) =>
+        enrichFantasyGameContextWithProjections(context, playerWeekFantasy, matchupProjections))
+    );
   }
 
   getWeeklyRecaps(): Observable<WeeklyRecapsReadModel> {

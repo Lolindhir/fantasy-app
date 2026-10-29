@@ -93,7 +93,9 @@ function makeLeague(teamCount = 8): League {
       Team: `Long Fantasy Team ${place}`,
       TeamAbbr: `T${place}`,
       Owner: `Owner ${place}`,
-      Avatar: '',
+      OwnerAvatar: place === 2 ? '' : `/owner-${place}.png`,
+      TeamAvatar: `/team-${place}.png`,
+      Avatar: `/team-${place}.png`,
       Roster: [makePlayer(place)],
       Placements: {
         Current: { Regular: regular, Awards: [] },
@@ -228,6 +230,15 @@ const recap: WeeklyRecapsReadModel = {
         FantasyMatchupIDs: ['m-3']
       }
     ],
+    TeamAwards: {
+      State: 'available',
+      BestCoach: [
+        { CanonicalLeagueRosterID: 'coach-2', FantasyTeamID: 2, EfficiencyPercent: 89.4911, ActualStarterPoints: 179, PotentialPoints: 200.02, MissedPoints: 21.02 }
+      ],
+      BestManager: [
+        { CanonicalLeagueRosterID: 'manager-1', FantasyTeamID: 1, PotentialPoints: 229.16 }
+      ]
+    },
     KeyPlayers: [
       { PlayerID: 'player-2', FantasyTeamID: 2, NFLTeamID: 'NFL-2', Position: 'WR', Points: 15 },
       { PlayerID: 'player-1', FantasyTeamID: 1, NFLTeamID: 'NFL-1', Position: 'WR', Points: 30 },
@@ -324,8 +335,8 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     });
   }
 
-  for (const width of [360, 390, 430]) {
-    it(`keeps the compact 2-game / 3-player recap dense and contained at ${width}px`, () => {
+  for (const width of [320, 360, 390, 430]) {
+    it(`keeps the compact 2-game / 3-player / 2-award recap dense and contained at ${width}px`, () => {
       dataService.getMatchups.and.returnValue(of(makeMatchups(8, '2000-09-17T00:00:00Z')));
       fixture.destroy();
       fixture = TestBed.createComponent(LeagueMatchupsComponent);
@@ -343,19 +354,49 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
       const playerList = shell?.querySelector<HTMLElement>('.weekly-recap-list--players');
       const games = Array.from(shell?.querySelectorAll<HTMLElement>('.weekly-recap-game') ?? []);
       const players = Array.from(shell?.querySelectorAll<HTMLElement>('.weekly-recap-player') ?? []);
+      const awardGrid = shell?.querySelector<HTMLElement>('.weekly-recap-awards');
+      const awards = Array.from(shell?.querySelectorAll<HTMLElement>('.weekly-recap-award') ?? []);
 
       expect(shell).not.toBeNull();
       expect(gameList).not.toBeNull();
       expect(playerList).not.toBeNull();
       expect(games.length).toBe(2);
       expect(players.length).toBe(3);
+      expect(awards.length).toBe(2);
+      expect(awardGrid).not.toBeNull();
+      expect(awards[0].textContent).toContain('Best Coach');
+      expect(awards[0].textContent).toContain('89.5%');
+      expect(awards[1].textContent).toContain('Best Manager');
+      expect(awards[1].textContent).toContain('229.16');
+      expect(awards[0].textContent).toContain('Owner 2');
+      expect(awards[1].querySelector('img')?.getAttribute('src')).toBe('/owner-1.png');
+      expect(awards[1].querySelector('img')?.getAttribute('src')).not.toBe('/team-1.png');
       expect(shell!.querySelector('.weekly-recap-meta')).toBeNull();
       expect(shell!.textContent).not.toContain('starter pts');
       expect(shell!.textContent).not.toContain('starter');
       expect(shell!.scrollWidth).toBeLessThanOrEqual(shell!.clientWidth + 1);
       expect(gameList!.scrollWidth).toBeLessThanOrEqual(gameList!.clientWidth + 1);
       expect(playerList!.scrollWidth).toBeLessThanOrEqual(playerList!.clientWidth + 1);
-      expect(shell!.getBoundingClientRect().height).toBeLessThan(190);
+      expect(shell!.getBoundingClientRect().height).toBeLessThan(305);
+      expect(awardGrid!.scrollWidth).toBeLessThanOrEqual(awardGrid!.clientWidth + 1);
+      expect(getComputedStyle(awardGrid!).gridTemplateColumns.split(' ').filter(Boolean).length).toBe(2);
+      for (const award of awards) {
+        expect(award.scrollWidth).toBeLessThanOrEqual(award.clientWidth + 1);
+        const winner = award.querySelector<HTMLElement>('.weekly-recap-award-winner')!;
+        const owner = winner.querySelector<HTMLElement>('.weekly-recap-award-owner')!;
+        const value = winner.querySelector<HTMLElement>('.weekly-recap-award-value')!;
+        const ownerRect = owner.getBoundingClientRect();
+        const valueRect = value.getBoundingClientRect();
+        const ownerCenterY = (ownerRect.top + ownerRect.bottom) / 2;
+        const valueCenterY = (valueRect.top + valueRect.bottom) / 2;
+        expect(Math.abs(ownerCenterY - valueCenterY)).toBeLessThan(2);
+        expect(valueRect.right).toBeLessThanOrEqual(winner.getBoundingClientRect().right + 1);
+        expect(getComputedStyle(value).whiteSpace).toBe('nowrap');
+      }
+      expect(getComputedStyle(awards[0].querySelector<HTMLElement>('.weekly-recap-award-extra')!).display).toBe('none');
+      const unit = awards[1].querySelector<HTMLElement>('.weekly-recap-award-unit')!;
+      expect(getComputedStyle(unit).position).toBe('absolute');
+      expect(unit.textContent).toContain('pts');
 
       const gameColumns = getComputedStyle(gameList!).gridTemplateColumns.split(' ').filter(Boolean);
       const playerColumns = getComputedStyle(playerList!).gridTemplateColumns.split(' ').filter(Boolean);
@@ -378,6 +419,56 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
       }
     });
   }
+
+  it('shows richer Owner identity in the prominent recap and opens the correct team', () => {
+    const host: HTMLElement = fixture.nativeElement;
+    const shell = host.querySelector<HTMLElement>('.weekly-recap-shell--prominent');
+    expect(shell).not.toBeNull();
+    const awards = Array.from(shell!.querySelectorAll<HTMLElement>('.weekly-recap-award'));
+    expect(awards.length).toBe(2);
+    expect(awards[0].textContent).toContain('Best Coach');
+    expect(awards[0].textContent).toContain('Long Fantasy Team 2');
+    expect(awards[0].textContent).toContain('179 / 200.02 possible pts');
+    expect(awards[1].textContent).toContain('Best Manager');
+    expect(awards[1].textContent).toContain('Long Fantasy Team 1');
+    // Prominent awards must not overwhelm the adjacent Key Fantasy Players.
+    // Keep the already-accepted Compact variant on its own CSS overrides.
+    const playerPoints = shell!.querySelector<HTMLElement>('.weekly-recap-player-points')!;
+    const playerName = shell!.querySelector<HTMLElement>('.weekly-recap-player-copy strong')!;
+    const awardPoints = awards[0].querySelector<HTMLElement>('.weekly-recap-award-value')!;
+    const awardName = awards[0].querySelector<HTMLElement>('.weekly-recap-award-identity strong')!;
+    const awardAvatar = awards[0].querySelector<HTMLElement>('.weekly-recap-award-avatar')!;
+    expect(getComputedStyle(awardPoints).fontSize).toBe(getComputedStyle(playerPoints).fontSize);
+    expect(getComputedStyle(awardName).fontSize).toBe(getComputedStyle(playerName).fontSize);
+    expect(getComputedStyle(awardAvatar).width).toBe('28px');
+    expect(getComputedStyle(awards[0]).paddingTop).toBe('7px');
+    // Score and muted explanation are centered; title and identity remain left-aligned.
+    for (const award of awards) {
+      const value = award.querySelector<HTMLElement>('.weekly-recap-award-value')!;
+      const extra = award.querySelector<HTMLElement>('.weekly-recap-award-extra')!;
+      const owner = award.querySelector<HTMLElement>('.weekly-recap-award-owner')!;
+      expect(getComputedStyle(value).textAlign).toBe('center');
+      expect(getComputedStyle(extra).textAlign).toBe('center');
+      expect(getComputedStyle(owner).textAlign).toBe('left');
+    }
+    const ownerButton = awards[1].querySelector<HTMLButtonElement>('.weekly-recap-award-owner')!;
+    ownerButton.click();
+    const dialog = TestBed.inject(TeamDetailDialogService) as jasmine.SpyObj<TeamDetailDialogService>;
+    expect(dialog.open).toHaveBeenCalledWith(1);
+  });
+
+  it('does not show award cards when weekly recap awards are unavailable', () => {
+    const withoutAwards: WeeklyRecapsReadModel = {
+      ...recap,
+      Weeks: [{ ...recap.Weeks[0], TeamAwards: { State: 'unavailable', BestCoach: [], BestManager: [] } }]
+    };
+    dataService.getWeeklyRecaps.and.returnValue(of(withoutAwards));
+    fixture.destroy();
+    fixture = TestBed.createComponent(LeagueMatchupsComponent);
+    fixture.componentInstance.league = makeLeague();
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.weekly-recap-awards')).toBeNull();
+  });
 
   it('retains the prior matchup week instead of hiding the surface while standings are stale', () => {
     const staleLeague = makeLeague();
@@ -497,6 +588,40 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
     expect(host.querySelectorAll('.weekly-standing-record').length).toBe(10);
     expect(host.querySelectorAll('.weekly-last-matchup').length).toBe(5);
     expect(host.querySelectorAll('.weekly-last-side').length).toBe(10);
+  });
+
+  it('positions the playoff cutline from league settings and hides it when not applicable', () => {
+    dataService.getMatchups.and.returnValue(of(makeMatchups(6)));
+    fixture.destroy();
+    fixture = TestBed.createComponent(LeagueMatchupsComponent);
+    const league = makeLeague(6);
+    league.Settings = { playoff_teams: 4 };
+    fixture.componentInstance.league = league;
+    fixture.detectChanges();
+
+    const cutlineRanks = () => Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+        '.weekly-standing-row--playoff-cutline .weekly-standing-rank'
+      )
+    ).map(rank => rank.textContent?.trim());
+
+    expect(cutlineRanks()).toEqual(['5']);
+
+    league.Settings = { playoff_teams: 2 };
+    fixture.detectChanges();
+    expect(cutlineRanks()).toEqual(['3']);
+
+    league.Settings = { playoff_teams: 6 };
+    fixture.detectChanges();
+    expect(cutlineRanks()).toEqual([]);
+
+    league.Settings = {};
+    fixture.detectChanges();
+    expect(cutlineRanks()).toEqual([]);
+
+    league.Settings = { playoff_teams: 'invalid' };
+    fixture.detectChanges();
+    expect(cutlineRanks()).toEqual([]);
   });
 
   it('renders each Last Week result as one explicit two-sided matchup with the correct team-score association', () => {

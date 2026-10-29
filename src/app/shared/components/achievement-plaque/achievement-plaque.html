@@ -1,0 +1,37 @@
+<article class="achievement-plaque" [attr.aria-label]="season + ' ' + achievementLabel + ': ' + subjectName">
+  <div class="achievement-plaque__metal">
+    <header class="achievement-plaque__header">
+      <div class="achievement-plaque__year">
+        <span class="achievement-plaque__rule" aria-hidden="true"></span>
+        <strong>{{ season }}</strong>
+        <span class="achievement-plaque__rule" aria-hidden="true"></span>
+      </div>
+      <div class="achievement-plaque__title">{{ achievementLabel }}</div>
+      <div class="achievement-plaque__ornament" aria-hidden="true">◆</div>
+    </header>
+
+    <div class="achievement-plaque__body">
+      <div class="achievement-plaque__emblem">
+        <img [src]="emblemSrc" alt="" aria-hidden="true" />
+      </div>
+
+      <span class="achievement-plaque__avatar-stack">
+        <span class="achievement-plaque__primary-avatar">
+          <img *ngIf="subjectAvatar; else avatarFallback" [src]="subjectAvatar" alt="" aria-hidden="true" />
+          <ng-template #avatarFallback>
+            <img src="assets/default-team-avatar.png" alt="" aria-hidden="true" />
+          </ng-template>
+        </span>
+        <span *ngIf="secondaryAvatar" class="achievement-plaque__secondary-avatar">
+          <img [src]="secondaryAvatar" alt="" aria-hidden="true" />
+        </span>
+      </span>
+
+      <div class="achievement-plaque__identity">
+        <div class="achievement-plaque__name" [appFitText]="subjectName" [fitTextMinSize]="11.5" [fitTextMaxSize]="15.36">
+          {{ subjectName }}
+        </div>
+      </div>
+    </div>
+  </div>
+</article>

@@ -3,6 +3,7 @@ import { Component, Input, inject } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import type { Player } from '../../../core/models/fantasy.models';
+import { PlayerPicturePipe } from '../../pipes/player-picture.pipe';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 import type { DraftPickContext } from './draft-pick-context.models';
@@ -10,7 +11,7 @@ import type { DraftPickContext } from './draft-pick-context.models';
 @Component({
   selector: 'app-draft-pick-context-popover',
   standalone: true,
-  imports: [CommonModule, MatDialogModule, PositionStylePipe],
+  imports: [CommonModule, MatDialogModule, PositionStylePipe, PlayerPicturePipe],
   templateUrl: './draft-pick-context-popover.html',
   styleUrl: './draft-pick-context-popover.scss'
 })
@@ -30,11 +31,16 @@ export class DraftPickContextPopoverComponent {
   }
 
   get selectedPlayer(): Player | undefined {
-    return this.context.selectedPlayer;
+    // A current Player dialog cannot stand in for an archived draft identity.
+    return this.context.pick?.PlayerRef?.Name ? undefined : this.context.selectedPlayer;
+  }
+
+  get selectedPlayerRef() {
+    return this.context.pick?.PlayerRef;
   }
 
   get selectedPlayerName(): string | undefined {
-    return this.context.selectedPlayerName || this.context.pick?.PlayerName || undefined;
+    return this.selectedPlayerRef?.Name || this.context.selectedPlayerName || this.context.pick?.PlayerName || undefined;
   }
 
   get showOpenPickLabel(): boolean {

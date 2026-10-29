@@ -58,6 +58,7 @@ snapshot:
   - At or after 30 minutes from the retained Health due slot, the next central scheduler tick must dispatch Health even when a productive target is newly dispatched, in-flight or awaiting observation in that same tick. The machine-readable decision and Job Summary must identify the starvation override and any still-active blockers.
   - Retry-wait, retry-exhausted, retry cooldown, observation-timeout and observation-cooldown are not Health blockers. Once retry or dispatch observation can no longer productively settle in the current window, Health must be allowed to materialize the observable state instead of being starved.
   - The observation barrier delays only Workflow Health. Other productive scheduler targets remain parallel and are not serialized by monitoring.
+  - Snapshot API reads (tools/build_workflow_health_snapshot.py github_getter) retry transient failures (HTTP 429/5xx, network aborts, timeouts) three times with about 2, 5 and 10 seconds backoff plus jitter and log each retry as a warning; client errors fail immediately. Only an error that survives all retries fails the run (Issue 980); snapshot freshness stays the backstop.
   - The snapshot producer itself has no schedule, push or workflow_run trigger; repository activity and unrelated workflow completions must not create Health Snapshot runs.
   - Each actual scheduler dispatch materializes a snapshot directly. There is no snapshot-side freshness gate because the central scheduler owns due-slot deduplication and observation-barrier timing.
   - The verified external Cloudflare cron is the sole automatic wake-up source for the central scheduler through `external-scheduler-tick` repository_dispatch; workflow_dispatch remains available for manual recovery and testing.
@@ -78,6 +79,17 @@ scheduler:
       GitHub Actions run history is positive evidence for actual execution status and failure conclusions. Scheduler runtime
       state is authoritative only for the fact that a dispatch request was issued and for anchoring retry, observation,
       deferral and circuit timing. Absence from one workflow-run list response is unknown state, never failure evidence.
+    satisfiedSlots:
+      location: satisfiedSlots.<targetId> in workflow-scheduler-state.json (optional map, no schema version bump)
+      content: dueAt of the last slot seen as satisfied, the satisfying runId and recordedAt; one entry per target.
+      rule: >
+        A slot recorded as satisfied is never dispatched again, even when a later workflow-run list response does not
+        contain the successful run. A newer due slot behaves normally. The decision is `satisfied` with
+        satisfiedFromState=true so the JSON decision log and Job Summary show where the evidence came from. Entries of
+        removed targets are pruned.
+    stateReadRule: >
+      Empty or truncated scheduler state content is treated like a transient read error: it is re-read up to twice with
+      the configured delays (1 s, 2 s) and only then fails closed.
   profiles:
     productive:
       healthBarrier: true
@@ -97,6 +109,7 @@ scheduler:
       listWorkflowRuns query filtered to event=repository_dispatch without the branch parameter, merge/dedupe both result sets,
       then apply the local main/event/due-slot matcher again.
     missingRunRule: A persisted dispatch that is not visible in the merged run reads is `awaiting-observation`; it must not increment attempts or trigger a retry.
+    preDispatchRule: Before any `dispatch` decision (without stored satisfied-slot evidence) the same fallback query is run once and merged, so a successful or running run hidden from the primary list prevents the dispatch.
     timeoutRule: After 15 minutes without observing the requested run, open an observation circuit instead of issuing a blind retry.
     cooldownMinutes: 60
     cooldownRule: While the observation circuit is open, do not dispatch the target. After expiry a later scheduler tick may start one fresh cycle for the then-current due slot.
@@ -110,10 +123,47 @@ scheduler:
     - 10
     cooldownMinutes: 60
     slotAnchor: original-due-slot-until-success-or-circuit-resolution
-    failureEvidenceRule: A retry may be scheduled only after an actually observed repository_dispatch run for the active cycle is completed with a non-success conclusion. Missing run observation is not a failed attempt.
+    failureEvidenceRule: >
+      A retry may be scheduled only after an actually observed repository_dispatch run for the active cycle is completed with a non-success conclusion.
+      Missing run observation is not a failed attempt.
+      A run with conclusion `cancelled` (typically a waiting run replaced inside its concurrency group before any step ran) is neither a failed attempt nor an observation gap: it does not count toward maxAttempts, triggers no retry-wait, retry-exhausted or cooldown, and the next tick may dispatch normally.
+      This matches Workflow Health, which ignores `cancelled`.
     successRule: Any newer relevant successful run that satisfies the active cycle heals it and clears scheduler runtime state.
     exhaustionRule: After the configured observed failed attempts are exhausted, open the retry circuit for the configured cooldown instead of dispatching again on every scheduler tick.
     cooldownRule: While the retry circuit is open, do not dispatch the target; after expiry a later scheduler tick may start a fresh cycle for the then-current due slot.
+  gameWindow:
+    issue: 946
+    policyOwner: .github/workflow-schedules.json
+    implementation: tools/nfl-game-window.cjs
+    mode: >-
+      A target may declare `mode: game-window` with `gameWindow.preKickoffMinutes`, `gameWindow.postFinalMinutes` and `gameWindow.idleCron` (optional `assumedGameDurationMinutes` default 210, `maxOverrunMinutes` default 180). Inside an NFL game window the target's normal `cron` applies; outside windows only `idleCron` does.
+    windowSource: >-
+      Canonical NFL schedule data-source/nfl/schedules/<season>.json (Eastern-time kickoffs, same rule as tools/nfl_season_context.py and CanonicalScheduleUtils.psm1) for the previous and current calendar year, plus data-source/nfl/game-finality/<season>.json.
+    blockRule: >-
+      Games whose assumed durations overlap form one block. A window opens preKickoffMinutes before the first kickoff and closes postFinalMinutes after the assumed end of the block. Canonical finality carries no timestamp, so the post-final lag is anchored on the assumed end; a block with games that are not final stays open for at most maxOverrunMinutes beyond the assumed end.
+    failClosedRule: >-
+      An unreadable, missing or invalid schedule never pauses a target; it keeps the normal (dense) cron and the decision reports `schedule-unavailable`.
+    observability: >-
+      Every game-window decision carries `gameWindow` (state in-window | idle | schedule-unavailable, active cron set, window end or next window start). The Job Summary appends the window state to the Reason column and lists all windowed targets in an `NFL game windows` section.
+    monitoringRule: >-
+      A game-window target rests outside windows by design. Its workflow entry therefore uses failure streaks only and no staleAfterMinutes, like the seasonal finality workflow before it.
+    slotRule: >-
+      Satisfied-slot evidence and retry state are keyed by due slot and keep working across cron-set changes; a slot of the idle cron that was already satisfied is never dispatched again when a window ends.
+  apiErrors:
+    issue: 980
+    policyOwner: .github/workflow-schedules.json
+    policyKey: apiErrorPolicy.failAfterConsecutiveTicks
+    implementation: tools/run-workflow-scheduler-entry.cjs (read retry) and tools/run-workflow-scheduler-runtime.cjs (decision and counter)
+    retryRule: >-
+      Workflow-run list reads (primary and fallback) retry HTTP 429, 500, 502, 503, 504, network aborts and timeouts up to three times with backoff of about 2, 5 and 10 seconds plus jitter (retry-after honoured on 429, capped at 30 s); every retry is logged as a warning with workflow and attempt. 401, 403, 404, 422 and all other errors are not retried and fail the run immediately.
+    dispatchRule: >-
+      createDispatchEvent is never repeated blindly because a 5xx leaves it unknown whether the event was delivered. A transient dispatch failure records no run state and counts as an API error for that tick; the next tick sees a landed run as in-flight or dispatches again, so the existing observation logic (ADR-034) prevents duplicates.
+    decisionRule: >-
+      A target whose read (after retries) or dispatch still fails transiently gets the decision `api-error` for this tick: nothing is dispatched and its retry/observation state stays unchanged. The decision is visible in the JSON decision log, the summary counter and a `GitHub API errors` section of the Job Summary.
+    persistenceRule: >-
+      runtime state carries optional apiErrors.<targetId> (consecutiveTicks, firstAt, lastAt, lastError; no schema version bump). It is reset by the first tick without an API error for that target and pruned for removed targets.
+    failureRule: >-
+      A single transient API error is a warning. When the same target fails in apiErrorPolicy.failAfterConsecutiveTicks (default 2) consecutive ticks, the scheduler run fails after all other targets and the state were processed, so a persistent outage stays visible to run-health monitoring.
   projectFieldSync:
     policyOwner: .github/workflow-schedules.json
     implementation: tools/run-project-field-sync-scheduler.cjs
@@ -126,6 +176,7 @@ scheduler:
     watermarkRule: Use the newest successful scheduler-dispatched Project batch run; before the first batch after cutover, the newest successful legacy Issue-event sync may seed the watermark.
     changeDetectionRule: Inspect repository Issues updated after the watermark; pull requests are excluded. Issue state and labels remain canonical even though unrelated Issue metadata updates may conservatively enter a batch.
     idleRule: If no Issue changed after the watermark, or a batch is already in flight, do not start another Project sync workflow run.
+    stuckBatchRule: A batch run that is still queued or in progress 60 minutes after creation (optional projectFieldSync.inFlightMaxAgeMinutes) is a stuck run, not an in-flight batch. It no longer suppresses new batches and the scheduler logs a warning naming it. Background - a run queued on 2026-09-13 blocked all Project syncs for six weeks (incident e82c8a4597d71598dc7b03d2).
     debounceRule: Dispatch one batch after five minutes without another pending Issue update; continuous activity may delay that batch for at most 30 minutes from the oldest pending Issue update.
     failureIsolation: Project field mutations execute in the separate sync-project-fields workflow. Project/API mutation failures therefore fail that workflow, not the central scheduler run that detected the batch.
   output:
@@ -149,6 +200,29 @@ principles:
 runEvaluation:
   defaultBranch: main
   recentRunsToInspect: 100
+  runVolume:
+    issue: 934
+    scheduleConfig: .github/workflow-schedules.json
+    windowHours: 24
+    warningFactor: 2
+    warningOffset: 2
+    cancelledWarningMinimum: 5
+    mode: informational
+    rule: >-
+      For every workflow that is a scheduler target (matched by path in scheduleConfig) the snapshot adds
+      workflows.<path>.runVolume with observed24h (repository_dispatch runs on main created in the window, all
+      conclusions), expected24h (cron slots of the target in the window, evaluated in the target timezone;
+      game-window targets use their dense cron as upper bound), ratio and warning. warning is true when
+      observed24h > warningFactor * expected24h + warningOffset. The factor tolerates scheduler retries (up to three
+      attempts per slot) and the offset tolerates sparse targets; the stale-slot defect that produced 46 instead of 2 Players
+      runs is far above both. cancelledWarning flags at least cancelledWarningMinimum cancelled runs that also exceed
+      the expected slot count (concurrency contention). Push, manual and pull-request runs are not counted.
+    output: >-
+      Warnings are listed in the snapshot top-level warnings array (types multiple-starts, many-cancelled-runs). They
+      are never incidents, never change overall and never page; the external watcher may mention them in a digest.
+    limitation: >-
+      Only the newest recentRunsToInspect runs are read; runVolume.truncated is true when the window holds more runs than
+      were read, so observed24h is then a lower bound.
   defaultIgnoredEvents:
   - pull_request
   - workflow_dispatch
@@ -206,15 +280,30 @@ categories:
       is the main backstop.
 workflows:
   .github/workflows/build.yml:
-    category: non-paging
-    relevantEvents: []
-    rationale: PR/manual CI; failures are handled in the active development/review context.
+    category: important
+    consecutiveFailures: 1
+    relevantEvents:
+    - repository_dispatch
+    runListEvent: repository_dispatch
+    staleAfterMinutes: 11520
+    firstDueAt: "2026-10-22T00:15:00Z"
+    firstDueGraceMinutes: 120
+    rationale: >-
+      CP4 weekly read-only full test audit from the central scheduler
+      (Thursday 02:15 Europe/Berlin). Filter the GitHub Actions run list by
+      repository_dispatch server-side: frequent PR runs must never hide audits.
+      Alert after the first failed scheduled audit or stale/missing successful
+      audit; initial missing-success alarm starts only after the first due slot
+      plus 120-minute grace. The audit is the only automatic Deep run (pull
+      requests run Core and selected Fast blocks, ADR-067) and also runs the read-only Derived Restore Gate
+      (Issue #471); a restore defect, nondeterminism or blocked source fails the audit. PR and manual operator
+      runs, including a single-category Deep dispatch, are non-paging.
   .github/workflows/deploy.yml:
     category: critical
     relevantEvents:
     - push
     - workflow_call
-    rationale: Main deployment failure can leave the published app behind repository state.
+    rationale: Main deployment failure can leave the published app behind repository state. The push trigger uses a positive path filter (src, public, Angular/npm/tsconfig build inputs, deploy_action.ps1, the workflow itself), so commits touching only data-source, data-derived or fantasy-management do not deploy; there is deliberately no debounce.
   .github/workflows/fantasy-management-validation.yml:
     category: critical
     relevantEvents:
@@ -235,12 +324,24 @@ workflows:
     consecutiveFailures: 1
     staleAfterMinutes: 1800
     rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes, while failures or a missed daily cycle should surface promptly. Manual repair runs remain non-paging.
-  .github/workflows/sync-nfl-game-finality.yml:
+  .github/workflows/odds-refresh.yml:
     category: important
     relevantEvents:
     - repository_dispatch
     consecutiveFailures: 1
-    rationale: Seasonal ten-minute canonical NFL Finality refresh dispatched by the central scheduler from September through January. It calls the hardened NFL source workflow for nflverse.game-finality only; one production failure is actionable because stale completion state can keep finished games falsely live. No staleness timer is used because the workflow is intentionally dormant outside its configured season months.
+    rationale: Central game-window Odds observer uses a dedicated CAS technical branch and delegates any approved Spread/Total Source publication to the existing validated NFL Source Sync; source and Derived failures are actionable, idle ticks do not create main commits.
+  .github/workflows/nfl-live.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    consecutiveFailures: 1
+    rationale: NFL Live pipeline dispatched by the central scheduler in game-window mode (Issue #946, S3) - every ten minutes inside NFL game windows and every six hours (September through January) otherwise. One run chains canonical game finality (hardened NFL source workflow, game-finality scope), the Schedule.json publication (only when finality or the canonical schedule changed) and a League Live wake-up (only when finality changed). One production failure is actionable because stale completion state can keep finished games falsely live. No staleness timer is used because the workflow rests outside game windows and outside its season months by design.
+  .github/workflows/sync-nfl-player-availability.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    consecutiveFailures: 2
+    rationale: Seasonal ten-minute ESPN player injury-status snapshot (September through January, minute 9, directly before the minute-10 League refresh) dispatched by the central scheduler. It feeds DecisionWindows scoring availability through the canonical source layer; a failed run keeps the last known good snapshot, so one transient failure is tolerated and two consecutive failures are actionable. The snapshot is written only on semantic change, so no staleness timer is used; the workflow is intentionally dormant outside its configured season months. Manual repair runs remain non-paging.
   .github/workflows/sync-league-source-data.yml:
     category: important
     relevantEvents:
@@ -249,25 +350,6 @@ workflows:
     consecutiveFailures: 1
     staleAfterMinutes: 1800
     rationale: Daily persistent League Source sync dispatched by the central scheduler; main-push runs verify source-layer changes immediately, while failures or a missed daily cycle should surface promptly. Pull-request, reusable-call and manual repair runs remain non-paging.
-  .github/workflows/sync-league-core.yml:
-    category: important
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 45
-    rationale: Ten-minute canonical League Core freshness refresh dispatched at minute 2 of each ten-minute window, plus narrow main-push rebuilds when the League Core wrapper or its direct materialization code changes. It delegates current league, members, rosters, winners/losers brackets and exactly the active current matchup week, materializing the five Core files plus one bounded current-matchup partition. Scheduler and narrow push runs are production health evidence. Two consecutive production failures or roughly 45 minutes without a successful production run are actionable. Manual repair runs remain non-paging.
-  .github/workflows/sync-league-transactions.yml:
-    category: important
-    relevantEvents:
-    - repository_dispatch
-    staleAfterMinutes: 45
-    rationale: Ten-minute canonical League transaction freshness refresh dispatched by the central scheduler. It delegates to the reusable League Source producer for the source-owned current/previous-week transaction window; two consecutive production failures or roughly 45 minutes without a successful scheduler run are actionable. Manual repair runs remain non-paging.
-  .github/workflows/sync-league-drafts.yml:
-    category: important
-    relevantEvents:
-    - repository_dispatch
-    staleAfterMinutes: 45
-    rationale: Ten-minute canonical League draft/pick freshness refresh dispatched at minute 8 of each ten-minute window, after transaction-source refresh and before the next App League refresh. It delegates current-season draft-index/detail/picks/traded-picks acquisition and bounded drafts.json materialization to the reusable League Source producer; two consecutive production failures or roughly 45 minutes without a successful scheduler run are actionable. Manual repair runs remain non-paging.
   .github/workflows/source-data-readiness.yml:
     category: important
     relevantEvents:
@@ -280,94 +362,47 @@ workflows:
     relevantEvents:
     - repository_dispatch
     rationale: Scheduler-dispatched batches mirror canonical Issue state and labels after a five-minute quiet period, with a 30-minute maximum wait during continuous activity. Repeated batch failures can desynchronize the GitHub Project; manual workflow_dispatch repair runs remain non-paging.
+  .github/workflows/fm-daily.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    - push
+    staleAfterMinutes: 1800
+    rationale: Daily Fantasy Operations pipeline dispatched by the central scheduler (Issue #947, replaces the six provider refresh workflows and the separate materializer). Six provider legs run as matrix jobs with fail-fast false and publish their own snapshots; the materializer runs afterwards even when a provider failed and uses the last good source state. A failed provider leg fails the run (and is named in the Job Summary and a warning annotation), so two consecutive production failures or a missed daily cycle are actionable. Main-push runs materialize League/Players/Metadata/draft and definition changes without the providers. Pull-request and manual repair runs remain non-paging.
   .github/workflows/clean-backups.yml:
     category: routine
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 11520
     rationale: Weekly maintenance dispatched by the central scheduler; alert after the scheduled cycle has effectively been missed for about a day.
-  .github/workflows/materialize-fantasy-operations-inputs.yml:
+  .github/workflows/league-live.yml:
     category: important
     relevantEvents:
     - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily Operations materialization dispatched by the central scheduler should not silently miss a complete daily cycle.
-  .github/workflows/update-cbs-sports-projections.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-fantasy-football-calculator-adp.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-fantasycalc-rankings.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-fantasypros-rankings.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-fftoday-projections.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations provider refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-sleeper-trending.yml:
-    category: routine
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 1800
-    rationale: Daily pre-Operations signal refresh dispatched by the central scheduler; tolerate a transient failure but surface a missed daily cycle.
-  .github/workflows/update-league.yml:
-    category: important
-    relevantEvents:
-    - repository_dispatch
-    - push
     staleAfterMinutes: 45
-    rationale: Ten-minute league refreshes from the central scheduler plus narrow main-push refreshes for Schedule, published Standings, the League workflow, its direct canonical generator adapters (League Core, Playoffs and Current Matchups), and canonical nfl-reise current-matchup partition changes provide production health evidence. A Standings publication therefore re-enriches League team placement/record context promptly; two consecutive failures or roughly 45 minutes without a successful production run are actionable.
+    rationale: Ten-minute League Live pipeline dispatched by the central scheduler (Issue #945, replaces the former League Core, League transactions, League drafts and App League scheduler targets). One run chains the current League source scopes (League Core, current/previous transaction week, current drafts) into a single pair of source commits, a Standings rebuild only when Standings inputs changed during the chain, and the App League refresh including PlayerWeekFantasy and MatchupProjections. Two consecutive production failures or roughly 45 minutes without a successful scheduler run are actionable. Code changes reach production through the next scheduled run, so no push events are evaluated. Manual repair runs remain non-paging.
   .github/workflows/update-players.yml:
     category: important
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 840
-    rationale: Three centrally scheduled daily refreshes; 14 hours covers the longest normal gap with modest operational grace.
+    rationale: Three centrally scheduled daily refreshes; 14 hours covers the longest normal gap with modest operational grace. Since Issue #919 step 5 the run also materializes and publishes data-derived/player-valuation (Salary, Ranking, Grading, Salary Cap); a failed materialization fails the run, so the existing category and staleness cover it.
   .github/workflows/update-games.yml:
-    category: important
-    relevantEvents:
-    - repository_dispatch
-    - push
-    staleAfterMinutes: 960
-    rationale: Retains two centrally scheduled daily fallback refreshes and also runs on main changes to canonical NFL game-finality so completed-game transitions publish promptly. Both scheduler and finality-driven push runs are production health evidence; 16 hours still covers the longest fallback schedule gap with operational grace.
+    category: non-paging
+    relevantEvents: []
+    rationale: Schedule.json publication is a reusable job of the NFL Live pipeline (nfl-live.yml, Issue #946); its failures surface through the calling nfl-live.yml run. Manual workflow_dispatch repair runs remain non-paging.
   .github/workflows/update-transactions.yml:
     category: important
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly transaction/history rebuild dispatched by the central scheduler; surface a missed weekly cycle without paging on a single transient run immediately.
+    rationale: Weekly transaction/history rebuild dispatched by the central scheduler; the same rebuild-and-retry run now also publishes all canonical league seasons of Shared Derived LeagueTransactions and LeagueDrafts in one scoped commit with App data. Surface a missed weekly cycle without paging on a single transient run immediately.
   .github/workflows/update-standings.yml:
     category: routine
     relevantEvents:
     - repository_dispatch
-    - push
     staleAfterMinutes: 11520
-    rationale: Weekly between-week standings refresh remains the scheduler fallback, while narrow main-push rebuilds also react to canonical nfl-reise league/member/roster/playoff-bracket source changes and to Standings workflow/derivation changes. Push-triggered refreshes keep completed-week records current without inventing a more frequent time schedule; the long staleness threshold still reflects that source changes are not guaranteed every hour.
+    rationale: Weekly Standings fallback and all-finalized PlayerWeekFantasy remain independent jobs; historical TeamWeekPerformance runs only after the PWF job succeeds and publishes exclusively data-derived/team-week-performance using the same classified rebuild-and-retry helper. A blocked or failed PWF/TWP producer fails the weekly workflow without suppressing independent Standings output. Current Standings and live PWF remain owned by ten-minute League Live. The long staleness threshold reflects the weekly cadence.
   .github/workflows/update-teams.yml:
     category: routine
     relevantEvents:

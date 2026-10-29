@@ -6,6 +6,7 @@ import json
 import sys
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 import jsonschema
@@ -108,8 +109,8 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
         self.write_json(root, "generated/free-agent-signals.json", {"schema_version": 1, "dataset_id": "free-agent-signals", "generated_at": "2026-08-16T06:30:00Z", "input_fingerprint": "b" * 64, "players": [wr, kicker], "quality": {"status": "ok", "source_quality_status": "ok", "source_issue_count": 0, "selection_count_matches_source": True}})
         previous = root / "generated/free-agent-signals.previous.json"
         self.write_json(root, "generated/free-agent-signals.previous.json", {"schema_version": 1, "dataset_id": "free-agent-signals", "generated_at": "2026-08-15T06:30:00Z", "input_fingerprint": "c" * 64, "players": [self.player("fa-wr", "WR", "fantasy_free_agent", depth=3), self.player("fa-k", "K", "fantasy_free_agent")], "quality": {"status": "ok"}})
-        self.write_json(root, "source-data/leagues/test/manifest.json", {"CanonicalLeagueID": "test", "CurrentCanonicalLeagueSeasonID": "test-2026", "Seasons": [{"CanonicalLeagueSeasonID": "test-2026", "Season": 2026}]})
-        self.write_json(root, "source-data/leagues/test/seasons/2026/league.json", {"CanonicalLeagueID": "test", "Season": 2026, "ScoringSettings": {}})
+        self.write_json(root, "data-source/leagues/test/manifest.json", {"CanonicalLeagueID": "test", "CurrentCanonicalLeagueSeasonID": "test-2026", "Seasons": [{"CanonicalLeagueSeasonID": "test-2026", "Season": 2026}]})
+        self.write_json(root, "data-source/leagues/test/seasons/2026/league.json", {"CanonicalLeagueID": "test", "Season": 2026, "ScoringSettings": {}})
 
         definitions = [
             self.source("wr-adp", "adp", "WR", "redraft_adp", ["rank", "percentile", "adp", "times_drafted"], primary=True),
@@ -191,14 +192,14 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
             source = result["source"]["canonical_league_scoring"]
             self.assertEqual(source["canonical_league_id"], "test")
             self.assertEqual(source["season"], 2026)
-            self.assertEqual(source["path"], "source-data/leagues/test/seasons/2026/league.json")
+            self.assertEqual(source["path"], "data-source/leagues/test/seasons/2026/league.json")
             self.assertNotIn("league", result["source"])
 
     def test_canonical_scoring_identity_mismatch_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             config, previous = self.fixture(root)
-            self.write_json(root, "source-data/leagues/test/seasons/2026/league.json", {"CanonicalLeagueID": "wrong", "Season": 2026, "ScoringSettings": {}})
+            self.write_json(root, "data-source/leagues/test/seasons/2026/league.json", {"CanonicalLeagueID": "wrong", "Season": 2026, "ScoringSettings": {}})
             with self.assertRaisesRegex(MODULE.FreeAgentMovementMaterializationError, "identity mismatch"):
                 MODULE.build(root, config, previous)
 
@@ -210,6 +211,39 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
         self.assertEqual(scoring, legacy)
         self.assertEqual(source["canonical_league_id"], "nfl-reise")
         self.assertEqual(source["season"], 2026)
+
+    def test_historical_baseline_chooses_latest_intraday_snapshot_at_cutoff(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = self.source("wr-market", "expert_consensus", "WR", "market", ["rank"])
+            base = "sources/wr-market/snapshots"
+            current = f"{base}/2026-08-16/190000Z-33333333/ranking.csv"
+            self.write_csv(root, current, [{"player_id": "fa-wr", "rank": 10}])
+            self.write_json(root, current.replace("ranking.csv", "metadata.json"), {
+                "fetched_at": "2026-08-16T19:00:00Z",
+            })
+            self.write_json(root, "sources/wr-market/latest.json", {
+                "snapshot_date": "2026-08-16", "ranking_file": current,
+            })
+            self.write_csv(root, f"{base}/2026-08-09/ranking.csv", [
+                {"player_id": "fa-wr", "rank": 90},
+            ])
+            for stamp, hash8, rank in (
+                ("090000", "11111111", 80),
+                ("180000", "22222222", 70),
+            ):
+                directory = f"{base}/2026-08-09/{stamp}Z-{hash8}"
+                self.write_csv(root, f"{directory}/ranking.csv", [
+                    {"player_id": "fa-wr", "rank": rank},
+                ])
+                self.write_json(root, f"{directory}/metadata.json", {
+                    "fetched_at": f"2026-08-09T{stamp[:2]}:{stamp[2:4]}:{stamp[4:]}Z",
+                })
+            history = MODULE._build_source_history(root, source, [7, 14], date(2026, 8, 16))
+            self.assertEqual(history.current_snapshot_date, date(2026, 8, 16))
+            self.assertEqual(history.baseline_dates[7], "2026-08-09")
+            self.assertEqual(history.baselines[7].rows[0]["rank"], "70")
+            self.assertIsNone(history.baselines[14])
 
     def test_current_repository_inputs_build_and_validate(self) -> None:
         root = SCRIPT_PATH.parents[3]
@@ -224,7 +258,7 @@ class FreeAgentMovementDatasetTests(unittest.TestCase):
 
     def test_production_workflow_materializes_after_free_agents(self) -> None:
         root = SCRIPT_PATH.parents[3]
-        workflow = (root / ".github/workflows/materialize-fantasy-operations-inputs.yml").read_text(encoding="utf-8")
+        workflow = (root / ".github/workflows/fm-daily.yml").read_text(encoding="utf-8") + (root / "fantasy-management/_ai/scripts/materialize_operations_inputs.sh").read_text(encoding="utf-8")
         free_agent = "python fantasy-management/_ai/scripts/build_free_agent_dataset.py"
         movement = "python fantasy-management/_ai/scripts/build_free_agent_movement_dataset.py"
         self.assertLess(workflow.index(free_agent), workflow.index(movement))

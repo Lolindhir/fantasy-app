@@ -1,9 +1,12 @@
 'use strict';
 
 const fs = require('node:fs');
+const path = require('node:path');
+const gameWindow = require('./nfl-game-window.cjs');
 const base = require('./run-workflow-scheduler.cjs');
 
 const OBSERVATION_DECISIONS = new Set(['awaiting-observation', 'observation-timeout', 'observation-cooldown']);
+const FALLBACK_DECISIONS = new Set([...OBSERVATION_DECISIONS, 'dispatch']);
 
 function validateConfig(config) {
   base.validateConfig(config);
@@ -85,26 +88,15 @@ function observationDecision(baseResult, cycleDue, latestDue, retryPolicy, state
   };
 }
 
-function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, targetState = null) {
+function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, targetState = null, satisfiedSlot = null) {
   const latestDue = base.latestDueSlot(target.cron, target.timezone, now, lookbackMinutes);
   const baseResult = { id: target.id, workflow: target.workflow, profile: target.profile, healthBarrier: profile.healthBarrier };
   if (!latestDue) return { result: { ...baseResult, decision: 'no-due-slot-in-lookback' }, nextState: null };
 
   const latestSuccess = runs.find((run) => base.runSatisfiesSlot(run, target, latestDue, ref));
-  if (latestSuccess) {
-    return {
-      result: {
-        ...baseResult,
-        decision: 'satisfied',
-        dueAt: latestDue.toISOString(),
-        satisfyingRunId: latestSuccess.id,
-        satisfyingEvent: latestSuccess.event,
-        satisfyingStatus: latestSuccess.status,
-        satisfyingConclusion: latestSuccess.conclusion,
-      },
-      nextState: null,
-    };
-  }
+  if (latestSuccess) return base.satisfiedByRun(baseResult, latestDue, latestSuccess, satisfiedSlot, now);
+  // Absence from one run-list response is unknown state, never a reason to re-open a slot already seen as satisfied.
+  if (base.slotCoveredByState(satisfiedSlot, latestDue)) return base.satisfiedByState(baseResult, latestDue, satisfiedSlot);
 
   let state = targetState && typeof targetState === 'object' ? { ...targetState } : null;
   let stateDue = state ? new Date(state.dueAt) : null;
@@ -151,18 +143,7 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
   if (cycleSuccess) {
     const successCreatedAt = Date.parse(cycleSuccess.created_at || '');
     if (Number.isFinite(successCreatedAt) && successCreatedAt >= latestDue.getTime()) {
-      return {
-        result: {
-          ...baseResult,
-          decision: 'satisfied',
-          dueAt: latestDue.toISOString(),
-          satisfyingRunId: cycleSuccess.id,
-          satisfyingEvent: cycleSuccess.event,
-          satisfyingStatus: cycleSuccess.status,
-          satisfyingConclusion: cycleSuccess.conclusion,
-        },
-        nextState: null,
-      };
+      return base.satisfiedByRun(baseResult, latestDue, cycleSuccess, satisfiedSlot, now);
     }
     state = null;
     cycleDue = latestDue;
@@ -174,8 +155,8 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
   const attemptRuns = base.schedulerAttemptRuns(cycleRuns, target, cycleDue, ref);
   const observedAttempts = attemptRuns.length;
   const stateAttempts = state?.attemptsDispatched || 0;
-  const attemptsDispatched = Math.max(stateAttempts, observedAttempts);
-  const latestAttempt = attemptRuns[0] || null;
+  const attemptsDispatched = Math.max(0, Math.max(stateAttempts, observedAttempts) - base.countCancelledRuns(attemptRuns));
+  const latestAttempt = attemptRuns.find((run) => !base.isCancelledRun(run)) || null;
   const inFlight = cycleRuns.find((run) => Boolean(run.status) && run.status !== 'completed');
 
   if (inFlight) {
@@ -206,7 +187,7 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
   if (state && stateAttempts > observedAttempts) {
     const observation = observationDecision(baseResult, cycleDue, latestDue, retryPolicy, state, observedAttempts, now);
     if (observation) return observation;
-    return evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, null);
+    return evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, null, satisfiedSlot);
   }
 
   const latestAttemptFailed = latestAttempt
@@ -304,7 +285,7 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
   };
 }
 
-async function evaluateTargetFromGithub({ github, context, target, profile, retryPolicy, ref, now, lookbackMinutes, targetState }) {
+async function evaluateTargetFromGithub({ github, context, target, profile, retryPolicy, ref, now, lookbackMinutes, targetState, satisfiedSlot = null }) {
   const primaryResponse = await github.rest.actions.listWorkflowRuns({
     owner: context.repo.owner,
     repo: context.repo.repo,
@@ -313,8 +294,9 @@ async function evaluateTargetFromGithub({ github, context, target, profile, retr
     per_page: 100,
   });
   const primaryRuns = primaryResponse.data.workflow_runs || [];
-  let evaluation = evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, primaryRuns, targetState);
-  if (!OBSERVATION_DECISIONS.has(evaluation.result.decision)) return evaluation;
+  let evaluation = evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, primaryRuns, targetState, satisfiedSlot);
+  // Before starting a run, also confirm through the unfiltered query that no successful or running run is hiding from the primary list.
+  if (!FALLBACK_DECISIONS.has(evaluation.result.decision)) return evaluation;
 
   const fallbackResponse = await github.rest.actions.listWorkflowRuns({
     owner: context.repo.owner,
@@ -325,9 +307,9 @@ async function evaluateTargetFromGithub({ github, context, target, profile, retr
   });
   const fallbackRuns = fallbackResponse.data.workflow_runs || [];
   const mergedRuns = mergeWorkflowRuns(primaryRuns, fallbackRuns);
-  evaluation = evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, mergedRuns, targetState);
+  evaluation = evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, mergedRuns, targetState, satisfiedSlot);
   evaluation.result.runQueryFallbackUsed = true;
-  evaluation.result.runQueryFallbackRecovered = !OBSERVATION_DECISIONS.has(evaluation.result.decision);
+  evaluation.result.runQueryFallbackRecovered = !FALLBACK_DECISIONS.has(evaluation.result.decision);
   evaluation.result.primaryRunCount = primaryRuns.length;
   evaluation.result.fallbackRunCount = fallbackRuns.length;
   return evaluation;
@@ -470,7 +452,9 @@ function reasonForResult(result, timeZone) {
   let text;
   switch (result.decision) {
     case 'satisfied':
-      text = `Run #${result.satisfyingRunId} completed successfully.`;
+      text = result.satisfiedFromState
+        ? `Slot ${result.satisfiedSlotDueAt} already satisfied by run #${result.satisfyingRunId} (evidence from scheduler state; the run list did not show it).`
+        : `Run #${result.satisfyingRunId} completed successfully.`;
       break;
     case 'in-flight':
       text = `Run #${result.inFlightRunId} is ${result.inFlightStatus || 'in flight'}.`;
@@ -519,7 +503,18 @@ function reasonForResult(result, timeZone) {
     default:
       text = result.deferralExpired ? 'Observation deferral limit expired.' : 'See machine-readable log.';
   }
-  return appendFallback(result, text);
+  return appendWindow(result, appendFallback(result, text), timeZone);
+}
+
+function appendWindow(result, text, timeZone) {
+  const window = result.gameWindow;
+  if (!window) return text;
+  const detail = window.state === 'in-window'
+    ? `in-window until ${formatTimestamp(window.windowEndsAt, timeZone)}`
+    : window.state === 'idle'
+      ? `idle${window.nextWindowAt ? `, next window at ${formatTimestamp(window.nextWindowAt, timeZone)}` : ', no further window'}`
+      : 'schedule unavailable (dense cron)';
+  return `${text} Game window: ${detail}.`;
 }
 
 function buildSummaryMarkdown(results, now, config) {
@@ -530,14 +525,27 @@ function buildSummaryMarkdown(results, now, config) {
   const observationStates = results.filter((result) => OBSERVATION_DECISIONS.has(result.decision)).length;
   const satisfied = results.filter((result) => result.decision === 'satisfied').length;
   const inFlight = results.filter((result) => result.decision === 'in-flight').length;
+  const apiErrors = results.filter((result) => result.decision === 'api-error').length;
 
   let markdown = `## Scheduler summary — ${formatTimestamp(now, timeZone)}\n\n`;
-  markdown += `**${dispatched} dispatched · ${deferred} deferred · ${retryStates} retry/cooldown · ${observationStates} observation · ${inFlight} in flight · ${satisfied} satisfied**\n\n`;
+  markdown += `**${dispatched} dispatched · ${deferred} deferred · ${retryStates} retry/cooldown · ${observationStates} observation · ${inFlight} in flight · ${satisfied} satisfied`;
+  markdown += `${apiErrors > 0 ? ` · ${apiErrors} API error` : ''}**\n\n`;
   markdown += '| Target | Profile | Status | Action | Due slot | Attempt | Reason |\n';
   markdown += '| --- | --- | --- | --- | --- | --- | --- |\n';
   for (const result of results) {
     const attempts = result.maxAttempts ? `${result.retryAttempt || result.attemptsDispatched || '—'}/${result.maxAttempts}` : '—';
     markdown += `| ${escapeTableCell(result.id)} | ${escapeTableCell(result.profile || '—')} | ${escapeTableCell(decisionLabel(result))} | ${escapeTableCell(actionLabel(result))} | ${escapeTableCell(formatTimestamp(result.dueAt, timeZone))} | ${escapeTableCell(attempts)} | ${escapeTableCell(reasonForResult(result, timeZone))} |\n`;
+  }
+
+  const windowed = results.filter((result) => result.gameWindow);
+  if (windowed.length > 0) {
+    markdown += '\n### NFL game windows\n\n';
+    for (const result of windowed) {
+      const window = result.gameWindow;
+      markdown += `- **${result.id}:** ${window.state} (${window.cronSet} cron) — ${window.reason}`;
+      if (window.state === 'idle' && window.nextWindowAt) markdown += ` Next window at ${formatTimestamp(window.nextWindowAt, timeZone)}.`;
+      markdown += '\n';
+    }
   }
 
   const deferredHealth = results.find((result) => result.id === 'workflow-health' && result.decision === 'deferred');
@@ -554,6 +562,11 @@ function buildSummaryMarkdown(results, now, config) {
     markdown += '\n### Retry / circuit-breaker notes\n\n';
     for (const result of circuits) markdown += `- **${result.id}:** ${reasonForResult(result, timeZone)}\n`;
   }
+  const apiErrorResults = results.filter((result) => result.decision === 'api-error');
+  if (apiErrorResults.length > 0) {
+    markdown += '\n### GitHub API errors\n\n';
+    for (const result of apiErrorResults) markdown += `- **${result.id}:** ${reasonForResult(result, timeZone)}\n`;
+  }
   markdown += '\n<details><summary>Machine-readable decisions</summary>\n\n```json\n';
   markdown += `${JSON.stringify(results, null, 2)}\n`;
   markdown += '```\n</details>\n';
@@ -565,17 +578,45 @@ async function writeSummary(core, results, now, config) {
   await core.summary.addRaw(buildSummaryMarkdown(results, now, config)).write();
 }
 
-async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date() }) {
+async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date(), stateReadRetryDelaysMs, sleepFn, repoRoot }) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   validateConfig(config);
+  const scheduleRoot = repoRoot || path.resolve(path.dirname(path.resolve(configPath)), '..');
   if (config.repository !== `${context.repo.owner}/${context.repo.repo}`) {
     throw new Error(`Scheduler repository mismatch: config=${config.repository} runtime=${context.repo.owner}/${context.repo.repo}`);
   }
   const ref = config.ref || 'main';
-  const loadedState = await base.loadSchedulerState({ github, context, config, core });
+  const loadedState = await base.loadSchedulerState({ github, context, config, core, retryDelaysMs: stateReadRetryDelaysMs, sleepFn });
   const runtimeState = JSON.parse(JSON.stringify(loadedState.state));
   const failures = [];
   const evaluated = [];
+  const apiErrorTargets = new Set();
+  const failAfterTicks = base.apiErrorFailAfterTicks(config);
+  // Transient API failures are recorded per target as consecutive ticks; only a persistent failure turns the run red.
+  const noteApiError = (targetId, phase, message) => {
+    apiErrorTargets.add(targetId);
+    const entry = base.recordApiError(runtimeState, targetId, message, now);
+    const text = `${targetId}: GitHub API ${phase} failed transiently (${message}); consecutive ticks ${entry.consecutiveTicks}/${failAfterTicks}`;
+    if (entry.consecutiveTicks >= failAfterTicks) {
+      core.error(text);
+      failures.push(`${targetId}: ${message} (persistent, ${entry.consecutiveTicks} consecutive ticks)`);
+    } else {
+      core.warning(text);
+    }
+    return entry;
+  };
+  const apiErrorResult = (target, profile, phase, message, entry) => ({
+    id: target.id,
+    workflow: target.workflow,
+    profile: target.profile,
+    healthBarrier: profile?.healthBarrier ?? false,
+    decision: 'api-error',
+    apiErrorPhase: phase,
+    error: message,
+    consecutiveTicks: entry.consecutiveTicks,
+    failAfterConsecutiveTicks: failAfterTicks,
+    firstErrorAt: entry.firstAt,
+  });
 
   for (const target of config.targets) {
     try {
@@ -584,27 +625,49 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
         ...config.retryPolicies[profile.retryPolicy],
         dispatchObservationTimeoutMinutes: config.dispatchObservation.timeoutMinutes,
       };
+      // A game-window target runs on its dense cron only inside an NFL game window and on its idle cron otherwise.
+      const windowStatus = target.mode === 'game-window'
+        ? gameWindow.resolveGameWindow({ target, now, repoRoot: scheduleRoot })
+        : null;
       const evaluation = await evaluateTargetFromGithub({
         github,
         context,
-        target,
+        target: windowStatus ? { ...target, cron: windowStatus.cron } : target,
         profile,
         retryPolicy,
         ref,
         now,
         lookbackMinutes: config.lookbackMinutes,
         targetState: runtimeState.targets[target.id] || null,
+        satisfiedSlot: runtimeState.satisfiedSlots?.[target.id] || null,
       });
+      base.recordSatisfiedSlots(runtimeState, config, evaluation, target.id);
       if (evaluation.nextState) runtimeState.targets[target.id] = evaluation.nextState;
       else delete runtimeState.targets[target.id];
+      if (windowStatus) {
+        const { cron, ...publicStatus } = windowStatus;
+        evaluation.result.gameWindow = { ...publicStatus, activeCron: cron };
+      }
       evaluated.push({ target, result: evaluation.result });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      core.error(`${target.id}: ${message}`);
-      failures.push(`${target.id}: ${message}`);
+      if (base.isTransientApiError(error)) {
+        // Persistent transient read failure after the client retries: skip this target for the tick, leave its state untouched.
+        const profile = config.profiles[target.profile];
+        const entry = noteApiError(target.id, 'read', message);
+        evaluated.push({
+          target,
+          result: apiErrorResult(target, profile, 'read', message, entry),
+          apiError: true,
+        });
+      } else {
+        core.error(`${target.id}: ${message}`);
+        failures.push(`${target.id}: ${message}`);
+      }
     }
   }
 
+  base.pruneSatisfiedSlots(runtimeState, config);
   const peerResults = evaluated.map((item) => item.result);
   for (const item of evaluated) {
     item.result = applyTargetDeferral(item.target, item.result, peerResults, now);
@@ -656,10 +719,24 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
       results.push(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      core.error(`${target.id}: ${message}`);
-      failures.push(`${target.id}: ${message}`);
+      if (result.decision === 'dispatch' && !result.dispatched && base.isTransientApiError(error)) {
+        // A 5xx on createDispatchEvent leaves it unknown whether the event arrived. It is never repeated blindly:
+        // no run state is recorded, and the next tick sees a landed run as in flight before it could dispatch again.
+        const entry = noteApiError(target.id, 'dispatch', message);
+        const apiResult = apiErrorResult(target, config.profiles[target.profile], 'dispatch', message, entry);
+        core.info(JSON.stringify(apiResult));
+        results.push(apiResult);
+      } else {
+        core.error(`${target.id}: ${message}`);
+        failures.push(`${target.id}: ${message}`);
+      }
     }
   }
+
+  for (const target of config.targets) {
+    if (!apiErrorTargets.has(target.id)) base.clearApiError(runtimeState, target.id);
+  }
+  base.pruneApiErrors(runtimeState, config);
 
   try {
     await base.persistSchedulerState({

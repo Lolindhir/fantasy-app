@@ -27,7 +27,7 @@ class PlayerWeekFantasyMaterializationTests(unittest.TestCase):
             scoring_season=2026,
         )
 
-        league_path = repo_root / "source-data/leagues/nfl-reise/seasons/2026/league.json"
+        league_path = repo_root / "data-source/leagues/nfl-reise/seasons/2026/league.json"
         league = json.loads(league_path.read_text(encoding="utf-8"))
         expected_hash = scoring_settings_fingerprint(league["ScoringSettings"])
 
@@ -54,7 +54,7 @@ class PlayerWeekFantasyMaterializationTests(unittest.TestCase):
         self.assertEqual(ids, sorted(ids))
         self.assertEqual(len(ids), len(set(ids)))
 
-    def test_initial_productive_week3_snapshot_is_persisted_and_pinned(self) -> None:
+    def test_persisted_week3_snapshot_remains_valid_across_historical_backfill(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         path = output_path(repo_root, league_id="nfl-reise", season=2026, week=3)
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -68,10 +68,23 @@ class PlayerWeekFantasyMaterializationTests(unittest.TestCase):
             payload["Materialization"]["ProjectionStatusCounts"],
             {"available": 642, "insufficient-history": 178},
         )
-        self.assertEqual(payload["Materialization"]["ActualStateCounts"], {"unavailable": 820})
-        self.assertFalse(payload["Materialization"]["ActualScoringEvidenceFinalized"])
+        # Historical derived partitions are reproducible caches, not immutable
+        # snapshots of their first publication. The data-only W03 backfill in
+        # #697 transitions old unavailable Actuals to final canonical scoring.
+        # Keep this test compatible with both snapshots during that cutover.
+        state_counts = payload["Materialization"]["ActualStateCounts"]
+        self.assertIn(state_counts, ({"unavailable": 820}, {"final": 820}))
+        is_final = state_counts == {"final": 820}
+        self.assertEqual(payload["Materialization"]["ActualScoringEvidenceFinalized"], is_final)
         self.assertFalse(payload["Materialization"]["TargetWeeklyRosterFinalized"])
         self.assertEqual(payload["ProjectionModel"]["IntervalCalibrationRows"], 5724)
+        if is_final:
+            self.assertTrue(all(row["Actual"]["State"] == "final" and
+                                row["Actual"]["Points"] is not None
+                                for row in payload["Records"]))
+            self.assertEqual(payload["Materialization"]["TargetRosterSourceWeek"], 3)
+            self.assertFalse(payload["Materialization"]["TargetRosterProvisional"])
+            self.assertEqual(payload["ProjectionModel"]["IntervalLevels"], [0.5, 0.8, 0.9])
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-deta
       [title]="player.Name"
       (click)="openPlayerDetail()"
     >
-      <img
+      <img loading="lazy" decoding="async"
         *ngIf="player.Picture"
         class="draft-pick-player-picture"
         [src]="player.Picture"

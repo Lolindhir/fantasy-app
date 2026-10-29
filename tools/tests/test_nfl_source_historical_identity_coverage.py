@@ -10,6 +10,7 @@ from tools.nfl_source_data_lib.canonical_identity import identity_lookup
 from tools.nfl_source_data_lib.common import load_registry
 from tools.nfl_source_data_lib.coverage import build_player_stats_identity_coverage
 from tools.nfl_source_data_lib.identity import build_identities
+from tools.ci_tier import deep_only
 
 
 class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
@@ -21,12 +22,12 @@ class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
         self.temp.cleanup()
 
     def write_partition(self, season: int, week: int, records: list[dict[str, object]]) -> None:
-        path = self.root / f"source-data/nfl/player-stats/{season}/{week:02d}.json"
+        path = self.root / f"data-source/nfl/player-stats/{season}/{week:02d}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps({"Season": season, "Week": week, "Records": records}), encoding="utf-8")
 
     def write_raw_stats(self, season: int, rows: list[dict[str, object]]) -> None:
-        path = self.root / f"source-data/providers/nflverse/player-stats/raw-{season}.csv"
+        path = self.root / f"data-source/providers/nflverse/player-stats/raw-{season}.csv"
         path.parent.mkdir(parents=True, exist_ok=True)
         fieldnames = [
             "player_id",
@@ -182,6 +183,7 @@ class HistoricalNFLPlayerIdentityCoverageTests(unittest.TestCase):
 
 
 class RealCareerIdentityRegressionTests(unittest.TestCase):
+    @deep_only("rebuilds all historical identities (~55 s)")
     def test_repository_historical_unresolved_ids_are_repairable_from_provider_identity(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
@@ -199,6 +201,7 @@ class RealCareerIdentityRegressionTests(unittest.TestCase):
             "historical player-stat identities must be repairable from authoritative provider evidence",
         )
 
+    @deep_only("scans all raw historical stat partitions (~25 s)")
     def test_repository_raw_missing_player_ids_are_provider_aggregate_buckets(self) -> None:
         repo_root = Path(__file__).resolve().parents[2]
         coverage = build_player_stats_identity_coverage(repo_root, current_season=2026)
@@ -230,7 +233,7 @@ class RealCareerIdentityRegressionTests(unittest.TestCase):
         canonical_ids: set[str] = set()
         gsis_ids: set[str] = set()
         for season in range(2020, 2026):
-            path = repo_root / f"source-data/nfl/player-stats/{season}/01.json"
+            path = repo_root / f"data-source/nfl/player-stats/{season}/01.json"
             self.assertTrue(path.exists(), f"missing canonical Week 1 stats for {season}")
             payload = json.loads(path.read_text(encoding="utf-8"))
             matches = [record for record in payload.get("Records", []) if record.get("PlayerName") == "Justin Jefferson"]

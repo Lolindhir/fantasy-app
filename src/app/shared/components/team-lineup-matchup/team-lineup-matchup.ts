@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 
 import type { DecisionWindowGame } from '../../../core/models/decision-window.models';
 import type { NFLTeam } from '../../../core/models/player.models';
+import { findNflTeam } from '../../utils/nfl-team-key.util';
 
 @Component({
   selector: 'app-team-lineup-matchup',
@@ -35,7 +36,7 @@ export class TeamLineupMatchupComponent {
 
   private resolveTeam(teamId: string, teamAbbr: string | null): NFLTeam | null {
     const normalizedAbbr = teamAbbr?.trim().toUpperCase() ?? '';
-    return this.nflTeams.find(candidate => candidate.ID === teamId)
+    return findNflTeam(this.nflTeams, teamId)
       ?? this.nflTeams.find(candidate => candidate.Abv.trim().toUpperCase() === normalizedAbbr)
       ?? null;
   }

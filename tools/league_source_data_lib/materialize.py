@@ -6,9 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-from .core import canonical_league_season_id, write_json_if_changed
+from .core import canonical_league_season_id, normalize_sleeper_player_id, write_json_if_changed
 from .registry import LeagueDataset
 from .week_structure import derive_season_week_structures, resolve_nfl_regular_season_week_ceiling
+from data_roots import DATA_SOURCE_ROOT
 
 SCHEMA_VERSION = 1
 REQUIRED_DATASET_IDS = {
@@ -94,7 +95,7 @@ class PlayerMappingResolver:
 
     @classmethod
     def load(cls, repo_root: Path) -> "PlayerMappingResolver":
-        path = repo_root / "source-data/nfl/identities/provider-mappings.json"
+        path = repo_root / DATA_SOURCE_ROOT / "nfl/identities/provider-mappings.json"
         raw = _read_json(path)
         if not isinstance(raw, dict):
             raise ValueError(f"Player provider mappings must be an object: {path}")
@@ -141,10 +142,8 @@ class PlayerMappingResolver:
 
 
 def _player_ref(resolver: PlayerMappingResolver, provider_player_id: object, season: int) -> dict | None:
-    if provider_player_id is None:
-        return None
-    external = str(provider_player_id).strip()
-    if not external:
+    external = normalize_sleeper_player_id(provider_player_id)
+    if external is None:
         return None
     return {
         "CanonicalPlayerID": resolver.resolve("Sleeper", external, season),
@@ -165,8 +164,8 @@ def _player_refs(
     result: list[dict] = []
     seen: set[str] = set()
     for value in values:
-        external = str(value or "").strip()
-        if not external:
+        external = normalize_sleeper_player_id(value)
+        if external is None:
             continue
         if external in seen:
             raise ValueError(f"Duplicate Sleeper player id {external} in {source_label}")
@@ -433,8 +432,16 @@ def _canonicalize_matchups(
             raise ValueError(f"Duplicate Sleeper matchup roster_id {provider_roster_id} in week {week}")
         seen_rosters.add(provider_roster_id)
         provider_matchup_id = item.get("matchup_id")
-        result.append(
-            {
+        raw_starters = item.get("starters") or []
+        if not isinstance(raw_starters, list):
+            raise ValueError(f"Sleeper matchup week {week} starters must be an array")
+        # Sleeper encodes an explicitly unfilled lineup slot as "0". Preserve
+        # that fact separately from real players; blanks/null are not evidence.
+        empty_starter_slots = sum(
+            1 for starter in raw_starters
+            if isinstance(starter, (str, int)) and str(starter).strip() == "0"
+        )
+        canonical = {
                 "CanonicalLeagueMatchupID": canonical_matchup_id(season_id, week, provider_matchup_id),
                 "CanonicalLeagueRosterID": _resolve_roster(roster_by_provider, provider_roster_id, f"matchups.week-{week}.roster_id"),
                 "Week": week,
@@ -442,11 +449,13 @@ def _canonicalize_matchups(
                 "Points": item.get("points"),
                 "CustomPoints": item.get("custom_points"),
                 "Players": _player_refs(resolver, item.get("players") or [], season, f"matchups.week-{week}.players"),
-                "Starters": _player_refs(resolver, item.get("starters") or [], season, f"matchups.week-{week}.starters"),
+                "Starters": _player_refs(resolver, raw_starters, season, f"matchups.week-{week}.starters"),
                 "PlayerPoints": _points_entries(resolver, item.get("players_points"), item.get("players") or [], season, f"matchups.week-{week}.players_points"),
-                "StarterPoints": _points_entries(resolver, item.get("starters_points"), item.get("starters") or [], season, f"matchups.week-{week}.starters_points"),
-            }
-        )
+                "StarterPoints": _points_entries(resolver, item.get("starters_points"), raw_starters, season, f"matchups.week-{week}.starters_points"),
+        }
+        if empty_starter_slots:
+            canonical["EmptyStarterSlots"] = empty_starter_slots
+        result.append(canonical)
     result.sort(key=lambda item: item["CanonicalLeagueRosterID"])
     return result
 
@@ -533,6 +542,7 @@ def _canonicalize_transactions(
                 "Status": item.get("status"),
                 "Week": week,
                 "CreatedAt": item.get("created"),
+                "StatusUpdatedAt": item.get("status_updated"),
                 "CreatorCanonicalLeagueMemberID": member_by_provider.get(creator_provider_id) if creator_provider_id else None,
                 "CreatorProviderUserID": creator_provider_id,
                 "CanonicalLeagueRosterIDs": [_resolve_roster(roster_by_provider, value, f"transaction.{provider_transaction_id}.roster_ids") for value in roster_values],
@@ -654,7 +664,7 @@ def _canonicalize_drafts(
 
 
 def _manifest(repo_root: Path, canonical_league_id: str) -> dict:
-    path = repo_root / "source-data" / "leagues" / canonical_league_id / "manifest.json"
+    path = repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "manifest.json"
     raw = _read_json(path)
     if not isinstance(raw, dict):
         raise ValueError(f"League manifest must be an object: {path}")
@@ -710,7 +720,7 @@ def plan_canonical_materialization(
         provider_league_id = str(provider_mapping.get("ProviderLeagueID") or "").strip()
         if not provider_league_id:
             raise ValueError(f"Sleeper ProviderLeagueID is required for {canonical_league_id}/{season}")
-        raw_base = repo_root / "source-data" / "providers" / "sleeper" / "leagues" / provider_league_id
+        raw_base = repo_root / DATA_SOURCE_ROOT / "providers" / "sleeper" / "leagues" / provider_league_id
         league_raw = _read_json(raw_base / "league.json")
         members_raw = _read_json(raw_base / "members.json")
         rosters_raw = _read_json(raw_base / "rosters.json")
@@ -762,7 +772,7 @@ def plan_canonical_materialization(
         season_entry = context["SeasonEntry"]
         provider_mapping = context["ProviderMapping"]
         league_raw = context["LeagueRaw"]
-        season_root = repo_root / "source-data" / "leagues" / canonical_league_id / "seasons" / str(season)
+        season_root = repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "seasons" / str(season)
 
         members, rosters, member_by_provider, roster_by_provider = _members_and_rosters(
             canonical_league_id, season_id, context["MembersRaw"], context["RostersRaw"], resolver, season

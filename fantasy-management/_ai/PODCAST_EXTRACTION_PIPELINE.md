@@ -29,6 +29,7 @@ Podcast extraction is source-centered and entity-neutral. A source may primarily
 - injuries
 - NFL drafts, free agency or trades
 - fantasy formats, markets and strategy
+- week-specific NFL game previews, winner calls, start/sit and streaming recommendations
 
 Players remain the primary decision objects of later Fantasy Management analysis. They are not automatically the primary source objects of every episode.
 
@@ -127,6 +128,37 @@ The following files are deterministic generated entry points:
 - `index.json`
 
 A builder may copy the complete working package into the published location and generate those four entry points. It must not create new editorial interpretation during aggregation.
+
+## In-season game and weekly fantasy source context
+
+The active `game-matchup-preview` and `weekly-fantasy-start-sit` Golden Set profiles cover genuine NFL week/game previews and player-specific fantasy calls. A `game` may be the independent primary subject of a source take. For the listed weekly segment/take types, `weekly_context` records the **season and week**; attach verified matchup home/away teams and canonical game ID if available. Keep game-wide claims independent of but linked to affected players, preserve timing and host differences, and never rewrite original predictions with later scores or injuries. A podcast start/sit call is source evidence and never automatically a Mighty Giants lineup recommendation.
+
+
+### In-season source-first completion checkpoint
+
+For weekly and game-by-game episodes, `takes_complete` for a Content Map segment requires an independent **raw-cue source-claim/question inventory**, checking every separate game forecast, start/sit comparison, streaming option, source condition, longer-horizon market action and late Q&A against a corresponding take. A three-claim summary plus internally consistent take links is not proof of completeness. The inventory should preserve distinct source conviction and matchups, and may live in private pilot QA artifacts prior to final publication.
+
+The evidence gate requires literal SRT-backed excerpt hints and source-local timestamps for each materially separate argument; neither placeholders nor unrelated cue windows qualify. Keep source risks and speaker opinions apart from extractor QA notes, and avoid assuming verified identity just from a plausible ASR name. Do not promote unverified raw transcripts to the public repository.
+
+## Multi-pass preprocessing, reconciliation and regeneration
+
+New/reworked podcast packages use two **complementary inventories before take generation**:
+
+| Stage | Source input | Intermediate output | Purpose |
+| --- | --- | --- | --- |
+| Entity candidate detection | Entire immutable raw transcript | Exact-span mention candidates with cue offsets, including unresolved/noisy names | High-recall entity coverage, without pretending identities are verified |
+| Source-statement detection | Entire immutable raw transcript, independently | Atomic claim/question/contradiction inventory with cue evidence | High-recall substantive coverage, including claims not linked to a named person |
+| Identity resolution | Candidate occurrences + approved registry/verification | Confirmed, ambiguous or unresolved canonical mapping | Separate raw form from identity; do not erase uncertain names |
+| Take generation | Both inventories + raw context + Golden Set | Content Map, per-claim source takes, article sections | Preserve argument chains and source distinctions |
+| Independent QA | Raw cues, independently of take planning | Coverage differences, omissions, incorrect merges, literal-evidence and identity checks | Check the actual source, not merely planned-vs-produced counts |
+| Targeted repair and re-QA | Frozen first-pass snapshot + audit findings | Revised takes and reconciled audit record | Correct misses while keeping a measurable first-pass baseline |
+| Final mention audit/publication gate | Entire raw transcript + finished takes/article | Complete technical `mentions.json` and reviewed work package | Confirm source mentions and required subject coverage before readiness |
+
+A simple "is this an unusual word?" filter is not an adequate entity recognizer; name detection uses surrounding linguistic context and retains candidate uncertainty. An early name sweep cannot discover a game-script, team-scheme or strategy claim without a personal name, so the claim sweep is equally necessary.
+
+A single model may perform separate passes, but should receive **different explicit objectives**, preferably with bounded context and independent second-read validation. Freeze the first extraction before reviewing it. Correct failures, rerun checks on affected ranges, and do not confuse multiple self-reviews with independent evidence of completeness.
+
+For now these are **normative editorial stages**, not a claim that new automated jobs, a first-class source-claim-inventory JSON contract, an entity-extraction service, or new validator rules are implemented. Their technical contract, tests, cost/performance, storage location, deterministic cross-links and gates require a separate implementation checkpoint. Existing independent final mention-audit and builder publication constraints stay intact. See `PODCAST_EXTRACTION_RULES.md` for precise fidelity and unresolved-name handling.
 
 ## Content Map
 
@@ -353,7 +385,7 @@ The implemented local builder must:
 
 The builder is deterministic. It must not summarize, rewrite, infer or otherwise create editorial source content.
 
-A future GitHub Actions publication workflow is a separate execution layer. If approved, it must trigger only for an explicit ready request, prevent recursive triggering, use episode-scoped concurrency and commit only the finished validated package to `main`. It requires a separately approved workflow change because it needs narrowly scoped `contents: write` access. Do not implement or modify that workflow until its trigger, path scope, failure behavior, recursion guard and commit identity have been explicitly approved.
+A future GitHub Actions publication workflow is a separate execution layer. If approved, it must trigger only for an explicit ready request, prevent recursive triggering, use episode-scoped concurrency and commit only the finished validated package to `main`. Its new `contents: write` publication behavior is elevated risk under the root governance contract. Do not implement or activate it until the user has concretely authorized its trigger, path/write scope, failure behavior, recursion guard and commit identity, whether as part of a sufficiently specified work package or a targeted follow-up approval.
 
 ## Validation scope
 

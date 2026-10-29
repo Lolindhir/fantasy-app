@@ -2,12 +2,12 @@
   "version": 3,
   "purpose": "Owner and team reference map for Fantasy Management.",
   "canonical_dynamic_sources": [
-    "public/data/Metadata.json",
+    "data-meta/nfl-reise/metadata.json",
     "public/data/League.json"
   ],
   "rules": [
     "Use TeamID as the stable identity.",
-    "Use Metadata.json when exact owner mapping matters.",
+    "Use data-meta/<CanonicalLeagueID>/metadata.json (Owners) when exact owner mapping matters.",
     "Use League.json for current team names, rosters, picks and salary context.",
     "In human-facing analyses, rankings, tables, headings and recommendations, use each owner's preferred_human_label by default.",
     "Refer to TeamID 1 as Robert, not merely as Mighty Giants, whenever the manager is being compared with Marcel, Flo, Jan, Dennis or Tim.",
@@ -113,7 +113,7 @@
   ],
   "canonical_league_id": "nfl-reise",
   "canonical_identity_sources": [
-    "source-data/leagues/nfl-reise/seasons/*/members.json",
-    "source-data/leagues/nfl-reise/seasons/*/rosters.json"
+    "data-source/leagues/nfl-reise/seasons/*/members.json",
+    "data-source/leagues/nfl-reise/seasons/*/rosters.json"
   ]
 }

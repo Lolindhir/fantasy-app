@@ -55,6 +55,23 @@ modes:
   independentReview:
     actor: separate-reviewer-agent-or-human
     defaultMode: read-only
+    reviewContexts:
+      changeFocused:
+        purpose: Review one Issue, proposed change, PR or specified code revision.
+        ciImpactEvidence:
+          - Examine changed and removed tests, code and data paths against the versioned test inventory and actual job/test runners.
+          - Verify that Fast versus Deep tier and selected Deep families cover affected producer, consumer, identity and publication dependencies.
+          - Confirm newly introduced or changed tests are really executed by the appropriate PR or independently triggered validation; a green merge gate alone does not establish this.
+          - Inspect any new uncovered-test exception, issue rationale or change to the frozen legacy uncovered baseline.
+          - Record the concrete CI-impact evidence, required remediation or justified not-applicable result in the owning Issue.
+      periodicRepositoryAudit:
+        purpose: Review repository-wide CI fitness and accumulated architectural drift across changes, not merely one PR.
+        ciImpactEvidence:
+          - Reconcile current discovered test files against .github/ci-test-inventory.json and verify its classification matches actual workflows and runners, including intentionally path-filtered independent workflows.
+          - Inspect tools/ci_test_impact.py routing against current code, source/derived/consumer dependency families and all four Deep groups; challenge missing, overly narrow or stale rules even if the selector falls back to all Deep.
+          - Review changes since the last known audited revision when available, plus the present full repository state; do not assume a periodic review only needs to inspect recent changed files.
+          - Reassess the frozen uncovered-test baseline, issue-backed exceptions and any audit-only/non-PR test coverage gaps; never count registered but unexecuted tests as CI-pass evidence.
+          - Verify job-level actual execution, permanent merge-gate behavior and regression fixtures still protect intended Fast/Deep selection; open or update owning Issues for actionable drift rather than inventing a parallel findings log.
     prerequisites:
       - Read the current Issue body as operative work state.
       - Read the applicable canonical architecture/domain/source/workflow contracts.
@@ -202,6 +219,28 @@ dimensions:
     expectedEvidence:
       - documentation update list or explicit no-change rationale
 
+  ciImpactAndTestCoverage:
+    intent: Ensure new and accumulated changes cannot silently outgrow the versioned Fast/Deep CI dependency and test-coverage model.
+    checks:
+      - Does the current test inventory include every discovered test, with truthful tier, Deep group(s) and current PR coverage classification?
+      - Do declared Fast/Deep/independent-FM or other validation entry points really invoke the tests, rather than merely list them in the manifest?
+      - Have introduced, moved or removed code paths and producer-to-consumer dependencies been assessed for their effect on the four Deep routing families and their Fast counterparts (Deep runs only in the audit or by manual dispatch, ADR-067; is a manual Deep run recommended for this change)?
+      - Does a change require new regression fixtures, a new Deep classification or a justified existing grouping, without weakening formerly required checks?
+      - Are uncovered legacy tests and issue-backed new exceptions explicit and honestly classified, with a plan or rationale for continued non-PR coverage?
+      - Does the CI impact decision appear in the owning Issue, or does a periodic audit document concrete cumulative drift and the appropriate follow-up ownership?
+    expectedEvidence:
+      - .github/ci-test-inventory.json versus discovered tests and actual workflow/runner execution
+      - tools/ci_test_impact.py dependency routing and tools/tests/test_ci_test_impact.py regressions
+      - CI job or execution evidence, not only a successful aggregate gate
+      - owning Issue references for uncovered debt, exceptions and actionable findings
+    reviewRule: >
+      Apply in both change-focused reviews and periodic repository-wide architecture audits.
+      For non-code reviews, explicitly record not-applicable with rationale rather than
+      treating a green CI result as proof. Never silently approve gaps in executed coverage.
+      Also compare Fast block run times from CI runs with the roughly 3-minute budget and name Deep
+      modules that contain cheap deterministic parts as Fast candidates (ai-guidance ciMaintenance).
+      Record findings in the owning Issue, not in a parallel list.
+
   validationAndInvariants:
     intent: Make architecture claims testable.
     checks:
@@ -218,6 +257,7 @@ reviewOutput:
     - reviewed-scope
     - existing-reuse
     - findings-by-applicable-dimension
+    - ci-impact-and-coverage
     - required-changes
     - open-questions-or-insufficient-evidence
     - documentation-impact
@@ -242,6 +282,7 @@ reviewOutput:
     - Non-applicable dimensions may be omitted or marked not-applicable with a short reason.
     - Findings should cite concrete repository paths, contracts, Issue decisions or implementation behavior when available.
     - Required changes belong in the Issue body when they affect current scope, acceptance criteria or handoff.
+    - State the reviewed context (change-focused or periodic repository audit) and summarize independent CI-impact/coverage evidence, or give a reasoned not-applicable conclusion.
 
 issueIntegration:
   lifecycleStatus: status:review

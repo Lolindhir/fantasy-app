@@ -49,6 +49,20 @@ contextModel:
     mayBeEditedByAI: true
     mayBeRegeneratedAutomatically: false
 
+  leagueMetadata:
+    description: >
+      Hand-maintained league metadata per league under data-meta/<CanonicalLeagueID>/ (ADR-054,
+      Issue #986): provider league ID, owners, draft configuration, per-season Cap Deadline and model
+      choice per season. Calculation logic lives in central models, not here.
+    contract: .ai-context/manual/league-metadata.yaml
+    directory: data-meta
+    mayBeEditedByAI: true
+    mayBeRegeneratedAutomatically: false
+    rules:
+      - Only hand maintenance writes into data-meta; no workflow or generator does.
+      - Read it through tools/league_metadata.py or LeagueMetadataUtils.psm1, never by ad-hoc path.
+      - Do not put model parameters or facts that are already canonical in data-source into the metadata.
+
   workTracking:
     description: >
       GitHub Issues are the canonical operative source of truth for repository
@@ -114,14 +128,21 @@ readingOrder:
   - .ai-context/manual/work-tracking.yaml
   - .ai-context/manual/workflow-monitoring.yaml
   - .ai-context/manual/architecture.yaml
+  - .ai-context/manual/league-metadata.yaml
   - .ai-context/manual/frontend-design/index.yaml
   - .ai-context/manual/domain.yaml
   - .ai-context/manual/draft-identity.yaml
   - .ai-context/manual/player-identity.yaml
   - .ai-context/manual/nfl-source-data.yaml
   - .ai-context/manual/league-source-data.yaml
+  - .ai-context/manual/external-source-data.yaml
   - .ai-context/manual/historical-fantasy-scoring.yaml
+  - .ai-context/manual/week-finality.yaml
   - .ai-context/manual/player-week-fantasy.yaml
+  - .ai-context/manual/derived-models.yaml
+  - .ai-context/manual/player-valuation.yaml
+  - .ai-context/manual/league-standings.yaml
+  - .ai-context/manual/league-history.yaml
   - .ai-context/manual/provider-join-invariants.yaml
   - .ai-context/manual/source-of-truth-matrix.yaml
   - .ai-context/manual/data-sources.yaml
@@ -138,17 +159,25 @@ shortContext:
   .ai-context/manual/work-tracking.yaml: Kanonischer Vertrag für GitHub-Issue-Work-Tracking, Label-Semantik, Prioritäten, Handoff und Drift-Governance
   .ai-context/manual/workflow-monitoring.yaml: Kanonischer fail-closed Vertrag für Workflow-Klassifizierung, Failure-/Staleness-Auswertung, isolierten Health-Snapshot und externe Alarmierung
   .ai-context/manual/frontend-design/index.yaml: Kanonischer Einstiegspunkt für app-weite Frontend-Design-Governance mit getrennten Principles, Architecture, Standards und Decisions sowie MUST/SHOULD/MAY-Review-Semantik
-  public/data/Metadata.json: Liga-spezifische Inputs und Regeln; Drafts.UpcomingDraftCount zählt nicht abgeschlossene Drafts pro Typ zusätzlich zu allen Drafts der aktuellen LeagueYear; DraftType + DraftInstance identifiziert einen konfigurierten Draft-Slot und SleeperDraftIDs bindet bekannte konkrete Sleeper-Drafts saisonweise
+  .ai-context/manual/league-metadata.yaml: Kanonischer Vertrag fuer die handgepflegten Liga-Metadaten data-meta/<CanonicalLeagueID>/metadata.json (ADR-054, Issue #986) mit Modellwahl je Saison, Lader und fail-closed Regeln; hat Metadata.json, config.ps1 und _bootstrap abgeloest (entfernt)
   .ai-context/manual/draft-identity.yaml: Kanonischer Vertrag für DraftType, DraftInstance, DraftCode, DraftKey, SleeperDraftID-Mapping und Transaction-Pick-Auflösung
   .ai-context/manual/player-identity.yaml: Kanonischer Vertrag für die von fantasy-app vergebene providerunabhängige CanonicalPlayerID, historische Provider-Mappings, Konflikt-Quarantäne, Legacy-Feldmigration und den unveränderten Sleeper-basierten Players.json-App-Vertrag
-  .ai-context/manual/nfl-source-data.yaml: Kanonischer Vertrag für source-data Registry v3, Fixed-/Season-Partitioned Acquisition, Availability, Dataset-Lifecycle, Refresh/Retention/Repair, historische Partitionen und NFL-Source-Materialisierung
+  .ai-context/manual/nfl-source-data.yaml: Kanonischer Vertrag für data-source Registry v3, Fixed-/Season-Partitioned Acquisition, Availability, Dataset-Lifecycle, Refresh/Retention/Repair, historische Partitionen und NFL-Source-Materialisierung
   .ai-context/manual/league-source-data.yaml: Produktiv akzeptierter Phase-1B-Vertrag des gemeinsamen League Source Layers; CanonicalLeagueID/CanonicalLeagueSeasonID, Sleeper-League-Lineage, saisonale WeekStructure, Multi-League-Struktur, Raw/Canonical-Lifecycle und Phase-2-Consumergrenzen
-  derived-data/**: Physischer kanonischer Owner fuer reproduzierbare consumer-neutrale Shared-Derived-Daten nach ADR-038; erster produktiver Datensatz ist PlayerWeekFantasy
+  .ai-context/manual/external-source-data.yaml: Kanonischer Vertrag für externe Markt-, Ranking-, ADP-, Projection- und Roster-Activity-Quellen als Source Evidence (ADR-060, Issue #988): eigene Registry data-source/external-registry.json, Snapshot-Layout unter data-source/market, Identitätsindex ohne Namens-Fallback, Rechtefelder, Challenge-/Phasenregeln; Fundament steht, Umzug je Provider folgt
+  data-derived/**: Physischer kanonischer Owner fuer reproduzierbare consumer-neutrale Shared-Derived-Daten nach ADR-038; erster produktiver Datensatz ist PlayerWeekFantasy
+  .ai-context/manual/week-finality.yaml: Kanonischer Vertrag der gemeinsamen Woche-final-Definition (ADR-071, Issue #897); Belege NflGamesFinal/NflStatsComplete/LeagueScored, Meilensteine LeagueScoredWeek und StatsFinalWeek, reine Funktion ohne Persistenz (tools/derived_data_lib/week_finality.py)
   .ai-context/manual/player-week-fantasy.yaml: Kanonischer Shared-Derived-Vertrag fuer PlayerWeekFantasy mit scoring-spezifischer Identitaet, semantischem SettingsHash sowie Actual/Projection/PredictionRange-Semantik
+  .ai-context/manual/derived-models.yaml: Kanonischer Vertrag fuer zentrale, ligaunabhaengige, versionierte Derivationsmodelle (salary-v1, salary-cap-v1, grading-v1) mit Registry, Unveraenderlichkeit nach erstem produktiven Einsatz, Modellwahl je Liga und Saison ueber data-meta und exakter Paritaet zum PowerShell-Verhalten (ADR-055, #919)
+  .ai-context/manual/player-valuation.yaml: Shared-Derived-Vertrag fuer PlayerValuation (Salary, SalaryProjected, Ranking, Rank-Grading, Salary Cap) mit voller Historie je Liga, Saison und Woche unter data-derived/player-valuation, Snapshot-Identitaet, Identity-Hold und Invalidierung (ADR-055, #919)
+  .ai-context/manual/league-standings.yaml: Shared-Derived-Vertrag fuer die Liga-Standings (Regular-Season-Tabelle mit Tiebreaks, Wochentabellen und Weekly Movement, Playoff-Platzierungen, Awards, All-Time) als Produkt league-standings mit einer Datei je Liga und Saison unter data-derived; zentrale Modelle standings-v1/awards-v1 mit Modellwahl je Saison in data-meta, Wochenbasis LeagueScoredWeek, Cutover elevated (ADR-072, #987)
+  .ai-context/manual/league-history.yaml: Shared-Derived-Vertrag fuer die Liga-Historie (LeagueTransactions, LeagueDrafts) mit voller Historie je Liga und Saison unter data-derived, ADR-026-Materialisierungsreihenfolge, Consumer-Generator fuer schlanke public/data-Auslieferung und explizitem Standings-Uebergangsinput bis #987 (ADR-057, #999)
   .ai-context/manual/historical-fantasy-scoring.yaml: ADR-033 und kanonischer Hardening-Vertrag für historische/What-if-Neuberechnung aus persistierten NFL-Fakten plus explizitem League-Scoringprofil; Missing historisch ist fail-closed, Provider-Fantasy-Punkte bleiben validation-only und nfl-reise ist die aktuelle CanonicalLeagueID
+  .ai-context/manual/source-of-truth-matrix.yaml#consumerReadClassification: Pro Datei klassifizierte Provider- und public/data-Reads aller App-, Fantasy-Management- und Tooling-Consumer (#347 K1); tools/tests/test_consumer_read_classification.py schlaegt bei jedem nicht klassifizierten Read fehl
   .ai-context/manual/provider-join-invariants.yaml: Fail-closed Cardinality-/Uniqueness-Vertrag für Player-, Team-, Draft-, Transaction- und Historical-Provider-Joins
   .ai-context/manual/source-of-truth-matrix.yaml: Konsolidierte feldbezogene Primary-/Secondary-/Fallback-Entscheidung für NFL- und Fantasy-League-Quellen sowie heutige Runtime-vs.-kanonische Zielbesitzer
-  public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration
+  public/requests/utils/ConfigUtils.psm1: Technische Pfade und Generierungs-Konfiguration; besitzt außerdem die PowerShell-Daten-Roots (Get-DataSourceRoot, Get-DataDerivedRoot, Get-DataMetaRoot, Config DataSourceDir/DataDerivedDir/DataMetaDir)
+  tools/data_roots.py: Einzige Python-Definition der Daten-Roots (DATA_SOURCE_ROOT, DATA_DERIVED_ROOT, DATA_META_ROOT) nach Issue #788 Schritt 0; Produktivcode unter tools/ und public/requests/ schreibt die Root-Namen nicht aus, tools/tests/test_data_roots.py erzwingt das und hält Python und ConfigUtils synchron
   public/data/*.json: Generierte App-Daten
   public/data/PlayerWeekFantasy.json: App-Delivery-Adapter des Shared-Derived PlayerWeekFantasy-Snapshots; bewahrt CanonicalPlayerID und ergänzt nullable Sleeper PlayerID ohne Projection-/Scoring-Neuberechnung
   public/data/League.json: Generiertes League-Home-Read-Model für Lifecycle, Teams, Standings, League-Konfiguration und Season-Metadaten; Fantasy-Matchup-Schedule/Score/Result/Finality liegen ausschließlich im dedizierten Matchups-Read-Model
@@ -157,11 +186,23 @@ shortContext:
   public/data/PastSeasonsIndex.json: Generiertes Navigationsmanifest für historische Season-Dateien unter public/data/past_seasons, einschließlich Matchups und FantasyGameContext wenn vorhanden
   public/requests/RequestPastSeasonsIndex.ps1: Entry-Point zum Regenerieren von PastSeasonsIndex.json
   public/requests/utils/league/PastSeasonsIndexUtils.psm1: Utility zum Scannen konfigurierter Past-Season-Ressourcen, Schreiben stabiler data/... Web-Pfade und ContentHash-basierter Index-Metadaten
-  public/requests/utils/league/DraftOrderAwareUtils.psm1: Order-aware Draft-Pick-Generator; behält alle Drafts der aktuellen Saison unabhängig vom Status und ergänzt je Typ/Instanz die konfigurierte Anzahl offener Drafts; berücksichtigt linear/snake bei exakten Drafts
-  public/requests/utils/league/DraftHistoryUtils.psm1: Completed-Draft-History-Generator; nutzt dieselbe Season+DraftType+DraftInstance-Identität wie Current Drafts und reichert completed Pick-Ergebnisse sowie CurrentOwnerRosterID aus Sleeper-Pick-Ergebnissen an
+  tools/derived_data.py: Materializer fuer Shared-Derived-Produkte (materialize --product player-valuation); schreibt PlayerValuation je Liga, Saison und Woche nach data-derived, nur bei semantischer Aenderung; seit dem Cutover (Issue #919 Schritt 5) vom Players-Lauf ausgefuehrt und von update-players.yml veroeffentlicht, mit --hold-seed-players-file fuer Identity-Hold (ADR-055)
+  tools/player_valuation_sources.py: Liest kanonische NFL-/League-Fakten (Population, Punkte, Byes, Scoring-Profil) fuer PlayerValuation; nutzt players_league_scoring und players_population
+  tools/player_valuation_shadow.py: Read-only Shadow fuer PlayerValuation; materialisiert in ein Scratch-Verzeichnis und vergleicht den Snapshot der veroeffentlichten Woche exakt (ohne Toleranz) mit Players.json/League.json (Salary, SalaryProjected, Ranking, Rank-Grading, Inputs, SalaryCap*); fuer historische Snapshots nur Plausibilitaetsbericht (ADR-055, Issue #919 Schritt 4)
+  tools/derived_data_lib/player_valuation.py: Reine Snapshot-Berechnung von PlayerValuation (Inputs, Salary, Ranking, Grading, Cap) mit den per Liga und Saison gewaehlten Modellen
+  tools/league_standings_sources.py: Loader der league-standings-Eingaben aus data-source/leagues (league, members, rosters, brackets, matchups) mit Woche-final-Basis LeagueScoredWeek; Port von CanonicalStandingUtils.psm1, fail-closed (ADR-072, #987)
+  tools/derived_data_lib/league_standings.py: Reine Assemblierung des Produkts league-standings je Liga und Saison aus den Modellen standings-v1 und awards-v1 (Tabelle, Wochentabellen, Playoffs, Awards, All-Time-Kette)
+  tools/league_history_sources.py: Loader der LeagueTransactions-/LeagueDrafts-Eingaben aus data-source/leagues, data-meta und dem Manual-Overlay (Standings nur als uebergangsweiser Draft-Order-Input bis #987)
+  tools/derived_data_lib/league_transactions.py: Reine Transaktionsstufen der Liga-Historie (Manual-Overlay, Pick-Identitaetsaufloesung, Pick-Ergebnis-Anreicherung) mit PowerShell-Paritaet (ADR-057, #999)
+  tools/derived_data_lib/league_history.py: Pipeline der Liga-Historie in ADR-026-Reihenfolge ueber LeagueHistoryInputs (Transaktionsbasis, Pick-Identitaet, Drafts, Pick-Ergebnisse zurueck in die Transaktionen); build_history liefert beide Produkte
+  tools/schedule_archive.py: Consumer-Generator der Schedule-Archive public/data/past_seasons/Schedule_<season>.json aus data-source/nfl (schedules, game-finality); wird woechentlich im update-transactions-Lauf geschrieben, nur bei semantischer Aenderung; compare-current beweist Paritaet mit Schedule.json (ADR-058, Issue #999 Schritt 7b)
+  tools/league_history_app_publish.py: Consumer-Generator der Liga-Historie, rendert die App-Dateien Transactions.json, Drafts.json und past_seasons/Transactions|Drafts aus den Produkten (Display-Felder, Pick-LeagueID, Dateiformat) und vergleicht sie im Befehl compare exakt mit public/data (Schatten-Paritaet, Issue #999 Schritt 4)
+  tools/derived_data_lib/league_drafts.py: Reine Draft-Stufe der Liga-Historie (aktuelle, offene und abgeschlossene Drafts, Linear/Snake-Reihenfolge, Trades, Pick-Ergebnisse, TradeHistory) mit PowerShell-Paritaet (ADR-057, #999)
+  tools/players_game_history.py: Builder für Players.json GameHistory aus kanonischen NFL-Fakten (player-stats, snap-counts, qbr-week, player-game-long-gains, Schedule, Finality); läuft innerhalb des players_league_scoring.py-Exports, ADR-044
   public/requests/utils/league/LeagueUtils.psm1: Generator für League Status und Phase; unterscheidet Pre Draft, In Draft und Between Drafts anhand aktueller offener, laufender und abgeschlossener Drafts
   public/requests/utils/league/LeagueOverviewUtils.psm1: Generator-Helper für nullable TradeDeadlineWeek sowie echten Regular-Season-/Playoff-Kickoff; Matchup-Snapshot-Kompatibilität gehört nicht mehr zu League.json
   public/requests/utils/league/MatchupReadModelUtils.psm1: Öffentliche Generator-Grenze für season-weite Matchups-Read-Models, Vergleich, historische Materialisierung, kanonische Pairing-/Score-Helfer und neutrale #503-Reihenfolge; Legacy League.Matchups wird nicht exportiert
+  tools/nfl-game-window.cjs: Scheduler-Modul fuer mode game-window; leitet NFL-Spielfenster aus dem kanonischen Schedule (Eastern-Kickoffs) und Game-Finality ab, waehlt dichten oder Idle-Cron und faellt bei unlesbarem Schedule auf den dichten Cron zurueck (Issue #946)
   deploy_action.ps1: Pages-Build-Script; schreibt .ai-workflow/build.log und deploy-script-result.json als transiente CI-Diagnose
   .ai-context/manual/ci-diagnostics.yaml: Manuelle Doku für transiente Build-/Deploy-Diagnoseausgaben
   src/app/core/interceptors/json-data-cache-busting.interceptor.ts: Fügt lokalen GET-Requests für JSON unter data/ den aktuellen Build-Commit als Queryparameter hinzu; data/past_seasons/** bleibt für langfristiges historisches Caching ausgenommen

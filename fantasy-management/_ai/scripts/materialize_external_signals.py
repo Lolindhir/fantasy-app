@@ -577,7 +577,7 @@ def build(
     ownership = build_ownership(teams)
     canonical_league_root = (
         root
-        / "source-data"
+        / "data-source"
         / "leagues"
         / canonical_league_id
     )

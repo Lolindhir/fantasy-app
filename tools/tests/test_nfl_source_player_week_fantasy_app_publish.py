@@ -109,6 +109,36 @@ class PlayerWeekFantasyAppPublicationTests(unittest.TestCase):
         self.assertIsNone(result["Records"][1]["PlayerID"])
         self.assertEqual(result["Records"][0]["Projection"]["Points"], 10.5)
 
+    def test_publication_exposes_display_level_and_shared_range_axis(self) -> None:
+        identity = {"Players": [{"CanonicalPlayerID": "NFLP-a", "IDs": {"Sleeper": "100"}}]}
+        sleeper = {"Records": [{"CanonicalPlayerID": "NFLP-a", "SleeperPlayerID": "100"}]}
+        result = build_app_player_week_fantasy_read_model(source_contract(), identity, sleeper)
+
+        # The only available fixture projection is 10.5 with range 5.5..18.5 at level 0.9.
+        self.assertEqual(
+            result["Display"],
+            {"RangeLevel": 0.9, "RangeAxis": {"Min": 5, "Max": 20}},
+        )
+        self.assertEqual(
+            result["Records"][0]["Projection"]["PredictionRanges"],
+            [{"Level": 0.9, "Lower": 5.5, "Upper": 18.5}],
+        )
+        self.assertEqual(result["Records"][1]["Projection"]["PredictionRanges"], [])
+
+    def test_range_axis_is_absent_when_no_range_has_the_display_level(self) -> None:
+        source = source_contract()
+        for record in source["Records"]:
+            range_ = record["Projection"]["PredictionRange"]
+            if range_:
+                range_["Level"] = 0.8
+        result = build_app_player_week_fantasy_read_model(
+            source,
+            {"Players": [{"CanonicalPlayerID": "NFLP-a", "IDs": {"Sleeper": "100"}}]},
+            {"Records": [{"CanonicalPlayerID": "NFLP-a", "SleeperPlayerID": "100"}]},
+        )
+
+        self.assertIsNone(result["Display"]["RangeAxis"])
+
     def test_cross_source_sleeper_identity_disagreement_fails_closed(self) -> None:
         with self.assertRaisesRegex(ValueError, "identity disagreement"):
             build_app_player_week_fantasy_read_model(

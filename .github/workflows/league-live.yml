@@ -1,0 +1,169 @@
+name: APP • Pipeline • League Live
+
+# One ten-minute chain for the live league data (Issue #945, step S2 of #471):
+#   source    current League Core + transactions + drafts, one run and one pair of commits
+#   standings league-standings product and Standings.json (Python writer, semantic no-op; Issue #987 step 4)
+#   league    App League plus PlayerWeekFantasy/MatchupProjections and, in the same publication, the
+#             current-season Shared Derived refresh (league-transactions/-drafts, newest scored-week
+#             TeamWeekPerformance; Issue #471 step 3)
+# Standings runs before League because League.json embeds the published Standings placement.
+
+on:
+  repository_dispatch:
+    types:
+      - scheduler-league-live
+  workflow_dispatch:
+    inputs:
+      historical_preflight:
+        description: "Read-only isolated historical PWF + TeamWeekPerformance audit (skip all live writers)"
+        required: false
+        type: boolean
+        default: false
+      historical_mode:
+        description: "Historical target selection"
+        required: false
+        type: choice
+        options:
+          - full
+          - week
+          - incremental
+        default: full
+      historical_season:
+        description: "Season (only for week mode)"
+        required: false
+        type: string
+      historical_week:
+        description: "Week (only for week mode)"
+        required: false
+        type: string
+      historical_changed_path:
+        description: "Changed canonical path (only for incremental mode)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+# Own group, no cancellation: a newer tick waits for the running chain. The source job
+# additionally takes the group of sync-league-source-data.yml so the daily full League
+# source sync never writes in parallel.
+concurrency:
+  group: league-live
+  cancel-in-progress: false
+
+jobs:
+  historical_preflight:
+    if: ${{ inputs.historical_preflight == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout coherent Source snapshot without write credentials
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Run isolated historical PWF and TWP preflight (no publication)
+        shell: bash
+        env:
+          MODE: ${{ inputs.historical_mode }}
+          YEAR: ${{ inputs.historical_season }}
+          WEEK: ${{ inputs.historical_week }}
+          CHANGED_PATH: ${{ inputs.historical_changed_path }}
+        run: |
+          set -euo pipefail
+          args=(--league nfl-reise --mode "${MODE:-full}")
+          if [[ "${MODE:-full}" == "week" ]]; then
+            [[ "${YEAR:-}" =~ ^[0-9]{4}$ && "${WEEK:-}" =~ ^[0-9]{1,2}$ ]] || {
+              echo "Historical week mode requires valid season and week" >&2
+              exit 2
+            }
+            args+=(--season "$YEAR" --week "$WEEK")
+          elif [[ "${MODE:-full}" == "incremental" ]]; then
+            [[ -n "${CHANGED_PATH:-}" ]] || {
+              echo "Incremental mode requires a changed canonical path" >&2
+              exit 2
+            }
+            args+=(--changed-path "$CHANGED_PATH")
+          fi
+          python3 tools/historical_derived_orchestrate.py "${args[@]}"
+
+  source:
+    if: ${{ !inputs.historical_preflight }}
+    uses: ./.github/workflows/sync-league-source-data.yml
+    with:
+      materialization_scope: current
+    secrets: inherit
+
+  standings:
+    needs: source
+    if: ${{ !cancelled() && !inputs.historical_preflight }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+
+      # The Standings writer is Python-only (no pwsh) and a semantic no-op writes nothing, so it runs every
+      # tick. A change-detection gate would miss LeagueScoredWeek moves: the week basis depends on NFL game
+      # finality, which nfl-live commits outside this chain (Issue #987 step 4).
+      - name: Note Standings run
+        id: detect
+        run: |
+          echo "run=true" >> "$GITHUB_OUTPUT"
+          echo "- Standings: run=true (semantic no-op writer, week basis depends on NFL game finality)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Rebuild and publish Standings data
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope standings
+          --path public/data
+          --path data-derived/league-standings
+          --
+          python3 tools/league_standings_app_publish.py write
+
+  league:
+    needs: [source, standings]
+    if: ${{ !cancelled() && !inputs.historical_preflight }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # One generator run and one commit for League and PlayerWeekFantasy/MatchupProjections:
+      # two pushes seconds apart made the Deploy of the first one cancel itself.
+      # Products before consumers: the current-season Shared Derived refresh (league-transactions,
+      # league-drafts, TeamWeekPerformance) runs first so the App files and WeeklyRecaps are rendered from
+      # the fresh product. It reads only data-source and is fail-soft (warning, last good file stays), so an
+      # unfinished week can never block the App League publication. data-derived commits do not deploy.
+      # The PlayerWeekFantasy/MatchupProjections refresh stays after RequestLeaguePublication on purpose:
+      # it takes the target week from the just-written FantasyGameContext.json and no consumer reads it.
+      - name: Rebuild and publish League, PlayerWeekFantasy, MatchupProjections and current-season Derived
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope league
+          --path public/data
+          --path data-derived/player-week-fantasy
+          --path data-derived/team-week-performance
+          --path data-derived/league-transactions
+          --path data-derived/league-drafts
+          --
+          bash -euo pipefail -c
+          'python3 tools/league_live_derived_refresh.py &&
+          python3 tools/league_history_app_publish.py write &&
+          pwsh ./public/requests/RequestLeaguePublication.ps1 &&
+          python3 tools/player_week_fantasy_refresh.py'

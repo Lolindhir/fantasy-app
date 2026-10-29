@@ -186,6 +186,20 @@ Wenn das Entfernen eines Spielers dazu führen würde, dass bereits eine normale
 
 Ein Spieler darf nicht allein deshalb zum Churn-Spieler werden, weil er isoliert schwächer bewertet ist, wenn sein Abgang die Position unter den aktuellen `coverage_floor` drücken würde.
 
+### 4.3.1 Zusätzliche QB-Coverage: tatsächlicher Einsatzpfad statt nomineller QB-Zahl
+
+Gerade in einer kleinen Liga mit mehreren festen QB-Startern ist zusätzliche Absicherung relevant, aber **nicht jeder weitere gehaltene QB ist dauerhaft wertvolle Coverage**. Für einen marginalen QB-Backup werden vor jeder Hold-/Cut-/Waiver- oder Trade-Entscheidung fünf getrennte Fragen beantwortet:
+
+1. **Aktuell einsetzbare Rotation:** Wie viele der kontrollierten QBs sind derzeit gesund, aktiv und mit einer realistischen NFL-Rolle spielbar? Reserve/IR-Spieler zählen als kontrollierte Zukunfts-Assets, nicht als aktuell startfähige Notfallabsicherung.
+2. **Realistischer Startpfad bis zum Saisonende:** In welchen konkreten verbleibenden Wochen könnte der zusätzliche QB wegen Byes, zusammenfallender Verletzungen, längerer Ausfälle oder eines echten Leistungs-/Rollenanstiegs in einen der tatsächlich benötigten QB-Slots rücken? Die reine Möglichkeit einer weiteren Verletzung ist kein garantierter Einsatz; unsichere Fälle werden qualitativ statt mit erfundenen Wahrscheinlichkeiten bewertet.
+3. **Marginaler aktueller Saisonwert:** Wie viel zusätzlichen Expected-Weekly-Value oder Ausfallschutz bietet dieser QB gegenüber der bereits verfügbaren Rotation **und** einem tatsächlich verfügbaren Ersatz aus dem aktuellen Liga-Free-Agent-Pool? Ein höheres kurzfristiges Ranking bringt ohne wahrscheinliche Lineup-Nutzung kaum direkten Gewinnwert.
+4. **Zukunfts- und Asset-Pfad:** Gibt es einen glaubhaften Entwicklungsweg zu einem künftigen Mighty-Giants-Starter bzw. hochwertigerer Coverage oder eine realistisch verwertbare Trade-Chance? Externe Dynasty-Ranks und Marktwerte allein beweisen weder künftige eigene Nutzung noch Nachfrage in der konkreten Sechserliga.
+5. **Roster-Opportunity-Cost:** Rechtfertigen aktuelle Insurance plus erwarteter Zukunfts-/Trade-Optionswert den aktiven Platz gegenüber der tatsächlichen Comparison Boundary, anderen Positionen, Salary/Cap und dem notwendigen Churn-Budget?
+
+Eine durch gleichzeitige IR- und Verletzungsunsicherheit begründete zusätzliche **temporäre** QB-Absicherung ist kein automatischer langfristiger Hold. Wenn ein Kern-QB zurückkehrt, ein Verletzungsrisiko materiell sinkt, kritische Bye-Überlappungen vorbei sind, sich NFL-Starterrollen ändern oder ein besserer Add den Platz beansprucht, erfolgt ein neuer Vergleich. Auch die spätere Rückkehr eines IR-QBs wird als Retention-/Coverage-Trigger geplant, nicht vorweg als heutige aktive Verfügbarkeit verbucht.
+
+Umgekehrt bleibt eine zusätzliche Absicherung trotz geringer normaler Startwahrscheinlichkeit sinnvoll, wenn ein realer Injury-/Bye-Ausfall sonst die feste QB-Coverage unter den Floor drückt und der externe Ersatz unzureichend ist. Es gibt **keine starre QB4-/QB5-Cut-Regel**: maßgeblich sind aktuelle Verfügbarkeit, Startpfad und der tatsächliche Slotpreis. Eine kurzfristige QB-Rangdifferenz rechtfertigt insbesondere keinen erzwungenen Swap, wenn beide Kandidaten voraussichtlich nur auf der Bank sitzen und der abgegebene Spieler glaubhaften längerfristigen Wert besitzt.
+
 ### 4.4 Gemeinsamer FLEX-/Skill-Pool
 
 RB, WR, TE und andere aktuell FLEX-eligible Positionen dürfen nicht nur getrennt nach Positionszahl bewertet werden.
@@ -494,6 +508,7 @@ Roster Audits, Cut-Analysen, FA-Boards und Weekly Waiver/Lineup Decisions sollen
 - `materialized_roster_count`, `pending_controlled_draft_count`, `effective_controlled_roster_count` und `effective_active_roster_count` inklusive der verwendeten aktuellen `League.json`-/`Drafts.json`-Stände;
 - dynamisch abgeleitete feste Starteranforderungen je Position;
 - aktuellen `coverage_floor` und `preferred_coverage` je relevante feste Position;
+- bei marginalen QB-Backups: aktuell spielbare vs. IR-/Reserve-Coverage, realistische Einsatzszenarien bis Saisonende, separaten Insurance-/Dynasty-/Trade-Wert, aktiven Slotpreis und konkrete Recheck-Trigger;
 - aktuellen `startable_skill_pool`, `required_skill_lineup_slots` und `skill_pool_margin`;
 - aktuelle Taxi-Phase: `pre_lock` oder `locked`;
 - bei `pre_lock`: den gemeinsam bewerteten Taxi-eligible Rookie-Pool einschließlich noch nicht materialisierter eigener Draft-Picks und die aktuell optimale **virtuelle** Taxi-Zuweisung;

@@ -6,9 +6,8 @@
   },
   "sources": {
     "league_display": "public/data/League.json",
-    "players": "public/data/Players.json",
-    "canonical_player_identities": "source-data/nfl/identities/players.json",
-    "canonical_sleeper_players": "source-data/nfl/platform/sleeper/players.json",
+    "canonical_player_identities": "data-source/nfl/identities/players.json",
+    "canonical_sleeper_players": "data-source/nfl/platform/sleeper/players.json",
     "timestamps": "public/data/Timestamps.json",
     "external_signal_relevance": "fantasy-management/generated/operations/external-signal-relevance.json"
   },
@@ -26,7 +25,8 @@
       "K"
     ],
     "include_if": [
-      "has_nfl_team",
+      "canonical_nfl_membership",
+      "canonical_nfl_recent_history",
       "league_owned",
       "listed_in_external_source",
       "present_in_external_signal"

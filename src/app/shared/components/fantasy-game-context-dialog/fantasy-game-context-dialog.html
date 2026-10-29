@@ -25,7 +25,7 @@
           </ng-container>
           <ng-template #gameAt><span class="fgc-game-at">@</span></ng-template>
           <span>{{ selectedGame.StartsAtUtc | date:'EEE, MMM d · HH:mm' }}</span>
-          <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(selectedGame) === 'Live'">
+          <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(selectedGame) === 'Live'" [class.fgc-status--final]="gameStageLabel(selectedGame) === 'Final'">
             {{ gameStageLabel(selectedGame) }}
           </span>
         </div>
@@ -121,7 +121,7 @@
                 (click)="openPlayer(player.PlayerID)"
               >
                 <span class="fgc-player-photo-wrap">
-                  <img *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" class="fgc-player-photo" />
+                  <img loading="lazy" decoding="async" *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" class="fgc-player-photo" />
                   <img *ngIf="playerNflLogo(player.PlayerID) as logo" [src]="logo" alt="" class="fgc-player-nfl-logo" />
                 </span>
                 <span class="fgc-player-copy">
@@ -181,6 +181,9 @@
           </ng-container>
           <ng-template #matchupVsOnly><span>VS</span></ng-template>
           <strong>{{ matchupStateLabel(selectedMatchup) }}</strong>
+          <small *ngIf="matchupProjection(selectedMatchup) as projection" class="fgc-matchup-projection" aria-label="Projected final score">
+            Proj. {{ projection.left }} – {{ projection.right }}
+          </small>
         </div>
 
         <button type="button" class="fgc-matchup-team" (click)="openTeam(matchupTeamID(selectedMatchup, 'right'))">
@@ -188,6 +191,8 @@
           <strong>{{ teamShortName(matchupTeamID(selectedMatchup, 'right')) }}</strong>
         </button>
       </section>
+
+      <app-matchup-range-chart *ngIf="matchupRange(selectedMatchup) as range" [view]="range"></app-matchup-range-chart>
 
       <section *ngIf="selectedMatchup.RemainingRelevance as remaining" class="fgc-signal-strip fgc-matchup-signal-strip">
         <span *ngIf="remaining.LockedActiveStarterCount > 0" class="fgc-signal fgc-signal--live">
@@ -200,6 +205,13 @@
           {{ remaining.EligibleBenchCandidateCount }} lineup option{{ remaining.EligibleBenchCandidateCount === 1 ? '' : 's' }}
         </span>
       </section>
+
+      <app-matchup-player-status
+        *ngIf="hasPlayerStatus"
+        [teams]="playerStatusTeams"
+        (playerSelected)="openPlayer($event)"
+        (teamSelected)="openTeam($event)"
+      ></app-matchup-player-status>
 
       <section class="fgc-section fgc-timeline-section">
         <div class="fgc-section-heading">
@@ -229,7 +241,7 @@
 
               <div class="fgc-timeline-meta">
                 <span>{{ row.StartsAtUtc | date:'EEE · HH:mm' }}</span>
-                <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(linkedGame) === 'Live'">{{ gameStageLabel(linkedGame) }}</span>
+                <span class="fgc-status" [class.fgc-status--live]="gameStageLabel(linkedGame) === 'Live'" [class.fgc-status--final]="gameStageLabel(linkedGame) === 'Final'">{{ gameStageLabel(linkedGame) }}</span>
                 <span *ngIf="isFinalWindow(selectedMatchup, row.GameID)" class="fgc-final-window-chip">Final window</span>
               </div>
             </div>
@@ -248,7 +260,7 @@
                   (click)="openPlayer(player.PlayerID)"
                 >
                   <span class="fgc-mini-player-photo-wrap">
-                    <img *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" class="fgc-mini-player-photo" />
+                    <img loading="lazy" decoding="async" *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" class="fgc-mini-player-photo" />
                     <img *ngIf="playerNflLogo(player.PlayerID) as logo" [src]="logo" alt="" class="fgc-mini-player-nfl-logo" />
                   </span>
                   <span class="fgc-mini-player-copy">
@@ -264,6 +276,7 @@
                         [class.fgc-player-state--option]="player.IsBenchCandidate"
                       >{{ playerStateLabel(player) }}</span>
                     </span>
+                    <app-player-projection *ngIf="playerProjection(row, player) as projection" [view]="projection"></app-player-projection>
                   </span>
                   <span *ngIf="hasMatchupGameScoring(row) && player.Points != null" class="fgc-mini-player-points">
                     {{ formatFantasyPoints(player.Points) }}
@@ -285,7 +298,7 @@
                   (click)="openPlayer(player.PlayerID)"
                 >
                   <span class="fgc-mini-player-photo-wrap">
-                    <img *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" class="fgc-mini-player-photo" />
+                    <img loading="lazy" decoding="async" *ngIf="playerPicture(player.PlayerID) as picture" [src]="picture" alt="" class="fgc-mini-player-photo" />
                     <img *ngIf="playerNflLogo(player.PlayerID) as logo" [src]="logo" alt="" class="fgc-mini-player-nfl-logo" />
                   </span>
                   <span class="fgc-mini-player-copy">
@@ -301,6 +314,7 @@
                         [class.fgc-player-state--option]="player.IsBenchCandidate"
                       >{{ playerStateLabel(player) }}</span>
                     </span>
+                    <app-player-projection *ngIf="playerProjection(row, player) as projection" [view]="projection"></app-player-projection>
                   </span>
                   <span *ngIf="hasMatchupGameScoring(row) && player.Points != null" class="fgc-mini-player-points">
                     {{ formatFantasyPoints(player.Points) }}

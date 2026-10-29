@@ -25,25 +25,25 @@ phasePlan:
       und Fantasy Management materialisieren.
   phase2:
     name: Consumer Migration
-    status: next
+    status: in-progress
     goal: >
-      App-Generatoren und Fantasy-Management-Basisableitungen auf source-data
+      App-Generatoren und Fantasy-Management-Basisableitungen auf data-source
       umstellen, ohne bestehende public/data-Contracts unbeabsichtigt zu aendern.
 
 targetFlow: |
-  nflverse ---------------------> source-data/providers/nflverse/**
+  nflverse ---------------------> data-source/providers/nflverse/**
                                           |
-  Sleeper /players/nfl --------> source-data/providers/sleeper/**
+  Sleeper /players/nfl --------> data-source/providers/sleeper/**
                                           |
                                           v
-                                  source-data/nfl/**
+                                  data-source/nfl/**
                                           |
                                           |
-  Sleeper league APIs ---------> source-data/providers/sleeper/leagues/**
+  Sleeper league APIs ---------> data-source/providers/sleeper/leagues/**
                                           |
   League bootstrap/config ----->         |
                                           v
-                                  source-data/leagues/**
+                                  data-source/leagues/**
                                           |
                              +------------+------------+
                              |                         |
@@ -58,8 +58,8 @@ targetFlow: |
 boundaries:
   providerRaw:
     paths:
-      - source-data/providers/nflverse/**
-      - source-data/providers/sleeper/**
+      - data-source/providers/nflverse/**
+      - data-source/providers/sleeper/**
     owns:
       - validierte providernahe Rohdaten
       - Provider-IDs und Provider-Feldnamen
@@ -70,7 +70,7 @@ boundaries:
       Bewertungen enthalten.
 
   canonicalNfl:
-    path: source-data/nfl/**
+    path: data-source/nfl/**
     owns:
       - providerunabhaengige NFL-Fakten
       - CanonicalPlayerID und Provider-Mappings
@@ -78,24 +78,27 @@ boundaries:
     contract: .ai-context/manual/nfl-source-data.yaml
 
   canonicalLeague:
-    pathPattern: source-data/leagues/<CanonicalLeagueID>/**
+    pathPattern: data-source/leagues/<CanonicalLeagueID>/**
     owns:
       - stabile logische Ligaidentitaet ueber mehrere Provider-Saisons hinweg
       - validierte saisonale League-Instanzen und Provider-Mappings
       - normalisierte Liga-, Member-, Roster-, Bracket-, Matchup-, Transaction- und Fantasy-Draft-Fakten
       - saisonuebergreifende League-Lineage
     doesNotOwn:
-      - NFL-weite Fakten, die unter source-data/nfl gehoeren
+      - NFL-weite Fakten, die unter data-source/nfl gehoeren
       - App-spezifische Anzeige-/Readmodel-Felder
       - Fantasy-Management-Bewertungen, Watchlists, Monitoring-Urteile oder Analysen
 
   appReadModels:
     path: public/data/**
     currentState: >
-      Auch nach produktiver Phase-1B-Abnahme lesen die bestehenden App-Generatoren
-      League-Daten bis zur Phase-2-Migration weiterhin ueber ihre heutigen
-      Provider-Pfade und erzeugen public/data Readmodels. Der akzeptierte Source-
-      Layer laeuft parallel und verdrahtet die produktiven Generatoren noch nicht um.
+      Phase 2 laeuft. Die unter consumerMigrationNotes als canonical-active
+      gefuehrten App-Consumer (historische und aktuelle Standings, Transactions
+      und Drafts sowie League Core, Playoff-Brackets und aktuelle Matchups in
+      RequestLeague) lesen ihre League-Fakten bereits aus data-source/leagues.
+      Noch nicht migrierte App-Generatoren lesen League-Daten bis zu ihrem eigenen
+      Cutover weiterhin ueber ihre heutigen Provider-Pfade. Alle erzeugen
+      unveraendert public/data Readmodels.
     targetState: >
       public/data bleibt App-Ausgabe. Phase 2 migriert die Generatoren auf die
       akzeptierten NFL- und League-Source-Vertraege, ohne die bestehenden
@@ -108,13 +111,13 @@ boundaries:
       den fail-closed Canonical League Ownership/Roster Adapter und die explizite
       TeamID->CanonicalLeagueMemberID-Bridge etabliert. Checkpoint 6Q nutzt diesen
       Adapter produktiv fuer managed-roster-signals: TeamID 1 Roster, Reserve, Taxi
-      und Starter kommen direkt aus source-data/leagues. Checkpoint 6R nutzt die
+      und Starter kommen direkt aus data-source/leagues. Checkpoint 6R nutzt die
       gleiche Canonical-Basis produktiv fuer external-signal-relevance und damit die
       vollstaendige league-weite Roster/Reserve/Taxi-Ownership-Union. Checkpoint 6S
       nutzt dieselbe Union produktiv fuer player-signals inklusive Ownership-Status
       und league_owned Population-Reason. Checkpoint 6T nutzt dieselbe Canonical-
       Ownership nun produktiv fuer fa-board-readmodel: Availability, Owner/Bucket
-      und Managed-Team Roster/Reserve/Taxi-Belegung kommen direkt aus source-data.
+      und Managed-Team Roster/Reserve/Taxi-Belegung kommen direkt aus data-source.
       Checkpoint 6U entfernt ausserdem den doppelten direkten Membership-Read im
       managed-roster-overview; dessen Held/Active/Reserve/Taxi-Struktur wird jetzt
       aus canonical-active managed-roster-signals abgeleitet. League.json liefert
@@ -131,15 +134,18 @@ boundaries:
       Reconciliation und Kicker Streaming behalten ihre eigenen Scoring-Enrichment-
       Grenzen bis zu separaten Checkpoints. Checkpoint 6Z.1 entkoppelt ausserdem den
       Player-Signal-Team-Fakt von der Population: nfl_team stammt aus Canonical
-      Sleeper Team, waehrend public/data/Players.json -> TeamAbbr vorerst nur den
-      bestehenden has_nfl_team Population-Compatibility-Reason erhaelt. Dieser
-      Legacy-Reason ist kein NFL-Roster-/Vertragsbeweis. Drafts-, Transactions- und weitere nicht
+      Sleeper Team. Checkpoint C2 (Issue #347, 2026-10-05) ersetzt den Legacy-
+      Population-Reason has_nfl_team durch Canonical-NFL-Roster-Evidenz
+      (canonical_nfl_membership = letztes materialisiertes Weekly Roster,
+      canonical_nfl_recent_history = Season- oder Weekly-Roster der aktuellen
+      Saison, jeweils per CanonicalPlayerID); public/data/Players.json -> TeamAbbr
+      wird von player-signals nicht mehr gelesen. Drafts-, Transactions- und weitere nicht
       migrierte FM-Pfade behalten
       bis zu eigenen Checkpoints ihre bisherigen public/data-Vertraege.
       Sleeper roster_id bleibt reine Provenienz.
     targetState: >
       Basisfakten fuer Liga, Ownership, Drafts, Transactions und NFL-Zustand werden
-      nach Consumer-Migration direkt aus source-data abgeleitet. Fantasy-Management-
+      nach Consumer-Migration direkt aus data-source abgeleitet. Fantasy-Management-
       eigene Rankings, Signale, Knowledge, Analysen und Decisions bleiben unter
       fantasy-management.
 
@@ -166,7 +172,7 @@ bootstrapContract:
     - Historische Sleeper-Instanzen werden ueber previous_league_id rueckwaerts entdeckt und persistent gespeichert.
     - Beim Saisonwechsel bleibt CanonicalLeagueID unveraendert und CurrentProviderLeagueID wird auf die neue Provider-Saison aktualisiert.
     - Jede weitere unabhaengige Fantasy-Liga erhaelt einen eigenen Bootstrap und eine eigene CanonicalLeagueID.
-    - public/data/Metadata.json bleibt bis zur Phase-2-Consumer-Migration produktiver Legacy-/App-Input und darf die aktuelle Sleeper LeagueID parallel enthalten.
+    - 'ADR-054 (Issue #986): Der frühere Bootstrap data-source/leagues/_bootstrap/<CanonicalLeagueID>.json ist durch die handgepflegte Liga-Metadaten-Datei data-meta/<CanonicalLeagueID>/metadata.json (.ai-context/manual/league-metadata.yaml) ersetzt und entfernt. Der League-Source-Sync liest CanonicalLeagueID, Provider und CurrentProviderLeagueID von dort (tools/league_source_data_lib/core.py load_bootstraps).'
 
 leagueIdentity:
   principle: >
@@ -226,9 +232,7 @@ multiLeagueModel:
   productiveSecondLeagueRequiredForPhase1BAcceptance: false
   testEvidence: multi-bootstrap-regression-test
   exampleLayout: |
-    source-data/leagues/
-      _bootstrap/
-        <CanonicalLeagueID>.json
+    data-source/leagues/
       <CanonicalLeagueID-A>/
         manifest.json
         seasons/
@@ -355,8 +359,38 @@ productiveAcceptance:
     currentLeagueCoreConsumer: canonical-active / RequestLeague League+Teams core
     currentPlayoffBracketConsumer: canonical-active / RequestLeague Get-CanonicalCurrentPlayoffs
     currentMatchupConsumer: canonical-active / RequestLeague Get-CanonicalCurrentMatchupLoad
+    consumerReadClassification: >
+      Complete per-file classification of every App, Fantasy Management and tooling
+      read of a provider or a published public/data read model lives in
+      source-of-truth-matrix.yaml consumerReadClassification (#347 K1) and is enforced
+      by tools/tests/test_consumer_read_classification.py. Intentional overlays:
+      Fantasy Management League.json display/scoring enrichment (6P-6V) and the manual league
+      metadata data-meta/<CanonicalLeagueID>/metadata.json (ADR-054). Open items stay visible there as
+      legacy-read-model-pending (only the two Players.json declared
+      inputs of the Fantasy Management player-signal and operations materializations,
+      bounded to the league-derived Salary fields, Age, Year and the population; the
+      kicker research plan and the weekly-league-review job read canonical data-source
+      since the #347 FM-read step) and
+      legacy-provider-path (no entries left: the dead direct Sleeper client callers
+      in TeamUtils, LeagueUtils, PlayoffUtils, the former TransactionUtils and FantasyGameContextCore
+      were removed together with the Sleeper client SleeperUtils.psm1 in the #347 K1
+      follow-up; draft-history season discovery reads the canonical league seasons).
 
 phase2TargetedFreshnessScopes:
+  currentCombinedScope:
+    status: productive-scheduled
+    issue: 945
+    purpose: >
+      One run and one commit pair for the three ten-minute League scopes. The combined
+      scope reuses the single-scope planners; it is not a new materializer.
+    cli:
+      acquisition: tools/league_source_data.py sync --current-scope
+      materialization: tools/league_source_data.py materialize --materialization-scope current --current-scope
+    composition: League Core (with active matchup week), then current transaction window, then current drafts
+    writeSet: union of the three single-scope write-sets
+    parity: tools/tests/test_league_source_current_scope.py proves identical files and semantic no-op behaviour versus the three single scopes run in order
+    workflow: .github/workflows/sync-league-source-data.yml materialization_scope=current, called by .github/workflows/league-live.yml
+    singleScopes: league-core, transactions, drafts and matchups stay available for manual repair runs through workflow_dispatch
   currentLeagueCore:
     status: productive-scheduled
     purpose: >
@@ -373,27 +407,27 @@ phase2TargetedFreshnessScopes:
       - sleeper.losers-bracket
       - sleeper.matchups / exactly CurrentWeek
     canonicalWriteSet:
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/league.json
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/members.json
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/rosters.json
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/winners-bracket.json
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/losers-bracket.json
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/matchups/week-<CurrentWeek>.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/league.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/members.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/rosters.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/winners-bracket.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/losers-bracket.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/matchups/week-<CurrentWeek>.json
     excluded:
       - non-current matchup weeks
       - transactions
       - drafts
       - consumer publication
     workflow:
-      wrapper: .github/workflows/sync-league-core.yml
+      pipeline: .github/workflows/league-live.yml (Issue #945, ADR-048)
       delegatedProducer: .github/workflows/sync-league-source-data.yml
-      materializationScope: league-core
-      schedulerTarget: league-core-source
-      eventType: scheduler-sync-league-core
-      timezone: Europe/Berlin
-      cron: 2-59/10 * * * *
-      ordering: League Core + active Current Matchup :02 -> Transactions :05 -> Drafts :08 -> App League :10
-      monitoring: important / repository_dispatch / 45-minute staleness
+      productionMaterializationScope: current (League Core + current transaction window + current drafts in one run; isolated manual scope league-core remains available)
+      schedulerTarget: league-live
+      eventType: scheduler-league-live
+      timezone: Etc/UTC
+      cron: "*/10 * * * *"
+      ordering: League Live chain per tick = source scope current (League Core + active Current Matchup, Transactions, Drafts) -> Standings (only on changed inputs) -> App League
+      monitoring: important / repository_dispatch / 45-minute staleness (league-live.yml)
       publication: rebuild-and-retry via delegated League Source producer
     weekStructureRule: >
       WeekStructure is intentionally outside the fast League Core scope because it
@@ -446,7 +480,7 @@ phase2TargetedFreshnessScopes:
       - sleeper.league
       - sleeper.matchups
     canonicalWriteSet:
-      - source-data/leagues/<CanonicalLeagueID>/seasons/<current-season>/matchups/week-<CurrentWeek>.json
+      - data-source/leagues/<CanonicalLeagueID>/seasons/<current-season>/matchups/week-<CurrentWeek>.json
     excluded:
       - members
       - rosters
@@ -455,16 +489,16 @@ phase2TargetedFreshnessScopes:
       - drafts
       - consumer publication
     workflow:
-      wrapper: .github/workflows/sync-league-core.yml
+      pipeline: .github/workflows/league-live.yml (Issue #945, ADR-048)
       delegatedProducer: .github/workflows/sync-league-source-data.yml
-      productionMaterializationScope: league-core
+      productionMaterializationScope: current (includes the League Core matchup week)
       isolatedManualMaterializationScope: matchups
-      schedulerTarget: league-core-source
-      eventType: scheduler-sync-league-core
-      timezone: Europe/Berlin
-      cron: 2-59/10 * * * *
-      ordering: League Core + active Current Matchup :02 -> Transactions :05 -> Drafts :08 -> App League scheduler :10
-      monitoring: important / repository_dispatch + narrow push / 45-minute staleness
+      schedulerTarget: league-live
+      eventType: scheduler-league-live
+      timezone: Etc/UTC
+      cron: "*/10 * * * *"
+      ordering: source scope current -> Standings (on changed inputs) -> App League, within one pipeline run
+      monitoring: important / repository_dispatch / 45-minute staleness
       publication: rebuild-and-retry via delegated League Source producer
     identityGuard: >
       Current Sleeper payload ProviderLeagueID/Season, bootstrap CurrentProviderLeagueID,
@@ -478,11 +512,11 @@ phase2TargetedFreshnessScopes:
       RequestLeague performs exactly one Get-CanonicalCurrentMatchupLoad read for the
       active week and no longer performs a direct current-matchup provider read.
     publicationOrderingNote: >
-      The regular scheduler still provides League Core + active Current Matchup at :02
-      and App League at :10, but correctness no longer depends on that timing alone.
-      APP • Data • League also has a narrow main-push trigger for CanonicalMatchupUtils
-      and canonical nfl-reise matchup partition changes, so newly published current
-      matchup evidence causes a rebuild through the existing rebuild-and-retry writer.
+      Since Issue #945 the League Live pipeline runs the current source scope and then
+      the App League build in one chain, so newly materialized current matchup evidence
+      is consumed by the League job of the same run; the former narrow main-push trigger
+      on CanonicalMatchupUtils and matchup partitions is gone. Correctness still does not
+      depend on timing: each job checks out the latest main.
 
 phase1BInventory:
   status: completed-and-refreshed-2026-09-03
@@ -494,6 +528,8 @@ phase1BInventory:
     League.json nachinventarisiert.
 
   centralProviderAdapter:
+    # Retired in the #347 K1 follow-up: the module and its remaining callers are gone; this
+    # block is the historical 2026-09-03 inventory.
     path: public/requests/utils/invoke/SleeperUtils.psm1
     endpoints:
       - dataset: league
@@ -572,23 +608,13 @@ phase1BInventory:
       - public/requests/RequestLeague.ps1
       - public/requests/utils/league/LeagueUtils.psm1
       - public/requests/utils/league/TeamUtils.psm1
-      - public/requests/utils/league/PlayoffUtils.psm1
       - public/requests/utils/league/LeagueOverviewUtils.psm1
     standingsAndHistory:
-      - public/requests/RequestStandings.ps1
-      - public/requests/utils/league/CanonicalStandingUtils.psm1
-      - public/requests/utils/league/StandingUtils.psm1
-      - current season still uses public/requests/utils/league/LeagueUtils.psm1 and TeamUtils.psm1 live
-    transactions:
-      - public/requests/RequestTransactions.ps1
-      - public/requests/utils/league/TransactionUtils.psm1
-      - public/requests/utils/league/TransactionDraftPickEnrichmentUtils.psm1
-      - public/requests/utils/league/DraftTransactionPipelineUtils.psm1
-    drafts:
-      - public/requests/utils/league/DraftUtils.psm1
-      - public/requests/utils/league/DraftHistoryUtils.psm1
-      - public/requests/utils/league/DraftOrderAwareUtils.psm1
-      - public/requests/utils/league/DraftPickResultUtils.psm1
+      - tools/league_standings_app_publish.py
+      - tools/league_standings_sources.py
+    leagueHistory:
+      - tools/league_history_sources.py
+      - tools/league_history_app_publish.py
 
   fieldFamiliesObserved:
     league:
@@ -661,14 +687,16 @@ phase1BInventory:
 
   historicalLeagueDiscovery:
     currentMechanism: >
-      Der Legacy-App-Pfad Get-LeaguesRecursive laedt weiterhin das aktuelle Sleeper-
-      League-Objekt und folgt previous_league_id rekursiv. Der akzeptierte Source-
+      Der Legacy-App-Pfad Get-LeaguesRecursive (Sleeper-Rekursion ueber previous_league_id)
+      wurde im #347-K1-Folgeschritt entfernt; die Draft-Historie liest die Saisonliste jetzt
+      aus Get-CanonicalLeagueSeasonLeagues (data-source/leagues/<CanonicalLeagueID>/seasons).
+      Der akzeptierte Source-
       Layer nutzt dieselbe Provider-Evidenz unabhaengig davon fuer persistente
       Lineage-Discovery und Canonical-Mappings.
     persistenceState: >
       Provider-League-Objekte und previous_league_id-Evidenz werden unter
-      source-data/providers/sleeper/leagues/** persistent gehalten. Der kanonische
-      Manifest-/Season-Layer unter source-data/leagues/<CanonicalLeagueID>/** bindet
+      data-source/providers/sleeper/leagues/** persistent gehalten. Der kanonische
+      Manifest-/Season-Layer unter data-source/leagues/<CanonicalLeagueID>/** bindet
       diese Provider-Instanzen fail-closed an stabile CanonicalLeagueID- und
       CanonicalLeagueSeasonID-Werte. Die produktive 2026→2025→2024-Lineage ist
       materialisiert und bestaetigt.
@@ -677,20 +705,20 @@ phase1BInventory:
         Provider: Sleeper
         ProviderLeagueID: "1133541805053714432"
         evidence:
-          - source-data/providers/sleeper/leagues/1133541805053714432/league.json
-          - source-data/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2024/league.json
+          - data-source/providers/sleeper/leagues/1133541805053714432/league.json
+          - data-source/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2024/league.json
       - season: 2025
         Provider: Sleeper
         ProviderLeagueID: "1257421353431080960"
         evidence:
-          - source-data/providers/sleeper/leagues/1257421353431080960/league.json
-          - source-data/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2025/league.json
+          - data-source/providers/sleeper/leagues/1257421353431080960/league.json
+          - data-source/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2025/league.json
       - season: 2026
         Provider: Sleeper
         ProviderLeagueID: "1354177383984267264"
         evidence:
-          - source-data/providers/sleeper/leagues/1354177383984267264/league.json
-          - source-data/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2026/league.json
+          - data-source/providers/sleeper/leagues/1354177383984267264/league.json
+          - data-source/leagues/cl-220306ac3f9b480fa865e124098d8f56/seasons/2026/league.json
     rawPreviousEdgesPersistedToday: true
     canonicalLeagueIDAssignedToday: true
     canonicalLeagueSeasonIDsAssignedToday: true
@@ -751,7 +779,7 @@ phase1BInventory:
       - roster ownership and player placement
       - provider playoff brackets
       - provider matchup facts by week
-      - provider transactions by week
+      - provider transactions by week (CreatedAt from Sleeper created and StatusUpdatedAt from status_updated; both preserved as evidence)
       - provider fantasy draft metadata/order/results/traded-pick state
       - validated cross-season provider lineage and canonical league mappings
     derivedNotRawSource:
@@ -762,7 +790,7 @@ phase1BInventory:
       - generated DraftKey/DisplayDraftKey and UI labels
       - Fantasy Management Monitor/Grace/Watchlist/Buy/Sell or recommendation state
     manualSourceKeptSeparate:
-      - public/data/Metadata.json league-specific rules and current legacy App league selection
+      - data-meta/<CanonicalLeagueID>/metadata.json hand-maintained league metadata (ADR-054)
       - owner/team mappings that are application-owned rather than Sleeper facts
 
   inventoryConclusions:
@@ -789,15 +817,15 @@ phase1BInventory:
 
 consumerRules:
   sharedFacts:
-    - NFL player identity and NFL facts come from source-data/nfl
-    - league membership, ownership, settings, brackets, matchups, transactions and fantasy drafts come from source-data/leagues
+    - NFL player identity and NFL facts come from data-source/nfl
+    - league membership, ownership, settings, brackets, matchups, transactions and fantasy drafts come from data-source/leagues
   app:
     - public/data remains a generated app contract, not the shared source of truth
     - Phase 2 should preserve existing public/data shapes unless a contract change is separately approved
   fantasyManagement:
-    - source-data facts may feed Operations, monitoring and analyses
+    - data-source facts may feed Operations, monitoring and analyses
     - derived evaluations remain Fantasy-Management-owned artifacts
-    - source-data must not contain Buy/Sell/Monitor/Grace/Watchlist or recommendation state
+    - data-source must not contain Buy/Sell/Monitor/Grace/Watchlist or recommendation state
 
 acceptanceOrder:
   - Phase 1A NFL source layer remains accepted and unchanged
@@ -806,4 +834,20 @@ acceptanceOrder:
   - Phase 1B persists raw league provider data with provenance and no-op semantics
   - Phase 1B materializes normalized league facts and validates historical season linkage
   - unchanged Phase 1B sync/materialization has proven semantic total no-op productively
-  - Phase 2 may now migrate App and Fantasy Management consumers under separate authorization; that migration has not started
+  - Phase 2 may now migrate App and Fantasy Management consumers under separate authorization; that migration is in progress and tracked in Issue 347
+
+matchupEmptyStarterSlots:
+  issue: 1164
+  canonicalField: EmptyStarterSlots
+  appliesTo: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-<n>.json
+  semantics: >
+    Optional positive integer on a canonical roster/matchup row, counting only
+    explicit Sleeper "0" entries in the week-specific starter list. The placeholder
+    is not a player and contributes no scoring; actual Starters and StarterPoints
+    remain exclusively real player identities. Zero/no placeholders omit the field.
+    Null/blank/unmapped actual player data must not be reinterpreted as empty slots.
+  consumer: >
+    The non-active Matchups.json finality derivation requires the count of real
+    starters plus canonical EmptyStarterSlots to equal the configured league starter
+    positions. Real starters still require unambiguous NFL game-finality evidence;
+    an absent/invalid count cannot authorize finalization.

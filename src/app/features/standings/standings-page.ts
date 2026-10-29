@@ -33,11 +33,19 @@ export class StandingsPageComponent {
   vm$ = this.dataService.getLeagueWithPlayers().pipe(
     map(({ league, teams }) => {
       const legacy = buildLeagueLegacy(league, teams);
+      const configuredPlayoffTeams = league.Settings?.['playoff_teams'];
+      const playoffTeams = typeof configuredPlayoffTeams === 'number'
+        && Number.isInteger(configuredPlayoffTeams)
+        && configuredPlayoffTeams > 0
+        && configuredPlayoffTeams < teams.length
+        ? configuredPlayoffTeams
+        : null;
 
       return {
         league,
         legacy,
         currentStandings: buildCurrentStandings(league, teams),
+        playoffTeams,
         seasonHistory: filterArchivedSeasons(buildSeasonHistory(league), String(league.Season))
       };
     })

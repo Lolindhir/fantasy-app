@@ -24,15 +24,15 @@ class LeagueSourceTransactionTargetingTests(unittest.TestCase):
     def _root_with_registry(self) -> tuple[tempfile.TemporaryDirectory, Path]:
         temporary = tempfile.TemporaryDirectory()
         root = Path(temporary.name)
-        source = Path(__file__).resolve().parents[2] / "source-data" / "league-registry.json"
-        target = root / "source-data" / "league-registry.json"
+        source = Path(__file__).resolve().parents[2] / "data-source" / "league-registry.json"
+        target = root / "data-source" / "league-registry.json"
         target.parent.mkdir(parents=True)
         target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
         return temporary, root
 
     @staticmethod
     def _write_schedule(root: Path, season: int, last_week: int = 18) -> None:
-        path = root / "source-data" / "nfl" / "schedules" / f"{season}.json"
+        path = root / "data-source" / "nfl" / "schedules" / f"{season}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps(
@@ -64,7 +64,7 @@ class LeagueSourceTransactionTargetingTests(unittest.TestCase):
         self._write_schedule(root, season)
         season_id = canonical_league_season_id(canonical_league_id, season)
 
-        mappings = root / "source-data" / "nfl" / "identities" / "provider-mappings.json"
+        mappings = root / "data-source" / "nfl" / "identities" / "provider-mappings.json"
         mappings.parent.mkdir(parents=True, exist_ok=True)
         mappings.write_text(
             json.dumps(
@@ -85,7 +85,7 @@ class LeagueSourceTransactionTargetingTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        league_root = root / "source-data" / "leagues" / canonical_league_id
+        league_root = root / "data-source" / "leagues" / canonical_league_id
         league_root.mkdir(parents=True, exist_ok=True)
         (league_root / "manifest.json").write_text(
             json.dumps(
@@ -145,7 +145,7 @@ class LeagueSourceTransactionTargetingTests(unittest.TestCase):
 
         raw_root = (
             root
-            / "source-data"
+            / "data-source"
             / "providers"
             / "sleeper"
             / "leagues"
@@ -267,7 +267,7 @@ class LeagueSourceTransactionTargetingTests(unittest.TestCase):
             self.assertEqual(len(outputs), 1)
             self.assertEqual(
                 outputs[0].path.relative_to(root).as_posix(),
-                "source-data/leagues/test-league/seasons/2026/transactions/week-7.json",
+                "data-source/leagues/test-league/seasons/2026/transactions/week-7.json",
             )
             self.assertEqual(
                 TRANSACTION_SCOPE_DEPENDENCIES,
@@ -295,7 +295,7 @@ class LeagueSourceTransactionTargetingTests(unittest.TestCase):
             self.assertEqual(first["CanonicalFilesChanged"], 1)
             self.assertEqual(second["CanonicalFilesChanged"], 0)
 
-            season_root = root / "source-data" / "leagues" / "test-league" / "seasons" / "2026"
+            season_root = root / "data-source" / "leagues" / "test-league" / "seasons" / "2026"
             self.assertFalse((season_root / "league.json").exists())
             self.assertFalse((season_root / "drafts.json").exists())
             self.assertFalse((season_root / "matchups").exists())
@@ -308,7 +308,7 @@ class LeagueSourceTransactionTargetingTests(unittest.TestCase):
             self._write_transaction_scope_fixture(root)
             roster_path = (
                 root
-                / "source-data"
+                / "data-source"
                 / "leagues"
                 / "test-league"
                 / "seasons"
@@ -346,7 +346,48 @@ class CurrentRepositoryTransactionScopeIntegrationTests(unittest.TestCase):
         )
         self.assertEqual(len(outputs), 1)
         existing = json.loads(outputs[0].path.read_text(encoding="utf-8"))
-        self.assertEqual(outputs[0].value, existing)
+        # The schema migration intentionally adds StatusUpdatedAt to canonical facts.
+        # Every pre-existing field still has to match the published partition exactly.
+        without_new_timestamp = [
+            {key: value for key, value in transaction.items() if key != "StatusUpdatedAt"}
+            for transaction in outputs[0].value
+        ]
+        existing_without_new_timestamp = [
+            {key: value for key, value in transaction.items() if key != "StatusUpdatedAt"}
+            for transaction in existing
+        ]
+        self.assertEqual(without_new_timestamp, existing_without_new_timestamp)
+
+        # Independently verify the new field against its owning Sleeper raw input,
+        # rather than ignoring it as a harmless mismatch.
+        provider_raw = json.loads((
+            repo_root / "data-source" / "providers" / "sleeper" / "leagues"
+            / "1354177383984267264" / "transactions" / "week-1.json"
+        ).read_text(encoding="utf-8"))
+        updated_by_id = {
+            str(item["transaction_id"]): item.get("status_updated")
+            for item in provider_raw
+        }
+        self.assertEqual(len(updated_by_id), len(outputs[0].value))
+        for transaction in outputs[0].value:
+            provider_id = next(
+                mapping["ProviderTransactionID"]
+                for mapping in transaction["ProviderMappings"]
+                if mapping["Provider"] == "Sleeper"
+            )
+            self.assertIn(provider_id, updated_by_id)
+            self.assertEqual(transaction["StatusUpdatedAt"], updated_by_id[provider_id])
+        # Once the source publisher has backfilled the new field, the tracked
+        # canonical snapshot must agree with the same independently checked raw
+        # status timestamp. Before that publication, legacy snapshots lack it.
+        existing_by_id = {
+            next(mapping["ProviderTransactionID"] for mapping in transaction["ProviderMappings"]
+                 if mapping["Provider"] == "Sleeper"): transaction
+            for transaction in existing
+        }
+        for provider_id, transaction in existing_by_id.items():
+            if "StatusUpdatedAt" in transaction:
+                self.assertEqual(transaction["StatusUpdatedAt"], updated_by_id[provider_id])
 
 
 if __name__ == "__main__":

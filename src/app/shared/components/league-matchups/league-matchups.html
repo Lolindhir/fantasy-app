@@ -7,7 +7,11 @@
       </div>
 
       <div class="weekly-context-rows">
-        <div *ngFor="let row of context.standings" class="weekly-context-row weekly-standing-row">
+        <div
+          *ngFor="let row of context.standings"
+          class="weekly-context-row weekly-standing-row"
+          [class.weekly-standing-row--playoff-cutline]="row.displayPlace === playoffCutlineStartPlace"
+        >
           <strong class="weekly-standing-rank">{{ row.displayPlace }}</strong>
           <span class="weekly-team-avatar">
             <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
@@ -17,11 +21,13 @@
           <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(row.team) }}</span>
           <strong class="weekly-standing-record">{{ row.record }}</strong>
           <strong
-            class="weekly-standing-point-diff"
-            [class.weekly-standing-point-diff--positive]="row.points - row.pointsAgainst > 0"
-            [class.weekly-standing-point-diff--negative]="row.points - row.pointsAgainst < 0"
-            title="Point differential"
-          ><ng-container *ngIf="row.points - row.pointsAgainst > 0">+</ng-container>{{ row.points - row.pointsAgainst | number:'1.0-0' }}</strong>
+            class="weekly-standing-movement"
+            [class.weekly-standing-movement--up]="row.placeDelta !== null && row.placeDelta > 0"
+            [class.weekly-standing-movement--down]="row.placeDelta !== null && row.placeDelta < 0"
+            [class.weekly-standing-movement--none]="row.placeDelta === null || row.placeDelta === 0"
+            [attr.aria-label]="standingMovementLabel(row.placeDelta)"
+            [title]="standingMovementLabel(row.placeDelta)"
+          ><span aria-hidden="true">{{ standingMovementText(row.placeDelta) }}</span></strong>
         </div>
       </div>
     </a>
@@ -116,6 +122,19 @@
                 <strong class="matchup-score-value matchup-score-value--left">{{ matchup.left.pointsDisplay }}</strong>
                 <span class="matchup-vs" aria-hidden="true">VS</span>
                 <strong class="matchup-score-value matchup-score-value--right">{{ matchup.right.pointsDisplay }}</strong>
+                <ng-container *ngIf="fantasyContextState$ | async as projectionState">
+                  <ng-container *ngIf="matchupProjection(matchup, projectionState.context) as projection">
+                    <span
+                      class="matchup-projection-value matchup-score-value--left"
+                      [attr.aria-label]="'Projected final score ' + projection.left"
+                    >{{ projection.left }}</span>
+                    <span class="matchup-vs">PROJ.</span>
+                    <span
+                      class="matchup-projection-value matchup-projection-value--right"
+                      [attr.aria-label]="'Projected final score ' + projection.right"
+                    >{{ projection.right }}</span>
+                  </ng-container>
+                </ng-container>
               </div>
 
               <div class="matchup-team matchup-team--right">
@@ -157,6 +176,7 @@
                         class="matchup-progress-group"
                         [class.matchup-progress-group--next]="group.outline === 'next'"
                         [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
+                        [class.matchup-progress-group--questionable]="group.outline === 'questionable'"
                         [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
                         [attr.aria-label]="group.ariaLabel"
                       >
@@ -197,6 +217,7 @@
                         class="matchup-progress-group"
                         [class.matchup-progress-group--next]="group.outline === 'next'"
                         [class.matchup-progress-group--repairable]="group.outline === 'repairable'"
+                        [class.matchup-progress-group--questionable]="group.outline === 'questionable'"
                         [class.matchup-progress-group--unknown]="group.outline === 'unknown'"
                         [attr.aria-label]="group.ariaLabel"
                       >
@@ -325,8 +346,8 @@
                   *ngFor="let game of mustWatch"
                   class="fantasy-pulse-card fantasy-pulse-card--remaining"
                   [class.fantasy-pulse-card--live]="gameIsLiveForFantasy(game)"
+                  [class.fantasy-pulse-card--final]="gameIsFinal(game)"
                 >
-                  <span class="fantasy-pulse-rank" *ngIf="game.RemainingRelevance?.MustWatchRank as rank">#{{ rank }}</span>
                   <button
                     type="button"
                     class="fantasy-pulse-card-main"
@@ -343,14 +364,33 @@
                         <img *ngIf="nflLogo(game.HomeTeamID) as homeLogo" [src]="homeLogo" alt="" />
                         <strong>{{ game.HomeTeamAbbr || game.HomeTeamID }}</strong>
                       </span>
-                      <strong *ngIf="hasNflScore(game)" class="fantasy-pulse-final-nfl-score">
-                        {{ formatNflScore(game.AwayScore) }}–{{ formatNflScore(game.HomeScore) }}
-                      </strong>
+                      
+                      <ng-container *ngIf="gameIsFinal(game)">
+                        <strong class="fantasy-pulse-score-value fantasy-pulse-score-value--away">{{ hasNflScore(game) ? formatNflScore(game.AwayScore) : '–' }}</strong>
+                        <span class="fantasy-pulse-score-label fantasy-pulse-score-label--final"><span class="fantasy-pulse-status-emoji" role="img" aria-label="Final">🏁</span> Final</span>
+                        <strong class="fantasy-pulse-score-value fantasy-pulse-score-value--home">{{ hasNflScore(game) ? formatNflScore(game.HomeScore) : '–' }}</strong>
+                      </ng-container>
+                      <!-- Live has no reliable NFL score; the gray Proj. row remains a market estimate until Final. -->
+                      <ng-container *ngIf="!gameIsFinal(game) && game.Market as market">
+                        <ng-container *ngIf="hasImpliedNflScores(market)">
+                          <strong class="fantasy-pulse-score-value fantasy-pulse-score-value--away fantasy-pulse-score-value--projected">{{ formatImpliedNflScore(market.ImpliedAwayPoints) }}</strong>
+                          <span class="fantasy-pulse-score-label fantasy-pulse-score-label--market"><span class="fantasy-pulse-status-emoji" role="img" aria-label="Betting market">🎰</span> Proj.</span>
+                          <strong class="fantasy-pulse-score-value fantasy-pulse-score-value--home fantasy-pulse-score-value--projected">{{ formatImpliedNflScore(market.ImpliedHomePoints) }}</strong>
+                        </ng-container>
+                      </ng-container>
                     </span>
-                    <span class="fantasy-pulse-game-meta">
-                      <span *ngIf="gameIsLiveForFantasy(game)" class="fantasy-pulse-live-dot">Live</span>
-                      <span *ngIf="gameIsFinal(game)" role="img" aria-label="Final">🏁</span>
-                      <span>{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
+                    <span class="fantasy-pulse-side-meta">
+                      <span class="fantasy-pulse-rank" *ngIf="game.RemainingRelevance?.MustWatchRank as rank">#{{ rank }}</span>
+                      <span class="fantasy-pulse-side-kickoff-row">
+                        <span *ngIf="gameIsLiveForFantasy(game)" class="fantasy-pulse-side-live">
+                          <svg class="fantasy-pulse-live-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="2" />
+                            <path d="M16.24 7.76a6 6 0 0 1 0 8.48M7.76 7.76a6 6 0 0 0 0 8.48M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
+                          </svg>
+                          Live
+                        </span>
+                        <span class="fantasy-pulse-game-kickoff">{{ game.StartsAtUtc | date:'EEE · HH:mm' }}</span>
+                      </span>
                     </span>
                     <span class="fantasy-pulse-metrics">
                       <strong *ngIf="game.Relevance.StarterCount > 0" class="fantasy-pulse-metric-chip fantasy-pulse-metric-chip--starter">
@@ -442,7 +482,7 @@
               (click)="openRecapPlayerDetail(player)"
             >
               <span class="weekly-recap-player-picture">
-                <img *ngIf="recapPlayerPicture(player) as picture" class="weekly-recap-player-portrait" [src]="picture" alt="" />
+                <img loading="lazy" decoding="async" *ngIf="recapPlayerPicture(player) as picture" class="weekly-recap-player-portrait" [src]="picture" alt="" />
                 <span *ngIf="!recapPlayerPicture(player)">{{ player.Position }}</span>
               </span>
               <span class="weekly-recap-player-copy">
@@ -451,6 +491,55 @@
               </span>
               <strong class="weekly-recap-player-points">{{ formatFantasyPoints(player.Points) }}</strong>
             </button>
+          </div>
+        </div>
+
+        <div *ngIf="recap.awards as awards" class="weekly-recap-group weekly-recap-group--awards">
+          <h3>Weekly Team Awards</h3>
+          <div class="weekly-recap-awards">
+            <article class="weekly-recap-award" aria-label="Best Coach award">
+              <h4 class="weekly-recap-award-title"><mat-icon aria-hidden="true">gps_fixed</mat-icon>Best Coach</h4>
+              <div *ngFor="let winner of awards.BestCoach" class="weekly-recap-award-winner">
+                <button type="button" class="weekly-recap-award-owner"
+                  [disabled]="!awardTeamExists(winner.FantasyTeamID)"
+                  [attr.aria-label]="'Open ' + awardOwnerName(winner.FantasyTeamID) + ' team details'"
+                  (click)="openAwardTeamDetails(winner.FantasyTeamID)">
+                  <span class="weekly-recap-award-avatar">
+                    <img *ngIf="awardOwnerAvatar(winner.FantasyTeamID) as avatar" [src]="avatar" alt="" loading="lazy" decoding="async" />
+                    <span *ngIf="!awardOwnerAvatar(winner.FantasyTeamID)">{{ awardOwnerName(winner.FantasyTeamID).charAt(0) }}</span>
+                  </span>
+                  <span class="weekly-recap-award-identity">
+                    <strong>{{ awardOwnerName(winner.FantasyTeamID) }}</strong>
+                    <span class="weekly-recap-award-team" *ngIf="awardTeamName(winner.FantasyTeamID) as teamName">{{ teamName }}</span>
+                  </span>
+                </button>
+                <strong class="weekly-recap-award-value">{{ formatAwardEfficiency(winner.EfficiencyPercent) }}%</strong>
+                <span class="weekly-recap-award-extra">{{ formatFantasyPoints(winner.ActualStarterPoints) }} / {{ formatFantasyPoints(winner.PotentialPoints) }} possible pts</span>
+              </div>
+              <div *ngIf="awards.BestCoach.length === 0" class="weekly-recap-award-empty">No eligible winner</div>
+            </article>
+
+            <article class="weekly-recap-award" aria-label="Best Manager award">
+              <h4 class="weekly-recap-award-title"><mat-icon aria-hidden="true">workspace_premium</mat-icon>Best Manager</h4>
+              <div *ngFor="let winner of awards.BestManager" class="weekly-recap-award-winner">
+                <button type="button" class="weekly-recap-award-owner"
+                  [disabled]="!awardTeamExists(winner.FantasyTeamID)"
+                  [attr.aria-label]="'Open ' + awardOwnerName(winner.FantasyTeamID) + ' team details'"
+                  (click)="openAwardTeamDetails(winner.FantasyTeamID)">
+                  <span class="weekly-recap-award-avatar">
+                    <img *ngIf="awardOwnerAvatar(winner.FantasyTeamID) as avatar" [src]="avatar" alt="" loading="lazy" decoding="async" />
+                    <span *ngIf="!awardOwnerAvatar(winner.FantasyTeamID)">{{ awardOwnerName(winner.FantasyTeamID).charAt(0) }}</span>
+                  </span>
+                  <span class="weekly-recap-award-identity">
+                    <strong>{{ awardOwnerName(winner.FantasyTeamID) }}</strong>
+                    <span class="weekly-recap-award-team" *ngIf="awardTeamName(winner.FantasyTeamID) as teamName">{{ teamName }}</span>
+                  </span>
+                </button>
+                <strong class="weekly-recap-award-value">{{ formatFantasyPoints(winner.PotentialPoints) }}<span class="weekly-recap-award-unit"> pts</span></strong>
+                <span class="weekly-recap-award-extra">Highest roster potential</span>
+              </div>
+              <div *ngIf="awards.BestManager.length === 0" class="weekly-recap-award-empty">No eligible winner</div>
+            </article>
           </div>
         </div>
       </div>

@@ -18,9 +18,9 @@ export function mapRawTransactions(
   return (rawTransactions ?? [])
     .map(raw => mapRawTransaction(raw, teams, players))
     .sort((a, b) => {
-      const createdAtDifference = b.CreatedAt - a.CreatedAt;
-      return createdAtDifference !== 0
-        ? createdAtDifference
+      const effectiveAtDifference = b.EffectiveAt - a.EffectiveAt;
+      return effectiveAtDifference !== 0
+        ? effectiveAtDifference
         : b.TransactionID.localeCompare(a.TransactionID);
     });
 }
@@ -40,10 +40,17 @@ export function mapRawTransaction(
     playerById
   ));
   const rosterIDs = collectRosterIDs(raw, adds, drops, draftPicks);
+  // Transitional fallback for old published JSON while the canonical source and
+  // Shared Derived artifacts are being re-materialized. The generator owns EffectiveAt.
+  const effectiveAt = Number.isFinite(raw.EffectiveAt) && (raw.EffectiveAt ?? 0) > 0
+    ? raw.EffectiveAt!
+    : raw.CreatedAt;
 
   return {
     ...raw,
+    EffectiveAt: effectiveAt,
     CreatedAtDate: Number.isFinite(raw.CreatedAt) ? new Date(raw.CreatedAt) : null,
+    EffectiveAtDate: Number.isFinite(effectiveAt) ? new Date(effectiveAt) : null,
     RosterIDs: rosterIDs,
     Participants: rosterIDs.map(rosterID => mapParticipant(
       rosterID,
@@ -51,6 +58,7 @@ export function mapRawTransaction(
       playerById,
       adds,
       drops,
+      raw.PlayerRefs,
       draftPicks
     )),
     DraftPicks: draftPicks
@@ -63,13 +71,14 @@ function mapParticipant(
   playerById: Map<string, Player>,
   adds: TransactionPlayerRosterMap,
   drops: TransactionPlayerRosterMap,
+  historicalRefs: RawTransaction['PlayerRefs'],
   draftPicks: TransactionDraftPick[]
 ): TransactionParticipant {
   return {
     RosterID: rosterID,
     Team: teamByRosterId.get(rosterID),
-    AddedPlayers: mapPlayerAssets(adds, rosterID, playerById),
-    DroppedPlayers: mapPlayerAssets(drops, rosterID, playerById),
+    AddedPlayers: mapPlayerAssets(adds, rosterID, playerById, historicalRefs),
+    DroppedPlayers: mapPlayerAssets(drops, rosterID, playerById, historicalRefs),
     AcquiredDraftPicks: draftPicks.filter(pick => pick.NewOwnerRosterID === rosterID),
     SentDraftPicks: draftPicks.filter(pick => pick.PreviousOwnerRosterID === rosterID)
   };
@@ -78,13 +87,15 @@ function mapParticipant(
 function mapPlayerAssets(
   playerRosterMap: TransactionPlayerRosterMap,
   rosterID: number,
-  playerById: Map<string, Player>
+  playerById: Map<string, Player>,
+  historicalRefs: RawTransaction['PlayerRefs']
 ): TransactionPlayerAsset[] {
   return Object.entries(playerRosterMap)
     .filter(([, targetRosterID]) => normalizeRosterID(targetRosterID) === rosterID)
     .map(([playerID]) => ({
       PlayerID: playerID,
-      Player: playerById.get(playerID)
+      Player: playerById.get(playerID),
+      ...(historicalRefs?.[playerID] ? { PlayerRef: historicalRefs[playerID] } : {})
     }))
     .sort((a, b) => {
       const aName = a.Player?.Name ?? a.PlayerID;

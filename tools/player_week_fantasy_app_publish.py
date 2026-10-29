@@ -4,13 +4,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from pathlib import Path
 from typing import Any, Mapping
 
 from player_week_fantasy import (
     CONTRACT_VERSION,
+    DISPLAY_INTERVAL_LEVEL,
     build_player_week_fantasy_contract,
 )
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 
 APP_SCHEMA_VERSION = 1
 IDENTITY_PROVIDER = "Sleeper"
@@ -179,6 +182,27 @@ def _build_identity_bridge(
     return canonical_to_sleeper
 
 
+RANGE_AXIS_STEP = 5
+
+
+def _range_axis(records: list[dict[str, Any]], level: float) -> dict[str, int] | None:
+    """Shared player-range scale at the display level, snapped outward to the step."""
+
+    lowers: list[float] = []
+    uppers: list[float] = []
+    for record in records:
+        for item in record["Projection"].get("PredictionRanges", []):
+            if item["Level"] == level:
+                lowers.append(item["Lower"])
+                uppers.append(item["Upper"])
+    if not lowers:
+        return None
+    return {
+        "Min": math.floor(min(lowers) / RANGE_AXIS_STEP) * RANGE_AXIS_STEP,
+        "Max": math.ceil(max(uppers) / RANGE_AXIS_STEP) * RANGE_AXIS_STEP,
+    }
+
+
 def build_app_player_week_fantasy_read_model(
     source: Mapping[str, Any],
     identity_payload: Mapping[str, Any],
@@ -219,6 +243,10 @@ def build_app_player_week_fantasy_read_model(
             "ResolvedRecordCount": resolved,
             "UnavailableRecordCount": unavailable,
         },
+        "Display": {
+            "RangeLevel": DISPLAY_INTERVAL_LEVEL,
+            "RangeAxis": _range_axis(records, DISPLAY_INTERVAL_LEVEL),
+        },
         "Records": records,
     }
 
@@ -246,14 +274,14 @@ def materialize_app_player_week_fantasy(
 
     source_path = (
         repo_root
-        / "derived-data"
+        / DATA_DERIVED_ROOT
         / "player-week-fantasy"
         / canonical_league_id
         / str(season)
         / f"{week:02d}.json"
     )
-    identity_path = repo_root / "source-data" / "nfl" / "identities" / "players.json"
-    sleeper_path = repo_root / "source-data" / "nfl" / "platform" / "sleeper" / "players.json"
+    identity_path = repo_root / DATA_SOURCE_ROOT / "nfl" / "identities" / "players.json"
+    sleeper_path = repo_root / DATA_SOURCE_ROOT / "nfl" / "platform" / "sleeper" / "players.json"
     target_path = output_path or (repo_root / "public" / "data" / "PlayerWeekFantasy.json")
 
     payload = build_app_player_week_fantasy_read_model(

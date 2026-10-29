@@ -5,6 +5,8 @@ import type {
   DecisionWindowGame,
   DecisionWindowsReadModel
 } from '../../core/models/decision-window.models';
+import type { NFLTeam } from '../../core/models/player.models';
+import { canonicalNflTeamKey } from './nfl-team-key.util';
 import {
   formatDecisionWindowIssue,
   getDecisionWindowStatusLabel
@@ -55,7 +57,8 @@ export function isTeamDecisionWindowActiveStatus(status: string): boolean {
 export function buildTeamUpcomingLockViews(
   model: DecisionWindowsReadModel,
   fantasyTeamId: number,
-  now: Date
+  now: Date,
+  nflTeams: readonly NFLTeam[] = []
 ): TeamUpcomingLockView[] {
   const nowMs = now.getTime();
 
@@ -99,7 +102,7 @@ export function buildTeamUpcomingLockViews(
               game,
               affectedPlayers,
               affectedStarterCount: affectedPlayers.filter(player => player.IsStarter).length,
-              teamGroups: buildTeamGameGroups(game, affectedPlayers)
+              teamGroups: buildTeamGameGroups(game, affectedPlayers, nflTeams)
             } satisfies TeamDecisionWindowGameView
           };
         })
@@ -212,17 +215,21 @@ export function formatTeamAffectedCounts(lock: TeamUpcomingLockView): string {
 
 function buildTeamGameGroups(
   game: DecisionWindowGame,
-  affectedPlayers: DecisionWindowAffectedPlayer[]
+  affectedPlayers: DecisionWindowAffectedPlayer[],
+  nflTeams: readonly NFLTeam[]
 ): TeamDecisionWindowNflTeamGroupView[] {
+  // Players and games may reference the same NFL team with different key forms (abbreviation or legacy ID).
   const byTeam = new Map<string, DecisionWindowAffectedPlayer[]>();
   affectedPlayers.forEach(player => {
-    const key = player.NFLTeamID ?? '';
+    const key = canonicalNflTeamKey(nflTeams, player.NFLTeamID);
     const players = byTeam.get(key) ?? [];
     players.push(player);
     byTeam.set(key, players);
   });
 
-  const primaryTeamIds = [game.HomeTeamID, game.AwayTeamID];
+  const homeKey = canonicalNflTeamKey(nflTeams, game.HomeTeamID);
+  const awayKey = canonicalNflTeamKey(nflTeams, game.AwayTeamID);
+  const primaryTeamIds = [homeKey, awayKey];
   const extraTeamIds = [...byTeam.keys()]
     .filter(teamId => !primaryTeamIds.includes(teamId))
     .sort((a, b) => a.localeCompare(b));
@@ -231,9 +238,9 @@ function buildTeamGameGroups(
     .filter((teamId, index, all) => all.indexOf(teamId) === index)
     .map(teamId => {
       const players = sortAffectedPlayers(byTeam.get(teamId) ?? []);
-      const teamAbbr = teamId === game.HomeTeamID
+      const teamAbbr = teamId === homeKey
         ? game.HomeTeamAbbr || game.HomeTeamID
-        : teamId === game.AwayTeamID
+        : teamId === awayKey
           ? game.AwayTeamAbbr || game.AwayTeamID
           : teamId || 'Unknown';
 

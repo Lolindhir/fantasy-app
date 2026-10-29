@@ -55,6 +55,14 @@ class PublishGeneratedCommitTests(unittest.TestCase):
         git(path, "config", "user.email", "test@example.com")
         return path
 
+    def shallow_clone(self, name: str) -> Path:
+        # Depth only applies to a URL clone; this mirrors actions/checkout with fetch-depth: 1.
+        path = self.root / name
+        git(self.root, "clone", "--depth", "1", self.remote.as_uri(), str(path))
+        git(path, "config", "user.name", "Test")
+        git(path, "config", "user.email", "test@example.com")
+        return path
+
     def commit_file(self, repo: Path, path: str, text: str, message: str) -> None:
         target = repo / path
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -94,6 +102,49 @@ class PublishGeneratedCommitTests(unittest.TestCase):
         verify = self.clone("verify")
         self.assertTrue((verify / "first.txt").exists())
         self.assertTrue((verify / "second.txt").exists())
+
+    def test_shallow_clone_rebases_onto_advanced_remote(self) -> None:
+        # fm-daily provider legs check out with fetch-depth: 1 (Issue #1156).
+        shallow = self.shallow_clone("shallow")
+        self.assertEqual(git(shallow, "rev-parse", "--is-shallow-repository").stdout.strip(), "true")
+        other = self.clone("other")
+        self.commit_file(other, "other-1.txt", "1\n", "other 1")
+        self.commit_file(other, "other-2.txt", "2\n", "other 2")
+        git(other, "push", "origin", "HEAD:main")
+        self.commit_file(shallow, "shallow.txt", "s\n", "shallow")
+        self.publish(shallow)
+        verify = self.clone("verify")
+        for name in ("other-1.txt", "other-2.txt", "shallow.txt"):
+            self.assertTrue((verify / name).exists(), name)
+        # One generated commit on top of the two foreign ones, no history rewrite.
+        self.assertEqual(git(verify, "rev-list", "--count", "HEAD").stdout.strip(), "4")
+
+    def test_shallow_clone_retries_race_during_push(self) -> None:
+        shallow = self.shallow_clone("shallow")
+        racer = self.clone("racer")
+        self.commit_file(shallow, "shallow.txt", "s\n", "shallow")
+        self.commit_file(racer, "racer.txt", "r\n", "racer")
+
+        original_run_git = publisher.run_git
+        race_injected = False
+
+        def run_git_with_race(args, *, check=True):
+            nonlocal race_injected
+            if list(args[:2]) == ["push", "origin"] and not race_injected:
+                race_injected = True
+                git(racer, "push", "origin", "HEAD:main")
+            return original_run_git(args, check=check)
+
+        publisher.run_git = run_git_with_race
+        try:
+            self.publish(shallow)
+        finally:
+            publisher.run_git = original_run_git
+
+        self.assertTrue(race_injected)
+        verify = self.clone("verify")
+        self.assertTrue((verify / "shallow.txt").exists())
+        self.assertTrue((verify / "racer.txt").exists())
 
     def test_retries_when_remote_advances_during_push(self) -> None:
         writer = self.clone("writer")
@@ -171,6 +222,98 @@ class PublishGeneratedCommitTests(unittest.TestCase):
                 result = publisher.GitResult(1, "", stderr)
                 self.assertTrue(publisher.is_retryable_race(result))
         self.assertFalse(publisher.is_retryable_race(publisher.GitResult(1, "", "Authentication failed")))
+
+    def test_transient_classifier(self) -> None:
+        for stderr in (
+            "fatal: unable to access: The requested URL returned error: 502",
+            "error: RPC failed; curl 56",
+            "fatal: the remote end hung up unexpectedly",
+        ):
+            with self.subTest(stderr=stderr):
+                self.assertTrue(publisher.is_transient_failure(publisher.GitResult(1, "", stderr)))
+        for stderr in (
+            "rejected (fetch first)",
+            "The requested URL returned error: 403",
+            "Authentication failed",
+            "pre-receive hook declined",
+        ):
+            with self.subTest(stderr=stderr):
+                self.assertFalse(publisher.is_transient_failure(publisher.GitResult(1, "", stderr)))
+
+    def _with_injected_failures(self, writer: Path, failures: dict, **kwargs: object) -> list:
+        """Run publish with run_git failing the first N matching git commands."""
+        original_run_git = publisher.run_git
+        original_sleep = publisher.time.sleep
+        sleeps: list = []
+        remaining = dict(failures)
+
+        def run_git_with_failure(args, *, check=True):
+            key = args[0]
+            if remaining.get(key):
+                remaining[key] -= 1
+                return publisher.GitResult(128, "", failures_text[key])
+            return original_run_git(args, check=check)
+
+        failures_text = kwargs.pop("texts")
+        publisher.run_git = run_git_with_failure
+        publisher.time.sleep = sleeps.append
+        try:
+            self.publish_transient(writer, **kwargs)
+        finally:
+            publisher.run_git = original_run_git
+            publisher.time.sleep = original_sleep
+        return sleeps
+
+    def publish_transient(self, repo: Path, **kwargs: object) -> None:
+        import os
+        old = Path.cwd()
+        try:
+            os.chdir(repo)
+            publisher.publish(
+                remote="origin",
+                branch="main",
+                max_attempts=3,
+                backoff_seconds=0,
+                jitter_seconds=0,
+                transient_backoff_seconds=5.0,
+                **kwargs,
+            )
+        finally:
+            os.chdir(old)
+
+    def test_transient_push_failure_is_retried_then_succeeds(self) -> None:
+        writer = self.clone("writer")
+        self.commit_file(writer, "writer.txt", "w\n", "writer")
+        sleeps = self._with_injected_failures(
+            writer, {"push": 2}, texts={"push": "error: RPC failed; HTTP 502"}
+        )
+        self.assertEqual(sleeps, [5.0, 15.0])
+        self.assertTrue((self.clone("verify") / "writer.txt").exists())
+
+    def test_transient_fetch_failure_is_retried_then_succeeds(self) -> None:
+        writer = self.clone("writer")
+        self.commit_file(writer, "writer.txt", "w\n", "writer")
+        sleeps = self._with_injected_failures(
+            writer, {"fetch": 1}, texts={"fetch": "fatal: the remote end hung up unexpectedly"}
+        )
+        self.assertEqual(sleeps, [5.0])
+        self.assertTrue((self.clone("verify") / "writer.txt").exists())
+
+    def test_transient_push_failure_exhausts_with_clear_error(self) -> None:
+        writer = self.clone("writer")
+        self.commit_file(writer, "writer.txt", "w\n", "writer")
+        with self.assertRaisesRegex(RuntimeError, "transient error after 3 retries"):
+            self._with_injected_failures(
+                writer, {"push": 99}, texts={"push": "The requested URL returned error: 503"}
+            )
+
+    def test_auth_push_failure_fails_closed_without_retry(self) -> None:
+        writer = self.clone("writer")
+        self.commit_file(writer, "writer.txt", "w\n", "writer")
+        with self.assertRaisesRegex(RuntimeError, "non-race reason"):
+            sleeps = self._with_injected_failures(
+                writer, {"push": 99}, texts={"push": "remote: Permission denied\nreturned error: 403"}
+            )
 
 
 if __name__ == "__main__":

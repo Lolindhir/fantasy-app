@@ -3,6 +3,7 @@ import { Component, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 import { DataService } from '../../core/services/data.service';
 import type { DraftPick, FantasyTeam, League, RawDraft } from '../../core/models/fantasy.models';
+import { PlayerPicturePipe } from '../../shared/pipes/player-picture.pipe';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 
 type TeamDisplayViewModel = {
@@ -63,7 +64,8 @@ interface DraftsViewModel {
   standalone: true,
   imports: [
     CommonModule,
-    SharedMaterialImports
+    SharedMaterialImports,
+    PlayerPicturePipe
   ],
   templateUrl: './drafts.html',
   styleUrl: './drafts.scss'

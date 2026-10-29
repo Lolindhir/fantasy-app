@@ -128,10 +128,12 @@ lifecycle:
     - Reference the relevant Issue from the PR.
     - Use a closing reference only if the PR completes the entire Issue.
     - Keep the Issue open when the PR is only partial.
+    - 'For a partial PR, write only a non-closing reference such as `Refs #N` or `Part of #N` in the PR description and in commit messages; closing keywords (`Fixes`, `Closes`, `Resolves`) must not appear there, because GitHub closes the Issue automatically on merge into the default branch and no repository setting disables this.'
+    - Long-running multi-PR Issues (for example #347) are closed only after their acceptance criteria are complete; an Issue closed by an accidental closing reference is reopened (state reason `reopened`) and its labels and body are reconciled.
     - After creating or materially updating a Pull Request, add or refresh the PR reference and resulting validation/status information in the Issue body before treating that transition as complete.
   postMerge:
     - Treat post-merge Issue reconciliation as a mandatory lifecycle gate after every authorized successful merge associated with Issue-tracked work.
-    - Verify the merge actually succeeded and fetch the resulting Pull Request and Issue state even when a closing reference such as `Fixes #N` has already closed the Issue automatically.
+    - 'Verify the merge actually succeeded and fetch the resulting Pull Request and Issue state even when a closing reference such as `Fixes #N` has already closed the Issue automatically.'
     - Re-evaluate all acceptance criteria against the merged result and available validation evidence.
     - Update the Issue body to the actual merged state, including completed checklist items, merge/PR reference, validation outcome and final outcome or remaining handoff.
     - If the full Issue is complete, ensure the Issue is closed with state reason `completed`, remove `priority:*`, `status:*` and `blocked`, and retain the required origin/type/area classification.
@@ -160,7 +162,7 @@ scopePolicy:
     - tracking:excluded
   rules:
     - An Issue carrying `tracking:excluded` is explicitly not a repository work package and is excluded from normal priority/origin/area/type/status/blocked cardinality validation.
-    - `tracking:excluded` is only for accidentally created technical placeholders, connector/test artifacts or equivalent Issues that never represented repository work.
+    - '`tracking:excluded` is only for accidentally created technical placeholders, connector/test artifacts or equivalent Issues that never represented repository work.'
     - Do not use `tracking:excluded` for genuine work that was rejected, superseded, abandoned or closed as not planned; those Issues retain normal durable classification.
     - An excluded Issue must not carry any other label. If it does, the exclusion marker is invalid and the Issue must be reconciled rather than silently skipped.
 
@@ -224,11 +226,11 @@ labels:
       area:frontend:
         meaning: Angular/UI/frontend work.
       area:data:
-        meaning: Data generation, source-data, generated-data contracts or data pipelines.
+        meaning: Data generation, data-source, generated-data contracts or data pipelines.
       area:platform:
         meaning: Shared technical platform, infrastructure or cross-cutting repository engineering.
       area:fantasy-management:
-        meaning: Fantasy decision domain: research, interpretation, evaluation, strategy, roster/trade/draft/free-agent/lineup/waiver decisions and retrospective reviews.
+        meaning: 'Fantasy decision domain: research, interpretation, evaluation, strategy, roster/trade/draft/free-agent/lineup/waiver decisions and retrospective reviews.'
       area:fantasy-operations:
         meaning: Fantasy-specific automation, materialization, monitoring, readmodels, baselines, events, freshness and orchestration that prepare decision inputs without owning final fantasy decisions.
       area:documentation:
@@ -237,7 +239,7 @@ labels:
       - Every open or closed tracked Issue must have at least one area label.
       - Prefer the smallest accurate set of areas.
       - Classify an Issue by the responsibility it changes, not by implementation technology or every downstream consumer.
-      - Shared `source-data/**`, provider-normalization and cross-consumer source/platform work remains `area:data` and/or `area:platform` as appropriate; a Fantasy Operations consumer does not by itself make that shared work `area:fantasy-operations`.
+      - Shared `data-source/**`, provider-normalization and cross-consumer source/platform work remains `area:data` and/or `area:platform` as appropriate; a Fantasy Operations consumer does not by itself make that shared work `area:fantasy-operations`.
       - A Fantasy Operations dataset, monitor, baseline or workflow does not also receive `area:fantasy-management` merely because Management consumes its output.
       - A Management analysis, review or decision workflow does not receive `area:fantasy-operations` merely because it reads materialized Operations inputs.
       - Use both `area:fantasy-management` and `area:fantasy-operations` only when one coherent Work Package substantively changes both the decision layer and the Operations preparation/execution layer.

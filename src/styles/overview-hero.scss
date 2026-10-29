@@ -183,36 +183,41 @@ app-overview .header .salary-cap-change--flat {
   color: #64748b !important;
 }
 
-/* Keep the passive Waiver Run deliberately centered, but let both operational
- * cards stay compact now that Week N shares the matchup row.
+/* Keep the Waiver Run centered whether passive or clickable, while both
+ * operational cards remain compact beside their matchup context.
  */
 app-overview .header app-league-timeline .league-timeline-operational-item {
   min-height: 68px;
 }
 
-app-overview .header app-league-timeline .league-timeline-operational-item:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable) {
+app-overview .header app-league-timeline .league-timeline-operational-item:is(:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable), .league-timeline-operational-item--waiver) {
   justify-content: center;
   align-items: center;
   text-align: center;
 }
 
-app-overview .header app-league-timeline .league-timeline-operational-item:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable) .league-timeline-operational-heading {
+app-overview .header app-league-timeline .league-timeline-operational-item:is(:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable), .league-timeline-operational-item--waiver) .league-timeline-operational-heading {
   justify-content: center;
 }
 
-app-overview .header app-league-timeline .league-timeline-operational-item:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable) .league-timeline-operational-value {
+app-overview .header app-league-timeline .league-timeline-operational-item:is(:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable), .league-timeline-operational-item--waiver) .league-timeline-operational-value {
   margin-top: 6px;
   font-size: 1rem;
   line-height: 1.05;
 }
 
-app-overview .header app-league-timeline .league-timeline-operational-item:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable) .league-timeline-operational-detail {
+app-overview .header app-league-timeline .league-timeline-operational-item:is(:not(.league-timeline-operational-item--interactive):not(.league-timeline-operational-item--unavailable), .league-timeline-operational-item--waiver) .league-timeline-operational-detail {
   margin-top: 4px;
   text-align: center;
 }
 
 app-overview .header app-league-timeline .league-timeline-operational-item--interactive {
   padding: 8px 20px 7px 10px;
+}
+
+/* Symmetric padding preserves optical centering despite the right-hand chevron. */
+app-overview .header app-league-timeline .league-timeline-operational-item--waiver {
+  padding: 8px 10px 7px;
 }
 
 app-overview .header app-league-timeline .league-timeline-operational-item--interactive .league-timeline-operational-value-row {

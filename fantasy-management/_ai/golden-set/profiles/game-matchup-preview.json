@@ -1,0 +1,248 @@
+{
+  "profile_schema_version": 1,
+  "version": 1,
+  "depth_expectations": {
+    "passing": [
+      "Retain contextual references without manufacturing source positions."
+    ],
+    "brief": [
+      "Retain the spoken view and its immediate qualifiers without inventing details."
+    ],
+    "substantive": [
+      "Preserve conclusion, mechanism, meaningful conditions, limitations and source confidence."
+    ],
+    "deep": [
+      "Preserve the full reasoning chain, positive and negative paths, relevant comparisons, context, disagreements and uncertainty."
+    ],
+    "structural": [
+      "Preserve the broader game or weekly strategy independently of any one player; link affected subjects and conditions."
+    ]
+  },
+  "change_policy": {
+    "may_propose_changes": true,
+    "automatic_changes_allowed": false,
+    "approval_required": true
+  },
+  "profile_id": "game-matchup-preview",
+  "title": "NFL Game / Matchup Preview",
+  "description": "Week-scoped game-by-game NFL previews preserving winner picks, opposing-unit interactions, game script, key player roles and host differences.",
+  "scope": {
+    "subject_types": [
+      "game",
+      "team",
+      "unit",
+      "player",
+      "head_coach",
+      "coordinator",
+      "scheme"
+    ],
+    "segment_types": [
+      "game_preview",
+      "weekly_matchup",
+      "game_prediction",
+      "week_preview",
+      "game_debate"
+    ],
+    "take_types": [
+      "game_preview",
+      "winner_prediction",
+      "game_script_thesis",
+      "matchup_advantage",
+      "game_strategy"
+    ]
+  },
+  "principles": [
+    "Preserve every substantively covered game; do not omit late games or the initial separate news block.",
+    "A matchup take records a time-scoped opinion, not a timeless team fact or actual result.",
+    "Preserve each host's pick and reasoning when attributable; never generate an artificial consensus.",
+    "Connect the game-level thesis to independent player, team, coaching and scheme takes when the source supports both.",
+    "Only store numerical scores, win probabilities, spreads or specific production forecasts if actually stated.",
+    "Season/week identify applicability; canonical game IDs only when confirmed, never guessed."
+  ],
+  "dimensions": [
+    {
+      "id": "game_identity",
+      "description": "season, NFL week, opponent pairing and game identity",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Identify both teams and the relevant game window; do not invent a canonical ID.",
+      "detection_questions": [
+        "Did the source materially discuss season, nfl week, opponent pairing and game identity?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "winner_call",
+      "description": "the hosts' game winner or upset prediction",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain the predicted winner, qualifiers and named host, or the absence of a firm call.",
+      "detection_questions": [
+        "Did the source materially discuss the hosts' game winner or upset prediction?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "game_script",
+      "description": "expected score environment, game flow and lead/trail dynamics",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Explain how game script changes opportunity and which assumptions it depends on.",
+      "detection_questions": [
+        "Did the source materially discuss expected score environment, game flow and lead/trail dynamics?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "offense_defense_edges",
+      "description": "specific offensive versus opposing defensive advantages",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve matchups, unit strengths or vulnerabilities and the mechanism, not just generic rankings.",
+      "detection_questions": [
+        "Did the source materially discuss specific offensive versus opposing defensive advantages?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "coaching_scheme",
+      "description": "coaching decisions, tactics and play-calling influence",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Retain specific scheme and coordinator/coach attribution with uncertainty.",
+      "detection_questions": [
+        "Did the source materially discuss coaching decisions, tactics and play-calling influence?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "key_players",
+      "description": "key player duels, role usage and impacts",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Link affected players with their reason for importance, not disconnected name lists.",
+      "detection_questions": [
+        "Did the source materially discuss key player duels, role usage and impacts?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "injury_conditions",
+      "description": "availability, injury and personnel contingencies",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Keep if/then assumptions distinct from confirmed statuses.",
+      "detection_questions": [
+        "Did the source materially discuss availability, injury and personnel contingencies?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "venue_environment",
+      "description": "home/away, rest, travel and weather factors",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve only environment factors explicitly discussed.",
+      "detection_questions": [
+        "Did the source materially discuss home/away, rest, travel and weather factors?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "alternative_outcomes",
+      "description": "countercase, uncertainty and possible failure paths",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve credible routes to a different result rather than only the preferred outcome.",
+      "detection_questions": [
+        "Did the source materially discuss countercase, uncertainty and possible failure paths?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "fantasy_implications",
+      "description": "explicit weekly fantasy repercussions",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Maintain links to player weekly takes without inferring starters from game winners.",
+      "detection_questions": [
+        "Did the source materially discuss explicit weekly fantasy repercussions?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    },
+    {
+      "id": "host_differences",
+      "description": "distinct host game predictions and debate",
+      "required_when_source_supports": true,
+      "applicable_depths": [
+        "substantive",
+        "deep",
+        "structural"
+      ],
+      "preservation_expectation": "Preserve differences when attribution is reliable; leave unknown speakers unresolved.",
+      "detection_questions": [
+        "Did the source materially discuss distinct host game predictions and debate?",
+        "What reasoning, conditions or uncertainty were expressed?"
+      ]
+    }
+  ],
+  "review_questions": [
+    "Does every substantively covered game retain season/week and teams?",
+    "Can readers reconstruct winner picks and the rationale for the predicted game flow?",
+    "Are opposing units, coach/scheme mechanics, uncertainty and injury conditions preserved when discussed?",
+    "Were hosts' differences and late-game segments retained?",
+    "Are game-wide forecasts and player-level implications reusable without merging them?"
+  ],
+  "forbidden_distortions": [
+    "Never invent a winner, projected score, spread or percentage.",
+    "Never retroactively rewrite the original forecast using the actual game outcome.",
+    "Never treat a team's predicted win as a player start recommendation.",
+    "Never guess speaker identity, canonical game ID or injury certainty.",
+    "Never omit entire games just because the episode's main headline covers another matchup."
+  ],
+  "extension_signals": [
+    "Repeated betting/spread forecasts need additional dimensions.",
+    "Post-game film-review episodes expose distinct recap needs.",
+    "Repeatedly used game identities exceed the current weekly_context contract."
+  ]
+}

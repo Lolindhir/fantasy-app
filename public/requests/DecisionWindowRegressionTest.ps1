@@ -1,5 +1,8 @@
 $ErrorActionPreference = 'Stop'
 
+& "$PSScriptRoot\NflTeamRegistryRegressionTest.ps1"
+& "$PSScriptRoot\NflTeamKeyJoinRegressionTest.ps1"
+& "$PSScriptRoot\NflTeamsReadModelRegressionTest.ps1"
 & "$PSScriptRoot\DecisionWindowRegressionLegacyTest.ps1"
 & "$PSScriptRoot\LeagueWeekBoundaryRegressionTest.ps1"
 & "$PSScriptRoot\FantasyGameContextRegressionTest.ps1"
@@ -10,9 +13,12 @@ $ErrorActionPreference = 'Stop'
 & "$PSScriptRoot\ParticipantScoringPathRegressionTest.ps1"
 & "$PSScriptRoot\FantasyWeeklyWatchRegressionTest.ps1"
 & "$PSScriptRoot\GameFinalityRegressionTest.ps1"
-& "$PSScriptRoot\GameScoreRegressionTest.ps1"
+& "$PSScriptRoot\NflByeWeekRegressionTest.ps1"
+& "$PSScriptRoot\PlayerLeagueScoringRegressionTest.ps1"
+& "$PSScriptRoot\PlayerPopulationRegressionTest.ps1"
+& "$PSScriptRoot\CanonicalScheduleRegressionTest.ps1"
 & "$PSScriptRoot\FantasyGameContextScoreRegressionTest.ps1"
 & "$PSScriptRoot\FantasyMatchupPreviewRegressionTest.ps1"
 & "$PSScriptRoot\MatchupReadModelRegressionTest.ps1"
 & "$PSScriptRoot\WeeklyRecapRegressionTest.ps1"
-Write-Host 'Decision Window + League Week Boundary + FantasyGameContext + Matchups + WeeklyRecaps regression suite passed.' -ForegroundColor Green
+Write-Host 'Decision Window + NFL Bye Weeks + League Week Boundary + FantasyGameContext + Matchups + WeeklyRecaps regression suite passed.' -ForegroundColor Green

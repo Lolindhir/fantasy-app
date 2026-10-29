@@ -1,4 +1,7 @@
+Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
+
 try {
+    Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\MatchupReadModelUtils.psm1" -ErrorAction Stop -Force
 }
@@ -41,11 +44,8 @@ function Get-WrScheduleWeekNumber {
 function ConvertTo-WrCanonicalTeamAbbr {
     param([AllowNull()][object]$TeamAbbr)
     $value = ([string]$TeamAbbr).Trim().ToUpperInvariant()
-    switch ($value) {
-        'LAR' { return 'LA' }
-        'WSH' { return 'WAS' }
-        default { return $value }
-    }
+    if ([string]::IsNullOrWhiteSpace($value)) { return $value }
+    return (Get-NflTeamJoinKey -Value $value).ToUpperInvariant()
 }
 
 function Get-WrAwayAbbr {
@@ -73,7 +73,7 @@ function Get-WrKickoffUtc {
 
 function Get-WrCanonicalScheduleGames {
     param([Parameter(Mandatory = $true)][string]$RepoRoot, [Parameter(Mandatory = $true)][int]$Season)
-    $path = Join-Path $RepoRoot "source-data/nfl/schedules/$Season.json"
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/schedules/$Season.json"
     if (-not (Test-Path $path)) { throw "WeeklyRecaps canonical NFL schedule is missing for season $Season at $path." }
     $document = Get-Content $path -Raw | ConvertFrom-Json
     return @(Get-WrCollection (Get-WrValue -Object $document -Names @('Games')))
@@ -85,7 +85,7 @@ function Get-WrWeeklyRosterRows {
         [Parameter(Mandatory = $true)][int]$Season,
         [Parameter(Mandatory = $true)][int]$Week
     )
-    $path = Join-Path $RepoRoot ("source-data/nfl/weekly-rosters/{0}/{1:D2}.json" -f $Season, $Week)
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) ("nfl/weekly-rosters/{0}/{1:D2}.json" -f $Season, $Week)
     if (-not (Test-Path $path)) { throw "WeeklyRecaps canonical weekly-roster evidence is missing for season $Season Week $Week at $path." }
     $document = Get-Content $path -Raw | ConvertFrom-Json
     return @(Get-WrCollection (Get-WrValue -Object $document -Names @('Records','Rows','Players','Data')))
@@ -129,6 +129,8 @@ function Get-WrNFLTeamID {
         if ($home -eq $teamKey) { $ids += [string](Get-WrValue -Object $game -Names @('teamIDHome','HomeTeamID')) }
     }
     $ids = @($ids | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
+    # Differing key forms of the same team (abbreviation, provider spelling, legacy numeric ID) are one stable team.
+    if (@($ids | ForEach-Object { Get-NflTeamJoinKey -Value $_ } | Sort-Object -Unique).Count -eq 1) { $ids = @($ids[0]) }
     if ($ids.Count -ne 1) { throw "WeeklyRecaps cannot resolve one stable NFLTeamID for '$TeamAbbr'." }
     return [string]$ids[0]
 }
@@ -366,6 +368,128 @@ function New-WeeklyRecapWeekReadModel {
     }
 }
 
+function Get-WrTeamAwards {
+    param(
+        [Parameter(Mandatory = $true)][string]$CanonicalLeagueID,
+        [Parameter(Mandatory = $true)][int]$Season,
+        [Parameter(Mandatory = $true)][int]$Week,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$MatchupRows,
+        [Parameter(Mandatory = $true)][object]$MatchupsWeek,
+        [Parameter(Mandatory = $true)][string]$RepoRoot
+    )
+
+    # Missing derived evidence is unknown, not zero and not an empty winner result.
+    $root = Get-DataDerivedRoot -RepoRoot $RepoRoot
+    $path = Join-Path $root ("team-week-performance/{0}/{1}/{2:D2}.json" -f $CanonicalLeagueID, $Season, $Week)
+    if (-not (Test-Path $path)) {
+        return [PSCustomObject][ordered]@{ State = 'unavailable'; BestManager = @(); BestCoach = @() }
+    }
+    $derived = Get-Content $path -Raw | ConvertFrom-Json -ErrorAction Stop
+    if ([int](Get-WrValue $derived @('ContractVersion')) -ne 1 -or
+        [string](Get-WrValue $derived @('CanonicalLeagueID')) -cne $CanonicalLeagueID -or
+        [int](Get-WrValue $derived @('Season')) -ne $Season -or
+        [int](Get-WrValue $derived @('Week')) -ne $Week) {
+        throw "WeeklyRecaps TeamAwards derived partition identity/version mismatch: $path"
+    }
+    $finality = "data-source/nfl/game-finality/$Season.json:REG-W$Week;league:scored-week-confirmed"
+    if ([string](Get-WrValue $derived @('FinalityEvidence')) -cne $finality -or
+        [string]::IsNullOrWhiteSpace([string](Get-WrValue $derived @('LineupDefinitionHash'))) -or
+        [string]::IsNullOrWhiteSpace([string](Get-WrValue (Get-WrValue $derived @('ScoringProfile')) @('SettingsHash')))) {
+        throw "WeeklyRecaps TeamAwards derived finality/scoring provenance is missing or invalid: $path"
+    }
+
+    # Only use the *same historical fantasy week* as the roster-to-app identity bridge.
+    # A current roster or Owner name would backdate later ownership and is forbidden.
+    $participants = @{}
+    foreach ($matchup in @(Get-WrCollection (Get-WrValue $MatchupsWeek @('Matchups')))) {
+        foreach ($participant in @(Get-WrCollection (Get-WrValue $matchup @('Participants')))) {
+            $id = [string](Get-WrValue $participant @('TeamID'))
+            if ([string]::IsNullOrWhiteSpace($id) -or $participants.ContainsKey($id)) {
+                throw "WeeklyRecaps TeamAwards has an invalid or duplicate final participant: $Season/W$Week"
+            }
+            $participants[$id] = $true
+        }
+    }
+    $rosterToTeam = @{}
+    $teamIDs = @{}
+    foreach ($row in @($MatchupRows)) {
+        if ([int](Get-WrValue $row @('Week')) -ne $Week) {
+            throw "WeeklyRecaps TeamAwards canonical matchup row week mismatch: $Season/W$Week"
+        }
+        $rosterID = ([string](Get-WrValue $row @('CanonicalLeagueRosterID'))).Trim()
+        $sleeper = @(
+            Get-WrCollection (Get-WrValue $row @('ProviderMappings')) |
+            Where-Object { [string](Get-WrValue $_ @('Provider')) -ceq 'Sleeper' }
+        )
+        if ([string]::IsNullOrWhiteSpace($rosterID) -or $rosterToTeam.ContainsKey($rosterID) -or $sleeper.Count -ne 1) {
+            throw "WeeklyRecaps TeamAwards missing/duplicate canonical roster identity: $Season/W$Week"
+        }
+        $teamIDText = [string](Get-WrValue $sleeper[0] @('ProviderRosterID'))
+        $teamID = 0
+        if (-not [int]::TryParse($teamIDText, [ref]$teamID) -or $teamID -le 0 -or
+            -not $participants.ContainsKey([string]$teamID) -or $teamIDs.ContainsKey([string]$teamID)) {
+            throw "WeeklyRecaps TeamAwards roster-to-final-Matchups team join failed: $Season/W$Week"
+        }
+        $rosterToTeam[$rosterID] = $teamID
+        $teamIDs[[string]$teamID] = $true
+    }
+    if ($rosterToTeam.Count -ne $participants.Count -or $rosterToTeam.Count -eq 0) {
+        throw "WeeklyRecaps TeamAwards historical team population differs from final Matchups: $Season/W$Week"
+    }
+    $teams = @{}
+    foreach ($team in @(Get-WrCollection (Get-WrValue $derived @('Teams')))) {
+        $rosterID = ([string](Get-WrValue $team @('CanonicalLeagueRosterID'))).Trim()
+        if (-not $rosterToTeam.ContainsKey($rosterID) -or $teams.ContainsKey($rosterID)) {
+            throw "WeeklyRecaps TeamAwards derived team identity disagrees with source: $Season/W$Week"
+        }
+        $teams[$rosterID] = $team
+    }
+    if ($teams.Count -ne $rosterToTeam.Count) {
+        throw "WeeklyRecaps TeamAwards incomplete derived team population: $Season/W$Week"
+    }
+    $awards = Get-WrValue $derived @('Awards')
+    # An empty winner array is valid (e.g. zero potential), but absent fields are not.
+    if ($null -eq $awards -or
+        $awards.PSObject.Properties.Name -notcontains 'BestManagerRosterIDs' -or
+        $awards.PSObject.Properties.Name -notcontains 'BestCoachRosterIDs') {
+        throw "WeeklyRecaps TeamAwards derived winner evidence is missing: $Season/W$Week"
+    }
+    $result = [PSCustomObject][ordered]@{ State = 'available'; BestManager = @(); BestCoach = @() }
+    foreach ($awardName in @('BestManager', 'BestCoach')) {
+        $seen = @{}
+        $winners = @()
+        foreach ($rosterIDValue in @(Get-WrCollection (Get-WrValue $awards @("${awardName}RosterIDs")))) {
+            $rosterID = [string]$rosterIDValue
+            if (-not $teams.ContainsKey($rosterID) -or $seen.ContainsKey($rosterID)) {
+                throw "WeeklyRecaps TeamAwards winner has invalid/duplicate roster ID: $Season/W$Week"
+            }
+            $seen[$rosterID] = $true
+            $team = $teams[$rosterID]
+            if ($awardName -eq 'BestManager') {
+                $winners += [PSCustomObject][ordered]@{
+                    CanonicalLeagueRosterID = $rosterID
+                    FantasyTeamID = [int]$rosterToTeam[$rosterID]
+                    PotentialPoints = [double](Get-WrValue $team @('PotentialPoints'))
+                }
+            }
+            else {
+                $efficiency = Get-WrValue $team @('EfficiencyPercent')
+                if ($null -eq $efficiency) { throw "WeeklyRecaps TeamAwards coach winner lacks efficiency: $Season/W$Week" }
+                $winners += [PSCustomObject][ordered]@{
+                    CanonicalLeagueRosterID = $rosterID
+                    FantasyTeamID = [int]$rosterToTeam[$rosterID]
+                    EfficiencyPercent = [double]$efficiency
+                    ActualStarterPoints = [double](Get-WrValue $team @('ActualStarterPoints'))
+                    PotentialPoints = [double](Get-WrValue $team @('PotentialPoints'))
+                    MissedPoints = [double](Get-WrValue $team @('MissedPoints'))
+                }
+            }
+        }
+        $result.$awardName = @($winners | Sort-Object CanonicalLeagueRosterID)
+    }
+    return $result
+}
+
 function New-WeeklyRecapSeasonReadModel {
     param(
         [Parameter(Mandatory = $true)][string]$CanonicalLeagueID,
@@ -389,7 +513,7 @@ function New-WeeklyRecapSeasonReadModel {
     $identitySchedule = @(Get-Content $IdentityScheduleFile -Raw | ConvertFrom-Json)
     $canonicalSchedule = @(Get-WrCanonicalScheduleGames -RepoRoot $RepoRoot -Season $Season)
     $teamOrder = Get-MatchupParticipantOrderMap -Standings $Standings -Season $Season -HistoricalCutoff:$HistoricalCutoff
-    $seasonDir = Join-Path $RepoRoot "source-data/leagues/$CanonicalLeagueID/seasons/$Season/matchups"
+    $seasonDir = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "leagues/$CanonicalLeagueID/seasons/$Season/matchups"
     $weeks = @()
 
     foreach ($matchupsWeek in $finalWeeks) {
@@ -400,7 +524,7 @@ function New-WeeklyRecapSeasonReadModel {
         $facts = @(ConvertTo-FgcCanonicalMatchupFacts -Season ([string]$Season) -Week $week -MatchupRows $rows)
         $rosterRows = @(Get-WrWeeklyRosterRows -RepoRoot $RepoRoot -Season $Season -Week $week)
         $identityMap = New-WrRosterIdentityMap -Rows $rosterRows
-        $weeks += New-WeeklyRecapWeekReadModel `
+        $recap = New-WeeklyRecapWeekReadModel `
             -Week $week `
             -MatchupsWeek $matchupsWeek `
             -FantasyMatchups $facts `
@@ -408,6 +532,15 @@ function New-WeeklyRecapSeasonReadModel {
             -CanonicalSchedule $canonicalSchedule `
             -RosterIdentityMap $identityMap `
             -TeamOrder $teamOrder
+        $awardProjection = Get-WrTeamAwards `
+            -CanonicalLeagueID $CanonicalLeagueID `
+            -Season $Season `
+            -Week $week `
+            -MatchupRows $rows `
+            -MatchupsWeek $matchupsWeek `
+            -RepoRoot $RepoRoot
+        $recap | Add-Member -NotePropertyName TeamAwards -NotePropertyValue $awardProjection
+        $weeks += $recap
     }
 
     return [PSCustomObject][ordered]@{
@@ -467,4 +600,4 @@ function Update-WeeklyRecapHistoryReadModels {
     return $changed
 }
 
-Export-ModuleMember -Function New-WrRosterIdentityMap, New-WeeklyRecapWeekReadModel, New-WeeklyRecapSeasonReadModel, Test-WeeklyRecapsReadModelChanged, Update-WeeklyRecapHistoryReadModels
+Export-ModuleMember -Function New-WrRosterIdentityMap, New-WeeklyRecapWeekReadModel, Get-WrTeamAwards, New-WeeklyRecapSeasonReadModel, Test-WeeklyRecapsReadModelChanged, Update-WeeklyRecapHistoryReadModels

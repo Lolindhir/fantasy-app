@@ -40,7 +40,7 @@ function Get-CanonicalPlayoffJson {
     )
 
     $repoRoot = Get-CanonicalPlayoffRepoRoot
-    $path = Join-Path $repoRoot "source-data/leagues/$CanonicalLeagueID/seasons/$Season/$FileName"
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues/$CanonicalLeagueID/seasons/$Season/$FileName"
     if (-not (Test-Path $path)) {
         throw "Canonical Playoff source '$FileName' missing for $CanonicalLeagueID/$Season at '$path'."
     }

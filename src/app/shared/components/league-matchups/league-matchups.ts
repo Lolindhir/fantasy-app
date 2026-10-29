@@ -10,6 +10,7 @@ import { catchError, combineLatest, map, of, shareReplay, tap, timer } from 'rxj
 import type { DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
 import type {
   FantasyGameContextGame,
+  FantasyGameMarket,
   FantasyGameContextMatchup,
   FantasyGameContextReadModel
 } from '../../../core/models/fantasy-game-context.models';
@@ -55,12 +56,14 @@ import {
   type OverviewTopContext,
   type OverviewWeeklyPhase
 } from '../../utils/overview-weekly-dashboard.util';
+import { formatProjectionPoints } from '../../utils/projection-range.util';
 import {
   FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
 } from '../fantasy-game-context-dialog/fantasy-game-context-dialog';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
+import { findNflTeam } from '../../utils/nfl-team-key.util';
 
 type LeagueMatchupContextMode = 'current' | 'previous';
 
@@ -188,6 +191,17 @@ export class LeagueMatchupsComponent {
     return !this.league?.Status || ['Pre-Season', 'In-Season', 'Playoffs'].includes(this.league.Status);
   }
 
+  get playoffCutlineStartPlace(): number | null {
+    const playoffTeams = this.league?.Settings?.['playoff_teams'];
+    const teamCount = this.league?.Teams?.length ?? 0;
+    return typeof playoffTeams === 'number'
+      && Number.isInteger(playoffTeams)
+      && playoffTeams > 0
+      && playoffTeams < teamCount
+      ? playoffTeams + 1
+      : null;
+  }
+
   get hasOverviewContextData(): boolean {
     return Array.isArray(this.league?.Standings)
       && Array.isArray(this.league?.Teams)
@@ -274,6 +288,23 @@ export class LeagueMatchupsComponent {
     return current.FantasyMatchups.find(candidate => candidate.FantasyMatchupID === matchup.matchupID) ?? null;
   }
 
+  matchupProjection(
+    matchup: LeagueMatchupView,
+    context: FantasyGameContextReadModel | null
+  ): { left: string; right: string } | null {
+    if (matchup.completionState === 'final') return null;
+    const teams = this.matchupContext(matchup, context)?.Projection?.Teams;
+    if (!teams) return null;
+
+    const scoreOf = (teamID: string | number): number | null =>
+      teams.find(team => String(team.FantasyTeamID) === String(teamID))?.ProjectedFinalScore ?? null;
+    const left = scoreOf(matchup.left.team.TeamID);
+    const right = scoreOf(matchup.right.team.TeamID);
+    if (left === null && right === null) return null;
+
+    return { left: formatProjectionPoints(left), right: formatProjectionPoints(right) };
+  }
+
   scoreboardState(matchup: LeagueMatchupView): MatchupScoreboardState {
     const decisionWindows = this.currentDecisionWindows();
     return buildMatchupScoreboardState(matchup.completionState, [
@@ -318,6 +349,20 @@ export class LeagueMatchupsComponent {
     return team.TeamAbbr?.trim() || team.Team?.trim() || team.Owner;
   }
 
+  standingMovementText(placeDelta: number | null): string {
+    if (placeDelta === null || placeDelta === 0) return '—';
+    return placeDelta > 0 ? `▲${placeDelta}` : `▼${Math.abs(placeDelta)}`;
+  }
+
+  standingMovementLabel(placeDelta: number | null): string {
+    if (placeDelta === null) return 'No previous week available';
+    if (placeDelta === 0) return 'No change since last week';
+
+    const places = Math.abs(placeDelta);
+    const unit = places === 1 ? 'place' : 'places';
+    return `Moved ${placeDelta > 0 ? 'up' : 'down'} ${places} ${unit} since last week`;
+  }
+
   teamDisplayName(team: FantasyTeam): string {
     return team.Team?.trim() || team.Owner || `Team ${team.TeamID}`;
   }
@@ -350,16 +395,18 @@ export class LeagueMatchupsComponent {
   }
 
   nflLogo(teamID: string | number): string | null {
-    return this.nflTeamsSignal().find(team => String(team.ID) === String(teamID))?.Logo || null;
+    return findNflTeam(this.nflTeamsSignal(), teamID)?.Logo || null;
   }
 
   nflAbbr(teamID: string | number): string {
-    const team = this.nflTeamsSignal().find(candidate => String(candidate.ID) === String(teamID));
+    const team = findNflTeam(this.nflTeamsSignal(), teamID);
     return team?.Abv || String(teamID);
   }
 
   gameIsLiveForFantasy(game: FantasyGameContextGame): boolean {
-    return (game.RemainingRelevance?.LockedActiveStarterCount ?? 0) > 0;
+    // Generated locked-active starters are evidence of the live NFL window, not
+    // a real-time NFL score. Final is authoritative even for stale locked paths.
+    return !this.gameIsFinal(game) && (game.RemainingRelevance?.LockedActiveStarterCount ?? 0) > 0;
   }
 
   gameIsFinal(game: FantasyGameContextGame): boolean {
@@ -372,6 +419,41 @@ export class LeagueMatchupsComponent {
       && game.AwayScore !== undefined
       && game.HomeScore !== null
       && game.HomeScore !== undefined;
+  }
+
+  hasImpliedNflScores(market: FantasyGameMarket): boolean {
+    return market.ImpliedAwayPoints !== null && Number.isFinite(market.ImpliedAwayPoints)
+      && market.ImpliedHomePoints !== null && Number.isFinite(market.ImpliedHomePoints);
+  }
+
+  formatImpliedNflScore(value: number | null): string {
+    return value === null || !Number.isFinite(value) ? '–' : `≈${this.nflScoreFormatter.format(value)}`;
+  }
+
+  /** Awards describe the Owner, not the franchise logo or mixed team Avatar. */
+  awardOwnerName(teamID: string | number): string {
+    return this.teamForID(teamID)?.Owner?.trim() || `Team ${teamID}`;
+  }
+
+  awardOwnerAvatar(teamID: string | number): string | null {
+    return this.teamForID(teamID)?.OwnerAvatar?.trim() || null;
+  }
+
+  awardTeamName(teamID: string | number): string | null {
+    return this.teamForID(teamID)?.Team?.trim() || null;
+  }
+
+  awardTeamExists(teamID: string | number): boolean {
+    return this.teamForID(teamID) !== null;
+  }
+
+  openAwardTeamDetails(teamID: string | number): void {
+    const team = this.teamForID(teamID);
+    if (team) this.teamDialog.open(team.TeamID);
+  }
+
+  formatAwardEfficiency(value: number): string {
+    return Number.isFinite(value) ? this.pointsForFormatter.format(value) : '–';
   }
 
   formatFantasyPoints(value: number | null | undefined): string {

@@ -25,7 +25,7 @@ from league_source_data_lib.transaction_window import (  # noqa: E402
 
 class CurrentRepositoryMatchupScopeIntegrationTests(unittest.TestCase):
     def _current_context(self) -> tuple[str, str, dict, dict]:
-        manifest_path = ROOT / "source-data" / "leagues" / "nfl-reise" / "manifest.json"
+        manifest_path = ROOT / "data-source" / "leagues" / "nfl-reise" / "manifest.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         provider_league_id = str(manifest["CurrentProviderLeagueID"])
         payload = load_persisted_current_league_payload(ROOT, provider_league_id)

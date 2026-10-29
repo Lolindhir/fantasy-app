@@ -17,10 +17,10 @@ architecture:
     - ADR-037
     - ADR-038
   logicalLayer: Shared Derived Data
-  physicalStorage: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+  physicalStorage: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
   implementationFoundation: tools/player_week_fantasy.py
   rules:
-    - source-data/nfl/weekly-rosters/<season>/<week>.json remains the canonical week-scoped NFL player anchor.
+    - data-source/nfl/weekly-rosters/<season>/<week>.json remains the authoritative canonical week-scoped NFL player anchor when present. For the live App refresh only, a missing target partition permits a provisional, exactly one-week-old same-season canonical roster; historical/backtest materialization stays strict.
     - PlayerWeekFantasy never mutates or enriches canonical NFL source records in place.
     - public/data is an App delivery layer and is not the shared domain owner.
     - FantasyGameContext, Players/Free Agents and later Fantasy Operations are consumers, not independent scoring owners.
@@ -176,18 +176,31 @@ actual:
     - Zero and negative fantasy scores are valid realized values.
     - Unknown/unavailable must never be represented as zero.
     - Finality is separate from score presence and must come from canonical game/finality evidence in the later materializer.
+    - Actual is final only for weeks within StatsFinalWeek (week-finality.yaml, ADR-071: games final and player-stats cover every playing team); until then Actual.State stays unavailable with null points, never final with 0.
     - Provider fantasy totals remain validation/fallback evidence according to the historical-scoring contract; they are not silently promoted to canonical truth.
 
 dependencies:
   scoringProfile:
-    owner: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::ScoringSettings
     invalidates:
       - Actual
       - Projection
       - PredictionRange
     key: SettingsHash
   weeklyPlayerAnchor:
-    owner: source-data/nfl/weekly-rosters/<season>/<week>.json
+    owner: data-source/nfl/weekly-rosters/<season>/<week>.json
+    liveRefreshFallback: >
+      Only when the target-week NFL weekly roster partition is absent, the current App
+      refresh may use the immediately previous week's same-season canonical NFL roster
+      as a provisional set of known players and NFL team membership. The target
+      Season/Week, NFL game schedule, historical training cutoff, and current Sleeper
+      starters remain those of the actual target week. No historical/backtest fallback;
+      an older or malformed fallback partition is never accepted. The derived artifact
+      records Materialization.TargetRosterSourceWeek and TargetRosterProvisional and
+      the refresh status logs the fallback. A later real target-week roster
+      automatically supersedes provisional evidence. Team trades/new players after
+      the prior weekly snapshot may remain unavailable or temporarily stale; do not
+      invent joins or hide unresolved starter coverage.
     invalidates:
       - target-week player population
       - no-game/game association semantics
@@ -208,16 +221,84 @@ consumerBoundary:
     - public/data/PlayerWeekFantasy.json is the App delivery adapter for the shared PlayerWeekFantasy snapshot.
     - App PlayerID is the active canonical Sleeper mapping when available; CanonicalPlayerID is always retained.
     - Missing active Sleeper identity is represented as PlayerID=null and never name-joined or silently dropped.
-    - FantasyGameContext may join the published value for rostered player rows.
-    - Players/Free Agents may join the same published value for unrostered players.
+    - Angular DataService joins the published value into current FantasyGameContext player rows by App/Sleeper PlayerID only when Season and Week match.
+    - Angular DataService joins public/data/MatchupProjections.json onto FantasyGameContext matchups by FantasyMatchupID, independently and only when Season and Week match.
+    - The joins are compatibility-safe: missing publication, duplicate non-null App PlayerID, or Season/Week mismatch leaves the raw context unchanged. The frontend never calculates a projection, range, display level or axis.
+    - Players/Free Agents may join the same published value for unrostered players in a later checkpoint.
   teamProjection:
-    pointRule: sum available starter Projection.Points
-    rangeRule: separate later distribution/simulation aggregation
+    owner: tools/matchup_projection.py (see matchupProjections below)
+    pointRule: sum of starter Projection.Points; byes count zero; PregameProjectedScore only when every starter has one
   liveProjectedFinal:
     rule: >
       final players use Actual; not-started players use pregame Projection; live
       players require a separate remaining-points model. Current points must not
       be added to the full pregame Projection.
+    publishedData:
+      owner: tools/matchup_projection.py
+      field: MatchupProjections.json::Matchups[].Teams[].ProjectedFinalScore
+      starterRule:
+        finalGame: actual FantasyGameContext starter Points; no projection required
+        otherGame: pregame Projection.Points; live points are never used (provider scoring is delayed and corrected, game Status has no live state)
+        outStarter: ScoringAvailability out (DecisionWindows.ScoringAvailabilityObservations, same Season/LineupWeek) counts as a resolved zero without variance, like a bye; uncertain starters keep the participation-conditional projection and are only listed
+      completeness: numeric only when every current starter is resolved (bye starters count as zero; other non-game starters stay unresolved); otherwise null
+      pregameEquivalence: equals PregameProjectedScore while no starter game has started
+    ui:
+      owner: src/app/shared/components/league-matchups
+      surface: Overview Week Matchups card score plate, secondary row labelled PROJ. below the actual score
+      rule: neutral secondary typography, never recolors the score or implies a winner; hidden when the matchup is final or no side has a value
+      matchupDialog:
+        owner: src/app/shared/components/fantasy-game-context-dialog
+        hero: neutral "Proj. left – right" line under the matchup state label, only while the matchup is not final; oriented by the displayed team order
+        playerRows: app-player-projection under the starter chips for current starters whose game is not scored yet and whose published projection is available - "PROJ." number, range bar on the published PlayerRangeAxis at the published PlayerRangeLevel, and the range as text under the bar; final or scored games keep showing actual points
+        rangeChart: app-matchup-range-chart under the hero while the matchup is not final; both teams (avatar, abbreviation as fallback) on the published Axis, range at the published TeamRangeLevel, marker at ProjectedFinalScore; the "Scored so far" sentence appears only once a team has scored
+        precision: projections, markers and ranges show one decimal in the UI (formatProjectionPoints); real scores keep their own precision
+        axisRoom: the data pads the shared team Axis by 10 points (tools/matchup_projection.py AXIS_PADDING) so the end labels never touch the card edge
+        levelRule: the shown level and all axes are published data (DISPLAY_INTERVAL_LEVEL); the UI only maps values to percentages (src/app/shared/utils/projection-range.util.ts)
+
+matchupProjections:
+  output: public/data/MatchupProjections.json
+  owner: tools/matchup_projection.py
+  inputs:
+    - public/data/FantasyGameContext.json
+    - public/data/PlayerWeekFantasy.json
+  scheduling: tools/player_week_fantasy_refresh.py inside the APP Data League workflow (second rebuild-and-retry step)
+  method:
+    id: normal-independent-v1
+    teamValue: ProjectedFinalScore as defined under teamProjection.liveProjectedFinal; byes count zero
+    teamVariance: >
+      sum over current starters in games that are not final of sigma squared, with
+      sigma = (Upper - Lower) / (2 * z(0.9)) from the starter's 90 percent PredictionRange;
+      final-game starters and byes carry no variance
+    range: mean +/- z(level) * sqrt(variance) for the published levels 0.5, 0.8 and 0.9
+    neverDo: sum player lower/upper bounds (50 to 358 points for a normal team instead of about 151 to 241)
+  displayLevel: >
+    DISPLAY_INTERVAL_LEVEL in tools/player_week_fantasy.py selects the level every surface shows;
+    players and teams switch together and the frontend only reads the published Level.
+  publicationRule: week mismatch between the two inputs skips publication and keeps the existing file
+  transitional: >
+    Angular DataService still aggregates TeamPredictions in the browser until the frontend
+    checkpoint switches to this file and removes that arithmetic.
+  backtest:
+    tool: tools/historical_team_range_backtest.py
+    command: python3 tools/historical_team_range_backtest.py --seasons 2024 2025
+    protocol: >
+      Production PlayerWeekFantasy model rebuilt walk-forward per team-week, actual starters from
+      the canonical league matchup partitions, weeks after FinalLeagueWeek excluded (NFL week 18
+      was never a fantasy week), weeks whose weekly roster has rows without CanonicalPlayerID
+      excluded (2024 W1, W2, 2025 W1), team-weeks with an unprojectable starter skipped.
+    result_2026_10_04:
+      teamWeeks: {"2024": 90, "2025": 94, "all": 184}
+      coverageAt90Percent: {"2024": 0.8778, "2025": 0.8723, "all": 0.875}
+      coverageAt80Percent: {"2024": 0.8, "2025": 0.7553, "all": 0.7772}
+      coverageAt50Percent: {"2024": 0.4556, "2025": 0.4787, "all": 0.4674}
+      tailMissesAt90Percent: {"low": 12, "high": 11}
+      residualStdVsPredictedStd: {"2024": [27.2, 27.66], "2025": [29.76, 28.24]}
+      calibrationScaleFrom2024: 1.0031
+      holdout2025CoverageAt90PercentWithScale: 0.883
+    interpretation: >
+      Slightly narrow (about 2.5 points below the nominal level at every level) but balanced
+      between both tails; no inflation applied. The sample is small (184 correlated team-weeks,
+      about +/-2.5 points). Byes and running games are not covered by the backtest.
 
 failClosed:
   - duplicate CanonicalPlayerID within one PlayerWeekFantasy contract
@@ -237,24 +318,26 @@ currentCheckpoint:
     - contract builder/validation
     - Actual derivation delegation to canonical scorer
     - regression coverage
-    - physical Shared Derived storage path under derived-data/**
+    - physical Shared Derived storage path under data-derived/**
     - current-week materialization
     - V4-C production promotion
     - V4-C-PI1 interval production promotion
     - Sleeper/app publication bridge via public/data/PlayerWeekFantasy.json
+    - Angular FantasyGameContext consumer join by published App/Sleeper PlayerID
+    - current-starter team PredictedEndScore aggregation with explicit complete/partial/unavailable coverage
+    - team ProjectedFinalScore (final starters actual, other starters projection, out starters and byes zero) shown as PROJ. row on the Overview matchup card and in the matchup dialog
+    - scheduled refresh of the current App week inside the existing APP Data League workflow (tools/player_week_fantasy_refresh.py)
   deferred:
-    - FantasyGameContext migration
     - Players/Free Agents migration
     - team range simulation
     - live remaining-points model
-    - workflows/scheduling
-    - UI
+    - UI beyond the Overview matchup card and the matchup dialog (Players/Free Agents)
 
 
 productionMaterialization:
   implementation: tools/player_week_fantasy_materialize.py
-  outputPattern: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
-  firstAcceptedSnapshot: derived-data/player-week-fantasy/nfl-reise/2026/03.json
+  outputPattern: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+  firstAcceptedSnapshot: data-derived/player-week-fantasy/nfl-reise/2026/03.json
   writeSemantics: deterministic-semantic-no-op
   targetPopulation: >
     All canonical weekly-roster QB/RB/WR/TE/FB/K players for the target NFL week,
@@ -272,7 +355,7 @@ productionMaterialization:
       explicitly selected ScoringSettings. A SettingsHash change therefore invalidates
       Actual, Projection and PredictionRange without requiring a code change.
   currentSeasonFinality:
-    authority: source-data/nfl/game-finality/<season>.json::Weeks[].WeekFinal
+    authority: data-source/nfl/game-finality/<season>.json::Weeks[].WeekFinal
     rule: >
       Current-season source partitions may remain lifecycle Finalized=false while
       completed weeks are valid history. Only canonical REG WeekFinal=true weeks
@@ -282,5 +365,81 @@ productionMaterialization:
       Actual becomes final only when the whole target REG week is canonically
       WeekFinal. Otherwise it remains unavailable; live remaining-points semantics
       are deliberately deferred.
-  scheduling: explicit-tool-only
-  publication: shared-derived-plus-app-publication-bridge-no-consumer-join-yet
+  scheduling:
+    owner: .github/workflows/league-live.yml (league job, second rebuild-and-retry step, scope player-week-fantasy)
+    entrypoint: tools/player_week_fantasy_refresh.py
+    targetResolution: >
+      League/Season/Week are read from public/data/FantasyGameContext.json so the published
+      snapshot always matches the week the Angular join requires. The Sleeper league is mapped to
+      the canonical league through data-source/leagues/*/seasons/<season>/league.json ProviderMappings.
+    publicationScope:
+      - data-derived/player-week-fantasy
+      - public/data/PlayerWeekFantasy.json
+    notReadyRule: >
+      A target week without a synced canonical weekly-roster partition is skipped and the existing
+      publication stays untouched. Every other failure fails closed.
+    idempotence: Unchanged inputs produce no commit (deterministic semantic no-op).
+    projectionStability: >
+      The player Projection depends only on canonically final weeks < target week, so reruns during
+      the week do not change it; it can only improve when an earlier week becomes canonically final.
+  publication: shared-derived-plus-app-publication-bridge-consumed-by-fantasy-game-context
+
+# Issue #471 historical source-owned batch (initial, not scheduled)
+historicalBatch:
+  entryPoint: tools/historical_pwf_batch.py
+  ownership: >-
+    Inventory is derived from registered league metadata, canonical league season
+    manifests and each season's scored-week bounds; never infer target coverage
+    from existing data-derived snapshots or public/data app read models.
+  gate: >-
+    For each league/scored-week candidate require canonical NFL REG week-final
+    and game IDs, target-week roster (never provisional previous-week fallback),
+    and complete canonical Actual scoring evidence. Any blocked target prevents
+    all writes in the selected batch and returns nonzero.
+  calculation: >-
+    Delegate to player_week_fantasy_materialize.build_player_week_fantasy_dataset
+    and reuse its exact deterministic JSON serialization. The batch adds no
+    new player scoring or projection formulas; source changes can regenerate
+    older weeks and later projections when their inputs change.
+  interfaces:
+    readOnlyDefault: true
+    optInWrite: --write
+    isolatedRoot: --out-root
+    filters: ["--league", "--season", "--week"]
+    parity: >-
+      Producing final PWF is only an upstream readiness gate for strict
+      TeamWeekPerformance parity. The batch alone does not attest fantasy
+      matchup player-point parity or user-facing award completeness.
+  historicalAcceptanceGate: >-
+    Full 39-week source-only reconstruction is an explicit opt-in CI check
+    (RUN_FULL_HISTORICAL_PWF_AUDIT=1). Its 2026-10-16 execution exposed
+    unresolved canonical weekly-roster identities in 2024/W01, 2024/W02
+    and 2025/W01 (source owner Issue #1061). The full canonical NFL Source
+    sync has since successfully published the missing identities and the
+    real-source regression now requires complete canonical ID coverage. The
+    39-week source-only PWF audit MUST be rerun and pass against the now
+    published input before any all-season write. Ordinary fast tests or a
+    historical partial audit do not authorize all-season publication or
+    relaxing the original scoring/identity rules.
+  activation: >-
+    The existing weekly APP Data Standings workflow has an independent
+    historical_pwf job that materializes every canonical scored/finalized week
+    with the original deterministic generator and publishes changed snapshots
+    through a scoped rebuild-and-retry writer. The 10-minute League Live current
+    week App/Shared-Derived bridge remains unchanged. No added scheduler target,
+    new scoring formula, TeamWeekPerformance publication or App contract.
+    A blocked week prevents every write in that weekly historical batch.
+  weeklyPublisher:
+    workflow: .github/workflows/update-standings.yml::historical_pwf
+    schedule: existing central standings scheduler, Wednesday 03:35 America/New_York
+    entrypoint: python3 tools/historical_pwf_batch.py --write
+    registeredLeagues: from data-meta and canonical manifests, no fixed Sleeper league ID
+    allowedPaths:
+      - data-derived/player-week-fantasy/**
+    safety: >-
+      Source and canonical NFL finality are checked for the complete historical
+      target inventory before the materializer writes. A blocked target exits
+      nonzero and prevents a publication. The classified publisher rebuilds from
+      latest main on race and commits only changed PWF snapshots.
+      The live producer may concurrently publish a current-week partition;
+      both use rebuild-and-retry on the same prefix without force pushing.

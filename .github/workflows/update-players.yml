@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
 
       - name: Setup Node.js
@@ -30,5 +30,6 @@ jobs:
           python3 tools/rebuild_and_publish.py
           --scope players
           --path public/data
+          --path data-derived/player-valuation
           --
           pwsh ./public/requests/RequestPlayers.ps1

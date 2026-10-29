@@ -282,6 +282,37 @@ class Phase1SourceDataTests(unittest.TestCase):
             self.assertEqual("Limited", record["PracticeParticipation"])
             self.assertEqual(1, audit["sleeperPlayers"]["resolvedIdentityCount"])
 
+    def test_sleeper_players_expose_persisted_raw_profile_fields(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            sleeper = sleeper_dataset(root / "raw")
+            sleeper.raw_path.parent.mkdir(parents=True, exist_ok=True)
+            sleeper.raw_path.write_text(json.dumps({
+                "123": {
+                    "player_id": "123", "status": "Active", "position": "WR",
+                    "first_name": "Test", "last_name": "Player", "full_name": "Test Player",
+                    "years_exp": 3, "college": "Somewhere", "high_school": "Anywhere High",
+                    "number": 11, "espn_id": 4567, "birth_date": "2000-01-02",
+                    "injury_body_part": "Knee", "injury_notes": "Note", "practice_description": "Limited",
+                },
+                "456": {"player_id": "456", "years_exp": None, "number": None, "espn_id": None},
+            }), encoding="utf-8")
+            first, _, _ = build_phase1_outputs(root, {sleeper.id: sleeper}, CANONICAL, 2026)
+            second, _, _ = build_phase1_outputs(root, {sleeper.id: sleeper}, CANONICAL, 2026)
+            self.assertEqual(first[0][1], second[0][1])
+            rec = {r["SleeperPlayerID"]: r for r in first[0][1]["Records"]}
+            full = rec["123"]
+            self.assertEqual(
+                ("Test", "Player", "Test Player", 3, "Somewhere", "Anywhere High", 11, "4567", "2000-01-02"),
+                (full["FirstName"], full["LastName"], full["FullName"], full["YearsExp"], full["College"],
+                 full["HighSchool"], full["Number"], full["ESPNID"], full["BirthDate"]),
+            )
+            self.assertEqual(("Knee", "Note", "Limited"),
+                             (full["InjuryBodyPart"], full["InjuryNotes"], full["PracticeDescription"]))
+            sparse = rec["456"]
+            for key in ("YearsExp", "Number", "ESPNID", "FullName", "College", "BirthDate"):
+                self.assertIsNone(sparse[key])
+
     def test_sleeper_object_key_mismatch_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

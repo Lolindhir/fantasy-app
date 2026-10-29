@@ -20,6 +20,7 @@ contract:
     - Week
     - KeyGames
     - KeyPlayers
+    - TeamAwards
   keyGameFields:
     - GameID
     - KickoffUtc
@@ -31,6 +32,18 @@ contract:
     - StarterCount
     - FantasyTeamIDs
     - FantasyMatchupIDs
+  teamAwardsFields:
+    - State
+    - BestManager
+    - BestCoach
+  teamAwardSemantics: >
+    State=unavailable with empty winner arrays when a matching Shared Derived
+    TeamWeekPerformance partition is absent; State=available when strict final
+    derived data was projected. All exact ties are represented. Winners expose
+    canonical roster IDs, that historical week\'s app FantasyTeamID and the
+    applicable precomputed PotentialPoints/EfficiencyPercent/ActualStarterPoints/
+    MissedPoints. This is a consumer projection, never an independent Best Ball
+    or coaching-efficiency calculation. Older archives may omit TeamAwards.
   keyPlayerFields:
     - PlayerID
     - FantasyTeamID
@@ -40,11 +53,17 @@ contract:
 
 sourceOfTruth:
   finality: public/data/Matchups.json and historical Matchups archives; only Week CompletionState=final is eligible
-  leagueScoring: source-data/leagues/nfl-reise/seasons/<season>/matchups/week-<week>.json StarterPoints/PlayerPoints
-  nflWeeklyIdentity: source-data/nfl/weekly-rosters/<season>/<week>.json
-  nflScores: source-data/nfl/schedules/<season>.json
+  leagueScoring: data-source/leagues/nfl-reise/seasons/<season>/matchups/week-<week>.json StarterPoints/PlayerPoints
+  nflWeeklyIdentity: data-source/nfl/weekly-rosters/<season>/<week>.json
+  nflScores: data-source/nfl/schedules/<season>.json
   appGameIdentity: current/historical Schedule resources provide stable app GameID, kickoff and NFL team IDs
   fantasyTeamOrdering: '#503 neutral All-Time Overall order; historical runs use cutoff-aware order'
+  teamAwards: data-derived/team-week-performance/<CanonicalLeagueID>/<season>/<week:02d>.json
+  teamAwardIdentity: >
+    Match CanonicalLeagueRosterID to the SAME season/week canonical league
+    matchup partition and its unique Sleeper ProviderRosterID; verify against
+    that final public/data/Matchups Week's FantasyTeamIDs. Never join via the
+    current roster or current owner display name.
   forbiddenDependency: >
     WeeklyRecaps generation must not parse published FantasyGameContext.json as its
     source of truth. Reusable FantasyGameContext normalization/identity utilities may
@@ -89,6 +108,15 @@ boundaries:
   awards: >
     #499 remains separate. WeeklyRecaps contains no Week MVP, Matchup Hero, Carry Job,
     Heartbreaker or Bench Burn fields.
+  teamAwards: >
+    Best Manager and Best Coach are shared-derived TeamWeekPerformance facts
+    projected without recalculation into finalized recap weeks (#355). Missing
+    derived partitions do not block pre-existing KeyGames/KeyPlayers. A present
+    but invalid finality, version, roster join or winner population fails
+    closed rather than being reported as unavailable. No weekly player awards
+    from #499 are included. Existing League Live + RequestLeaguePublication
+    remain the sole App publisher; each scheduled rerun consumes newly
+    published Derived snapshots.
   statCorrections: >
     Finality does not mean immutable data. Later canonical scoring corrections may
     rematerialize WeeklyRecaps and legitimately change Key Game/Key Player rankings.

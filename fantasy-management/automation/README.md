@@ -128,7 +128,7 @@ Bei scheduled Monitoring:
 - keine Änderung an State, Knowledge, Decisions, Boards oder Analysen;
 - keine Änderung an Jobs, Target Sets, Profilen oder Workflows;
 - keine Änderung an `public/data/`;
-- keine GitHub-Actions-Änderung ohne separate ausdrückliche Freigabe.
+- GitHub-Actions-Änderungen nur innerhalb eines freigegebenen Arbeitspakets und nach der risikobasierten Root-Governance; normale Workflow-Dateiänderungen brauchen keine zusätzliche Freigabe.
 
 Bei einem ausdrücklich freigegebenen interaktiven Write:
 

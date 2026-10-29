@@ -1,3 +1,9 @@
+import type { MatchupProjectionMatchup } from './matchup-projections.models';
+import type {
+  PlayerWeekFantasyProjection,
+  PlayerWeekFantasyRangeAxis
+} from './player-week-fantasy.models';
+
 export type FantasyGameContextScoringState = 'pending' | 'partial' | 'final';
 export type FantasyGameImpactState = 'unavailable' | 'partial' | 'final';
 
@@ -11,6 +17,7 @@ export interface FantasyGameContextPlayer {
   PlayerID: string;
   IsStarter: boolean;
   Points: number | null;
+  Prediction?: PlayerWeekFantasyProjection | null;
 }
 
 export interface FantasyGameContextTeam {
@@ -52,6 +59,14 @@ export interface FantasyGameRemainingRelevance {
   MustWatchRank?: number;
 }
 
+/** Latest available betting-market expectation, not an NFL or fantasy score prediction. */
+export interface FantasyGameMarket {
+  SpreadLine: number | null;
+  TotalLine: number | null;
+  ImpliedAwayPoints: number | null;
+  ImpliedHomePoints: number | null;
+}
+
 export interface FantasyGameContextGame {
   GameID: string;
   DecisionWindowID: string;
@@ -63,6 +78,7 @@ export interface FantasyGameContextGame {
   Status: string | null;
   AwayScore?: number | null;
   HomeScore?: number | null;
+  Market?: FantasyGameMarket | null;
   Relevance: FantasyGameRelevance;
   Impact: FantasyGameImpact;
   FantasyTeams: FantasyGameContextTeam[];
@@ -122,6 +138,7 @@ export interface FantasyMatchupRemainingRelevance {
 export interface FantasyGameContextMatchup {
   FantasyMatchupID: string;
   TeamIDs: Array<string | number>;
+  Projection?: MatchupProjectionMatchup | null;
   FinalScores: FantasyGameContextCounterfactualScore | null;
   CounterfactualState:
     | 'available'
@@ -158,6 +175,13 @@ export interface FantasyMustWatchGame {
   EligibleBenchCandidateCount: number;
 }
 
+export interface FantasyGameContextProjectionDisplay {
+  /** Prediction-range levels the published data wants shown; null when that snapshot did not join. */
+  PlayerRangeLevel: number | null;
+  PlayerRangeAxis: PlayerWeekFantasyRangeAxis | null;
+  TeamRangeLevel: number | null;
+}
+
 export interface FantasyGameContextReadModel {
   SchemaVersion: number;
   LeagueID: string | number;
@@ -169,6 +193,7 @@ export interface FantasyGameContextReadModel {
   FantasyMatchups: FantasyGameContextMatchup[];
   NonGameAssociations: FantasyGameContextNonGameAssociation[];
   MustWatchGames?: FantasyMustWatchGame[];
+  ProjectionDisplay?: FantasyGameContextProjectionDisplay | null;
 }
 
 export interface HistoricalFantasyGameContextSeason {

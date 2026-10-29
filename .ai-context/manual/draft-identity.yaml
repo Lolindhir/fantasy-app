@@ -40,7 +40,7 @@ draftIdentity:
     SleeperDraftID:
       meaning: External Sleeper identity for a concrete draft.
       rule: >
-        A known SleeperDraftID may be bound per season in Metadata.json. Explicit
+        A known SleeperDraftID may be bound per season in the league metadata (data-meta). Explicit
         bindings are authoritative; unbound drafts may be bootstrapped by Sleeper
         metadata/type classification plus configured instance order.
     SleeperFuturePickPool:
@@ -53,7 +53,7 @@ draftIdentity:
         Rookie. At most one configured draft instance may own the role at a time.
 
   metadataContract:
-    source: public/data/Metadata.json
+    source: data-meta/<CanonicalLeagueID>/metadata.json
     draftDefinition:
       required:
         - DraftType
@@ -78,7 +78,7 @@ draftIdentity:
   transactionContract:
     sourceOfTruth:
       generated: public/data/Transactions.json
-      manualInput: public/data/Transactions_Manual.json
+      manualInput: data-meta/<CanonicalLeagueID>/transactions-manual.json
     manualPickRule: >
       Every manual transaction pick must declare its canonical DraftKey explicitly.
       Manual is provenance only and must never imply Free_Agent or any other DraftType.
@@ -123,7 +123,7 @@ draftIdentity:
       historical rebuild regenerates them from canonical inputs and must not use a
       stale previous generated Drafts_<season>.json as an enrichment source.
     order:
-      - Rebuild current and historical transaction base data from Canonical League source-data plus the explicit manual overlay.
+      - Rebuild current and historical transaction base data from Canonical League data-source plus the explicit manual overlay.
       - Resolve canonical DraftType, DraftInstance, DraftCode, DraftKey and SleeperDraftID on transaction picks.
       - Rebuild current/open drafts and completed historical drafts from those freshly generated transactions in the same working tree.
       - Enrich transaction picks with position, selected-player and pick-result details only after the fresh draft outputs exist.
@@ -134,9 +134,10 @@ draftIdentity:
       overwrites those disposable generated files with canonical keys such as
       2024_Free_Agent and 2025_Rookie.
     workflowOwnership: >
-      The scheduled RequestTransactions workflow owns the coupled weekly historical
-      rebuild. RequestDrafts remains manually dispatchable for an independent draft
-      refresh but is not a second scheduled history writer.
+      The weekly update-transactions workflow writes the history deliveries through
+      tools/league_history_app_publish.py write; update-drafts remains manually
+      dispatchable for an independent refresh but is not a second scheduled writer.
+      (The PowerShell RequestTransactions/RequestDrafts rebuild was removed in Issue #999 step 7.)
 
   migration:
     currentState: completed

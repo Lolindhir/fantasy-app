@@ -11,6 +11,22 @@ sys.path.insert(0, str(TOOLS))
 from nfl_source_data_lib import common as common_mod
 from nfl_source_data_lib.materialize import materialize
 
+def _write_league_manifest(root: Path, season: int) -> None:
+    """Canonical League fact that owns the current season of the NFL source layer."""
+    path = root / "data-source/leagues/test-league/manifest.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "CanonicalLeagueID": "test-league",
+                "CurrentCanonicalLeagueSeasonID": f"test-league-{season}",
+                "Seasons": [{"CanonicalLeagueSeasonID": f"test-league-{season}", "Season": season}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 
 def write_csv(path: Path, rows, fieldnames):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -94,13 +110,13 @@ def write_registry(root: Path):
             },
         ],
     }
-    (root / "source-data").mkdir(parents=True, exist_ok=True)
-    (root / "source-data/registry.json").write_text(json.dumps(registry), encoding="utf-8")
+    (root / "data-source").mkdir(parents=True, exist_ok=True)
+    (root / "data-source/registry.json").write_text(json.dumps(registry), encoding="utf-8")
 
 
 def write_players(root: Path, birth_date: str):
     write_csv(
-        root / "source-data/providers/nflverse/players/raw-latest.csv",
+        root / "data-source/providers/nflverse/players/raw-latest.csv",
         [
             {
                 "gsis_id": "00-0041330",
@@ -118,7 +134,7 @@ def write_players(root: Path, birth_date: str):
 
 def write_supporting_sources(root: Path):
     write_csv(
-        root / "source-data/providers/nflverse/ff-player-ids/raw-latest.csv",
+        root / "data-source/providers/nflverse/ff-player-ids/raw-latest.csv",
         [
             {
                 "mfl_id": "B",
@@ -153,7 +169,7 @@ def write_supporting_sources(root: Path):
         ],
     )
     write_csv(
-        root / "source-data/providers/nflverse/draft-picks/raw-latest.csv",
+        root / "data-source/providers/nflverse/draft-picks/raw-latest.csv",
         [
             {
                 "season": "2025",
@@ -180,7 +196,7 @@ def write_supporting_sources(root: Path):
     (root / "public/data").mkdir(parents=True, exist_ok=True)
     (root / "public/data/Players.json").write_text("[]", encoding="utf-8")
     (root / "public/data/Players_Relevant.json").write_text("[]", encoding="utf-8")
-    (root / "public/data/League.json").write_text(json.dumps({"Season": 2026}), encoding="utf-8")
+    _write_league_manifest(root, 2026)
 
 
 class NflSourceIdentityBirthdateCorrectionTests(unittest.TestCase):
@@ -194,7 +210,7 @@ class NflSourceIdentityBirthdateCorrectionTests(unittest.TestCase):
 
             first = materialize(root, datasets)
             first_payload = json.loads(
-                (root / "source-data/nfl/identities/players.json").read_text(encoding="utf-8")
+                (root / "data-source/nfl/identities/players.json").read_text(encoding="utf-8")
             )
             first_row = next(
                 row
@@ -207,7 +223,7 @@ class NflSourceIdentityBirthdateCorrectionTests(unittest.TestCase):
             write_players(root, "2003-01-02")
             second = materialize(root, datasets)
             second_payload = json.loads(
-                (root / "source-data/nfl/identities/players.json").read_text(encoding="utf-8")
+                (root / "data-source/nfl/identities/players.json").read_text(encoding="utf-8")
             )
             matching = [
                 row

@@ -50,7 +50,7 @@ Der Heartbeat wird erst nach erfolgreichem Fetch geschrieben. Scheitert ein Fetc
 
 `public/data/Players.json`, `public/data/League.json` und die weiteren unter `public/data/` veröffentlichten App-Datensätze sind kanonische App-Inputs. Fantasy Management konsumiert sie read-only und darf auf veröffentlichte Änderungen reagieren. **Players und League sind bewusst keine Quellen im Fantasy-Operations-Freshness-Gate.**
 
-Die Workflows `APP • Data • Players` und `APP • Data • League` schreiben keine Fantasy-Management-Heartbeats. Ihre Generierung, Schedules und Veröffentlichung dürfen nicht von Fantasy-Management-Skripten, -Dateien oder -Runtime-State abhängen. Der League-App-Workflow behält ausschließlich seinen regulären Zehn-Minuten-Refresh und den manuellen App-Start; ein zusätzlicher Fantasy-Management-spezifischer 06:35-Refresh existiert nicht.
+Die Workflows `APP • Data • Players` und `APP • Pipeline • League Live` schreiben keine Fantasy-Management-Heartbeats. Ihre Generierung, Schedules und Veröffentlichung dürfen nicht von Fantasy-Management-Skripten, -Dateien oder -Runtime-State abhängen. Der League-App-Workflow behält ausschließlich seinen regulären Zehn-Minuten-Refresh und den manuellen App-Start; ein zusätzlicher Fantasy-Management-spezifischer 06:35-Refresh existiert nicht.
 
 `public/data/Timestamps.json` bleibt App-Provenienz dafür, wann sich einzelne generierte App-Datensätze zuletzt inhaltlich verändert haben. Diese Zeitstempel sind kein Fantasy-Operations-Freshness-Gate und dürfen das Monitoring nicht als paralleler App-Health-Vertrag blockieren. Fantasy Operations verwendet den jeweils aktuell auf `main` veröffentlichten App-Stand als Input.
 
@@ -122,7 +122,7 @@ Für den 07:00-Consumer gilt ausschließlich der tatsächlich veröffentlichte k
 
 ## Materialisierungs-Observability
 
-`FM • Materialize • Operations Inputs` schreibt bei jedem ausgeführten Materializer-Lauf eine kompakte Laufzeitübersicht in das GitHub-Actions-Run-Summary. Für Push-Trigger werden dabei getrennt ausgewiesen:
+`FM • Pipeline • Daily` (Job `materialize`) schreibt bei jedem ausgeführten Materializer-Lauf eine kompakte Laufzeitübersicht in das GitHub-Actions-Run-Summary. Für Push-Trigger werden dabei getrennt ausgewiesen:
 
 - Trigger-/Source-Commit-Zeitpunkt → Start des Materializer-Jobs;
 - Start des Materializer-Jobs → erfolgreicher Publish des kanonischen Operations-State;
@@ -157,7 +157,7 @@ Für FFC ist der erste produktive Vertrag:
 - vor Beginn der Regular Season bleibt `redraft_adp` ein No-Event-relevanter Input;
 - während der Regular Season bleibt FFC sichtbar und wird weiter refreshed, ist für Daily Free-Agent-No-Event aber `secondary`; ein fehlender FFC-Heartbeat degradiert den Freshness-Status, blockiert jedoch nicht die No-Event-Aussage;
 - in Postseason bzw. nach Ende der Regular Season wird FFC für diesen Freshness-Consumer aus der erwarteten Population genommen;
-- die Phase stammt aus dem kanonischen NFL Schedule unter `source-data/nfl/schedules/<season>.json`, nicht aus Sleeper- oder Workflow-Kalenderheuristik.
+- die Phase stammt aus dem kanonischen NFL Schedule unter `data-source/nfl/schedules/<season>.json`, nicht aus Sleeper- oder Workflow-Kalenderheuristik.
 
 Diese Policy ändert keine technische Validierungsgrenze. Malformed Payload, falsche Source-Identity, ungültige Teamzahl, veraltetes Sample oder mathematisch inkonsistente Playerdaten bleiben technische Fehler und erzeugen keinen Success-Heartbeat.
 

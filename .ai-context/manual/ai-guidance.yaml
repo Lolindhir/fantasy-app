@@ -10,11 +10,11 @@ guidance:
     - Define each step narrowly enough that its scope, validation result, persisted state and rollback path can be explained without reconstructing a large unfinished work chain.
     - Prefer several small commits, pull requests or merges over a large monolithic change when the work can be separated cleanly; do not accumulate unnecessarily large uncommitted or unmerged change chains.
     - Within one clearly authorized small step, do not pause merely for routine commit, pull-request or merge actions when those actions are already inside the granted scope and repository governance allows them; complete the step through the relevant validation and post-merge/live verification.
-    - In interactive ChatGPT-style workflows, autonomy applies within the agreed small step, not across an open-ended sequence of substantive work packages.
-    - After completing one substantive step, report the achieved state, relevant commit/PR/merge or persisted result, validation outcome, known risks or deviations, rollback path and the proposed next small step in chat, then stop before beginning that next substantive step.
-    - Begin the next substantive step only after another user interaction unless the user explicitly requested a continuous multi-step run.
-    - If an apparently small step expands materially in scope or no longer has a clean rollback/validation boundary, stop at the safest stable checkpoint, report the expansion and propose how to split the remaining work instead of continuing a monolithic run.
-    - These checkpoint rules govern execution granularity and interaction cadence; they do not weaken explicit authorization requirements, workflow approvals, issue synchronization, source-of-truth ownership or other repository governance.
+    - In interactive ChatGPT-style workflows, distinguish an approved single bounded step from an explicitly authorized complete Issue or work package. A full-work-package authorization permits continuous in-scope execution across substantive checkpoints by default; an isolated step authorization ends at that step.
+    - After each meaningful checkpoint, keep the Issue body synchronized and communicate the result, validation, persisted state, known risks and rollback path. Reporting a checkpoint does not itself require a new user approval when further steps remain inside the authorized work package.
+    - Do not begin a distinct work package, an unauthorized substantive scope expansion, or an action beyond the current authorization. At that boundary, stop and request the necessary decision.
+    - If a step expands materially or loses a clean rollback/validation boundary, stop at the safest stable checkpoint, reassess its risk and either re-split the work within the authorized scope or request targeted approval when required by the risk contract.
+    - These checkpoints preserve independent validation, Issue synchronization, protected technical boundaries and the authorization/risk rules below; they are not file-based workflow or routine merge approval gates.
 
   answering:
     - When the user asks implementation questions, option comparisons, feasibility questions or follow-up questions about specific application, frontend, data generation, script or repository behavior, inspect the relevant current repository files and AI context before answering.
@@ -23,19 +23,32 @@ guidance:
 
   architectureReview:
     - Follow `.ai-context/manual/architecture-review.yaml` for materially architectural proposals, contract/data-model changes, ownership/source-of-truth changes, cross-consumer derivations, identity/key design and migrations.
-    - Before proposing a new artifact or mechanism, perform the Architecture Review existing-first check: inspect whether a suitable contract, dataset, helper, service, publisher, workflow or Issue already owns the concern and prefer coherent extension over parallel architecture.
+    - 'Before proposing a new artifact or mechanism, perform the Architecture Review existing-first check: inspect whether a suitable contract, dataset, helper, service, publisher, workflow or Issue already owns the concern and prefer coherent extension over parallel architecture.'
     - Explicitly check whether variable behavior is configuration/settings-driven or accidentally hard-coded, including league, season, scoring-profile and other relevant dimensions. State which future changes require reconfiguration/re-derivation versus code changes.
     - For derived or cached state, identify its complete identity, dependencies, invalidation/recompute triggers and compatibility behavior when inputs/settings change.
     - Keep the normal agent self-review lightweight but mandatory when the contract applies; surface material unresolved findings before implementation rather than waiting for the user to ask recurring architecture-check questions.
     - When acting as an independent Architecture Reviewer, operate read-only by default, challenge the proposal independently, use the contract's review-output shape and record durable findings in the owning Issue. Do not implement fixes unless separately authorized.
     - Reuse `status:review` for an architecture-review handoff; do not invent a `review:architecture` label in v1. The requested review type, reviewed basis and result belong in the Issue body.
 
+  ciMaintenance:
+    - For each authorized feature, bugfix, data-contract, test or CI change, assess whether tests are added, changed, renamed or removed and whether the Fast/Deep impact graph still represents the affected producer/consumer dependencies.
+    - Maintain the canonical test inventory at .github/ci-test-inventory.json: every discovered test has a truthful tier, Deep group(s) when applicable, and current PR execution coverage. A registry entry never proves a test is executed; verify the owning Fast/Deep runner, PowerShell/Node/Angular job, or separately path-triggered Fantasy Management validation.
+    - Maintain tools/ci_test_impact.py routing rules and tools/tests/test_ci_test_impact.py regressions in the same approved work whenever a new code family, dependency, test tier or Deep trigger is introduced or retired. Avoid narrowing previously required Deep closure merely to make PRs faster. Unknown and ambiguous changes must remain fail-closed.
+    - Do not introduce a new test with currentPrCoverage not-in-current-pr-ci merely by adding it to the inventory. Existing documented uncovered test paths are legacy debt, not permission for new gaps. New exclusions require a named owning Issue, concrete rationale, explicit coverage exception and negative regression evidence; prefer wiring the test into the correct Fast/Deep or existing independent validation instead.
+    - Record a brief CI impact decision in the owning GitHub Issue as part of implementation and review handoff: relevant added/removed tests, tier/group placement, changed routing dependencies, actual execution path, and validation or justified not-applicable evidence. Do not create standalone per-feature CI tracking issues or duplicate the registry.
+    - For independently reviewable work, make the CI impact decision and test evidence available to the reviewer; the reviewer must not infer adequate coverage from a green Merge Gate alone.
+    - 'Pull requests run Core plus the selected Fast blocks only; Deep runs in the weekly full audit or through a manual dispatch of one category (ADR-067). Do not add an automatic Deep obligation, approval engine or cross-workflow gate for it.'
+    - 'Deep recommendation (normal dialog rule): when a change touches the dependencies of a Deep category (identity, scoring/PWF/TWP, market, consumer restore) and the Fast blocks may not prove it, recommend a manual Deep run of the affected category with a short reason. The user answers yes or no. On yes dispatch that single category; on no document the decision in the owning Issue and add or extend a Fast edge-case test for the risk that Deep would have covered.'
+    - 'Grow Fast with each defect class: when a defect is found only by a Deep replay or the audit, add a cheap Fast guard (persisted-state invariant, synthetic edge case or a deep_only split of the module via tools/ci_tier.py) in the same work package. Never weaken a Deep test to make it Fast; Deep modules keep their full real-source proof.'
+    - 'New or changed tests need a truthful inventory entry: tier, Deep group(s) and fastGroups (the Fast family that executes them). The Fast lane runs a Deep module with CI_TEST_TIER=fast, so mark only the expensive real-source cases deep_only.'
+    - 'Fast budget and extraction check (ADR-067): each Fast block should stay at about 3 minutes including setup and a pull request at 5 to 10 minutes in total. For every change to tests or code of a Deep category ask whether a cheap deterministic part can run as a Fast case or persisted-state guard while the expensive real-source part stays deep_only, and record the answer in the CI impact decision of the owning Issue. Read Fast times from CI runs, not from local runs (pwsh is missing locally). A block that exceeds the budget is split or relieved with deep_only in the same work package. These are working rules, not gates.'
+
   standingsTerminology:
     - For completed, previous or historical seasons, treat unqualified `Standings` as Overall/final season standings, represented by playoff/final placement, unless the user explicitly says Regular Season.
     - Treat `Previous Season Standings` as `Placements.Previous.Playoffs` / the previous season's final overall placement by default. Do not substitute `Placements.Previous.Regular` unless Regular Season is explicitly requested.
     - Treat `All-Time Standings` as overall/all-time playoff placement by default. Use all-time regular-season placement only when the user explicitly says `All-Time Regular Season Standings` or equivalent.
     - Keep explicitly named `Regular Season Standings` separate from Overall standings in answers, implementation choices, comparisons and fallback/tiebreak logic.
-    - `Current Standings` during an active season may represent the live current-season table; this exception does not change the historical/default meaning of unqualified previous-season or all-time standings.
+    - '`Current Standings` during an active season may represent the live current-season table; this exception does not change the historical/default meaning of unqualified previous-season or all-time standings.'
 
   userIntent:
     - Treat every user message phrased as a question as a question only and never as an instruction to perform an action, even when the wording could be understood as a polite request in German.
@@ -48,11 +61,39 @@ guidance:
     - 'Examples of action instructions: "Mach das bitte", "Setze das um", "Erstelle ...", "Committe ...", "Füge ... hinzu".'
     - Once concrete repository work is explicitly authorized, the administrative GitHub Issue maintenance required to track that authorized work is implicitly authorized and does not require a separate confirmation.
     - Administrative Issue maintenance includes searching/reusing/creating the relevant Issue, updating its body/checklist/labels/handoff, adding commit or PR references, closing it when all acceptance criteria are actually complete after an authorized successful merge, reopening the same scope on regression, and creating a separate follow-up Issue for independently meaningful newly discovered work.
-    - This Issue-maintenance exception does not authorize extra code or architecture scope, GitHub Actions workflow changes without their specific approval, merge without the applicable merge approval, or Fantasy Management State/Knowledge/Decision/board/baseline/review persistence.
+    - Administrative Issue maintenance never expands the authorized technical scope or overrides Fantasy Management State/Knowledge/Decision/board/baseline/review persistence approvals. Normal in-scope GitHub Actions edits and merges are governed by authorizationAndRisk, not a separate file-based approval gate.
+
+  authorizationAndRisk:
+    principle: >-
+      User authorization covers a defined outcome and its concrete risk/effect boundaries, not a
+      fixed list of file extensions or agent providers. Inspect the actual behavior and affected
+      write paths, permissions, data ownership, triggers and rollback before classifying a change.
+      Merely editing a GitHub Actions YAML is not a separate approval trigger.
+    scope:
+      - Explicit approval of a fully defined Issue or end-to-end work package normally includes in-scope implementation, workflow adjustments, documentation, tests, validation, commits, pull requests, merges, Issue reconciliation and post-merge verification.
+      - A user authorizing a particular step does not thereby authorize subsequent substantive steps; questions, analyses, reviews and vague intent do not authorize mutation.
+      - A merge inside the authorized scope needs no additional chat approval when required validation and repository review/protection policies pass. Never bypass a failing or unavailable mandatory gate.
+      - A new objective, materially broader impact or higher risk than the user concretely approved is out of scope, even if it appears during implementation.
+    standard:
+      - Routine code, documentation, test and existing GitHub Actions workflow edits are autonomous within an authorized scope when they preserve existing data ownership, declared publication/write scopes, permissions and safety invariants.
+      - Normal generated-data regeneration and publication through already classified, bounded workflows is standard behavior; data files changing on a normal pipeline run is not by itself a critical effect.
+      - Scheduling, trigger, CI/observability and retry adjustments may be standard only after checking their real downstream write effects and preserving safety and publication contracts.
+    elevated:
+      - New automated writers, expanded output/publication destinations, changed write permissions, new persistence/activation paths, material changes to canonical ownership or cross-context producer behavior, and migrations that can substantially change stored results require an explicit impact, scope, validation and rollback assessment.
+      - Proceed only if the user specifically authorized the elevated effect and its relevant write scope in the approved work package. Otherwise request targeted approval before implementation or activation; a generic authorization does not cover undisclosed elevated effects.
+    critical:
+      - Destructive or hard-to-reverse edits to canonical hand-maintained facts, bulk deletion/replacement of persistent authoritative data, force-push/history rewrite, removal of protections or validation gates, exposure or weakening of credentials/secrets, and irreversible external side effects require separate targeted approval even when the surrounding Issue is approved.
+      - Never use user authorization to violate absolute repository constraints such as no automated writes into data-meta, generated-context immutability, publication safety, security rules, or independent Fantasy Management qualitative persistence approvals.
+    enforcement:
+      - If impact or risk cannot be established reliably, fail closed and explain the uncertainty before writing.
+      - When CI reveals stale generated outputs relative to canonical source facts, repair the responsible producer and regenerate through approved publication tooling; do not suppress parity checks or manually patch generated output to make validation green. Track a separately owned repair if it exceeds the original work-package scope.
+      - Preserve the default prohibition on one-off, migration, upload, repair, recovery and branch-manipulation Actions workflows; any exception must be separately and narrowly approved after safer existing tooling is ruled out.
+      - Every created, renamed or materially repurposed workflow remains subject to workflow-monitoring classification, workflow-publication writer semantics, tests and observability review in the same change.
+      - Apply the same contract to ChatGPT, Claude, other agents and human-assisted agent runners; no actor-specific exemption.
 
   sourceOfTruth:
     - Do not infer source-of-truth domain ownership from Angular components alone.
-    - Do not put league-specific rules into ConfigUtils.psm1 when they belong in Metadata.json.
+    - Do not put league-specific rules into ConfigUtils.psm1 when they belong in the league metadata (data-meta/<CanonicalLeagueID>/metadata.json).
     - Do not treat generated JSON as manually editable source-of-truth data.
     - Do not edit files in .ai-context/generated manually.
     - Prefer deriving persistent domain facts, cross-feature data and source-of-truth behavior in the PowerShell generation pipeline and exposing them through generated JSON instead of re-deriving them in Angular.
@@ -74,7 +115,7 @@ guidance:
     - Use .ai-context/manual/work-tracking.yaml as the canonical contract for Issue lifecycle, label semantics, priority rules, handoff and work-tracking drift governance.
 
   workflowObservability:
-    - When creating, renaming or materially repurposing a GitHub Actions workflow, or when adding or materially changing a scheduler-integrated decision path, review the operator-observability surfaces in the same authorized change: workflow-monitoring classification/contract where applicable, the human-readable GitHub Job Summary, machine-readable decisions/logs, and regression coverage.
+    - 'When creating, renaming or materially repurposing a GitHub Actions workflow, or when adding or materially changing a scheduler-integrated decision path, review the operator-observability surfaces in the same authorized change: workflow-monitoring classification/contract where applicable, the human-readable GitHub Job Summary, machine-readable decisions/logs, and regression coverage.'
     - A scheduler-integrated decision path that executes outside the normal configured scheduler targets must be explicitly composed into the final operator summary and machine-readable decision set, or its intentional exclusion must be documented. Execution order must never silently make a working decision path invisible to operators.
     - Prefer the final Job Summary to be materialized only after all scheduler-integrated decisions for the tick are known. If an existing layer writes an intermediate summary earlier, the orchestrator may deliberately replace it with one final combined view after late decision paths have completed.
     - Add or update regression coverage whenever summary composition changes so a new workflow or decision path cannot be introduced successfully while remaining absent from the expected operator-facing summary.
@@ -83,7 +124,7 @@ guidance:
     - GitHub Issues are the canonical operative source of truth for repository work, backlog, progress, handoff and historical work records.
     - The current Issue body is the canonical mutable work state. Comments are supplemental history or communication and must not be required to reconstruct the current state.
     - Meaningful changes to scope, decisions, checklist progress, acceptance criteria, validation, current status, blockers or handoff must be incorporated into the Issue body.
-    - Use lifecycle status and blocking as separate dimensions: status:* describes where the Issue is in the work lifecycle, while the standalone `blocked` label describes whether a real impediment currently prevents the next meaningful step.
+    - 'Use lifecycle status and blocking as separate dimensions: status:* describes where the Issue is in the work lifecycle, while the standalone `blocked` label describes whether a real impediment currently prevents the next meaningful step.'
     - Treat an open Issue with no status:* label as intentional Backlog. Do not add status:backlog or status:new merely to represent the default backlog state.
     - Use status:analysis when the topic has been meaningfully discussed or investigated but remains deliberately not Ready because scope, options, requirements or decisions are still unresolved.
     - Use status:ready only when the Issue is sufficiently defined that an implementing worker should not need to invent fundamental product or architecture decisions before starting.
@@ -105,12 +146,13 @@ guidance:
 
   frontend:
     - Keep visible frontend UI copy in English by default, including Angular templates and presentation ViewModel strings. Only use German in frontend UI when the user explicitly requests a German-only UI element or when displaying generated/user-provided data that is already German.
-    - Use English-style user-facing numeric formatting by default: `.` as decimal separator and `,` as thousands separator (for example `1,234.5`). Make numeric locale explicit where needed rather than globally changing application locale in a way that could alter dates/times. Preserve surface-specific precision unless a product requirement changes it.
+    - 'Use English-style user-facing numeric formatting by default: `.` as decimal separator and `,` as thousands separator (for example `1,234.5`). Make numeric locale explicit where needed rather than globally changing application locale in a way that could alter dates/times. Preserve surface-specific precision unless a product requirement changes it.'
     - When deriving or rendering NFL player position colors/styles in Angular, use the centralized shared utility or pipe such as PositionColorPipe, PositionStylePipe, getPositionColor or getPositionStyle. Do not create local position-color mappings or hard-code local position chip background/text colors unless the central utility itself is intentionally being changed.
 
   ciDeployment:
     - After commits to main, check the deploy/result commit status for the committed SHA whenever possible.
     - Treat deploy/result as the primary machine-readable deployed-build result when workflow runs are not directly listable through the available tools.
+    - The deploy workflow only starts on a main push that touches build or delivered files (src/**, public/**, angular.json, package*.json, tsconfig*.json, deploy_action.ps1, deploy.yml). Commits touching only data-source/**, data-derived/** or fantasy-management/** do not deploy, so no deploy/result status exists for that SHA; this is expected and not a failure.
     - Prefer machine-readable diagnostics from .ai-workflow/workflow-result.json, .ai-workflow/deploy-script-result.json and build.log when they are available through CI artifacts.
     - If CI status or diagnostics cannot be read through the available tools, state that limitation explicitly in the visible post-commit check.
     - Do not commit local .ai-workflow diagnostics; they are transient CI/helper output.
@@ -120,7 +162,7 @@ guidance:
     - If a guidance section becomes too broad, mixed or hard to scan, propose a content or physical split instead of continuing to append unrelated rules.
 
   writeStrategy:
-    - For large, multi-file, move-heavy or refactor commits, use a deliberate large-change mode: summarize the intended change, identify affected files, choose the safest write strategy, and avoid uploading unnecessarily large full-file contents.
+    - 'For large, multi-file, move-heavy or refactor commits, use a deliberate large-change mode: summarize the intended change, identify affected files, choose the safest write strategy, and avoid uploading unnecessarily large full-file contents.'
     - Prefer small focused commits over one large commit. Split large changes into logical commits when possible, especially when moving files, restructuring folders, or changing multiple layers.
     - For pure file moves or renames, prefer Git tree/blob/SHA-based operations when available instead of re-uploading full file contents.
     - Preserve file content unchanged during pure moves and verify that the resulting diff represents a move, not an unintended rewrite.
@@ -148,11 +190,12 @@ guidance:
   pullRequest:
     - Before creating a Pull Request, verify that the linked Issue body already reflects the committed state, including checklist/progress, commit/result reference, validation, remaining work and current handoff.
     - Reference the relevant Issue from the Pull Request and use a closing reference only when the PR completes the entire Issue.
+    - 'For partial PRs use `Refs #N` or `Part of #N` in the PR description and in commit messages and never `Fixes`, `Closes` or `Resolves`; reopen an Issue that was closed by an accidental closing reference (see `.ai-context/manual/work-tracking.yaml` lifecycle.pullRequest).'
     - After creating or materially updating a Pull Request, update the Issue body with the PR reference and resulting validation/status information before treating the PR transition as complete.
 
   postMerge:
     - After an authorized merge actually succeeds, treat Issue reconciliation as a mandatory lifecycle gate before reporting the merge/close lifecycle as complete.
-    - Verify the Pull Request is actually merged and fetch the linked Issue after the merge even when GitHub has already closed it through `Fixes #N` or another closing reference.
+    - 'Verify the Pull Request is actually merged and fetch the linked Issue after the merge even when GitHub has already closed it through `Fixes #N` or another closing reference.'
     - Re-check every acceptance criterion against the merged result and available validation evidence.
     - Finalize the Issue body with completed checklist items, merge/PR reference, validation outcome, acceptance-criteria result and final outcome or remaining handoff.
     - If the full scope is complete, ensure the Issue is closed as `completed` and remove active work-status labels unless intentionally retained for history.

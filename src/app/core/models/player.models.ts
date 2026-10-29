@@ -75,7 +75,7 @@ export interface GameDetails {
 }
 
 export interface PassingStats {
-  QBRating: number;
+  QBRating: number | null;
   Rating: number;
   PassAttempts: number;
   PassAvg: number;
@@ -89,14 +89,14 @@ export interface RushingStats {
   RushAvg: number;
   RushYards: number;
   Carries: number;
-  LongRush: number;
+  LongRush: number | null;
   RushTDs: number;
 }
 
 export interface ReceivingStats {
   Receptions: number;
   ReceptionTDs: number;
-  LongReceptions: number;
+  LongReceptions: number | null;
   Targets: number;
   ReceptionYards: number;
   ReceptionAvg: number;
@@ -153,10 +153,11 @@ export interface RawPlayer {
   Age: number;
   Year: number;
   Picture: string;
+  /** Large headshot rendition for detail and desktop portraits; absent until the next Players refresh. */
+  PictureLarge?: string | null;
   Number: string;
   FantasyPros: string;
   ESPN: string;
-  ESPNID?: string | null;
   SleeperDepthChartPosition?: string | null;
   SleeperDepthChartOrder?: number | null;
   College: string;
@@ -201,6 +202,8 @@ export interface RawNFLTeam {
   Name: string;
   Abv: string;
   Logo: string;
+  /** Former numeric app team IDs; generated data may still reference them (#347 F3). */
+  LegacyIDs?: string[];
 }
 
 export interface NFLTeam extends RawNFLTeam {}

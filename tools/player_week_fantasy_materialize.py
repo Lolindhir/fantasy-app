@@ -9,6 +9,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from derived_data_lib.week_finality import stats_complete_weeks
 from historical_fantasy_scoring import (
     SPECIAL_TEAMS_EVENT_SCORING_KEYS,
     league_season_path,
@@ -58,16 +59,19 @@ from historical_projection_v4_calibration import (
 )
 from player_week_fantasy import (
     PARTICIPATION_CONDITION,
+    PRIMARY_INTERVAL_LEVEL,
+    PUBLISHED_INTERVAL_LEVELS,
     build_player_week_fantasy_contract,
     build_scoring_profile_identity,
     derive_actual_points,
 )
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 
 POINT_MODEL = "V4-C"
 INTERVAL_MODEL = "V4-C-PI1"
 V4_C_RIDGE = 64.0
 V4_C_CLIP = 4.0
-INTERVAL_LEVEL = 0.90
+INTERVAL_LEVEL = PRIMARY_INTERVAL_LEVEL
 EXCLUDED_WEEKLY_ROSTER_STATUSES = {"RET"}
 
 
@@ -107,10 +111,24 @@ def _target_roster(
     repo_root: Path,
     season: int,
     week: int,
-) -> tuple[list[dict[str, Any]], bool]:
-    path = repo_root / "source-data/nfl/weekly-rosters" / str(season) / f"{week:02d}.json"
+    *,
+    allow_provisional_roster: bool = False,
+) -> tuple[list[dict[str, Any]], bool, int]:
+    """Use the target NFL weekly roster, or one prior week for current App pregame refresh.
+
+    Historical/backtest calls remain strict by default. A previous-week roster
+    supplies last-known NFL team membership, never target-week results.
+    """
+    directory = repo_root / DATA_SOURCE_ROOT / "nfl/weekly-rosters" / str(season)
+    source_week = week
+    path = directory / f"{week:02d}.json"
+    if not path.is_file() and allow_provisional_roster and week > 1:
+        previous_path = directory / f"{week - 1:02d}.json"
+        if previous_path.is_file():
+            path = previous_path
+            source_week = week - 1
     payload = _require_object(path)
-    if payload.get("Season") != season or payload.get("Week") != week:
+    if payload.get("Season") != season or payload.get("Week") != source_week:
         raise ValueError(f"Weekly roster season/week mismatch: {path}")
     rows = payload.get("Records")
     if not isinstance(rows, list):
@@ -143,11 +161,11 @@ def _target_roster(
             }
         )
     players.sort(key=lambda row: row["CanonicalPlayerID"])
-    return players, payload.get("Finalized") is True
+    return players, payload.get("Finalized") is True, source_week
 
 
 def _scheduled_teams(repo_root: Path, season: int, week: int) -> set[str]:
-    path = repo_root / "source-data/nfl/schedules" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/schedules" / f"{season}.json"
     payload = _require_object(path)
     if payload.get("Season") != season:
         raise ValueError(f"Schedule season mismatch: {path}")
@@ -182,7 +200,7 @@ def _week_finality(
     season becomes historical. WeekFinal is therefore the temporal authority for
     whether a completed current-season week may enter pregame projection history.
     """
-    path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/game-finality" / f"{season}.json"
     payload = _require_object(path)
     if payload.get("Season") != season:
         raise ValueError(f"Game-finality season mismatch: {path}")
@@ -235,7 +253,7 @@ def _current_partition_records(
     season: int,
     week: int,
 ) -> list[dict[str, Any]]:
-    path = repo_root / "source-data/nfl" / relative_path / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl" / relative_path / str(season) / f"{week:02d}.json"
     payload = _require_object(path)
     if payload.get("Season") != season or payload.get("Week") != week:
         raise ValueError(f"Current-season canonical partition season/week mismatch: {path}")
@@ -278,7 +296,7 @@ def _current_event_rows_by_player(
 ) -> dict[str, list[dict[str, Any]]]:
     path = (
         repo_root
-        / "source-data/nfl/special-teams-fumble-events"
+        / DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events"
         / str(season)
         / f"{week:02d}.json"
     )
@@ -818,6 +836,7 @@ def _projection_for_player(
             "Status": "no-game",
             "Points": None,
             "PredictionRange": None,
+            "PredictionRanges": [],
             "RangeQuality": "unavailable",
             "HistoryGames": history_games,
             "ParticipationCondition": PARTICIPATION_CONDITION,
@@ -838,6 +857,7 @@ def _projection_for_player(
             "Status": status,
             "Points": None,
             "PredictionRange": None,
+            "PredictionRanges": [],
             "RangeQuality": "unavailable",
             "HistoryGames": history_games,
             "ParticipationCondition": PARTICIPATION_CONDITION,
@@ -866,14 +886,18 @@ def _projection_for_player(
         "Projection": projection,
         "PriorScoreVolatility": volatility,
     }
-    interval = _interval_for_row(
-        interval_row,
-        level=INTERVAL_LEVEL,
-        strategy=STRATEGY_POSITION_PROJECTION_VOLATILITY,
-        groups=model_state["ResidualGroups"],
-        projection_thresholds=model_state["ProjectionThresholds"],
-        volatility_thresholds=model_state["VolatilityThresholds"],
-    )
+    intervals = {
+        level: _interval_for_row(
+            interval_row,
+            level=level,
+            strategy=STRATEGY_POSITION_PROJECTION_VOLATILITY,
+            groups=model_state["ResidualGroups"],
+            projection_thresholds=model_state["ProjectionThresholds"],
+            volatility_thresholds=model_state["VolatilityThresholds"],
+        )
+        for level in PUBLISHED_INTERVAL_LEVELS
+    }
+    interval = intervals[INTERVAL_LEVEL]
     selected_group = str(interval["Group"])
     range_quality = (
         "player-volatility"
@@ -889,6 +913,14 @@ def _projection_for_player(
             "Lower": round(float(interval["Lower"]), 4),
             "Upper": round(float(interval["Upper"]), 4),
         },
+        "PredictionRanges": [
+            {
+                "Level": level,
+                "Lower": round(float(intervals[level]["Lower"]), 4),
+                "Upper": round(float(intervals[level]["Upper"]), 4),
+            }
+            for level in PUBLISHED_INTERVAL_LEVELS
+        ],
         "RangeQuality": range_quality,
         "HistoryGames": history_games,
         "ParticipationCondition": PARTICIPATION_CONDITION,
@@ -913,8 +945,12 @@ def _final_actual_inputs(
     if not week_final:
         return False, {}, {}
 
-    stats_path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+    stats_path = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
     if not stats_path.exists():
+        return False, {}, {}
+    # Shared week-final definition (ADR-071, #897): an incomplete stats partition (teams missing)
+    # must stay unavailable instead of scoring the missing teams' players as final 0.
+    if not stats_complete_weeks(repo_root, season, {week}):
         return False, {}, {}
     rows = _current_partition_records(
         repo_root,
@@ -990,11 +1026,14 @@ def build_player_week_fantasy_dataset(
     season: int,
     week: int,
     scoring_season: int | None = None,
+    allow_provisional_roster: bool = False,
 ) -> dict[str, Any]:
     root = repo_root.resolve()
     scoring_season = season if scoring_season is None else scoring_season
     scoring, scoring_profile = _scoring_settings(root, league_id, scoring_season)
-    roster, roster_finalized = _target_roster(root, season, week)
+    roster, roster_finalized, roster_source_week = _target_roster(
+        root, season, week, allow_provisional_roster=allow_provisional_roster
+    )
     scheduled_teams = _scheduled_teams(root, season, week)
 
     model_state = _build_model_state(
@@ -1058,11 +1097,14 @@ def build_player_week_fantasy_dataset(
         "IntervalCalibrationPointFitSeasons": model_state["IntervalFitSeasons"],
         "IntervalCalibrationRows": model_state["IntervalCalibrationRows"],
         "IntervalLevel": INTERVAL_LEVEL,
+        "IntervalLevels": list(PUBLISHED_INTERVAL_LEVELS),
         "MinimumConditionalGroupSize": MIN_GROUP_SIZE,
         "ParticipationCondition": PARTICIPATION_CONDITION,
     }
     contract["Materialization"] = {
         "TargetWeeklyRosterFinalized": roster_finalized,
+        "TargetRosterSourceWeek": roster_source_week,
+        "TargetRosterProvisional": roster_source_week != week,
         "ActualScoringEvidenceFinalized": actual_finalized,
         "FantasyRelevantPositions": sorted(FANTASY_POSITIONS),
         "ExcludedWeeklyRosterStatuses": sorted(EXCLUDED_WEEKLY_ROSTER_STATUSES),
@@ -1110,7 +1152,7 @@ def output_path(
 ) -> Path:
     return (
         repo_root
-        / "derived-data"
+        / DATA_DERIVED_ROOT
         / "player-week-fantasy"
         / league_id
         / str(season)

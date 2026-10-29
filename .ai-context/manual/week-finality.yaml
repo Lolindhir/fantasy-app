@@ -1,0 +1,87 @@
+schemaVersion: 1
+domain: week-finality
+status: active-all-consumers-migrated
+trackingIssues: [897, 697]
+architectureDecision: ADR-071
+purpose: >-
+  One definition of "week final" for every consumer. A league week is judged by three independent
+  pieces of evidence and two milestones derived from them. The result is a pure function of canonical
+  source facts; nothing is persisted.
+
+owner:
+  implementation: tools/derived_data_lib/week_finality.py
+  cli: tools/week_finality.py
+  cliCommand: python3 tools/week_finality.py bounds --league <CanonicalLeagueID> --season <Season>
+  persistence: none (no product, no writer; a pure function like tools/nfl_season_context.py)
+  tests: tools/tests/test_week_finality.py
+
+evidence:
+  NflGamesFinal:
+    rule: REG WeekFinal is true with complete final-game evidence (ApplicableGameCount > 0 and FinalGameCount equals it).
+    source: data-source/nfl/game-finality/<season>.json
+  NflStatsComplete:
+    rule: The player-stats partition of the week exists and its REG records cover every team that plays that week.
+    source: data-source/nfl/player-stats/<season>/<WW>.json plus data-source/nfl/schedules/<season>.json
+    note: Team-level check; a single missing player inside a covered team is not detected (see boundaries).
+  LeagueScored:
+    rule: Week is at or before WeekStructure.LastScoredLeg (an absent value counts as 0).
+    source: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::WeekStructure
+
+milestones:
+  LeagueScoredWeek:
+    definition: NflGamesFinal and LeagueScored
+    consumers: League.json FinalScoredWeek, Standings, Lifecycle, TeamWeekPerformance (Best Manager, Best Coach)
+    reason: These use the Sleeper PlayerPoints of the matchups and need not wait for nflverse stats.
+  StatsFinalWeek:
+    definition: NflGamesFinal and NflStatsComplete
+    consumers: PlayerWeekFantasy Actual, Players (points, GameHistory), PlayerValuation
+    reason: These derive from nflverse detail stats; an incomplete partition would score missing teams as zero.
+  shape: >-
+    Each milestone is the last week of an uninterrupted run starting at WeekStructure.StartWeek, capped at
+    the last league week (ExpectedLastLeagueWeek, else FinalLeagueWeek). 0 when no week qualifies.
+  output: >-
+    Every week of the league carries the three evidence booleans and Pending (the evidence names still
+    missing), so logs and summaries show what is waited for.
+
+failClosed:
+  notFinalYet: Missing current-season finality row, stats partition or schedule means "not final yet", never an error.
+  hardErrors:
+    - missing league source or WeekStructure, or no resolvable last league week
+    - last league week above NFL regular season week 18 (a league beyond that needs an explicit mapping first)
+    - LastScoredLeg above the last league week, or a non-integer value
+    - WeekFinal true without complete final-game evidence, or WeekFinal not a boolean
+    - missing game-finality file or row for a completed league season (LastScoredLeg at the last league week) or a finalized payload
+
+finalIsNotFrozen: >-
+  Late corrections change the inputs. Consumers rebuild as before and write only on semantic change;
+  there is no frozen state.
+
+outOfScope:
+  - Matchup finality (per matchup, over the games of its starters; MatchupReadModelCore.ps1)
+  - Current week and lineup week (Sleeper settings.leg, transaction window, first open game); this belongs to the lifecycle product
+  - Player-level completeness checks against Sleeper points (ADR-064 reconciliation); a later item
+
+boundaries:
+  - League week equals NFL REG week. A league beyond week 18 or into the postseason needs a mapping first.
+  - The stats coverage check works on team level.
+
+migration:
+  issue: 897
+  steps:
+    - "1 resolver, contract, ADR, tests (this change, no consumer changed)"
+    - "2 Players and PlayerValuation delegate to StatsFinalWeek"
+    - "3 PlayerWeekFantasy Actual only at StatsFinalWeek, else Actual.State unavailable (never final with 0)"
+    - "4 TeamWeekPerformance week selection through LeagueScoredWeek"
+    - "5 RequestLeague FinalScoredWeek from LeagueScoredWeek"
+    - "6 documentation (domain, data-sources, player-week-fantasy, team-week-performance, matrix)"
+  legacyRules: >-
+    Until each step lands, steps 1 to 5 are merged or in review: Players, PlayerWeekFantasy, TeamWeekPerformance and League.json
+    (Get-LeagueScoredWeek) all call the shared function; the former Resolve-LeagueFinalScoredWeek is removed.
+    test_week_finality.py keeps proving parity with the legacy Players and TWP rules.
+
+architectureReview:
+  existingFirst: Reuses the finality, stats-coverage and WeekStructure rules already in the repository; no new dataset.
+  configuration: League, season and week structure come from the canonical league source; nothing is hard-coded per league.
+  identity: CanonicalLeagueID + Season (+ Week); no player or provider identity involved.
+  invalidation: Inputs are the three source files; the result is recomputed on every call.
+  unknown: Missing current-season evidence is "not final", contradictions fail closed.

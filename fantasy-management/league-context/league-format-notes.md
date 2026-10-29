@@ -5,7 +5,7 @@ Purpose: stable interpretation notes for the league format.
 Canonical current settings come from current repository data, especially:
 
 - `public/data/League.json`
-- `public/data/Metadata.json`
+- `data-meta/nfl-reise/metadata.json`
 
 Re-check current data before dynamic roster, salary, pick, standings or trade conclusions.
 
@@ -45,6 +45,8 @@ Taxi is a separate rookie-development budget and does not replace general active
 - In a shallow league, quality and weekly ceiling matter more than mere rosterability.
 - Depth still matters when the dynamically derived number of weekly starter and FLEX slots is large.
 - Kickers are usually replaceable unless current data shows a special reason.
+- For additional quarterbacks beyond the normally preferred starting rotation, value plausible actual starts during remaining bye/injury windows and backup insurance separately from long-term development and verified trade liquidity; a dynasty ranking alone does not justify a permanent active slot.
+- When the primary QB group is temporarily weakened by injury/IR, extra QB coverage may be warranted, but re-evaluate it after health, bye or roster-role changes; do not count an injured reserve asset as an immediately playable starter or apply an automatic QB4/QB5 cut rule.
 
 ## Player value question
 

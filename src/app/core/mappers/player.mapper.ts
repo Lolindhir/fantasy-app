@@ -9,6 +9,7 @@ import type {
   RawNFLTeam,
   RawPlayer
 } from '../models/player.models';
+import { findNflTeam } from '../../shared/utils/nfl-team-key.util';
 
 export interface PlayerMappingContext {
   nflTeams: RawNFLTeam[];
@@ -16,6 +17,16 @@ export interface PlayerMappingContext {
   currentWeek: number;
   playoffStartWeek: number;
   lastWeek: number;
+}
+
+// Shown when generated player data references an NFL team missing from Teams.json, instead of crashing the mapper.
+function createUnknownNflTeam(teamId: string): NFLTeam {
+  return {
+    ID: teamId,
+    Name: 'Unknown team',
+    Abv: teamId || 'NFL',
+    Logo: 'assets/logo_nfl.png'
+  };
 }
 
 const FREE_AGENT_TEAM: NFLTeam = {
@@ -28,7 +39,7 @@ const FREE_AGENT_TEAM: NFLTeam = {
 export function mapRawPlayerToPlayer(raw: RawPlayer, context: PlayerMappingContext): Player {
   const teamNfl = raw.IsFreeAgent
     ? FREE_AGENT_TEAM
-    : context.nflTeams.find(team => team.ID === raw.TeamID)!;
+    : findNflTeam(context.nflTeams, raw.TeamID) ?? createUnknownNflTeam(String(raw.TeamID ?? '').trim());
 
   const stats = mapPlayerStats(raw, context.seasonYear);
   const injuryDetails = normalizeInjuryDetails(raw);

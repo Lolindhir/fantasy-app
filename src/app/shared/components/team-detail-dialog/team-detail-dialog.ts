@@ -10,6 +10,7 @@ import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../../
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
+import { PlayerPicturePipe } from '../../pipes/player-picture.pipe';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { formatDecisionWindowsUpdatedAt } from '../../utils/decision-window-view.util';
 import { getDraftRoundColor } from '../../utils/draft-ui.util';
@@ -85,6 +86,7 @@ interface TeamHistoryRow {
     CommonModule,
     MatDialogModule,
     MatTabsModule,
+    PlayerPicturePipe,
     MatButtonToggleModule,
     SharedMaterialImports,
     PositionStylePipe,
@@ -392,19 +394,20 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
       currentOwner: this.draftOwnerDisplay(pick.CurrentOwnerRosterID),
       originalOwner: this.draftOwnerDisplay(pick.OriginalOwnerRosterID),
       selectedPlayer,
-      selectedPlayerName: selectedPlayer ? undefined : (pick.PlayerName || undefined),
+      selectedPlayerName: selectedPlayer ? undefined : (pick.PlayerRef?.Name || pick.PlayerName || undefined),
       isTradedPick: (pick.TradeHistory?.length ?? 0) > 0,
       roundColor: getDraftRoundColor(pick.Round, draft.Settings?.Rounds)
     };
   }
 
   historicalPlayer(pick: DraftPick): Player | undefined {
-    if (!pick.PlayerID) return undefined;
+    // The current player list cannot prove a historical ID's temporal identity.
+    if (pick.PlayerRef || !pick.PlayerID) return undefined;
     return this.data.players.find(candidate => candidate.ID === pick.PlayerID);
   }
 
   historicalPlayerName(pick: DraftPick): string {
-    return this.historicalPlayer(pick)?.Name || pick.PlayerName || 'Unknown player';
+    return pick.PlayerRef?.Name || pick.PlayerName || this.historicalPlayer(pick)?.Name || 'Unknown player';
   }
 
   private get showsRosterSortColumn(): boolean {

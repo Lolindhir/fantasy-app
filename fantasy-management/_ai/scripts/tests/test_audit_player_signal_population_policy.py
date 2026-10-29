@@ -7,6 +7,7 @@ import importlib.util
 import json
 import sys
 import unittest
+from datetime import date
 from pathlib import Path
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "audit_player_signal_population_policy.py"
@@ -125,20 +126,70 @@ class PlayerSignalPopulationPolicyAuditTests(unittest.TestCase):
             )
         )
 
-        current_identity_gap_count = result["current_identity_gap_candidates"]["count"]
-        if result["decision_status"] == "blocked_on_current_canonical_identity_coverage":
-            self.assertGreater(current_identity_gap_count, 0)
+        gaps = result["current_identity_gap_candidates"]
+        hold = result["identity_hold"]
+        self.assertEqual(
+            gaps["count"], hold["classified_open_count"] + hold["unclassified_count"]
+        )
+        self.assertEqual(hold["classified_open_count"], len(hold["held_player_ids"]))
+        if hold["unclassified_count"]:
+            self.assertEqual(
+                "blocked_on_current_canonical_identity_coverage", result["decision_status"]
+            )
+        elif hold["classified_open_count"]:
+            self.assertEqual(
+                "policy_ready_for_runtime_cutover_design_with_identity_hold",
+                result["decision_status"],
+            )
         else:
             self.assertEqual(
                 "policy_ready_for_runtime_cutover_design", result["decision_status"]
             )
-            self.assertEqual(0, current_identity_gap_count)
+            self.assertEqual(0, gaps["count"])
+
+        projection = candidate["identity_hold_adjusted_projection"]
+        self.assertEqual(
+            candidate["pre_identity_repair_projected_removed_count"]
+            - projection["held_player_count"],
+            projection["removed_count"],
+        )
 
         print(
             "6Z4_POPULATION_POLICY_AUDIT="
             + json.dumps(MODULE.compact_summary(result), sort_keys=True),
             flush=True,
         )
+
+    def test_current_repository_gaps_are_classified_and_held(self) -> None:
+        root = SCRIPT_PATH.parents[3]
+        config_path = root / "fantasy-management/automation/player-signal-materialization.json"
+        result = MODULE.build(root, config_path, as_of=date(2026, 10, 14))
+
+        for player in result["current_identity_gap_candidates"]["players"]:
+            self.assertIn(
+                player["identity_gap_state"], {"classified_open", "unclassified"}
+            )
+            self.assertEqual(
+                player["identity_gap_state"] == "classified_open",
+                player["identity_gap_class"] is not None,
+            )
+            self.assertEqual(10, player["identity_gap_age_days"])
+
+        hold = result["identity_hold"]
+        classes = {
+            player["name"]: player["identity_gap_class"]
+            for player in hold["classified_open_players"]
+        }
+        # Documented cases of Issue #347; they disappear from here once resolved.
+        expected = {
+            "Layne Pryor": "placeholderGsisUpgrade",
+            "Grant Finley": "splitIdentity",
+            "Gregory Desrosiers": "splitIdentity",
+            "Roydell Williams": "splitIdentity",
+            "Sam Hartman": "wrongUpstreamClaim",
+        }
+        for name, gap_class in classes.items():
+            self.assertEqual(expected.get(name, gap_class), gap_class)
 
 
 if __name__ == "__main__":

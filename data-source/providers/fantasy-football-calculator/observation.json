@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "source_id": "fantasy-football-calculator",
+  "technical_status": "success",
+  "checked_at": "2026-10-29T04:22:15.826777Z",
+  "season_context": {
+    "schema_version": 1,
+    "season": 2026,
+    "phase": "regular_season",
+    "as_of_date": "2026-10-29",
+    "current_week": 8,
+    "regular_season": {
+      "first_game_date": "2026-09-09",
+      "last_game_date": "2027-01-10"
+    },
+    "postseason": {
+      "first_game_date": null,
+      "last_game_date": null
+    },
+    "source": {
+      "kind": "canonical_nfl_schedule",
+      "path": "data-source/nfl/schedules/2026.json"
+    }
+  },
+  "datasets": {
+    "redraft-ppr-8-team": {
+      "dataset_id": "redraft-ppr-8-team",
+      "technical_status": "valid",
+      "coverage_status": "insufficient_coverage",
+      "observed_rows": 28,
+      "minimum_usable_rows": 50,
+      "expected_minimum_rows": 50,
+      "publishable": false,
+      "sample": {
+        "type": "PPR",
+        "teams": 8,
+        "rounds": 15,
+        "total_drafts": 109,
+        "start_date": "2026-09-18",
+        "end_date": "2026-09-25",
+        "age_days": 34,
+        "quality": "medium_sample"
+      },
+      "diagnostics": {
+        "source_player_count": 29,
+        "normalized_player_count": 28,
+        "source_position_counts": {
+          "PK": 1,
+          "QB": 2,
+          "RB": 15,
+          "TE": 2,
+          "WR": 9
+        },
+        "excluded_position_counts": {
+          "PK": 1
+        },
+        "normalized_rank_unique": true
+      }
+    },
+    "redraft-ppr-8-team-kicker": {
+      "dataset_id": "redraft-ppr-8-team-kicker",
+      "technical_status": "valid",
+      "coverage_status": "insufficient_coverage",
+      "observed_rows": 1,
+      "minimum_usable_rows": 10,
+      "expected_minimum_rows": 10,
+      "publishable": false,
+      "sample": {
+        "type": "PPR",
+        "teams": 8,
+        "rounds": 15,
+        "total_drafts": 109,
+        "start_date": "2026-09-18",
+        "end_date": "2026-09-25",
+        "age_days": 34,
+        "quality": "medium_sample"
+      },
+      "diagnostics": {
+        "source_player_count": 29,
+        "normalized_player_count": 1,
+        "normalized_position": "K",
+        "source_position": "PK",
+        "normalized_rank_unique": true,
+        "reuses_ppr_all_position_payload": true
+      }
+    },
+    "redraft-2qb-10-team": {
+      "dataset_id": "redraft-2qb-10-team",
+      "technical_status": "valid",
+      "coverage_status": "usable",
+      "observed_rows": 123,
+      "minimum_usable_rows": 50,
+      "expected_minimum_rows": 50,
+      "publishable": true,
+      "sample": {
+        "type": "2 QB",
+        "teams": 10,
+        "rounds": 15,
+        "total_drafts": 187,
+        "start_date": "2026-09-08",
+        "end_date": "2026-10-08",
+        "age_days": 21,
+        "quality": "medium_sample"
+      },
+      "diagnostics": {
+        "source_player_count": 131,
+        "normalized_player_count": 123,
+        "source_position_counts": {
+          "DEF": 5,
+          "PK": 3,
+          "QB": 30,
+          "RB": 38,
+          "TE": 8,
+          "WR": 47
+        },
+        "excluded_position_counts": {
+          "DEF": 5,
+          "PK": 3
+        },
+        "normalized_rank_unique": true
+      }
+    }
+  }
+}

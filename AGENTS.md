@@ -32,24 +32,24 @@ Do not duplicate detailed Fantasy Management rules or source documentation in gl
 
 ## Required app context
 
-Before making architecture, data model, generation or frontend changes, read:
+Before making architecture, data model, generation or frontend changes, these files must be read completely, in this order (they are listed as `@` imports so that tools which support imports load them automatically; other tools must open the paths):
 
-1. `.ai-context/ai-context.yaml`
-2. `.ai-context/manual/ai-guidance.yaml`
-3. `.ai-context/manual/architecture-review.yaml`
-4. `.ai-context/manual/work-tracking.yaml`
-5. `.ai-context/manual/workflow-monitoring.yaml`
-6. `.ai-context/manual/workflow-publication.yaml`
-7. `.ai-context/manual/architecture.yaml`
-8. `.ai-context/manual/domain.yaml`
-9. `.ai-context/manual/data-sources.yaml`
-10. `.ai-context/manual/decisions.yaml`
+1. @.ai-context/ai-context.yaml
+2. @.ai-context/manual/ai-guidance.yaml
+3. @.ai-context/manual/architecture-review.yaml
+4. @.ai-context/manual/work-tracking.yaml
+5. @.ai-context/manual/workflow-monitoring.yaml
+6. @.ai-context/manual/workflow-publication.yaml
+7. @.ai-context/manual/architecture.yaml
+8. @.ai-context/manual/domain.yaml
+9. @.ai-context/manual/data-sources.yaml
+10. @.ai-context/manual/decisions.yaml
 
 For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/frontend-design/index.yaml` and follow its internal reading order before analysis or mutation.
 
 ## Source-of-truth rules
 
-- `public/data/Metadata.json` owns league-specific inputs and rules.
+- `data-meta/<CanonicalLeagueID>/metadata.json` owns hand-maintained league metadata (owners, drafts, Cap Deadline, model choice per season); contract `.ai-context/manual/league-metadata.yaml`.
 - `public/requests/utils/ConfigUtils.psm1` owns technical paths and generation configuration.
 - `public/data/*.json` files are generated app data.
 - `src/app/**` owns Angular display and frontend interaction.
@@ -99,18 +99,16 @@ Generated app data lives under:
 
 - `public/data`
 
-Exception:
+Manual input lives in `data-meta/**`; no workflow or generator writes into it.
 
-- `public/data/Metadata.json` is manual input.
-- `public/data/Metadata.ai-doc.yaml` documents `Metadata.json`.
+## Scope-based authorization and GitHub Actions safety
 
-## GitHub Actions approval
-
-- Do not create, modify, enable or commit GitHub Actions workflow files unless the user has explicitly approved the specific workflow change.
+- Follow the agent-independent risk/authorization contract in `.ai-context/manual/ai-guidance.yaml` (`guidance.authorizationAndRisk`) for all code, workflow and repository mutations; authorization depends on scope and effects, not whether a file lives under `.github/workflows/`.
+- An explicitly authorized end-to-end Issue or work package includes its routine in-scope workflow changes, validation, commits, pull requests and merges; do not ask again for each YAML edit or normal lifecycle transition. Approval of a single bounded step is not approval of the next substantive step.
+- Elevated effects need a concrete impact and rollback assessment and targeted approval when they were not specifically authorized. Critical/destructive effects always need separate targeted authorization; stop on uncertain risk boundaries.
 - Every GitHub Actions workflow that is created, renamed or materially repurposed must be classified in `.ai-context/manual/workflow-monitoring.yaml` in the same authorized change; unclassified workflows are a fail-closed monitoring configuration error.
-- Every repository branch writer must follow the publication class assigned in `.ai-context/manual/workflow-publication.yaml`.
-- Topic-specific, one-off, migration, upload, recovery or branch-manipulation workflows are prohibited by default.
-- For one-off tasks, use existing repository tooling, local scripts, connector actions or temporary uncommitted files. If no safe alternative exists, ask for explicit approval before touching `.github/workflows/`.
+- Every repository branch writer must follow the publication class assigned in `.ai-context/manual/workflow-publication.yaml`. Validation, CI, branch protection, write-scope and source-of-truth restrictions are never bypassed by authorization.
+- Topic-specific, one-off, migration, upload, recovery or branch-manipulation workflows remain prohibited by default. Prefer existing repository tooling, local scripts, connector actions or temporary uncommitted files; an exception needs explicit scoped approval and the applicable elevated/critical review.
 
 ## Current preference
 
@@ -122,7 +120,7 @@ Exception:
 
 - For complex or longer-running authorized work, use checkpointed execution: split the work into small, independently verifiable and reversible steps that leave a stable persisted state whenever practical.
 - Prefer several small commits, pull requests or merges over a large monolithic change when the work can be separated cleanly.
-- In interactive ChatGPT-style work, a clearly authorized small step may be completed autonomously through validation, commit/PR/merge and relevant live verification, but after that step the agent must report the achieved state and proposed next step in chat and stop before beginning the next substantive step unless the user explicitly requested a continuous run.
+- A specifically authorized single step ends at its checkpoint; an explicitly authorized complete Issue or work package permits continuous in-scope execution through validated steps, PRs and merges. Report meaningful checkpoints without requiring routine re-approval, and stop on completion, scope expansion, unsafe risk escalation or an unresolved blocker.
 - The detailed execution-checkpoint rules live in `.ai-context/manual/ai-guidance.yaml`.
 
 ## Change guidance

@@ -1,0 +1,246 @@
+schemaVersion: 1
+status: active
+
+purpose: >
+  Canonical contract for the shared external market, ranking, ADP, projection and roster-activity
+  sources (FantasyPros, FantasyCalc, Fantasy Football Calculator, FFToday, CBS Sports, Sleeper
+  Trending) as Source Evidence under data-source (ADR-060, Issue #988). Podcasts and articles follow
+  later in the same registry with domain media; this contract only keeps the structure open for them.
+
+state: >
+  Issue #988 step 3 moved all six provider fetchers and their Source Evidence to
+  data-source. 4A.1 legacy/intraday snapshot discovery, 4A.4 versioned read-only
+  provider adapters and neutral identity rows, the 4B in-memory market candidate
+  renderer, and the 4C synthetic and real 19-dataset clean-root audits are
+  merged. The 4A.2 append-only snapshot planner remains dormant; no ranked
+  writer cutover, Sleeper durable archive, persisted market-observations
+  Shared-Derived publisher, or FM consumer migration has been enabled. All 19
+  dataset storage/publication rights are still unknown under #190.
+
+layerPosition: >
+  Level 1 of the six-level target (global facts and market observations). The observations are global
+  and attributed: they record what a named provider said for a named format at an observation time.
+  League context (for example the league team count) is not part of an observation.
+
+registry:
+  file: data-source/external-registry.json
+  loader: tools/external_source/registry.py
+  cli: tools/external_source_data.py validate
+  rule: >
+    One entry per dataset (provider x format). Unknown or duplicate dataset IDs, missing or unknown
+    keys, an unknown identity provider key, an invalid season policy or missing rights fields fail
+    closed. The registry is separate from data-source/registry.json (v3, one URL per CSV dataset) and
+    from data-source/league-registry.json, like ADR-046 and the league layer, but reuses the terms
+    retentionPolicy and lifecycle.
+  fields:
+    id: "The pattern <provider>.<name>.<format>; the format part is also the directory name below the provider."
+    domain: market (media follows with podcasts).
+    kind: expert-consensus, market-value, adp, projection or roster-activity.
+    acquisition: mode (html-embedded-json, html-table, json-api) and the fetcher module.
+    format: Provider attributes only (horizon, scoring, quarterbackMode, providerTeamCount, positions, window). providerTeamCount is a provider request parameter, never a league property.
+    identity: providerKey (a key of player-identity.yaml or null) and the CSV column holding the provider player ID.
+    retentionPolicy: latest-with-git-history for all datasets.
+    quality: minimumRows (null until the fetcher's own limit moves into the registry).
+    seasonPolicy: expected, optional or inactive for each phase of tools/nfl_season_context.py.
+    rights: "license, attribution, storage, publication (unknown, allowed, restricted, forbidden) and evidence; mandatory, value unknown is allowed (Issue #190)."
+    lifecycle: active or retired; retiring a dataset keeps its data and is decided by the owner.
+
+paths:
+  raw: "data-source/providers/<provider>/<dataset>/  # raw-latest.json, provider metadata, source audit"
+  snapshots: "data-source/market/<kind>/<provider>/<format>/snapshots/<YYYY-MM-DD>/{ranking.csv,metadata.json} (existing legacy)"
+  plannedIntradaySnapshots: "data-source/market/<kind>/<provider>/<format>/snapshots/<YYYY-MM-DD>/<HHmmssZ-hash8>/{ranking.csv,metadata.json} (reader-supported in 4A.1; writer only in 4A.2)"
+  latest: data-source/market/<kind>/<provider>/<format>/latest.json
+  identity: data-source/market/<kind>/<provider>/<format>/identity.json
+  status: data-source/market/_status/<provider>.json
+  rule: Roots come from tools/data_roots.py; no new root literals.
+  rosterActivity: "Sleeper Trending is one combined document (add and drop) and keeps a single latest.json at data-source/market/roster-activity/sleeper/latest.json with raw evidence at data-source/providers/sleeper/trending/ (no snapshot folders, so no identity.json yet)."
+
+snapshots:
+  discovery: tools/external_source/snapshot_discovery.py
+  appendOnlyPlan: tools/external_source/snapshot_plan.py
+  appendOnlyPlanStatus: > 
+    Technical pure read-only path/semantic SHA-256 planning and immutable collision
+    inspection only. It is not called by any provider writer and does not enable
+    additional permanent archives. Step 4A.2 producer activation is blocked until
+    the relevant external-registry rights.storage and retention obligations have
+    been established under Issue #190.
+  discoverySemantics: >
+    Enumerate both historical daily folders and future UTC intraday folders by actual
+    ranking/metadata paths. Order by date and authenticated observation instant, with
+    stable path-key tiebreak. For old folders without a reliable fetched_at metadata
+    value, observation instant remains unknown; the date directory is not an invented
+    timestamp. Provider source-updated time is separate from acquisition observation
+    time. FM movement historical baselines and Source identity indexes reuse discovery.
+  rules:
+    - A normalized provider snapshot is immutable once written and keeps the provider's view (provider ID, provider rank, values, raw stats).
+    - A new snapshot folder is written only on a semantic change of the normalized ranking.
+    - Historical snapshots move byte-identical with git mv. Paths inside old metadata.json files stay as historical provenance.
+    - New snapshots and metadata do not carry actual_league_team_count or team_count_usage.
+
+readOnlyVersionedAdapters:
+  implementation: tools/external_source/observation_adapter.py
+  status: "4A.4 read-only parser/validator; not yet a published market-observations product"
+  rankedProviders:
+    fantasypros: "schema versions 5, 6, 7"
+    fantasycalc: "schema versions 2, 3, 4"
+    fantasy-football-calculator: "schema versions 1, 2"
+    fftoday: "schema version 1"
+    cbs-sports: "schema versions 1, 2"
+  combinedJsonProvider:
+    sleeper: "roster-activity add/drop latest schema version 1; no invented historical archive"
+  neutralRowAdapter:
+    implementations:
+      - tools/external_source/observation_adapter.py::normalize_ranked_observations
+      - tools/external_source/observation_adapter.py::normalize_sleeper_activity_observations
+    status: "4A.4 read-only normalized row contract, not yet a persisted 4B product"
+    identity: "DatasetID + SnapshotKey + SourceRowNumber + AssetType + ProviderPlayerID; CanonicalPlayerID nullable and resolved by Source Identity mapping owner"
+    fields: "SourceSchemaVersion, NFLObservationSeason, ProviderTeamCount, IdentityStatus/Method and attributed ProviderValues; source rank, ADP and points remain provider-specific"
+    exceptions: >
+      Legacy actual_league_team_count is historical consumer context, excluded
+      from global neutral observations. providerTeamCount is read from registry
+      provider format only. Draft picks are not-a-player with no canonical
+      identity; missing provider keys are no-provider-key. Sleeper not_listed
+      remains null rank/count; latest comparison is never canonically copied.
+    repeatability: "Identical canonical evidence + mappings => byte-/semantically equal in-memory output; no branch write"
+  semantics: >
+    Validate recorded CSV ranking SHA-256, normalized rank identity, provider
+    required columns and schema version. Preserve original provider attribution
+    and raw field strings, including draft_pick vs player in FantasyCalc.
+    Sleeper not_listed is outside the Top N, not zero events. No name/team
+    identity fallback or league scoring adjustment. An unsupported historical
+    version fails closed until explicitly registered and tested.
+  rights: >
+    Reading already present source evidence does not authorize new permanent
+    archive writes or App publication. #190 still governs storage and rights,
+    and 4A.2/4A.3 writer activation stays blocked while storage is unknown.
+
+marketObservationsPreview:
+  implementation: tools/external_source/market_observations.py
+  status: "4B read-only draft: NO new data-derived writer or App/FM publication"
+  commands:
+    inventory: "python tools/external_source/market_observations.py inventory"
+    preview: "python tools/external_source/market_observations.py preview --dataset-id <DatasetID> --season <NFLObservationSeason>"
+  partition: "market-observations/<DatasetID>/<NFLObservationSeason>.json (intended future path only)"
+  schemaVersion: 1
+  semantics: >
+    Read all persisted daily and future intraday ranking snapshots from Source
+    and group by actual observation NFL season. Validate original provider
+    schema version, ranking hash and player identity via the Source mapping
+    owner. Include original provider metrics, registry format, rights and
+    attribution. Preserve missing legacy observation instants as null.
+    Sleeper add/drop are two views of the single current latest observation
+    until 4A.3 adds lawful durable Source history; do not invent missing history.
+    A repeat preview with identical Source and mappings yields identical bytes
+    and candidate SHA-256. CLI prints only counts, fingerprint and rights,
+    never player observations.
+  safety: >
+    CLI has inventory and preview only, no write, publish, update, workflow or
+    scheduler entry point. Additional durable archive and Shared-Derived
+    publication are still gated by dataset rights under #190 and subsequent
+    checkpoint acceptance. #471 owns eventual scheduled orchestration.
+
+
+marketObservationsRestorePreflight:
+  test: tools/tests/test_market_observations_restore_preflight.py
+  status: "4C targeted read-only clean-root and input-invalidation evidence, NOT 4C full restoration acceptance"
+  execution: "python -m unittest tools.tests.test_market_observations_restore_preflight -v"
+  guaranteesTested:
+    - "Source-only temp root with no preexisting data-derived dependencies yields the same deterministic candidate twice"
+    - "Injected stale derived candidate does not affect source-only rendering or get overwritten"
+    - "Ranked latest pointer and heartbeat-only refresh cannot cause semantic candidate dirty"
+    - "Earlier historical Source evidence corrections with matching recorded SHA-256 alter the affected candidate partition"
+    - "Identity mapping corrections/season validity, versioned Source schema, registry format/rights and renderer-version changes alter the candidate"
+    - "New UTC intraday observations extend observed history without synthetic dates; partial or corrupted Source fails closed"
+    - "Corrections to one observation season leave another existing season partition unchanged in the same isolated source fixture"
+  boundaries: >
+    The fixture uses synthetic ephemeral Source Evidence under an isolated
+    temporary root; no actual vendor ranking bytes are persisted or published.
+    No production data-derived writer, publisher, scheduler, FM reader or
+    Source fetch behavior changes. Full 19-dataset clean-root restore,
+    end-to-end no-op writer parity and rights approval from #190 are separate
+    acceptance gates. #471 owns cross-product dependency orchestration.
+
+
+
+marketObservationsFullSourceAudit:
+  suite: tools/tests/test_market_observations_full_restore.py
+  command: "python -m unittest tools.tests.test_market_observations_full_restore -v"
+  semantics: >
+    In an isolated temporary root, byte-copy only existing real Source registry,
+    NFL schedule evidence, canonical provider mappings, all persisted ranking
+    snapshots and the existing Sleeper add/drop latest view. Do not copy
+    data-derived or App outputs. Enumerate every registry DatasetID and actual
+    observation NFL season, render each source-only candidate twice, compare
+    canonical JSON SHA-256 aggregates and enforce absence of derived writes.
+    Emit a compact CI audit with dataset/partition/observation/row counts and
+    two aggregate hashes, never raw provider rankings.
+  limits: >
+    This is a genuine all-registered-dataset read-only candidate rebuild, but
+    it is NOT the eventual persistent materializer's second-run/no-op check,
+    provider archive-retention approval or #471 generic orchestration proof.
+    Sleeper remains latest-only until a lawfully authorized durable source
+    archive exists. Historical mapping and source correction invalidation is
+    covered by the independent synthetic Source-only preflight fixture.
+
+
+marketObservationsProductAdapter:
+  implementation: tools/external_source/market_observations_product.py
+  cli: "python tools/external_source/market_observations_product.py --dataset-id <DatasetID> --previous-plan <ExistingPlanJSON>"
+  status: "4D read-only partition/dirty planner; NOT #471 scheduler or publisher activation"
+  identity: "DatasetID + NFLObservationSeason, from canonical external-registry and discovered Source Evidence"
+  semantics: >
+    Build exact source-only candidate hashes with the existing 4B renderer for
+    every discovered dataset-season partition. Compare with an optional
+    previously supplied plan: new, changed, unchanged, orphaned. A ranked
+    latest.json pointer or provider heartbeat update cannot dirty candidate
+    content without a new durable snapshot; older Source corrections and
+    season-valid canonical identity mapping corrections must change the
+    applicable partition. Report orphaned partitions; NEVER auto-delete.
+  dependencies: >
+    Registry dataset format/rights/identity, actual Source snapshot IDs,
+    rankings plus Source metadata/version, canonical NFL season schedule,
+    source identity provider mappings and renderer/adapter version. Candidate
+    SHA-256 captures the actual derived content semantics. The planning scan
+    is comprehensive and not a 10-minute polling/refresh trigger.
+  safety: >
+    Print only identifiers, counts, source paths, hashes and status; not raw
+    provider rows. No source, derived, App or FM writes; no scheduler, new
+    workflow, fetch cadence, branch publisher or permission change. Rights
+    remain unknown under #190; WriterEnabled remains false even if synthetic
+    test rights switch to allowed. #471 alone owns DAG orchestration.
+
+identity:
+  file: identity.json per dataset
+  producer: tools/external_source/identity.py (tools/external_source_data.py identity)
+  key: (Season, ProviderPlayerID, AssetType); Season is the NFL season of the snapshot date.
+  resolution: >
+    Through data-source/nfl/identities/provider-mappings.json with FirstObservedSeason and
+    LastObservedSeason. Exactly one valid mapping gives resolved with the CanonicalPlayerID; several
+    give ambiguous without an ID; none gives unresolved. Assets that are not players (for example
+    FantasyCalc draft picks, column asset_type) are not-a-player. A dataset without a provider key
+    (FFToday, Fantasy Football Calculator) is no-provider-key.
+  rules:
+    - There is no name or team fallback in the source layer. Name joins stay consumer policy.
+    - The index is regenerable from snapshots and identities and is written only when its content differs.
+    - Provider evidence is never rewritten when an identity is adjudicated later.
+
+http:
+  module: tools/external_source/http.py
+  rules:
+    - Bounded retries with backoff and Retry-After for transient statuses; the last good state stays untouched on failure.
+    - An access challenge (403 with Cloudflare challenge header or body) raises HttpFetchBlockedError, is never retried and is never bypassed.
+    - A dataset whose season policy is inactive for the current phase is not requested.
+  note: The former Fantasy Management shim http_fetch_resilience.py was removed with the last provider move (Issue #988 step 3.7).
+
+governance:
+  - Acquisition stays a matrix leg of fm-daily.yml (ADR-051) until an App consumer exists; a separate workflow needs its own approval.
+  - Every provider move is one PR with exact parity of the Fantasy Management outputs after path-prefix normalization, fetcher tests moved and no old path left behind.
+  - Fantasy Management reads the moved provider snapshots directly only as a transitional consumer (consumerReadClassification); no App consumer may read provider snapshots.
+  - Shared consumers later read the Shared Derived products data-derived/market-observations and the movement models (Issue #988 steps 4 to 6).
+  - publication unknown blocks every later App display of a dataset (Issue #190).
+
+validation:
+  tests: tools/tests/test_external_source_registry.py
+  rules:
+    - The repository registry validates and covers all six providers.
+    - Every fail-closed case of the registry and every identity state has a test.

@@ -1,6 +1,7 @@
 'use strict';
 
 const fs = require('node:fs');
+const gameWindow = require('./nfl-game-window.cjs');
 
 function parseField(raw, minimum, maximum) {
   const values = new Set();
@@ -124,6 +125,10 @@ function validateConfig(config) {
   if (config.state.schemaVersion !== 1 || !config.state.branch || !config.state.path) {
     throw new Error('Invalid scheduler state contract');
   }
+  if (config.apiErrorPolicy !== undefined) {
+    const ticks = config.apiErrorPolicy?.failAfterConsecutiveTicks;
+    if (!Number.isInteger(ticks) || ticks < 1) throw new Error('apiErrorPolicy.failAfterConsecutiveTicks must be a positive integer');
+  }
 
   if (!config.retryPolicies || typeof config.retryPolicies !== 'object' || Array.isArray(config.retryPolicies)) {
     throw new Error('Scheduler config must contain retryPolicies');
@@ -189,7 +194,72 @@ function validateConfig(config) {
     }
     localParts(new Date('2026-01-05T00:00:00Z'), target.timezone);
     for (const expression of target.cron) cronMatches(expression, new Date('2026-01-05T00:00:00Z'), target.timezone);
+    gameWindow.validateGameWindowConfig(target, cronMatches);
   }
+}
+
+function isCancelledRun(run) {
+  return run.status === 'completed' && run.conclusion === 'cancelled';
+}
+
+// A run cancelled by GitHub (typically a waiting run replaced inside its concurrency group) did not execute
+// and is no evidence of failure, consistent with Workflow Health (ignoredConclusions: cancelled).
+function countCancelledRuns(attemptRuns) {
+  return attemptRuns.filter(isCancelledRun).length;
+}
+
+function slotCoveredByState(satisfiedSlot, latestDue) {
+  const satisfiedMs = Date.parse(satisfiedSlot?.dueAt || '');
+  return Number.isFinite(satisfiedMs) && latestDue.getTime() <= satisfiedMs;
+}
+
+function satisfiedByRun(baseResult, latestDue, run, satisfiedSlot, now) {
+  const dueAt = latestDue.toISOString();
+  const unchanged = satisfiedSlot && satisfiedSlot.dueAt === dueAt && satisfiedSlot.runId === (run.id ?? null);
+  return {
+    result: {
+      ...baseResult,
+      decision: 'satisfied',
+      dueAt,
+      satisfyingRunId: run.id,
+      satisfyingEvent: run.event,
+      satisfyingStatus: run.status,
+      satisfyingConclusion: run.conclusion,
+    },
+    nextState: null,
+    satisfiedSlot: unchanged ? satisfiedSlot : { dueAt, runId: run.id ?? null, recordedAt: now.toISOString() },
+  };
+}
+
+function satisfiedByState(baseResult, latestDue, satisfiedSlot) {
+  return {
+    result: {
+      ...baseResult,
+      decision: 'satisfied',
+      dueAt: latestDue.toISOString(),
+      satisfiedFromState: true,
+      satisfiedSlotDueAt: satisfiedSlot.dueAt,
+      satisfyingRunId: satisfiedSlot.runId ?? null,
+      satisfiedRecordedAt: satisfiedSlot.recordedAt || null,
+    },
+    nextState: null,
+    satisfiedSlot,
+  };
+}
+
+function recordSatisfiedSlots(runtimeState, config, evaluation, targetId) {
+  if (evaluation.satisfiedSlot) {
+    runtimeState.satisfiedSlots = { ...(runtimeState.satisfiedSlots || {}), [targetId]: evaluation.satisfiedSlot };
+  }
+}
+
+function pruneSatisfiedSlots(runtimeState, config) {
+  if (!runtimeState.satisfiedSlots) return;
+  const ids = new Set(config.targets.map((target) => target.id));
+  for (const id of Object.keys(runtimeState.satisfiedSlots)) {
+    if (!ids.has(id)) delete runtimeState.satisfiedSlots[id];
+  }
+  if (Object.keys(runtimeState.satisfiedSlots).length === 0) delete runtimeState.satisfiedSlots;
 }
 
 function evaluateTarget(target, ref, now, lookbackMinutes, runs) {
@@ -242,26 +312,14 @@ function retryState(dueAt, attemptsDispatched, extra = {}) {
   };
 }
 
-function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, targetState = null) {
+function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbackMinutes, runs, targetState = null, satisfiedSlot = null) {
   const latestDue = latestDueSlot(target.cron, target.timezone, now, lookbackMinutes);
   const base = { id: target.id, workflow: target.workflow, profile: target.profile, healthBarrier: profile.healthBarrier };
   if (!latestDue) return { result: { ...base, decision: 'no-due-slot-in-lookback' }, nextState: null };
 
   const latestSuccess = runs.find((run) => runSatisfiesSlot(run, target, latestDue, ref));
-  if (latestSuccess) {
-    return {
-      result: {
-        ...base,
-        decision: 'satisfied',
-        dueAt: latestDue.toISOString(),
-        satisfyingRunId: latestSuccess.id,
-        satisfyingEvent: latestSuccess.event,
-        satisfyingStatus: latestSuccess.status,
-        satisfyingConclusion: latestSuccess.conclusion,
-      },
-      nextState: null,
-    };
-  }
+  if (latestSuccess) return satisfiedByRun(base, latestDue, latestSuccess, satisfiedSlot, now);
+  if (slotCoveredByState(satisfiedSlot, latestDue)) return satisfiedByState(base, latestDue, satisfiedSlot);
 
   let state = targetState && typeof targetState === 'object' ? { ...targetState } : null;
   let stateDue = state ? new Date(state.dueAt) : null;
@@ -305,18 +363,7 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
   if (cycleSuccess) {
     const successCreatedAt = Date.parse(cycleSuccess.created_at || '');
     if (Number.isFinite(successCreatedAt) && successCreatedAt >= latestDue.getTime()) {
-      return {
-        result: {
-          ...base,
-          decision: 'satisfied',
-          dueAt: latestDue.toISOString(),
-          satisfyingRunId: cycleSuccess.id,
-          satisfyingEvent: cycleSuccess.event,
-          satisfyingStatus: cycleSuccess.status,
-          satisfyingConclusion: cycleSuccess.conclusion,
-        },
-        nextState: null,
-      };
+      return satisfiedByRun(base, latestDue, cycleSuccess, satisfiedSlot, now);
     }
     state = null;
     cycleDue = latestDue;
@@ -327,8 +374,8 @@ function evaluateTargetWithRetry(target, profile, retryPolicy, ref, now, lookbac
 
   const attemptRuns = schedulerAttemptRuns(cycleRuns, target, cycleDue, ref);
   const observedAttempts = attemptRuns.length;
-  const attemptsDispatched = Math.max(state?.attemptsDispatched || 0, observedAttempts);
-  const latestAttempt = attemptRuns.find((run) => run.status === 'completed') || null;
+  const attemptsDispatched = Math.max(0, Math.max(state?.attemptsDispatched || 0, observedAttempts) - countCancelledRuns(attemptRuns));
+  const latestAttempt = attemptRuns.find((run) => run.status === 'completed' && !isCancelledRun(run)) || null;
   const inFlight = cycleRuns.find((run) => Boolean(run.status) && run.status !== 'completed');
 
   if (inFlight) {
@@ -470,6 +517,61 @@ function applyTargetDeferral(target, result, peerResults, now) {
   return { ...annotated, deferralExpired: true, deferralReason: 'in-flight-deferral-expired' };
 }
 
+const TRANSIENT_API_HTTP_STATUSES = new Set([429, 500, 502, 503, 504]);
+const TRANSIENT_API_NETWORK_CODES = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'EAI_AGAIN',
+  'ENETUNREACH',
+  'EPIPE',
+  'ETIMEDOUT',
+  'UND_ERR_BODY_TIMEOUT',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_SOCKET',
+]);
+const DEFAULT_API_ERROR_FAIL_AFTER_TICKS = 2;
+
+// Transient GitHub API failures (5xx, 429, network aborts, timeouts). 401/403/404/422 and other errors are not transient.
+function isTransientApiError(error) {
+  const status = Number(error?.status ?? error?.response?.status);
+  if (Number.isInteger(status) && TRANSIENT_API_HTTP_STATUSES.has(status)) return true;
+  return TRANSIENT_API_NETWORK_CODES.has(error?.code || error?.cause?.code || null);
+}
+
+function apiErrorFailAfterTicks(config) {
+  return config.apiErrorPolicy?.failAfterConsecutiveTicks ?? DEFAULT_API_ERROR_FAIL_AFTER_TICKS;
+}
+
+function recordApiError(runtimeState, targetId, message, now) {
+  const previous = runtimeState.apiErrors?.[targetId];
+  const consecutive = (previous?.consecutiveTicks || 0) + 1;
+  runtimeState.apiErrors = {
+    ...(runtimeState.apiErrors || {}),
+    [targetId]: {
+      consecutiveTicks: consecutive,
+      firstAt: previous?.firstAt || now.toISOString(),
+      lastAt: now.toISOString(),
+      lastError: String(message).slice(0, 300),
+    },
+  };
+  return runtimeState.apiErrors[targetId];
+}
+
+function clearApiError(runtimeState, targetId) {
+  if (!runtimeState.apiErrors?.[targetId]) return;
+  delete runtimeState.apiErrors[targetId];
+}
+
+function pruneApiErrors(runtimeState, config) {
+  if (!runtimeState.apiErrors) return;
+  const ids = new Set(config.targets.map((target) => target.id));
+  for (const id of Object.keys(runtimeState.apiErrors)) {
+    if (!ids.has(id)) delete runtimeState.apiErrors[id];
+  }
+  if (Object.keys(runtimeState.apiErrors).length === 0) delete runtimeState.apiErrors;
+}
+
 function createEmptySchedulerState(config) {
   return { schemaVersion: config.state.schemaVersion, targets: {} };
 }
@@ -478,28 +580,77 @@ function validateSchedulerState(state, config) {
   if (!state || typeof state !== 'object' || Array.isArray(state)) throw new Error('Scheduler runtime state is not an object');
   if (state.schemaVersion !== config.state.schemaVersion) throw new Error('Unsupported scheduler runtime state schemaVersion');
   if (!state.targets || typeof state.targets !== 'object' || Array.isArray(state.targets)) throw new Error('Scheduler runtime state targets must be an object');
+  if (state.satisfiedSlots !== undefined) {
+    if (!state.satisfiedSlots || typeof state.satisfiedSlots !== 'object' || Array.isArray(state.satisfiedSlots)) {
+      throw new Error('Scheduler runtime state satisfiedSlots must be an object');
+    }
+    for (const [id, slot] of Object.entries(state.satisfiedSlots)) {
+      if (!slot || typeof slot !== 'object' || !Number.isFinite(Date.parse(slot.dueAt || ''))) {
+        throw new Error(`Scheduler runtime state satisfiedSlots.${id} needs a valid dueAt`);
+      }
+    }
+  }
+  if (state.apiErrors !== undefined) {
+    if (!state.apiErrors || typeof state.apiErrors !== 'object' || Array.isArray(state.apiErrors)) {
+      throw new Error('Scheduler runtime state apiErrors must be an object');
+    }
+    for (const [id, entry] of Object.entries(state.apiErrors)) {
+      if (!entry || !Number.isInteger(entry.consecutiveTicks) || entry.consecutiveTicks < 1) {
+        throw new Error(`Scheduler runtime state apiErrors.${id} needs consecutiveTicks >= 1`);
+      }
+    }
+  }
 }
 
 function serializeSchedulerState(state) {
   return `${JSON.stringify(state, null, 2)}\n`;
 }
 
-async function loadSchedulerState({ github, context, config, core }) {
+const DEFAULT_STATE_CONTENT_RETRY_DELAYS_MS = Object.freeze([1000, 2000]);
+
+function sleepMs(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function loadSchedulerState({
+  github,
+  context,
+  config,
+  core,
+  retryDelaysMs = DEFAULT_STATE_CONTENT_RETRY_DELAYS_MS,
+  sleepFn = sleepMs,
+}) {
   const empty = createEmptySchedulerState(config);
   try {
-    const response = await github.rest.repos.getContent({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      path: config.state.path,
-      ref: config.state.branch,
-    });
-    if (!response.data || Array.isArray(response.data) || !response.data.content) {
-      throw new Error(`Scheduler runtime state ${config.state.branch}/${config.state.path} is not a file`);
+    for (let attempt = 0; ; attempt += 1) {
+      const response = await github.rest.repos.getContent({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        path: config.state.path,
+        ref: config.state.branch,
+      });
+      if (!response.data || Array.isArray(response.data)) {
+        throw new Error(`Scheduler runtime state ${config.state.branch}/${config.state.path} is not a file`);
+      }
+      let state;
+      try {
+        const text = Buffer.from(response.data.content || '', 'base64').toString('utf8');
+        if (!text.trim()) throw new SyntaxError('Unexpected end of JSON input');
+        state = JSON.parse(text);
+      } catch (error) {
+        // An empty or truncated read is treated like a transient read error (e.g. read during a concurrent write).
+        if (!(error instanceof SyntaxError) || attempt >= retryDelaysMs.length) throw error;
+        const delayMs = retryDelaysMs[attempt];
+        core.warning(
+          `Scheduler runtime state content was empty or incomplete (${error.message}); re-reading in ${delayMs} ms `
+          + `(attempt ${attempt + 2}/${retryDelaysMs.length + 1}).`,
+        );
+        await sleepFn(delayMs);
+        continue;
+      }
+      validateSchedulerState(state, config);
+      return { state, serialized: serializeSchedulerState(state), exists: true };
     }
-    const text = Buffer.from(response.data.content, 'base64').toString('utf8');
-    const state = JSON.parse(text);
-    validateSchedulerState(state, config);
-    return { state, serialized: serializeSchedulerState(state), exists: true };
   } catch (error) {
     if (error && error.status === 404) {
       core.info(`Scheduler runtime state ${config.state.branch}/${config.state.path} does not exist yet; it will be initialized on the first state change.`);
@@ -590,6 +741,7 @@ function decisionLabel(result) {
     'retry-exhausted': '❌ Retry exhausted',
     cooldown: '🧯 Cooldown',
     'no-due-slot-in-lookback': '⚪ No due slot',
+    'api-error': '⚠️ API error',
   };
   return labels[result.decision] || result.decision;
 }
@@ -597,6 +749,7 @@ function decisionLabel(result) {
 function actionLabel(result) {
   if (result.decision === 'dispatch') return result.dispatched ? 'Started' : 'Start';
   if (result.decision === 'deferred' || result.decision === 'retry-wait') return 'Wait';
+  if (result.decision === 'api-error') return 'Skipped this tick';
   if (result.decision === 'retry-exhausted') return 'Open circuit';
   return 'No action';
 }
@@ -604,6 +757,9 @@ function actionLabel(result) {
 function reasonForResult(result, timeZone) {
   switch (result.decision) {
     case 'satisfied':
+      if (result.satisfiedFromState) {
+        return `Slot ${result.satisfiedSlotDueAt} already satisfied by run #${result.satisfyingRunId} (evidence from scheduler state; the run list did not show it).`;
+      }
       return `Run #${result.satisfyingRunId} completed successfully.`;
     case 'in-flight':
       return `Run #${result.inFlightRunId} is ${result.inFlightStatus || 'in flight'}.`;
@@ -627,6 +783,8 @@ function reasonForResult(result, timeZone) {
       if (result.hardDispatchBarrier) return `Health waits because productive work starts this tick: ${blockers}.`;
       return `Health waits for productive in-flight work: ${blockers}.`;
     }
+    case 'api-error':
+      return `GitHub API ${result.apiErrorPhase || 'read'} failed transiently after retries (${result.error}); nothing dispatched and state unchanged, consecutive ticks ${result.consecutiveTicks}/${result.failAfterConsecutiveTicks}.`;
     case 'no-due-slot-in-lookback':
       return 'No matching schedule slot exists in the configured lookback.';
     default:
@@ -673,14 +831,14 @@ async function writeSummary(core, results, now, config) {
   await core.summary.addRaw(buildSummaryMarkdown(results, now, config)).write();
 }
 
-async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date() }) {
+async function run({ github, context, core, configPath = '.github/workflow-schedules.json', now = new Date(), stateReadRetryDelaysMs, sleepFn }) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   validateConfig(config);
   if (config.repository !== `${context.repo.owner}/${context.repo.repo}`) {
     throw new Error(`Scheduler repository mismatch: config=${config.repository} runtime=${context.repo.owner}/${context.repo.repo}`);
   }
   const ref = config.ref || 'main';
-  const loadedState = await loadSchedulerState({ github, context, config, core });
+  const loadedState = await loadSchedulerState({ github, context, config, core, retryDelaysMs: stateReadRetryDelaysMs, sleepFn });
   const runtimeState = JSON.parse(JSON.stringify(loadedState.state));
   const failures = [];
   const evaluated = [];
@@ -705,7 +863,9 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
         config.lookbackMinutes,
         response.data.workflow_runs || [],
         runtimeState.targets[target.id] || null,
+        runtimeState.satisfiedSlots?.[target.id] || null,
       );
+      recordSatisfiedSlots(runtimeState, config, evaluation, target.id);
       if (evaluation.nextState) runtimeState.targets[target.id] = evaluation.nextState;
       else delete runtimeState.targets[target.id];
       evaluated.push({ target, result: evaluation.result });
@@ -716,6 +876,7 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
     }
   }
 
+  pruneSatisfiedSlots(runtimeState, config);
   const peerResults = evaluated.map((item) => item.result);
   for (const item of evaluated) {
     item.result = applyTargetDeferral(item.target, item.result, peerResults, now);
@@ -799,7 +960,19 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
 }
 
 module.exports = {
+  apiErrorFailAfterTicks,
   applyTargetDeferral,
+  clearApiError,
+  isTransientApiError,
+  pruneApiErrors,
+  recordApiError,
+  countCancelledRuns,
+  isCancelledRun,
+  pruneSatisfiedSlots,
+  recordSatisfiedSlots,
+  satisfiedByRun,
+  satisfiedByState,
+  slotCoveredByState,
   buildSummaryMarkdown,
   createEmptySchedulerState,
   cronMatches,

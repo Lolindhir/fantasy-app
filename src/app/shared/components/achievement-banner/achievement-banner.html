@@ -12,6 +12,17 @@
     <div class="achievement-banner__title">{{ achievementLabel }}</div>
   </header>
 
+  <svg
+    class="achievement-banner__threadwork"
+    viewBox="0 0 100 100"
+    preserveAspectRatio="none"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M 2 2 H 98 V 79 L 50 98 L 2 79 Z" />
+    <path d="M 4 4 H 96 V 78 L 50 96 L 4 78 Z" />
+  </svg>
+
   <div class="achievement-banner__identity">
     <span class="achievement-banner__avatar-stack">
       <span class="achievement-banner__primary-avatar">
@@ -28,9 +39,19 @@
       <span *ngIf="secondaryAvatar" class="achievement-banner__secondary-avatar">
         <img [src]="secondaryAvatar" alt="" />
       </span>
+      <span *ngIf="achievementBadgeSrc" class="achievement-banner__corner-badge" title="Regular Season Champion" aria-label="Regular Season Champion">
+        <img [src]="achievementBadgeSrc" alt="" aria-hidden="true" />
+      </span>
     </span>
 
-    <div class="achievement-banner__name">{{ subjectName }}</div>
+    <div
+      class="achievement-banner__name"
+      [appFitText]="subjectName"
+      [fitTextMinSize]="11.5"
+      [fitTextMaxSize]="15.36"
+    >
+      {{ subjectName }}
+    </div>
   </div>
 
   <div class="achievement-banner__emblem">

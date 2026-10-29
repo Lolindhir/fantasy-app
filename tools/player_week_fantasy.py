@@ -32,6 +32,13 @@ ACTUAL_STATES = {
 }
 PARTICIPATION_CONDITION = "conditional-on-participation"
 
+# Prediction-range levels published per player. PRIMARY is the level kept in the
+# single-range field PredictionRange; DISPLAY is the level UIs show. Changing
+# DISPLAY_INTERVAL_LEVEL (it must be published) switches every surface at once.
+PUBLISHED_INTERVAL_LEVELS = (0.5, 0.8, 0.9)
+PRIMARY_INTERVAL_LEVEL = 0.9
+DISPLAY_INTERVAL_LEVEL = 0.9
+
 
 def _canonical_decimal(value: Any) -> tuple[Decimal, str]:
     if isinstance(value, bool) or value is None:
@@ -188,6 +195,46 @@ def _history_games(value: Any) -> int:
     return value
 
 
+def _validate_range(value: Any, field: str) -> dict[str, float]:
+    if not isinstance(value, Mapping):
+        raise ValueError(f"{field} must be an object")
+    level = _finite_number(value.get("Level"), f"{field}.Level")
+    lower = _finite_number(value.get("Lower"), f"{field}.Lower")
+    upper = _finite_number(value.get("Upper"), f"{field}.Upper")
+    if not 0 < level < 1:
+        raise ValueError(f"{field}.Level must be between 0 and 1")
+    if lower > upper:
+        raise ValueError(f"{field}.Lower must not exceed Upper")
+    return {"Level": level, "Lower": lower, "Upper": upper}
+
+
+def validate_prediction_ranges(
+    value: Any,
+    primary: Mapping[str, float],
+) -> list[dict[str, float]]:
+    """Validate the multi-level ranges; absent means only the primary range."""
+
+    if value is None:
+        return [dict(primary)]
+    if not isinstance(value, (list, tuple)) or not value:
+        raise ValueError("Projection.PredictionRanges must be a non-empty list")
+
+    ranges = [
+        _validate_range(item, f"Projection.PredictionRanges[{index}]")
+        for index, item in enumerate(value)
+    ]
+    for previous, current in zip(ranges, ranges[1:]):
+        if current["Level"] <= previous["Level"]:
+            raise ValueError("Projection.PredictionRanges levels must be strictly ascending")
+        if current["Lower"] > previous["Lower"] or current["Upper"] < previous["Upper"]:
+            raise ValueError("Projection.PredictionRanges must be nested: higher levels are wider")
+
+    matching = [item for item in ranges if item["Level"] == primary["Level"]]
+    if len(matching) != 1 or matching[0] != dict(primary):
+        raise ValueError("Projection.PredictionRanges must contain the primary PredictionRange")
+    return ranges
+
+
 def validate_projection(projection: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(projection, Mapping):
         raise ValueError("Projection must be an object")
@@ -216,13 +263,11 @@ def validate_projection(projection: Mapping[str, Any]) -> dict[str, Any]:
         prediction_range = projection.get("PredictionRange")
         if not isinstance(prediction_range, Mapping):
             raise ValueError("Available projection requires PredictionRange")
-        level = _finite_number(prediction_range.get("Level"), "Projection.PredictionRange.Level")
-        lower = _finite_number(prediction_range.get("Lower"), "Projection.PredictionRange.Lower")
-        upper = _finite_number(prediction_range.get("Upper"), "Projection.PredictionRange.Upper")
-        if not 0 < level < 1:
-            raise ValueError("Projection.PredictionRange.Level must be between 0 and 1")
-        if lower > upper:
-            raise ValueError("Projection.PredictionRange.Lower must not exceed Upper")
+        primary_range = _validate_range(prediction_range, "Projection.PredictionRange")
+        prediction_ranges = validate_prediction_ranges(
+            projection.get("PredictionRanges"),
+            primary_range,
+        )
 
         range_quality = projection.get("RangeQuality")
         if range_quality not in AVAILABLE_RANGE_QUALITIES:
@@ -237,11 +282,8 @@ def validate_projection(projection: Mapping[str, Any]) -> dict[str, Any]:
         return {
             "Status": status,
             "Points": points,
-            "PredictionRange": {
-                "Level": level,
-                "Lower": lower,
-                "Upper": upper,
-            },
+            "PredictionRange": primary_range,
+            "PredictionRanges": prediction_ranges,
             "RangeQuality": range_quality,
             "HistoryGames": history_games,
             "ParticipationCondition": participation,
@@ -254,6 +296,8 @@ def validate_projection(projection: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError(f"Projection.Points must be null when Status={status}")
     if projection.get("PredictionRange") is not None:
         raise ValueError(f"Projection.PredictionRange must be null when Status={status}")
+    if projection.get("PredictionRanges") not in (None, [], ()):
+        raise ValueError(f"Projection.PredictionRanges must be empty when Status={status}")
     if projection.get("RangeQuality") != "unavailable":
         raise ValueError(f"Projection.RangeQuality must be 'unavailable' when Status={status}")
 
@@ -265,6 +309,7 @@ def validate_projection(projection: Mapping[str, Any]) -> dict[str, Any]:
         "Status": status,
         "Points": None,
         "PredictionRange": None,
+        "PredictionRanges": [],
         "RangeQuality": "unavailable",
         "HistoryGames": history_games,
         "ParticipationCondition": participation,

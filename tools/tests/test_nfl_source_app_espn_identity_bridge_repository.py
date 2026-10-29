@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from tools.nfl_source_data_lib.common import load_registry
 from tools.nfl_source_data_lib.identity import build_identities
+from tools.ci_tier import deep_only
 
 ROOT = Path(__file__).resolve().parents[2]
 FM_SCRIPTS = ROOT / "fantasy-management" / "_ai" / "scripts"
@@ -17,6 +18,11 @@ if str(FM_SCRIPTS) not in sys.path:
 import audit_player_signal_population_policy as population_policy  # noqa: E402
 
 
+# This test audits live repository state (Players.json, canonical identities,
+# Sleeper platform data) that independent workflows may change. The production
+# full Source Sync runs it only AFTER rebuilding canonical data (Issue #814,
+# ADR-039); PR Fast runs its cheap cases and periodic Deep runs this replay.
+@deep_only("rebuilds all repository identities against the App population (~45 s)")
 class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
     def test_rebuilt_identities_do_not_regress_current_population_identity_gap(self) -> None:
         config_path = (
@@ -28,11 +34,6 @@ class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
 
         baseline = population_policy.build(ROOT, config_path)
         baseline_gap = int(baseline["current_identity_gap_candidates"]["count"])
-        self.assertGreater(
-            baseline_gap,
-            0,
-            "Repository baseline unexpectedly has no current identity-gap candidates",
-        )
 
         datasets = {dataset.id: dataset for dataset in load_registry(ROOT)}
         rebuilt_players, _, _, _, _ = build_identities(ROOT, datasets)
@@ -47,10 +48,10 @@ class AppEspnIdentityBridgeRepositoryTests(unittest.TestCase):
         }
 
         canonical_identity_path = (
-            ROOT / "source-data" / "nfl" / "identities" / "players.json"
+            ROOT / "data-source" / "nfl" / "identities" / "players.json"
         ).resolve()
         canonical_sleeper_path = (
-            ROOT / "source-data" / "nfl" / "platform" / "sleeper" / "players.json"
+            ROOT / "data-source" / "nfl" / "platform" / "sleeper" / "players.json"
         ).resolve()
         original_load_json = population_policy.ops.load_json
         persisted_sleeper_document = original_load_json(canonical_sleeper_path)

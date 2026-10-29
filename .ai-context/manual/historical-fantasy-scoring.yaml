@@ -12,7 +12,7 @@ decision:
     deterministically under the scoring rules of a selected League season. Provider
     fantasy-point totals are useful for validation, but they are not canonical facts.
   decision: >
-    Persist raw/statistical NFL facts in source-data, persist League scoring settings
+    Persist raw/statistical NFL facts in data-source, persist League scoring settings
     with the canonical League season, and derive historical/what-if fantasy points at
     evaluation time. Historical source gaps fail closed and are never interpreted as zero.
   consequences:
@@ -40,18 +40,18 @@ canonicalLeague:
 
 factOwnership:
   nflFacts:
-    owner: source-data/nfl/**
+    owner: data-source/nfl/**
     relevantDatasets:
-      - source-data/nfl/player-stats/**
-      - source-data/nfl/special-teams-fumble-events/**
-      - source-data/nfl/rosters/**
-      - source-data/nfl/weekly-rosters/**
-      - source-data/nfl/snap-counts/**
+      - data-source/nfl/player-stats/**
+      - data-source/nfl/special-teams-fumble-events/**
+      - data-source/nfl/rosters/**
+      - data-source/nfl/weekly-rosters/**
+      - data-source/nfl/snap-counts/**
     rule: >
       Store provider-independent facts and evidence required for later derivation. Do not
       bake League scoring settings or provider fantasy-point totals into canonical NFL facts.
   leagueScoringProfile:
-    ownerPattern: source-data/leagues/<CanonicalLeagueID>/seasons/<season>/league.json
+    ownerPattern: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json
     field: ScoringSettings
     rule: >
       ScoringSettings is an explicit input profile for a scoring calculation. It is League
@@ -127,6 +127,7 @@ scoringContract:
     fieldGoalMadeDistance: fg_made_distance
   derivedRules:
     - Sleeper fum_rec is not reconstructed from offensive own/opponent recovery counters for an individual player; player fum_rec uses the defensive/IDP recovery fact def_fumbles.
+    - Offensive and kicking positions (QB, RB, FB, WR, TE, K, P) do not score ff or fum_rec because nflverse credits them with def_fumbles_forced/def_fumbles on change-of-possession plays after their own fumble, and Sleeper does not score these (#347 D2a; all 11 affected rostered player-weeks 2024-2026 matched Sleeper only without the credit). Individual-defense positions keep both keys. Assumption (not verified against Sleeper data) is that IDP positions are unaffected, because no IDP player is rostered in the league.
     - Sleeper st_td is an individual Special Teams Player TD and maps to special_teams_tds.
     - Sleeper st_ff counts canonical SpecialTeams forced-fumble events for the individual player.
     - Sleeper st_fum_rec counts canonical SpecialTeams fumble-recovery events only when RecoveryTeam is the opponent of the single unambiguous FumbledTeams value; own-team recoveries do not score and ambiguous recovery relations fail closed.
@@ -151,9 +152,9 @@ readinessContract:
   implementation: tools/source_data_readiness.py
   historicalBandOwner: tools/nfl_source_data_lib/history.py
   persistedAudits:
-    - source-data/audits/nfl-source-data-readiness.json
-    - source-data/audits/league-source-data-audit.json
-    - source-data/audits/source-data-storage-audit.json
+    - data-source/audits/nfl-source-data-readiness.json
+    - data-source/audits/league-source-data-audit.json
+    - data-source/audits/source-data-storage-audit.json
   readyForHistoricalScoringRule: >
     Every historical season in every declared support band must have persisted raw evidence
     and complete canonical materialization. For special-teams-fumble-events, completeness is
@@ -435,6 +436,83 @@ operations:
     - require ReadyForHistoricalScoring=true before declaring historical coverage complete
     - validate historical scoring against persisted nflverse raw fields and an explicit nfl-reise scoring profile
 
+playersLeagueScoringShadow:
+  issue: 347
+  step: D3
+  state: shadow-only-players-json-unchanged
+  implementation: tools/players_league_scoring_shadow.py
+  tests: tools/tests/test_players_league_scoring_shadow.py
+  purpose: >
+    Re-derive the Tank01-PPR based Players.json fields from canonical player-stats, snap-counts
+    and the canonical league ScoringSettings and report the field-level difference. Writes nothing
+    to public/data; the cutover is step D4.
+  recomputedFields:
+    - FantasyPoints* (Total, AvgGame, AvgPotentialGame, AvgSnap, AvgAttempt)
+    - GamesPlayed, SnapsTotal, AttemptsTotal, Touchdowns*
+    - PointHistory, Ranking, Grading.Rank
+    - GameHistory[].FantasyPoints
+    - Salary, SalaryProjected, League salary cap
+  rules:
+    - Players.json row -> CanonicalPlayerID through the season-aware Sleeper identity resolver of tools/players_league_scoring.py (same resolver as the D4 export); ambiguous or unmapped rows are identity_hold, keep legacy values and are listed.
+    - Played game = offense snaps > 0 from canonical snap-counts (snap-only games count with 0 points); kickers FG + PAT attempts > 0.
+    - Current season = REG weeks with canonical WeekFinal up to LastLeagueWeek; historical partitions must be Finalized (fail closed).
+    - Salary formula, weights and cap formula are the unchanged PowerShell model (ported; the port must reproduce the committed Players.json and the published cap exactly, otherwise the shadow is not trustworthy).
+    - GameHistory rows of non-final weeks keep their legacy FantasyPoints and are counted.
+    - Rows whose legacy history had games but whose canonical history has none are listed (historyLoss), with a league-owned flag.
+  sleeperGate:
+    command: python tools/players_league_scoring_shadow.py gate
+    reference: League PlayerPoints (Sleeper) of canonical final weeks, all league seasons present
+    failsWhen:
+      - exact rate below 0.995
+      - any absolute difference above 2.0
+      - any residual not in a known class
+      - a non-zero applicable scoring setting without canonical mapping
+    knownResidualClasses:
+      yardage-correction: residual smaller than the smallest discrete scoring weight and an exact multiple of a fractional yardage weight (provider stat correction)
+    ciWiring: .github/workflows/build.yml step 'Run Players league-scoring shadow and Sleeper gate' (unit tests plus the gate command; approved by Robert 2026-10-04)
+
+playersLeagueScoring:
+  issue: 347
+  step: D4
+  state: productive-cutover-2026-10-05
+  rollbackReference: rollback/347-pre-d4-players-league-scoring
+  implementation:
+    export: tools/players_league_scoring.py
+    consumer: public/requests/utils/player/PlayerLeagueScoringUtils.psm1
+    generator: public/requests/RequestPlayers.ps1
+  tests:
+    - tools/tests/test_players_league_scoring_shadow.py
+    - public/requests/PlayerLeagueScoringRegressionTest.ps1 (via DecisionWindowRegressionTest.ps1)
+  purpose: >
+    Players.json points, played games, snaps, attempts, touchdowns, PointHistory and the per-game
+    points of final regular-season games come from canonical NFL stats scored with the league
+    ScoringSettings (robert, 2026-10-04: points, history, ranking and salary switch together).
+    Salary, SalaryProjected, Ranking, Grading.Rank and the League salary cap are unchanged
+    PowerShell formulas over the new inputs; the salary redesign concept is not part of this step.
+  flow: >
+    RequestPlayers.ps1 passes the Sleeper IDs of the current player universe to the export; the
+    export resolves each ID per season, scores the canonical weekly stats with the ScoringSettings of
+    the current season (all four seasons use one profile) and returns weekly rows; PowerShell
+    aggregates them with the same played-game and rounding rules as the D3 shadow.
+  rules:
+    - Identity is resolved per season. Candidates are the persisted Sleeper mappings and the parties of covering mapping conflicts; a record without any provider ID cannot own NFL stats and is dropped; exactly one remaining record resolves the ID, several are ambiguous. A season before the earliest persisted observation uses the earliest mapping, a gap between observations is unmapped.
+    - Identity hold (no unique record for the current season) keeps the last published scoring values; a player that was never published starts at zero. A league-owned player with an ambiguous identity aborts the export, so Players.json stays at its last known good state.
+    - A non-zero ScoringSettings weight that the scorer does not map aborts the export (fail closed).
+    - A player whose special-teams fumble evidence is ambiguous (recovery team among several fumbling teams, found live for a free-agent CB in 2023 week 5) cannot be scored: the export lists him as `ambiguous-evidence` and he is held like an identity hold (last published values). A league-owned player with ambiguous evidence aborts the export. The shared scorer itself stays fail-closed; only the Players export collects the ambiguity instead of raising.
+    - Current season = final regular-season weeks (game-finality WeekFinal) up to LastLeagueWeek; historical partitions must be Finalized.
+    - GamesPotential keeps its legacy rule (present only when Tank01 games exist, minus the canonical bye week); the games themselves and the points are canonical.
+    - Playoff games and games of not yet final weeks keep the Tank01 PPR value in GameHistory.
+  persistence: >
+    The export is rebuilt on every Players run in a temporary file and is not committed. A committed
+    data-derived product would need the Players workflow publish scope extended, which requires
+    Robert's explicit workflow approval.
+  evidence: >
+    Offline run of RequestPlayers.ps1 with mocked provider responses built from the committed
+    Players.json: every compared field of all 1268 rows equals the approved D3 shadow
+    (Salary, SalaryProjected, Ranking, Grading.Rank, PointHistory, FantasyPoints*, GamesPlayed,
+    SnapsTotal, AttemptsTotal, Touchdowns*, GameHistory points, Grading.Form points).
+    Cap 434,255,984 -> 432,611,104 and projected 452,436,562 -> 451,127,758.
+
 validationEvidence:
   namespaceAndWeekStructure: cd4f935cffe53692300cca4936a8eee576adc3e4
   monitoringPolicy: 48143c0042a7c32d58046f98800f4088ffc6bd0e
@@ -443,7 +521,7 @@ validationEvidence:
   readinessRegressions: 6a74902078c245909ee875d47c583c0d718c5785
   trackingIssue: 373
   phase2Issue: 347
-  phase2State: paused-until-phase1-hardening-complete
+  phase2State: in-progress
 
 
 playerWeekFantasyIntegration:

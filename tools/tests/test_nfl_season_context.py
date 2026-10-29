@@ -12,7 +12,7 @@ from tools.nfl_season_context import (
 
 class NflSeasonContextTests(unittest.TestCase):
     def write_schedule(self, root: Path, season: int, games: list[dict]) -> None:
-        path = root / "source-data" / "nfl" / "schedules" / f"{season}.json"
+        path = root / "data-source" / "nfl" / "schedules" / f"{season}.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps(

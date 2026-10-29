@@ -102,9 +102,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--materialization-scope",
-        choices=("full", "league-core", "transactions", "drafts", "matchups"),
+        choices=("full", "league-core", "transactions", "drafts", "matchups", "current"),
         default="full",
-        help="Choose full League materialization or a bounded League Core/transaction/draft/matchup write scope.",
+        help=(
+            "Choose full League materialization or a bounded League Core/transaction/draft/matchup "
+            "write scope; current combines League Core, transactions and drafts."
+        ),
     )
     parser.add_argument(
         "--current-league-core-scope",
@@ -128,6 +131,14 @@ def parse_args() -> argparse.Namespace:
         help=(
             "Use the source-owned current draft scope: the current Sleeper league's "
             "draft index plus every discovered draft detail, pick and traded-pick partition."
+        ),
+    )
+    parser.add_argument(
+        "--current-scope",
+        action="store_true",
+        help=(
+            "Run the source-owned current League Core scope, current transaction window and "
+            "current draft scope in one invocation, in that order (League Live pipeline)."
         ),
     )
     parser.add_argument(
@@ -191,9 +202,28 @@ def _validate_current_scope_args(args: argparse.Namespace) -> None:
         args.current_transaction_window,
         args.current_draft_scope,
         args.current_matchup_scope,
+        args.current_scope,
     ]
     if sum(bool(value) for value in active_current_scopes) > 1:
         raise ValueError("Current League source scopes are mutually exclusive")
+
+    if args.current_scope:
+        if args.command == "validate":
+            raise ValueError("--current-scope does not apply to validate")
+        if args.seasons or args.weeks:
+            raise ValueError(
+                "--current-scope owns season/week targeting; do not combine it with --season/--week"
+            )
+        if args.command == "sync" and args.dataset_ids:
+            raise ValueError(
+                "--current-scope owns its dataset set; do not combine it with --dataset"
+            )
+        if args.command == "materialize" and args.materialization_scope != "current":
+            raise ValueError(
+                "--current-scope materialization requires --materialization-scope current"
+            )
+    elif args.command == "materialize" and args.materialization_scope == "current":
+        raise ValueError("--materialization-scope current requires --current-scope")
 
     if args.current_league_core_scope:
         if args.command == "validate":
@@ -262,8 +292,7 @@ def _validate_current_scope_args(args: argparse.Namespace) -> None:
             )
 
 
-def main() -> int:
-    args = parse_args()
+def execute(args: argparse.Namespace) -> dict:
     _validate_current_scope_args(args)
     repo_root = args.repo_root.resolve()
     bootstraps = load_bootstraps(repo_root)
@@ -284,20 +313,12 @@ def main() -> int:
         raise ValueError("No league bootstrap files found or selected")
 
     if args.command == "validate":
-        print(
-            json.dumps(
-                {
-                    "BootstrapCount": len(selected),
-                    "CanonicalLeagueIDs": [
-                        b.canonical_league_id for b in selected
-                    ],
-                    "DatasetCount": len(registry),
-                    "DatasetIDs": [dataset.id for dataset in registry],
-                },
-                indent=2,
-            )
-        )
-        return 0
+        return {
+            "BootstrapCount": len(selected),
+            "CanonicalLeagueIDs": [b.canonical_league_id for b in selected],
+            "DatasetCount": len(registry),
+            "DatasetIDs": [dataset.id for dataset in registry],
+        }
 
     if args.command == "materialize":
         if args.dataset_ids:
@@ -443,8 +464,7 @@ def main() -> int:
             if current_matchup_scope is not None:
                 item["CurrentMatchupScope"] = current_matchup_scope
             results.append(item)
-        print(json.dumps({"Leagues": results}, indent=2))
-        return 0
+        return {"Leagues": results}
 
     lineage_fetcher = (
         persisted_sleeper_fetcher(repo_root)
@@ -627,7 +647,75 @@ def main() -> int:
         raw = persist_raw_plans(plans)
         results.append(combine_sync_results(identity, raw))
 
-    print(json.dumps({"Leagues": results}, indent=2))
+    return {"Leagues": results}
+
+
+CURRENT_SCOPE_PARTS = (
+    ("league-core", "current_league_core_scope"),
+    ("transactions", "current_transaction_window"),
+    ("drafts", "current_draft_scope"),
+)
+_CURRENT_SCOPE_SUMMED_KEYS = (
+    "CanonicalFiles",
+    "CanonicalFilesChanged",
+    "DatasetPartitions",
+    "RawFilesChanged",
+    "MetadataFilesChanged",
+)
+
+
+def execute_current_scope(args: argparse.Namespace) -> dict:
+    """Run the three current scopes sequentially and merge them per league.
+
+    Equivalent to invoking --current-league-core-scope, --current-transaction-window
+    and --current-draft-scope one after another, so the write-set and the semantic
+    no-op behaviour are exactly those of the single scopes; only the process and the
+    caller's commit are shared.
+    """
+    merged: dict[str, dict] = {}
+    for part, flag in CURRENT_SCOPE_PARTS:
+        part_args = argparse.Namespace(**vars(args))
+        part_args.current_scope = False
+        setattr(part_args, flag, True)
+        if args.command == "materialize":
+            part_args.materialization_scope = part
+        result = execute(part_args)
+        for item in result["Leagues"]:
+            league_id = item["CanonicalLeagueID"]
+            target = merged.setdefault(
+                league_id,
+                {
+                    "CanonicalLeagueID": league_id,
+                    "Scope": "current",
+                    "Dependencies": [],
+                    "Parts": [],
+                },
+            )
+            target["Parts"].append(part)
+            for dependency in item.get("Dependencies", []):
+                if dependency not in target["Dependencies"]:
+                    target["Dependencies"].append(dependency)
+            for key in _CURRENT_SCOPE_SUMMED_KEYS:
+                if key in item:
+                    target[key] = target.get(key, 0) + item[key]
+            for key, value in item.items():
+                if key.startswith("Current"):
+                    target[key] = value
+            if args.command == "materialize":
+                target["MaterializationScope"] = "current"
+            else:
+                target["AcquisitionScope"] = "current"
+    return {"Leagues": list(merged.values())}
+
+
+def main() -> int:
+    args = parse_args()
+    if args.current_scope:
+        _validate_current_scope_args(args)
+        payload = execute_current_scope(args)
+    else:
+        payload = execute(args)
+    print(json.dumps(payload, indent=2))
     return 0
 
 

@@ -13,9 +13,10 @@ contract:
   current_output: public/data/FantasyGameContext.json
   historical_output: public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json
   historical_index: public/data/PastSeasonsIndex.json
-  schema_version: 5
+  schema_version: 6
   ownership: generator-owned
   angular_role: presentation-only
+  historical_schema: existing-compatible-version-no-modern-odds-backfill
 
 semantic_chain:
   - NFL Game
@@ -81,6 +82,26 @@ impact:
     final: league-scored facts exist and the NFL game is final
   ordering: StarterPoints descending, then relevance ordering
 
+current_nfl_market:
+  owner: data-derived/nfl-games/<season>.json
+  delivery: current Games[].Market, nullable, added in schema v6 by Issue #1148
+  exact_join: App Schedule.gameID -> Schedule.CanonicalGameID -> Derived GameID
+  fields: [SpreadLine, TotalLine, ImpliedAwayPoints, ImpliedHomePoints]
+  guard: >-
+    Matching season, week and away/home teams are required; mismatched canonical
+    identity or malformed numbers fail closed. Absent Derived data remains null.
+  semantics: >-
+    Market-derived NFL points are not actual NFL scores, Fantasy projections or a
+    time-stamped historical bookmaker snapshot. Current values are latest available
+    lines; do not imply a 10-minute refresh for bookmaker price odds.
+  ui: >-
+    In Overview Must Watch, show only rounded approximate implied points in a
+    separate score row aligned beneath each NFL team, with a Vegas/market cue.
+    Once Final, show actual whole-number NFL scores in those same positions with
+    a Final cue. Keep O/U and spread in the read model but off the compact cards.
+    Preserve the existing fantasy ranking and relevance signals.
+  historical: no latest-line backfill and no schema promotion for existing archives
+
 counterfactual:
   statement: >-
     For a completed, unambiguous fantasy matchup, subtract only the selected NFL game's
@@ -92,9 +113,9 @@ counterfactual:
     - custom_points / commissioner-adjusted scoring evidence is present
 
 historical_evidence_ladder:
-  - canonical week-specific player/team membership when identity is available
-  - exact historical Players_<season>.json Games[] game/team evidence
-  - explicit unknown/no-association when neither rung resolves exactly one game
+  rungs:
+    - canonical week-specific player/team membership when identity is available
+    - explicit unknown/no-association when the week evidence does not resolve exactly one game
   forbidden:
     - current roster/team membership as historical evidence
     - nearest-date or abbreviation guessing
@@ -141,7 +162,7 @@ boundaries:
     owns richer roster, starter, NFL-game relevance, impact and counterfactual facts. League.json no
     longer republishes a compact matchup scoreboard snapshot.
   source_snapshots: >-
-    source-data remains provider/canonical evidence. Generated Matchups and FantasyGameContext files
+    data-source remains provider/canonical evidence. Generated Matchups and FantasyGameContext files
     are disposable presentation read models and can be rebuilt from those sources.
   angular: >-
     Angular may render generated Active/Next horizons and preserve generator-owned GameID order/count

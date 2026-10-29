@@ -6,19 +6,11 @@ const projectFieldSync = require('./run-project-field-sync-scheduler.cjs');
 const schedulerSummary = require('./run-workflow-scheduler-summary.cjs');
 
 const DEFAULT_STATE_READ_RETRY_DELAYS_MS = Object.freeze([1000, 2000]);
-const TRANSIENT_HTTP_STATUSES = new Set([500, 502, 503, 504]);
-const TRANSIENT_NETWORK_CODES = new Set([
-  'ECONNRESET',
-  'ECONNREFUSED',
-  'EAI_AGAIN',
-  'ENETUNREACH',
-  'EPIPE',
-  'ETIMEDOUT',
-  'UND_ERR_BODY_TIMEOUT',
-  'UND_ERR_CONNECT_TIMEOUT',
-  'UND_ERR_HEADERS_TIMEOUT',
-  'UND_ERR_SOCKET',
-]);
+const scheduler = require('./run-workflow-scheduler.cjs');
+
+const DEFAULT_API_READ_RETRY_DELAYS_MS = Object.freeze([2000, 5000, 10000]);
+const MAX_RETRY_AFTER_MS = 30000;
+const JITTER_MAX_MS = 1000;
 
 function errorStatus(error) {
   const status = error?.status ?? error?.response?.status;
@@ -30,9 +22,18 @@ function errorCode(error) {
 }
 
 function isTransientStateReadError(error) {
-  const status = errorStatus(error);
-  if (Number.isInteger(status) && TRANSIENT_HTTP_STATUSES.has(status)) return true;
-  return TRANSIENT_NETWORK_CODES.has(errorCode(error));
+  return scheduler.isTransientApiError(error);
+}
+
+function retryAfterMs(error) {
+  const header = error?.response?.headers?.['retry-after'] ?? error?.headers?.['retry-after'];
+  const seconds = Number(header);
+  if (!Number.isFinite(seconds) || seconds <= 0) return 0;
+  return Math.min(seconds * 1000, MAX_RETRY_AFTER_MS);
+}
+
+function defaultJitterMs() {
+  return Math.floor(Math.random() * JITTER_MAX_MS);
 }
 
 function describeError(error) {
@@ -52,6 +53,8 @@ function createStateReadRetryClient({
   core,
   state,
   retryDelaysMs = DEFAULT_STATE_READ_RETRY_DELAYS_MS,
+  apiRetryDelaysMs = DEFAULT_API_READ_RETRY_DELAYS_MS,
+  jitterFn = defaultJitterMs,
   sleepFn = sleep,
 }) {
   if (!github?.rest?.repos || typeof github.rest.repos.getContent !== 'function') {
@@ -85,6 +88,32 @@ function createStateReadRetryClient({
 
   const rest = Object.create(github.rest);
   rest.repos = repos;
+
+  // Workflow-run list reads are idempotent: retry transient failures (5xx, 429, network) with backoff and jitter.
+  // Dispatch events are deliberately not wrapped because a 5xx leaves it unknown whether the event was delivered.
+  if (typeof github.rest.actions?.listWorkflowRuns === 'function') {
+    if (!Array.isArray(apiRetryDelaysMs) || apiRetryDelaysMs.some((value) => !Number.isInteger(value) || value < 0)) {
+      throw new Error('API-read retry delays must be non-negative integer milliseconds');
+    }
+    const originalList = github.rest.actions.listWorkflowRuns.bind(github.rest.actions);
+    const actions = Object.create(github.rest.actions);
+    actions.listWorkflowRuns = async (args) => {
+      for (let attempt = 0; ; attempt += 1) {
+        try {
+          return await originalList(args);
+        } catch (error) {
+          if (!isTransientStateReadError(error) || attempt >= apiRetryDelaysMs.length) throw error;
+          const delayMs = Math.max(apiRetryDelaysMs[attempt], retryAfterMs(error)) + jitterFn();
+          core.warning(
+            `listWorkflowRuns for ${args?.workflow_id || 'unknown workflow'}${args?.event ? ` (event ${args.event})` : ''} failed transiently `
+            + `(${describeError(error)}); retrying in ${delayMs} ms (attempt ${attempt + 2}/${apiRetryDelaysMs.length + 1}).`,
+          );
+          await sleepFn(delayMs);
+        }
+      }
+    };
+    rest.actions = actions;
+  }
   const wrappedGithub = Object.create(github);
   wrappedGithub.rest = rest;
   return wrappedGithub;
@@ -105,6 +134,8 @@ async function run({
   configPath = '.github/workflow-schedules.json',
   now = new Date(),
   retryDelaysMs = DEFAULT_STATE_READ_RETRY_DELAYS_MS,
+  apiRetryDelaysMs = DEFAULT_API_READ_RETRY_DELAYS_MS,
+  jitterFn = defaultJitterMs,
   sleepFn = sleep,
 }) {
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -113,9 +144,13 @@ async function run({
     core,
     state: config.state,
     retryDelaysMs,
+    apiRetryDelaysMs,
+    jitterFn,
     sleepFn,
   });
-  const results = await runtime.run({ github: retryingGithub, context, core, configPath, now });
+  const results = await runtime.run({
+    github: retryingGithub, context, core, configPath, now, stateReadRetryDelaysMs: retryDelaysMs, sleepFn,
+  });
 
   let projectFieldResult;
   try {
@@ -140,6 +175,7 @@ async function run({
 }
 
 module.exports = {
+  DEFAULT_API_READ_RETRY_DELAYS_MS,
   DEFAULT_STATE_READ_RETRY_DELAYS_MS,
   createStateReadRetryClient,
   describeError,

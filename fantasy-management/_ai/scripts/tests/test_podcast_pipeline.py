@@ -94,5 +94,43 @@ class PodcastPipelineTests(unittest.TestCase):
         self.assertEqual("keep", (output / "sentinel.txt").read_text(encoding="utf-8"))
 
 
+    def test_weekly_profiles_and_game_context_contract(self) -> None:
+        from jsonschema import Draft202012Validator
+        from podcast_pipeline_schema import load_golden_profiles, schema_path
+        from podcast_pipeline_types import PipelineReport
+
+        report = PipelineReport()
+        active = load_golden_profiles(self.repo_root, report)
+        self.assertEqual([], report.errors)
+        self.assertIn("game-matchup-preview", active.active_ids)
+        self.assertIn("weekly-fantasy-start-sit", active.active_ids)
+
+        def schema(key: str) -> dict:
+            return json.loads(schema_path(self.repo_root, key).read_text(encoding="utf-8"))
+
+        context = {"season": 2026, "week": 7, "game": {"home_team": "Example A", "away_team": "Example B"}}
+        subject = {"type": "game", "entity": "Example B @ Example A"}
+        segment = json.loads((self.work / "content-map/segments/segment-001.json").read_text(encoding="utf-8"))
+        take = json.loads((self.work / "takes/items/take-test-player.json").read_text(encoding="utf-8"))
+        segment.update(segment_type="weekly_matchup", primary_subjects=[subject], weekly_context=context,
+                       golden_profiles=["game-matchup-preview"])
+        take.update(type="start_sit", primary_subject=subject, weekly_context=context,
+                    golden_profiles=["weekly-fantasy-start-sit"])
+        self.assertEqual([], list(Draft202012Validator(schema("content_map_segment")).iter_errors(segment)))
+        self.assertEqual([], list(Draft202012Validator(schema("take_item")).iter_errors(take)))
+        segment.pop("weekly_context")
+        take.pop("weekly_context")
+        self.assertTrue(list(Draft202012Validator(schema("content_map_segment")).iter_errors(segment)))
+        self.assertTrue(list(Draft202012Validator(schema("take_item")).iter_errors(take)))
+
+    def test_legacy_takes_require_no_weekly_context(self) -> None:
+        from jsonschema import Draft202012Validator
+        from podcast_pipeline_schema import schema_path
+
+        take = json.loads((self.work / "takes/items/take-test-player.json").read_text(encoding="utf-8"))
+        schema = json.loads(schema_path(self.repo_root, "take_item").read_text(encoding="utf-8"))
+        self.assertEqual([], list(Draft202012Validator(schema).iter_errors(take)))
+
+
 if __name__ == "__main__":
     unittest.main()

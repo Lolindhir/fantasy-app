@@ -28,9 +28,9 @@ class SourceDataReadinessTests(unittest.TestCase):
         path.write_text(content, encoding="utf-8")
 
     def configure_player_stats_registry(self) -> None:
-        self.write_json("source-data/nfl/schedules/2026.json", {})
+        self.write_json("data-source/nfl/schedules/2026.json", {})
         self.write_json(
-            "source-data/registry.json",
+            "data-source/registry.json",
             {
                 "datasets": [
                     {
@@ -44,18 +44,18 @@ class SourceDataReadinessTests(unittest.TestCase):
         )
 
     def mark_player_stats_ready(self, season: int, records: list[dict[str, object]] | None = None) -> None:
-        self.write_text(f"source-data/providers/nflverse/player-stats/raw-{season}.csv")
-        self.write_json(f"source-data/providers/nflverse/player-stats/metadata-{season}.json", {"availabilityStatus": "available"})
+        self.write_text(f"data-source/providers/nflverse/player-stats/raw-{season}.csv")
+        self.write_json(f"data-source/providers/nflverse/player-stats/metadata-{season}.json", {"availabilityStatus": "available"})
         self.write_json(
-            f"source-data/nfl/player-stats/{season}/1.json",
+            f"data-source/nfl/player-stats/{season}/1.json",
             {"Season": season, "Week": 1, "Records": records or []},
         )
 
 
     def configure_special_teams_fumble_registry(self) -> None:
-        self.write_json("source-data/nfl/schedules/2026.json", {})
+        self.write_json("data-source/nfl/schedules/2026.json", {})
         self.write_json(
-            "source-data/registry.json",
+            "data-source/registry.json",
             {
                 "datasets": [
                     {
@@ -70,11 +70,11 @@ class SourceDataReadinessTests(unittest.TestCase):
 
     def mark_special_teams_fumble_raw_ready(self, season: int) -> None:
         self.write_json(
-            f"source-data/providers/nflverse/special-teams-fumble-events/raw-{season}.json",
+            f"data-source/providers/nflverse/special-teams-fumble-events/raw-{season}.json",
             {"Records": []},
         )
         self.write_json(
-            f"source-data/providers/nflverse/special-teams-fumble-events/metadata-{season}.json",
+            f"data-source/providers/nflverse/special-teams-fumble-events/metadata-{season}.json",
             {"availabilityStatus": "available"},
         )
 
@@ -87,7 +87,7 @@ class SourceDataReadinessTests(unittest.TestCase):
     ) -> None:
         incomplete_weeks = incomplete_weeks or []
         self.write_json(
-            f"source-data/nfl/game-finality/{season}.json",
+            f"data-source/nfl/game-finality/{season}.json",
             {
                 "Season": season,
                 "Finalized": True,
@@ -111,7 +111,7 @@ class SourceDataReadinessTests(unittest.TestCase):
         finalized: bool = True,
     ) -> None:
         self.write_json(
-            f"source-data/nfl/special-teams-fumble-events/{season}/{week:02d}.json",
+            f"data-source/nfl/special-teams-fumble-events/{season}/{week:02d}.json",
             {
                 "Season": season,
                 "Week": week,
@@ -125,7 +125,7 @@ class SourceDataReadinessTests(unittest.TestCase):
         self.configure_player_stats_registry()
         self.mark_player_stats_ready(2025)
         self.write_json(
-            "source-data/providers/nflverse/player-stats/metadata-2026.json",
+            "data-source/providers/nflverse/player-stats/metadata-2026.json",
             {"availabilityStatus": "not-yet-available"},
         )
 
@@ -150,7 +150,7 @@ class SourceDataReadinessTests(unittest.TestCase):
         self.mark_player_stats_ready(2024)
         self.mark_player_stats_ready(2025)
         self.write_json(
-            "source-data/providers/nflverse/player-stats/metadata-2026.json",
+            "data-source/providers/nflverse/player-stats/metadata-2026.json",
             {"availabilityStatus": "not-yet-available"},
         )
 
@@ -479,9 +479,9 @@ class SourceDataReadinessTests(unittest.TestCase):
         )
 
     def test_known_unavailable_historical_partition_is_explicit_but_not_a_hard_failure(self) -> None:
-        self.write_json("source-data/nfl/schedules/2014.json", {})
+        self.write_json("data-source/nfl/schedules/2014.json", {})
         self.write_json(
-            "source-data/registry.json",
+            "data-source/registry.json",
             {
                 "datasets": [
                     {
@@ -493,12 +493,12 @@ class SourceDataReadinessTests(unittest.TestCase):
                 ]
             },
         )
-        self.write_text("source-data/providers/nflverse/snap-counts/raw-2013.csv")
+        self.write_text("data-source/providers/nflverse/snap-counts/raw-2013.csv")
         self.write_json(
-            "source-data/providers/nflverse/snap-counts/metadata-2013.json",
+            "data-source/providers/nflverse/snap-counts/metadata-2013.json",
             {"availabilityStatus": "available"},
         )
-        self.write_json("source-data/nfl/snap-counts/2013/1.json", {"Season": 2013, "Week": 1})
+        self.write_json("data-source/nfl/snap-counts/2013/1.json", {"Season": 2013, "Week": 1})
 
         with patch.dict(
             HISTORICAL_BANDS,
@@ -535,7 +535,7 @@ class SourceDataReadinessTests(unittest.TestCase):
 
     def _configure_league(self) -> str:
         self.write_json(
-            "source-data/leagues/_bootstrap/nfl-reise.json",
+            "data-meta/nfl-reise/metadata.json",
             {
                 "CanonicalLeagueID": "nfl-reise",
                 "Provider": "sleeper",
@@ -543,7 +543,7 @@ class SourceDataReadinessTests(unittest.TestCase):
             },
         )
         self.write_json(
-            "source-data/leagues/nfl-reise/manifest.json",
+            "data-source/leagues/nfl-reise/manifest.json",
             {
                 "Seasons": [
                     {
@@ -554,7 +554,7 @@ class SourceDataReadinessTests(unittest.TestCase):
                 ]
             },
         )
-        season_root = "source-data/leagues/nfl-reise/seasons/2025"
+        season_root = "data-source/leagues/nfl-reise/seasons/2025"
         self.write_json(
             f"{season_root}/league.json",
             {"WeekStructure": {"ExpectedFinalWeek": 17}, "ScoringSettings": {"pass_td": 4}},

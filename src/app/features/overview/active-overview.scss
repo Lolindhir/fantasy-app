@@ -1,11 +1,79 @@
-/* #500 supersedes the legacy active-season standings/leaders/moves snapshot cards.
- * The weekly dashboard is rendered by app-league-matchups; draft/off-season surfaces
- * remain owned by overview.html and are intentionally unaffected. */
+/* #500 supersedes the legacy active-season snapshot cards in the weekly dashboard.
+ * Keep the compact Recent Moves preview as the league activity entry point. */
 .header {
   order: -20;
 }
 
 .season-pulse-card,
-.active-overview-card {
+.active-overview-card:not(.recent-moves-card) {
   display: none;
+}
+
+// #965: retain Recent Moves as the only active-season snapshot card.
+// #200 CP3: use the shared TransactionCard instead of duplicating move markup.
+.recent-moves-card {
+  margin: 0 5px 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.recent-moves-card .active-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.recent-moves-card .active-card-eyebrow {
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.recent-moves-card h2 {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.recent-moves-heading {
+  align-items: center;
+  padding: 0 2px 4px;
+}
+
+.recent-moves-link {
+  flex: 0 0 auto;
+  min-width: auto;
+  padding-right: 0;
+}
+
+.recent-moves-link mat-icon {
+  margin-left: 2px;
+}
+
+.recent-move-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.recent-moves-card .active-empty-state {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.84rem;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .recent-moves-card .active-card-heading {
+    gap: 8px;
+  }
 }

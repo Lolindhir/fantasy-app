@@ -15,7 +15,7 @@ if str(TOOLS) not in sys.path:
 from nfl_source_data_lib.mapping_history import build_historical_app_mapping_claims  # noqa: E402
 
 
-class NflSourceMappingGitHistoryTests(unittest.TestCase):
+class NflSourceMappingGitHistoryRetiredTests(unittest.TestCase):
     def _repo(self) -> tuple[tempfile.TemporaryDirectory, Path]:
         temporary = tempfile.TemporaryDirectory()
         root = Path(temporary.name)
@@ -50,71 +50,12 @@ class NflSourceMappingGitHistoryTests(unittest.TestCase):
             text=True,
         ).stdout.strip()
 
-    def test_contemporaneous_players_history_backfills_two_provider_bridge(self) -> None:
+    def test_players_json_git_history_is_no_longer_identity_evidence(self) -> None:
+        # #347 H1a: the generated Players.json is a consumer output. Its git
+        # history must not produce historical provider claims or git statistics.
         temporary, root = self._repo()
         try:
             self._write_archive_marker(root, 2025)
-            commit = self._commit_players(
-                root,
-                "2025-10-15T12:00:00Z",
-                [{"ID": "S1", "TankID": "T1", "Name": "Player A", "Position": "WR"}],
-            )
-            canonical = [
-                {
-                    "CanonicalPlayerID": "NFLP-a",
-                    "IDs": {"Sleeper": "S1", "Tank01": "T1"},
-                    "IDAliases": {},
-                }
-            ]
-
-            claims, conflicts, stats = build_historical_app_mapping_claims(root, canonical)
-
-            self.assertEqual([], conflicts)
-            self.assertEqual(1, stats["gitSnapshotSeasonCount"])
-            self.assertEqual(1, stats["gitSnapshotCommitCount"])
-            self.assertEqual(1, stats["gitResolvedPlayerCount"])
-            self.assertEqual(2, stats["historicalClaimCount"])
-            by_provider = {item["Provider"]: item for item in claims}
-            self.assertEqual("NFLP-a", by_provider["Sleeper"]["CanonicalPlayerID"])
-            self.assertEqual("NFLP-a", by_provider["Tank01"]["CanonicalPlayerID"])
-            self.assertEqual(2025, by_provider["Sleeper"]["ObservedSeason"])
-            self.assertIn(
-                f"app.Players.git.2025@{commit[:12]}",
-                by_provider["Sleeper"]["Sources"],
-            )
-        finally:
-            temporary.cleanup()
-
-    def test_contemporaneous_provider_disagreement_fails_closed(self) -> None:
-        temporary, root = self._repo()
-        try:
-            self._write_archive_marker(root, 2025)
-            self._commit_players(
-                root,
-                "2025-11-01T12:00:00Z",
-                [{"ID": "S1", "TankID": "T2", "Name": "Ambiguous", "Position": "RB"}],
-            )
-            canonical = [
-                {"CanonicalPlayerID": "NFLP-a", "IDs": {"Sleeper": "S1"}, "IDAliases": {}},
-                {"CanonicalPlayerID": "NFLP-b", "IDs": {"Tank01": "T2"}, "IDAliases": {}},
-            ]
-
-            claims, conflicts, stats = build_historical_app_mapping_claims(root, canonical)
-
-            self.assertEqual([], claims)
-            self.assertEqual(1, stats["gitConflictingPlayerCount"])
-            self.assertEqual(1, len(conflicts))
-            self.assertEqual(
-                {"Sleeper": "NFLP-a", "Tank01": "NFLP-b"},
-                conflicts[0]["ResolvedByProvider"],
-            )
-        finally:
-            temporary.cleanup()
-
-    def test_later_git_snapshot_is_not_backprojected_into_earlier_season(self) -> None:
-        temporary, root = self._repo()
-        try:
-            self._write_archive_marker(root, 2024)
             self._commit_players(
                 root,
                 "2025-10-15T12:00:00Z",
@@ -132,10 +73,10 @@ class NflSourceMappingGitHistoryTests(unittest.TestCase):
 
             self.assertEqual([], claims)
             self.assertEqual([], conflicts)
-            self.assertEqual(0, stats["gitSnapshotSeasonCount"])
+            self.assertFalse([key for key in stats if key.startswith("git")])
+            self.assertEqual(0, stats["historicalClaimCount"])
         finally:
             temporary.cleanup()
-
 
 if __name__ == "__main__":
     unittest.main()

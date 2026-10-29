@@ -8,7 +8,6 @@ try {
     Import-Module "$PSScriptRoot\..\general\ArrayUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\AvatarUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\..\invoke\SleeperUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\..\league\StandingUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
@@ -218,75 +217,6 @@ function New-SleeperTeamSourceLookups {
         RostersByRosterID = $rostersByRosterID
         RostersByOwnerID  = $rostersByOwnerID
     }
-}
-
-function Get-Teams {
-    param (
-        [string]$leagueID = (Get-Config).LeagueID
-    )
-
-    try {
-        $members = Get-SleeperMembers -leagueID $leagueID
-        $rosters = Get-SleeperRosters -leagueID $leagueID
-        Write-Host "Sleeper Teams found: $($rosters.Count)" -ForegroundColor Yellow
-
-        $sourceLookups = New-SleeperTeamSourceLookups -Members @($members) -Rosters @($rosters)
-        $membersByUserID = $sourceLookups.MembersByUserID
-
-        # --- Teams bauen ---
-        $teamData = @()
-        foreach ($roster in $rosters) {
-            $member = $membersByUserID[[string]$roster.owner_id]
-            $ownerAvatar = $null
-            if ($member.avatar) {
-                $avatarID    = $member.avatar
-                $ownerAvatar = Get-SleeperAvatar($avatarID)
-            }
-
-            # Punkte berechnen als Double
-            $points = [double]($roster.settings.fpts + ($roster.settings.fpts_decimal / 100))
-            $pointsAgainst = [double]($roster.settings.fpts_against + ($roster.settings.fpts_against_decimal / 100))
-            $teamName = Resolve-TeamDisplayName -TeamName $member.metadata.team_name -OwnerName $member.display_name
-
-            $teamData += [PSCustomObject]@{
-                Owner          = $member.display_name
-                OwnerID        = $member.user_id
-                OwnerAvatar    = $ownerAvatar
-                Team           = $teamName
-                TeamAbbr       = ConvertTo-TeamAbbreviation -TeamName $teamName -TeamID $roster.roster_id
-                TeamID         = $roster.roster_id
-                TeamAvatar     = $member.metadata.avatar
-                PlaceRegular   = 0 # wird später berechnet
-                PlacePlayoffs  = 0 # wird später berechnet
-                Points         = $points
-                PointsAgainst  = $pointsAgainst
-                Wins           = $roster.settings.wins
-                Losses         = $roster.settings.losses
-                Ties           = $roster.settings.ties
-                Record         = $roster.metadata.record
-                Streak         = $roster.metadata.streak
-                MatchupID      = $roster.settings.matchup_id
-                WaiverPosition = $roster.settings.waiver_position
-                WaiverAdjusted = $roster.settings.waiver_adjusted
-                IsCommissioner = $member.is_owner
-                Placements     = @{} # wird später berechnet
-                Roster         = $roster.players
-                Reserve        = $roster.reserve
-                Taxi           = $roster.taxi
-                Starter        = $roster.starters
-            }
-        }
-
-        return $teamData
-    }
-    catch {
-        throw $_
-    }  
-}
-
-function Get-TeamsForLeague {
-    return Get-Teams |
-        Select-Object * -ExcludeProperty PlaceRegular, PlacePlayoffs, Points, PointsAgainst, Wins, Losses, Ties, Record, Streak
 }
 
 function Get-OwnerIDByName {

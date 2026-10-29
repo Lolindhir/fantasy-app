@@ -15,12 +15,13 @@ from historical_fantasy_scoring import (
     read_json,
     score_record,
 )
+from data_roots import DATA_SOURCE_ROOT
 
 
 def _player_points_for_week(repo_root: Path, league_id: str, season: int, week: int) -> dict[str, float]:
     path = (
         repo_root
-        / "source-data/leagues"
+        / DATA_SOURCE_ROOT / "leagues"
         / league_id
         / "seasons"
         / str(season)
@@ -54,7 +55,7 @@ def _player_points_for_week(repo_root: Path, league_id: str, season: int, week: 
 
 
 def _player_stats_for_week(repo_root: Path, season: int, week: int) -> dict[str, dict[str, Any]]:
-    path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
     payload = read_json(path)
     rows = payload.get("Records") if isinstance(payload, dict) else None
     if not isinstance(rows, list):
@@ -78,7 +79,7 @@ def _special_teams_events_for_week(
     season: int,
     week: int,
 ) -> dict[str, list[dict[str, Any]]]:
-    path = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
     if not path.exists():
         raise ValueError(
             "Canonical special-teams fumble evidence is missing; parity cannot assume zero: "

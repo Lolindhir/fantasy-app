@@ -1,3 +1,6 @@
+Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
+Import-Module "$PSScriptRoot\..\general\SleeperPlayerIdUtils.psm1" -ErrorAction Stop -Force
+
 function ConvertTo-DecisionWindowUtcString {
     param(
         [Parameter(Mandatory = $true)]
@@ -38,8 +41,7 @@ function Get-DecisionWindowCollectionInfo {
 function ConvertTo-DecisionWindowPlayerId {
     param(
         [AllowNull()]
-        [object]$Value,
-        [switch]$TreatZeroAsEmpty
+        [object]$Value
     )
 
     if ($null -eq $Value) {
@@ -54,12 +56,8 @@ function ConvertTo-DecisionWindowPlayerId {
         return [PSCustomObject]@{ State = "malformed"; Value = $null }
     }
 
-    $text = ([string]$Value).Trim()
-    if ([string]::IsNullOrWhiteSpace($text)) {
-        return [PSCustomObject]@{ State = "empty"; Value = $null }
-    }
-
-    if ($TreatZeroAsEmpty -and $text -eq "0") {
+    $text = ConvertTo-SleeperPlayerID -Value $Value
+    if ($null -eq $text) {
         return [PSCustomObject]@{ State = "empty"; Value = $null }
     }
 
@@ -158,14 +156,16 @@ function Get-DecisionWindowFacts {
         }
 
         $gameIds[$gameId] = $true
-        $knownTeamIds[$homeTeamId] = $true
-        $knownTeamIds[$awayTeamId] = $true
+        # Join on the canonical team key so schedule and player team IDs may use different key forms
+        # (abbreviation, provider spelling, legacy numeric ID); emitted IDs stay exactly as supplied.
+        $knownTeamIds[(Get-NflTeamJoinKey -Value $homeTeamId)] = $true
+        $knownTeamIds[(Get-NflTeamJoinKey -Value $awayTeamId)] = $true
     }
 
     $weekGames = @($normalizedGames | Where-Object { $_.Week -eq $Week } | Sort-Object StartsAtUtc, GameID)
     $weekGamesByTeam = @{}
     foreach ($game in $weekGames) {
-        foreach ($teamId in @($game.HomeTeamID, $game.AwayTeamID)) {
+        foreach ($teamId in @($game.HomeTeamID, $game.AwayTeamID | ForEach-Object { Get-NflTeamJoinKey -Value $_ })) {
             if (-not $weekGamesByTeam.ContainsKey($teamId)) {
                 $weekGamesByTeam[$teamId] = @()
             }
@@ -296,7 +296,7 @@ function Get-DecisionWindowFacts {
         $validStarterIds = @()
         $starterSeen = @{}
         foreach ($rawStarterId in @($starterInfo.Items)) {
-            $playerInfo = ConvertTo-DecisionWindowPlayerId -Value $rawStarterId -TreatZeroAsEmpty
+            $playerInfo = ConvertTo-DecisionWindowPlayerId -Value $rawStarterId
             if ($playerInfo.State -eq "empty") {
                 continue
             }
@@ -346,14 +346,14 @@ function Get-DecisionWindowFacts {
                 if ([string]::IsNullOrWhiteSpace([string]$nflTeamId)) {
                     $kind = "no-team"
                 }
-                elseif (-not $knownTeamIds.ContainsKey([string]$nflTeamId)) {
+                elseif (-not $knownTeamIds.ContainsKey((Get-NflTeamJoinKey -Value $nflTeamId))) {
                     $kind = "unknown"
                 }
-                elseif (-not $weekGamesByTeam.ContainsKey([string]$nflTeamId)) {
+                elseif (-not $weekGamesByTeam.ContainsKey((Get-NflTeamJoinKey -Value $nflTeamId))) {
                     $kind = "bye"
                 }
                 else {
-                    $candidateGames = @($weekGamesByTeam[[string]$nflTeamId])
+                    $candidateGames = @($weekGamesByTeam[(Get-NflTeamJoinKey -Value $nflTeamId)])
                     if ($candidateGames.Count -ne 1) {
                         $kind = "unknown"
                     }

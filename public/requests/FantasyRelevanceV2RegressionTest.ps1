@@ -205,4 +205,26 @@ Assert-FrvEqual 'g-wide' $rankingContext.MustWatchGames[0].GameID 'distinct star
 Assert-FrvEqual 3 $rankingContext.MustWatchGames[0].DirectStarterFantasyTeamCount 'must-watch rows must retain starter-team breadth'
 Assert-FrvTrue (@($rankingContext.MustWatchGames[0].DirectStarterFantasyTeamIDs) -contains '3') 'must-watch rows must retain affected fantasy-team identities'
 
+# A starter whose NFL team plays only in another week is on bye: a known state of its own, never unknown.
+$byeLeague = [PSCustomObject]@{
+    league_id = 'league'; season = '2026'; settings = [PSCustomObject]@{ leg = 1 }
+    roster_positions = @('QB','BN')
+}
+$byeTeams = @([PSCustomObject]@{ TeamID = 1; Roster = @('bye1'); Starter = @('bye1'); Reserve = @(); Taxi = @() })
+$byePlayers = @([PSCustomObject]@{ ID = 'bye1'; Position = 'QB'; TeamID = '19' })
+$otherWeekGame = New-FrvGame -GameID 'g-other-week' -StartsAtUtc '2026-09-20T17:00:00Z' -AwayTeamID '19' -HomeTeamID '20'
+$otherWeekGame.gameWeek = 'Week 2'
+$byeSchedule = @(
+    New-FrvGame -GameID 'g-week1' -StartsAtUtc '2026-09-13T17:00:00Z' -AwayTeamID '21' -HomeTeamID '22'
+    $otherWeekGame
+)
+$byeBase = DecisionWindowUtils\New-CurrentLeagueDecisionWindowsReadModel `
+    -League $byeLeague -Teams $byeTeams -Players $byePlayers -Schedule $byeSchedule -LastLineupWeek 1
+$byeDecision = Add-FantasyRelevanceDecisionFacts `
+    -BaseReadModel $byeBase -League $byeLeague -Teams $byeTeams -Players $byePlayers -Schedule $byeSchedule `
+    -AsOfUtc ([DateTimeOffset]::Parse('2026-09-13T10:00:00Z'))
+$byeTeam = @($byeDecision.FantasyRelevance.Teams)[0]
+Assert-FrvEqual 'bye' (@($byeTeam.Slots)[0].State) 'starter on bye must have its own slot state'
+Assert-FrvEqual 'bye' (@($byeTeam.Players)[0].GameState) 'player on bye must have its own game state'
+
 Write-Host 'Fantasy Relevance v2 regression tests passed.' -ForegroundColor Green

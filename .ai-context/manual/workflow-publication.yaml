@@ -10,7 +10,14 @@ principles:
   - Self-contained snapshots may use rebase-and-retry when their content does not depend on repository state that can change during the run.
   - Repository-derived outputs must use rebuild-and-retry: fetch latest target, discard the stale generated commit, rerun the generator, then retry publication.
   - Real generator failures, unexpected changed paths and non-race Git failures fail closed.
+  - Transient transport/server failures (HTTP 5xx, RPC failed, hung-up or reset connections, DNS/timeouts, HTTP 429) of git push and git fetch are neither a branch race nor a generator failure. Both helpers repeat the same git command a bounded number of times (default 3, backoff 5/15/45 s plus jitter, `--max-transient-retries` / `--transient-backoff-seconds`) with a separate counter from the race counter; a rebuild helper re-pushes the same local commit instead of rebuilding. Auth errors (403, permission denied, authentication failed) and hook/protection rejections stay fail-closed, as do exhausted transient retries.
+  - Workflow-local push loops that do not use the helpers (sync-nfl-source-data Source job, source-data-readiness) do not yet have transient retry; moving them onto the helpers is tracked in Issue #471 and follows the root scope-based risk authorization rules, without a separate workflow-file gate.
+  - The dependent nfl_games_derived job in sync-nfl-source-data.yml is a separately scoped, Source-dependent Derived publisher. It runs only after a successful full NFL Source Sync or a successful explicitly targeted nflverse.schedule-odds Source sync, and uses tools/rebuild_and_publish.py (not the Source job's custom push loop). Its declared output scope is exclusively data-derived/nfl-games/**; game-finality/NFL Live and unrelated targeted dataset runs skip it.
+  - odds-refresh.yml is an isolated technical state branch writer (odds-refresh-state/odds-buffer/<season>.json only), using tools/odds_state_publish.py for optimistic SHA CAS. It conditionally delegates nflverse.schedule-odds publication with materialization_scope=schedule-odds to the existing rebuild-validated sync-nfl-source-data.yml. This scope requires parity with published canonical schedules and writes only data-source/nfl/schedule-odds/**, retaining the original Source writer's rebuild-or-safe-rebase publication class and concurrency group. The dependent NFL Game Derived writer retains its separate data-derived/nfl-games/** scope. No additional main writer, writer destination, credentials or force push exists.
+  - sync-league-source-data.yml keeps its two-phase raw-then-canonical loop with failure diagnostics, but fetches and pushes through tools/git_transient.py, which reuses the transient-retry classification of tools/rebuild_and_publish.py (exit 10 = branch race, rebuild from latest main; any other failure fails closed). Its League Live callers (league-live.yml) publish Standings, League and PlayerWeekFantasy through tools/rebuild_and_publish.py. Since Issue #471 step 3 the League Live league job additionally publishes, in the same rebuild-and-retry publication, the current-season Shared Derived refresh of tools/league_live_derived_refresh.py: data-derived/league-transactions, data-derived/league-drafts and data-derived/team-week-performance (newest scored week only). These prefixes are already written by the weekly update-transactions and update-standings runs; the writer class, credentials and permissions of league-live.yml are unchanged and a data-derived-only commit triggers no deploy. The refresh is fail-soft: an unready product keeps its last good file and raises a warning instead of blocking the App League publication. Step order inside the publication command is fixed (products before consumers): derived refresh, then the App history files and RequestLeaguePublication, then the PlayerWeekFantasy/MatchupProjections refresh (it needs the fresh FantasyGameContext.json).
   - Cross-workflow serialization is not the primary safety mechanism; independent writers may remain parallel when publication semantics are race-safe.
+  - The existing weekly update-transactions.yml pipeline materializes historical Shared Derived league-transactions and league-drafts before rebuilding App transactions/history. Its rebuild-and-retry commit permits only public/data, data-derived/league-transactions and data-derived/league-drafts; generator failures abort publication. No new scheduler target or writer class is introduced.
+  - The existing weekly update-standings.yml has independent Standings and historical PlayerWeekFantasy jobs, plus a downstream historical TeamWeekPerformance job which requires successful historical PWF publication. Each historical job uses tools/rebuild_and_publish.py, with exactly one permitted data-derived/player-week-fantasy or data-derived/team-week-performance prefix respectively. TWP checks all finalized weeks with strict --require-pwf reconciliation before writing; failures abort TWP without suppressing independent Standings output. Each job rebuilds on the latest main after a publication race and does no push on semantic no-op. No new workflow, schedule, branch-writer class, credentials, 10-minute League Live App producer or App/Source publication destination.
   - Generated-data writers publish only their declared output scope.
   - Every workflow that requests repository content write permission, or otherwise contains recognized branch-publication behavior, must be explicitly classified here before CI may accept it.
   - A workflow that intentionally needs contents write for a non-branch surface must still be classified as non-branch-writer; write permission is never an implicit exemption from publication review.
@@ -23,13 +30,15 @@ classes:
   rebuild-and-retry:
     helper: tools/rebuild_and_publish.py or workflow-local/delegated equivalent with the same semantics
     meaning: The generator is rerun from the latest target branch after every recognized publication race.
+    exception: sync-nfl-source-data.yml may rebase its validated canonical commit when the race touched no declared materialization input path (materialize_input_pathspecs); any input change, rebase conflict or exhausted rebase attempts still force a full rebuild or fail closed.
+    mixedWorkflow: fm-daily.yml (Issue #947) is classified rebuild-and-retry because its materialize job rebuilds Fantasy Operations inputs through tools/rebuild_and_publish.py. Its six provider matrix legs each publish one self-contained external-source snapshot through tools/publish_generated_commit.py (rebase-and-retry); both helpers are required in that workflow.
   isolated-branch:
     meaning: State is intentionally published to a dedicated non-main branch and must not compete with main writers.
   non-branch-writer:
     meaning: Workflow may hold write permissions for another GitHub surface but does not publish repository branch content.
 
 writers:
-  .github/workflows/update-league.yml: rebuild-and-retry
+  .github/workflows/league-live.yml: rebuild-and-retry
   .github/workflows/update-players.yml: rebuild-and-retry
   .github/workflows/update-games.yml: rebuild-and-retry
   .github/workflows/update-drafts.yml: rebuild-and-retry
@@ -39,19 +48,12 @@ writers:
   .github/workflows/update-past-seasons-index.yml: rebuild-and-retry
   .github/workflows/clean-backups.yml: rebuild-and-retry
   .github/workflows/source-data-readiness.yml: rebuild-and-retry
-  .github/workflows/sync-nfl-game-finality.yml: rebuild-and-retry
+  .github/workflows/nfl-live.yml: rebuild-and-retry
+  .github/workflows/odds-refresh.yml: isolated-branch
   .github/workflows/sync-nfl-source-data.yml: rebuild-and-retry
+  .github/workflows/sync-nfl-player-availability.yml: rebuild-and-retry
   .github/workflows/sync-league-source-data.yml: rebuild-and-retry
-  .github/workflows/sync-league-core.yml: rebuild-and-retry
-  .github/workflows/sync-league-transactions.yml: rebuild-and-retry
-  .github/workflows/sync-league-drafts.yml: rebuild-and-retry
-  .github/workflows/materialize-fantasy-operations-inputs.yml: rebuild-and-retry
-  .github/workflows/update-fantasypros-rankings.yml: rebase-and-retry
-  .github/workflows/update-fantasycalc-rankings.yml: rebase-and-retry
-  .github/workflows/update-fantasy-football-calculator-adp.yml: rebase-and-retry
-  .github/workflows/update-fftoday-projections.yml: rebase-and-retry
-  .github/workflows/update-cbs-sports-projections.yml: rebase-and-retry
-  .github/workflows/update-sleeper-trending.yml: rebase-and-retry
+  .github/workflows/fm-daily.yml: rebuild-and-retry
   .github/workflows/workflow-health-snapshot.yml: isolated-branch
   .github/workflows/scheduler.yml: isolated-branch
 
@@ -67,6 +69,7 @@ validation:
     - Every writers entry must point to an existing workflow file and use a declared class.
     - Every workflow listed as rebuild-and-retry must invoke tools/rebuild_and_publish.py, contain an explicitly reviewed workflow-local rebuild loop, or delegate to a reusable workflow with the same classified rebuild semantics.
     - Every workflow listed as rebase-and-retry must invoke tools/publish_generated_commit.py.
+    - fm-daily.yml must invoke both tools/rebuild_and_publish.py and tools/publish_generated_commit.py and must not contain a naked git push.
     - Workflows classified non-branch-writer must not contain recognized branch-publication markers.
     - App/Maintenance generated-data workflows must not contain a naked direct HEAD:main push.
     - App/Maintenance generated-data workflows need contents: write only unless another permission is separately justified.

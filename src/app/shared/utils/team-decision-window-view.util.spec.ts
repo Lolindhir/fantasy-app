@@ -75,6 +75,39 @@ describe('team Decision Window view utilities', () => {
     expect(summary.nextWindow?.window.DecisionWindowID).toBe('second');
   });
 
+  it('groups affected players under their game team when game and player use different team key forms', () => {
+    const nflTeams = [
+      { ID: 'NE', Name: 'Patriots', Abv: 'NE', Logo: '', LegacyIDs: ['7'] },
+      { ID: 'SEA', Name: 'Seahawks', Abv: 'SEA', Logo: '', LegacyIDs: ['9'] }
+    ];
+    const window = makeWindow('mixed', 1, '2026-09-06T18:00:00Z', 0, 0, 42);
+    window.Games = [{
+      GameID: 'mixed-game',
+      Week: 1,
+      AwayTeamID: '9',
+      AwayTeamAbbr: 'SEA',
+      HomeTeamID: '7',
+      HomeTeamAbbr: 'NE'
+    }];
+    window.AffectedFantasyTeams = [{
+      FantasyTeamID: 42,
+      AffectedRosteredPlayerCount: 2,
+      AffectedStarterCount: 1,
+      Players: [
+        { PlayerID: 'home-player', NFLTeamID: 'NE', GameID: 'mixed-game', IsStarter: true },
+        { PlayerID: 'away-player', NFLTeamID: '9', GameID: 'mixed-game', IsStarter: false }
+      ]
+    }];
+
+    const [row] = buildTeamUpcomingLockViews(makeModel([window]), 42, now, nflTeams);
+    const groups = row.games[0].teamGroups;
+
+    expect(groups.map(group => group.teamAbbr)).toEqual(['NE', 'SEA']);
+    expect(groups.map(group => group.nflTeamId)).toEqual(['NE', 'SEA']);
+    expect(groups[0].affectedPlayers.map(player => player.PlayerID)).toEqual(['home-player']);
+    expect(groups[1].affectedPlayers.map(player => player.PlayerID)).toEqual(['away-player']);
+  });
+
   it('orders selected-team affected players by home team first and starter status second', () => {
     const window = makeWindow('multi', 1, '2026-09-06T18:00:00Z', 0, 0, 42);
     window.Games = [

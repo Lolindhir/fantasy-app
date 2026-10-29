@@ -8,12 +8,13 @@ from typing import Any
 
 from .common import clean, load_json
 from .historical_identity import non_player_stat_identity
+from data_roots import DATA_SOURCE_ROOT
 
 _RAW_STATS_PATTERN = re.compile(r"^raw-(\d{4})\.csv$")
 
 
 def _raw_player_stats_identity_coverage(repo_root: Path, current_season: int) -> dict[str, Any]:
-    root = repo_root / "source-data/providers/nflverse/player-stats"
+    root = repo_root / DATA_SOURCE_ROOT / "providers/nflverse/player-stats"
     by_season: dict[str, dict[str, int]] = {}
     historical_missing = 0
     historical_aggregates = 0
@@ -118,7 +119,7 @@ def build_player_stats_identity_coverage(
     not count as unresolved people and must never receive a CanonicalPlayerID.
     """
 
-    root = repo_root / "source-data/nfl/player-stats"
+    root = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats"
     raw_coverage = _raw_player_stats_identity_coverage(repo_root, current_season)
     by_season: dict[str, dict[str, Any]] = {}
     gsis_to_canonical: dict[str, set[str]] = defaultdict(set)

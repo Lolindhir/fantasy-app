@@ -314,6 +314,104 @@ button.league-timeline-operational-item {
   font-weight: 900;
 }
 
+.waiver-priority-dialog {
+  box-sizing: border-box;
+  padding: 12px 14px 8px;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  color: #1f2937;
+}
+
+.waiver-priority-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.waiver-priority-eyebrow {
+  color: #7c8799;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.waiver-priority-title {
+  margin: 3px 0 0;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.waiver-priority-close {
+  display: grid;
+  place-items: center;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.65rem;
+}
+
+.waiver-priority-close:hover,
+.waiver-priority-close:focus-visible {
+  background: #f1f5f9;
+  outline: none;
+}
+
+.waiver-priority-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.waiver-priority-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 46px;
+  padding: 6px 3px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.waiver-priority-position {
+  flex: 0 0 22px;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.waiver-priority-team-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+  --team-identity-avatar-size: 30px;
+  --team-identity-avatar-radius: 50%;
+  --team-identity-title-font-size: 0.8rem;
+  --team-identity-gap: 6px;
+}
+
+.waiver-priority-team-copy app-team-identity {
+  min-width: 0;
+}
+
+.waiver-priority-last-pick {
+  margin-top: 2px;
+  margin-left: calc(var(--team-identity-avatar-size) + var(--team-identity-gap));
+  color: #64748b;
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+
 .league-timeline-milestones {
   display: flex;
   flex-wrap: wrap;

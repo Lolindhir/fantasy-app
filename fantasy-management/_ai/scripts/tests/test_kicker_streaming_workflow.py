@@ -8,8 +8,9 @@ from pathlib import Path
 class KickerStreamingWorkflowTests(unittest.TestCase):
     def workflow_text(self) -> str:
         root = Path(__file__).resolve().parents[4]
-        workflow_path = root / ".github/workflows/materialize-fantasy-operations-inputs.yml"
-        return workflow_path.read_text(encoding="utf-8")
+        workflow_path = root / ".github/workflows/fm-daily.yml"
+        script_path = root / "fantasy-management/_ai/scripts/materialize_operations_inputs.sh"
+        return workflow_path.read_text(encoding="utf-8") + "\n" + script_path.read_text(encoding="utf-8")
 
     def schedule_target(self, target_id: str) -> dict:
         root = Path(__file__).resolve().parents[4]
@@ -44,32 +45,30 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
         self.assertIn('data["population"]["candidate_count"]', workflow)
         self.assertIn('data["population"]["free_agent_count"]', workflow)
 
-    def test_materializer_keeps_0645_as_non_disruptive_catch_up(self) -> None:
+    def test_materializer_is_gated_and_runs_after_the_providers(self) -> None:
         workflow = self.workflow_text()
-        target = self.schedule_target("fantasy-operations-materializer")
+        target = self.schedule_target("fm-daily")
 
-        self.assertEqual(target["cron"], ["45 6 * * *"])
+        self.assertEqual(target["cron"], ["20 5 * * *"])
         self.assertEqual(target["timezone"], "Europe/Berlin")
-        self.assertEqual(target["eventType"], "scheduler-materialize-fantasy-operations-inputs")
+        self.assertEqual(target["eventType"], "scheduler-fm-daily")
         self.assertIn("repository_dispatch:", workflow)
-        self.assertIn("- scheduler-materialize-fantasy-operations-inputs", workflow)
+        self.assertIn("- scheduler-fm-daily", workflow)
         self.assertNotIn("\n  schedule:\n", workflow)
-        self.assertIn("- fantasy-management/sources/external-rankings/**", workflow)
-        self.assertIn("- fantasy-management/sources/external-signals/**", workflow)
         self.assertIn(
             "fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py",
             workflow,
         )
         self.assertIn("jobs:\n  gate:", workflow)
-        self.assertIn("needs: gate", workflow)
-        self.assertIn("if: needs.gate.outputs.run == 'true'", workflow)
+        self.assertIn("needs: [gate, providers]", workflow)
+        self.assertIn("!cancelled() && needs.gate.outputs.run == 'true'", workflow)
         self.assertIn("concurrency:\n      group: fantasy-operations-input-materialization", workflow)
-        self.assertIn("cancel-in-progress: ${{ github.event_name == 'push' }}", workflow)
+        self.assertIn("cancel-in-progress: false", workflow)
         self.assertNotIn("cancel-in-progress: true", workflow)
         self.assertIn("timeout-minutes: 15", workflow)
 
-        gate_index = workflow.index("  gate:")
-        materialize_index = workflow.index("  materialize:")
+        gate_index = workflow.index("\n  gate:\n")
+        materialize_index = workflow.index("\n  materialize:\n")
         concurrency_index = workflow.index("    concurrency:", materialize_index)
         self.assertLess(gate_index, materialize_index)
         self.assertGreater(concurrency_index, materialize_index)
@@ -86,9 +85,11 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
         for immediate_path in (
             "public/data/League.json",
             "public/data/Players.json",
-            "public/data/Timestamps.json",
         ):
             self.assertIn(immediate_path, workflow)
+
+        # Timestamps-only data commits carry no materializer input (Issue #930).
+        self.assertNotIn("public/data/Timestamps.json", workflow)
 
         self.assertIn("workflow_dispatch:", workflow)
 

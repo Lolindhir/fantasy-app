@@ -21,6 +21,8 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import build_fantasy_operations_inputs as ops  # noqa: E402
+import canonical_nfl_membership as nfl_membership  # noqa: E402
+import canonical_player_inputs  # noqa: E402
 import materialize_external_signals as external_signals  # noqa: E402
 from canonical_league_ownership import (  # noqa: E402
     CanonicalOwnershipError,
@@ -217,28 +219,47 @@ def canonical_identity_name_aliases(identity: dict[str, Any]) -> list[str]:
     return [full_name]
 
 
+def canonical_nfl_population_reasons(
+    *,
+    latest_weekly_roster_member: bool,
+    current_season_history_member: bool,
+) -> list[str]:
+    """Population reasons derived from Canonical NFL roster evidence.
+
+    The latest weekly roster is the current in-season membership fact. The
+    current-season history (season roster or any current-season weekly roster)
+    is broader recent evidence. Both stay separate from provider Team/Status
+    fields and from Tank01 IsFreeAgent evidence.
+    """
+    reasons: list[str] = []
+    if latest_weekly_roster_member:
+        reasons.append("canonical_nfl_membership")
+    if current_season_history_member:
+        reasons.append("canonical_nfl_recent_history")
+    return reasons
+
+
 def canonical_nfl_population_shadow(
     *,
     latest_weekly_roster_member: bool,
     current_season_roster_member: bool,
 ) -> dict[str, Any]:
-    """Model future Canonical NFL population reasons without publishing them.
+    """Audit-only projection of the Canonical NFL population reasons.
 
-    The latest weekly roster is the current in-season membership fact. The
-    season roster is broader current-season history. These facts stay separate
-    from provider Team/Status fields and from Tank01 IsFreeAgent evidence.
+    Used by the pre-cutover population audits to explain removed cohorts; the
+    productive builder publishes the reasons through
+    ``canonical_nfl_population_reasons``.
     """
-    reasons: list[str] = []
-    if latest_weekly_roster_member:
-        reasons.append("canonical_nfl_membership")
-    if current_season_roster_member:
-        reasons.append("canonical_nfl_recent_history")
+    reasons = canonical_nfl_population_reasons(
+        latest_weekly_roster_member=latest_weekly_roster_member,
+        current_season_history_member=current_season_roster_member,
+    )
     return {
         "reasons": reasons,
         "current_membership": latest_weekly_roster_member,
         "current_season_history": current_season_roster_member,
         "would_preserve_without_legacy_bridge": bool(reasons),
-        "runtime_effect": "shadow_only_not_published",
+        "runtime_effect": "audit_projection_only",
     }
 
 
@@ -293,7 +314,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     core = config["sources"]
     league_display_path = root / core["league_display"]
-    players_path = root / core["players"]
     canonical_identities_path = root / core["canonical_player_identities"]
     canonical_sleeper_players_path = root / core["canonical_sleeper_players"]
     timestamps_path = root / core["timestamps"]
@@ -301,15 +321,12 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     catalog_path = root / config["source_catalog"]
 
     league_display = ops.load_json(league_display_path)
-    players = ops.load_json(players_path)
     canonical_identities = ops.load_json(canonical_identities_path)
     canonical_sleeper_players = ops.load_json(canonical_sleeper_players_path)
     timestamps = ops.load_json(timestamps_path)
     external_signal_document = ops.load_json(external_signal_path)
     catalog = ops.load_json(catalog_path)
     ops.validate_catalog(catalog)
-    if not isinstance(players, list):
-        raise PlayerSignalMaterializationError("Players input must be a JSON array")
     try:
         identity_by_sleeper = ops.build_canonical_identity_by_sleeper(
             canonical_identities
@@ -348,6 +365,15 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         raise PlayerSignalMaterializationError(
             f"Canonical player-signal ownership is unavailable: {exc}"
         ) from exc
+    try:
+        players = canonical_player_inputs.load_players(
+            root,
+            canonical_league_id,
+            canonical_season,
+            ops._player_reference_date(timestamps),
+        )
+    except canonical_player_inputs.CanonicalPlayerInputsError as exc:
+        raise PlayerSignalMaterializationError(f"Canonical player inputs are unavailable: {exc}") from exc
 
     managed_team = next((team for team in teams if str(team.get("TeamID")) == managed_team_id), None)
     if managed_team is None:
@@ -368,7 +394,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     external_signal_timestamp = external_signal_document.get("generated_at") if isinstance(external_signal_document, dict) else None
     canonical_league_root = (
         root
-        / "source-data"
+        / "data-source"
         / "leagues"
         / canonical_league_id
     )
@@ -395,7 +421,12 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             canonical_season_root / "rosters.json",
             root,
         ),
-        ops.source_file("players", players_path, root, player_timestamp),
+        *(
+            ops.source_file(source_id, path, root, player_timestamp)
+            for source_id, path in canonical_player_inputs.source_files(
+                root, canonical_league_id, canonical_season
+            )
+        ),
         ops.source_file(
             "canonical_player_identities",
             canonical_identities_path,
@@ -417,6 +448,26 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     ]
     for source in loaded_sources:
         input_sources.extend([source.pointer_source, source.ranking_source])
+
+    try:
+        nfl_evidence = nfl_membership.load_current_season_membership(
+            root,
+            int(canonical_season),
+            identity_by_sleeper,
+        )
+    except nfl_membership.CanonicalNflMembershipError as exc:
+        raise PlayerSignalMaterializationError(
+            f"Canonical NFL roster membership is unavailable: {exc}"
+        ) from exc
+    input_sources.append(
+        ops.source_file("canonical_nfl_season_roster", nfl_evidence["season_roster_path"], root)
+    )
+    for week_path in nfl_evidence["weekly_paths"]:
+        input_sources.append(
+            ops.source_file(
+                f"canonical_nfl_weekly_roster_{week_path.stem}", week_path, root
+            )
+        )
 
     generated_at = ops.max_timestamp(source.source_timestamp for source in input_sources)
     allowed_positions = {str(position).upper() for position in config["population"]["positions"]}
@@ -520,11 +571,15 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         ownership_value = external_signals.ownership_for(player_id, ownership, managed_team_id)
         activity = activity_view(player_id, activity_by_player, activity_metadata)
         reasons: list[str] = []
-        # Compatibility-only population bridge: preserve the pre-6Z.1 population
-        # independently from the canonical nfl_team fact. This is not evidence of
-        # a current NFL contract and is intentionally sourced from the legacy row.
-        if ops.optional_text(legacy_player.get("TeamAbbr")):
-            reasons.append("has_nfl_team")
+        # Canonical NFL roster evidence only (CanonicalPlayerID). Provider team
+        # fields and name matches never create population membership.
+        membership = nfl_membership.membership_flags(player_id, identity, nfl_evidence)
+        reasons.extend(
+            canonical_nfl_population_reasons(
+                latest_weekly_roster_member=membership["latest_weekly_member"],
+                current_season_history_member=membership["current_season_history_member"],
+            )
+        )
         if ownership_value["status"] != "fantasy_free_agent":
             reasons.append("league_owned")
         if any(result.get("listed") for result in raw_results.values()):
@@ -635,10 +690,23 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             "positions": sorted(allowed_positions),
             "inclusion_rule": "position is in configured fantasy positions and at least one population reason applies",
             "reason_counts": dict(sorted(population_reason_counts.items())),
-            "team_presence_reason_contract": {
-                "reason": "has_nfl_team",
-                "source": "public/data/Players.json -> TeamAbbr",
-                "semantics": "legacy_population_compatibility_bridge_not_current_nfl_roster_truth",
+            "canonical_nfl_population_contract": {
+                "season": nfl_evidence["season"],
+                "latest_week": nfl_evidence["latest_week"],
+                "reasons": {
+                    "canonical_nfl_membership": (
+                        "CanonicalPlayerID is on the latest materialized canonical weekly NFL roster"
+                    ),
+                    "canonical_nfl_recent_history": (
+                        "CanonicalPlayerID is on the current-season canonical season roster "
+                        "or any current-season canonical weekly roster"
+                    ),
+                },
+                "sources": [
+                    "data-source/nfl/rosters/<season>.json",
+                    "data-source/nfl/weekly-rosters/<season>/<week>.json",
+                ],
+                "semantics": "canonical_nfl_roster_evidence_by_canonical_player_id_provider_team_fields_are_not_membership",
             },
         },
         "sources": source_records,

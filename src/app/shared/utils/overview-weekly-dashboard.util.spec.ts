@@ -427,6 +427,149 @@ describe('Overview weekly dashboard presentation', () => {
     )).toBeTrue();
   });
 
+  describe('canonical weekly place movement', () => {
+    function movementLeague(): League {
+      const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+      // Standings after week 1: 3 (1st), 1 (2nd), 4 (3rd), 2 (4th).
+      const placeByTeam = new Map([[3, 1], [1, 2], [4, 3], [2, 4]]);
+      const deltaByTeam = new Map<number, number | null>([[3, 2], [1, 0], [4, -1], [2, null]]);
+      for (const team of teams) {
+        const regular = team.Placements.Current.Regular;
+        regular.Place = placeByTeam.get(Number(team.TeamID)) as number;
+        regular.Wins = [1, 3].includes(Number(team.TeamID)) ? 1 : 0;
+        regular.Losses = [2, 4].includes(Number(team.TeamID)) ? 1 : 0;
+        regular.Ties = 0;
+        regular.PlaceDelta = deltaByTeam.get(Number(team.TeamID)) ?? null;
+      }
+      const league = makeLeague(teams, 1);
+      league.PlayoffStartWeek = 14;
+      return league;
+    }
+
+    it('shows the generator PlaceDelta for the snapshot that is the current table', () => {
+      const context = buildOverviewTopContext(movementLeague(), readModel(1, 2), 2);
+
+      expect(context.standings.map(row => [row.team.TeamID, row.displayPlace, row.placeDelta])).toEqual([
+        [3, 1, 2],
+        [1, 2, 0],
+        [4, 3, -1],
+        [2, 4, null]
+      ]);
+    });
+
+    it('shows historical W4 movement during a retained W5 even after League reached W5', () => {
+      const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+      const currentPlaces = new Map([[1, 3], [2, 2], [3, 1], [4, 4]]);
+      const latestDeltas = new Map([[1, -1], [2, 1], [3, 0], [4, 0]]);
+      for (const team of teams) {
+        const regular = team.Placements.Current.Regular;
+        regular.Place = currentPlaces.get(team.TeamID)!;
+        regular.Wins = 3;
+        regular.Losses = 2;
+        regular.PlaceDelta = latestDeltas.get(team.TeamID)!;
+      }
+      const league = makeLeague(teams, 5);
+      league.PlayoffStartWeek = 14;
+
+      const pairs = [
+        [[1, 2], [3, 4]],
+        [[3, 1], [2, 4]],
+        [[1, 4], [2, 3]],
+        [[1, 2], [3, 4]],
+        [[3, 1], [2, 4]],
+        [[1, 3], [2, 4]]
+      ];
+      const model: MatchupsReadModel = {
+        SchemaVersion: 1,
+        Season: '2026',
+        Weeks: pairs.map((weekPairs, index) => ({
+          Week: index + 1,
+          Stage: 'regular-season' as const,
+          FirstKickoffUtc: '2026-09-10T00:00:00Z',
+          CompletionState: (index < 5 ? 'final' : 'open') as 'final' | 'open',
+          Matchups: weekPairs.map(([a, b], matchIndex) =>
+            matchup(`w${index + 1}-m${matchIndex}`, a, b, index < 5 ? 'final' : 'open'))
+        })),
+        Summary: { LastCompletedWeek: 5, ActiveOrNextWeek: 6 }
+      };
+
+      const displayWeek = resolveOverviewDisplayWeek(
+        league, model,
+        { Season: '2026', LineupWeek: 5 } as DecisionWindowsReadModel,
+        { Season: '2026', Week: 5 } as FantasyGameContextReadModel
+      );
+      expect(displayWeek).toBe(5);
+      const before = buildOverviewTopContext(league, model, displayWeek);
+      expect(before.standings.map(row => row.team.TeamID)).toEqual([3, 1, 2, 4]);
+      expect(before.standings.every(row => row.placeDelta === null)).toBeTrue();
+
+      const week4Deltas = new Map([[1, 1], [2, -1], [3, 0], [4, 0]]);
+      for (const row of before.standings) {
+        const regular = row.team.Placements.Current.Regular;
+        const oldPlace = row.displayPlace + week4Deltas.get(row.team.TeamID)!;
+        regular.WeeklyMovements = [
+          {
+            Week: 4,
+            Place: row.displayPlace,
+            PreviousWeekPlace: oldPlace,
+            PlaceDelta: oldPlace - row.displayPlace
+          },
+          {
+            Week: 5,
+            Place: regular.Place,
+            PreviousWeekPlace: regular.Place + latestDeltas.get(row.team.TeamID)!,
+            PlaceDelta: latestDeltas.get(row.team.TeamID)!
+          }
+        ];
+      }
+
+      const held = buildOverviewTopContext(league, model, displayWeek);
+      expect(held.standings.map(row => [row.team.TeamID, row.placeDelta])).toEqual([
+        [3, 0], [1, 1], [2, -1], [4, 0]
+      ]);
+      const released = buildOverviewTopContext(league, model, 6);
+      expect(released.standings.map(row => [row.team.TeamID, row.placeDelta])).toEqual([
+        [3, 0], [2, 1], [1, -1], [4, 0]
+      ]);
+      // A missing week, or a mismatched generated place, must remain neutral.
+      teams[0].Placements.Current.Regular.WeeklyMovements = [];
+      teams[1].Placements.Current.Regular.WeeklyMovements![0].Place = 99;
+      const guarded = buildOverviewTopContext(league, model, 5);
+      expect(guarded.standings.find(row => row.team.TeamID === 1)?.placeDelta).toBeNull();
+      expect(guarded.standings.find(row => row.team.TeamID === 2)?.placeDelta).toBeNull();
+    });
+
+    it('does not leak movement into a retained display week that is older than the current table', () => {
+      // Current table already has two games, the Overview still displays Week 2 (standings after Week 1).
+      const league = movementLeague();
+      for (const team of league.Teams) {
+        team.Placements.Current.Regular.Wins = 2;
+        team.Placements.Current.Regular.Losses = 0;
+      }
+
+      const context = buildOverviewTopContext(league, readModel(1, 2), 2);
+
+      expect(context.standings.map(row => row.placeDelta)).toEqual([null, null, null, null]);
+    });
+
+    it('falls back to null when the snapshot place differs from the current table place', () => {
+      const league = movementLeague();
+      league.Teams.find(team => team.TeamID === 3)!.Placements.Current.Regular.Place = 2;
+
+      const context = buildOverviewTopContext(league, readModel(1, 2), 2);
+
+      expect(context.standings.find(row => row.team.TeamID === 3)?.placeDelta).toBeNull();
+    });
+
+    it('passes PlaceDelta through the current-table fallback without recomputing it', () => {
+      const context = buildOverviewTopContext(movementLeague(), null, null);
+
+      expect(context.standings.map(row => [row.team.TeamID, row.placeDelta])).toEqual(
+        jasmine.arrayContaining([[3, 2], [1, 0], [4, -1], [2, null]])
+      );
+    });
+  });
+
   it('caps standings coverage at the end of the regular season during playoffs', () => {
     const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
     for (const team of teams) {
@@ -506,6 +649,11 @@ describe('Overview weekly dashboard presentation', () => {
 
   it('preserves WeeklyRecaps ranking while keeping 2 games and 3 players in every density', () => {
     const source = recaps();
+    source.Weeks[0].TeamAwards = {
+      State: 'available',
+      BestCoach: [{ CanonicalLeagueRosterID: 'coach', FantasyTeamID: 2, EfficiencyPercent: 89.49, ActualStarterPoints: 179, PotentialPoints: 200, MissedPoints: 21 }],
+      BestManager: [{ CanonicalLeagueRosterID: 'manager', FantasyTeamID: 1, PotentialPoints: 229.16 }]
+    };
     const prominent = selectOverviewRecap(source, '2026', 1, 'recap');
     const prep = selectOverviewRecap(source, '2026', 1, 'prep');
     const live = selectOverviewRecap(source, '2026', 1, 'live');
@@ -513,10 +661,21 @@ describe('Overview weekly dashboard presentation', () => {
     for (const selection of [prominent, prep, live]) {
       expect(selection?.games.map(game => game.GameID)).toEqual(['g1', 'g2']);
       expect(selection?.players.map(player => player.PlayerID)).toEqual(['p1', 'p2', 'p3']);
+      expect(selection?.awards?.BestCoach.map(winner => winner.FantasyTeamID)).toEqual([2]);
+      expect(selection?.awards?.BestManager.map(winner => winner.FantasyTeamID)).toEqual([1]);
     }
     expect(prominent?.prominent).toBeTrue();
     expect(prep?.prominent).toBeFalse();
     expect(live?.prominent).toBeFalse();
+  });
+
+  it('does not invent winners for unavailable or legacy weekly awards', () => {
+    const source = recaps();
+    source.Weeks[0].TeamAwards = { State: 'unavailable', BestCoach: [], BestManager: [] };
+    expect(selectOverviewRecap(source, '2026', 1, 'recap')?.awards).toBeNull();
+    delete source.Weeks[0].TeamAwards;
+    expect(selectOverviewRecap(source, '2026', 1, 'recap')?.awards).toBeNull();
+    expect(selectOverviewRecap(source, '2025', 1, 'recap')).toBeNull();
   });
 
   it('rejects an unknown/non-final LastCompletedWeek instead of inferring recap finality', () => {

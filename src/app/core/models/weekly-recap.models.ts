@@ -19,10 +19,30 @@ export interface WeeklyRecapKeyPlayer {
   Points: number;
 }
 
+export interface WeeklyRecapBestManager {
+  CanonicalLeagueRosterID: string;
+  FantasyTeamID: string | number;
+  PotentialPoints: number;
+}
+
+export interface WeeklyRecapBestCoach extends WeeklyRecapBestManager {
+  EfficiencyPercent: number;
+  ActualStarterPoints: number;
+  MissedPoints: number;
+}
+
+export interface WeeklyRecapTeamAwards {
+  State: 'available' | 'unavailable';
+  BestManager: WeeklyRecapBestManager[];
+  BestCoach: WeeklyRecapBestCoach[];
+}
+
 export interface WeeklyRecapWeek {
   Week: number;
   KeyGames: WeeklyRecapKeyGame[];
   KeyPlayers: WeeklyRecapKeyPlayer[];
+  /** Optional for compatibility with season archives generated before team awards. */
+  TeamAwards?: WeeklyRecapTeamAwards;
 }
 
 export interface WeeklyRecapsReadModel {

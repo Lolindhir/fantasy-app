@@ -12,7 +12,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Iterator
 
-from .source_projection import SUPPORTED_SOURCE_PROJECTIONS, project_source
+from .source_projection import (
+    SUPPORTED_SOURCE_PROJECTIONS,
+    project_source,
+    projection_output_format,
+)
+from data_roots import DATA_SOURCE_ROOT
 
 SCHEMA_VERSION = 1
 CANONICAL_SCHEMA_VERSION = 2
@@ -214,6 +219,26 @@ def download(url: str, target: Path) -> None:
         shutil.copyfileobj(response, output)
 
 
+class UpstreamDownloadCache:
+    """Reuses one upstream download per URL within a sync run.
+
+    Several datasets may project different facts out of the same upstream artifact
+    (for example nflverse play-by-play); the artifact is downloaded only once.
+    """
+
+    def __init__(self, directory: Path) -> None:
+        self._directory = directory
+        self._files: dict[str, Path] = {}
+
+    def fetch(self, url: str, target: Path) -> None:
+        cached = self._files.get(url)
+        if cached is None:
+            cached = self._directory / f"upstream-{len(self._files)}"
+            download(url, cached)
+            self._files[url] = cached
+        shutil.copyfile(cached, target)
+
+
 def _validate_lifecycle(value: dict[str, Any], dataset_id: str) -> dict[str, str]:
     lifecycle = value.get("lifecycle")
     if not isinstance(lifecycle, dict):
@@ -329,8 +354,9 @@ def _validate_source_contract(value: dict[str, Any], dataset_id: str) -> dict[st
                 f"Dataset {dataset_id} sourceProjection {projection_id}@{projection_version} "
                 f"requires upstreamFormat={expected_upstream}"
             )
-        if source_format != "json":
-            raise ValueError(f"Projected dataset {dataset_id} must persist sourceFormat=json")
+        expected_output = projection_output_format(projection_id, projection_version)
+        if source_format != expected_output:
+            raise ValueError(f"Projected dataset {dataset_id} must persist sourceFormat={expected_output}")
 
     source_url = str(value.get("sourceUrl") or "").strip()
     raw_path = str(value.get("rawPath") or "").strip()
@@ -444,16 +470,16 @@ class Dataset:
 
 
 def load_registry_manifest(repo_root: Path) -> dict[str, Any]:
-    source_root = repo_root / "source-data"
+    source_root = repo_root / DATA_SOURCE_ROOT
     registry = load_json(source_root / "registry.json")
     if not isinstance(registry, dict):
-        raise ValueError("source-data/registry.json is missing or invalid")
+        raise ValueError(f"{DATA_SOURCE_ROOT}/registry.json is missing or invalid")
     version = as_int(registry.get("schemaVersion"))
     if version not in SUPPORTED_REGISTRY_SCHEMA_VERSIONS:
-        raise ValueError("source-data/registry.json has an unsupported schemaVersion")
+        raise ValueError(f"{DATA_SOURCE_ROOT}/registry.json has an unsupported schemaVersion")
     datasets = registry.get("datasets")
     if not isinstance(datasets, list) or not datasets:
-        raise ValueError("source-data/registry.json must contain at least one active dataset")
+        raise ValueError(f"{DATA_SOURCE_ROOT}/registry.json must contain at least one active dataset")
 
     seen: set[str] = set()
     for value in datasets:
@@ -484,7 +510,7 @@ def load_registry_manifest(repo_root: Path) -> dict[str, Any]:
 
 
 def load_registry(repo_root: Path) -> list[Dataset]:
-    source_root = repo_root / "source-data"
+    source_root = repo_root / DATA_SOURCE_ROOT
     registry = load_registry_manifest(repo_root)
     version = int(registry["schemaVersion"])
     return [
@@ -499,14 +525,29 @@ def planned_dataset_ids(repo_root: Path) -> list[str]:
 
 
 def current_source_season(repo_root: Path) -> int:
-    league = load_json(repo_root / "public/data/League.json", {}) or {}
-    season = as_int(league.get("Season"))
-    if season is not None:
-        return season
-    metadata = load_json(repo_root / "public/data/Metadata.json", {}) or {}
-    season = as_int(metadata.get("LeagueYear"))
-    if season is not None:
-        return season
+    """Current season from canonical League facts (``data-source/leagues/*/manifest.json``).
+
+    The NFL source layer must not depend on App delivery read models or manual
+    league metadata, so nothing under ``public/data`` is read here. With several
+    canonical leagues the latest current season wins. A manifest whose current season entry
+    cannot be resolved fails closed; without any league manifest the UTC year is the last resort.
+    """
+    seasons: list[int] = []
+    for manifest_path in sorted((repo_root / DATA_SOURCE_ROOT / "leagues").glob("*/manifest.json")):
+        manifest = load_json(manifest_path, {}) or {}
+        current_id = str(manifest.get("CurrentCanonicalLeagueSeasonID") or "").strip()
+        matches = [
+            as_int(entry.get("Season"))
+            for entry in manifest.get("Seasons") or []
+            if isinstance(entry, dict) and str(entry.get("CanonicalLeagueSeasonID") or "") == current_id
+        ]
+        if not current_id or len(matches) != 1 or matches[0] is None:
+            raise ValueError(
+                f"League manifest must resolve CurrentCanonicalLeagueSeasonID to exactly one season: {manifest_path}"
+            )
+        seasons.append(matches[0])
+    if seasons:
+        return max(seasons)
     return datetime.now(timezone.utc).year
 
 
@@ -551,6 +592,7 @@ def sync_dataset(
     offline: bool = False,
     season: int | None = None,
     current_season: int | None = None,
+    upstream_cache: UpstreamDownloadCache | None = None,
 ) -> dict[str, Any]:
     raw_path = dataset.raw_path_for(season)
     metadata_path = dataset.metadata_path_for(season)
@@ -618,7 +660,10 @@ def sync_dataset(
                 download(source_url, candidate)
             else:
                 upstream_candidate = Path(temp_dir) / "upstream-source"
-                download(source_url, upstream_candidate)
+                if upstream_cache is None:
+                    download(source_url, upstream_candidate)
+                else:
+                    upstream_cache.fetch(source_url, upstream_candidate)
                 upstream_hash = sha256_file(upstream_candidate)
                 upstream_size = upstream_candidate.stat().st_size
                 projection_stats = project_source(

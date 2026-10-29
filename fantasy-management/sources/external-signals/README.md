@@ -1,5 +1,7 @@
 # External Signals
 
+> Hinweis (Issue #988, ADR-060): Die Sleeper-Trending-Daten liegen seit Schritt 3.1 in der gemeinsamen Source-Schicht (`data-source/market/roster-activity/sleeper/`, Rohdaten und Doku unter `data-source/providers/sleeper/trending/`). Dieser Ordner enthält nur noch die allgemeinen Regeln.
+
 Dieser Bereich speichert externe, zeitabhängige Signale, die keine geordneten Spieler- oder Assetbewertungen sind.
 
 ## Abgrenzung zu externen Rankings

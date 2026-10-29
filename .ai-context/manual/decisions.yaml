@@ -22,7 +22,8 @@ decisions:
 
   - id: ADR-002
     title: Metadata owns league-specific rules
-    status: accepted
+    status: superseded
+    supersededBy: ADR-054
     decision: >
       League-specific inputs and rules belong in public/data/Metadata.json, not
       in Angular and not in technical path utilities.
@@ -1167,7 +1168,7 @@ decisions:
 
 
   - id: ADR-038
-    title: Shared Derived Data materializes under derived-data
+    title: Shared Derived Data materializes under data-derived
     status: accepted
     context: >
       ADR-037 defined Shared Derived Data logically but deliberately deferred its
@@ -1175,10 +1176,10 @@ decisions:
       shared derivation and needs an owner that is neither source-data, public/data
       nor a consumer namespace.
     decision: >
-      Use derived-data/** as the canonical physical repository root for deterministic,
+      Use data-derived/** (renamed from derived-data/** in #788 SA) as the canonical physical repository root for deterministic,
       reproducible and consumer-neutral Shared Derived Data. PlayerWeekFantasy is the
       first product at
-      derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json.
+      data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json.
       source-data/** remains source/canonical facts; public/data/** remains App
       delivery; consumer-generated insights remain consumer-owned. Writers must be
       deterministic and preserve semantic no-op writes. Existing transitional
@@ -1196,3 +1197,1258 @@ decisions:
         - The repository gains a new top-level data namespace.
         - Existing transitional shared derivations remain mixed until separately migrated.
         - Each new shared-derived product still needs explicit contract and invalidation semantics.
+
+
+  - id: ADR-039
+    title: NFL source sync runs the repo-state identity audit after materialization
+    status: accepted
+    context: >
+      The workflow "Data • NFL Source Sync" runs the NFL source-data regression tests before it
+      materializes and publishes source-data/**. The test
+      test_rebuilt_identities_do_not_regress_current_population_identity_gap compares
+      persisted canonical identities with public/data/Players.json, which
+      update-players.yml writes independently. When Players.json gains a player that
+      the persisted identities do not cover yet, the test fails, the sync is skipped
+      and the identities stay stale. CI of every PR runs the same suite and turns
+      red (Issue #814, resolved once by PR #815).
+    decision: >
+      Run the repo-state identity audit (test_rebuilt_identities_do_not_regress_current_population_identity_gap)
+      after canonical materialization instead of in the pre-materialization test
+      gate. The pre-gate sets NFL_SOURCE_SYNC_SKIP_REPO_STATE_AUDIT=1 for the full
+      scope only; inside the rebuild loop, after the second idempotency check and
+      before the canonical commit, the workflow runs the audit against the freshly
+      materialized state. PR CI does not set the variable and still runs the test.
+      The remaining test_nfl_source*.py suite stays in the pre-gate, and the
+      game-finality scope is unchanged. If the audit fails after materialization, no
+      canonical data is published and a failure diagnostic is written. The raw
+      evidence is already on main by design, so canonical data stays stale and every
+      scheduled run fails until the cause is fixed; this is a permanent property of
+      the design, not a transition effect. The one-time recovery for the earlier
+      deadlock was an official re-materialization
+      (python tools/nfl_source_data.py materialize) merged through a normal PR
+      (#815), never hand-edited source-data/**.
+    rationale: >
+      The audit is a guard on the materialized result, not on the state before the
+      job that repairs it. Verified on the stale pre-fix state (e31113c):
+      materialize ran cleanly, the audit then passed, and a second materialize was a
+      semantic no-op. Decoupling the test from Players.json would weaken a real
+      fail-closed guard, and a dedicated recovery path or one-off workflow adds
+      machinery for a recurring event. Publishing raw evidence while canonical data
+      lags is no regression: before this change the same condition blocked the whole
+      run including raw data.
+    consequences:
+      positive:
+        - The self-blocking deadlock between the test gate and the sync is removed.
+        - The guard keeps its fail-closed meaning for published canonical data.
+        - PR CI still runs the audit unchanged.
+      negative:
+        - After a real audit failure raw data keeps refreshing while canonical data stays stale until fixed.
+        - PR CI can stay red while main is stale until the next sync heals it.
+        - The pre-gate and the post-materialization step must stay in sync; the workflow contract test test_repo_state_audit_runs_after_materialization_not_in_pre_gate guards the ordering.
+
+  - id: ADR-040
+    title: Weekly standings movement is a generated canonical field
+    status: accepted
+    context: >
+      The Weekly Overview standings need an up/down/unchanged movement signal.
+      Issue #686 proposed reconstructing the previous week's table in Angular from
+      Matchups facts, Issue #565 asked for a canonical generated field. Placements.Previous
+      is the previous season and cannot serve as a weekly delta source.
+    decision: >
+      The standings generator owns the movement (Robert, 2026-10-04, Issue #565).
+      Get-PreviousWeekRegularSeasonPlaces rebuilds the table after the immediately
+      preceding completed week from canonical per-week matchups with the existing
+      ranking/tiebreak function and publishes PreviousWeekPlace and PlaceDelta
+      (PreviousWeekPlace - Place, positive = moved up) on current-season
+      RegularSeason rows. Values are null when no trustworthy comparison exists.
+      The 2026-10-13 retained-week regression additionally requires a
+      WeeklyMovements[] history (Week, Place, PreviousWeekPlace, PlaceDelta)
+      generated from validated per-week canonical matchup facts on current-season
+      RegularSeason rows. Angular selects the history entry for its displayed
+      as-of week, checks Place against the snapshot, and renders null when missing.
+      Current PreviousWeekPlace/PlaceDelta remain backward-compatible and are
+      never misapplied to older weekly snapshots. Neither historical seasons nor
+      the frontend derive new standings rankings.
+      Angular only displays the value.
+    rationale: >
+      Ranking and tiebreak semantics stay in one place, the league size stays
+      dynamic and consumers need no historical standings machinery. Rejecting
+      inconsistent weekly facts (results must match Record) is preferred over
+      publishing a wrong arrow.
+    consequences:
+      positive:
+        - One canonical value for every consumer, no frontend recomputation.
+      negative:
+        - Standings.json and Teams.json gain two fields for the current season.
+        - Issue #686 / PR #714 must switch from frontend reconstruction to this field.
+
+  - id: ADR-041
+    title: Players points and salary come from canonical stats scored with the league ScoringSettings
+    status: accepted
+    context: >
+      Players.json fantasy points, played games and the three prior seasons were Tank01 PPR sums over
+      Games.json and Tank01 past_seasons archives. Tank01 does not know the league scoring, drops games
+      with missing snap counts and has ID collisions (Issue #347 D2/D3). Salary, ranking and the League
+      salary cap are derived from these points.
+    decision: >
+      Robert decided on 2026-10-04 to switch points, history, ranking and salary together (Issue #347
+      step D4). RequestPlayers.ps1 reads league-scored weekly rows from tools/players_league_scoring.py,
+      which scores canonical player-stats and snap-counts with the canonical league ScoringSettings and
+      resolves Players.json[].ID (Sleeper) to a CanonicalPlayerID per season. The salary formula, weights,
+      ranking and cap formulas stay unchanged in PowerShell; the salary redesign concept is not part of
+      this decision. The export is rebuilt per run and not committed; persisting it as a data-derived
+      product needs a separate workflow approval. The Sleeper PlayerPoints gate in build.yml is the
+      permanent validation of the scorer.
+    rationale: >
+      One scorer (tools/historical_fantasy_scoring.py) serves PlayerWeekFantasy and Players, the points
+      follow the league rules instead of a provider default, and fixed Tank01 defects (missing games, ID
+      collisions) stop distorting salaries. Keeping the formulas in PowerShell keeps the change a pure
+      input switch with an exact shadow parity.
+    consequences:
+      positive:
+        - Points, history, ranking and salary follow the league ScoringSettings; the Sleeper gate guards the scorer.
+        - Kicker history is complete; Tank01 snap-count gaps no longer drop games.
+      negative:
+        - League-owned kicker salaries rise by about 41 percent and the salary cap moves by about -0.4 percent.
+        - A Sleeper ID without a unique current canonical identity keeps stale published values until the identity is resolved.
+        - Playoff and not yet final GameHistory games still show Tank01 PPR points.
+
+  - id: ADR-042
+    title: NFL team identity is a canonical registry keyed by abbreviation
+    status: accepted
+    context: >
+      The app keys NFL teams by a numeric Tank01 ID in Teams.json, Players, Schedule, GameHistory,
+      DecisionWindows, FantasyGameContext and WeeklyRecaps, while canonical NFL source data uses
+      nflverse abbreviations. Tank01 must be removed (Issue #347), and alias handling such as LAR
+      to LA was hard-wired in individual scripts.
+    decision: >
+      Robert decided on 2026-10-05 (Issue #347 F3, decision D) to use the canonical abbreviation as
+      the app team key and to keep the old numeric IDs permanently as LegacyIDs. source-data/nfl/teams.json,
+      materialized from the nflverse dataset nflverse.teams, is the registry (FranchiseID, names,
+      division, ESPN logo, aliases, LegacyAppTeamID). One fail-closed resolver per language reads it.
+      Cutover is staged: registry and resolvers (F3a), tolerant lookup of both key forms in Angular and the
+      PowerShell joins (F3b), Teams.json from the registry (F3c), then producers one by one (F3d).
+    rationale: >
+      Players.json and Schedule.json are written by different workflows at different times, so a
+      single-commit key switch is not possible; tolerant reading first keeps every intermediate state
+      consistent. Keeping LegacyIDs avoids rewriting browser-cached archives.
+    consequences:
+      positive:
+        - One team identity for all consumers, no provider-specific alias maps.
+        - Archives with numeric IDs keep resolving.
+      negative:
+        - Teams.json gains LegacyIDs and the visible Rams and Commanders abbreviations change in F3c.
+
+  - id: ADR-043
+    title: Players population follows the Fantasy Management rule and identity evidence no longer comes from Players.json
+    status: accepted
+    context: >
+      RequestPlayers.ps1 took its population from Tank01 getNFLPlayerList rows with
+      sleeperBotID and the identity builder read public/data/Players.json (and its git
+      history) as evidence, so Players.json fed the identities that fed Players.json
+      (Issue #347 H1; 182 of 184 historical_mapping_overlap conflicts cited
+      app.Players.git). Without Tank01, new players that only the persisted identity
+      record links to a Sleeper ID would have had no automatic bridge. Sleeper's current
+      team alone is not a population criterion because retired players keep stale teams.
+    decision: >
+      Robert decided on 2026-10-05 (A to C) to use one population rule for the App and
+      Fantasy Management: a canonical Sleeper snapshot player with an app fantasy position
+      (QB, RB, WR, TE, K) and a valid birth date belongs in Players.json when it has a
+      reason: nfl_roster_current_season, nfl_draft_current_season (both need exactly one
+      CanonicalPlayerID) or league_owned (incl. Taxi and IR; identity hold without a unique
+      identity). While the season roster is unpublished the previous season roster is used
+      and marked; without a roster the run fails closed. Team, free-agent and status fields
+      come from the canonical Sleeper snapshot through the canonical team registry (ADR-042):
+      TeamAbbr = TeamID = canonical abbreviation (null without a team), IsFreeAgent = no
+      Sleeper team (NFL free agency, not fantasy availability), TankID removed. app.Players
+      and app.Players.git.* stop being identity evidence (persisted provenance stays as
+      history); the Sleeper snapshot (source sleeper.players) replaces them, and Tank01 is
+      no attach key. A bounded sleeperCurrentRosterAttributeBridge attaches a new Sleeper ID
+      to exactly one current nflverse roster record on exact birth date, team and position
+      when unique and uncontradicted; ambiguity stays provisional or goes to adjudication.
+      Implemented in #347 H1a (identity) and H1b (population, PR 887 and 891); documented in
+      #347 H1c.
+    rationale: >
+      One rule avoids two competing definitions of a relevant player, the snapshot is fresh
+      daily and matches what managers see in Sleeper, and removing Players.json from the
+      evidence closes the cycle without weakening fail-closed identity handling. The
+      attribute bridge is the narrow replacement for the lost Tank01 pairing.
+    consequences:
+      positive:
+        - Players.json carries no Tank01 population claim and no provider ID.
+        - Identity evidence is acyclic; new app-driven identity conflicts no longer arise.
+        - Free-agent and team semantics are explicit and registry-keyed.
+      negative:
+        - Players without a current-season roster, draft or league reason leave Players.json (1,268 to 937 on the 2026-10-05 data, 336 removed, 5 added, none league-owned); they return automatically through a roster entry.
+        - GameHistory still depends on Games.json via the canonical Tank01 ID until G3.
+        - A new Sleeper player that neither nflverse nor the bridge can resolve needs adjudication.
+
+  - id: ADR-044
+    title: Players GameHistory is built from canonical NFL facts
+    status: accepted
+    context: >
+      GameHistory in Players.json came from Tank01 boxscores in Games.json: the QBRating was wrong
+      (1 of 148 values matched ESPN), points of non-final and postseason games were Tank01 PPR, snap
+      and kicking fields carried Tank01 artifacts (zero Kicking blocks for non-kickers) and a few games
+      were missing entirely. #347 requires that no Tank01 dependency remains (Robert, 2026-10-05,
+      Decision 4: all fields stay in the contract).
+    decision: >
+      GameHistory is built in tools/players_game_history.py inside the players_league_scoring.py export,
+      so identity resolution and the hold decision stay shared with the points. An entry exists for every
+      current-season game with a canonical player-stats row or snap-counts row. Fields follow the G1 design:
+      exact-fraction half-up rounding for Rating and the *Avg fields, QBRating from ESPN QBR, long gains
+      from player-game-long-gains (0 for covered games without a record, null for games the dataset does
+      not cover yet, negative values kept), canonical team abbreviations for all team keys while GameID keeps
+      the legacy provider spelling, league-scored points for every game. QBRating, LongRush and LongReceptions
+      may be null (unknown, never zero). A game whose special-teams fumble evidence is ambiguous gets no
+      entry instead of a wrong zero; a player in identity hold keeps the last published GameHistory.
+    rationale: >
+      One scorer and one identity resolution serve points and games, canonical facts replace a provider
+      object that cannot be repaired, and unknown values stay distinguishable from zero.
+    consequences:
+      positive:
+        - No Games.json input remains in RequestPlayers.ps1; the Players workflow no longer depends on Tank01 boxscores.
+        - GameHistory points follow the league ScoringSettings for every game.
+        - Games Tank01 never listed (for example a player missing from its boxscore) appear and change GamesPotential and SalaryProjected for those players.
+      negative:
+        - Published GameHistory team keys change from numeric Tank01 IDs and LAR/WSH spellings to canonical abbreviations (LA, WAS).
+        - Rating differs by 0.1 from Tank01 on exact rounding ties.
+        - Games.json, RequestGames.ps1 and RequestPlayersSeason.ps1 stayed until #347 G4 and were retired there (ADR-045).
+
+  - id: ADR-045
+    title: The Tank01 game pipeline is retired; Schedule.json is the only Games-workflow output
+    status: accepted
+    context: >
+      After G2 (Schedule.json from canonical schedule and finality) and G3 (GameHistory and points from canonical
+      player-stats and snap-counts) the only remaining Tank01 use was the boxscore fetch that fed public/data/Games.json,
+      which neither Angular nor Fantasy Management reads, plus the manual archive generators RequestGamesSeason.ps1 and
+      RequestPlayersSeason.ps1 (Issue #347, hard rule: no Tank01 dependency may remain).
+    decision: >
+      Robert approved the workflow change on 2026-10-06 (decision card, G4). RequestGames.ps1 becomes
+      RequestSchedule.ps1 and builds only Schedule.json from canonical facts; update-games.yml keeps its name, triggers
+      (scheduler event, main push on source-data/nfl/game-finality/**) and publication class (rebuild-and-retry) and only
+      calls the renamed script. Games.json, RequestGamesSeason.ps1, RequestPlayersSeason.ps1, GameScoreUtils.psm1, the
+      Tank01 example payloads, the Tank01 join helpers in PlayerUtils.psm1 and all RapidAPI keys (ConfigUtils.psm1,
+      config.ps1, examples) are removed. The static past_seasons/Games_<year>.json archives (about 255 MB of Tank01
+      boxscores without a consumer) are removed from the tree and from the Games resource of PastSeasonsIndex.json; they
+      remain recoverable from git history. Schedule_<year>.json stays an archive (regenerated, ADR-058); past_seasons/Players_<year>.json was removed
+      later (Issue #999 step 7b, 2026-10-16). update-teams.yml needs no change (no Tank01 call since #347 F3c). workflow-monitoring.yaml and
+      workflow-publication.yaml classifications stay valid because workflow names, triggers and publication class are unchanged.
+    rationale: >
+      A dead provider pipeline that needs API keys is a maintenance and security liability; keeping the workflow and its
+      scheduler contract avoids a monitoring/scheduler migration for no functional gain.
+    consequences:
+      positive:
+        - No Tank01 call, key or boxscore remains in the repository code.
+        - The Games workflow no longer needs provider credentials and no longer writes Games.json or its timestamp.
+      negative:
+        - The leaked RapidAPI keys stay valid in git history until Robert rotates them at RapidAPI (rest of Issue #186).
+        - The workflow name still says Games although it only publishes the Schedule.
+
+  - id: ADR-046
+    title: ESPN player injury status is a shared NFL source dataset
+    status: accepted
+    context: >
+      RequestLeague fetched ESPN kona_player_info directly on every ten-minute League refresh and wrote the result only to
+      DecisionWindows.json. That was the last network call under public/requests (#347 target check, 2026-10-06) and the
+      observation was filtered to the current fantasy starters, so it was not reusable by other consumers.
+    decision: >
+      Robert approved the workflow change on 2026-10-06. tools/espn_player_availability.py snapshots the ESPN injury status of
+      all returned players into source-data/nfl/player-availability/espn.json (provenance in
+      source-data/providers/espn/player-availability/metadata.json); the raw 21 MB response is not retained. The new workflow
+      sync-nfl-player-availability.yml (rebuild-and-retry, monitoring category important) is dispatched by the central scheduler
+      every ten minutes from September through January at minute 9, before the minute-10 League refresh. RequestLeague only reads
+      the canonical snapshot; a missing, unreadable or other-season snapshot leaves availability unknown. The K1 consumer-read test
+      now forbids direct provider requests under public/requests.
+    rationale: >
+      Provider acquisition belongs to the source layer, the observation is consumer-neutral, and a dedicated thin workflow avoids
+      forcing a JSON provider into the CSV-oriented NFL registry and the daily NFL sync.
+    consequences:
+      positive:
+        - public/requests holds no provider request anymore; the League refresh no longer depends on ESPN availability.
+        - Other consumers can read the same injury snapshot.
+      negative:
+        - One more scheduled workflow; a stale snapshot shows up as unknown availability until the workflow health alerts.
+        - Outside September through January the snapshot is not refreshed.
+
+
+  - id: ADR-047
+    title: Satisfied slots are persisted; absence never re-opens a satisfied slot, cancelled runs are not failed attempts
+    status: accepted
+    context: >
+      Productive observation on 2026-10-07 (Issue #927, found in the #471 analysis) showed weekly and daily targets
+      such as Standings, Players and Games being dispatched dozens of times per day. A later scheduler tick did not
+      receive the already successful run in its workflow-run list (same unexplained phenomenon as ADR-034), found no
+      satisfying run and started a new cycle for an already satisfied due slot. Separately, runs that GitHub cancelled
+      as waiting runs inside a shared concurrency group (league-source-data-sync, nfl-source-data-sync) were counted as
+      attempts, which produced retry-wait, retry-exhausted and 60-minute cooldowns without any failure. A scheduler
+      state file read as empty or truncated also turned a whole scheduler run red.
+    decision: >
+      Extend ADR-033/ADR-034: the runtime state keeps one satisfied slot per target (satisfiedSlots.<targetId> with
+      dueAt, runId, recordedAt; optional map, schema version unchanged). A due slot at or before the stored dueAt is
+      `satisfied` (satisfiedFromState=true in decision log and Job Summary) even when the run list does not contain the
+      run; a newer due slot behaves as before. Before any dispatch decision the existing unfiltered repository_dispatch
+      fallback query is run once and merged. Runs with conclusion cancelled are not counted as attempts and cause no
+      retry-wait, circuit or cooldown (consistent with Workflow Health ignoring cancelled). Empty or truncated state
+      content is re-read up to twice before failing closed.
+    rationale: >
+      Absence from a list response is unknown state and must never create work; a satisfied slot is a monotonic fact
+      that is cheap to persist. A cancelled run did not execute and is no failure evidence, so counting it contradicts
+      the failure-evidence rule of ADR-034.
+    consequences:
+      positive:
+        - Weekly and daily targets run once per slot even when the run list is incomplete.
+        - Shared-concurrency cancellations no longer open retry circuits.
+        - A transient empty state read no longer fails the scheduler run.
+      negative:
+        - The state file is rewritten once per newly satisfied slot per target.
+        - A genuine cancel by a person is also not retried within the same slot until the next tick dispatches normally.
+
+  - id: ADR-048
+    title: Scheduler targets are pipelines
+    status: accepted
+    context: >
+      ADR-031 and ADR-033 gave every ten-minute League step its own scheduler target and workflow: League Core (:02),
+      transactions (:05), drafts (:08) and App League (:10), plus push-triggered Standings and League rebuilds on the
+      files these steps wrote. Measured on 2026-10-10 this produced about 500 runs per day, 41 cancelled waiting runs
+      (all source targets share the concurrency group league-source-data-sync) and many commits on main racing each
+      other (Issue #945, step S2 of Issue #471).
+    decision: >
+      Model one scheduler target per dependency chain instead of one per step. The target league-live
+      (.github/workflows/league-live.yml, event scheduler-league-live, every ten minutes, profile productive) runs
+      jobs in order: source (reusable sync-league-source-data.yml with the new materialization scope current), Standings
+      (only when canonical standing inputs changed between the start of the source job and the Standings job, or when
+      forced) and App League including PlayerWeekFantasy and MatchupProjections. Standings runs before League because
+      League.json embeds the published Standings placement. The scope current is not a new materializer: tools/
+      league_source_data.py --current-scope runs the League Core, transaction-window and draft planners in that order and
+      merges their results; tests/test_league_source_current_scope.py proves identical files and semantic no-op behaviour
+      against the three single scopes. The pipeline owns its concurrency group league-live without cancel-in-progress; the
+      source job additionally takes league-source-data-sync so the daily full League source sync never writes in parallel.
+      The former targets league, league-core-source, league-transaction-source and league-draft-source and the workflows
+      sync-league-core, sync-league-transactions, sync-league-drafts and update-league are removed; update-standings.yml
+      stays as weekly fallback and manual path without push triggers. The League source loop fetches and pushes through
+      tools/git_transient.py so the transient retry of ADR-033-era publication helpers applies. Monitoring is one entry
+      (important, repository_dispatch, 45 minutes), publication class rebuild-and-retry.
+    rationale: >
+      A chain whose steps depend on each other belongs in one run: one scheduler decision, one retry cycle, one monitoring
+      signal, no waiting runs cancelled by a shared concurrency group and no commit race between producer and consumer.
+      Single scopes stay available for manual repair so no capability is lost.
+    consequences:
+      positive:
+        - One scheduler target and roughly one run plus the necessary commits per ten-minute window instead of four targets and push-triggered follow-ups.
+        - No cancelled waiting League runs; League and Standings consume the source commit of their own chain.
+        - Future chains (for example the NFL live chain, FM daily chain) follow the same pattern.
+      negative:
+        - A failure in an early job fails the whole chain and is retried as one cycle; the later jobs still run on the last published data so freshness degrades gracefully.
+        - Changes to Standings derivation code reach production at the next input change, the weekly fallback or a manual run instead of immediately via push.
+        - Code changes of the League generator reach production with the next ten-minute chain instead of an immediate push run.
+
+  - id: ADR-049
+    title: Scheduler targets can follow NFL game windows
+    status: accepted
+    context: >
+      The Finality target ran every ten minutes from September through January (143 runs on a Saturday without a single
+      NFL game, Issue #946, step S3 of Issue #471). Nothing changes between NFL games, so dense polling outside game
+      windows is pure Actions and commit load.
+    decision: >
+      Robert approved the workflow change on 2026-10-11. A scheduler target may declare mode game-window with
+      preKickoffMinutes, postFinalMinutes and idleCron in .github/workflow-schedules.json. The runtime derives game blocks
+      (games with overlapping assumed durations) from the canonical NFL schedule and Eastern-time kickoffs and uses the
+      target cron only inside a window (first kickoff minus preKickoffMinutes until the assumed end of the block plus
+      postFinalMinutes, extended up to maxOverrunMinutes while games are not final) and the idleCron otherwise. Canonical
+      finality has no timestamp, so the post-final lag is anchored on the assumed end. An unreadable schedule keeps the
+      dense cron. Player availability keeps its own ten-minute target all season because injury news does not follow
+      game windows. Implementation: tools/nfl-game-window.cjs, evaluated in tools/run-workflow-scheduler-runtime.cjs.
+    rationale: >
+      The window is derived from the same canonical schedule the rest of the platform uses, stays configuration-driven per
+      target and fails towards more runs, never fewer.
+    consequences:
+      positive:
+        - No ten-minute runs on days without games; Finality and Schedule stay about ten minutes fresh inside windows.
+        - Window state is visible in the machine-readable decision and the Job Summary.
+      negative:
+        - A schedule change that moves a game is picked up only after the next canonical schedule refresh.
+        - The post-final lag is approximated from the assumed game end because finality has no timestamp.
+
+  - id: ADR-050
+    title: NFL Live is one game-window pipeline target
+    status: accepted
+    context: >
+      After ADR-048 the NFL finality refresh, the Games workflow (Schedule.json) and their push trigger were still separate
+      moving parts: a ten-minute finality target, two daily Games slots and a push-triggered Games run that raced the source
+      commits (Issue #946, step S3 of Issue #471).
+    decision: >
+      Replace the scheduler targets nfl-game-finality and games by one target nfl-live (workflow nfl-live.yml, event
+      scheduler-nfl-live, mode game-window per ADR-049). The pipeline runs jobs in order: finality (the existing sync-nfl-source-data.yml
+      game-finality scope, which also syncs the schedule snapshot without odds), schedule (update-games.yml as reusable workflow, only when
+      game-finality or the canonical schedule changed between the start of the finality job and the detect job), and league (repository_dispatch
+      of scheduler-league-live, only when finality changed). update-games.yml loses its push and scheduler triggers and keeps workflow_dispatch for
+      repair. The wrapper sync-nfl-game-finality.yml is removed. Player Availability keeps its own ten-minute target. The pipeline owns the
+      concurrency group nfl-live without cancellation.
+    rationale: >
+      A dependency chain belongs in one run (ADR-048): one scheduler decision, one retry cycle and one monitoring signal; a changed finality
+      wakes the League chain immediately instead of waiting up to ten minutes.
+    consequences:
+      positive:
+        - No push-triggered Games runs and no daily Games fallback runs; Schedule.json is rebuilt only when its inputs changed.
+        - Finality changes reach League.json about one tick earlier.
+      negative:
+        - A Schedule.json publication failure fails the nfl-live run and is retried as one cycle.
+        - The League Live wake-up is an additional repository_dispatch from a workflow, using the PAT_PUSH secret.
+
+  - id: ADR-051
+    title: FM Daily is one pipeline target with provider matrix legs
+    status: accepted
+    context: >
+      The daily Fantasy Operations chain consisted of six provider refresh workflows (05:20 to 06:20 Berlin) and a
+      separate materializer (06:45) with its own push-trigger loop, seven scheduler targets in total (Issue #947,
+      step S4 of Issue #471). Provider commits push-triggered the materializer, and the materializer kept a
+      workflow-local push loop without the transient retry of the shared publication helper.
+    decision: >
+      Robert approved the workflow change on 2026-10-11. One scheduler target fm-daily (workflow fm-daily.yml, event
+      scheduler-fm-daily, 05:20 Europe/Berlin, profile productive) runs the six providers as matrix legs with
+      fail-fast false (each publishes its own snapshot through tools/publish_generated_commit.py), then the
+      materializer job after all of them (needs providers, if not cancelled), also when a provider failed, using the
+      last good source state. A report job writes the per-leg results into the Job Summary and a warning annotation;
+      the run stays failed when a leg failed. The materializer generator moved into
+      fantasy-management/_ai/scripts/materialize_operations_inputs.sh and is published through
+      tools/rebuild_and_publish.py (scope fantasy-operations), so the transient retry applies. The workflow is
+      classified rebuild-and-retry (it contains a rebuild writer; the provider legs are documented self-contained
+      rebase writers). Push triggers: only League/Players/Metadata/draft inputs and materialization definitions run
+      the gate and materialize jobs; source and heartbeat paths are no triggers (the resolver returns
+      source_inputs_refreshed_by_pipeline), and fetcher code merges no longer refresh immediately; pull requests run
+      the fetcher tests only. A queued materialization never cancels a running one. The former seven scheduler
+      targets and workflows are removed; monitoring has one entry (important, staleness 1800 minutes).
+    rationale: >
+      A dependency chain belongs in one run (ADR-048): one scheduler decision, one retry cycle, one monitoring signal,
+      and no push loop between producers and consumer. The productive profile is kept because the chain is short
+      (parallel legs plus one materialize job) and Health should snapshot only after it.
+    consequences:
+      positive:
+        - One scheduler target and one monitoring entry instead of seven; the materializer follows the providers directly.
+        - The materializer publication gains the transient retry of the shared helper.
+        - A failing provider no longer blocks materialization, and the failure is named in the run summary.
+      negative:
+        - A fetcher code change reaches production at the next daily run instead of immediately after the merge.
+        - The commit message of materializer commits changes to the generated-data schema (data(fantasy-operations): Fantasy Operations inputs).
+        - A failed provider leg fails the whole run, so the scheduler retries the complete chain (providers use skip-unchanged).
+
+  - id: ADR-052
+    title: Transient GitHub API read errors are retried and only persistent ones fail the run
+    status: accepted
+    context: >
+      On 2026-10-12 (10:50 to 12:50 UTC) nine REPO Scheduler runs and one Workflow Health Snapshot run failed because a
+      single GitHub API read returned HTTP 5xx (Issue #980). The scheduler already isolated errors per target, but one
+      failed listWorkflowRuns still turned the whole run (monitoring category critical) red, and the Health snapshot had no
+      retry at all. Everything was green again at the next tick.
+    decision: >
+      Robert approved the workflow-adjacent change on 2026-10-13. Idempotent API reads are retried inside the run:
+      transient statuses 429, 500, 502, 503, 504 and network aborts or timeouts, three retries with about 2, 5 and
+      10 seconds backoff plus jitter (retry-after honoured), each logged as a warning; 401, 403, 404 and 422 fail
+      immediately. JS: tools/run-workflow-scheduler-entry.cjs wraps listWorkflowRuns next to the existing state-read retry.
+      Python: github_getter in tools/build_workflow_health_snapshot.py. createDispatchEvent is not retried blindly because a
+      5xx does not prove non-delivery; a transient dispatch failure records no run state and the next tick relies on the
+      observation logic of ADR-034 (a landed run shows up as in-flight). A read or dispatch failure that survives the retries
+      gives the target the decision api-error for that tick (no dispatch, state unchanged), counted in
+      runtimeState.apiErrors.<targetId>. The scheduler run turns red only when the same target hits an API error in
+      apiErrorPolicy.failAfterConsecutiveTicks (2) consecutive ticks.
+    rationale: >
+      A short GitHub outage is infrastructure noise, not a scheduling defect, and must not page via the critical scheduler
+      workflow. A persistent outage must stay visible, so repeated errors per target still fail the run. Not repeating the
+      dispatch avoids duplicate productive runs.
+    consequences:
+      positive:
+        - A single 5xx no longer produces a red Scheduler or Health run.
+        - Retries and api-error decisions are visible in logs, the Job Summary and the machine-readable decisions.
+        - No duplicate dispatch from retrying.
+      negative:
+        - A target with a transient read error is skipped for one tick, so its dispatch may be delayed by five minutes.
+        - A failed dispatch whose event did arrive is only noticed through the next tick's run list.
+        - Retries add up to about 17 seconds (plus jitter) per failing read.
+
+  - id: ADR-053
+    title: Workflow Health reports scheduler run volume as an informational warning
+    status: accepted
+    context: >
+      Health evaluated only failures and staleness, so a defect that started a target far more often than planned
+      (Players: 46 instead of 2 runs in 13 hours, ADR-047) went unnoticed (Issue #934).
+    decision: >
+      Robert approved the change on 2026-10-13. The snapshot compares, per scheduler target, the repository_dispatch runs of the last 24 hours with the
+      cron slots planned in .github/workflow-schedules.json (runVolume) and lists multiple-starts and many-cancelled-runs in a
+      top-level warnings array. Threshold observed > 2 x expected + 2; game-window targets use the dense cron as upper bound.
+      Warnings never create incidents, never change overall and never page. Details in workflow-monitoring.yaml runEvaluation.runVolume.
+    rationale: >
+      Volume anomalies are an early signal but push runs, manual repeats and legitimate retries make exact counts unreliable, so the signal stays informational.
+    consequences:
+      positive:
+        - Repeated dispatching of satisfied slots becomes visible in the snapshot.
+      negative:
+        - Cron evaluation exists in Python and in the scheduler (Node); both support the same simple expression subset.
+        - Targets denser than 100 runs per window report a lower-bound count.
+
+  - id: ADR-054
+    title: Hand-maintained league metadata lives in data-meta per league; calculation logic is central
+    status: accepted
+    supersedes: ADR-002
+    context: >
+      Hand-maintained league inputs were spread over public/data/Metadata.json,
+      public/requests/config.ps1, league defaults in ConfigUtils.psm1 and the League source
+      bootstrap (source-data/leagues/_bootstrap). ADR-002 put league rules into Metadata.json,
+      which mixed metadata with calculation parameters and tied them to the App delivery tree.
+      With several leagues possible and Salary, Cap and Grading moving into central models
+      (Issue #919), one place per league is needed that holds only what a person decides.
+    decision: >
+      Robert decided on 2026-10-14 (Issue #986). Everything hand-maintained about one league
+      lives in data-meta/<CanonicalLeagueID>/metadata.json (plus, later, transactions-manual.json
+      from Issue #999): CanonicalLeagueID, Provider, CurrentProviderLeagueID, LeagueTimeZone,
+      Owners, Drafts including SleeperDraftIDs, and per season the Cap Deadline with its buffer
+      and the model choice (Salary, SalaryCap, Grading). Calculation logic and model parameters
+      are central and league-independent (versioned, immutable models, Issue #919); a league only
+      chooses a model ID per season. Facts that are already canonical stay out of the metadata
+      (LeagueYear, TeamCount, earlier provider league IDs). data-meta is written by hand only;
+      no workflow or generator writes into it. Access goes through tools/league_metadata.py and
+      LeagueMetadataUtils.psm1, which fail closed (missing file or season, unknown key, unknown
+      model ID) and iterate all leagues. The staged migration (Issue #986): contract (step 1),
+      file and loaders with a parity test (step 2), consumer switch (step 3), removal of the
+      legacy owners (step 4). ADR-002 is superseded; its ownership of league inputs passes to
+      this decision, its ConfigUtils/technical-path split (ADR-003) is unchanged.
+    rationale: >
+      Metadata (what a league is and chooses) and logic (how values are calculated) change for
+      different reasons and have different owners. One file per league supports multiple leagues
+      and makes the model choice per season reproducible for history.
+    consequences:
+      positive:
+        - One hand-maintained place per league; no league metadata in public/data or technical scripts.
+        - A new model version applies from a chosen season while older seasons stay reproducible.
+        - Multi-league capable loaders with fail-closed validation.
+      negative:
+        - Until step 3 two sources exist and are kept equal only by a parity test.
+        - The interim model catalogue in the loaders must move to the model registry of Issue #919.
+
+  - id: ADR-055
+    title: Salary, Ranking, Grading and Salary Cap are central versioned models with the player-valuation product
+    status: accepted
+    context: >
+      Salary, SalaryProjected, Ranking, Grading and the League Salary Cap are computed in
+      public/requests/RequestPlayers.ps1 and RequestLeague.ps1 with parameters spread over
+      config.ps1, ConfigUtils.psm1 and literals. Fantasy Management keeps a copy of the curve
+      and floor in its salary simulation, and its Operations/Signal builders still read Salary
+      from Players.json (legacy-read-model-pending in the K1 register). ADR-038 deferred the
+      migration of such transitional derivations to scoped steps; Issue #919 is that step for
+      this family. The league will use more than one Salary concept over time (a redesign is
+      under discussion), and more than one league can exist.
+    decision: >
+      Robert decided on 2026-10-14 (Issue #919): the logic is central and league-independent.
+      Each derivation is a versioned model in tools/derived_data_lib/models/<kind>/v<N>.py
+      (salary-v1, salary-cap-v1, grading-v1) registered in registry.py; parameters live with
+      the code, never in league files. A league chooses per season which model ID applies
+      through data-meta/<CanonicalLeagueID>/metadata.json (ADR-054, #986). A model is
+      immutable after its first productive use; any change is a new version. Ranking is a
+      deterministic order statistic in tools/derived_data_lib/ranking.py without a model ID.
+      Results are stored as the Shared Derived product PlayerValuation under
+      data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json with full
+      history (every season of the league manifest, every week), regenerable at any time.
+      public/data stays an App delivery contract filled by consumer generators with an
+      unchanged contract; FM Operations/Signals and the salary simulation read the same
+      product and models. The first versions reproduce today's behaviour exactly (Robert:
+      parity without rounding tolerance); the Salary redesign becomes salary-v2 later. The
+      contracts are .ai-context/manual/derived-models.yaml and
+      .ai-context/manual/player-valuation.yaml.
+    rationale: >
+      One implementation per model removes the PowerShell/Python/FM copies, makes the Salary
+      concept selectable per league and season without hidden parameters, keeps old seasons
+      reproducible under the model that was valid then, and gives every consumer the same
+      numbers. Immutable versions turn a formula change into an explicit, reviewable event.
+    consequences:
+      positive:
+        - Salary, Ranking, Grading and Cap have one implementation, one registry and one stored history.
+        - App, Operations, Management and the simulation can no longer drift apart.
+        - A redesign (salary-v2, Dead Cap) lands as a new version without touching old seasons.
+      negative:
+        - The full history under data-derived adds repository size; it is measured in step 3 before it is committed.
+        - Identity-hold rows depend on earlier snapshot content and are the only non-rebuildable part.
+        - Resolved 2026-10-15 (Robert): the legacy quirk that an unranked player is graded A was a defect and is fixed in grading-v1 itself (Grade null for unranked players); no grading-v2, one-time exception to model immutability.
+        - Until the cutover (step 5) the PowerShell implementation stays the productive one and the models are covered by tests and the shadow only.
+
+  - id: ADR-056
+    title: The three data roots are data-source, data-meta and data-derived
+    status: accepted
+    context: >
+      The data roots were named source-data, derived-data and (new) data-meta, and every module spelled the
+      root names out itself (about 1,250 mentions of source-data in about 230 files). A shared prefix makes the
+      three roles easy to scan and the roots sort together in the repository (Issue #788).
+    decision: >
+      Robert decided on 2026-10-14 (gestaffelt) and approved the merges and the foreseen workflow changes the
+      same day. Step 0 centralized the root names (tools/data_roots.py, ConfigUtils.psm1 Get-DataSourceRoot,
+      Get-DataDerivedRoot, Get-DataMetaRoot, tools/tests/test_data_roots.py). Step A renamed derived-data to
+      data-derived. Step B renames source-data to data-source in one atomic change: git mv, the constants, every
+      path in code, workflows, .github/workflow-schedules.json, tools/nfl-game-window.cjs, tests and active
+      documentation. Workflow file names, scheduler target IDs, event types and contract file names that contain
+      "source-data" (for example sync-nfl-source-data.yml, nfl-source-data.yaml) are identifiers, not paths, and
+      stay. No compatibility layer and no double paths. Earlier ADRs and the analyses under
+      fantasy-management/analyses/** are historical records and keep the path names valid when they were written
+      (source-data/, derived-data/); read them with this ADR. The provenance strings inside
+      data-source/nfl/identities/historical-identity-adjudications.json are persisted evidence and stay as written.
+    rationale: >
+      One prefix for the three data roots, one place per language that spells them out, and a single atomic
+      rename keep the repository consistent at every commit. Rollback is a revert of the rename commit.
+    consequences:
+      positive:
+        - The roots sort together and are addressed through one constant per language.
+        - A further move needs one constant instead of hundreds of edits.
+      negative:
+        - Older ADR text and historical analyses still say source-data/ and derived-data/.
+        - Sync and pipeline workflows must not run across the rename merge; the merge happens in a quiet window.
+
+  - id: ADR-057
+    title: League history (transactions and drafts) is a Shared Derived product with a slim App delivery
+    status: accepted
+    context: >
+      Completed transactions and all drafts are rebuilt by about 4,200 lines of PowerShell in
+      public/requests/utils/league and written to public/data/Transactions.json, Drafts.json and
+      past_seasons/Transactions and Drafts. Those generated files feed each other (ADR-026), the
+      history is not available to Fantasy Operations or Fantasy Management except through the App
+      read model, Display fields are mixed into the facts, and the draft order still reads
+      public/data/Standings.json (Issue #999, #183).
+    decision: >
+      Robert decided on 2026-10-14 (Issue #999, six-layer target of the derived-data analysis) that the full
+      league history lives in data-derived. Two products, data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
+      and data-derived/league-drafts/<CanonicalLeagueID>/<season>.json, hold every completed transaction
+      (manual overlay applied, picks resolved to canonical draft identity and pick result) and every draft
+      (completed, current and open future, order, ownership, pick results, TradeHistory) of every season,
+      reproducible at any time from data-source plus data-meta. They are computed together in the ADR-026
+      order in one in-memory materialization by tools/derived_data_lib and written only on semantic
+      difference. Presentation (DisplayStatus, Display*Key, DisplayPick, selection of current versus past files)
+      belongs to the consumer generator tools/league_history_app_publish.py, which writes the App files with an
+      unchanged contract; trimming App fields is a separate later step that needs Robert's approval of the
+      field list. No new transaction, draft-order or ownership rule is introduced. Exact parity is proven
+      by a shadow run before the cutover. The only temporary non-canonical input is the Standings placement for
+      configured draft orders, replaced by the league-standings product of Issue #987. Contract:
+      .ai-context/manual/league-history.yaml. Amendment (Issue #1100, CP2,
+      2026-10-21): historical player display references belong to those same
+      Shared Derived league-history products, not to a new identity owner or a
+      join in the App consumer. Both product families carry season-aware
+      PlayerRefs resolved through the existing canonical provider mappings and
+      qualified NFL/profile/provider-event evidence; the transactions product
+      keeps its PlayerIdentities compatibility map generated from that same
+      resolver. Source names, positions and portraits are explicitly attributed,
+      unknown/ambiguous player identities remain unresolved and a current
+      NFL team is never projected into a historical event. ContractVersion 2
+      is additive at the product level; the App delivery and Angular fallbacks
+      remain unchanged until separate CP3 integration.
+    rationale: >
+      A reproducible history owned by one deterministic implementation removes the generated-file feedback
+      loop, serves all consumers from the same facts and lets the App receive a slim, App-specific delivery.
+    consequences:
+      positive:
+        - No generated archive is the source of any value; history is regenerated, not archived.
+        - App, Fantasy Operations and Fantasy Management can read the same transactions and drafts.
+        - Presentation changes no longer touch the facts.
+      negative:
+        - Until Issue #987 the draft order depends on the Standings placement through one explicit adapter.
+        - The PowerShell implementation stays productive until the cutover step, so two implementations coexist and are held equal by the shadow test.
+        - Resolved 2026-10-15 (Robert, Issue #999 step 7): after the cutover the PowerShell rebuild (RequestTransactions.ps1, RequestDrafts.ps1 and the Draft/Transaction modules in public/requests/utils/league) was removed; ADR-026's dependency order now lives in tools/derived_data_lib/league_history.py and ADR-011/ADR-026 text that names the PowerShell entry points is historical.
+
+  - id: ADR-058
+    title: Past-season Schedule archives are regenerated from canonical NFL facts every week
+    status: accepted
+    amends: ADR-045
+    context: >
+      ADR-045 left past_seasons/Schedule_<year>.json as static archives after the Tank01 generators were removed. A check
+      for Issue #999 step 7b found them reproducible from data-source/nfl (schedules plus game-finality) and, in part,
+      wrong: three 2024 and two 2022 kickoff times differed from the canonical facts (for example BAL@KC 2024-09-05 shown
+      as 8:40p instead of 8:20p). A derived output that is generated once cannot follow later changes of the derivation
+      logic or a corrected canonical fact.
+    decision: >
+      Robert decided on 2026-10-15 (Issue #999) that the archives are kept current by the regular runs, never generated
+      once. tools/schedule_archive.py is the consumer generator; it repeats New-AppScheduleGame
+      (CanonicalScheduleUtils.psm1) in Python, proves parity with the published Schedule.json through the command
+      compare-current, and writes Schedule_<season>.json from the first needed season (first league season minus the
+      history seasons the Salary model of that season reads, salary-v1: 3, so 2021 for the league that began in 2024; the
+      value is HISTORY_SEASONS of the model, not a constant of the generator) up to the season before the current
+      league season (league manifests), only on a semantic difference and fail-closed (a season that cannot be built keeps its last
+      file and raises a warning). It runs in the weekly update-transactions run before the Past Seasons index refresh.
+      Archives keep all game types (the records carry seasonType), team fields use canonical abbreviations (ADR-042,
+      consumers resolve LegacyIDs), and the cancelled 2022 week-17 game BUF@CIN, absent from nflverse, is a visible
+      hand-maintained supplement in the generator. Players_<year>.json (static Tank01 archive) was removed on 2026-10-16 (Robert, Issue #999 step 7b) after its readers
+      (historical FantasyGameContext, #420; FM salary simulation, dead TankID join) no longer needed it; recoverable from git history.
+    rationale: >
+      One implementation of the schedule conversion per language with a parity command, no archive as input, and
+      archives that follow the canonical facts instead of freezing a provider's errors.
+    consequences:
+      positive:
+        - Schedule archives always equal the canonical facts and follow later logic changes with the next weekly run.
+        - Wrong Tank01 kickoff times in the archives are corrected.
+      negative:
+        - The archives gain 13 postseason games per season and lose the numeric Tank01 team IDs (LegacyIDs still resolve).
+        - The conversion exists in PowerShell and Python; compare-current guards against drift.
+
+  - id: ADR-059
+    title: Scope-based and risk-tiered authorization replaces file-based workflow approvals
+    status: accepted
+    context: >
+      Historic per-file GitHub Actions approval and per-step chat stoppages slow
+      authorized multi-agent delivery without addressing risks in generators or
+      other non-workflow code. Existing publication and workflow monitoring
+      contracts provide separately enforceable safety requirements.
+    decision: >
+      On 2026-10-16 the user approved authorization by defined work-package
+      scope and downstream operational impact rather than filename or model.
+      A clearly approved end-to-end Issue permits continuous routine scoped
+      workflow changes, commits, reviews, PRs and merges, subject to required
+      checks, with no further approval for each YAML or checkpoint. A single
+      bounded-step approval ends at its checkpoint. Standard changes preserve
+      ownership, permissions and writer scopes. Elevated effects require the
+      relevant specific scope and impact authorization; critical/destructive
+      effects require distinct targeted authorization even for an approved
+      Issue. Unknown risk fails closed. Keep Fantasy Management qualitative
+      persistence authorization, default one-off Actions prohibition, canonical
+      source-of-truth and branch-publication/monitoring safety unchanged.
+      The normative agent-independent rules live in
+      .ai-context/manual/ai-guidance.yaml under authorizationAndRisk
+      (Issue #1039).
+    rationale: >
+      Human attention should focus on unapproved risk or material new scope,
+      while reliable agents autonomously complete already authorized work.
+    consequences:
+      positive:
+        - Less repeated approval friction for ChatGPT, Claude and other agents.
+        - Real downstream data and permission effects determine review rigor.
+        - Reversible checkpoints, mandatory validation and technical safety remain.
+      negative:
+        - Each agent must assess actual operational impact and escalate uncertainty.
+
+  - id: ADR-060
+    title: External market, ranking, ADP, projection and roster-activity sources are shared Source Evidence under data-source
+    status: accepted
+    context: >
+      FantasyPros, FantasyCalc, Fantasy Football Calculator, FFToday, CBS Sports and Sleeper Trending are fetched by
+      Fantasy Management scripts and stored under fantasy-management/sources (Issue #988). ADR-037 says reusable
+      market/media acquisition must not stay in a consumer namespace. The inventory found league context
+      (actual_league_team_count) inside global observations, three raw retention styles, no CanonicalPlayerID and only
+      one season-aware quality contract, while the canonical identities already map FantasyPros, CBS and Sleeper IDs.
+    decision: >
+      Robert approved the migration plan and the foreseen workflow changes on 2026-10-14. The six sources become
+      Source Evidence in data-source. A separate registry (data-source/external-registry.json, like league-registry.json)
+      describes each dataset (provider x format): domain, kind, acquisition, provider format attributes, identity provider
+      key, retention, quality, season-phase policy and mandatory rights fields. Raw responses live under
+      data-source/providers/<provider>/<dataset>/ with latest-with-git-history retention. Normalized provider snapshots keep
+      their current layout under data-source/market/<kind>/<provider>/<format>/snapshots/<date>/ and are immutable once
+      written; history is moved with git mv. A per-dataset identity.json maps (Season, ProviderPlayerID) to CanonicalPlayerID
+      through provider-mappings.json, fail-closed, without name fallback, regenerable and written only on semantic change.
+      Observations carry format only as provider attributes; league context such as the league team count is not written.
+      Technical freshness status per provider lives under data-source/market/_status/; Fantasy Management keeps its readiness
+      gate as consumer policy. Code lives in tools/external_source_data.py and tools/external_source/. Acquisition keeps
+      running as matrix legs of fm-daily.yml until an App consumer exists. A challenge response of a provider is a blocked
+      state, never retried and never bypassed; a dataset inactive in the current NFL phase is not requested. No App display
+      without resolved rights (#190). Migration is one PR per provider with exact Fantasy Management output parity after
+      path-prefix normalization. Consumers do not read provider snapshots permanently: a deterministic Shared Derived product
+      data-derived/market-observations (one schema across providers, CanonicalPlayerID, full history) and central movement
+      models follow; App and Fantasy Management then read only those. Podcast transcripts later go to data-source/providers,
+      extracted takes and mentions (LLM output, not byte-reproducible) to data-source/media as immutable versioned
+      observations, and deterministic evaluations on top of them to data-derived; storage and publication rights stay a
+      separate per-dataset decision (ADR-037). Transition rule: until the market-observations cutover, Fantasy Management
+      reads the moved provider snapshots directly; this read is classified as transitional in consumerReadClassification and
+      removed with that cutover. Contract: .ai-context/manual/external-source-data.yaml.
+    rationale: >
+      One owner for consumer-neutral evidence, the same retention and identity rules as the rest of data-source, and a
+      migration that keeps every historical snapshot byte-identical.
+    consequences:
+      positive:
+        - App and Fantasy Management can read the same attributed values; Fantasy Management is no longer the hidden owner.
+        - Four of six sources gain a fail-closed CanonicalPlayerID without changing provider evidence.
+        - Season-phase expectations apply to every source, so preseason-only projections ending is not an error.
+      negative:
+        - A third registry next to registry v3 and league-registry.json.
+        - FFToday and Fantasy Football Calculator stay without CanonicalPlayerID until a provider ID mapping exists.
+        - Acquisition remains orchestrated by an FM-named workflow until a later split.
+
+  - id: ADR-061
+    title: NFL betting source observations remain separate from global NFL Game derived expectations
+    status: accepted
+    context: >
+      Issue #946 separated nflverse betting columns from the schedule facts because
+      live finality polling caused frequent Raw commits without an odds consumer.
+      #1073 enables canonical NFL betting source observations; #1077 introduces
+      a reusable global NFL Game product. Upstream games.csv changed repeatedly
+      during 2026-10-16/17, sometimes ten minutes apart, while the repository
+      odds snapshot was refreshed only once per normal daily source run.
+    decision: >
+      On 2026-10-17 Robert approved an explicit Source/Derived split: keep the
+      original low-churn schedules materialization and materialize separately
+      data-source/nfl/schedule-odds/<season>.json keyed by canonical GameID with
+      attributed Moneyline, Spread, Total and quoted odds as nullable source
+      observations; do not store derived expected scores in canonical Source.
+      The shared-derived global NFL Game product is owned separately by #1077
+      under data-derived/nfl-games/<season>.json, joins Schedule, Finality and
+      canonical Odds, and computes ImpliedAwayPoints=(TotalLine-SpreadLine)/2 and
+      ImpliedHomePoints=(TotalLine+SpreadLine)/2 (positive away spread favors home).
+      It is a market expectation, not a provider exact-score forecast. The odds
+      dataset stays excluded from the ten-minute game-finality materialization.
+      The daily odds cadence is *provisional*: #471 owns a data-driven reassessment
+      of pregame freshness versus Source/Derived publication cost, and any scoped
+      refresh cadence or writer change must first pass operational impact, rollback,
+      monitoring and race-safety review. This decision alone does not authorize
+      changing the scheduler, publication path or live pipeline.
+    rationale: >
+      Betting evidence needs its own provenance and low-noise source pipeline,
+      while common cross-input derivation belongs to the dedicated shared-derived
+      NFL Game domain. A future consumer justifies revisiting source freshness
+      rather than automatically restoring noisy ten-minute full pipeline runs.
+    consequences:
+      positive:
+        - Historical/current source odds are normalized without being recast as model truth.
+        - One consumer-neutral global NFL Game product can serve multiple future consumers.
+        - Existing finality and schedule contracts remain stable.
+      negative:
+        - First-time canonical Odds and future NFL Game backfill add stored files.
+        - nflverse latest rows have no per-game publication time or odds movements;
+          historical pregame backtests need real contemporary observations.
+        - More frequent odds-only sync may require future scoped scheduling/writer
+          changes after #471 evaluation.
+
+  - id: ADR-062
+    title: Global NFL Game shared derivation is separately owned from Source and scheduler
+    status: accepted
+    context: >
+      On 2026-10-17 Robert authorized a global NFL Game product and a separate
+      smarter Source/Derived publishing gate. #1073 owns odds evidence and
+      #471 owns scheduling and durable change gates; neither may duplicate
+      the global NFL Game domain computation.
+    decision: >
+      #1077 owns the consumer-neutral global season-partitioned NFL Game product
+      under data-derived/nfl-games/<season>.json. Inputs are only normalized
+      canonical Schedule, Game Finality and Schedule Odds partitions. The product
+      is keyed by Season and GameID, preserves canonical scores and Finality, and
+      derives rounded market-implied team points from SpreadLine and TotalLine.
+      Never include provider moneyline/price fields in this v1 product; changes
+      only to those fields do not invalidate the shared game model. Missing
+      entire Source Odds partitions fail closed instead of masquerading as zero
+      market expectations; missing individual SpreadLine/TotalLine remain null.
+      Store no fabricated historical pregame observation time. The domain builder
+      is deterministic and read-only by default; workflow/publisher integration
+      is owned by #471 and requires a reviewed write/rollback scope.
+    rationale: >
+      A versioned single-owner shared model prevents a second game predictor in
+      Source or in Angular/Fantasy Management. Separating semantic valuation
+      from polling and Git publication prevents bookmaker price churn from
+      re-triggering unrelated NFL Live and fantasy App builds.
+    consequences:
+      positive:
+        - Deterministic league-independent NFL game truth plus attributed market estimates.
+        - Reproducible output under a completely empty Shared Derived root.
+        - Pure odds price changes cause no global NFL game data diffs.
+      negative:
+        - A new derived output and future scheduler adapter require explicit safety validation.
+        - Historical latest-line market values must not be reused as ex-ante pregame evidence.
+
+  - id: ADR-063
+    title: Weekly team awards reuse the existing App WeeklyRecaps publisher
+    status: accepted
+    context: >
+      The existing weekly recap generator owns the App-facing editorial
+      KeyGames and KeyPlayers read model. Best Manager and Best Coach are
+      already canonical Shared Derived TeamWeekPerformance facts for completed
+      weeks; a parallel App publisher would duplicate its ownership.
+    decision: >
+      Reuse RequestLeaguePublication.ps1, RequestWeeklyRecaps.ps1 and
+      WeeklyRecapUtils.psm1 to project existing TeamWeekPerformance winner
+      facts into public/data/WeeklyRecaps.json and historical WeeklyRecaps
+      archives. Derived owns scoring, best-ball optimization and winner ties.
+      WeeklyRecaps does no second calculation. Winner CanonicalLeagueRosterID
+      values map to FantasyTeamID exclusively through the exact season/week
+      canonical league matchup ProviderRosterID and matching final Matchups
+      participants; no current owner or mutable current roster lookup.
+      Missing Derived partitions remain explicitly unavailable, not zero;
+      incompatible or contradictory present partitions fail closed. The
+      established 2 KeyGames/3 KeyPlayers contract remains unchanged.
+      Future incremental migration of those legacy calculations to Shared
+      Derived retains the existing public/data WeeklyRecaps projection
+      boundary and is not performed in this checkpoint.
+    rationale: >
+      A single existing App publisher avoids a second scheduler/writer,
+      preserves source-of-truth boundaries and supplies a stable consumer
+      schema while Shared Derived expands.
+    consequences:
+      positive:
+        - One App projection and no reimplementation of Best Ball scoring.
+        - Historical roster identity is joined in its original week.
+        - Independent Derived backfills become visible on the next App chain
+          without introducing a new publication writer.
+      negative:
+        - A matching Derived partition is not guaranteed for every finalized
+          recap week until separately gated historical backfill finishes.
+        - The current recap generator temporarily mixes legacy editorial
+          calculations with shared-derived team award projection.
+
+
+  - id: ADR-064
+    title: Keep league-provider points and canonical NFL scoring separate with auditable reconciliation
+    status: accepted
+    context: >
+      Sleeper League PlayerPoints and independent canonical NFL-derived
+      PlayerWeekFantasy Actual sometimes disagree because provider scoring
+      evidence differs. League awards and canonical player analyses answer
+      different questions. Overwriting either point value, globally widening
+      scoring tolerances, or duplicating divergence gates across downstream
+      consumers would hide evidence or make historic awards unreliable.
+    decision: >
+      Retain both values in their existing authoritative sources and add one
+      read-only-by-default Shared Derived player-scoring reconciliation.
+      Identify a comparison by canonical league, season, week, player and
+      scoring-profile fingerprint. The reconciliation output contains both
+      values, null when one is absent, numerical difference and explicit
+      verification status. Allow only versioned, provenance-backed, exact
+      player/week/value-pair exceptions from manual data-meta policy.
+      Exception publication must remain auditable and stale exceptions fail
+      closed. This does not relax the normal ~0.01-point parity tolerance.
+      TeamWeekPerformance uses Sleeper League matchup PlayerPoints for both
+      actual starters and retrospective all-roster Best Ball; it consumes
+      reconciliation only as a quality gate. PWF continues to calculate
+      independent canonical NFL scores without using provider fantasy totals
+      as its source of truth.
+    rationale: >
+      A single reconciling fact creates future consumer choice without
+      merging two independent scoring facts or creating a second scorer.
+      The known Caleb Williams 2025 W06 difference (#698: 19.88 League
+      versus 20.38 PWF) has an explicit narrow exception, not a waiver.
+    consequences:
+      positive:
+        - Consumers can select a scoring source and inspect provenance.
+        - Unknown, stale or inconsistent scoring remains fail-closed.
+        - Accepted provider differences are not disguised as exact parity.
+      negative:
+        - An additional Shared Derived output requires later classified,
+          race-safe publication and explicit historical backfill validation.
+        - Players absent from the league matchup roster cannot have
+          invented Sleeper points and are marked unavailable on that side.
+
+  - id: ADR-065
+    title: Fail-closed risk-selected CI for pull requests with permanent merge result
+    status: accepted
+    amendedBy: ADR-067
+    context: >
+      The single mandatory GitHub Actions build serially executed every
+      historical source replay and full market restore on every pull request,
+      regardless of risk or touched dependencies. Its measured runtime was
+      approximately 39 minutes, mostly in NFL identity and market restoration.
+      CP1 registered existing tests and a read-only dependency impact selector;
+      CP2 proved independent read-only Fast validation can complete in roughly
+      2 minutes while retaining the complete legacy suite. Moving to selected
+      Deep tests must never silently drop existing checks or turn a skipped
+      GitHub Actions job into false evidence of validation.
+    decision: >
+      The existing build.yml remains the sole central PR CI entry point.
+      Run Fast contract/source/PowerShell/scheduler/Angular lanes on every PR
+      and execute the remaining previously required Python Fast modules from
+      a strict versioned registry. Select four Deep families using a complete
+      verified PR changed-file inventory plus conservative dependency closure.
+      Unknown paths, newly unclassified tests, renames/deletes, API uncertainty,
+      CI/selector/contract changes and broad provider or identity dependencies
+      require all affected Deep families; the unchanged legacy historical build is
+      invoked only by workflow_dispatch manual full validation, never
+      redundantly on a pull request. CP4 additionally schedules one weekly
+      read-only full audit through the existing central scheduler using the
+      narrowly declared repository_dispatch scheduler-ci-full-audit event.
+      The audit has one attempt per weekly slot; its strict CI gate requires
+      all Fast, all Deep and the intact historical full build to succeed.
+      Health monitoring separately queries repository_dispatch runs (not
+      frequently generated PR runs), alerts on the first failed audit,
+      checks for stale success and provides a bounded first-due grace period.
+      A single job-level
+      timeout-minutes-only change in an explicit allowlisted workflow may avoid
+      Deep only after comparing immutable base/head YAML semantic trees;
+      event, permission, command, environment or writer changes can never be
+      exempted. A stable always-present CI / Merge Gate inspects every Fast,
+      selector, selected and unselected Deep and conditional legacy job result;
+      missing, failed, cancelled, neutral or unexpected skip outcomes fail.
+      Existing independent production publication and Fantasy Management
+      validation remain intact. Branch protection activation is a separate
+      administrative step owned by Issue #243, and until then a named Merge
+      Gate is not itself a server-enforced required check.
+    rationale: >
+      Risk-based execution avoids unrelated 25-minute identity replays while
+      preserving full coverage of test modules previously invoked by the old
+      build. A separate strict result gate prevents the GitHub Actions default
+      'skipped' status from being mistaken for validated critical tests.
+      The tested Deep-test union replaces the redundant old build on CI-change
+      pull requests, with all four Deep suites still required on those changes.
+      Explicit full manual audits preserve the original complete command chain.
+    consequences:
+      positive:
+        - Unrelated PRs can obtain bounded read-only Fast checks without full historical restore.
+        - Source, identity, scoring, market and consumer risk retains explicit Deep regressions.
+        - All selector errors and unexpected job outcomes are visible and fail closed.
+        - Existing scheduler, state ownership and publication writers are unaffected.
+      negative:
+        - More individual jobs and test registry updates are now necessary.
+        - Conservative cases still incur long NFL Deep replay when needed, but
+          never the redundant sequential legacy build on pull requests.
+        - The historical build runs only via manual operator dispatch or
+          the once-weekly CP4 scheduler audit, not automatically on PRs.
+        - 'Until Issue #243 activates branch protection for CI / Merge Gate, GitHub does not make this check a server-enforced merge requirement.'
+        - Periodic complete audit and performance-distribution measurement are
+          follow-up checkpoints CP4 and CP6, not part of this decision.
+
+  - id: ADR-066
+    title: Effective transaction chronology is derived from provider status update
+    status: accepted
+    context: >
+      Sleeper waiver creation may precede successful processing by a calendar day.
+      The prior CreatedAt-based chronology presented pending submission as though
+      it were the effective completed league move and also ordered draft ownership
+      transfers and salary simulation incorrectly in that case (Issue #1117).
+    decision: >
+      Preserve Sleeper created and status_updated as CreatedAt and StatusUpdatedAt
+      in canonical League transaction facts. Shared Derived LeagueTransactions
+      computes a single principal EffectiveAt timestamp from valid positive
+      StatusUpdatedAt, falling back deterministically to CreatedAt for legacy
+      missing provider evidence and manual-only records; there is no wall-clock
+      interpolation. Keep CreatedAt and CreatedDate only as submission provenance.
+      Transaction consumers (App timeline/recent moves, draft pick trade ordering,
+      Fantasy Management salary simulation) use EffectiveAt as the event timestamp.
+      The additive LeagueTransactions and LeagueDrafts product schemas are v2; LeagueDrafts additionally includes season-aware PlayerRefs per ADR-057/Issue #1100.
+      The existing source/canonical and derived publisher pipelines own regeneration;
+      no hand-authored generated-data corrections or new workflows.
+    rationale: >
+      One effective event time eliminates separate consumer-specific guesses and
+      prevents a previously queued waiver claim from being dated before its outcome.
+    consequences:
+      positive:
+        - Chronological league events align with successful status transitions.
+        - Manual and legacy records have an explicit deterministic fallback.
+        - Submission provenance is still available for historical audit.
+      negative:
+        - Previously generated timelines and historical draft trade ordering may change.
+        - Canonical historical sources and consumer outputs need controlled republishing.
+        - A later Sleeper status_updated edit cannot reveal historical prior status
+          transitions; the provider timestamp is treated as best available evidence.
+
+  - id: ADR-067
+    title: Pull requests run Core plus selected Fast blocks; Deep runs only in the audit or by manual dispatch
+    status: accepted
+    amends: ADR-065
+    context: >
+      ADR-065 kept the four Deep families (NFL identity replay, League PWF/TWP,
+      market restore, consumer restore) as automatically selected pull-request
+      jobs. In practice the conservative dependency closure selected most or all
+      of them for any change to shared code, so ordinary pull requests still waited
+      for the 25 to 40 minute historical replays. Measured in Issue #1122 (CP6.0):
+      a pull request without Deep finishes in about 2.5 minutes of wall-clock time.
+    decision: >
+      Robert approved the scope on 2026-10-22 (Issue #1122). A pull request runs
+      Core (small mandatory contracts and publication-safety tests, always) plus
+      exactly the Fast blocks the selector derives from the complete verified diff:
+      the four Fast families (named like the Deep categories), Angular, Scheduler
+      and PowerShell. Deep never runs on a pull request. It runs in the weekly full
+      audit (together with every Fast block and the legacy build), and one Deep
+      category can be started individually through the workflow_dispatch input
+      `scope`. Every Deep category has Fast counterparts: modules mix cheap
+      deterministic cases with one expensive real-source replay, and the expensive
+      case carries the `deep_only` marker (tools/ci_tier.py) that the Fast lane
+      skips through CI_TEST_TIER=fast; the Deep lane and local runs execute it.
+      Additional read-only persisted-state guards (identity and derived references)
+      check the most common regressions in seconds. The selector stays fail-closed:
+      unknown, renamed, deleted, CI or policy paths select every Fast family and
+      block; the unchanged historical Deep proofs keep their safety value in the
+      audit. Fast families run when their own code or dependencies change, not on
+      unrelated changes. The CI / Merge Gate requires Core and exactly the selected
+      Fast blocks on a pull request, forbids Deep and the legacy build there, and
+      requires every Fast block, every Deep category and the legacy build in a full
+      audit. A Deep recommendation is a normal dialog rule, not a gate engine (see
+      ai-guidance ciMaintenance). No new writers, permissions or branch protection.
+    rationale: >
+      Fast feedback for normal changes and full historical proof on a regular
+      cadence. A bug that only a historical replay finds is caught at the latest by
+      the weekly audit, while the persisted-state guards and the cheap parts of the
+      Deep modules catch the common cases in the pull request.
+    consequences:
+      positive:
+        - Normal pull requests finish in minutes instead of waiting for historical replays.
+        - Deep is never skipped silently; it is audit or explicitly dispatched, and the audit gate requires it.
+        - Fast counterparts grow with each Deep-found defect class.
+      negative:
+        - A defect only visible in a full replay can reach main and is found by the next weekly audit.
+        - Modules with a deep_only case need the marker kept current; the inventory validation checks Fast family registration but not marker coverage.
+        - The Fast budget (about 3 minutes per block) and the question whether Deep parts can be extracted as Fast are working rules in ai-guidance ciMaintenance and the architecture review, not gates.
+
+  - id: ADR-068
+    title: Separate NFL regression suites from production source validation
+    status: accepted
+    amends: ADR-039
+    context: >
+      The shared NFL Source Sync workflow executed the broad test_nfl_source*.py
+      suite before every production refresh, including targeted schedule-odds.
+      This cost about 25 minutes in recent live runs before the source-to-derived
+      transaction could proceed. ADR-067 already owns PR Fast and full Deep
+      regression scheduling.
+    decision: >
+      Production NFL source and game-finality refreshes no longer invoke a
+      regression test suite before fetching current provider data. Regression
+      ownership remains with PR Core and selected Fast tests, plus periodic
+      full/Deep audit or manually dispatched Deep. Runtime fail-closed guards
+      remain unchanged: provider acquisition and schema validation, raw-first
+      publication, canonical materialization and integrity checks, scoped
+      write-set guards, repeated semantic no-op verification, and race-safe
+      publication. The full-scope repository-state identity audit (ADR-039)
+      still runs against the freshly materialized state before canonical commit;
+      it is a data-dependent publication guard, not redundant pre-sync testing.
+      No data ownership, published output schema or write destination changes.
+    rationale: >
+      Code regressions belong in CI, whereas live provider evidence and
+      materialized canonical state require direct checks on every production run.
+      A dedicated odds-only materialization scope is separate follow-up work.
+    consequences:
+      positive:
+        - Production Source refreshes avoid the expensive duplicate pre-sync suite.
+        - The live data-integrity guards and identity check remain fail-closed.
+      negative:
+        - Historical-only Deep regressions may be detected first by the
+          periodic audit, as accepted in ADR-067.
+        - Targeted Odds publishing still performs full canonical materialization
+          until the independent scoped-publishing change is implemented.
+
+  - id: ADR-069
+    title: Scope intelligent Odds canonical materialization to schedule-odds
+    status: accepted
+    context: >
+      The 10-minute intelligent Odds observer previously delegated to the
+      full NFL Source materializer. The full identity, roster, draft,
+      Combine and historical pipeline was rebuilt twice even for an
+      odds-only update. ADR-068 separated unit regressions from runtime
+      but did not address this materialization cost.
+    decision: >
+      Extend the existing NFL Source CLI and reusable workflow with a
+      schedule-odds scope restricted to dataset=nflverse.schedule-odds
+      (fixed raw source, no season argument). Reuse the full canonical
+      schedule and odds builders to preserve GameID joins, validation,
+      output schema and lifecycle rules. Evaluate the schedule raw
+      evidence but require its canonical effective partitions to match
+      previously published canonical schedules; a mismatch fails closed
+      until a normal full Source Sync reconciles the schedules.
+      Publish only data-source/nfl/schedule-odds/** as a scoped canonical
+      writer. Keep the existing two-phase raw-first transaction,
+      deterministic second semantic no-op pass, guarded path set and
+      race-safe publication. Narrow the scoped materialization's Git
+      input paths to schedules, odds and their producer code; unrelated
+      player and league updates cannot change this output.
+      The existing Source concurrency group and dependent NFL Game
+      Derived publisher stay unchanged. Do not introduce a new workflow
+      or another owner of canonical Odds.
+    rationale: >
+      Odds changes do not invalidate player identity or weekly source
+      products. Reusing the canonical builders avoids second-source
+      computation, while strict schedule parity prevents odds from
+      referring to unpublished schedule revisions.
+    consequences:
+      positive:
+        - The Odds-specific publish path avoids full identity/roster rebuilds.
+        - The scoped writer cannot modify unrelated canonical data.
+        - Unrelated updates need not trigger expensive Odds rebuild retries.
+      negative:
+        - Missing or stale published schedules block scoped Odds until
+          reconciled by full Source Sync.
+        - Odds may still queue behind the full Source publisher because
+          concurrency is unchanged in this checkpoint.
+
+  - id: ADR-070
+    title: League Live refreshes the current-season Shared Derived products incrementally
+    status: accepted
+    amends: ADR-057
+    context: >
+      LeagueTransactions/LeagueDrafts were rederived only weekly while League Live rendered the App
+      files every ten minutes, so the Shared Derived product lagged the App by up to a week. Best Manager
+      and Best Coach (TeamWeekPerformance, ADR-063) of a just-final week appeared only with the next
+      weekly run (Issue #471, measured 2026-10-25).
+    decision: >
+      Robert approved the plan and, as an elevated effect, this step on 2026-10-25 (Issue #471, step 3).
+      The League Live league job runs tools/league_live_derived_refresh.py after the PlayerWeekFantasy
+      refresh and inside the same rebuild-and-retry publication: league-transactions and league-drafts of
+      the current season per league, and TeamWeekPerformance of the newest league-scored week (strict
+      --require-pwf). The publication gains the prefixes data-derived/team-week-performance,
+      league-transactions and league-drafts, which the weekly runs already write. No fingerprint engine,
+      no new workflow, scheduler target, credential or permission. The helper is fail-soft per product
+      (warning, last good file stays) so an unfinished week cannot block the App League publication;
+      corrections of older weeks still arrive with the weekly runs. Fast tests: tools/tests/test_league_live_derived_refresh.py.
+      Ordering amendment (Issue #471, 2026-10-29, Robert approved the workflow change): products before
+      consumers. Within the publication command the derived refresh runs first, then
+      league_history_app_publish.py write and RequestLeaguePublication.ps1 (WeeklyRecaps reads the fresh
+      TeamWeekPerformance), and the PlayerWeekFantasy/MatchupProjections refresh last, because it takes its
+      target week from the FantasyGameContext.json that RequestLeaguePublication just wrote and no consumer
+      reads PlayerWeekFantasy. Guarded by tools/tests/test_league_live_derived_refresh.py.
+    rationale: >
+      The App and its Shared Derived source stay equally fresh using the existing materializers, with
+      failure isolation and without new infrastructure.
+    consequences:
+      positive:
+        - Product and App are equally fresh; awards of a final week are available within one tick.
+      negative:
+        - League Live writes three more data-derived prefixes and runs a few seconds longer; the
+          runtime was measured after the merge (Issue #471).
+        - A persistently unready product only shows as a warning until the weekly run fails loudly.
+
+  - id: ADR-071
+    title: One week-final definition with two milestones, computed and not persisted
+    status: accepted
+    context: >
+      Five places used three different rules for "week final" (Issue #897). PlayerWeekFantasy accepted WeekFinal without
+      a stats coverage check, so PWF week 6 (2026-10-20) and week 7 (2026-10-27) published about 20 players with false
+      0 points for roughly a day, while League.json already showed the week as scored and Players and PlayerValuation
+      followed about 13 hours later.
+    decision: >
+      Robert decided on 2026-10-29 (Variant B) and approved implementation including merges after green CI. A single
+      implementation, tools/derived_data_lib/week_finality.py with the CLI tools/week_finality.py, derives per league
+      week the evidence NflGamesFinal, NflStatsComplete and LeagueScored and two milestones, each an uninterrupted run
+      from the first league week: LeagueScoredWeek (games final and Sleeper scored) for League, Standings and
+      TeamWeekPerformance, and StatsFinalWeek (games final and stats cover every playing team) for PlayerWeekFantasy
+      Actual, Players and PlayerValuation. Until stats are complete PlayerWeekFantasy keeps Actual unavailable, never
+      final with 0. The result is a pure function of canonical source facts and is not persisted (no new writer).
+      Matchup finality and the current/lineup week stay separate concepts. Migration in six steps, one pull request
+      each, League last because it runs every ten minutes. Contract: .ai-context/manual/week-finality.yaml.
+    rationale: >
+      One rule removes the divergence by construction. Two milestones name the roughly 12 hour offset between the
+      Sleeper scoring and the nflverse stats instead of leaving it to chance, and a computed result needs no writer.
+    consequences:
+      positive:
+        - No consumer can publish a final week with missing team stats.
+        - The wait reason (Pending evidence) becomes visible per week.
+      negative:
+        - Until all steps land, the legacy rules stay productive next to the new function (held equal by a parity test).
+        - The coverage check is team level; a missing single player inside a covered team is not detected.
+        - Leagues with weeks beyond NFL week 18 need an explicit mapping first (hard error).
+
+  - id: ADR-072
+    title: Standings, Playoffs and Awards are central versioned models with the league-standings product
+    status: accepted
+    context: >
+      The regular-season table with tiebreaks, the playoff placements, the season awards, the all-time standing and the weekly
+      movement (ADR-040) are computed by about 1,700 lines of PowerShell (StandingUtils.psm1, CanonicalStandingUtils.psm1) and
+      written to public/data/Standings.json. Three consumers read that generated file back (RequestLeague.ps1 for League.json
+      Standings and Placements, RequestWeeklyRecaps.ps1, and tools/league_history_sources.py for the draft order, a transitional
+      read the restore gate reports as latent-blocker). The logic cannot be applied per league or per season, and a second league
+      would inherit the first league's rules (Issue #987, extracted from #919).
+    decision: >
+      Robert decided on 2026-10-29 (Issue #987, "alles wie empfohlen") to move the derivation into central, league-independent,
+      versioned models standings-v1 and awards-v1 in tools/derived_data_lib/models, registered in the model registry (ADR-055) and
+      chosen per league and season in data-meta/<CanonicalLeagueID>/metadata.json (ADR-054, keys Standings and Awards). The first
+      versions reproduce the PowerShell behaviour 1:1 (no new tiebreak or award rule; #964 follows as awards-v2). The result is the
+      Shared Derived product league-standings, one file per league and season at data-derived/league-standings/<CanonicalLeagueID>/<season>.json
+      with the weekly tables, playoffs, awards and the all-time standing through that season; there are no week files. The week basis is
+      LeagueScoredWeek (ADR-071). Consumers get Standings.json, the League.json placements, the neutral team order and the draft order only
+      from the product; overlay reads are for display, never for status, phase or week. The migration runs in five steps with one pull
+      request each: contract, models and materializer, exact shadow parity, cutover, removal of the old code. The cutover adds the write
+      prefix data-derived/league-standings/** to league-live.yml and update-standings.yml; that is an elevated effect and needs a separate
+      targeted approval with impact and rollback. Contract: .ai-context/manual/league-standings.yaml.
+    rationale: >
+      One implementation per model removes the generated-file feedback loop, lets a league choose the rules per season and keeps
+      history reproducible. A season file avoids about twenty nearly identical weekly files; the week basis follows the Sleeper results
+      without waiting for nflverse stats.
+    consequences:
+      positive:
+        - Standings, Playoffs and Awards have one implementation, one registry entry and one stored history.
+        - The draft order and WeeklyRecaps no longer read a consumer output.
+        - A rule change lands as a new model version without touching old seasons.
+      negative:
+        - Until the cutover the PowerShell implementation stays productive and is held equal by the shadow comparison.
+        - v1 keeps legacy quirks (per-game values divide by the regular-season game count during the season, team join across seasons by roster ID, display strings inside results).
+        - The cutover adds a write prefix for two existing writers.

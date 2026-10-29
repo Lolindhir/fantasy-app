@@ -4,10 +4,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 
-from nfl_source_data_lib.common import current_source_season, load_json, load_registry, sync_dataset
+from nfl_source_data_lib.common import (
+    UpstreamDownloadCache,
+    current_source_season,
+    load_json,
+    load_registry,
+    sync_dataset,
+)
 from nfl_source_data_lib.finality_materialize import (
     GAME_FINALITY_DATASET_ID,
     GAME_FINALITY_SCOPE,
@@ -17,9 +24,15 @@ from nfl_source_data_lib.finality_materialize import (
 from nfl_source_data_lib.historical_crosswalk import sync_historical_crosswalk_evidence
 from nfl_source_data_lib.history import select_missing_historical_partitions
 from nfl_source_data_lib.materialize import materialize
+from nfl_source_data_lib.schedule_odds_materialize import (
+    ODDS_DATASET_ID,
+    SCHEDULE_ODDS_SCOPE,
+    materialize_schedule_odds,
+)
+from data_roots import DATA_SOURCE_ROOT
 
 # Keep this entry point side-effect free until main() is invoked; CI imports the
-# supporting modules independently during source-data validation.
+# supporting modules independently during data-source validation.
 
 
 def parse_args() -> argparse.Namespace:
@@ -55,11 +68,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--raw-only", action="store_true", help="For sync, stop after validated provider raw data is persisted")
     parser.add_argument(
         "--scope",
-        choices=("full", GAME_FINALITY_SCOPE),
+        choices=("full", GAME_FINALITY_SCOPE, SCHEDULE_ODDS_SCOPE),
         default="full",
         help=(
             "Materialization scope. 'full' preserves the complete NFL materializer; "
-            "'game-finality' writes only canonical game-finality outputs."
+            "'game-finality' writes schedules/finality; 'schedule-odds' writes only canonical odds."
         ),
     )
     return parser.parse_args()
@@ -75,7 +88,7 @@ def main() -> int:
         raise ValueError("--scope is only valid with the materialize command")
 
     if args.command == "audit":
-        audit_path = repo_root / "source-data/audits/nfl-source-data-audit.json"
+        audit_path = repo_root / DATA_SOURCE_ROOT / "audits/nfl-source-data-audit.json"
         audit = load_json(audit_path)
         if audit is None:
             raise FileNotFoundError(
@@ -141,23 +154,26 @@ def main() -> int:
             else:
                 print("historical backfill batch: none")
 
-        for dataset in selected:
-            if dataset.is_season_partitioned:
-                partitions = list(args.seasons or [source_season])
-                partitions.extend(historical_by_dataset.get(dataset.id, []))
-            else:
-                partitions = [None]
-            for season in partitions:
-                result = sync_dataset(
-                    dataset,
-                    force=args.force,
-                    offline=args.offline,
-                    season=season,
-                    current_season=source_season,
-                )
-                partition = f" season={season}" if season is not None else ""
-                row_count = result["rowCount"] if result["rowCount"] is not None else "n/a"
-                print(f"{dataset.id}{partition}: {result['status']} ({row_count} rows)")
+        with tempfile.TemporaryDirectory(prefix="nfl-source-upstream-") as upstream_dir:
+            upstream_cache = UpstreamDownloadCache(Path(upstream_dir))
+            for dataset in selected:
+                if dataset.is_season_partitioned:
+                    partitions = list(args.seasons or [source_season])
+                    partitions.extend(historical_by_dataset.get(dataset.id, []))
+                else:
+                    partitions = [None]
+                for season in partitions:
+                    result = sync_dataset(
+                        dataset,
+                        force=args.force,
+                        offline=args.offline,
+                        season=season,
+                        current_season=source_season,
+                        upstream_cache=upstream_cache,
+                    )
+                    partition = f" season={season}" if season is not None else ""
+                    row_count = result["rowCount"] if result["rowCount"] is not None else "n/a"
+                    print(f"{dataset.id}{partition}: {result['status']} ({row_count} rows)")
         if args.raw_only:
             print("canonical materialization skipped: --raw-only requested")
             return 0
@@ -173,6 +189,13 @@ def main() -> int:
             if dataset_id in datasets
         }
         result = materialize_game_finality(repo_root, scoped_datasets, force=args.force)
+    elif args.scope == SCHEDULE_ODDS_SCOPE:
+        scoped_datasets = {
+            dataset_id: datasets[dataset_id]
+            for dataset_id in (SCHEDULE_DATASET_ID, ODDS_DATASET_ID)
+            if dataset_id in datasets
+        }
+        result = materialize_schedule_odds(repo_root, scoped_datasets, force=args.force)
     else:
         materialize_datasets = {dataset.id: dataset for dataset in registry if dataset.materialize}
         result = materialize(repo_root, materialize_datasets, force=args.force)

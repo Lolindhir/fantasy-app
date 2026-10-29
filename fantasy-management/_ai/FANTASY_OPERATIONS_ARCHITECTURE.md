@@ -17,13 +17,13 @@ Source refreshers own acquisition and source-local normalization. They do not ma
 The productive morning refresh path uses independent source-triggered materialization around the 07:00 Europe/Berlin monitoring window:
 
 - every successful relevant external ranking, projection, activity or Success-Heartbeat push on `main` may materialize immediately, including pushes between 05:00 and 06:45 Europe/Berlin;
-- relevant `League.json`, `Drafts.json`, `Players.json` and `Timestamps.json` input changes remain immediate materialization triggers;
+- relevant `League.json`, league metadata (`data-meta/<CanonicalLeagueID>/metadata.json`), `Players.json` and current-season Canonical League `drafts.json` (`data-source/leagues/*/seasons/*/drafts.json`) input changes remain immediate materialization triggers; a `Timestamps.json`-only push no longer is one (Issue #930); the App read model `Drafts.json` no longer is one;
 - materialization code, configuration, schema and workflow changes remain immediate triggers;
 - the DST-safe scheduled 06:45 Europe/Berlin materializer remains only as an additional catch-up and is never the sole normal morning consolidation path;
 - a manual `workflow_dispatch` of the materializer always runs immediately;
 - generated Operations-only commits do not recursively trigger the materializer, and PR-only validation must not publish production heartbeats or production materialization.
 
-The trigger decision is versioned and testable in `fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py`. `FM • Materialize • Operations Inputs` separates its lightweight `gate` job from the expensive `materialize` job. Push-triggered materializations may supersede older push-triggered materializations, while the scheduled 06:45 catch-up is not allowed to cancel an already running source-triggered materialization.
+The trigger decision is versioned and testable in `fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py`. `FM • Pipeline • Daily` (`.github/workflows/fm-daily.yml`) separates its lightweight `gate` job from the expensive `materialize` job, which runs after the six provider matrix jobs (also when one of them failed) and publishes through `tools/rebuild_and_publish.py`. Pushes that only change source or heartbeat files do not start a second run, because the pipeline materializes explicitly after the providers. Materializations never cancel each other; a later push-triggered run queues behind a running one.
 
 Correctness does not depend on GitHub Actions starting the scheduled 06:45 catch-up on time or completing it before the 07:00 consumer. The latest successfully published canonical Operations state is authoritative, and its `source-freshness.json` contract determines whether monitoring may proceed, proceed in degraded mode or block.
 
@@ -78,9 +78,9 @@ fantasy-management/_ai/scripts/build_player_signal_dataset.py
 
 The workflow builds `source-freshness.json` first and `external-signal-relevance.json` before `player-signals.json`, so the central contracts consume the latest successfully materialized readiness, activity and ownership context from the same run. All generated outputs are staged and published together through the existing retry/rebuild write path.
 
-The central player-signal dataset is league-wide rather than managed-roster-only. Since Checkpoint 6Y, its player name, fantasy-relevant position, Sleeper status, ESPN identity and nominal Sleeper depth-chart fields are read from Canonical NFL Identity/Platform data. Since Checkpoint 6Z.1, `nfl_team` is also the Canonical Sleeper `Team` fact and carries explicit `nfl_team_source = canonical_sleeper_team` provenance. Population membership is intentionally decoupled from that field: `Players.json -> TeamAbbr` remains only the compatibility source for `has_nfl_team` so the source cutover has zero intended population drift. This legacy reason is not current-NFL-roster truth. `Players.json` otherwise supplies Age/Experience, Salary/SalaryProjected, Tank01 `IsFreeAgent` and the structured Injury contract. Its configured fantasy population is QB/RB/WR/TE/K and includes a player when at least one of these conditions holds:
+The central player-signal dataset is league-wide rather than managed-roster-only. Since Checkpoint 6Y, its player name, fantasy-relevant position, Sleeper status, ESPN identity and nominal Sleeper depth-chart fields are read from Canonical NFL Identity/Platform data. Since Checkpoint 6Z.1, `nfl_team` is also the Canonical Sleeper `Team` fact and carries explicit `nfl_team_source = canonical_sleeper_team` provenance. Population membership is intentionally decoupled from that field. Since Checkpoint C2 (Issue #347, 2026-10-05) it follows Canonical NFL roster evidence by CanonicalPlayerID (`canonical_nfl_membership`, `canonical_nfl_recent_history`) instead of the former `has_nfl_team` bridge from `Players.json -> TeamAbbr`. `Players.json` otherwise supplies Age/Experience, Salary/SalaryProjected, Tank01 `IsFreeAgent` and the structured Injury contract. Its configured fantasy population is QB/RB/WR/TE/K and includes a player when at least one of these conditions holds:
 
-- the legacy App TeamAbbr compatibility bridge is present;
+- the player is on the latest canonical weekly NFL roster (`canonical_nfl_membership`) or on a current-season canonical season/weekly roster (`canonical_nfl_recent_history`);
 - the player is owned in the fantasy league;
 - the player is listed in an active normalized external ranking/projection source;
 - the player appears in the current external activity signal.
@@ -89,7 +89,7 @@ The dataset joins:
 
 - Canonical NFL player name/fantasy position plus Canonical ESPN identity;
 - Canonical Sleeper Team, status and nominal depth-chart position/order as source facts, with depth chart explicitly not treated as usage truth;
-- remaining App/legacy enrichment fields including the TeamAbbr population-only compatibility bridge, Age/Experience, Salary/SalaryProjected, Tank01 IsFreeAgent and structured injury;
+- remaining App/legacy enrichment fields including Age/Experience, Salary/SalaryProjected, Tank01 IsFreeAgent and structured injury;
 - league ownership derived from every team’s Roster/Reserve/Taxi union;
 - Dynasty expert-consensus and market-value signals;
 - Redraft ADP including the dedicated Kicker ADP feed;
@@ -99,7 +99,7 @@ The dataset joins:
 
 Projection providers remain independent. Comparable rank percentiles may be summarized across projection providers, but provider fantasy-point projections are retained separately and must not be averaged because provider scoring contracts can differ and are not Mighty-Giants scoring.
 
-The compact FA-board decision-infrastructure contract is built from freshly materialized `player-signals.json`, Canonical League ownership, non-membership `League.json` rule/display enrichment, complete current `Drafts.json` and `Timestamps.json`:
+The compact FA-board decision-infrastructure contract is built from freshly materialized `player-signals.json`, Canonical League ownership, non-membership `League.json` rule/display enrichment, the current-season Canonical League drafts (`data-source/leagues/<CanonicalLeagueID>/seasons/<season>/drafts.json`, classified through the league metadata `data-meta/<CanonicalLeagueID>/metadata.json` Drafts.Types) and `Timestamps.json`:
 
 ```text
 fantasy-management/automation/fa-board-materialization.json
@@ -115,7 +115,7 @@ Availability is fail-closed:
 - current league ownership is resolved from the complete Canonical League union of every team's `Roster`, `Reserve` and `Taxi` lists;
 - Managed-Team Reserve/Taxi occupancy used for capacity is taken from the same Canonical League ownership snapshot;
 - `League.json` contributes settings/phase/status/roster-size/kickoff/week and Team/TeamAbbr enrichment only; its roster lists do not control FA-board ownership or occupancy;
-- the current relevant Free-Agent Draft is resolved from complete `Drafts.json`;
+- the current relevant Free-Agent Draft is resolved from the Canonical League drafts via `canonical_league_drafts.py`; the DraftType comes from an explicit league metadata `SleeperDraftIDs` binding or, for unbound drafts, the free-agent/rookie keyword rule, and an unclassifiable open draft or a missing/invalid `drafts.json` resolves the draft state to unknown (fail closed);
 - positive ownership or an already assigned current FA-draft pick always blocks availability;
 - a player is `available` only when both negative checks are complete and unambiguous;
 - incomplete or ambiguous mandatory inputs yield `availability_status = unknown`, never a silent `available`;
@@ -485,7 +485,7 @@ Legacy workflow and helper files may remain only where another explicitly docume
 
 Fantasy Operations behandelt zeitabhängige Source-Relevanz datengetrieben statt über versteckte Scheduler-Sonderlogik.
 
-Der gemeinsame NFL Season Context wird deterministisch aus kanonischen Schedule-Fakten aufgelöst. Der erste Resolver ist `tools/nfl_season_context.py` und verwendet `source-data/nfl/schedules/<season>.json`. Er unterscheidet mindestens `pre_regular_season`, `regular_season`, `postseason` und `post_regular_season`. Consumer dürfen diese Semantik nicht separat aus Sleeper rekonstruieren.
+Der gemeinsame NFL Season Context wird deterministisch aus kanonischen Schedule-Fakten aufgelöst. Der erste Resolver ist `tools/nfl_season_context.py` und verwendet `data-source/nfl/schedules/<season>.json`. Er unterscheidet mindestens `pre_regular_season`, `regular_season`, `postseason` und `post_regular_season`. Consumer dürfen diese Semantik nicht separat aus Sleeper rekonstruieren.
 
 Für externe Source-Datasets gelten getrennte Zustände:
 1. **technical refresh** — Provider erreichbar und technischer Vertrag valide;
@@ -505,7 +505,7 @@ Der gemeinsame NFL Season Context wird in Fantasy Operations zusätzlich in eine
 Der aktuelle Runtime-Contract wird zusammen mit Source Freshness publiziert:
 
 ```text
-source-data/nfl/schedules/<season>.json
+data-source/nfl/schedules/<season>.json
 → shared NFL Season Context
 → Fantasy Operations Consumer Activity Policy
 → generated/operations/source-freshness.json -> consumer_activity

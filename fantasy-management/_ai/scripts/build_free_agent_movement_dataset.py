@@ -29,6 +29,13 @@ import build_player_signal_dataset_with_projection_extensions as projection_ext 
 import canonical_league_ownership as canonical_ownership  # noqa: E402
 import free_agent_movement_market_calibration as market_calibration  # noqa: E402
 
+# The shared read-only Source snapshot discovery also serves Fantasy Operations
+# historical baselines. Do not duplicate the format grammar in this consumer.
+TOOLS_DIR = SCRIPT_DIR.parents[2] / "tools"
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+from external_source.snapshot_discovery import discover_snapshots  # noqa: E402
+
 SCHEMA_VERSION = 1
 CONFIG_SCHEMA_VERSION = 1
 DATASET_ID = "free-agent-movement-signals"
@@ -104,7 +111,7 @@ def load_canonical_league_scoring(root: Path, config: dict[str, Any]) -> tuple[d
     except canonical_ownership.CanonicalOwnershipError as exc:
         raise FreeAgentMovementMaterializationError(str(exc)) from exc
 
-    relative_path = Path("source-data") / "leagues" / canonical_league_id / "seasons" / str(season) / "league.json"
+    relative_path = Path("data-source") / "leagues" / canonical_league_id / "seasons" / str(season) / "league.json"
     league = load_json(root / relative_path)
     if not isinstance(league, dict):
         raise FreeAgentMovementMaterializationError("Canonical league scoring source must be a JSON object")
@@ -155,7 +162,7 @@ def _snapshot_date(pointer: dict[str, Any], ranking_file: Path) -> date | None:
         parsed = _extract_date(pointer.get(key))
         if parsed:
             return parsed
-    return _extract_date(ranking_file.parent.name)
+    return _extract_date(ranking_file.parent.name) or _extract_date(ranking_file.parent.parent.name)
 
 
 def _load_merged_catalog(root: Path, config: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, str]]]:
@@ -219,30 +226,35 @@ def _build_source_history(
         )
 
     current_dir = current.ranking_source.path.parent
-    snapshots_root = current_dir.parent
-    dated_dirs: list[tuple[date, Path]] = []
-    if snapshots_root.is_dir():
-        for child in snapshots_root.iterdir():
-            if not child.is_dir():
-                continue
-            parsed = _extract_date(child.name)
-            if parsed and (child / current.ranking_source.path.name).is_file():
-                dated_dirs.append((parsed, child))
-    dated_dirs.sort(key=lambda item: item[0])
+    # With the append-only layout current_dir may be .../snapshots/DAY/INTRADAY.
+    # Walk upward to the known Source history boundary rather than assuming a
+    # single parent hop from ranking.csv. Keep the current latest.json contract.
+    snapshots_root = next(
+        (directory for directory in (current_dir, *current_dir.parents) if directory.name == "snapshots"),
+        None,
+    )
+    if snapshots_root is None or not snapshots_root.is_relative_to(root):
+        raise FreeAgentMovementMaterializationError(
+            f"Ranking path is not inside a snapshots directory: {current.ranking_source.path}"
+        )
+    snapshots = discover_snapshots(snapshots_root, ranking_name=current.ranking_source.path.name)
 
     baselines: dict[int, ops.LoadedCatalogSource | None] = {}
     baseline_dates: dict[int, str | None] = {}
     for window in windows:
         cutoff = evaluation_date - timedelta(days=window)
-        candidates = [item for item in dated_dirs if item[0] <= cutoff]
+        # Stable ordering includes the observation UTC instant and the content
+        # hash suffix when more than one snapshot exists on the cutoff day.
+        candidates = [snapshot for snapshot in snapshots if snapshot.day <= cutoff]
         if not candidates:
             baselines[window] = None
             baseline_dates[window] = None
             continue
-        selected_date, selected_dir = candidates[-1]
-        ranking_file = selected_dir / current.ranking_source.path.name
-        baselines[window] = _historical_loaded_source(root, definition, current, ranking_file, selected_date)
-        baseline_dates[window] = selected_date.isoformat()
+        selected = candidates[-1]
+        baselines[window] = _historical_loaded_source(
+            root, definition, current, selected.ranking_file, selected.day
+        )
+        baseline_dates[window] = selected.day.isoformat()
 
     return SourceHistory(
         definition=definition,

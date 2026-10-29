@@ -6,7 +6,7 @@ Read this file first for Fantasy Football, Dynasty, Mighty Giants, Stoned Lack, 
 
 ## Scope
 
-Fantasy workspace work must stay inside this folder unless current application, shared source-data or league data from elsewhere in the repository is required.
+Fantasy workspace work must stay inside this folder unless current application, shared data-source or league data from elsewhere in the repository is required.
 
 ### Fantasy Management
 
@@ -37,7 +37,7 @@ Fantasy Operations prepares reliable decision inputs but does not own final Draf
 
 ### Shared Data / Platform boundary
 
-Shared provider-normalized NFL/league facts and cross-consumer technical infrastructure are not Fantasy Operations merely because this workspace consumes them. `source-data/**` and shared Data/Platform contracts remain in the repository application/data/platform context according to root `AGENTS.md` and `.ai-context`.
+Shared provider-normalized NFL/league facts and cross-consumer technical infrastructure are not Fantasy Operations merely because this workspace consumes them. `data-source/**` and shared Data/Platform contracts remain in the repository application/data/platform context according to root `AGENTS.md` and `.ai-context`.
 
 A downstream dependency does not change ownership: classify work by the responsibility it changes. Use both Fantasy Management and Fantasy Operations only when one coherent work package substantively changes both layers.
 
@@ -109,7 +109,7 @@ Store Fantasy-specific artifacts only under:
 
 `fantasy-management/`
 
-Shared canonical source facts remain in their repository-owned `source-data/**` / application-data context rather than being copied into Fantasy Operations as a second source of truth.
+Shared canonical source facts remain in their repository-owned `data-source/**` / application-data context rather than being copied into Fantasy Operations as a second source of truth.
 
 ## Work tracking
 
@@ -122,7 +122,7 @@ Shared canonical source facts remain in their repository-owned `source-data/**` 
 - Fantasy Operations owns Fantasy-specific automation, materialization, monitoring, readmodels, baselines, events, freshness and orchestration that prepare those decisions.
 - A Fantasy Operations pipeline or dataset does not also become Fantasy Management work merely because Management consumes it; a Management analysis or review does not become Operations merely because it reads Operations inputs.
 - Use both `area:fantasy-management` and `area:fantasy-operations` only when one coherent work package substantively changes both layers.
-- Shared `source-data/**`, provider-normalization, application, frontend, generated-app-data and shared technical-platform work remains in its Data/App/Frontend/Platform context as appropriate; a Fantasy consumer does not change that ownership.
+- Shared `data-source/**`, provider-normalization, application, frontend, generated-app-data and shared technical-platform work remains in its Data/App/Frontend/Platform context as appropriate; a Fantasy consumer does not change that ownership.
 - Coordinated cross-context work should use one coherent Issue where appropriate rather than duplicate canonical work.
 - Move durable Fantasy Management decisions into the relevant canonical rules, source maps or workflow documentation under `fantasy-management/_ai`; Issues do not replace durable knowledge.
 - Questions and analysis alone do not authorize repository mutation. Once the user explicitly authorizes concrete repository work, the administrative Issue maintenance required to track that authorized work is implicitly authorized.
@@ -228,6 +228,12 @@ fantasy-management/
     league-format-notes.md
   league-economy/
     AGENTS.md
+    salary/
+      README.md
+      salary-dead-cap-concept.md
+      salary-system-redesign-concept.md
+      analyses/
+      simulation/
     team-window-strategy-concept.md
     league-economy-redesign-options.md
   sources/

@@ -124,6 +124,16 @@ test('an in-flight batch suppresses a second dispatch and clears stale pending s
   assert.equal(evaluation.nextState, null);
 });
 
+test('a stuck queued batch no longer counts as in flight after the age bound', () => {
+  const now = new Date('2026-10-29T07:00:00Z');
+  const stuck = { id: 1, event: 'repository_dispatch', status: 'queued', created_at: '2026-09-13T08:59:33Z' };
+  const fresh = { id: 2, event: 'repository_dispatch', status: 'in_progress', created_at: '2026-10-29T06:50:00Z' };
+  assert.equal(scheduler.selectInFlightBatchRun([stuck], { now }), null);
+  assert.equal(scheduler.selectStaleBatchRun([stuck], { now }).id, 1);
+  assert.equal(scheduler.selectInFlightBatchRun([stuck, fresh], { now }).id, 2);
+  assert.equal(scheduler.selectStaleBatchRun([fresh], { now }), null);
+});
+
 test('successful scheduler batches replace legacy issue-event runs as the watermark', () => {
   const runs = [
     { id: 1, event: 'issues', status: 'completed', conclusion: 'success', created_at: '2026-09-05T05:40:00Z' },

@@ -10,7 +10,7 @@ responsibility: >
   data is available.
 
 owns:
-  - completed transaction identity and chronology
+  - completed transaction identity and chronology via EffectiveAt, not CreatedAt
   - participant roster IDs
   - player adds and drops
   - draft-pick movement from previous owner to new owner
@@ -26,20 +26,21 @@ doesNotOwn:
 
 sources:
   - Sleeper transaction endpoint
-  - public/data/Transactions_Manual.json
+  - data-meta/<CanonicalLeagueID>/transactions-manual.json
   - Sleeper draft and traded-pick endpoints
   - public/data/Drafts.json
   - public/data/past_seasons/Drafts/Drafts_<season>.json
 
 generation:
-  primaryGenerator: public/requests/utils/league/TransactionUtils.psm1
-  draftPickEnrichment: public/requests/utils/league/TransactionDraftPickEnrichmentUtils.psm1
+  primaryGenerator: tools/league_history_app_publish.py
+  product: data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
   entryPoints:
     - public/requests/RequestLeague.ps1
-    - public/requests/RequestTransactions.ps1
-    - public/requests/RequestDrafts.ps1
+    - .github/workflows/update-transactions.yml
+    - .github/workflows/update-drafts.yml
 
 notes:
+  - EffectiveAt is the authoritative timestamp of a completed move (Shared Derived LeagueTransactions v2). Source/Canonical preserve Sleeper created and status_updated; CreatedAt/CreatedDate remain submission provenance. Manual and legacy missing updated time use CreatedAt deterministically.
   - Angular must consume the generated draft-pick facts instead of deriving draft identity, concrete position or selected player from unrelated frontend state.
   - Draft-pick enrichment is intentionally optional while a future pick has no exact order or while a draft result is not yet available.
   - PlayerName is stored as a historical fallback when PlayerID no longer resolves against the current Players.json.

@@ -104,4 +104,45 @@ function Resolve-FantasyMatchupLoadWeek {
     return [Math]::Min($lineupWeek, $LastLeagueWeek)
 }
 
-Export-ModuleMember -Function Resolve-LeagueWeekState, Resolve-FantasyMatchupLoadWeek
+# FinalScoredWeek of League.json: the shared LeagueScoredWeek milestone (ADR-071, Issue #897).
+# A week counts only when every NFL game is final AND the league provider has scored it; the rule
+# lives in tools/derived_data_lib/week_finality.py and is not re-implemented here. Fails closed.
+function Get-LeagueScoredWeek {
+    param(
+        [Parameter(Mandatory = $true)][string]$CanonicalLeagueID,
+        [Parameter(Mandatory = $true)][int]$Season,
+        [Parameter(Mandatory = $true)][string]$RepoRoot
+    )
+
+    $toolPath = Join-Path $RepoRoot "tools/week_finality.py"
+    if (-not (Test-Path $toolPath)) {
+        throw "Week-finality tool missing at '$toolPath'."
+    }
+
+    $python = $null
+    foreach ($name in @("python3", "python")) {
+        $command = Get-Command $name -ErrorAction SilentlyContinue
+        if ($command) { $python = $command.Source; break }
+    }
+    if (-not $python) { throw "Python is required for the shared week-final definition." }
+
+    $output = & $python $toolPath bounds --league $CanonicalLeagueID --season $Season --repo-root $RepoRoot 2>&1
+    $exitCode = $LASTEXITCODE
+    $outputText = (@($output) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+    if ($exitCode -ne 0) {
+        throw "Shared week-final definition failed with exit code $exitCode. $outputText"
+    }
+
+    try {
+        $result = $outputText | ConvertFrom-Json
+    }
+    catch {
+        throw "Shared week-final definition returned invalid JSON. $outputText"
+    }
+    if ($null -eq $result.LeagueScoredWeek -or [int]$result.LeagueScoredWeek -lt 0) {
+        throw "Shared week-final definition lacks a valid LeagueScoredWeek."
+    }
+    return [int]$result.LeagueScoredWeek
+}
+
+Export-ModuleMember -Function Resolve-LeagueWeekState, Resolve-FantasyMatchupLoadWeek, Get-LeagueScoredWeek

@@ -73,7 +73,7 @@
 }
 
 .fantasy-pulse-card--remaining:hover { background: rgba(255, 255, 255, 0.94); }
-.fantasy-pulse-card--remaining.fantasy-pulse-card--final-window:hover { background: linear-gradient(135deg, #fff 0%, #faf7ff 100%); }
+.fantasy-pulse-card--remaining.fantasy-pulse-card--final-window:hover { background: linear-gradient(135deg, #fff 0%, #f4fbf6 100%); }
 
 .fantasy-pulse-card-main {
   position: relative;
@@ -121,7 +121,6 @@
 }
 
 .fantasy-pulse-metric-chip--starter { border: 1px solid #ddd6fe; background: #f5f3ff; color: #6d28d9; }
-.fantasy-pulse-metric-chip--final { border: 1px solid #c4b5fd; background: #ede9fe; color: #6d28d9; }
 .fantasy-pulse-metric-chip--option { border: 1px solid #cbd5e1; background: transparent; color: #64748b; }
 
 .fantasy-pulse-team-strip {
@@ -176,7 +175,7 @@
 }
 
 .matchup-score,
-.fantasy-pulse-final-nfl-score,
+.fantasy-pulse-score-value,
 .fantasy-pulse-impact-score { font-variant-numeric: tabular-nums; }
 
 .matchup-score { gap: 5px; margin-top: 1px; color: #172033; font-size: 0.86rem; font-weight: 950; line-height: 1; letter-spacing: -0.025em; }
@@ -185,16 +184,6 @@
 
 .fantasy-pulse-card--impact { min-height: 88px; }
 .fantasy-pulse-card--impact .fantasy-pulse-game-lockup { flex-wrap: wrap; row-gap: 3px; }
-
-.fantasy-pulse-final-nfl-score {
-  flex: 0 0 auto;
-  margin-left: 2px;
-  color: #172033;
-  font-size: 0.8rem;
-  font-weight: 950;
-  letter-spacing: -0.02em;
-  white-space: nowrap;
-}
 
 .fantasy-pulse-metrics--impact { align-items: baseline; gap: 4px 8px; }
 
@@ -213,11 +202,11 @@
 
 /* #488 Matchups Overview: matchup-first scoreboard and starter-scoring progress. */
 .matchup-card {
-  --matchup-final: #16a34a;
-  --matchup-locked: #2563eb;
-  --matchup-future: #cbd5e1;
-  --matchup-problem: #dc2626;
-  --matchup-review: #d97706;
+  --matchup-final: var(--lifecycle-final);
+  --matchup-locked: var(--lifecycle-active);
+  --matchup-future: var(--lifecycle-neutral);
+  --matchup-problem: var(--lifecycle-problem);
+  --matchup-review: var(--lifecycle-review);
   display: block;
   min-height: 0;
   padding: 7px 0 8px;
@@ -278,6 +267,15 @@
   white-space: nowrap;
 }
 .matchup-score-value--left { text-align: right; }
+
+.matchup-projection-value {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
 
 .matchup-vs {
   width: auto;
@@ -365,8 +363,7 @@
   background: var(--matchup-future);
 }
 
-.matchup-progress-segment--final,
-.matchup-progress-segment--irreparable { height: 12px; }
+.matchup-progress-segment--final { height: 12px; }
 .matchup-progress-segment--locked { height: 10px; }
 .matchup-progress-segment--final { background: var(--matchup-final); }
 .matchup-progress-segment--locked { background: var(--matchup-locked); }
@@ -390,7 +387,6 @@
 
 .matchup-window-title-line { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .matchup-window-kicker { color: #7c8799; font-size: 0.52rem; font-weight: 850; letter-spacing: 0.045em; text-transform: uppercase; }
-.matchup-window-live { color: #047857; font-size: 0.5rem; font-weight: 950; letter-spacing: 0.035em; }
 .matchup-window-time { color: #64748b; font-size: 0.61rem; font-weight: 800; white-space: nowrap; }
 
 .matchup-window-summary {
@@ -471,7 +467,6 @@
   .fantasy-pulse-team-strip { gap: 5px; padding-inline: 8px; }
   .fantasy-pulse-team-strip-label { font-size: 0.48rem; }
   .fantasy-pulse-team-avatar { width: 22px; height: 22px; }
-  .fantasy-pulse-final-nfl-score { font-size: 0.74rem; }
 }
 
 @media (min-width: 768px) {

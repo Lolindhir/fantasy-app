@@ -11,14 +11,14 @@ purpose: >
 
 boundaries:
   providerRaw:
-    path: source-data/providers/<provider>/
+    path: data-source/providers/<provider>/
     owns:
       - validierte providernahe Rohdaten
       - Abrufprovenienz und Content-Hash
       - Provider-/Upstream-Feldnamen
       - expliziten Availability-State pro persistierter Source/Partition
   canonicalNfl:
-    path: source-data/nfl/
+    path: data-source/nfl/
     owns:
       - providerunabhaengige NFL-Fakten
       - dauerhafte CanonicalPlayerID-Verknuepfungen
@@ -31,7 +31,7 @@ boundaries:
     owns:
       - generierte App-Vertraege
     rule: >
-      Source-Datasets duerfen nicht allein durch ihre Aufnahme in source-data
+      Source-Datasets duerfen nicht allein durch ihre Aufnahme in data-source
       automatisch neue Felder, Provider oder Identitaeten in public/data
       einfuehren. Die App-Generator-Migration ist ein eigener spaeterer Schritt.
 
@@ -46,7 +46,7 @@ canonicalSchema:
     CanonicalPlayerID.
 
 registry:
-  path: source-data/registry.json
+  path: data-source/registry.json
   schemaVersion: 3
   principle: >
     Acquisition, Format, Availability, Materializer-Teilnahme, Refresh,
@@ -85,7 +85,7 @@ registry:
       Raw Source persistiert.
     contract:
       - sourceProjection muss id, positive version und upstreamFormat deklarieren.
-      - Persistiertes sourceFormat bleibt ein normales Registry-Format; projected sources verwenden aktuell JSON.
+      - Persistiertes sourceFormat bleibt ein normales Registry-Format. Die meisten Projections persistieren JSON; die Schedule-Projections (nflverse-schedule-without-odds@1, nflverse-schedule-odds@1) persistieren CSV. Das erwartete Ausgabeformat je Projection-ID/Version steht in source_projection.py (SOURCE_PROJECTION_OUTPUT_FORMATS).
       - Nur explizit im Code registrierte Projection-ID/Version-Paare sind erlaubt.
       - Die Projection darf nur Provider-Zeilen filtern und Provider-Felder projizieren; CanonicalPlayerID, Fantasy-Scoring oder andere Derived Semantik bleibt dem Materializer vorbehalten.
       - Upstream-Bytes duerfen transient sein; Metadata persistiert Upstream-Hash, Byte-Groesse und Projection-Statistik.
@@ -116,9 +116,12 @@ registry:
 
   sourceSeason:
     resolutionOrder:
-      - public/data/League.json -> Season
-      - public/data/Metadata.json -> LeagueYear
-      - UTC calendar year as final technical fallback
+      - data-source/leagues/*/manifest.json -> CurrentCanonicalLeagueSeasonID (latest current season across leagues; unresolvable manifest fails closed)
+      - UTC calendar year as final technical fallback when no league manifest exists
+    independenceRule: >
+      Die NFL-Source-Schicht liest weder public/data/League.json noch
+      die manuellen Liga-Metadaten in data-meta; die
+      aktuelle Season stammt aus kanonischen League-Fakten (Issue #347 I2).
     explicitSelection: >
       `python tools/nfl_source_data.py sync --season <year>` ist wiederholbar und
       nur fuer sync mit mindestens einem ausgewaehlten season-partitioned Dataset
@@ -165,7 +168,7 @@ registry:
     wiederverwendet. Historische Reparaturen verwenden --force.
 
 historicalIdentityBackfill:
-  configPath: source-data/historical-identity-backfill.json
+  configPath: data-source/historical-identity-backfill.json
   purpose: >
     Persistiert zeitgenoessische historische Provider-Crosswalk-Evidenz, damit
     spaeter hinzugefuegte Fantasy-Ligen alte Sleeper-Player-IDs gegen bereits
@@ -262,6 +265,12 @@ activeDatasets:
   - id: nflverse.schedules
     lifecycle: seasonal-finalizable
     sourceMode: fixed
+    sourceProjection: nflverse-schedule-without-odds@1
+    materialize: true
+  - id: nflverse.schedule-odds
+    lifecycle: seasonal-finalizable
+    sourceMode: fixed
+    sourceProjection: nflverse-schedule-odds@1
     materialize: true
   - id: nflverse.game-finality
     lifecycle: seasonal-finalizable
@@ -284,11 +293,24 @@ activeDatasets:
     sourceMode: season-partitioned
     sourceProjection: nflverse-special-teams-fumble-events@1
     materialize: true
+  - id: nflverse.player-game-long-gains
+    lifecycle: seasonal-finalizable
+    sourceMode: season-partitioned
+    sourceProjection: nflverse-player-game-long-gains@1
+    materialize: true
   - id: nflverse.snap-counts
     lifecycle: seasonal-finalizable
     sourceMode: season-partitioned
     materialize: true
+  - id: nflverse.espn-qbr-week
+    lifecycle: seasonal-finalizable
+    sourceMode: fixed
+    materialize: true
   - id: sleeper.players
+    lifecycle: dynamic
+    sourceMode: fixed
+    materialize: true
+  - id: nflverse.teams
     lifecycle: dynamic
     sourceMode: fixed
     materialize: true
@@ -299,24 +321,158 @@ plannedDatasets:
   - id: nflverse.contracts
     lifecycle: snapshot
 
+scheduleOddsContract:
+  issue: 1073
+  providerDataset: nflverse.schedule-odds
+  rawPath: data-source/providers/nflverse/schedule-odds/raw-latest.csv
+  canonicalPath: data-source/nfl/schedule-odds/<season>.json
+  scope: >
+    Daily full NFL Source Sync materializes season partitions from the existing raw source.
+    NFL Live scoped game-finality sync never fetches or materializes odds. The normal
+    schedule and game-finality datasets remain separate, low-churn products.
+    Application Schedule.json / historical archives and Angular do not consume this
+    dataset in step 1; a consumer join is a separate later work package.
+  join: >
+    Each provider game_id must uniquely match one canonical schedules GameID; the
+    complete source must cover every schedule GameID. Mismatch or invalid numeric
+    lines fail closed before output is written.
+  fields: >
+    Each game carries GameID, GameType, Week, AwayMoneyline, HomeMoneyline,
+    SpreadLine, AwaySpreadOdds, HomeSpreadOdds, TotalLine, UnderOdds, OverOdds.
+    Missing source lines remain null, never zero. The canonical market evidence
+    does not contain any modeled/derived team points.
+  spreadConvention: >
+    nflverse spread_line is the away point spread: positive = home favored.
+    Keep that source convention attributed; calculations of implied team points
+    exclusively belong in the global shared-derived NFL Game product (#1077).
+  historicity: >
+    Only one latest line per game is available, not an intraday odds-movement
+    history. Existing older-season canonical partitions are frozen by the standard
+    seasonal-finalizable contract; first-time historical backfill uses current raw
+    historical evidence. No guarantee of snapshot/line publication time per game.
+  audit: phase1Datasets.scheduleOdds (seasonCount, gameCount, gamesWithAnyOdds, gamesWithCompleteLines, gamesWithoutCompleteLines, earliestSeason, latestSeason)
+  incrementalPublishing: >
+    The intelligent Odds observer delegates to the existing NFL Source Sync with
+    dataset=nflverse.schedule-odds and materialization_scope=schedule-odds.
+    This mode uses the same canonical schedule and odds builders as the full
+    source materializer, but only publishes data-source/nfl/schedule-odds/**.
+    Before writing odds, the evaluated source schedule must match the already
+    published canonical schedules; a mismatch fails closed and requires the
+    normal full Source Sync to reconcile schedule evidence.
+    The per-season freeze, strict canonical write-set guard and second semantic
+    no-op verification remain intact. It does not rewrite player identities,
+    other canonical NFL datasets or the persisted full NFL audit.
+    The downstream nfl-games Derived publisher keeps its own scoped writer and
+    runtime checks. The Source concurrency group is unchanged; removing that
+    queue bottleneck requires a separate authorized step.
+
+qbrWeekContract:
+  issue: 347
+  step: F4a
+  providerDataset: nflverse.espn-qbr-week
+  upstream: nflverse-data release espn_data, file qbr_week_level.csv (ESPN Total QBR per quarterback and game, all seasons since 2006 in one file)
+  providerRawPath: data-source/providers/nflverse/espn-qbr-week/raw-latest.csv
+  canonicalPath: data-source/nfl/qbr-week/<season>.json
+  acquisition: >
+    Fixed source (like nflverse.game-finality), refreshed by the existing NFL Source Sync; no
+    workflow change. The registry lifecycle is seasonal-finalizable/partitionKey=season because the
+    registry validator reserves refreshPolicy=periodic for dynamic datasets.
+  scope: >
+    Only the current source season is materialized, plus any season whose canonical partition
+    already exists (frozen by freeze-prior-seasons, repairable with --force). Older seasons are never
+    materialized speculatively; the raw file itself keeps all seasons.
+  join:
+    player: upstream player_id is the ESPN athlete id and resolves through IDs.ESPN to CanonicalPlayerID. An unmapped id keeps CanonicalPlayerID null with IdentityResolution=unresolved and is counted in the audit (phase1Datasets.qbrWeek.unresolvedIdentityCount); it is never guessed by name.
+    game: upstream game_id is the ESPN game id and must match exactly one ProviderGameIDs.ESPN in the canonical schedule. An unknown game id, a game from another season or a duplicate game/player pair fails the materialization closed.
+  semantics:
+    coverage: ESPN publishes QBR only for quarterbacks with at least 20 plays; Qualified is TRUE for every row.
+    notYetAvailable: A schedule game without a single QBR row has Games[].QBRStatus=not-yet-available (ESPN publishes with a delay of days). Consumers must show null, never 0.
+    notRated: A game with QBRStatus=published but without a row for a quarterback means that quarterback was not rated in that game. Consumers must show null, never 0.
+    missingMetric: An empty or NA metric stays null.
+    sourceTeam: SourceTeam/SourceOpponentTeam are ESPN abbreviations verbatim. ESPN can label a quarterback with a later team after a trade, so they are evidence only and not a join key; team resolution belongs to the F3 team registry and the game.
+  audit: phase1Datasets.qbrWeek (partitionCount, recordCount, resolvedIdentityCount, unresolvedIdentityCount, publishedGameCount, notYetAvailableGameCount)
+  consumer: G3 (GameHistory). G1 fixes the Passer Rating and average formulas there. Parity for the legacy Tank01 QBRating is not meaningful (qb-rating-uses-previous-passing-row in source-of-truth-matrix.yaml).
+
+playerProfilesContract:
+  issue: 347
+  step: F2
+  providerDataset: nflverse.players
+  upstream: nflverse-data release players, file players.csv (already persisted raw, also read by the identity layer)
+  canonicalPath: data-source/nfl/player-profiles/nflverse.json
+  implementation: tools/nfl_source_data_lib/player_profiles.py
+  acquisition: >
+    Unchanged; materialized by the existing NFL Source Sync from the persisted raw CSV. No workflow change.
+  fields: >
+    CanonicalPlayerID, GSISID, DisplayName, ShortName, Headshot, Position, PositionGroup, RookieSeason,
+    LastSeason, Status, LatestTeam, BirthDate. The set is the single table _PROFILE_FIELDS; adding a
+    persisted raw column is a one-line change. Empty or NA values stay null, never zero or empty string.
+  identityGuard: >
+    The projection is not an identity owner. Records are keyed by the CanonicalPlayerID that the identity
+    layer already resolved from IDs.GSIS (and GSIS aliases). A source row without a resolvable GSIS identity
+    is counted (phase1Datasets.playerProfiles.unresolvedIdentityCount) and not persisted; it never creates,
+    merges or re-links a player. A duplicate gsis_id, or two rows resolving to one CanonicalPlayerID, fails the
+    materialization closed because a profile join would be ambiguous. Identity materialization does not read this output.
+  audit: phase1Datasets.playerProfiles (sourceRowCount, recordCount, unresolvedIdentityCount)
+  consumer: tools/players_population.py (#347 H2 - NameShort, Picture, ESPN and FantasyPros links via DisplayName/Headshot). Consumers join by CanonicalPlayerID only.
+
 canonicalOutputs:
-  schedules: source-data/nfl/schedules/<season>.json
-  gameFinality: source-data/nfl/game-finality/<season>.json
-  rosters: source-data/nfl/rosters/<season>.json
-  weeklyRosters: source-data/nfl/weekly-rosters/<season>/<week>.json
-  playerStats: source-data/nfl/player-stats/<season>/<week>.json
-  specialTeamsFumbleEvents: source-data/nfl/special-teams-fumble-events/<season>/<week>.json
-  snapCounts: source-data/nfl/snap-counts/<season>/<week>.json
-  sleeperPlayers: source-data/nfl/platform/sleeper/players.json
-  audit: source-data/audits/nfl-source-data-audit.json
+  schedules: data-source/nfl/schedules/<season>.json
+  scheduleOdds: data-source/nfl/schedule-odds/<season>.json
+  gameFinality: data-source/nfl/game-finality/<season>.json
+  rosters: data-source/nfl/rosters/<season>.json
+  weeklyRosters: data-source/nfl/weekly-rosters/<season>/<week>.json
+  playerStats: data-source/nfl/player-stats/<season>/<week>.json
+  specialTeamsFumbleEvents: data-source/nfl/special-teams-fumble-events/<season>/<week>.json
+  playerGameLongGains: data-source/nfl/player-game-long-gains/<season>.json
+  snapCounts: data-source/nfl/snap-counts/<season>/<week>.json
+  qbrWeek: data-source/nfl/qbr-week/<season>.json
+  playerProfiles: data-source/nfl/player-profiles/nflverse.json
+  sleeperPlayers: data-source/nfl/platform/sleeper/players.json
+  teams: data-source/nfl/teams.json
+  audit: data-source/audits/nfl-source-data-audit.json
+
+teamRegistryContract:
+  issue: 347
+  step: F3a
+  providerDataset: nflverse.teams
+  upstream: nflverse-data release teams/teams_colors_logos.csv
+  canonicalPath: data-source/nfl/teams.json
+  implementation: tools/nfl_source_data_lib/teams.py
+  resolvers:
+    python: tools/nfl_source_data_lib/teams.py::NflTeamRegistry
+    powershell: public/requests/utils/general/NflTeamRegistryUtils.psm1
+  identity: >
+    TeamAbbr is the canonical app team key (nflverse abbreviation, LA and WAS for Rams
+    and Commanders). FranchiseID is the nflverse team_id and stays stable across relocations.
+  fields:
+    - TeamAbbr, FranchiseID, FullName, Name, City, Conference, ConferenceAbv, Division, DivisionName, Logo (ESPN)
+    - Aliases (provider spellings LAR and WSH; historical OAK until 2019, SD until 2016, STL until 2015)
+    - LegacyAppTeamID (numeric Tank01-era app key, frozen static history for old archives)
+  rules:
+    - Exactly 32 current teams; the abbreviations equal the canonical schedule abbreviations.
+    - Historical aliases require a season and fail closed outside their seasons; unknown or empty keys fail closed.
+    - LegacyAppTeamID is frozen in code (LEGACY_APP_TEAM_IDS) from the published Teams.json and is never fetched from a provider.
+    - Alias rows from nflverse must share the franchise ID of their target team, otherwise materialization fails.
+  consumerStatus: >
+    F3a provided the registry and resolvers. F3b (tolerant reads) is in place: PowerShell joins
+    between NFL team references (DecisionWindows, Lineup Repairability evidence, FantasyGameContext,
+    WeeklyRecaps) compare canonical keys through Get-NflTeamJoinKey, which accepts abbreviations,
+    provider spellings and legacy numeric IDs on either side and returns unresolvable values
+    unchanged; emitted team IDs are never rewritten. NflScheduleUtils and WeeklyRecapUtils resolve
+    LAR/WSH through the registry instead of local maps. Angular resolves NFL teams by ID or
+    Teams.json LegacyIDs through shared/utils/nfl-team-key.util.ts and falls back to a neutral team
+    for unknown references. Since F3c public/data/Teams.json is generated by RequestTeams.ps1
+    purely from the registry (no provider call, no API key): ID and Abv are the canonical
+    abbreviation (LA, WAS), Name/City/Conference/Division/Logo come from the registry (ESPN logos)
+    and LegacyIDs carries the former numeric app ID. Producer switches (F3d) follow in the #347 plan.
 
 specialTeamsFumbleEventContract:
   issue: 709
   providerDataset: nflverse.special-teams-fumble-events
   upstream: nflverse play-by-play csv.gz
   upstreamRetention: transient
-  providerProjectionPath: source-data/providers/nflverse/special-teams-fumble-events/raw-<season>.json
-  canonicalPath: source-data/nfl/special-teams-fumble-events/<season>/<week>.json
+  providerProjectionPath: data-source/providers/nflverse/special-teams-fumble-events/raw-<season>.json
+  canonicalPath: data-source/nfl/special-teams-fumble-events/<season>/<week>.json
   projectionRule: >
     Persist only nflverse PBP rows with special=1 and at least one forced-fumble
     or fumble-recovery player ID. Full play-by-play is not retained.
@@ -370,6 +526,51 @@ specialTeamsFumbleEventContract:
       backfill selector. Checkpoint B1 activates the support/readiness contract;
       production persistence of the remaining 1999-2024 seasons is Checkpoint B2.
 
+playerGameLongGainsContract:
+  issue: 347
+  step: F4b
+  providerDataset: nflverse.player-game-long-gains
+  upstream: nflverse play-by-play csv.gz (same URL as nflverse.special-teams-fumble-events)
+  upstreamRetention: transient
+  upstreamDownload: >
+    A sync run downloads one play-by-play URL once and reuses it for every projection
+    that declares it (UpstreamDownloadCache); no extra workflow, schedule or timeout
+    is needed.
+  providerProjectionPath: data-source/providers/nflverse/player-game-long-gains/raw-<season>.json
+  canonicalPath: data-source/nfl/player-game-long-gains/<season>.json
+  projectionRule: >
+    Per game, player and gain type keep only the provider play row with the maximum
+    yards (lowest play_id on ties) as evidence; full play-by-play is not retained.
+    rush = rusher_player_id with rushing_yards; reception = receiver_player_id with
+    complete_pass=1 and receiving_yards. Two-point attempts are excluded. Negative
+    maxima are kept as they are. The projection additionally lists every game found
+    in the upstream file (Games) so that "no record" is distinguishable from "game
+    not published".
+  canonicalIdentity: GameID + GainType + CanonicalPlayerID (SourceIDs.GSIS while unresolved)
+  gainTypes:
+    - LongRush
+    - LongReception
+  record: CanonicalPlayerID, SourceIDs.GSIS, GameID, SeasonType, Week, Team, GainType, Yards, PlayID
+  playerIdentity: >
+    PBP player IDs are GSIS provider IDs resolved through the CanonicalPlayerID
+    lookup. Unresolved current-season IDs stay null and are listed in the audit;
+    unresolved IDs in a finalized prior season fail closed.
+  missingSemantics: >
+    A game missing from Games is unknown (play-by-play not yet published), never zero.
+    A player without a record in a covered game has no qualifying play of that type.
+    A zero for a player with targets but no catch is a consumer rule that combines
+    this dataset with player-stats; it is not materialized here. The partition's
+    Finalized flag follows the season; per-game completeness comes from the
+    canonical game-finality dataset.
+  backfill: >
+    Only the current season is acquired in normal sync (GameHistory shows only the
+    current season). The dataset is deliberately not part of HISTORICAL_BANDS; older
+    seasons can be acquired on demand with --season (frozen unless --force).
+  parity:
+    reference: Tank01 Games.json longRush/longRec, 2026 weeks 1-4
+    result: 1328 of 1329 compared player-games equal; the one deviation is in week 4 (play-by-play not yet final)
+  consumer: G3 (GameHistory); G1 fixes the formulas for passer rating and the averages
+
 operationalDatasetEvaluation:
   evaluatedAt: 2026-08-30
   principle: >
@@ -377,9 +578,27 @@ operationalDatasetEvaluation:
     im Source-Data-Vertrag aktiviert; dies aendert public/data und seine Runtime-
     Provider noch nicht. App-Generator-Migration bleibt Phase 2.
 
+  scheduleOddsSplit:
+    issue: 946
+    rule: >
+      nflverse games.csv liefert Spielplan und Wettquoten in einer Datei. Die Quotenspalten
+      (away_moneyline, home_moneyline, spread_line, away_spread_odds, home_spread_odds,
+      total_line, under_odds, over_odds) aendern sich laufend und erzeugten bis zu 37
+      Raw-Commits pro Tag. Das Raw-Snapshot wird deshalb in zwei unabhaengige Datasets aus
+      derselben Upstream-URL geteilt: nflverse.schedules (providers/nflverse/schedules, ohne
+      Quotenspalten, materialize=true) und nflverse.schedule-odds (providers/nflverse/schedule-odds,
+      game_id plus Quotenspalten, materialize=false, kein kanonischer Konsument).
+    refreshRule: >
+      Beide Datasets haben eigenen Hash, eigene Metadata und eigene No-op-Erkennung. Der
+      Game-Finality-Scope des Workflows synct nur nflverse.schedules; die Quoten werden nur im
+      taeglichen vollen NFL-Sync aktualisiert. Eine reine Quotenaenderung veraendert die
+      Spielplan-Rohdatei nicht.
+    registryVersion: Registry-Schema bleibt v3 (additive Erweiterung der Projection-Ausgabeformate).
+    licenseAndProvenance: Lizenz und Attribution des Upstreams gelten unveraendert fuer beide Datasets.
+
   schedules:
     recommendedRole: primary-canonical
-    canonicalPath: source-data/nfl/schedules/<season>.json
+    canonicalPath: data-source/nfl/schedules/<season>.json
     primaryFor:
       - NFL-Spielplan und historische Schedule-Metadaten
       - Saison, Woche, Game Type, Datum, Teams und Scores
@@ -389,7 +608,7 @@ operationalDatasetEvaluation:
       gameKey: nflverse game_id
       playerIdentityRequired: false
     currentRuntimeUntilMigration:
-      - Tank01 liefert weiterhin das heutige Schedule.json-Format bis Phase 2
+      - Schedule.json wird seit #347 G2 vollstaendig aus kanonischem Schedule plus Finality gebaut (seit #347 G4 ohne jeden Tank01-Aufruf; Produzent ist RequestSchedule.ps1, Games.json entfaellt)
     guards:
       - game_id ist innerhalb des kanonischen Schedule-Datasets eindeutig
       - game_type wird explizit erhalten
@@ -397,7 +616,7 @@ operationalDatasetEvaluation:
 
   gameFinality:
     recommendedRole: canonical-finality-evidence
-    canonicalPath: source-data/nfl/game-finality/<season>.json
+    canonicalPath: data-source/nfl/game-finality/<season>.json
     evidence: nflverse released_games.csv
     rule: >
       Ein Score allein ist niemals Final-Nachweis. Final=true gilt nur fuer eine
@@ -414,7 +633,7 @@ operationalDatasetEvaluation:
 
   playerStats:
     recommendedRole: primary-canonical
-    canonicalPath: source-data/nfl/player-stats/<season>/<week>.json
+    canonicalPath: data-source/nfl/player-stats/<season>/<week>.json
     primaryFor:
       - woechentliche NFL-Player-Rohstats
       - historische Passing-, Rushing-, Receiving-, Kicking- und Return-Statistik
@@ -433,12 +652,12 @@ operationalDatasetEvaluation:
       Noch nicht veroeffentlichte aktuelle Stats duerfen als not-yet-available
       gelten. Missing ist nicht 0.
     currentRuntimeUntilMigration:
-      - Tank01 bleibt Quelle des heutigen provider-spezifischen Games.json-Boxscore-Schemas bis Phase 2
+      - Games.json und Tank01-Boxscores sind seit #347 G4 abgeschaltet; Points und GameHistory kommen aus kanonischen Stats
 
   rosters:
     recommendedRole: primary-canonical-for-nfl-membership
-    canonicalSeasonPath: source-data/nfl/rosters/<season>.json
-    canonicalWeeklyPath: source-data/nfl/weekly-rosters/<season>/<week>.json
+    canonicalSeasonPath: data-source/nfl/rosters/<season>.json
+    canonicalWeeklyPath: data-source/nfl/weekly-rosters/<season>/<week>.json
     primaryFor:
       - NFL-Teamzugehoerigkeit und saisonale Roster-Historie
       - In-Season-Teamwechsel ueber Weekly Rosters
@@ -456,11 +675,16 @@ operationalDatasetEvaluation:
     rule: >
       Season-Rosters ersetzen keine Weekly-Historie fuer In-Season-Teamwechsel.
       Rows ohne GSIS bleiben in Raw-Evidence, werden aber nicht per Name in die
-      kanonische Player-Zuordnung geraten.
+      kanonische Player-Zuordnung geraten. Historische Weekly-Roster-Raw-Partitionen
+      liefern GSIS-only-Evidenz fuer Spieler, die in heutigen Players/FF-Crosswalks
+      und historischen Stats fehlen. Nur echte GSIS-IDs (00-xxxxxxx) ohne
+      anderweitige Identitaetszuordnung koennen einen neuen kanonischen
+      Personen-Datensatz begruenden. Bereits per Weekly-Roster belegte
+      GSIS-Provenienz wird deterministisch wiederholt; nie via Namen verbinden.
 
   snapCounts:
     recommendedRole: primary-canonical
-    canonicalPath: source-data/nfl/snap-counts/<season>/<week>.json
+    canonicalPath: data-source/nfl/snap-counts/<season>/<week>.json
     primaryFor:
       - offensive, defensive und Special-Teams-Snaps pro Spiel
       - historische Snap-Anteile und Snap-Counts
@@ -494,7 +718,7 @@ operationalDatasetEvaluation:
 
   sleeperPlayers:
     recommendedRole: current-platform-and-interim-injury-source
-    canonicalPath: source-data/nfl/platform/sleeper/players.json
+    canonicalPath: data-source/nfl/platform/sleeper/players.json
     identity:
       authoritativeProviderKey: Sleeper player_id
       canonicalTarget: CanonicalPlayerID
@@ -506,6 +730,14 @@ operationalDatasetEvaluation:
       - injury_start_date
       - practice_participation
       - Sleeper depth-chart fields as platform facts
+      - 'profile fields (#347 F1): FirstName, LastName, FullName, YearsExp, College, HighSchool, Number, ESPNID, BirthDate'
+      - 'injury detail fields (#347 F1): InjuryBodyPart, InjuryNotes, PracticeDescription'
+    fieldProjection: >
+      The exposed field set is a single contract-driven table
+      (_SLEEPER_PLAYER_FIELDS in tools/nfl_source_data_lib/phase1.py) over the
+      already persisted raw snapshot; acquisition is unchanged and existing fields
+      keep name and order. Missing raw values stay null, never zero or empty string.
+      Sleeper stays a platform fact source here and does not become identity owner.
     injuryRule: >
       Sleeper liefert den benoetigten aktuellen Injury-/Practice-State. Tank01-
       spezifische Rich-Fields wie ReturnDate oder Description sind kein
@@ -532,8 +764,8 @@ tank01Target:
 
 historicalBackfill:
   currentAppHistory: >
-    public/data/past_seasons besitzt fuer Players, Games und Schedule derzeit
-    materialisierte Saisons 2022 bis 2025.
+    public/data/past_seasons besitzt fuer Players und Schedule derzeit
+    materialisierte Saisons 2022 bis 2025 (die Games-Archive wurden mit #347 G4 entfernt).
   bands:
     - seasons: 2012-2021
       coverage: schedules + player-stats + weekly-rosters + snap-counts (2013-2021)
@@ -562,7 +794,7 @@ combine:
   providerDataset: nflverse.combine
   upstream: nflverse/nflverse-data
   provenance: NFL Combine data courtesy of Pro Football Reference
-  canonicalPath: source-data/nfl/combine/<season>.json
+  canonicalPath: data-source/nfl/combine/<season>.json
   identity:
     masterKey: CanonicalPlayerID
     authoritativeJoin: PFR provider mapping
@@ -576,7 +808,7 @@ combine:
       Position oder Schule duerfen keinen Gewinner bestimmen. Widerspruechliche
       Same-Season-PFR-Claims werden quarantinisiert.
   draftLink:
-    authoritativeSource: source-data/nfl/draft/<season>.json
+    authoritativeSource: data-source/nfl/draft/<season>.json
     sourceEvidenceField: SourceDraftEvidence
     rule: >
       Upstream-Draftfelder bleiben Provenienz. Die normalisierte Draft-
@@ -588,7 +820,11 @@ publication:
   semanticNoOpRequired: true
   normalRepairBehavior: >
     Normale Materialisierung/Raw-Synchronisierung darf eingefrorene historische
-    Partitionen nicht ersetzen. Bewusste Reparatur verwendet --force.
+    Partitionen nicht ersetzen. Eine begrenzte Ausnahme erlaubt bei frozen
+    Player-Stats und Weekly-Rosters ausschliesslich fehlende CanonicalPlayerIDs
+    von null auf eine eindeutige Source-belegte Identitaet anzureichern, wenn
+    alle anderen Fakten und bestehenden Identitaeten byte-semantisch unveraendert
+    bleiben. Bewusste andere Reparaturen verwenden weiterhin --force.
   workflow:
     path: .github/workflows/sync-nfl-source-data.yml
     rule: >
@@ -607,7 +843,9 @@ validation:
   - Vorhandene prior-season Raw-Partitionen werden normal ohne Netzabruf erhalten.
   - Unerwartet kleine/leere oder schema-inkompatible Inputs koennen keinen letzten guten Stand ersetzen.
   - Exakte known-unavailable historische Partitionen werden separat auditiert, vom bounded Backfill ausgelassen und nie als Ready oder 0-Fakten ausgegeben; benachbarte unterstuetzte Seasons bleiben Pflicht.
-  - PR-CI fuehrt die komplette test_nfl_source*.py-Suite vor den bestehenden PowerShell-/Angular-Checks aus.
+  - PR-CI fuehrt Core und die selektierten Fast-Regressionstests aus (ADR-067); vollstaendige NFL-Regressionen inklusive Deep-Replays laufen im periodischen Full Audit oder per manuellem Deep-Dispatch.
+  - Produktive NFL-Source-Datenlaeufe fuehren keine generische test_nfl_source*.py-Regressionstestsuite vor dem Sync aus (ADR-068). Provider-Raw-Validierung, kanonische Schema-/Join-Pruefung, Write-Set-Guards, zweite semantische No-op-Materialisierung und fail-closed Publication bleiben verbindlich.
+  - Die Live-Repo-State-Identity-Pruefung laeuft im Full-Scope weiterhin gegen die frisch materialisierte Kanonik nach dem zweiten Idempotenz-Pass und vor dem kanonischen Commit. Scheitert sie, wird nichts Kanonisches publiziert (ADR-039).
   - Schedules und released-games game_id muessen eindeutig sein; unbekannte released game_id bricht fail-closed ab.
   - BUF-CIN Week 17/2022 bleibt ohne released-Evidenz nicht final, auch wenn Scores vorliegen.
   - Roster/Stats/Snap/Sleeper-Player-Zuordnung verwendet nur Provider-IDs; Namen sind nie autoritativ.

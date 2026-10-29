@@ -1,0 +1,42 @@
+<section class="mps" aria-label="Starter status">
+  <div class="mps-heading">
+    <span class="mps-label">Starter status</span>
+    <h3>Out and questionable starters</h3>
+  </div>
+
+  <div class="mps-columns">
+    <article *ngFor="let team of teams" class="mps-team">
+      <header class="mps-team-header">
+        <button type="button" class="mps-team-identity" (click)="teamSelected.emit(team.teamID)">
+          <img *ngIf="team.avatar as avatar" [src]="avatar" alt="" />
+          <strong>{{ team.name }}</strong>
+        </button>
+      </header>
+
+      <p *ngIf="team.problems.length === 0" class="mps-none">No out or questionable starters</p>
+
+      <div *ngIf="team.problems.length > 0" class="mps-group">
+        <button
+          *ngFor="let player of team.problems"
+          type="button"
+          class="mps-problem"
+          [class.mps-problem--out]="player.kind === 'out'"
+          [class.mps-problem--questionable]="player.kind === 'questionable'"
+          (click)="playerSelected.emit(player.playerID)"
+        >
+          <span class="mps-photo-wrap">
+            <img loading="lazy" decoding="async" *ngIf="player.picture as picture" [src]="picture" alt="" class="mps-photo" />
+            <img *ngIf="player.nflLogo as logo" [src]="logo" alt="" class="mps-nfl-logo" />
+          </span>
+          <span class="mps-player-copy">
+            <strong>
+              <span class="mps-chip mps-chip--status">{{ player.kind === 'out' ? 'OUT' : 'Q' }}</span>
+              {{ player.name }}
+            </strong>
+            <span *ngIf="player.gameLabel as label" class="mps-why">{{ label }}</span>
+          </span>
+        </button>
+      </div>
+    </article>
+  </div>
+</section>

@@ -2,20 +2,24 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+import re
 from datetime import datetime
 
 SOURCE_INPUT_PREFIXES = (
     "fantasy-management/sources/external-rankings/",
     "fantasy-management/sources/external-signals/",
     "fantasy-management/sources/refresh-status/",
+    "data-source/market/",
 )
 GENERATED_OPERATIONS_PREFIX = "fantasy-management/generated/operations/"
 CORE_INPUT_PATHS = {
     "public/data/League.json",
     "public/data/Players.json",
-    "public/data/Drafts.json",
-    "public/data/Timestamps.json",
 }
+# Hand-maintained league metadata (ADR-054) feeds the draft type classification of the FA board.
+LEAGUE_METADATA_PATTERN = re.compile(r"^data-meta/[^/]+/metadata\.json$")
+# Current-season Canonical League drafts feed the FA board (build_fa_board_readmodel.py).
+CANONICAL_LEAGUE_DRAFTS_PATTERN = re.compile(r"^data-source/leagues/[^/]+/seasons/[^/]+/drafts\.json$")
 MATERIALIZATION_DEFINITION_PREFIXES = (
     "fantasy-management/automation/",
     "fantasy-management/_ai/scripts/",
@@ -28,7 +32,8 @@ MATERIALIZATION_DEFINITION_PATHS = {
     "fantasy-management/_ai/schema-list.json",
     "fantasy-management/_ai/FANTASY_OPERATIONS_ARCHITECTURE.md",
     "fantasy-management/_ai/MONITORING_AND_WEEKLY_DECISIONS.md",
-    ".github/workflows/materialize-fantasy-operations-inputs.yml",
+    ".github/workflows/fm-daily.yml",
+    "fantasy-management/_ai/scripts/materialize_operations_inputs.sh",
 }
 
 
@@ -87,10 +92,15 @@ def decide(
     if all(_is_generated_operations(path) for path in files):
         return TriggerDecision(False, "generated_operations_only_change")
 
-    if any(_is_source_input(path) for path in files):
-        return TriggerDecision(True, "relevant_source_or_heartbeat_change")
+    # Provider commits are produced by the FM Daily chain, which materializes explicitly after the
+    # providers (Issue #947). A push that only touches source inputs must not start a second run.
+    if all(_is_source_input(path) or _is_generated_operations(path) for path in files):
+        return TriggerDecision(False, "source_inputs_refreshed_by_pipeline")
 
-    if any(path in CORE_INPUT_PATHS for path in files):
+    if any(
+        path in CORE_INPUT_PATHS or CANONICAL_LEAGUE_DRAFTS_PATTERN.match(path) or LEAGUE_METADATA_PATTERN.match(path)
+        for path in files
+    ):
         return TriggerDecision(True, "relevant_league_or_player_input_change")
 
     if any(_is_materialization_definition(path) for path in files):

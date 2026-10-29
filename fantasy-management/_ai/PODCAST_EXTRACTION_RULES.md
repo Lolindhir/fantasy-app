@@ -246,6 +246,71 @@ The audit is complete only when:
 
 A package is complete only when `coverage_audit.status` is `completed`.
 
+
+## In-season source-first coverage and evidence QA (approved pilot refinement)
+
+These requirements apply to weekly matchups, Start/Sit shows, Q&A and mixed episodes in addition to the independent full entity mention sweep. **Unresolved identities are acceptable intermediate work state; missing source statements are not.**
+
+### Source-first claim and question sweep
+
+Before marking any Content Map segment `takes_complete`:
+
+1. Read every original SRT/raw cue in the segment **again**, independently of its draft take IDs, planned claims or generated summary.
+2. Inventory every explicit start/sit, player-vs-player question and answer, weekly rank, winner/score/game-script call, materially reasoned positive/negative outlook, and source-expressed injury/usage condition.
+3. Inventory standalone *non-weekly* trade/acquire/avoid/waiver-budget or other strategic statements independently, even if the player has an existing weekly take.
+4. Record a traceable source obligation and matching take ID for each such statement. Passing teammate references do not automatically require new takes; however a brief explicit recommendation does.
+5. Reconcile **source inventory -> authored takes**, not merely **planned takes -> authored takes**. The latter validates internal consistency but cannot prove source recall.
+6. A complete segment includes its late questions, follow-up answers and sidebars; do not omit content after a nominal outro.
+
+The source-first inventory is a separate editorial coverage check, not a replacement for the full second-pass `mentions.json` entity audit. Schema-valid packages can still fail this editorial review. Never declare a segment complete solely because its original three broad claims or IDs were covered.
+
+### Evidence and source/QA separation
+
+- Every substantive take must include a literal, non-placeholder source quote hint and the original raw part/cue-range. A take with several independent statements needs multiple evidence points when one cue cannot support them all.
+- Anchor the evidence to the actual relevant cue; do not use the first cue of an entire several-minute discussion merely for convenience. Preserve SRT timing precision as *cue precision*, not as proof of audio accuracy.
+- Quote hints must be substrings of unchanged source text. Fabricated or paraphrased hints, `TODO`, or pointers saying only 'see raw part' do not qualify.
+- `risks`, `conditions`, `uncertainties` and `host_views` describe **what the source expressed**. Extraction-only concerns (ASR distortion, unverified name, absence of audio, suspicious chronology, weak attribution or missing external fact verification) belong in `entity_resolution.reason`, `notes` or a separate QA report.
+- Never assign named speakers from an unverified automatic diarization label. Distinct but unattributed speaker positions may be represented with explicit neutral labels and an attribution warning.
+- Classify `source_depth` by the source's actual reasoning (passing / brief / substantive / deep / structural), not by the length of JSON or topic importance. A one-sentence Q&A start decision is often `brief`; a multi-mechanism game argument may be `deep`.
+
+### Temporal, matchup and identity boundaries
+
+- One structured `game` subject denotes **one game**; don't join two games simply because they share a betting total or weekly rubric. Retain different source confidence between games.
+- A weekly lineup preference and a longer-term buy/sell/hold/avoid thesis can be two independent takes for the same player. Preserve their time horizon and reason separately.
+- A transcript-context identity hypothesis is not a confirmed canonical identity. Use `entity: null` with `ambiguous` or `unresolved` status until the claimed identity is sufficiently verified. Preserve raw mentions and plausible candidates in QA notes instead of silently resolving them.
+- Identity-resolution status can remain open during a pilot. Do not discard the original source call simply because identity is unresolved; also do not publish an unsupported alias or treat source news as verified NFL fact.
+- Maintain extraction fidelity separately from later source-calibration and Mighty Giants lineup decisions.
+
+## Multi-pass extraction and entity-first preflight (approved pilot guidance)
+
+**Primary quality goal:** maximize source-statement and mention recall before optimizing a readable synthesis. A fluent or schema-valid summary is not proof that nothing was omitted. Do not ask one generative pass to both select the "important" material and prove its own completeness.
+
+### Preflight A: high-recall raw entity candidates
+
+- Scan the **complete immutable raw transcript**, in short cue-bounded windows with overlap where discussion boundaries require it, for all potential player, coach, staff, host, team, league and other fantasy-relevant named entities. Include first names, surnames, partial names, ambiguous proper nouns, nicknames, phonetic ASR distortions and possible false positives.
+- Preserve each **exact original text span**, raw-part/cue/time reference and occurrence, together with a *candidate* kind and uncertainty. Do not silently replace a raw form with a cleaned canonical name. A normal-looking dictionary word can be a surname, while an unusual word is not necessarily a name; use context, not merely German/English dictionary membership.
+- Keep candidate detection **independent of resolution**. Only after the raw candidate register exists should the identity registry, verified league/NFL facts or external references be used to resolve entities. If unresolved or ambiguous, retain the raw candidate with a null canonical entity and appropriate status; this does not block collecting its claims.
+- A mention is **not** automatically a standalone take. Ranking subjects, explicit Start/Sit recommendations, materially evaluated players, news subjects and meaningful independent theses require takes. Passing comparisons, teammates and other context-only mentions can be technical mentions without fabricated evaluations.
+- This preflight candidate register complements but does **not** replace the later independent full `mentions.json` audit. The final audit must reread the raw source, including names missed in preflight.
+
+### Preflight B: independent source-statement inventory
+
+- In a separate task, enumerate all individually testable spoken claims, questions and answers: rankings, Start/Sit preferences, score/winner calls, direct comparisons, news, injury/usage contingencies, relevant figures, host dissent, structural team/scheme arguments and independent long-term trade or waiver theses. Do **not** collapse a contrary host view into the majority view.
+- Record each obligation with exact cue/time evidence. It may refer to an unresolved name or even to a game/team/strategy with **no personal name**; no source claim may disappear because preflight A found no verified player.
+- The entity inventory and claim inventory are complementary coverage axes. Link claims to candidate occurrences when supported, but do not derive the claims inventory only from a name list or derive the name list only from generated takes.
+
+### Distinct generation, review and repair passes
+
+1. **Pass 1 — inventory:** produce the entity candidates and source-statement inventory from raw transcript, separately from the finished takes and article.
+2. **Pass 2 — extraction:** author source-faithful Content Map/takes using Golden Set dimensions and both inventories; evidence, separate time horizons and dissent remain explicit. Freeze the first-pass result for calibration before any quality fixes.
+3. **Pass 3 — independent QA:** reread the raw cues with the *different* objective of discovering omissions, over-merges, invented statements, unsupported identities and misplaced evidence. Independently sweep named entities **and** claims, then reconcile raw -> inventories -> takes/article as well as takes -> raw. Preserve an audit of what was absent or partial; do not score only internal planned-take links.
+4. **Pass 4 — targeted repair:** if QA finds defects, add or correct affected inventories, takes and related content without silently changing the frozen first-pass baseline. Rerun deterministic linkage, exact-span/quote checks, and a source-focused QA pass on the changed source ranges and their context. Repeat repair/review **as needed**, rather than rerunning identical broad summaries without new objectives.
+5. **Final gate:** no unaddressed **required** claim/mention, invented source statement, untraceable evidence or conflated host stance. Record unresolved ASR identities, source-audio uncertainties and ambiguous passages as bounded review items; unresolved identity alone need not block an intermediate extraction, but never claim full fidelity or publication readiness with blocking uncertainties.
+
+Different prompts, read order or independent reviewers/models may expose additional gaps. Repeated passes by the same model are **not statistically independent** and cannot establish a measured 100% recall rate for unknown, undiscovered source statements. Prefer a separate reviewer or blind/holdout segment for production-readiness evaluation; compare results to the original source, not to the model's own summary.
+
+**Implementation boundary:** these are required *editorial* passes for new/reworked packages. Current work-package schemas, Golden Set profiles and deterministic validator do not yet implement a first-class preflight inventory or automatically detect omitted raw claims. Until tooling is explicitly designed and validated, preserve the preflight inventories and QA findings in private pilot working artifacts/process review; do not assert automated enforcement, change storage/publication targets, or upload unlicensed raw transcripts to a public repository.
+
 ## `index.json` rule
 
 `index.json` is the local technical map. It may contain:

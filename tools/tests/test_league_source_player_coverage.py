@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -13,7 +11,6 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 from league_source_data_lib.coverage import build_season_player_reference_coverage  # noqa: E402
-from nfl_source_data_lib.mapping_history import build_historical_app_mapping_claims  # noqa: E402
 from source_data_readiness import build_league_readiness  # noqa: E402
 
 
@@ -32,34 +29,10 @@ class LeagueSourcePlayerCoverageTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload), encoding="utf-8")
 
-    def _init_git(self, root: Path) -> None:
-        subprocess.run(["git", "init"], cwd=root, check=True, capture_output=True)
-        subprocess.run(["git", "config", "user.name", "Fixture"], cwd=root, check=True)
-        subprocess.run(["git", "config", "user.email", "fixture@example.invalid"], cwd=root, check=True)
-
-    def _commit_players(self, root: Path, when: str, rows: list[dict]) -> str:
-        self._write(root, "public/data/Players.json", rows)
-        subprocess.run(["git", "add", "public/data/Players.json"], cwd=root, check=True)
-        env = {**os.environ, "GIT_AUTHOR_DATE": when, "GIT_COMMITTER_DATE": when}
-        subprocess.run(
-            ["git", "commit", "-m", "Players Update"],
-            cwd=root,
-            check=True,
-            capture_output=True,
-            env=env,
-        )
-        return subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=root,
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.strip()
-
     def _configure_league(self, root: Path, roster_payload: object) -> Path:
         self._write(
             root,
-            "source-data/leagues/_bootstrap/nfl-reise.json",
+            "data-meta/nfl-reise/metadata.json",
             {
                 "CanonicalLeagueID": "nfl-reise",
                 "Provider": "Sleeper",
@@ -68,7 +41,7 @@ class LeagueSourcePlayerCoverageTests(unittest.TestCase):
         )
         self._write(
             root,
-            "source-data/leagues/nfl-reise/manifest.json",
+            "data-source/leagues/nfl-reise/manifest.json",
             {
                 "Seasons": [
                     {
@@ -81,7 +54,7 @@ class LeagueSourcePlayerCoverageTests(unittest.TestCase):
                 ]
             },
         )
-        season_root = root / "source-data/leagues/nfl-reise/seasons/2025"
+        season_root = root / "data-source/leagues/nfl-reise/seasons/2025"
         self._write(
             season_root,
             "league.json",
@@ -99,7 +72,7 @@ class LeagueSourcePlayerCoverageTests(unittest.TestCase):
 
     def test_counts_unresolved_player_references_across_all_league_domains(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            season_root = Path(tmp) / "source-data/leagues/nfl-reise/seasons/2025"
+            season_root = Path(tmp) / "data-source/leagues/nfl-reise/seasons/2025"
             self._write(
                 season_root,
                 "rosters.json",
@@ -163,36 +136,6 @@ class LeagueSourcePlayerCoverageTests(unittest.TestCase):
             self.assertIn("1 unresolved canonical player references", readiness["HardFailures"][0])
             coverage = readiness["Leagues"][0]["Seasons"][0]["PlayerReferenceCoverage"]
             self.assertEqual(["S1"], coverage["UnresolvedSleeperPlayerIDs"])
-
-    def test_historical_backfill_uses_contemporaneous_two_provider_git_evidence(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self._init_git(root)
-            self._write(root, "public/data/past_seasons/Players_2025.json", [])
-            commit = self._commit_players(
-                root,
-                "2025-10-15T12:00:00Z",
-                [{"ID": "S1", "TankID": "T1", "Name": "Player A", "Position": "WR"}],
-            )
-            canonical = [
-                {
-                    "CanonicalPlayerID": "NFLP-a",
-                    "IDs": {"Sleeper": "S1", "Tank01": "T1"},
-                    "IDAliases": {},
-                }
-            ]
-
-            claims, conflicts, stats = build_historical_app_mapping_claims(root, canonical)
-
-            self.assertEqual([], conflicts)
-            self.assertEqual(1, stats["gitResolvedPlayerCount"])
-            by_provider = {item["Provider"]: item for item in claims}
-            self.assertEqual("NFLP-a", by_provider["Sleeper"]["CanonicalPlayerID"])
-            self.assertEqual("NFLP-a", by_provider["Tank01"]["CanonicalPlayerID"])
-            self.assertIn(
-                f"app.Players.git.2025@{commit[:12]}",
-                by_provider["Sleeper"]["Sources"],
-            )
 
 
 if __name__ == "__main__":

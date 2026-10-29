@@ -2,7 +2,7 @@
 
 Status: kanonisch
 
-Diese Regel gilt für die sechs automatisierten Fantasy-Management-Source-Producer:
+Diese Regel gilt für die sechs automatisierten Fantasy-Management-Source-Producer. Seit Issue #947 laufen sie als Matrix-Jobs `Provider • <id>` im gemeinsamen Workflow `FM • Pipeline • Daily` (`.github/workflows/fm-daily.yml`); ihre Heartbeat-Labels bleiben unverändert:
 
 - `FM • Ranking • FantasyPros ECR`
 - `FM • Ranking • FantasyCalc Market`
@@ -13,19 +13,17 @@ Diese Regel gilt für die sechs automatisierten Fantasy-Management-Source-Produc
 
 ## Trigger-Regel
 
-Jeder Source-Producer behält seinen regulären zeitgesteuerten Refresh und `workflow_dispatch`.
+Der Workflow wird vom zentralen Scheduler (Ziel `fm-daily`, täglich 05:20 Europe/Berlin) per `repository_dispatch` gestartet und bleibt per `workflow_dispatch` manuell startbar.
 
-Zusätzlich gilt für alle sechs Workflows ein identischer Code-Change-Contract:
-
-1. Ein Merge nach `main`, der den jeweiligen Fetcher, eine unmittelbar verwendete Fetcher-Implementierung bzw. Helper-Datei, einen zugehörigen Fetcher-Test oder die Workflow-YAML selbst ändert, löst unmittelbar einen Source-Refresh aus.
-2. Ein Pull Request mit denselben Pfadänderungen führt den Fetch- und Validierungspfad aus, veröffentlicht aber weder Heartbeat noch Source-Commit nach `main`.
-3. Generierte Source-Daten unter `fantasy-management/sources/` sind ausdrücklich keine Push-Trigger. Dadurch darf ein erfolgreicher Source-Commit keinen erneuten Source-Refresh desselben Workflows auslösen.
-4. Push- und Pull-Request-Pfade eines Source-Workflows müssen denselben Code-/Test-/Workflow-Contract abdecken.
-5. Source-Workflows mit Push-/PR-Trigger verwenden einen `run-name` im Schema `<Workflow-Name> • <Commit-/PR-Titel/Event>`, damit die Actions-Übersicht den Workflow-Kontext sichtbar erhält.
+1. Die Provider-Jobs laufen mit `fail-fast: false`; ein fehlgeschlagener Provider stoppt die anderen nicht. Danach läuft der Materializer auch dann, wenn ein Provider fehlschlug, und nutzt den letzten guten Source-Stand. Der Lauf bleibt rot, die Job Summary nennt die fehlgeschlagenen Provider.
+2. Ein Pull Request, der einen Fetcher, einen Fetcher-Test oder die Workflow-YAML ändert, führt nur die Fetcher-Tests aus. Er veröffentlicht weder Heartbeat noch Source-Commit.
+3. Ein Merge von Fetcher-Code löst keinen sofortigen Source-Refresh mehr aus (entfallen mit Issue #947); der nächste tägliche Lauf führt den geänderten Fetcher produktiv aus.
+4. Generierte Source-Daten unter `fantasy-management/sources/` sind ausdrücklich keine Push-Trigger. Die Pipeline materialisiert nach den Providern selbst; ein Source-Commit startet keinen zweiten Lauf.
+5. Der Workflow verwendet einen `run-name` im Schema `FM • Pipeline • Daily • <Commit-/PR-Titel/Event>`.
 6. PR-Läufe müssen von allen schreibenden Schritten durch `github.event_name != 'pull_request'` getrennt bleiben.
 
 ## Abgrenzung
 
-Diese Policy ändert weder die regulären Source-Refresh-Zeitpläne noch die Fetch- oder Materialisierungslogik. Sie betrifft ausschließlich den zusätzlichen Refresh nach Änderungen am ausführbaren Source-Contract sowie dessen sichere PR-Validierung und Actions-Nomenklatur.
+Diese Policy ändert weder die Fetch- noch die Materialisierungslogik. Sie betrifft Trigger, Reihenfolge und PR-Validierung der Source-Producer.
 
 Die Invarianten werden in `fantasy-management/_ai/scripts/tests/test_source_refresh_freshness_workflows.py` geprüft.

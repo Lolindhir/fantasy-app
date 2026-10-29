@@ -8,6 +8,12 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+import sys as _sys
+_TOOLS_DIR = str(Path(__file__).resolve().parent)
+if _TOOLS_DIR not in _sys.path:
+    _sys.path.insert(0, _TOOLS_DIR)
+
+from data_roots import DATA_META_ROOT, DATA_SOURCE_ROOT  # noqa: E402
 
 SLEEPER = "Sleeper"
 WEEK_FILE_RE = re.compile(r"week-(\d+)\.json$")
@@ -223,6 +229,8 @@ def convert_canonical_transaction(
         "Season": str(season),
         "Week": week,
         "CreatedAt": created_at,
+        # Provenance only: shared-derived computes EffectiveAt from this value.
+        "StatusUpdatedAt": transaction.get("StatusUpdatedAt"),
         "CreatedDate": _created_date(created_at),
         "RosterIDs": roster_ids,
         "Adds": _asset_map(transaction.get("Adds"), roster_lookup, label=f"transaction {transaction_id} Adds"),
@@ -249,8 +257,8 @@ def _normalized_asset_map(value: object, *, context: str) -> dict[str, int]:
 def _legacy_draft_pick_projection(pick: object, *, index: int) -> dict[str, Any]:
     if not isinstance(pick, dict):
         raise ShadowContractError(f"legacy DraftPicks[{index}] must be an object")
+    # DraftSource is no longer part of the slim App delivery (Issue #999 step 6), so it is not compared.
     return {
-        "DraftSource": str(pick.get("DraftSource") or ""),
         "Season": str(pick.get("Season") or ""),
         "Round": int(pick.get("Round") or 0),
         "OriginalOwnerRosterID": int(pick.get("OriginalOwnerRosterID") or 0),
@@ -260,8 +268,8 @@ def _legacy_draft_pick_projection(pick: object, *, index: int) -> dict[str, Any]
 
 
 def _canonical_draft_pick_projection(pick: dict[str, Any]) -> dict[str, Any]:
+    # DraftSource is no longer part of the slim App delivery (Issue #999 step 6), so it is not compared.
     return {
-        "DraftSource": str(pick.get("DraftSource") or ""),
         "Season": str(pick.get("Season") or ""),
         "Round": int(pick.get("Round") or 0),
         "OriginalOwnerRosterID": int(pick.get("OriginalOwnerRosterID") or 0),
@@ -432,13 +440,18 @@ def build_shadow_report(
     }
 
 
+def manual_overlay_path(repo_root: Path, canonical_league_id: str) -> Path:
+    """Hand-maintained manual transaction overlay of one league (Issue #999 step 5c)."""
+    return repo_root / DATA_META_ROOT / canonical_league_id / "transactions-manual.json"
+
+
 def build_repo_shadow_report(repo_root: Path, *, canonical_league_id: str, season: int) -> dict[str, Any]:
-    season_dir = repo_root / "source-data" / "leagues" / canonical_league_id / "seasons" / str(season)
+    season_dir = repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "seasons" / str(season)
     rosters = load_json(season_dir / "rosters.json")
     lookup = build_roster_provider_lookup(rosters)
     canonical_transactions = load_canonical_transactions(season_dir, lookup, season=season)
     legacy_transactions = load_json(repo_root / "public" / "data" / "Transactions.json")
-    manual_path = repo_root / "public" / "data" / "Transactions_Manual.json"
+    manual_path = manual_overlay_path(repo_root, canonical_league_id)
     manual = load_json(manual_path) if manual_path.exists() else []
     return build_shadow_report(
         canonical_transactions,

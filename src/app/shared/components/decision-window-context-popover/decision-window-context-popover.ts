@@ -29,6 +29,7 @@ import {
 } from '../../utils/league-timeline-view.util';
 import { DecisionWindowMatchupContextComponent } from '../decision-window-matchup-context/decision-window-matchup-context';
 import { PlayerListComponent, type PlayerListColumn } from '../player-list/player-list';
+import { findNflTeam } from '../../utils/nfl-team-key.util';
 
 @Component({
   selector: 'app-decision-window-context-popover',
@@ -147,7 +148,7 @@ export class DecisionWindowContextPopoverComponent implements OnInit, OnDestroy 
   }
 
   nflLogo(teamID: string | number): string | null {
-    return this.nflTeams.find(team => String(team.ID) === String(teamID))?.Logo || null;
+    return findNflTeam(this.nflTeams, teamID)?.Logo || null;
   }
 
   openTeam(teamId: number): void {

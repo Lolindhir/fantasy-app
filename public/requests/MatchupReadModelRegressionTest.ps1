@@ -108,7 +108,7 @@ function New-MrmDecisionFacts {
 
 $temp = Join-Path ([System.IO.Path]::GetTempPath()) ("matchup-read-model-" + [guid]::NewGuid().ToString('N'))
 try {
-    $seasonDir = Join-Path $temp 'source-data/leagues/nfl-reise/seasons/2026'
+    $seasonDir = Join-Path $temp 'data-source/leagues/nfl-reise/seasons/2026'
     $matchupDir = Join-Path $seasonDir 'matchups'
     New-Item -ItemType Directory -Path $matchupDir -Force | Out-Null
 
@@ -173,8 +173,8 @@ try {
             }
         )
     }
-    Write-MrmJson -Path (Join-Path $temp 'source-data/nfl/schedules/2026.json') -Value $schedule
-    Write-MrmJson -Path (Join-Path $temp 'source-data/nfl/game-finality/2026.json') -Value ([PSCustomObject][ordered]@{
+    Write-MrmJson -Path (Join-Path $temp 'data-source/nfl/schedules/2026.json') -Value $schedule
+    Write-MrmJson -Path (Join-Path $temp 'data-source/nfl/game-finality/2026.json') -Value ([PSCustomObject][ordered]@{
         SchemaVersion = 2
         Season = 2026
         Games = @(
@@ -182,7 +182,7 @@ try {
             [PSCustomObject][ordered]@{ GameID = '2026_01_CCC_DDD'; GameType = 'REG'; Week = 1; Final = $false }
         )
     })
-    Write-MrmJson -Path (Join-Path $temp 'source-data/nfl/weekly-rosters/2026/01.json') -Value ([PSCustomObject][ordered]@{
+    Write-MrmJson -Path (Join-Path $temp 'data-source/nfl/weekly-rosters/2026/01.json') -Value ([PSCustomObject][ordered]@{
         SchemaVersion = 2
         Season = 2026
         Week = 1
@@ -354,6 +354,42 @@ try {
     $adjustedScore = Get-MrmEffectiveScore -Row $adjustedCanonical
     Assert-MrmEqual 3.0 $adjustedScore.Points 'Canonical custom score must replace standard score.'
     Assert-MrmEqual 'adjusted' $adjustedScore.ScoreKind 'Canonical custom score kind is incorrect.'
+
+    # Week-7 production analogue: Sleeper sent one explicit "0" slot (zero
+    # points) and one real player instead of two real starters.
+    $leagueSource.RosterPositions = @('QB','RB','BN')
+    Write-MrmJson -Path (Join-Path $seasonDir 'league.json') -Value $leagueSource
+    Write-MrmJson -Path (Join-Path $matchupDir 'week-1.json') -Value @($team1Row, $team2Row)
+    $noEmptyEvidenceModel = New-MatchupSeasonReadModel -CanonicalLeagueID 'nfl-reise' -Season 2026 -Standings $standings -DecisionFacts $null -AsOfUtc ([DateTimeOffset]::Parse('2026-09-15T18:00:00Z')) -RepoRoot $temp
+    Assert-MrmEqual 'unknown' $noEmptyEvidenceModel.Weeks[0].CompletionState 'A missing required starter without explicit empty-slot evidence remains unknown.'
+
+    $team1Row | Add-Member -NotePropertyName EmptyStarterSlots -NotePropertyValue 1
+    $team2Row | Add-Member -NotePropertyName EmptyStarterSlots -NotePropertyValue 1
+    Write-MrmJson -Path (Join-Path $matchupDir 'week-1.json') -Value @($team1Row, $team2Row)
+    $explicitEmptyModel = New-MatchupSeasonReadModel -CanonicalLeagueID 'nfl-reise' -Season 2026 -Standings $standings -DecisionFacts $null -AsOfUtc ([DateTimeOffset]::Parse('2026-09-15T18:00:00Z')) -RepoRoot $temp
+    Assert-MrmEqual 'final' $explicitEmptyModel.Weeks[0].CompletionState 'Explicitly empty historical starter slots must not block final after real NFL games finish.'
+    Assert-MrmEqual 1 $explicitEmptyModel.Summary.LastCompletedWeek 'Explicit empty starter allows LastCompletedWeek to advance.'
+    Assert-MrmEqual 1 $explicitEmptyModel.Weeks[0].Matchups[0].Result.WinnerTeamID 'Empty slot must not change the provider effective scores or winner.'
+
+    $team2Row.EmptyStarterSlots = 2
+    Write-MrmJson -Path (Join-Path $matchupDir 'week-1.json') -Value @($team1Row, $team2Row)
+    $overcountModel = New-MatchupSeasonReadModel -CanonicalLeagueID 'nfl-reise' -Season 2026 -Standings $standings -DecisionFacts $null -AsOfUtc ([DateTimeOffset]::Parse('2026-09-15T18:00:00Z')) -RepoRoot $temp
+    Assert-MrmEqual 'unknown' $overcountModel.Weeks[0].CompletionState 'Inconsistent empty-slot plus starter counts must fail closed.'
+    $team2Row.EmptyStarterSlots = 1
+
+    $team2Row.StarterPoints[0].Player.CanonicalPlayerID = 'NFLP-UNMAPPED'
+    Write-MrmJson -Path (Join-Path $matchupDir 'week-1.json') -Value @($team1Row, $team2Row)
+    $unmappedModel = New-MatchupSeasonReadModel -CanonicalLeagueID 'nfl-reise' -Season 2026 -Standings $standings -DecisionFacts $null -AsOfUtc ([DateTimeOffset]::Parse('2026-09-15T18:00:00Z')) -RepoRoot $temp
+    Assert-MrmEqual 'unknown' $unmappedModel.Weeks[0].CompletionState 'A real starter without NFL team/game evidence must stay unknown despite the explicit empty slot.'
+    $team2Row.StarterPoints[0].Player.CanonicalPlayerID = 'NFLP-2'
+
+    $finalityPath = Join-Path $temp 'data-source/nfl/game-finality/2026.json'
+    $unfinished = Get-Content $finalityPath -Raw | ConvertFrom-Json
+    $unfinished.Games[0].Final = $false
+    Write-MrmJson -Path $finalityPath -Value $unfinished
+    Write-MrmJson -Path (Join-Path $matchupDir 'week-1.json') -Value @($team1Row, $team2Row)
+    $realGameOpenModel = New-MatchupSeasonReadModel -CanonicalLeagueID 'nfl-reise' -Season 2026 -Standings $standings -DecisionFacts $null -AsOfUtc ([DateTimeOffset]::Parse('2026-09-15T18:00:00Z')) -RepoRoot $temp
+    Assert-MrmEqual 'open' $realGameOpenModel.Weeks[0].CompletionState 'An actual starter NFL game still running must keep the matchup open despite the empty slot.'
 
     Write-Host 'Matchup read-model regression tests passed.' -ForegroundColor Green
 }

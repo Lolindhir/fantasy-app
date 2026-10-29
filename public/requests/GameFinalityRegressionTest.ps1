@@ -19,8 +19,8 @@ function Assert-GfrTrue {
 
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("fantasy-game-finality-" + [guid]::NewGuid().ToString('N'))
 try {
-    $canonicalScheduleDir = Join-Path $tempRoot 'source-data/nfl/schedules'
-    $canonicalFinalityDir = Join-Path $tempRoot 'source-data/nfl/game-finality'
+    $canonicalScheduleDir = Join-Path $tempRoot 'data-source/nfl/schedules'
+    $canonicalFinalityDir = Join-Path $tempRoot 'data-source/nfl/game-finality'
     New-Item -ItemType Directory -Path $canonicalScheduleDir -Force | Out-Null
     New-Item -ItemType Directory -Path $canonicalFinalityDir -Force | Out-Null
 

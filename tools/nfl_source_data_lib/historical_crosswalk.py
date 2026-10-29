@@ -17,6 +17,7 @@ from .common import (
     utc_now,
     write_json_if_changed,
 )
+from data_roots import DATA_SOURCE_ROOT
 
 _CONFIG_KEY = "historicalIdentityBackfill"
 _GITHUB_API = "https://api.github.com"
@@ -24,7 +25,7 @@ _USER_AGENT = "Lolindhir-fantasy-app-historical-player-identity/1.0"
 
 
 def _config(repo_root: Path) -> dict[str, Any] | None:
-    raw = load_json(repo_root / "source-data/historical-identity-backfill.json")
+    raw = load_json(repo_root / DATA_SOURCE_ROOT / "historical-identity-backfill.json")
     if raw is None:
         return None
     if not isinstance(raw, dict):
@@ -171,7 +172,7 @@ def _existing_snapshot_matches(
     if existing != expected:
         return False
 
-    source_root = repo_root / "source-data"
+    source_root = repo_root / DATA_SOURCE_ROOT
     for item in snapshots:
         raw_relative = item.get("rawPath")
         if not raw_relative:
@@ -196,7 +197,7 @@ def _sync_season(
     force: bool,
     offline: bool,
 ) -> dict[str, Any]:
-    source_root = repo_root / "source-data"
+    source_root = repo_root / DATA_SOURCE_ROOT
     metadata_path = source_root / str(source["metadataPath"]).format(season=season)
     existing = load_json(metadata_path, {}) or {}
 
@@ -410,7 +411,7 @@ def iter_historical_crosswalk_snapshots(repo_root: Path) -> list[dict[str, Any]]
         return []
 
     source = config["source"]
-    source_root = repo_root / "source-data"
+    source_root = repo_root / DATA_SOURCE_ROOT
     snapshots: list[dict[str, Any]] = []
     start_season = int(config["startSeason"])
     end_season = current_source_season(repo_root)

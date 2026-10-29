@@ -3,7 +3,7 @@
 
 This helper is intended for CI jobs that have already validated, staged, and committed
 one generated-data update. It rebases that single local commit onto the latest remote
-branch and retries only recognized ref races. Real content conflicts and unrelated
+branch and retries recognized ref races and, separately, a bounded number of transient transport failures. Real content conflicts and unrelated
 Git/authentication failures remain hard failures.
 """
 from __future__ import annotations
@@ -25,6 +25,36 @@ RACE_MARKERS = (
     "failed to update ref",
     "stale info",
 )
+# Transient transport/server failures (compared lowercase). They are neither a branch race nor a
+# content conflict: the same git command is repeated a bounded number of times with backoff.
+TRANSIENT_MARKERS = (
+    "the requested url returned error: 5",  # HTTP 500-504 from the git smart-HTTP endpoint
+    "rpc failed",
+    "the remote end hung up unexpectedly",
+    "early eof",
+    "unexpected disconnect",
+    "connection reset",
+    "connection timed out",
+    "operation timed out",
+    "could not resolve host",
+    "gnutls_handshake",
+    "internal server error",
+    "bad gateway",
+    "service unavailable",
+    "gateway timeout",
+    "http 429",
+    "too many requests",
+)
+# Auth and server-side policy rejections must stay fail-closed even if a transient marker co-occurs.
+NON_TRANSIENT_MARKERS = (
+    "403",
+    "permission denied",
+    "authentication failed",
+    "pre-receive hook declined",
+    "protected branch",
+)
+DEFAULT_MAX_TRANSIENT_RETRIES = 3
+DEFAULT_TRANSIENT_BACKOFF_SECONDS = 5.0
 
 
 @dataclass(frozen=True)
@@ -65,8 +95,63 @@ def require_clean_worktree() -> None:
         )
 
 
-def fetch_target(remote: str, branch: str) -> str:
-    run_git(["fetch", "--no-tags", remote, branch])
+def is_transient_failure(result: GitResult) -> bool:
+    if any(marker in result.combined for marker in NON_TRANSIENT_MARKERS):
+        return False
+    if is_retryable_race(result):
+        return False
+    return any(marker in result.combined for marker in TRANSIENT_MARKERS)
+
+
+def run_git_with_transient_retry(
+    args: Sequence[str],
+    *,
+    max_transient_retries: int = DEFAULT_MAX_TRANSIENT_RETRIES,
+    transient_backoff_seconds: float = DEFAULT_TRANSIENT_BACKOFF_SECONDS,
+    jitter_seconds: float = 0.5,
+) -> GitResult:
+    """Run one git command, repeating it only after recognized transient failures.
+
+    Backoff grows 1x, 3x, 9x of the base (5s, 15s, 45s by default). The last result is returned
+    unchanged so callers keep their own handling for races and real failures.
+    """
+    retry = 0
+    while True:
+        result = run_git(args, check=False)
+        if result.returncode == 0 or not is_transient_failure(result):
+            return result
+        if retry >= max_transient_retries:
+            return result
+        retry += 1
+        delay = transient_backoff_seconds * (3 ** (retry - 1)) + random.uniform(0, jitter_seconds)
+        print(
+            f"transient git {args[0]} failure, retry {retry}/{max_transient_retries} in {delay:.1f}s",
+            file=sys.stderr,
+        )
+        if delay:
+            time.sleep(delay)
+
+
+def fetch_target(
+    remote: str,
+    branch: str,
+    *,
+    max_transient_retries: int = DEFAULT_MAX_TRANSIENT_RETRIES,
+    transient_backoff_seconds: float = DEFAULT_TRANSIENT_BACKOFF_SECONDS,
+    jitter_seconds: float = 0.5,
+) -> str:
+    fetch = run_git_with_transient_retry(
+        ["fetch", "--no-tags", remote, branch],
+        max_transient_retries=max_transient_retries,
+        transient_backoff_seconds=transient_backoff_seconds,
+        jitter_seconds=jitter_seconds,
+    )
+    if fetch.returncode != 0:
+        if fetch.stdout:
+            print(fetch.stdout, end="", file=sys.stderr)
+        if fetch.stderr:
+            print(fetch.stderr, end="", file=sys.stderr)
+        raise RuntimeError(f"git fetch failed with exit code {fetch.returncode}")
     # A fetch of an arbitrary branch does not necessarily refresh a configured remote-tracking ref.
     # FETCH_HEAD is always the exact branch tip just fetched, so pin a private local ref to it.
     fetched_sha = run_git(["rev-parse", "FETCH_HEAD"]).stdout.strip()
@@ -112,6 +197,8 @@ def publish(
     max_attempts: int,
     backoff_seconds: float,
     jitter_seconds: float,
+    max_transient_retries: int = DEFAULT_MAX_TRANSIENT_RETRIES,
+    transient_backoff_seconds: float = DEFAULT_TRANSIENT_BACKOFF_SECONDS,
 ) -> None:
     if max_attempts < 1:
         raise ValueError("max_attempts must be at least 1")
@@ -121,7 +208,13 @@ def publish(
     require_clean_worktree()
 
     for attempt in range(1, max_attempts + 1):
-        remote_ref = fetch_target(remote, branch)
+        remote_ref = fetch_target(
+            remote,
+            branch,
+            max_transient_retries=max_transient_retries,
+            transient_backoff_seconds=transient_backoff_seconds,
+            jitter_seconds=jitter_seconds,
+        )
 
         if not has_common_history(remote_ref):
             raise RuntimeError("Local HEAD and target branch do not share Git history; refusing to publish.")
@@ -139,7 +232,13 @@ def publish(
         require_clean_worktree()
 
         print(f"Publish attempt {attempt}/{max_attempts} to {remote}/{branch}.")
-        push = run_git(["push", remote, f"HEAD:{branch}"], check=False)
+        # A transient push failure repeats the same rebased commit.
+        push = run_git_with_transient_retry(
+            ["push", remote, f"HEAD:{branch}"],
+            max_transient_retries=max_transient_retries,
+            transient_backoff_seconds=transient_backoff_seconds,
+            jitter_seconds=jitter_seconds,
+        )
         if push.returncode == 0:
             if push.stdout:
                 print(push.stdout, end="")
@@ -153,6 +252,10 @@ def publish(
                 print(push.stdout, end="", file=sys.stderr)
             if push.stderr:
                 print(push.stderr, end="", file=sys.stderr)
+            if is_transient_failure(push):
+                raise RuntimeError(
+                    f"Git push still failing with a transient error after {max_transient_retries} retries."
+                )
             raise RuntimeError("Git push failed for a non-race reason; refusing automatic retry.")
 
         if attempt == max_attempts:
@@ -175,6 +278,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-attempts", type=int, default=5)
     parser.add_argument("--backoff-seconds", type=float, default=1.0)
     parser.add_argument("--jitter-seconds", type=float, default=0.5)
+    parser.add_argument("--max-transient-retries", type=int, default=DEFAULT_MAX_TRANSIENT_RETRIES)
+    parser.add_argument("--transient-backoff-seconds", type=float, default=DEFAULT_TRANSIENT_BACKOFF_SECONDS)
     return parser.parse_args()
 
 
@@ -187,6 +292,8 @@ def main() -> int:
             max_attempts=args.max_attempts,
             backoff_seconds=args.backoff_seconds,
             jitter_seconds=args.jitter_seconds,
+            max_transient_retries=args.max_transient_retries,
+            transient_backoff_seconds=args.transient_backoff_seconds,
         )
     except (RuntimeError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

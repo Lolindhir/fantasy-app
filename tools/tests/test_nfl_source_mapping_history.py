@@ -193,7 +193,7 @@ class NflSourceMappingHistoryTests(unittest.TestCase):
         self.assertEqual(0, len(extended["Conflicts"]))
 
     def _write_mapping_payload(self, root: Path, mappings):
-        path = root / "source-data/nfl/identities/provider-mappings.json"
+        path = root / "data-source/nfl/identities/provider-mappings.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps(

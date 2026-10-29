@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import math
 import re
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -9,17 +10,25 @@ from typing import Any, Iterable
 from .canonical_identity import identity_lookup
 from .common import CANONICAL_SCHEMA_VERSION, Dataset, as_float, as_int, clean, load_json
 from .lifecycle import effective_partition_payload
+from .player_profiles import PLAYER_PROFILES_DATASET_ID, build_player_profiles
+from .teams import TEAMS_DATASET_ID, TEAMS_RELATIVE_PATH, build_teams_payload
+from data_roots import DATA_SOURCE_ROOT
 
 
 _PHASE1_DATASET_IDS = {
     "nflverse.schedules",
+    "nflverse.schedule-odds",
     "nflverse.game-finality",
     "nflverse.rosters",
     "nflverse.weekly-rosters",
     "nflverse.player-stats",
     "nflverse.special-teams-fumble-events",
+    "nflverse.player-game-long-gains",
     "nflverse.snap-counts",
+    "nflverse.espn-qbr-week",
     "sleeper.players",
+    PLAYER_PROFILES_DATASET_ID,
+    TEAMS_DATASET_ID,
 }
 
 _ROSTER_SOURCE_ID_ORDER = (
@@ -89,7 +98,7 @@ def _canonical_partition(
     payload: dict[str, Any],
     force: bool,
 ) -> tuple[Path, dict[str, Any], bool]:
-    path = repo_root / "source-data/nfl" / relative_path
+    path = repo_root / DATA_SOURCE_ROOT / "nfl" / relative_path
     effective, preserved = effective_partition_payload(
         dataset,
         path=path,
@@ -184,6 +193,116 @@ def _build_schedules(
         "latestSeason": max(grouped) if grouped else None,
     }
     return outputs, audit, preserved, game_index
+
+
+# nflverse spread_line is the away-team spread: positive favors home.
+# Preserve provider facts here; market-implied point calculations belong to #1077.
+_ODDS_FIELD_NAMES = {
+    "away_moneyline": "AwayMoneyline",
+    "home_moneyline": "HomeMoneyline",
+    "spread_line": "SpreadLine",
+    "away_spread_odds": "AwaySpreadOdds",
+    "home_spread_odds": "HomeSpreadOdds",
+    "total_line": "TotalLine",
+    "under_odds": "UnderOdds",
+    "over_odds": "OverOdds",
+}
+
+
+def _build_schedule_odds(
+    repo_root: Path,
+    dataset: Dataset,
+    schedule_index: dict[str, dict[str, Any]],
+    observation_season: int,
+    *,
+    force: bool,
+) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
+    """Join odds by canonical GameID without changing the low-churn schedule facts."""
+    if not schedule_index:
+        raise ValueError("nflverse.schedule-odds materialization requires nflverse.schedules")
+    grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    seen: set[str] = set()
+    complete_lines = 0
+    games_with_any_odds = 0
+
+    for row in _iter_csv_path(dataset.raw_path):
+        game_id = clean(row.get("game_id"))
+        if not game_id:
+            raise ValueError("NFL schedule odds row is missing game_id")
+        if game_id in seen:
+            raise ValueError(f"Duplicate NFL schedule odds game_id: {game_id}")
+        seen.add(game_id)
+        schedule = schedule_index.get(game_id)
+        if schedule is None:
+            raise ValueError(f"Odds game_id has no canonical NFL schedule match: {game_id}")
+
+        values: dict[str, float | None] = {}
+        for raw_name, canonical_name in _ODDS_FIELD_NAMES.items():
+            raw_value = clean(row.get(raw_name))
+            number = as_float(raw_value) if raw_value is not None else None
+            if raw_value is not None and (number is None or not math.isfinite(number)):
+                raise ValueError(f"Invalid NFL odds number for game {game_id}: {raw_name}={raw_value}")
+            values[canonical_name] = number
+
+        spread = values["SpreadLine"]
+        total = values["TotalLine"]
+        if total is not None and total <= 0:
+            raise ValueError(f"Non-positive NFL odds total for game {game_id}: {total}")
+        if spread is not None and total is not None and abs(spread) > total:
+            raise ValueError(f"Impossible NFL odds line for game {game_id}: spread={spread} total={total}")
+        has_line = spread is not None and total is not None
+        complete_lines += int(has_line)
+        games_with_any_odds += int(any(v is not None for v in values.values()))
+
+        grouped[int(schedule["Season"])].append({
+            "GameID": game_id,
+            "GameType": schedule["GameType"],
+            "Week": schedule["Week"],
+            **values,
+        })
+
+    missing_games = sorted(set(schedule_index) - seen)
+    if missing_games:
+        raise ValueError(
+            "Canonical NFL schedule games missing from odds source: "
+            + ", ".join(missing_games[:10])
+        )
+
+    outputs: list[tuple[Path, dict[str, Any]]] = []
+    preserved = 0
+    for season, games in sorted(grouped.items()):
+        games.sort(key=lambda item: (item["Week"], item["GameType"], item["GameID"]))
+        payload = {
+            "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+            "Season": season,
+            "SourceDataset": dataset.id,
+            "ScheduleDataset": "nflverse.schedules",
+            "Finalized": _finalized_for_season(season, observation_season),
+            "SpreadConvention": "away spread; positive favors home",
+            "Games": games,
+        }
+        path, effective, was_preserved = _canonical_partition(
+            repo_root,
+            dataset,
+            relative_path=f"schedule-odds/{season}.json",
+            season=season,
+            observation_season=observation_season,
+            payload=payload,
+            force=force,
+        )
+        outputs.append((path, effective))
+        preserved += int(was_preserved)
+
+    audit = {
+        "seasonCount": len(grouped),
+        "gameCount": len(seen),
+        "gamesWithAnyOdds": games_with_any_odds,
+        "gamesWithCompleteLines": complete_lines,
+        "gamesWithoutCompleteLines": len(seen) - complete_lines,
+        "earliestSeason": min(grouped) if grouped else None,
+        "latestSeason": max(grouped) if grouped else None,
+    }
+    return outputs, audit, preserved
 
 
 def _build_game_finality(
@@ -577,7 +696,7 @@ def _build_player_stats(
 
 
 def _historical_week_finality(repo_root: Path, season: int) -> dict[int, bool]:
-    path = repo_root / "source-data/nfl/game-finality" / f"{season}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/game-finality" / f"{season}.json"
     if not path.exists():
         raise ValueError(
             f"Historical special-teams fumble materialization requires persisted game-finality evidence: {path}"
@@ -608,6 +727,154 @@ def _historical_week_finality(repo_root: Path, season: int) -> dict[int, bool]:
     if not any(week_finality.values()):
         raise ValueError(f"Historical game-finality evidence contains no finalized weeks: {path}")
     return week_finality
+
+
+def _build_player_game_long_gains(
+    repo_root: Path,
+    dataset: Dataset,
+    canonical: list[dict[str, Any]],
+    observation_season: int,
+    *,
+    force: bool,
+) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
+    lookup = identity_lookup(canonical)
+    gain_types = {"rush": "LongRush", "reception": "LongReception"}
+    outputs: list[tuple[Path, dict[str, Any]]] = []
+    preserved = 0
+    record_count = 0
+    game_count = 0
+    resolved_count = 0
+    unresolved_count = 0
+    unresolved_ids: set[str] = set()
+    type_counts: Counter[str] = Counter()
+
+    for season, raw_path in _persisted_season_paths(dataset):
+        payload = load_json(raw_path)
+        if (
+            not isinstance(payload, dict)
+            or not isinstance(payload.get("Records"), list)
+            or not isinstance(payload.get("Games"), list)
+        ):
+            raise ValueError(f"{dataset.id} raw projection must be an object with Games and Records: {raw_path}")
+
+        games: dict[str, dict[str, Any]] = {}
+        for row in payload["Games"]:
+            game_id = clean(row.get("game_id")) if isinstance(row, dict) else None
+            week = as_int(row.get("week")) if isinstance(row, dict) else None
+            season_type = clean(row.get("season_type")) if isinstance(row, dict) else None
+            if not game_id or week is None or not season_type:
+                raise ValueError(f"{dataset.id} projection game is missing game/week/season type")
+            if game_id in games:
+                raise ValueError(f"Duplicate {dataset.id} projection game: {game_id}")
+            games[game_id] = {
+                "GameID": game_id,
+                "SeasonType": season_type,
+                "Week": week,
+                "HomeTeam": clean(row.get("home_team")),
+                "AwayTeam": clean(row.get("away_team")),
+            }
+
+        records: list[dict[str, Any]] = []
+        seen: set[tuple[str, str, str]] = set()
+        for row in payload["Records"]:
+            if not isinstance(row, dict):
+                raise ValueError(f"{dataset.id} projection contains a non-object record")
+            row_season = as_int(row.get("season"))
+            week = as_int(row.get("week"))
+            play_id = as_int(row.get("play_id"))
+            yards = as_int(row.get("yards"))
+            game_id = clean(row.get("game_id"))
+            gsis = clean(row.get("player_id"))
+            gain_type = clean(row.get("gain_type"))
+            season_type = clean(row.get("season_type"))
+            if row_season != season:
+                raise ValueError(f"{dataset.id} partition {season} contains row for season {row_season}")
+            if (
+                week is None
+                or play_id is None
+                or yards is None
+                or not game_id
+                or not gsis
+                or not season_type
+                or gain_type not in gain_types
+            ):
+                raise ValueError(
+                    f"{dataset.id} row is missing game/player/play/yards identity: game={game_id} player={gsis}"
+                )
+            game = games.get(game_id)
+            if game is None or game["Week"] != week:
+                raise ValueError(f"{dataset.id} record references a game outside the covered games: {game_id}")
+            key = (game_id, gain_type, gsis)
+            if key in seen:
+                raise ValueError(
+                    f"Duplicate {dataset.id} identity: game={game_id} type={gain_type} player={gsis}"
+                )
+            seen.add(key)
+            canonical_player_id = lookup.get(("GSIS", gsis))
+            if canonical_player_id is None:
+                unresolved_count += 1
+                unresolved_ids.add(gsis)
+                if season < observation_season:
+                    raise ValueError(
+                        f"{dataset.id} historical record cannot resolve GSIS {gsis}: "
+                        f"season={season} game={game_id}"
+                    )
+            else:
+                resolved_count += 1
+            records.append(
+                {
+                    "CanonicalPlayerID": canonical_player_id,
+                    "SourceIDs": {"GSIS": gsis},
+                    "GameID": game_id,
+                    "SeasonType": season_type,
+                    "Week": week,
+                    "Team": clean(row.get("team")),
+                    "GainType": gain_types[gain_type],
+                    "Yards": yards,
+                    "PlayID": play_id,
+                }
+            )
+            type_counts[gain_types[gain_type]] += 1
+
+        records.sort(
+            key=lambda item: (
+                item["GameID"],
+                item["GainType"],
+                item["CanonicalPlayerID"] or item["SourceIDs"]["GSIS"],
+            )
+        )
+        record_count += len(records)
+        game_count += len(games)
+        candidate = {
+            "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+            "Season": season,
+            "SourceDataset": dataset.id,
+            "Finalized": _finalized_for_season(season, observation_season),
+            "Games": sorted(games.values(), key=lambda item: item["GameID"]),
+            "Records": records,
+        }
+        path, effective, was_preserved = _canonical_partition(
+            repo_root,
+            dataset,
+            relative_path=f"player-game-long-gains/{season}.json",
+            season=season,
+            observation_season=observation_season,
+            payload=candidate,
+            force=force,
+        )
+        outputs.append((path, effective))
+        preserved += int(was_preserved)
+
+    audit = {
+        "partitionCount": len(outputs),
+        "coveredGameCount": game_count,
+        "recordCount": record_count,
+        "recordTypeCounts": dict(sorted(type_counts.items())),
+        "resolvedIdentityCount": resolved_count,
+        "unresolvedIdentityCount": unresolved_count,
+        "unresolvedGSISIDs": sorted(unresolved_ids),
+    }
+    return outputs, audit, preserved
 
 
 def _build_special_teams_fumble_events(
@@ -881,6 +1148,213 @@ def _build_snap_counts(
     return outputs, audit, preserved
 
 
+# Contract-driven projection of the persisted raw Sleeper player snapshot (#347 F1).
+# Output field -> (raw key, coercion). Adding a persisted raw field to the canonical
+# platform snapshot is a one-line change here; consumers decide what to read.
+_SLEEPER_PLAYER_FIELDS: tuple[tuple[str, str, Any], ...] = (
+    ("Status", "status", clean),
+    ("Team", "team", clean),
+    ("Position", "position", clean),
+    ("InjuryStatus", "injury_status", clean),
+    ("InjuryStartDate", "injury_start_date", clean),
+    ("PracticeParticipation", "practice_participation", clean),
+    ("DepthChartPosition", "depth_chart_position", clean),
+    ("DepthChartOrder", "depth_chart_order", as_int),
+    ("FirstName", "first_name", clean),
+    ("LastName", "last_name", clean),
+    ("FullName", "full_name", clean),
+    ("YearsExp", "years_exp", as_int),
+    ("College", "college", clean),
+    ("HighSchool", "high_school", clean),
+    ("Number", "number", as_int),
+    ("ESPNID", "espn_id", clean),
+    ("BirthDate", "birth_date", clean),
+    ("InjuryBodyPart", "injury_body_part", clean),
+    ("InjuryNotes", "injury_notes", clean),
+    ("PracticeDescription", "practice_description", clean),
+)
+
+
+def _qbr_materialized_seasons(
+    repo_root: Path,
+    observation_season: int,
+    available_seasons: Iterable[int],
+) -> list[int]:
+    """Seasons the QBR materializer owns: the current one plus already persisted partitions.
+
+    The upstream file spans every season since 2006, but the app only needs the current
+    season. Older seasons are materialized only when a canonical partition already exists
+    (frozen or explicitly repaired), never speculatively.
+    """
+    seasons = {observation_season}
+    directory = repo_root / DATA_SOURCE_ROOT / "nfl/qbr-week"
+    if directory.is_dir():
+        for path in directory.glob("*.json"):
+            if re.fullmatch(r"\d{4}", path.stem):
+                seasons.add(int(path.stem))
+    return sorted(seasons & (set(available_seasons) | {observation_season}))
+
+
+def _build_qbr_week(
+    repo_root: Path,
+    dataset: Dataset,
+    schedule_index: dict[str, dict[str, Any]],
+    canonical: list[dict[str, Any]],
+    observation_season: int,
+    *,
+    force: bool,
+) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
+    if not schedule_index:
+        raise ValueError("nflverse.espn-qbr-week materialization requires nflverse.schedules")
+    lookup = identity_lookup(canonical)
+
+    rows_by_season: dict[int, list[dict[str, str]]] = defaultdict(list)
+    for row in _iter_csv_path(dataset.raw_path):
+        season = as_int(row.get("season"))
+        if season is None:
+            raise ValueError(f"{dataset.id} row is missing season")
+        rows_by_season[season].append(row)
+
+    seasons = _qbr_materialized_seasons(repo_root, observation_season, rows_by_season)
+    # The ESPN game id is only required to be unique inside a materialized season.
+    espn_to_schedule: dict[str, dict[str, Any]] = {}
+    for schedule in schedule_index.values():
+        if schedule["Season"] not in seasons:
+            continue
+        espn_game_id = (schedule.get("ProviderGameIDs") or {}).get("ESPN")
+        if not espn_game_id:
+            continue
+        if espn_game_id in espn_to_schedule:
+            raise ValueError(f"Duplicate ESPN game id in canonical schedule: {espn_game_id}")
+        espn_to_schedule[espn_game_id] = schedule
+
+    outputs: list[tuple[Path, dict[str, Any]]] = []
+    preserved = 0
+    record_count = 0
+    resolved_count = 0
+    unresolved_count = 0
+    published_game_count = 0
+    not_yet_available_game_count = 0
+
+    for season in seasons:
+        season_games = sorted(
+            (game for game in schedule_index.values() if game["Season"] == season),
+            key=lambda item: (item["Week"], item["GameType"], item["GameDay"] or "", item["GameID"]),
+        )
+        if not season_games:
+            continue
+
+        records: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+        rated_by_game: Counter[str] = Counter()
+        for row in rows_by_season.get(season, []):
+            espn_game_id = clean(row.get("game_id"))
+            espn_player_id = clean(row.get("player_id"))
+            if not espn_game_id or not espn_player_id:
+                raise ValueError(f"{dataset.id} row is missing game_id/player_id")
+            schedule = espn_to_schedule.get(espn_game_id)
+            if schedule is None:
+                raise ValueError(
+                    f"{dataset.id} references ESPN game {espn_game_id} that is unknown to the canonical schedule"
+                )
+            if schedule["Season"] != season:
+                raise ValueError(
+                    f"{dataset.id} ESPN game {espn_game_id} belongs to season {schedule['Season']}, not {season}"
+                )
+            key = (espn_game_id, espn_player_id)
+            if key in seen:
+                raise ValueError(f"Duplicate {dataset.id} game/player identity: game={espn_game_id} espn={espn_player_id}")
+            seen.add(key)
+
+            canonical_player_id = lookup.get(("ESPN", espn_player_id))
+            resolved_count += int(canonical_player_id is not None)
+            unresolved_count += int(canonical_player_id is None)
+            rated_by_game[schedule["GameID"]] += 1
+            identity_resolution: dict[str, Any] = {
+                "Status": "resolved" if canonical_player_id else "unresolved",
+                "Provider": "ESPN",
+                "ExternalID": espn_player_id,
+            }
+            if not canonical_player_id:
+                identity_resolution["Reason"] = "unmapped-provider-id"
+            records.append({
+                "CanonicalPlayerID": canonical_player_id,
+                "IdentityResolution": identity_resolution,
+                "SourceIDs": {"ESPN": espn_player_id},
+                "GameID": schedule["GameID"],
+                "ProviderGameIDs": {"ESPN": espn_game_id},
+                "GameType": schedule["GameType"],
+                "Week": schedule["Week"],
+                "PlayerName": clean(row.get("name_display")),
+                "SourceTeam": clean(row.get("team_abb")),
+                "SourceOpponentTeam": clean(row.get("opp_abb")),
+                "SourceSeasonType": clean(row.get("season_type")),
+                "SourceWeek": as_int(row.get("week_num")),
+                "Qualified": (clean(row.get("qualified")) or "").upper() == "TRUE",
+                "Rank": as_int(row.get("rank")),
+                "QBRTotal": as_float(row.get("qbr_total")),
+                "QBRRaw": as_float(row.get("qbr_raw")),
+                "PointsAdded": as_float(row.get("pts_added")),
+                "QBPlays": as_int(row.get("qb_plays")),
+                "EPATotal": as_float(row.get("epa_total")),
+                "Components": {
+                    "Pass": as_float(row.get("pass")),
+                    "Run": as_float(row.get("run")),
+                    "ExpSack": as_float(row.get("exp_sack")),
+                    "Penalty": as_float(row.get("penalty")),
+                    "Sack": as_float(row.get("sack")),
+                },
+            })
+        records.sort(key=lambda item: (item["GameID"], item["SourceIDs"]["ESPN"]))
+
+        games: list[dict[str, Any]] = []
+        for game in season_games:
+            rated = rated_by_game.get(game["GameID"], 0)
+            published = rated > 0
+            published_game_count += int(published)
+            not_yet_available_game_count += int(not published)
+            games.append({
+                "GameID": game["GameID"],
+                "GameType": game["GameType"],
+                "Week": game["Week"],
+                "ProviderGameIDs": {"ESPN": (game.get("ProviderGameIDs") or {}).get("ESPN")},
+                "QBRStatus": "published" if published else "not-yet-available",
+                "RatedRecordCount": rated,
+            })
+        record_count += len(records)
+
+        payload = {
+            "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+            "Season": season,
+            "SourceDataset": dataset.id,
+            "ScheduleDataset": "nflverse.schedules",
+            "Finalized": _finalized_for_season(season, observation_season),
+            "Games": games,
+            "Records": records,
+        }
+        path, effective, was_preserved = _canonical_partition(
+            repo_root,
+            dataset,
+            relative_path=f"qbr-week/{season}.json",
+            season=season,
+            observation_season=observation_season,
+            payload=payload,
+            force=force,
+        )
+        outputs.append((path, effective))
+        preserved += int(was_preserved)
+
+    audit = {
+        "partitionCount": len(outputs),
+        "recordCount": record_count,
+        "resolvedIdentityCount": resolved_count,
+        "unresolvedIdentityCount": unresolved_count,
+        "publishedGameCount": published_game_count,
+        "notYetAvailableGameCount": not_yet_available_game_count,
+    }
+    return outputs, audit, preserved
+
+
 def _build_sleeper_players(
     repo_root: Path,
     dataset: Dataset,
@@ -912,26 +1386,24 @@ def _build_sleeper_players(
         canonical_player_id = lookup.get(("Sleeper", sleeper_id))
         resolved_count += int(canonical_player_id is not None)
         unresolved_count += int(canonical_player_id is None)
-        records.append({
+        record: dict[str, Any] = {
             "CanonicalPlayerID": canonical_player_id,
             "SleeperPlayerID": sleeper_id,
-            "Status": clean(row.get("status")),
-            "Team": clean(row.get("team")),
-            "Position": clean(row.get("position")),
-            "FantasyPositions": row.get("fantasy_positions") if isinstance(row.get("fantasy_positions"), list) else [],
-            "InjuryStatus": clean(row.get("injury_status")),
-            "InjuryStartDate": clean(row.get("injury_start_date")),
-            "PracticeParticipation": clean(row.get("practice_participation")),
-            "DepthChartPosition": clean(row.get("depth_chart_position")),
-            "DepthChartOrder": as_int(row.get("depth_chart_order")),
-        })
+        }
+        for output_name, raw_key, coerce in _SLEEPER_PLAYER_FIELDS:
+            record[output_name] = coerce(row.get(raw_key))
+            if output_name == "Position":
+                record["FantasyPositions"] = (
+                    row.get("fantasy_positions") if isinstance(row.get("fantasy_positions"), list) else []
+                )
+        records.append(record)
     records.sort(key=lambda item: item["SleeperPlayerID"])
     payload = {
         "SchemaVersion": CANONICAL_SCHEMA_VERSION,
         "SourceDataset": dataset.id,
         "Records": records,
     }
-    path = repo_root / "source-data/nfl/platform/sleeper/players.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/platform/sleeper/players.json"
     audit = {
         "recordCount": len(records),
         "resolvedIdentityCount": resolved_count,
@@ -948,7 +1420,7 @@ def build_phase1_outputs(
     *,
     force: bool = False,
 ) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
-    """Build all activated Phase-1 canonical source-data outputs before publication."""
+    """Build all activated Phase-1 canonical data-source outputs before publication."""
     outputs: list[tuple[Path, dict[str, Any]]] = []
     audit: dict[str, Any] = {}
     preserved = 0
@@ -961,6 +1433,15 @@ def build_phase1_outputs(
         )
         outputs.extend(built)
         audit["schedules"] = coverage
+        preserved += count
+
+    odds_dataset = datasets.get("nflverse.schedule-odds")
+    if odds_dataset is not None:
+        built, coverage, count = _build_schedule_odds(
+            repo_root, odds_dataset, schedule_index, observation_season, force=force
+        )
+        outputs.extend(built)
+        audit["scheduleOdds"] = coverage
         preserved += count
 
     finality_dataset = datasets.get("nflverse.game-finality")
@@ -1023,6 +1504,19 @@ def build_phase1_outputs(
         audit["specialTeamsFumbleEvents"] = coverage
         preserved += count
 
+    long_gains_dataset = datasets.get("nflverse.player-game-long-gains")
+    if long_gains_dataset is not None:
+        built, coverage, count = _build_player_game_long_gains(
+            repo_root,
+            long_gains_dataset,
+            canonical,
+            observation_season,
+            force=force,
+        )
+        outputs.extend(built)
+        audit["playerGameLongGains"] = coverage
+        preserved += count
+
     snaps_dataset = datasets.get("nflverse.snap-counts")
     if snaps_dataset is not None:
         built, coverage, count = _build_snap_counts(
@@ -1032,12 +1526,34 @@ def build_phase1_outputs(
         audit["snapCounts"] = coverage
         preserved += count
 
+    qbr_dataset = datasets.get("nflverse.espn-qbr-week")
+    if qbr_dataset is not None:
+        built, coverage, count = _build_qbr_week(
+            repo_root, qbr_dataset, schedule_index, canonical, observation_season, force=force
+        )
+        outputs.extend(built)
+        audit["qbrWeek"] = coverage
+        preserved += count
+
     sleeper_dataset = datasets.get("sleeper.players")
     if sleeper_dataset is not None:
         built, coverage, count = _build_sleeper_players(repo_root, sleeper_dataset, canonical)
         outputs.extend(built)
         audit["sleeperPlayers"] = coverage
         preserved += count
+
+    profiles_dataset = datasets.get(PLAYER_PROFILES_DATASET_ID)
+    if profiles_dataset is not None:
+        built, coverage, count = build_player_profiles(repo_root, profiles_dataset, canonical)
+        outputs.extend(built)
+        audit["playerProfiles"] = coverage
+        preserved += count
+
+    teams_dataset = datasets.get(TEAMS_DATASET_ID)
+    if teams_dataset is not None:
+        teams_payload, coverage = build_teams_payload(teams_dataset)
+        outputs.append((repo_root / TEAMS_RELATIVE_PATH, teams_payload))
+        audit["teams"] = coverage
 
     duplicate_paths = [path for path, count in Counter(path for path, _ in outputs).items() if count > 1]
     if duplicate_paths:

@@ -66,6 +66,10 @@ on:
         required: false
         type: string
         default: "full"
+    outputs:
+      main_before_sync:
+        description: "origin/main commit at the start of the sync job (NFL Live change detection base)"
+        value: ${{ jobs.sync.outputs.main_before_sync }}
     secrets:
       PAT_PUSH:
         required: true
@@ -81,9 +85,11 @@ concurrency:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     env:
       MATERIALIZATION_SCOPE: ${{ inputs.materialization_scope || 'full' }}
+    outputs:
+      main_before_sync: ${{ steps.base.outputs.main_before_sync }}
 
     steps:
       - name: Record queue timing
@@ -143,8 +149,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: ${{ inputs.materialization_scope == 'game-finality' && 1 || 0 }}
+          fetch-depth: ${{ (inputs.materialization_scope == 'game-finality' || inputs.materialization_scope == 'schedule-odds') && 1 || 0 }}
           token: ${{ secrets.PAT_PUSH }}
+
+      - name: Record main before sync
+        id: base
+        shell: bash
+        run: echo "main_before_sync=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Record checkout timing
         shell: bash
@@ -158,18 +169,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Test NFL source-data tooling
+      # Regression tests run in PR CI and the periodic full audit.
+      # Keep real-data and canonical-state validation in the publisher.
+      - name: Report production validation boundary
         shell: bash
         run: |
-          set -euo pipefail
-          test_start="$(date +%s)"
-          if [[ "${MATERIALIZATION_SCOPE:-full}" == "game-finality" ]]; then
-            python -m unittest tools.tests.test_nfl_source_game_finality_scope -v
-          else
-            python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
-          fi
-          test_seconds=$(( $(date +%s) - test_start ))
-          echo "- Tests (${MATERIALIZATION_SCOPE:-full}): ${test_seconds}s" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Regression suites: PR Fast / periodic full audit; not run during data sync" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Runtime safeguards: provider validation, canonical materialization, semantic no-op, and scoped write guards" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Full scope: post-materialization identity audit before canonical publication" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Sync, validate and publish NFL source data
         shell: bash
@@ -184,7 +191,7 @@ jobs:
 
           materialization_scope="${MATERIALIZATION_SCOPE:-full}"
           case "$materialization_scope" in
-            full|game-finality) ;;
+            full|game-finality|schedule-odds) ;;
             *)
               echo "Unsupported materialization scope: $materialization_scope" >&2
               exit 2
@@ -197,6 +204,17 @@ jobs:
             fi
             if [[ -n "${SEASON:-}" ]]; then
               echo "game-finality scope does not accept a season filter; schedules and released evidence are fixed datasets" >&2
+              exit 2
+            fi
+          fi
+
+          if [[ "$materialization_scope" == "schedule-odds" ]]; then
+            if [[ "${DATASET:-}" != "nflverse.schedule-odds" ]]; then
+              echo "schedule-odds scope requires dataset=nflverse.schedule-odds" >&2
+              exit 2
+            fi
+            if [[ -n "${SEASON:-}" ]]; then
+              echo "schedule-odds scope does not accept a season filter; odds upstream is fixed" >&2
               exit 2
             fi
           fi
@@ -228,6 +246,8 @@ jobs:
           materialize_args=(materialize)
           if [[ "$materialization_scope" == "game-finality" ]]; then
             materialize_args+=(--scope game-finality)
+          elif [[ "$materialization_scope" == "schedule-odds" ]]; then
+            materialize_args+=(--scope schedule-odds)
           fi
 
           {
@@ -236,7 +256,11 @@ jobs:
             echo "- Materialization scope: $materialization_scope"
             if [[ "$materialization_scope" == "game-finality" ]]; then
               echo "- Scoped raw datasets: nflverse.schedules + nflverse.game-finality"
-              echo "- Canonical write-set: source-data/nfl/schedules/** + source-data/nfl/game-finality/**"
+              echo "- Canonical write-set: data-source/nfl/schedules/** + data-source/nfl/game-finality/**"
+              echo "- Full NFL audit: read/write disabled for scoped materialization"
+            elif [[ "$materialization_scope" == "schedule-odds" ]]; then
+              echo "- Scoped read dependencies: schedule raw + published canonical schedule"
+              echo "- Canonical write-set: data-source/nfl/schedule-odds/** only"
               echo "- Full NFL audit: read/write disabled for scoped materialization"
             else
               echo "- Canonical write-set: full NFL source materialization"
@@ -262,44 +286,118 @@ jobs:
           reset_to_main() {
             git fetch origin main
             git reset --hard origin/main
-            git clean -fd -- source-data
+            git clean -fd -- data-source
+          }
+
+          # Materialization reads only these inputs. Pushes by other writers to any
+          # other path (league source incl. data-source/providers/sleeper/leagues,
+          # fantasy operations, matchups) cannot change the canonical result, so the validated commit may be rebased instead of rebuilt.
+          materialize_input_pathspecs=(
+            data-source/registry.json
+            data-source/providers/dynastyprocess
+            data-source/providers/nflverse
+            data-source/providers/sleeper/players
+            data-source/nfl
+            data-source/audits
+            data-source/historical-identity-backfill.json
+            'data-source/leagues/*/manifest.json'
+            public/data/past_seasons
+            tools
+            .github/workflows/sync-nfl-source-data.yml
+          )
+
+          # Odds-only materialization does not read player/roster/identity data.
+          # Keep producer tools as a conservative race input.
+          if [[ "$materialization_scope" == "schedule-odds" ]]; then
+            materialize_input_pathspecs=(
+              data-source/registry.json
+              data-source/providers/nflverse/schedules
+              data-source/providers/nflverse/schedule-odds
+              data-source/nfl/schedules
+              data-source/nfl/schedule-odds
+              tools
+              .github/workflows/sync-nfl-source-data.yml
+            )
+          fi
+
+          # Returns 0 after a successful push. Returns 1 when a materialization input
+          # changed on main (caller must rebuild). Fails closed on rebase conflicts.
+          publish_canonical_commit() {
+            local base_sha rebase_attempt
+            base_sha="$(git rev-parse HEAD~1)"
+            for rebase_attempt in 1 2 3 4 5; do
+              if git push "$push_url" HEAD:main; then
+                return 0
+              fi
+              # schedule-odds normally uses a shallow checkout. Restore complete
+              # ancestry only after a rejected push so input comparison and
+              # rebase retain the original race-safe semantics.
+              if [[ "$materialization_scope" == "schedule-odds" ]] && [[ "$(git rev-parse --is-shallow-repository)" == "true" ]]; then
+                if ! git fetch --unshallow origin main; then
+                  echo "Cannot restore complete schedule-odds ancestry; failing closed." >&2
+                  exit 1
+                fi
+                if [[ "$(git rev-parse --is-shallow-repository)" != "false" ]]; then
+                  echo "Schedule-odds history remains shallow after fetch; failing closed." >&2
+                  exit 1
+                fi
+              else
+                git fetch origin main
+              fi
+              if ! git diff --quiet "$base_sha" origin/main -- "${materialize_input_pathspecs[@]}"; then
+                echo "Materialization inputs changed on main; rebuild required."
+                return 1
+              fi
+              echo "main advanced outside materialization inputs; rebasing validated commit (rebase attempt $rebase_attempt)."
+              if ! git rebase origin/main; then
+                git rebase --abort || true
+                echo "Rebase of validated canonical commit failed; failing closed." >&2
+                exit 1
+              fi
+              base_sha="$(git rev-parse HEAD~1)"
+            done
+            echo "main kept advancing outside materialization inputs; rebuild required."
+            return 1
           }
 
           assert_source_data_only() {
             mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
             unexpected=()
             for path in "${changed[@]}"; do
-              if [[ "$path" != source-data/* ]]; then
+              if [[ "$path" != data-source/* ]]; then
                 unexpected+=("$path")
               fi
             done
             if (( ${#unexpected[@]} > 0 )); then
-              printf 'Unexpected changes outside source-data/:\n' >&2
+              printf 'Unexpected changes outside data-source/:\n' >&2
               printf ' - %s\n' "${unexpected[@]}" >&2
               return 1
             fi
           }
 
           assert_scoped_canonical_write_set() {
-            if [[ "$materialization_scope" != "game-finality" ]]; then
+            if [[ "$materialization_scope" == "full" ]]; then
               return 0
             fi
             mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
             unexpected=()
             for path in "${changed[@]}"; do
-              if [[ "$path" == source-data/nfl/schedules/* ]]; then
-                continue
+              if [[ "$materialization_scope" == "game-finality" ]]; then
+                if [[ "$path" == data-source/nfl/schedules/* || "$path" == data-source/nfl/game-finality/* ]]; then
+                  continue
+                fi
+              elif [[ "$materialization_scope" == "schedule-odds" ]]; then
+                if [[ "$path" == data-source/nfl/schedule-odds/* ]]; then
+                  continue
+                fi
               fi
-              if [[ "$path" == source-data/nfl/game-finality/* ]]; then
-                continue
-              fi
-              if [[ "$path" == "source-data/_sync/last-failure.json" ]]; then
+              if [[ "$path" == "data-source/_sync/last-failure.json" ]]; then
                 continue
               fi
               unexpected+=("$path")
             done
             if (( ${#unexpected[@]} > 0 )); then
-              printf 'Scoped game-finality materialization touched an unexpected path:\n' >&2
+              printf 'Scoped %s materialization touched unexpected paths:\n' "$materialization_scope" >&2
               printf ' - %s\n' "${unexpected[@]}" >&2
               return 1
             fi
@@ -312,7 +410,7 @@ jobs:
 
             for diagnostic_attempt in $(seq 1 "$max_attempts"); do
               reset_to_main
-              mkdir -p source-data/_sync
+              mkdir -p data-source/_sync
 
               PHASE="$phase" EXIT_CODE="$exit_code" LOG_FILE="$log_file" \
                 python - <<'PY'
@@ -338,14 +436,14 @@ jobs:
               "forceInput": (os.environ.get("FORCE") or "false").lower() == "true",
               "errorTail": lines[-80:],
           }
-          Path("source-data/_sync/last-failure.json").write_text(
+          Path("data-source/_sync/last-failure.json").write_text(
               json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
               encoding="utf-8",
           )
           PY
 
               assert_source_data_only
-              git add -- source-data/_sync/last-failure.json
+              git add -- data-source/_sync/last-failure.json
               if git diff --cached --quiet; then
                 echo "Failure diagnostic already matches main."
                 return 0
@@ -394,7 +492,7 @@ jobs:
             fi
 
             assert_source_data_only
-            git add -- source-data/providers
+            git add -- data-source/providers
             if ! git diff --cached --quiet; then
               timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
               git commit -m "data(nfl-source): refresh provider raw sources • $timestamp"
@@ -423,7 +521,7 @@ jobs:
             set -e
             materialize_seconds=$(( $(date +%s) - materialize_start ))
             phase_label="Full Materialization"
-            if [[ "$materialization_scope" == "game-finality" ]]; then
+            if [[ "$materialization_scope" != "full" ]]; then
               phase_label="Scoped Materialization"
             fi
             echo "- ${phase_label} (attempt $attempt): ${materialize_seconds}s" >> "$GITHUB_STEP_SUMMARY"
@@ -460,6 +558,17 @@ jobs:
                   f"final={diagnostics.get('finalGameCount')}, "
                   f"weekFinal={diagnostics.get('weekFinalCount')}"
               )
+          elif scope == "schedule-odds":
+              print(f"- Scoped canonical files evaluated: {result.get('oddsCanonicalFileCount')}")
+              print(f"- Scoped canonical files changed: {result.get('oddsFilesChanged')}")
+              print("- Scoped changed paths: " + (", ".join(result.get("oddsChangedPaths") or []) or "none"))
+              diagnostics = result.get("oddsDiagnostics") or {}
+              print(
+                  "- Odds coverage: "
+                  f"games={diagnostics.get('gameCount')}, "
+                  f"complete={diagnostics.get('gamesWithCompleteLines')}, "
+                  f"incomplete={diagnostics.get('gamesWithoutCompleteLines')}"
+              )
           else:
               print(
                   "- Full materialization change flags: "
@@ -492,6 +601,11 @@ jobs:
                   "gameFinalityFilesChanged": 0,
                   "gameFinalityChangedPaths": [],
               }
+          elif scope == "schedule-odds":
+              expected = {
+                  "oddsFilesChanged": 0,
+                  "oddsChangedPaths": [],
+              }
           else:
               expected = {
                   "identityChanged": False,
@@ -520,30 +634,50 @@ jobs:
             assert_source_data_only
             assert_scoped_canonical_write_set
 
+            # The repo-state identity audit reads Players.json, persisted identities
+            # and Sleeper platform data. It runs after materialization
+            # to check freshly rebuilt canonical identities (Issue #814, ADR-039).
+            # A failure publishes no canonical data; raw evidence is already on main.
+            if [[ "$materialization_scope" == "full" ]]; then
+              post_audit_log="$(mktemp)"
+              post_audit_start="$(date +%s)"
+              set +e
+              python -m unittest tools.tests.test_nfl_source_app_espn_identity_bridge_repository -v 2>&1 | tee "$post_audit_log"
+              post_audit_status=${PIPESTATUS[0]}
+              set -e
+              post_audit_seconds=$(( $(date +%s) - post_audit_start ))
+              echo "- Post-materialization repo-state audit (attempt $attempt): ${post_audit_seconds}s" >> "$GITHUB_STEP_SUMMARY"
+              if (( post_audit_status != 0 )); then
+                echo "NFL post-materialization repo-state audit failed; canonical data is not published." >&2
+                write_failure_diagnostic "post-materialize-audit" "$post_audit_status" "$post_audit_log"
+                exit "$post_audit_status"
+              fi
+            fi
+
             # The complete NFL audit belongs only to the full materializer. Scoped
-            # finality diagnostics remain execution output and never overwrite it.
+            # scoped diagnostics remain execution output and never overwrite it.
             if [[ "$materialization_scope" == "full" ]]; then
               python tools/nfl_source_data.py audit | tee -a "$materialize_log"
             fi
-            rm -f source-data/_sync/last-failure.json
+            rm -f data-source/_sync/last-failure.json
             assert_source_data_only
             assert_scoped_canonical_write_set
 
             mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
             if (( ${#changed[@]} == 0 )); then
-              echo "No canonical NFL source-data changes detected."
+              echo "No canonical NFL data-source changes detected."
               echo "- No-op reason: canonical write-set unchanged after validated second pass" >> "$GITHUB_STEP_SUMMARY"
               echo "- Publication (attempt $attempt): ${publication_seconds}s" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
 
-            printf 'Validated canonical source-data changes:\n'
+            printf 'Validated canonical data-source changes:\n'
             printf ' - %s\n' "${changed[@]}"
 
-            git add -- source-data
+            git add -- data-source
             if git diff --cached --quiet; then
-              echo "No canonical source-data changes to commit."
-              echo "- No-op reason: no staged semantic source-data changes" >> "$GITHUB_STEP_SUMMARY"
+              echo "No canonical data-source changes to commit."
+              echo "- No-op reason: no staged semantic data-source changes" >> "$GITHUB_STEP_SUMMARY"
               echo "- Publication (attempt $attempt): ${publication_seconds}s" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
@@ -551,9 +685,9 @@ jobs:
             timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
             git commit -m "data(nfl-source): materialize canonical NFL sources • $timestamp"
             publish_start="$(date +%s)"
-            if git push "$push_url" HEAD:main; then
+            if publish_canonical_commit; then
               publication_seconds=$(( publication_seconds + $(date +%s) - publish_start ))
-              echo "NFL source-data publish succeeded."
+              echo "NFL data-source publish succeeded."
               echo "- Publication (attempt $attempt): ${publication_seconds}s" >> "$GITHUB_STEP_SUMMARY"
               echo "- No-op reason: n/a — validated canonical changes published" >> "$GITHUB_STEP_SUMMARY"
               exit 0
@@ -567,3 +701,45 @@ jobs:
             echo "main advanced during canonical publish; rebuilding from latest main."
             echo "- Publication (attempt $attempt): ${publication_seconds}s; canonical push raced with main, rebuilding" >> "$GITHUB_STEP_SUMMARY"
           done
+
+  nfl_games_derived:
+    name: Publish global NFL Game Shared Derived
+    needs: sync
+    # After full daily Source or scoped nflverse.schedule-odds refresh only.
+    # NFL Live game-finality and all other targeted datasets remain excluded.
+    if: ${{ needs.sync.result == 'success' && inputs.materialization_scope != 'game-finality' && (!inputs.dataset || inputs.dataset == 'nflverse.schedule-odds') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify canonical NFL Game Source-to-Derived restore
+        run: python3 -m unittest tools.tests.test_nfl_games_real_source_restore -v
+
+      - name: Rebuild and publish only NFL Game Derived seasons
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope nfl-games
+          --path data-derived/nfl-games
+          --
+          python3 tools/nfl_games_materialize.py --all-seasons --write
+
+      - name: Summarize isolated Derived publication
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          echo "## Global NFL Game Shared Derived" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Trigger: successful full NFL Source sync only (not game-finality live)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Generated write-set: data-derived/nfl-games/** only" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Publisher: rebuild-and-retry from latest main, no-op on unchanged content" >> "$GITHUB_STEP_SUMMARY"
+

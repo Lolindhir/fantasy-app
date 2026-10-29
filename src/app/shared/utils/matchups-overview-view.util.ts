@@ -18,8 +18,9 @@ export type MatchupProgressKind =
   | 'next'
   | 'future'
   | 'repairable'
+  | 'questionable'
   | 'unknown';
-export type MatchupProgressOutline = 'next' | 'repairable' | 'unknown' | null;
+export type MatchupProgressOutline = 'next' | 'repairable' | 'questionable' | 'unknown' | null;
 export type MatchupScoringWindowDensity = 'rich' | 'compact' | 'dense';
 export type MatchupScoreboardState = 'neutral' | 'active' | 'final' | 'unknown';
 
@@ -61,15 +62,35 @@ export interface MatchupScoringWindowView extends MatchupScoringWindowHorizonVie
   isLive: boolean;
 }
 
-const kindOrder: Record<MatchupProgressKind, number> = {
+// Outer edge first. Started starters (locked or final) form the outermost block: red, green, blue, yellow, unknown.
+// Open starters follow: plain next-window and later segments, then the always-outlined problems
+// (yellow, red) with unknown innermost.
+const startedOrder: Partial<Record<MatchupProgressKind, number>> = {
   irreparable: 0,
+  repairable: 0.5,
   final: 1,
   locked: 2,
-  next: 3,
-  future: 4,
-  repairable: 5,
-  unknown: 6
+  questionable: 3,
+  unknown: 4
 };
+const openOrder: Partial<Record<MatchupProgressKind, number>> = {
+  next: 0,
+  future: 1,
+  questionable: 2,
+  repairable: 3,
+  irreparable: 4,
+  unknown: 5
+};
+
+function sortRank(segment: MatchupProgressSegmentView, started: boolean): number {
+  return started
+    ? startedOrder[segment.kind] ?? 0
+    : 10 + (openOrder[segment.kind] ?? 0);
+}
+
+function hasStarted(slot: FantasyRelevanceSlotState): boolean {
+  return slot.State === 'completed' || slot.State === 'locked-active';
+}
 
 const kindLabel: Record<MatchupProgressKind, string> = {
   irreparable: 'irreparable starter problem',
@@ -78,6 +99,7 @@ const kindLabel: Record<MatchupProgressKind, string> = {
   next: 'starter in the next scoring window',
   future: 'later unlocked starter',
   repairable: 'repairable starter problem',
+  questionable: 'questionable starter',
   unknown: 'starter state requiring review'
 };
 
@@ -112,9 +134,13 @@ export function buildMatchupStarterProgress(
   if (!team?.Slots?.length) return null;
 
   const sorted = team.Slots
-    .map(slot => toSegment(slot, nextScoringWindowID))
-    .sort((left, right) => kindOrder[left.kind] - kindOrder[right.kind]
-      || slotIndex(team.Slots, left.slotID) - slotIndex(team.Slots, right.slotID));
+    .map(slot => {
+      const segment = toSegment(slot, nextScoringWindowID);
+      return { segment, rank: sortRank(segment, hasStarted(slot)) };
+    })
+    .sort((left, right) => left.rank - right.rank
+      || slotIndex(team.Slots, left.segment.slotID) - slotIndex(team.Slots, right.segment.slotID))
+    .map(item => item.segment);
 
   const groups: MatchupProgressGroupView[] = [];
   for (const segment of sorted) {
@@ -267,7 +293,13 @@ function classifySlot(
   if (slot.State === 'completed') return 'final';
   if (slot.State === 'locked-active') return 'locked';
   if (slot.Repairability?.State === 'repairable') return 'repairable';
+  // An explicit OUT is an objective problem and always red, even when repair or slot evidence is unknown.
+  if (slot.ScoringAvailability?.State === 'out') return 'repairable';
+  // A bye is a known state of its own and shown red like any objective starter problem; unknown stays amber.
+  if (slot.State === 'bye') return 'repairable';
   if (slot.Repairability?.State === 'unknown' || slot.State === 'unknown') return 'unknown';
+  // Known status: ESPN lists the starter as questionable. Distinct from the unknown-state review marker.
+  if (slot.ScoringAvailability?.State === 'uncertain') return 'questionable';
   if (slot.State === 'unlocked' && nextScoringWindowID && slot.DecisionWindowID === nextScoringWindowID) {
     return 'next';
   }
@@ -276,7 +308,8 @@ function classifySlot(
 
 function outlineFor(kind: MatchupProgressKind): MatchupProgressOutline {
   if (kind === 'next') return 'next';
-  if (kind === 'repairable') return 'repairable';
+  if (kind === 'repairable' || kind === 'irreparable') return 'repairable';
+  if (kind === 'questionable') return 'questionable';
   if (kind === 'unknown') return 'unknown';
   return null;
 }

@@ -95,7 +95,7 @@ function assignFantasyPlacement(player: Player, placement: 'activeRoster' | 'tax
     Taxi: placement === 'taxi' ? [player] : [],
     Reserve: placement === 'ir' ? [player] : [],
     Starter: []
-  } as Player['TeamFantasy'];
+  } as unknown as Player['TeamFantasy'];
 
   player.TeamFantasy = team;
 }

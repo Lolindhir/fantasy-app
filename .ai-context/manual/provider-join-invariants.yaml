@@ -37,27 +37,11 @@ joinAudit:
   player:
     currentOutput:
       canonicalKey: Players.ID
-      providerKey: TankID
       rules:
-        - Players.ID is required and globally unique.
-        - TankID is required and globally unique in generated Players.json.
-        - Tank01 playerID must be unique in the provider input.
-        - Tank01 sleeperBotID is optional, but every non-empty value must identify at most one Tank01 record.
+        - Players.ID (Sleeper player_id from the canonical Sleeper snapshot) is required and globally unique.
+        - Since #347 H1b Players.json carries no provider ID (TankID removed); the Tank01 join helpers and the historical Tank01 archive aggregation were removed with #347 G4.
         - Sleeper player_id is optional in the global player catalog, but every non-empty value must be unique before joining.
       defenseInDepth: public/requests/utils/player/PlayerUtils.psm1::Test-UniquePlayerIds
-    history:
-      key: TankID
-      rule: >
-        Every historical Players_<season>.json used for current player calculations
-        must contain at most one record per non-empty TankID. Historical lookup
-        construction must fail instead of overwriting a previous record.
-    historicalGameAggregation:
-      providerKey: Tank01 playerID
-      rule: >
-        RequestPlayersSeason.ps1 aggregates the same Tank01 playerID across games,
-        but one game may not contain multiple playerStats entries claiming that
-        same playerID. The provider playerID, not the JSON property name, is the
-        historical identity key.
 
   team:
     source: Sleeper
@@ -119,7 +103,7 @@ joinAudit:
       as distinct season-roster records for different teams; a trade or roster
       move must not be collapsed across teams.
     rawEvidenceRule: >
-      All provider rows remain unchanged in source-data/providers. Canonical
+      All provider rows remain unchanged in data-source/providers. Canonical
       merging enriches only the derived SourceIDs map and never chooses a first or
       last row as a winner.
     observability: >
@@ -162,7 +146,7 @@ joinAudit:
         one Data-Exchange weekly identity and produce values such as ACT and TRT
         that are not independent week-specific status evidence.
       canonicalRule: >
-        Preserve every provider row unchanged in source-data/providers, but do not
+        Preserve every provider row unchanged in data-source/providers, but do not
         promote the later Shield status enrichment into canonical weekly Status for
         seasons 2002-2015; canonical Status is null for those weekly records.
         status_description_abbr remains week-specific Data-Exchange evidence and is
@@ -175,23 +159,24 @@ joinAudit:
         Canonical materialization reports equivalentDuplicateRowCount and
         legacyWeeklyStatusSuppressedRowCount in the weekly-roster audit.
     rawEvidenceRule: >
-      All provider rows remain unchanged in source-data/providers. Canonical
+      All provider rows remain unchanged in data-source/providers. Canonical
       SourceID enrichment only combines compatible evidence into the derived
       weekly record and never rewrites provider raw history.
 
 regressionCoverage:
   entryPoint: public/requests/ProviderJoinInvariantRegressionTest.ps1
-  ciEntryPoint: public/requests/DraftIdentityRegressionTest.ps1
+  ciEntryPoint: public/requests/ProviderJoinInvariantRegressionTest.ps1
+  draftAndTransactionJoins: >
+    The draft and transaction join cases (explicit Sleeper draft bindings, PickKey and TransactionID
+    uniqueness, historical draft-pick contexts, current versus archived pick copies) lived in the PowerShell
+    rebuild that was removed in Issue #999 step 7. They are covered by the league history products and tests
+    (tools/derived_data_lib/league_transactions.py, league_drafts.py, tools/tests/test_league_transactions.py,
+    test_league_drafts.py), which fail closed on the same conditions.
   cases:
     - generic duplicate and missing provider keys
     - Tank01-to-Sleeper player mapping collisions
     - historical TankID collisions
     - Sleeper member/roster owner cardinality
-    - duplicate/missing explicit Sleeper draft bindings
-    - duplicate standing identities and PickKeys
-    - duplicate generated TransactionIDs and manual SleeperTransactionID bindings
-    - missing completed historical Sleeper draft IDs
-    - identical versus conflicting current/history draft-pick copies
     - compatible nflverse season-roster SourceID enrichment collapses only across identical season/team/GSIS canonical facts while conflicting facts or provider IDs fail closed
     - compatible nflverse weekly-roster SourceID enrichment collapses only across identical weekly facts while conflicting provider IDs or weekly facts fail closed
     - legacy nflverse weekly-roster status variants collapse only after documented normalization while remaining canonical conflicts fail closed
@@ -199,4 +184,4 @@ regressionCoverage:
 futureSourceDataImplication: >
   New nflverse schedules, stats, rosters and snap-count materializers must apply
   the same contract to GSIS, PFR, game and season/week keys before their canonical
-  source-data files can become inputs to app generators.
+  data-source files can become inputs to app generators.

@@ -49,7 +49,7 @@ class HistoricalIdentityAdjudicationTests(unittest.TestCase):
 
     @classmethod
     def _write_source(cls, root: Path, entries: list[dict[str, Any]]) -> None:
-        path = root / "source-data/nfl/identities/historical-identity-adjudications.json"
+        path = root / "data-source/nfl/identities/historical-identity-adjudications.json"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(
             json.dumps({"SchemaVersion": 1, "Adjudications": entries}, indent=2) + "\n",
@@ -204,7 +204,7 @@ class HistoricalIdentityAdjudicationTests(unittest.TestCase):
     def test_provider_mapping_build_applies_versioned_adjudication(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            mapping_path = root / "source-data/nfl/identities/provider-mappings.json"
+            mapping_path = root / "data-source/nfl/identities/provider-mappings.json"
             mapping_path.parent.mkdir(parents=True, exist_ok=True)
             mapping_path.write_text(
                 json.dumps(
@@ -260,7 +260,7 @@ class HistoricalIdentityAdjudicationTests(unittest.TestCase):
             )
 
     def test_repository_adjudications_resolve_bates_and_conklin_in_2024(self) -> None:
-        mapping_path = ROOT / "source-data/nfl/identities/provider-mappings.json"
+        mapping_path = ROOT / "data-source/nfl/identities/provider-mappings.json"
         payload = json.loads(mapping_path.read_text(encoding="utf-8-sig"))
         known_canonical_ids = {
             str(item.get("CanonicalPlayerID") or "")

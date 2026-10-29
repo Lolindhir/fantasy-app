@@ -1,0 +1,86 @@
+schemaVersion: 1
+domain: player-scoring-reconciliation
+status: pre-publication-code-checkpoint
+trackingIssues: [355, 471, 698]
+purpose: >-
+  Reconcile a canonical league-week's Sleeper PlayerPoints against
+  independently calculated PlayerWeekFantasy Actual on an explicit
+  CanonicalPlayerID, CanonicalLeagueID, Season, Week and ScoringSettingsHash.
+  Preserve both facts so downstream consumers may select the intended owner.
+owner:
+  generatedOutput: data-derived/player-scoring-reconciliation/<CanonicalLeagueID>/<Season>/<Week:02d>.json
+  producer: tools/player_scoring_reconciliation.py
+  policy: data-meta/<CanonicalLeagueID>/scoring-divergences.json
+  readOnlyDefault: true
+  writeOptIn: --write
+  publication: >-
+    The CLI prepares a derived artifact on an explicitly selected finalized
+    league/NFL week and writes only after strict complete comparison succeeds.
+    It does not publish into main, create a branch, add a workflow or modify
+    existing PWF, TWP, League matchups or App JSON. Later publication must use
+    an approved existing classified rebuild-and-retry Derived writer.
+sources:
+  sleeper: data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/matchups/week-<Week>.json::PlayerPoints
+  calculated: data-derived/player-week-fantasy/<CanonicalLeagueID>/<Season>/<Week:02d>.json::Records[].Actual
+  identity:
+    - CanonicalLeagueID
+    - Season
+    - Week
+    - CanonicalPlayerID
+    - ScoringProfile.SettingsHash
+contract:
+  version: 1
+  recordFields:
+    - CanonicalPlayerID
+    - LeaguePoints
+    - CalculatedPoints
+    - Difference
+    - Status
+    - ExceptionReference (only when accepted)
+  statuses:
+    verified: Both present/final and within 0.010001 points
+    accepted-divergence: >-
+      Beyond tolerance, but exact league, week, player and both point values
+      match an audited, versioned policy entry. This is not identical scoring.
+    mismatch: Missing nonzero scorer, non-final PWF or unexpected divergence
+    unavailable: >-
+      Missing one of the two comparable values, including a non-rostered PWF
+      player, a zero-score league player missing from PWF, or missing PWF data.
+  rules:
+    - Never represent missing provider scores as zero.
+    - Never overwrite either upstream source with the alternative value.
+    - The old global tolerance is not raised, widened or disabled.
+    - Mismatches and stale/unused exception entries block derived publication.
+    - A missing nonzero League scorer or non-final matching PWF Actual blocks publication.
+    - Scoring fingerprint and unique canonical player IDs must match exactly.
+    - Same input produces the same JSON bytes; a no-op makes no write.
+    - A policy entry must identify exact expected Sleeper and computed scores, player, season, week and incident reference.
+  consumerSemantics:
+    weeklyAwards: >-
+      TeamWeekPerformance always calculates its actual starters and theoretical
+      best-ball from canonical league/Sleeper matchup PlayerPoints. Reconciliation
+      controls quality assurance; it does not substitute PWF points.
+    playerAnalysis: >-
+      PlayerWeekFantasy Actual remains canonical independent NFL scoring and
+      may diverge from provider evidence. The comparison is informational,
+      not a change to the PWF scoring formula.
+    historicalAttribution: >-
+      Owner/franchise name or avatars are not supplied by this record;
+      downstream joins require the historically correct season/week identity.
+acceptedInitialPolicy:
+  canonicalLeagueID: nfl-reise
+  season: 2025
+  week: 6
+  player: Caleb Williams
+  canonicalPlayerID: NFLP-3c5ddc5072f6fe8f9b77
+  leaguePoints: 19.88
+  calculatedPoints: 20.38
+  reference: '#698'
+  note: >-
+    Recorded as a provider-stat evidence divergence only; not an NFL source
+    correction and not proof of strict point equality.
+releaseGate: >-
+  CI must cover exact match, documented exception, stale exception, changed
+  point values, unknown mismatches, non-final and missing PWF, stable write/no-op
+  and real 2025/W06 league evidence. Historical full-season PWF and TWP still
+  require their independent finality, source, publication and backfill checks.

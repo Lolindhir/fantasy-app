@@ -9,9 +9,9 @@ role: >
   scoring semantics.
 
 source:
-  sharedDerived: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
-  canonicalIdentity: source-data/nfl/identities/players.json
-  sleeperValidation: source-data/nfl/platform/sleeper/players.json
+  sharedDerived: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+  canonicalIdentity: data-source/nfl/identities/players.json
+  sleeperValidation: data-source/nfl/platform/sleeper/players.json
   publisher: tools/player_week_fantasy_app_publish.py
 
 identity:
@@ -32,17 +32,23 @@ contract:
     - Week
     - ScoringProfile
     - IdentityCoverage
+    - Display
     - Records
+  displayFields:
+    RangeLevel: prediction-range level UIs show; one of Projection.PredictionRanges[].Level (tools/player_week_fantasy.py::DISPLAY_INTERVAL_LEVEL)
+    RangeAxis: shared Min/Max scale (step 5) covering all player ranges at RangeLevel
   recordFields:
     - PlayerID
     - CanonicalPlayerID
     - Projection
     - Actual
+  projectionRanges: Projection.PredictionRange is the primary 90 percent range; Projection.PredictionRanges lists 50/80/90 percent ranges (nested, ascending levels)
   projectionSemantics: .ai-context/manual/player-week-fantasy.yaml
   actualSemantics: .ai-context/manual/player-week-fantasy.yaml
 
 boundaries:
   - This file is an App delivery adapter, not Shared Derived ownership.
   - It does not recompute points, ranges, availability or model parameters.
-  - FantasyGameContext and Players/Free Agents may consume this publication in later checkpoints.
-  - Scheduling/freshness orchestration is not owned by this file or publisher.
+  - Current Angular FantasyGameContext consumes this publication through DataService; Players/Free Agents remain a later consumer checkpoint.
+  - Scheduling/freshness orchestration is not owned by this file or publisher; tools/player_week_fantasy_refresh.py runs it inside the APP Data League workflow.
+  - Team-level values and ranges live in public/data/MatchupProjections.json, not here.

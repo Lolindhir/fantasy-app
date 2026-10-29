@@ -42,7 +42,7 @@ function Get-CanonicalLeagueCoreJson {
     )
 
     $repoRoot = Get-CanonicalLeagueCoreRepoRoot
-    $path = Join-Path $repoRoot "source-data/leagues/$CanonicalLeagueID/seasons/$Season/$FileName"
+    $path = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues/$CanonicalLeagueID/seasons/$Season/$FileName"
     if (-not (Test-Path $path)) {
         throw "Canonical League Core source '$FileName' missing for $CanonicalLeagueID/$Season at '$path'."
     }
@@ -370,8 +370,45 @@ function Get-CanonicalCurrentLeagueCoreShadow {
     }
 }
 
+function Get-CanonicalLeagueSeasonLeagues {
+    param(
+        [string]$CanonicalLeagueID = "nfl-reise"
+    )
+
+    $seasonsRoot = Join-Path (Get-DataSourceRoot -RepoRoot (Get-CanonicalLeagueCoreRepoRoot)) "leagues/$CanonicalLeagueID/seasons"
+    if (-not (Test-Path $seasonsRoot)) {
+        throw "Canonical League season directory missing at '$seasonsRoot'."
+    }
+
+    $currentSeason = [int](Get-Config).LeagueYear
+    $leagues = @()
+
+    foreach ($directory in (Get-ChildItem -Path $seasonsRoot -Directory)) {
+        $seasonNumber = 0
+        if (-not [int]::TryParse([string]$directory.Name, [ref]$seasonNumber)) { continue }
+        if ($seasonNumber -gt $currentSeason) { continue }
+
+        $league = Get-CanonicalLeagueCoreJson -CanonicalLeagueID $CanonicalLeagueID -Season ([string]$seasonNumber) -FileName "league.json"
+        if ([string]$league.CanonicalLeagueID -ne $CanonicalLeagueID) {
+            throw "Canonical League Core identity mismatch: requested '$CanonicalLeagueID', league.json for season $seasonNumber contains '$($league.CanonicalLeagueID)'."
+        }
+        if ([string]$league.Season -ne [string]$seasonNumber) {
+            throw "Canonical League Core season mismatch: directory '$seasonNumber', league.json contains '$($league.Season)'."
+        }
+
+        $mapping = Get-CanonicalLeagueCoreSleeperMapping -Mappings $league.ProviderMappings -SourceLabel "Canonical league '$CanonicalLeagueID/$seasonNumber'"
+        $leagues += [PSCustomObject][ordered]@{
+            league_id = Get-CanonicalLeagueCoreRequiredMappingValue -Mapping $mapping -PropertyName "ProviderLeagueID" -SourceLabel "Canonical league '$CanonicalLeagueID/$seasonNumber'"
+            season    = [string]$league.Season
+        }
+    }
+
+    return @($leagues | Sort-Object { [int]$_.season })
+}
+
 Export-ModuleMember -Function @(
     "Get-CanonicalCurrentLeagueRaw",
     "Get-CanonicalCurrentTeamsForLeague",
-    "Get-CanonicalCurrentLeagueCoreShadow"
+    "Get-CanonicalCurrentLeagueCoreShadow",
+    "Get-CanonicalLeagueSeasonLeagues"
 )

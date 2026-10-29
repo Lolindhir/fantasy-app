@@ -6,6 +6,7 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any
+from data_roots import DATA_SOURCE_ROOT
 
 # Sleeper scoring keys are intentionally mapped to canonical nflverse raw-stat fields.
 # Provider fantasy-point columns are never consumed here.
@@ -117,6 +118,14 @@ TEAM_DEFENSE_ONLY_KEYS = {
     "yds_allow_550p",
 }
 
+# nflverse credits offensive players with defensive fumble facts (def_fumbles_forced,
+# def_fumbles) on change-of-possession plays after their own fumble or sack-fumble.
+# Sleeper does not score these for offensive players (D2a: 11 of 11 affected rostered
+# player-weeks 2024-2026 mismatch without this rule, none match), so ff/fum_rec only
+# apply to individual-defense positions.
+OFFENSIVE_POSITIONS_WITHOUT_DEFENSIVE_FUMBLE_CREDIT = {"QB", "RB", "FB", "WR", "TE", "K", "P"}
+DEFENSIVE_FUMBLE_CREDIT_KEYS = {"ff", "fum_rec"}
+
 # Position-specific Sleeper settings are the exception to event-first scoring.
 # They only apply when the player's canonical primary position matches the key.
 POSITIONAL_RECEPTION_BONUS_KEYS = {"bonus_rec_rb", "bonus_rec_wr", "bonus_rec_te"}
@@ -190,7 +199,7 @@ def load_special_teams_fumble_events_for_player(
     week: int,
     player_id: str,
 ) -> list[dict[str, Any]]:
-    path = repo_root / "source-data/nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
     if not path.exists():
         raise ValueError(
             "Canonical special-teams fumble evidence is missing; zero-by-absence is not allowed: "
@@ -235,6 +244,11 @@ def applicable_scoring_keys(position: str | None, scoring: dict[str, Any]) -> se
     applicable: set[str] = set()
     for key in scoring:
         if key in TEAM_DEFENSE_ONLY_KEYS:
+            continue
+        if (
+            key in DEFENSIVE_FUMBLE_CREDIT_KEYS
+            and pos in OFFENSIVE_POSITIONS_WITHOUT_DEFENSIVE_FUMBLE_CREDIT
+        ):
             continue
         if key in POSITIONAL_KEYS:
             if positional_key_applies(pos, key):
@@ -285,11 +299,11 @@ def score_record(
 
 
 def league_season_path(repo_root: Path, league_id: str, season: int) -> Path:
-    return repo_root / "source-data/leagues" / league_id / "seasons" / str(season) / "league.json"
+    return repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons" / str(season) / "league.json"
 
 
 def find_player_record(repo_root: Path, season: int, week: int, player_id: str) -> dict[str, Any]:
-    path = repo_root / "source-data/nfl/player-stats" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
     payload = read_json(path)
     matches = [row for row in payload.get("Records", []) if row.get("CanonicalPlayerID") == player_id]
     if len(matches) != 1:
@@ -298,7 +312,7 @@ def find_player_record(repo_root: Path, season: int, week: int, player_id: str) 
 
 
 def snap_context(repo_root: Path, season: int, week: int, player_id: str) -> dict[str, Any] | None:
-    path = repo_root / "source-data/nfl/snap-counts" / str(season) / f"{week:02d}.json"
+    path = repo_root / DATA_SOURCE_ROOT / "nfl/snap-counts" / str(season) / f"{week:02d}.json"
     if not path.exists():
         return None
     rows = [row for row in read_json(path).get("Records", []) if row.get("CanonicalPlayerID") == player_id]

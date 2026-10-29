@@ -1,0 +1,192 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.achievement-plaque {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px;
+  border: 2px solid #38251b;
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 7px, rgba(226, 174, 115, 0.045) 8px 9px, transparent 10px 15px),
+    linear-gradient(120deg, #3b271d, #69452e 45%, #38251b 100%);
+  color: #34251a;
+}
+
+.achievement-plaque__metal {
+  position: relative;
+  min-width: 0;
+  padding: 5px 6px 5px;
+  border: 2px solid #927341;
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(88, 60, 25, 0.025) 4px 5px),
+    linear-gradient(105deg, #bda06a 0%, #e1cb95 42%, #c8aa72 100%);
+}
+
+.achievement-plaque__metal::before,
+.achievement-plaque__metal::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  width: 9px;
+  height: 9px;
+  border: 1px solid #76572c;
+  border-radius: 50%;
+  background: #d9bd84;
+}
+
+.achievement-plaque__metal::before { left: 7px; }
+.achievement-plaque__metal::after { right: 7px; }
+
+.achievement-plaque__header {
+  text-align: center;
+  line-height: 1.15;
+}
+
+.achievement-plaque__year {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.achievement-plaque__rule {
+  width: 22px;
+  height: 1px;
+  background: #70502c;
+}
+
+.achievement-plaque__title {
+  margin-top: 1px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.14;
+}
+
+.achievement-plaque__ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 1px auto 1px;
+  color: #694825;
+  font-size: 0.45rem;
+}
+
+.achievement-plaque__ornament::before,
+.achievement-plaque__ornament::after {
+  content: "";
+  width: min(20%, 52px);
+  height: 1px;
+  background: #8e6c3d;
+}
+
+.achievement-plaque__body {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 52px 54px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 4px;
+}
+
+.achievement-plaque__emblem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 50px;
+  border-right: 1px solid #997849;
+  padding-right: 5px;
+  box-sizing: border-box;
+}
+
+.achievement-plaque__emblem img {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+.achievement-plaque__avatar-stack {
+  position: relative;
+  display: block;
+  width: 52px;
+  height: 52px;
+}
+
+.achievement-plaque__primary-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  border: 2px solid #f7f2e8;
+  border-radius: 50%;
+  box-sizing: border-box;
+  background: #e4d2ac;
+  color: #43301e;
+  font-weight: 800;
+}
+
+.achievement-plaque__primary-avatar img,
+.achievement-plaque__secondary-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.achievement-plaque__secondary-avatar {
+  position: absolute;
+  right: -2px;
+  bottom: -1px;
+  width: 19px;
+  height: 19px;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 2px solid #f7f2e8;
+  border-radius: 50%;
+  background: #ebd9b0;
+}
+
+.achievement-plaque__identity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.achievement-plaque__name {
+  min-width: 0;
+  overflow: hidden;
+  color: #2d2118;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.12;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+@container (min-width: 480px) {
+  .achievement-plaque { padding: 11px; }
+  .achievement-plaque__metal { padding: 11px 22px 14px; }
+  .achievement-plaque__year { font-size: 1.3rem; }
+  .achievement-plaque__body {
+    grid-template-columns: 84px 82px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .achievement-plaque__emblem { width: 84px; height: 86px; padding-right: 12px; }
+  .achievement-plaque__emblem img { width: 65px; height: 65px; }
+  .achievement-plaque__avatar-stack,
+  .achievement-plaque__primary-avatar { width: 78px; height: 78px; }
+  .achievement-plaque__secondary-avatar { width: 27px; height: 27px; }
+}

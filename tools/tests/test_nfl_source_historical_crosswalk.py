@@ -27,7 +27,7 @@ from nfl_source_data_lib.mapping_history import (  # noqa: E402
 
 def _config(start_season: int = 2024, *, minimum_rows: int | None = 1) -> dict:
     config = json.loads(
-        (TOOLS.parent / "source-data/historical-identity-backfill.json").read_text(
+        (TOOLS.parent / "data-source/historical-identity-backfill.json").read_text(
             encoding="utf-8"
         )
     )
@@ -40,7 +40,7 @@ def _config(start_season: int = 2024, *, minimum_rows: int | None = 1) -> dict:
 def _write_config(
     root: Path, start_season: int = 2024, *, minimum_rows: int | None = 1
 ) -> None:
-    path = root / "source-data/historical-identity-backfill.json"
+    path = root / "data-source/historical-identity-backfill.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(_config(start_season, minimum_rows=minimum_rows)), encoding="utf-8"
@@ -49,7 +49,7 @@ def _write_config(
 
 def _write_crosswalk(root: Path, season: int, rows: list[dict[str, str]]) -> None:
     relative = f"providers/dynastyprocess/ff-player-ids-history/{season}/opening.csv"
-    path = root / "source-data" / relative
+    path = root / "data-source" / relative
     path.parent.mkdir(parents=True, exist_ok=True)
     fields = [
         "mfl_id",
@@ -109,7 +109,7 @@ class HistoricalCrosswalkTests(unittest.TestCase):
             ):
                 result = sync_historical_crosswalk_evidence(root, current_season=2020)
 
-            directory = root / "source-data/providers/dynastyprocess/ff-player-ids-history/2020"
+            directory = root / "data-source/providers/dynastyprocess/ff-player-ids-history/2020"
             metadata_path = directory / "metadata.json"
             metadata_bytes = metadata_path.read_bytes()
             metadata = json.loads(metadata_bytes)
@@ -165,7 +165,7 @@ class HistoricalCrosswalkTests(unittest.TestCase):
                         ValueError, f"missing required columns: {missing}" if missing else "implausibly few rows"
                     ):
                         sync_historical_crosswalk_evidence(root, current_season=2020)
-                directory = root / "source-data/providers/dynastyprocess/ff-player-ids-history/2020"
+                directory = root / "data-source/providers/dynastyprocess/ff-player-ids-history/2020"
                 self.assertFalse((directory / "opening.csv").exists())
                 self.assertFalse((directory / "metadata.json").exists())
 
@@ -199,7 +199,7 @@ class HistoricalCrosswalkTests(unittest.TestCase):
                 )
                 metadata_path = (
                     root
-                    / "source-data/providers/dynastyprocess/ff-player-ids-history/2024/metadata.json"
+                    / "data-source/providers/dynastyprocess/ff-player-ids-history/2024/metadata.json"
                 )
                 rendered = metadata_path.read_text(encoding="utf-8")
                 second = sync_historical_crosswalk_evidence(

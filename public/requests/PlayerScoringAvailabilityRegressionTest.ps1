@@ -170,4 +170,33 @@ $localePrevious = [PSCustomObject]@{
 $resolved = @(Resolve-PlayerScoringAvailabilityObservationTimes -CurrentObservations @($parsedCurrent) -PreviousObservations @($localePrevious))
 Assert-PsaEqual '2026-09-22T16:49:31Z' $resolved[0].FirstObservedAtUtc 'Previously published locale-formatted transition time must self-heal to UTC ISO'
 
+# Canonical snapshot read (espn.player-availability): no network, fail closed to unknown.
+$snapshotDir = Join-Path ([System.IO.Path]::GetTempPath()) ([guid]::NewGuid().ToString())
+New-Item -ItemType Directory -Path $snapshotDir | Out-Null
+try {
+    $snapshotPath = Join-Path $snapshotDir 'espn.json'
+    $teams = @([PSCustomObject]@{ Starter = @('s1', 's2') })
+    $players = @([PSCustomObject]@{ ID = 's1' }, [PSCustomObject]@{ ID = 's2' })
+    $identities = @(
+        [PSCustomObject]@{ IDs = [PSCustomObject]@{ Sleeper = 's1'; ESPN = '9001' } },
+        [PSCustomObject]@{ IDs = [PSCustomObject]@{ Sleeper = 's2'; ESPN = '9002' } }
+    )
+    $missing = @(Get-CanonicalScoringAvailabilityObservations -Season 2030 -Teams $teams -Players $players -CanonicalIdentities $identities -SnapshotPath $snapshotPath 3>$null)
+    Assert-PsaEqual 0 $missing.Count 'Missing canonical snapshot must leave availability unknown'
+
+    $json = '{"SchemaVersion":1,"Season":2030,"Players":[{"ESPNPlayerID":"9001","ProviderStatus":"OUT","StatusSinceUtc":"2030-09-01T10:00:00Z"},{"ESPNPlayerID":"9999","ProviderStatus":"OUT","StatusSinceUtc":"2030-09-01T10:00:00Z"}]}'
+    Set-Content -LiteralPath $snapshotPath -Value $json -Encoding utf8
+    $observed = @(Get-CanonicalScoringAvailabilityObservations -Season 2030 -Teams $teams -Players $players -CanonicalIdentities $identities -SnapshotPath $snapshotPath)
+    Assert-PsaEqual 1 $observed.Count 'Only starters with a canonical snapshot row are observed'
+    Assert-PsaEqual 's1' $observed[0].PlayerID 'Observation must map ESPN ID back to the Sleeper starter'
+    Assert-PsaEqual 'out' $observed[0].State 'Snapshot OUT must normalize to out'
+    Assert-PsaEqual '2030-09-01T10:00:00Z' $observed[0].ObservedAtUtc 'Observation time comes from the snapshot status-since time'
+
+    $otherSeason = @(Get-CanonicalScoringAvailabilityObservations -Season 2031 -Teams $teams -Players $players -CanonicalIdentities $identities -SnapshotPath $snapshotPath 3>$null)
+    Assert-PsaEqual 0 $otherSeason.Count 'Snapshot of another season must not be used'
+}
+finally {
+    Remove-Item -LiteralPath $snapshotDir -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 Write-Host 'Player scoring availability regression tests passed.' -ForegroundColor Green

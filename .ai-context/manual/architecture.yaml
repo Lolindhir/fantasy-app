@@ -12,44 +12,43 @@ architecture:
     until separately migrated.
 
 layers:
-  - name: manual-domain-config
-    path: public/data/Metadata.json
+  - name: league-metadata
+    path: data-meta/<CanonicalLeagueID>/
     responsibility: >
-      Contains league-specific inputs and rules used by the PowerShell generation
-      pipeline.
+      ADR-054 (Issue #986): hand-maintained metadata per league, one metadata.json per
+      CanonicalLeagueID. It replaced public/data/Metadata.json, public/requests/config.ps1,
+      the league defaults in ConfigUtils.psm1 and data-source/leagues/_bootstrap (removed in
+      Issue #986 step 4); all consumers read it. Contract: .ai-context/manual/league-metadata.yaml.
     owns:
-      - league-specific inputs
-      - league-specific rules
-      - owner id mapping
-      - draft configuration
+      - Provider league ID, owners, draft configuration and draft IDs
+      - per-season calendar dates (Cap Deadline) and the model choice per season
     doesNotOwn:
-      - technical paths
-      - runtime credentials
-      - Angular rendering
-      - generated app output
+      - calculation logic and model parameters (central, league-independent models, Issue #919)
+      - generated or synced data; no workflow writes into data-meta
+      - facts already canonical in data-source (LeagueYear, TeamCount, earlier provider league IDs)
 
   - name: generation-config
     path: public/requests/utils/ConfigUtils.psm1
     responsibility: >
       Provides technical paths and generation configuration for the PowerShell
-      data generation pipeline. Loads Metadata.json and exposes configuration to
+      data generation pipeline. Loads the league metadata (data-meta) and exposes configuration to
       generator scripts.
     owns:
       - generated data file paths
       - backup paths
       - request/generation defaults
-      - mapping Metadata.json into generator config
+      - mapping the league metadata (data-meta) into generator config
     doesNotOwn:
       - Angular rendering
       - generated JSON content as source of truth
       - UI state
 
   - name: persistent-source-data
-    path: source-data/**
+    path: data-source/**
     responsibility: >
-      Persists validated provider raw inputs under source-data/providers,
-      provider-independent NFL facts under source-data/nfl and canonical
-      fantasy-league facts under source-data/leagues. Phase 1B is productively
+      Persists validated provider raw inputs under data-source/providers,
+      provider-independent NFL facts under data-source/nfl and canonical
+      fantasy-league facts under data-source/leagues. Phase 1B is productively
       accepted; this shared facts substrate is now available independently to the
       App generators and Fantasy Management without making either consumer depend
       on the other's derived read models.
@@ -59,7 +58,7 @@ layers:
       - stable CanonicalLeagueID and CanonicalLeagueSeasonID identities for fantasy-league lineage
       - canonical season-partitioned NFL facts such as Draft, Combine, schedules, rosters, stats and snaps
       - canonical fantasy-league facts such as league instances, members, rosters, transactions and fantasy drafts
-      - dataset acquisition/lifecycle contracts and source-data audit output
+      - dataset acquisition/lifecycle contracts and data-source audit output
     doesNotOwn:
       - manually authored league-specific rules that remain owned by Metadata
       - public/data app read-model contracts
@@ -77,12 +76,12 @@ layers:
     responsibility: >
       Fetches, transforms and enriches source data into generated JSON files
       consumed by the Angular app. During the transition some generators still
-      read providers directly. Phase 1B is accepted; Phase 2 is the next migration
-      step and moves them to the stable canonical NFL and League source-data
+      read providers directly. Phase 1B is accepted; Phase 2 is in progress and
+      moves them step by step to the stable canonical NFL and League data-source
       contracts while preserving existing public/data contracts unless separately
       approved.
     owns:
-      - fetching external/source data not yet migrated into source-data
+      - fetching external/source data not yet migrated into data-source
       - data transformation
       - data enrichment
       - writing generated JSON
@@ -91,7 +90,7 @@ layers:
     doesNotOwn:
       - frontend presentation state
       - manual architecture decisions
-      - persistent provider raw provenance already owned by source-data
+      - persistent provider raw provenance already owned by data-source
 
   - name: generated-app-data
     path: public/data/*.json
@@ -115,7 +114,7 @@ layers:
       Produces Fantasy Management source context, Operations datasets, monitoring,
       Knowledge, analyses and decisions. Today current league state is read from
       public/data; the Phase-2 target is to derive shared NFL/League base facts
-      directly from source-data while keeping Fantasy-Management-specific
+      directly from data-source while keeping Fantasy-Management-specific
       interpretation in fantasy-management.
     owns:
       - Fantasy Management external source processing
@@ -156,12 +155,12 @@ sourceDataTarget:
       contract: .ai-context/manual/league-source-data.yaml
     phase2:
       name: Consumer Migration
-      status: next
+      status: in-progress
 
   targetFlow: |
-    nflverse / Sleeper NFL ------> source-data/providers/** ----> source-data/nfl/**
+    nflverse / Sleeper NFL ------> data-source/providers/** ----> data-source/nfl/**
                                                                     |
-    Sleeper league APIs --------> source-data/providers/** ----> source-data/leagues/**
+    Sleeper league APIs --------> data-source/providers/** ----> data-source/leagues/**
                                                                     |
                                                        +------------+------------+
                                                        |                         |
@@ -188,7 +187,7 @@ sourceDataTarget:
       replace the canonical league identity and cannot silently override an
       existing conflicting canonical mapping.
     multiLeague: >
-      The source-data model supports multiple independent CanonicalLeagueID values;
+      The data-source model supports multiple independent CanonicalLeagueID values;
       no shared-source contract may assume exactly one fantasy league globally.
 
 
@@ -245,7 +244,7 @@ dataPlatformTarget:
         - normalized FantasyPros ranking observations
         - podcast mentions/takes resolved to canonical entities
       rules:
-        - "Canonical" for an attributed opinion means canonical representation of what the source said, not canonical correctness of the opinion.
+        - '"Canonical" for an attributed opinion means canonical representation of what the source said, not canonical correctness of the opinion.'
         - Cross-provider entity joins follow the repository's fail-closed identity rules.
 
     sharedDerived:
@@ -314,11 +313,11 @@ dataPlatformTarget:
       the derivations and publishers it can affect.
 
   migrationGuardrails:
-    - Do not move league-owned calculations such as Salary or Grading into source-data/nfl merely because their input facts are migrated there.
+    - Do not move league-owned calculations such as Salary or Grading into data-source/nfl merely because their input facts are migrated there.
     - Do not leave reusable market/media source acquisition permanently under fantasy-management merely because Fantasy Management was the first consumer.
     - Raw podcast transcripts and normalized/extracted takes are different data products with separate provenance and publication policy.
     - Keep provider rankings/values attributed; only an explicit derived aggregation may produce an application-owned consensus metric.
-    - Before the Players portion of #347, decompose RequestPlayers responsibilities by logical layer instead of treating the script as one canonical consumer.
+    - 'Before the Players portion of #347, decompose RequestPlayers responsibilities by logical layer instead of treating the script as one canonical consumer.'
     - public/data remains an App delivery contract, not the long-term shared domain-data store.
     - Exact future top-level directory names and physical migration sequencing require a separate approved design step.
 
@@ -529,7 +528,7 @@ sharedDomainContext:
     owner: shared-data-platform-product-semantics
     resolver: tools/nfl_season_context.py
     canonicalInputs:
-      - source-data/nfl/schedules/<season>.json
+      - data-source/nfl/schedules/<season>.json
     phases:
       - pre_regular_season
       - regular_season
@@ -550,7 +549,7 @@ playerWeekFantasySharedDerived:
   contract: .ai-context/manual/player-week-fantasy.yaml
   trackingIssue: 697
   logicalLayer: Shared Derived Data
-  physicalPath: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+  physicalPath: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
   identity: CanonicalPlayerID + CanonicalLeagueID + Season + Week + ScoringProfile.SettingsHash
   inputs:
     - canonical NFL weekly roster/player/game facts
@@ -561,7 +560,7 @@ playerWeekFantasySharedDerived:
     - Fantasy Operations
     - future Fantasy Management derivations
   rules:
-    - Weekly NFL roster facts stay scoring-independent under source-data/nfl.
+    - Weekly NFL roster facts stay scoring-independent under data-source/nfl.
     - PlayerWeekFantasy owns reusable scoring-specific player-week Actual plus Projection/PredictionRange semantics.
     - public/data may publish or adapt this data later but does not become the shared owner.
     - Starter, bench and ownership context remains consumer data and must not change the underlying player projection.
@@ -570,13 +569,13 @@ playerWeekFantasySharedDerived:
 
 sharedDerivedPhysicalLayer:
   architectureDecision: ADR-038
-  root: derived-data/**
+  root: data-derived/**
   responsibility: >
     Physical owner for deterministic, reproducible, consumer-neutral Shared Derived
-    Data downstream of canonical source-data and upstream of consumer publication.
+    Data downstream of canonical data-source and upstream of consumer publication.
   firstProduct:
     name: PlayerWeekFantasy
-    path: derived-data/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
+    path: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json
     contract: .ai-context/manual/player-week-fantasy.yaml
     materializer: tools/player_week_fantasy_materialize.py
   doesNotOwn:
@@ -587,3 +586,75 @@ sharedDerivedPhysicalLayer:
     - Writers must be deterministic and preserve semantic no-op behavior.
     - Shared outputs remain consumer-neutral; consumer-specific joins happen downstream.
     - Existing transitional derivations are not automatically migrated by introducing this root.
+
+
+playerValuationSharedDerived:
+  contract: .ai-context/manual/player-valuation.yaml
+  modelsContract: .ai-context/manual/derived-models.yaml
+  architectureDecision: ADR-055
+  trackingIssue: 919
+  logicalLayer: Shared Derived Data
+  physicalPath: data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json
+  physicalPathTransition: renamed from derived-data/ to data-derived/ in #788 SA (history preserved by git mv)
+  identity: CanonicalLeagueID + Season + AsOfFinalScoredWeek + ScoringProfile.SettingsHash + selected model IDs
+  models:
+    implementation: tools/derived_data_lib/models/<kind>/v<N>.py
+    registry: tools/derived_data_lib/models/registry.py
+    ids:
+      - salary-v1
+      - salary-cap-v1
+      - grading-v1
+  rules:
+    - Model logic is central and league-independent; a league only selects model IDs per season (data-meta, ADR-054).
+    - A model is immutable after its first productive use; changes are new versions.
+    - Until the cutover (#919 step 5) RequestPlayers.ps1 and RequestLeague.ps1 stay productive and public/data contracts stay unchanged.
+
+
+leagueHistorySharedDerived:
+  contract: .ai-context/manual/league-history.yaml
+  architectureDecision: ADR-057
+  trackingIssue: 999
+  logicalLayer: Shared Derived Data
+  physicalPath:
+    transactions: data-derived/league-transactions/<CanonicalLeagueID>/<season>.json
+    drafts: data-derived/league-drafts/<CanonicalLeagueID>/<season>.json
+  identity: CanonicalLeagueID + Season (+ TransactionID, DraftKey, PickKey as entry identities)
+  inputs:
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<season>/ (transactions, drafts, picks, traded picks, rosters, league)
+    - data-meta/<CanonicalLeagueID>/metadata.json (Owners, Drafts configuration)
+    - manual transaction overlay (data-meta/<CanonicalLeagueID>/transactions-manual.json since Issue #999 step 5c)
+    - transitional - Standings placement for configured draft orders until Issue #987
+  consumers:
+    - App delivery files public/data/Transactions.json, Drafts.json and past_seasons/** via tools/league_history_app_publish.py (cutover in step 5)
+    - Fantasy Operations and Fantasy Management later
+  rules:
+    - Materialization order follows ADR-026 in one in-memory run; written only on semantic difference.
+    - Presentation fields belong to the consumer generator.
+    - The PowerShell rebuild stays productive until the cutover; the public/data contracts were slimmed in Issue #999 step 6 (see league-history.yaml).
+
+
+leagueStandingsSharedDerived:
+  contract: .ai-context/manual/league-standings.yaml
+  modelsContract: .ai-context/manual/derived-models.yaml
+  architectureDecision: ADR-072
+  trackingIssue: 987
+  logicalLayer: Shared Derived Data
+  physicalPath: data-derived/league-standings/<CanonicalLeagueID>/<season>.json
+  identity: CanonicalLeagueID + Season + selected model IDs (Standings, Awards) + AsOf.LeagueScoredWeek
+  models:
+    implementation: tools/derived_data_lib/models/<kind>/v<N>.py
+    ids:
+      - standings-v1
+      - awards-v1
+  inputs:
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<season>/ (league, members, rosters, brackets, matchups)
+    - data-meta/<CanonicalLeagueID>/metadata.json (model choice per season)
+    - week finality (tools/derived_data_lib/week_finality.py, LeagueScoredWeek)
+    - the product of the previous season (Most Improved, all-time chain)
+  consumers:
+    - public/data/Standings.json and the League.json Standings and Placements (consumer generators, after the cutover)
+    - RequestWeeklyRecaps.ps1 neutral team order and tools/league_history_sources.py draft order (after the cutover)
+    - Fantasy Operations and Fantasy Management later
+  rules:
+    - Model logic is central and league-independent; a league only selects model IDs per season (data-meta, ADR-054).
+    - public/data keeps its contract (ADR-020, ADR-040); until the cutover (#987 step 4) the PowerShell generators stay productive.

@@ -1,0 +1,242 @@
+schemaVersion: 1
+domain: team-week-performance
+status: weekly-historical-publisher-configured-pending-live-acceptance
+trackingIssue: 355
+
+purpose: >
+  Consumer-neutral, reproducible fantasy Team/Week performance facts and
+  weekly Best Manager/Best Coach leaders. Shared Derived Data is the owner;
+  WeeklyRecaps/Overview, Team History, Season Awards and Fantasy Operations are
+  downstream consumers. No Angular or frontend-owned recalculation is allowed.
+
+physicalOwner:
+  pattern: data-derived/team-week-performance/<CanonicalLeagueID>/<Season>/<Week:02d>.json
+  producer:
+    calculation: tools/team_week_performance.py::build_team_week_performance
+    persistence: tools/team_week_performance.py::save_team_week_performance
+    explicitMaterializer: tools/team_week_performance_materialize.py
+    optimizer: tools/weekly_lineup_optimizer.py::maximize_lineup
+    canonicalInputAdapter: tools/team_week_performance_sources.py::load_verified_week_inputs
+    lineupEligibilityBridge: public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1
+  status: current-2026-weeks-03-05-on-main-full-history-publication-pending
+  delivery: >
+    Current App projection checkpoint #355: existing
+    public/requests/utils/league/WeeklyRecapUtils.psm1 reads finalized
+    TeamWeekPerformance and maps canonical roster IDs to week-specific
+    FantasyTeamIDs in public/data/WeeklyRecaps.json. An absent partition is
+    explicitly unavailable; a present invalid one fails closed. Existing
+    league-live.yml / RequestLeaguePublication.ps1 retains App publication
+    ownership; the independent weekly Shared-Derived backfill adds no second App
+    publisher or cron. As of activation the existing Shared Derived partitions
+    are 2026 W03-W05; 37 further scored weeks require productive publication.
+    The strictly accepted 2025/W06 scoring divergence remains governed by #698.
+
+identity:
+  root:
+    - CanonicalLeagueID
+    - Season
+    - Week
+    - ScoringProfile.SettingsHash
+    - LineupDefinitionHash
+    - ContractVersion
+  team:
+    - CanonicalLeagueRosterID
+  player: CanonicalPlayerID
+  separation: >
+    Franchise/roster performance is a team fact. Historical manager/owner
+    attribution is a downstream season-appropriate identity join; current
+    owner names and mutable Sleeper IDs must not be treated as durable identity.
+
+inputs:
+  sourceRosterAndScores:
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/matchups/week-<Week>.json
+    fields:
+      - CanonicalLeagueRosterID
+      - Week
+      - Players
+      - Starters
+      - PlayerPoints
+      - StarterPoints
+      - Points
+    semantics: >
+      Every player appearing in a team's canonical week Players array is
+      a hypothetical candidate, including Starter, Bench, Taxi and IR/Reserve.
+      A player must not appear for two teams in the same week. Per ADR-036,
+      the canonical weekly matchup Players list is the authoritative
+      week-scoped fantasy ownership pool. No intraweek transaction replay or
+      per-NFL-kickoff roster snapshot is required by these awards; this is
+      explicitly a retrospective WEEK-POOL metric, not evidence of precise
+      minute-by-minute acquisition eligibility. Historical ownership is
+      not inferred from a current roster snapshot.
+  expectedTeamPopulation:
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json::Settings.num_teams
+    requirement: >
+      A final week must contain exactly the historical season's configured
+      number of fantasy team matchup rows, with unique CanonicalLeagueRosterIDs.
+      Partial team-week populations fail closed before leaderboard calculation.
+  lineupDefinition:
+    owner: data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json::RosterPositions
+    constraint: >
+      Caller supplies slot IDs and allowed natural positions via the existing
+      FantasyRelevance slot eligibility semantics. The Python performance
+      calculator contains no copied hardcoded FLEX/SUPER_FLEX/REC_FLEX rule map.
+      2024 WRRB_FLEX/REC_FLEX and 2025/2026 FLEX configurations must be tested.
+  historicalFantasyPositions:
+    requirement: >
+      For ALL candidate CanonicalPlayerIDs, caller must provide a verified
+      week-appropriate fantasy position. The source adapter first checks
+      data-source/nfl/weekly-rosters/<season>/<week:02d>.json::Records.
+      Missing target-week positions can use canonical NFL weekly roster
+      partitions strictly earlier in the same season (consistent position
+      required), then the same-season NFL roster only when Finalized=true.
+      When still missing, earlier NFL season roster partitions may be used
+      only if Finalized=true, CanonicalPlayerID matches, and every earlier
+      finalized season containing that ID agrees on its Position. Future
+      seasons and nonfinalized rosters are never eligible as fallback evidence.
+      Evidence remains traceable to canonical NFL season/year source partitions;
+      no current Sleeper platform profile is backdated. Conflicts or missing
+      positions fail closed, including for bye/IR/Taxi players.
+  finality:
+    requirement: >
+      Producer must verify finality independently from canonical NFL
+      game finality and the league's scored-week state (canonical league
+      WeekStructure.LastScoredLeg); week discovery (discover_finalized_weeks) lists weeks up to the
+      shared LeagueScoredWeek milestone (week-finality.yaml, ADR-071); the source adapter reuses the existing
+      player_week_fantasy_materialize._week_finality reader before passing
+      finalized=True and concrete finality_evidence. The builder checks this
+      explicit gate but does not itself verify the asserted source.
+      Simply having non-null PlayerPoints or a week-N source file is NOT
+      finality. Real 2024/2025 canonical league and NFL finality was verified
+      for all 17 scored weeks per season in the 2026-10-15 audit (#355).
+  scoring:
+    owner: Shared canonical fantasy scoring / league-scored weekly facts
+    currentEvidence: canonical league matchup PlayerPoints and StarterPoints
+    fingerprintImplementation: tools/player_week_fantasy.py::build_scoring_profile_identity
+    rule: >
+      Do not implement a new player scoring engine. ActualStarterPoints is
+      calculated from the recorded StarterPoints values; the provider's
+      Points is retained separately as OfficialMatchupPoints because manual
+      commissioner adjustments may be distinct from player production.
+      Reconcile against finalized Shared PlayerWeekFantasy Actual where
+      available before approving production backfills. The canonical
+      player-scoring reconciliation (#355, #698) retains both values and
+      accepts only exact, provenance-backed provider-stat exceptions in its
+      strict independent audit. Provider-stat divergences never silently
+      override or veto official Sleeper-based awards. TWP optimization continues
+      using canonical League matchup PlayerPoints and StarterPoints, not
+      substituting PWF Actual for Sleeper fantasy league points.
+
+contract:
+  version: 1
+  topLevelFields:
+    - ContractVersion
+    - CanonicalLeagueID
+    - Season
+    - Week
+    - ScoringProfile
+    - LineupDefinitionHash
+    - FinalityEvidence
+    - Teams
+    - Awards
+  teamFields:
+    - CanonicalLeagueRosterID
+    - ActualStarterPoints
+    - OfficialMatchupPoints
+    - PotentialPoints
+    - EfficiencyPercent
+    - MissedPoints
+    - OptimalLineup
+    - UnfilledSlotIDs
+  awardsFields:
+    - BestManagerRosterIDs
+    - BestCoachRosterIDs
+  formulas:
+    potential: Maximum sum of actual weekly points assignable to the given position-constrained lineup slots from the entire fantasy roster
+    efficiency: ActualStarterPoints / PotentialPoints * 100 when PotentialPoints > 0, otherwise null
+    missed: PotentialPoints - ActualStarterPoints
+    managerWinner: Highest unrounded positive PotentialPoints, all exact ties retained
+    coachWinner: Highest unrounded non-null EfficiencyPercent, all exact ties retained
+  precision: >
+    Calculate in Decimal. Publish point and percentage values rounded to
+    4 decimals, half up. Determine ties from unrounded scores.
+  hypotheticalPolicy: >
+    This is an All-Roster Potential metric, NOT proof of the best practically
+    attainable legal in-week lineup. It hypothetically permits IR/Reserve and
+    Taxi players to fill a slot, without simulating their real activation
+    constraints, cuts or irreversible roster moves.
+  edgeCases:
+    - For hypothetical Best-Ball v1, any slot may be left empty for zero; a negative-score player is never mandatory in the theoretical optimum. This intentionally differs from submitted-lineup legality and is not a replay of Sleeper rules.
+    - ActualStarterPoints includes all real started negative values; official commissioner-adjusted Points remain distinct. A team with PotentialPoints <= 0 has null efficiency, cannot win Best Coach; no Best Manager winner when the maximum is <= 0.
+    - Missing/invalid positions, scores, team identities, historical league team counts and incomplete starter evidence fail closed.
+    - Every actual starter must be assignable injectively to a historical legal slot; actual starter production must not exceed the theoretical all-roster maximum. Commissioner-adjusted official Points are recorded separately.
+    - Empty slots score zero instead of negative candidate scores: approved v1 theoretical potential semantics, not a claim about an actually submitted lineup.
+    - A nonpositive PotentialPoints yields null EfficiencyPercent; no award winners when the league maximum is zero.
+    - All exact tied winner roster IDs are kept; consumers must not silently select a favorite.
+
+recomputation:
+  triggers:
+    - canonical week Players/Starters/PlayerPoints/StarterPoints/Points correction
+    - historical position or ownership correction
+    - League season RosterPositions/eligibility rule change
+    - League season ScoringSettings hash change
+    - season/week finality correction
+    - contract/algorithm version change
+  publicationGate: >
+    tools/team_week_performance_materialize.py is read-only unless --write is supplied.
+    Official Fantasy League awards use verified, completed Sleeper league matchups
+    (including exact historical roster ownership, complete PlayerPoints/StarterPoints,
+    lineup/position eligibility, league team count and game/league finality).
+    Only these league-owned facts gate official award publication. PlayerWeekFantasy
+    is a separate NFL/nflverse-based data product: missing or discrepant actual
+    scores are returned as explicit parity diagnostics (not-available/mismatch),
+    not as an official Sleeper-awards blocker. The opt-in --require-pwf switch
+    retains the original strict PWF presence, fingerprint, finalized-Actual and
+    exact-score reconciliation for independent quality/historical replay audits.
+    Missing or stale NFL stats must not be silently normalized to valid final zero
+    in the PWF product; its own finality/completeness hardening is tracked in #697.
+    The --all-finalized mode discovers registered leagues/seasons from canonical
+    manifests. Before writes, every selected week must pass the strict league,
+    lineup and finality verification; any invalid league week aborts ALL batch
+    writes. The existing weekly APP Data Standings workflow now publishes
+    historical TWP independently of the PWF publisher, both with their original
+    output scopes and rebuild-and-retry publication safety. The ten-minute
+    League Live producer handles newest scored-week TWP the same way and emits
+    a non-blocking GitHub warning on independent parity anomalies. Historical
+    TWP publishes data-derived/team-week-performance only; no second App
+    publisher, schedule or output path was added. For earlier strict historical
+    replay see the legacy 40-week audit (#355/#471), which remains reproducible
+    with --require-pwf explicitly requested.
+  persistence: >
+    Stable JSON key ordering, no generation-time timestamp, byte-identical
+    semantic no-op. Recalculate and publish only after all input requirements
+    hold; historical awards can change with legitimate canonical corrections.
+
+historicalOrchestrationPreflight:
+  trackingIssue: 471
+  implementation: tools/historical_derived_orchestrate.py
+  entrypoint: .github/workflows/league-live.yml::historical_preflight
+  status: read-only-manual-audit-no-historical-publication
+  modes:
+    full: Discover every canonically scored league week; always derive final PWF then strict TWP.
+    week: One explicitly requested finalized league season/week.
+    incremental: >-
+      Select affected scored weeks from explicit changed canonical paths. Known
+      League matchups constrain their own week. NFL weekly stats and roster
+      evidence invalidate their week and all later scored weeks across seasons.
+      NFL season-scoped evidence invalidates that and later seasons. League\n      settings constrain their own season; any unknown or shared input
+      conservatively triggers full rebuild.
+      No automatic Scheduler source-diff feed is activated at this checkpoint.
+  safety:
+    - Uses original PWF source-owned materializer and TeamWeekPerformance materializer; no parallel scorer or award logic.
+    - Stages derivation in temporary Shared-Derived storage with Source, metadata and App context as read-only inputs; never persists Derived/App/Source or pushes a branch.
+    - NFL game finality, final roster, canonical identity, historical scoring profile, official Sleeper actual points and the narrowly versioned 2025/W06 exception remain required.
+    - Fails when any selected week is the active App week, any existing published TeamWeekPerformance payload would change, any PWF/TWP parity is unverified, or a second staged pass is not a no-op.
+    - A manual historical preflight skips all League Live writer jobs and checks out main without writable credentials, with job-level contents: read.
+    - The manual preflight itself never publishes. The separately approved weekly TWP Shared-Derived writer is tracked in #471; App publication and state-aware incremental scheduling remain separately gated.
+  publicationHandoff: >-
+    Weekly historical TWP publication was approved with exact
+    data-derived/team-week-performance/** scope following successful 40-week
+    read-only PWF/TWP preflight (#40030010930). The standalone weekly job uses
+    latest-main rebuild-and-retry and strict --require-pwf; its first live
+    40-week publication and follow-up semantic no-op require independent
+    acceptance before #471 Step 2 is closed. Never use a one-off migration workflow.

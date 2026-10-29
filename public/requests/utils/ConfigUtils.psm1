@@ -1,21 +1,38 @@
+# Data root directories (Issue #788, step 0). The only place in PowerShell that spells out the root names;
+# tools/data_roots.py is the Python counterpart and tools/tests/test_data_roots.py keeps both in sync.
+$script:DataSourceRootName = 'data-source'
+$script:DataDerivedRootName = 'data-derived'
+$script:DataMetaRootName = 'data-meta'
+
+Import-Module "$PSScriptRoot\LeagueMetadataUtils.psm1" -ErrorAction Stop
+
+function Get-DataSourceRoot {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+    return (Join-Path $RepoRoot $script:DataSourceRootName)
+}
+
+function Get-DataDerivedRoot {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+    return (Join-Path $RepoRoot $script:DataDerivedRootName)
+}
+
+function Get-DataMetaRoot {
+    param([Parameter(Mandatory = $true)][string]$RepoRoot)
+    return (Join-Path $RepoRoot $script:DataMetaRootName)
+}
+
 function Get-Config {
 
     # League Settings
-    $SalaryRelevantTeamSize = 20
     $MaxTransactionWeek = 20
     $LeagueStatusSeasonStartBufferDays = 7
 
-    # RapidAPI-Key für Tank01
-    $RapidAPIKey = "cccff76c4bmsh01946acbc2d3c0bp141721jsn161bd86f4c69"
-    $RapidAPIKeyAlt1 = "1e10165385msh4175f82e3d08e84p19fd3ejsn82f1e01c01aa"
-    $RapidAPIKeyAlt2 = "3a3482fb66msh803287ddb5773dbp185f31jsnc6f1e236cd5e"
-
-    # Point Settings
-    $WeightTotal = 0.5
-    $WeightGame = 0.5
-
     # File Locations
     $DataDir = "$PSScriptRoot\..\..\data"
+    $RepoRootDir = Join-Path $PSScriptRoot "..\..\.."
+    $DataSourceDir = Get-DataSourceRoot -RepoRoot $RepoRootDir
+    $DataDerivedDir = Get-DataDerivedRoot -RepoRoot $RepoRootDir
+    $DataMetaDir = Get-DataMetaRoot -RepoRoot $RepoRootDir
     $BackupDir = Join-Path $DataDir "backup"
     $PlayersFile = Join-Path $DataDir "Players.json"
     $LeagueFile = Join-Path $DataDir "League.json"
@@ -24,9 +41,7 @@ function Get-Config {
     $WeeklyRecapsFile = Join-Path $DataDir "WeeklyRecaps.json"
     $TeamsFile = Join-Path $DataDir "Teams.json"
     $ScheduleFile = Join-Path $DataDir "Schedule.json"
-    $GamesFile = Join-Path $DataDir "Games.json"
     $StandingsFile = Join-Path $DataDir "Standings.json"
-    $ManualTransactionsFile = Join-Path $DataDir "Transactions_Manual.json"
     $TransactionsFile = Join-Path $DataDir "Transactions.json"
 
     $PastSeasonsDir = Join-Path $DataDir "past_seasons"
@@ -46,10 +61,6 @@ function Get-Config {
     $WeeklyRecapsFileHistoricalPrefix = Join-Path $WeeklyRecapsArchiveDir "WeeklyRecaps_"
     $WeeklyRecapsFileHistoricalSuffix = ".json"
 
-    $PastSeasonPlayersFileHistoricalPrefix = Join-Path $PastSeasonsDir "Players_"
-    $PastSeasonPlayersFileHistoricalSuffix = ".json"
-    $PastSeasonGamesFileHistoricalPrefix = Join-Path $PastSeasonsDir "Games_"
-    $PastSeasonGamesFileHistoricalSuffix = ".json"
     $PastSeasonScheduleFileHistoricalPrefix = Join-Path $PastSeasonsDir "Schedule_"
     $PastSeasonScheduleFileHistoricalSuffix = ".json"
     $PastSeasonStandingsFileHistoricalPrefix = Join-Path $PastSeasonsDir "Standings_"
@@ -83,18 +94,6 @@ function Get-Config {
             Suffix = ".json"
         },
         @{
-            Key = "Players"
-            Directory = $PastSeasonsDir
-            Prefix = "Players_"
-            Suffix = ".json"
-        },
-        @{
-            Key = "Games"
-            Directory = $PastSeasonsDir
-            Prefix = "Games_"
-            Suffix = ".json"
-        },
-        @{
             Key = "Schedule"
             Directory = $PastSeasonsDir
             Prefix = "Schedule_"
@@ -117,46 +116,59 @@ function Get-Config {
     $TimestampsFile = Join-Path $DataDir "Timestamps.json"
     $ErrorsFile = Join-Path $DataDir "Errors.json"
 
-    # Lade Metadata
-    $metadataPath = Join-Path $DataDir "Metadata.json"
+    # Lade Liga-Metadaten (data-meta/<CanonicalLeagueID>/metadata.json, ADR-054, Issue #986).
+    # The generators still work on exactly one league; more than one league needs an explicit selection first.
+    $leagueIds = @(Get-LeagueMetadataIds -Root $DataMetaDir)
+    if ($leagueIds.Count -ne 1) {
+        throw "Expected exactly one league under $DataMetaDir but found $($leagueIds.Count) ($($leagueIds -join ', ')); generator league selection is not implemented."
+    }
+    $CanonicalLeagueID = [string]$leagueIds[0]
+    # Hand-maintained manual transaction overlay of the league (Issue #999 step 5c).
+    $ManualTransactionsFile = Join-Path (Join-Path $DataMetaDir $CanonicalLeagueID) "transactions-manual.json"
+    $metadataContent = Get-LeagueMetadata -LeagueId $CanonicalLeagueID -Root $DataMetaDir
 
-    if (-not (Test-Path $metadataPath)) {
-        Write-Error "Metadata file not found at $metadataPath."
-        throw "Metadata file not found."
+    # LeagueYear is canonical in the League source manifest, not hand-maintained.
+    $manifestPath = Join-Path (Join-Path (Join-Path $DataSourceDir "leagues") $CanonicalLeagueID) "manifest.json"
+    if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+        throw "League source manifest not found at $manifestPath."
+    }
+    $manifest = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $currentSeasonId = [string]$manifest.CurrentCanonicalLeagueSeasonID
+    if ($currentSeasonId -notmatch "^$([regex]::Escape($CanonicalLeagueID))-(?<season>[0-9]{4})$") {
+        throw "League source manifest of $CanonicalLeagueID has no valid CurrentCanonicalLeagueSeasonID ('$currentSeasonId')."
+    }
+    $LeagueYear = [int]$Matches['season']
+
+    # CapDeadline and its buffer are mandatory for the current season (the loader fails closed otherwise).
+    $seasonEntry = Get-LeagueSeasonEntry -Metadata $metadataContent -Season $LeagueYear
+    if ($seasonEntry.PSObject.Properties.Name -notcontains "CapDeadline") {
+        throw "League metadata of $CanonicalLeagueID has no CapDeadline for the current season $LeagueYear."
     }
 
-    $metadataContent = Get-Content $metadataPath -Raw | ConvertFrom-Json
-
     $ownerIDs = @{}
-    $metadataContent.OwnerIDs.PSObject.Properties | ForEach-Object {
+    $metadataContent.Owners.PSObject.Properties | ForEach-Object {
         $ownerIDs[$_.Name] = $_.Value
     }
 
     $DraftsConfig = $metadataContent.Drafts
-    $LeagueTimeZone = if ($metadataContent.PSObject.Properties.Name -contains "LeagueTimeZone") {
-        [string]$metadataContent.LeagueTimeZone
-    } else {
-        "UTC"
-    }
+    $LeagueTimeZone = [string]$metadataContent.LeagueTimeZone
 
     return @{
-        LeagueYear                       = $metadataContent.LeagueYear
-        SalaryRelevantTeamSize           = $SalaryRelevantTeamSize
+        CanonicalLeagueID                = $CanonicalLeagueID
+        LeagueYear                       = $LeagueYear
         MaxTransactionWeek               = $MaxTransactionWeek
         LeagueStatusSeasonStartBufferDays = $LeagueStatusSeasonStartBufferDays
-        LeagueID                         = $metadataContent.LeagueID
-        CapDeadline                      = $metadataContent.CapDeadline
+        LeagueID                         = [string]$metadataContent.CurrentProviderLeagueID
+        CapDeadline                      = $seasonEntry.CapDeadline
+        CapDeadlineBufferDays            = [int]$seasonEntry.CapDeadlineBufferDays
         LeagueTimeZone                   = $LeagueTimeZone
         OwnerIDs                         = $ownerIDs
 
-        RapidAPIKey                      = $RapidAPIKey
-        RapidAPIKeyAlt1                  = $RapidAPIKeyAlt1
-        RapidAPIKeyAlt2                  = $RapidAPIKeyAlt2
-
-        WeightTotal                      = $WeightTotal
-        WeightGame                       = $WeightGame
 
         DataDir                          = $DataDir
+        DataSourceDir                    = $DataSourceDir
+        DataDerivedDir                   = $DataDerivedDir
+        DataMetaDir                      = $DataMetaDir
         BackupDir                        = $BackupDir
         LeagueFile                       = $LeagueFile
         DecisionWindowsFile              = $DecisionWindowsFile
@@ -164,7 +176,6 @@ function Get-Config {
         WeeklyRecapsFile                 = $WeeklyRecapsFile
         TeamsFile                        = $TeamsFile
         ScheduleFile                     = $ScheduleFile
-        GamesFile                        = $GamesFile
         StandingsFile                    = $StandingsFile
 
         PlayersFile                      = $PlayersFile
@@ -189,10 +200,6 @@ function Get-Config {
 
         PastSeasonsDir                              = $PastSeasonsDir
         PastSeasonsIndexFile                        = $PastSeasonsIndexFile
-        PastSeasonPlayersFileHistoricalPrefix       = $PastSeasonPlayersFileHistoricalPrefix
-        PastSeasonPlayersFileHistoricalSuffix       = $PastSeasonPlayersFileHistoricalSuffix
-        PastSeasonGamesFileHistoricalPrefix         = $PastSeasonGamesFileHistoricalPrefix
-        PastSeasonGamesFileHistoricalSuffix         = $PastSeasonGamesFileHistoricalSuffix
         PastSeasonScheduleFileHistoricalPrefix      = $PastSeasonScheduleFileHistoricalPrefix
         PastSeasonScheduleFileHistoricalSuffix      = $PastSeasonScheduleFileHistoricalSuffix
         PastSeasonStandingsFileHistoricalPrefix     = $PastSeasonStandingsFileHistoricalPrefix

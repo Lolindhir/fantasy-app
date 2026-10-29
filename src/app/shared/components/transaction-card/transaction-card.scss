@@ -1,0 +1,396 @@
+:host { display: block; min-width: 0; }
+
+.transaction-card {
+  --transaction-accent: #64748b;
+  --team-identity-avatar-size: 22px;
+  --team-identity-title-font-size: 0.64rem;
+  --team-identity-gap: 5px;
+  overflow: hidden;
+  border: 1px solid #dfe7f0;
+  border-left: 3px solid var(--transaction-accent);
+  border-radius: 13px;
+  background: #fff;
+  color: #1c293d;
+  box-shadow: 0 2px 10px rgba(25, 40, 65, 0.04);
+}
+.transaction-card--trade { --transaction-accent: #3975db; }
+.transaction-card--add { --transaction-accent: #16866d; }
+.transaction-card--cut { --transaction-accent: #bd7a2c; }
+
+.transaction-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-bottom: 1px solid #f0f3f6;
+}
+.transaction-card__type {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 4px;
+  color: var(--transaction-accent);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.transaction-card__type mat-icon { width: 15px; height: 15px; font-size: 15px; }
+.transaction-card__header-context { display: inline-flex; align-items: center; justify-content: flex-end; flex: 1 1 auto; gap: 7px; min-width: 0; }
+.transaction-card__header-context time { flex: 0 0 auto; color: #8290a1; font-size: 0.65rem; }
+.transaction-card__header-team { display: inline-block; min-width: 0; max-width: 100%; color: #78879b; }
+.transaction-card__unknown-team { color: #40516b; font-size: 0.73rem; font-weight: 700; }
+
+.transaction-card__participants { display: flex; flex-direction: column; min-width: 0; }
+.transaction-card__participant {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 9px;
+  min-width: 0;
+  padding: 6px 10px;
+}
+.transaction-card__participant + .transaction-card__participant { border-top: 1px solid #edf1f6; }
+.transaction-card__team { flex: 0 1 40%; min-width: 110px; max-width: 210px; display: flex; justify-content: flex-end; color: #79869a; }
+.transaction-card__team app-team-identity { display: inline-block; max-width: 100%; min-width: 0; }
+.transaction-card__assets { display: flex; flex: 1 1 0; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+.transaction-card:not(.transaction-card--trade) .transaction-card__assets { flex: 1 1 100%; }
+
+.transaction-card__asset-line { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; }
+.transaction-card__movement { width: 14px; height: 14px; flex: 0 0 14px; color: #139468; font-size: 14px; }
+.transaction-card__asset-line--outgoing .transaction-card__movement { color: #b85869; }
+
+/* A trade must not reserve a fixed-width team column on narrow screens.
+   Keep the full team identity readable, then let assets use the entire card. */
+.transaction-card--trade .transaction-card__participant {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  padding-block: 6px;
+}
+.transaction-card--trade .transaction-card__team {
+  flex: none;
+  min-width: 0;
+  max-width: 100%;
+}
+.transaction-card--trade .transaction-card__assets {
+  flex: none;
+  width: 100%;
+  gap: 3px 12px;
+}
+.transaction-card--trade .transaction-card__asset-line--pick {
+  flex: 0 1 auto;
+  width: auto;
+}
+
+/* The team is contextual: show it beside the first received asset, not on
+   its own empty row. Remaining trade assets keep the full available width. */
+.transaction-card__trade-leading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 3px 8px;
+  width: 100%;
+  min-width: 0;
+}
+.transaction-card__trade-first-asset {
+  display: flex;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.transaction-card--trade .transaction-card__trade-leading .transaction-card__team {
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  margin-left: auto;
+}
+.transaction-card--trade .transaction-card__trade-remainder {
+  align-items: center;
+  width: 100%;
+  gap: 3px 12px;
+}
+
+
+
+.transaction-card__player, .transaction-card__pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+.transaction-card__player, .transaction-card__pick--interactive { cursor: pointer; }
+.transaction-card__pick--interactive:hover .transaction-card__asset-copy > strong { text-decoration: underline; }
+.transaction-card__player:disabled { cursor: default; }
+.transaction-card__player:not(:disabled):hover strong { text-decoration: underline; }
+.transaction-card__pick--interactive:focus-visible,
+.transaction-card__player:focus-visible,
+.transaction-card__more:focus-visible,
+.transaction-card__collapse:focus-visible { outline: 2px solid #3975db; outline-offset: 2px; }
+
+.transaction-card__portrait {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: transparent;
+}
+.transaction-card__portrait > img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
+.transaction-card__portrait > mat-icon { width: 27px; height: 27px; font-size: 27px; color: #99a5b3; }
+
+.transaction-card__asset-copy { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.transaction-card__asset-copy > strong { overflow: hidden; max-width: 100%; color: #233249; font-size: 0.77rem; font-weight: 770; line-height: 1.12; text-overflow: ellipsis; white-space: nowrap; }
+.transaction-card__asset-copy > small { overflow: hidden; color: #728197; font-size: 0.65rem; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+.transaction-card__player-meta { display: flex; align-items: center; gap: 3px; min-height: 13px; }
+.transaction-card__player-meta small { color: #687c93; font-size: 0.64rem; line-height: 1; }
+.transaction-card__position { padding: 1px 3px; border-radius: 3px; font-size: 0.56rem; line-height: 1.1; font-weight: 800; }
+.transaction-card__nfl-logo { display: block; width: 14px; height: 14px; object-fit: contain; }
+
+.transaction-card__pick-shield {
+  display: flex;
+  flex: 0 0 32px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 35px;
+  padding-bottom: 3px;
+  background: #356ac9;
+  color: #fff;
+  clip-path: polygon(0 0, 100% 0, 100% 76%, 50% 100%, 0 76%);
+}
+.transaction-card__pick-shield small { font-size: 0.38rem; line-height: 1.1; letter-spacing: 0.07em; opacity: 0.88; }
+.transaction-card__pick-shield strong { font-size: 0.95rem; line-height: 1; }
+.transaction-card__more, .transaction-card__collapse { border: 0; background: transparent; color: #3975db; font: inherit; font-size: 0.67rem; font-weight: 750; cursor: pointer; }
+.transaction-card__more { padding: 4px 2px; }
+.transaction-card__collapse { width: 100%; padding: 5px; border-top: 1px solid #edf0f5; }
+.transaction-card__empty { color: #91a0b3; font-size: 0.68rem; font-style: italic; }
+.transaction-card__notes { margin: 0; padding: 8px 10px; border-top: 1px solid #edf0f5; font-size: 0.73rem; }
+
+.transaction-card--mini { --team-identity-avatar-size: 20px; --team-identity-title-font-size: 0.69rem; }
+.transaction-card--mini .transaction-card__header { padding: 3px 8px; }
+.transaction-card--mini .transaction-card__participant { padding: 4px 8px; gap: 4px; }
+.transaction-card--mini .transaction-card__portrait { width: 29px; height: 29px; flex-basis: 29px; }
+.transaction-card--mini .transaction-card__pick-shield { width: 28px; height: 31px; flex-basis: 28px; }
+.transaction-card--detail { --team-identity-avatar-size: 29px; --team-identity-title-font-size: 0.83rem; }
+.transaction-card--detail .transaction-card__participant { padding: 11px 13px; gap: 10px; }
+.transaction-card--detail .transaction-card__portrait { width: 42px; height: 42px; flex-basis: 42px; }
+.transaction-card--detail .transaction-card__asset-copy > strong { font-size: 0.85rem; }
+
+@media (max-width: 400px) {
+  .transaction-card__participant { gap: 4px 7px; }
+  .transaction-card__team { flex-basis: 100%; max-width: 100%; }
+  .transaction-card__assets { flex-basis: 100%; }
+  .transaction-card__asset-copy > strong { font-size: 0.75rem; }
+}
+
+/* Fantasy-team identity is a muted byline, not a competing headline. */
+.transaction-card__team app-team-identity,
+.transaction-card__header-team {
+  --team-identity-title-font-size: 0.64rem;
+  --team-identity-avatar-size: 22px;
+  color: #77869a;
+}
+.transaction-card__team { min-height: 23px; }
+.transaction-card__asset-line--pick { max-width: 100%; }
+.transaction-card__pick { gap: 5px; }
+.transaction-card__pick-shield {
+  width: 27px;
+  height: 30px;
+  flex-basis: 27px;
+}
+.transaction-card__pick-shield strong { font-size: 0.83rem; }
+.transaction-card__pick-shield small { font-size: 0.34rem; }
+
+/* Keep the compact Trade label recognizable without a tall standalone header.
+   This does not affect Adds, Cuts or multi-team/detail fallbacks. */
+.transaction-card--comparison .transaction-card__header {
+  min-height: 24px;
+  padding: 2px 9px;
+}
+.transaction-card--comparison .transaction-card__type {
+  font-size: 0.71rem;
+}
+.transaction-card--comparison .transaction-card__type mat-icon {
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+}
+
+/* Two-team trades: comparison columns with one continuous center divider.
+   The existing Trade fallback is retained for multi-team / detail screens. */
+.transaction-card--comparison .transaction-card__participants {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.transaction-card--comparison .transaction-card__participant {
+  min-width: 0;
+  padding: 8px 9px 9px;
+  gap: 4px;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+.transaction-card--comparison .transaction-card__participant + .transaction-card__participant {
+  border-top: 0;
+  border-left: 1px solid #dce4ee;
+}
+.transaction-card--comparison .transaction-card__compare-team {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  min-height: 26px;
+}
+.transaction-card--comparison .transaction-card__compare-team--right {
+  justify-content: flex-end;
+}
+.transaction-card--comparison .transaction-card__compare-team app-team-identity {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  --team-identity-avatar-size: 22px;
+  --team-identity-title-font-size: 0.64rem;
+}
+.transaction-card--comparison .transaction-card__compare-assets {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+}
+.transaction-card--comparison .transaction-card__asset-line,
+.transaction-card--comparison .transaction-card__asset-line--pick {
+  display: flex;
+  flex: none;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+.transaction-card--comparison .transaction-card__player,
+.transaction-card--comparison .transaction-card__pick {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  align-items: center;
+  gap: 5px;
+}
+.transaction-card--comparison .transaction-card__asset-copy {
+  min-width: 0;
+  flex: 1;
+}
+.transaction-card--comparison .transaction-card__asset-copy > strong {
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  line-height: 1.18;
+  font-size: 0.73rem;
+}
+.transaction-card--comparison .transaction-card__portrait {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+}
+.transaction-card--comparison .transaction-card__pick-shield {
+  width: 27px;
+  height: 30px;
+  flex-basis: 27px;
+}
+.transaction-card--comparison .transaction-card__more {
+  align-self: flex-start;
+  margin-top: 0;
+  padding: 1px 0;
+}
+
+/* Mirror only the right side of a two-team comparison. The asset's portrait
+   or shield sits on the outer edge; the label and NFL metadata face the center. */
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__player,
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__pick {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__asset-copy {
+  text-align: right;
+}
+.transaction-card--comparison .transaction-card__participant--mirror .transaction-card__player-meta {
+  justify-content: flex-end;
+}
+
+/* Add/Cut bylines lead with the acting team, next to the move category.
+   Leave two-column Trades and their accepted mirrored composition untouched. */
+.transaction-card--add .transaction-card__header,
+.transaction-card--cut .transaction-card__header {
+  justify-content: flex-start;
+  gap: 7px;
+}
+.transaction-card--add .transaction-card__header-team,
+.transaction-card--cut .transaction-card__header-team {
+  flex: 0 1 auto;
+  min-width: 0;
+  --team-identity-title-font-size: 0.70rem;
+  --team-identity-avatar-size: 22px;
+  color: #52657c;
+}
+.transaction-card--add .transaction-card__header-context,
+.transaction-card--cut .transaction-card__header-context {
+  margin-left: auto;
+}
+.transaction-card--add .transaction-card__team,
+.transaction-card--cut .transaction-card__team {
+  justify-content: flex-start;
+}
+
+/* In a waiver Add the incoming player is the action; an outgoing player
+   is a subordinate roster consequence, not a separate Cut. */
+.transaction-card--add .transaction-card__assets {
+  gap: 6px 12px;
+}
+.transaction-card--add .transaction-card__asset-line {
+  flex: 1 1 150px;
+  min-width: min(100%, 140px);
+  max-width: 100%;
+}
+.transaction-card--add .transaction-card__asset-copy > strong,
+.transaction-card--cut .transaction-card__asset-copy > strong {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.18;
+}
+.transaction-card--add .transaction-card__asset-line--outgoing {
+  flex: 0 1 155px;
+  color: #748299;
+}
+.transaction-card--add .transaction-card__asset-line--outgoing .transaction-card__asset-copy > strong {
+  color: #75849a;
+  font-size: 0.69rem;
+  font-weight: 650;
+}
+.transaction-card--add .transaction-card__asset-line--outgoing .transaction-card__portrait {
+  width: 27px;
+  height: 27px;
+  flex-basis: 27px;
+  opacity: 0.72;
+}
+.transaction-card--add .transaction-card__asset-line--outgoing .transaction-card__player-meta {
+  opacity: 0.72;
+}
+.transaction-card--add .transaction-card__asset-line--outgoing .transaction-card__movement {
+  opacity: 0.75;
+}
