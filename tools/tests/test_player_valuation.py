@@ -271,8 +271,9 @@ class RegistryAlignmentTests(unittest.TestCase):
     def test_league_metadata_model_catalogue_matches_the_registry(self) -> None:
         by_kind = {name: {mid for mid in registry.model_ids() if get_model(mid).KIND == kind}
                    for name, kind in pv.MODEL_KINDS.items()}
-        catalogue = {name: set(ids) for name, ids in league_metadata.KNOWN_MODEL_IDS.items() if name in pv.MODEL_KINDS}
-        self.assertEqual(by_kind, catalogue)
+        by_kind.update({name: {mid for mid in registry.model_ids() if get_model(mid).KIND == kind}
+                        for name, kind in (("Standings", "standings"), ("Awards", "awards"))})
+        self.assertEqual(by_kind, {name: set(ids) for name, ids in league_metadata.KNOWN_MODEL_IDS.items()})
 
 
 class MaterializerIntegrationTests(unittest.TestCase):

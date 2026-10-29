@@ -17,8 +17,13 @@ result; the additive CP2 PlayerRefs do not alter that App delivery until Issue #
 The optional --hold-seed-players-file explicitly reads the last published
 public/data/Players.json, not a new canonical identity source.
 
+Third product: league-standings (league-standings.yaml, ADR-072, Issue #987), one file per league and season at
+<derived root>/league-standings/<CanonicalLeagueID>/<season>.json with the regular-season table, the weekly tables,
+playoffs, awards and the all-time standing through that season. The seasons are chained (Most Improved, all-time) and
+always rebuilt chronologically in one run; the models come from data-meta (standings-v1, awards-v1).
+
 Usage:
-  derived_data.py materialize --product player-valuation|league-transactions|league-drafts [--league nfl-reise]
+  derived_data.py materialize --product player-valuation|league-transactions|league-drafts|league-standings [--league nfl-reise]
                               [--season 2026 ...] [--out-root DIR] [--check]
                               [--hold-seed-players-file PUBLISHED_PLAYERS_JSON]   (player-valuation only)
 """
@@ -45,11 +50,15 @@ from league_metadata import (  # noqa: E402
 import player_valuation_sources as sources  # noqa: E402
 from derived_data_lib.league_history import build_history, drafts_document, transactions_document  # noqa: E402
 from league_history_sources import LeagueHistorySourceError, load_inputs  # noqa: E402
+from derived_data_lib.league_standings import build_season  # noqa: E402
+from derived_data_lib.models.registry import get_model  # noqa: E402
+import league_standings_sources as standings_sources  # noqa: E402
 from derived_data_lib.league_player_refs import LeaguePlayerReferenceResolver, provider_draft_names  # noqa: E402
 
 LEAGUE_TRANSACTIONS = "league-transactions"
 LEAGUE_DRAFTS = "league-drafts"
-PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS)
+LEAGUE_STANDINGS = "league-standings"
+PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS)
 EXIT_CHANGED = 3  # --check found a snapshot that differs from disk
 
 
@@ -242,6 +251,51 @@ def materialize_league_history(
     return summary
 
 
+def materialize_league_standings(
+    repo_root: Path, out_root: Path, league_id: str, seasons: list[int] | None, check_only: bool,
+) -> dict[str, Any]:
+    manifest = standings_sources.manifest(repo_root, league_id)
+    metadata = load_league_metadata(league_id, data_meta_root(repo_root))
+    validate_against_manifest(metadata, manifest)
+    available = standings_sources.manifest_seasons(manifest)
+    unknown = [s for s in (seasons or []) if s not in available]
+    if unknown:
+        raise standings_sources.StandingsSourceError(f"Seasons not in the league manifest: {unknown}; available: {available}")
+    wanted = set(seasons or available)
+    current = standings_sources.current_season(manifest)
+
+    summary: dict[str, Any] = {"Product": LEAGUE_STANDINGS, "CanonicalLeagueID": league_id, "Seasons": []}
+    previous: dict[str, Any] | None = None
+    completed_newest_first: list[dict[str, Any]] = []
+    for season in available:
+        inputs = standings_sources.load_season_inputs(repo_root, league_id, season, current)
+        standings_model = get_model(model_for(metadata, season, "Standings"), "standings")
+        awards_model = get_model(model_for(metadata, season, "Awards"), "awards")
+        document = build_season(inputs, standings_model, awards_model, previous, completed_newest_first)
+        previous = document
+        if document["IsCompleted"]:
+            completed_newest_first.insert(0, document)
+        if season not in wanted:
+            continue
+        text = serialize(document)
+        path = league_history_path(out_root, LEAGUE_STANDINGS, league_id, season)
+        unchanged = path.is_file() and path.read_text(encoding="utf-8") == text
+        if not unchanged and not check_only:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        summary["Seasons"].append({
+            "Season": season,
+            "Models": document["Models"],
+            "CompletedWeeks": document["AsOf"]["CompletedWeeks"],
+            "Weeks": len(document["Weeks"]),
+            "Awards": len(document["Awards"]),
+            "Bytes": len(text.encode("utf-8")),
+            "Unchanged": 1 if unchanged else 0,
+            "Written" if not check_only else "WouldWrite": 0 if unchanged else 1,
+        })
+    return summary
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -262,7 +316,12 @@ def main() -> int:
     out_root = args.out_root or data_derived_dir(args.repo_root)
     try:
         leagues = [args.league] if args.league else list_league_ids(data_meta_root(args.repo_root))
-        if args.product in (LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS):
+        if args.product == LEAGUE_STANDINGS:
+            results = [
+                materialize_league_standings(args.repo_root, out_root, league, args.season, args.check)
+                for league in leagues
+            ]
+        elif args.product in (LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS):
             results = [
                 materialize_league_history(args.repo_root, out_root, league, args.product, args.season, args.check)
                 for league in leagues
@@ -273,7 +332,8 @@ def main() -> int:
                 materialize_player_valuation(args.repo_root, out_root, league, args.season, args.check, hold_seed)
                 for league in leagues
             ]
-    except (sources.SourceError, LeagueMetadataError, LeagueHistorySourceError, ValueError, KeyError, OSError) as error:
+    except (sources.SourceError, LeagueMetadataError, LeagueHistorySourceError, standings_sources.StandingsSourceError,
+            ValueError, KeyError, OSError) as error:
         print(f"derived_data materialize failed: {error}", file=sys.stderr)
         return 1
     print(json.dumps(results, indent=2, sort_keys=True))
