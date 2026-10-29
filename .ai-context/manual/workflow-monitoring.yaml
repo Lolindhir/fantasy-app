@@ -176,6 +176,7 @@ scheduler:
     watermarkRule: Use the newest successful scheduler-dispatched Project batch run; before the first batch after cutover, the newest successful legacy Issue-event sync may seed the watermark.
     changeDetectionRule: Inspect repository Issues updated after the watermark; pull requests are excluded. Issue state and labels remain canonical even though unrelated Issue metadata updates may conservatively enter a batch.
     idleRule: If no Issue changed after the watermark, or a batch is already in flight, do not start another Project sync workflow run.
+    stuckBatchRule: A batch run that is still queued or in progress 60 minutes after creation (optional projectFieldSync.inFlightMaxAgeMinutes) is a stuck run, not an in-flight batch. It no longer suppresses new batches and the scheduler logs a warning naming it. Background - a run queued on 2026-09-13 blocked all Project syncs for six weeks (incident e82c8a4597d71598dc7b03d2).
     debounceRule: Dispatch one batch after five minutes without another pending Issue update; continuous activity may delay that batch for at most 30 minutes from the oldest pending Issue update.
     failureIsolation: Project field mutations execute in the separate sync-project-fields workflow. Project/API mutation failures therefore fail that workflow, not the central scheduler run that detected the batch.
   output:

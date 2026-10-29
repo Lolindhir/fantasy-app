@@ -35,8 +35,25 @@ function selectWatermarkRun(runs) {
   return newestRun(successful.filter((run) => run.event === 'issues'));
 }
 
-function selectInFlightBatchRun(runs) {
-  return newestRun((runs || []).filter((run) => run.event === 'repository_dispatch' && run.status && run.status !== 'completed'));
+const DEFAULT_IN_FLIGHT_MAX_AGE_MINUTES = 60;
+
+// A batch run that stays queued or in progress far beyond its job timeouts (2 + 5 minutes) is a stuck run,
+// not a running batch. Without an age bound it would suppress every later batch forever (Sep 13 incident).
+function selectInFlightBatchRun(runs, { now = null, maxAgeMinutes = DEFAULT_IN_FLIGHT_MAX_AGE_MINUTES } = {}) {
+  return newestRun((runs || []).filter((run) => {
+    if (run.event !== 'repository_dispatch' || !run.status || run.status === 'completed') return false;
+    if (!now) return true;
+    const createdMs = Date.parse(run.created_at || '');
+    return !Number.isFinite(createdMs) || now.getTime() - createdMs < maxAgeMinutes * 60000;
+  }));
+}
+
+function selectStaleBatchRun(runs, { now, maxAgeMinutes = DEFAULT_IN_FLIGHT_MAX_AGE_MINUTES }) {
+  return newestRun((runs || []).filter((run) => {
+    if (run.event !== 'repository_dispatch' || !run.status || run.status === 'completed') return false;
+    const createdMs = Date.parse(run.created_at || '');
+    return Number.isFinite(createdMs) && now.getTime() - createdMs >= maxAgeMinutes * 60000;
+  }));
 }
 
 function parsePendingState(pendingState) {
@@ -141,7 +158,14 @@ async function run({ github, context, core, configPath = '.github/workflow-sched
   const watermarkRun = selectWatermarkRun(runs);
   const since = watermarkRun?.created_at
     || new Date(now.getTime() - sync.bootstrapLookbackMinutes * 60000).toISOString();
-  const inFlight = selectInFlightBatchRun(runs);
+  const maxAgeMinutes = Number.isInteger(sync.inFlightMaxAgeMinutes) && sync.inFlightMaxAgeMinutes > 0
+    ? sync.inFlightMaxAgeMinutes
+    : DEFAULT_IN_FLIGHT_MAX_AGE_MINUTES;
+  const inFlight = selectInFlightBatchRun(runs, { now, maxAgeMinutes });
+  const staleRun = selectStaleBatchRun(runs, { now, maxAgeMinutes });
+  if (staleRun) {
+    core.warning(`Ignoring stuck Project field sync run ${staleRun.id} (${staleRun.status} since ${staleRun.created_at}); it no longer blocks batches.`);
+  }
 
   const issueArgs = {
     owner: context.repo.owner,
@@ -208,6 +232,7 @@ module.exports = {
   parsePendingState,
   run,
   selectInFlightBatchRun,
+  selectStaleBatchRun,
   selectWatermarkRun,
   validateProjectFieldSyncConfig,
 };
