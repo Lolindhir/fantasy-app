@@ -126,7 +126,7 @@ function Get-LeagueScoredWeek {
     }
     if (-not $python) { throw "Python is required for the shared week-final definition." }
 
-    $output = & $python $toolPath --repo-root $RepoRoot bounds --league $CanonicalLeagueID --season $Season 2>&1
+    $output = & $python $toolPath bounds --league $CanonicalLeagueID --season $Season --repo-root $RepoRoot 2>&1
     $exitCode = $LASTEXITCODE
     $outputText = (@($output) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
     if ($exitCode -ne 0) {
