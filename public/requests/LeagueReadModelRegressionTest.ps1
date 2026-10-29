@@ -46,7 +46,8 @@ Assert-True -Condition $requestLeague.Contains("Resolve-LeagueTradeDeadlineWeek"
 Assert-True -Condition $requestLeague.Contains("SeasonKickoff           = `$seasonKickoff") -Message "RequestLeague does not publish SeasonKickoff."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Matchups                = `$matchupSnapshot") -Expected 0 -Message "RequestLeague still publishes the legacy League.Matchups snapshot."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "ConvertTo-LeagueMatchupSnapshot") -Expected 0 -Message "RequestLeague still builds the legacy League.Matchups snapshot."
-Assert-True -Condition $requestLeague.Contains("Update-MatchupHistoryReadModels") -Message "RequestLeague does not use the public Matchups history API."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Update-MatchupHistoryReadModels") -Expected 0 -Message "RequestLeague regenerates the Matchups history; the weekly RequestHistoricalAppReadModels owns it (Issue 1189)."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "FantasyGameContextHistory") -Expected 0 -Message "RequestLeague still carries the FantasyGameContext history writer (Issue 1189)."
 Assert-True -Condition $requestLeague.Contains("CanonicalLeagueCoreUtils.psm1") -Message "RequestLeague does not import the canonical League Core consumer."
 Assert-True -Condition $requestLeague.Contains("CanonicalPlayoffUtils.psm1") -Message "RequestLeague does not import the canonical Playoff consumer."
 Assert-True -Condition $requestLeague.Contains("CanonicalMatchupUtils.psm1") -Message "RequestLeague does not import the canonical current Matchup consumer."
@@ -318,5 +319,36 @@ $publishedCoreTeams = @(
 )
 Assert-Equal -Actual $canonicalCoreTeams.Count -Expected $publishedCoreTeams.Count -Message "Canonical League Core team count differs from published League.json."
 Assert-StandingsJsonEqual -Actual $canonicalCoreTeams -Expected $publishedCoreTeams -Message "Canonical League Core team-source parity failed."
+
+# --- Issue 1189: historical Matchups and FantasyGameContext are regenerated, never skipped or read from archives ---
+$matchupCore = Get-Content "$PSScriptRoot\utils\league\MatchupReadModelCore.ps1" -Raw
+$contextCore = Get-Content "$PSScriptRoot\utils\league\FantasyGameContextCore.ps1" -Raw
+Assert-True -Condition ($matchupCore -notmatch 'Test-Path \$targetFile\)\s*\{\s*continue') -Message "Matchups history skips existing files again (Issue 1189)."
+Assert-True -Condition ($contextCore -notmatch 'Test-Path \$targetFile\)\s*\{\s*return') -Message "FantasyGameContext history skips existing files again (Issue 1189)."
+Assert-True -Condition (-not $contextCore.Contains('Schedule_$')) -Message "FantasyGameContext history reads the Schedule archive again (Issue 1189)."
+Assert-True -Condition ($contextCore.Contains('Get-CanonicalAppSchedule')) -Message "FantasyGameContext history no longer takes the canonical NFL schedule (Issue 1189)."
+
+$historyTestDir = Join-Path ([System.IO.Path]::GetTempPath()) ("history-regeneration-" + [guid]::NewGuid().ToString('N'))
+try {
+    $historyFile = Join-Path $historyTestDir 'nested/Model_2030.json'
+    $historyChanged = { param($oldData, $newData) (($oldData | ConvertTo-Json -Depth 10 -Compress) -ne ($newData | ConvertTo-Json -Depth 10 -Compress)) }
+    $modelV1 = [PSCustomObject][ordered]@{ SchemaVersion = 1; Weeks = @([PSCustomObject][ordered]@{ Week = 1; CompletionState = 'unknown' }) }
+    $modelV2 = [PSCustomObject][ordered]@{ SchemaVersion = 1; Weeks = @([PSCustomObject][ordered]@{ Week = 1; CompletionState = 'final' }) }
+
+    Assert-Equal -Actual (Save-HistoricalReadModelIfChanged -TargetFile $historyFile -Model $modelV1 -ChangedScript $historyChanged) -Expected 'created' -Message "A missing historical file is not created."
+    $hashAfterCreate = (Get-FileHash $historyFile).Hash
+    Start-Sleep -Milliseconds 50
+    Assert-Equal -Actual (Save-HistoricalReadModelIfChanged -TargetFile $historyFile -Model $modelV1 -ChangedScript $historyChanged) -Expected 'unchanged' -Message "An identical second run is not a no-op."
+    Assert-Equal -Actual (Get-FileHash $historyFile).Hash -Expected $hashAfterCreate -Message "A no-op run rewrote the historical file."
+    Assert-Equal -Actual (Save-HistoricalReadModelIfChanged -TargetFile $historyFile -Model $modelV2 -ChangedScript $historyChanged) -Expected 'updated' -Message "A corrected derivation is not adopted into the existing historical file."
+    Assert-Equal -Actual (Get-Content $historyFile -Raw | ConvertFrom-Json).Weeks[0].CompletionState -Expected 'final' -Message "The corrected value was not written."
+    Assert-Equal -Actual (Save-HistoricalReadModelIfChanged -TargetFile $historyFile -Model $modelV2 -ChangedScript $historyChanged) -Expected 'unchanged' -Message "The run after the correction is not a no-op."
+}
+finally {
+    if (Test-Path $historyTestDir) { Remove-Item $historyTestDir -Recurse -Force }
+}
+
+$weeklyWorkflow = Get-Content "$PSScriptRoot\..\..\.github\workflows\update-transactions.yml" -Raw
+Assert-True -Condition ($weeklyWorkflow.Contains('RequestHistoricalAppReadModels.ps1')) -Message "The weekly update-transactions run does not regenerate the historical App read models (Issue 1189)."
 
 Write-Host "League transaction and overview regression tests passed." -ForegroundColor Green

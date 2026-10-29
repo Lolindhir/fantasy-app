@@ -513,6 +513,24 @@ dataSources:
     timestamped: false
     backup: false
 
+  historicalMatchupsAndContext:
+    path: public/data/past_seasons/Matchups/Matchups_<season>.json and public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json
+    generator: public/requests/RequestHistoricalAppReadModels.ps1
+    workflow: .github/workflows/update-transactions.yml
+    category: generated-output
+    role: Historical Matchups and FantasyGameContext read models
+    issue: 1189
+    description: >
+      Disposable consumer outputs regenerated in the weekly update-transactions run (pattern of ADR-058), after the
+      Schedule archives and before the Past Seasons index. Matchups come from data-source/leagues (complete seasons);
+      FantasyGameContext comes from data-source/leagues, the canonical NFL schedule with finality and canonical weekly
+      rosters (previous season from 2022 plus every season that already has a file). The Schedule archive is no input.
+      A file is written only when it is missing or differs semantically from the freshly derived model
+      (Save-HistoricalReadModelIfChanged); an existing file is never trusted as input. Incomplete evidence keeps the
+      last file and warns. The ten-minute League refresh no longer touches these files, so a newly completed season
+      gets its files with the next weekly run. The neutral team order of the Matchups history still reads
+      Standings.json until Issue #987 moves that consumer to the league-standings product.
+
   externalMarketSources:
     path: data-source/external-registry.json
     category: source-evidence

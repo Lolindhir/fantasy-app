@@ -40,6 +40,7 @@ jobs:
            python3 tools/derived_data.py materialize --product league-drafts | tee "$RUNNER_TEMP/derived-summary/league-drafts.json" &&
            python3 tools/league_history_app_publish.py write --fail-on-error &&
            python3 tools/schedule_archive.py write &&
+           pwsh ./public/requests/RequestHistoricalAppReadModels.ps1 &&
            pwsh ./public/requests/RequestPastSeasonsIndex.ps1'
 
       - name: Summarize Derived products
