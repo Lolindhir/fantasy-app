@@ -311,7 +311,16 @@ jobs:
               --silent
           }
 
-          set_single_select "${status_field_id}" "${status_option_id}"
+          # An archived Project item cannot be updated and is intentionally out of the board; skip it
+          # instead of failing the whole batch, which would keep the watermark behind forever.
+          if ! status_output="$(set_single_select "${status_field_id}" "${status_option_id}" 2>&1)"; then
+            if grep -qi 'item is archived' <<< "${status_output}"; then
+              echo "::notice::Issue #${ISSUE_NUMBER} is archived in '${project_title}'; skipping."
+              exit 0
+            fi
+            echo "${status_output}" >&2
+            exit 1
+          fi
 
           if [[ -n "${priority_option_id}" ]]; then
             set_single_select "${priority_field_id}" "${priority_option_id}"
