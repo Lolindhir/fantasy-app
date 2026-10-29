@@ -666,11 +666,11 @@ function Ensure-MatchupHistoryReadModels {
         if ([string](Get-MrmValue -Object $leagueSource -Names @('Status')) -ne 'complete') { continue }
 
         $targetFile = Join-Path $historyDir "Matchups_$historicalSeason.json"
-        if (Test-Path $targetFile) { continue }
         $model = New-MatchupSeasonReadModel -CanonicalLeagueID $CanonicalLeagueID -Season $historicalSeason -Standings $Standings -RepoRoot $RepoRoot -HistoricalCutoff
-        $model | ConvertTo-Json -Depth 30 | Out-File $targetFile -Encoding UTF8
-        Write-Host "Historical Matchups $historicalSeason materialized." -ForegroundColor Green
-        $created = $true
+        $compare = { param($oldData, $newData) Test-MatchupSeasonReadModelChanged -OldData $oldData -NewData $newData }
+        $outcome = Save-HistoricalReadModelIfChanged -TargetFile $targetFile -Model $model -ChangedScript $compare -Depth 30
+        Write-Host "Historical Matchups ${historicalSeason}: $outcome." -ForegroundColor $(if ($outcome -eq 'unchanged') { 'Gray' } else { 'Green' })
+        if ($outcome -ne 'unchanged') { $created = $true }
     }
     return $created
 }

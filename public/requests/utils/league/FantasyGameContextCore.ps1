@@ -711,12 +711,12 @@ function New-HistoricalFantasyGameContextSeason {
         [Parameter(Mandatory = $true)][int]$Season,
         [Parameter(Mandatory = $true)][string]$LeagueSourceFile,
         [Parameter(Mandatory = $true)][string]$MatchupDirectory,
-        [Parameter(Mandatory = $true)][string]$ScheduleFile,
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][array]$Schedule,
         [AllowNull()][string]$WeeklyRosterDirectory
     )
 
-    if (-not (Test-Path $LeagueSourceFile) -or -not (Test-Path $MatchupDirectory) -or -not (Test-Path $ScheduleFile)) {
-        throw "Historical FantasyGameContext $Season requires canonical league matchups, the historical schedule and canonical weekly NFL roster evidence."
+    if (-not (Test-Path $LeagueSourceFile) -or -not (Test-Path $MatchupDirectory) -or @($Schedule).Count -eq 0) {
+        throw "Historical FantasyGameContext $Season requires canonical league matchups, the canonical NFL schedule and canonical weekly NFL roster evidence."
     }
 
     $leagueSource = Get-Content $LeagueSourceFile -Raw | ConvertFrom-Json
@@ -724,7 +724,7 @@ function New-HistoricalFantasyGameContextSeason {
     if ($lastWeek -le 0) { $lastWeek = [int](Get-FgcPropertyValue -Object (Get-FgcPropertyValue -Object $leagueSource -Names @('Settings')) -Names @('last_scored_leg')) }
     if ($lastWeek -le 0) { throw "Historical FantasyGameContext $Season cannot resolve the final fantasy week." }
 
-    $schedule = @(Get-Content $ScheduleFile -Raw | ConvertFrom-Json)
+    $schedule = @($Schedule)
     $weeks = @()
     for ($week = 1; $week -le $lastWeek; $week++) {
         $matchupFile = Join-Path $MatchupDirectory "week-$week.json"
@@ -752,4 +752,80 @@ function New-HistoricalFantasyGameContextSeason {
         ScoringState  = 'final'
         Weeks         = $weeks
     }
+}
+
+# Writes one historical read-model file only when it is missing or differs semantically from the freshly derived model.
+# Returns 'created', 'updated' or 'unchanged'. The existing file is never trusted as input (ADR-058 pattern).
+function Save-HistoricalReadModelIfChanged {
+    param(
+        [Parameter(Mandatory = $true)][string]$TargetFile,
+        [Parameter(Mandatory = $true)][object]$Model,
+        [Parameter(Mandatory = $true)][scriptblock]$ChangedScript,
+        [int]$Depth = 30
+    )
+
+    $old = $null
+    $existed = Test-Path $TargetFile
+    if ($existed) {
+        try { $old = Get-Content $TargetFile -Raw | ConvertFrom-Json } catch { $old = $null }
+    }
+    # Both sides go through the same JSON round trip, so parser conversions (for example ISO strings to DateTime)
+    # cannot show up as a difference.
+    $modelJson = $Model | ConvertTo-Json -Depth $Depth
+    if ($existed -and -not [bool](& $ChangedScript $old ($modelJson | ConvertFrom-Json))) { return 'unchanged' }
+
+    $targetDir = Split-Path -Parent $TargetFile
+    if (-not (Test-Path $targetDir)) { New-Item -ItemType Directory -Path $targetDir -Force | Out-Null }
+    $modelJson | Out-File $TargetFile -Encoding UTF8
+    return $(if ($existed) { 'updated' } else { 'created' })
+}
+
+# Regenerates the historical FantasyGameContext files from canonical league matchups, the canonical NFL schedule
+# (data-source/nfl, never the Schedule archive) and canonical weekly rosters. Seasons: the previous season (from 2022)
+# plus every season that already has a file. Incomplete source evidence keeps the last file and warns.
+function Update-FantasyGameContextHistory {
+    param(
+        [Parameter(Mandatory = $true)][string]$CanonicalLeagueID,
+        [Parameter(Mandatory = $true)][int]$CurrentSeason,
+        [Parameter(Mandatory = $true)][hashtable]$Config,
+        [Parameter(Mandatory = $true)][string]$RepoRoot
+    )
+
+    $historyDir = Join-Path ([string]$Config.PastSeasonsDir) 'FantasyGameContext'
+    $seasons = @()
+    if ($CurrentSeason - 1 -ge 2022) { $seasons += ($CurrentSeason - 1) }
+    if (Test-Path $historyDir) {
+        foreach ($file in @(Get-ChildItem -Path $historyDir -Filter 'FantasyGameContext_*.json')) {
+            $parsed = 0
+            if ([int]::TryParse(($file.BaseName -replace '^FantasyGameContext_', ''), [ref]$parsed) -and $parsed -lt $CurrentSeason) { $seasons += $parsed }
+        }
+    }
+
+    $changed = $false
+    foreach ($season in @($seasons | Sort-Object -Unique)) {
+        $seasonSourceDir = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "leagues/$CanonicalLeagueID/seasons/$season"
+        $leagueSourceFile = Join-Path $seasonSourceDir 'league.json'
+        $matchupDirectory = Join-Path $seasonSourceDir 'matchups'
+        $weeklyRosterDirectory = Join-Path (Get-DataSourceRoot -RepoRoot $RepoRoot) "nfl/weekly-rosters/$season"
+        if (-not (Test-Path $leagueSourceFile) -or -not (Test-Path $matchupDirectory) -or -not (Test-Path $weeklyRosterDirectory)) {
+            Write-Warning "Historical FantasyGameContext $season is not materialized because required source evidence is incomplete."
+            continue
+        }
+
+        # All game types: the former archive input also carried the postseason games.
+        $schedule = @(Get-CanonicalAppSchedule -Season $season -RepoRoot $RepoRoot -GameTypes @('REG', 'WC', 'DIV', 'CON', 'SB'))
+        $model = New-HistoricalFantasyGameContextSeason `
+            -LeagueID $CanonicalLeagueID `
+            -Season $season `
+            -LeagueSourceFile $leagueSourceFile `
+            -MatchupDirectory $matchupDirectory `
+            -Schedule $schedule `
+            -WeeklyRosterDirectory $weeklyRosterDirectory
+
+        $compare = { param($oldData, $newData) Test-FantasyGameContextReadModelChanged -OldData $oldData -NewData $newData }
+        $outcome = Save-HistoricalReadModelIfChanged -TargetFile (Join-Path $historyDir "FantasyGameContext_$season.json") -Model $model -ChangedScript $compare -Depth 20
+        Write-Host "Historical FantasyGameContext ${season}: $outcome." -ForegroundColor $(if ($outcome -eq 'unchanged') { 'Gray' } else { 'Green' })
+        if ($outcome -ne 'unchanged') { $changed = $true }
+    }
+    return $changed
 }

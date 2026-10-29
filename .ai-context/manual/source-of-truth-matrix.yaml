@@ -1118,6 +1118,10 @@ consumerReadClassification:
         legacy:Players: analysis-snapshot-input
         legacy:Transactions: analysis-snapshot-input
       note: 'Point-in-time salary analysis over the published App read models; not a recurring pipeline consumer.'
+    public/requests/RequestHistoricalAppReadModels.ps1:
+      reads:
+        legacy:Standings: app-read-model-chain
+      note: 'Weekly regeneration of the historical Matchups and FantasyGameContext files (Issue #1189). Facts come from data-source/leagues and data-source/nfl (canonical schedule, never the Schedule archive); the published Standings.json (Get-StandingsLocal) only supplies the neutral team order of the Matchups history until the league-standings product is the consumer source (Issue #987).'
     public/requests/RequestLeague.ps1:
       reads:
         legacy:DecisionWindows: app-output-state-feedback
