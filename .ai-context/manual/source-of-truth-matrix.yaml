@@ -1191,6 +1191,12 @@ consumerReadClassification:
         legacy:Timestamps: app-output-owner
         legacy:Transactions: validation-shadow
       note: 'Consumer generator of the League history products (ADR-057, Issue #999). compare renders the App-shaped Transactions and Drafts files in memory and compares them exactly with the committed public/data files (validation-shadow, never an input). Since step 5b write publishes those files only on semantic change and updates the Transactions and Drafts keys of Timestamps.json (app-output-owner: the writer owns its own freshness timestamp, never an input).'
+    tools/league_standings_app_publish.py:
+      reads:
+        legacy:League: validation-shadow
+        legacy:Standings: validation-shadow
+        provider:sleeper: display-link-construction
+      note: 'Consumer rendering of the league-standings product (ADR-072, Issue #987 step 3). compare renders the App-shaped Standings.json and League.json placements in memory and compares them with the committed public/data files (validation-shadow, never an input). The avatar CDN URL is built from the provider avatar ID of the product; no fetch.'
     tools/schedule_archive.py:
       reads:
         legacy:Schedule: validation-shadow
