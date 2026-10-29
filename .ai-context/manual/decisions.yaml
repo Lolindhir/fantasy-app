@@ -2416,3 +2416,39 @@ decisions:
         - Until all steps land, the legacy rules stay productive next to the new function (held equal by a parity test).
         - The coverage check is team level; a missing single player inside a covered team is not detected.
         - Leagues with weeks beyond NFL week 18 need an explicit mapping first (hard error).
+
+  - id: ADR-072
+    title: Standings, Playoffs and Awards are central versioned models with the league-standings product
+    status: accepted
+    context: >
+      The regular-season table with tiebreaks, the playoff placements, the season awards, the all-time standing and the weekly
+      movement (ADR-040) are computed by about 1,700 lines of PowerShell (StandingUtils.psm1, CanonicalStandingUtils.psm1) and
+      written to public/data/Standings.json. Three consumers read that generated file back (RequestLeague.ps1 for League.json
+      Standings and Placements, RequestWeeklyRecaps.ps1, and tools/league_history_sources.py for the draft order, a transitional
+      read the restore gate reports as latent-blocker). The logic cannot be applied per league or per season, and a second league
+      would inherit the first league's rules (Issue #987, extracted from #919).
+    decision: >
+      Robert decided on 2026-10-29 (Issue #987, "alles wie empfohlen") to move the derivation into central, league-independent,
+      versioned models standings-v1 and awards-v1 in tools/derived_data_lib/models, registered in the model registry (ADR-055) and
+      chosen per league and season in data-meta/<CanonicalLeagueID>/metadata.json (ADR-054, keys Standings and Awards). The first
+      versions reproduce the PowerShell behaviour 1:1 (no new tiebreak or award rule; #964 follows as awards-v2). The result is the
+      Shared Derived product league-standings, one file per league and season at data-derived/league-standings/<CanonicalLeagueID>/<season>.json
+      with the weekly tables, playoffs, awards and the all-time standing through that season; there are no week files. The week basis is
+      LeagueScoredWeek (ADR-071). Consumers get Standings.json, the League.json placements, the neutral team order and the draft order only
+      from the product; overlay reads are for display, never for status, phase or week. The migration runs in five steps with one pull
+      request each: contract, models and materializer, exact shadow parity, cutover, removal of the old code. The cutover adds the write
+      prefix data-derived/league-standings/** to league-live.yml and update-standings.yml; that is an elevated effect and needs a separate
+      targeted approval with impact and rollback. Contract: .ai-context/manual/league-standings.yaml.
+    rationale: >
+      One implementation per model removes the generated-file feedback loop, lets a league choose the rules per season and keeps
+      history reproducible. A season file avoids about twenty nearly identical weekly files; the week basis follows the Sleeper results
+      without waiting for nflverse stats.
+    consequences:
+      positive:
+        - Standings, Playoffs and Awards have one implementation, one registry entry and one stored history.
+        - The draft order and WeeklyRecaps no longer read a consumer output.
+        - A rule change lands as a new model version without touching old seasons.
+      negative:
+        - Until the cutover the PowerShell implementation stays productive and is held equal by the shadow comparison.
+        - v1 keeps legacy quirks (per-game values divide by the regular-season game count during the season, team join across seasons by roster ID, display strings inside results).
+        - The cutover adds a write prefix for two existing writers.

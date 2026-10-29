@@ -9,7 +9,7 @@ purpose: >
   facts into a derived value with an algorithm and parameters that live next to the
   code. Leagues do not carry model parameters; a league only selects, per season,
   which model version applies. Salary, SalaryCap and Grading are the first models;
-  Standings and Awards follow (#987).
+  Standings and Awards follow (#987, ADR-072, league-standings.yaml).
 
 architecture:
   decisionBasis:
@@ -23,7 +23,8 @@ architecture:
   consumers:
     - tools/derived_data.py materializer (player-valuation product, #919 step 3)
     - Fantasy Management salary simulation (#919 step 7)
-    - later models (standings, awards) through the same registry
+    - tools/derived_data.py materializer (league-standings product, #987 step 2)
+    - later models through the same registry
   rules:
     - A model is a pure function of its explicit inputs plus its own PARAMS. It reads no files, no network, no clock, no environment and no league configuration.
     - Inputs that depend on the league (team count, scoring settings, rosters) are passed in by the caller, which reads them from canonical league facts.
@@ -38,6 +39,8 @@ identity:
       - salary-v1
       - salary-cap-v1
       - grading-v1
+      - standings-v1
+      - awards-v1
     rules:
       - The model ID is the only way a league, a snapshot or a test refers to a model.
       - kind uses hyphens in the ID (salary-cap-v1) and underscores in the module path (salary_cap/v1.py).
@@ -52,6 +55,12 @@ identity:
     grading:
       module: tools/derived_data_lib/models/grading/v1.py
       produces: Grade letter and the Rank grading row
+    standings:
+      module: tools/derived_data_lib/models/standings/v1.py
+      produces: Regular-season table with tiebreaks, weekly tables and movement, playoff placements and the all-time standing
+    awards:
+      module: tools/derived_data_lib/models/awards/v1.py
+      produces: Season awards with their score annotations
 
 immutability:
   rule: >
@@ -78,7 +87,7 @@ registry:
     - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
   leagueSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
-    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading } -> model IDs
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards } -> model IDs
     rule: >
       The league metadata chooses model IDs per season. A new version applies from
       the season in which the metadata first names it; earlier seasons keep their
@@ -131,6 +140,38 @@ models:
       - Grade is the first letter whose threshold times the position multiplier is greater than or equal to the Combined_Pos rank; above the last threshold the grade is F.
       - A player without a Combined_Pos rank gets no grade: the Rank row carries null for Value, Rank and Grade. The legacy PowerShell graded such a player as rank 0 (A); Robert decided on 2026-10-15 that this is a defect and had it corrected in grading-v1 itself (a one-time, explicit exception to immutability, since the model had been productive for hours and the old behaviour was never intended; no grading-v2 was created).
       - The Form grading row is a copy of the last four final scored GameHistory entries, not a model; it stays with the Players consumer generator.
+
+  standings-v1:
+    status: planned-step-2
+    behaviour: exact port of StandingUtils.psm1 and CanonicalStandingUtils.psm1 (no new rule)
+    contract: .ai-context/manual/league-standings.yaml
+    parameters:
+      regularSeasonTiebreak: [WinPercentage desc, Points desc, PointsAgainst asc]
+      allTimeTiebreak: [RegularSeasonWins desc, WinPercentage desc, Points desc, PointsAgainst asc]
+      allTimePlayoffTiebreak: [Championships desc, RunnerUps desc, Thirds desc, RegularSeasonWins desc, PlaceAverage asc, RegularSeason Place asc]
+      tieKey: win percentage to 6 decimals, points and points against to 2 decimals; equal keys share the place and the next place is the previous plus one (dense)
+      efficiencyScore: pointsPerGameDiff + pointsAgainstPerGameDiff + wins
+      ironWillScore: pointsAgainstPerGame / leagueAvgPointsAgainstPerGame + sqrt(winPct * 0.25); -999 when the league average is not positive
+      streakScores: [0.001 per win, 0.00001 per point; 0.001 per loss, 0.00001 per point against]
+    rules:
+      - Games per season in the per-game values is the regular-season game count of the league (playoff_week_start - 1), also while the season is in progress (v1 behaviour kept).
+      - The weekly tables rebuild wins, losses, ties and points from the canonical matchups, rounding sums to two decimals after each week, and are accepted only while every team result agrees with its Record.
+      - The place movement is PreviousWeekPlace - Place (positive means moved up) and is null whenever no validated comparison exists (ADR-040).
+      - Playoff placements come from the placement matches of the winners bracket (start place 1) followed by the losers bracket; the PlaceType boundary is the number of winners-bracket placements.
+      - All-time standings accumulate completed seasons newest first (the order fixes the Placements array), rounding points to two decimals at the end.
+  awards-v1:
+    status: planned-step-2
+    behaviour: exact port of Get-Awards (no new rule); #964 follows as awards-v2
+    contract: .ai-context/manual/league-standings.yaml
+    parameters:
+      order: [Best Performer, Streaker, Overperformer, Brick Wall, Clutch Peaker, Most Improved]
+      clutchPeaker: place gain minus 0.01 times the playoff place; -999 for a team outside the playoffs
+      mostImproved: win percentage gain plus 0.01 times the points per game gain, rounded to four decimals; 0 for a team without a previous season row
+    rules:
+      - Without a completed regular-season game no award is given.
+      - Clutch Peaker needs playoff placements, Most Improved needs the previous season; otherwise the award is absent.
+      - The first team in table order wins an exact tie of the award score.
+      - The score annotations (ClutchPeakerScore, ImprovementScore) are part of the result because the App contract carries them on the regular-season rows.
 
 rankingFunctions:
   implementation: tools/derived_data_lib/ranking.py

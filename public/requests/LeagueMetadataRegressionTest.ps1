@@ -25,6 +25,8 @@ $deadline = Get-LeagueCapDeadline -Metadata $meta -Season $season
 if (-not $deadline.CapDeadline -or $null -eq $deadline.CapDeadlineBufferDays) { throw 'Current season needs CapDeadline and CapDeadlineBufferDays.' }
 foreach ($s in $manifest.Seasons) {
     Assert-Equal 'salary-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Salary') "Salary model $($s.Season)."
+    Assert-Equal 'standings-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Standings') "Standings model $($s.Season)."
+    Assert-Equal 'awards-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Awards') "Awards model $($s.Season)."
 }
 foreach ($retired in @('public/data/Metadata.json', 'public/data/Metadata.ai-doc.yaml', 'data-source/leagues/_bootstrap', 'public/requests/config.ps1')) {
     if (Test-Path (Join-Path $repoRoot $retired)) { throw "Retired legacy path still exists: $retired" }
