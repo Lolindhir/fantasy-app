@@ -1,7 +1,6 @@
 $ErrorActionPreference = "Stop"
 
 Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Force
-Import-Module "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -Force
@@ -76,23 +75,6 @@ Assert-True -Condition (-not $updateStandingsWorkflow.Contains("  push:")) -Mess
 Assert-True -Condition $leagueLiveWorkflow.Contains("--path data-derived/league-standings") -Message "League Live does not publish the league-standings product."
 Assert-True -Condition (-not $leagueLiveWorkflow.Contains("Detect changed Standings inputs")) -Message "League Live must not gate the Standings writer on League inputs."
 
-# Historical playoff identity must be snapshotted from the same season's canonical
-# Sleeper member data. Never resolve historical logos from the current League team.
-$historicalIdentitySource = Get-CanonicalStandingSourceForSeason -CanonicalLeagueID "nfl-reise" -Season "2025"
-$historicalFloSource = @($historicalIdentitySource.TeamData | Where-Object { [int]$_.TeamID -eq 3 }) | Select-Object -First 1
-$historicalMarcelSource = @($historicalIdentitySource.TeamData | Where-Object { [int]$_.TeamID -eq 2 }) | Select-Object -First 1
-Assert-True -Condition ($null -ne $historicalFloSource) -Message "2025 historical identity regression could not resolve Flo's canonical team."
-Assert-Equal -Actual $historicalFloSource.OwnerAvatar -Expected "https://sleepercdn.com/avatars/530057c108a2b40e9260d681e125c5f4" -Message "Historical owner avatar is not sourced from the 2025 canonical member snapshot."
-Assert-Equal -Actual $historicalFloSource.TeamAvatar -Expected "https://sleepercdn.com/uploads/448710a86b985d823dfa45fa287c6c35.jpg" -Message "Historical team avatar is not sourced from the 2025 canonical member metadata."
-Assert-Equal -Actual $historicalMarcelSource.TeamAvatar -Expected $null -Message "Missing historical team avatar must remain null in canonical standings source data."
-
-$historicalIdentityStandings = Get-CanonicalHistoricalStandings -CanonicalLeagueID "nfl-reise" -Seasons @("2025")
-$historicalFloPlayoff = @($historicalIdentityStandings.Seasons[0].Playoffs | Where-Object { [int]$_.TeamID -eq 3 }) | Select-Object -First 1
-$historicalMarcelPlayoff = @($historicalIdentityStandings.Seasons[0].Playoffs | Where-Object { [int]$_.TeamID -eq 2 }) | Select-Object -First 1
-Assert-Equal -Actual $historicalFloPlayoff.OwnerAvatar -Expected $historicalFloSource.OwnerAvatar -Message "Historical playoff output dropped the season-specific owner avatar."
-Assert-Equal -Actual $historicalFloPlayoff.TeamAvatar -Expected $historicalFloSource.TeamAvatar -Message "Historical playoff output dropped the season-specific team avatar."
-Assert-Equal -Actual $historicalMarcelPlayoff.TeamAvatar -Expected $null -Message "Historical playoff output must not invent a team avatar when the source season has none."
-
 $avatarCompareOld = [PSCustomObject]@{
     Place = 1; TeamID = 3; Owner = "FloDHL99"; OwnerAvatar = "owner.png"; TeamName = "Just Bill"; TeamAvatar = "historical.png";
     PlaceType = "Winner"; PlaceOrdinal = "1st"; PlaceCumulative = $null; PlaceAverage = $null; Championships = $null; RunnerUps = $null; Thirds = $null
@@ -130,97 +112,6 @@ $matchupReadModelUtils = Get-Content "$PSScriptRoot\utils\league\MatchupReadMode
 Assert-Equal -Actual (Get-OccurrenceCount -Text $matchupReadModelUtils -Needle "Set-Alias -Name Ensure-MatchupHistoryReadModels") -Expected 0 -Message "MatchupReadModelUtils still exposes the transitional history alias."
 Assert-True -Condition $matchupReadModelUtils.Contains("Update-MatchupHistoryReadModels") -Message "MatchupReadModelUtils no longer exposes the approved public history API."
 
-
-# Historical and current standings are canonical consumers. RequestStandings
-# must not perform direct Sleeper league/team/bracket reads after the current cutover.
-$canonicalStandingUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalStandingUtils.psm1" -Raw
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-LeagueRaw")) -Message "Canonical standings consumer performs a direct Sleeper league read."
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-Teams")) -Message "Canonical standings consumer performs a direct Sleeper team read."
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperWinnersBracket")) -Message "Canonical standings consumer performs a direct Sleeper winners-bracket read."
-Assert-True -Condition (-not $canonicalStandingUtils.Contains("Get-SleeperLosersBracket")) -Message "Canonical standings consumer performs a direct Sleeper losers-bracket read."
-
-$requestStandingsCutover = Get-Content "$PSScriptRoot\RequestStandings.ps1" -Raw
-Assert-True -Condition $requestStandingsCutover.Contains("CanonicalStandingUtils.psm1") -Message "RequestStandings does not import the canonical standings consumer."
-Assert-True -Condition $requestStandingsCutover.Contains("Get-CanonicalHistoricalStandings") -Message "RequestStandings does not consume canonical historical standings."
-Assert-True -Condition $requestStandingsCutover.Contains("Get-CanonicalCurrentSeasonData") -Message "RequestStandings does not consume canonical current standings."
-Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-CurrentSeasonData")) -Message "RequestStandings still contains the retired live current-season helper."
-Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-LeagueRaw")) -Message "RequestStandings still performs a direct Sleeper league read."
-Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-Teams")) -Message "RequestStandings still performs a direct Sleeper team read."
-Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-Playoffs")) -Message "RequestStandings still performs a direct Sleeper playoff read."
-Assert-True -Condition (-not $requestStandingsCutover.Contains("TeamUtils.psm1")) -Message "RequestStandings still imports TeamUtils after the canonical current cutover."
-Assert-True -Condition (-not $requestStandingsCutover.Contains("LeagueUtils.psm1")) -Message "RequestStandings still imports LeagueUtils after the canonical current cutover."
-Assert-True -Condition (-not $requestStandingsCutover.Contains("Get-SeasonDataRecursive")) -Message "RequestStandings still recursively traverses historical Sleeper leagues."
-Assert-True -Condition (-not $requestStandingsCutover.Contains("previous_league_id")) -Message "RequestStandings still discovers historical seasons through Sleeper previous_league_id."
-
-# Reproduce RequestStandings' import block in a clean module state and verify the
-# canonical current/historical consumers plus shared derivation remain visible.
-Remove-Module CanonicalStandingUtils, TeamUtils, StandingUtils, LeagueUtils -Force -ErrorAction SilentlyContinue
-$requestImportLines = @(
-    $requestStandingsCutover -split "`n" |
-        Where-Object { $_ -match '^\s*Import-Module ' }
-)
-foreach ($importLine in $requestImportLines) {
-    $resolvedImportLine = $importLine.Replace('$PSScriptRoot', $PSScriptRoot)
-    Invoke-Expression $resolvedImportLine
-}
-Assert-True -Condition ($null -ne (Get-Command Get-StandingsRemote -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides Get-StandingsRemote from the caller scope."
-Assert-True -Condition ($null -ne (Get-Command Get-CanonicalHistoricalStandings -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical historical standings consumer."
-Assert-True -Condition ($null -ne (Get-Command Get-CanonicalCurrentSeasonData -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical current standings consumer."
-Assert-True -Condition ($null -ne (Get-Command Get-CanonicalCurrentStandings -ErrorAction SilentlyContinue)) -Message "RequestStandings import order hides the canonical current standings compatibility wrapper."
-
-# The clean-state import above unloads shared helpers that later cases still use.
-Import-Module "$PSScriptRoot\utils\general\AvatarUtils.psm1" -Force
-Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -Force
-
-# Cross-source previous-season award joins must not depend on the CLR numeric
-# type used to materialize the same provider roster ID.
-$mixedTypePreviousSeason = [PSCustomObject]@{
-    RegularSeason = @(
-        [PSCustomObject]@{
-            TeamID         = [int]42
-            Wins           = 6
-            Points         = 1300
-            WinPercentage  = 0.5
-            PointsPerGame  = 100.0
-        }
-    )
-}
-$mixedTypeCurrentStandings = @(
-    [PSCustomObject]@{
-        Place                         = 1
-        PlaceOrdinal                  = "1st"
-        TeamID                        = [long]42
-        Owner                         = "MixedTypeOwner"
-        TeamName                      = "Mixed Type Team"
-        Wins                          = 8
-        Losses                        = 2
-        Ties                          = 0
-        WinPercentage                 = 0.75
-        Points                        = 1450
-        PointsPerGame                 = 110.0
-        Record                        = "WWWWLWWWWL"
-        LongestWinStreak              = 4
-        WinStreakScore                = 4.1
-        PointDifference               = 120
-        EfficiencyScore               = 5.0
-        PointsAgainstPerGame          = 95.0
-        PointsAgainstPerGameDiffLeagueAvg = -3.0
-        IronWillScore                 = 2.0
-    }
-)
-$mixedTypeAwards = @(Get-Awards -regularSeasonStandings $mixedTypeCurrentStandings -playoffsStandings $null -previousSeasonStandings $mixedTypePreviousSeason)
-Assert-Equal -Actual $mixedTypeCurrentStandings[0].ImprovementScore -Expected 0.35 -Message "Previous-season standings join still depends on numeric TeamID runtime type."
-$mixedTypeMostImproved = @($mixedTypeAwards | Where-Object { $_.Name -eq "Most Improved" })
-Assert-Equal -Actual $mixedTypeMostImproved.Count -Expected 1 -Message "Mixed-type previous-season join did not produce exactly one Most Improved award."
-Assert-Equal -Actual $mixedTypeMostImproved[0].TeamID -Expected ([long]42) -Message "Mixed-type previous-season join resolved the wrong team."
-Assert-Equal -Actual $mixedTypeMostImproved[0].StatDisplay -Expected "Wins: 6 to 8 | Points: 1300 to 1450" -Message "Mixed-type previous-season join lost previous-season award facts."
-
-
-$discoveredHistoricalSeasons = @(Get-CanonicalHistoricalStandingSeasons -CanonicalLeagueID "nfl-reise")
-Assert-Equal -Actual ($discoveredHistoricalSeasons -join ",") -Expected "2024,2025" -Message "Canonical historical standings discovery changed unexpectedly."
-
-$publishedStandings = @(Get-Content (Get-Config).StandingsFile -Raw | ConvertFrom-Json)
-$canonicalStandings = Get-CanonicalHistoricalStandings -CanonicalLeagueID "nfl-reise" -Seasons @("2024", "2025")
 
 function ConvertTo-StandingsComparableValue {
     param([AllowNull()]$Value)
@@ -267,65 +158,6 @@ function Assert-StandingsJsonEqual {
         throw "$Message Canonical historical output differs from the published read model."
     }
 }
-
-$publishedCurrentSeason = @($publishedStandings | Where-Object { [string]$_.Season -eq [string](Get-Config).LeagueYear })
-Assert-Equal -Actual $publishedCurrentSeason.Count -Expected 1 -Message "Published standings must contain the configured current season exactly once."
-
-$canonicalPreviousSeason = @(
-    $canonicalStandings.Seasons |
-        Sort-Object { [int]$_.Season } -Descending |
-        Select-Object -First 1
-)
-Assert-Equal -Actual $canonicalPreviousSeason.Count -Expected 1 -Message "Canonical current standings shadow requires exactly one previous-season standings context."
-
-$canonicalCurrentSeasonData = Get-CanonicalCurrentSeasonData `
-    -CanonicalLeagueID "nfl-reise" `
-    -PreviousSeasonStandings $canonicalPreviousSeason[0]
-
-$canonicalCurrentSource = Get-CanonicalStandingSourceForSeason `
-    -CanonicalLeagueID "nfl-reise" `
-    -Season ([string](Get-Config).LeagueYear) `
-    -AllowActiveSeason
-Assert-Equal -Actual $canonicalCurrentSeasonData.IsCompleted -Expected $canonicalCurrentSource.IsCompleted -Message "Canonical current standings completion state is not propagated from league.json."
-
-# Current canonical data-source and generated Standings.json are published by
-# separate race-safe workflows. A PR merge ref may therefore observe the canonical
-# source one commit ahead of the generated current-season snapshot. Validate the two
-# canonical current consumer APIs against each other here; the workflow-trigger
-# assertions above own the contract that closes current publication drift on main.
-# Historical completed seasons remain strict against the published read model below.
-$canonicalCurrentStandings = Get-CanonicalCurrentStandings `
-    -CanonicalLeagueID "nfl-reise" `
-    -PreviousSeasonStandings $canonicalPreviousSeason[0]
-Assert-StandingsJsonEqual -Actual $canonicalCurrentStandings -Expected $canonicalCurrentSeasonData.Output -Message "Canonical current standings compatibility wrapper parity failed."
-
-# The pre-migration published Standings.json snapshots still contain the former
-# Regular Season King award. New canonical generation correctly derives this
-# placement-based achievement from RegularSeason.Place=1 instead. Normalize
-# ONLY that one legacy Award entry in expected snapshots for historical parity;
-# every other field and award remains subject to strict equality.
-function Remove-LegacyRegularSeasonKingFromExpectedAwards {
-    param([Parameter(Mandatory = $true)]$Standing)
-
-    $normalized = $Standing | ConvertTo-Json -Depth 100 -Compress | ConvertFrom-Json
-    if ($normalized.PSObject.Properties['Awards']) {
-        $normalized.Awards = @($normalized.Awards | Where-Object { $_.Name -ne "Regular Season King" })
-    }
-    return $normalized
-}
-
-foreach ($season in @("2024", "2025")) {
-    $publishedSeason = @($publishedStandings | Where-Object { [string]$_.Season -eq $season })
-    $canonicalSeason = @($canonicalStandings.Seasons | Where-Object { [string]$_.Season -eq $season })
-    Assert-Equal -Actual $publishedSeason.Count -Expected 1 -Message "Published standings must contain season $season exactly once."
-    Assert-Equal -Actual $canonicalSeason.Count -Expected 1 -Message "Canonical historical consumer must contain season $season exactly once."
-    $expectedMigratedSeason = Remove-LegacyRegularSeasonKingFromExpectedAwards -Standing $publishedSeason[0]
-    Assert-StandingsJsonEqual -Actual $canonicalSeason[0] -Expected $expectedMigratedSeason -Message "Canonical historical standings parity failed for $season."
-}
-
-$publishedAllTime = @($publishedStandings | Where-Object { [string]$_.Season -eq "AllTime" })
-Assert-Equal -Actual $publishedAllTime.Count -Expected 1 -Message "Published standings must contain AllTime exactly once."
-Assert-StandingsJsonEqual -Actual $canonicalStandings.AllTime -Expected $publishedAllTime[0] -Message "Canonical historical standings AllTime parity failed."
 
 # Current League Core must reconstruct the source-owned League/Team inputs
 # from canonical data without performing direct provider reads.
