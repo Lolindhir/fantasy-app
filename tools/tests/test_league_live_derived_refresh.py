@@ -91,5 +91,19 @@ class RefreshTests(unittest.TestCase):
         twp.assert_called()  # an independent product still runs
 
 
+class LeagueLiveStepOrderTests(unittest.TestCase):
+    def test_products_before_consumers(self):
+        workflow = (TOOLS.parent / ".github/workflows/league-live.yml").read_text(encoding="utf-8")
+        steps = [
+            "python3 tools/league_live_derived_refresh.py",
+            "python3 tools/league_history_app_publish.py write",
+            "pwsh ./public/requests/RequestLeaguePublication.ps1",
+            # needs the FantasyGameContext.json written by RequestLeaguePublication
+            "python3 tools/player_week_fantasy_refresh.py",
+        ]
+        positions = [workflow.index(step) for step in steps]
+        self.assertEqual(sorted(positions), positions)
+
+
 if __name__ == "__main__":
     unittest.main()

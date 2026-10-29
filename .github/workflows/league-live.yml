@@ -183,9 +183,12 @@ jobs:
 
       # One generator run and one commit for League and PlayerWeekFantasy/MatchupProjections:
       # two pushes seconds apart made the Deploy of the first one cancel itself.
-      # The Shared Derived refresh runs last: it reads the PlayerWeekFantasy snapshot written just before
-      # (TeamWeekPerformance --require-pwf) and is fail-soft (warning, last good file stays), so an
+      # Products before consumers: the current-season Shared Derived refresh (league-transactions,
+      # league-drafts, TeamWeekPerformance) runs first so the App files and WeeklyRecaps are rendered from
+      # the fresh product. It reads only data-source and is fail-soft (warning, last good file stays), so an
       # unfinished week can never block the App League publication. data-derived commits do not deploy.
+      # The PlayerWeekFantasy/MatchupProjections refresh stays after RequestLeaguePublication on purpose:
+      # it takes the target week from the just-written FantasyGameContext.json and no consumer reads it.
       - name: Rebuild and publish League, PlayerWeekFantasy, MatchupProjections and current-season Derived
         run: >-
           python3 tools/rebuild_and_publish.py
@@ -197,7 +200,7 @@ jobs:
           --path data-derived/league-drafts
           --
           bash -euo pipefail -c
-          'python3 tools/league_history_app_publish.py write &&
+          'python3 tools/league_live_derived_refresh.py &&
+          python3 tools/league_history_app_publish.py write &&
           pwsh ./public/requests/RequestLeaguePublication.ps1 &&
-          python3 tools/player_week_fantasy_refresh.py &&
-          python3 tools/league_live_derived_refresh.py'
+          python3 tools/player_week_fantasy_refresh.py'

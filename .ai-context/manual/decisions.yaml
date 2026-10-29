@@ -2370,6 +2370,12 @@ decisions:
       no new workflow, scheduler target, credential or permission. The helper is fail-soft per product
       (warning, last good file stays) so an unfinished week cannot block the App League publication;
       corrections of older weeks still arrive with the weekly runs. Fast tests: tools/tests/test_league_live_derived_refresh.py.
+      Ordering amendment (Issue #471, 2026-10-29, Robert approved the workflow change): products before
+      consumers. Within the publication command the derived refresh runs first, then
+      league_history_app_publish.py write and RequestLeaguePublication.ps1 (WeeklyRecaps reads the fresh
+      TeamWeekPerformance), and the PlayerWeekFantasy/MatchupProjections refresh last, because it takes its
+      target week from the FantasyGameContext.json that RequestLeaguePublication just wrote and no consumer
+      reads PlayerWeekFantasy. Guarded by tools/tests/test_league_live_derived_refresh.py.
     rationale: >
       The App and its Shared Derived source stay equally fresh using the existing materializers, with
       failure isolation and without new infrastructure.
