@@ -75,9 +75,9 @@ migration:
     - "5 RequestLeague FinalScoredWeek from LeagueScoredWeek"
     - "6 documentation (domain, data-sources, player-week-fantasy, team-week-performance, matrix)"
   legacyRules: >-
-    Until each step lands, players_league_scoring.py::resolve_league_week_bounds, Resolve-LeagueFinalScoredWeek,
-    player_week_fantasy_materialize.py::_final_actual_inputs and team_week_performance_materialize.py::discover_finalized_weeks
-    stay the productive rules; test_week_finality.py proves parity with the first and the TWP rule.
+    Until each step lands, steps 1 to 5 are merged or in review: Players, PlayerWeekFantasy, TeamWeekPerformance and League.json
+    (Get-LeagueScoredWeek) all call the shared function; the former Resolve-LeagueFinalScoredWeek is removed.
+    test_week_finality.py keeps proving parity with the legacy Players and TWP rules.
 
 architectureReview:
   existingFirst: Reuses the finality, stats-coverage and WeekStructure rules already in the repository; no new dataset.

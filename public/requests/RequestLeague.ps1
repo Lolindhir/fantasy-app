@@ -327,27 +327,11 @@ try {
                 break
             }
         }
-
-        if (-not $currentWeek -and $sortedGames.Count -gt 0) {
-            if ($sortedGames[-1].gameWeek -match 'Week (\d+)') {
-                $finalWeek = [int]$matches[1]
-                Write-Host "All games final. Defaulting to last known week" -ForegroundColor DarkGray
-            }
-        } else {
-            $finalWeek = $currentWeek - 1
-        }
-
-        if ($finalWeek -gt $lastWeek) {
-            $finalWeek = $lastWeek
-            Write-Host "Adjusting final week to last league week: Week $finalWeek" -ForegroundColor DarkGray
-        }
     }
 
-    $scheduleFinalWeek = $finalWeek
-    $finalWeek = Resolve-LeagueFinalScoredWeek -ScheduleFinalWeek $scheduleFinalWeek -LastScoredLeg $lastScoredLeg
-    if ($finalWeek -ne $scheduleFinalWeek) {
-        Write-Host "Schedule reports Week $scheduleFinalWeek final, but the league has scored through Week $lastScoredLeg; using Week $finalWeek." -ForegroundColor DarkGray
-    }
+    # FinalScoredWeek is the shared LeagueScoredWeek milestone (ADR-071, #897); CurrentWeek above
+    # stays a separate concept (first non-final game).
+    $finalWeek = Get-LeagueScoredWeek -CanonicalLeagueID $CanonicalLeagueID -Season ([int]$currentSeason) -RepoRoot $repoRoot
 
     if ($finalWeek -ge 0) {
         Write-Host "Final active week detected: Week $finalWeek" -ForegroundColor Yellow
