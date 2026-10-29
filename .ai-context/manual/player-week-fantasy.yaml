@@ -176,6 +176,7 @@ actual:
     - Zero and negative fantasy scores are valid realized values.
     - Unknown/unavailable must never be represented as zero.
     - Finality is separate from score presence and must come from canonical game/finality evidence in the later materializer.
+    - Actual is final only for weeks within StatsFinalWeek (week-finality.yaml, ADR-071: games final and player-stats cover every playing team); until then Actual.State stays unavailable with null points, never final with 0.
     - Provider fantasy totals remain validation/fallback evidence according to the historical-scoring contract; they are not silently promoted to canonical truth.
 
 dependencies:

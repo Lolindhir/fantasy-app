@@ -136,8 +136,8 @@ inputs:
       be assigned unambiguously is omitted and counted in the materialization report
       (Missing, not zero).
   weekBounds:
-    owner: tools/players_league_scoring.py::resolve_league_week_bounds
-    rule: LastLeagueWeek, PlayoffStartWeek from the canonical league-season WeekStructure; AsOfFinalScoredWeek from canonical game finality and stats coverage.
+    owner: tools/players_league_scoring.py::resolve_league_week_bounds (delegates to tools/derived_data_lib/week_finality.py)
+    rule: LastLeagueWeek, PlayoffStartWeek from the canonical league-season WeekStructure; AsOfFinalScoredWeek is the shared StatsFinalWeek milestone (games final and stats coverage, week-finality.yaml, ADR-071).
   teamCount:
     owner: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json::Settings.num_teams
   modelSelection:
