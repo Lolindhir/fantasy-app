@@ -63,6 +63,30 @@ For the current structure, remember the mathematical baseline:
 
 Do not silently extrapolate conclusions to a different future team count or playoff format.
 
+### Treat Rookie order and legacy incentives as one system
+
+The user-confirmed intended Rookie Draft order from prior-season final placement is:
+
+- 5th place -> 1.01
+- 6th place -> 1.02
+- 4th place -> 1.03
+- 3rd place -> 1.04
+- 2nd place -> 1.05
+- 1st place -> 1.06
+
+Do not evaluate or redesign this order as an isolated anti-tanking, rebuild or competitive-balance lever.
+
+Its intended incentive logic is coupled to long-term franchise achievements:
+
+- finishing 5th instead of 6th remains rewarded with the earlier Rookie pick;
+- finishing 3rd instead of 4th remains valuable because Third Places contribute to the intended All-Time standings;
+- the user-confirmed intended All-Time achievement priority is Championships -> Runner-Ups -> Third Places -> Regular Season Kings;
+- later Rookie picks for better finishes are therefore partly exchanged for durable franchise/legacy value rather than being a pure punishment for winning.
+
+Treat this as a confirmed league-economy design intent unless the user explicitly reopens the Rookie-order or All-Time incentive design.
+
+The current standings generator appears to diverge from the intended fourth criterion by using cumulative Regular Season wins after Third Places. That technical reconciliation is tracked separately in GitHub Issue #810. Do not silently redefine the intended design from the current implementation and do not change the runtime as part of league-economy research alone.
+
 ### Evaluate strategy as an option-value problem
 
 In a league with late/open trading and broad playoff access, waiting can itself have value because a manager can retain championship upside and sell later if elimination becomes clear.
