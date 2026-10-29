@@ -35,7 +35,7 @@ NETWORK_RE = re.compile(
     r"\brequests\.(?:get|post)\(|http\.client|aiohttp|httpx"
 )
 PY_DATA_DIR_RE = re.compile(r"public[\"']?\s*[,/]\s*[\"']?data|DATA_DIR|PUBLIC_DATA|public/data")
-CONFIG_REF_RE = re.compile(r"\$[Cc]onfig\.([A-Za-z]+)File\b")
+CONFIG_REF_RE = re.compile(r"(?:\$[Cc]onfig|\(Get-Config\))\.([A-Za-z]+)File\b")
 
 SCAN_GLOBS = (
     "public/requests/**/*.ps1",
@@ -59,7 +59,9 @@ def sleeper_functions(repo_root: Path) -> list[str]:
     return sorted(found)
 
 
-def scan_text(path: str, text: str, names: list[str], sleeper_fns: list[str]) -> set[str]:
+def scan_text(
+    path: str, text: str, names: list[str], sleeper_fns: list[str], helpers: dict[str, str] | None = None
+) -> set[str]:
     tokens: set[str] = set()
     name_alt = "|".join(names)
     path_re = re.compile(rf"public/data/({name_alt})\.json")
@@ -78,6 +80,10 @@ def scan_text(path: str, text: str, names: list[str], sleeper_fns: list[str]) ->
         for match in CONFIG_REF_RE.finditer(text):
             if match.group(1) in names or match.group(1) + "s" in names:
                 tokens.add(f"legacy:{match.group(1)}")
+        # A call of a declared reader helper is a read of the read model it wraps (L7).
+        for helper, model in (helpers or {}).items():
+            if re.search(rf"(?<!function )(?<![\w-]){re.escape(helper)}\b", text):
+                tokens.add(f"legacy:{model}")
     elif path.endswith(".py"):
         if PY_DATA_DIR_RE.search(text):
             for match in re.finditer(rf"[\"'/\s]({name_alt})\.json", text):
@@ -93,6 +99,7 @@ def scan_text(path: str, text: str, names: list[str], sleeper_fns: list[str]) ->
 def scan_repository(repo_root: Path) -> dict[str, set[str]]:
     names = read_model_names(repo_root)
     fns = sleeper_functions(repo_root)
+    helpers = (load_registry().get("helperReads") or {})
     found: dict[str, set[str]] = {}
     for pattern in SCAN_GLOBS:
         for file in repo_root.glob(pattern):
@@ -101,7 +108,7 @@ def scan_repository(repo_root: Path) -> dict[str, set[str]]:
                 continue
             if file.name.startswith("test_") or "RegressionTest" in file.name:
                 continue
-            tokens = scan_text(rel.as_posix(), file.read_text(encoding="utf-8", errors="ignore"), names, fns)
+            tokens = scan_text(rel.as_posix(), file.read_text(encoding="utf-8", errors="ignore"), names, fns, helpers)
             if tokens:
                 found[rel.as_posix()] = tokens
     return found
@@ -189,6 +196,44 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         found[path] = found[path] | extra
         problems = compare(found, registry)
         self.assertTrue(any("unclassified read provider:sleeper" in p for p in problems), problems)
+
+    def test_helper_reads_are_declared_and_consistent(self) -> None:
+        """L7: a reader helper hides the read of a read model from its callers, so it is declared once.
+
+        Each declared helper must be defined exactly once, wrap a known read model, and
+        its defining file must itself carry the matching classified read.
+        """
+        registry = load_registry()
+        helpers = registry.get("helperReads") or {}
+        names = set(read_model_names(REPO_ROOT))
+        self.assertTrue(helpers)
+        problems = []
+        for helper, model in helpers.items():
+            if model not in names:
+                problems.append(f"{helper}: unknown read model {model}")
+            definitions = [
+                f.relative_to(REPO_ROOT).as_posix()
+                for pattern in ("public/requests/**/*.ps1", "public/requests/**/*.psm1")
+                for f in REPO_ROOT.glob(pattern)
+                if re.search(rf"^function {re.escape(helper)}\b", f.read_text(encoding="utf-8", errors="ignore"), re.M)
+            ]
+            if len(definitions) != 1:
+                problems.append(f"{helper}: expected one definition, found {definitions}")
+                continue
+            reads = (registry["consumers"].get(definitions[0]) or {}).get("reads") or {}
+            if f"legacy:{model}" not in reads:
+                problems.append(f"{helper}: defining file {definitions[0]} lacks legacy:{model}")
+        self.assertEqual([], problems, "\n".join(problems))
+
+    def test_helper_call_is_detected_as_read(self) -> None:
+        names = read_model_names(REPO_ROOT)
+        fns = sleeper_functions(REPO_ROOT)
+        helpers = load_registry()["helperReads"]
+        helper, model = next(iter(helpers.items()))
+        call = scan_text("public/requests/New.ps1", f"$x = {helper}\n", names, fns, helpers)
+        definition = scan_text("public/requests/New.ps1", f"function {helper} {{ }}\n", names, fns, helpers)
+        self.assertEqual({f"legacy:{model}"}, call)
+        self.assertEqual(set(), definition)
 
     def test_unknown_category_is_detected(self) -> None:
         registry = load_registry()

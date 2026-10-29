@@ -965,7 +965,18 @@ consumerReadClassification:
     provider:<host>: a URL naming a known provider host (sleeper, nflverse, fantasypros, fantasycalc, fftoday, cbssports, fantasyfootballcalculator, espn, tank01, rapidapi)
     sleeper-api:<Function>: a call to a Sleeper client function (the client SleeperUtils.psm1 was retired; its function names stay reserved in the test so a reintroduced call is reported)
     network: an HTTP client call (Invoke-RestMethod, urllib, requests, ...)
-    legacy:<Name>: a reference to public/data/<Name>.json or the matching $config.<Name>File
+    legacy:<Name>: a reference to public/data/<Name>.json, the matching $config.<Name>File or (Get-Config).<Name>File, or a call of a reader helper declared under helperReads
+  helperReads:
+    Get-StandingsLocal: Standings
+    Get-PlayersFromFile: Players
+    Get-LeagueDraftsLocal: Drafts
+  helperReadsRule: >
+    A reader helper hides the read of a published read model from its callers, so the
+    scan would miss every caller (L7, datenprodukte analysis 2026-10-29). Each helper is
+    declared here with the read model it wraps; a call counts as a legacy:<Name> read of
+    the calling file, and the test checks that the helper is defined exactly once in a
+    file that carries the matching classified read itself. A new reader helper must be
+    added here in the same change.
   categories:
     source-layer-acquisition: provider read owned by the data-source acquisition layer; sanctioned
     provider-client: the shared Sleeper HTTP client module (retired in #347 K1 follow-up; category kept for history)
@@ -976,6 +987,7 @@ consumerReadClassification:
     http-helper: generic HTTP helper without a provider-specific read
     repository-infrastructure: repository tooling, not a fantasy base fact
     app-output-owner: the generator or publisher that writes that read model
+    app-output-state-feedback: the generator reads its own previously published output to carry state across runs (not a base fact); the file is also written by it
     app-read-model-chain: a consumer reads another published App read model as a deliberate step of the App derivation chain
     app-config-path-owner: resolves generated-file paths
     intentional-overlay: documented consumer-specific display or scoring enrichment (ADR-054 boundary); base facts come from data-source
@@ -1108,10 +1120,13 @@ consumerReadClassification:
       note: 'Point-in-time salary analysis over the published App read models; not a recurring pipeline consumer.'
     public/requests/RequestLeague.ps1:
       reads:
-        legacy:DecisionWindows: app-output-owner
+        legacy:DecisionWindows: app-output-state-feedback
+        legacy:Drafts: app-read-model-chain
         legacy:Matchups: app-output-owner
+        legacy:Players: app-read-model-chain
         legacy:Schedule: app-read-model-chain
-      note: 'League generator: writes DecisionWindows.json and Matchups.json; reads the published Schedule.json as transitional adapter input (ADR-036 migration boundary).'
+        legacy:Standings: app-read-model-chain
+      note: 'League generator: writes DecisionWindows.json and Matchups.json. It reads the previous DecisionWindows.json to keep ScoringAvailabilityObservations timing stable (state feedback). Through reader helpers it also consumes the published Standings.json (Get-StandingsLocal), Players.json (Get-PlayersFromFile) and Drafts.json (Get-LeagueDraftsLocal), and the published Schedule.json as transitional adapter input (ADR-036 migration boundary). These are the real return channels from League.json to other App files; League Live must therefore publish those inputs before it (L0).'
     public/requests/RequestTeams.ps1:
       reads:
         legacy:Teams: app-output-owner
@@ -1146,14 +1161,22 @@ consumerReadClassification:
         legacy:Transactions: app-config-path-owner
         legacy:WeeklyRecaps: app-config-path-owner
       note: 'Resolves the generated-file paths from ConfigUtils for all generators.'
+    public/requests/utils/player/PlayerUtils.psm1:
+      reads:
+        legacy:Players: app-read-model-chain
+      note: 'Defines the reader helper Get-PlayersFromFile (published Players.json, used by RequestLeague.ps1).'
     public/requests/utils/league/PastSeasonsIndexUtils.psm1:
       reads:
         legacy:PastSeasonsIndex: app-output-owner
       note: 'Writes PastSeasonsIndex.json.'
+    public/requests/utils/league/StandingUtils.psm1:
+      reads:
+        legacy:Standings: app-read-model-chain
+      note: 'Defines the reader helper Get-StandingsLocal (published Standings.json, used by RequestLeague.ps1).'
     public/requests/utils/league/TeamDraftPickUtils.psm1:
       reads:
         legacy:Drafts: app-read-model-chain
-      note: 'Resolves team DraftPicks from the published Drafts.json (ADR-006).'
+      note: 'Resolves team DraftPicks from the published Drafts.json (ADR-006); defines the reader helper Get-LeagueDraftsLocal.'
     tools/build_workflow_health_snapshot.py:
       reads:
         network: repository-infrastructure
