@@ -100,7 +100,8 @@ inputs:
     requirement: >
       Producer must verify finality independently from canonical NFL
       game finality and the league's scored-week state (canonical league
-      WeekStructure.LastScoredLeg); the source adapter reuses the existing
+      WeekStructure.LastScoredLeg); week discovery (discover_finalized_weeks) lists weeks up to the
+      shared LeagueScoredWeek milestone (week-finality.yaml, ADR-071); the source adapter reuses the existing
       player_week_fantasy_materialize._week_finality reader before passing
       finalized=True and concrete finality_evidence. The builder checks this
       explicit gate but does not itself verify the asserted source.
