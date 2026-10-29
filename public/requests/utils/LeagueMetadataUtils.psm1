@@ -9,6 +9,8 @@ $script:KnownModelIds = @{
     Salary    = @('salary-v1')
     SalaryCap = @('salary-cap-v1')
     Grading   = @('grading-v1')
+    Standings = @('standings-v1')
+    Awards    = @('awards-v1')
 }
 $script:TopLevelKeys = @('SchemaVersion', 'CanonicalLeagueID', 'Provider', 'CurrentProviderLeagueID', 'LeagueTimeZone', 'Owners', 'Drafts', 'Seasons')
 $script:SeasonKeys = @('CapDeadline', 'CapDeadlineBufferDays', 'Models')

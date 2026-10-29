@@ -29,6 +29,8 @@ KNOWN_MODEL_IDS: dict[str, frozenset[str]] = {
     "Salary": frozenset({"salary-v1"}),
     "SalaryCap": frozenset({"salary-cap-v1"}),
     "Grading": frozenset({"grading-v1"}),
+    "Standings": frozenset({"standings-v1"}),
+    "Awards": frozenset({"awards-v1"}),
 }
 
 TOP_LEVEL_KEYS = {

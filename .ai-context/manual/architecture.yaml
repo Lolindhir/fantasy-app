@@ -631,3 +631,30 @@ leagueHistorySharedDerived:
     - Materialization order follows ADR-026 in one in-memory run; written only on semantic difference.
     - Presentation fields belong to the consumer generator.
     - The PowerShell rebuild stays productive until the cutover; the public/data contracts were slimmed in Issue #999 step 6 (see league-history.yaml).
+
+
+leagueStandingsSharedDerived:
+  contract: .ai-context/manual/league-standings.yaml
+  modelsContract: .ai-context/manual/derived-models.yaml
+  architectureDecision: ADR-072
+  trackingIssue: 987
+  logicalLayer: Shared Derived Data
+  physicalPath: data-derived/league-standings/<CanonicalLeagueID>/<season>.json
+  identity: CanonicalLeagueID + Season + selected model IDs (Standings, Awards) + AsOf.LeagueScoredWeek
+  models:
+    implementation: tools/derived_data_lib/models/<kind>/v<N>.py
+    ids:
+      - standings-v1
+      - awards-v1
+  inputs:
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<season>/ (league, members, rosters, brackets, matchups)
+    - data-meta/<CanonicalLeagueID>/metadata.json (model choice per season)
+    - week finality (tools/derived_data_lib/week_finality.py, LeagueScoredWeek)
+    - the product of the previous season (Most Improved, all-time chain)
+  consumers:
+    - public/data/Standings.json and the League.json Standings and Placements (consumer generators, after the cutover)
+    - RequestWeeklyRecaps.ps1 neutral team order and tools/league_history_sources.py draft order (after the cutover)
+    - Fantasy Operations and Fantasy Management later
+  rules:
+    - Model logic is central and league-independent; a league only selects model IDs per season (data-meta, ADR-054).
+    - public/data keeps its contract (ADR-020, ADR-040); until the cutover (#987 step 4) the PowerShell generators stay productive.

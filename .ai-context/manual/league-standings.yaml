@@ -1,0 +1,174 @@
+schemaVersion: 1
+status: accepted-contract-v1
+trackingIssue: 987
+architectureDecision: ADR-072
+implementationState: contract only (#987 step 1); models and materializer follow in step 2, shadow parity in step 3, cutover (elevated, separate approval) in step 4
+
+purpose: >
+  Define the Shared Derived Data product LeagueStandings: for one league and one season the
+  regular-season table with tiebreaks, the weekly tables after every scored week (Weekly Movement,
+  ADR-040), the playoff placements, the season awards and the all-time standing through that
+  season. It replaces the Standings/Playoffs/Awards derivation in
+  public/requests/utils/league/StandingUtils.psm1 and CanonicalStandingUtils.psm1 with versioned
+  central models (derived-models.yaml) and keeps the full history reproducible.
+
+architecture:
+  decisionBasis:
+    - ADR-020
+    - ADR-037
+    - ADR-038
+    - ADR-040
+    - ADR-054
+    - ADR-055
+    - ADR-071
+    - ADR-072
+  logicalLayer: Shared Derived Data
+  physicalStorage: data-derived/league-standings/<CanonicalLeagueID>/<season>.json
+  models: .ai-context/manual/derived-models.yaml
+  rules:
+    - The product is consumer-neutral. League.json placements, Standings.json, WeeklyRecaps, the draft order and Fantasy Management read the same file; consumer shapes come from consumer generators.
+    - public/data/Standings.json and the League.json Standings and Placements keep their current contract (ADR-020 awards stay in Standings.json). They are rendered from the product (step 4) and stay equal for unchanged inputs.
+    - Tiebreak and award rules are central, league-independent models (standings-v1, awards-v1). A league only selects a model ID per season in data-meta (ADR-054, ADR-055).
+    - No new tiebreak or award rule is introduced by this product; v1 reproduces the PowerShell behaviour 1:1.
+    - Mighty-Giants-specific interpretation (rivals, strategy) stays Fantasy Management insight and never enters the product.
+
+identity:
+  fileTuple:
+    - CanonicalLeagueID
+    - Season
+    - Models (Standings and Awards model IDs)
+    - week basis (AsOf.LeagueScoredWeek)
+  oneFilePerLeagueSeason: >
+    One file per league and season, no week-<NN>.json. A weekly file would repeat an almost identical table ~20 times
+    per season; the weekly tables are a section of the season file (Weeks).
+  teamKey: >
+    TeamID is the provider roster ID (Sleeper roster_id) as in Standings.json; CanonicalLeagueRosterID in Teams[] is the
+    canonical key and the join to other canonical facts. v1 joins a team across seasons by TeamID exactly like the
+    PowerShell version (Most Improved, All-Time); this assumes stable roster IDs per owner and is a documented v1
+    limitation, not a canonical identity claim. A v2 may join by CanonicalLeagueMemberID.
+  providerBoundary: Avatars are stored as provider IDs (OwnerAvatarID) or as the member metadata value (TeamAvatar); building the CDN URL is a consumer concern.
+
+weekBasis:
+  rule: >
+    The week basis is LeagueScoredWeek of tools/derived_data_lib/week_finality.py (ADR-071, week-finality.yaml): games final
+    and league provider scored. Weeks covers 1..min(LeagueScoredWeek, RegularSeasonGames) as an uninterrupted run
+    of weeks whose matchup results agree with every team's Record.
+  completedSeasons: LeagueScoredWeek equals the last league week; Weeks covers every regular-season week.
+  notStatsFinal: Standings follow the Sleeper results and never wait for nflverse stats (StatsFinalWeek is not used).
+
+contract:
+  version: 1
+  rootShape: |
+    {
+      "SchemaVersion": 1,
+      "Product": "league-standings",
+      "CanonicalLeagueID": "<id>",
+      "Season": <int>,
+      "Models": { "Standings": "standings-v1", "Awards": "awards-v1" },
+      "LeagueStatus": "<canonical league.json Status>",
+      "IsCompleted": <bool>,
+      "RegularSeasonGames": <int>,
+      "AsOf": { "LeagueScoredWeek": <int>, "CompletedWeeks": <int> },
+      "Teams": [ { "TeamID", "CanonicalLeagueRosterID", "Owner", "OwnerAvatarID", "TeamName", "TeamAvatar" } ],
+      "RegularSeason": [ <row> ],
+      "Weeks": [ { "Week", "Teams": [ { "TeamID", "Place", "Wins", "Losses", "Ties", "Points", "PointsAgainst" } ] } ],
+      "Playoffs": [ <row> ],
+      "Awards": [ <award> ],
+      "AllTime": { "ThroughSeason": <int|null>, "Playoffs": [ <row> ], "RegularSeason": [ <row> ] }
+    }
+  sections:
+    Teams: Identity per roster of the season, ordered by provider roster ID ascending.
+    RegularSeason: >
+      One row per team in rank order with exactly the fields of the current Standings.json RegularSeason row (Place,
+      PlaceOrdinal, TeamID, Owner, TeamName, NumberOfGames, Wins, Losses, Ties, Points, PointsAgainst, Record, Streak, WinPercentage,
+      WinPercentageDisplay, WinPercentageDiffLeagueAvg, WinPercentageHistory, PointDifference, PointsPerGame, PointsPerGameDiffLeagueAvg,
+      PointsAgainstPerGame, PointsAgainstPerGameDiffLeagueAvg, LongestWinStreak, WinStreakScore, LongestLossStreak, LossStreakScore,
+      EfficiencyScore, IronWillScore) plus PreviousWeekPlace, PlaceDelta and WeeklyMovements (ADR-040) and the award score
+      annotations ClutchPeakerScore and ImprovementScore when the awards model computed them. Display strings (PlaceOrdinal,
+      WinPercentageDisplay, StatDisplay) are part of the v1 results because the App contract is unchanged; a later model version may separate them.
+    Weeks: >
+      Table after each validated completed week (rank by the same tiebreak function, wins/losses/ties and points rebuilt from the
+      canonical per-week matchups). Weeks are validated against the Record of every team; a missing, contradicting or incomplete week ends
+      the list and later weeks are never inferred.
+    Playoffs: >
+      Placement rows from the winners and losers bracket (Place, TeamID, Owner, OwnerAvatarID, TeamName, TeamAvatar, PlaceType, PlaceOrdinal).
+      Empty while no placement match is decided.
+    Awards: >
+      Awards in the order of the model (Name, Type, IconUnicode, StatDisplay, TeamID, Owner, TeamName). Empty while no regular-season
+      game is completed.
+    AllTime: >
+      Overall (playoff placement) and regular-season all-time standing through the last completed season at or before Season
+      (ThroughSeason). A season in progress is not part of its own AllTime; ThroughSeason is null before the first completed season.
+  determinism:
+    - Compact JSON, fixed key order from the builder, no timestamps and no wall-clock input.
+    - Floating-point semantics follow .NET (round half to even after scaling, sequential accumulation); sums never use Python's compensated sum.
+
+inputs:
+  canonical:
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json (Status, Settings.playoff_week_start, WeekStructure)
+    - members.json, rosters.json, winners-bracket.json, losers-bracket.json
+    - matchups/week-<n>.json
+    - NFL schedule and game finality through tools/derived_data_lib/week_finality.py
+  metadata: data-meta/<CanonicalLeagueID>/metadata.json Seasons.<season>.Models.Standings and .Awards
+  previousProduct: The product of the previous manifest season (Most Improved and AllTime are chained).
+  roster: Rosters are read as provider-published state (wins, losses, ties, fpts, record, streak). The weekly tables are rebuilt independently from matchups and checked against the Record.
+
+invalidation:
+  triggers:
+    - any listed canonical input of the season changes
+    - the Standings or Awards model choice of the season changes in data-meta
+    - the product of an earlier season changes (Most Improved, AllTime); the materializer always rebuilds all seasons chronologically in one run
+    - week finality inputs change the LeagueScoredWeek
+  rule: Snapshots are rebuilt from canonical facts on every run and written only on a semantic difference.
+
+nullSemantics:
+  source: ADR-040
+  rules:
+    - PreviousWeekPlace and PlaceDelta are explicit null when fewer than two completed weeks exist or when the weekly facts are missing, incomplete or contradict the Record.
+    - WeeklyMovements is [] when no validated history exists and ends at the first unvalidated week; later weeks are never inferred.
+    - Week 1 has no previous week.
+    - Placements.Previous (previous season) is never a source of weekly movement.
+    - Unknown or missing evidence is never converted to zero.
+
+consumerRules:
+  fromProductsOnly: >
+    Facts and calculations come only from products. Overlay reads (display data such as the neutral team order for a historical cutoff) are
+    allowed for presentation but never for status, phase or week (Robert, 2026-10-29).
+  currentConsumers:
+    - RequestLeague.ps1 through Get-StandingsLocal (League.json Standings and Placements Current, AllTime, Previous)
+    - RequestWeeklyRecaps.ps1 (neutral team order)
+    - tools/league_history_sources.py (draft order; transitional read, restore gate classification latent-blocker)
+  target: >
+    After the cutover (step 4) Standings.json is rendered from the product; RequestLeague, WeeklyRecaps and the draft order read the product.
+    Angular keeps reading only League.json.
+  cutover:
+    class: elevated
+    reason: New write prefix data-derived/league-standings/** for league-live.yml and update-standings.yml.
+    approval: Separate targeted approval by Robert with impact and rollback before step 4 starts (Issue #987).
+
+modelSelection:
+  owner: data-meta/<CanonicalLeagueID>/metadata.json
+  shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards }
+  initialChoice: standings-v1 and awards-v1 for every season (set by hand in the step 1 pull request; no workflow writes data-meta)
+  awardsV2: Issue #964 (separating placement achievements from dynamic season awards) follows as awards-v2 with a start season in data-meta.
+
+failClosed:
+  - unknown model ID or model of the wrong kind
+  - a non-current season that is not complete
+  - missing canonical input file of a season, missing Sleeper mapping, duplicate roster or member keys
+  - roster owner mapping that does not match the member
+  - invalid playoff_week_start
+  - non-finite numbers in a model result
+
+validation:
+  step2: Unit tests with constructed leagues; no real teams or owners are hard-wired in tests.
+  step3: Exact shadow comparison against Standings.json and the League.json Placements for every season and every week of the current season (WeeklyMovements), then the product joins the restore gate.
+  tests:
+    - tools/tests/test_league_standings_models.py (step 2)
+    - tools/tests/test_league_standings_product.py (step 2)
+    - tools/tests/test_league_standings_shadow.py (step 3)
+
+nonGoals:
+  - No new tiebreak or award rule (awards-v2 is #964).
+  - No change of the Standings.json or League.json contract.
+  - Hall of Fame (#193) and the all-time playoff tiebreaker (#810) build on the result.
