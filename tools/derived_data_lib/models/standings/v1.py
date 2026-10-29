@@ -129,8 +129,9 @@ def regular_season_rows(
     rows: list[dict[str, Any]] = []
     for team in rank_teams(teams):
         record = team["Record"] or ""
-        longest_win = _max_run(record, "W")
-        longest_loss = _max_run(record, "L")
+        # PowerShell measures the runs as doubles, so the App contract carries 3.0 and not 3.
+        longest_win = float(_max_run(record, "W"))
+        longest_loss = float(_max_run(record, "L"))
         win_pct = win_percentage(team)
         points_per_game = team["Points"] / regular_season_games
         points_against_per_game = team["PointsAgainst"] / regular_season_games

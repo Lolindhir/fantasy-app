@@ -18,18 +18,25 @@ order must match.
 
 Usage:
   league_standings_app_publish.py compare [--league nfl-reise] [--repo-root DIR]
+  league_standings_app_publish.py write   [--league nfl-reise] [--repo-root DIR]
+
+``write`` (cutover, Issue #987 step 4) materializes the product under data-derived/league-standings and renders
+public/data/Standings.json from it, only where the content differs semantically, and stamps Timestamps.json
+(key Standings) like Save-JsonFile did. It replaces RequestStandings.ps1; RequestLeague.ps1 and
+RequestWeeklyRecaps.ps1 keep reading the rendered Standings.json, which the same chain writes first.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from derived_data import build_league_standings  # noqa: E402
+from derived_data import build_league_standings, materialize_league_standings  # noqa: E402
 from league_metadata import data_meta_root, list_league_ids  # noqa: E402
 
 AVATAR_URL = "https://sleepercdn.com/avatars/{}"
@@ -174,6 +181,44 @@ def shadow_compare(repo_root: Path, league_id: str, documents: dict[int, dict[st
 KNOWN_LEGACY_AWARDS_DEVIATION = "public/data/League.json#Teams.Placements.Awards (known legacy deviation)"
 
 
+def _dump(payload: Any) -> str:
+    return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+
+
+def write_standings(repo_root: Path, league_id: str, now: datetime | None = None) -> list[str]:
+    """Materialize the product and render Standings.json; return the changed repository-relative paths.
+
+    The product is written first; Standings.json only changes on a semantic difference, in which case
+    Timestamps.json[Standings] is stamped (the writer owns its freshness timestamp, never an input).
+    """
+    documents = build_league_standings(repo_root, league_id)
+    summary = materialize_league_standings(repo_root, repo_root / "data-derived", league_id, None, False)
+    changed = [
+        f"data-derived/league-standings/{league_id}/{item['Season']}.json"
+        for item in summary["Seasons"] if item.get("Written")
+    ]
+    data = repo_root / "public" / "data"
+    league_year = int(_load(data / "League.json")["Season"])
+    rendered = render_standings(documents, league_year)
+    path = data / "Standings.json"
+    if path.is_file() and not difference(rendered, _load(path)):
+        return changed
+    path.write_text(_dump(rendered), encoding="utf-8")
+    changed.append("public/data/Standings.json")
+    stamp_path = data / "Timestamps.json"
+    timestamps = _load(stamp_path) if stamp_path.is_file() else {}
+    timestamps["Standings"] = (now or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    stamp_path.write_text(_dump(timestamps), encoding="utf-8")
+    changed.append("public/data/Timestamps.json")
+    return changed
+
+
+def run_write(args: argparse.Namespace) -> int:
+    changed = write_standings(args.repo_root, args.league)
+    print("\n".join(f"wrote {name}" for name in changed) if changed else "No changes - update skipped.")
+    return 0
+
+
 def run_compare(args: argparse.Namespace) -> int:
     leagues = [args.league] if args.league else list_league_ids(data_meta_root(args.repo_root))
     exit_code = 0
@@ -197,6 +242,9 @@ def main() -> int:
     compare = sub.add_parser("compare", help="compare the rendered product with the published Standings.json and League.json")
     compare.add_argument("--league", help="CanonicalLeagueID (default: every league in data-meta)")
     compare.set_defaults(func=run_compare)
+    write = sub.add_parser("write", help="materialize the product and render Standings.json (semantic no-op)")
+    write.add_argument("--league", default="nfl-reise", help="CanonicalLeagueID (default: nfl-reise)")
+    write.set_defaults(func=run_write)
     args = parser.parse_args()
     return args.func(args)
 

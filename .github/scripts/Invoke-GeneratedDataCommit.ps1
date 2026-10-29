@@ -50,6 +50,7 @@ function Get-GeneratedDataLabel {
         "^data-derived/player-week-fantasy/" { return "PlayerWeekFantasy derived" }
         "^data-derived/team-week-performance/" { return "TeamWeekPerformance derived" }
         "^data-derived/nfl-games/" { return "NFL Games derived" }
+        "^data-derived/league-standings/" { return "Standings derived" }
         "/PlayerWeekFantasy\.json$" { return "PlayerWeekFantasy" }
         "/MatchupProjections\.json$" { return "MatchupProjections" }
         "/PastSeasonsIndex\.json$" { return "Past seasons index" }

@@ -247,7 +247,7 @@ dataSources:
       productiveLeagueAdapter: public/requests/utils/league/CanonicalLeagueCoreUtils.psm1::Get-CanonicalCurrentLeagueRaw
       productiveTeamAdapter: public/requests/utils/league/CanonicalLeagueCoreUtils.psm1::Get-CanonicalCurrentTeamsForLeague
       canonicalInputs: league.json + members.json + rosters.json
-      freshness: League Core is refreshed every ten minutes by the League Live pipeline (source scope current); the same pipeline rebuilds Standings when canonical standing-source files changed during the chain and then builds League, which re-enriches team placement from the fresh Standings (Issue #945)
+      freshness: League Core is refreshed every ten minutes by the League Live pipeline (source scope current); the same pipeline runs the Standings writer every tick (semantic no-op, Issue #987 step 4) and then builds League, which re-enriches team placement from the fresh Standings (Issue #945)
       providerFallback: none
       cutoverStatus: productive
       currentPlayoffBracketSource:
@@ -293,7 +293,7 @@ dataSources:
 
   standings:
     path: public/data/Standings.json
-    generator: public/requests/RequestStandings.ps1
+    generator: tools/league_standings_app_publish.py write (renders the league-standings product; RequestStandings.ps1 is no longer called, removal in Issue #987 step 5)
     helpers:
       - public/requests/utils/league/CanonicalStandingUtils.psm1
       - public/requests/utils/league/StandingUtils.psm1
@@ -351,7 +351,7 @@ dataSources:
       mode: canonical-active
       productiveConsumer: public/requests/utils/league/CanonicalStandingUtils.psm1::Get-CanonicalCurrentSeasonData
       canonicalInputs: league.json + members.json + rosters.json + winners-bracket.json + losers-bracket.json
-      freshness: League Core every ten minutes via the League Live pipeline; Standings are rebuilt there only when standing inputs (league, members, rosters, brackets) changed during the chain, plus the weekly scheduler fallback (update-standings.yml, no push triggers)
+      freshness: League Core every ten minutes via the League Live pipeline; Standings are rendered there from the league-standings product on every tick (a semantic no-op writes nothing), plus the weekly scheduler fallback (update-standings.yml, no push triggers)
       providerFallback: none
       cutoverStatus: productive
     timestamped: true

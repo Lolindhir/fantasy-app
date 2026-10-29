@@ -2,13 +2,11 @@
 """Load the inputs of the LeagueTransactions / LeagueDrafts materialization from canonical sources.
 
 Reads only data-source/leagues/<CanonicalLeagueID>/**, data-meta/<CanonicalLeagueID>/metadata.json and the
-hand-maintained manual overlay. The one non-canonical read is the transitional Standings placement for
-configured draft orders (league-history.yaml transitionalInputs, removal with Issue #987); it is only
-loaded when a draft actually needs it.
+hand-maintained manual overlay. The Standings placement for configured draft orders comes from the
+league-standings product, built in memory (Issue #987 step 4); it is only loaded when a draft needs it.
 """
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -22,7 +20,6 @@ from league_metadata import data_meta_root, load_league_metadata  # noqa: E402
 from transaction_canonical_consumer import build_repo_canonical_transactions  # noqa: E402
 from transaction_canonical_shadow import build_roster_provider_lookup, load_json, manual_overlay_path  # noqa: E402
 
-STANDINGS_PATH = Path("public/data/Standings.json")  # transitional until Issue #987
 
 
 class LeagueHistorySourceError(ValueError):
@@ -53,13 +50,17 @@ def load_manual_overlay(repo_root: Path, league_id: str) -> list[dict[str, Any]]
     return payload if isinstance(payload, list) else [payload]
 
 
-def make_standings_loader(repo_root: Path):
+def make_standings_loader(repo_root: Path, league_id: str, league_year: int):
+    """Draft-order input from the league-standings product (ADR-072, Issue #987 step 4).
+
+    The product is built in memory from canonical facts, so the draft order depends neither on a published
+    App file nor on a previously generated product file.
+    """
     def load() -> list[dict[str, Any]]:
-        path = repo_root / STANDINGS_PATH
-        if not path.is_file():
-            raise LeagueHistorySourceError(f"Draft order needs the transitional Standings input, but {path} is missing.")
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        return payload if isinstance(payload, list) else [payload]
+        # Lazy imports: derived_data imports this module.
+        from derived_data import build_league_standings
+        from league_standings_app_publish import render_standings
+        return render_standings(build_league_standings(repo_root, league_id), league_year)
     return load
 
 
@@ -100,5 +101,5 @@ def load_inputs(repo_root: Path, league_id: str) -> LeagueHistoryInputs:
         payloads=payloads,
         manual_rows=load_manual_overlay(repo_root, league_id),
         team_ids=team_ids,
-        standings_loader=make_standings_loader(repo_root),
+        standings_loader=make_standings_loader(repo_root, league_id, league_year),
     )

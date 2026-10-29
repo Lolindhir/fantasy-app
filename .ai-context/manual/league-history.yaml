@@ -178,9 +178,9 @@ inputs:
     owner: data-meta / data-source league manifest (LeagueYear); never read from public/data.
   transitionalInputs:
     - id: standings-draft-order
-      input: public/data/Standings.json (Playoffs placement, seasons and AllTime)
+      input: league-standings Shared Derived product (Playoffs placement, seasons and AllTime), built in memory by tools/derived_data.py build_league_standings and rendered by tools/league_standings_app_publish.py render_standings
       use: Draft order for configured OrderSource PreviousPlayoffs and AllTime when the provider draft has no slot order yet (Get-DraftOrderRosterIDs).
-      removal: Replace by the league-standings Shared Derived product of Issue #987. Until then the dependency is explicit, read through one adapter function and fail-closed (missing season, empty ranking or duplicate standing identity fail the draft). It affects only Exact drafts without a provider slot order.
+      status: resolved in Issue #987 step 4; no published App file is read any more. The dependency stays fail-closed (missing season, empty ranking or duplicate standing identity fail the draft) and affects only Exact drafts without a provider slot order.
 
 invalidation:
   triggers:
@@ -190,7 +190,7 @@ invalidation:
     - league manifest (seasons, LeagueYear)
     - NFL identities/provider-mappings, canonical nflverse player profiles and
       canonical Sleeper player snapshot used for PlayerIdentities and PlayerRefs
-    - standings placement while the transitional standings input exists
+    - league-standings product inputs (league, members, rosters, brackets, matchups, week finality) of the seasons that feed a configured draft order
   rule: >
     Detected by recomputation, not by a cache key. The materializer recomputes every season
     of the league and writes a file only on semantic difference; unchanged inputs produce no
@@ -248,7 +248,7 @@ validation:
 
 openPoints:
   - id: standings-input
-    text: The draft order for configured sources depends on the Standings placement until Issue #987 delivers league-standings. See transitionalInputs.
+    text: Resolved in Issue #987 step 4 - the draft order reads the league-standings product (see transitionalInputs).
   - id: manual-overlay-location
     text: The overlay stays in public/data until step 5; its move is coordinated with Issue #986.
   - id: product-size
@@ -281,8 +281,8 @@ weeklyDerivedPublication:
     Both data-derived prefixes and public/data are committed by one
     rebuild-and-retry publisher, with semantic no-op behavior. Both producer
     calls and the App renderer must succeed before anything is committed.
-    The transitional public/data/Standings.json dependency for draft placement
-    is unchanged; this is not a claim of source-only restoration.
+    The draft placement reads the league-standings product built from canonical
+    facts since Issue #987 step 4, not the published Standings.json.
   exclusions: >-
     No new workflow, cron, source/model policy, App contract, historical
     PlayerWeekFantasy/TeamWeekPerformance writer or UI activation.

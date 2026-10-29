@@ -204,8 +204,10 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         self.assertIn("--path data-derived/player-week-fantasy", workflow)
         self.assertIn("python3 tools/historical_pwf_batch.py --write", workflow)
         self.assertNotIn("tools/derived_data.py", workflow)
-        self.assertIn("pwsh ./public/requests/RequestStandings.ps1", workflow)
+        self.assertIn("python3 tools/league_standings_app_publish.py write", workflow)
+        self.assertNotIn("RequestStandings.ps1", workflow)
         self.assertIn("--path public/data", workflow)
+        self.assertIn("--path data-derived/league-standings", workflow)
         self.assertIn("tools/rebuild_and_publish.py", workflow)
 
     def test_weekly_publication_scope_matches_commit_helper_validateset(self):

@@ -1181,10 +1181,6 @@ consumerReadClassification:
       reads:
         network: repository-infrastructure
       note: 'GitHub API access for repository operations; no fantasy base fact.'
-    tools/league_history_sources.py:
-      reads:
-        legacy:Standings: legacy-read-model-pending
-      note: 'Input loader of the LeagueTransactions / LeagueDrafts products (ADR-057, Issue #999). Facts come from data-source/leagues and data-meta. transactions-manual.json in data-meta is the hand-maintained overlay (moved there in Issue #999 step 5c). Standings.json is the one transitional non-canonical input (draft order for configured sources) and is removed with the league-standings product of Issue #987.'
     tools/league_history_app_publish.py:
       reads:
         legacy:Drafts: validation-shadow
@@ -1195,8 +1191,9 @@ consumerReadClassification:
       reads:
         legacy:League: validation-shadow
         legacy:Standings: validation-shadow
+        legacy:Timestamps: app-output-owner
         provider:sleeper: display-link-construction
-      note: 'Consumer rendering of the league-standings product (ADR-072, Issue #987 step 3). compare renders the App-shaped Standings.json and League.json placements in memory and compares them with the committed public/data files (validation-shadow, never an input). The avatar CDN URL is built from the provider avatar ID of the product; no fetch.'
+      note: 'Consumer generator of the league-standings product (ADR-072, Issue #987). Since step 4 write renders Standings.json from the product and stamps the Standings key of Timestamps.json (app-output-owner: the writer owns its own freshness timestamp, never an input). compare renders the App-shaped Standings.json and League.json placements in memory and compares them with the committed public/data files (validation-shadow, never an input). The avatar CDN URL is built from the provider avatar ID of the product; no fetch.'
     tools/schedule_archive.py:
       reads:
         legacy:Schedule: validation-shadow

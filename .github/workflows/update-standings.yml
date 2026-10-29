@@ -30,8 +30,9 @@ jobs:
           python3 tools/rebuild_and_publish.py
           --scope standings
           --path public/data
+          --path data-derived/league-standings
           --
-          pwsh ./public/requests/RequestStandings.ps1
+          python3 tools/league_standings_app_publish.py write
 
   # Run the same weekly scheduler tick as Standings, but in a separate job
   # so historical PWF failures never suppress the original App Standings build.

@@ -92,6 +92,51 @@ class DifferenceTests(unittest.TestCase):
         self.assertTrue(app.difference(None, 0))
 
 
+class WriteTests(unittest.TestCase):
+    """write: product first, Standings.json only on a semantic difference, Timestamps stamped then."""
+
+    def setUp(self):
+        import tempfile
+        from datetime import datetime, timezone
+        from unittest.mock import patch
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        data = self.root / "public" / "data"
+        data.mkdir(parents=True)
+        (data / "League.json").write_text('{"Season": "2025"}', encoding="utf-8")
+        self.documents = {2024: document(2024, False), 2025: document(2025, True)}
+        self.now = datetime(2026, 10, 29, 12, 0, 0, tzinfo=timezone.utc)
+        patcher = patch.multiple(
+            app,
+            build_league_standings=lambda root, league: self.documents,
+            materialize_league_standings=lambda root, out, league, seasons, check: {
+                "Seasons": [{"Season": 2025, "Written": 1}, {"Season": 2024, "Written": 0}]},
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_first_write_creates_file_and_timestamp_second_is_noop(self):
+        changed = app.write_standings(self.root, "league-a", self.now)
+        self.assertEqual(["data-derived/league-standings/league-a/2025.json", "public/data/Standings.json", "public/data/Timestamps.json"], changed)
+        import json
+        stamps = json.loads((self.root / "public/data/Timestamps.json").read_text())
+        self.assertEqual("2026-10-29T12:00:00Z", stamps["Standings"])
+        text = (self.root / "public/data/Standings.json").read_text()
+        self.assertTrue(text.endswith("}\n]\n"))
+        self.assertEqual(["data-derived/league-standings/league-a/2025.json"], app.write_standings(self.root, "league-a", self.now))
+        self.assertEqual(text, (self.root / "public/data/Standings.json").read_text())
+
+    def test_change_rewrites_and_keeps_other_timestamps(self):
+        import json
+        (self.root / "public/data/Timestamps.json").write_text('{"League": "x"}')
+        app.write_standings(self.root, "league-a", self.now)
+        self.documents[2025]["RegularSeason"][0]["Wins"] = 9
+        self.assertIn("public/data/Standings.json", app.write_standings(self.root, "league-a", self.now))
+        stamps = json.loads((self.root / "public/data/Timestamps.json").read_text())
+        self.assertEqual({"League": "x", "Standings": "2026-10-29T12:00:00Z"}, stamps)
+
+
 class RepositoryParityTests(unittest.TestCase):
     """Completed seasons never change with live data, so they must match the published files exactly."""
 
