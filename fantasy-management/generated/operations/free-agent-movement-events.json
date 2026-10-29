@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
-  "generated_at": "2026-10-29T17:33:28Z",
-  "input_fingerprint": "d82bb9d998197618f9c72f10394987141950ddbb1f5f210bc5423bcf5411161a",
+  "generated_at": "2026-10-29T17:42:09Z",
+  "input_fingerprint": "9c3b10b44bda0238ead5710e431a534d7adc80eae0f87ca2708332f986571f7c",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "c3dfa630e7e3968af8608ef98f59b0f0acedca066e548be17a7940dccc58a063"
+      "input_fingerprint": "33c7a5f4d9e64532c642d038a6f2c79a082fabb232680fe0f717d07b17269e00"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "d9ce9357e51a7bd2f692e9f1a89db05f586b14a9eca2b43a52d21c0ba7423c21"
+      "input_fingerprint": "c3dfa630e7e3968af8608ef98f59b0f0acedca066e548be17a7940dccc58a063"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,16 +23,16 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 233,
-    "previous_discovery_count": 231,
+    "current_discovery_count": 231,
+    "previous_discovery_count": 233,
     "event_count": 3,
     "event_type_counts": {
       "changed": 1,
-      "new": 2
+      "resolved": 2
     },
     "event_priority_counts": {
-      "high": 1,
-      "medium": 2
+      "low": 2,
+      "medium": 1
     },
     "baseline_mode": "comparison"
   },
@@ -40,8 +40,8 @@
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "dcfb8ef5bfd4784721a50485be33ca2590b5fcc83da78f1abd8e84e530a1e9f0",
-    "previous_evidence_fingerprint": "4a525baa475d2de782167b386e070b3ac153bd63fbeba13cc3ba5d171cdce8f9",
+    "current_evidence_fingerprint": "26645b3c00579de088f015234cbaf0d52f0d6efa86f1146034189ba925b0be1a",
+    "previous_evidence_fingerprint": "dcfb8ef5bfd4784721a50485be33ca2590b5fcc83da78f1abd8e84e530a1e9f0",
     "contract_changed": false,
     "evidence_changed": true,
     "comparison_event_count_before_suppression": 3,
@@ -54,20 +54,19 @@
       "name": "Josh Whyle",
       "position": "TE",
       "event_type": "changed",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "medium",
-      "current_state_hash": "29437aec18f2d8f73e663b23286130dcc3a04af47af66708812ce5f7f05428e9",
-      "previous_state_hash": "ae1214909787544fcc15196ef432e598dcfa292fafe61d1cc8bc891d5b681f88",
+      "event_priority": "medium",
+      "current_research_priority": "medium",
+      "previous_research_priority": "high",
+      "current_state_hash": "ae1214909787544fcc15196ef432e598dcfa292fafe61d1cc8bc891d5b681f88",
+      "previous_state_hash": "29437aec18f2d8f73e663b23286130dcc3a04af47af66708812ce5f7f05428e9",
       "changed_dimensions": [
-        "research_priority",
-        "structural_change"
+        "research_priority"
       ],
       "current_material_families": [
-        "role_opportunity",
         "season_projection"
       ],
       "previous_material_families": [
+        "role_opportunity",
         "season_projection"
       ],
       "current_replacement_classification": "below_rostered_boundary",
@@ -81,81 +80,55 @@
         }
       ],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 4,
-          "to": 3
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "13013",
       "name": "Mark Redman",
       "position": "TE",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "role_opportunity"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "unknown",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "unknown",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 3,
-          "to": 4
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
       "player_id": "13075",
       "name": "Myles Price",
       "position": "WR",
-      "event_type": "new",
-      "event_priority": "medium",
-      "current_research_priority": "medium",
-      "previous_research_priority": null,
-      "current_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
-      "previous_state_hash": null,
+      "event_type": "resolved",
+      "event_priority": "low",
+      "current_research_priority": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": null,
+      "previous_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
       "changed_dimensions": [
-        "new_discovery",
-        "structural_change"
+        "resolved_discovery"
       ],
-      "current_material_families": [
+      "current_material_families": [],
+      "previous_material_families": [
         "role_opportunity"
       ],
-      "previous_material_families": [],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": null,
+      "current_replacement_classification": null,
+      "previous_replacement_classification": "below_rostered_boundary",
       "threshold_summary": [],
       "cross_signal_summary": [],
-      "structural_changes": [
-        {
-          "family": "role_opportunity",
-          "kind": "depth_chart_order_change",
-          "severity": "medium",
-          "from": 5,
-          "to": 7
-        }
-      ],
+      "structural_changes": [],
       "final_roster_recommendation": null
     }
   ],
