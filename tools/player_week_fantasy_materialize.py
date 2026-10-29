@@ -9,6 +9,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
+from derived_data_lib.week_finality import stats_complete_weeks
 from historical_fantasy_scoring import (
     SPECIAL_TEAMS_EVENT_SCORING_KEYS,
     league_season_path,
@@ -946,6 +947,10 @@ def _final_actual_inputs(
 
     stats_path = repo_root / DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json"
     if not stats_path.exists():
+        return False, {}, {}
+    # Shared week-final definition (ADR-071, #897): an incomplete stats partition (teams missing)
+    # must stay unavailable instead of scoring the missing teams' players as final 0.
+    if not stats_complete_weeks(repo_root, season, {week}):
         return False, {}, {}
     rows = _current_partition_records(
         repo_root,

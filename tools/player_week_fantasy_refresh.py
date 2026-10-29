@@ -24,6 +24,7 @@ TOOLS = Path(__file__).resolve().parent
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+from derived_data_lib.week_finality import stats_complete_weeks  # noqa: E402
 from matchup_projection import publish_matchup_projections  # noqa: E402
 from player_week_fantasy_app_publish import materialize_app_player_week_fantasy  # noqa: E402
 from player_week_fantasy_materialize import (  # noqa: E402
@@ -122,6 +123,10 @@ def refresh_previous_scored_week(
         raise ValueError(
             f"League-scored week {season}/W{previous} lacks canonical NFL finality"
         )
+    if not stats_complete_weeks(repo_root, season, {previous}):
+        # Sleeper scores before nflverse stats cover every team (ADR-071): wait instead of
+        # publishing final 0 points for the missing teams; a later run finalizes the week.
+        return {"Season": season, "Week": previous, "Status": "awaiting-stats-coverage"}
     candidate = build_player_week_fantasy_dataset(
         repo_root, league_id=league_id, season=season, week=previous,
     )

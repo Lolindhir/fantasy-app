@@ -203,7 +203,8 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
             calls.append(("write", path.relative_to(root).as_posix()))
             return path.name == "06.json"
 
-        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \
+        with mock.patch.object(refresh, "stats_complete_weeks", return_value={6}), \
+             mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \
              mock.patch.object(refresh, "build_player_week_fantasy_dataset", side_effect=build), \
              mock.patch.object(refresh, "write_dataset", side_effect=write), \
              mock.patch.object(refresh, "materialize_app_player_week_fantasy",
@@ -235,6 +236,18 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
             build.assert_not_called()
             final.assert_not_called()
 
+    def test_league_scored_week_waits_for_stats_coverage(self):
+        root = self._root()
+        with mock.patch.object(refresh, "stats_complete_weeks", return_value=set()), \
+             mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \
+             mock.patch.object(refresh, "build_player_week_fantasy_dataset") as build, \
+             mock.patch.object(refresh, "write_dataset") as write:
+            result = refresh.refresh_previous_scored_week(
+                root, league_id="league-a", season=2026, current_week=7)
+        self.assertEqual({"Season": 2026, "Week": 6, "Status": "awaiting-stats-coverage"}, result)
+        build.assert_not_called()
+        write.assert_not_called()
+
     def test_unfinalized_nfl_week_fails_closed_even_when_league_scored(self):
         root = self._root()
         with mock.patch.object(refresh, "_week_finality", return_value=(False, set())), \
@@ -253,7 +266,8 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
             "Materialization": {"ActualScoringEvidenceFinalized": False,
                                 "TargetRosterProvisional": False},
         }
-        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \
+        with mock.patch.object(refresh, "stats_complete_weeks", return_value={6}), \
+             mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \
              mock.patch.object(refresh, "build_player_week_fantasy_dataset", return_value=payload), \
              mock.patch.object(refresh, "write_dataset") as write:
             with self.assertRaisesRegex(ValueError, "incomplete"):
@@ -266,7 +280,8 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
         payload = {"Records": [{"CanonicalPlayerID": "p"}],
                    "Materialization": {"ActualScoringEvidenceFinalized": True,
                                        "TargetRosterProvisional": False}}
-        with mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \
+        with mock.patch.object(refresh, "stats_complete_weeks", return_value={6}), \
+             mock.patch.object(refresh, "_week_finality", return_value=(True, {"game1"})), \
              mock.patch.object(refresh, "build_player_week_fantasy_dataset", return_value=payload), \
              mock.patch.object(refresh, "write_dataset", return_value=False) as write:
             first = refresh.refresh_previous_scored_week(root, league_id="league-a", season=2026, current_week=7)
@@ -293,6 +308,43 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
             self.assertIsNone(refresh.refresh_previous_scored_week(
                 root, league_id="league-a", season=2026, current_week=1))
             build.assert_not_called()
+
+
+class FinalActualCoverageGateTests(unittest.TestCase):
+    """Shared week-final definition (ADR-071): incomplete stats coverage never yields final 0 points."""
+
+    def _repo(self, root: Path, covered_teams: list[str]) -> None:
+        write_json(root / "data-source/nfl/game-finality/2026.json", {
+            "Season": 2026,
+            "Weeks": [{"GameType": "REG", "Week": 3, "ApplicableGameCount": 2,
+                       "FinalGameCount": 2, "WeekFinal": True}],
+            "Games": [{"GameType": "REG", "Week": 3, "GameID": g, "Final": True} for g in ("g1", "g2")],
+        })
+        write_json(root / "data-source/nfl/schedules/2026.json", {"Games": [
+            {"GameType": "REG", "Week": 3, "HomeTeam": "AAA", "AwayTeam": "BBB"},
+            {"GameType": "REG", "Week": 3, "HomeTeam": "CCC", "AwayTeam": "DDD"},
+        ]})
+        write_json(root / "data-source/nfl/player-stats/2026/03.json", {
+            "Season": 2026, "Week": 3,
+            "Records": [{"CanonicalPlayerID": f"p-{team}", "Team": team, "SeasonType": "REG",
+                         "Stats": {"game_id": "g1"}} for team in covered_teams],
+        })
+
+    def test_missing_team_coverage_keeps_actual_unavailable(self):
+        from player_week_fantasy_materialize import _final_actual_inputs
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repo(root, ["AAA", "BBB", "CCC"])
+            self.assertEqual((False, {}, {}), _final_actual_inputs(root, season=2026, week=3, scoring={}))
+
+    def test_full_team_coverage_finalizes_actual(self):
+        from player_week_fantasy_materialize import _final_actual_inputs
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._repo(root, ["AAA", "BBB", "CCC", "DDD"])
+            finalized, stats, _events = _final_actual_inputs(root, season=2026, week=3, scoring={})
+            self.assertTrue(finalized)
+            self.assertEqual(4, len(stats))
 
 
 class RealFinalWeekScoringRegression(unittest.TestCase):
