@@ -161,13 +161,21 @@ class BatchMaterializerTests(unittest.TestCase):
         self.season(2024, 1, 17, 2)
         self.season(2025, 1, 17, 0)
         self.season(2026, 2, 17, 3)
+        scored = {2024: 2, 2025: 0, 2026: 3}
         with patch("team_week_performance_materialize.load_league_metadata",
                    return_value={}), patch(
-                       "team_week_performance_materialize.validate_against_manifest"):
+                       "team_week_performance_materialize.validate_against_manifest"), patch(
+                       "team_week_performance_materialize.resolve_week_finality",
+                       side_effect=lambda root, league, year: {"LeagueScoredWeek": scored[year]}):
             self.assertEqual(discover_finalized_weeks(self.root), [
                 ("nfl-reise", 2024, 1), ("nfl-reise", 2024, 2),
                 ("nfl-reise", 2026, 2), ("nfl-reise", 2026, 3),
             ])
+            # The shared milestone, not LastScoredLeg alone, limits the weeks
+            # (league scored but NFL games not final yet -> not listed).
+            scored[2026] = 2
+            self.assertEqual(discover_finalized_weeks(
+                self.root, seasons=[2026]), [("nfl-reise", 2026, 2)])
             self.assertEqual(discover_finalized_weeks(
                 self.root, league_id="nfl-reise", seasons=[2025]), [])
             with self.assertRaisesRegex(ValueError, "do not exist"):

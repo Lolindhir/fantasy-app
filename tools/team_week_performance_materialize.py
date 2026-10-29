@@ -20,6 +20,7 @@ from team_week_performance import (
     output_path,
     save_team_week_performance,
 )
+from derived_data_lib.week_finality import resolve_week_finality
 from team_week_performance_sources import load_verified_week_inputs, _league_source
 from player_scoring_reconciliation import reconcile
 
@@ -127,9 +128,11 @@ def discover_finalized_weeks(
                 raise ValueError(f"Missing final-week bounds for {current_id}/{year}")
             if not (1 <= first <= ceiling <= 25 and 0 <= last_scored <= ceiling):
                 raise ValueError(f"Invalid finalized-week bounds for {current_id}/{year}")
+            # LeagueScoredWeek (ADR-071): games final and league scored, gapless.
+            scored = resolve_week_finality(repo_root, current_id, year)["LeagueScoredWeek"]
             targets.extend(
                 (current_id, year, week)
-                for week in range(first, last_scored + 1)
+                for week in range(first, scored + 1)
             )
     missing = requested - found_seasons
     if missing:
