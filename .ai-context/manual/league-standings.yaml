@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 987
 architectureDecision: ADR-072
-implementationState: cutover done (#987 step 4, approved by Robert 2026-10-29 with unchanged output): tools/league_standings_app_publish.py write materializes the product and renders Standings.json (League Live standings job and weekly update-standings); the draft order reads the product in memory; RequestStandings.ps1 and the PowerShell standings modules are no longer called and are removed in step 5
+implementationState: 'cutover done (#987 step 4, approved by Robert 2026-10-29 with unchanged output): tools/league_standings_app_publish.py write materializes the product and renders Standings.json (League Live standings job and weekly update-standings); the draft order reads the product in memory; step 5 removed RequestStandings.ps1, CanonicalStandingUtils.psm1 and the PowerShell derivation functions of StandingUtils.psm1 (only compare helpers, Get-StandingsLocal and Get-OutputStandingsForAllTime remain for RequestLeague.ps1 and the Matchups read model, which still read the rendered Standings.json)'
 
 purpose: >
   Define the Shared Derived Data product LeagueStandings: for one league and one season the
@@ -149,7 +149,7 @@ consumerRules:
   cutover:
     class: elevated
     reason: New write prefix data-derived/league-standings/** for league-live.yml and update-standings.yml.
-    approval: Granted by Robert on 2026-10-29 (decision card, output unchanged). Writers: league-live.yml standings job (every tick, semantic no-op) and update-standings.yml; both publish public/data and data-derived/league-standings through tools/rebuild_and_publish.py (scope standings). Rollback: revert the cutover pull request; the PowerShell modules stay until step 5 and the product files are regenerable.
+    approval: 'Granted by Robert on 2026-10-29 (decision card, output unchanged). Writers: league-live.yml standings job (every tick, semantic no-op) and update-standings.yml; both publish public/data and data-derived/league-standings through tools/rebuild_and_publish.py (scope standings). Rollback: revert the cutover pull request; the PowerShell modules stay until step 5 and the product files are regenerable.'
 
 modelSelection:
   owner: data-meta/<CanonicalLeagueID>/metadata.json
