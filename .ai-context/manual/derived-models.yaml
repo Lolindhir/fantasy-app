@@ -142,7 +142,7 @@ models:
       - The Form grading row is a copy of the last four final scored GameHistory entries, not a model; it stays with the Players consumer generator.
 
   standings-v1:
-    status: planned-step-2
+    status: implemented-step-2
     behaviour: exact port of StandingUtils.psm1 and CanonicalStandingUtils.psm1 (no new rule)
     contract: .ai-context/manual/league-standings.yaml
     parameters:
@@ -160,7 +160,7 @@ models:
       - Playoff placements come from the placement matches of the winners bracket (start place 1) followed by the losers bracket; the PlaceType boundary is the number of winners-bracket placements.
       - All-time standings accumulate completed seasons newest first (the order fixes the Placements array), rounding points to two decimals at the end.
   awards-v1:
-    status: planned-step-2
+    status: implemented-step-2
     behaviour: exact port of Get-Awards (no new rule); #964 follows as awards-v2
     contract: .ai-context/manual/league-standings.yaml
     parameters:

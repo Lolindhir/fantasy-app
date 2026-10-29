@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 987
 architectureDecision: ADR-072
-implementationState: contract only (#987 step 1); models and materializer follow in step 2, shadow parity in step 3, cutover (elevated, separate approval) in step 4
+implementationState: models and materializer done (#987 step 2; tools/derived_data.py materialize --product league-standings writes data-derived/league-standings, not yet scheduled and read by no consumer); shadow parity follows in step 3, cutover (elevated, separate approval) in step 4
 
 purpose: >
   Define the Shared Derived Data product LeagueStandings: for one league and one season the
@@ -159,6 +159,21 @@ failClosed:
   - roster owner mapping that does not match the member
   - invalid playoff_week_start
   - non-finite numbers in a model result
+
+implementation:
+  models: tools/derived_data_lib/models/standings/v1.py and tools/derived_data_lib/models/awards/v1.py (pure functions, registered in registry.py)
+  assembly: tools/derived_data_lib/league_standings.py (pure; SeasonInputs, build_season)
+  sources: tools/league_standings_sources.py (canonical league facts, port of CanonicalStandingUtils.psm1)
+  materializer: tools/derived_data.py materialize --product league-standings [--league] [--season] [--out-root] [--check]
+  chaining: >
+    The materializer always builds every manifest season chronologically in one run because Most Improved and the all-time standing
+    chain on earlier seasons; --season only restricts which files are written.
+  numerics: >
+    tools/derived_data_lib/models/_common.py provides dotnet_round (scale, round half to even, scale back like [math]::Round),
+    sequential_sum (no compensated summation) and ps_text (PowerShell number-to-text); the models use no Python round() on money-like values.
+  tieOrder: >
+    Teams with a completely equal sort key keep their input order (roster ID order). The PowerShell all-time stage enumerated an unordered
+    hashtable, so the order of such exact ties was undefined there; the shadow comparison (step 3) shows whether it ever mattered.
 
 validation:
   step2: Unit tests with constructed leagues; no real teams or owners are hard-wired in tests.
