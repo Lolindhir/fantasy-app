@@ -86,8 +86,8 @@ dataSources:
       uninterrupted run of final regular-season weeks in canonical NFL game finality whose canonical
       player-stats partition also covers every playing team (nflverse stats lag game results; #895), capped at
       LastLeagueWeek, via tools/players_league_scoring.py::resolve_league_week_bounds. League.json
-      FinalScoredWeek is the minimum of schedule finality and the league provider's last_scored_leg
-      (LeagueWeekUtils.psm1::Resolve-LeagueFinalScoredWeek), so a week is not shown as scored before standings include it. Players no longer
+      FinalScoredWeek is the shared LeagueScoredWeek milestone (games final and league scored, ADR-071;
+      LeagueWeekUtils.psm1::Get-LeagueScoredWeek calls tools/week_finality.py), so a week is not shown as scored before standings include it. Players no longer
       reads these from League.json; a missing structure or finality fails closed.
     populationContract:
       issue: 347

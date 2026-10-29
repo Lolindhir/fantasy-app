@@ -91,9 +91,17 @@ try {
     }
     Assert-Equal -Expected $true -Actual $threw -Message 'Scored leg beyond the structural boundary must fail closed.'
 
-    Assert-Equal -Expected 3 -Actual (Resolve-LeagueFinalScoredWeek -ScheduleFinalWeek 4 -LastScoredLeg 3) -Message 'Final scored week must wait for provider scoring.'
-    Assert-Equal -Expected 3 -Actual (Resolve-LeagueFinalScoredWeek -ScheduleFinalWeek 3 -LastScoredLeg 4) -Message 'Final scored week must not exceed schedule finality.'
-    Assert-Equal -Expected 0 -Actual (Resolve-LeagueFinalScoredWeek -ScheduleFinalWeek 1 -LastScoredLeg 0) -Message 'No scored leg means no final scored week.'
+    $scoredWeek = Get-LeagueScoredWeek -CanonicalLeagueID 'nfl-reise' -Season 2026 -RepoRoot (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+    Assert-Equal -Expected $true -Actual ($scoredWeek -ge 0 -and $scoredWeek -le 18) -Message 'Shared LeagueScoredWeek must be a valid week number.'
+
+    $threw = $false
+    try {
+        Get-LeagueScoredWeek -CanonicalLeagueID 'unknown-league' -Season 2026 -RepoRoot (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path | Out-Null
+    }
+    catch {
+        $threw = $true
+    }
+    Assert-Equal -Expected $true -Actual $threw -Message 'Unknown league must fail closed in the shared week-final definition.'
 }
 finally {
     Remove-Item $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
