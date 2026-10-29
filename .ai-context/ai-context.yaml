@@ -137,6 +137,7 @@ readingOrder:
   - .ai-context/manual/league-source-data.yaml
   - .ai-context/manual/external-source-data.yaml
   - .ai-context/manual/historical-fantasy-scoring.yaml
+  - .ai-context/manual/week-finality.yaml
   - .ai-context/manual/player-week-fantasy.yaml
   - .ai-context/manual/derived-models.yaml
   - .ai-context/manual/player-valuation.yaml
@@ -164,6 +165,7 @@ shortContext:
   .ai-context/manual/league-source-data.yaml: Produktiv akzeptierter Phase-1B-Vertrag des gemeinsamen League Source Layers; CanonicalLeagueID/CanonicalLeagueSeasonID, Sleeper-League-Lineage, saisonale WeekStructure, Multi-League-Struktur, Raw/Canonical-Lifecycle und Phase-2-Consumergrenzen
   .ai-context/manual/external-source-data.yaml: Kanonischer Vertrag für externe Markt-, Ranking-, ADP-, Projection- und Roster-Activity-Quellen als Source Evidence (ADR-060, Issue #988): eigene Registry data-source/external-registry.json, Snapshot-Layout unter data-source/market, Identitätsindex ohne Namens-Fallback, Rechtefelder, Challenge-/Phasenregeln; Fundament steht, Umzug je Provider folgt
   data-derived/**: Physischer kanonischer Owner fuer reproduzierbare consumer-neutrale Shared-Derived-Daten nach ADR-038; erster produktiver Datensatz ist PlayerWeekFantasy
+  .ai-context/manual/week-finality.yaml: Kanonischer Vertrag der gemeinsamen Woche-final-Definition (ADR-071, Issue #897); Belege NflGamesFinal/NflStatsComplete/LeagueScored, Meilensteine LeagueScoredWeek und StatsFinalWeek, reine Funktion ohne Persistenz (tools/derived_data_lib/week_finality.py)
   .ai-context/manual/player-week-fantasy.yaml: Kanonischer Shared-Derived-Vertrag fuer PlayerWeekFantasy mit scoring-spezifischer Identitaet, semantischem SettingsHash sowie Actual/Projection/PredictionRange-Semantik
   .ai-context/manual/derived-models.yaml: Kanonischer Vertrag fuer zentrale, ligaunabhaengige, versionierte Derivationsmodelle (salary-v1, salary-cap-v1, grading-v1) mit Registry, Unveraenderlichkeit nach erstem produktiven Einsatz, Modellwahl je Liga und Saison ueber data-meta und exakter Paritaet zum PowerShell-Verhalten (ADR-055, #919)
   .ai-context/manual/player-valuation.yaml: Shared-Derived-Vertrag fuer PlayerValuation (Salary, SalaryProjected, Ranking, Rank-Grading, Salary Cap) mit voller Historie je Liga, Saison und Woche unter data-derived/player-valuation, Snapshot-Identitaet, Identity-Hold und Invalidierung (ADR-055, #919)

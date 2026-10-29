@@ -2386,3 +2386,33 @@ decisions:
         - League Live writes three more data-derived prefixes and runs a few seconds longer; the
           runtime was measured after the merge (Issue #471).
         - A persistently unready product only shows as a warning until the weekly run fails loudly.
+
+  - id: ADR-071
+    title: One week-final definition with two milestones, computed and not persisted
+    status: accepted
+    context: >
+      Five places used three different rules for "week final" (Issue #897). PlayerWeekFantasy accepted WeekFinal without
+      a stats coverage check, so PWF week 6 (2026-10-20) and week 7 (2026-10-27) published about 20 players with false
+      0 points for roughly a day, while League.json already showed the week as scored and Players and PlayerValuation
+      followed about 13 hours later.
+    decision: >
+      Robert decided on 2026-10-29 (Variant B) and approved implementation including merges after green CI. A single
+      implementation, tools/derived_data_lib/week_finality.py with the CLI tools/week_finality.py, derives per league
+      week the evidence NflGamesFinal, NflStatsComplete and LeagueScored and two milestones, each an uninterrupted run
+      from the first league week: LeagueScoredWeek (games final and Sleeper scored) for League, Standings and
+      TeamWeekPerformance, and StatsFinalWeek (games final and stats cover every playing team) for PlayerWeekFantasy
+      Actual, Players and PlayerValuation. Until stats are complete PlayerWeekFantasy keeps Actual unavailable, never
+      final with 0. The result is a pure function of canonical source facts and is not persisted (no new writer).
+      Matchup finality and the current/lineup week stay separate concepts. Migration in six steps, one pull request
+      each, League last because it runs every ten minutes. Contract: .ai-context/manual/week-finality.yaml.
+    rationale: >
+      One rule removes the divergence by construction. Two milestones name the roughly 12 hour offset between the
+      Sleeper scoring and the nflverse stats instead of leaving it to chance, and a computed result needs no writer.
+    consequences:
+      positive:
+        - No consumer can publish a final week with missing team stats.
+        - The wait reason (Pending evidence) becomes visible per week.
+      negative:
+        - Until all steps land, the legacy rules stay productive next to the new function (held equal by a parity test).
+        - The coverage check is team level; a missing single player inside a covered team is not detected.
+        - Leagues with weeks beyond NFL week 18 need an explicit mapping first (hard error).
