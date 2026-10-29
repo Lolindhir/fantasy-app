@@ -66,20 +66,15 @@ Assert-True -Condition $leagueLiveWorkflow.Contains("materialization_scope: curr
 Assert-True -Condition $leagueLiveWorkflow.Contains("RequestLeaguePublication.ps1") -Message "League Live does not publish the App League read model."
 Assert-True -Condition $leagueLiveWorkflow.Contains("league_history_app_publish.py write") -Message "League Live does not write Transactions.json and Drafts.json from the league history product."
 Assert-True -Condition ($leagueLiveWorkflow.IndexOf("league_history_app_publish.py write") -lt $leagueLiveWorkflow.IndexOf("RequestLeaguePublication.ps1")) -Message "League Live must write the league history files before RequestLeague reads Drafts.json."
-Assert-True -Condition $leagueLiveWorkflow.Contains("RequestStandings.ps1") -Message "League Live does not rebuild Standings."
+Assert-True -Condition $leagueLiveWorkflow.Contains("league_standings_app_publish.py write") -Message "League Live does not rebuild Standings."
 # Standings must be published before League is built: League.json embeds the published Standings placement context.
-Assert-True -Condition ($leagueLiveWorkflow.IndexOf("RequestStandings.ps1") -lt $leagueLiveWorkflow.IndexOf("RequestLeaguePublication.ps1")) -Message "League Live must rebuild Standings before League so team placement context is current."
+Assert-True -Condition ($leagueLiveWorkflow.IndexOf("league_standings_app_publish.py write") -lt $leagueLiveWorkflow.IndexOf("RequestLeaguePublication.ps1")) -Message "League Live must rebuild Standings before League so team placement context is current."
 $updateStandingsWorkflow = Get-Content (Join-Path (Join-Path $PSScriptRoot "..\..") ".github/workflows/update-standings.yml") -Raw
 Assert-True -Condition (-not $updateStandingsWorkflow.Contains("  push:")) -Message "APP Standings workflow must not have push triggers; League Live owns input-driven rebuilds."
-foreach ($canonicalStandingPath in @(
-    "data-source/leagues/*/seasons/*/league.json",
-    "data-source/leagues/*/seasons/*/members.json",
-    "data-source/leagues/*/seasons/*/rosters.json",
-    "data-source/leagues/*/seasons/*/winners-bracket.json",
-    "data-source/leagues/*/seasons/*/losers-bracket.json"
-)) {
-    Assert-True -Condition $leagueLiveWorkflow.Contains($canonicalStandingPath) -Message "League Live does not detect Standings input '$canonicalStandingPath'."
-}
+# The Standings writer runs on every League Live tick (Issue #987 step 4): the week basis depends on NFL game finality,
+# which nfl-live commits outside this chain, so a change gate on League inputs would miss LeagueScoredWeek moves.
+Assert-True -Condition $leagueLiveWorkflow.Contains("--path data-derived/league-standings") -Message "League Live does not publish the league-standings product."
+Assert-True -Condition (-not $leagueLiveWorkflow.Contains("Detect changed Standings inputs")) -Message "League Live must not gate the Standings writer on League inputs."
 
 # Historical playoff identity must be snapshotted from the same season's canonical
 # Sleeper member data. Never resolve historical logos from the current League team.

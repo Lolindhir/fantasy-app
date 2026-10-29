@@ -29,7 +29,9 @@ def dotnet_round(value: float, digits: int) -> float:
     if not math.isfinite(value):
         raise ValueError(f"cannot round a non-finite value: {value!r}")
     power = 10.0 ** digits
-    return float(round(value * power)) / power
+    result = float(round(value * power)) / power
+    # .NET keeps the sign of a negative value that rounds to zero (-0.0); Python's int round drops it.
+    return math.copysign(0.0, value) if result == 0 else result
 
 
 def sequential_sum(values) -> float:

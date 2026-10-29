@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 987
 architectureDecision: ADR-072
-implementationState: models and materializer done (#987 step 2); exact shadow comparison with the published Standings.json and League.json placements done (#987 step 3, tools/league_standings_app_publish.py compare) and the product is part of the restore gate; not yet scheduled and read by no consumer; cutover (elevated, separate approval) in step 4
+implementationState: cutover done (#987 step 4, approved by Robert 2026-10-29 with unchanged output): tools/league_standings_app_publish.py write materializes the product and renders Standings.json (League Live standings job and weekly update-standings); the draft order reads the product in memory; RequestStandings.ps1 and the PowerShell standings modules are no longer called and are removed in step 5
 
 purpose: >
   Define the Shared Derived Data product LeagueStandings: for one league and one season the
@@ -139,12 +139,17 @@ consumerRules:
     - RequestWeeklyRecaps.ps1 (neutral team order)
     - tools/league_history_sources.py (draft order; transitional read, restore gate classification latent-blocker)
   target: >
-    After the cutover (step 4) Standings.json is rendered from the product; RequestLeague, WeeklyRecaps and the draft order read the product.
-    Angular keeps reading only League.json.
+    Since the cutover (step 4) Standings.json is rendered from the product by tools/league_standings_app_publish.py write; the draft order reads
+    the product directly. RequestLeague.ps1 (Get-StandingsLocal) and RequestWeeklyRecaps.ps1 read the rendered Standings.json, which the same
+    League Live chain writes before them (the Standings job precedes the League job), i.e. the App delivery of the product and not a second
+    derivation; reading the product itself from PowerShell is an optional later cleanup. Angular keeps reading only League.json.
+  placementsAwards: >
+    Placements.<Key>.Awards stays an empty list for every team in League.json, exactly like before the cutover (Robert, 2026-10-29: output unchanged).
+    The product holds the real season awards; delivering them in the placements (which Angular would then display) is a separate decision.
   cutover:
     class: elevated
     reason: New write prefix data-derived/league-standings/** for league-live.yml and update-standings.yml.
-    approval: Separate targeted approval by Robert with impact and rollback before step 4 starts (Issue #987).
+    approval: Granted by Robert on 2026-10-29 (decision card, output unchanged). Writers: league-live.yml standings job (every tick, semantic no-op) and update-standings.yml; both publish public/data and data-derived/league-standings through tools/rebuild_and_publish.py (scope standings). Rollback: revert the cutover pull request; the PowerShell modules stay until step 5 and the product files are regenerable.
 
 modelSelection:
   owner: data-meta/<CanonicalLeagueID>/metadata.json

@@ -2,7 +2,7 @@ name: APP • Pipeline • League Live
 
 # One ten-minute chain for the live league data (Issue #945, step S2 of #471):
 #   source    current League Core + transactions + drafts, one run and one pair of commits
-#   standings only when Standings inputs changed during this chain (or when forced)
+#   standings league-standings product and Standings.json (Python writer, semantic no-op; Issue #987 step 4)
 #   league    App League plus PlayerWeekFantasy/MatchupProjections and, in the same publication, the
 #             current-season Shared Derived refresh (league-transactions/-drafts, newest scored-week
 #             TeamWeekPerformance; Issue #471 step 3)
@@ -14,11 +14,6 @@ on:
       - scheduler-league-live
   workflow_dispatch:
     inputs:
-      force_standings:
-        description: "Rebuild Standings even if no Standings input changed"
-        required: false
-        type: boolean
-        default: false
       historical_preflight:
         description: "Read-only isolated historical PWF + TeamWeekPerformance audit (skip all live writers)"
         required: false
@@ -113,55 +108,23 @@ jobs:
           fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
 
-      - name: Detect changed Standings inputs
+      # The Standings writer is Python-only (no pwsh) and a semantic no-op writes nothing, so it runs every
+      # tick. A change-detection gate would miss LeagueScoredWeek moves: the week basis depends on NFL game
+      # finality, which nfl-live commits outside this chain (Issue #987 step 4).
+      - name: Note Standings run
         id: detect
-        env:
-          BASE: ${{ needs.source.outputs.main_before_sync }}
-          FORCE: ${{ inputs.force_standings }}
         run: |
-          set -euo pipefail
-          run=false
-          reason=""
-          if [[ "${FORCE:-false}" == "true" ]]; then
-            run=true
-            reason="forced by workflow_dispatch input"
-          elif [[ -z "${BASE:-}" ]]; then
-            run=true
-            reason="no source base commit available (source job did not report); running conservatively"
-          else
-            git fetch --no-tags --depth=1 origin "$BASE"
-            changed="$(git diff --name-only "$BASE" HEAD -- \
-              ':(glob)data-source/leagues/*/seasons/*/league.json' \
-              ':(glob)data-source/leagues/*/seasons/*/members.json' \
-              ':(glob)data-source/leagues/*/seasons/*/rosters.json' \
-              ':(glob)data-source/leagues/*/seasons/*/winners-bracket.json' \
-              ':(glob)data-source/leagues/*/seasons/*/losers-bracket.json')"
-            if [[ -n "$changed" ]]; then
-              run=true
-              reason="Standings inputs changed since $BASE"
-              printf '%s\n' "$changed"
-            else
-              reason="no Standings input changed since $BASE"
-            fi
-          fi
-          echo "run=$run" >> "$GITHUB_OUTPUT"
-          echo "- Standings: run=$run ($reason)" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Setup Node.js
-        if: steps.detect.outputs.run == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
+          echo "run=true" >> "$GITHUB_OUTPUT"
+          echo "- Standings: run=true (semantic no-op writer, week basis depends on NFL game finality)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Rebuild and publish Standings data
-        if: steps.detect.outputs.run == 'true'
         run: >-
           python3 tools/rebuild_and_publish.py
           --scope standings
           --path public/data
+          --path data-derived/league-standings
           --
-          pwsh ./public/requests/RequestStandings.ps1
+          python3 tools/league_standings_app_publish.py write
 
   league:
     needs: [source, standings]

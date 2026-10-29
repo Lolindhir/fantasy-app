@@ -188,7 +188,7 @@ test('League Live chains current source scope, Standings and League in order wit
   assert.match(workflow, /standings:\s*\n\s+needs:\s+source/);
   assert.match(workflow, /league:\s*\n\s+needs:\s+\[source, standings\]/);
   assert.ok(
-    workflow.indexOf('RequestStandings.ps1') < workflow.indexOf('RequestLeaguePublication.ps1'),
+    workflow.indexOf('league_standings_app_publish.py write') < workflow.indexOf('RequestLeaguePublication.ps1'),
     'Standings must be published before League is built',
   );
 });

@@ -67,6 +67,12 @@ class NumericHelperTests(unittest.TestCase):
         self.assertEqual(0.8571, dotnet_round(6 / 7, 4))
         self.assertEqual(-1.0, dotnet_round(-1, 3))
         self.assertEqual(0.12, dotnet_round(0.125, 2))  # exact tie goes to the even digit
+
+    def test_dotnet_round_keeps_the_sign_of_a_negative_zero(self):
+        import math
+        self.assertEqual(-1.0, math.copysign(1.0, dotnet_round(-0.004, 2)))  # published as -0.0
+        self.assertEqual(1.0, math.copysign(1.0, dotnet_round(0.004, 2)))
+        self.assertEqual(1.0, math.copysign(1.0, dotnet_round(0.0, 2)))
         with self.assertRaises(ValueError):
             dotnet_round(float("nan"), 2)
 
