@@ -665,7 +665,7 @@ playerWeekFantasy:
   matchupProjections:
     output: public/data/MatchupProjections.json
     owner: tools/matchup_projection.py
-    inputs: App read models FantasyGameContext.json and PlayerWeekFantasy.json (same Season+Week)
+    inputs: computed FantasyGameContext (matchup-context function) and the App adaptation of the PlayerWeekFantasy product (same Season+Week); no public/data read since Issue #1199 section 3 step 6
     rule: team projection and range arithmetic lives in published data, not in Angular
   migrationRule: >
     Existing provider/current consumer score paths remain productive until a later
@@ -1220,10 +1220,8 @@ consumerReadClassification:
       note: 'Provider acquisition owned by the data-source layer (raw evidence under data-source/providers).'
     tools/matchup_projection.py:
       reads:
-        legacy:FantasyGameContext: app-read-model-chain
         legacy:MatchupProjections: app-output-owner
-        legacy:PlayerWeekFantasy: app-read-model-chain
-      note: 'Matchup projection derives from published FantasyGameContext and PlayerWeekFantasy plus the shared Decision Windows function (scoring availability, ADR-074; no public/data read) and writes MatchupProjections.json.'
+      note: 'Matchup projection takes the computed FantasyGameContext (matchup-context function, ADR-075), the in-memory App adaptation of the PlayerWeekFantasy product and the shared Decision Windows function (scoring availability, ADR-074); it reads nothing from public/data and writes MatchupProjections.json with the team-range model chosen in data-meta.'
     tools/nfl_source_data_lib/audit.py:
       reads:
         legacy:Players: validation-shadow
@@ -1257,10 +1255,6 @@ consumerReadClassification:
       reads:
         legacy:FantasyGameContext: validation-shadow
       note: 'Read-only check of the currently published App week to reject historical rebuild overlap; no App scoring input or output publication (#471).'
-    tools/player_week_fantasy_refresh.py:
-      reads:
-        legacy:FantasyGameContext: app-read-model-chain
-      note: 'Reads the published FantasyGameContext to find the current App week.'
     tools/players_league_scoring_shadow.py:
       reads:
         legacy:League: validation-shadow

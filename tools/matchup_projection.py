@@ -1,75 +1,45 @@
 #!/usr/bin/env python3
 """Publish team-level matchup projections and ranges into the App delivery layer.
 
-Inputs are the App read models FantasyGameContext.json (current starters, game
-status, final points), PlayerWeekFantasy.json (published player projections and
-ranges) and, optionally, the shared Decision Windows function (scoring availability per player, ADR-074).
-Points of games that are not final are never used: live points are delayed and
-corrected by the provider, so a running game counts its projection until Final.
-A starter whose scoring availability is "out" counts as a resolved zero with no
-variance (like a bye) and is listed; "uncertain" starters keep their
-participation-conditional projection and are listed. The team projection is a sum; the team range is a normal
-approximation that adds player variances (independent players), calibrated by
-tools/historical_team_range_backtest.py. No arithmetic belongs in the frontend.
+Inputs are the computed FantasyGameContext (matchup-context function, ADR-075: current starters, game status, final points),
+the App adaptation of the Shared Derived PlayerWeekFantasy product (player projections and ranges) and the shared Decision
+Windows function (scoring availability per player, ADR-074). Nothing is read from public/data. The projection method is the
+team-range model chosen per season in data-meta (team-range-v1, tools/derived_data_lib/models/team_range); this module only
+collects the starters, joins the projections and writes MatchupProjections.json. No arithmetic belongs in the frontend.
 """
 from __future__ import annotations
 
-import argparse
 import json
 import math
 import re
 import sys
 from collections import defaultdict
 from pathlib import Path
-from statistics import NormalDist
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from derived_data_lib.decision_windows import DecisionWindowsError, resolve as resolve_decision_windows
 from derived_data_lib.league_lifecycle import LifecycleError
-from league_metadata import LeagueMetadataError, data_meta_root, load_all_league_metadata
+from league_metadata import LeagueMetadataError, data_meta_root, load_league_metadata, model_for
+from derived_data_lib.models.registry import get_model
+from derived_data_lib.models.team_range import v1 as team_range_v1
+from derived_data_lib.models.team_range.v1 import (  # noqa: F401  (re-exported, the method lives in the model)
+    AVAILABILITY_OUT,
+    AVAILABILITY_UNCERTAIN,
+    METHOD_ID,
+    SIGMA_BASIS_LEVEL,
+    build_team_projection,
+    player_sigma,
+    projection_values as _projection_values,
+    team_ranges,
+    z_for_level,
+)
 from player_week_fantasy import DISPLAY_INTERVAL_LEVEL, PUBLISHED_INTERVAL_LEVELS
 
 SCHEMA_VERSION = 2
-METHOD_ID = "normal-independent-v1"
-SIGMA_BASIS_LEVEL = 0.9
 AXIS_STEP = 20
 AXIS_PADDING = 10
 OUTPUT_PATH = Path("public/data/MatchupProjections.json")
-CONTEXT_PATH = Path("public/data/FantasyGameContext.json")
-PLAYER_PATH = Path("public/data/PlayerWeekFantasy.json")
-AVAILABILITY_OUT = "out"
-AVAILABILITY_UNCERTAIN = "uncertain"
-
-
-def z_for_level(level: float) -> float:
-    """Two-sided normal quantile for a central interval of the given level."""
-
-    return NormalDist().inv_cdf(0.5 + level / 2.0)
-
-
-def player_sigma(lower: float, upper: float) -> float:
-    """Standard deviation implied by a player's SIGMA_BASIS_LEVEL interval."""
-
-    return (upper - lower) / (2.0 * z_for_level(SIGMA_BASIS_LEVEL))
-
-
-def team_ranges(
-    mean: float,
-    variance: float,
-    levels: tuple[float, ...] = PUBLISHED_INTERVAL_LEVELS,
-) -> list[dict[str, float]]:
-    """Central ranges around the team mean; variances of independent starters add."""
-
-    sd = math.sqrt(variance)
-    return [
-        {
-            "Level": level,
-            "Lower": round(mean - z_for_level(level) * sd, 4),
-            "Upper": round(mean + z_for_level(level) * sd, 4),
-        }
-        for level in levels
-    ]
 
 
 def _is_final(status: Any) -> bool:
@@ -100,26 +70,6 @@ def _player_index(player_model: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     return index
 
 
-def _projection_values(projection: Mapping[str, Any] | None) -> tuple[float, float] | None:
-    """(points, sigma) when the projection is usable, else None."""
-
-    if not projection or projection.get("Status") != "available":
-        return None
-    points = _finite(projection.get("Points"))
-    if points is None:
-        return None
-    ranges = projection.get("PredictionRanges") or (
-        [projection["PredictionRange"]] if projection.get("PredictionRange") else []
-    )
-    basis = next((item for item in ranges if item.get("Level") == SIGMA_BASIS_LEVEL), None)
-    if basis is None:
-        return None
-    lower, upper = _finite(basis.get("Lower")), _finite(basis.get("Upper"))
-    if lower is None or upper is None or upper < lower:
-        return None
-    return points, player_sigma(lower, upper)
-
-
 def _collect_starters(context: Mapping[str, Any]) -> dict[tuple[str, str], dict[str, dict[str, Any]]]:
     starters: dict[tuple[str, str], dict[str, dict[str, Any]]] = defaultdict(dict)
     for game in context.get("Games", []):
@@ -145,85 +95,6 @@ def _collect_starters(context: Mapping[str, Any]) -> dict[tuple[str, str], dict[
     return starters
 
 
-def build_team_projection(
-    team_id: Any,
-    starters: Mapping[str, Mapping[str, Any]],
-    projections: Mapping[str, Mapping[str, Any]],
-    availability: Mapping[str, str] | None = None,
-) -> dict[str, Any]:
-    availability = availability or {}
-    scored = 0.0
-    mean = 0.0
-    variance = 0.0
-    pregame = 0.0
-    pregame_complete = bool(starters)
-    final_count = 0
-    resolved = 0
-    byes: list[str] = []
-    out: list[str] = []
-    uncertain: list[str] = []
-    unavailable: list[str] = []
-
-    for player_id in sorted(starters):
-        starter = starters[player_id]
-        values = _projection_values(projections.get(player_id))
-
-        if starter["bye"]:
-            byes.append(player_id)
-            resolved += 1
-            continue
-
-        state = availability.get(player_id)
-        if not starter["final"] and state == AVAILABILITY_OUT:
-            out.append(player_id)
-            resolved += 1
-            continue
-        if not starter["final"] and state == AVAILABILITY_UNCERTAIN:
-            uncertain.append(player_id)
-
-        if values is None:
-            pregame_complete = False
-        else:
-            pregame += values[0]
-
-        if starter["final"]:
-            if starter["points"] is None:
-                unavailable.append(player_id)
-                continue
-            scored += starter["points"]
-            mean += starter["points"]
-            final_count += 1
-            resolved += 1
-        elif values is None:
-            unavailable.append(player_id)
-        else:
-            points, sigma = values
-            mean += points
-            variance += sigma * sigma
-            resolved += 1
-
-    starter_count = len(starters)
-    complete = starter_count > 0 and resolved == starter_count
-    state = "available" if complete else ("partial" if resolved > 0 else "unavailable")
-
-    return {
-        "FantasyTeamID": team_id,
-        "State": state,
-        "StarterCount": starter_count,
-        "ResolvedStarterCount": resolved,
-        "FinalStarterCount": final_count,
-        "ScoredPoints": round(scored, 4),
-        "PregameProjectedScore": round(pregame, 4) if pregame_complete else None,
-        "ProjectedFinalScore": round(mean, 4) if complete else None,
-        "StandardDeviation": round(math.sqrt(variance), 4) if complete else None,
-        "Ranges": team_ranges(mean, variance) if complete else [],
-        "ByeStarterPlayerIDs": byes,
-        "OutStarterPlayerIDs": out,
-        "UncertainStarterPlayerIDs": uncertain,
-        "UnavailableStarterPlayerIDs": unavailable,
-    }
-
-
 def _axis(teams: list[dict[str, Any]], level: float) -> dict[str, int] | None:
     bounds = [
         item
@@ -246,6 +117,7 @@ def build_matchup_projections(
     *,
     display_level: float = DISPLAY_INTERVAL_LEVEL,
     availability: Mapping[str, str] | None = None,
+    model: Any = team_range_v1,
 ) -> dict[str, Any]:
     """Pure builder. Raises ValueError when the two inputs do not describe the same week."""
 
@@ -266,7 +138,7 @@ def build_matchup_projections(
     matchups: list[dict[str, Any]] = []
     for matchup in context.get("FantasyMatchups", []):
         teams = [
-            build_team_projection(
+            model.build_team_projection(
                 team_id,
                 starters_by_team.get(_team_key(matchup["FantasyMatchupID"], team_id), {}),
                 projections,
@@ -288,15 +160,7 @@ def build_matchup_projections(
         "Season": player_model["Season"],
         "Week": player_model["Week"],
         "DisplayLevel": display_level,
-        "Method": {
-            "Id": METHOD_ID,
-            "Levels": list(PUBLISHED_INTERVAL_LEVELS),
-            "SigmaBasisLevel": SIGMA_BASIS_LEVEL,
-            "Assumption": "starters score independently; player variances add",
-            "LivePoints": "not-used",
-            "OutStarters": "zero-without-variance",
-            "ParticipationCondition": "conditional-on-participation",
-        },
+        "Method": dict(model.METHOD),
         "Matchups": matchups,
     }
 
@@ -310,49 +174,24 @@ def write_json_if_changed(path: Path, payload: Mapping[str, Any]) -> bool:
     return True
 
 
-def _read_object(path: Path) -> dict[str, Any]:
-    try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError as exc:
-        raise ValueError(f"Required input is missing: {path}") from exc
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Input is invalid JSON: {path}") from exc
-    if not isinstance(payload, dict):
-        raise ValueError(f"Input must be a JSON object: {path}")
-    return payload
-
-
-def _canonical_league_id(root: Path, provider_league_id: Any) -> str | None:
-    """CanonicalLeagueID whose current provider league is ``provider_league_id`` (data-meta), else None."""
-
-    for league_id, metadata in load_all_league_metadata(data_meta_root(root)).items():
-        if str(metadata.get("CurrentProviderLeagueID")) == str(provider_league_id):
-            return league_id
-    return None
-
-
-def _decision_windows(root: Path, context: Mapping[str, Any]) -> dict[str, Any] | None:
+def _decision_windows(root: Path, league_id: str, season: int, at_utc: datetime) -> dict[str, Any] | None:
     """Current Decision Windows from the shared function (ADR-074); None when it cannot be computed.
 
-    The function is computed at the current instant and nothing is read from public/data. A failure keeps the
-    projections without availability and is reported on stderr, like a missing file before the cutover.
+    The function is computed at ``at_utc`` and nothing is read from public/data. A failure keeps the projections without
+    availability and is reported on stderr.
     """
 
     try:
-        league_id = _canonical_league_id(root, context.get("LeagueID"))
-        if league_id is None:
-            print(f"matchup_projection: no league metadata for provider league {context.get('LeagueID')!r}", file=sys.stderr)
-            return None
-        return resolve_decision_windows(root, league_id, int(context["Season"]), datetime.now(timezone.utc))
+        return resolve_decision_windows(root, league_id, season, at_utc)
     except (DecisionWindowsError, LifecycleError, LeagueMetadataError, KeyError, ValueError, OSError) as exc:
         print(f"matchup_projection: Decision Windows unavailable, availability ignored: {exc}", file=sys.stderr)
         return None
 
 
-def _availability_by_player(root: Path, context: Mapping[str, Any]) -> dict[str, str]:
+def _availability_by_player(root: Path, league_id: str, context: Mapping[str, Any], at_utc: datetime) -> dict[str, str]:
     """Scoring availability per App PlayerID; empty when unavailable or the function targets another week."""
 
-    windows = _decision_windows(root, context)
+    windows = _decision_windows(root, league_id, int(context["Season"]), at_utc)
     if windows is None:
         return {}
     if str(windows.get("Season")) != str(context.get("Season")) or str(windows.get("LineupWeek")) != str(
@@ -366,19 +205,28 @@ def _availability_by_player(root: Path, context: Mapping[str, Any]) -> dict[str,
     }
 
 
-def publish_matchup_projections(repo_root: Path) -> dict[str, Any]:
-    """Build from the published App read models and write when the content changed.
+def publish_matchup_projections(
+    repo_root: Path,
+    context: Mapping[str, Any],
+    player_model: Mapping[str, Any],
+    *,
+    league_id: str,
+    at_utc: datetime,
+) -> dict[str, Any]:
+    """Build from the FantasyGameContext function result and the PlayerWeekFantasy App model and write on change.
 
-    A context/player-model week mismatch skips publication and keeps the existing file:
-    the consumer ignores a snapshot that targets another week.
+    Neither input is read from public/data: the context is the computed matchup-context result (ADR-075) and the player model is
+    the in-memory App adaptation of the Shared Derived PlayerWeekFantasy product. The method is the team-range model chosen
+    for the season in data-meta (Models.TeamRange). A context/player-model week mismatch skips publication and keeps the
+    existing file: the consumer ignores a snapshot that targets another week.
     """
 
     root = repo_root.resolve()
-    context = _read_object(root / CONTEXT_PATH)
-    player_model = _read_object(root / PLAYER_PATH)
+    season = int(context["Season"])
+    model = get_model(model_for(load_league_metadata(league_id, data_meta_root(root)), season, "TeamRange"), "team-range")
     try:
         payload = build_matchup_projections(
-            context, player_model, availability=_availability_by_player(root, context)
+            context, player_model, availability=_availability_by_player(root, league_id, context, at_utc), model=model
         )
     except ValueError as exc:
         if "target different weeks" in str(exc):
@@ -395,15 +243,3 @@ def publish_matchup_projections(repo_root: Path) -> dict[str, Any]:
         "AvailableTeamCount": sum(1 for team in teams if team["State"] == "available"),
         "TeamCount": len(teams),
     }
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    args = parser.parse_args(argv)
-    print(json.dumps(publish_matchup_projections(args.repo_root), indent=2, sort_keys=True))
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

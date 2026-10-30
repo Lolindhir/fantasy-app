@@ -111,7 +111,7 @@ migration:
     3: 'FantasyGameContext core with the counterfactual on LeagueScoredWeek (M2) and Fast tests ported from the FGC, Preview and WeeklyWatch tests.'
     4: 'History of completed seasons for Matchups and FantasyGameContext with Fast tests.'
     5: 'Shadow compare (tools/matchup_context.py compare) against the published files, current at the Timestamps instants and historical; exact except M2. Observed 2026-10-30: current Matchups and FantasyGameContext and the 2025 FantasyGameContext history identical; the published historical Matchups files still carry the older unknown completion states (computed: final) until the weekly regeneration or the step 7 cutover rewrites them.'
-    6: 'team-range-v1 in the registry, projections from the PlayerWeekFantasy product, PlayerWeekFantasy refresh target week from the lifecycle.'
+    6: 'Done: team-range-v1 in the registry (tools/derived_data_lib/models/team_range/v1.py, numbers unchanged), tools/matchup_projection.py takes the computed FantasyGameContext and the in-memory PlayerWeekFantasy App adaptation (no public/data read), tools/player_week_fantasy_refresh.py takes its target week from the lifecycle LineupWeek (B1 fixed). League Live order (products before consumers) follows with the step 7 cutover.'
     7: 'App cutover (matchup_context_app_publish.py in League Live and update-transactions, RequestLeague stops writing Matchups and FGC); League Live runtime measured.'
     8: 'Cleanup of the PowerShell modules and tests (Decision Windows legacy modules included), inventory, data-sources.yaml, consumer-read register, ai-context shortContext; the WeeklyRecaps dependencies stay until section 4.'
 

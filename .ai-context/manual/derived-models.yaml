@@ -75,6 +75,9 @@ identity:
     repairability:
       module: tools/derived_data_lib/models/repairability/v1.py
       produces: Lineup repairability (State, Path, ReasonCode, candidate counts) per problem slot, including the acquisition policy (computed, not persisted, ADR-074)
+    team-range:
+      module: tools/derived_data_lib/models/team_range/v1.py
+      produces: Team projection (ProjectedFinalScore, StandardDeviation, 50/80/90 percent Ranges) from the starters' PlayerWeekFantasy projections (computed, not persisted, ADR-075)
 
 immutability:
   rule: >
@@ -219,7 +222,8 @@ models:
       - A new acquisition policy is a new version chosen from a season on in data-meta.
 
   team-range-v1:
-    status: planned-1199-section-3-step-6
+    status: registered-1199-section-3-step-6
+    module: tools/derived_data_lib/models/team_range/v1.py
     behaviour: exact move of the method normal-independent-v1 of tools/matchup_projection.py (no new rule); contract in matchup-context.yaml
     contract: .ai-context/manual/matchup-context.yaml
     parameters: calibrated Gaussian team range, starters independent, 50/80/90 percent levels (values stay those of matchup_projection.py at the time of the move)
