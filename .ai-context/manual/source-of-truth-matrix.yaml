@@ -1180,6 +1180,11 @@ consumerReadClassification:
         legacy:Timestamps: app-output-owner
         legacy:Transactions: validation-shadow
       note: 'Consumer generator of the League history products (ADR-057, Issue #999). compare renders the App-shaped Transactions and Drafts files in memory and compares them exactly with the committed public/data files (validation-shadow, never an input). Since step 5b write publishes those files only on semantic change and updates the Transactions and Drafts keys of Timestamps.json (app-output-owner: the writer owns its own freshness timestamp, never an input).'
+    tools/decision_windows.py:
+      reads:
+        legacy:DecisionWindows: validation-shadow
+        legacy:Timestamps: validation-shadow
+      note: 'CLI of the Decision Windows (ADR-074, Issue #1199 section 2). resolve reads only canonical data-source, the lifecycle function and data-meta. compare computes the Decision Windows at the DecisionWindows timestamp and compares them exactly with the published DecisionWindows.json (validation-shadow, never an input; only FirstObservedAtUtc, ObservedAtUtc and AsOfUtc are excluded, D2); Timestamps.json DecisionWindows only supplies the comparison instant.'
     tools/league_lifecycle.py:
       reads:
         legacy:League: validation-shadow
