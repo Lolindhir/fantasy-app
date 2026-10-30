@@ -36,7 +36,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from derived_data import build_league_standings, materialize_league_standings  # noqa: E402
+import league_standings_sources as standings_sources  # noqa: E402
+from derived_data import LEAGUE_STANDINGS, build_league_standings, league_history_path, materialize_league_standings  # noqa: E402
 from league_metadata import data_meta_root, list_league_ids  # noqa: E402
 
 AVATAR_URL = "https://sleepercdn.com/avatars/{}"
@@ -213,6 +214,30 @@ def write_standings(repo_root: Path, league_id: str, now: datetime | None = None
     return changed
 
 
+def load_product_documents(repo_root: Path, league_id: str) -> dict[int, dict[str, Any]]:
+    """Persisted league-standings product documents of every manifest season; fails closed when one is missing."""
+    seasons = standings_sources.manifest_seasons(standings_sources.manifest(repo_root, league_id))
+    documents: dict[int, dict[str, Any]] = {}
+    for season in seasons:
+        path = league_history_path(repo_root / "data-derived", LEAGUE_STANDINGS, league_id, season)
+        if not path.is_file():
+            raise FileNotFoundError(f"league-standings product missing for {league_id} {season}: {path}")
+        documents[season] = _load(path)
+    return documents
+
+
+def render_from_product(repo_root: Path, league_id: str) -> list[dict[str, Any]]:
+    """Standings in the App shape, rendered from the persisted product (consumer read for RequestLeague and recaps)."""
+    league_year = standings_sources.current_season(standings_sources.manifest(repo_root, league_id))
+    return render_standings(load_product_documents(repo_root, league_id), league_year)
+
+
+def run_render(args: argparse.Namespace) -> int:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stdout.write(json.dumps(render_from_product(args.repo_root, args.league), ensure_ascii=False))
+    return 0
+
+
 def run_write(args: argparse.Namespace) -> int:
     changed = write_standings(args.repo_root, args.league)
     print("\n".join(f"wrote {name}" for name in changed) if changed else "No changes - update skipped.")
@@ -245,6 +270,9 @@ def main() -> int:
     write = sub.add_parser("write", help="materialize the product and render Standings.json (semantic no-op)")
     write.add_argument("--league", default="nfl-reise", help="CanonicalLeagueID (default: nfl-reise)")
     write.set_defaults(func=run_write)
+    render = sub.add_parser("render", help="print the App-shaped standings rendered from the persisted product as JSON")
+    render.add_argument("--league", default="nfl-reise", help="CanonicalLeagueID (default: nfl-reise)")
+    render.set_defaults(func=run_render)
     args = parser.parse_args()
     return args.func(args)
 

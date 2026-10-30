@@ -125,7 +125,8 @@ try {
     $league = Get-CanonicalCurrentLeagueRaw -CanonicalLeagueID $CanonicalLeagueID
     $teamData = Get-CanonicalCurrentTeamsForLeague -CanonicalLeagueID $CanonicalLeagueID
     $playoffs = Get-CanonicalCurrentPlayoffs -CanonicalLeagueID $CanonicalLeagueID
-    $standings = Get-StandingsLocal
+    $standingsRepoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
+    $standings = Get-LeagueStandingsProduct -CanonicalLeagueID $CanonicalLeagueID -RepoRoot $standingsRepoRoot
 
     $currentSeason = $league.Season
     $previousSeason = $league.Season - 1

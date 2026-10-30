@@ -25,8 +25,8 @@ try {
     $currentSeason = [int]$config.LeagueYear
     $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 
-    # Neutral team order still comes from Standings.json until the league-standings product is the consumer source (Issue #987).
-    $standings = @(Get-StandingsLocal)
+    # Neutral team order comes from the league-standings product (Issue #987), not from the rendered Standings.json.
+    $standings = @(Get-LeagueStandingsProduct -CanonicalLeagueID $CanonicalLeagueID -RepoRoot $repoRoot)
 
     $matchupsChanged = Update-MatchupHistoryReadModels `
         -CanonicalLeagueID $CanonicalLeagueID `
