@@ -255,6 +255,15 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(0, v1.resolve(facts(games=[]), IN_SEASON_AT)["CurrentWeek"])
         self.assertEqual(0, v1.resolve(facts(games=games(final_weeks=4)), IN_SEASON_AT)["CurrentWeek"])
 
+    def test_lineup_week_is_the_provider_leg_and_independent_of_the_current_week(self) -> None:
+        result = v1.resolve(facts(settings=settings(leg=7), games=games(final_weeks=1)), IN_SEASON_AT)
+        self.assertEqual((7, 2), (result["LineupWeek"], result["CurrentWeek"]))
+        self.assertEqual(7, v1.resolve(facts(settings=settings(leg="7")), IN_SEASON_AT)["LineupWeek"])
+        self.assertEqual(0, v1.resolve(facts(settings=settings(leg=0)), IN_SEASON_AT)["LineupWeek"])
+        self.assertIsNone(v1.resolve(facts(), IN_SEASON_AT)["LineupWeek"])
+        with self.assertRaises(ValueError):
+            v1.resolve(facts(settings=settings(leg="x")), IN_SEASON_AT)
+
     def test_current_week_follows_game_date_order_not_week_order(self) -> None:
         postponed = [v1.Game(1, "20300909_AAA@BBB", KICKOFF, True), v1.Game(2, "20300922_AAA@BBB", KICKOFF + timedelta(days=14), False),
                      v1.Game(1, "20300929_CCC@DDD", KICKOFF + timedelta(days=21), False)]

@@ -1,0 +1,151 @@
+schemaVersion: 1
+domain: decision-windows
+status: accepted-contract-v1
+trackingIssue: 1199
+architectureDecision: ADR-074
+amends: ADR-036
+implementationState: >-
+  Issue #1199 section 2, step 1: contract, ADR-074, the data-meta key Models.Repairability and LineupWeek in the lifecycle
+  result. The function, the repairability model, the shadow and the App cutover follow in steps 2 to 7; until step 7 the
+  PowerShell modules stay productive.
+
+purpose: >-
+  Define the Decision Windows read model (exact-kickoff windows, player lock facts, objective lineup evaluations, Fantasy
+  Relevance, scoring availability, lineup repairability and the remaining scoring path) as one pure function of canonical
+  facts, products and data-meta. It replaces the PowerShell derivation of public/requests (DecisionWindowUtils,
+  FantasyRelevanceV2Utils, PlayerScoringAvailabilityUtils, LineupRepairability*Utils, AcquisitionCapabilityUtils,
+  ParticipantScoringPathDecisionUtils). The result is computed, never persisted (pattern of league-lifecycle.yaml and
+  week-finality.yaml). public/data/DecisionWindows.json stays the App delivery with an unchanged contract.
+
+architecture:
+  decisionBasis: [ADR-036, ADR-037, ADR-054, ADR-055, ADR-071, ADR-073, ADR-074]
+  logicalLayer: Shared Derived Data (product semantics, computed)
+  persistence: none (no product file, no writer, no write prefix, no workflow change)
+  owner:
+    function: tools/derived_data_lib/decision_windows.py
+    cli: tools/decision_windows.py
+    cliCommand: python3 tools/decision_windows.py resolve --league <CanonicalLeagueID> --season <Season> [--at <AtUtc>]
+    repairabilityModel: tools/derived_data_lib/models/repairability/v1.py
+    tests: tools/tests/test_decision_windows.py
+  rules:
+    - The result is a pure function of explicit inputs. The clock is an input (AtUtc), never read inside the function or the model; the result echoes it as AsOfUtc.
+    - Facts come only from data-source, the nfl-games inputs (canonical schedule and game finality), the lifecycle function and data-meta. public/data (Players.json, Schedule.json, League.json and the previous DecisionWindows.json) is never an input; it is a consumer output.
+    - The previous DecisionWindows.json is not an input either. FirstObservedAtUtc comes from the ESPN snapshot StatusSinceUtc (decision D2), which removes the self-read feedback loop.
+    - Windows, locks, slot assignment and relevance are fixed provider-neutral semantics (ADR-036) without a model ID. Only lineup repairability together with its acquisition policy is a versioned model (decision D4).
+    - No new window, lock, relevance or repairability rule is introduced by v1. It reproduces the PowerShell behaviour 1:1; the only intended value change is FirstObservedAtUtc (see decisions).
+    - DecisionWindows.json keeps its contract (SchemaVersion 3, FantasyRelevance.Version 4). Angular and FantasyGameContext/Matchups consumers are unchanged.
+
+decisions:
+  D1: Computed, not persisted. resolve(CanonicalLeagueID, Season, AtUtc) returns the complete current DecisionWindows object; DecisionWindows.json remains the App delivery.
+  D2: >-
+    FirstObservedAtUtc (and the legacy alias ObservedAtUtc) of a scoring-availability observation is the StatusSinceUtc of the ESPN snapshot row.
+    It is a deliberate one-time value change: the value may become earlier and now means "since when the status holds" instead of "since when our run saw it".
+    A row without StatusSinceUtc gives null.
+  D3: Real port to Python with an exact shadow instead of only rewiring the PowerShell inputs.
+  D4: >-
+    Model ID only for lineup repairability and acquisition. repairability-v1 uses the acquisition policy acquisition-waiver-only-v1 (the
+    temporary #493 bridge: external acquisition is waiver-only and actionable only when the next waiver run is strictly before the
+    candidate's kickoff). The choice is made per season in data-meta (Models.Repairability, by hand). Issue #492 lands later as a new version.
+  D5: Start after lifecycle step 2 (satisfied).
+
+function:
+  signature: resolve(repo_root, CanonicalLeagueID, Season, AtUtc) -> DecisionWindows object
+  atUtc: timezone-aware UTC instant supplied by the caller. The CLI defaults it to the current time.
+  determinism: Same inputs and same AtUtc give the same result. The result changes without an input change only when AtUtc crosses a kickoff or the next waiver run.
+  failClosed:
+    - missing canonical league source, rosters, NFL schedule or game finality, Sleeper player snapshot or lifecycle inputs
+    - model choice missing in data-meta or unknown model ID
+    - a lineup week that cannot be resolved while the league is in a lineup week range (Settings.leg missing)
+    - duplicate or malformed schedule games, rosters or players (the same errors the PowerShell derivation raises)
+    - A missing optional observation (no ESPN snapshot, other season, missing row) never synthesizes unavailability: availability stays unknown.
+
+inputs:
+  leagueSource:
+    path: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json
+    fields: Settings.leg through the lifecycle (LineupWeek), RosterPositions (starting slots), Status
+  rosters:
+    path: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/rosters.json (Players, Starters, Reserve, Taxi with Sleeper provider mappings) and members/roster mapping for the FantasyTeamID (ProviderRosterID)
+    note: The same canonical rosters RequestLeague.ps1 uses for League.json Teams[] (Get-CanonicalCurrentTeamsForLeague).
+  nflSchedule:
+    path: data-source/nfl/schedules/<season>.json plus data-source/nfl/game-finality/<season>.json (the inputs of the data-derived/nfl-games product)
+    use: Kickoff, game week, teams and Final status per regular-season game, with the App game ID (tools/schedule_archive.py build_schedule, proven equal to Schedule.json).
+    note: The nfl-games product itself carries the canonical GameID only; the App GameID of the output contract needs the ESPN-based conversion of schedule_archive, so the function reads the same two canonical inputs the product reads.
+  players:
+    path: data-source/nfl/platform/sleeper/players.json plus the NFL team registry (ADR-042)
+    use: NFL team and app fantasy position per Sleeper player, with the population rule of tools/players_population.py. Replaces Players.json.
+    boundary: >-
+      The team is the player's current Sleeper team, correct for the current lineup week only (ADR-036 historical rule is unchanged: a historical
+      evaluation needs the week-specific weekly roster team). v1 does not evaluate past weeks; the function is for the current week and its lookahead.
+  availability:
+    path: data-source/nfl/player-availability/espn.json (ProviderStatus, StatusSinceUtc) joined through the canonical identity IDs.Sleeper -> IDs.ESPN (data-source/nfl/identities/players.json)
+  lifecycle:
+    function: tools/derived_data_lib/league_lifecycle.py
+    use: LineupWeek (Settings.leg), LastLeagueWeek, WaiversOpen, NextWaiverRun at AtUtc
+  leagueMetadata:
+    path: data-meta/<CanonicalLeagueID>/metadata.json
+    fields: Seasons.<season>.Models.Repairability
+
+outputs:
+  shape: >-
+    The complete current DecisionWindows object: SchemaVersion, LeagueID (the provider league ID), Season, LineupWeek, LastLineupWeek, DecisionWindows,
+    LookaheadDecisionWindow, PlayerLockFacts, TeamLineupEvaluations, FantasyRelevance (Version, SlotDefinitions, Teams with Slots, Players,
+    RemainingScoringPathState) and ScoringAvailabilityObservations, exactly as in public/data/DecisionWindows.json, plus AsOfUtc.
+  asOfUtc: The instant the result was computed for. It is additive; the App delivery may drop it so that unchanged inputs keep a semantic no-op.
+  outsideLineupRange: >-
+    Before week 1 or after the last lineup week the object contains only pending evaluations and the first week-1 lookahead window (as today); FantasyRelevance is absent.
+
+semantics:
+  windows: One window per exact absolute kickoff instant of the lineup week; simultaneous games share it, slightly offset kickoffs are separate windows. The lookahead is the first window of the next lineup week and carries FantasyContextState pending (ADR-036).
+  locks: PlayerLockFacts classify every rostered player as scheduled, bye, no-team or unknown by the lineup-week schedule. Lineup lock advances at kickoff, never at Final.
+  lineupEvaluation: Objective per-team issues (open starter slots, starter on bye, starter without NFL team, unknown lock evidence) and their state (ready, review, action-required, unknown, pending).
+  relevance: Slot states per team (unlocked, locked-active, completed, bye, unknown) are judged against AtUtc; this is the only clock-dependent part and is why AtUtc is an input.
+  availability: Only an explicit ESPN OUT removes a direct scoring path; missing, other-season or unknown stays unknown.
+  repairability: >-
+    A matching problem over all mutable required slots together (one player per slot, FLEX and SUPER_FLEX reshuffles, locked players fixed); internal path over
+    the unlocked bench, external path through the acquisition policy of the chosen model; unknown evidence is never guessed into repairable or irreparable.
+    The States, Paths and Reasons are those of domain.yaml LineupRepairability.
+  scoringPath: RemainingScoringPathState open, none or unknown per team from relevance, repairability and the lineup evaluation.
+
+repairabilityModel:
+  kind: repairability
+  id: repairability-v1
+  acquisitionPolicy: acquisition-waiver-only-v1
+  parameters:
+    externalAcquisitionMode: waiver-only
+    immediateFreeAgentAddsAllowed: false
+    tradeRepairAllowed: false
+    waiverMustPrecedeKickoff: strict
+  rule: The model is a pure function of the lineup evidence and the lifecycle waiver facts. A league selects it per season in data-meta; #492 is a later version.
+
+knownLimits:
+  - Team assignment uses the current NFL team (see inputs.players.boundary).
+  - The Sleeper snapshot can be fresher than the Players.json the PowerShell derivation reads; the shadow can then differ until Players.json is republished.
+  - The function evaluates the current lineup week; a persisted history is not provided (ADR-036, no historical DecisionWindows store).
+
+consumers:
+  app: public/requests/RequestLeague.ps1 calls the CLI, writes DecisionWindows.json and hands the facts to FantasyGameContext and Matchups (their migration is section 3 of Issue #1199).
+  matchupProjection: tools/matchup_projection.py calls the function instead of reading DecisionWindows.json (step 7).
+  angular: Reads DecisionWindows.json only; unchanged.
+
+migration:
+  issue: 1199
+  steps:
+    1: 'Contract, ADR-074, derived-models.yaml entry repairability-v1, data-meta key Models.Repairability and LineupWeek in the lifecycle (this change).'
+    2: 'Windows, locks, lineup evaluation and lookahead as a function with Fast tests.'
+    3: 'Fantasy Relevance v4 and scoring path with Fast tests.'
+    4: 'Scoring availability with StatusSinceUtc (closes the feedback loop N4).'
+    5: 'Repairability with model repairability-v1 and the acquisition bridge, with Fast tests.'
+    6: 'Shadow compare against the published DecisionWindows.json at its timestamp (Fast guard plus one manual run over several runs of a game day).'
+    7: 'App cutover: RequestLeague.ps1 and matchup_projection.py; remove the PowerShell modules FantasyGameContext no longer needs; measure the League Live runtime.'
+    8: 'Documentation and register (data-sources.yaml, domain.yaml, consumer-read register).'
+
+architectureReview:
+  existingFirst: Reuses the computed-function pattern (week-finality, lifecycle), the model registry with a per-season choice in data-meta, schedule_archive for the App game IDs, players_population for the player population rule and the canonical ESPN snapshot. No new dataset, writer or workflow.
+  configuration: >-
+    Slots come from the league RosterPositions, the acquisition policy from the chosen repairability model. Window, lock and relevance rules are fixed provider-neutral semantics.
+    A new acquisition policy needs a code change (repairability-v2) plus a data-meta choice from the season it applies.
+  identity: CanonicalLeagueID + Season + AtUtc (+ repairability model ID). Players are identified by the Sleeper player ID (App contract) with the canonical identity only for the ESPN join.
+  invalidation: Inputs are the league source and rosters, the NFL schedule and finality, the Sleeper snapshot and team registry, the ESPN snapshot, the lifecycle and data-meta. The result is recomputed on every call.
+  temporal: The state is a function of time (kickoffs, next waiver run). Pre-kickoff and post-kickoff states are distinct through AtUtc.
+  unknown: Missing or ambiguous evidence stays unknown; zero or false is never used as an unknown sentinel.
+  compatibility: DecisionWindows.json and its consumers are unchanged except the documented FirstObservedAtUtc semantics; the PowerShell modules are removed in step 7 after the shadow proves equality.

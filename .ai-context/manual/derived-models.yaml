@@ -10,7 +10,8 @@ purpose: >
   code. Leagues do not carry model parameters; a league only selects, per season,
   which model version applies. Salary, SalaryCap and Grading are the first models;
   Standings and Awards follow (#987, ADR-072, league-standings.yaml), then the league
-  Lifecycle (#1199, ADR-073, league-lifecycle.yaml).
+  Lifecycle (#1199, ADR-073, league-lifecycle.yaml) and the lineup Repairability of the
+  Decision Windows (#1199 section 2, ADR-074, decision-windows.yaml).
 
 architecture:
   decisionBasis:
@@ -26,6 +27,7 @@ architecture:
     - Fantasy Management salary simulation (#919 step 7)
     - tools/derived_data.py materializer (league-standings product, #987 step 2)
     - tools/derived_data_lib/league_lifecycle.py (computed lifecycle function, no product, #1199 step 2)
+    - tools/derived_data_lib/decision_windows.py (computed Decision Windows function with the repairability model, no product, #1199 section 2)
     - later models through the same registry
   rules:
     - A model is a pure function of its explicit inputs plus its own PARAMS. It reads no files, no network, no clock, no environment and no league configuration.
@@ -44,6 +46,7 @@ identity:
       - standings-v1
       - awards-v1
       - lifecycle-v1
+      - repairability-v1
     rules:
       - The model ID is the only way a league, a snapshot or a test refers to a model.
       - kind uses hyphens in the ID (salary-cap-v1) and underscores in the module path (salary_cap/v1.py).
@@ -67,6 +70,9 @@ identity:
     lifecycle:
       module: tools/derived_data_lib/models/lifecycle/v1.py
       produces: League Status and Phase, trade and waiver state, cuts flag and the clock-dependent boundaries for one instant (computed, not persisted, ADR-073)
+    repairability:
+      module: tools/derived_data_lib/models/repairability/v1.py
+      produces: Lineup repairability (State, Path, ReasonCode, candidate counts) per problem slot, including the acquisition policy (computed, not persisted, ADR-074)
 
 immutability:
   rule: >
@@ -93,7 +99,7 @@ registry:
     - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
   leagueSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
-    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle } -> model IDs
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability } -> model IDs
     rule: >
       The league metadata chooses model IDs per season. A new version applies from
       the season in which the metadata first names it; earlier seasons keep their
@@ -195,6 +201,21 @@ models:
       - The result carries the instants at which its clock-dependent part may change (cap window end, season window start, next waiver run).
       - Known v1 quirks (CutsAllowed constant, trade deadline against CurrentWeek, UTC calendar days) are kept and listed in the contract for lifecycle-v2.
 
+  repairability-v1:
+    status: planned-1199-section-2-step-5
+    behaviour: exact port of LineupRepairabilityUtils.psm1, LineupRepairabilityEvidenceUtils.psm1, LineupRepairabilityDecisionUtils.psm1 and AcquisitionCapabilityUtils.psm1 (no new rule); contract in decision-windows.yaml
+    contract: .ai-context/manual/decision-windows.yaml
+    acquisitionPolicy: acquisition-waiver-only-v1 (the #493 bridge; #492 follows as a later version)
+    parameters:
+      externalAcquisitionMode: waiver-only
+      immediateFreeAgentAddsAllowed: false
+      tradeRepairAllowed: false
+      waiverMustPrecedeKickoff: strict
+    rules:
+      - The model is a pure function of the lineup evidence and the waiver facts; the clock is an explicit input (AtUtc) and the model reads no file and no league configuration.
+      - It is the only versioned part of the Decision Windows; windows, locks, slot assignment and relevance are fixed provider-neutral semantics without a model ID.
+      - A new acquisition policy is a new version chosen from a season on in data-meta.
+
 rankingFunctions:
   implementation: tools/derived_data_lib/ranking.py
   versioning: >
@@ -228,6 +249,7 @@ failClosed:
   - non-positive TopN or empty salary list in salary-cap
   - non-integer or non-positive team count
   - lifecycle - naive (not timezone-aware) AtUtc, unparsable instants, non-integer week values
+  - repairability - naive AtUtc, duplicate candidates, slots without ID or type
 
 documentation:
   humanDescription: >
