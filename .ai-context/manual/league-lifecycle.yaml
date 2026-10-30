@@ -56,7 +56,7 @@ function:
 inputs:
   leagueSource:
     path: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json
-    fields: Status (provider lifecycle), Settings (disable_trades, trade_review_days, trade_deadline, disable_adds, daily_waivers, daily_waivers_days, daily_waivers_hour, playoff_week_start), WeekStructure (through week_finality)
+    fields: Status (provider lifecycle), Settings (leg, disable_trades, trade_review_days, trade_deadline, disable_adds, daily_waivers, daily_waivers_days, daily_waivers_hour, playoff_week_start), WeekStructure (through week_finality)
   draftsProduct:
     path: data-derived/league-drafts/<CanonicalLeagueID>/<season>.json
     fields: Drafts[] with Season, Status (Virtual, PreDraft, Drafting, Complete), DraftStartTimeUtc, SleeperStartTime
@@ -76,6 +76,7 @@ outputs:
   Status: Completed | Playoffs | In-Season | Pre-Season | Draft-Season | Off-Season
   Phase: '"" or Cap Deadline Open | Cap Check | Post Cap Check | Pre Draft | In Draft | Between Drafts'
   CurrentWeek: week of the first non-final regular-season game by game date; 0 when every game is final or no schedule exists.
+  LineupWeek: the provider lineup week, Settings.leg as an integer (null when absent). It is a different concept from CurrentWeek (the first open game week) and owned here so that every consumer reads both from one place; Decision Windows (decision-windows.yaml, Issue #1199 section 2) take their week from it. Added to the result in Issue #1199 section 2 step 1; not a League.json field and not part of the shadow compare.
   FinalScoredWeek: LeagueScoredWeek (week-finality.yaml).
   LastLeagueWeek: structural last league week from the canonical WeekStructure.
   PlayoffStartWeek: Settings.playoff_week_start (null when absent).

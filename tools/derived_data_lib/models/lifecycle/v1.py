@@ -249,6 +249,8 @@ def resolve(facts: Facts, at_utc: datetime) -> dict[str, Any]:
     window_open = cap_end is not None and at < cap_end
 
     week = current_week(facts.games)
+    leg_raw = settings.get("leg")
+    lineup_week = None if leg_raw is None else _int0(leg_raw, "leg")
     playoff_week_raw = settings.get("playoff_week_start")
     playoff_week = _int0(playoff_week_raw, "playoff_week_start")
 
@@ -277,6 +279,7 @@ def resolve(facts: Facts, at_utc: datetime) -> dict[str, Any]:
         "Status": status,
         "Phase": phase,
         "CurrentWeek": week,
+        "LineupWeek": lineup_week,
         "FinalScoredWeek": facts.final_scored_week,
         "LastLeagueWeek": facts.last_league_week,
         "PlayoffStartWeek": None if playoff_week_raw is None else playoff_week,

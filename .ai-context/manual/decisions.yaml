@@ -2494,3 +2494,47 @@ decisions:
         - Until the cutover (step 4) the PowerShell implementation stays productive and is held equal by the shadow comparison.
         - RequestLeague.ps1 gains a Python process call in the ten-minute League Live run (measured in step 4).
         - Known v1 quirks stay visible until a lifecycle-v2 is decided.
+
+  - id: ADR-074
+    title: Decision Windows are a central pure function with the repairability model, computed and not persisted
+    status: accepted
+    amends: ADR-036
+    context: >
+      public/data/DecisionWindows.json is built in the ten-minute League Live run by about 2,400 lines of PowerShell
+      (Issue #1199 section 2). The derivation reads consumer outputs (Players.json, Schedule.json and its own previous
+      DecisionWindows.json, from which FirstObservedAtUtc is carried over), calls the clock inside relevance and
+      repairability and persists the resulting locked-active and unlocked states, and the lineup week lives next to the
+      lifecycle current week without a common owner. Python consumers such as tools/matchup_projection.py can only read the
+      App file.
+    decision: >
+      Robert decided on 2026-10-30 (Issue #1199, review D1 to D5, all as recommended). The Decision Windows are one pure
+      function tools/derived_data_lib/decision_windows.py with the CLI tools/decision_windows.py, resolve(CanonicalLeagueID,
+      Season, AtUtc), computed and not persisted (pattern of ADR-071 and ADR-073). AtUtc is an explicit input and echoed as
+      AsOfUtc, which resolves the conflict of the clock-dependent slot states with ADR-036 without storing wall-clock labels.
+      Inputs are only data-source (league source and rosters, the canonical NFL schedule and game finality that feed
+      data-derived/nfl-games, the Sleeper player snapshot with the team registry, the ESPN availability snapshot), the
+      lifecycle function (LineupWeek, WaiversOpen, NextWaiverRun) and data-meta; public/data is never an input. The lifecycle
+      result gains LineupWeek (Settings.leg) so that both week concepts have one owner. FirstObservedAtUtc comes from the
+      ESPN snapshot StatusSinceUtc, which removes the self-read feedback loop; this is the only intended value change and it
+      is a one-time shift to "since when the status holds". Windows, locks, slot assignment and relevance are fixed
+      provider-neutral semantics without a model ID; only lineup repairability with its acquisition policy is a versioned
+      model repairability-v1 (acquisition-waiver-only-v1, the #493 bridge) chosen per season in data-meta
+      (Models.Repairability). Issue #492 lands later as repairability-v2. DecisionWindows.json stays the App delivery with an
+      unchanged contract, written by RequestLeague.ps1 from the CLI result; FantasyGameContext and Matchups keep receiving the
+      facts in memory until section 3. There is no new writer, write prefix or workflow change. A persisted product with
+      history is rejected: ADR-036 defines no historical store and no consumer needs one. Exactness is proven by a shadow
+      compare against the published file. Contract: .ai-context/manual/decision-windows.yaml.
+    rationale: >
+      One central implementation lets App and Python consumers share the same facts, removes the consumer-output inputs and
+      the feedback loop, keeps the clock explicit and puts the only league-dependent rule (acquisition) under the model
+      registry of ADR-055 without turning fixed provider-neutral window semantics into configuration.
+    consequences:
+      positive:
+        - One implementation of windows, locks, relevance, availability, repairability and scoring path for every consumer.
+        - Testable with constructed weeks and a fixed AtUtc; no hidden clock and no feedback loop.
+        - No new writer or permission; all steps are risk level standard.
+      negative:
+        - Until the cutover (step 7) the PowerShell implementation stays productive and is held equal by the shadow comparison.
+        - The Sleeper snapshot can be fresher than the published Players.json, so the shadow can differ until Players.json is republished.
+        - RequestLeague.ps1 gains a Python process call in the ten-minute League Live run (measured in step 7).
+        - The team assignment still uses the current NFL team and is valid for the current lineup week only (boundary B6).
