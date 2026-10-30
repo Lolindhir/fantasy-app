@@ -360,3 +360,49 @@ class LoadWeekTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ShadowCompareTests(unittest.TestCase):
+    """The shadow compares computed models exactly with published files; synthetic data only."""
+
+    def setUp(self):
+        import matchup_context as cli
+
+        self.cli = cli
+
+    def test_exact_differences_by_path(self):
+        published = {"Season": "2030", "Weeks": [{"Week": 1, "CompletionState": "unknown", "Matchups": []}]}
+        computed = copy.deepcopy(published)
+        self.assertEqual([], self.cli.diff_values(published, computed))
+        computed["Weeks"][0]["CompletionState"] = "final"
+        self.assertEqual(["Weeks[0].CompletionState: published 'unknown' != computed 'final'"], self.cli.diff_values(published, computed))
+        computed["Weeks"].append({})
+        self.assertEqual(["Weeks: published 1 items != computed 2"], self.cli.diff_values(published, computed))
+        self.assertEqual(["Extra: missing in published file"], self.cli.diff_values({}, {"Extra": 1}))
+        self.assertEqual(1, len(self.cli.diff_values({"Id": 1}, {"Id": True})))
+
+    def test_compare_reports_every_file_and_never_writes(self):
+        from unittest import mock
+
+        with tempfile.TemporaryDirectory() as root:
+            data = Path(root) / "public" / "data"
+            (data / "past_seasons" / "Matchups").mkdir(parents=True)
+            (data / "past_seasons" / "FantasyGameContext").mkdir(parents=True)
+            stamp = "2030-09-08T12:00:00Z"
+            (data / "Timestamps.json").write_text(json.dumps({"Matchups": stamp, "FantasyGameContext": stamp}), encoding="utf-8")
+            (data / "Matchups.json").write_text(json.dumps({"Season": "2030", "Weeks": []}), encoding="utf-8")
+            (data / "FantasyGameContext.json").write_text(json.dumps({"Season": "2030", "Week": 1}), encoding="utf-8")
+            (data / "past_seasons" / "Matchups" / "Matchups_2029.json").write_text(json.dumps({"Season": "2029"}), encoding="utf-8")
+            (data / "past_seasons" / "FantasyGameContext" / "FantasyGameContext_2029.json").write_text(json.dumps({"Season": "2029"}), encoding="utf-8")
+            before = sorted(str(p) for p in Path(root).rglob("*"))
+            with (
+                mock.patch.object(self.cli, "resolve_matchups", side_effect=lambda r, l, s, at: {"Season": str(s), "Weeks": []} if s == 2030 else {"Season": str(s), "X": 1}),
+                mock.patch.object(self.cli, "resolve_current_context", return_value=None),
+                mock.patch.object(self.cli, "resolve_historical_season", return_value={"Season": "2029"}),
+            ):
+                report = self.cli.compare_with_published(Path(root), "league", None)
+            self.assertEqual([], report["Matchups.json"])
+            self.assertIn("not comparable", report["FantasyGameContext.json"])
+            self.assertEqual(["X: missing in published file"], report["past_seasons/Matchups/Matchups_2029.json"])
+            self.assertEqual([], report["past_seasons/FantasyGameContext/FantasyGameContext_2029.json"])
+            self.assertEqual(before, sorted(str(p) for p in Path(root).rglob("*")))
