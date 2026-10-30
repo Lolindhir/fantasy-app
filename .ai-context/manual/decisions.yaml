@@ -2068,6 +2068,26 @@ decisions:
       Future incremental migration of those legacy calculations to Shared
       Derived retains the existing public/data WeeklyRecaps projection
       boundary and is not performed in this checkpoint.
+      Amendment (Issue #1199 section 4, ADR-063 step 1, Robert 2026-10-30,
+      R1 to R6): the generator moves to Python as a computed function. A pure
+      function tools/derived_data_lib/weekly_recaps.py (CLI
+      tools/weekly_recaps.py), resolve(CanonicalLeagueID, Season), is computed
+      and not persisted (pattern of ADR-071, ADR-073, ADR-074, ADR-075); a
+      consumer generator tools/weekly_recaps_app_publish.py writes
+      WeeklyRecaps.json and the past_seasons files only on a semantic
+      difference with an unchanged file contract. Facts come only from
+      matchup_context.resolve, the canonical schedule with finality, the
+      canonical weekly rosters, the league-standings and
+      team-week-performance products and data-meta; the consumer files
+      Matchups.json and Schedule.json are no longer inputs. The week basis is
+      LeagueScoredWeek (ADR-071) instead of Matchups CompletionState, so recap
+      and TeamAwards cover the same week (the only allowed shadow difference).
+      All leagues of the manifests are processed. League Live writes the
+      current season, the weekly update-transactions run writes completed
+      seasons. The selection rules are fixed league-independent semantics in
+      .ai-context/manual/weekly-recaps.yaml without a model ID until #499 or a
+      league needs a weekly-recap-v2. No new writer, write prefix or
+      permission.
     rationale: >
       A single existing App publisher avoids a second scheduler/writer,
       preserves source-of-truth boundaries and supplies a stable consumer
