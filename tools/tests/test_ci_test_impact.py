@@ -81,6 +81,10 @@ class RoutingTests(unittest.TestCase):
         selected = set(self.choose("tools/decision_windows.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
 
+    def test_matchup_context_cli_selects_derived_families(self):
+        selected = set(self.choose("tools/matchup_context.py")["selected"])
+        self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
+
     def test_league_live_derived_refresh_selects_derived_families(self):
         selected = set(self.choose("tools/league_live_derived_refresh.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
