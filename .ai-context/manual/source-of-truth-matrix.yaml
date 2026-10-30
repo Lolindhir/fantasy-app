@@ -1120,10 +1120,9 @@ consumerReadClassification:
     public/requests/RequestLeague.ps1:
       reads:
         legacy:Drafts: app-read-model-chain
-        legacy:Matchups: app-output-owner
         legacy:Players: app-read-model-chain
         legacy:Schedule: app-read-model-chain
-      note: 'League generator: writes DecisionWindows.json and Matchups.json. Since Issue #1199 section 2 step 7 DecisionWindows.json comes from the shared Decision Windows function (Get-LeagueDecisionWindows, tools/decision_windows.py) and the previous file is no longer read (finding N4 closed). Standings come from the league-standings product (Get-LeagueStandingsProduct, Issue #987). Through reader helpers it also consumes Players.json (Get-PlayersFromFile) and Drafts.json (Get-LeagueDraftsLocal), and the published Schedule.json as transitional adapter input (ADR-036 migration boundary). These are the real return channels from League.json to other App files; League Live must therefore publish those inputs before it (L0).'
+      note: 'League generator: writes DecisionWindows.json (Matchups.json and FantasyGameContext.json come from tools/matchup_context_app_publish.py since Issue #1199 section 3 step 7). Since Issue #1199 section 2 step 7 DecisionWindows.json comes from the shared Decision Windows function (Get-LeagueDecisionWindows, tools/decision_windows.py) and the previous file is no longer read (finding N4 closed). Standings come from the league-standings product (Get-LeagueStandingsProduct, Issue #987). Through reader helpers it also consumes Players.json (Get-PlayersFromFile) and Drafts.json (Get-LeagueDraftsLocal), and the published Schedule.json as transitional adapter input (ADR-036 migration boundary). These are the real return channels from League.json to other App files; League Live must therefore publish those inputs before it (L0).'
     public/requests/RequestTeams.ps1:
       reads:
         legacy:Teams: app-output-owner
@@ -1184,6 +1183,12 @@ consumerReadClassification:
         legacy:DecisionWindows: validation-shadow
         legacy:Timestamps: validation-shadow
       note: 'CLI of the Decision Windows (ADR-074, Issue #1199 section 2). resolve reads only canonical data-source, the lifecycle function and data-meta. compare computes the Decision Windows at the DecisionWindows timestamp and compares them exactly with the published DecisionWindows.json (validation-shadow, never an input; only FirstObservedAtUtc, ObservedAtUtc and AsOfUtc are excluded, D2); Timestamps.json DecisionWindows only supplies the comparison instant.'
+    tools/matchup_context_app_publish.py:
+      reads:
+        legacy:FantasyGameContext: app-output-owner
+        legacy:Matchups: app-output-owner
+        legacy:Timestamps: app-output-owner
+      note: 'Consumer generator of the matchup context (ADR-075, Issue #1199 section 3 step 7). write renders Matchups.json, FantasyGameContext.json and the past_seasons Matchups and FantasyGameContext files from the computed matchup context (data-source, products, lifecycle and Decision Windows functions, data-meta) and publishes them only on a semantic difference. It reads the existing App files only to detect that difference and to list the FantasyGameContext history seasons, and updates the Matchups and FantasyGameContext keys of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/matchup_context.py:
       reads:
         legacy:FantasyGameContext: validation-shadow

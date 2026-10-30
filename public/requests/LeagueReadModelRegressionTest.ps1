@@ -57,7 +57,7 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Update-M
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "FantasyGameContextHistory") -Expected 0 -Message "RequestLeague still carries the FantasyGameContext history writer (Issue 1189)."
 Assert-True -Condition $requestLeague.Contains("CanonicalLeagueCoreUtils.psm1") -Message "RequestLeague does not import the canonical League Core consumer."
 Assert-True -Condition $requestLeague.Contains("CanonicalPlayoffUtils.psm1") -Message "RequestLeague does not import the canonical Playoff consumer."
-Assert-True -Condition $requestLeague.Contains("CanonicalMatchupUtils.psm1") -Message "RequestLeague does not import the canonical current Matchup consumer."
+Assert-True -Condition (-not $requestLeague.Contains("CanonicalMatchupUtils.psm1")) -Message "RequestLeague still imports the canonical current Matchup consumer; Matchups and FantasyGameContext come from tools/matchup_context_app_publish.py (ADR-075)."
 Assert-True -Condition (-not $requestLeague.Contains("\utils\league\PlayoffUtils.psm1")) -Message "RequestLeague still imports the legacy live Playoff adapter."
 Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentLeagueRaw -CanonicalLeagueID `$CanonicalLeagueID") -Message "RequestLeague does not use canonical current League metadata/settings."
 Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentTeamsForLeague -CanonicalLeagueID `$CanonicalLeagueID") -Message "RequestLeague does not use canonical current Members/Rosters team data."
@@ -66,8 +66,8 @@ Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Team
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-Playoffs") -Expected 0 -Message "RequestLeague still performs the legacy live Playoffs read."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-CanonicalCurrentPlayoffs") -Expected 1 -Message "RequestLeague must use exactly one canonical current Playoffs read."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-FgcCurrentMatchupLoad") -Expected 0 -Message "RequestLeague still performs the legacy live current-matchup provider read after the 6O cutover."
-Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-CanonicalCurrentMatchupLoad") -Expected 1 -Message "RequestLeague must use exactly one canonical current Matchup read."
-Assert-True -Condition $requestLeague.Contains("Get-CanonicalCurrentMatchupLoad -CanonicalLeagueID `$CanonicalLeagueID -Season ([int]`$league.season) -Week `$matchupWeek") -Message "RequestLeague canonical current Matchup read does not bind canonical league, season and active week explicitly."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Get-CanonicalCurrentMatchupLoad") -Expected 0 -Message "RequestLeague still reads the current matchups; the matchup context function owns them (ADR-075)."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "New-MatchupSeasonReadModel") -Expected 0 -Message "RequestLeague still builds the Matchups read model (ADR-075)."
 $leagueLiveWorkflow = Get-Content (Join-Path (Join-Path $PSScriptRoot "..\..") ".github/workflows/league-live.yml") -Raw
 Assert-True -Condition $leagueLiveWorkflow.Contains("materialization_scope: current") -Message "League Live does not run the combined current League source scope."
 Assert-True -Condition $leagueLiveWorkflow.Contains("RequestLeaguePublication.ps1") -Message "League Live does not publish the App League read model."
@@ -342,6 +342,6 @@ finally {
 }
 
 $weeklyWorkflow = Get-Content "$PSScriptRoot\..\..\.github\workflows\update-transactions.yml" -Raw
-Assert-True -Condition ($weeklyWorkflow.Contains('RequestHistoricalAppReadModels.ps1')) -Message "The weekly update-transactions run does not regenerate the historical App read models (Issue 1189)."
+Assert-True -Condition ($weeklyWorkflow.Contains('tools/matchup_context_app_publish.py write --scope history')) -Message "The weekly update-transactions run does not regenerate the historical App read models (Issue 1189, ADR-075)."
 
 Write-Host "League transaction and overview regression tests passed." -ForegroundColor Green

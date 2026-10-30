@@ -515,7 +515,7 @@ dataSources:
 
   historicalMatchupsAndContext:
     path: public/data/past_seasons/Matchups/Matchups_<season>.json and public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json
-    generator: public/requests/RequestHistoricalAppReadModels.ps1
+    generator: tools/matchup_context_app_publish.py write --scope history (ADR-075, Issue #1199 section 3 step 7; replaced RequestHistoricalAppReadModels.ps1)
     workflow: .github/workflows/update-transactions.yml
     category: generated-output
     role: Historical Matchups and FantasyGameContext read models
