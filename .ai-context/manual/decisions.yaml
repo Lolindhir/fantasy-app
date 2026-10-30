@@ -1288,6 +1288,7 @@ decisions:
   - id: ADR-041
     title: Players points and salary come from canonical stats scored with the league ScoringSettings
     status: accepted
+    amendedBy: ADR-076
     context: >
       Players.json fantasy points, played games and the three prior seasons were Tank01 PPR sums over
       Games.json and Tank01 past_seasons archives. Tank01 does not know the league scoring, drops games
@@ -1345,6 +1346,7 @@ decisions:
   - id: ADR-043
     title: Players population follows the Fantasy Management rule and identity evidence no longer comes from Players.json
     status: accepted
+    amendedBy: ADR-076
     context: >
       RequestPlayers.ps1 took its population from Tank01 getNFLPlayerList rows with
       sleeperBotID and the identity builder read public/data/Players.json (and its git
@@ -1389,6 +1391,7 @@ decisions:
   - id: ADR-044
     title: Players GameHistory is built from canonical NFL facts
     status: accepted
+    amendedBy: ADR-076
     context: >
       GameHistory in Players.json came from Tank01 boxscores in Games.json: the QBRating was wrong
       (1 of 148 values matched ESPN), points of non-final and postseason games were Tank01 PPR, snap
@@ -1731,6 +1734,7 @@ decisions:
   - id: ADR-055
     title: Salary, Ranking, Grading and Salary Cap are central versioned models with the player-valuation product
     status: accepted
+    amendedBy: ADR-076
     context: >
       Salary, SalaryProjected, Ranking, Grading and the League Salary Cap are computed in
       public/requests/RequestPlayers.ps1 and RequestLeague.ps1 with parameters spread over
@@ -2606,3 +2610,38 @@ decisions:
         - Until the cutover (step 7) the PowerShell implementation stays productive and is held equal by the shadow comparison.
         - The counterfactual may appear slightly later when Sleeper scores a week before the canonical game finality (M2).
         - League Live gains Python process calls (runtime measured in step 7).
+
+  - id: ADR-076
+    title: Players.json is a computed consumer delivery; season values and point history are owned by the player-valuation product
+    status: accepted
+    amends: [ADR-041, ADR-043, ADR-044, ADR-055]
+    context: >
+      public/data/Players.json is built by RequestPlayers.ps1 (about 440 lines plus five modules). Age uses the wall clock, the identity
+      hold and the PV hold seed read the previously published Players.json, and the season values (AvgGame, AvgPotentialGame, Total,
+      GamesPlayed, GamesPotential, PointHistory, Form basis) exist twice, in PowerShell and in the PV Inputs. The file is therefore
+      neither reproducible nor free of the consumer-reads-own-output feedback (Issue #1226, review 2026-10-30).
+    decision: >
+      Robert decided on 2026-10-30 (Issue #1226, Q1 to Q6; Q4 sharpened after his question about source, derived and consumer for
+      gradings). Players.json becomes a pure delivery. The pure function tools/derived_data_lib/players_read_model.py,
+      resolve(CanonicalLeagueID, Season, AsOfDate), is computed and not persisted (pattern of ADR-071, ADR-073, ADR-074, ADR-075); the
+      consumer generator tools/players_app_publish.py writes the file only on a semantic difference with an unchanged contract. Age
+      uses the explicit AsOfDate (run date in the league time zone) instead of the clock (amends ADR-043 population/platform fields).
+      The previously published Players.json is no input: a hold player takes its values from the PV snapshot hold row, its GameHistory
+      is empty with a warning, the PV hold seed is dropped (amends ADR-055 identity hold and ADR-044 hold rule). Season values,
+      PointHistory, GamesPotential and the Form basis move additively into the player-valuation product; the function only copies
+      them (amends ADR-055; rank grading stays grading-v1, a real Form grading becomes grading-v2). The two point paths stay: Players
+      and the PV Inputs score history with the current ScoringSettings (ADR-041), PlayerWeekFantasy with the settings of each season;
+      a Fast guard on persisted state requires equal current-season weekly points. No new product, writer, write prefix or permission.
+      PowerShell is removed after the cutover. Contract: .ai-context/manual/players-read-model.yaml.
+    rationale: >
+      One implementation per derivation, the clock as an input and no consumer output as input make the file reproducible and let
+      App and Fantasy Management read the same season values. Source, derived and consumer stay separate also for gradings.
+    consequences:
+      positive:
+        - Players.json can be rebuilt and compared exactly for a given AsOfDate.
+        - The season arithmetic exists once, in Python, and is visible to every consumer through the product.
+        - No new writer or permission; all steps are risk level standard.
+      negative:
+        - Until the cutover (step 5) the PowerShell generator stays productive and is held equal by the shadow comparison.
+        - A hold player no snapshot knows is a visible gap instead of a carried-over old value.
+        - The product grows additively (ContractVersion bump) with the season values.

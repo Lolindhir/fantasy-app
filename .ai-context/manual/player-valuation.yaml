@@ -29,7 +29,7 @@ architecture:
     - The product is consumer-neutral. App, Fantasy Operations, Fantasy Management and the salary simulation read the same snapshot; consumer shapes are produced by consumer generators.
     - public/data/Players.json and League.json keep their current contract. They are filled from the snapshot by the Players/League consumer generators (step 5) and stay byte-identical for unchanged inputs.
     - Mighty-Giants-specific valuation, roster fit and decisions stay FM insights and never enter this product.
-    - The Form grading row is a copy of GameHistory and stays in the Players consumer generator.
+    - Season values, PointHistory, GamesPotential and the Form basis (last four scored games) are added to the product additively (ADR-076, players-read-model.yaml, Issue #1226 step 3a); the Players function only copies them. A real Form grading becomes grading-v2 on the product data. Until step 3a the Form grading row stays a copy of GameHistory in the Players consumer generator.
 
 identity:
   snapshotTuple:
