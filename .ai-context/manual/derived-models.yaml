@@ -11,7 +11,7 @@ purpose: >
   which model version applies. Salary, SalaryCap and Grading are the first models;
   Standings and Awards follow (#987, ADR-072, league-standings.yaml), then the league
   Lifecycle (#1199, ADR-073, league-lifecycle.yaml) and the lineup Repairability of the
-  Decision Windows (#1199 section 2, ADR-074, decision-windows.yaml).
+  Decision Windows (#1199 section 2, ADR-074, decision-windows.yaml) and the team projection range of the matchup context (#1199 section 3, ADR-075, matchup-context.yaml).
 
 architecture:
   decisionBasis:
@@ -28,6 +28,7 @@ architecture:
     - tools/derived_data.py materializer (league-standings product, #987 step 2)
     - tools/derived_data_lib/league_lifecycle.py (computed lifecycle function, no product, #1199 step 2)
     - tools/derived_data_lib/decision_windows.py (computed Decision Windows function with the repairability model, no product, #1199 section 2)
+    - tools/derived_data_lib/matchup_context.py (computed matchup context function with the team-range model, no product, #1199 section 3)
     - later models through the same registry
   rules:
     - A model is a pure function of its explicit inputs plus its own PARAMS. It reads no files, no network, no clock, no environment and no league configuration.
@@ -47,6 +48,7 @@ identity:
       - awards-v1
       - lifecycle-v1
       - repairability-v1
+      - team-range-v1
     rules:
       - The model ID is the only way a league, a snapshot or a test refers to a model.
       - kind uses hyphens in the ID (salary-cap-v1) and underscores in the module path (salary_cap/v1.py).
@@ -99,7 +101,7 @@ registry:
     - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
   leagueSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
-    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability } -> model IDs
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange } -> model IDs
     rule: >
       The league metadata chooses model IDs per season. A new version applies from
       the season in which the metadata first names it; earlier seasons keep their
@@ -215,6 +217,15 @@ models:
       - The model is a pure function of the lineup evidence and the waiver facts; the clock is an explicit input (AtUtc) and the model reads no file and no league configuration.
       - It is the only versioned part of the Decision Windows; windows, locks, slot assignment and relevance are fixed provider-neutral semantics without a model ID.
       - A new acquisition policy is a new version chosen from a season on in data-meta.
+
+  team-range-v1:
+    status: planned-1199-section-3-step-6
+    behaviour: exact move of the method normal-independent-v1 of tools/matchup_projection.py (no new rule); contract in matchup-context.yaml
+    contract: .ai-context/manual/matchup-context.yaml
+    parameters: calibrated Gaussian team range, starters independent, 50/80/90 percent levels (values stay those of matchup_projection.py at the time of the move)
+    rules:
+      - The model is a pure function of the starters' PlayerWeekFantasy projections and prediction ranges; it reads no file, no clock and no league configuration.
+      - A better method (for example correlated players of one NFL game) is a new version chosen from a season on in data-meta (Models.TeamRange), never a silent change of the numbers.
 
 rankingFunctions:
   implementation: tools/derived_data_lib/ranking.py

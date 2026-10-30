@@ -1,0 +1,125 @@
+schemaVersion: 1
+domain: matchup-context
+status: accepted-contract-v1
+trackingIssue: 1199
+architectureDecision: ADR-075
+amends: [ADR-036, ADR-074]
+implementationState: >-
+  Issue #1199 section 3, step 1: contract, ADR-075, the model entry team-range-v1 and the data-meta key Models.TeamRange.
+  The function, the shadow, the projections and the App cutover follow in steps 2 to 7; the PowerShell cleanup is step 8.
+
+purpose: >-
+  Define the matchup context (the season Matchups read model, the FantasyGameContext of the matchup week, the history of
+  completed seasons and the team projections) as one pure function of canonical facts, products and data-meta. It replaces the
+  PowerShell derivation of public/requests (MatchupReadModelCore, FantasyGameContextCore, FantasyGameContextUtils,
+  FantasyMatchupPreviewUtils, FantasyWeeklyWatchUtils, FantasyRelevanceV2Utils context part, CanonicalMatchupUtils,
+  FantasyTeamOrderUtils) and the file-reading tools/matchup_projection.py. The result is computed, never persisted (pattern of
+  league-lifecycle.yaml, decision-windows.yaml and week-finality.yaml). The App files stay deliveries with unchanged contracts.
+
+architecture:
+  decisionBasis: [ADR-036, ADR-037, ADR-054, ADR-055, ADR-071, ADR-073, ADR-074, ADR-075]
+  logicalLayer: Shared Derived Data (product semantics, computed)
+  persistence: none (no product file, no writer, no write prefix; the App deliveries are written by a consumer generator)
+  owner:
+    function: tools/derived_data_lib/matchup_context.py
+    cli: tools/matchup_context.py
+    cliCommand: python3 tools/matchup_context.py resolve --league <CanonicalLeagueID> --season <Season> [--at <AtUtc>]
+    consumerGenerator: tools/matchup_context_app_publish.py write
+    projectionModel: tools/derived_data_lib/models/team_range/v1.py
+    tests: tools/tests/test_matchup_context.py
+  rules:
+    - The result is a pure function of explicit inputs. The clock is an input (AtUtc), never read inside the function or the model; the result echoes it as AsOfUtc.
+    - Facts come only from data-source, the products nfl-games, league-standings and player-week-fantasy, the lifecycle, Decision Windows and week-finality functions and data-meta. public/data is never an input; it is a consumer output.
+    - No new matchup, relevance, preview or projection rule is introduced by v1. It reproduces the PowerShell and matchup_projection.py behaviour 1:1; the only intended value change is M2.
+    - The file contracts of Matchups.json, FantasyGameContext.json (SchemaVersion 6) and MatchupProjections.json are unchanged, except the documented M2 semantics.
+    - Weekly Recaps reading Matchups.json and Schedule.json is section 4 of Issue #1199, not part of this contract.
+
+decisions:
+  M1: Computed, not persisted. resolve(CanonicalLeagueID, Season, AtUtc) returns the season Matchups model, the FantasyGameContext of the matchup week and the team projections; completed seasons return the history. No product directory.
+  M2: >-
+    The FantasyGameContext counterfactual ("would the matchup have ended differently without this game") uses WeekIsFinal = week <= LeagueScoredWeek (ADR-071,
+    week-finality.yaml) instead of Sleeper last_scored_leg. It is the only allowed value difference in the shadow. Normally both agree because Sleeper scores
+    after the games end; they differ only when Sleeper scores a week while a game is not yet final canonically, and the counterfactual then appears later.
+  M3: The projection method normal-independent-v1 becomes the model team-range-v1, unchanged, registered in derived-models.yaml and chosen per season in data-meta (Models.TeamRange, by hand).
+  M4: The PlayerWeekFantasy refresh takes its target week from the lifecycle LineupWeek, not from FantasyGameContext.json; League Live runs products before consumers (PlayerWeekFantasy refresh first, then the App files).
+  M5: The PowerShell modules are deleted completely, the Decision Windows legacy modules of section 2 included, only after their test cases exist as Python Fast tests. Exception until section 4 - ConvertTo-FgcCanonicalMatchupFacts, Get-MatchupParticipantOrderMap and their helpers stay, because WeeklyRecapUtils.psm1 calls them.
+
+completionState:
+  meaning: >-
+    Per matchup of the Matchups model: open (at least one starter game is not final or a score is missing and the week is not decided), final (all
+    games of both starters are final and both scores are present) or unknown (evidence is missing or contradictory). For the active week the state
+    uses the starter games and the relevance and repairability facts of the Decision Windows. It is not "week final".
+  separateFrom: >-
+    ADR-071 week finality (LeagueScoredWeek, StatsFinalWeek) is a property of a week for the whole league; CompletionState is a property of one matchup
+    and may be final before the week is. week-finality.yaml lists it as out of scope. The exact rules are those of MatchupReadModelCore.ps1
+    (Resolve-MrmActiveCompletionState, Resolve-MrmNonActiveCompletionState) and are ported 1:1.
+  unknownRule: Missing or ambiguous evidence stays unknown; a zero or empty score is never a final result.
+
+function:
+  signature: resolve(repo_root, CanonicalLeagueID, Season, AtUtc) -> object
+  atUtc: timezone-aware UTC instant supplied by the caller. The CLI defaults it to the current time.
+  determinism: Same inputs and same AtUtc give the same result. The result changes without an input change only when AtUtc crosses a kickoff, a lock or the next waiver run.
+  matchupWeek: >-
+    The FantasyGameContext week is chosen like Resolve-FantasyMatchupLoadWeek (the lineup week of the Decision Windows, retained across a rollover as today).
+    A mismatch between the matchup week and the Decision Windows lineup week produces no FantasyGameContext (the consumer keeps its previous file), as today.
+  failClosed:
+    - missing canonical league source, matchups, NFL schedule or game finality, standings product or lifecycle inputs
+    - model choice missing in data-meta (Models.TeamRange) or unknown model ID
+    - a team or provider matchup ID that cannot be mapped to a FantasyTeamID
+    - duplicate or malformed schedule games, rosters or matchup rows (the errors the PowerShell derivation raises)
+    - missing optional evidence (no PlayerWeekFantasy partition, no market row) never synthesizes values; the field stays null or unavailable
+
+inputs:
+  leagueSource: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/ (league.json, members.json, rosters.json, matchups/week-<n>.json)
+  nflSchedule: data-source/nfl/schedules/<season>.json plus data-source/nfl/game-finality/<season>.json (App game IDs through tools/schedule_archive.build_schedule, as in decision-windows.yaml)
+  weeklyRosters: data-source/nfl/weekly-rosters/<season>/<week>.json (history only; week-specific NFL team and position)
+  markets: data-derived/nfl-games/<season>.json (market-implied points; nullable)
+  neutralTeamOrder: data-derived/league-standings/<CanonicalLeagueID>/<season>.json (All-Time Overall order, domain.yaml neutralOrdering)
+  projections: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<week>.json; the Sleeper player ID join goes through data-source/nfl/identities (IDs.Sleeper), as in tools/player_week_fantasy_app_publish.py
+  functions: lifecycle (LineupWeek, LastLeagueWeek), Decision Windows (windows, slot states, availability, repairability, scoring path) and week_finality (LeagueScoredWeek)
+  leagueMetadata: data-meta/<CanonicalLeagueID>/metadata.json (Seasons.<season>.Models.TeamRange)
+
+outputs:
+  matchups: The season Matchups object exactly as in public/data/Matchups.json (all weeks with pairings, nullable effective scores, FantasyMatchupID, CompletionState, results, stage, first kickoff, Summary).
+  fantasyGameContext: The FantasyGameContext of the matchup week exactly as in public/data/FantasyGameContext.json (schema 6; games with relevance and impact per team, matchup view with counterfactual, preview, MustWatch ranking, final scores, market).
+  projections: The team projections exactly as in public/data/MatchupProjections.json (ProjectedFinalScore and 50/80/90 percent ranges per FantasyMatchupID and team; method Id and version from the model).
+  history: For a completed season the same Matchups and FantasyGameContext objects as the history files past_seasons/Matchups_<season>.json and past_seasons/FantasyGameContext_<season>.json (weekly rosters instead of Decision Windows).
+  asOfUtc: Additive; the App delivery drops it so that unchanged inputs keep a semantic no-op.
+
+projectionModel:
+  kind: team-range
+  id: team-range-v1
+  method: normal-independent-v1 (Gaussian team range from the starters' prediction ranges, starters independent, 50/80/90 percent levels)
+  rule: A pure function of the starters' PlayerWeekFantasy projections; it reads no file, no clock and no league configuration. A new method is a new version chosen from a season on in data-meta.
+
+delivery:
+  generator: tools/matchup_context_app_publish.py write
+  files: [public/data/Matchups.json, public/data/FantasyGameContext.json, public/data/MatchupProjections.json, public/data/past_seasons/Matchups/Matchups_<season>.json, public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json]
+  rule: Written only on a semantic difference; an existing file is never an input; incomplete evidence keeps the last file and warns (Save-HistoricalReadModelIfChanged semantics, Issue #1189).
+  orderInLeagueLive: PlayerWeekFantasy refresh, then this generator, then RequestLeague/RequestLeaguePublication (products before consumers).
+
+knownLimits:
+  - The current-week Decision Windows facts use the current NFL team (decision-windows.yaml boundary B6); history uses weekly rosters.
+  - PowerShell and Python rounding must be proven equal in the shadow (ConvertTo-Json number format, half-even versus half-up).
+  - Weekly Recaps is not migrated here (section 4).
+
+migration:
+  issue: 1199
+  steps:
+    1: 'Contract, ADR-075, derived-models.yaml entry team-range-v1, data-meta key Models.TeamRange, loader catalogs (this change).'
+    2: 'Matchups season model as a function with Fast tests ported from MatchupReadModelRegressionTest.'
+    3: 'FantasyGameContext core with the counterfactual on LeagueScoredWeek (M2) and Fast tests ported from the FGC, Preview and WeeklyWatch tests.'
+    4: 'History of completed seasons for Matchups and FantasyGameContext with Fast tests.'
+    5: 'Shadow compare against the published files, current and historical; exact except M2.'
+    6: 'team-range-v1 in the registry, projections from the PlayerWeekFantasy product, PlayerWeekFantasy refresh target week from the lifecycle.'
+    7: 'App cutover (matchup_context_app_publish.py in League Live and update-transactions, RequestLeague stops writing Matchups and FGC); League Live runtime measured.'
+    8: 'Cleanup of the PowerShell modules and tests (Decision Windows legacy modules included), inventory, data-sources.yaml, consumer-read register, ai-context shortContext; the WeeklyRecaps dependencies stay until section 4.'
+
+architectureReview:
+  existingFirst: Reuses the computed-function pattern (week-finality, lifecycle, Decision Windows), the model registry with a per-season choice in data-meta, schedule_archive for App game IDs, the league-standings product for the neutral order and the PlayerWeekFantasy product for projections. No new dataset, writer or workflow.
+  configuration: The projection method is a versioned model chosen per season; everything else is fixed provider-neutral semantics. A new projection method needs a code change (team-range-v2) plus a data-meta choice from the season it applies.
+  identity: CanonicalLeagueID + Season + AtUtc (+ team-range model ID). Matchups are identified by FantasyMatchupID; players by the Sleeper player ID (App contract) with the canonical identity only for joins.
+  invalidation: Inputs are the league source, the NFL schedule and finality, weekly rosters, the three products, the three functions and data-meta. The result is recomputed on every call.
+  temporal: Open, final and unknown matchups and the slot states are distinct through AtUtc; the counterfactual waits for LeagueScoredWeek.
+  unknown: Missing or ambiguous evidence stays unknown or null; zero is never an unknown sentinel.
+  compatibility: The App files and Angular are unchanged except M2; the PowerShell modules are removed in step 8 (WeeklyRecaps dependencies in section 4).
