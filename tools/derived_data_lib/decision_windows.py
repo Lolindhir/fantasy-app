@@ -1115,7 +1115,13 @@ def resolve_base(repo_root: Path, league_id: str, season: int, at_utc: datetime)
 
 
 def resolve(repo_root: Path, league_id: str, season: int, at_utc: datetime) -> dict[str, Any]:
-    """Decision Windows with Fantasy Relevance and the scoring path at ``at_utc``; computed, never persisted."""
+    """Decision Windows with Fantasy Relevance and the scoring path at ``at_utc`` plus ``AsOfUtc``; computed, never persisted."""
+    model = _resolve_model(repo_root, league_id, season, at_utc)
+    model["AsOfUtc"] = utc_text(at_utc)
+    return model
+
+
+def _resolve_model(repo_root: Path, league_id: str, season: int, at_utc: datetime) -> dict[str, Any]:
     inputs = _inputs(repo_root, league_id, season, at_utc)
     model = _base_from_inputs(inputs, season)
     if inputs["lineup_week"] < 1 or inputs["lineup_week"] > inputs["last_week"]:

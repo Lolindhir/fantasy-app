@@ -493,6 +493,60 @@ class AdapterTests(unittest.TestCase):
             dw.rosters_from_canonical([broken], "test")
 
 
+class ShadowCompareTests(unittest.TestCase):
+    """The shadow compares the computed object with the published file; only the documented D2 keys may differ."""
+
+    PUBLISHED = {"Season": "2030", "LineupWeek": 1, "DecisionWindows": [{"StartsAtUtc": "2030-09-08T17:00:00Z", "Games": [{"GameID": "g1"}]}],
+                 "ScoringAvailabilityObservations": [{"PlayerID": "p1", "State": "out", "FirstObservedAtUtc": "2030-09-07T09:00:00Z"}]}
+
+    def computed(self, **changes):
+        import copy
+        result = copy.deepcopy(self.PUBLISHED)
+        result["AsOfUtc"] = "2030-09-08T12:00:00Z"
+        result["ScoringAvailabilityObservations"][0]["FirstObservedAtUtc"] = "2030-09-06T09:00:00Z"
+        result.update(changes)
+        return result
+
+    def test_documented_keys_are_ignored_everything_else_is_exact(self):
+        self.assertEqual([], cli.diff_values(self.PUBLISHED, self.computed()))
+        self.assertEqual(["LineupWeek: published 1 != computed 2"], cli.diff_values(self.PUBLISHED, self.computed(LineupWeek=2)))
+        self.assertEqual(1, len(cli.diff_values(self.PUBLISHED, self.computed(DecisionWindows=[]))))
+        self.assertEqual(["Extra: missing in published file"], cli.diff_values(self.PUBLISHED, self.computed(Extra=1)))
+
+    def test_type_changes_are_differences(self):
+        self.assertEqual(1, len(cli.diff_values({"Id": 1}, {"Id": "1"})))
+        self.assertEqual(1, len(cli.diff_values({"Id": 1}, {"Id": True})))
+
+    def test_compare_uses_the_timestamp_and_the_published_season(self):
+        import json
+        from unittest import mock
+        with tempfile.TemporaryDirectory() as root:
+            data = Path(root) / "public" / "data"
+            data.mkdir(parents=True)
+            (data / "DecisionWindows.json").write_text(json.dumps(self.PUBLISHED), encoding="utf-8")
+            (data / "Timestamps.json").write_text(json.dumps({"DecisionWindows": "2030-09-08T12:00:00Z"}), encoding="utf-8")
+            with mock.patch.object(cli, "resolve", return_value=self.computed()) as called:
+                differences, result = cli.compare_with_published(Path(root), "league-x", None)
+            self.assertEqual([], differences)
+            args = called.call_args.args
+            self.assertEqual(("league-x", 2030, "2030-09-08T12:00:00+00:00"), (args[1], args[2], args[3].isoformat()))
+            with mock.patch.object(cli, "resolve", return_value=self.computed(LineupWeek=3)):
+                self.assertEqual(1, len(cli.compare_with_published(Path(root), "league-x", "2030-09-09T00:00:00Z")[0]))
+
+    def test_compare_fails_closed_without_published_files(self):
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaises(dw.DecisionWindowsError):
+                cli.compare_with_published(Path(root), "league-x", None)
+        self.assertEqual(1, cli.main(["compare", "--league", "none", "--repo-root", "/nonexistent-root"]))
+
+    def test_resolve_echoes_the_instant_as_asofutc(self):
+        from datetime import datetime, timezone
+        from unittest import mock
+        with mock.patch.object(dw, "_resolve_model", return_value={"Season": "2030"}):
+            result = dw.resolve(Path("."), "x", 2030, datetime(2030, 9, 8, 12, 0, 5, tzinfo=timezone.utc))
+        self.assertEqual("2030-09-08T12:00:05Z", result["AsOfUtc"])
+
+
 class CliTests(unittest.TestCase):
     def test_missing_inputs_fail_closed_with_a_message(self):
         with tempfile.TemporaryDirectory() as root:
