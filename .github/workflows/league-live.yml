@@ -150,8 +150,9 @@ jobs:
       # league-drafts, TeamWeekPerformance) runs first so the App files and WeeklyRecaps are rendered from
       # the fresh product. It reads only data-source and is fail-soft (warning, last good file stays), so an
       # unfinished week can never block the App League publication. data-derived commits do not deploy.
-      # The PlayerWeekFantasy/MatchupProjections refresh stays after RequestLeaguePublication on purpose:
-      # it takes the target week from the just-written FantasyGameContext.json and no consumer reads it.
+      # The PlayerWeekFantasy/MatchupProjections refresh stays last for now; it no longer depends on
+      # FantasyGameContext.json (target week from the lifecycle LineupWeek, ADR-075) and moves before the
+      # App files with the cutover (products before consumers, Issue #1199 section 3 step 7).
       - name: Rebuild and publish League, PlayerWeekFantasy, MatchupProjections and current-season Derived
         run: >-
           python3 tools/rebuild_and_publish.py

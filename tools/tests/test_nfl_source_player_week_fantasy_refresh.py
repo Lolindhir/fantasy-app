@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -20,63 +22,56 @@ def write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 
-def build_repo(root: Path, *, context: dict | None = None, mappings: list | None = None) -> None:
-    write_json(
-        root / "public" / "data" / "FantasyGameContext.json",
-        context if context is not None else {"LeagueID": "999", "Season": "2026", "Week": 4},
-    )
+def build_repo(root: Path) -> None:
     write_json(
         root / "data-source" / "leagues" / "league-a" / "seasons" / "2026" / "league.json",
         {
             "CanonicalLeagueID": "league-a",
             "Season": 2026,
             "WeekStructure": {"Season": 2026, "LastScoredLeg": 2},
-            "ProviderMappings": mappings
-            if mappings is not None
-            else [{"Provider": "Sleeper", "ProviderLeagueID": "999"}],
         },
     )
 
 
+CONTEXT = {"Season": 2026, "Week": 4}
+
+
+def target(week, league_ids=("league-a",)):
+    """Patch the lifecycle target resolution: one configured league in season 2026 whose LineupWeek is ``week``."""
+    stack = contextlib.ExitStack()
+    stack.enter_context(mock.patch.object(refresh, "list_league_ids", return_value=list(league_ids)))
+    stack.enter_context(mock.patch.object(refresh, "league_manifest", return_value={}))
+    stack.enter_context(mock.patch.object(refresh, "current_season", return_value=2026))
+    stack.enter_context(mock.patch.object(refresh, "resolve_lifecycle", return_value={"LineupWeek": week}))
+    return stack
+
+
 class ResolveTargetTests(unittest.TestCase):
-    def test_resolves_canonical_league_season_and_week_from_context(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            build_repo(root)
-            self.assertEqual(refresh.resolve_target(root), ("league-a", 2026, 4))
+    AT = datetime(2026, 10, 30, 12, tzinfo=timezone.utc)
 
-    def test_integer_season_is_accepted(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            build_repo(root, context={"LeagueID": "999", "Season": 2026, "Week": 4})
-            self.assertEqual(refresh.resolve_target(root), ("league-a", 2026, 4))
+    def test_resolves_league_season_and_lineup_week_from_the_lifecycle(self) -> None:
+        with target(4):
+            self.assertEqual(refresh.resolve_target(Path("."), self.AT), ("league-a", 2026, 4))
 
-    def test_unmapped_league_fails_closed(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            build_repo(root, mappings=[{"Provider": "Sleeper", "ProviderLeagueID": "other"}])
-            with self.assertRaises(ValueError):
-                refresh.resolve_target(root)
-
-    def test_non_sleeper_mapping_does_not_match(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            build_repo(root, mappings=[{"Provider": "Other", "ProviderLeagueID": "999"}])
-            with self.assertRaises(ValueError):
-                refresh.resolve_target(root)
+    def test_the_lifecycle_is_asked_at_the_given_instant(self) -> None:
+        with target(4) as stack, mock.patch.object(refresh, "resolve_lifecycle", return_value={"LineupWeek": 4}) as life:
+            refresh.resolve_target(Path("."), self.AT)
+        life.assert_called_once_with(Path("."), "league-a", 2026, self.AT)
 
     def test_invalid_week_fails_closed(self) -> None:
         for week in (0, -1, "4x", None, True, 4.0):
-            with self.subTest(week=week), tempfile.TemporaryDirectory() as tmp:
-                root = Path(tmp)
-                build_repo(root, context={"LeagueID": "999", "Season": "2026", "Week": week})
+            with self.subTest(week=week), target(week):
                 with self.assertRaises(ValueError):
-                    refresh.resolve_target(root)
+                    refresh.resolve_target(Path("."), self.AT)
 
-    def test_missing_context_fails_closed(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaises(ValueError):
-                refresh.resolve_target(Path(tmp))
+    def test_not_exactly_one_league_fails_closed(self) -> None:
+        for league_ids in ((), ("league-a", "league-b")):
+            with self.subTest(league_ids=league_ids), target(4, league_ids):
+                with self.assertRaisesRegex(ValueError, "exactly one configured league"):
+                    refresh.resolve_target(Path("."), self.AT)
+
+    def test_the_refresh_reads_nothing_from_public_data(self) -> None:
+        self.assertNotIn("public/data", Path(refresh.__file__).read_text(encoding="utf-8"))
 
 
 class RefreshTests(unittest.TestCase):
@@ -87,7 +82,8 @@ class RefreshTests(unittest.TestCase):
             with mock.patch.object(refresh, "build_player_week_fantasy_dataset") as build, mock.patch.object(
                 refresh, "materialize_app_player_week_fantasy"
             ) as publish:
-                result = refresh.refresh(root)
+                with target(4):
+                    result = refresh.refresh(root)
             build.assert_not_called()
             publish.assert_not_called()
             self.assertEqual(result["Status"], "skipped-weekly-roster-not-synced")
@@ -119,16 +115,19 @@ class RefreshTests(unittest.TestCase):
                 self.assertEqual((league_id, season, week), ("league-a", 2026, 4))
                 return {"Records": [1, 2, 3]}, False
 
-            def fake_matchups(repo_root):
+            def fake_matchups(repo_root, context, player_model, *, league_id, at_utc):
                 calls.append("matchups")
                 self.assertEqual(repo_root, root.resolve())
+                self.assertIs(context, CONTEXT)
+                self.assertEqual(player_model, {"Records": [1, 2, 3]})
+                self.assertEqual(league_id, "league-a")
                 return {"Status": "published", "Changed": True}
 
             with mock.patch.object(refresh, "build_player_week_fantasy_dataset", fake_build), mock.patch.object(
                 refresh, "write_dataset", fake_write
             ), mock.patch.object(refresh, "materialize_app_player_week_fantasy", fake_publish), mock.patch.object(
                 refresh, "publish_matchup_projections", fake_matchups
-            ):
+            ), mock.patch.object(refresh, "resolve_current_context", return_value=CONTEXT), target(4):
                 result = refresh.refresh(root)
 
             self.assertEqual(calls, ["build", "write", "publish", "matchups"])
@@ -152,7 +151,7 @@ class RefreshTests(unittest.TestCase):
                 refresh, "materialize_app_player_week_fantasy", return_value=({"Records": []}, True)
             ), mock.patch.object(
                 refresh, "publish_matchup_projections", return_value={"Status": "published"}
-            ):
+            ), mock.patch.object(refresh, "resolve_current_context", return_value={"Season": 2026}), target(4):
                 result = refresh.refresh(root)
             self.assertEqual(result["Status"], "published")
             self.assertEqual(result["RosterSourceWeek"], 3)
@@ -162,11 +161,26 @@ class RefreshTests(unittest.TestCase):
                 "allow_provisional_roster": True,
             }])
 
+    def test_without_a_matchup_context_the_projections_are_skipped(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            build_repo(root)
+            write_json(refresh.weekly_roster_path(root, 2026, 4), {"Records": []})
+            with mock.patch.object(refresh, "build_player_week_fantasy_dataset", return_value={"Records": []}), \
+                    mock.patch.object(refresh, "write_dataset", return_value=False), \
+                    mock.patch.object(refresh, "materialize_app_player_week_fantasy", return_value=({"Records": []}, False)), \
+                    mock.patch.object(refresh, "resolve_current_context", return_value=None), \
+                    mock.patch.object(refresh, "publish_matchup_projections") as publish, target(4):
+                result = refresh.refresh(root)
+            publish.assert_not_called()
+            self.assertEqual(result["MatchupProjections"], {"Status": "skipped-no-matchup-context"})
+
     def test_week_one_does_not_use_previous_season_roster(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            build_repo(root, context={"LeagueID": "999", "Season": 2026, "Week": 1})
-            result = refresh.refresh(root)
+            build_repo(root)
+            with target(1):
+                result = refresh.refresh(root)
             self.assertEqual(result["Status"], "skipped-weekly-roster-not-synced")
 
 
@@ -175,7 +189,7 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         root = Path(tmp.name)
-        build_repo(root, context={"LeagueID": "999", "Season": "2026", "Week": 7})
+        build_repo(root)
         path = root / "data-source/leagues/league-a/seasons/2026/league.json"
         league = json.loads(path.read_text(encoding="utf-8"))
         league["WeekStructure"]["LastScoredLeg"] = 6
@@ -209,7 +223,8 @@ class PreviousFinalizedWeekCatchupTests(unittest.TestCase):
              mock.patch.object(refresh, "write_dataset", side_effect=write), \
              mock.patch.object(refresh, "materialize_app_player_week_fantasy",
                                return_value=({"Records": []}, False)) as app_publish, \
-             mock.patch.object(refresh, "publish_matchup_projections", return_value={"Status": "ok"}):
+             mock.patch.object(refresh, "resolve_current_context", return_value={"Season": 2026}), \
+             mock.patch.object(refresh, "publish_matchup_projections", return_value={"Status": "ok"}), target(7):
             result = refresh.refresh(root)
 
         self.assertEqual([x[1]["week"] for x in calls if x[0] == "build"], [7, 6])
@@ -436,7 +451,7 @@ class RefreshErrorTests(unittest.TestCase):
             with mock.patch.object(
                 refresh, "build_player_week_fantasy_dataset", side_effect=ValueError("broken input")
             ):
-                with self.assertRaises(ValueError):
+                with target(4), self.assertRaises(ValueError):
                     refresh.refresh(root)
 
 

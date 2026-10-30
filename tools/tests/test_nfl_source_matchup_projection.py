@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from datetime import datetime, timezone
 import json
 import math
 import sys
@@ -14,6 +15,7 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 import matchup_projection  # noqa: E402
+from derived_data_lib.models.team_range import v1 as team_range_v1  # noqa: E402
 from matchup_projection import (  # noqa: E402
     AXIS_PADDING,
     METHOD_ID,
@@ -319,100 +321,114 @@ class MatchupProjectionTests(unittest.TestCase):
         self.assertLessEqual(wide["Matchups"][0]["Axis"]["Min"], narrow["Matchups"][0]["Axis"]["Min"])
 
 
+class TeamRangeModelTests(unittest.TestCase):
+    def test_the_model_is_registered_and_pins_the_v1_method(self) -> None:
+        from derived_data_lib.models.registry import get_model
+
+        model = get_model("team-range-v1", "team-range")
+        self.assertIs(model, team_range_v1)
+        self.assertEqual(dict(model.PARAMS), {"MethodId": "normal-independent-v1", "Levels": (0.5, 0.8, 0.9), "SigmaBasisLevel": 0.9})
+        self.assertEqual(model.METHOD["Id"], "normal-independent-v1")
+        self.assertEqual(model.METHOD["Levels"], [0.5, 0.8, 0.9])
+
+    def test_the_model_reads_no_file_and_no_clock(self) -> None:
+        source = Path(team_range_v1.__file__).read_text(encoding="utf-8")
+        for forbidden in ("open(", "read_text", "datetime", "time.", "environ"):
+            self.assertNotIn(forbidden, source)
+
+
 class PublicationTests(unittest.TestCase):
-    def _repo(self, context: dict, model: dict) -> Path:
-        root = Path(tempfile.mkdtemp())
-        (root / "public" / "data").mkdir(parents=True)
-        (root / "public/data/FantasyGameContext.json").write_text(json.dumps(context), encoding="utf-8")
-        (root / "public/data/PlayerWeekFantasy.json").write_text(json.dumps(model), encoding="utf-8")
-        return root
+    AT = datetime(2026, 10, 30, 12, tzinfo=timezone.utc)
+
+    def _publish(self, root: Path, context: dict, model: dict, *, windows=None) -> dict:
+        """Publish with a stand-in data-meta (team-range-v1 chosen for the season) and stand-in Decision Windows."""
+        metadata = {"CanonicalLeagueID": "league-a", "Seasons": {"2026": {"Models": {"TeamRange": "team-range-v1"}}}}
+        with mock.patch("matchup_projection.load_league_metadata", return_value=metadata), mock.patch(
+            "matchup_projection._decision_windows", return_value=windows
+        ):
+            return publish_matchup_projections(root, context, model, league_id="league-a", at_utc=self.AT)
+
+    def _windows(self, *, week: int, state: str) -> dict:
+        return {"Season": 2026, "LineupWeek": week, "ScoringAvailabilityObservations": [{"PlayerID": "p1", "State": state}]}
+
+    def _payload(self, root: Path) -> dict:
+        return json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
 
     def test_publication_writes_once_and_is_a_semantic_no_op_afterwards(self) -> None:
-        root = self._repo(default_context(), default_model())
+        root = Path(tempfile.mkdtemp())
 
-        first = publish_matchup_projections(root)
-        second = publish_matchup_projections(root)
+        first = self._publish(root, default_context(), default_model())
+        second = self._publish(root, default_context(), default_model())
 
         self.assertEqual(first["Status"], "published")
         self.assertTrue(first["Changed"])
         self.assertFalse(second["Changed"])
         self.assertEqual(first["AvailableTeamCount"], 2)
-        payload = json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
-        self.assertEqual(payload["Week"], 3)
+        self.assertEqual(self._payload(root)["Week"], 3)
 
     def test_week_mismatch_keeps_the_existing_publication(self) -> None:
         model = default_model()
         model["Week"] = 2
-        root = self._repo(default_context(), model)
+        root = Path(tempfile.mkdtemp())
         existing = root / "public/data/MatchupProjections.json"
+        existing.parent.mkdir(parents=True)
         existing.write_text("previous", encoding="utf-8")
 
-        result = publish_matchup_projections(root)
+        result = self._publish(root, default_context(), model)
 
         self.assertEqual(result["Status"], "skipped-week-mismatch")
         self.assertEqual(existing.read_text(encoding="utf-8"), "previous")
 
-    def _windows(self, *, week: int, state: str):
-        windows = {"Season": 2026, "LineupWeek": week, "ScoringAvailabilityObservations": [{"PlayerID": "p1", "State": state}]}
-        return mock.patch("matchup_projection._decision_windows", return_value=windows)
-
     def test_publication_applies_availability_of_the_same_week(self) -> None:
-        root = self._repo(default_context(), default_model())
+        root = Path(tempfile.mkdtemp())
 
-        with self._windows(week=3, state="out"):
-            publish_matchup_projections(root)
+        self._publish(root, default_context(), default_model(), windows=self._windows(week=3, state="out"))
 
-        payload = json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
-        self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], ["p1"])
+        self.assertEqual(self._payload(root)["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], ["p1"])
 
     def test_publication_ignores_availability_of_another_week(self) -> None:
-        root = self._repo(default_context(), default_model())
+        root = Path(tempfile.mkdtemp())
 
-        with self._windows(week=2, state="out"):
-            publish_matchup_projections(root)
+        self._publish(root, default_context(), default_model(), windows=self._windows(week=2, state="out"))
 
-        payload = json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
-        self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
-
-    def test_publication_never_reads_the_published_decision_windows_file(self) -> None:
-        root = self._repo(default_context(), default_model())
-        (root / "public/data/DecisionWindows.json").write_text(
-            json.dumps({"Season": 2026, "LineupWeek": 3, "ScoringAvailabilityObservations": [{"PlayerID": "p1", "State": "out"}]}),
-            encoding="utf-8",
-        )
-
-        with mock.patch("matchup_projection._decision_windows", return_value=None):
-            publish_matchup_projections(root)
-
-        payload = json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
-        self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
+        self.assertEqual(self._payload(root)["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
 
     def test_function_failure_keeps_projections_without_availability(self) -> None:
-        root = self._repo(default_context(), default_model())
+        root = Path(tempfile.mkdtemp())
 
-        self.assertEqual({}, matchup_projection._availability_by_player(root, default_context()))  # no data-meta in the temp repo
-        payload_result = publish_matchup_projections(root)
-        self.assertEqual("published", payload_result["Status"])
+        result = self._publish(root, default_context(), default_model(), windows=None)
 
-    def test_canonical_league_is_found_by_the_provider_league_id(self) -> None:
-        metadata = {"league-a": {"CurrentProviderLeagueID": "111"}, "league-b": {"CurrentProviderLeagueID": "222"}}
-        with mock.patch("matchup_projection.load_all_league_metadata", return_value=metadata):
-            self.assertEqual("league-b", matchup_projection._canonical_league_id(Path("."), 222))
-            self.assertIsNone(matchup_projection._canonical_league_id(Path("."), "333"))
+        self.assertEqual("published", result["Status"])
+        self.assertEqual(self._payload(root)["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
 
-    def test_decision_windows_are_resolved_for_the_context_season_at_the_current_instant(self) -> None:
-        with mock.patch("matchup_projection._canonical_league_id", return_value="league-a"), mock.patch(
-            "matchup_projection.resolve_decision_windows", return_value={"LineupWeek": 3}
-        ) as resolved:
-            result = matchup_projection._decision_windows(Path("."), {"LeagueID": "111", "Season": "2026"})
-        self.assertEqual({"LineupWeek": 3}, result)
-        args = resolved.call_args.args
-        self.assertEqual(("league-a", 2026), (args[1], args[2]))
-        self.assertIsNotNone(args[3].tzinfo)
+    def test_decision_windows_are_resolved_for_the_context_season_at_the_given_instant(self) -> None:
+        with mock.patch("matchup_projection.resolve_decision_windows", return_value={"Season": 2026}) as resolve:
+            matchup_projection._decision_windows(Path("."), "league-a", 2026, self.AT)
+        resolve.assert_called_once_with(Path("."), "league-a", 2026, self.AT)
 
-    def test_missing_input_fails_closed(self) -> None:
-        with self.assertRaisesRegex(ValueError, "missing"):
-            publish_matchup_projections(Path(tempfile.mkdtemp()))
+    def test_decision_windows_failure_is_reported_and_yields_none(self) -> None:
+        with mock.patch("matchup_projection.resolve_decision_windows", side_effect=ValueError("boom")):
+            self.assertIsNone(matchup_projection._decision_windows(Path("."), "league-a", 2026, self.AT))
+
+    def test_the_method_comes_from_the_season_model_and_the_numbers_are_unchanged(self) -> None:
+        root = Path(tempfile.mkdtemp())
+        self._publish(root, default_context(), default_model())
+        direct = build_matchup_projections(default_context(), default_model())
+
+        self.assertEqual(self._payload(root), direct)
+        self.assertEqual(direct["Method"]["Id"], METHOD_ID)
+        self.assertEqual(team_range_v1.MODEL_ID, "team-range-v1")
+
+    def test_an_unknown_model_choice_fails_closed(self) -> None:
+        root = Path(tempfile.mkdtemp())
+        metadata = {"CanonicalLeagueID": "league-a", "Seasons": {"2026": {"Models": {"TeamRange": "team-range-v9"}}}}
+        with mock.patch("matchup_projection.load_league_metadata", return_value=metadata):
+            with self.assertRaises(ValueError):
+                publish_matchup_projections(root, default_context(), default_model(), league_id="league-a", at_utc=self.AT)
+
+    def test_the_projections_read_nothing_from_public_data(self) -> None:
+        self.assertNotIn("public/data/FantasyGame", Path(matchup_projection.__file__).read_text(encoding="utf-8"))
+        self.assertNotIn("public/data/PlayerWeek", Path(matchup_projection.__file__).read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
