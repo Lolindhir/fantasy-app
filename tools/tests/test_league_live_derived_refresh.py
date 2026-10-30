@@ -96,10 +96,12 @@ class LeagueLiveStepOrderTests(unittest.TestCase):
         workflow = (TOOLS.parent / ".github/workflows/league-live.yml").read_text(encoding="utf-8")
         steps = [
             "python3 tools/league_live_derived_refresh.py",
+            # PlayerWeekFantasy/MatchupProjections no longer depend on an App file (ADR-075), so they precede the App files
+            "python3 tools/player_week_fantasy_refresh.py",
+            # WeeklyRecaps (RequestLeaguePublication) reads Matchups.json
+            "python3 tools/matchup_context_app_publish.py write",
             "python3 tools/league_history_app_publish.py write",
             "pwsh ./public/requests/RequestLeaguePublication.ps1",
-            # needs the FantasyGameContext.json written by RequestLeaguePublication
-            "python3 tools/player_week_fantasy_refresh.py",
         ]
         positions = [workflow.index(step) for step in steps]
         self.assertEqual(sorted(positions), positions)

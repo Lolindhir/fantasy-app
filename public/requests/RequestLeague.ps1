@@ -11,11 +11,9 @@ try {
     Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueWeekUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\MatchupReadModelUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PastSeasonsIndexUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerValuationUtils.psm1" -ErrorAction Stop -Force
@@ -44,7 +42,6 @@ $LeagueTimeZone = $config.LeagueTimeZone
 $CapDeadlineBufferDays = $config.CapDeadlineBufferDays
 
 $ScheduleFile = $config.ScheduleFile
-$FantasyGameContextFile = Join-Path $config.DataDir "FantasyGameContext.json"
 
 # ===========================================================================
 # 3. Funktionen
@@ -226,55 +223,8 @@ try {
     $seasonKickoff = $lifecycle.SeasonKickoff
     $playoffStartAt = $lifecycle.PlayoffStart
 
-    $matchupWeek = Resolve-FantasyMatchupLoadWeek `
-        -DecisionWindows $decisionWindowsAsJson `
-        -LastLeagueWeek ([int]$lastWeek) `
-        -LeagueComplete ([string]$league.status -eq "complete")
-
-    $fantasyGameContextAsJson = $null
-    $matchupRows = @()
-    $activeMatchupScoreEvidenceAvailable = $matchupWeek -le 0
-    if ($matchupWeek -gt 0) {
-        $matchupLoad = Get-CanonicalCurrentMatchupLoad -CanonicalLeagueID $CanonicalLeagueID -Season ([int]$league.season) -Week $matchupWeek
-        if ($matchupLoad.Success) {
-            $activeMatchupScoreEvidenceAvailable = $true
-            $matchupRows = @($matchupLoad.Rows)
-
-            if ([int]$decisionWindowsAsJson.LineupWeek -eq $matchupWeek) {
-                $fantasyMatchupFacts = @(ConvertTo-FgcCurrentMatchupFacts -Season ([string]$league.season) -Week $matchupWeek -MatchupRows $matchupRows)
-                $weekIsFinal = $lastScoredLeg -ge $matchupWeek
-                $nflGameDerived = $null
-                $nflGameDerivedFile = Join-Path $config.DataDerivedDir "nfl-games/$($league.season).json"
-                if (Test-Path $nflGameDerivedFile) {
-                    $nflGameDerived = Get-Content $nflGameDerivedFile -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
-                }
-                $fantasyGameContextAsJson = New-FantasyGameContextReadModel `
-                    -LeagueID $LeagueID `
-                    -Season ([string]$league.season) `
-                    -Week $matchupWeek `
-                    -DecisionFacts $decisionWindowsAsJson `
-                    -FantasyMatchups $fantasyMatchupFacts `
-                    -Schedule @($schedule) `
-                    -WeekIsFinal $weekIsFinal `
-                    -NflGameDerived $nflGameDerived
-            }
-            else {
-                Write-Warning "FantasyGameContext not overwritten because matchup Week $matchupWeek differs from DecisionWindows lineup Week $($decisionWindowsAsJson.LineupWeek)."
-            }
-        }
-        else {
-            Write-Warning "Canonical current matchup load for Week $matchupWeek failed. Matchups finality will fail closed for active score evidence and FantasyGameContext keeps its previous generated file."
-        }
-    }
-
-    $matchupsAsJson = New-MatchupSeasonReadModel `
-        -CanonicalLeagueID $CanonicalLeagueID `
-        -Season ([int]$league.season) `
-        -Standings @($standings) `
-        -DecisionFacts $decisionWindowsAsJson `
-        -LiveMatchupRows @($matchupRows) `
-        -LiveMatchupWeek $matchupWeek `
-        -ActiveScoreEvidenceAvailable $activeMatchupScoreEvidenceAvailable
+    # Matchups.json and FantasyGameContext.json are no longer built here: the computed matchup context (ADR-075) is
+    # delivered by tools/matchup_context_app_publish.py before this script runs.
 
     $cutsAllowed = [bool]$lifecycle.CutsAllowed
     $cutsMetaText = ""
@@ -345,35 +295,11 @@ try {
     }
     Save-JsonFile -Type "DecisionWindows" -Data $decisionWindowsAsJson -CompareScript $decisionCompare -UpdateTimestamp
 
-    $matchupsCompare = {
-        param($oldMatchups, $newMatchups)
-        Test-MatchupSeasonReadModelChanged -OldData $oldMatchups -NewData $newMatchups
-    }
-    Save-JsonFile `
-        -TargetFile $config.MatchupsFile `
-        -Type "Matchups" `
-        -Data $matchupsAsJson `
-        -CompareScript $matchupsCompare `
-        -UpdateTimestamp
-
-    if ($null -ne $fantasyGameContextAsJson) {
-        $fantasyGameContextCompare = {
-            param($oldContext, $newContext)
-            Test-FantasyGameContextReadModelChanged -OldData $oldContext -NewData $newContext
-        }
-        Save-JsonFile `
-            -TargetFile $FantasyGameContextFile `
-            -Type "FantasyGameContext" `
-            -Data $fantasyGameContextAsJson `
-            -CompareScript $fantasyGameContextCompare `
-            -UpdateTimestamp
-    }
-
     $compare = & Get-Compare
     Save-JsonFile -Type "League" -Data $leagueAsJson -CompareScript $compare -CreateBackup -UpdateTimestamp
 
     # Historical Matchups and FantasyGameContext files are regenerated by the weekly update-transactions run
-    # (RequestHistoricalAppReadModels.ps1, Issue #1189), not by the ten-minute League refresh.
+    # (tools/matchup_context_app_publish.py write --history), not by the ten-minute League refresh.
     Update-PastSeasonsIndex -Config $config | Out-Null
 
     exit 0
