@@ -29,6 +29,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
+from canonical_league_lifecycle import LeagueLifecycleUnavailable, resolve_lifecycle_state  # noqa: E402
 from canonical_league_ownership import (
     CanonicalOwnershipError,
     build_canonical_ownership_snapshot,
@@ -163,8 +164,14 @@ def build_league_state(
     ownership_teams: Any,
     managed_team_id: str,
     canonical_season: int,
+    lifecycle: dict[str, Any] | None = None,
+    lifecycle_issue: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Combine canonical ownership with retained App-owned league rule enrichment."""
+    """Combine canonical ownership with retained App-owned league rule enrichment.
+
+    Status, phase, season kickoff and current week come from the shared lifecycle model (ADR-073), not from the
+    League.json delivery; without a lifecycle they stay unknown and the state is incomplete.
+    """
 
     issues: list[dict[str, Any]] = []
     if not isinstance(league_enrichment, dict):
@@ -281,6 +288,10 @@ def build_league_state(
             }
         )
 
+    if lifecycle is None:
+        issues.append(lifecycle_issue or {"severity": "error", "kind": "league_lifecycle_unavailable"})
+        lifecycle = {}
+
     roster_size = league_enrichment.get("RosterSize")
     active_capacity = len(roster_size) if isinstance(roster_size, list) else None
     if active_capacity is None:
@@ -297,10 +308,10 @@ def build_league_state(
         "settings": settings,
         "active_capacity": active_capacity,
         "league_season": str(canonical_season),
-        "league_phase": optional_text(league_enrichment.get("Phase")),
-        "league_status": optional_text(league_enrichment.get("Status")),
-        "season_kickoff": optional_text(league_enrichment.get("SeasonKickoff")),
-        "current_week": optional_number(league_enrichment.get("CurrentWeek")),
+        "league_phase": optional_text(lifecycle.get("Phase")),
+        "league_status": optional_text(lifecycle.get("Status")),
+        "season_kickoff": optional_text(lifecycle.get("SeasonKickoff")),
+        "current_week": optional_number(lifecycle.get("CurrentWeek")),
     }
 
 
@@ -694,11 +705,28 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             f"Canonical FA-board ownership is unavailable: {exc}"
         ) from exc
 
+    generated_at = max_timestamp(
+        [
+            player_signals.get("generated_at"),
+            timestamps.get("League"),
+            timestamps.get("Players"),
+        ]
+    ) or optional_text(player_signals.get("generated_at"))
+
+    lifecycle: dict[str, Any] | None = None
+    lifecycle_issue: dict[str, Any] | None = None
+    try:
+        lifecycle = resolve_lifecycle_state(root, canonical_league_id, canonical_season, generated_at)
+    except LeagueLifecycleUnavailable as exc:
+        lifecycle_issue = {"severity": "error", "kind": "league_lifecycle_unavailable", "detail": str(exc)}
+
     league_state = build_league_state(
         league_enrichment,
         ownership_teams,
         managed_team_id,
         canonical_season,
+        lifecycle,
+        lifecycle_issue,
     )
     drafts_path = canonical_drafts_path(root, canonical_league_id, canonical_season)
     try:
@@ -716,14 +744,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     draft_state = resolve_active_fa_draft(drafts, league_state)
     if draft_load_issue:
         draft_state["issues"] = [draft_load_issue]
-
-    generated_at = max_timestamp(
-        [
-            player_signals.get("generated_at"),
-            timestamps.get("League"),
-            timestamps.get("Players"),
-        ]
-    ) or optional_text(player_signals.get("generated_at"))
 
     quality_issues: list[dict[str, Any]] = []
     quality_issues.extend(league_state.get("issues") or [])

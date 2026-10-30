@@ -6,8 +6,9 @@ architectureDecision: ADR-073
 implementationState: >-
   Issue #1199 section 1: contract and data-meta key (step 1), model, function and CLI (step 2) and the shadow compare
   (step 3) are in place. Since step 4 RequestLeague.ps1 takes the lifecycle from the CLI (Get-LeagueLifecycle in
-  LeagueWeekUtils.psm1) and LeagueUtils.psm1, WaiverUtils.psm1 and LeagueOverviewUtils.psm1 are removed. The Fantasy
-  Management cutover follows in step 5.
+  LeagueWeekUtils.psm1) and LeagueUtils.psm1, WaiverUtils.psm1 and LeagueOverviewUtils.psm1 are removed. Since step 5
+  Fantasy Management resolves the lifecycle through fantasy-management/_ai/scripts/canonical_league_lifecycle.py
+  (FA board and managed roster overview) instead of reading Status/Phase from League.json.
 
 purpose: >-
   Define the league lifecycle as a central, versioned, league-independent model with one pure function. For one
@@ -157,8 +158,8 @@ consumers:
   app:
     - public/requests/RequestLeague.ps1 (step 4) renders the League.json fields from the CLI result and adds the MetaText.
   fantasyManagement:
-    - fantasy-management/_ai/scripts/build_fa_board_readmodel.py reads Status, Phase and CurrentWeek (step 5)
-    - fantasy-management/_ai/scripts/build_managed_roster_overview.py::_derive_taxi_phase reads Status, Phase and FinalScoredWeek (step 5, fixes the in-season casefold defect)
+    - fantasy-management/_ai/scripts/build_fa_board_readmodel.py takes Status, Phase, SeasonKickoff and CurrentWeek from the function at the signals timestamp (step 5, done; unresolvable lifecycle is the error issue league_lifecycle_unavailable)
+    - fantasy-management/_ai/scripts/build_managed_roster_overview.py::_derive_taxi_phase uses Status, Phase and FinalScoredWeek of the function (step 5, done; "In-Season" is now recognised, fixing the casefold defect; an unresolvable lifecycle raises RosterOverviewError)
   angular: Reads League.json only; unchanged.
 
 migration:
@@ -168,7 +169,7 @@ migration:
     2: 'Model lifecycle-v1, registry entry, function, CLI and Fast tests with constructed seasons for every rule branch.'
     3: 'Shadow compare against League.json (Fast guard, run once manually).'
     4: 'App cutover: RequestLeague.ps1 calls the CLI; Resolve-LeagueStatusState, the draft helpers, the CurrentWeek block, the waiver and overview helpers and the ConfigUtils constant LeagueStatusSeasonStartBufferDays are removed; measure the run time of the ten-minute League Live run.'
-    5: 'Fantasy Management cutover (FA board, managed roster overview), consumer-read register, data-sources.yaml and domain.yaml.'
+    5: 'Fantasy Management cutover (FA board, managed roster overview via canonical_league_lifecycle.py; config key canonical_league.canonical_league_id), consumer-read register, data-sources.yaml and domain.yaml (done).'
   later: Decision Windows with Repairability and the matchup context reuse the same lifecycle and current week (Issue #1199 sections 2 to 4).
 
 architectureReview:

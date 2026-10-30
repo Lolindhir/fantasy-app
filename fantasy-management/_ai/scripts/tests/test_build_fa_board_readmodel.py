@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from jsonschema import Draft202012Validator
 
@@ -286,8 +287,14 @@ class Fixture:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
+    def lifecycle(self, root: Path, canonical_league_id: str, season: int, at: object) -> dict:
+        """Stand-in for the shared lifecycle: the fixture League.json plays the role of the lifecycle result."""
+        league_data = json.loads((self.root / "public/data/League.json").read_text(encoding="utf-8"))
+        return {key: league_data.get(key) for key in ("Status", "Phase", "SeasonKickoff", "CurrentWeek", "FinalScoredWeek")}
+
     def build(self) -> dict:
-        return MODULE.build(self.root, self.config)
+        with mock.patch.object(MODULE, "resolve_lifecycle_state", side_effect=self.lifecycle):
+            return MODULE.build(self.root, self.config)
 
 
 def row(result: dict, pid: str) -> dict:
