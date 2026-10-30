@@ -1,0 +1,188 @@
+schemaVersion: 1
+domain: league-lifecycle
+status: accepted-contract-v1
+trackingIssue: 1199
+architectureDecision: ADR-073
+implementationState: >-
+  step 1 of Issue #1199 section 1 (contract, ADR-073, data-meta key). Model, function, CLI, shadow and the consumer
+  cutovers follow in steps 2 to 5; until step 4 RequestLeague.ps1 and LeagueUtils.psm1 stay productive.
+
+purpose: >-
+  Define the league lifecycle as a central, versioned, league-independent model with one pure function. For one
+  league, one season and one instant it answers: which Status and Phase is the league in, which week is current,
+  which trades and waivers are possible and when the clock-dependent boundaries lie. It replaces the lifecycle code
+  of public/requests/RequestLeague.ps1 and LeagueUtils.psm1, WaiverUtils.psm1 and LeagueOverviewUtils.psm1.
+  The result is computed, never persisted (pattern of week-finality.yaml, ADR-071).
+
+architecture:
+  decisionBasis:
+    - ADR-003
+    - ADR-036
+    - ADR-037
+    - ADR-054
+    - ADR-055
+    - ADR-071
+    - ADR-073
+  logicalLayer: Shared Derived Data (product semantics, computed)
+  persistence: none (no product file, no writer, no write prefix, no workflow change)
+  models: .ai-context/manual/derived-models.yaml (kind lifecycle, model lifecycle-v1)
+  owner:
+    model: tools/derived_data_lib/models/lifecycle/v1.py
+    function: tools/derived_data_lib/league_lifecycle.py
+    cli: tools/league_lifecycle.py
+    cliCommand: python3 tools/league_lifecycle.py resolve --league <CanonicalLeagueID> --season <Season> [--at <AtUtc>]
+    tests: tools/tests/test_league_lifecycle.py
+  rules:
+    - The lifecycle is a pure function of explicit inputs. The clock is an input (AtUtc), never read inside the function or the model.
+    - Facts come only from data-source, the league-drafts product, week_finality and data-meta. public/data (League.json, Drafts.json, Schedule.json) is never an input; it is a consumer output.
+    - League.json keeps its contract. RequestLeague.ps1 calls the CLI like it calls Get-LeagueScoredWeek and renders the fields; the MetaText display strings stay in that consumer.
+    - Consumers (App generator, Fantasy Management) call the function or the CLI instead of reading the lifecycle fields back from League.json.
+    - A league selects the lifecycle model per season in data-meta (Models.Lifecycle, ADR-054). Rule parameters (the 7-day season start lead, draft status sets) belong to the model, not to ConfigUtils.psm1 and not to league files.
+    - No new lifecycle rule is introduced by v1. It reproduces the current PowerShell behaviour 1:1 (Robert, 2026-10-30).
+
+function:
+  signature: resolve(repo_root, CanonicalLeagueID, Season, AtUtc) -> result
+  atUtc: timezone-aware UTC instant supplied by the caller. The CLI defaults it to the current time and always prints it back.
+  determinism: Same inputs and same AtUtc give the same result. The result changes without an input change only when AtUtc crosses one of the Boundaries.
+  failClosed:
+    - missing canonical league source, drafts product, NFL schedule or game finality for the season
+    - model choice missing in data-meta or unknown model ID
+    - unparsable instants, non-integer week values or contradicting week evidence (week_finality errors pass through)
+    - A missing input never produces a guessed Status; the caller keeps its last published file.
+
+inputs:
+  leagueSource:
+    path: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json
+    fields: Status (provider lifecycle), Settings (disable_trades, trade_review_days, trade_deadline, disable_adds, daily_waivers, daily_waivers_days, daily_waivers_hour, playoff_week_start), WeekStructure (through week_finality)
+  draftsProduct:
+    path: data-derived/league-drafts/<CanonicalLeagueID>/<season>.json
+    fields: Drafts[] with Season, Status (Virtual, PreDraft, Drafting, Complete), DraftStartTimeUtc, SleeperStartTime
+    note: Replaces public/data/Drafts.json. Only drafts of the requested season count; the product holds exactly those.
+  nflSchedule:
+    path: data-source/nfl/schedules/<season>.json plus data-source/nfl/game-finality/<season>.json
+    use: Regular-season kickoffs (SeasonKickoff, season window, PlayoffStart) and the first non-final regular-season game (CurrentWeek). Kickoffs are Eastern-time local times converted exactly like tools/schedule_archive.py (the Schedule.json derivation).
+    replaces: public/data/Schedule.json
+  weekFinality:
+    function: tools/derived_data_lib/week_finality.py::resolve_week_finality
+    use: FinalScoredWeek is LeagueScoredWeek; LastLeagueWeek is the resolved structural last league week.
+  leagueMetadata:
+    path: data-meta/<CanonicalLeagueID>/metadata.json
+    fields: Seasons.<season>.CapDeadline, Seasons.<season>.CapDeadlineBufferDays, Seasons.<season>.Models.Lifecycle
+
+outputs:
+  Status: Completed | Playoffs | In-Season | Pre-Season | Draft-Season | Off-Season
+  Phase: '"" or Cap Deadline Open | Cap Check | Post Cap Check | Pre Draft | In Draft | Between Drafts'
+  CurrentWeek: week of the first non-final regular-season game by game date; 0 when every game is final or no schedule exists.
+  FinalScoredWeek: LeagueScoredWeek (week-finality.yaml).
+  LastLeagueWeek: structural last league week from the canonical WeekStructure.
+  PlayoffStartWeek: Settings.playoff_week_start (null when absent).
+  PlayoffStart: first regular-season kickoff of week PlayoffStartWeek as UTC instant, else null.
+  SeasonKickoff: first regular-season kickoff of the season as UTC instant, else null.
+  TradesOpen: boolean (see trades).
+  TradesClosedBy: reason codes DisabledInProvider, CommissionerReview, TradeDeadlineReached (the consumer maps them to its MetaText).
+  TradeReviewDays: Settings.trade_review_days, 0 when absent.
+  TradeDeadlineWeek: Settings.trade_deadline as a week, null when absent, non-numeric, non-positive or 99 (Sleeper disabled marker).
+  WaiversOpen: boolean (see waivers).
+  NextWaiverRun: next waiver processing instant after AtUtc as UTC instant, else null.
+  CutsAllowed: boolean.
+  Boundaries: instants at which the clock-dependent part of the result may change.
+  Warnings: diagnostics (for example an undecidable waiver schedule); never part of any comparison.
+  notOutput: The *MetaText display strings stay in the consumer (RequestLeague.ps1).
+  instantFormat: yyyy-MM-ddTHH:mm:ssZ (UTC, whole seconds), identical to the League.json strings.
+
+boundaries:
+  CapWindowEnd: >-
+    First instant after the Cap Deadline buffer window, 00:00 UTC of the day after CapDeadline date plus CapDeadlineBufferDays.
+    Null when the season has no CapDeadline.
+  SeasonWindowStart: SeasonKickoff minus the season start lead of the model (7 days). Null without a regular-season kickoff.
+  NextWaiverRun: same instant as the output field.
+  rule: >-
+    The lifecycle is not stored. A consumer that needs the state at another time calls the function with that AtUtc.
+    A consumer that wants to cache can keep the result until the earliest Boundary after AtUtc or until an input changes.
+
+statusRules:
+  note: >-
+    First match wins. TradesOpen is the value after the trade rules (before the Completed override).
+    Season window started means AtUtc is at or after SeasonWindowStart. Cap window open means the UTC date of AtUtc is on or before
+    the CapDeadline UTC date plus CapDeadlineBufferDays; without a CapDeadline it is never open.
+    Drafts are the drafts of the season. Open = Status Virtual, PreDraft or Drafting. Start time set = an open draft has
+    DraftStartTimeUtc or SleeperStartTime.
+  rules:
+    1: 'provider Status complete -> Completed'
+    2: 'provider Status playoffs, or PlayoffStartWeek > 0 and FinalScoredWeek >= PlayoffStartWeek -> Playoffs'
+    3: 'at least one draft and every draft Complete -> Pre-Season before the season window, else In-Season'
+    4: 'a draft is Drafting -> Draft-Season / In Draft'
+    5: 'a draft is Complete and a draft is open and an open draft has a start time -> Draft-Season / Pre Draft'
+    6: 'a draft is Complete and a draft is open -> Draft-Season / Between Drafts'
+    7: 'TradesOpen and cap window open -> Off-Season / Cap Deadline Open'
+    8: 'a draft is open and not TradesOpen -> Off-Season / Cap Check'
+    9: 'a draft is open, TradesOpen, no open draft start time -> Off-Season / Post Cap Check'
+    10: 'a draft is open, TradesOpen, an open draft start time -> Draft-Season / Pre Draft'
+    11: 'season window not started -> Pre-Season'
+    12: 'otherwise -> In-Season'
+
+tradeRules:
+  - TradesOpen starts as Settings.disable_trades equal 0.
+  - A positive trade_review_days closes trades (CommissionerReview).
+  - The trade deadline closes trades when TradeDeadlineWeek is set and the week reached is at least TradeDeadlineWeek. The week reached is CurrentWeek, or FinalScoredWeek when CurrentWeek is 0 (v1 quirk, see knownQuirks).
+  - Status Completed overrides to TradesOpen false, WaiversOpen false, NextWaiverRun null and CutsAllowed false.
+
+waiverRules:
+  - WaiversOpen is Settings.disable_adds equal 0.
+  - NextWaiverRun needs disable_adds 0, daily_waivers 1 and daily_waivers_days plus daily_waivers_hour. The days are seven base-4 digits Monday to Sunday; the validated modes are Waivers (1) and Locked (2). Any other mode, a value out of range or a daylight-saving-ambiguous run time gives null with a warning.
+  - The run time is evaluated in America/Los_Angeles (the Sleeper waiver time zone). The next run is the first candidate strictly after AtUtc within 7 days.
+
+cutsRules:
+  - CutsAllowed is always true except for Completed (v1 quirk).
+
+knownQuirks:
+  note: Kept in v1 to stay 1:1 with today. Candidates for lifecycle-v2; none of them is changed silently.
+  items:
+    - CutsAllowed is a constant true, not derived from a provider field (domain.yaml: do not derive it from Phase).
+    - The trade deadline compares against CurrentWeek (the first open game week), not against the lineup or scored week.
+    - Dates (cap window) are compared as UTC calendar days; LeagueTimeZone is not applied (the league time zone is UTC).
+    - Rule 2 treats a scored playoff start week as Playoffs.
+    - CurrentWeek takes the first non-final game by game date, so a postponed earlier game keeps the week open.
+
+shadow:
+  step: 3
+  rule: >-
+    tools/league_lifecycle.py compare resolves the lifecycle for the current season at the League.json timestamp
+    (Timestamps.json League, overridable with --at) and compares every lifecycle field of the published
+    public/data/League.json exactly. Equality is the cutover proof. It also runs as a Fast guard.
+
+consumers:
+  app:
+    - public/requests/RequestLeague.ps1 (step 4) renders the League.json fields from the CLI result and adds the MetaText.
+  fantasyManagement:
+    - fantasy-management/_ai/scripts/build_fa_board_readmodel.py reads Status, Phase and CurrentWeek (step 5)
+    - fantasy-management/_ai/scripts/build_managed_roster_overview.py::_derive_taxi_phase reads Status, Phase and FinalScoredWeek (step 5, fixes the in-season casefold defect)
+  angular: Reads League.json only; unchanged.
+
+migration:
+  issue: 1199
+  steps:
+    1: 'Contract, ADR-073, derived-models.yaml entry and the data-meta key Models.Lifecycle (this change).'
+    2: 'Model lifecycle-v1, registry entry, function, CLI and Fast tests with constructed seasons for every rule branch.'
+    3: 'Shadow compare against League.json (Fast guard, run once manually).'
+    4: 'App cutover: RequestLeague.ps1 calls the CLI; Resolve-LeagueStatusState, the draft helpers, the CurrentWeek block, the waiver and overview helpers and the ConfigUtils constant LeagueStatusSeasonStartBufferDays are removed; measure the run time of the ten-minute League Live run.'
+    5: 'Fantasy Management cutover (FA board, managed roster overview), consumer-read register, data-sources.yaml and domain.yaml.'
+  later: Decision Windows with Repairability and the matchup context reuse the same lifecycle and current week (Issue #1199 sections 2 to 4).
+
+architectureReview:
+  existingFirst: >-
+    Reuses the week-finality pattern (computed pure function), the model registry with per-season choice in data-meta
+    (ADR-055, ADR-054) and the exact-kickoff idea of Decision Windows (ADR-036: store instants, compare when reading).
+    No new dataset, writer or workflow.
+  configuration: >-
+    Cap Deadline, buffer and model choice come from data-meta; the season start lead and draft status sets are model parameters.
+    A new rule version needs a code change (lifecycle-v2) plus a data-meta choice for the season from which it applies.
+  identity: CanonicalLeagueID + Season + AtUtc (+ model ID). No provider identity involved.
+  invalidation: >-
+    Inputs are the league source, the league-drafts product, the NFL schedule and finality, week_finality and data-meta.
+    The result is recomputed on every call; Boundaries name the next clock-driven change.
+  temporal: >-
+    The state is a function of time. Pre-event and post-event states are distinct through AtUtc; history ("phase at date X")
+    is available by calling with that AtUtc against the then-valid inputs and is not persisted (a possible v2).
+  unknown: Missing inputs fail closed; a null instant means "not determinable", never "now".
+  compatibility: League.json and its consumers are unchanged; the PowerShell lifecycle code is removed in step 4 after the shadow proves equality.

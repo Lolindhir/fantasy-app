@@ -11,6 +11,7 @@ $script:KnownModelIds = @{
     Grading   = @('grading-v1')
     Standings = @('standings-v1')
     Awards    = @('awards-v1')
+    Lifecycle = @('lifecycle-v1')
 }
 $script:TopLevelKeys = @('SchemaVersion', 'CanonicalLeagueID', 'Provider', 'CurrentProviderLeagueID', 'LeagueTimeZone', 'Owners', 'Drafts', 'Seasons')
 $script:SeasonKeys = @('CapDeadline', 'CapDeadlineBufferDays', 'Models')

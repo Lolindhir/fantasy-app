@@ -2452,3 +2452,45 @@ decisions:
         - Until the cutover the PowerShell implementation stays productive and is held equal by the shadow comparison.
         - v1 keeps legacy quirks (per-game values divide by the regular-season game count during the season, team join across seasons by roster ID, display strings inside results).
         - The cutover adds a write prefix for two existing writers.
+
+  - id: ADR-073
+    title: The league lifecycle is a central versioned model with a pure function, computed and not persisted
+    status: accepted
+    context: >
+      Status, Phase, CurrentWeek, the trade and waiver state and the season boundaries of League.json are derived in
+      RequestLeague.ps1 and LeagueUtils.psm1, WaiverUtils.psm1 and LeagueOverviewUtils.psm1 (Issue #1199, about 5,000
+      lines of product semantics in total). The result depends on the current clock (cap deadline window, season start
+      lead, next waiver run), reads the consumer outputs Drafts.json and Schedule.json instead of canonical facts, keeps
+      a league rule (the 7-day season start lead) in ConfigUtils.psm1 and sorts the current week by game ID text. Fantasy
+      Management reads the result back from League.json and interprets Status with its own heuristic
+      (_derive_taxi_phase does not recognise In-Season, so week 1 before the first scoring resolves to unknown).
+    decision: >
+      Robert decided on 2026-10-30 (Issue #1199, review L1 to L5, all as recommended). The lifecycle is a central,
+      league-independent, versioned model lifecycle-v1 in tools/derived_data_lib/models/lifecycle/v1.py, registered in
+      the model registry (ADR-055) and chosen per season in data-meta (ADR-054, Models.Lifecycle). One pure function,
+      tools/derived_data_lib/league_lifecycle.py with the CLI tools/league_lifecycle.py, resolves
+      (CanonicalLeagueID, Season, AtUtc). It is computed and not persisted, following the week-finality pattern
+      (ADR-071); AtUtc is an explicit input and the clock-dependent instants are returned as Boundaries. Inputs are
+      only data-source (league.json, NFL schedule and game finality), the league-drafts product, week_finality and
+      data-meta; public/data is never an input. v1 reproduces today's behaviour 1:1, with one allowed difference: CurrentWeek
+      comes from the canonical schedule instead of Schedule.json, and the shadow comparison proves equality. Known
+      quirks (CutsAllowed constant, trade deadline against CurrentWeek, UTC calendar days) stay and are listed for
+      lifecycle-v2. The season start lead moves into the model. League.json keeps its contract and the MetaTexts stay in the
+      consumer. There is no new writer, write prefix, workflow change or product directory. A persisted lifecycle history
+      (data-derived/league-lifecycle) is rejected for now: it would need a new write prefix, would store only boundaries
+      and not the state, and no consumer needs "phase at date X". Contract: .ai-context/manual/league-lifecycle.yaml.
+    rationale: >
+      A time-dependent state belongs in a function whose clock is an input, as Decision Windows store instants and compare
+      when reading (ADR-036) and as week finality is computed (ADR-071). Reading canonical facts removes the
+      consumer-output feedback loop, the model choice per season keeps older seasons reproducible and one function lets
+      App and Fantasy Management share the same Status without a second interpretation.
+    consequences:
+      positive:
+        - One implementation of Status, Phase, current week, trade and waiver state for every consumer.
+        - Testable with constructed seasons and a fixed AtUtc; no hidden clock.
+        - Fantasy Management no longer interprets League.json Status with its own heuristic.
+        - No new writer or permission; all steps are risk level standard.
+      negative:
+        - Until the cutover (step 4) the PowerShell implementation stays productive and is held equal by the shadow comparison.
+        - RequestLeague.ps1 gains a Python process call in the ten-minute League Live run (measured in step 4).
+        - Known v1 quirks stay visible until a lifecycle-v2 is decided.

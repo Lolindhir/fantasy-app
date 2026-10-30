@@ -9,7 +9,8 @@ purpose: >
   facts into a derived value with an algorithm and parameters that live next to the
   code. Leagues do not carry model parameters; a league only selects, per season,
   which model version applies. Salary, SalaryCap and Grading are the first models;
-  Standings and Awards follow (#987, ADR-072, league-standings.yaml).
+  Standings and Awards follow (#987, ADR-072, league-standings.yaml), then the league
+  Lifecycle (#1199, ADR-073, league-lifecycle.yaml).
 
 architecture:
   decisionBasis:
@@ -24,6 +25,7 @@ architecture:
     - tools/derived_data.py materializer (player-valuation product, #919 step 3)
     - Fantasy Management salary simulation (#919 step 7)
     - tools/derived_data.py materializer (league-standings product, #987 step 2)
+    - tools/derived_data_lib/league_lifecycle.py (computed lifecycle function, no product, #1199 step 2)
     - later models through the same registry
   rules:
     - A model is a pure function of its explicit inputs plus its own PARAMS. It reads no files, no network, no clock, no environment and no league configuration.
@@ -41,6 +43,7 @@ identity:
       - grading-v1
       - standings-v1
       - awards-v1
+      - lifecycle-v1
     rules:
       - The model ID is the only way a league, a snapshot or a test refers to a model.
       - kind uses hyphens in the ID (salary-cap-v1) and underscores in the module path (salary_cap/v1.py).
@@ -61,6 +64,9 @@ identity:
     awards:
       module: tools/derived_data_lib/models/awards/v1.py
       produces: Season awards with their score annotations
+    lifecycle:
+      module: tools/derived_data_lib/models/lifecycle/v1.py
+      produces: League Status and Phase, trade and waiver state, cuts flag and the clock-dependent boundaries for one instant (computed, not persisted, ADR-073)
 
 immutability:
   rule: >
@@ -87,7 +93,7 @@ registry:
     - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
   leagueSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
-    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards } -> model IDs
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle } -> model IDs
     rule: >
       The league metadata chooses model IDs per season. A new version applies from
       the season in which the metadata first names it; earlier seasons keep their
@@ -173,6 +179,22 @@ models:
       - The first team in table order wins an exact tie of the award score.
       - The score annotations (ClutchPeakerScore, ImprovementScore) are part of the result because the App contract carries them on the regular-season rows.
 
+  lifecycle-v1:
+    status: planned-1199-step-2
+    behaviour: exact port of the lifecycle code of RequestLeague.ps1, LeagueUtils.psm1, WaiverUtils.psm1 and LeagueOverviewUtils.psm1 (no new rule); the rule chain is in league-lifecycle.yaml
+    contract: .ai-context/manual/league-lifecycle.yaml
+    parameters:
+      seasonStartLeadDays: 7
+      openDraftStatuses: [Virtual, PreDraft, Drafting]
+      liveDraftStatus: Drafting
+      completedDraftStatus: Complete
+      waiverTimeZone: America/Los_Angeles
+      validatedWaiverModes: [1, 2]
+    rules:
+      - The clock is an explicit input of the model (AtUtc); the model reads no clock, no file and no league configuration.
+      - The result carries the instants at which its clock-dependent part may change (cap window end, season window start, next waiver run).
+      - Known v1 quirks (CutsAllowed constant, trade deadline against CurrentWeek, UTC calendar days) are kept and listed in the contract for lifecycle-v2.
+
 rankingFunctions:
   implementation: tools/derived_data_lib/ranking.py
   versioning: >
@@ -205,6 +227,7 @@ failClosed:
   - non-finite input values (NaN, infinity)
   - non-positive TopN or empty salary list in salary-cap
   - non-integer or non-positive team count
+  - lifecycle - naive (not timezone-aware) AtUtc, unparsable instants, non-integer week values
 
 documentation:
   humanDescription: >
