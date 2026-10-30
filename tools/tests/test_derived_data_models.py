@@ -59,7 +59,7 @@ class OracleMixin(unittest.TestCase):
 
 class RegistryTests(unittest.TestCase):
     def test_registered_ids_are_sorted_and_complete(self) -> None:
-        self.assertEqual(["awards-v1", "grading-v1", "salary-cap-v1", "salary-v1", "standings-v1"], registry.model_ids())
+        self.assertEqual(["awards-v1", "grading-v1", "lifecycle-v1", "salary-cap-v1", "salary-v1", "standings-v1"], registry.model_ids())
 
     def test_get_model_returns_the_module_and_checks_the_kind(self) -> None:
         self.assertIs(salary_v1, registry.get_model("salary-v1"))

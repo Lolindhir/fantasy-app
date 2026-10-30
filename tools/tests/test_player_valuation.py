@@ -272,10 +272,8 @@ class RegistryAlignmentTests(unittest.TestCase):
         by_kind = {name: {mid for mid in registry.model_ids() if get_model(mid).KIND == kind}
                    for name, kind in pv.MODEL_KINDS.items()}
         by_kind.update({name: {mid for mid in registry.model_ids() if get_model(mid).KIND == kind}
-                        for name, kind in (("Standings", "standings"), ("Awards", "awards"))})
-        # Transitional (Issue #1199): the Lifecycle catalogue entry exists since step 1; lifecycle-v1 is registered in step 2.
-        known = {name: set(ids) for name, ids in league_metadata.KNOWN_MODEL_IDS.items() if name != "Lifecycle"}
-        self.assertEqual(by_kind, known)
+                        for name, kind in (("Standings", "standings"), ("Awards", "awards"), ("Lifecycle", "lifecycle"))})
+        self.assertEqual(by_kind, {name: set(ids) for name, ids in league_metadata.KNOWN_MODEL_IDS.items()})
 
 
 class MaterializerIntegrationTests(unittest.TestCase):

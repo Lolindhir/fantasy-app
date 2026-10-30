@@ -8,14 +8,15 @@ from types import ModuleType
 
 from .awards import v1 as awards_v1
 from .grading import v1 as grading_v1
+from .lifecycle import v1 as lifecycle_v1
 from .salary import v1 as salary_v1
 from .salary_cap import v1 as salary_cap_v1
 from .standings import v1 as standings_v1
 
-_MODULES: tuple[ModuleType, ...] = (salary_v1, salary_cap_v1, grading_v1, standings_v1, awards_v1)
+_MODULES: tuple[ModuleType, ...] = (salary_v1, salary_cap_v1, grading_v1, standings_v1, awards_v1, lifecycle_v1)
 _REGISTRY: dict[str, ModuleType] = {module.MODEL_ID: module for module in _MODULES}
 
-KINDS = ("awards", "grading", "salary", "salary-cap", "standings")
+KINDS = ("awards", "grading", "lifecycle", "salary", "salary-cap", "standings")
 
 
 class UnknownModelError(ValueError):
