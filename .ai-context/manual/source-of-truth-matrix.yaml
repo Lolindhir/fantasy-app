@@ -882,8 +882,8 @@ playersReadModelFieldInventory:
       Optional follow-up (subject to scope-based risk authorization, no separate YAML gate): drop public/data/Players.json from the
       materialize input list of the NFL Source Sync.
     salaryCap: >
-      RequestLeague.ps1 derives the league salary cap from Players.json Salary and
-      SalaryProjected, so Players salary changes propagate into League.json.
+      RequestLeague.ps1 derives the league salary cap from the newest PlayerValuation snapshot
+      (since Issue #919 step 5); the dead read of Players.json was removed in Issue #1226 step 1.
     historyArchives: >
       Players.json history inputs come from Tank01-keyed past_seasons archives, i.e.
       a legacy read model is used as input. A league-scoring migration must
@@ -967,7 +967,6 @@ consumerReadClassification:
     network: an HTTP client call (Invoke-RestMethod, urllib, requests, ...)
     legacy:<Name>: a reference to public/data/<Name>.json, the matching $config.<Name>File or (Get-Config).<Name>File, or a call of a reader helper declared under helperReads
   helperReads:
-    Get-PlayersFromFile: Players
     Get-LeagueDraftsLocal: Drafts
   helperReadsRule: >
     A reader helper hides the read of a published read model from its callers, so the
@@ -1114,15 +1113,13 @@ consumerReadClassification:
     fantasy-management/league-economy/salary/simulation/salary_simulation.py:
       reads:
         legacy:League: analysis-snapshot-input
-        legacy:Players: analysis-snapshot-input
         legacy:Transactions: analysis-snapshot-input
-      note: 'Point-in-time salary analysis over the published App read models; not a recurring pipeline consumer.'
+      note: 'Point-in-time salary analysis; population and season inputs come from tools/players_population.py and the PlayerValuation product (Issue #1226 step 1), League/Transactions remain published read models; not a recurring pipeline consumer.'
     public/requests/RequestLeague.ps1:
       reads:
         legacy:Drafts: app-read-model-chain
-        legacy:Players: app-read-model-chain
         legacy:Schedule: app-read-model-chain
-      note: 'League generator: writes DecisionWindows.json (Matchups.json and FantasyGameContext.json come from tools/matchup_context_app_publish.py since Issue #1199 section 3 step 7). Since Issue #1199 section 2 step 7 DecisionWindows.json comes from the shared Decision Windows function (Get-LeagueDecisionWindows, tools/decision_windows.py) and the previous file is no longer read (finding N4 closed). Standings come from the league-standings product (Get-LeagueStandingsProduct, Issue #987). Through reader helpers it also consumes Players.json (Get-PlayersFromFile) and Drafts.json (Get-LeagueDraftsLocal), and the published Schedule.json as transitional adapter input (ADR-036 migration boundary). These are the real return channels from League.json to other App files; League Live must therefore publish those inputs before it (L0).'
+      note: 'League generator: writes DecisionWindows.json (Matchups.json and FantasyGameContext.json come from tools/matchup_context_app_publish.py since Issue #1199 section 3 step 7). Since Issue #1199 section 2 step 7 DecisionWindows.json comes from the shared Decision Windows function (Get-LeagueDecisionWindows, tools/decision_windows.py) and the previous file is no longer read (finding N4 closed). Standings come from the league-standings product (Get-LeagueStandingsProduct, Issue #987). Through a reader helper it also consumes Drafts.json (Get-LeagueDraftsLocal), and the published Schedule.json as transitional adapter input (ADR-036 migration boundary). These are the real return channels from League.json to other App files; League Live must therefore publish those inputs before it (L0).'
     public/requests/RequestTeams.ps1:
       reads:
         legacy:Teams: app-output-owner
@@ -1150,10 +1147,6 @@ consumerReadClassification:
         legacy:Transactions: app-config-path-owner
         legacy:WeeklyRecaps: app-config-path-owner
       note: 'Resolves the generated-file paths from ConfigUtils for all generators.'
-    public/requests/utils/player/PlayerUtils.psm1:
-      reads:
-        legacy:Players: app-read-model-chain
-      note: 'Defines the reader helper Get-PlayersFromFile (published Players.json, used by RequestLeague.ps1).'
     public/requests/utils/league/PastSeasonsIndexUtils.psm1:
       reads:
         legacy:PastSeasonsIndex: app-output-owner
