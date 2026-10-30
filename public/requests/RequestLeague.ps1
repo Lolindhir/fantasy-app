@@ -149,7 +149,6 @@ try {
     Write-Host "Enriching team data with draft pick keys..." -ForegroundColor Yellow
     $teamData = Add-DraftPickKeysToTeams -teams $teamData -drafts $drafts
 
-    $playersData = Get-PlayersFromFile
     # --- Salary Cap aus dem PlayerValuation-Snapshot (#919 step 5): der neueste Snapshot der Saison ist der
     # Stand, den der letzte Players-Lauf zusammen mit Players.json veroeffentlicht hat. Keine Berechnung hier.
     $valuationSnapshot = Get-PlayerValuationLatestSnapshot -CanonicalLeagueID $CanonicalLeagueID -Season ([int]$league.season)

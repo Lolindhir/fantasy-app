@@ -17,6 +17,7 @@ import json
 import math
 import sys
 from collections import Counter, defaultdict
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -24,6 +25,12 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from tools.derived_data_lib.models import registry  # noqa: E402
+
+_FM_SCRIPTS = ROOT / "fantasy-management" / "_ai" / "scripts"
+if str(_FM_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_FM_SCRIPTS))
+
+import canonical_player_inputs  # noqa: E402
 
 # Heutige Formel: Kurve, Floor und Cap kommen aus den zentralen Modellen (ADR-055, #919), nicht aus einer Kopie.
 SALARY_MODEL = registry.get_model("salary-v1", "salary")
@@ -33,6 +40,11 @@ LEAGUE_SRC = ROOT / "data-source" / "leagues" / "nfl-reise" / "seasons"
 NFL_SRC = ROOT / "data-source" / "nfl"
 OUT_DIR = Path(__file__).resolve().parents[1] / "analyses"
 OUT_STEM = "2026-10-05-salary-simulation"
+
+LEAGUE_ID = "nfl-reise"
+SEASON = 2026
+# Explicit reference date for the canonical player inputs (Age is not used by this analysis); no wall clock.
+AS_OF = date(2026, 10, 5)
 
 POSITIONS = ["QB", "RB", "WR", "TE", "K"]
 FLEX_ELIGIBLE = {"RB", "WR", "TE"}
@@ -53,6 +65,20 @@ DEAD_CAP_RATE_LONG = 0.05
 def load(path: Path):
     with open(path, encoding="utf-8-sig") as handle:
         return json.load(handle)
+
+
+def load_canonical_players() -> list[dict]:
+    """Population from tools/players_population.py, Salary and the season inputs (PointHistory) from the newest
+    PlayerValuation snapshot (ADR-055); The published players read model is no input (Issue #1226, data-platform rule 4)."""
+    players = canonical_player_inputs.load_players(ROOT, LEAGUE_ID, SEASON, AS_OF)
+    snapshot = canonical_player_inputs.latest_valuation_snapshot(ROOT, LEAGUE_ID, SEASON)
+    inputs = {str(row["PlayerID"]): row["Inputs"] for row in snapshot["Players"] if row.get("PlayerID") is not None}
+    result = []
+    for player in players:
+        if player["Position"] not in POSITIONS or player["ID"] not in inputs or player["Salary"] is None:
+            continue
+        result.append({**player, "PointHistory": inputs[player["ID"]]})
+    return result
 
 
 def as_list(data, key):
@@ -507,7 +533,7 @@ def write_report(r: dict) -> str:
     w("")
     w("## 3. Criticality-Kurven auf Liga-Scoring")
     w("")
-    w("Berechnung wie im Redesign-Papier (DMLI je Saison 2023/2024/2025, Rangmittel über drei Jahre). Population sind alle Spieler aus Players.json mit Punkten in der Saison.")
+    w("Berechnung wie im Redesign-Papier (DMLI je Saison 2023/2024/2025, Rangmittel über drei Jahre). Population sind alle Spieler der kanonischen Population (players_population) mit Punkten in der Saison.")
     w("")
     w("| Saison | FLEX-Verteilung | Poolgröße QB/RB/WR/TE/K |")
     w("|---|---|---|")
@@ -636,7 +662,7 @@ def write_report(r: dict) -> str:
     w("")
     w("## 9. Annahmen und Datenlücken")
     w("")
-    w("- **Population:** Nur Spieler aus dem heutigen Players.json. Zurückgetretene Spieler fehlen in den historischen Kurven; die Kurven der Saisons 2023/2024 können dadurch leicht zu flach sein.")
+    w("- **Population:** Nur Spieler der heutigen kanonischen Population. Zurückgetretene Spieler fehlen in den historischen Kurven; die Kurven der Saisons 2023/2024 können dadurch leicht zu flach sein.")
     w("- **Anker-Cap:** Startwert der Rückkopplung ist das heute veröffentlichte Cap. Rookie-Verträge der Jahrgänge 2024/2025 nutzen denselben Anker statt des Caps ihres Draftjahres.")
     w("- **Jahrgang 2024:** Die Liga hatte 2024 keinen Rookie Draft. Als Fantasy-Signal zählt die Reihenfolge der Rookies im Free-Agent-Draft 2024.")
     w("- **Zyklus 2025:** Für die Saison 2022 gibt es nur das Tank01-PPR-Archiv; mögliche Spiele = 17. Das betrifft nur Timing und Dead Cap der Deadline 2026.")
@@ -659,7 +685,7 @@ def write_report(r: dict) -> str:
 # ------------------------------------------------------------------ main
 
 def main():
-    players = [p for p in load(DATA / "Players.json") if p["Position"] in POSITIONS]
+    players = load_canonical_players()
     league = load(DATA / "League.json")
     fmt = league_format(league)
     teams = league["Teams"]
@@ -778,7 +804,7 @@ def main():
         "issue": 879,
         "status": "simulation, keine Ligaentscheidung",
         "inputs": {
-            "players": "public/data/Players.json (Liga-Scoring seit #347 D4)",
+            "players": "tools/players_population.py + data-derived/player-valuation (Inputs, Salary), Issue #1226",
             "league": "public/data/League.json",
             "rookie_drafts": "public/data/past_seasons/Drafts/Drafts_<season>.json",
             "nfl_draft": "data-source/nfl/draft/<season>.json",
