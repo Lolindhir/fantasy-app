@@ -194,7 +194,7 @@ dataSources:
     path: public/data/League.json
     generator: public/requests/RequestLeague.ps1
     helpers:
-      - public/requests/utils/league/LeagueUtils.psm1
+      - public/requests/utils/league/LeagueWeekUtils.psm1 (Get-LeagueLifecycle calls the lifecycle-v1 model, ADR-073)
       - public/requests/utils/league/TeamUtils.psm1
       - public/requests/utils/league/TeamDraftPickUtils.psm1
     category: generated-output
@@ -297,7 +297,6 @@ dataSources:
     helpers:
       - public/requests/utils/league/StandingUtils.psm1 (change-detection compare helpers, Get-LeagueStandingsProduct, the consumer read of the league-standings product, and Get-OutputStandingsForAllTime)
       - public/requests/utils/league/TeamUtils.psm1
-      - public/requests/utils/league/LeagueUtils.psm1
     category: generated-output
     role: Hybrid current plus historical standings read model
     description: >

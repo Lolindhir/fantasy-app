@@ -145,4 +145,58 @@ function Get-LeagueScoredWeek {
     return [int]$result.LeagueScoredWeek
 }
 
-Export-ModuleMember -Function Resolve-LeagueWeekState, Resolve-FantasyMatchupLoadWeek, Get-LeagueScoredWeek
+# Lifecycle of League.json (Status, Phase, CurrentWeek, trade and waiver state, season boundaries): the central model
+# lifecycle-v1 (ADR-073, Issue #1199) in tools/derived_data_lib/league_lifecycle.py. The instant is an explicit input of
+# the function; nothing is persisted. The CLI echoes it as AtUtc. Fails closed; no status is guessed.
+function Get-LeagueLifecycle {
+    param(
+        [Parameter(Mandatory = $true)][string]$CanonicalLeagueID,
+        [Parameter(Mandatory = $true)][int]$Season,
+        [Parameter(Mandatory = $true)][string]$RepoRoot
+    )
+
+    $toolPath = Join-Path $RepoRoot "tools/league_lifecycle.py"
+    if (-not (Test-Path $toolPath)) {
+        throw "League lifecycle tool missing at '$toolPath'."
+    }
+
+    $python = $null
+    foreach ($name in @("python3", "python")) {
+        $command = Get-Command $name -ErrorAction SilentlyContinue
+        if ($command) { $python = $command.Source; break }
+    }
+    if (-not $python) { throw "Python is required for the shared league lifecycle." }
+
+    $atUtc = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+    $output = & $python $toolPath resolve --league $CanonicalLeagueID --season $Season --at $atUtc --repo-root $RepoRoot 2>&1
+    $exitCode = $LASTEXITCODE
+    $outputText = (@($output) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+    if ($exitCode -ne 0) {
+        throw "Shared league lifecycle failed with exit code $exitCode. $outputText"
+    }
+
+    try {
+        $result = $outputText | ConvertFrom-Json
+    }
+    catch {
+        throw "Shared league lifecycle returned invalid JSON. $outputText"
+    }
+    foreach ($field in @("Status", "Phase", "CurrentWeek", "FinalScoredWeek", "LastLeagueWeek", "PlayoffStartWeek", "TradesOpen", "TradeReviewDays", "WaiversOpen", "CutsAllowed", "PlayoffStart", "SeasonKickoff", "NextWaiverRun", "TradeDeadlineWeek")) {
+        if ($null -eq $result.PSObject.Properties[$field]) {
+            throw "Shared league lifecycle lacks the field '$field'."
+        }
+    }
+    # ConvertFrom-Json turns ISO instants into DateTime; League.json keeps the yyyy-MM-ddTHH:mm:ssZ text.
+    foreach ($field in @("PlayoffStart", "SeasonKickoff", "NextWaiverRun")) {
+        $value = $result.PSObject.Properties[$field].Value
+        if ($value -is [DateTime]) {
+            $result.$field = $value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        }
+        elseif ($value -is [DateTimeOffset]) {
+            $result.$field = $value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ")
+        }
+    }
+    return $result
+}
+
+Export-ModuleMember -Function Resolve-LeagueWeekState, Resolve-FantasyMatchupLoadWeek, Get-LeagueScoredWeek, Get-LeagueLifecycle

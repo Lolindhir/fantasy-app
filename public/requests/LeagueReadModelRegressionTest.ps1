@@ -1,6 +1,5 @@
 $ErrorActionPreference = "Stop"
 
-Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -Force
@@ -42,7 +41,13 @@ function Get-OccurrenceCount {
 # consumer generator writes them before RequestLeague runs in League Live; RequestLeague only reads Drafts.json.
 $requestLeague = Get-Content "$PSScriptRoot\RequestLeague.ps1" -Raw
 Assert-True -Condition $requestLeague.Contains('$drafts = Get-LeagueDraftsLocal') -Message "RequestLeague does not read the Drafts.json written by the league history consumer generator."
-Assert-True -Condition $requestLeague.Contains("Resolve-LeagueTradeDeadlineWeek") -Message "RequestLeague does not normalize the trade deadline before publishing League.json."
+Assert-True -Condition $requestLeague.Contains("Get-LeagueLifecycle") -Message "RequestLeague does not take the lifecycle from the shared lifecycle model (ADR-073)."
+foreach ($legacy in @("Resolve-LeagueStatusState", "Resolve-LeagueNextWaiverRunUtc", "Resolve-LeagueTradeDeadlineWeek", "Get-LeagueSeasonKickoffUtc", "Get-LeaguePlayoffStartUtc", "LeagueStatusSeasonStartBufferDays")) {
+    Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle $legacy) -Expected 0 -Message "RequestLeague still derives lifecycle state itself ($legacy); it belongs to lifecycle-v1."
+}
+foreach ($removed in @("LeagueUtils.psm1", "WaiverUtils.psm1", "LeagueOverviewUtils.psm1")) {
+    Assert-True -Condition (-not (Test-Path "$PSScriptRoot\utils\league\$removed")) -Message "$removed was retired with the lifecycle cutover (Issue 1199 step 4)."
+}
 Assert-True -Condition $requestLeague.Contains("SeasonKickoff           = `$seasonKickoff") -Message "RequestLeague does not publish SeasonKickoff."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Matchups                = `$matchupSnapshot") -Expected 0 -Message "RequestLeague still publishes the legacy League.Matchups snapshot."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "ConvertTo-LeagueMatchupSnapshot") -Expected 0 -Message "RequestLeague still builds the legacy League.Matchups snapshot."
@@ -94,28 +99,6 @@ Assert-True -Condition (Compare-PlayoffStandings -oldPlayoffs @($avatarCompareOl
 Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "RequestLeague change detection does not track LeagueIDPrevious."
 Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType','Playoffs')") -Message "RequestLeague change detection does not track canonical Settings, ScoringType and Playoffs structurally."
 Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical structured comparison is not structural."
-
-# League overview read-model helpers normalize optional deadline settings and
-# deterministic kickoff facts without frontend derivation.
-Assert-Equal -Actual (Resolve-LeagueTradeDeadlineWeek -TradeDeadline $null) -Expected $null -Message "Null trade deadline must stay null."
-Assert-Equal -Actual (Resolve-LeagueTradeDeadlineWeek -TradeDeadline 0) -Expected $null -Message "Trade deadline week 0 must normalize to null."
-Assert-Equal -Actual (Resolve-LeagueTradeDeadlineWeek -TradeDeadline -1) -Expected $null -Message "Negative trade deadline must normalize to null."
-Assert-Equal -Actual (Resolve-LeagueTradeDeadlineWeek -TradeDeadline "off") -Expected $null -Message "Non-numeric trade deadline must normalize to null."
-Assert-Equal -Actual (Resolve-LeagueTradeDeadlineWeek -TradeDeadline 99) -Expected $null -Message "Sleeper trade deadline sentinel 99 must normalize to null."
-Assert-Equal -Actual (Resolve-LeagueTradeDeadlineWeek -TradeDeadline 11) -Expected 11 -Message "Positive trade deadline week changed unexpectedly."
-
-$scheduleFixture = @(
-    [PSCustomObject]@{ seasonType = "Preseason"; gameTime_epoch = "1788000000" },
-    [PSCustomObject]@{ seasonType = "Regular Season"; gameTime_epoch = "1789318800" },
-    [PSCustomObject]@{ seasonType = "Regular Season"; gameTime_epoch = "1788999600" }
-)
-$kickoff = Get-LeagueSeasonKickoffUtc -Schedule $scheduleFixture
-$expectedKickoff = [DateTimeOffset]::FromUnixTimeSeconds(1788999600).UtcDateTime
-Assert-Equal -Actual $kickoff.ToString("o") -Expected $expectedKickoff.ToString("o") -Message "Season kickoff did not use the earliest regular-season game."
-
-$leagueOverviewUtils = Get-Content "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -Raw
-Assert-Equal -Actual (Get-OccurrenceCount -Text $leagueOverviewUtils -Needle "ConvertTo-LeagueMatchupSnapshot") -Expected 0 -Message "LeagueOverviewUtils still contains the legacy matchup snapshot converter."
-Assert-Equal -Actual (Get-OccurrenceCount -Text $leagueOverviewUtils -Needle "Get-LeagueMatchupSnapshot") -Expected 0 -Message "LeagueOverviewUtils still contains the legacy matchup snapshot loader."
 
 $matchupReadModelUtils = Get-Content "$PSScriptRoot\utils\league\MatchupReadModelUtils.psm1" -Raw
 Assert-Equal -Actual (Get-OccurrenceCount -Text $matchupReadModelUtils -Needle "Set-Alias -Name Ensure-MatchupHistoryReadModels") -Expected 0 -Message "MatchupReadModelUtils still exposes the transitional history alias."

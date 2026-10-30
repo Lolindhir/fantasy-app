@@ -4,14 +4,16 @@ status: accepted-contract-v1
 trackingIssue: 1199
 architectureDecision: ADR-073
 implementationState: >-
-  step 1 of Issue #1199 section 1 (contract, ADR-073, data-meta key). Model, function, CLI, shadow and the consumer
-  cutovers follow in steps 2 to 5; until step 4 RequestLeague.ps1 and LeagueUtils.psm1 stay productive.
+  Issue #1199 section 1: contract and data-meta key (step 1), model, function and CLI (step 2) and the shadow compare
+  (step 3) are in place. Since step 4 RequestLeague.ps1 takes the lifecycle from the CLI (Get-LeagueLifecycle in
+  LeagueWeekUtils.psm1) and LeagueUtils.psm1, WaiverUtils.psm1 and LeagueOverviewUtils.psm1 are removed. The Fantasy
+  Management cutover follows in step 5.
 
 purpose: >-
   Define the league lifecycle as a central, versioned, league-independent model with one pure function. For one
   league, one season and one instant it answers: which Status and Phase is the league in, which week is current,
   which trades and waivers are possible and when the clock-dependent boundaries lie. It replaces the lifecycle code
-  of public/requests/RequestLeague.ps1 and LeagueUtils.psm1, WaiverUtils.psm1 and LeagueOverviewUtils.psm1.
+  of public/requests/RequestLeague.ps1 and the removed LeagueUtils.psm1, WaiverUtils.psm1 and LeagueOverviewUtils.psm1.
   The result is computed, never persisted (pattern of week-finality.yaml, ADR-071).
 
 architecture:
