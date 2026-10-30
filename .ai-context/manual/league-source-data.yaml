@@ -506,11 +506,11 @@ phase2TargetedFreshnessScopes:
       week ceiling must agree. Drift or an invalid requested week fails closed.
     parity:
       - bounded planner reproduces exactly the accepted current canonical matchup partition
-      - CanonicalMatchupUtils reconstructs persisted Sleeper provider semantics without live reads
-      - reconstructed rows feed ConvertTo-FgcCurrentMatchupFacts identically to persisted raw Sleeper rows
+      - the computed matchup context (tools/derived_data_lib/matchup_context.py) reads the persisted canonical matchup partitions without live reads
+      - rows feed the FantasyGameContext facts identically to persisted raw Sleeper rows (Python Fast tests; the PowerShell modules were removed in Issue #1199 section 3 step 8)
     consumerStatus: >
-      RequestLeague performs exactly one Get-CanonicalCurrentMatchupLoad read for the
-      active week and no longer performs a direct current-matchup provider read.
+      RequestLeague performs no current-matchup read any more; Matchups.json and FantasyGameContext.json
+      come from tools/matchup_context_app_publish.py (ADR-075).
     publicationOrderingNote: >
       Since Issue #945 the League Live pipeline runs the current source scope and then
       the App League build in one chain, so newly materialized current matchup evidence

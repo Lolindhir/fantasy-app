@@ -2,8 +2,7 @@ Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
 
 try {
     Import-Module "$PSScriptRoot\..\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\MatchupReadModelUtils.psm1" -ErrorAction Stop -Force
+    Import-Module "$PSScriptRoot\WeeklyRecapMatchupFacts.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Failed to load WeeklyRecap dependencies: $_"

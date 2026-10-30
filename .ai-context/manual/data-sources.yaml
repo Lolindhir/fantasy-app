@@ -260,12 +260,12 @@ dataSources:
         cutoverStatus: productive
       currentMatchupSource:
         mode: canonical-active
-        productiveAdapter: public/requests/utils/league/CanonicalMatchupUtils.psm1::Get-CanonicalCurrentMatchupLoad
+        productiveAdapter: tools/derived_data_lib/matchup_context.py (canonical week-partitioned matchups read by the computed matchup context; CanonicalMatchupUtils.psm1 removed in Issue #1199 section 3 step 8)
         canonicalInput: matchups/week-<CurrentWeek>.json
         freshness: refreshed every ten minutes by the League Live pipeline (source scope current, then App League in the same run)
         currentWeekSelection: shared source-owned current-week resolver / settings.leg first
         providerFallback: none
-        parity: persisted current raw Sleeper provider semantics + downstream ConvertTo-FgcCurrentMatchupFacts
+        parity: persisted current raw Sleeper provider semantics proven by tools/tests/test_matchup_context.py and test_fantasy_game_context.py
         publicationTrigger: APP • Pipeline • League Live runs the App League build right after the source scope in every ten-minute chain (no push trigger since Issue #945)
         cutoverStatus: productive
       downstreamDerivedUnchanged:
@@ -590,7 +590,7 @@ dataFlow:
   - from: data-source/nfl/player-availability/espn.json
     to: public/data/DecisionWindows.json
     purpose: >
-      RequestLeague reads the canonical snapshot (PlayerScoringAvailabilityUtils.psm1::Get-CanonicalScoringAvailabilityObservations)
+      tools/derived_data_lib/decision_windows.py reads the canonical snapshot (the former PowerShell PlayerScoringAvailabilityUtils was removed in Issue #1199 section 3 step 8)
       without any network call. Canonical Player Identity `IDs.Sleeper -> IDs.ESPN` joins starters to snapshot rows; the legacy Players.json
       ESPN field is not identity authority. Only explicit OUT removes a direct scoring path; a missing or other-season snapshot, a
       missing row or an unknown status stays unknown and must not synthesize unavailability. The generated observation keeps a
