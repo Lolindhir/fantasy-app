@@ -2541,3 +2541,48 @@ decisions:
         - The Sleeper snapshot can be fresher than the published Players.json, so the shadow can differ until Players.json is republished.
         - RequestLeague.ps1 gains a Python process call in the ten-minute League Live run (measured in step 7).
         - The team assignment still uses the current NFL team and is valid for the current lineup week only (boundary B6).
+
+  - id: ADR-075
+    title: The matchup context is a central pure function with the team-range model, computed and not persisted
+    status: accepted
+    amends: [ADR-036, ADR-074]
+    context: >
+      public/data/Matchups.json, FantasyGameContext.json, MatchupProjections.json and the past_seasons Matchups and
+      FantasyGameContext files are built by about 3,000 lines of PowerShell (MatchupReadModelCore, FantasyGameContextCore and
+      relatives, Issue #1199 section 3) and tools/matchup_projection.py. The product PlayerWeekFantasy takes its target week
+      from public/data/FantasyGameContext.json, which reverses the ADR-037 layering and forces League Live to run the consumer
+      before the product. The FantasyGameContext counterfactual uses Sleeper last_scored_leg as its own week-final rule, the
+      Matchups CompletionState is documented only in code, the clock sits inside the result and the projection method has no
+      registry entry.
+    decision: >
+      Robert decided on 2026-10-30 (Issue #1199, review M1 to M5, all as recommended). The matchup context is one pure function
+      tools/derived_data_lib/matchup_context.py with the CLI tools/matchup_context.py, resolve(CanonicalLeagueID, Season, AtUtc),
+      computed and not persisted (pattern of ADR-071, ADR-073, ADR-074). It returns the season Matchups model, the
+      FantasyGameContext of the matchup week and the team projections; for completed seasons it returns the history. AtUtc is
+      an explicit input. Inputs are only data-source (league, matchups, canonical NFL schedule and finality, weekly rosters),
+      the products nfl-games, league-standings and player-week-fantasy, the lifecycle, Decision Windows and week-finality
+      functions and data-meta; public/data is never an input. The consumer generator tools/matchup_context_app_publish.py writes
+      the App files with unchanged contracts, only on a semantic difference. The only intended value change is the
+      FantasyGameContext counterfactual: WeekIsFinal comes from LeagueScoredWeek (ADR-071) instead of Sleeper last_scored_leg.
+      The Matchups CompletionState (open, final, unknown per matchup, over the games of its starters) is a separate concept next
+      to ADR-071 and is defined in the contract. The projection method normal-independent-v1 becomes the versioned model
+      team-range-v1 (unchanged numbers), chosen per season in data-meta (Models.TeamRange, by hand). The PlayerWeekFantasy
+      refresh takes its target week from the lifecycle LineupWeek, and League Live runs products before consumers. A persisted
+      product data-derived/league-matchups is rejected: it needs a new write prefix (elevated) and no reader needs it. No new
+      writer, write prefix or permission. The PowerShell modules are removed once their test cases exist as Python Fast tests;
+      ConvertTo-FgcCanonicalMatchupFacts, Get-MatchupParticipantOrderMap and their helpers stay until section 4 (Weekly Recaps)
+      because WeeklyRecapUtils.psm1 uses them. Contract: .ai-context/manual/matchup-context.yaml.
+    rationale: >
+      One central implementation lets App and Python consumers share the same facts, restores the layering (product before
+      consumer), keeps the clock explicit, aligns the week-final rule with ADR-071 and puts the projection method under the model
+      registry of ADR-055 so a better method cannot silently re-interpret old numbers.
+    consequences:
+      positive:
+        - One implementation of matchups, game context and projections for every consumer.
+        - PlayerWeekFantasy no longer depends on an App file; League Live runs products before consumers.
+        - Testable with constructed weeks and a fixed AtUtc; no hidden clock.
+        - No new writer or permission; all steps are risk level standard.
+      negative:
+        - Until the cutover (step 7) the PowerShell implementation stays productive and is held equal by the shadow comparison.
+        - The counterfactual may appear slightly later when Sleeper scores a week before the canonical game finality (M2).
+        - League Live gains Python process calls (runtime measured in step 7).

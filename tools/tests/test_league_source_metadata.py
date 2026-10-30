@@ -44,7 +44,7 @@ class LeagueMetadataLoaderTests(unittest.TestCase):
         current = int(manifest["CurrentCanonicalLeagueSeasonID"].rsplit("-", 1)[1])
         self.assertTrue(all(lm.cap_deadline(meta, current)))
         for kind, expected in (("Salary", "salary-v1"), ("SalaryCap", "salary-cap-v1"), ("Grading", "grading-v1"),
-                               ("Standings", "standings-v1"), ("Awards", "awards-v1"), ("Lifecycle", "lifecycle-v1"), ("Repairability", "repairability-v1")):
+                               ("Standings", "standings-v1"), ("Awards", "awards-v1"), ("Lifecycle", "lifecycle-v1"), ("Repairability", "repairability-v1"), ("TeamRange", "team-range-v1")):
             for season in meta["Seasons"]:
                 self.assertEqual(expected, lm.model_for(meta, season, kind))
         self.assertFalse((REPO_ROOT / "public/data/Metadata.json").exists())
