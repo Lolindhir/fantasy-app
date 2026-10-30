@@ -1195,6 +1195,11 @@ consumerReadClassification:
         legacy:Matchups: validation-shadow
         legacy:Timestamps: validation-shadow
       note: 'CLI of the matchup context (ADR-075, Issue #1199 section 3). matchups, context and history read only canonical data-source, the league-standings and nfl-games products, the lifecycle and Decision Windows functions and data-meta. compare computes the Matchups and FantasyGameContext (current at the Timestamps instants, completed seasons at the current time) and compares them exactly with the published public/data files (validation-shadow, never an input); Timestamps.json only supplies the comparison instants. The only intended value difference is decision M2 (counterfactual week-final rule).'
+    tools/weekly_recaps_app_publish.py:
+      reads:
+        legacy:Timestamps: app-output-owner
+        legacy:WeeklyRecaps: app-output-owner
+      note: 'Consumer generator of the weekly recaps (ADR-063, Issue #1199 section 4 step 4). write renders WeeklyRecaps.json and the past_seasons WeeklyRecaps files from the computed recap function (data-source, products, data-meta) and publishes them only on a semantic difference. It reads the existing App files only to detect that difference and updates the WeeklyRecaps key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/weekly_recaps.py:
       reads:
         legacy:WeeklyRecaps: validation-shadow
