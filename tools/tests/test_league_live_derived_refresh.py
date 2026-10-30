@@ -98,9 +98,10 @@ class LeagueLiveStepOrderTests(unittest.TestCase):
             "python3 tools/league_live_derived_refresh.py",
             # PlayerWeekFantasy/MatchupProjections no longer depend on an App file (ADR-075), so they precede the App files
             "python3 tools/player_week_fantasy_refresh.py",
-            # WeeklyRecaps (RequestLeaguePublication) reads Matchups.json
             "python3 tools/matchup_context_app_publish.py write",
             "python3 tools/league_history_app_publish.py write",
+            # WeeklyRecaps are computed from the fresh TeamWeekPerformance product (ADR-063, Issue #1199 section 4)
+            "python3 tools/weekly_recaps_app_publish.py write",
             "pwsh ./public/requests/RequestLeaguePublication.ps1",
         ]
         positions = [workflow.index(step) for step in steps]

@@ -153,7 +153,8 @@ jobs:
       # Products before consumers: the PlayerWeekFantasy/MatchupProjections refresh no longer depends on an App file
       # (target week from the lifecycle LineupWeek, ADR-075), so it runs before the App files. Matchups.json and
       # FantasyGameContext.json are rendered from the computed matchup context by tools/matchup_context_app_publish.py
-      # (Issue #1199 section 3 step 7) before RequestLeaguePublication, because WeeklyRecaps reads Matchups.json.
+      # (Issue #1199 section 3 step 7) before RequestLeaguePublication. WeeklyRecaps.json is rendered from the computed recap function by
+      # tools/weekly_recaps_app_publish.py (Issue #1199 section 4); it reads the fresh TeamWeekPerformance product, not an App file.
       - name: Rebuild and publish League, PlayerWeekFantasy, MatchupProjections and current-season Derived
         run: >-
           python3 tools/rebuild_and_publish.py
@@ -169,4 +170,5 @@ jobs:
           python3 tools/player_week_fantasy_refresh.py &&
           python3 tools/matchup_context_app_publish.py write --fail-on-error &&
           python3 tools/league_history_app_publish.py write &&
+          python3 tools/weekly_recaps_app_publish.py write --fail-on-error &&
           pwsh ./public/requests/RequestLeaguePublication.ps1'
