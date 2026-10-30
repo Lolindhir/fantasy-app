@@ -828,6 +828,211 @@ def build_fantasy_game_context(
     return context
 
 
+# ---------------------------------------------------------------------------------------------------------------------
+# History of completed seasons (New-HistoricalFantasyGameContextSeason of FantasyGameContextCore.ps1)
+
+HISTORY_GAME_TYPES = {"REG", "WC", "DIV", "CON", "SB"}
+
+
+def canonical_matchup_facts(season: str, week: int, rows: list[Any]) -> list[dict[str, Any]]:
+    """Paired facts of canonical league matchup rows (ConvertTo-FgcCanonicalMatchupFacts)."""
+    normalized: list[dict[str, Any]] = []
+    for row in rows:
+        provider_id = _mapping_text(row, "ProviderMatchupID", "MatchupID")
+        team_id = _mapping_text(row, "ProviderRosterID", "RosterID")
+        if provider_id is None or team_id is None:
+            continue
+        player_points = _canonical_points(value_of(row, "PlayerPoints"))
+        starter_points = _canonical_points(value_of(row, "StarterPoints"))
+        starter_ids = sorted({pid for pid in (_canonical_player_id(p) for p in (value_of(row, "Starters") or [])) if pid})
+        players: dict[str, dict[str, Any]] = {}
+        for ref in value_of(row, "Players") or []:
+            player_id = _canonical_player_id(ref)
+            if not player_id:
+                continue
+            is_starter = player_id in starter_ids
+            has_points = player_id in player_points
+            points = player_points[player_id] if has_points else None
+            if is_starter and player_id in starter_points:
+                has_points, points = True, starter_points[player_id]
+            canonical = value_of(ref, "CanonicalPlayerID") if isinstance(ref, dict) else None
+            canonical = None if _blank(canonical) else str(canonical).strip()
+            players.setdefault(player_id, _player_fact(player_id, canonical, is_starter, points, has_points))
+        for starter_id in starter_ids:
+            if starter_id not in players:
+                raise MatchupContextError(f"Historical fantasy matchup Week {week} Team '{team_id}' has starter '{starter_id}' outside the rostered player set.")
+        score = value_of(row, "Points")
+        normalized.append(
+            {
+                "ProviderMatchupID": provider_id,
+                "FantasyTeamID": team_id,
+                "Players": [players[key] for key in sorted(players)],
+                "FinalScore": 0.0 if score is None else float(score),
+                "HasCustomPoints": value_of(row, "CustomPoints") is not None,
+            }
+        )
+    return paired_matchup_facts(season, week, normalized)
+
+
+def _mapping_text(row: Any, *names: str) -> str | None:
+    for mapping in value_of(row, "ProviderMappings") or []:
+        if _s(value_of(mapping, "Provider")) != "Sleeper":
+            continue
+        value = value_of(mapping, *names)
+        if value is not None and not _blank(value):
+            return str(value).strip()
+    return None
+
+
+def _canonical_player_id(ref: Any) -> str | None:
+    if ref is None:
+        return None
+    if not isinstance(ref, dict):
+        return str(ref).strip() or None
+    direct = value_of(ref, "PlayerID", "ID", "SleeperID")
+    if direct is not None and not _blank(direct):
+        return str(direct).strip()
+    return _mapping_text(ref, "ProviderPlayerID", "PlayerID")
+
+
+def _canonical_points(entries: Any) -> dict[str, float]:
+    result: dict[str, float] = {}
+    for entry in entries or []:
+        if entry is None:
+            continue
+        player_id = _canonical_player_id(value_of(entry, "Player"))
+        points = value_of(entry, "Points")
+        if player_id and points is not None:
+            result[player_id] = float(points)
+    return result
+
+
+def _kickoff_from_epoch(game: Any) -> str | None:
+    from datetime import datetime, timezone
+
+    epoch = value_of(game, "gameTime_epoch", "GameTimeEpoch")
+    if epoch is not None and str(epoch).strip() != "":
+        try:
+            return datetime.fromtimestamp(int(float(epoch)), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        except (ValueError, OverflowError, OSError):
+            pass
+    return None
+
+
+def historical_decision_facts(
+    week: int,
+    schedule: list[dict[str, Any]],
+    matchups: list[dict[str, Any]],
+    assignments: dict[str, list[str]] | None,
+    team_key: Callable[[Any], str | None],
+) -> dict[str, Any]:
+    """Decision Windows and player lock facts of a completed week from canonical weekly membership (New-FgcHistoricalDecisionFacts)."""
+    label = f"Week {week}"
+    games: list[dict[str, Any]] = []
+    for game in schedule:
+        week_text = _s(value_of(game, "gameWeek", "Week"))
+        if week_text != label and week_text != str(week):
+            continue
+        game_id = _s(value_of(game, "gameID", "GameID"))
+        starts = _kickoff_from_epoch(game)
+        if game_id.strip() == "" or not starts:
+            continue
+        games.append(
+            {
+                "GameID": game_id,
+                "StartsAtUtc": starts,
+                "AwayTeamID": _s(value_of(game, "teamIDAway", "AwayTeamID")),
+                "AwayTeamAbbr": value_of(game, "teamAbvAway", "AwayTeamAbbr"),
+                "HomeTeamID": _s(value_of(game, "teamIDHome", "HomeTeamID")),
+                "HomeTeamAbbr": value_of(game, "teamAbvHome", "HomeTeamAbbr"),
+            }
+        )
+    assignments = assignments or {}
+    locks: list[dict[str, Any]] = []
+    for matchup in matchups:
+        for team in matchup["Teams"]:
+            for player in team["Players"]:
+                candidates: list[tuple[dict[str, Any], str]] = []
+                canonical = _s(player.get("CanonicalPlayerID"))
+                if canonical.strip() != "" and canonical in assignments:
+                    for abbr in assignments[canonical]:
+                        for game in games:
+                            keys = {team_key(game["AwayTeamID"]), team_key(game["HomeTeamID"])}
+                            if team_key(abbr) in keys or abbr in (_s(game["AwayTeamAbbr"]), _s(game["HomeTeamAbbr"])):
+                                candidates.append((game, abbr))
+                game_ids = sorted({g["GameID"] for g, _ in candidates})
+                if len(game_ids) == 1:
+                    game = candidates[0][0]
+                    team_ids = sorted({abbr for _, abbr in candidates})
+                    locks.append(
+                        {
+                            "FantasyTeamID": team["FantasyTeamID"], "PlayerID": player["PlayerID"],
+                            "NFLTeamID": team_ids[0] if len(team_ids) == 1 else None, "Kind": "scheduled", "GameID": game["GameID"],
+                            "DecisionWindowID": game["StartsAtUtc"], "StartsAtUtc": game["StartsAtUtc"], "IsStarter": player["IsStarter"],
+                        }
+                    )
+                else:
+                    locks.append(
+                        {
+                            "FantasyTeamID": team["FantasyTeamID"], "PlayerID": player["PlayerID"], "NFLTeamID": None, "Kind": "unknown",
+                            "GameID": None, "DecisionWindowID": None, "StartsAtUtc": None, "IsStarter": player["IsStarter"],
+                        }
+                    )
+    windows: list[dict[str, Any]] = []
+    for starts in sorted({g["StartsAtUtc"] for g in games}):
+        windows.append(
+            {
+                "DecisionWindowID": starts,
+                "StartsAtUtc": starts,
+                "Games": sorted((g for g in games if g["StartsAtUtc"] == starts), key=lambda g: g["GameID"]),
+            }
+        )
+    return {"DecisionWindows": windows, "PlayerLockFacts": locks}
+
+
+def resolve_historical_season(repo_root: Path, league_id: str, season: int) -> dict[str, Any]:
+    """The FantasyGameContext history document of a completed season (SchemaVersion 1, ScoringState final).
+
+    Raises MatchupContextError when the canonical evidence (league source, matchups, schedule, weekly rosters) is incomplete.
+    """
+    from nfl_source_data_lib.teams import NflTeamRegistry
+    from schedule_archive import ScheduleArchiveError, build_schedule
+
+    from .decision_windows import make_team_key
+
+    season_dir = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons" / str(season)
+    league_file = season_dir / "league.json"
+    matchup_dir = season_dir / "matchups"
+    roster_dir = repo_root / DATA_SOURCE_ROOT / "nfl" / "weekly-rosters" / str(season)
+    if not league_file.is_file() or not matchup_dir.is_dir() or not roster_dir.is_dir():
+        raise MatchupContextError(f"Historical FantasyGameContext {season} requires canonical league matchups, the canonical NFL schedule and canonical weekly NFL roster evidence.")
+    league = _read(league_file, "Canonical league source")
+    last_week = to_int(value_of(value_of(league, "WeekStructure"), "FinalLeagueWeek"))
+    if last_week <= 0:
+        last_week = to_int(value_of(value_of(league, "Settings"), "last_scored_leg"))
+    if last_week <= 0:
+        raise MatchupContextError(f"Historical FantasyGameContext {season} cannot resolve the final fantasy week.")
+    try:
+        schedule = build_schedule(repo_root, season, HISTORY_GAME_TYPES)
+    except ScheduleArchiveError as exc:
+        raise MatchupContextError(str(exc)) from exc
+    team_key = make_team_key(NflTeamRegistry.load(repo_root))
+    weeks: list[dict[str, Any]] = []
+    for week in range(1, last_week + 1):
+        matchup_file = matchup_dir / f"week-{week}.json"
+        if not matchup_file.is_file():
+            continue
+        payload = _read(matchup_file, f"Canonical matchups week {week}")
+        facts = canonical_matchup_facts(str(season), week, payload if isinstance(payload, list) else [payload])
+        if not facts:
+            continue
+        from .matchup_context import weekly_assignment_map
+
+        decision = historical_decision_facts(week, schedule, facts, weekly_assignment_map(repo_root, season, week), team_key)
+        weeks.append(build_fantasy_game_context(league_id, str(season), week, decision, facts, schedule, True, team_key, parse_instant_text))
+    return {"SchemaVersion": 1, "LeagueID": league_id, "Season": str(season), "ScoringState": "final", "Weeks": weeks}
+
+
 def resolve_current_context(repo_root: Path, league_id: str, season: int, at_utc: Any) -> dict[str, Any] | None:
     """The FantasyGameContext of the current lineup week at ``at_utc`` or None when no current matchup week is loadable.
 
@@ -876,5 +1081,5 @@ def resolve_current_context(repo_root: Path, league_id: str, season: int, at_utc
 __all__ = [
     "add_market_context", "add_preview_context", "add_relevance_context", "add_score_context", "add_weekly_watch_context",
     "build_fantasy_game_context", "current_matchup_facts", "outcome_state", "paired_matchup_facts", "point_map",
-    "resolve_current_context",
+    "resolve_current_context", "resolve_historical_season", "canonical_matchup_facts", "historical_decision_facts",
 ]
