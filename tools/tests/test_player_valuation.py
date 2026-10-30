@@ -53,6 +53,75 @@ def no_hold(_key: str):
     return None, None
 
 
+class SeasonValuesTests(unittest.TestCase):
+    """SeasonValues and FormGames (ContractVersion 2, Issue #1226 step 3a), synthetic players only."""
+
+    def test_history_values_use_the_rounded_total_and_last_league_week(self) -> None:
+        rows = {1: week(10.004), 2: week(20.0), 3: week(0.0, snaps=0), 20: week(99.0)}
+        values = pv.history_values(rows, "WR", 17)
+        self.assertEqual({"Total": 30.0, "AvgGame": 15.0, "AvgPotentialGame": 1.88, "GamesPlayed": 2,
+                          "PotentialGames": 16}, values)
+
+    def test_history_inputs_stay_a_projection_of_history_values(self) -> None:
+        rows = {1: week(10.0), 2: week(20.0)}
+        values = pv.history_values(rows, "WR", 17)
+        self.assertEqual({"AvgPotentialGame": values["AvgPotentialGame"], "AvgGame": values["AvgGame"]},
+                         pv.history_inputs(rows, "WR", 17))
+
+    def test_games_potential_drops_a_passed_bye_and_is_zero_without_games(self) -> None:
+        self.assertEqual(4, pv.games_potential(5, 3, True))
+        self.assertEqual(5, pv.games_potential(5, 9, True))
+        self.assertEqual(0, pv.games_potential(5, 3, False))
+
+    def test_current_values_sum_counting_stats_and_ignore_later_weeks(self) -> None:
+        rows = {
+            1: {"Points": 10.0, "Snaps": 40, "KickAttempts": 0, "Attempts": 20, "TdPass": 1, "TdRec": 0, "TdRush": 0},
+            2: {"Points": 5.5, "Snaps": 60, "KickAttempts": 0, "Attempts": 10, "TdPass": 0, "TdRec": 1, "TdRush": 2},
+            3: {"Points": 99.0, "Snaps": 60, "KickAttempts": 0, "Attempts": 10, "TdPass": 5, "TdRec": 5, "TdRush": 5},
+        }
+        values = pv.current_values(rows, "QB", 2, 9, True)
+        self.assertEqual(2, values["GamesPlayed"])
+        self.assertEqual(2, values["GamesPotential"])
+        self.assertEqual(100, values["SnapsTotal"])
+        self.assertEqual(30, values["AttemptsTotal"])
+        self.assertEqual(15.5, values["FantasyPointsTotal"])
+        self.assertEqual(7.75, values["FantasyPointsAvgGame"])
+        self.assertEqual(0.155, values["FantasyPointsAvgSnap"])
+        self.assertEqual((1, 1, 2, 4), (values["TouchdownsPassing"], values["TouchdownsReceiving"],
+                                         values["TouchdownsRushing"], values["TouchdownsTotal"]))
+
+    def test_current_values_of_a_player_without_games_are_zero(self) -> None:
+        values = pv.current_values({}, "WR", 5, 3, False)
+        self.assertEqual(0, values["GamesPlayed"])
+        self.assertEqual(0, values["GamesPotential"])
+        self.assertEqual(0, values["FantasyPointsAvgGame"])
+
+    def test_form_games_take_the_newest_four_final_games_up_to_the_as_of_week(self) -> None:
+        games = tuple(pv.GameRef(f"g{w}", w, final) for w, final in
+                      [(9, True), (8, False), (7, True), (6, True), (5, True), (4, True), (3, True)])
+        self.assertEqual(["g7", "g6", "g5", "g4"], pv.form_games(games, 8, 17))
+        self.assertEqual(["g5", "g4", "g3"], pv.form_games(games, 5, 17))
+        self.assertEqual(["g4", "g3"], pv.form_games(games, 9, 4))
+
+    def test_snapshot_rows_carry_season_values_and_hold_rows_take_held_values(self) -> None:
+        resolved = pv.PlayerBasis(sleeper_id="1", canonical_id="c1", position="WR", team="AAA",
+                                  population=("nfl_roster_current_season",), identity_status=pv.STATUS_RESOLVED,
+                                  weeks={2030: {1: week(10.0)}}, games=(pv.GameRef("g1", 1, True),))
+        held = basis("2", None, status="identity_unresolved")
+        held_inputs = {"Current": {"AvgPotentialGame": 1.0, "AvgGame": 1.0}}
+        for name in pv.HISTORY_KEYS:
+            held_inputs[name] = {"AvgPotentialGame": 1.0, "AvgGame": 1.0}
+        held_values = {"Current": {"GamesPlayed": 3}}
+        snapshot = pv.build_snapshot(
+            context(as_of=1), [resolved, held], lambda key: (held_inputs, 0) if key == "2" else (None, None),
+            lambda key: (held_values, 0) if key == "2" else (None, None))
+        rows = {r["PlayerID"]: r for r in snapshot["Players"]}
+        self.assertEqual(["g1"], rows["1"]["FormGames"])
+        self.assertEqual(1, rows["1"]["SeasonValues"]["Current"]["GamesPlayed"])
+        self.assertEqual(held_values, rows["2"]["SeasonValues"])
+        self.assertEqual([], rows["2"]["FormGames"])
+
+
 class AggregationTests(unittest.TestCase):
     def test_scaled_round_rounds_half_to_even_after_scaling(self) -> None:
         self.assertEqual(0.12, pv.scaled_round(0.125, 2))   # 12.5 -> 12
@@ -116,7 +185,7 @@ class SnapshotTests(unittest.TestCase):
         snapshot = pv.build_snapshot(context(), self.players(), no_hold)
         self.assertEqual(["ContractVersion", "CanonicalLeagueID", "Season", "AsOfFinalScoredWeek", "ScoringProfile",
                           "Models", "League", "Players"], list(snapshot))
-        self.assertEqual(["CanonicalPlayerID", "PlayerID", "Position", "Population", "Hold", "Inputs", "Salary",
+        self.assertEqual(["CanonicalPlayerID", "PlayerID", "Position", "Population", "Hold", "Inputs", "SeasonValues", "FormGames", "Salary",
                           "SalaryProjected", "Ranking", "Grading"], list(snapshot["Players"][1]))
         self.assertEqual(["Current", "SeasonMinus1", "SeasonMinus2", "SeasonMinus3"], list(snapshot["Players"][1]["Inputs"]))
         self.assertEqual(MODEL_IDS, snapshot["Models"])
