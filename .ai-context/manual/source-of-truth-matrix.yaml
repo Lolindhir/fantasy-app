@@ -1127,12 +1127,6 @@ consumerReadClassification:
       reads:
         legacy:Teams: app-output-owner
       note: 'Writes Teams.json from the canonical NFL team registry (F3c).'
-    public/requests/RequestWeeklyRecaps.ps1:
-      reads:
-        legacy:Matchups: app-read-model-chain
-        legacy:Schedule: app-read-model-chain
-        legacy:WeeklyRecaps: app-output-owner
-      note: 'Weekly recaps derive KeyGames/KeyPlayers from published Matchups, Schedule and canonical season/week facts, with the neutral team order from the league-standings product (Issue #987); TeamAwards are projected from data-derived/team-week-performance for that exact finalized week, with historical canonical roster to app-team identity verified against the canonical weekly matchup source. No award recalculation, current-owner joins or parallel publisher (#355).'
     public/requests/utils/general/AvatarUtils.psm1:
       reads:
         provider:sleeper: display-link-construction

@@ -4,11 +4,11 @@ status: accepted-contract-v1
 trackingIssue: 1199
 architectureDecision: ADR-063
 implementationState: >-
-  Issue #1199 section 4: the contract and the ADR-063 amendment (step 1) are merged, as are the function, its CLI with the shadow compare and the Fast
-  tests (step 2). The App cutover (step 4) is implemented: tools/weekly_recaps_app_publish.py write renders WeeklyRecaps.json (League Live, current
-  season, --fail-on-error) and the past_seasons files (weekly update-transactions run, --scope history) only on a semantic difference;
-  RequestLeaguePublication.ps1 no longer calls RequestWeeklyRecaps.ps1 and keeps only the PastSeasonsIndex refresh. The App files carry no league
-  dimension, so the publisher fails closed for more than one league until the App delivery gains one. The PowerShell cleanup (steps 5 and 6) follows.
+  Issue #1199 section 4 is complete: contract and ADR-063 amendment (step 1), function, CLI and Fast tests (step 2), the App cutover (step 4;
+  tools/weekly_recaps_app_publish.py write in League Live for the current season and in the weekly update-transactions run for the history) and
+  the removal of RequestWeeklyRecaps.ps1, WeeklyRecapUtils.psm1, WeeklyRecapMatchupFacts.psm1 and WeeklyRecapRegressionTest.ps1 (steps 5 and 6).
+  RequestLeaguePublication.ps1 keeps only the PastSeasonsIndex refresh. The App files carry no league dimension, so the publisher fails closed for
+  more than one league until the App delivery gains one.
 
 purpose: >-
   Define the Weekly Recaps (KeyPlayers, KeyGames and the TeamAwards projection per final league week) as one pure function of

@@ -82,7 +82,7 @@ Assert-True -Condition $leagueLiveWorkflow.Contains("--path data-derived/league-
 Assert-True -Condition (-not $leagueLiveWorkflow.Contains("Detect changed Standings inputs")) -Message "League Live must not gate the Standings writer on League inputs."
 
 # Standings consumers read the league-standings product, never the rendered Standings.json (Issue #1197).
-foreach ($consumerName in @("RequestLeague.ps1", "RequestWeeklyRecaps.ps1")) {
+foreach ($consumerName in @("RequestLeague.ps1")) {
     $consumerText = Get-Content (Join-Path $PSScriptRoot $consumerName) -Raw
     Assert-True -Condition $consumerText.Contains("Get-LeagueStandingsProduct") -Message "$consumerName does not read the league-standings product."
     Assert-True -Condition (-not $consumerText.Contains("Get-StandingsLocal")) -Message "$consumerName still reads the rendered Standings.json through Get-StandingsLocal."
