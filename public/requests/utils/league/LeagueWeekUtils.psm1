@@ -199,4 +199,69 @@ function Get-LeagueLifecycle {
     return $result
 }
 
-Export-ModuleMember -Function Resolve-LeagueWeekState, Resolve-FantasyMatchupLoadWeek, Get-LeagueScoredWeek, Get-LeagueLifecycle
+# ConvertFrom-Json turns ISO instants into DateTime; the DecisionWindows delivery keeps the yyyy-MM-ddTHH:mm:ssZ text.
+function ConvertTo-InstantText {
+    param([AllowNull()][object]$Value)
+
+    if ($Value -is [DateTime]) { return $Value.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ") }
+    if ($Value -is [DateTimeOffset]) { return $Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ") }
+    if ($Value -is [System.Management.Automation.PSCustomObject]) {
+        foreach ($property in @($Value.PSObject.Properties)) {
+            $property.Value = ConvertTo-InstantText -Value $property.Value
+        }
+        return $Value
+    }
+    if ($Value -is [System.Collections.IList]) {
+        $items = New-Object System.Collections.ArrayList
+        foreach ($item in $Value) { [void]$items.Add((ConvertTo-InstantText -Value $item)) }
+        return ,($items.ToArray())
+    }
+    return $Value
+}
+
+# The current Decision Windows come from the shared Decision Windows function (ADR-074, Issue #1199 section 2) in
+# tools/decision_windows.py. The instant is an explicit input; nothing is persisted. The function echoes it as AsOfUtc,
+# which is not part of the DecisionWindows.json delivery and is removed here. Fails closed.
+function Get-LeagueDecisionWindows {
+    param(
+        [Parameter(Mandatory = $true)][string]$CanonicalLeagueID,
+        [Parameter(Mandatory = $true)][int]$Season,
+        [Parameter(Mandatory = $true)][string]$RepoRoot
+    )
+
+    $toolPath = Join-Path $RepoRoot "tools/decision_windows.py"
+    if (-not (Test-Path $toolPath)) {
+        throw "Decision Windows tool missing at '$toolPath'."
+    }
+
+    $python = $null
+    foreach ($name in @("python3", "python")) {
+        $command = Get-Command $name -ErrorAction SilentlyContinue
+        if ($command) { $python = $command.Source; break }
+    }
+    if (-not $python) { throw "Python is required for the shared Decision Windows." }
+
+    $atUtc = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+    $output = & $python $toolPath resolve --league $CanonicalLeagueID --season $Season --at $atUtc --repo-root $RepoRoot 2>&1
+    $exitCode = $LASTEXITCODE
+    $outputText = (@($output) | ForEach-Object { [string]$_ }) -join [Environment]::NewLine
+    if ($exitCode -ne 0) {
+        throw "Shared Decision Windows failed with exit code $exitCode. $outputText"
+    }
+
+    try {
+        $result = $outputText | ConvertFrom-Json
+    }
+    catch {
+        throw "Shared Decision Windows returned invalid JSON. $outputText"
+    }
+    foreach ($field in @("SchemaVersion", "LeagueID", "Season", "LineupWeek", "LastLineupWeek", "DecisionWindows", "PlayerLockFacts", "TeamLineupEvaluations", "AsOfUtc")) {
+        if ($null -eq $result.PSObject.Properties[$field]) {
+            throw "Shared Decision Windows lack the field '$field'."
+        }
+    }
+    [void]$result.PSObject.Properties.Remove("AsOfUtc")
+    return (ConvertTo-InstantText -Value $result)
+}
+
+Export-ModuleMember -Function Resolve-LeagueWeekState, Resolve-FantasyMatchupLoadWeek, Get-LeagueScoredWeek, Get-LeagueLifecycle, Get-LeagueDecisionWindows
