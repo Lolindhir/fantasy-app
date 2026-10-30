@@ -434,6 +434,212 @@ def build_base_model(
 
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Fantasy Relevance and participant scoring path (port of FantasyRelevanceV2Utils / ParticipantScoringPathDecisionUtils)
+
+_FLEX_ELIGIBILITY = {
+    "FLEX": ("RB", "WR", "TE"),
+    "SUPER_FLEX": ("QB", "RB", "WR", "TE"),
+    "WRRB_FLEX": ("WR", "RB"),
+    "REC_FLEX": ("WR", "TE"),
+}
+RELEVANCE_VERSION = 3
+
+
+def slot_definitions(roster_positions: Any) -> list[dict[str, Any]]:
+    """Starting slots in lineup order (bench excluded) with per-type ordinals."""
+    if roster_positions is None or len(roster_positions) == 0:
+        raise DecisionWindowsError("Fantasy Relevance requires league roster_positions.")
+    occurrences: dict[str, int] = {}
+    result: list[dict[str, Any]] = []
+    for raw in roster_positions:
+        if _blank(raw):
+            continue
+        slot_type = str(raw).strip().upper()
+        if slot_type == "BN":
+            continue
+        occurrences[slot_type] = occurrences.get(slot_type, 0) + 1
+        result.append({
+            "SlotID": f"{slot_type}-{occurrences[slot_type]}",
+            "SlotType": slot_type,
+            "SlotOrdinal": occurrences[slot_type],
+            "SlotIndex": len(result),
+        })
+    if not result:
+        raise DecisionWindowsError("Fantasy Relevance could not derive starting slots from roster_positions.")
+    return result
+
+
+def slot_eligible(position: str | None, slot_type: str) -> bool:
+    if _blank(position):
+        return False
+    key = str(position).strip().upper()
+    slot = slot_type.strip().upper()
+    if slot in _FLEX_ELIGIBILITY:
+        return key in _FLEX_ELIGIBILITY[slot]
+    return key == slot
+
+
+def game_state(lock: dict[str, Any] | None, game_status: str | None, at_utc: datetime) -> str:
+    """bye | completed | locked-active | unlocked | unknown for one player lock fact at ``at_utc``."""
+    kind = None if lock is None else lock.get("Kind")
+    if kind == "bye":
+        return "bye"
+    if kind != "scheduled":
+        return "unknown"
+    if not _blank(game_status) and re.match(r"^Final", str(game_status)):
+        return "completed"
+    if _blank(lock.get("StartsAtUtc")):
+        return "unknown"
+    starts_at = datetime.strptime(utc_text(lock["StartsAtUtc"]), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+    return "locked-active" if starts_at <= at_utc.astimezone(UTC) else "unlocked"
+
+
+def _valid_ids(values: Any) -> list[str]:
+    seen: list[str] = []
+    for value in values or []:
+        state, player_id = _player_id(value)
+        if state == "valid" and player_id not in seen:
+            seen.append(player_id)
+    return seen
+
+
+def add_relevance(
+    model: dict[str, Any],
+    roster_positions: Any,
+    rosters: list[dict[str, Any]],
+    positions: dict[str, str | None],
+    status_by_game: dict[str, str],
+    at_utc: datetime,
+) -> dict[str, Any]:
+    """Port of Add-FantasyRelevanceDecisionFacts: slot states, player placements and team counts at ``at_utc``."""
+    definitions = slot_definitions(roster_positions)
+    lock_by_team_player = {(str(l["FantasyTeamID"]), l["PlayerID"]): l for l in model["PlayerLockFacts"]}
+    teams: list[dict[str, Any]] = []
+    for roster in sorted(rosters, key=lambda r: str(r["FantasyTeamID"]).lower()):
+        team_id = str(roster["FantasyTeamID"])
+        roster_ids = _valid_ids(roster.get("PlayerIDs"))
+        starter_raw = list(roster.get("StarterSlots") if roster.get("StarterSlots") is not None else roster.get("StarterIDs") or [])
+        starter_ids = _valid_ids(starter_raw)
+        ir_ids = _valid_ids(roster.get("ReserveIDs"))
+        taxi_ids = _valid_ids(roster.get("TaxiIDs"))
+        for starter_id in starter_ids:
+            if starter_id in ir_ids or starter_id in taxi_ids:
+                raise DecisionWindowsError(f"Fantasy Relevance team '{team_id}' has starter '{starter_id}' outside Active Roster.")
+        if len(starter_raw) > len(definitions):
+            raise DecisionWindowsError(f"Fantasy Relevance team '{team_id}' has more starter entries than starting slots.")
+
+        def lock_of(player_id: str | None) -> dict[str, Any] | None:
+            return None if player_id is None else lock_by_team_player.get((team_id, player_id))
+
+        slot_states: list[dict[str, Any]] = []
+        slot_by_starter: dict[str, dict[str, Any]] = {}
+        for index, definition in enumerate(definitions):
+            starter_id = _player_id(starter_raw[index])[1] if index < len(starter_raw) else None
+            lock = lock_of(starter_id)
+            status = status_by_game.get(str(lock["GameID"])) if lock is not None and not _blank(lock.get("GameID")) else None
+            state = "unlocked" if starter_id is None else game_state(lock, status, at_utc)
+            slot = {
+                **definition,
+                "CurrentStarterID": starter_id,
+                "State": state,
+                "GameID": None if lock is None else lock.get("GameID"),
+                "DecisionWindowID": None if lock is None else lock.get("DecisionWindowID"),
+                "StartsAtUtc": None if lock is None else lock.get("StartsAtUtc"),
+            }
+            slot_states.append(slot)
+            if starter_id is not None:
+                slot_by_starter[starter_id] = slot
+
+        bench_ids = [p for p in roster_ids if p not in starter_ids and p not in ir_ids and p not in taxi_ids]
+        mutable = [s for s in slot_states if s["State"] == "unlocked"]
+        players: list[dict[str, Any]] = []
+        for player_id in roster_ids:
+            placement = "starter" if player_id in starter_ids else "ir" if player_id in ir_ids else "taxi" if player_id in taxi_ids else "bench"
+            position = positions.get(player_id)
+            position = None if _blank(position) else str(position).strip().upper()
+            lock = lock_of(player_id)
+            status = status_by_game.get(str(lock["GameID"])) if lock is not None and not _blank(lock.get("GameID")) else None
+            state = game_state(lock, status, at_utc)
+            eligible: list[str] = []
+            if placement == "bench" and state == "unlocked":
+                for slot in mutable:
+                    if slot_eligible(position, slot["SlotType"]) and slot["SlotID"] not in eligible:
+                        eligible.append(slot["SlotID"])
+            bench_candidate = placement == "bench" and len(eligible) > 0
+            lineup_slot = slot_by_starter.get(player_id) if placement == "starter" else None
+            players.append({
+                "PlayerID": player_id,
+                "Placement": placement,
+                "Position": position,
+                "GameState": state,
+                "GameID": None if lock is None else lock.get("GameID"),
+                "DecisionWindowID": None if lock is None else lock.get("DecisionWindowID"),
+                "StartsAtUtc": None if lock is None else lock.get("StartsAtUtc"),
+                "LineupSlotID": None if lineup_slot is None else lineup_slot["SlotID"],
+                "LineupSlotType": None if lineup_slot is None else lineup_slot["SlotType"],
+                "EligibleUnlockedSlotIDs": eligible,
+                "IsBenchCandidate": bench_candidate,
+                "HasDirectScoringPath": placement == "starter" and state in ("unlocked", "locked-active"),
+                "HasAlternativePath": bench_candidate,
+            })
+
+        def starters_in(state: str) -> int:
+            return sum(1 for p in players if p["Placement"] == "starter" and p["GameState"] == state)
+
+        teams.append({
+            "FantasyTeamID": team_id,
+            "ActiveRosterPlayerCount": len(starter_ids) + len(bench_ids),
+            "StarterCount": len(starter_ids),
+            "BenchCount": len(bench_ids),
+            "IRCount": len(ir_ids),
+            "TaxiCount": len(taxi_ids),
+            "UnlockedStarterCount": starters_in("unlocked"),
+            "LockedActiveStarterCount": starters_in("locked-active"),
+            "CompletedStarterCount": starters_in("completed"),
+            "EligibleBenchCandidateCount": sum(1 for p in players if p["IsBenchCandidate"]),
+            "HasRemainingScoringPath": any(p["HasDirectScoringPath"] or p["HasAlternativePath"] for p in players),
+            "Slots": slot_states,
+            "Players": sorted(players, key=lambda p: (p["Placement"].lower(), p["PlayerID"].lower())),
+        })
+    model["FantasyRelevance"] = {"Version": 1, "SlotDefinitions": definitions, "Teams": teams}
+    model["SchemaVersion"] = max(2, int(model["SchemaVersion"]))
+    return model
+
+
+def remaining_scoring_path_state(team_state: dict[str, Any], evaluation: dict[str, Any] | None) -> str:
+    """open | unknown | none: whether the team can still score through a starter, a bench candidate or a repair."""
+    has_path = team_state.get("HasRemainingScoringPath")
+    slots = team_state.get("Slots") or []
+
+    def repairability_state(slot: dict[str, Any]) -> str | None:
+        repairability = slot.get("Repairability")
+        return None if not isinstance(repairability, dict) else repairability.get("State")
+
+    if has_path is True or any(repairability_state(slot) == "repairable" for slot in slots):
+        return "open"
+    if has_path is None:
+        return "unknown"
+    if evaluation is None or evaluation.get("State") in ("unknown", "review"):
+        return "unknown"
+    for slot in slots:
+        if slot.get("State") == "unknown" or repairability_state(slot) == "unknown":
+            return "unknown"
+    return "none"
+
+
+def add_scoring_path(model: dict[str, Any]) -> dict[str, Any]:
+    """Port of Add-ParticipantScoringPathDecisionFacts: RemainingScoringPathState per team (runs after availability and repairability)."""
+    relevance = model.get("FantasyRelevance")
+    if relevance is None:
+        return model
+    evaluations = {str(e["FantasyTeamID"]).strip(): e for e in model["TeamLineupEvaluations"] if e is not None}
+    for team_state in relevance["Teams"]:
+        team_state["RemainingScoringPathState"] = remaining_scoring_path_state(team_state, evaluations.get(str(team_state["FantasyTeamID"]).strip()))
+    relevance["Version"] = max(RELEVANCE_VERSION, int(relevance["Version"]))
+    return model
+
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Input adapters (canonical facts -> derivation inputs)
 
 _WEEK_LABEL = re.compile(r"^Week\s+(\d+)$")
@@ -534,13 +740,35 @@ def rosters_from_canonical(rosters: Any, label: str) -> list[dict[str, Any]]:
             "FantasyTeamID": team_id,
             "PlayerIDs": provider_ids(roster.get("Players"), roster_label),
             "StarterIDs": provider_ids(roster.get("Starters"), roster_label),
+            "ReserveIDs": provider_ids(roster.get("Reserve"), roster_label),
+            "TaxiIDs": provider_ids(roster.get("Taxi"), roster_label),
         })
     result.sort(key=lambda r: r["FantasyTeamID"])
     return result
 
 
-def resolve_base(repo_root: Path, league_id: str, season: int, at_utc: datetime) -> dict[str, Any]:
-    """Base Decision Windows (windows, locks, lineup evaluations, lookahead) at ``at_utc``; computed, never persisted."""
+def _ordered_starter_slots(repo_root: Path, provider_league_id: str, rosters: list[dict[str, Any]]) -> None:
+    """Attach ``StarterSlots`` (lineup order, None for an unfilled slot) from the raw Sleeper roster evidence.
+
+    The canonical rosters drop Sleeper's "0" placeholders and with them the slot positions, which the lineup order needs. The raw
+    provider snapshot under data-source keeps them; it is cross-checked against the canonical starters and never replaces them.
+    """
+    path = repo_root / DATA_SOURCE_ROOT / "providers" / "sleeper" / "leagues" / provider_league_id / "rosters.json"
+    raw = _read(path, "Raw Sleeper rosters")
+    if not isinstance(raw, list):
+        raise DecisionWindowsError(f"Raw Sleeper rosters are not a list: {path}")
+    by_roster = {str(item.get("roster_id")): item for item in raw if isinstance(item, dict)}
+    for roster in rosters:
+        item = by_roster.get(str(roster["FantasyTeamID"]))
+        if item is None:
+            raise DecisionWindowsError(f"Raw Sleeper rosters lack roster {roster['FantasyTeamID']}: {path}")
+        slots = [_player_id(value)[1] for value in item.get("starters") or []]
+        if sorted(p for p in slots if p is not None) != sorted(roster["StarterIDs"]):
+            raise DecisionWindowsError(f"Raw Sleeper starters of roster {roster['FantasyTeamID']} contradict the canonical rosters.")
+        roster["StarterSlots"] = slots
+
+
+def _inputs(repo_root: Path, league_id: str, season: int, at_utc: datetime) -> dict[str, Any]:
     if at_utc.tzinfo is None:
         raise DecisionWindowsError("AtUtc must be timezone-aware")
     from players_population import PopulationError, build_population  # local: heavy import, only the resolver needs it
@@ -554,32 +782,59 @@ def resolve_base(repo_root: Path, league_id: str, season: int, at_utc: datetime)
     provider_league_id = _sleeper_mapping(league.get("ProviderMappings"), f"Canonical league '{league_id}/{season}'", "ProviderLeagueID")
     if lifecycle["LineupWeek"] is None:
         raise DecisionWindowsError("Current Decision Window adapter requires fantasy-platform settings.leg.")
-    lineup_week = int(lifecycle["LineupWeek"])
-    last_week = int(lifecycle["LastLeagueWeek"])
-    starters = expected_starter_count(league.get("RosterPositions"))
     rosters = rosters_from_canonical(_read(base / "rosters.json", "Canonical rosters"), f"Canonical league '{league_id}/{season}'")
+    _ordered_starter_slots(repo_root, provider_league_id, rosters)
 
     try:
         records = build_schedule(repo_root, season, {"REG"})
         population = build_population(repo_root, league_id, season)
     except (ScheduleArchiveError, PopulationError, OSError, KeyError) as exc:
         raise DecisionWindowsError(f"Decision Window input unusable: {exc}") from exc
-    assignments = [{"PlayerID": p["SleeperID"], "NFLTeamID": p["TeamID"]} for p in population["Players"]]
+    return {
+        "provider_league_id": provider_league_id,
+        "lineup_week": int(lifecycle["LineupWeek"]),
+        "last_week": int(lifecycle["LastLeagueWeek"]),
+        "roster_positions": league.get("RosterPositions"),
+        "rosters": rosters,
+        "records": records,
+        "positions": {p["SleeperID"]: p.get("Position") for p in population["Players"]},
+        "assignments": [{"PlayerID": p["SleeperID"], "NFLTeamID": p["TeamID"]} for p in population["Players"]],
+        "team_key": make_team_key(NflTeamRegistry.load(repo_root)),
+    }
 
+
+def _base_from_inputs(inputs: dict[str, Any], season: int) -> dict[str, Any]:
     return build_base_model(
-        provider_league_id,
+        inputs["provider_league_id"],
         str(season),
-        lineup_week,
-        last_week,
-        schedule_games(records, str(season), lineup_week, last_week),
-        rosters,
-        assignments,
-        starters,
-        make_team_key(NflTeamRegistry.load(repo_root)),
+        inputs["lineup_week"],
+        inputs["last_week"],
+        schedule_games(inputs["records"], str(season), inputs["lineup_week"], inputs["last_week"]),
+        inputs["rosters"],
+        inputs["assignments"],
+        expected_starter_count(inputs["roster_positions"]),
+        inputs["team_key"],
     )
 
 
+def resolve_base(repo_root: Path, league_id: str, season: int, at_utc: datetime) -> dict[str, Any]:
+    """Base Decision Windows (windows, locks, lineup evaluations, lookahead) at ``at_utc``; computed, never persisted."""
+    return _base_from_inputs(_inputs(repo_root, league_id, season, at_utc), season)
+
+
+def resolve(repo_root: Path, league_id: str, season: int, at_utc: datetime) -> dict[str, Any]:
+    """Decision Windows with Fantasy Relevance and the scoring path at ``at_utc``; computed, never persisted."""
+    inputs = _inputs(repo_root, league_id, season, at_utc)
+    model = _base_from_inputs(inputs, season)
+    if inputs["lineup_week"] < 1 or inputs["lineup_week"] > inputs["last_week"]:
+        return model
+    status_by_game = {str(r["gameID"]): str(r.get("gameStatus") or "") for r in inputs["records"] if r.get("gameID")}
+    add_relevance(model, inputs["roster_positions"], inputs["rosters"], inputs["positions"], status_by_game, at_utc)
+    return add_scoring_path(model)
+
+
 __all__ = [
-    "DecisionWindowsError", "build_base_model", "derive_facts", "expected_starter_count", "make_team_key", "parse_instant",
-    "resolve_base", "rosters_from_canonical", "schedule_games", "utc_text",
+    "DecisionWindowsError", "add_relevance", "add_scoring_path", "build_base_model", "game_state", "remaining_scoring_path_state",
+    "slot_definitions", "slot_eligible", "derive_facts", "expected_starter_count", "make_team_key", "parse_instant",
+    "resolve", "resolve_base", "rosters_from_canonical", "schedule_games", "utc_text",
 ]

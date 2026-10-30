@@ -202,6 +202,102 @@ class ModelTests(unittest.TestCase):
         self.assertEqual(self.model(1), self.model(1))
 
 
+class RelevanceTests(unittest.TestCase):
+    POSITIONS = ["QB", "RB", "FLEX", "BN", "BN"]
+    POS = {"p1": "QB", "p2": "RB", "p3": "WR", "p4": "TE", "p5": "RB", "p6": "QB"}
+    STATUS = {"w1a": "Final", "w1b": "Scheduled", "w1c": "Scheduled"}
+
+    def model(self, rosters, at="2030-09-08T17:10:00Z", status=None):
+        base = dw.build_base_model("L", SEASON, 1, 18, GAMES, rosters, ASSIGN, 3, key)
+        when = dw.parse_instant(at, "at")
+        dw.add_relevance(base, self.POSITIONS, rosters, self.POS, self.STATUS if status is None else status, when)
+        return dw.add_scoring_path(base)
+
+    def team(self, model):
+        return model["FantasyRelevance"]["Teams"][0]
+
+    def test_slots_follow_roster_positions_without_the_bench(self):
+        definitions = dw.slot_definitions(["QB", "FLEX", "FLEX", "BN"])
+        self.assertEqual(["QB-1", "FLEX-1", "FLEX-2"], [d["SlotID"] for d in definitions])
+        self.assertEqual([0, 1, 2], [d["SlotIndex"] for d in definitions])
+        with self.assertRaises(dw.DecisionWindowsError):
+            dw.slot_definitions(["BN"])
+
+    def test_flex_family_eligibility(self):
+        self.assertTrue(dw.slot_eligible("te", "FLEX"))
+        self.assertFalse(dw.slot_eligible("QB", "FLEX"))
+        self.assertTrue(dw.slot_eligible("QB", "SUPER_FLEX"))
+        self.assertTrue(dw.slot_eligible("TE", "REC_FLEX"))
+        self.assertFalse(dw.slot_eligible("RB", "REC_FLEX"))
+        self.assertTrue(dw.slot_eligible("K", "K"))
+        self.assertFalse(dw.slot_eligible(None, "K"))
+
+    def test_slot_states_follow_the_instant(self):
+        r = [{"FantasyTeamID": 1, "PlayerIDs": ["p1", "p2", "p3"], "StarterIDs": ["p1", "p2", "p3"]}]
+        team = self.team(self.model(r))
+        # p1 (AAA, w1a) is final, p2 (CCC, w1b) kicked off at 17:00, p3 (EEE, w1c) kicks off at 17:20.
+        self.assertEqual(["completed", "locked-active", "unlocked"], [s["State"] for s in team["Slots"]])
+        early = self.team(self.model(r, at="2030-09-08T16:59:59Z", status={}))
+        self.assertEqual(["unlocked"] * 3, [s["State"] for s in early["Slots"]])
+        self.assertEqual((1, 1, 1), (team["CompletedStarterCount"], team["LockedActiveStarterCount"], team["UnlockedStarterCount"]))
+
+    def test_kickoff_instant_locks_and_bye_or_unknown_are_their_own_states(self):
+        r = [{"FantasyTeamID": 1, "PlayerIDs": ["p3", "p4", "p6"], "StarterIDs": ["p3", "p4", "p6"]}]
+        exactly = self.team(self.model(r, at="2030-09-08T17:20:00Z", status={}))
+        self.assertEqual("locked-active", exactly["Slots"][0]["State"])
+        self.assertEqual("bye", exactly["Slots"][1]["State"])
+        self.assertEqual("unknown", exactly["Slots"][2]["State"])
+
+    def test_empty_slot_keeps_its_position_and_is_unlocked(self):
+        r = [{"FantasyTeamID": 1, "PlayerIDs": ["p2", "p3"], "StarterIDs": ["p2", "p3"], "StarterSlots": [None, "p2", "p3"]}]
+        slots = self.team(self.model(r))["Slots"]
+        self.assertEqual([None, "p2", "p3"], [s["CurrentStarterID"] for s in slots])
+        self.assertEqual("unlocked", slots[0]["State"])
+        self.assertEqual("RB-1", [p for p in self.team(self.model(r))["Players"] if p["PlayerID"] == "p2"][0]["LineupSlotID"])
+
+    def test_bench_candidates_are_eligible_for_unlocked_slots_only(self):
+        r = [{"FantasyTeamID": 1, "PlayerIDs": ["p1", "p2", "p3"], "StarterIDs": ["p1", "p2"]}]
+        early = {p["PlayerID"]: p for p in self.team(self.model(r, at="2030-09-08T16:00:00Z", status={}))["Players"]}
+        self.assertEqual(["FLEX-1"], early["p3"]["EligibleUnlockedSlotIDs"])
+        self.assertTrue(early["p3"]["IsBenchCandidate"] and early["p3"]["HasAlternativePath"])
+        locked = {p["PlayerID"]: p for p in self.team(self.model(r, at="2030-09-08T17:30:00Z"))["Players"]}
+        self.assertEqual([], locked["p3"]["EligibleUnlockedSlotIDs"])
+        self.assertFalse(locked["p3"]["IsBenchCandidate"])
+        self.assertFalse(locked["p1"]["HasDirectScoringPath"])
+
+    def test_ir_and_taxi_players_are_counted_outside_the_active_roster(self):
+        r = [{"FantasyTeamID": 1, "PlayerIDs": ["p1", "p2", "p5", "p6"], "StarterIDs": ["p1"], "ReserveIDs": ["p2"], "TaxiIDs": ["p6"]}]
+        team = self.team(self.model(r))
+        self.assertEqual((2, 1, 1, 1, 1), (team["ActiveRosterPlayerCount"], team["StarterCount"], team["BenchCount"], team["IRCount"], team["TaxiCount"]))
+        self.assertEqual({"ir", "taxi"}, {p["Placement"] for p in team["Players"]} - {"starter", "bench"})
+
+    def test_starter_on_ir_or_taxi_and_starter_overflow_fail_closed(self):
+        with self.assertRaises(dw.DecisionWindowsError):
+            self.model([{"FantasyTeamID": 1, "PlayerIDs": ["p1"], "StarterIDs": ["p1"], "ReserveIDs": ["p1"]}])
+        with self.assertRaises(dw.DecisionWindowsError):
+            self.model([{"FantasyTeamID": 1, "PlayerIDs": ["p1", "p2", "p3", "p4"], "StarterIDs": ["p1", "p2", "p3", "p4"]}])
+
+    def test_teams_and_players_are_ordered_as_strings(self):
+        rosters = [{"FantasyTeamID": n, "PlayerIDs": [], "StarterIDs": []} for n in (2, 10, 1)]
+        model = self.model(rosters)
+        self.assertEqual(["1", "10", "2"], [t["FantasyTeamID"] for t in model["FantasyRelevance"]["Teams"]])
+
+    def test_scoring_path_state(self):
+        ready = {"State": "ready"}
+        self.assertEqual("open", dw.remaining_scoring_path_state({"HasRemainingScoringPath": True, "Slots": []}, None))
+        self.assertEqual("open", dw.remaining_scoring_path_state({"HasRemainingScoringPath": False, "Slots": [{"Repairability": {"State": "repairable"}}]}, None))
+        self.assertEqual("unknown", dw.remaining_scoring_path_state({"HasRemainingScoringPath": False, "Slots": []}, None))
+        self.assertEqual("unknown", dw.remaining_scoring_path_state({"HasRemainingScoringPath": False, "Slots": []}, {"State": "review"}))
+        self.assertEqual("unknown", dw.remaining_scoring_path_state({"HasRemainingScoringPath": False, "Slots": [{"Repairability": {"State": "unknown"}}]}, ready))
+        self.assertEqual("none", dw.remaining_scoring_path_state({"HasRemainingScoringPath": False, "Slots": [{"State": "completed"}]}, ready))
+
+    def test_versions_and_scoring_path_on_a_model(self):
+        model = self.model([{"FantasyTeamID": 1, "PlayerIDs": ["p1"], "StarterIDs": ["p1"]}], at="2030-09-08T16:00:00Z", status={})
+        self.assertEqual(3, model["FantasyRelevance"]["Version"])
+        self.assertEqual(2, model["SchemaVersion"])
+        self.assertEqual("open", self.team(model)["RemainingScoringPathState"])
+
+
 class AdapterTests(unittest.TestCase):
     def record(self, game_id, week, epoch, season="2030"):
         return {"gameID": game_id, "season": season, "gameWeek": f"Week {week}", "gameTime_epoch": epoch,
