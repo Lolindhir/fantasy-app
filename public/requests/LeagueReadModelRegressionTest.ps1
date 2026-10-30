@@ -342,6 +342,6 @@ finally {
 }
 
 $weeklyWorkflow = Get-Content "$PSScriptRoot\..\..\.github\workflows\update-transactions.yml" -Raw
-Assert-True -Condition ($weeklyWorkflow.Contains('RequestHistoricalAppReadModels.ps1')) -Message "The weekly update-transactions run does not regenerate the historical App read models (Issue 1189)."
+Assert-True -Condition ($weeklyWorkflow.Contains('tools/matchup_context_app_publish.py write --scope history')) -Message "The weekly update-transactions run does not regenerate the historical App read models (Issue 1189, ADR-075)."
 
 Write-Host "League transaction and overview regression tests passed." -ForegroundColor Green
