@@ -18,10 +18,12 @@ from pathlib import Path
 from typing import Any
 
 from data_roots import DATA_SOURCE_ROOT
+from league_metadata import LeagueMetadataError, data_meta_root, load_league_metadata, model_for
 from nfl_source_data_lib.teams import NflTeamRegistry, NflTeamRegistryError
 from schedule_archive import ScheduleArchiveError, build_schedule
 
 from .league_lifecycle import LifecycleError, parse_instant, resolve_lifecycle
+from .models.registry import UnknownModelError, get_model
 
 UTC = timezone.utc
 SCHEMA_VERSION = 1
@@ -486,7 +488,7 @@ def game_state(lock: dict[str, Any] | None, game_status: str | None, at_utc: dat
         return "bye"
     if kind != "scheduled":
         return "unknown"
-    if not _blank(game_status) and re.match(r"^Final", str(game_status)):
+    if not _blank(game_status) and re.match(r"^Final", str(game_status), re.IGNORECASE):
         return "completed"
     if _blank(lock.get("StartsAtUtc")):
         return "unknown"
@@ -731,6 +733,135 @@ def add_availability(model: dict[str, Any], observations: list[dict[str, Any]]) 
     return model
 
 
+def _repairability(problem_code: str, resolved: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ProblemCode": problem_code,
+        "State": resolved["State"],
+        "Path": resolved["Path"],
+        "ReasonCode": resolved["ReasonCode"],
+        "InternalCandidateCount": resolved["InternalCandidateCount"],
+        "ExternalCandidateCount": resolved["ExternalCandidateCount"],
+    }
+
+
+def add_repairability(
+    model: dict[str, Any],
+    repairability_model: Any,
+    rosters: list[dict[str, Any]],
+    players: list[dict[str, Any]],
+    games: list[dict[str, Any]],
+    acquisition: dict[str, Any] | None,
+    team_key: Callable[[Any], str | None],
+    at_utc: datetime,
+) -> dict[str, Any]:
+    """Port of Add-LineupRepairabilityDecisionFacts: Repairability per problem slot using the model chosen in data-meta."""
+    relevance = model.get("FantasyRelevance")
+    if relevance is None or model.get("LineupWeek") is None:
+        return model
+    lineup_week = int(model["LineupWeek"])
+    locks = {(str(l["FantasyTeamID"]).strip(), l["PlayerID"]): l for l in model["PlayerLockFacts"]}
+    evaluations = {str(e["FantasyTeamID"]).strip(): e for e in model["TeamLineupEvaluations"]}
+    owned = {p for roster in rosters for p in _valid_ids(roster.get("PlayerIDs"))}
+    eligible = slot_eligible
+    unknown = {"State": "unknown", "Path": None, "ReasonCode": "LINEUP_EVIDENCE_UNKNOWN", "InternalCandidateCount": 0, "ExternalCandidateCount": 0}
+    locked_unavailable = {"State": "irreparable", "Path": None, "ReasonCode": "NO_LEGAL_REPAIR_PATH", "InternalCandidateCount": 0, "ExternalCandidateCount": 0}
+
+    def kind_of(team_id: str, player_id: str) -> str:
+        lock = locks.get((team_id, player_id))
+        return "unknown" if lock is None else str(lock.get("Kind") or "")
+
+    for team_state in relevance["Teams"]:
+        team_id = str(team_state["FantasyTeamID"]).strip()
+        if not team_id:
+            continue
+        slots = team_state["Slots"]
+        for slot in slots:
+            slot["Repairability"] = None
+
+        problems: dict[str, str] = {}
+        for slot in slots:
+            slot_id = str(slot["SlotID"])
+            if not slot_id.strip():
+                continue
+            starter_id = _player_id(slot["CurrentStarterID"])[1]
+            if starter_id is None:
+                problems[slot_id] = "OPEN_STARTER_SLOT"
+                continue
+            if (slot.get("ScoringAvailability") or {}).get("State") == "out":
+                problems[slot_id] = "STARTER_UNAVAILABLE"
+                continue
+            if kind_of(team_id, starter_id) == "bye":
+                problems[slot_id] = "STARTER_ON_BYE"
+        if not problems:
+            continue
+
+        evaluation = evaluations.get(team_id)
+        evaluation_state = "unknown" if evaluation is None else str(evaluation.get("State") or "")
+        if evaluation_state in ("unknown", "review"):
+            for slot in slots:
+                slot_id = str(slot["SlotID"])
+                if slot_id in problems:
+                    fixed = problems[slot_id] == "STARTER_UNAVAILABLE" and slot["State"] in ("locked-active", "completed")
+                    slot["Repairability"] = _repairability(problems[slot_id], locked_unavailable if fixed else unknown)
+            continue
+
+        mutable_slots: list[dict[str, Any]] = []
+        mutable_ids: set[str] = set()
+        for slot in slots:
+            slot_id = str(slot["SlotID"])
+            starter_id = _player_id(slot["CurrentStarterID"])[1]
+            mutable = starter_id is None
+            if not mutable:
+                mutable = (
+                    kind_of(team_id, starter_id) == "bye"
+                    or slot["State"] == "unlocked"
+                    or (problems.get(slot_id) == "STARTER_UNAVAILABLE" and slot["State"] not in ("locked-active", "completed"))
+                )
+            if mutable:
+                mutable_slots.append(slot)
+                mutable_ids.add(slot_id)
+
+        internal: list[dict[str, Any]] = []
+        internal_unknown = False
+        for player in team_state["Players"]:
+            if player["Placement"] not in ("starter", "bench"):
+                continue
+            player_id = _player_id(player["PlayerID"])[1]
+            if player_id is None:
+                continue
+            if player["Placement"] == "starter":
+                lineup_slot = str(player.get("LineupSlotID") or "")
+                if not lineup_slot.strip() or lineup_slot not in mutable_ids:
+                    continue
+            position = "" if _blank(player.get("Position")) else str(player["Position"]).strip().upper()
+            if (player.get("ScoringAvailability") or {}).get("State") == "out":
+                continue
+            kind = kind_of(team_id, player_id)
+            relevant = bool(position) and any(eligible(position, str(slot["SlotType"])) for slot in mutable_slots)
+            if kind == "scheduled" and player["GameState"] == "unlocked":
+                if not position:
+                    internal_unknown = True
+                elif relevant:
+                    internal.append({"PlayerID": player_id, "Position": position})
+            elif kind == "unknown" and (not position or relevant):
+                internal_unknown = True
+
+        external = repairability_model.external_evidence(
+            players, owned, games, mutable_slots, acquisition, lineup_week, at_utc, team_key, eligible
+        )
+        resolved = repairability_model.resolve_state(
+            mutable_slots, internal, external["Candidates"], internal_unknown,
+            external["State"], bool(external["PlayerEvidenceUnknown"]), eligible,
+        )
+        for slot in slots:
+            slot_id = str(slot["SlotID"])
+            if slot_id in problems:
+                fixed = problems[slot_id] == "STARTER_UNAVAILABLE" and slot["State"] in ("locked-active", "completed")
+                slot["Repairability"] = _repairability(problems[slot_id], locked_unavailable if fixed else resolved)
+    relevance["Version"] = max(2, int(relevance["Version"]))
+    return model
+
+
 def remaining_scoring_path_state(team_state: dict[str, Any], evaluation: dict[str, Any] | None) -> str:
     """open | unknown | none: whether the team can still score through a starter, a bench candidate or a repair."""
     has_path = team_state.get("HasRemainingScoringPath")
@@ -872,6 +1003,13 @@ def rosters_from_canonical(rosters: Any, label: str) -> list[dict[str, Any]]:
     return result
 
 
+def _epoch_utc(value: Any) -> str | None:
+    try:
+        return datetime.fromtimestamp(int(float(str(value))), UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except (ValueError, OverflowError, OSError):
+        return None
+
+
 def _ordered_starter_slots(repo_root: Path, provider_league_id: str, rosters: list[dict[str, Any]]) -> None:
     """Attach ``StarterSlots`` (lineup order, None for an unfilled slot) from the raw Sleeper roster evidence.
 
@@ -921,7 +1059,28 @@ def _inputs(repo_root: Path, league_id: str, season: int, at_utc: datetime) -> d
         availability_snapshot = _read(snapshot_path, "Canonical player-availability snapshot") if snapshot_path.is_file() else None
     except DecisionWindowsError:
         availability_snapshot = None  # unreadable snapshot: availability stays unknown
+    try:
+        repairability_model = get_model(model_for(load_league_metadata(league_id, data_meta_root(repo_root)), season, "Repairability"), "repairability")
+    except (LeagueMetadataError, UnknownModelError) as exc:
+        raise DecisionWindowsError(str(exc)) from exc
+    acquisition = repairability_model.resolve_acquisition(bool(lifecycle["WaiversOpen"]), lifecycle["NextWaiverRun"])
+    games = []
+    for record in records:
+        match = _WEEK_LABEL.match(str(record.get("gameWeek") or ""))
+        if not match:
+            continue
+        games.append({
+            "Week": int(match.group(1)),
+            "HomeTeamID": record.get("teamIDHome"),
+            "AwayTeamID": record.get("teamIDAway"),
+            "StartsAtUtc": None if _blank(record.get("gameTime_epoch")) else _epoch_utc(record["gameTime_epoch"]),
+            "Status": str(record.get("gameStatus") or ""),
+        })
     return {
+        "repairability_model": repairability_model,
+        "acquisition": acquisition,
+        "games": games,
+        "players": [{"PlayerID": p["SleeperID"], "Position": p.get("Position"), "TeamID": p["TeamID"]} for p in population["Players"]],
         "identities": identities if isinstance(identities, list) else [],
         "availability_snapshot": availability_snapshot,
         "provider_league_id": provider_league_id,
@@ -967,11 +1126,15 @@ def resolve(repo_root: Path, league_id: str, season: int, at_utc: datetime) -> d
         season, inputs["rosters"], set(inputs["positions"]), inputs["identities"], inputs["availability_snapshot"]
     )
     add_availability(model, observations)
+    add_repairability(
+        model, inputs["repairability_model"], inputs["rosters"], inputs["players"], inputs["games"], inputs["acquisition"],
+        inputs["team_key"], at_utc,
+    )
     return add_scoring_path(model)
 
 
 __all__ = [
-    "DecisionWindowsError", "add_availability", "add_relevance", "add_scoring_path", "scoring_availability_observations", "build_base_model", "game_state", "remaining_scoring_path_state",
+    "DecisionWindowsError", "add_availability", "add_relevance", "add_repairability", "add_scoring_path", "scoring_availability_observations", "build_base_model", "game_state", "remaining_scoring_path_state",
     "slot_definitions", "slot_eligible", "derive_facts", "expected_starter_count", "make_team_key", "parse_instant",
     "resolve", "resolve_base", "rosters_from_canonical", "schedule_games", "utc_text",
 ]

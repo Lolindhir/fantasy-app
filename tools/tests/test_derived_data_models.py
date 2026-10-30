@@ -59,7 +59,7 @@ class OracleMixin(unittest.TestCase):
 
 class RegistryTests(unittest.TestCase):
     def test_registered_ids_are_sorted_and_complete(self) -> None:
-        self.assertEqual(["awards-v1", "grading-v1", "lifecycle-v1", "salary-cap-v1", "salary-v1", "standings-v1"], registry.model_ids())
+        self.assertEqual(["awards-v1", "grading-v1", "lifecycle-v1", "repairability-v1", "salary-cap-v1", "salary-v1", "standings-v1"], registry.model_ids())
 
     def test_get_model_returns_the_module_and_checks_the_kind(self) -> None:
         self.assertIs(salary_v1, registry.get_model("salary-v1"))
@@ -98,6 +98,11 @@ class RegistryTests(unittest.TestCase):
             {key: dict(value) if hasattr(value, "keys") else value for key, value in salary_v1.PARAMS.items()},
         )
         self.assertEqual({"SalaryRelevantTeamSize": 20, "Factor": 0.9}, dict(salary_cap_v1.PARAMS))
+        self.assertEqual(
+            {"AcquisitionPolicy": "acquisition-waiver-only-v1", "ExternalAcquisitionMode": "waiver-only",
+             "ImmediateFreeAgentAddsAllowed": False, "TradeRepairAllowed": False},
+            dict(registry.get_model("repairability-v1").PARAMS),
+        )
         self.assertEqual((6, 12, 18, 24, 30), grading_v1.PARAMS["Thresholds"])
         self.assertEqual(("A", "B", "C", "D", "E", "F"), grading_v1.PARAMS["Grades"])
         self.assertEqual({"K": 1.0, "RB": 2.0, "WR": 2.0}, dict(grading_v1.PARAMS["PositionMultiplier"]))
