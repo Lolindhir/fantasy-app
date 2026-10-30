@@ -7,11 +7,13 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+import matchup_projection  # noqa: E402
 from matchup_projection import (  # noqa: E402
     AXIS_PADDING,
     METHOD_ID,
@@ -350,35 +352,63 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(result["Status"], "skipped-week-mismatch")
         self.assertEqual(existing.read_text(encoding="utf-8"), "previous")
 
-    def _windows(self, root: Path, *, week: int, state: str) -> None:
-        (root / "public/data/DecisionWindows.json").write_text(
-            json.dumps(
-                {
-                    "Season": 2026,
-                    "LineupWeek": week,
-                    "ScoringAvailabilityObservations": [{"PlayerID": "p1", "State": state}],
-                }
-            ),
-            encoding="utf-8",
-        )
+    def _windows(self, *, week: int, state: str):
+        windows = {"Season": 2026, "LineupWeek": week, "ScoringAvailabilityObservations": [{"PlayerID": "p1", "State": state}]}
+        return mock.patch("matchup_projection._decision_windows", return_value=windows)
 
     def test_publication_applies_availability_of_the_same_week(self) -> None:
         root = self._repo(default_context(), default_model())
-        self._windows(root, week=3, state="out")
 
-        publish_matchup_projections(root)
+        with self._windows(week=3, state="out"):
+            publish_matchup_projections(root)
 
         payload = json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
         self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], ["p1"])
 
     def test_publication_ignores_availability_of_another_week(self) -> None:
         root = self._repo(default_context(), default_model())
-        self._windows(root, week=2, state="out")
 
-        publish_matchup_projections(root)
+        with self._windows(week=2, state="out"):
+            publish_matchup_projections(root)
 
         payload = json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
         self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
+
+    def test_publication_never_reads_the_published_decision_windows_file(self) -> None:
+        root = self._repo(default_context(), default_model())
+        (root / "public/data/DecisionWindows.json").write_text(
+            json.dumps({"Season": 2026, "LineupWeek": 3, "ScoringAvailabilityObservations": [{"PlayerID": "p1", "State": "out"}]}),
+            encoding="utf-8",
+        )
+
+        with mock.patch("matchup_projection._decision_windows", return_value=None):
+            publish_matchup_projections(root)
+
+        payload = json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
+        self.assertEqual(payload["Matchups"][0]["Teams"][0]["OutStarterPlayerIDs"], [])
+
+    def test_function_failure_keeps_projections_without_availability(self) -> None:
+        root = self._repo(default_context(), default_model())
+
+        self.assertEqual({}, matchup_projection._availability_by_player(root, default_context()))  # no data-meta in the temp repo
+        payload_result = publish_matchup_projections(root)
+        self.assertEqual("published", payload_result["Status"])
+
+    def test_canonical_league_is_found_by_the_provider_league_id(self) -> None:
+        metadata = {"league-a": {"CurrentProviderLeagueID": "111"}, "league-b": {"CurrentProviderLeagueID": "222"}}
+        with mock.patch("matchup_projection.load_all_league_metadata", return_value=metadata):
+            self.assertEqual("league-b", matchup_projection._canonical_league_id(Path("."), 222))
+            self.assertIsNone(matchup_projection._canonical_league_id(Path("."), "333"))
+
+    def test_decision_windows_are_resolved_for_the_context_season_at_the_current_instant(self) -> None:
+        with mock.patch("matchup_projection._canonical_league_id", return_value="league-a"), mock.patch(
+            "matchup_projection.resolve_decision_windows", return_value={"LineupWeek": 3}
+        ) as resolved:
+            result = matchup_projection._decision_windows(Path("."), {"LeagueID": "111", "Season": "2026"})
+        self.assertEqual({"LineupWeek": 3}, result)
+        args = resolved.call_args.args
+        self.assertEqual(("league-a", 2026), (args[1], args[2]))
+        self.assertIsNotNone(args[3].tzinfo)
 
     def test_missing_input_fails_closed(self) -> None:
         with self.assertRaisesRegex(ValueError, "missing"):

@@ -1119,12 +1119,11 @@ consumerReadClassification:
       note: 'Point-in-time salary analysis over the published App read models; not a recurring pipeline consumer.'
     public/requests/RequestLeague.ps1:
       reads:
-        legacy:DecisionWindows: app-output-state-feedback
         legacy:Drafts: app-read-model-chain
         legacy:Matchups: app-output-owner
         legacy:Players: app-read-model-chain
         legacy:Schedule: app-read-model-chain
-      note: 'League generator: writes DecisionWindows.json and Matchups.json. It reads the previous DecisionWindows.json to keep ScoringAvailabilityObservations timing stable (state feedback). Standings come from the league-standings product (Get-LeagueStandingsProduct, Issue #987). Through reader helpers it also consumes Players.json (Get-PlayersFromFile) and Drafts.json (Get-LeagueDraftsLocal), and the published Schedule.json as transitional adapter input (ADR-036 migration boundary). These are the real return channels from League.json to other App files; League Live must therefore publish those inputs before it (L0).'
+      note: 'League generator: writes DecisionWindows.json and Matchups.json. Since Issue #1199 section 2 step 7 DecisionWindows.json comes from the shared Decision Windows function (Get-LeagueDecisionWindows, tools/decision_windows.py) and the previous file is no longer read (finding N4 closed). Standings come from the league-standings product (Get-LeagueStandingsProduct, Issue #987). Through reader helpers it also consumes Players.json (Get-PlayersFromFile) and Drafts.json (Get-LeagueDraftsLocal), and the published Schedule.json as transitional adapter input (ADR-036 migration boundary). These are the real return channels from League.json to other App files; League Live must therefore publish those inputs before it (L0).'
     public/requests/RequestTeams.ps1:
       reads:
         legacy:Teams: app-output-owner
@@ -1215,11 +1214,10 @@ consumerReadClassification:
       note: 'Provider acquisition owned by the data-source layer (raw evidence under data-source/providers).'
     tools/matchup_projection.py:
       reads:
-        legacy:DecisionWindows: app-read-model-chain
         legacy:FantasyGameContext: app-read-model-chain
         legacy:MatchupProjections: app-output-owner
         legacy:PlayerWeekFantasy: app-read-model-chain
-      note: 'Matchup projection derives from published FantasyGameContext, PlayerWeekFantasy and DecisionWindows and writes MatchupProjections.json.'
+      note: 'Matchup projection derives from published FantasyGameContext and PlayerWeekFantasy plus the shared Decision Windows function (scoring availability, ADR-074; no public/data read) and writes MatchupProjections.json.'
     tools/nfl_source_data_lib/audit.py:
       reads:
         legacy:Players: validation-shadow

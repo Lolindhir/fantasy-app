@@ -208,51 +208,12 @@ try {
     $lifecycle = Get-LeagueLifecycle -CanonicalLeagueID $CanonicalLeagueID -Season ([int]$currentSeason) -RepoRoot $repoRoot
     $waiversOpen = [bool]$lifecycle.WaiversOpen
     $nextWaiverRun = $lifecycle.NextWaiverRun
-    $acquisitionCapability = Resolve-TemporaryWaiverOnlyAcquisitionCapability `
-        -WaiversOpen $waiversOpen `
-        -NextWaiverRun $nextWaiverRun
 
-    $canonicalIdentityPath = Join-Path (Get-DataSourceRoot -RepoRoot (Join-Path $PSScriptRoot "..\..")) "nfl\identities\players.json"
-    $canonicalIdentityPayload = Get-Content $canonicalIdentityPath -Raw | ConvertFrom-Json
-    $canonicalIdentities = @($canonicalIdentityPayload.Players)
-
-    $previousScoringAvailabilityObservations = @()
-    if (Test-Path $config.DecisionWindowsFile) {
-        try {
-            $previousDecisionWindows = Get-Content $config.DecisionWindowsFile -Raw | ConvertFrom-Json
-            if ($previousDecisionWindows.PSObject.Properties.Name -contains 'ScoringAvailabilityObservations') {
-                $previousScoringAvailabilityObservations = @($previousDecisionWindows.ScoringAvailabilityObservations)
-            }
-        }
-        catch {
-            Write-Warning "Could not read prior DecisionWindows scoring-availability observations; transition timing will restart from this poll. $_"
-        }
-    }
-
-    $currentScoringAvailabilityObservations = @(
-        Get-CanonicalScoringAvailabilityObservations `
-            -Season ([int]$currentSeason) `
-            -Teams $teamData `
-            -Players $playersData `
-            -CanonicalIdentities $canonicalIdentities `
-            -SnapshotPath (Join-Path (Get-DataSourceRoot -RepoRoot (Join-Path $PSScriptRoot "..\..")) "nfl\player-availability\espn.json")
-    )
-    $scoringAvailabilityObservations = @(
-        Resolve-PlayerScoringAvailabilityObservationTimes `
-            -CurrentObservations $currentScoringAvailabilityObservations `
-            -PreviousObservations $previousScoringAvailabilityObservations
-    )
-    $outAvailabilityCount = @($scoringAvailabilityObservations | Where-Object State -eq 'out').Count
-    Write-Host "ESPN scoring availability: $($scoringAvailabilityObservations.Count) starter observations, $outAvailabilityCount OUT." -ForegroundColor DarkGray
-
-    $decisionWindowsAsJson = New-CurrentLeagueDecisionWindowsReadModel `
-        -League $league `
-        -Teams $teamData `
-        -Players $playersData `
-        -Schedule $schedule `
-        -LastLineupWeek ([int]$lastWeek) `
-        -AcquisitionCapability $acquisitionCapability `
-        -ScoringAvailabilityObservations $scoringAvailabilityObservations
+    # Windows, locks, Fantasy Relevance, scoring availability, repairability and the scoring path come from the shared
+    # Decision Windows function (ADR-074, Issue 1199 section 2); the delivery contract is unchanged.
+    $decisionWindowsAsJson = Get-LeagueDecisionWindows -CanonicalLeagueID $CanonicalLeagueID -Season ([int]$currentSeason) -RepoRoot $repoRoot
+    $outAvailabilityCount = @(@($decisionWindowsAsJson.ScoringAvailabilityObservations) | Where-Object State -eq 'out').Count
+    Write-Host "ESPN scoring availability: $(@($decisionWindowsAsJson.ScoringAvailabilityObservations).Count) starter observations, $outAvailabilityCount OUT." -ForegroundColor DarkGray
 
     # FinalScoredWeek is the shared LeagueScoredWeek milestone (ADR-071, #897); CurrentWeek is a separate concept
     # (first non-final game of the canonical schedule); both come from the lifecycle.

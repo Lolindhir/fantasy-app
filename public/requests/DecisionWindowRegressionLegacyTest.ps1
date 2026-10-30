@@ -355,13 +355,11 @@ $historicalFacts = Get-DecisionWindowFacts `
 Assert-Equal -Actual $historicalFacts.DecisionWindows[0].AffectedFantasyTeams[0].Players[0].PlayerID -Expected "historical-player" -Message "Historical persisted facts should rebuild the same association shape."
 Assert-True -Condition $historicalFacts.DecisionWindows[0].AffectedFantasyTeams[0].Players[0].IsStarter -Message "Historical starters must preserve starter semantics."
 
-# RequestLeague must invoke the transitional adapter with facts already loaded in the same refresh; no feature-local provider fetch is allowed.
+# Since Issue 1199 section 2 (ADR-074) RequestLeague takes the Decision Windows from the shared function; the PowerShell adapter is not called any more.
 $requestLeagueText = Get-Content "$PSScriptRoot\RequestLeague.ps1" -Raw
-Assert-True -Condition ($requestLeagueText -match 'New-CurrentLeagueDecisionWindowsReadModel') -Message "RequestLeague must invoke the current Decision Window adapter."
-Assert-True -Condition ($requestLeagueText -match '-League\s+\$league') -Message "RequestLeague must reuse already-fetched league state for DecisionWindows."
-Assert-True -Condition ($requestLeagueText -match '-Teams\s+\$teamData') -Message "RequestLeague must reuse current in-memory fantasy teams for DecisionWindows."
-Assert-True -Condition ($requestLeagueText -match '-Players\s+\$playersData') -Message "RequestLeague must reuse current generated player data for DecisionWindows."
-Assert-True -Condition ($requestLeagueText -match '-Schedule\s+\$schedule') -Message "RequestLeague must reuse current Schedule data for DecisionWindows."
+Assert-True -Condition ($requestLeagueText -match 'Get-LeagueDecisionWindows') -Message "RequestLeague must take the Decision Windows from the shared Decision Windows function."
+Assert-True -Condition ($requestLeagueText -notmatch 'New-CurrentLeagueDecisionWindowsReadModel') -Message "RequestLeague must not build the Decision Windows in PowerShell any more."
+Assert-True -Condition ($requestLeagueText -notmatch 'previousDecisionWindows') -Message "RequestLeague must not read the previous DecisionWindows.json as an input (finding N4)."
 Assert-True -Condition ($requestLeagueText -match 'Save-JsonFile -Type "DecisionWindows"') -Message "RequestLeague must publish DecisionWindows through the central JSON writer."
 
 # Central writer semantics: identical semantic output skips rewrite/timestamp; changed output updates both.

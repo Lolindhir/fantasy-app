@@ -3,7 +3,7 @@
 
 Inputs are the App read models FantasyGameContext.json (current starters, game
 status, final points), PlayerWeekFantasy.json (published player projections and
-ranges) and, optionally, DecisionWindows.json (scoring availability per player).
+ranges) and, optionally, the shared Decision Windows function (scoring availability per player, ADR-074).
 Points of games that are not final are never used: live points are delayed and
 corrected by the provider, so a running game counts its projection until Final.
 A starter whose scoring availability is "out" counts as a resolved zero with no
@@ -18,11 +18,16 @@ import argparse
 import json
 import math
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
 from statistics import NormalDist
+from datetime import datetime, timezone
 from typing import Any, Mapping
 
+from derived_data_lib.decision_windows import DecisionWindowsError, resolve as resolve_decision_windows
+from derived_data_lib.league_lifecycle import LifecycleError
+from league_metadata import LeagueMetadataError, data_meta_root, load_all_league_metadata
 from player_week_fantasy import DISPLAY_INTERVAL_LEVEL, PUBLISHED_INTERVAL_LEVELS
 
 SCHEMA_VERSION = 2
@@ -33,7 +38,6 @@ AXIS_PADDING = 10
 OUTPUT_PATH = Path("public/data/MatchupProjections.json")
 CONTEXT_PATH = Path("public/data/FantasyGameContext.json")
 PLAYER_PATH = Path("public/data/PlayerWeekFantasy.json")
-DECISION_WINDOWS_PATH = Path("public/data/DecisionWindows.json")
 AVAILABILITY_OUT = "out"
 AVAILABILITY_UNCERTAIN = "uncertain"
 
@@ -318,12 +322,38 @@ def _read_object(path: Path) -> dict[str, Any]:
     return payload
 
 
-def _availability_by_player(root: Path, context: Mapping[str, Any]) -> dict[str, str]:
-    """Scoring availability per App PlayerID; empty when the file is missing or targets another week."""
+def _canonical_league_id(root: Path, provider_league_id: Any) -> str | None:
+    """CanonicalLeagueID whose current provider league is ``provider_league_id`` (data-meta), else None."""
+
+    for league_id, metadata in load_all_league_metadata(data_meta_root(root)).items():
+        if str(metadata.get("CurrentProviderLeagueID")) == str(provider_league_id):
+            return league_id
+    return None
+
+
+def _decision_windows(root: Path, context: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Current Decision Windows from the shared function (ADR-074); None when it cannot be computed.
+
+    The function is computed at the current instant and nothing is read from public/data. A failure keeps the
+    projections without availability and is reported on stderr, like a missing file before the cutover.
+    """
 
     try:
-        windows = _read_object(root / DECISION_WINDOWS_PATH)
-    except ValueError:
+        league_id = _canonical_league_id(root, context.get("LeagueID"))
+        if league_id is None:
+            print(f"matchup_projection: no league metadata for provider league {context.get('LeagueID')!r}", file=sys.stderr)
+            return None
+        return resolve_decision_windows(root, league_id, int(context["Season"]), datetime.now(timezone.utc))
+    except (DecisionWindowsError, LifecycleError, LeagueMetadataError, KeyError, ValueError, OSError) as exc:
+        print(f"matchup_projection: Decision Windows unavailable, availability ignored: {exc}", file=sys.stderr)
+        return None
+
+
+def _availability_by_player(root: Path, context: Mapping[str, Any]) -> dict[str, str]:
+    """Scoring availability per App PlayerID; empty when unavailable or the function targets another week."""
+
+    windows = _decision_windows(root, context)
+    if windows is None:
         return {}
     if str(windows.get("Season")) != str(context.get("Season")) or str(windows.get("LineupWeek")) != str(
         context.get("Week")

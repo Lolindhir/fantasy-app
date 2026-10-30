@@ -48,6 +48,8 @@ foreach ($legacy in @("Resolve-LeagueStatusState", "Resolve-LeagueNextWaiverRunU
 foreach ($removed in @("LeagueUtils.psm1", "WaiverUtils.psm1", "LeagueOverviewUtils.psm1")) {
     Assert-True -Condition (-not (Test-Path "$PSScriptRoot\utils\league\$removed")) -Message "$removed was retired with the lifecycle cutover (Issue 1199 step 4)."
 }
+Assert-True -Condition $requestLeague.Contains("Get-LeagueDecisionWindows") -Message "RequestLeague does not take the Decision Windows from the shared Decision Windows function (ADR-074)."
+Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Resolve-PlayerScoringAvailabilityObservationTimes") -Expected 0 -Message "RequestLeague still carries scoring-availability observation times over from the previous DecisionWindows.json."
 Assert-True -Condition $requestLeague.Contains("SeasonKickoff           = `$seasonKickoff") -Message "RequestLeague does not publish SeasonKickoff."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "Matchups                = `$matchupSnapshot") -Expected 0 -Message "RequestLeague still publishes the legacy League.Matchups snapshot."
 Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle "ConvertTo-LeagueMatchupSnapshot") -Expected 0 -Message "RequestLeague still builds the legacy League.Matchups snapshot."
