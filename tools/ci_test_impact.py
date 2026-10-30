@@ -30,10 +30,10 @@ BLOCKS = ("angular", "scheduler", "powershell")
 VALID_TIERS = {"fast", "deep", "audit"}
 VALID_COVERAGE = {"build", "build-indirect", "fm-validation", "shadow", "not-in-current-pr-ci"}
 VALID_STATES = {"added", "modified", "changed", "renamed", "removed", "deleted", "copied"}
-# Frozen 2026-10-20 existing uncovered-test debt (Issue #1113).
+# Frozen 2026-10-20 (retired matchup/FantasyGameContext PowerShell tests removed 2026-10-30, Issue #1199) existing uncovered-test debt (Issue #1113).
 # This is a drift detector, not a security hash. To retire legacy debt or replace
 # it with actual PR coverage, review the inventory change and update this anchor.
-LEGACY_UNCOVERED_FNV32 = "586b39fa"
+LEGACY_UNCOVERED_FNV32 = "c7f6c37c"
 
 
 def uncovered_baseline_fingerprint(paths: list[str]) -> str:

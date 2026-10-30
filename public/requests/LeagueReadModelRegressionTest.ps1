@@ -2,8 +2,6 @@ $ErrorActionPreference = "Stop"
 
 Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -Force
-Import-Module "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -Force
-Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\general\AvatarUtils.psm1" -Force
 
@@ -84,7 +82,7 @@ Assert-True -Condition $leagueLiveWorkflow.Contains("--path data-derived/league-
 Assert-True -Condition (-not $leagueLiveWorkflow.Contains("Detect changed Standings inputs")) -Message "League Live must not gate the Standings writer on League inputs."
 
 # Standings consumers read the league-standings product, never the rendered Standings.json (Issue #1197).
-foreach ($consumerName in @("RequestLeague.ps1", "RequestWeeklyRecaps.ps1", "RequestHistoricalAppReadModels.ps1")) {
+foreach ($consumerName in @("RequestLeague.ps1", "RequestWeeklyRecaps.ps1")) {
     $consumerText = Get-Content (Join-Path $PSScriptRoot $consumerName) -Raw
     Assert-True -Condition $consumerText.Contains("Get-LeagueStandingsProduct") -Message "$consumerName does not read the league-standings product."
     Assert-True -Condition (-not $consumerText.Contains("Get-StandingsLocal")) -Message "$consumerName still reads the rendered Standings.json through Get-StandingsLocal."
@@ -102,9 +100,6 @@ Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "R
 Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType','Playoffs')") -Message "RequestLeague change detection does not track canonical Settings, ScoringType and Playoffs structurally."
 Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical structured comparison is not structural."
 
-$matchupReadModelUtils = Get-Content "$PSScriptRoot\utils\league\MatchupReadModelUtils.psm1" -Raw
-Assert-Equal -Actual (Get-OccurrenceCount -Text $matchupReadModelUtils -Needle "Set-Alias -Name Ensure-MatchupHistoryReadModels") -Expected 0 -Message "MatchupReadModelUtils still exposes the transitional history alias."
-Assert-True -Condition $matchupReadModelUtils.Contains("Update-MatchupHistoryReadModels") -Message "MatchupReadModelUtils no longer exposes the approved public history API."
 
 
 function ConvertTo-StandingsComparableValue {
@@ -185,78 +180,6 @@ $shadowLosers = @($canonicalPlayoffs.LosersBracket)
 Assert-StandingsJsonEqual -Actual $shadowWinners -Expected $rawWinners -Message "Canonical current winners bracket does not reconstruct raw Sleeper routing."
 Assert-StandingsJsonEqual -Actual $shadowLosers -Expected $rawLosers -Message "Canonical current losers bracket does not reconstruct raw Sleeper routing."
 
-# Current matchup adapter must reconstruct the persisted Sleeper provider semantics
-# from canonical week-partitioned data-source without live-provider fallback.
-$canonicalMatchupUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -Raw
-Assert-True -Condition (-not $canonicalMatchupUtils.Contains("Get-SleeperMatchups")) -Message "Canonical current matchup shadow performs a live Sleeper matchup read."
-Assert-True -Condition (-not $canonicalMatchupUtils.Contains("Invoke-RestMethod")) -Message "Canonical current matchup shadow performs a direct HTTP read."
-Assert-True -Condition (-not $canonicalMatchupUtils.Contains("Get-FgcCurrentMatchupLoad")) -Message "Canonical current matchup shadow delegates to the legacy live matchup loader."
-
-$currentMatchupSeason = [int]$canonicalLeagueCoreShadow.League.season
-$currentMatchupWeek = [int]$canonicalLeagueCoreShadow.League.settings.leg
-if ($currentMatchupWeek -le 0) {
-    $currentMatchupWeek = [int]$canonicalLeagueCoreShadow.League.settings.last_scored_leg + 1
-}
-Assert-True -Condition ($currentMatchupWeek -gt 0) -Message "Canonical current matchup parity could not resolve a positive active week."
-
-$rawCurrentMatchupPath = Join-Path $repoRoot "data-source/providers/sleeper/leagues/$providerLeagueID/matchups/week-$currentMatchupWeek.json"
-Assert-True -Condition (Test-Path $rawCurrentMatchupPath) -Message "Persisted current Sleeper matchup source is missing for parity."
-$rawCurrentMatchupRows = @(
-    Get-Content $rawCurrentMatchupPath -Raw |
-        ConvertFrom-Json |
-        Sort-Object { [int]$_.roster_id }
-)
-$canonicalCurrentMatchupLoad = Get-CanonicalCurrentMatchupLoad -CanonicalLeagueID "nfl-reise" -Season $currentMatchupSeason -Week $currentMatchupWeek
-Assert-True -Condition ([bool]$canonicalCurrentMatchupLoad.Success) -Message "Canonical current matchup shadow failed to load."
-$canonicalCurrentMatchupRows = @($canonicalCurrentMatchupLoad.Rows | Sort-Object { [int]$_.roster_id })
-Assert-Equal -Actual $canonicalCurrentMatchupRows.Count -Expected $rawCurrentMatchupRows.Count -Message "Canonical current matchup shadow row count differs from persisted Sleeper raw."
-
-function Select-CurrentMatchupProviderComparable {
-    param([Parameter(Mandatory = $true)]$Row)
-
-    $playerPoints = @(
-        $Row.players_points.PSObject.Properties |
-            Sort-Object Name |
-            ForEach-Object {
-                [PSCustomObject][ordered]@{
-                    PlayerID = [string]$_.Name
-                    Points   = if ($null -eq $_.Value) { $null } else { [double]$_.Value }
-                }
-            }
-    )
-
-    # Sleeper marks an unfilled starter slot with "0". The canonical layer treats it as "no player"
-    # (issue #940), so the provider side drops those slots together with their parallel points.
-    $starterIds = @($Row.starters | ForEach-Object { [string]$_ })
-    $starterPointValues = @($Row.starters_points)
-    $filledStarters = @()
-    $filledStarterPoints = @()
-    for ($i = 0; $i -lt $starterIds.Count; $i++) {
-        if ($starterIds[$i] -eq '0') { continue }
-        $filledStarters += $starterIds[$i]
-        $filledStarterPoints += $(if ($null -eq $starterPointValues[$i]) { $null } else { [double]$starterPointValues[$i] })
-    }
-
-    return [PSCustomObject][ordered]@{
-        roster_id       = [int]$Row.roster_id
-        matchup_id      = if ($null -eq $Row.matchup_id) { $null } else { [int]$Row.matchup_id }
-        players         = @($Row.players | ForEach-Object { [string]$_ })
-        starters        = $filledStarters
-        players_points  = $playerPoints
-        starters_points = $filledStarterPoints
-        points          = if ($null -eq $Row.points) { $null } else { [double]$Row.points }
-        custom_points   = if ($null -eq $Row.custom_points) { $null } else { [double]$Row.custom_points }
-    }
-}
-
-$rawCurrentMatchupComparable = @($rawCurrentMatchupRows | ForEach-Object { Select-CurrentMatchupProviderComparable -Row $_ })
-$canonicalCurrentMatchupComparable = @($canonicalCurrentMatchupRows | ForEach-Object { Select-CurrentMatchupProviderComparable -Row $_ })
-Assert-StandingsJsonEqual -Actual $canonicalCurrentMatchupComparable -Expected $rawCurrentMatchupComparable -Message "Canonical current matchup shadow does not reconstruct persisted Sleeper provider semantics."
-
-$rawCurrentMatchupFacts = @(ConvertTo-FgcCurrentMatchupFacts -Season ([string]$currentMatchupSeason) -Week $currentMatchupWeek -MatchupRows $rawCurrentMatchupRows)
-$canonicalCurrentMatchupFacts = @(ConvertTo-FgcCurrentMatchupFacts -Season ([string]$currentMatchupSeason) -Week $currentMatchupWeek -MatchupRows $canonicalCurrentMatchupRows)
-Assert-StandingsJsonEqual -Actual $canonicalCurrentMatchupFacts -Expected $rawCurrentMatchupFacts -Message "Canonical current matchup shadow changes downstream FantasyGameContext matchup facts."
-
 Assert-Equal -Actual ([string]$canonicalLeagueCoreShadow.League.league_id) -Expected ([string]$publishedLeague.LeagueID) -Message "Canonical League Core provider LeagueID parity failed."
 Assert-Equal -Actual ([string]$canonicalLeagueCoreShadow.League.name) -Expected ([string]$publishedLeague.Name) -Message "Canonical League Core name parity failed."
 Assert-Equal -Actual ([string]$canonicalLeagueCoreShadow.League.season) -Expected ([string]$publishedLeague.Season) -Message "Canonical League Core season parity failed."
@@ -312,34 +235,6 @@ $publishedCoreTeams = @(
 )
 Assert-Equal -Actual $canonicalCoreTeams.Count -Expected $publishedCoreTeams.Count -Message "Canonical League Core team count differs from published League.json."
 Assert-StandingsJsonEqual -Actual $canonicalCoreTeams -Expected $publishedCoreTeams -Message "Canonical League Core team-source parity failed."
-
-# --- Issue 1189: historical Matchups and FantasyGameContext are regenerated, never skipped or read from archives ---
-$matchupCore = Get-Content "$PSScriptRoot\utils\league\MatchupReadModelCore.ps1" -Raw
-$contextCore = Get-Content "$PSScriptRoot\utils\league\FantasyGameContextCore.ps1" -Raw
-Assert-True -Condition ($matchupCore -notmatch 'Test-Path \$targetFile\)\s*\{\s*continue') -Message "Matchups history skips existing files again (Issue 1189)."
-Assert-True -Condition ($contextCore -notmatch 'Test-Path \$targetFile\)\s*\{\s*return') -Message "FantasyGameContext history skips existing files again (Issue 1189)."
-Assert-True -Condition (-not $contextCore.Contains('Schedule_$')) -Message "FantasyGameContext history reads the Schedule archive again (Issue 1189)."
-Assert-True -Condition ($contextCore.Contains('Get-CanonicalAppSchedule')) -Message "FantasyGameContext history no longer takes the canonical NFL schedule (Issue 1189)."
-
-$historyTestDir = Join-Path ([System.IO.Path]::GetTempPath()) ("history-regeneration-" + [guid]::NewGuid().ToString('N'))
-try {
-    $historyFile = Join-Path $historyTestDir 'nested/Model_2030.json'
-    $historyChanged = { param($oldData, $newData) (($oldData | ConvertTo-Json -Depth 10 -Compress) -ne ($newData | ConvertTo-Json -Depth 10 -Compress)) }
-    $modelV1 = [PSCustomObject][ordered]@{ SchemaVersion = 1; Weeks = @([PSCustomObject][ordered]@{ Week = 1; CompletionState = 'unknown' }) }
-    $modelV2 = [PSCustomObject][ordered]@{ SchemaVersion = 1; Weeks = @([PSCustomObject][ordered]@{ Week = 1; CompletionState = 'final' }) }
-
-    Assert-Equal -Actual (Save-HistoricalReadModelIfChanged -TargetFile $historyFile -Model $modelV1 -ChangedScript $historyChanged) -Expected 'created' -Message "A missing historical file is not created."
-    $hashAfterCreate = (Get-FileHash $historyFile).Hash
-    Start-Sleep -Milliseconds 50
-    Assert-Equal -Actual (Save-HistoricalReadModelIfChanged -TargetFile $historyFile -Model $modelV1 -ChangedScript $historyChanged) -Expected 'unchanged' -Message "An identical second run is not a no-op."
-    Assert-Equal -Actual (Get-FileHash $historyFile).Hash -Expected $hashAfterCreate -Message "A no-op run rewrote the historical file."
-    Assert-Equal -Actual (Save-HistoricalReadModelIfChanged -TargetFile $historyFile -Model $modelV2 -ChangedScript $historyChanged) -Expected 'updated' -Message "A corrected derivation is not adopted into the existing historical file."
-    Assert-Equal -Actual (Get-Content $historyFile -Raw | ConvertFrom-Json).Weeks[0].CompletionState -Expected 'final' -Message "The corrected value was not written."
-    Assert-Equal -Actual (Save-HistoricalReadModelIfChanged -TargetFile $historyFile -Model $modelV2 -ChangedScript $historyChanged) -Expected 'unchanged' -Message "The run after the correction is not a no-op."
-}
-finally {
-    if (Test-Path $historyTestDir) { Remove-Item $historyTestDir -Recurse -Force }
-}
 
 $weeklyWorkflow = Get-Content "$PSScriptRoot\..\..\.github\workflows\update-transactions.yml" -Raw
 Assert-True -Condition ($weeklyWorkflow.Contains('tools/matchup_context_app_publish.py write --scope history')) -Message "The weekly update-transactions run does not regenerate the historical App read models (Issue 1189, ADR-075)."

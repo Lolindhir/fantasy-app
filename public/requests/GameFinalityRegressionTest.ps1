@@ -1,9 +1,6 @@
 $ErrorActionPreference = 'Stop'
 
 Import-Module "$PSScriptRoot\utils\general\GameFinalityUtils.psm1" -Force
-Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -Force
-Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -Force
-Import-Module "$PSScriptRoot\utils\league\FantasyRelevanceV2Utils.psm1" -Force
 
 function Assert-GfrEqual {
     param($Expected, $Actual, [string]$Message)
@@ -78,66 +75,6 @@ try {
     Assert-GfrEqual 'Final' $resolvedSchedule[0].gameStatus 'canonical Final must override stale Tank01 Scheduled status'
     Assert-GfrEqual '2' $resolvedSchedule[0].gameStatusCode 'legacy compatibility status code must be promoted with Final'
 
-    $league = [PSCustomObject]@{
-        league_id = 'league'
-        season = '2026'
-        settings = [PSCustomObject]@{ leg = 1 }
-        roster_positions = @('QB','BN')
-    }
-    $teams = @(
-        [PSCustomObject]@{ TeamID = 1; Roster = @('q1'); Starter = @('q1'); Reserve = @(); Taxi = @() },
-        [PSCustomObject]@{ TeamID = 2; Roster = @('q2'); Starter = @('q2'); Reserve = @(); Taxi = @() }
-    )
-    $players = @(
-        [PSCustomObject]@{ ID = 'q1'; Position = 'QB'; TeamID = '1' },
-        [PSCustomObject]@{ ID = 'q2'; Position = 'QB'; TeamID = '2' }
-    )
-
-    $baseDecision = DecisionWindowUtils\New-CurrentLeagueDecisionWindowsReadModel `
-        -League $league -Teams $teams -Players $players -Schedule $resolvedSchedule -LastLineupWeek 1
-    $decision = Add-FantasyRelevanceDecisionFacts `
-        -BaseReadModel $baseDecision -League $league -Teams $teams -Players $players -Schedule $resolvedSchedule `
-        -AsOfUtc ([DateTimeOffset]::Parse('2026-09-10T05:00:00Z'))
-
-    $teamOne = @($decision.FantasyRelevance.Teams | Where-Object FantasyTeamID -eq '1')[0]
-    $teamTwo = @($decision.FantasyRelevance.Teams | Where-Object FantasyTeamID -eq '2')[0]
-    Assert-GfrEqual 'completed' $teamOne.Players[0].GameState 'completed canonical NFL game must complete starter one'
-    Assert-GfrEqual 'completed' $teamTwo.Players[0].GameState 'completed canonical NFL game must complete starter two'
-    Assert-GfrTrue (-not [bool]$teamOne.Players[0].HasDirectScoringPath) 'completed starter must not retain a direct scoring path'
-    Assert-GfrTrue (-not [bool]$teamTwo.Players[0].HasDirectScoringPath) 'completed starter must not retain a direct scoring path'
-
-    $rawMatchups = @(
-        [PSCustomObject]@{
-            matchup_id = 1
-            roster_id = 1
-            players = @('q1')
-            starters = @('q1')
-            players_points = [PSCustomObject]@{ q1 = 14.5 }
-            points = 14.5
-            custom_points = $null
-        },
-        [PSCustomObject]@{
-            matchup_id = 1
-            roster_id = 2
-            players = @('q2')
-            starters = @('q2')
-            players_points = [PSCustomObject]@{ q2 = 10.0 }
-            points = 10.0
-            custom_points = $null
-        }
-    )
-    $matchupFacts = @(ConvertTo-FgcCurrentMatchupFacts -Season '2026' -Week 1 -MatchupRows $rawMatchups)
-    $context = New-FantasyGameContextReadModel `
-        -LeagueID 'league' -Season '2026' -Week 1 -DecisionFacts $decision `
-        -FantasyMatchups $matchupFacts -Schedule $resolvedSchedule -WeekIsFinal $false
-
-    Assert-GfrEqual 1 @($context.MustWatchGames).Count 'completed Starter-impact game must remain in schema-v4 weekly Must-watch'
-    Assert-GfrEqual '20260909_NE@SEA' $context.MustWatchGames[0].GameID 'weekly Must-watch must preserve the completed game identity'
-    Assert-GfrTrue (-not [bool]$context.Games[0].RemainingRelevance.HasRemainingRelevance) 'completed game must have no remaining relevance'
-    Assert-GfrEqual 'none' $context.FantasyMatchups[0].RemainingRelevance.State 'completed matchup must have no remaining scoring paths'
-    Assert-GfrTrue (-not [bool]$context.FantasyMatchups[0].RemainingRelevance.HasRemainingScoringPaths) 'completed matchup must expose no remaining scoring paths'
-    Assert-GfrEqual 'final' $context.Games[0].Impact.State 'existing fantasy points must become completed/final impact'
-    Assert-GfrEqual '24.5' $context.Games[0].Impact.StarterPoints 'existing fantasy points must remain visible after finality changes'
 
     $canonicalFinality.Games[0].Final = $false
     $canonicalFinality | ConvertTo-Json -Depth 10 | Set-Content (Join-Path $canonicalFinalityDir '2026.json') -Encoding UTF8
