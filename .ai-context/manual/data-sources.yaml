@@ -357,9 +357,10 @@ dataSources:
 
   decisionWindows:
     path: public/data/DecisionWindows.json
-    generator: public/requests/RequestLeague.ps1
+    generator: public/requests/RequestLeague.ps1 (writes the delivery from tools/decision_windows.py resolve, ADR-074, Issue #1199 section 2)
     helpers:
-      - public/requests/utils/league/DecisionWindowUtils.psm1
+      - public/requests/utils/league/LeagueWeekUtils.psm1 (Get-LeagueDecisionWindows)
+      - tools/derived_data_lib/decision_windows.py (central pure function resolve(League, Season, AtUtc))
     localDocumentation: public/data/DecisionWindows.ai-doc.yaml
     architectureDecision: ADR-036
     category: generated-output
@@ -374,10 +375,10 @@ dataSources:
       lock facts and objective team lineup evaluations. It is not a historical
       store and never persists wall-clock-only upcoming/locked labels.
     currentAdapter:
-      lineupWeekSource: Sleeper settings.leg from already-fetched League state
-      scheduleJoin: Player.TeamID -> Schedule.teamIDHome / teamIDAway
-      providerRequests: none added specifically for DecisionWindows
-      migrationBoundary: '#347 may replace transitional current adapters with canonical data-source inputs without changing the provider-neutral derivation semantics.'
+      lineupWeekSource: lifecycle-v1 LineupWeek (Sleeper settings.leg from the canonical league source)
+      scheduleJoin: canonical NFL schedule and finality (same inputs as the nfl-games product) -> App game records
+      providerRequests: none
+      migrationBoundary: 'Since Issue #1199 section 2 step 7a the inputs are only data-source, the lifecycle function and data-meta; Players.json, Schedule.json and the previous DecisionWindows.json are no inputs. The PowerShell modules (DecisionWindowUtils and relatives) remain only as the reference of the legacy regression test and for FantasyGameContext until section 3.'
     historicalRule: >
       Historical relevance remains rebuildable from persisted season/week schedule,
       fantasy players/starters and week-appropriate player-to-NFL-team assignments

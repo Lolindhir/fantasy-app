@@ -14,9 +14,6 @@ try {
     Import-Module "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueWeekUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\AcquisitionCapabilityUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\PlayerScoringAvailabilityUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\MatchupReadModelUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PastSeasonsIndexUtils.psm1" -ErrorAction Stop -Force
