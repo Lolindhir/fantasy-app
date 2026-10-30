@@ -76,6 +76,14 @@ Assert-True -Condition (-not $updateStandingsWorkflow.Contains("  push:")) -Mess
 Assert-True -Condition $leagueLiveWorkflow.Contains("--path data-derived/league-standings") -Message "League Live does not publish the league-standings product."
 Assert-True -Condition (-not $leagueLiveWorkflow.Contains("Detect changed Standings inputs")) -Message "League Live must not gate the Standings writer on League inputs."
 
+# Standings consumers read the league-standings product, never the rendered Standings.json (Issue #1197).
+foreach ($consumerName in @("RequestLeague.ps1", "RequestWeeklyRecaps.ps1", "RequestHistoricalAppReadModels.ps1")) {
+    $consumerText = Get-Content (Join-Path $PSScriptRoot $consumerName) -Raw
+    Assert-True -Condition $consumerText.Contains("Get-LeagueStandingsProduct") -Message "$consumerName does not read the league-standings product."
+    Assert-True -Condition (-not $consumerText.Contains("Get-StandingsLocal")) -Message "$consumerName still reads the rendered Standings.json through Get-StandingsLocal."
+    Assert-True -Condition (-not $consumerText.Contains("StandingsFile")) -Message "$consumerName still reads the rendered Standings.json."
+}
+
 $avatarCompareOld = [PSCustomObject]@{
     Place = 1; TeamID = 3; Owner = "FloDHL99"; OwnerAvatar = "owner.png"; TeamName = "Just Bill"; TeamAvatar = "historical.png";
     PlaceType = "Winner"; PlaceOrdinal = "1st"; PlaceCumulative = $null; PlaceAverage = $null; Championships = $null; RunnerUps = $null; Thirds = $null

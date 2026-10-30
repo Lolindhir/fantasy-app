@@ -137,6 +137,42 @@ class WriteTests(unittest.TestCase):
         self.assertEqual({"League": "x", "Standings": "2026-10-29T12:00:00Z"}, stamps)
 
 
+class RenderFromProductTests(unittest.TestCase):
+    """render: the consumer read of RequestLeague and the recaps comes from the persisted product, fail-closed."""
+
+    def setUp(self):
+        import tempfile
+        from unittest.mock import patch
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        patcher = patch.multiple(
+            app.standings_sources,
+            manifest=lambda root, league: {},
+            manifest_seasons=lambda data: [2024, 2025],
+            current_season=lambda data: 2025,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def _write(self, season, doc):
+        import json
+        path = self.root / "data-derived" / "league-standings" / "league-a" / f"{season}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(doc), encoding="utf-8")
+
+    def test_renders_same_content_as_in_memory_render(self):
+        documents = {2024: document(2024, False), 2025: document(2025, True)}
+        for season, doc in documents.items():
+            self._write(season, doc)
+        self.assertEqual(app.render_standings(documents, 2025), app.render_from_product(self.root, "league-a"))
+
+    def test_missing_season_file_fails_closed(self):
+        self._write(2025, document(2025, True))
+        with self.assertRaises(FileNotFoundError):
+            app.render_from_product(self.root, "league-a")
+
+
 class RepositoryParityTests(unittest.TestCase):
     """Completed seasons never change with live data, so they must match the published files exactly."""
 

@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 987
 architectureDecision: ADR-072
-implementationState: 'cutover done (#987 step 4, approved by Robert 2026-10-29 with unchanged output): tools/league_standings_app_publish.py write materializes the product and renders Standings.json (League Live standings job and weekly update-standings); the draft order reads the product in memory; step 5 removed RequestStandings.ps1, CanonicalStandingUtils.psm1 and the PowerShell derivation functions of StandingUtils.psm1 (only compare helpers, Get-StandingsLocal and Get-OutputStandingsForAllTime remain for RequestLeague.ps1 and the Matchups read model, which still read the rendered Standings.json)'
+implementationState: 'cutover done (#987 step 4, approved by Robert 2026-10-29 with unchanged output): tools/league_standings_app_publish.py write materializes the product and renders Standings.json (League Live standings job and weekly update-standings); the draft order reads the product in memory; step 5 removed RequestStandings.ps1, CanonicalStandingUtils.psm1 and the PowerShell derivation functions of StandingUtils.psm1 (compare helpers, Get-LeagueStandingsProduct and Get-OutputStandingsForAllTime remain); the follow-up Issue #1197 moved RequestLeague.ps1, RequestWeeklyRecaps.ps1 and RequestHistoricalAppReadModels.ps1 to read the product through Get-LeagueStandingsProduct'
 
 purpose: >
   Define the Shared Derived Data product LeagueStandings: for one league and one season the
@@ -135,14 +135,14 @@ consumerRules:
     Facts and calculations come only from products. Overlay reads (display data such as the neutral team order for a historical cutoff) are
     allowed for presentation but never for status, phase or week (Robert, 2026-10-29).
   currentConsumers:
-    - RequestLeague.ps1 through Get-StandingsLocal (League.json Standings and Placements Current, AllTime, Previous)
-    - RequestWeeklyRecaps.ps1 (neutral team order)
+    - RequestLeague.ps1 through Get-LeagueStandingsProduct (League.json Standings and Placements Current, AllTime, Previous)
+    - RequestWeeklyRecaps.ps1 and RequestHistoricalAppReadModels.ps1 through Get-LeagueStandingsProduct (neutral team order)
     - tools/league_history_sources.py (draft order; transitional read, restore gate classification latent-blocker)
   target: >
     Since the cutover (step 4) Standings.json is rendered from the product by tools/league_standings_app_publish.py write; the draft order reads
-    the product directly. RequestLeague.ps1 (Get-StandingsLocal) and RequestWeeklyRecaps.ps1 read the rendered Standings.json, which the same
-    League Live chain writes before them (the Standings job precedes the League job), i.e. the App delivery of the product and not a second
-    derivation; reading the product itself from PowerShell is an optional later cleanup. Angular keeps reading only League.json.
+    the product directly. RequestLeague.ps1, RequestWeeklyRecaps.ps1 and RequestHistoricalAppReadModels.ps1 read the persisted product through
+    Get-LeagueStandingsProduct (tools/league_standings_app_publish.py render, fail-closed); the League Live Standings job publishes the product
+    before the League job (Issue #1197, accepted follow-up of Issue #987). Angular keeps reading only League.json.
   placementsAwards: >
     Placements.<Key>.Awards stays an empty list for every team in League.json, exactly like before the cutover (Robert, 2026-10-29: output unchanged).
     The product holds the real season awards; delivering them in the placements (which Angular would then display) is a separate decision.
