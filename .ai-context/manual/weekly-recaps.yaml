@@ -4,8 +4,9 @@ status: accepted-contract-v1
 trackingIssue: 1199
 architectureDecision: ADR-063
 implementationState: >-
-  Issue #1199 section 4, step 1: contract and the ADR-063 amendment. The function (step 2), the shadow (step 3), the App cutover
-  (step 4) and the PowerShell cleanup (steps 5 and 6) follow.
+  Issue #1199 section 4: the contract and the ADR-063 amendment (step 1) are merged. The function, its CLI with the shadow compare and the Fast tests
+  (step 2) are implemented; the exact shadow against the published files is proven by `weekly_recaps.py compare` (step 3, run once on main). The App
+  cutover (step 4) and the PowerShell cleanup (steps 5 and 6) follow.
 
 purpose: >-
   Define the Weekly Recaps (KeyPlayers, KeyGames and the TeamAwards projection per final league week) as one pure function of
@@ -26,7 +27,7 @@ architecture:
     tests: tools/tests/test_weekly_recaps.py
   rules:
     - The result is a pure function of explicit inputs. There is no clock input, because only final weeks go in.
-    - Facts come only from matchup_context.resolve (weeks, pairings, starters, points), schedule_archive.build_schedule (App game IDs and final scores), the canonical weekly rosters, the league-standings product (neutral team order), the team-week-performance product with the canonical league matchups (TeamAwards), week_finality and data-meta. public/data is never an input.
+    - Facts come only from the canonical league matchup rows (pairings through matchup_context.canonical_pairings, starters and points through fantasy_game_context.canonical_matchup_facts), schedule_archive.build_schedule (App game IDs and final scores), the canonical weekly rosters, the league-standings product (neutral team order), the team-week-performance product with the canonical league matchups (TeamAwards), week_finality and data-meta. public/data is never an input.
     - v1 introduces no new selection rule or award. It reproduces the PowerShell behaviour 1:1; the only intended value difference is R2.
     - The WeeklyRecaps.json contract (SchemaVersion 1) is unchanged.
 
@@ -34,7 +35,10 @@ decisions:
   R1: Computed, not persisted. resolve(CanonicalLeagueID, Season) returns the season model; tools/weekly_recaps_app_publish.py writes the App files only on a semantic difference. No new writer, write prefix or product directory.
   R2: >-
     The week basis is LeagueScoredWeek (ADR-071) instead of Matchups CompletionState = final, so the recap and its TeamAwards (which follow the
-    team-week-performance partition and thus LeagueScoredWeek) cover the same week. It is the only allowed shadow difference, at most the newest week.
+    team-week-performance partition and thus LeagueScoredWeek) cover the same week. Shadow finding (step 2): the current season is identical, but in completed
+    seasons the Matchups completion is unknown for most weeks (starter or game evidence gaps), so the published history only holds a few weeks (2024: none,
+    2025: two). The function therefore also recaps those earlier weeks when their starter and game evidence is complete; every published week stays identical.
+    A week with an evidence gap is left out and reported, never guessed.
   R3: No model ID for the selection rules in v1. They are fixed, league-independent editorial semantics (below). A model weekly-recap-v2 with a registry entry and a data-meta key follows only with #499 (weekly fantasy awards) or a league that wants other rules.
   R4: All leagues of the league manifests are processed; the league is never hard-coded.
   R5: League Live writes only the current season; completed seasons are written by the weekly update-transactions run together with the matchup-context history.
@@ -54,7 +58,11 @@ selectionRules:
     canonical league matchups of the same season and week.
   neutralOrder: The neutral team order is the All-Time Overall order of the league-standings product; historical seasons use it as it stood through that season (domain.yaml neutralOrdering).
   rounding: Points are rounded to 4 decimals exactly as the PowerShell generator does.
-  failClosed: v1 keeps the abort on incomplete evidence (W8). Whether skipping a week with a warning would be better is a separate decision.
+  failClosed: >-
+    Evidence that contradicts itself (matchup facts that are not in the pairings, a TeamAwards partition that disagrees with the matchups) fails the season.
+    A week whose starter, identity or game evidence is incomplete (a starter without weekly-roster identity or points, a game without a unique canonical
+    schedule row or score) is an evidence gap: the week is absent from the season model and resolve_with_skips reports it, because the PowerShell generator
+    only recapped weeks whose Matchups completion was final, which needs the same evidence.
 
 inputs:
   - matchup_context.resolve (tools/derived_data_lib/matchup_context.py)
