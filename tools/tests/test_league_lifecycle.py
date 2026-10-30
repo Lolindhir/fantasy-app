@@ -14,6 +14,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 import derived_data_lib.league_lifecycle as lifecycle  # noqa: E402
+import league_lifecycle as cli  # noqa: E402
 from derived_data_lib.models import registry  # noqa: E402
 from derived_data_lib.models.lifecycle import v1  # noqa: E402
 
@@ -390,6 +391,47 @@ class LoaderTests(unittest.TestCase):
                                   "--repo-root", str(self.root)], capture_output=True, text=True)
         self.assertEqual(1, failing.returncode)
         self.assertIn("league_lifecycle:", failing.stderr)
+
+
+class ShadowCompareTests(unittest.TestCase):
+    """The shadow command proves League.json lifecycle fields equal the function (guard for the cutover, Issue #1199 step 3)."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.addCleanup(self.tmp.cleanup)
+        build_repo(self.root)
+        self.stamp = "2030-10-01T12:00:00Z"
+        published = {"Season": str(SEASON)}
+        result = lifecycle.resolve_lifecycle(self.root, LEAGUE, SEASON, at(self.stamp))
+        for field in cli.COMPARED_FIELDS:
+            published[field] = result[field]
+        write(self.root / "public/data/League.json", published)
+        write(self.root / "public/data/Timestamps.json", {"League": self.stamp})
+
+    def run_compare(self, *extra: str):
+        return subprocess.run([sys.executable, str(TOOLS / "league_lifecycle.py"), "compare", "--league", LEAGUE,
+                               "--repo-root", str(self.root), *extra], capture_output=True, text=True)
+
+    def test_identical_uses_timestamp_and_exits_zero(self) -> None:
+        run = self.run_compare()
+        self.assertEqual(0, run.returncode, run.stdout + run.stderr)
+        self.assertIn("identical", run.stdout)
+
+    def test_any_differing_field_is_reported_exactly(self) -> None:
+        for field, value in (("Phase", "Cap Check"), ("CurrentWeek", 9), ("NextWaiverRun", None), ("TradesOpen", False)):
+            published = json.loads((self.root / "public/data/League.json").read_text(encoding="utf-8"))
+            tampered = {**published, field: value}
+            write(self.root / "public/data/League.json", tampered)
+            run = self.run_compare()
+            self.assertEqual(2, run.returncode, field)
+            self.assertIn(field, run.stdout)
+            write(self.root / "public/data/League.json", published)
+
+    def test_override_instant_and_missing_published_files(self) -> None:
+        self.assertEqual(2, self.run_compare("--at", "2030-07-01T00:00:00Z").returncode)
+        (self.root / "public/data/Timestamps.json").unlink()
+        self.assertEqual(1, self.run_compare().returncode)
 
 
 if __name__ == "__main__":
