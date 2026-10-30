@@ -1,0 +1,95 @@
+schemaVersion: 1
+domain: weekly-recaps
+status: accepted-contract-v1
+trackingIssue: 1199
+architectureDecision: ADR-063
+implementationState: >-
+  Issue #1199 section 4, step 1: contract and the ADR-063 amendment. The function (step 2), the shadow (step 3), the App cutover
+  (step 4) and the PowerShell cleanup (steps 5 and 6) follow.
+
+purpose: >-
+  Define the Weekly Recaps (KeyPlayers, KeyGames and the TeamAwards projection per final league week) as one pure function of
+  canonical facts, products and data-meta. It replaces public/requests/RequestWeeklyRecaps.ps1 and
+  public/requests/utils/league/WeeklyRecapUtils.psm1, which read the consumer files Matchups.json and Schedule.json. The result is
+  computed, never persisted (pattern of week-finality.yaml, league-lifecycle.yaml, decision-windows.yaml and matchup-context.yaml).
+  public/data/WeeklyRecaps.json and past_seasons/WeeklyRecaps/WeeklyRecaps_<season>.json stay App deliveries with unchanged contracts.
+
+architecture:
+  decisionBasis: [ADR-037, ADR-054, ADR-063, ADR-071, ADR-075]
+  logicalLayer: Shared Derived Data (editorial product semantics, computed)
+  persistence: none (no product file, no writer, no write prefix; the App files are written by a consumer generator)
+  owner:
+    function: tools/derived_data_lib/weekly_recaps.py
+    cli: tools/weekly_recaps.py
+    cliCommand: python3 tools/weekly_recaps.py resolve --league <CanonicalLeagueID> --season <Season>
+    consumerGenerator: tools/weekly_recaps_app_publish.py write [--scope current|history|all]
+    tests: tools/tests/test_weekly_recaps.py
+  rules:
+    - The result is a pure function of explicit inputs. There is no clock input, because only final weeks go in.
+    - Facts come only from matchup_context.resolve (weeks, pairings, starters, points), schedule_archive.build_schedule (App game IDs and final scores), the canonical weekly rosters, the league-standings product (neutral team order), the team-week-performance product with the canonical league matchups (TeamAwards), week_finality and data-meta. public/data is never an input.
+    - v1 introduces no new selection rule or award. It reproduces the PowerShell behaviour 1:1; the only intended value difference is R2.
+    - The WeeklyRecaps.json contract (SchemaVersion 1) is unchanged.
+
+decisions:
+  R1: Computed, not persisted. resolve(CanonicalLeagueID, Season) returns the season model; tools/weekly_recaps_app_publish.py writes the App files only on a semantic difference. No new writer, write prefix or product directory.
+  R2: >-
+    The week basis is LeagueScoredWeek (ADR-071) instead of Matchups CompletionState = final, so the recap and its TeamAwards (which follow the
+    team-week-performance partition and thus LeagueScoredWeek) cover the same week. It is the only allowed shadow difference, at most the newest week.
+  R3: No model ID for the selection rules in v1. They are fixed, league-independent editorial semantics (below). A model weekly-recap-v2 with a registry entry and a data-meta key follows only with #499 (weekly fantasy awards) or a league that wants other rules.
+  R4: All leagues of the league manifests are processed; the league is never hard-coded.
+  R5: League Live writes only the current season; completed seasons are written by the weekly update-transactions run together with the matchup-context history.
+  R6: After section 3, the remaining FantasyGameContext/Matchup PowerShell (WeeklyRecapMatchupFacts.psm1) is deleted together with the recap PowerShell.
+
+selectionRules:
+  weekBasis: A week gets a recap exactly when week <= LeagueScoredWeek. Weeks after it are absent, not empty.
+  starters: Only actual starters (IsStarter) count. A starter without realized point evidence fails closed.
+  identity: Team and position of a starter come from the canonical weekly roster of that week (CanonicalPlayerID first, then the Sleeper player ID); a defense is recognised by its team abbreviation and gets position DEF. Anything else fails closed.
+  keyPlayers: The top 3 starters by points; tiebreaks neutral team order (ascending), then PlayerID. Fewer than 3 starters fails closed.
+  keyGames: >-
+    The top 2 NFL games by the sum of starter points; tiebreaks fantasy matchup count, fantasy team count, starter count (all descending),
+    then kickoff (ascending), then GameID. Fewer than 2 games with starter production fails closed. Final scores come from the canonical schedule; a missing score fails closed.
+  teamAwards: >-
+    Best Manager and Best Coach are projected from data-derived/team-week-performance per ADR-063. A missing partition gives State unavailable
+    with empty winner lists, never zero. An incompatible or contradictory partition fails closed. Roster IDs map to FantasyTeamID only through the
+    canonical league matchups of the same season and week.
+  neutralOrder: The neutral team order is the All-Time Overall order of the league-standings product; historical seasons use it as it stood through that season (domain.yaml neutralOrdering).
+  rounding: Points are rounded to 4 decimals exactly as the PowerShell generator does.
+  failClosed: v1 keeps the abort on incomplete evidence (W8). Whether skipping a week with a warning would be better is a separate decision.
+
+inputs:
+  - matchup_context.resolve (tools/derived_data_lib/matchup_context.py)
+  - tools/schedule_archive.py build_schedule (canonical schedule and finality)
+  - data-source/nfl/weekly-rosters/<season>/<WW>.json
+  - data-source/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-<n>.json
+  - data-derived/league-standings/<CanonicalLeagueID>/<season>.json
+  - data-derived/team-week-performance/<CanonicalLeagueID>/<season>/<WW>.json
+  - tools/derived_data_lib/week_finality.py
+  - data-meta/<CanonicalLeagueID>/metadata.json (league manifest only)
+
+consumers:
+  app: public/data/WeeklyRecaps.json and public/data/past_seasons/WeeklyRecaps/WeeklyRecaps_<season>.json via tools/weekly_recaps_app_publish.py (Angular reads them; no Fantasy Management reader)
+  cadence: League Live (current season, every ten minutes, products before consumers) and the weekly update-transactions run (completed seasons)
+
+nonGoals:
+  - New selection rules or awards (#499 stays separate).
+  - Changes to the WeeklyRecaps.json contract other than R2 at the edge.
+  - A persisted recap product.
+  - Frontend changes.
+
+migration:
+  steps:
+    1: 'Contract and ADR-063 amendment (this change).'
+    2: 'Function with Fast tests ported from WeeklyRecapRegressionTest.ps1.'
+    3: 'Shadow compare against the published files, exact except R2, classified validation-shadow.'
+    4: 'App cutover in League Live and update-transactions; RequestLeaguePublication.ps1 stops calling RequestWeeklyRecaps.ps1; League Live runtime measured.'
+    5: 'Delete RequestWeeklyRecaps.ps1, WeeklyRecapUtils.psm1 and the PowerShell test; update inventory, data-sources.yaml and the consumer-read register.'
+    6: 'Delete WeeklyRecapMatchupFacts.psm1 once no caller remains (may coincide with step 5).'
+
+architectureReview:
+  existingFirst: Reuses matchup_context.resolve, schedule_archive.build_schedule, the league-standings and team-week-performance products and week_finality; no new product, writer or workflow.
+  configuration: The selection rules are fixed editorial semantics; the league and season are inputs. A new rule needs a code change plus a model ID (weekly-recap-v2).
+  identity: CanonicalLeagueID + Season; weeks by number; games by the App GameID; teams by FantasyTeamID; players by the Sleeper player ID (App contract).
+  invalidation: Recomputed on every call from final facts; the consumer generator writes only on a semantic difference.
+  temporal: Only weeks up to LeagueScoredWeek exist; no future or partial week can leak in.
+  unknown: A missing TeamAwards partition is unavailable; every other missing evidence fails closed.
+  compatibility: Contract unchanged; the PowerShell generator stays productive until the cutover and is held equal by the shadow.

@@ -145,6 +145,7 @@ readingOrder:
   - .ai-context/manual/league-lifecycle.yaml
   - .ai-context/manual/decision-windows.yaml
   - .ai-context/manual/matchup-context.yaml
+  - .ai-context/manual/weekly-recaps.yaml
   - .ai-context/manual/league-history.yaml
   - .ai-context/manual/provider-join-invariants.yaml
   - .ai-context/manual/source-of-truth-matrix.yaml
@@ -177,6 +178,7 @@ shortContext:
   .ai-context/manual/league-lifecycle.yaml: Kanonischer Vertrag fuer den Liga-Lifecycle als zentrales Modell lifecycle-v1 mit reiner Funktion resolve(Liga, Saison, AtUtc); berechnet statt gespeichert (Muster week-finality), Uhrzeit als Eingabe, Eingaben nur aus data-source, league-drafts-Produkt und data-meta, kein neuer Writer (ADR-073, #1199)
   .ai-context/manual/decision-windows.yaml: Kanonischer Vertrag fuer die Decision Windows (Fenster, Sperren, Lineup-Pruefung, Fantasy Relevance, Verfuegbarkeit, Repairability, Scoring Path) als reine Funktion resolve(Liga, Saison, AtUtc); berechnet statt gespeichert, Modell repairability-v1 je Saison in data-meta, DecisionWindows.json bleibt App-Auslieferung (ADR-074 erweitert ADR-036, #1199 Abschnitt 2)
   .ai-context/manual/matchup-context.yaml: Kanonischer Vertrag fuer den Matchup-Kontext (Matchups-Saisonmodell, FantasyGameContext, MatchupProjections, Historie) als reine Funktion resolve(Liga, Saison, AtUtc); berechnet statt gespeichert, CompletionState als eigenes Konzept neben ADR-071, Modell team-range-v1 je Saison in data-meta, App-Dateien bleiben Auslieferung eines Consumer-Generators (ADR-075 erweitert ADR-036/074, #1199 Abschnitt 3)
+  .ai-context/manual/weekly-recaps.yaml: Kanonischer Vertrag fuer die Weekly Recaps (KeyPlayers, KeyGames, TeamAwards-Projektion je finaler Liga-Woche) als reine Funktion resolve(Liga, Saison); berechnet statt gespeichert, Wochenbasis LeagueScoredWeek, feste Auswahlregeln ohne Modell-ID in v1, alle Ligen, WeeklyRecaps.json bleibt App-Auslieferung eines Consumer-Generators (ADR-063 erweitert, #1199 Abschnitt 4)
   .ai-context/manual/league-history.yaml: Shared-Derived-Vertrag fuer die Liga-Historie (LeagueTransactions, LeagueDrafts) mit voller Historie je Liga und Saison unter data-derived, ADR-026-Materialisierungsreihenfolge, Consumer-Generator fuer schlanke public/data-Auslieferung und explizitem Standings-Uebergangsinput bis #987 (ADR-057, #999)
   .ai-context/manual/historical-fantasy-scoring.yaml: ADR-033 und kanonischer Hardening-Vertrag für historische/What-if-Neuberechnung aus persistierten NFL-Fakten plus explizitem League-Scoringprofil; Missing historisch ist fail-closed, Provider-Fantasy-Punkte bleiben validation-only und nfl-reise ist die aktuelle CanonicalLeagueID
   .ai-context/manual/source-of-truth-matrix.yaml#consumerReadClassification: Pro Datei klassifizierte Provider- und public/data-Reads aller App-, Fantasy-Management- und Tooling-Consumer (#347 K1); tools/tests/test_consumer_read_classification.py schlaegt bei jedem nicht klassifizierten Read fehl
