@@ -56,6 +56,84 @@ def build(facts, schedule, final, decision=None, **kwargs):
     )
 
 
+def canonical_row(matchup, roster, players, starters, points, scored):
+    def ref(pid, cid):
+        return {"CanonicalPlayerID": cid, "ProviderMappings": [{"Provider": "Sleeper", "ProviderPlayerID": pid}]}
+
+    return {
+        "ProviderMappings": [{"Provider": "Sleeper", "ProviderRosterID": roster, "ProviderMatchupID": matchup}],
+        "Players": [ref(p, "c-" + p) for p in players],
+        "Starters": [ref(p, "c-" + p) for p in starters],
+        "PlayerPoints": [{"Player": ref(p, "c-" + p), "Points": scored[p]} for p in players if p in scored],
+        "StarterPoints": [],
+        "Points": points,
+        "CustomPoints": None,
+    }
+
+
+def history_matchups():
+    return [
+        {
+            "FantasyMatchupID": "fgm-history", "TeamIDs": ["1", "2"],
+            "Teams": [
+                {"FantasyTeamID": "1", "Players": [{"PlayerID": "hp1", "CanonicalPlayerID": "cp1", "IsStarter": True, "HasPoints": True, "Points": 10.0}], "FinalScore": 15.0, "HasCustomPoints": False},
+                {"FantasyTeamID": "2", "Players": [{"PlayerID": "inactive", "CanonicalPlayerID": "cp-inactive", "IsStarter": False, "HasPoints": True, "Points": 0.0}], "FinalScore": 5.0, "HasCustomPoints": False},
+            ],
+        }
+    ]
+
+
+class HistoryTests(unittest.TestCase):
+    def schedule(self, *games):
+        return [{"gameID": g, "gameWeek": "Week 1", "gameTime_epoch": e, "teamIDAway": a, "teamIDHome": h} for g, e, a, h in games]
+
+    def test_canonical_weekly_membership_wins_and_inactive_stays_unknown(self):
+        schedule = self.schedule(("hist-game", 1789000000, "OLD", "NEW"))
+        decision = fgc.historical_decision_facts(1, schedule, history_matchups(), {"cp1": ["NEW"]}, identity_key)
+        by_player = {f["PlayerID"]: f for f in decision["PlayerLockFacts"]}
+        self.assertEqual("hist-game", by_player["hp1"]["GameID"])
+        self.assertEqual("NEW", by_player["hp1"]["NFLTeamID"])
+        self.assertEqual("unknown", by_player["inactive"]["Kind"])
+        self.assertEqual("2026-09-10T00:26:40Z", by_player["hp1"]["StartsAtUtc"])
+
+    def test_two_different_games_stay_unknown(self):
+        schedule = self.schedule(("g-a", 1789000000, "AAA", "BBB"), ("g-b", 1789086400, "CCC", "DDD"))
+        decision = fgc.historical_decision_facts(1, schedule, history_matchups(), {"cp1": ["AAA", "CCC"]}, identity_key)
+        self.assertEqual("unknown", next(f for f in decision["PlayerLockFacts"] if f["PlayerID"] == "hp1")["Kind"])
+
+    def test_missing_roster_evidence_and_other_weeks_are_ignored(self):
+        schedule = self.schedule(("g-a", 1789000000, "AAA", "BBB")) + [{"gameID": "g-w2", "gameWeek": "Week 2", "gameTime_epoch": 1789000000, "teamIDAway": "AAA", "teamIDHome": "BBB"}]
+        decision = fgc.historical_decision_facts(1, schedule, history_matchups(), None, identity_key)
+        self.assertTrue(all(f["Kind"] == "unknown" for f in decision["PlayerLockFacts"]))
+        self.assertEqual(["g-a"], [g["GameID"] for w in decision["DecisionWindows"] for g in w["Games"]])
+
+    def test_windows_group_by_exact_kickoff(self):
+        schedule = self.schedule(("g1", 1789000000, "A", "B"), ("g2", 1789000000, "C", "D"), ("g3", 1789086400, "E", "F"))
+        windows = fgc.historical_decision_facts(1, schedule, [], None, identity_key)["DecisionWindows"]
+        self.assertEqual([2, 1], [len(w["Games"]) for w in windows])
+
+    def test_canonical_rows_pair_deterministically_with_points(self):
+        rows = [
+            canonical_row(1, 2, ["a", "b"], ["a"], 20.0, {"a": 12.5, "b": 1.0}),
+            canonical_row(1, 1, ["c"], ["c"], 9.0, {"c": 9.0}),
+        ]
+        first = fgc.canonical_matchup_facts("2025", 1, rows)
+        self.assertEqual(first, fgc.canonical_matchup_facts("2025", 1, copy.deepcopy(rows)))
+        self.assertEqual(["1", "2"], first[0]["TeamIDs"])
+        scored = [p for t in first[0]["Teams"] for p in t["Players"] if p["HasPoints"]]
+        self.assertEqual(3, len(scored))
+        self.assertEqual("c-a", next(p for p in scored if p["PlayerID"] == "a")["CanonicalPlayerID"])
+
+    def test_starter_outside_rostered_players_fails_closed(self):
+        row = canonical_row(1, 1, ["a"], ["a"], 1.0, {"a": 1.0})
+        row["Players"] = []
+        with self.assertRaises(MatchupContextError):
+            fgc.canonical_matchup_facts("2025", 1, [row])
+
+    def test_single_participant_group_is_excluded(self):
+        self.assertEqual([], fgc.canonical_matchup_facts("2025", 1, [canonical_row(1, 1, ["a"], [], 1.0, {})]))
+
+
 class CurrentFactsTests(unittest.TestCase):
     def test_pairing_identity_and_counterfactual(self):
         facts = fgc.current_matchup_facts("2026", 1, sleeper_rows())
