@@ -22,6 +22,8 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import build_fantasy_operations_inputs as ops  # noqa: E402
+from canonical_league_lifecycle import LeagueLifecycleUnavailable, resolve_lifecycle_state  # noqa: E402
+from canonical_league_ownership import CanonicalOwnershipError, resolve_current_canonical_season  # noqa: E402
 
 
 SCHEMA_VERSION = 1
@@ -177,15 +179,17 @@ def _roster_area(sections: list[str]) -> str:
     return "unknown"
 
 
-def _derive_taxi_phase(league: dict[str, Any]) -> str:
-    final_scored_week = ops.optional_number(league.get("FinalScoredWeek")) or 0
-    status = str(league.get("Status") or "").strip().casefold()
-    phase = str(league.get("Phase") or "").strip().casefold()
+def _derive_taxi_phase(lifecycle: dict[str, Any]) -> str:
+    """Taxi lock phase from the shared lifecycle (ADR-073); the lifecycle Status is spelled "In-Season"."""
+
+    final_scored_week = ops.optional_number(lifecycle.get("FinalScoredWeek")) or 0
+    status = str(lifecycle.get("Status") or "").strip().casefold()
+    phase = str(lifecycle.get("Phase") or "").strip().casefold()
     if float(final_scored_week) > 0:
         return "locked"
     if "draft" in status or "draft" in phase or "preseason" in status or "pre-season" in status:
         return "pre_lock"
-    if status in {"in_season", "in season", "regular season", "regular-season"}:
+    if status in {"in_season", "in season", "in-season", "regular season", "regular-season"}:
         return "locked"
     return "unknown"
 
@@ -288,7 +292,19 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     active_ids = roster_ids - taxi_ids - reserve_ids
 
-    taxi_phase = _derive_taxi_phase(league)
+    canonical_league_id = str((config.get("canonical_league") or {}).get("canonical_league_id") or "").strip()
+    if not canonical_league_id:
+        raise RosterOverviewError("canonical_league.canonical_league_id is required to resolve the shared lifecycle")
+    try:
+        lifecycle = resolve_lifecycle_state(
+            root,
+            canonical_league_id,
+            resolve_current_canonical_season(root, canonical_league_id=canonical_league_id),
+            signals.get("generated_at"),
+        )
+    except (CanonicalOwnershipError, LeagueLifecycleUnavailable) as exc:
+        raise RosterOverviewError(f"Shared league lifecycle is unavailable: {exc}") from exc
+    taxi_phase = _derive_taxi_phase(lifecycle)
     roster_size = league.get("RosterSize") if isinstance(league.get("RosterSize"), list) else []
     fixed_starters, flex_slots, bench_slots = _fixed_starters(roster_size)
     active_capacity = len(roster_size)

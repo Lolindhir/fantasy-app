@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parents[1]
 if str(SCRIPT_DIRECTORY) not in sys.path:
@@ -13,12 +14,25 @@ if str(SCRIPT_DIRECTORY) not in sys.path:
 from build_managed_roster_overview import build, render_markdown  # noqa: E402
 
 
+def fixture_lifecycle(root: Path, canonical_league_id: str, season: int, at: object) -> dict:
+    """Stand-in for the shared lifecycle: the fixture League.json plays the role of the lifecycle result."""
+    league = json.loads((root / "public/data/League.json").read_text(encoding="utf-8"))
+    return {key: league.get(key) for key in ("Status", "Phase", "FinalScoredWeek")}
+
+
+def build_with_fixture_lifecycle(root: Path, config: Path) -> dict:
+    with mock.patch("build_managed_roster_overview.resolve_lifecycle_state", side_effect=fixture_lifecycle), mock.patch(
+        "build_managed_roster_overview.resolve_current_canonical_season", return_value=2026
+    ):
+        return build(root, config)
+
+
 class ManagedRosterOverviewTests(unittest.TestCase):
     def test_build_separates_deterministic_structure_from_hybrid_classification(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._write_fixture(root)
-            result = build(root, root / "fantasy-management/automation/managed-roster-overview.json")
+            result = build_with_fixture_lifecycle(root, root / "fantasy-management/automation/managed-roster-overview.json")
 
             self.assertEqual("managed-roster-overview", result["dataset_id"])
             self.assertEqual("pre_lock", result["structure"]["taxi"]["phase"])
@@ -60,7 +74,7 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             league["Teams"][0]["Taxi"] = ["999"]
             league_path.write_text(json.dumps(league), encoding="utf-8")
 
-            result = build(root, root / "fantasy-management/automation/managed-roster-overview.json")
+            result = build_with_fixture_lifecycle(root, root / "fantasy-management/automation/managed-roster-overview.json")
 
             self.assertEqual(4, result["team"]["held_player_count"])
             self.assertEqual(3, result["structure"]["capacity"]["current_active_count"])
@@ -90,7 +104,7 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             ]
             state_path.write_text(json.dumps(state), encoding="utf-8")
 
-            result = build(root, root / "fantasy-management/automation/managed-roster-overview.json")
+            result = build_with_fixture_lifecycle(root, root / "fantasy-management/automation/managed-roster-overview.json")
             prospect = next(item for item in result["players"] if item["name"] == "Rookie Runner")
             self.assertEqual("hold", prospect["roster_security"])
             self.assertTrue(prospect["classification"]["user_override"])
@@ -104,8 +118,8 @@ class ManagedRosterOverviewTests(unittest.TestCase):
 
             league_path = root / "public/data/League.json"
             league = json.loads(league_path.read_text(encoding="utf-8"))
-            league["Status"] = "in_season"
-            league["Phase"] = "regular season"
+            league["Status"] = "In-Season"
+            league["Phase"] = ""
             league["FinalScoredWeek"] = 1
             league_path.write_text(json.dumps(league), encoding="utf-8")
 
@@ -130,7 +144,7 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             )
             state_path.write_text(json.dumps(state), encoding="utf-8")
 
-            result = build(root, root / "fantasy-management/automation/managed-roster-overview.json")
+            result = build_with_fixture_lifecycle(root, root / "fantasy-management/automation/managed-roster-overview.json")
             rookie_result = next(item for item in result["players"] if item["name"] == "Rookie Runner")
             churn_result = next(item for item in result["players"] if item["name"] == "Starting Receiver")
 
@@ -174,6 +188,7 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             {
                 "schema_version": 1,
                 "managed_team": {"team_id": 1},
+                "canonical_league": {"canonical_league_id": "test-league"},
                 "sources": {
                     "league_enrichment": "public/data/League.json",
                     "managed_roster_signals": "fantasy-management/generated/operations/managed-roster-signals.json",
