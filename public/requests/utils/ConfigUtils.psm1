@@ -25,7 +25,6 @@ function Get-Config {
 
     # League Settings
     $MaxTransactionWeek = 20
-    $LeagueStatusSeasonStartBufferDays = 7
 
     # File Locations
     $DataDir = "$PSScriptRoot\..\..\data"
@@ -157,7 +156,6 @@ function Get-Config {
         CanonicalLeagueID                = $CanonicalLeagueID
         LeagueYear                       = $LeagueYear
         MaxTransactionWeek               = $MaxTransactionWeek
-        LeagueStatusSeasonStartBufferDays = $LeagueStatusSeasonStartBufferDays
         LeagueID                         = [string]$metadataContent.CurrentProviderLeagueID
         CapDeadline                      = $seasonEntry.CapDeadline
         CapDeadlineBufferDays            = [int]$seasonEntry.CapDeadlineBufferDays

@@ -5,7 +5,6 @@
 
 try {
     Import-Module "$PSScriptRoot\..\ConfigUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\..\league\LeagueUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"

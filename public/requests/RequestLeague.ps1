@@ -13,11 +13,8 @@ try {
     Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\CanonicalMatchupUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueWeekUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\WaiverUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\AcquisitionCapabilityUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\LeagueOverviewUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PlayerScoringAvailabilityUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\FantasyGameContextUtils.psm1" -ErrorAction Stop -Force
@@ -25,8 +22,6 @@ try {
     Import-Module "$PSScriptRoot\utils\league\PastSeasonsIndexUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerValuationUtils.psm1" -ErrorAction Stop -Force
-    # Nested -Force imports of other modules (e.g. via StandingUtils) unload LeagueUtils from this scope; load it last.
-    Import-Module "$PSScriptRoot\utils\league\LeagueUtils.psm1" -ErrorAction Stop -Force
 }
 catch {
     Write-Error "Fehler beim Laden der Module: $_"
@@ -50,7 +45,6 @@ $CanonicalLeagueID = $config.CanonicalLeagueID
 $CapDeadline = $config.CapDeadline
 $LeagueTimeZone = $config.LeagueTimeZone
 $CapDeadlineBufferDays = $config.CapDeadlineBufferDays
-$LeagueStatusSeasonStartBufferDays = $config.LeagueStatusSeasonStartBufferDays
 
 $ScheduleFile = $config.ScheduleFile
 $FantasyGameContextFile = Join-Path $config.DataDir "FantasyGameContext.json"
@@ -223,10 +217,11 @@ try {
         throw "Decision Windows require Schedule.json in the League refresh."
     }
 
-    $waiversOpen = [int]$league.settings.disable_adds -eq 0
-    $nextWaiverRun = $null
-    $nextWaiverRunUtc = Resolve-LeagueNextWaiverRunUtc -League $league
-    if ($null -ne $nextWaiverRunUtc) { $nextWaiverRun = $nextWaiverRunUtc.ToString("yyyy-MM-ddTHH:mm:ssZ") }
+    # Status, Phase, weeks, trade and waiver state and the season boundaries come from the shared lifecycle model
+    # (lifecycle-v1, ADR-073, Issue 1199); only the display texts are built here.
+    $lifecycle = Get-LeagueLifecycle -CanonicalLeagueID $CanonicalLeagueID -Season ([int]$currentSeason) -RepoRoot $repoRoot
+    $waiversOpen = [bool]$lifecycle.WaiversOpen
+    $nextWaiverRun = $lifecycle.NextWaiverRun
     $acquisitionCapability = Resolve-TemporaryWaiverOnlyAcquisitionCapability `
         -WaiversOpen $waiversOpen `
         -NextWaiverRun $nextWaiverRun
@@ -273,24 +268,10 @@ try {
         -AcquisitionCapability $acquisitionCapability `
         -ScoringAvailabilityObservations $scoringAvailabilityObservations
 
-    if ($schedule) {
-        $sortedGames = $schedule | Sort-Object { $_.gameID }
-        foreach ($game in $sortedGames) {
-            if ($game.gameStatus -notmatch '^Final') {
-                if ($game.gameWeek -match 'Week (\d+)') {
-                    $currentWeek = [int]$matches[1]
-                    Write-Host "-> Found first non-final game: $($game.gameID) (Week $currentWeek)" -ForegroundColor Yellow
-                } else {
-                    Write-Warning "Could not parse gameWeek for $($game.gameID): $($game.gameWeek)"
-                }
-                break
-            }
-        }
-    }
-
-    # FinalScoredWeek is the shared LeagueScoredWeek milestone (ADR-071, #897); CurrentWeek above
-    # stays a separate concept (first non-final game).
-    $finalWeek = Get-LeagueScoredWeek -CanonicalLeagueID $CanonicalLeagueID -Season ([int]$currentSeason) -RepoRoot $repoRoot
+    # FinalScoredWeek is the shared LeagueScoredWeek milestone (ADR-071, #897); CurrentWeek is a separate concept
+    # (first non-final game of the canonical schedule); both come from the lifecycle.
+    $currentWeek = [int]$lifecycle.CurrentWeek
+    $finalWeek = [int]$lifecycle.FinalScoredWeek
 
     if ($finalWeek -ge 0) {
         Write-Host "Final active week detected: Week $finalWeek" -ForegroundColor Yellow
@@ -298,10 +279,8 @@ try {
         Write-Host "Could not determine current week." -ForegroundColor DarkYellow
     }
 
-    $seasonKickoffUtc = Get-LeagueSeasonKickoffUtc -Schedule $schedule
-    $seasonKickoff = if ($null -ne $seasonKickoffUtc) { $seasonKickoffUtc.ToString("yyyy-MM-ddTHH:mm:ssZ") } else { $null }
-    $playoffStartUtc = Get-LeaguePlayoffStartUtc -Schedule $schedule -PlayoffStartWeek ([int]$playoffStart)
-    $playoffStartAt = if ($null -ne $playoffStartUtc) { $playoffStartUtc.ToString("yyyy-MM-ddTHH:mm:ssZ") } else { $null }
+    $seasonKickoff = $lifecycle.SeasonKickoff
+    $playoffStartAt = $lifecycle.PlayoffStart
 
     $matchupWeek = Resolve-FantasyMatchupLoadWeek `
         -DecisionWindows $decisionWindowsAsJson `
@@ -353,52 +332,26 @@ try {
         -LiveMatchupWeek $matchupWeek `
         -ActiveScoreEvidenceAvailable $activeMatchupScoreEvidenceAvailable
 
-    $cutsAllowed = $true
+    $cutsAllowed = [bool]$lifecycle.CutsAllowed
     $cutsMetaText = ""
     Write-Host "Daily Waivers active per settings: $waiversOpen" -ForegroundColor Yellow
     $waiversMetaText = ""
-    $tradeReviewDays = if ($null -ne $league.settings.trade_review_days) { [int]$league.settings.trade_review_days } else { 0 }
-    $tradesOpen = [int]$league.settings.disable_trades -eq 0
+    $tradeReviewDays = [int]$lifecycle.TradeReviewDays
+    $tradesOpen = [bool]$lifecycle.TradesOpen
+    $tradeDeadlineWeek = $lifecycle.TradeDeadlineWeek
+
     $tradesMetaTextParts = @()
-
-    if (-not $tradesOpen) { $tradesMetaTextParts += "Disabled in Sleeper" }
-    if ($tradeReviewDays -gt 0) {
-        $tradesOpen = $false
-        $tradesMetaTextParts += "Trades will be declined by Commissioner Review"
-    }
-
-    $tradeDeadlineWeek = Resolve-LeagueTradeDeadlineWeek -TradeDeadline $league.settings.trade_deadline
-    $leagueWeekForTradeDeadline = $currentWeek
-    if ($leagueWeekForTradeDeadline -le 0) { $leagueWeekForTradeDeadline = $finalWeek }
-    if ($null -ne $tradeDeadlineWeek -and $leagueWeekForTradeDeadline -ge $tradeDeadlineWeek) {
-        $tradesOpen = $false
-        $tradesMetaTextParts += "Trade Deadline reached"
-    }
+    $tradesClosedBy = @($lifecycle.TradesClosedBy)
+    if ($tradesClosedBy -contains "DisabledInProvider") { $tradesMetaTextParts += "Disabled in Sleeper" }
+    if ($tradesClosedBy -contains "CommissionerReview") { $tradesMetaTextParts += "Trades will be declined by Commissioner Review" }
+    if ($tradesClosedBy -contains "TradeDeadlineReached") { $tradesMetaTextParts += "Trade Deadline reached" }
 
     $tradesMetaText = $tradesMetaTextParts -join " | "
     Write-Host "Trade review days: $tradeReviewDays" -ForegroundColor Yellow
     Write-Host "Trades open: $tradesOpen | Trades meta: $tradesMetaText" -ForegroundColor Yellow
 
-    $statusState = Resolve-LeagueStatusState `
-        -League $league `
-        -Drafts $drafts `
-        -Schedule $schedule `
-        -LeagueYear ([int]$config.LeagueYear) `
-        -CapDeadline $CapDeadline `
-        -CapDeadlineBufferDays $CapDeadlineBufferDays `
-        -TradesOpen $tradesOpen `
-        -FinalScoredWeek $finalWeek `
-        -PlayoffStartWeek $playoffStart `
-        -SeasonStartBufferDays $LeagueStatusSeasonStartBufferDays
-
-    $status = [string]$statusState.Status
-    $phase = [string]$statusState.Phase
-    if ($status -eq "Completed") {
-        $cutsAllowed = $false
-        $waiversOpen = $false
-        $nextWaiverRun = $null
-        $tradesOpen = $false
-    }
+    $status = [string]$lifecycle.Status
+    $phase = [string]$lifecycle.Phase
 
     Write-Host "League is in status '$status' with phase '$phase'." -ForegroundColor Yellow
     Write-Host "Waivers open: $waiversOpen | Next waiver run: $nextWaiverRun | Trades open: $tradesOpen | Cuts allowed: $cutsAllowed" -ForegroundColor Yellow
