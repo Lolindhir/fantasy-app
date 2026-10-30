@@ -349,6 +349,98 @@ class AvailabilityTests(unittest.TestCase):
         self.assertEqual(out, base["ScoringAvailabilityObservations"])
 
 
+class RepairabilityTests(unittest.TestCase):
+    model = dw.get_model("repairability-v1", "repairability")
+    AT = dw.parse_instant("2030-09-08T16:00:00Z", "at")
+
+    def slot(self, slot_id, slot_type):
+        return {"SlotID": slot_id, "SlotType": slot_type}
+
+    def test_acquisition_bridge_is_waiver_only_and_never_guesses(self):
+        known = self.model.resolve_acquisition(True, "2030-09-07T11:00:00+00:00")
+        self.assertEqual(("known", "2030-09-07T11:00:00Z", False, False), (known["State"], known["NextWaiverRun"], known["ImmediateFreeAgentAddsAllowed"], known["TradeRepairAllowed"]))
+        self.assertEqual("unknown", self.model.resolve_acquisition(True, None)["State"])
+        self.assertEqual("unknown", self.model.resolve_acquisition(True, "garbage")["State"])
+        self.assertEqual("unknown", self.model.resolve_acquisition(None, "2030-09-07T11:00:00Z")["State"])
+        self.assertEqual("unknown", self.model.resolve_acquisition(False, "2030-09-07T11:00:00Z")["State"])
+        closed = self.model.resolve_acquisition(False, None)
+        self.assertEqual(("known", False, None), (closed["State"], closed["ExternalAddsAllowed"], closed["NextWaiverRun"]))
+
+    def test_assignment_uses_augmenting_paths_and_flex_reshuffle(self):
+        cand = lambda i, pos: {"PlayerID": i, "Position": pos}
+        slots = [self.slot("RB-1", "RB"), self.slot("FLEX-1", "FLEX")]
+        # The only RB must take RB-1 although the WR would also fit FLEX-1 first by name.
+        self.assertTrue(self.model.complete_assignment(slots, [cand("a", "RB"), cand("b", "WR")], dw.slot_eligible))
+        self.assertFalse(self.model.complete_assignment(slots, [cand("a", "WR"), cand("b", "WR")], dw.slot_eligible))
+        self.assertFalse(self.model.complete_assignment(slots, [cand("a", "RB")], dw.slot_eligible))
+        self.assertTrue(self.model.complete_assignment([], [], dw.slot_eligible))
+        with self.assertRaises(ValueError):
+            self.model.complete_assignment(slots, [cand("a", "RB"), cand("a", "RB")], dw.slot_eligible)
+
+    def test_state_resolution_order(self):
+        slots = [self.slot("RB-1", "RB")]
+        rb = [{"PlayerID": "a", "Position": "RB"}]
+        r = lambda internal, external, iu, es, eu: self.model.resolve_state(slots, internal, external, iu, es, eu, dw.slot_eligible)
+        self.assertEqual(("repairable", "internal-roster"), (r(rb, [], False, "unavailable", False)["State"], r(rb, [], False, "unavailable", False)["Path"]))
+        self.assertEqual("external-acquisition", r([], rb, False, "available", False)["Path"])
+        self.assertEqual("LINEUP_EVIDENCE_UNKNOWN", r([], [], True, "unavailable", False)["ReasonCode"])
+        self.assertEqual("ACQUISITION_EVIDENCE_UNKNOWN", r([], [], False, "unknown", False)["ReasonCode"])
+        self.assertEqual("EXTERNAL_PLAYER_EVIDENCE_UNKNOWN", r([], [], False, "available", True)["ReasonCode"])
+        self.assertEqual("irreparable", r([], [], False, "unavailable", False)["State"])
+        self.assertEqual("unknown", self.model.resolve_state([], [], [], False, "unavailable", False, dw.slot_eligible)["State"])
+
+    def evidence(self, players, acquisition, owned=(), at=None):
+        games = [
+            {"Week": 1, "HomeTeamID": "BBB", "AwayTeamID": "AAA", "StartsAtUtc": "2030-09-08T17:00:00Z", "Status": "Scheduled"},
+            {"Week": 1, "HomeTeamID": "DDD", "AwayTeamID": "CCC", "StartsAtUtc": "2030-09-08T15:00:00Z", "Status": "Scheduled"},
+            {"Week": 2, "HomeTeamID": "EEE", "AwayTeamID": "FFF", "StartsAtUtc": "2030-09-15T17:00:00Z", "Status": "Scheduled"},
+        ]
+        return self.model.external_evidence(players, set(owned), games, [self.slot("RB-1", "RB")], acquisition, 1, at or self.AT, key, dw.slot_eligible)
+
+    def test_waiver_must_run_strictly_before_kickoff_and_the_game_must_be_open(self):
+        players = [{"PlayerID": "free", "Position": "RB", "TeamID": "AAA"}, {"PlayerID": "locked", "Position": "RB", "TeamID": "CCC"},
+                   {"PlayerID": "owned", "Position": "RB", "TeamID": "AAA"}, {"PlayerID": "wr", "Position": "WR", "TeamID": "AAA"}]
+        waiver = lambda run: self.model.resolve_acquisition(True, run)
+        found = self.evidence(players, waiver("2030-09-08T11:00:00Z"), owned={"owned"})
+        self.assertEqual(["free"], sorted(c["PlayerID"] for c in found["Candidates"]))
+        at_kickoff = self.evidence(players, waiver("2030-09-08T17:00:00Z"), owned={"owned"})
+        self.assertEqual([], [c for c in at_kickoff["Candidates"] if c["PlayerID"] == "free"])   # run == kickoff misses the lock
+        self.assertEqual("unavailable", self.evidence(players, self.model.resolve_acquisition(False, None))["State"])
+        self.assertEqual("unknown", self.evidence(players, self.model.resolve_acquisition(True, None))["State"])
+
+    def test_unknown_team_or_missing_position_marks_player_evidence_unknown(self):
+        acquisition = self.model.resolve_acquisition(True, "2030-09-08T11:00:00Z")
+        self.assertTrue(self.evidence([{"PlayerID": "x", "Position": "RB", "TeamID": "ZZZ"}], acquisition)["PlayerEvidenceUnknown"])
+        self.assertTrue(self.evidence([{"PlayerID": "x", "Position": None, "TeamID": "AAA"}], acquisition)["PlayerEvidenceUnknown"])
+        self.assertFalse(self.evidence([{"PlayerID": "x", "Position": "RB", "TeamID": None}], acquisition)["PlayerEvidenceUnknown"])
+        self.assertEqual([], self.evidence([{"PlayerID": "x", "Position": "RB", "TeamID": "EEE"}], acquisition)["Candidates"])  # bye in week 1
+
+    def test_add_repairability_marks_problem_slots_only(self):
+        rosters = [{"FantasyTeamID": 1, "PlayerIDs": ["p1", "p3", "p5"], "StarterIDs": ["p1"], "StarterSlots": [None, "p1"]}]
+        base = dw.build_base_model("L", SEASON, 1, 18, GAMES, rosters, ASSIGN, 2, key)
+        dw.add_relevance(base, ["RB", "RB", "BN"], rosters, {"p1": "RB", "p3": "RB"}, {}, dw.parse_instant("2030-09-08T16:00:00Z", "at"))
+        dw.add_availability(base, [])
+        acquisition = self.model.resolve_acquisition(False, None)
+        dw.add_repairability(base, self.model, rosters, [], [], acquisition, key, self.AT)
+        slots = base["FantasyRelevance"]["Teams"][0]["Slots"]
+        self.assertEqual("OPEN_STARTER_SLOT", slots[0]["Repairability"]["ProblemCode"])
+        self.assertIsNone(slots[1]["Repairability"])
+        # p3 (CCC, unlocked) is an internal bench candidate for the open RB slot, but p1 (AAA) also sits in a mutable slot.
+        self.assertEqual("repairable", slots[0]["Repairability"]["State"])
+
+    def test_locked_unavailable_starter_is_irreparable_and_other_open_slots_stay_separate(self):
+        rosters = [{"FantasyTeamID": 1, "PlayerIDs": ["p1", "p3"], "StarterIDs": ["p3"], "StarterSlots": [None, "p3"]}]
+        base = dw.build_base_model("L", SEASON, 1, 18, GAMES, rosters, ASSIGN, 2, key)
+        dw.add_relevance(base, ["RB", "RB"], rosters, {"p1": "RB", "p3": "RB"}, {}, dw.parse_instant("2030-09-08T17:30:00Z", "at"))
+        out = [{"PlayerID": "p3", "State": "out", "ProviderStatus": "OUT", "Source": "ESPN", "FirstObservedAtUtc": None, "ObservedAtUtc": None}]
+        dw.add_availability(base, out)
+        dw.add_repairability(base, self.model, rosters, [], [], self.model.resolve_acquisition(False, None), key, dw.parse_instant("2030-09-08T17:30:00Z", "at"))
+        slots = base["FantasyRelevance"]["Teams"][0]["Slots"]
+        self.assertEqual(("STARTER_UNAVAILABLE", "irreparable", "NO_LEGAL_REPAIR_PATH"),
+                         (slots[1]["Repairability"]["ProblemCode"], slots[1]["Repairability"]["State"], slots[1]["Repairability"]["ReasonCode"]))
+        self.assertEqual("OPEN_STARTER_SLOT", slots[0]["Repairability"]["ProblemCode"])
+
+
 class AdapterTests(unittest.TestCase):
     def record(self, game_id, week, epoch, season="2030"):
         return {"gameID": game_id, "season": season, "gameWeek": f"Week {week}", "gameTime_epoch": epoch,
