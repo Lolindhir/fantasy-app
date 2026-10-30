@@ -606,6 +606,131 @@ def add_relevance(
     return model
 
 
+_AVAILABILITY_STATES = {"OUT": "out", "QUESTIONABLE": "uncertain", "DOUBTFUL": "uncertain", "ACTIVE": "available"}
+AVAILABILITY_VERSION = 4
+
+
+def _availability_state(provider_status: str | None) -> str:
+    return _AVAILABILITY_STATES.get((provider_status or "").strip().upper(), "unknown")
+
+
+def _utc_or_none(value: Any) -> str | None:
+    if _blank(value):
+        return None
+    try:
+        return utc_text(value)
+    except DecisionWindowsError:
+        return None
+
+
+def scoring_availability_observations(
+    season: int,
+    rosters: list[dict[str, Any]],
+    known_players: set[str],
+    identities: list[dict[str, Any]],
+    snapshot: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """Port of Get-CanonicalScoringAvailabilityObservations for the starters of all teams.
+
+    ``FirstObservedAtUtc`` (and its alias ``ObservedAtUtc``) is the snapshot's ``StatusSinceUtc``: the instant since when the
+    provider status holds, so no earlier published file is read back (ADR-074 D2). A missing, unreadable or other-season snapshot,
+    a missing row or an unknown status leaves the availability unknown; unavailability is never synthesized.
+    """
+    espn_by_sleeper: dict[str, str] = {}
+    ambiguous_sleeper: set[str] = set()
+    ambiguous_espn: set[str] = set()
+    for identity in identities:
+        ids = identity.get("IDs") if isinstance(identity, dict) else None
+        if not isinstance(ids, dict):
+            continue
+        sleeper_state, sleeper_id = _player_id(ids.get("Sleeper"))
+        espn_state, espn_id = _player_id(ids.get("ESPN"))
+        if sleeper_id is None or espn_id is None:
+            continue
+        if sleeper_id in espn_by_sleeper and espn_by_sleeper[sleeper_id] != espn_id:
+            ambiguous_sleeper.add(sleeper_id)
+            continue
+        if any(v == espn_id and k != sleeper_id for k, v in espn_by_sleeper.items()):
+            ambiguous_espn.add(espn_id)
+            continue
+        espn_by_sleeper[sleeper_id] = espn_id
+    for sleeper_id in ambiguous_sleeper:
+        espn_by_sleeper.pop(sleeper_id, None)
+    for espn_id in ambiguous_espn:
+        for sleeper_id in [k for k, v in espn_by_sleeper.items() if v == espn_id]:
+            del espn_by_sleeper[sleeper_id]
+
+    target_by_espn: dict[str, str] = {}
+    for roster in rosters:
+        for raw in roster.get("StarterIDs") or []:
+            starter_id = _player_id(raw)[1]
+            if starter_id is None or starter_id not in known_players or starter_id not in espn_by_sleeper:
+                continue
+            target_by_espn[espn_by_sleeper[starter_id]] = starter_id
+    if not target_by_espn or snapshot is None:
+        return []
+    try:
+        if int(snapshot.get("Season")) != season:
+            return []
+    except (TypeError, ValueError):
+        return []
+    rows = {str(row.get("ESPNPlayerID") or "").strip(): row for row in snapshot.get("Players") or [] if isinstance(row, dict)}
+    observations = []
+    for espn_id in sorted(target_by_espn, key=str.lower):
+        row = rows.get(espn_id)
+        if row is None:
+            continue
+        status = str(row.get("ProviderStatus") or "").strip()
+        since = _utc_or_none(row.get("StatusSinceUtc"))
+        observations.append({
+            "PlayerID": target_by_espn[espn_id],
+            "ESPNPlayerID": espn_id,
+            "State": _availability_state(status),
+            "ProviderStatus": status.upper() if status else None,
+            "Source": "ESPN",
+            "FirstObservedAtUtc": since,
+            "ObservedAtUtc": since,
+        })
+    return observations
+
+
+def add_availability(model: dict[str, Any], observations: list[dict[str, Any]]) -> dict[str, Any]:
+    """Port of Add-PlayerScoringAvailabilityDecisionFacts: per-slot and per-player availability and the OUT path rule."""
+    relevance = model.get("FantasyRelevance")
+    if relevance is None:
+        return model
+    by_player = {o["PlayerID"]: o for o in observations}
+    for team in relevance["Teams"]:
+        slot_by_starter = {}
+        for slot in team["Slots"]:
+            if slot["CurrentStarterID"] is not None:
+                slot_by_starter[slot["CurrentStarterID"]] = slot
+            slot["ScoringAvailability"] = None
+        for player in team["Players"]:
+            observation = by_player.get(player["PlayerID"])
+            if observation is None:
+                availability = {"State": "unknown", "ProviderStatus": None, "Source": "ESPN", "FirstObservedAtUtc": None, "ObservedAtUtc": None}
+            else:
+                availability = {key: observation[key] for key in ("State", "ProviderStatus", "Source", "FirstObservedAtUtc", "ObservedAtUtc")}
+            player["ScoringAvailability"] = availability
+            if player["PlayerID"] in slot_by_starter:
+                slot_by_starter[player["PlayerID"]]["ScoringAvailability"] = availability
+            if player["Placement"] == "starter" and availability["State"] == "out" and player["GameState"] != "completed":
+                player["HasDirectScoringPath"] = False
+        players = team["Players"]
+
+        def counted(state: str) -> int:
+            return sum(1 for p in players if p["Placement"] == "starter" and p["GameState"] == state and p["HasDirectScoringPath"])
+
+        team["UnlockedStarterCount"] = counted("unlocked")
+        team["LockedActiveStarterCount"] = counted("locked-active")
+        team["HasRemainingScoringPath"] = any(p["HasDirectScoringPath"] or p["HasAlternativePath"] for p in players)
+    model["ScoringAvailabilityObservations"] = list(observations)
+    relevance["Version"] = max(AVAILABILITY_VERSION, int(relevance["Version"]))
+    model["SchemaVersion"] = max(3, int(model["SchemaVersion"]))
+    return model
+
+
 def remaining_scoring_path_state(team_state: dict[str, Any], evaluation: dict[str, Any] | None) -> str:
     """open | unknown | none: whether the team can still score through a starter, a bench candidate or a repair."""
     has_path = team_state.get("HasRemainingScoringPath")
@@ -790,7 +915,15 @@ def _inputs(repo_root: Path, league_id: str, season: int, at_utc: datetime) -> d
         population = build_population(repo_root, league_id, season)
     except (ScheduleArchiveError, PopulationError, OSError, KeyError) as exc:
         raise DecisionWindowsError(f"Decision Window input unusable: {exc}") from exc
+    identities = _read(repo_root / DATA_SOURCE_ROOT / "nfl" / "identities" / "players.json", "Canonical player identities").get("Players")
+    snapshot_path = repo_root / DATA_SOURCE_ROOT / "nfl" / "player-availability" / "espn.json"
+    try:
+        availability_snapshot = _read(snapshot_path, "Canonical player-availability snapshot") if snapshot_path.is_file() else None
+    except DecisionWindowsError:
+        availability_snapshot = None  # unreadable snapshot: availability stays unknown
     return {
+        "identities": identities if isinstance(identities, list) else [],
+        "availability_snapshot": availability_snapshot,
         "provider_league_id": provider_league_id,
         "lineup_week": int(lifecycle["LineupWeek"]),
         "last_week": int(lifecycle["LastLeagueWeek"]),
@@ -830,11 +963,15 @@ def resolve(repo_root: Path, league_id: str, season: int, at_utc: datetime) -> d
         return model
     status_by_game = {str(r["gameID"]): str(r.get("gameStatus") or "") for r in inputs["records"] if r.get("gameID")}
     add_relevance(model, inputs["roster_positions"], inputs["rosters"], inputs["positions"], status_by_game, at_utc)
+    observations = scoring_availability_observations(
+        season, inputs["rosters"], set(inputs["positions"]), inputs["identities"], inputs["availability_snapshot"]
+    )
+    add_availability(model, observations)
     return add_scoring_path(model)
 
 
 __all__ = [
-    "DecisionWindowsError", "add_relevance", "add_scoring_path", "build_base_model", "game_state", "remaining_scoring_path_state",
+    "DecisionWindowsError", "add_availability", "add_relevance", "add_scoring_path", "scoring_availability_observations", "build_base_model", "game_state", "remaining_scoring_path_state",
     "slot_definitions", "slot_eligible", "derive_facts", "expected_starter_count", "make_team_key", "parse_instant",
     "resolve", "resolve_base", "rosters_from_canonical", "schedule_games", "utc_text",
 ]

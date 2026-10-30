@@ -298,6 +298,57 @@ class RelevanceTests(unittest.TestCase):
         self.assertEqual("open", self.team(model)["RemainingScoringPathState"])
 
 
+class AvailabilityTests(unittest.TestCase):
+    ROSTERS = [{"FantasyTeamID": 1, "PlayerIDs": ["p1", "p2", "p3"], "StarterIDs": ["p1", "p2", "p3"]}]
+    IDENTITIES = [{"IDs": {"Sleeper": "p1", "ESPN": "e1"}}, {"IDs": {"Sleeper": "p2", "ESPN": "e2"}}, {"IDs": {"Sleeper": "p3", "ESPN": "e3"}}]
+    SNAPSHOT = {"Season": 2030, "Players": [
+        {"ESPNPlayerID": "e1", "ProviderStatus": "out", "StatusSinceUtc": "2030-09-01T10:00:00+02:00"},
+        {"ESPNPlayerID": "e2", "ProviderStatus": "QUESTIONABLE", "StatusSinceUtc": "2030-09-02T10:00:00Z"},
+        {"ESPNPlayerID": "e3", "ProviderStatus": "SUSPENDED", "StatusSinceUtc": None},
+    ]}
+
+    def observe(self, identities=None, snapshot="default", rosters=None):
+        return dw.scoring_availability_observations(
+            2030, self.ROSTERS if rosters is None else rosters, {"p1", "p2", "p3"},
+            self.IDENTITIES if identities is None else identities, self.SNAPSHOT if snapshot == "default" else snapshot)
+
+    def test_status_maps_to_state_and_since_is_the_first_observation(self):
+        observations = {o["PlayerID"]: o for o in self.observe()}
+        self.assertEqual(("out", "OUT", "2030-09-01T08:00:00Z"), (observations["p1"]["State"], observations["p1"]["ProviderStatus"], observations["p1"]["FirstObservedAtUtc"]))
+        self.assertEqual(observations["p1"]["FirstObservedAtUtc"], observations["p1"]["ObservedAtUtc"])
+        self.assertEqual("uncertain", observations["p2"]["State"])
+        self.assertEqual(("unknown", None), (observations["p3"]["State"], observations["p3"]["FirstObservedAtUtc"]))
+
+    def test_missing_other_season_or_unmapped_evidence_stays_unknown(self):
+        self.assertEqual([], self.observe(snapshot=None))
+        self.assertEqual([], self.observe(snapshot={**self.SNAPSHOT, "Season": 2029}))
+        self.assertEqual({"p2", "p3"}, {o["PlayerID"] for o in self.observe(identities=self.IDENTITIES[1:])})
+        self.assertEqual({"p1"}, {o["PlayerID"] for o in self.observe(rosters=[{"FantasyTeamID": 1, "PlayerIDs": ["p1"], "StarterIDs": ["p1"]}])})
+
+    def test_ambiguous_identity_mappings_are_skipped(self):
+        twice = self.IDENTITIES + [{"IDs": {"Sleeper": "p1", "ESPN": "eX"}}]
+        self.assertNotIn("p1", {o["PlayerID"] for o in self.observe(identities=twice)})
+        shared = self.IDENTITIES + [{"IDs": {"Sleeper": "p9", "ESPN": "e2"}}]
+        self.assertNotIn("p2", {o["PlayerID"] for o in self.observe(identities=shared)})
+
+    def test_explicit_out_removes_the_direct_path_unless_the_game_is_completed(self):
+        r = [{"FantasyTeamID": 1, "PlayerIDs": ["p1", "p2", "p3"], "StarterIDs": ["p1", "p2", "p3"]}]
+        base = dw.build_base_model("L", SEASON, 1, 18, GAMES, r, ASSIGN, 3, key)
+        dw.add_relevance(base, ["QB", "RB", "WR"], r, {}, {"w1c": "Final"}, dw.parse_instant("2030-09-08T16:00:00Z", "at"))
+        out = [{"PlayerID": p, "State": "out", "ProviderStatus": "OUT", "Source": "ESPN", "FirstObservedAtUtc": None, "ObservedAtUtc": None} for p in ("p1", "p3")]
+        dw.add_availability(base, out)
+        team = base["FantasyRelevance"]["Teams"][0]
+        players = {p["PlayerID"]: p for p in team["Players"]}
+        self.assertFalse(players["p1"]["HasDirectScoringPath"])      # p1 plays AAA, OUT and not completed
+        self.assertFalse(players["p3"]["HasDirectScoringPath"])      # p3 plays EEE, OUT and completed: no direct path anyway
+        self.assertEqual("unknown", players["p2"]["ScoringAvailability"]["State"])
+        self.assertEqual(1, team["UnlockedStarterCount"])
+        self.assertTrue(team["HasRemainingScoringPath"])
+        self.assertEqual(4, base["FantasyRelevance"]["Version"])
+        self.assertEqual(3, base["SchemaVersion"])
+        self.assertEqual(out, base["ScoringAvailabilityObservations"])
+
+
 class AdapterTests(unittest.TestCase):
     def record(self, game_id, week, epoch, season="2030"):
         return {"gameID": game_id, "season": season, "gameWeek": f"Week {week}", "gameTime_epoch": epoch,
