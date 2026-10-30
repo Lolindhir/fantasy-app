@@ -44,8 +44,7 @@ function team(id: number, playoffPlace: number): FantasyTeam {
     Avatar: 'team-' + id + '.png',
     Placements: {
       Previous: {
-        Playoffs: { Place: playoffPlace, PlaceOrdinal: playoffPlace + 'th' },
-        Awards: []
+        Playoffs: { Place: playoffPlace, PlaceOrdinal: playoffPlace + 'th' }
       }
     }
   } as unknown as FantasyTeam;

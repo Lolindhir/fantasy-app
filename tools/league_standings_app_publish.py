@@ -11,7 +11,8 @@ Rendering rules (identical to the current contract):
     (PreviousWeekPlace, PlaceDelta, WeeklyMovements) exist only on the rows of the current season.
   * Playoff rows carry ``OwnerAvatar`` as CDN URL (the product stores the provider avatar ID).
   * Placements: ``Current`` (League.Season), ``Previous`` (Season - 1) and ``AllTime`` per team with the
-    Playoffs and Regular row without TeamID/Owner/TeamName and the team's awards.
+    Playoffs and Regular row without TeamID/Owner/TeamName. Season awards stay in the Standings sections only;
+    the placements carry no copy (Issue #1195).
 
 Numbers are compared by value (a whole double and an integer are equal); every other type, key set and list
 order must match.
@@ -103,8 +104,6 @@ def render_placements(standings: list[dict[str, Any]], team_ids: list[int], leag
             regular = next((r for r in season["RegularSeason"] if r["TeamID"] == team_id), None)
             if regular is not None:
                 entry["Regular"] = {k: v for k, v in regular.items() if k not in IDENTITY_FIELDS}
-            entry["Awards"] = [{k: v for k, v in a.items() if k not in IDENTITY_FIELDS}
-                               for a in season.get("Awards") or [] if a["TeamID"] == team_id]
     return placements
 
 
@@ -140,7 +139,7 @@ def shadow_compare(repo_root: Path, league_id: str, documents: dict[int, dict[st
     """Differences between the rendered product and the published App files; key = comparison, value = differences.
 
     ``Standings.json`` and the ``League.json`` Standings copy are compared as a whole; the team placements are
-    compared per team with ``Awards`` separated into its own entry (see ``KNOWN_LEGACY_AWARDS_DEVIATION``).
+    compared per team. Season awards live only in the Standings sections, not in the placements (Issue #1195).
     """
     documents = documents if documents is not None else build_league_standings(repo_root, league_id)
     data = repo_root / "public" / "data"
@@ -157,7 +156,6 @@ def shadow_compare(repo_root: Path, league_id: str, documents: dict[int, dict[st
     team_ids = [int(t["TeamID"]) for t in league["Teams"]]
     expected = render_placements(rendered, team_ids, league_year)
     placement_diffs: list[str] = []
-    award_diffs: list[str] = []
     for team in league["Teams"]:
         team_id = int(team["TeamID"])
         published = team.get("Placements") or {}
@@ -166,20 +164,9 @@ def shadow_compare(repo_root: Path, league_id: str, documents: dict[int, dict[st
             if mine is None or theirs is None:
                 placement_diffs.append(f"$.Teams[{team_id}].Placements.{key}: present on one side only")
                 continue
-            mine_awards, theirs_awards = mine.get("Awards"), theirs.get("Awards")
-            placement_diffs += difference({k: v for k, v in mine.items() if k != "Awards"},
-                                          {k: v for k, v in theirs.items() if k != "Awards"}, f"$.Teams[{team_id}].Placements.{key}")
-            award_diffs += difference(mine_awards, theirs_awards, f"$.Teams[{team_id}].Placements.{key}.Awards")
+            placement_diffs += difference(mine, theirs, f"$.Teams[{team_id}].Placements.{key}")
     results["public/data/League.json#Teams.Placements"] = placement_diffs
-    results[KNOWN_LEGACY_AWARDS_DEVIATION] = award_diffs
     return results
-
-
-# RequestLeague.ps1 fills Placements.<key>.Awards from a hashtable keyed by the award's TeamID and looks it up with
-# the team's TeamID; the published League.json holds an empty list for every team although the season awards exist
-# (Issue #987 step 3 finding). The comparison reports this as its own entry instead of mixing it into the
-# placement differences; the cutover decides whether the intended content is delivered.
-KNOWN_LEGACY_AWARDS_DEVIATION = "public/data/League.json#Teams.Placements.Awards (known legacy deviation)"
 
 
 def _dump(payload: Any) -> str:
@@ -251,11 +238,10 @@ def run_compare(args: argparse.Namespace) -> int:
         results = shadow_compare(args.repo_root, league_id)
         print(f"League {league_id}")
         for name, diffs in results.items():
-            known = name == KNOWN_LEGACY_AWARDS_DEVIATION
             print(f"  {name}: {'identical' if not diffs else str(len(diffs)) + ' difference(s)'}")
             for line in diffs[:20]:
                 print(f"    {line}")
-            if diffs and not known:
+            if diffs:
                 exit_code = EXIT_DIFFERENT
     return exit_code
 

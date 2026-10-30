@@ -98,8 +98,8 @@ function makeLeague(teamCount = 8): League {
       Avatar: `/team-${place}.png`,
       Roster: [makePlayer(place)],
       Placements: {
-        Current: { Regular: regular, Awards: [] },
-        Previous: { Regular: regular, Playoffs: { Place: place, PlaceOrdinal: `${place}.` }, Awards: [] },
+        Current: { Regular: regular },
+        Previous: { Regular: regular, Playoffs: { Place: place, PlaceOrdinal: `${place}.` } },
         AllTime: {
           Regular: { ...regular, RegularSeasonWins: place },
           Playoffs: {

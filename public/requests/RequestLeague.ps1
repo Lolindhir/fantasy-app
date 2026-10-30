@@ -136,14 +136,6 @@ try {
         if (-not $key) { continue }
 
         Write-Host "Enriching standings for season '$($standingSeason.Season)' (key: '$key')" -ForegroundColor Yellow
-        $awardsByTeamId = @{}
-        if($standingSeason.Awards){
-            foreach ($award in $standingSeason.Awards) {
-                if (-not $awardsByTeamId.ContainsKey($award.TeamID)) { $awardsByTeamId[$award.TeamID] = @() }
-                $awardsByTeamId[$award.TeamID] += $award
-            }
-        }
-
         foreach ($team in $teamData) {
             if (-not ($team.Placements -is [hashtable])) { $team.Placements = @{} }
             if (-not ($team.Placements[$key] -is [hashtable])) { $team.Placements[$key] = @{} }
@@ -156,12 +148,6 @@ try {
             $regularStanding = $standingSeason.RegularSeason | Where-Object { $_.TeamID -eq $team.TeamID } | Select-Object -First 1
             if ($regularStanding) {
                 $team.Placements[$key]["Regular"] = $regularStanding | Select-Object * -ExcludeProperty TeamID, Owner, TeamName
-            }
-
-            if ($awardsByTeamId.ContainsKey($team.TeamID)) {
-                $team.Placements[$key]["Awards"] = $awardsByTeamId[$team.TeamID] | Select-Object * -ExcludeProperty TeamID, Owner, TeamName
-            } else {
-                $team.Placements[$key]["Awards"] = @()
             }
         }
     }

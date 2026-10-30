@@ -192,16 +192,13 @@ export interface Placements {
   Current: {
     Regular: PlacementRegularSeason;
     Playoffs?: PlacementPlayoffs;
-    Awards: Award | Award[];
   };
   Previous: {
     Regular: PlacementRegularSeason;
     Playoffs?: PlacementPlayoffs;
-    Awards: Award | Award[];
   };
   AllTime: {
     Regular: PlacementRegularSeasonAllTime;
-    Awards?: Award | Award[];
     Playoffs: PlacementPlayoffsAllTime;
   };
 }
@@ -246,5 +243,4 @@ export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'Reserve' |
   RunnerUps: number;
   Thirds: number;
   RegularSeasonWins: number;
-  CurrentAwardsDisplay: string;
 }

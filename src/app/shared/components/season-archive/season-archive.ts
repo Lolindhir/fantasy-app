@@ -34,7 +34,6 @@ export class SeasonArchiveComponent {
         teamName: row.teamName,
         place: row.place,
         isRegularSeasonChampion: !!winner && String(row.teamId) === String(winner.teamId),
-        awardsDisplay: '',
         ownerAvatar: row.ownerAvatar,
         teamAvatar: row.teamAvatar
       }))

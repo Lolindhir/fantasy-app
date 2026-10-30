@@ -40,11 +40,10 @@ function makeTeam(
     Owner: `Owner ${id}`,
     Avatar: '',
     Placements: {
-      Current: { Regular: regular(currentPlace), Awards: [] },
+      Current: { Regular: regular(currentPlace) },
       Previous: {
         Regular: regular(previousPlace),
-        Playoffs: previousPlace < 999 ? { Place: previousPlace, PlaceOrdinal: `${previousPlace}.` } : undefined,
-        Awards: []
+        Playoffs: previousPlace < 999 ? { Place: previousPlace, PlaceOrdinal: `${previousPlace}.` } : undefined
       },
       AllTime: {
         Regular: { ...regular(allTimePlace), RegularSeasonWins: 0 },
