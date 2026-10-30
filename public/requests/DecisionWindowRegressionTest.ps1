@@ -10,5 +10,4 @@ $ErrorActionPreference = 'Stop'
 & "$PSScriptRoot\PlayerLeagueScoringRegressionTest.ps1"
 & "$PSScriptRoot\PlayerPopulationRegressionTest.ps1"
 & "$PSScriptRoot\CanonicalScheduleRegressionTest.ps1"
-& "$PSScriptRoot\WeeklyRecapRegressionTest.ps1"
-Write-Host 'Decision Window legacy + NFL Bye Weeks + League Week Boundary + Game Finality + WeeklyRecaps regression suite passed.' -ForegroundColor Green
+Write-Host 'Decision Window legacy + NFL Bye Weeks + League Week Boundary + Game Finality regression suite passed.' -ForegroundColor Green

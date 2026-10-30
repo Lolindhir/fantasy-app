@@ -23,8 +23,8 @@ Usage:
 
 ``write`` (cutover, Issue #987 step 4) materializes the product under data-derived/league-standings and renders
 public/data/Standings.json from it, only where the content differs semantically, and stamps Timestamps.json
-(key Standings) like Save-JsonFile did. It replaces RequestStandings.ps1; RequestLeague.ps1 and
-RequestWeeklyRecaps.ps1 keep reading the rendered Standings.json, which the same chain writes first.
+(key Standings) like Save-JsonFile did. It replaces RequestStandings.ps1; RequestLeague.ps1 keeps
+reading the rendered Standings.json, which the same chain writes first.
 """
 from __future__ import annotations
 

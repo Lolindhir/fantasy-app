@@ -140,7 +140,6 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
 
         for required in (
             '& pwsh -NoLogo -NoProfile -File "$PSScriptRoot/RequestLeague.ps1"',
-            '& pwsh -NoLogo -NoProfile -File "$PSScriptRoot/RequestWeeklyRecaps.ps1"',
         ):
             self.assertIn(required, publication_wrapper)
         self.assertNotIn("fantasy-management/", publication_wrapper)
