@@ -41,8 +41,7 @@ function makeLeague(): League {
               WinPercentageDisplay: '1.000',
               Record: '1-0',
               Streak: '1W'
-            },
-            Awards: []
+            }
           }
         }
       };

@@ -144,8 +144,10 @@ consumerRules:
     Get-LeagueStandingsProduct (tools/league_standings_app_publish.py render, fail-closed); the League Live Standings job publishes the product
     before the League job (Issue #1197, accepted follow-up of Issue #987). Angular keeps reading only League.json.
   placementsAwards: >
-    Placements.<Key>.Awards stays an empty list for every team in League.json, exactly like before the cutover (Robert, 2026-10-29: output unchanged).
-    The product holds the real season awards; delivering them in the placements (which Angular would then display) is a separate decision.
+    League.json Teams[].Placements carry no Awards field (Robert, 2026-10-30, Issue #1195). The field was always empty because
+    RequestLeague.ps1 looked up an Int64-keyed hashtable with the Int32 TeamID, and no Angular template displayed it. Season awards
+    exist once per season in the product and are delivered only in Standings.json and League.json Standings[].Awards; consumers that
+    need a team view filter those by TeamID (as the Team Detail history does). Neither the product nor the placements duplicate them.
   cutover:
     class: elevated
     reason: New write prefix data-derived/league-standings/** for league-live.yml and update-standings.yml.
@@ -187,9 +189,8 @@ validation:
     tools/league_standings_app_publish.py compare renders the product in the shape of Standings.json and the League.json Standings and
     Teams[].Placements and compares by value (numbers equal regardless of integer/double, keys, types and list order exact). Result on the
     data of 2026-10-29: Standings.json, League.json Standings and the placements except Awards are identical for all seasons, including the
-    current weekly movement. Known legacy deviation: the published Placements.<key>.Awards are empty for every team although the season
-    awards exist (the lookup by TeamID in RequestLeague.ps1 does not hit). The comparison reports it as its own entry; the cutover (step 4)
-    decides whether Placements.Awards deliver the real awards, which Angular would then display.
+    current weekly movement. The former legacy deviation (always empty Placements.<key>.Awards) was resolved in Issue #1195 by removing
+    the field; the placements are compared as a whole without exceptions.
   tests:
     - tools/tests/test_league_standings_models.py (step 2)
     - tools/tests/test_league_standings_product.py (step 2)

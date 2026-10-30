@@ -70,9 +70,10 @@ class RenderTests(unittest.TestCase):
         for field in app.IDENTITY_FIELDS:
             self.assertNotIn(field, current["Playoffs"])
             self.assertNotIn(field, current["Regular"])
-        self.assertEqual(["Best Performer"], [a["Name"] for a in current["Awards"]])
-        self.assertEqual([], placements[2]["Current"]["Awards"])
-        self.assertNotIn("TeamID", current["Awards"][0])
+        # Season awards stay in the Standings sections; placements carry no copy (Issue #1195).
+        for team_id in (1, 2):
+            for key in ("AllTime", "Current", "Previous"):
+                self.assertNotIn("Awards", placements[team_id][key])
 
 
 class DifferenceTests(unittest.TestCase):

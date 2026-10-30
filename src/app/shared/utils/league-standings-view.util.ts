@@ -1,4 +1,4 @@
-import type { Award, AwardInStanding, FantasyTeam, League } from '../../core/models/fantasy.models';
+import type { AwardInStanding, FantasyTeam, League } from '../../core/models/fantasy.models';
 
 export interface CurrentStandingRow {
   team: FantasyTeam;
@@ -18,7 +18,6 @@ export interface SeasonResultTeam {
   teamId?: string | number;
   place: number;
   isRegularSeasonChampion?: boolean;
-  awardsDisplay: string;
   awardVisuals?: SeasonResultAwardVisual[];
   ownerAvatar?: string | null;
   teamAvatar?: string | null;
@@ -186,7 +185,6 @@ export function buildSeasonResults(teams: FantasyTeam[], league?: League): Seaso
       teamId: team.TeamID,
       place: team.Placements.Previous.Playoffs?.Place ?? 999,
       isRegularSeasonChampion: !!winner && String(team.TeamID) === String(winner.TeamID),
-      awardsDisplay: formatAwardsDisplay(team.Placements.Previous.Awards),
       ownerAvatar: team.OwnerAvatar?.trim() || null,
       teamAvatar: team.Avatar?.trim() || 'assets/default-team-avatar.png'
     }))
@@ -500,13 +498,6 @@ function normalizeStandingPlace(place: number | null | undefined): number {
     : Number.MAX_SAFE_INTEGER;
 }
 
-function formatAwardsDisplay(awards: Award | Award[] | null | undefined): string {
-  return ensureArray(awards)
-    .filter(isDynamicSeasonAward)
-    .map(award => award.Icon || unicodeToEmoji(award.IconUnicode))
-    .join('');
-}
-
 function buildAwardTooltip(displayText: string, occurrences: number): string {
   return `${displayText} • Awarded ${occurrences}x`;
 }
@@ -515,10 +506,6 @@ function formatRecord(wins: number, losses: number, ties: number): string {
   return ties > 0 ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
 }
 
-function ensureArray<T>(value: T | T[] | null | undefined): T[] {
-  if (!value) return [];
-  return Array.isArray(value) ? value : [value];
-}
 
 function unicodeToEmoji(unicode: string): string {
   return unicode

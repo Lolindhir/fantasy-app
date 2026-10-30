@@ -1,11 +1,9 @@
 import { formatSalaryDollars } from './player.mapper';
 import type { DraftPick, RawDraft } from '../models/draft.models';
 import type {
-  Award,
   AwardInStanding,
   FantasyTeam,
   League,
-  RawAward,
   RawFantasyTeam,
   RawLeague
 } from '../models/league.models';
@@ -70,9 +68,6 @@ function mapRawFantasyTeamToFantasyTeam(
   team: RawFantasyTeam,
   draftPickByKey: Map<string, DraftPick>
 ): FantasyTeam {
-  const currentAwards = ensureArray(team.Placements.Current.Awards)
-    .map(award => mapAward(award));
-
   const draftPickKeys = team.DraftPicks ?? [];
   const resolvedDraftPicks = draftPickKeys
     .map(key => draftPickByKey.get(key))
@@ -101,8 +96,7 @@ function mapRawFantasyTeamToFantasyTeam(
     Championships: team.Placements.AllTime.Playoffs.Championships ?? 0,
     RunnerUps: team.Placements.AllTime.Playoffs.RunnerUps ?? 0,
     Thirds: team.Placements.AllTime.Playoffs.Thirds ?? 0,
-    RegularSeasonWins: team.Placements.AllTime.Regular.RegularSeasonWins ?? 0,
-    CurrentAwardsDisplay: currentAwards.map(award => award.Icon).join('')
+    RegularSeasonWins: team.Placements.AllTime.Regular.RegularSeasonWins ?? 0
   };
 }
 
@@ -129,16 +123,6 @@ function rosterIdsToPlayers(rosterIds: string[], allPlayers: Player[]): Player[]
     .filter((player): player is Player => !!player);
 }
 
-function mapAward(raw: RawAward): Award {
-  return {
-    Name: raw.Name,
-    Type: raw.Type,
-    IconUnicode: raw.IconUnicode,
-    StatDisplay: raw.StatDisplay,
-    Icon: unicodeToEmoji(raw.IconUnicode)
-  };
-}
-
 function mapStandingAward(raw: AwardInStanding): AwardInStanding {
   return {
     ...raw,
@@ -153,7 +137,3 @@ function unicodeToEmoji(unicode: string): string {
     .join('');
 }
 
-function ensureArray<T>(value: T | T[] | null | undefined): T[] {
-  if (!value) return [];
-  return Array.isArray(value) ? value : [value];
-}

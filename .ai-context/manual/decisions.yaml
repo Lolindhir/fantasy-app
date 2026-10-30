@@ -372,7 +372,10 @@ decisions:
       public/data/Standings.json. Do not introduce a standalone Awards.json for
       this contract. League.json may temporarily embed standings and team
       placement awards for current frontend compatibility, but Standings.json is
-      the intended generated owner for season-level award history.
+      the intended generated owner for season-level award history. Amendment
+      (Issue #1195, Robert 2026-10-30): League.json team Placements carry no
+      award copy; awards are delivered only in the season standings sections
+      and consumers filter them by TeamID.
     rationale: >
       Awards are meaningful together with the season standings that produced
       them. Keeping them in Standings.json avoids a fragmented history model and

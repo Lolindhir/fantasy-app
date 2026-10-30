@@ -193,18 +193,15 @@ function createTeam(
     OwnerAvatar: `owner-${teamID}.png`,
     Placements: {
       Current: {
-        Regular: { Place: currentRegularPlace },
-        Awards: []
+        Regular: { Place: currentRegularPlace }
       },
       Previous: {
         Regular: {},
-        Playoffs: { Place: previousOverallPlace },
-        Awards: []
+        Playoffs: { Place: previousOverallPlace }
       },
       AllTime: {
         Regular: {},
-        Playoffs: { Place: allTimeOverallPlace },
-        Awards: []
+        Playoffs: { Place: allTimeOverallPlace }
       }
     }
   } as unknown as FantasyTeam;

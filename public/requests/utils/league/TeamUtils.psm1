@@ -82,11 +82,6 @@ function Compare-Teams {
                 return $true
             }
 
-            if (Compare-Awards $oldPlacement.Awards $newPlacement.Awards) {
-                Write-Host "Team '$($oldTeam.Owner)' awards for season '$key' changed."
-                return $true
-            }
-
         }
 
         # Vergleiche Roster, Reserve, Taxi
