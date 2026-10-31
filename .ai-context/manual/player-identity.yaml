@@ -48,7 +48,10 @@ identityModel:
       enrich a missing (null) CanonicalPlayerID from durable, non-ambiguous
       provider-identity evidence (GSIS for player stats/rosters; a verified,
       canonical PFR bridge for snap counts) only when every other semantic fact,
-      record order and existing non-null canonical ID remain identical. An
+      record order and existing non-null canonical ID remain identical. Frozen
+      snap-count enrichment is restricted to the exact PFR token and target
+      CanonicalPlayerID of an active confirmed-unowned-provider-token adjudication;
+      unapproved, otherwise resolvable PFR rows remain frozen. An
       unchanged partition is a semantic no-op. It cannot rename people, alter
       snaps or other source facts, or substitute display-name matches. Other
       repairs still require an explicitly reviewed, scoped --force.

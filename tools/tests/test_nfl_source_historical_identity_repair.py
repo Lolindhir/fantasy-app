@@ -140,6 +140,7 @@ class HistoricalIdentityRepairTests(unittest.TestCase):
             effective, preserved = effective_partition_payload(
                 dataset, path=path, candidate=candidate,
                 partition_season=2024, observation_season=2026, force=False,
+                approved_snap_pfr_bindings=frozenset({("WhitCo05", "NFLP-cody")}),
             )
             self.assertFalse(preserved)
             self.assertEqual(candidate, effective)
@@ -148,6 +149,7 @@ class HistoricalIdentityRepairTests(unittest.TestCase):
             same, preserved = effective_partition_payload(
                 dataset, path=path, candidate=candidate,
                 partition_season=2024, observation_season=2026, force=False,
+                approved_snap_pfr_bindings=frozenset({("WhitCo05", "NFLP-cody")}),
             )
             self.assertTrue(preserved)
             self.assertEqual(candidate, same)
@@ -186,6 +188,8 @@ class HistoricalIdentityRepairTests(unittest.TestCase):
                     effective, preserved = effective_partition_payload(
                         dataset, path=path, candidate=candidate,
                         partition_season=2024, observation_season=2026, force=False,
+                        approved_snap_pfr_bindings=frozenset({("WhitCo05", "NFLP-cody")}),
+                approved_snap_pfr_bindings=frozenset({("WhitCo05", "NFLP-cody")}),
                     )
                     self.assertTrue(preserved)
                     self.assertEqual(existing, effective)
@@ -198,9 +202,44 @@ class HistoricalIdentityRepairTests(unittest.TestCase):
             effective, preserved = effective_partition_payload(
                 dataset, path=path, candidate=candidate,
                 partition_season=2024, observation_season=2026, force=False,
+                approved_snap_pfr_bindings=frozenset({("WhitCo05", "NFLP-cody")}),
             )
             self.assertTrue(preserved)
             self.assertEqual(assigned, effective)
+
+    def test_frozen_snap_partition_limits_changes_to_confirmed_pfr_token(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "2024-01.json"
+            dataset = replace(stats_dataset(root), id="nflverse.snap-counts", kind="weekly-snap-counts")
+            existing = {
+                "SchemaVersion": CANONICAL_SCHEMA_VERSION, "Season": 2024, "Week": 1,
+                "SourceDataset": "nflverse.snap-counts", "Finalized": True,
+                "Records": [
+                    {"CanonicalPlayerID": None, "SourceIDs": {"PFR": "WhitCo05"}, "OffenseSnaps": 11},
+                    {"CanonicalPlayerID": None, "SourceIDs": {"PFR": "Other01"}, "OffenseSnaps": 12},
+                ],
+            }
+            candidate = json.loads(json.dumps(existing))
+            candidate["Records"][0]["CanonicalPlayerID"] = "NFLP-cody"
+            candidate["Records"][1]["CanonicalPlayerID"] = "NFLP-other"
+            path.write_text(json.dumps(existing), encoding="utf-8")
+            effective, preserved = effective_partition_payload(
+                dataset, path=path, candidate=candidate,
+                partition_season=2024, observation_season=2026, force=False,
+                approved_snap_pfr_bindings=frozenset({("WhitCo05", "NFLP-cody")}),
+            )
+            self.assertFalse(preserved)
+            self.assertEqual("NFLP-cody", effective["Records"][0]["CanonicalPlayerID"])
+            self.assertIsNone(effective["Records"][1]["CanonicalPlayerID"])
+            self.assertEqual(existing["Records"][1], effective["Records"][1])
+            # Default fail-closed: without explicit adjudication there is no enrichment.
+            effective, preserved = effective_partition_payload(
+                dataset, path=path, candidate=candidate,
+                partition_season=2024, observation_season=2026, force=False,
+            )
+            self.assertTrue(preserved)
+            self.assertEqual(existing, effective)
 
     def test_verified_legacy_stat_alias_resolves_through_existing_provider_bridge(self) -> None:
         canonical = [

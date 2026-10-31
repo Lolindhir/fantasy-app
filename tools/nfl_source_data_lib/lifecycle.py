@@ -79,6 +79,7 @@ def effective_partition_payload(
     partition_season: int,
     observation_season: int,
     force: bool = False,
+    approved_snap_pfr_bindings: frozenset[tuple[str, str]] = frozenset(),
 ) -> tuple[dict[str, Any], bool]:
     """Return the payload to publish and whether a frozen existing partition was preserved."""
     existing = load_json(path)
@@ -94,6 +95,24 @@ def effective_partition_payload(
         observation_season=observation_season,
         existing_payload=existing if isinstance(existing, dict) else None,
     ):
+        if isinstance(existing, dict) and candidate.get("SourceDataset") == "nflverse.snap-counts":
+            # Limit frozen history to the exact source-adjudicated PFR bindings.
+            # Other newly resolved players in the same week remain unchanged.
+            sanitized = deepcopy(candidate)
+            old_rows = existing.get("Records")
+            new_rows = sanitized.get("Records")
+            if isinstance(old_rows, list) and isinstance(new_rows, list) and len(old_rows) == len(new_rows):
+                for old_row, new_row in zip(old_rows, new_rows, strict=True):
+                    if not isinstance(old_row, dict) or not isinstance(new_row, dict):
+                        break
+                    canonical_id = new_row.get("CanonicalPlayerID")
+                    pfr = (new_row.get("SourceIDs") or {}).get("PFR")
+                    if old_row.get("CanonicalPlayerID") in (None, "") and canonical_id not in (None, ""):
+                        if (pfr, canonical_id) not in approved_snap_pfr_bindings:
+                            new_row["CanonicalPlayerID"] = old_row.get("CanonicalPlayerID")
+            if _frozen_identity_only_enrichment(existing, sanitized):
+                return sanitized, False
+            return existing, True
         if isinstance(existing, dict) and _frozen_identity_only_enrichment(existing, candidate):
             return candidate, False
         return existing, True
