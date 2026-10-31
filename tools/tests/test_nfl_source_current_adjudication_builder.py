@@ -20,6 +20,7 @@ from nfl_source_data_lib.identity import (  # noqa: E402
     IdentityCandidate,
     _adjudicated_tokens,
     _apply_current_adjudications,
+    existing_identity_candidates,
     build_identities,
     current_identity_adjudication_state,
 )
@@ -113,6 +114,28 @@ class ApplyCurrentAdjudicationTests(unittest.TestCase):
         replay, again = _apply_current_adjudications([decision], existing, [])
         self.assertEqual(first, replay)
         self.assertEqual([], again)
+
+    def test_repository_unowned_provider_tokens_apply_with_verified_state(self):
+        """Cheap Fast proof against persisted identities, without full NFL replay."""
+        decisions, statuses = current_identity_adjudication_state(ROOT, SEASON)
+        unowned = [d for d in decisions
+                   if d.get("ResolutionKind") == "confirmed-unowned-provider-token"]
+        self.assertTrue(unowned, "Expected confirmed, evidence-backed PFR adjudication")
+        status_by = {d["AdjudicationID"]: d["Status"] for d in statuses}
+        existing = existing_identity_candidates(ROOT)
+        for decision in unowned:
+            self.assertEqual("active", status_by[decision["AdjudicationID"]])
+            target_id = decision["TargetCanonicalPlayerID"]
+            target_before = [item for item in existing
+                             if item.existing_internal_id == target_id]
+            self.assertTrue(target_before)
+            transfers, diagnostic = _apply_current_adjudications([decision], existing, [])
+            provider = decision["ProviderAssignments"][0]["Provider"]
+            value = decision["ProviderAssignments"][0]["ExternalID"]
+            self.assertEqual([], diagnostic)
+            self.assertTrue(any(item.ids.get(provider) == value for item in target_before))
+            self.assertEqual((target_id, (), decision["Provenance"]), transfers[(provider, value)])
+            self.assertEqual(transfers, _apply_current_adjudications([decision], existing, [])[0])
 
     def test_reassignment_moves_tokens_from_sources_to_target_only(self):
         existing = self.persisted()
