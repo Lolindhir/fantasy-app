@@ -4,15 +4,14 @@ file:
   path: public/data/DecisionWindows.json
   kind: generated-json-read-model
   generator: public/requests/RequestLeague.ps1
-  baseDerivation: public/requests/utils/league/DecisionWindowUtils.psm1
-  relevanceDerivation: public/requests/utils/league/FantasyRelevanceV2Utils.psm1
-  scoringAvailabilityDerivation: public/requests/utils/league/PlayerScoringAvailabilityUtils.psm1
+  baseDerivation: tools/derived_data_lib/decision_windows.py::build_base_model
+  relevanceDerivation: tools/derived_data_lib/decision_windows.py::add_relevance
+  scoringAvailabilityDerivation: tools/derived_data_lib/decision_windows.py::add_availability
   repairabilityDerivation:
-    - public/requests/utils/league/LineupRepairabilityDecisionUtils.psm1
-    - public/requests/utils/league/LineupRepairabilityUtils.psm1
-    - public/requests/utils/league/LineupRepairabilityEvidenceUtils.psm1
-  participantScoringPathDerivation: public/requests/utils/league/ParticipantScoringPathDecisionUtils.psm1
-  temporaryAcquisitionBridge: public/requests/utils/league/AcquisitionCapabilityUtils.psm1
+    - tools/derived_data_lib/decision_windows.py::add_repairability
+    - tools/derived_data_lib/models/repairability/v1.py
+  participantScoringPathDerivation: tools/derived_data_lib/decision_windows.py::add_scoring_path
+  acquisitionModel: tools/derived_data_lib/models/repairability/v1.py::resolve_acquisition
   architectureDecision: .ai-context/manual/decisions.yaml#ADR-036
 
 contract:

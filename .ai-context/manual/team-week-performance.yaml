@@ -17,7 +17,7 @@ physicalOwner:
     explicitMaterializer: tools/team_week_performance_materialize.py
     optimizer: tools/weekly_lineup_optimizer.py::maximize_lineup
     canonicalInputAdapter: tools/team_week_performance_sources.py::load_verified_week_inputs
-    lineupEligibilityBridge: public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1
+    lineupEligibilityRules: tools/derived_data_lib/decision_windows.py::slot_definitions/slot_eligible
   status: current-2026-weeks-03-05-on-main-full-history-publication-pending
   delivery: >
     Current App projection checkpoint #355: tools/derived_data_lib/weekly_recaps.py reads finalized
@@ -76,9 +76,10 @@ inputs:
   lineupDefinition:
     owner: data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json::RosterPositions
     constraint: >
-      Caller supplies slot IDs and allowed natural positions via the existing
-      FantasyRelevance slot eligibility semantics. The Python performance
-      calculator contains no copied hardcoded FLEX/SUPER_FLEX/REC_FLEX rule map.
+      The input adapter derives slot IDs and natural-position eligibility from
+      shared Python decision_windows.slot_definitions/slot_eligible, preserving
+      Fantasy Relevance semantics. The performance calculator has no copied
+      FLEX/SUPER_FLEX/REC_FLEX rule table.
       2024 WRRB_FLEX/REC_FLEX and 2025/2026 FLEX configurations must be tested.
   historicalFantasyPositions:
     requirement: >
