@@ -378,7 +378,7 @@ dataSources:
       lineupWeekSource: lifecycle-v1 LineupWeek (Sleeper settings.leg from the canonical league source)
       scheduleJoin: canonical NFL schedule and finality (same inputs as the nfl-games product) -> App game records
       providerRequests: none
-      migrationBoundary: 'Since Issue #1199 section 2 step 7a the inputs are only data-source, the lifecycle function and data-meta; Players.json, Schedule.json and the previous DecisionWindows.json are no inputs. The PowerShell modules (DecisionWindowUtils and relatives) remain only as the reference of the legacy regression test and for FantasyGameContext until section 3.'
+      migrationBoundary: 'Since Issue #1199 section 2 step 7a the inputs are only data-source, the lifecycle function and data-meta; Players.json, Schedule.json and the previous DecisionWindows.json are no inputs. The migrated DecisionWindowUtils PowerShell module and legacy reference test were retired in #1238 scope 2 after Python Fast coverage and a PowerShell Save-JsonFile persistence regression; current FantasyGameContext is also Python-owned.'
     historicalRule: >
       Historical relevance remains rebuildable from persisted season/week schedule,
       fantasy players/starters and week-appropriate player-to-NFL-team assignments

@@ -7,7 +7,7 @@ amends: ADR-036
 implementationState: >-
   Issue #1199 section 2, step 1: contract, ADR-074, the data-meta key Models.Repairability and LineupWeek in the lifecycle
   result. The function, the repairability model, the shadow and the App cutover follow in steps 2 to 7; since step 7a the
-  App delivery is written from the function; the PowerShell modules stay only for FantasyGameContext (section 3) and the legacy reference test.
+  App delivery is written from the function; the obsolete DecisionWindowUtils module and legacy PowerShell reference test were retired in #1238 scope 2.
 
 purpose: >-
   Define the Decision Windows read model (exact-kickoff windows, player lock facts, objective lineup evaluations, Fantasy
@@ -136,7 +136,7 @@ migration:
     4: 'Scoring availability with StatusSinceUtc (closes the feedback loop N4).'
     5: 'Repairability with model repairability-v1 and the acquisition bridge, with Fast tests.'
     6: 'Shadow compare against the published DecisionWindows.json at its timestamp (Fast guard plus one manual run over several runs of a game day). Implemented as tools/decision_windows.py compare; only FirstObservedAtUtc, ObservedAtUtc and AsOfUtc are excluded (D2).'
-    7: 'App cutover: RequestLeague.ps1 and matchup_projection.py; 7a done (RequestLeague imports of the unused modules removed in 7b); the PowerShell modules stay because FantasyGameContextUtils and the legacy reference test still use them until section 3; League Live runtime measured after the cutover.'
+    7: 'Done: RequestLeague.ps1 publishes computed Python DecisionWindows; Save-JsonFile retains its exact JSON comparison/no-op timestamp behavior. The obsolete DecisionWindowUtils.psm1 and its legacy regression were retired in #1238 scope 2 after Python Fast parity and PowerShell persistence checks; matchup_projection.py uses the shared function.'
     8: 'Documentation and register (data-sources.yaml, domain.yaml, consumer-read register).'
 
 architectureReview:

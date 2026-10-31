@@ -62,6 +62,34 @@ class WindowTests(unittest.TestCase):
         self.assertEqual(["AAA", "BBB", "CCC", "DDD"], windows[0]["ParticipatingNFLTeamIDs"])
         self.assertEqual("available", windows[0]["FantasyContextState"])
 
+    def test_legacy_unusual_kickoffs_and_simultaneous_games(self):
+        # Former DecisionWindowRegressionLegacyTest.ps1: nearby 20:05/20:25
+        # kickoffs and a Saturday game must stay in distinct exact windows.
+        games = [
+            game("thu", 1, "2030-09-05T00:20:00Z", "AAA", "BBB"),
+            game("sun-a", 1, "2030-09-08T17:00:00Z", "CCC", "DDD"),
+            game("sun-b", 1, "2030-09-08T17:00:00Z", "EEE", "FFF"),
+            game("sun-late-1", 1, "2030-09-08T20:05:00Z", "GGG", "HHH"),
+            game("sun-late-2", 1, "2030-09-08T20:25:00Z", "III", "JJJ"),
+            game("sat", 1, "2030-09-14T17:00:00Z", "KKK", "LLL"),
+        ]
+        windows = facts([], games=games)["DecisionWindows"]
+        self.assertEqual(5, len(windows))
+        self.assertEqual(["sun-a", "sun-b"], [g["GameID"] for g in windows[1]["Games"]])
+        self.assertEqual(["2030-09-08T20:05:00Z", "2030-09-08T20:25:00Z"],
+                         [w["DecisionWindowID"] for w in windows[2:4]])
+        self.assertEqual("sat", windows[4]["Games"][0]["GameID"])
+
+    def test_rescheduled_game_keeps_id_but_moves_exact_window(self):
+        base = [game("rescheduled", 4, "2030-10-04T17:00:00Z", "AAA", "BBB")]
+        shifted = [dict(base[0], StartsAtUtc="2030-10-04T20:25:00Z")]
+        first = facts([], games=base, week=4)["DecisionWindows"][0]
+        second = facts([], games=shifted, week=4)["DecisionWindows"][0]
+        self.assertEqual("rescheduled", first["Games"][0]["GameID"])
+        self.assertEqual("rescheduled", second["Games"][0]["GameID"])
+        self.assertEqual("2030-10-04T20:25:00Z", second["DecisionWindowID"])
+        self.assertNotEqual(first["DecisionWindowID"], second["DecisionWindowID"])
+
     def test_only_the_lineup_week_games_form_windows(self):
         self.assertEqual(["2030-09-15T17:00:00Z", "2030-09-15T20:25:00Z"], [w["StartsAtUtc"] for w in facts([], week=2)["DecisionWindows"]])
 
@@ -82,6 +110,42 @@ class LockFactTests(unittest.TestCase):
         result = facts([roster(1, ["p1"], [])], assignments=[{"PlayerID": "p1", "NFLTeamID": "1"}])
         self.assertEqual("scheduled", result["PlayerLockFacts"][0]["Kind"])
         self.assertEqual("1", result["PlayerLockFacts"][0]["NFLTeamID"])
+
+    def test_legacy_canonical_team_join_matrix_preserves_emitted_ids(self):
+        # Port of NflTeamKeyJoinRegressionTest.ps1 after the PowerShell
+        # DecisionWindowUtils derivation is retired in Issue #1238.
+        def normalize(value):
+            text = str(value).strip().upper() if value is not None else ""
+            return {"1": "AAA", "2": "BBB", "3": "CCC"}.get(text, text) or None
+
+        for away, home, scheduled_team, bye_team in (
+            ("1", "2", "1", "3"),
+            ("AAA", "BBB", "1", "CCC"),
+            ("1", "2", "AAA", "CCC"),
+            ("AAA", "BBB", "AAA", "CCC"),
+        ):
+            with self.subTest(away=away, home=home, team=scheduled_team):
+                games = [
+                    game("g1", 1, "2030-09-08T17:00:00Z", away, home),
+                    game("g2", 2, "2030-09-15T17:00:00Z", bye_team, home),
+                ]
+                result = dw.build_base_model(
+                    "league", SEASON, 1, 3, games,
+                    [roster(1, ["p1", "p2"], ["p1", "p2"])],
+                    [{"PlayerID": "p1", "NFLTeamID": scheduled_team},
+                     {"PlayerID": "p2", "NFLTeamID": bye_team}],
+                    2, normalize,
+                )
+                locks = {p["PlayerID"]: p for p in result["PlayerLockFacts"]}
+                self.assertEqual(("scheduled", "g1", scheduled_team),
+                                 (locks["p1"]["Kind"], locks["p1"]["GameID"], locks["p1"]["NFLTeamID"]))
+                self.assertEqual("bye", locks["p2"]["Kind"])
+                self.assertEqual(away, result["DecisionWindows"][0]["Games"][0]["AwayTeamID"])
+                unknown = dw.build_base_model(
+                    "league", SEASON, 1, 3, games, [roster(1, ["p1"], ["p1"])],
+                    [{"PlayerID": "p1", "NFLTeamID": "NOT-A-TEAM"}], 1, normalize,
+                )
+                self.assertEqual("unknown", unknown["PlayerLockFacts"][0]["Kind"])
 
     def test_ambiguous_player_assignment_is_unknown(self):
         result = facts([roster(1, ["p1"], [])], assignments=[{"PlayerID": "p1", "NFLTeamID": "AAA"}, {"PlayerID": "p1", "NFLTeamID": "CCC"}])
