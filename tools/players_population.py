@@ -45,11 +45,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from historical_fantasy_scoring import read_json  # noqa: E402
 from nfl_source_data_lib.teams import NflTeamRegistry, NflTeamRegistryError  # noqa: E402
 from players_league_scoring import (  # noqa: E402
-    LEAGUE_ID,
     SleeperIdentityResolver,
     league_owned_sleeper_ids,
 )
 from data_roots import DATA_SOURCE_ROOT  # noqa: E402
+from league_metadata import LeagueMetadataError, data_meta_root, default_league_id  # noqa: E402
 
 SCHEMA_VERSION = 1
 APP_FANTASY_POSITIONS = ("TE", "QB", "RB", "WR", "K")
@@ -407,7 +407,7 @@ def build_shadow(repo_root: Path, league_id: str, season: int, published_path: P
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--league", default=LEAGUE_ID)
+    parser.add_argument("--league", help="CanonicalLeagueID (defaults to the sole league in data-meta)")
     sub = parser.add_subparsers(dest="command", required=True)
     export = sub.add_parser("export", help="write the population export consumed by RequestPlayers.ps1")
     export.add_argument("--season", type=int, required=True)
@@ -416,7 +416,13 @@ def parse_args() -> argparse.Namespace:
     shadow.add_argument("--season", type=int, required=True)
     shadow.add_argument("--published", type=Path, required=True)
     shadow.add_argument("--report-dir", type=Path, required=True)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.league is None:
+        try:
+            args.league = default_league_id(data_meta_root(args.repo_root))
+        except LeagueMetadataError as exc:
+            parser.error(str(exc))
+    return args
 
 
 def main() -> int:

@@ -10,6 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import players_league_scoring as scoring  # noqa: E402
+from league_metadata import data_meta_root, default_league_id  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LEAGUE = "test-league"
@@ -94,7 +95,7 @@ class WeekBoundsTest(unittest.TestCase):
     def test_committed_bounds_agree_with_published_league_json(self) -> None:
         league = json.loads((REPO_ROOT / "public/data/League.json").read_text(encoding="utf-8-sig"))
         season = int(league["Season"])
-        result = scoring.resolve_league_week_bounds(REPO_ROOT, scoring.LEAGUE_ID, season)
+        result = scoring.resolve_league_week_bounds(REPO_ROOT, default_league_id(data_meta_root(REPO_ROOT)), season)
         for key in ("LastLeagueWeek", "PlayoffStartWeek"):
             self.assertEqual(int(league[key]), result[key], key)
         # Both finality values wait for derived data (Sleeper scoring resp. nflverse stats), so either

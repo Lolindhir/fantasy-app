@@ -36,9 +36,9 @@ from historical_fantasy_scoring import number, read_json, score_record  # noqa: 
 from player_week_fantasy import build_scoring_profile_identity  # noqa: E402
 from players_game_history import GAME_HISTORY_SEASON_TYPES, build_game_histories  # noqa: E402
 from data_roots import DATA_SOURCE_ROOT
+from league_metadata import LeagueMetadataError, data_meta_root, default_league_id  # noqa: E402
 from derived_data_lib.week_finality import games_final_weeks, resolve_week_finality, stats_complete_weeks  # noqa: E402
 
-LEAGUE_ID = "nfl-reise"
 SCHEMA_VERSION = 2
 HISTORY_DEPTH = 3
 EXPORT_ROW_FIELDS = ("Points", "Snaps", "KickAttempts", "Attempts", "TdPass", "TdRec", "TdRush")
@@ -439,7 +439,7 @@ def build_export(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--league", default=LEAGUE_ID)
+    parser.add_argument("--league", help="CanonicalLeagueID (defaults to the sole league in data-meta)")
     sub = parser.add_subparsers(dest="command", required=True)
     export = sub.add_parser("export", help="write the per-Sleeper-ID weekly league-scoring export")
     export.add_argument("--season", type=int, required=True)
@@ -447,7 +447,13 @@ def parse_args() -> argparse.Namespace:
     export.add_argument("--out", type=Path, required=True)
     bounds = sub.add_parser("week-bounds", help="print LastLeagueWeek, PlayoffStartWeek and FinalScoredWeek as JSON")
     bounds.add_argument("--season", type=int, required=True)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.league is None:
+        try:
+            args.league = default_league_id(data_meta_root(args.repo_root))
+        except LeagueMetadataError as exc:
+            parser.error(str(exc))
+    return args
 
 
 def main() -> int:

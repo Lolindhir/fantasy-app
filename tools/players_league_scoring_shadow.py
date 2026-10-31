@@ -43,8 +43,8 @@ from players_league_scoring import (  # noqa: E402,F401
     season_view,
 )
 from data_roots import DATA_SOURCE_ROOT
+from league_metadata import LeagueMetadataError, data_meta_root, default_league_id  # noqa: E402
 
-LEAGUE_ID = "nfl-reise"
 HISTORY_SEASONS = ("SeasonMinus1", "SeasonMinus2", "SeasonMinus3")
 CURRENT_BLEND = {1: 0.25, 2: 0.35, 3: 0.5, 4: 0.75}
 GATE_MIN_EXACT_RATE = 0.995
@@ -325,7 +325,9 @@ def apply_identity_hold(new: dict[str, Any], legacy: dict[str, Any]) -> dict[str
     return held
 
 
-def build_shadow(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
+def build_shadow(repo_root: Path, league_id: str | None = None) -> dict[str, Any]:
+    if league_id is None:
+        league_id = default_league_id(data_meta_root(repo_root))
     players: list[dict[str, Any]] = read_json_bom(repo_root / "public/data/Players.json")
     league = read_json_bom(repo_root / "public/data/League.json")
     season = int(league["Season"])
@@ -645,7 +647,9 @@ def classify_residual(diff: float, applicable_weights: list[float]) -> str | Non
     return None
 
 
-def sleeper_gate(repo_root: Path, league_id: str = LEAGUE_ID) -> dict[str, Any]:
+def sleeper_gate(repo_root: Path, league_id: str | None = None) -> dict[str, Any]:
+    if league_id is None:
+        league_id = default_league_id(data_meta_root(repo_root))
     seasons_dir = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons"
     exact = 0
     compared = 0
@@ -758,13 +762,19 @@ def write_csv(path: Path, rows: list[dict[str, Any]], fields: list[str]) -> None
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--league", default=LEAGUE_ID)
+    parser.add_argument("--league", help="CanonicalLeagueID (defaults to the sole league in data-meta)")
     sub = parser.add_subparsers(dest="command", required=True)
     shadow = sub.add_parser("shadow", help="build the shadow and write the diff report")
     shadow.add_argument("--out-dir", type=Path, required=True)
     gate = sub.add_parser("gate", help="Sleeper gate; exit 1 on failure")
     gate.add_argument("--out-dir", type=Path)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.league is None:
+        try:
+            args.league = default_league_id(data_meta_root(args.repo_root))
+        except LeagueMetadataError as exc:
+            parser.error(str(exc))
+    return args
 
 
 def main() -> int:

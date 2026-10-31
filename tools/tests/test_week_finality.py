@@ -12,6 +12,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 import players_league_scoring as scoring  # noqa: E402
+from league_metadata import data_meta_root, default_league_id  # noqa: E402
 from derived_data_lib.week_finality import WeekFinalityError, resolve_week_finality  # noqa: E402
 
 REPO_ROOT = TOOLS.parent
@@ -129,22 +130,25 @@ class SyntheticTimelineTest(unittest.TestCase):
 class LegacyParityTest(unittest.TestCase):
     """The new milestones equal the rules they replace, on whatever canonical seasons exist."""
 
+    def setUp(self) -> None:
+        self.league_id = default_league_id(data_meta_root(REPO_ROOT))
+
     def seasons(self):
-        base = REPO_ROOT / "data-source/leagues" / scoring.LEAGUE_ID / "seasons"
+        base = REPO_ROOT / "data-source/leagues" / self.league_id / "seasons"
         return sorted(int(p.name) for p in base.iterdir() if (p / "league.json").is_file())
 
     def test_stats_final_week_equals_players_rule(self):
         for season in self.seasons():
             with self.subTest(season=season):
-                legacy = scoring.resolve_league_week_bounds(REPO_ROOT, scoring.LEAGUE_ID, season)
-                new = resolve_week_finality(REPO_ROOT, scoring.LEAGUE_ID, season)
+                legacy = scoring.resolve_league_week_bounds(REPO_ROOT, self.league_id, season)
+                new = resolve_week_finality(REPO_ROOT, self.league_id, season)
                 self.assertEqual(legacy["FinalScoredWeek"], new["StatsFinalWeek"])
                 self.assertEqual(legacy["LastLeagueWeek"], new["LastLeagueWeek"])
 
     def test_league_scored_week_equals_twp_rule(self):
         for season in self.seasons():
             with self.subTest(season=season):
-                new = resolve_week_finality(REPO_ROOT, scoring.LEAGUE_ID, season)
+                new = resolve_week_finality(REPO_ROOT, self.league_id, season)
                 final = scoring.game_final_regular_weeks(REPO_ROOT, season)
                 expected = 0
                 while expected + 1 in final and expected + 1 <= new["LastScoredLeg"]:
