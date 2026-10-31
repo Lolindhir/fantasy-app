@@ -445,6 +445,84 @@ class MaterializerIntegrationTests(unittest.TestCase):
             if row["Inputs"] is not None:
                 self.assertEqual({"AvgPotentialGame": 0.0, "AvgGame": 0.0}, row["Inputs"]["Current"])
 
+    def test_read_only_1236_historical_valuation_impact(self) -> None:
+        """Report (never publish) the exact v2->v3 salary/Cap/season-input differences.
+
+        Uses the same materializer as production against the repo's persisted
+        source, in a temporary directory. The current-season run is already
+        available from setUpClass; completed seasons are also scratch-only.
+        """
+        import collections
+
+        completed = [s for s in sources.manifest_seasons(self.manifest) if s < self.season]
+        if completed:
+            derived_data.materialize_player_valuation(
+                REPO_ROOT, self.out_root, self.league_id, completed, False
+            )
+        report = {"Issue": 1236, "Scope": "read-only scratch; no source identity repair",
+                  "Seasons": [], "HistoryInputs2026": {}}
+        for season in sorted(set(completed + [self.season])):
+            current_dir = self.out_root / "player-valuation" / self.league_id / str(season)
+            new_paths = sorted(current_dir.glob("week-*.json"))
+            if not new_paths:
+                continue
+            published = (REPO_ROOT / "data-derived" / "player-valuation" /
+                         self.league_id / str(season) / new_paths[-1].name)
+            if not published.is_file():
+                report["Seasons"].append({"Season": season, "MissingBaseline": str(published.relative_to(REPO_ROOT))})
+                continue
+            new = json.loads(new_paths[-1].read_text(encoding="utf-8"))
+            old = json.loads(published.read_text(encoding="utf-8"))
+            old_by = {r["CanonicalPlayerID"] or r["PlayerID"]: r for r in old["Players"]}
+            diffs = collections.Counter()
+            changed = []
+            for nr in new["Players"]:
+                key = nr["CanonicalPlayerID"] or nr["PlayerID"]
+                orow = old_by.get(key)
+                if not orow:
+                    diffs["new_row"] += 1
+                    continue
+                fields = ("Salary", "SalaryProjected")
+                for field in fields:
+                    if nr[field] != orow[field]:
+                        diffs[field] += 1
+                for offset in ("Current", "SeasonMinus1", "SeasonMinus2", "SeasonMinus3"):
+                    nval = (nr.get("SeasonValues") or {}).get(offset) or {}
+                    oval = (orow.get("SeasonValues") or {}).get(offset) or {}
+                    for field in ("GamesPlayed", "FantasyPointsTotal", "Total", "AvgGame", "AvgPotentialGame"):
+                        if nval.get(field) != oval.get(field):
+                            diffs[f"{offset}.{field}"] += 1
+                    ni = (nr.get("Inputs") or {}).get(offset) or {}
+                    oi = (orow.get("Inputs") or {}).get(offset) or {}
+                    if ni != oi:
+                        diffs[f"Inputs.{offset}"] += 1
+                if nr["Salary"] != orow["Salary"] or nr["SalaryProjected"] != orow["SalaryProjected"]:
+                    changed.append({"ID": key,
+                                    "SalaryDelta": (nr["Salary"] or 0) - (orow["Salary"] or 0),
+                                    "SalaryProjectedDelta": (nr["SalaryProjected"] or 0) - (orow["SalaryProjected"] or 0)})
+            changed.sort(key=lambda item: max(abs(item["SalaryDelta"]), abs(item["SalaryProjectedDelta"])),
+                         reverse=True)
+            rec = {"Season": season, "AsOfWeek": new["AsOfFinalScoredWeek"],
+                   "Players": len(new["Players"]), "BaselineContract": old["ContractVersion"],
+                   "NewContract": new["ContractVersion"],
+                   "SalaryCapDelta": new["League"]["SalaryCap"] - old["League"]["SalaryCap"],
+                   "SalaryCapProjectedDelta": new["League"]["SalaryCapProjected"] - old["League"]["SalaryCapProjected"],
+                   "DiffCounts": dict(sorted(diffs.items())), "TopSalaryDeltas": changed[:12]}
+            report["Seasons"].append(rec)
+            if season == self.season:
+                report["HistoryInputs2026"] = {
+                    str(self.season - i): {
+                        "ChangedPlayers": diffs.get(f"Inputs.SeasonMinus{i}", 0),
+                        "ChangedGamesPlayed": diffs.get(f"SeasonMinus{i}.GamesPlayed", 0),
+                        "ChangedFantasyPointsTotal": diffs.get(f"SeasonMinus{i}.Total", 0)}
+                    for i in (1, 2, 3)
+                }
+        print("IMPACT_1236_JSON=" + json.dumps(report, ensure_ascii=False, sort_keys=True))
+        self.assertEqual(sorted(set(completed + [self.season])),
+                         [x["Season"] for x in report["Seasons"]])
+        self.assertTrue(all(x.get("NewContract") == pv.CONTRACT_VERSION
+                            for x in report["Seasons"]))
+
     def test_unknown_season_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(sources.SourceError, "not in the league manifest"):
