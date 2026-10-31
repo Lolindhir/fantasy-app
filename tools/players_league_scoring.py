@@ -38,6 +38,7 @@ from players_game_history import GAME_HISTORY_SEASON_TYPES, build_game_histories
 from data_roots import DATA_SOURCE_ROOT
 from league_metadata import LeagueMetadataError, data_meta_root, default_league_id  # noqa: E402
 from derived_data_lib.week_finality import games_final_weeks, resolve_week_finality, stats_complete_weeks  # noqa: E402
+from derived_data_lib.fantasy_participation import is_fantasy_game  # noqa: E402
 
 SCHEMA_VERSION = 2
 HISTORY_DEPTH = 3
@@ -269,8 +270,7 @@ def played_weeks(weeks: dict[int, dict[str, float]], position: str, max_week: in
     for week, row in weeks.items():
         if week > max_week:
             continue
-        played = row["kick_attempts"] > 0 if position == "K" else row["snaps"] > 0
-        if played:
+        if is_fantasy_game(position, row["snaps"], row["kick_attempts"], row["points"]):
             out[week] = row
     return out
 
@@ -301,6 +301,14 @@ def _export_row(row: dict[str, float]) -> dict[str, float]:
         "TdRec": row["td_rec"],
         "TdRush": row["td_rush"],
     }
+
+
+def exportable_historical_week(row: dict[str, float]) -> bool:
+    """Keep score-bearing historical evidence, even when no offensive snaps were recorded.
+
+    Position-specific game eligibility is evaluated after this lossless export.
+    """
+    return row["snaps"] > 0 or row["kick_attempts"] > 0 or row["points"] != 0
 
 
 def resolve_player_seasons(
@@ -409,9 +417,9 @@ def build_export(
             seasons_out[str(season_value)] = {
                 str(week): _export_row(row)
                 for week, row in sorted(rows.items())
-                # prior seasons only feed the played-games aggregates; the current season also
-                # feeds per-game points for games without a played snap
-                if season_value == season or row["snaps"] > 0 or row["kick_attempts"] > 0
+                # Retain historical score-bearing weeks, including score-bearing ST-only
+                # and negative fantasy point weeks (#1236).
+                if season_value == season or exportable_historical_week(row)
             }
         players[sleeper_id] = {
             "Status": entry["Status"],
