@@ -221,7 +221,7 @@ class RoutingTests(unittest.TestCase):
 
 
 class FastLaneContractTests(unittest.TestCase):
-    """CP3: all Fast lanes obligatory; full legacy only for full Deep cases."""
+    """Core/Fast/Deep and read-only Restore Gate replace the legacy monolith."""
 
     @classmethod
     def setUpClass(cls):
@@ -291,30 +291,23 @@ class FastLaneContractTests(unittest.TestCase):
             with self.subTest(job=name):
                 self.assertIn(f"tools/ci_suite_runner.py fast {group}", runs(name))
 
-    def test_historical_legacy_build_remains_complete_audit_only(self):
-        job = self.jobs["build"]
-        self.assertEqual("selector", job["needs"])
-        self.assertIn("needs.selector.outputs.mode == 'full'", job["if"])
-        self.assertIn("github.event_name == 'workflow_dispatch'", job["if"])
-        self.assertIn("github.event.action == 'scheduler-ci-full-audit'", job["if"])
-        self.assertNotIn("continue-on-error", job)
-        all_commands = "\n".join(str(step.get("run", "")) for step in job["steps"])
-        for required in (
-            'test_nfl_source*.py', 'test_league_source*.py',
-            "test_market_observations_full_restore",
-            "test_workflow_publication_contracts",
-            "test_consumer_read_classification",
-            "test_player_scoring_reconciliation",
-            "node --test tools/tests/run-workflow-scheduler*.test.cjs",
-            "npx ng test --watch=false --browsers=ChromeHeadless",
-            "./deploy_action.ps1",
-        ):
-            self.assertIn(required, all_commands)
+
+    def test_full_audit_has_no_legacy_build_and_preserves_all_lanes(self):
+        self.assertNotIn("build", self.jobs)
+        for lane in ("fast-contracts", "fast-nfl", "fast-league", "fast-market",
+                     "fast-consumer", "fast-powershell", "fast-scheduler", "fast-angular",
+                     "deep-nfl", "deep-league", "deep-market", "deep-consumer", "restore-gate"):
+            with self.subTest(lane=lane):
+                self.assertIn(lane, self.jobs)
+                self.assertNotIn("continue-on-error", self.jobs[lane])
+        self.assertIn("scheduler-ci-full-audit", self.jobs["restore-gate"]["if"])
 
     def test_restore_gate_is_read_only_and_audit_only(self):
         job = self.jobs["restore-gate"]
         self.assertEqual("selector", job["needs"])
-        self.assertEqual(self.jobs["build"]["if"], job["if"])
+        self.assertIn("needs.selector.outputs.mode == 'full'", job["if"])
+        self.assertIn("github.event_name == 'workflow_dispatch'", job["if"])
+        self.assertIn("github.event.action == 'scheduler-ci-full-audit'", job["if"])
         self.assertNotIn("continue-on-error", job)
         self.assertEqual({"contents": "read"}, job["permissions"])
         commands = "\n".join(str(s.get("run", "")) for s in job["steps"])
@@ -349,7 +342,7 @@ class FastLaneContractTests(unittest.TestCase):
         self.assertNotIn("continue-on-error", gate)
         self.assertEqual({"contents": "read"}, gate["permissions"])
         self.assertEqual(
-            {"selector", "build", "restore-gate", "fast-contracts", "fast-nfl", "fast-league", "fast-market",
+            {"selector", "restore-gate", "fast-contracts", "fast-nfl", "fast-league", "fast-market",
              "fast-consumer", "fast-powershell", "fast-scheduler", "fast-angular",
              "deep-nfl", "deep-league", "deep-market", "deep-consumer"},
             set(gate["needs"]))
@@ -368,19 +361,31 @@ class FastLaneContractTests(unittest.TestCase):
                 self.assertNotIn("test_team_week_performance_integration", commands)
                 self.assertNotIn("ci_suite_runner.py deep", commands)
 
-    def test_fast_blocks_keep_original_safety_and_angular_entrypoints(self):
-        original = "\n".join(str(s.get("run", "")) for s in self.jobs["build"]["steps"])
-        for name in ("fast-league", "fast-powershell", "fast-scheduler", "fast-angular"):
-            for step in self.jobs[name]["steps"]:
-                for line in str(step.get("run", "")).splitlines():
-                    line = line.strip()
-                    if line.startswith(("./public/requests/", "node --test",
-                        "npx ng test", "./deploy_action.ps1",
-                        "python tools/players_league_scoring_shadow.py gate")):
-                        self.assertIn(line, original)
 
+    def test_fast_blocks_keep_all_original_safety_and_angular_entrypoints(self):
+        mandatory = {
+            "fast-contracts": ["python -m unittest tools.tests.test_ci_test_impact",
+                               "python tools/ci_suite_runner.py core"],
+            "fast-league": ["python tools/players_league_scoring_shadow.py gate"],
+            "fast-powershell": ["./public/requests/LeagueReadModelRegressionTest.ps1",
+                                "./public/requests/ProviderJoinInvariantRegressionTest.ps1",
+                                "./public/requests/DecisionWindowRegressionTest.ps1"],
+            "fast-scheduler": ["node --test tools/tests/run-workflow-scheduler*.test.cjs"],
+            "fast-angular": ["Run full Angular unit test suite", "./deploy_action.ps1",
+                             "fantasy-team-order", "player-week-fantasy",
+                             "overview-weekly-dashboard"],
+        }
+        for name, snippets in mandatory.items():
+            with self.subTest(job=name):
+                commands = str(self.jobs[name]["steps"])
+                for snippet in snippets:
+                    self.assertIn(snippet, commands)
+        from tools import ci_suite_runner as runner
+        inventory = ci.read_inventory()
+        for path in ("tools/tests/test_workflow_publication_contracts.py",
+                     "tools/tests/test_consumer_read_classification.py"):
+            self.assertIn(path, runner.modules_for_lane(inventory, "core"))
 
-class Cp3SelectionAndGateTests(unittest.TestCase):
     def test_routing_new_scripts_enforces_all_deep(self):
         for path in ("tools/ci_suite_runner.py", "tools/ci_merge_gate.py",
                      ".github/workflows/build.yml"):
@@ -565,7 +570,7 @@ jobs:
             with self.subTest(fast=fast):
                 self.assertEqual([], gate.verify(self.good_needs("pr", fast), "pull_request"))
 
-    def test_merge_gate_rejects_pull_request_deep_and_legacy_build(self):
+    def test_merge_gate_rejects_pull_request_deep_or_audit_jobs(self):
         from tools import ci_merge_gate as gate
         needs = self.good_needs("pr", ("nfl",), ("deep_nfl",))
         self.assertTrue(gate.verify(needs, "pull_request"))
@@ -577,6 +582,9 @@ jobs:
                 needs = self.good_needs("pr")
                 needs[job]["result"] = outcome
                 self.assertTrue(gate.verify(needs, "pull_request"))
+        needs = self.good_needs("pr")
+        needs["build"] = {"result": "skipped"}  # retired job must fail unexpected-needs validation
+        self.assertTrue(gate.verify(needs, "pull_request"))
         for invalid in ("push", "", None):
             self.assertTrue(gate.verify(self.good_needs("pr"), invalid))
 
@@ -604,7 +612,7 @@ jobs:
         needs["selector"]["outputs"]["mode"] = "full"  # incoherent with a pull request
         self.assertTrue(gate.verify(needs, "pull_request"))
 
-    def test_full_audit_requires_every_fast_block_every_deep_category_and_legacy_build(self):
+    def test_full_audit_requires_every_fast_block_every_deep_category_and_restore_gate(self):
         from tools import ci_merge_gate as gate
         every_fast, every_deep = tuple(gate.FAST), tuple(gate.DEEP)
         full = self.good_needs("full", every_fast, every_deep)
@@ -625,7 +633,7 @@ jobs:
             self.assertTrue(gate.verify(full, "repository_dispatch", action))
         self.assertTrue(gate.verify(full, "push"))
 
-    def test_deep_scope_dispatch_runs_exactly_one_deep_category_without_fast_or_legacy(self):
+    def test_deep_scope_dispatch_runs_exactly_one_deep_category_without_fast_or_audit(self):
         from tools import ci_merge_gate as gate
         self.assertEqual([], gate.verify(self.good_needs("deep", (), ("deep_market",)), "workflow_dispatch"))
         self.assertTrue(gate.verify(self.good_needs("deep", (), ()), "workflow_dispatch"))
@@ -635,19 +643,23 @@ jobs:
         scheduled = self.good_needs("deep", (), ("deep_market",))
         self.assertTrue(gate.verify(scheduled, "repository_dispatch", "scheduler-ci-full-audit"))
 
-    def test_weekly_audit_event_preserves_read_only_legacy_commands(self):
+
+    def test_weekly_audit_uses_read_only_partitioned_jobs(self):
         import yaml
         workflow = yaml.safe_load((ci.ROOT / ".github/workflows/build.yml").read_text(encoding="utf-8"))
         self.assertEqual(["scheduler-ci-full-audit"],
                          workflow[True]["repository_dispatch"]["types"])
         self.assertEqual({"contents": "read", "pull-requests": "read"}, workflow["permissions"])
-        legacy = workflow["jobs"]["build"]
-        self.assertNotIn("continue-on-error", legacy)
-        self.assertIn("scheduler-ci-full-audit", legacy["if"])
-        self.assertFalse(any(str(x.get("run", "")).strip().startswith(("git push", "git commit"))
-                             for x in legacy["steps"]))
+        self.assertNotIn("build", workflow["jobs"])
+        for name, job in workflow["jobs"].items():
+            with self.subTest(job=name):
+                self.assertNotIn("continue-on-error", job)
+                self.assertEqual("read", job.get("permissions", workflow["permissions"]).get("contents"))
+                self.assertFalse(any(str(x.get("run", "")).strip().startswith(("git push", "git commit"))
+                                     for x in job.get("steps", [])))
 
 class InventoryTests(unittest.TestCase):
+
     def test_current_repository_has_exact_test_coverage(self):
         # Run against the checked-out PR revision, not an environment-side copy.
         data = ci.read_inventory()

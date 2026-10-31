@@ -2,9 +2,9 @@
 """Fail-closed permanent result gate for pull requests and audits (Issues #1095, #1122).
 
 Pull requests require Core and exactly the Fast blocks the selector chose;
-Deep jobs and the legacy build must be skipped. A full audit (weekly scheduler
+Deep jobs and the audit-only restore gate must be skipped. A full audit (weekly scheduler
 event or a "full" operator dispatch) must select and pass every Fast block,
-every Deep category, the restore gate and the legacy build. A Deep-scope dispatch runs Core plus
+every Deep category and the restore gate. A Deep-scope dispatch runs Core plus
 exactly one Deep category. Unknown events fail. A block that was not selected is
 "not required", never "passed": only the exact expected outcome is accepted.
 """
@@ -31,7 +31,7 @@ DEEP = {
     "deep_consumer": "deep-consumer",
 }
 # Audit-only jobs: required in a full audit, skipped everywhere else.
-AUDIT_JOBS = ("restore-gate", "build")
+AUDIT_JOBS = ("restore-gate",)
 MODES = ("pr", "full", "deep")
 
 
@@ -108,7 +108,7 @@ def main() -> int:
     if summary:
         with open(summary, "a", encoding="utf-8") as fp:
             fp.write("### CI / Merge Gate: " + ("PASS" if not errors else "FAIL") + "\n")
-            fp.write("Core and every selected Fast block must succeed; unselected blocks are 'not required'. Pull requests run no Deep job and no legacy build; a full audit requires every Fast block, every Deep category, the restore gate and the legacy build.\n")
+            fp.write("Core and every selected Fast block must succeed; unselected blocks are 'not required'. Pull requests run no Deep or audit-only job; a full audit requires every Fast block, every Deep category and the restore gate.\n")
             if errors:
                 fp.write("\n".join("- " + item.replace("|", "/") for item in errors) + "\n")
     return int(bool(errors))

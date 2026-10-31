@@ -101,33 +101,35 @@ def read_inventory(path: Path = INVENTORY) -> dict:
 
 
 def baseline_coverage(root: Path, paths: set[str], inventory: dict | None = None) -> dict[str, str]:
-    """Derived from ACTUAL existing PR workflows, not from aspirational classes.
+    """Derive actual CI coverage from Core/Fast/Deep jobs, not the retired monolithic job.
 
-    Python modules executed by ``tools/ci_suite_runner.py`` are covered by
-    construction (the runner executes exactly the registered covered modules)
-    as long as build.yml still invokes the Core lane and every Fast/Deep family.
+    Python tests are registered in Core, selected Fast or audit-only Deep lanes.
+    Other commands are covered by the existing Fast Angular, Scheduler and
+    PowerShell jobs; the frozen legacy-uncovered baseline remains separate.
     """
-    build = (root / ".github/workflows/build.yml").read_text(encoding="utf-8")
+    workflow = (root / ".github/workflows/build.yml").read_text(encoding="utf-8")
     fm = (root / ".github/workflows/fantasy-management-validation.yml").read_text(encoding="utf-8")
-    bridge_path = root / "tools/tests/test_league_source_team_week_performance_ci.py"
-    bridge = bridge_path.read_text(encoding="utf-8")
-    if not all(s in build for s in (
-        'test_nfl_source*.py', 'test_league_source*.py',
-        'run-workflow-scheduler*.test.cjs', 'Run full Angular unit test suite',
-    )):
-        raise ValueError("Existing build discovery changed: re-audit baseline before classification")
+    bridge = (root / "tools/tests/test_league_source_team_week_performance_ci.py").read_text(encoding="utf-8")
+    commands = (
+        "ci_suite_runner.py core",
+        "run-workflow-scheduler*.test.cjs",
+        "Run full Angular unit test suite",
+        "./deploy_action.ps1",
+        "./public/requests/ProviderJoinInvariantRegressionTest.ps1",
+        "python -m unittest tools.tests.test_ci_test_impact",
+    ) + tuple(f"ci_suite_runner.py {lane} {group}"
+              for lane in ("fast", "deep") for group in GROUPS)
+    if not all(command in workflow for command in commands):
+        raise ValueError("Current Core/Fast/Deep workflow coverage changed: re-audit before classification")
     if "unittest discover" not in fm or "fantasy-management/_ai/scripts/tests" not in fm:
         raise ValueError("Fantasy Management validation discovery changed")
-    runner_covered: dict[str, str] = {}
-    if inventory is not None and "ci_suite_runner.py core" in build and all(
-            f"ci_suite_runner.py {lane} {group}" in build for lane in ("fast", "deep") for group in GROUPS):
-        runner_covered = {
-            e["path"]: e["currentPrCoverage"] for e in inventory["tests"]
-            if e["path"].startswith("tools/tests/test_") and e["path"].endswith(".py")
-            and e["tier"] in {"fast", "deep"} and e["currentPrCoverage"] in {"build", "build-indirect"}
-        }
-    python_refs = set(re.findall(r"tools[./]tests[./](test_[a-zA-Z0-9_]+)", build))
-    discover_patterns = set(re.findall(r'-p "([^"]+\.py)"', build))
+    runner_covered = {
+        entry["path"]: entry["currentPrCoverage"]
+        for entry in (inventory or {}).get("tests", [])
+        if entry["path"].startswith("tools/tests/test_") and entry["path"].endswith(".py")
+        and entry["tier"] in {"fast", "deep"}
+        and entry["currentPrCoverage"] in {"build", "build-indirect"}
+    }
     indirect = set(re.findall(r"tools\.tests\.(test_[a-zA-Z0-9_]+)", bridge))
     coverage = {}
     for path in paths:
@@ -138,17 +140,13 @@ def baseline_coverage(root: Path, paths: set[str], inventory: dict | None = None
             coverage[path] = "build"
         elif path.endswith(".test.cjs") and path.startswith("tools/tests/run-workflow-scheduler"):
             coverage[path] = "build"
-        elif path == "tools/tests/test_ci_test_impact.py" and "test_ci_test_impact" in build:
-            coverage[path] = "shadow"
+        elif path == "tools/tests/test_ci_test_impact.py":
+            coverage[path] = "shadow"  # direct mandatory Core harness; historical class retained
         elif path in runner_covered:
             coverage[path] = runner_covered[path]
-        elif path.startswith("tools/tests/") and (fnmatch.fnmatch(name, "test_nfl_source*")
-              or fnmatch.fnmatch(name, "test_league_source*") or name in python_refs
-              or any(fnmatch.fnmatch(Path(path).name, pat) for pat in discover_patterns)):
-            coverage[path] = "build"
         elif path.startswith("tools/tests/") and name in indirect:
             coverage[path] = "build-indirect"
-        elif path.startswith("public/requests/") and ("./" + path) in build:
+        elif path.startswith("public/requests/") and ("./" + path) in workflow:
             coverage[path] = "build"
         else:
             coverage[path] = "not-in-current-pr-ci"
