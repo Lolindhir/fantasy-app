@@ -77,12 +77,12 @@ dataSources:
       population (see populationContract).
       Since #347 D4 (2026-10-05) points, played games and the three prior seasons are
       canonical NFL stats scored with the league ScoringSettings
-      (tools/players_league_scoring.py via PlayerLeagueScoringUtils.psm1) instead of
+      (tools/players_league_scoring.py, adapted by the Python PlayerValuation and Players read models) instead of
       Tank01 PPR and the past_seasons/Players_<year>.json archives; Salary,
       SalaryProjected, Ranking, Grading.Rank and the League salary cap follow
       through the unchanged formulas.
     weekBounds: >
-      Since #347 I1 RequestPlayers.ps1 and players_league_scoring_shadow.py take LastLeagueWeek and
+      Since #347 I1 the Python Players product/read-model path and players_league_scoring_shadow.py take LastLeagueWeek and
       PlayoffStartWeek from the canonical League-season WeekStructure and FinalScoredWeek from the
       uninterrupted run of final regular-season weeks in canonical NFL game finality whose canonical
       player-stats partition also covers every playing team (nflverse stats lag game results; #895), capped at
@@ -94,7 +94,7 @@ dataSources:
       issue: 347
       step: H1b
       architectureDecision: ADR-043
-      producer: tools/players_population.py via PlayerPopulationUtils.psm1::Invoke-PlayerPopulationExport
+      producer: tools/players_population.py (used directly by the Python Players read model and PlayerValuation sources)
       rule: >
         A Sleeper player from the canonical snapshot
         (data-source/nfl/platform/sleeper/players.json) belongs in Players.json when it has an
@@ -661,8 +661,8 @@ notesForAIAgents:
   - Historical Transactions and Drafts are disposable generated outputs; a full rebuild must not treat an older generated historical Draft file as an authoritative enrichment source.
   - The scheduled historical rebuild order is Transactions base -> draft identity -> fresh current/historical Drafts -> transaction pick-result enrichment -> PastSeasonsIndex.
   - Legacy generated DraftKeys such as 2024_D1_Free_Agent are replaced by canonical current-contract keys during regeneration; do not add compatibility mappings merely to preserve an old generated schema.
-  - Players.json requires a non-empty, globally unique canonical Players.ID for every record; RequestPlayers must fail closed before persistence when the Tank01-to-Sleeper identity join creates a collision.
-  - Player identity collision diagnostics must preserve provider provenance by listing TankID plus Name, TeamID and Position for every conflicting record; do not silently deduplicate or choose a winner.
+  - Players.json requires a non-empty, globally unique Players.ID (Sleeper player_id) for every record; tools/derived_data_lib/players_read_model.py::validate_unique_ids must fail closed before persistence when a canonical Sleeper ID is missing or duplicated (ADR-043/076).
+  - Player identity diagnostics must preserve the duplicate or missing Sleeper Players.ID and available row metadata; TankID was retired and must not be reintroduced as an output field. Never silently deduplicate or choose a conflicting identity.
   - Draft generation depends on current transaction output.
   - Draft DisplayStatus is a generated UI label owned by the draft generation utilities; keep Status and SleeperStatus as technical/source status fields.
   - Drafts.json exposes SleeperStartTime from source start_time and DraftStartTimeUtc as the generated UTC representation when a start time exists.
@@ -755,11 +755,12 @@ sharedDerivedData:
       - week bounds (resolve_league_week_bounds)
       - model choice (data-meta, #986)
     note: >
-      Since the cutover (Issue #919 step 5) RequestPlayers.ps1 runs the materializer and fills
-      Salary, SalaryProjected, Ranking and the Rank grading of Players.json from the snapshot of
-      the final scored week; RequestLeague.ps1 takes SalaryCap and SalaryCapProjected from the
-      newest snapshot of the season. The update-players workflow publishes data-derived/player-valuation
-      together with public/data. The public/data contracts are unchanged.
+      Since Issue #1226 (ADR-076), tools/players_app_publish.py write materializes the PlayerValuation
+      product and renders Salary, SalaryProjected, Ranking and Rank grading into Players.json
+      through the Python players_read_model. RequestLeague.ps1 reads SalaryCap, SalaryCapProjected
+      and SalaryRelevantTeamSize from the newest season snapshot through the trimmed read-only
+      PlayerValuationUtils.psm1 adapter (Issue #1238). The update-players workflow publishes
+      data-derived/player-valuation with public/data; the public/data contracts are unchanged.
 
 sharedDerivedLeagueHistory:
   architectureDecision: ADR-057

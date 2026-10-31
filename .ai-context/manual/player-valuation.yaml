@@ -2,14 +2,22 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 919
 architectureDecision: ADR-055
-implementationState: cutover done (#919 step 5); RequestPlayers.ps1 materializes the product (tools/derived_data.py, all seasons and weeks, committed under data-derived by the update-players workflow) and fills Salary, SalaryProjected, Ranking and the Rank grading of Players.json from the snapshot of the final scored week; RequestLeague.ps1 takes SalaryCap and SalaryCapProjected from the newest snapshot of the season; Players.json and League.json are unchanged in content and type (byte-identical Players.json, semantically identical League.json against the pre-cutover generator); PowerShell valuation code is removed from RequestPlayers.ps1 for Ranking and Grading, the PowerShell Salary functions, Add-PreviousSeasonCombinedRanking and the ConfigUtils weights/team-size constants are removed (step 8); RequestLeague takes SalaryRelevantTeamSize from the snapshot
+implementationState: >
+  PlayerValuation has been productively Python-owned since #919 and the Players consumer
+  fully migrated in #1226 (ADR-076): tools/players_app_publish.py write materializes
+  tools/derived_data.py snapshots and renders public/data/Players.json using
+  tools/derived_data_lib/players_read_model.py. RequestLeague.ps1 only reads the
+  newest PlayerValuation season snapshot through the trimmed
+  public/requests/utils/player/PlayerValuationUtils.psm1::Get-PlayerValuationLatestSnapshot
+  (Issue #1238 scope 3). No valuation arithmetic or materializer is owned by PowerShell;
+  output contracts and the existing publication workflows are unchanged.
 
 purpose: >
   Define the Shared Derived Data product PlayerValuation: for one league and one
   season, per week, the league-valued state of every NFL player in the league
   population - Salary, SalaryProjected, Ranking, rank Grading - plus the league
   Salary Cap. It replaces the Salary/Ranking/Grading/Salary-Cap logic that lives in
-  public/requests/RequestPlayers.ps1 and RequestLeague.ps1 with versioned central
+  the former public/requests/RequestPlayers.ps1 and the valuation logic formerly embedded in RequestLeague.ps1 with versioned central
   models (derived-models.yaml) and keeps the full history reproducible.
 
 architecture:
@@ -200,9 +208,10 @@ consumers:
     step: 7
     state: done 2026-10-15; curve, floor, season-points weights and cap come from the registered salary-v1 and salary-cap-v1 modules (curve_dollars, floored_average, raw_cap; unrounded variants with unchanged behaviour of the productive functions); simulation output (md, json, csv) is byte-identical before and after on the same input data; the draft-concept parameters (minimum percentages, rookie scale, dead cap) stay simulation-local because they belong to the unadopted redesign
   legacyPowerShellRemoval:
-    path: public/requests (RequestPlayers.ps1, PlayerUtils.psm1, ConfigUtils.psm1, RequestLeague.ps1)
+    path: public/requests (former RequestPlayers.ps1 and PlayerUtils.psm1; current RequestLeague.ps1 and trimmed PlayerValuationUtils.psm1)
     step: 8
-    state: done 2026-10-15; leftover PowerShell Salary functions (MapSalaryToDollarsLinear through AdjustSalaryWithMeta), Add-PreviousSeasonCombinedRanking and the constants SalaryRelevantTeamSize, WeightTotal, WeightGame are removed; the snapshot is the only source; players_league_scoring_shadow keeps the legacy weights as fixed oracle constants
+    state: >
+      Done 2026-10-15 (#919 step 8) and completed by #1226/#1238: Salary/Ranking/Grading calculation, Players read model and materializer are Python-owned; the former PowerShell Salary functions and PlayerUtils.psm1 were retired. RequestLeague retains only a read-only newest-season PlayerValuation snapshot adapter for the unchanged Salary Cap. players_league_scoring_shadow keeps fixed oracle constants for parity validation.
 
 failClosed:
   - unknown model ID or model not chosen for the season
@@ -236,14 +245,13 @@ openPoints:
       --hold-seed-players-file takes the values of the last published Players.json (current season,
       final scored week only, matched by Sleeper player ID, which is the row key of a hold row
       without CanonicalPlayerID), exactly as RequestPlayers.ps1 held them before the cutover.
-      A hold row that no source knows keeps null Inputs and RequestPlayers.ps1 fails closed
-      for it (the previous behaviour was to publish zeros).
+      A hold row that no source knows keeps null Inputs and the Python Players read model
+      fails closed for it (the pre-cutover PowerShell behaviour was to publish zeros).
   - id: players-run-materializes-all-seasons
     text: >
-      RequestPlayers.ps1 materializes every season on each run (about 25 seconds). Past seasons
-      therefore follow corrections of canonical stats automatically; the League refresh does not
-      materialize and reads the newest committed snapshot, which is the state the last Players run
-      published together with Players.json.
+      The Python Players consumer tools/players_app_publish.py write materializes every season.
+      Past seasons therefore follow corrections to canonical stats automatically; the League refresh
+      never materializes and reads the newest committed snapshot from the last Players run.
   - id: non-contiguous-final-weeks
     text: >
       Legacy scores all final weeks while a snapshot uses only weeks <= AsOfFinalScoredWeek.

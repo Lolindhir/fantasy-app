@@ -115,7 +115,7 @@ matrix:
       - college/high-school metadata
       - generic player status fields
     durableCanonicalPrimary: unresolved
-    currentRuntimePrimary: mixed Sleeper and Tank01 in RequestPlayers.ps1
+    currentRuntimePrimary: tools/players_population.py and tools/derived_data_lib/players_read_model.py from the canonical Sleeper platform snapshot, nflverse profiles and explicit provider mappings; no live Tank01 read
     secondary:
       - nflverse players
       - existing provider mappings
@@ -252,7 +252,7 @@ matrix:
       - weekly player stat totals
       - team/opponent/game references
     durableCanonicalPrimary: nflverse player-stats
-    currentRuntimePrimary: canonical player-stats consumed by RequestPlayers.ps1 for points and GameHistory (#347 D4, G3)
+    currentRuntimePrimary: canonical player-stats used by tools/players_league_scoring.py, tools/players_game_history.py and PlayerValuation for the Python Players read model (#347 D4/G3, #1226)
     secondary: none-required for finalized history
     fallback:
       - none
@@ -273,7 +273,7 @@ matrix:
     facts:
       - league-specific fantasy points derived from canonical NFL player statistics
     durableCanonicalPrimary: deterministic derivation from canonical NFL player stats plus Sleeper league scoring_settings
-    currentRuntimePrimary: league-scored points exported by tools/players_league_scoring.py for Players.json (#347 D4, 2026-10-05); GameHistory points of every game follow the same scorer since #347 G3; no Tank01 value remains since #347 G4
+    currentRuntimePrimary: tools/players_league_scoring.py supplies current-league-profile historical points to the PlayerValuation product and Python Players consumer (#1226); GameHistory follows the same scorer. PlayerWeekFantasy is a distinct per-season-profile Shared Derived path; no Tank01 input.
     secondary:
       - nflverse/provider fantasy-point values may be used as validation/corroboration only
     fallback: none for Players.json points; an identity hold keeps the last published values
@@ -296,7 +296,7 @@ matrix:
       - st_snaps
       - st_pct
     durableCanonicalPrimary: nflverse PFR snap-count dataset
-    currentRuntimePrimary: canonical snap-counts consumed by RequestPlayers.ps1 GameHistory (#347 G3)
+    currentRuntimePrimary: canonical snap-counts consumed through tools/players_league_scoring.py and tools/players_game_history.py into PlayerValuation and the Python Players consumer (#347 G3, #1226)
     secondary: none-required
     fallback:
       - none
@@ -318,7 +318,7 @@ matrix:
       - in-season team changes
       - weekly roster/status evidence
     durableCanonicalPrimary: nflverse weekly-rosters
-    currentRuntimePrimary: mixed current player team/status evidence from Tank01 and Sleeper in RequestPlayers.ps1
+    currentRuntimePrimary: canonical season/weekly NFL rosters used for population evidence in tools/players_population.py; current platform team/status fields come from the persisted canonical Sleeper players snapshot, not Tank01
     secondary:
       - nflverse season rosters for season-level context
     fallback: none-defined for canonical finalized history
@@ -336,7 +336,7 @@ matrix:
       - season-level NFL roster affiliation
       - season-level roster/player profile evidence
     durableCanonicalPrimary: nflverse rosters
-    currentRuntimePrimary: mixed Tank01/Sleeper player metadata
+    currentRuntimePrimary: canonical nflverse season-roster data as player-population evidence; current platform profile fields are read by tools/players_population.py from canonical Sleeper and nflverse sources
     secondary:
       - weekly-rosters where week-specific membership is required
     fallback: none-defined
@@ -356,7 +356,7 @@ matrix:
       - Sleeper depth_chart_order
       - Sleeper-specific fantasy/player catalog metadata
     durableCanonicalPrimary: Sleeper for Sleeper-specific facts only
-    currentRuntimePrimary: Sleeper /players/nfl in RequestPlayers.ps1
+    currentRuntimePrimary: canonical data-source/nfl/platform/sleeper/players.json consumed by tools/players_population.py and the Python Players read model, not a live Sleeper call
     secondary: none
     fallback: none
     identityKey: Sleeper player_id mapped to CanonicalPlayerID where cross-provider identity is required
@@ -375,7 +375,7 @@ matrix:
       - practice participation where supplied
       - richer description/expected return only when a separately accepted source supplies it
     durableCanonicalPrimary: canonical sleeper.players snapshot (data-source/nfl/platform/sleeper/players.json) for status, start date, body part, notes and practice description; no return date exists in any accepted source
-    currentRuntimePrimary: RequestPlayers.ps1 through PlayerPopulationUtils.psm1::ConvertTo-PlayerInjuryDetails from the canonical snapshot (#347 H1b/H3, Decision 6); no Tank01 input
+    currentRuntimePrimary: tools/players_population.py and tools/derived_data_lib/players_read_model.py consume canonical Sleeper injury fields; no Tank01 or legacy PowerShell adapter input (#347 H1b/H3, #1226)
     secondary: []
     fallback: none-accepted-for-conflict-resolution
     identityKey: Sleeper player_id -> CanonicalPlayerID
@@ -393,7 +393,7 @@ matrix:
     facts:
       - NFL depth-chart role/order snapshots
     durableCanonicalPrimary: unresolved
-    currentRuntimePrimary: canonical Sleeper platform snapshot (data-source/nfl/platform/sleeper/players.json DepthChartPosition/DepthChartOrder) read by RequestPlayers.ps1 through utils/player/SleeperPlatformUtils.psm1 for the current app fields (#347 H4); a player missing from the snapshot stays null
+    currentRuntimePrimary: canonical Sleeper platform snapshot (data-source/nfl/platform/sleeper/players.json DepthChartPosition/DepthChartOrder), read by the Python Players consumer; absent evidence stays null (#347 H4, #1226)
     secondary:
       - nflverse depth-charts is a candidate snapshot source pending separate evaluation
       - other depth-chart providers may be evaluated separately
@@ -431,7 +431,7 @@ matrix:
       - ESPN link
       - provider-specific short name
     durableCanonicalPrimary: none-required; convenience-enrichment only
-    currentRuntimePrimary: Tank01 and Sleeper fields in RequestPlayers.ps1
+    currentRuntimePrimary: tools/players_population.py::derive_profile from canonical nflverse profile and explicit ESPN/Sleeper mappings; provider links are display-only, not identity evidence
     secondary: provider-specific alternatives may be used only through an explicit consumer rule
     fallback: consumer-specific
     identityKey: provider mapping to current player
@@ -446,7 +446,7 @@ matrix:
     facts:
       - NFL free-agent/active availability style fields in current Players.json
     durableCanonicalPrimary: canonical Sleeper platform snapshot (sleeper.players) Team and status via the canonical NFL team registry (decided #347 H5, Robert 2026-10-05 Decision C)
-    currentRuntimePrimary: tools/players_population.py export consumed by RequestPlayers.ps1 (#347 H1b); no Tank01 or live Sleeper call
+    currentRuntimePrimary: tools/players_population.py supplies platform status, team and population directly to the Python Players read model and PlayerValuation inputs (#1226); no Tank01 or live Sleeper call
     secondary:
       - canonical weekly/season rosters are population evidence (nfl_roster_current_season), not the team or free-agent source
     fallback: none (missing snapshot or unknown team abbreviation fails closed)
@@ -469,7 +469,7 @@ matrix:
     facts:
       - current-season bye week used in player read model
     durableCanonicalPrimary: derived-source-not-yet-formally-migrated
-    currentRuntimePrimary: current Tank01/team data path in RequestPlayers.ps1
+    currentRuntimePrimary: canonical NFL schedules and team registry consumed by the Python Players read model and PlayerValuation sources to derive season bye weeks; no Tank01 path (#1226)
     secondary:
       - future derivation from canonical nflverse schedule is the preferred candidate once schedules are active
     fallback: Tank01 during migration
@@ -764,7 +764,7 @@ playersReadModelFieldInventory:
     nflTeamAndAvailability:
       fields: [TeamID, TeamAbbr, IsFreeAgent, Status]
       layer: sourceFact
-      currentProducer: since #347 H1b canonical Sleeper snapshot Team/status via the team registry (inventory snapshot: Tank01 team/teamID/isFreeAgent; Sleeper status)
+      currentProducer: 'since #347 H1b canonical Sleeper snapshot Team/status via the team registry (inventory snapshot: Tank01 team/teamID/isFreeAgent; Sleeper status)'
       matrixKey: [nflWeeklyRosterMembership, nflFreeAgentAndAvailabilityStatus, sleeperPlayerPlatformFacts]
       targetOwner: Sleeper platform snapshot via the canonical team registry; free-agent definition decided in nflFreeAgentAndAvailabilityStatus (#347 H5)
       consumers:
@@ -796,7 +796,7 @@ playersReadModelFieldInventory:
     injury:
       fields: [Injured, InjuryDetails.Designation, InjuryDetails.Description, InjuryDetails.ReturnDate, InjuryDetails.Date]
       layer: sourceFact
-      currentProducer: canonical Sleeper snapshot via PlayerPopulationUtils.psm1::ConvertTo-PlayerInjuryDetails (Injured = designation present; ReturnDate null; #347 H3)
+      currentProducer: tools/players_population.py and tools/derived_data_lib/players_read_model.py from the canonical Sleeper snapshot (Injured = designation present; ReturnDate null; #347 H3, #1226)
       matrixKey: nflInjuriesCurrent
       targetOwner: unchanged (canonical Sleeper snapshot)
       consumers:
@@ -805,15 +805,15 @@ playersReadModelFieldInventory:
     byeWeek:
       fields: [ByeWeek]
       layer: sharedDerived
-      currentProducer: RequestPlayers.ps1 through NflScheduleUtils.psm1 from canonical data-source/nfl/schedules/<season>.json (#347 E1)
+      currentProducer: Python Players read model and PlayerValuation inputs using canonical NFL schedules and team mappings (ADR-076, #1226)
       matrixKey: byeWeek
       targetOwner: derivation from canonical data-source/nfl/schedules/<season>.json
       consumers:
-        - not read by Angular; used inside RequestPlayers.ps1 for GamesPotential
+        - not read by Angular; used by the Python Players read model and PlayerValuation to derive GamesPotential
     seasonStatsAndPoints:
       fields: [GamesPlayed, GamesPotential, SnapsTotal, AttemptsTotal, TouchdownsTotal, TouchdownsPassing, TouchdownsReceiving, TouchdownsRushing, FantasyPointsTotal, FantasyPointsAvgGame, FantasyPointsAvgPotentialGame, FantasyPointsAvgSnap, FantasyPointsAvgAttempt]
       layer: sharedDerived
-      currentProducer: PlayerLeagueScoringUtils.psm1 over the tools/players_league_scoring.py export (canonical player-stats and snap-counts scored with the league ScoringSettings, final REG weeks up to LastLeagueWeek, played game = offense snaps > 0, kickers FG + PAT attempts > 0); GamesPotential follows the final scored week minus the canonical bye week (#347 D4)
+      currentProducer: the PlayerValuation Shared Derived product, built from tools/players_league_scoring.py (canonical stats/snaps scored with league settings, final regular weeks through LastLeagueWeek); the Python Players read model copies the season values and GamesPotential (#1226). Played games use offense snaps > 0, kicker attempts FG + PAT > 0.
       matrixKey: [nflPlayerWeeklyStats, nflSnapCounts, fantasyPointsLeagueScoring]
       targetOwner: league-scored points from the PlayerWeekFantasy derivation (CanonicalPlayerID + league ScoringSettings); stats/snaps from canonical player-stats and snap-counts
       consumers:
@@ -825,7 +825,7 @@ playersReadModelFieldInventory:
     pointHistory:
       fields: [PointHistory.SeasonMinus1, PointHistory.SeasonMinus2, PointHistory.SeasonMinus3]
       layer: sharedDerived
-      currentProducer: PlayerLeagueScoringUtils.psm1::Get-PlayerLeagueScoringSeasonStats over the tools/players_league_scoring.py export (league-scored, season-aware Sleeper identity); PotentialGames = LastLeagueWeek - 1 (#347 D4; the past_seasons/Players_<year>.json archives are no longer read)
+      currentProducer: the PlayerValuation product from the league-scored historical tools/players_league_scoring.py export; the Python Players read model copies PointHistory unchanged (#1226). The retired past_seasons/Players_<year>.json archives are not inputs.
       matrixKey: fantasyPointsLeagueScoring
       targetOwner: league-scored historical points from canonical player stats per season and CanonicalPlayerID
       consumers:
@@ -842,7 +842,7 @@ playersReadModelFieldInventory:
     salary:
       fields: [Salary, SalaryProjected]
       layer: sharedDerived
-      currentProducer: salary-v1 (tools/derived_data_lib/models/salary/v1.py) in the PlayerValuation product; RequestPlayers.ps1 only adapts the snapshot (#919 step 5). Formula unchanged, weighted per-season points (Salary uses seasons -1..-3; SalaryProjected blends the current season with -1 and -2) mapped non-linearly to dollars
+      currentProducer: 'salary-v1 (tools/derived_data_lib/models/salary/v1.py) in the PlayerValuation product; the Python Players read model copies the snapshot (#1226). Formula unchanged: Salary uses seasons -1..-3; SalaryProjected blends current season with -1/-2, mapped non-linearly to dollars.'
       matrixKey: fantasyLeagueSettings (league rule) plus fantasyPointsLeagueScoring (input)
       targetOwner: Shared Derived league rule; must not move into data-source/nfl/**
       consumers:
@@ -854,7 +854,7 @@ playersReadModelFieldInventory:
     ranking:
       fields: [Ranking]
       layer: sharedDerived
-      currentProducer: tools/derived_data_lib/ranking.py via the PlayerValuation product (Total, PerGame, Combined, _Pos variants and Combined_Previous); RequestPlayers.ps1 only adapts the snapshot (#919 step 5)
+      currentProducer: tools/derived_data_lib/ranking.py via the PlayerValuation product (Total, PerGame, Combined, _Pos variants and Combined_Previous); the Python Players read model copies the snapshot (#1226)
       matrixKey: fantasyPointsLeagueScoring (input)
       targetOwner: Shared Derived
       consumers:
@@ -1118,7 +1118,7 @@ consumerReadClassification:
       reads:
         legacy:Drafts: app-read-model-chain
         legacy:Schedule: app-read-model-chain
-      note: 'League generator: writes DecisionWindows.json (Matchups.json and FantasyGameContext.json come from tools/matchup_context_app_publish.py since Issue #1199 section 3 step 7). Since Issue #1199 section 2 step 7 DecisionWindows.json comes from the shared Decision Windows function (Get-LeagueDecisionWindows, tools/decision_windows.py) and the previous file is no longer read (finding N4 closed). Standings come from the league-standings product (Get-LeagueStandingsProduct, Issue #987). Through a reader helper it also consumes Drafts.json (Get-LeagueDraftsLocal), and the published Schedule.json as transitional adapter input (ADR-036 migration boundary). These are the real return channels from League.json to other App files; League Live must therefore publish those inputs before it (L0).'
+      note: 'League generator: reads the newest read-only PlayerValuation season snapshot via PlayerValuationUtils.psm1::Get-PlayerValuationLatestSnapshot for SalaryCap, SalaryCapProjected and SalaryRelevantTeamSize (#1238); no materializer or valuation arithmetic. Publishes DecisionWindows.json from the shared Python Decision Windows function via Get-LeagueDecisionWindows, using Save-JsonFile semantic no-op and timestamp comparison; previous DecisionWindows.json is not a model input. Matchups.json and FantasyGameContext.json are published by tools/matchup_context_app_publish.py, and Standings by the league-standings product. Published Drafts.json is read through Get-LeagueDraftsLocal and Schedule.json is a transitional App adapter input; League Live publishes those inputs before the League generator (L0). No new provider/public-data read classification was introduced by #1238.'
     public/requests/RequestTeams.ps1:
       reads:
         legacy:Teams: app-output-owner
