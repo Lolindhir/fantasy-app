@@ -30,6 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import derived_data  # noqa: E402
 import player_valuation_sources as sources  # noqa: E402
+from league_metadata import LeagueMetadataError, data_meta_root, default_league_id  # noqa: E402
 
 EXIT_MISMATCH = 1
 EXIT_UNCOMPARABLE = 2
@@ -235,11 +236,16 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--league", default="nfl-reise")
+    parser.add_argument("--league", help="CanonicalLeagueID (defaults to the sole league in data-meta)")
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--snapshots-root", type=Path, default=None, help="Reuse already materialized snapshots instead of building into a scratch directory")
     parser.add_argument("--report-dir", type=Path, default=None, help="Write shadow-report.json and shadow-report.md here")
     args = parser.parse_args()
+    if args.league is None:
+        try:
+            args.league = default_league_id(data_meta_root(args.repo_root))
+        except LeagueMetadataError as exc:
+            parser.error(str(exc))
     try:
         report = run_shadow(args.repo_root, args.league, args.snapshots_root)
     except (ShadowError, sources.SourceError) as exc:

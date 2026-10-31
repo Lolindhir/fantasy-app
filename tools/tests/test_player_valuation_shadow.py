@@ -3,12 +3,16 @@ from __future__ import annotations
 
 import copy
 import sys
+import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import player_valuation_shadow as shadow  # noqa: E402
+import players_league_scoring as scoring  # noqa: E402
+import players_league_scoring_shadow as scoring_shadow  # noqa: E402
 
 
 def _inputs(avg_potential: float, avg: float) -> dict:
@@ -120,6 +124,56 @@ class PlausibilityTests(unittest.TestCase):
         report = shadow.plausibility(_snapshot([_snap_row("1"), held]))
         self.assertEqual((report["Rows"], report["Valued"], report["Held"], report["HeldWithoutInputs"]), (2, 1, 1, 1))
         self.assertEqual(report["ByPosition"], {"WR": 2})
+
+
+
+class LeagueCliDefaultTests(unittest.TestCase):
+    """Synthetic metadata fixtures; no published source, data or league output is read."""
+
+    def test_single_league_default_is_resolved_from_selected_repo_root(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._add_league(root, "test-league")
+            with mock.patch("sys.argv", ["scoring", "--repo-root", tmp, "week-bounds", "--season", "2026"]):
+                self.assertEqual(scoring.parse_args().league, "test-league")
+            with mock.patch("sys.argv", ["shadow", "--repo-root", tmp, "gate"]):
+                self.assertEqual(scoring_shadow.parse_args().league, "test-league")
+            with mock.patch("sys.argv", ["valuation-shadow", "--repo-root", tmp]), \
+                    mock.patch.object(shadow, "run_shadow", side_effect=shadow.ShadowError("synthetic")) as run:
+                self.assertEqual(shadow.main(), shadow.EXIT_UNCOMPARABLE)
+                self.assertEqual(run.call_args.args[1], "test-league")
+
+    def test_ambiguous_default_fails_closed_but_explicit_league_is_preserved(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._add_league(root, "alpha")
+            self._add_league(root, "beta")
+            with mock.patch("sys.argv", ["scoring", "--repo-root", tmp, "week-bounds", "--season", "2026"]):
+                with self.assertRaises(SystemExit) as error:
+                    scoring.parse_args()
+                self.assertEqual(error.exception.code, 2)
+            with mock.patch("sys.argv", ["shadow", "--repo-root", tmp, "gate"]):
+                with self.assertRaises(SystemExit) as error:
+                    scoring_shadow.parse_args()
+                self.assertEqual(error.exception.code, 2)
+            with mock.patch("sys.argv", ["valuation-shadow", "--repo-root", tmp]):
+                with self.assertRaises(SystemExit) as error:
+                    shadow.main()
+                self.assertEqual(error.exception.code, 2)
+            with mock.patch("sys.argv", ["scoring", "--repo-root", tmp, "--league", "beta", "week-bounds", "--season", "2026"]):
+                self.assertEqual(scoring.parse_args().league, "beta")
+            with mock.patch("sys.argv", ["shadow", "--repo-root", tmp, "--league", "alpha", "gate"]):
+                self.assertEqual(scoring_shadow.parse_args().league, "alpha")
+            with mock.patch("sys.argv", ["valuation-shadow", "--repo-root", tmp, "--league", "beta"]), \
+                    mock.patch.object(shadow, "run_shadow", side_effect=shadow.ShadowError("synthetic")) as run:
+                self.assertEqual(shadow.main(), shadow.EXIT_UNCOMPARABLE)
+                self.assertEqual(run.call_args.args[1], "beta")
+
+    @staticmethod
+    def _add_league(root: Path, name: str) -> None:
+        target = root / "data-meta" / name
+        target.mkdir(parents=True)
+        (target / "metadata.json").write_text("{}\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
