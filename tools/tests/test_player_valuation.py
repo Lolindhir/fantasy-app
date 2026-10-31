@@ -128,6 +128,12 @@ class AggregationTests(unittest.TestCase):
         self.assertEqual(0.14, pv.scaled_round(0.135, 2))   # 13.5 -> 14
         self.assertEqual(1.0, pv.scaled_round(1.005, 2))    # 1.005 * 100 = 100.49999999999999
 
+    def test_scaled_round_keeps_the_sign_of_a_negative_zero_like_net(self) -> None:
+        import math
+        self.assertEqual(-1.0, math.copysign(1.0, pv.scaled_round(-0.004, 2)))
+        self.assertEqual(1.0, math.copysign(1.0, pv.scaled_round(0.004, 2)))
+        self.assertEqual(-0.01, pv.scaled_round(-0.011, 2))
+
     def test_played_points_filters_position_rule_week_and_orders_by_week(self) -> None:
         rows = {3: week(7.0), 1: week(10.0), 2: week(99.0, snaps=0), 6: week(50.0)}
         self.assertEqual([10.0, 7.0], pv.played_points(rows, "WR", 5))
