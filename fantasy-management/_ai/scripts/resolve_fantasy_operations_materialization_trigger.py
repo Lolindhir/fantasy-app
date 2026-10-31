@@ -14,8 +14,9 @@ SOURCE_INPUT_PREFIXES = (
 GENERATED_OPERATIONS_PREFIX = "fantasy-management/generated/operations/"
 CORE_INPUT_PATHS = {
     "public/data/League.json",
-    "public/data/Players.json",
 }
+# Player Salary/Ranking/Grading come from the shared player-valuation product (ADR-055, Issue #1226), not from the App file.
+PLAYER_VALUATION_PREFIX = "data-derived/player-valuation/"
 # Hand-maintained league metadata (ADR-054) feeds the draft type classification of the FA board.
 LEAGUE_METADATA_PATTERN = re.compile(r"^data-meta/[^/]+/metadata\.json$")
 # Current-season Canonical League drafts feed the FA board (build_fa_board_readmodel.py).
@@ -98,7 +99,7 @@ def decide(
         return TriggerDecision(False, "source_inputs_refreshed_by_pipeline")
 
     if any(
-        path in CORE_INPUT_PATHS or CANONICAL_LEAGUE_DRAFTS_PATTERN.match(path) or LEAGUE_METADATA_PATTERN.match(path)
+        path in CORE_INPUT_PATHS or path.startswith(PLAYER_VALUATION_PREFIX) or CANONICAL_LEAGUE_DRAFTS_PATTERN.match(path) or LEAGUE_METADATA_PATTERN.match(path)
         for path in files
     ):
         return TriggerDecision(True, "relevant_league_or_player_input_change")

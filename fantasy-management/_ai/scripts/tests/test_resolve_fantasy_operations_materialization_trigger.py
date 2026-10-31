@@ -69,7 +69,7 @@ class MaterializationTriggerTests(unittest.TestCase):
     def test_league_players_metadata_and_canonical_drafts_inputs_run_immediately(self) -> None:
         for path in (
             "public/data/League.json",
-            "public/data/Players.json",
+            "data-derived/player-valuation/nfl-reise/2026/week-07.json",
             "data-meta/nfl-reise/metadata.json",
             "data-source/leagues/any-league/seasons/2031/drafts.json",
         ):
@@ -81,6 +81,11 @@ class MaterializationTriggerTests(unittest.TestCase):
                 )
                 self.assertTrue(decision.run)
                 self.assertEqual(decision.reason, "relevant_league_or_player_input_change")
+
+    def test_app_players_file_alone_no_longer_triggers_materialization(self) -> None:
+        decision = MODULE.decide(event_name="push", changed_files=["public/data/Players.json"])
+        self.assertFalse(decision.run)
+        self.assertEqual(decision.reason, "irrelevant_push")
 
     def test_timestamps_only_push_does_not_trigger_materialization(self) -> None:
         decision = MODULE.decide(

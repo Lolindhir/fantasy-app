@@ -33,7 +33,7 @@ VALID_STATES = {"added", "modified", "changed", "renamed", "removed", "deleted",
 # Frozen 2026-10-20 (retired matchup/FantasyGameContext PowerShell tests removed 2026-10-30, Issue #1199; WeeklyRecaps PowerShell test removed) existing uncovered-test debt (Issue #1113).
 # This is a drift detector, not a security hash. To retire legacy debt or replace
 # it with actual PR coverage, review the inventory change and update this anchor.
-LEGACY_UNCOVERED_FNV32 = "261b31a8"
+LEGACY_UNCOVERED_FNV32 = "75d60de7"
 
 
 def uncovered_baseline_fingerprint(paths: list[str]) -> str:
