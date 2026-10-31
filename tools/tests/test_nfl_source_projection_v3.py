@@ -116,6 +116,7 @@ class ProjectionV3CalibrationTests(unittest.TestCase):
         self.assertEqual(14.0, baseline)
 
     def test_real_v3_calibration_and_2025_holdout_are_reproducible(self) -> None:
+        # Source-owned Cody PFR backfill extends replay observations (#1236).
         report = build_v3_calibration_report(
             ROOT,
             league_id="nfl-reise",
@@ -138,30 +139,30 @@ class ProjectionV3CalibrationTests(unittest.TestCase):
         self.assertEqual(HISTORY_TWO_SEASON, baseline["HistoryVariant"])
         self.assertEqual(0.25, baseline["HistoryDecay"])
         self.assertEqual(0.0, baseline["HistoryK"])
-        self.assertEqual(1240, report["PlayerBaselineCalibration"]["ColdStartObservationCount"])
+        self.assertEqual(1241, report["PlayerBaselineCalibration"]["ColdStartObservationCount"])
         self.assertEqual(
             {
-                "Count": 987,
-                "MAE": 4.3678,
-                "RMSE": 5.8519,
-                "Bias": 1.3412,
-                "MeanProjection": 7.5238,
-                "MeanActual": 6.1826,
+                "Count": 988,
+                "MAE": 4.3707,
+                "RMSE": 5.8534,
+                "Bias": 1.3326,
+                "MeanProjection": 7.5174,
+                "MeanActual": 6.1848,
             },
             baseline["HistoryBackedColdStartMetrics"],
         )
 
         current = report["CurrentSeasonCalibration"]["Selected"]
-        self.assertEqual(11297, report["CurrentSeasonCalibration"]["ComparableObservationCount"])
+        self.assertEqual(11298, report["CurrentSeasonCalibration"]["ComparableObservationCount"])
         self.assertEqual(1.0, current["CurrentK"])
         self.assertEqual(
             {
-                "Count": 11297,
+                "Count": 11298,
                 "MAE": 4.5415,
-                "RMSE": 6.1991,
-                "Bias": -0.1009,
-                "MeanProjection": 8.1685,
-                "MeanActual": 8.2694,
+                "RMSE": 6.199,
+                "Bias": -0.1005,
+                "MeanProjection": 8.1682,
+                "MeanActual": 8.2687,
             },
             current["Metrics"],
         )
@@ -169,58 +170,58 @@ class ProjectionV3CalibrationTests(unittest.TestCase):
         comparable = report["Holdout"]["Comparable"]
         self.assertEqual(
             {
-                "Count": 5724,
-                "MAE": 4.593,
-                "RMSE": 6.3156,
-                "Bias": -0.0633,
-                "MeanProjection": 7.9965,
-                "MeanActual": 8.0598,
+                "Count": 5731,
+                "MAE": 4.5925,
+                "RMSE": 6.3145,
+                "Bias": -0.0618,
+                "MeanProjection": 7.9913,
+                "MeanActual": 8.0531,
             },
             comparable["V2"],
         )
         self.assertEqual(
             {
-                "Count": 5724,
-                "MAE": 4.5438,
-                "RMSE": 6.2441,
-                "Bias": 0.0186,
-                "MeanProjection": 8.0784,
-                "MeanActual": 8.0598,
+                "Count": 5731,
+                "MAE": 4.5431,
+                "RMSE": 6.2429,
+                "Bias": 0.0197,
+                "MeanProjection": 8.0727,
+                "MeanActual": 8.0531,
             },
             comparable["V3"],
         )
-        self.assertEqual(0.0492, comparable["MAEImprovementPoints"])
-        self.assertEqual(1.0712, comparable["MAEImprovementPercent"])
-        self.assertEqual(0.0715, comparable["RMSEImprovementPoints"])
-        self.assertEqual(1.1321, comparable["RMSEImprovementPercent"])
+        self.assertEqual(0.0494, comparable["MAEImprovementPoints"])
+        self.assertEqual(1.0757, comparable["MAEImprovementPercent"])
+        self.assertEqual(0.0716, comparable["RMSEImprovementPoints"])
+        self.assertEqual(1.1339, comparable["RMSEImprovementPercent"])
         self.assertEqual(5.0662, comparable["V2Breakdowns"]["ByWeek"]["2"]["MAE"])
         self.assertEqual(4.7852, comparable["V3Breakdowns"]["ByWeek"]["2"]["MAE"])
-        self.assertEqual(4.3233, comparable["V2Breakdowns"]["ByPriorGames"]["1"]["MAE"])
-        self.assertEqual(4.0747, comparable["V3Breakdowns"]["ByPriorGames"]["1"]["MAE"])
+        self.assertEqual(4.3334, comparable["V2Breakdowns"]["ByPriorGames"]["1"]["MAE"])
+        self.assertEqual(4.086, comparable["V3Breakdowns"]["ByPriorGames"]["1"]["MAE"])
 
         cold = report["Holdout"]["ColdStart"]
-        self.assertEqual(641, cold["V3All"]["Count"])
-        self.assertEqual(508, cold["HistoryBackedCount"])
+        self.assertEqual(642, cold["V3All"]["Count"])
+        self.assertEqual(509, cold["HistoryBackedCount"])
         self.assertEqual(133, cold["NoHistoryCount"])
         self.assertEqual(
             {
-                "Count": 508,
-                "MAE": 4.1106,
-                "RMSE": 5.5459,
-                "Bias": 1.1752,
-                "MeanProjection": 7.2645,
-                "MeanActual": 6.0893,
+                "Count": 509,
+                "MAE": 4.1107,
+                "RMSE": 5.5436,
+                "Bias": 1.1811,
+                "MeanProjection": 7.2585,
+                "MeanActual": 6.0774,
             },
             cold["V3HistoryBacked"],
         )
-        self.assertEqual(1.807, cold["HistoryBackedMAEImprovementPoints"])
+        self.assertEqual(1.81, cold["HistoryBackedMAEImprovementPoints"])
         self.assertEqual(
             {
                 "Count": 133,
-                "MAE": 6.1184,
-                "RMSE": 6.9054,
-                "Bias": 4.7955,
-                "MeanProjection": 8.2117,
+                "MAE": 6.1175,
+                "RMSE": 6.9046,
+                "Bias": 4.7943,
+                "MeanProjection": 8.2106,
                 "MeanActual": 3.4162,
             },
             cold["V3NoHistory"],
