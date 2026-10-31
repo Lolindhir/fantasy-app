@@ -10,6 +10,7 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 import players_league_scoring as scoring_export  # noqa: E402
+from league_metadata import data_meta_root, default_league_id  # noqa: E402
 import players_league_scoring_shadow as shadow  # noqa: E402
 
 
@@ -252,22 +253,23 @@ class ExportTests(unittest.TestCase):
         cls.players = json.loads((ROOT / "public/data/Players.json").read_text(encoding="utf-8-sig"))
         cls.league = json.loads((ROOT / "public/data/League.json").read_text(encoding="utf-8-sig"))
         cls.season = int(cls.league["Season"])
+        cls.league_id = default_league_id(data_meta_root(ROOT))
         cls.export = scoring_export.build_export(
-            ROOT, scoring_export.LEAGUE_ID, cls.season, [str(p["ID"]) for p in cls.players],
+            ROOT, cls.league_id, cls.season, [str(p["ID"]) for p in cls.players],
         )
 
     def test_export_is_deterministic_and_identified_by_the_scoring_profile(self) -> None:
         again = scoring_export.build_export(
-            ROOT, scoring_export.LEAGUE_ID, self.season, [str(p["ID"]) for p in reversed(self.players)],
+            ROOT, self.league_id, self.season, [str(p["ID"]) for p in reversed(self.players)],
         )
         self.assertEqual(self.export, again)
         profile = self.export["ScoringProfile"]
-        self.assertEqual(scoring_export.LEAGUE_ID, profile["CanonicalLeagueID"])
+        self.assertEqual(self.league_id, profile["CanonicalLeagueID"])
         self.assertEqual(self.season, profile["Season"])
         self.assertTrue(profile["SettingsHash"])
 
     def test_every_league_owned_player_resolves_and_current_rows_are_final_weeks_only(self) -> None:
-        owned = scoring_export.league_owned_sleeper_ids(ROOT, scoring_export.LEAGUE_ID, self.season)
+        owned = scoring_export.league_owned_sleeper_ids(ROOT, self.league_id, self.season)
         final_weeks = set(self.export["FinalRegularWeeksCurrent"])
         self.assertTrue(final_weeks)
         for sleeper_id, entry in self.export["Players"].items():
