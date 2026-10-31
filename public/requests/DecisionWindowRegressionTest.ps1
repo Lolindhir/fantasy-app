@@ -42,8 +42,9 @@ try {
     $changed = $model | ConvertTo-Json -Depth 10 | ConvertFrom-Json
     $changed.DecisionWindows[0].DecisionWindowID = "2030-09-08T17:20:00Z"
     Save-JsonFile -TargetFile $tempFile -Type "DecisionWindows" -Data $changed -CompareScript $decisionCompare -UpdateTimestamp
-    $updatedWindow = (Get-Content -Path $tempFile -Raw | ConvertFrom-Json).DecisionWindows[0].DecisionWindowID
-    if ([string]$updatedWindow -ne "2030-09-08T17:20:00Z") {
+    # Check the serialized JSON directly: ConvertFrom-Json auto-coerces ISO strings
+    # to DateTime in modern PowerShell, which is not a content comparison.
+    if ((Get-Content -Path $tempFile -Raw) -notmatch '"DecisionWindowID"\s*:\s*"2030-09-08T17:20:00Z"') {
         throw "Changed DecisionWindows did not update JSON."
     }
     if ((Get-Content -Path $tempTimestampFile -Raw) -ceq $beforeTimestamp) {
