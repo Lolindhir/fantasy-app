@@ -2,14 +2,12 @@
 from __future__ import annotations
 
 import json
-import re
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SNAPSHOT = ROOT / "data-source" / "nfl" / "platform" / "sleeper" / "players.json"
-GENERATOR = ROOT / "public" / "requests" / "RequestPlayers.ps1"
-MODULE = ROOT / "public" / "requests" / "utils" / "player" / "SleeperPlatformUtils.psm1"
+MODEL = ROOT / "tools" / "derived_data_lib" / "players_read_model.py"
 
 
 class PlayersDepthChartCutoverTests(unittest.TestCase):
@@ -25,19 +23,16 @@ class PlayersDepthChartCutoverTests(unittest.TestCase):
             self.assertIn("DepthChartPosition", record)
             self.assertIn("DepthChartOrder", record)
 
-    def test_generator_reads_depth_chart_from_canonical_snapshot(self) -> None:
-        source = GENERATOR.read_text(encoding="utf-8")
-        self.assertIn("SleeperPlatformUtils.psm1", source)
-        self.assertIn("Get-CanonicalSleeperDepthCharts", source)
-        self.assertNotRegex(source, r"\$sleeperEntry\.depth_chart_(position|order)")
-        self.assertRegex(source, r"SleeperDepthChartPosition\s*=\s*\$depthChart\.Position")
-        self.assertRegex(source, r"SleeperDepthChartOrder\s*=\s*\$depthChart\.Order")
+    def test_read_model_reads_depth_chart_from_canonical_snapshot(self) -> None:
+        source = MODEL.read_text(encoding="utf-8")
+        self.assertIn('record.get("DepthChartPosition")', source)
+        self.assertIn('record.get("DepthChartOrder")', source)
+        self.assertNotIn("depth_chart_position", source)
+        self.assertNotIn("depth_chart_order", source)
 
-    def test_module_fails_closed(self) -> None:
-        module = MODULE.read_text(encoding="utf-8")
-        self.assertRegex(module, r"throw .*is required for depth charts")
-        self.assertIn("lists SleeperPlayerID", module)
-        self.assertIn("Unexpected canonical Sleeper players source", module)
+    def test_read_model_fails_closed_without_snapshot(self) -> None:
+        source = MODEL.read_text(encoding="utf-8")
+        self.assertIn("Canonical Sleeper players snapshot is required for depth charts", source)
 
 
 if __name__ == "__main__":

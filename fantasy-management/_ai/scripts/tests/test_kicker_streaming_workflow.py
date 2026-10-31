@@ -84,7 +84,7 @@ class KickerStreamingWorkflowTests(unittest.TestCase):
 
         for immediate_path in (
             "public/data/League.json",
-            "public/data/Players.json",
+            "data-derived/player-valuation/**",
         ):
             self.assertIn(immediate_path, workflow)
 

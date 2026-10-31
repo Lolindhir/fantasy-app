@@ -16,7 +16,7 @@ import players_population as pop  # noqa: E402
 
 SEASON = 2026
 LEAGUE = "test-league"
-GENERATOR = ROOT / "public" / "requests" / "RequestPlayers.ps1"
+MODEL = ROOT / "tools" / "derived_data_lib" / "players_read_model.py"
 
 
 def write(root: Path, relative: str, payload: object) -> None:
@@ -204,14 +204,12 @@ class PopulationRuleTests(unittest.TestCase):
 
 class GeneratorCutoverTests(unittest.TestCase):
     def test_generator_has_no_tank01_or_live_sleeper_population(self) -> None:
-        source = GENERATOR.read_text(encoding="utf-8")
+        source = MODEL.read_text(encoding="utf-8")
         self.assertNotIn("getNFLPlayerList", source)
         self.assertNotIn("api.sleeper.app", source)
-        self.assertNotIn("$tankPlayers", source)
-        self.assertIn("Invoke-PlayerPopulationExport", source)
-        self.assertNotIn("Get-InterimPlayerProfileLinks", source)
-        self.assertNotIn("$profileLinks", source)
-        self.assertNotRegex(source, r"TankID\s+=\s+\$entry")
+        self.assertNotIn("tankPlayers", source)
+        self.assertIn("build_population", source)
+        self.assertNotIn("TankID", source.replace('"TankID"', "").replace("TankID removed", ""))
 
 
 if __name__ == "__main__":

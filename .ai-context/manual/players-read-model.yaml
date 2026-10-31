@@ -8,7 +8,7 @@ implementationState: >-
   consumer generator tools/players_app_publish.py (compare = shadow, write = productive) exist. Since the cutover
   update-players.yml runs players_app_publish.py write (materializes the player-valuation product, then writes the file on
   a content change with backup and the Players timestamp); the PV hold seed is no longer passed. RequestPlayers.ps1 and the
-  utils/player modules are no longer called and are removed in the cleanup (step 6).
+  PowerShell Players modules are removed (step 6, done); the point-path guard is tools/tests/test_players_point_paths_parity.py.
 
 purpose: >-
   Define public/data/Players.json as a pure consumer delivery. One pure function resolves the complete player rows for
@@ -129,4 +129,4 @@ steps:
   - 3b function players_read_model.py with Fast tests on synthetic players (done in the step 3b pull request; a local run against the freshly materialized product matched the published file byte for byte at AsOfDate 2026-10-31, the formal shadow is step 4)
   - 4 shadow compare against the published file (validation-shadow, Fast guard, one manual run on main)
   - 5 cutover of update-players.yml (players_app_publish.py write), PV hold seed dropped, runtime measured
-  - 6 cleanup: delete RequestPlayers.ps1 and unused player modules, point-path guard, FM trigger to data-derived/player-valuation/**, inventory and registers
+  - 6 cleanup (done): delete RequestPlayers.ps1 and unused player modules, point-path guard, FM trigger to data-derived/player-valuation/**, inventory and registers

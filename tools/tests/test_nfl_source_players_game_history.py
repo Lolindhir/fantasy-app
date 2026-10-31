@@ -182,11 +182,11 @@ class BuildTests(unittest.TestCase):
 
 
 class GeneratorContractTests(unittest.TestCase):
-    def test_request_players_has_no_games_json_or_tank01_history(self) -> None:
-        source = (ROOT / "public/requests/RequestPlayers.ps1").read_text(encoding="utf-8")
-        for needle in ("Games.json", "playerStats", "Tank01ID", "$playerHistory", "Update-PlayerGameHistoryLeaguePoints"):
+    def test_players_read_model_has_no_games_json_or_tank01_history(self) -> None:
+        source = (ROOT / "tools/derived_data_lib/players_read_model.py").read_text(encoding="utf-8")
+        for needle in ("Games.json", "playerStats", "Tank01ID", "playerHistory", "Update-PlayerGameHistoryLeaguePoints"):
             self.assertNotIn(needle, source)
-        self.assertIn("ConvertTo-PlayerGameHistory", source)
+        self.assertIn("GameHistory", source)
 
 
 if __name__ == "__main__":

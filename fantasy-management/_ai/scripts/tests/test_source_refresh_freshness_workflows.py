@@ -170,7 +170,7 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
             "python3 tools/rebuild_and_publish.py",
             "--scope players",
             "--path public/data",
-            "pwsh ./public/requests/RequestPlayers.ps1",
+            "python3 tools/players_app_publish.py write",
         ):
             self.assertIn(required, workflow)
 

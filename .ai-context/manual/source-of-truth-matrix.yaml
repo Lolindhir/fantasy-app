@@ -631,7 +631,7 @@ repositoryEvidence:
   - .github/workflow-schedules.json
   - .github/workflows/nfl-live.yml
   - .github/workflows/update-games.yml
-  - public/requests/RequestPlayers.ps1
+  - tools/players_app_publish.py
   - public/requests/RequestSchedule.ps1
   - public/requests/utils/general/GameFinalityUtils.psm1
   - public/requests/utils/general/CanonicalScheduleUtils.psm1
@@ -714,7 +714,7 @@ playersReadModelFieldInventory:
     consumerOnly: App delivery shape or display convenience (Consumer Data under #613)
 
   producer:
-    script: public/requests/RequestPlayers.ps1
+    script: tools/players_app_publish.py
     population: >
       Since #347 H1b (ADR-043): canonical Sleeper snapshot players with an app fantasy
       position and a valid birth date that have a roster, draft or league-ownership reason
@@ -1067,7 +1067,6 @@ consumerReadClassification:
     fantasy-management/_ai/scripts/resolve_fantasy_operations_materialization_trigger.py:
       reads:
         legacy:League: freshness-trigger
-        legacy:Players: freshness-trigger
       note: 'Decides whether a push touching these paths triggers Operations materialization; it reads no content. The league metadata data-meta/<CanonicalLeagueID>/metadata.json (DraftType binding, J2; ADR-054) is also a trigger path and is not a legacy read.'
     fantasy-management/automation/external-signal-materialization.json:
       reads:
