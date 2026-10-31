@@ -39,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import league_standings_sources as standings_sources  # noqa: E402
 from derived_data import LEAGUE_STANDINGS, build_league_standings, league_history_path, materialize_league_standings  # noqa: E402
-from league_metadata import data_meta_root, list_league_ids  # noqa: E402
+from league_metadata import data_meta_root, default_league_id, list_league_ids  # noqa: E402
 
 AVATAR_URL = "https://sleepercdn.com/avatars/{}"
 MOVEMENT_FIELDS = ("PreviousWeekPlace", "PlaceDelta", "WeeklyMovements")
@@ -254,12 +254,14 @@ def main() -> int:
     compare.add_argument("--league", help="CanonicalLeagueID (default: every league in data-meta)")
     compare.set_defaults(func=run_compare)
     write = sub.add_parser("write", help="materialize the product and render Standings.json (semantic no-op)")
-    write.add_argument("--league", default="nfl-reise", help="CanonicalLeagueID (default: nfl-reise)")
+    write.add_argument("--league", default=None, help="CanonicalLeagueID (default: the only league in data-meta)")
     write.set_defaults(func=run_write)
     render = sub.add_parser("render", help="print the App-shaped standings rendered from the persisted product as JSON")
-    render.add_argument("--league", default="nfl-reise", help="CanonicalLeagueID (default: nfl-reise)")
+    render.add_argument("--league", default=None, help="CanonicalLeagueID (default: the only league in data-meta)")
     render.set_defaults(func=run_render)
     args = parser.parse_args()
+    if getattr(args, "league", None) is None and args.command != "compare":
+        args.league = default_league_id(data_meta_root(args.repo_root))
     return args.func(args)
 
 

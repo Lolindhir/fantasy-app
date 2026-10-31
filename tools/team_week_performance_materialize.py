@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT, data_meta_dir
-from league_metadata import (list_league_ids, load_league_metadata, validate_against_manifest)
+from league_metadata import (data_meta_root, default_league_id, list_league_ids, load_league_metadata, validate_against_manifest)
 from team_week_performance import (
     build_team_week_performance,
     output_path,
@@ -248,7 +248,7 @@ def main() -> int:
     if args.week is None or not args.season or len(args.season) != 1:
         parser.error("Single-week mode requires exactly one --season and --week")
     print(json.dumps(materialize(
-        root, args.league or "nfl-reise", args.season[0], args.week,
+        root, args.league or default_league_id(data_meta_root(root)), args.season[0], args.week,
         write=args.write, require_pwf=args.require_pwf,
     ), indent=2, ensure_ascii=False, sort_keys=True))
     return 0
