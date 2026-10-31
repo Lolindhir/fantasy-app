@@ -132,6 +132,7 @@ class ProjectionV4CalibrationTests(unittest.TestCase):
         self.assertNotEqual(100.0, week_2[f"{FEATURE_OPPORTUNITY}Recent"])
 
     def test_real_v4_variants_keep_2025_as_untouched_holdout(self) -> None:
+        # The 2025 holdout stays independent of training despite added Cody PFR facts.
         report = build_v4_report(
             ROOT,
             league_id="nfl-reise",
@@ -160,64 +161,64 @@ class ProjectionV4CalibrationTests(unittest.TestCase):
         self.assertEqual([2023, 2024], report["CalibrationSeasons"])
 
         baseline = report["Holdout"]["V3"]
-        self.assertEqual(5724, baseline["PredictionCount"])
+        self.assertEqual(5731, baseline["PredictionCount"])
         self.assertEqual(
             {
-                "Count": 5724,
-                "MAE": 4.5438,
-                "RMSE": 6.2441,
-                "Bias": 0.0186,
-                "MeanProjection": 8.0784,
-                "MeanActual": 8.0598,
+                "Count": 5731,
+                "MAE": 4.5431,
+                "RMSE": 6.2429,
+                "Bias": 0.0197,
+                "MeanProjection": 8.0727,
+                "MeanActual": 8.0531,
             },
             baseline["Metrics"],
         )
 
         expected = {
             VARIANT_SNAP: {
-                "Ridge": 16.0,
-                "Clip": 4.0,
+                "Ridge": 0,
+                "Clip": 4,
                 "Metrics": {
-                    "Count": 5724,
-                    "MAE": 4.5282,
-                    "RMSE": 6.2337,
-                    "Bias": 0.0211,
-                    "MeanProjection": 8.0809,
-                    "MeanActual": 8.0598,
+                    "Count": 5731,
+                    "MAE": 4.5277,
+                    "RMSE": 6.2327,
+                    "Bias": 0.0222,
+                    "MeanProjection": 8.0752,
+                    "MeanActual": 8.0531,
                 },
-                "AdjustedCount": 4910,
-                "MAEImprovementPoints": 0.0156,
-                "RMSEImprovementPoints": 0.0104,
+                "AdjustedCount": 4917,
+                "MAEImprovementPoints": 0.0154,
+                "RMSEImprovementPoints": 0.0102,
             },
             VARIANT_OPPORTUNITY: {
-                "Ridge": 16.0,
-                "Clip": 4.0,
+                "Ridge": 4,
+                "Clip": 4,
                 "Metrics": {
-                    "Count": 5724,
-                    "MAE": 4.5347,
-                    "RMSE": 6.2386,
-                    "Bias": 0.0137,
-                    "MeanProjection": 8.0735,
-                    "MeanActual": 8.0598,
+                    "Count": 5731,
+                    "MAE": 4.5341,
+                    "RMSE": 6.2375,
+                    "Bias": 0.0147,
+                    "MeanProjection": 8.0678,
+                    "MeanActual": 8.0531,
                 },
-                "AdjustedCount": 5337,
-                "MAEImprovementPoints": 0.0091,
-                "RMSEImprovementPoints": 0.0055,
+                "AdjustedCount": 5344,
+                "MAEImprovementPoints": 0.009,
+                "RMSEImprovementPoints": 0.0054,
             },
             VARIANT_COMBINED: {
-                "Ridge": 64.0,
-                "Clip": 4.0,
+                "Ridge": 64,
+                "Clip": 4,
                 "Metrics": {
-                    "Count": 5724,
-                    "MAE": 4.5308,
-                    "RMSE": 6.2289,
-                    "Bias": 0.029,
-                    "MeanProjection": 8.0888,
-                    "MeanActual": 8.0598,
+                    "Count": 5731,
+                    "MAE": 4.5305,
+                    "RMSE": 6.228,
+                    "Bias": 0.0302,
+                    "MeanProjection": 8.0833,
+                    "MeanActual": 8.0531,
                 },
-                "AdjustedCount": 5412,
-                "MAEImprovementPoints": 0.013,
-                "RMSEImprovementPoints": 0.0152,
+                "AdjustedCount": 5419,
+                "MAEImprovementPoints": 0.0126,
+                "RMSEImprovementPoints": 0.0149,
             },
         }
 
@@ -229,7 +230,7 @@ class ProjectionV4CalibrationTests(unittest.TestCase):
             self.assertEqual([2023, 2024], calibration["CalibrationSeasons"])
             self.assertEqual(expected[variant]["Ridge"], calibration["Selected"]["Ridge"])
             self.assertEqual(expected[variant]["Clip"], calibration["Selected"]["Clip"])
-            self.assertEqual(5724, holdout["PredictionCount"])
+            self.assertEqual(5731, holdout["PredictionCount"])
             self.assertEqual(expected[variant]["Metrics"], holdout["Metrics"])
             self.assertEqual(expected[variant]["AdjustedCount"], holdout["AdjustedCount"])
             self.assertEqual(

@@ -126,6 +126,7 @@ def _apply_v4(
 
 class ProjectionV4Team2025Backtest(unittest.TestCase):
     def test_v3_v4_team_end_score_on_actual_2025_starters(self) -> None:
+        # Updated exact score regression after canonical Cody PFR Source repair (#1236).
         scoring = _scoring_profile(ROOT, "nfl-reise", 2025)
 
         # Reproduce the exact accepted V4 calibration contract before evaluating
@@ -451,8 +452,8 @@ class ProjectionV4Team2025Backtest(unittest.TestCase):
                 "Count": 97,
                 "MAE": 24.4566,
                 "RMSE": 30.3207,
-                "Bias": 4.573,
-                "MeanProjection": 189.1637,
+                "Bias": 4.5729,
+                "MeanProjection": 189.1636,
                 "MeanActual": 184.5907,
             },
             metrics["V3"]["AllLeagueWeeks"],
@@ -460,10 +461,10 @@ class ProjectionV4Team2025Backtest(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 97,
-                "MAE": 24.5213,
-                "RMSE": 30.4666,
-                "Bias": 5.479,
-                "MeanProjection": 190.0697,
+                "MAE": 24.5219,
+                "RMSE": 30.4678,
+                "Bias": 5.4862,
+                "MeanProjection": 190.077,
                 "MeanActual": 184.5907,
             },
             metrics["V4A"]["AllLeagueWeeks"],
@@ -471,10 +472,10 @@ class ProjectionV4Team2025Backtest(unittest.TestCase):
         self.assertEqual(
             {
                 "Count": 97,
-                "MAE": 24.3641,
-                "RMSE": 30.2253,
-                "Bias": 5.0115,
-                "MeanProjection": 189.6022,
+                "MAE": 24.3642,
+                "RMSE": 30.2252,
+                "Bias": 5.011,
+                "MeanProjection": 189.6017,
                 "MeanActual": 184.5907,
             },
             metrics["V4C"]["AllLeagueWeeks"],
