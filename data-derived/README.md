@@ -9,6 +9,25 @@ It is deliberately separate from:
 - `public/data/**`: generated App delivery/read-model contracts;
 - `fantasy-management/**`: consumer-specific Operations, analysis and decisions.
 
+## Product inventory
+
+One row per product directory. `tools/tests/test_data_derived_inventory.py`
+(Fast) fails when a directory under `data-derived/` is missing here, has no
+contract under `.ai-context/manual/`, no existing materializer, or no entry in
+the read-only restore probe `tools/derived_clean_root_audit.py`.
+
+<!-- derived-products:start -->
+| Product directory | Contract | Materializer | Writer workflows |
+|---|---|---|---|
+| `nfl-games` | `.ai-context/manual/nfl-games.yaml` | `tools/nfl_games_materialize.py` | `sync-nfl-source-data.yml` |
+| `player-week-fantasy` | `.ai-context/manual/player-week-fantasy.yaml` | `tools/player_week_fantasy_materialize.py` | `league-live.yml`, `update-standings.yml` |
+| `team-week-performance` | `.ai-context/manual/team-week-performance.yaml` | `tools/team_week_performance_materialize.py` | `league-live.yml`, `update-standings.yml` |
+| `player-valuation` | `.ai-context/manual/player-valuation.yaml` | `tools/derived_data.py` | `update-players.yml` |
+| `league-transactions` | `.ai-context/manual/league-history.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
+| `league-drafts` | `.ai-context/manual/league-history.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
+| `league-standings` | `.ai-context/manual/league-standings.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-standings.yml` |
+<!-- derived-products:end -->
+
 ## Global NFL Game
 
 Consumer-neutral product (Issue #1077; daily Derived publication activated after the #1082 acceptance gate):
