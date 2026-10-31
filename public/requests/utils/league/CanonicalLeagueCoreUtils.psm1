@@ -268,7 +268,7 @@ function New-CanonicalLeagueCoreLookups {
 
 function Get-CanonicalCurrentLeagueRaw {
     param(
-        [string]$CanonicalLeagueID = "nfl-reise"
+        [string]$CanonicalLeagueID = (Get-Config).CanonicalLeagueID
     )
 
     $season = [string](Get-Config).LeagueYear
@@ -308,7 +308,7 @@ function Get-CanonicalCurrentLeagueRaw {
 
 function Get-CanonicalCurrentTeamsForLeague {
     param(
-        [string]$CanonicalLeagueID = "nfl-reise"
+        [string]$CanonicalLeagueID = (Get-Config).CanonicalLeagueID
     )
 
     $season = [string](Get-Config).LeagueYear
@@ -361,7 +361,7 @@ function Get-CanonicalCurrentTeamsForLeague {
 
 function Get-CanonicalCurrentLeagueCoreShadow {
     param(
-        [string]$CanonicalLeagueID = "nfl-reise"
+        [string]$CanonicalLeagueID = (Get-Config).CanonicalLeagueID
     )
 
     return [PSCustomObject][ordered]@{
@@ -372,7 +372,7 @@ function Get-CanonicalCurrentLeagueCoreShadow {
 
 function Get-CanonicalLeagueSeasonLeagues {
     param(
-        [string]$CanonicalLeagueID = "nfl-reise"
+        [string]$CanonicalLeagueID = (Get-Config).CanonicalLeagueID
     )
 
     $seasonsRoot = Join-Path (Get-DataSourceRoot -RepoRoot (Get-CanonicalLeagueCoreRepoRoot)) "leagues/$CanonicalLeagueID/seasons"

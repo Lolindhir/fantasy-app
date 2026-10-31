@@ -73,7 +73,7 @@ jobs:
           CHANGED_PATH: ${{ inputs.historical_changed_path }}
         run: |
           set -euo pipefail
-          args=(--league nfl-reise --mode "${MODE:-full}")
+          args=(--mode "${MODE:-full}")
           if [[ "${MODE:-full}" == "week" ]]; then
             [[ "${YEAR:-}" =~ ^[0-9]{4}$ && "${WEEK:-}" =~ ^[0-9]{1,2}$ ]] || {
               echo "Historical week mode requires valid season and week" >&2

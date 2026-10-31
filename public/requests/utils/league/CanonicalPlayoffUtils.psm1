@@ -209,7 +209,7 @@ function ConvertTo-CanonicalPlayoffLegacyBracket {
 
 function Get-CanonicalCurrentPlayoffs {
     param(
-        [string]$CanonicalLeagueID = "nfl-reise"
+        [string]$CanonicalLeagueID = (Get-Config).CanonicalLeagueID
     )
 
     $season = [string](Get-Config).LeagueYear

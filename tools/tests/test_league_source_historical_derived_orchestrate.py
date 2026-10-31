@@ -1,11 +1,13 @@
 """Bounded isolated historical Shared-Derived audit regression (#471)."""
 from __future__ import annotations
 
+import io
 import json
 import shutil
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -61,6 +63,20 @@ class HistoricalDerivedWorkflowSafetyTests(unittest.TestCase):
         self.assertEqual(text.count("if: ${{ !cancelled() && !inputs.historical_preflight }}"), 2)
         self.assertIn("contents: read", text)
         self.assertIn("persist-credentials: false", text)
+        self.assertIn("args=(--mode", text)
+        self.assertNotIn("--league nfl-reise", text)
+        self.assertIn("python3 tools/historical_derived_orchestrate.py", text)
+
+    def test_cli_defaults_to_source_discovery_without_a_fixed_league(self):
+        with patch.object(pipeline, "preflight", return_value={"Targets": []}) as audit:
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(pipeline.main(["--mode", "full"]), 0)
+            self.assertIsNone(audit.call_args.kwargs["league_id"])
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(pipeline.main(
+                    ["--league", "alpha", "--mode", "week", "--season", "2024", "--week", "1"]
+                ), 0)
+            self.assertEqual(audit.call_args.kwargs["league_id"], "alpha")
 
 
 class HistoricalDerivedIsolatedTests(unittest.TestCase):
