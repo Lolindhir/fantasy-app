@@ -764,7 +764,7 @@ playersReadModelFieldInventory:
     nflTeamAndAvailability:
       fields: [TeamID, TeamAbbr, IsFreeAgent, Status]
       layer: sourceFact
-      currentProducer: since #347 H1b canonical Sleeper snapshot Team/status via the team registry (inventory snapshot: Tank01 team/teamID/isFreeAgent; Sleeper status)
+      currentProducer: 'since #347 H1b canonical Sleeper snapshot Team/status via the team registry (inventory snapshot: Tank01 team/teamID/isFreeAgent; Sleeper status)'
       matrixKey: [nflWeeklyRosterMembership, nflFreeAgentAndAvailabilityStatus, sleeperPlayerPlatformFacts]
       targetOwner: Sleeper platform snapshot via the canonical team registry; free-agent definition decided in nflFreeAgentAndAvailabilityStatus (#347 H5)
       consumers:
@@ -842,7 +842,7 @@ playersReadModelFieldInventory:
     salary:
       fields: [Salary, SalaryProjected]
       layer: sharedDerived
-      currentProducer: salary-v1 (tools/derived_data_lib/models/salary/v1.py) in the PlayerValuation product; the Python Players read model copies the snapshot (#1226). Formula unchanged: Salary uses seasons -1..-3; SalaryProjected blends current season with -1/-2, mapped non-linearly to dollars.
+      currentProducer: 'salary-v1 (tools/derived_data_lib/models/salary/v1.py) in the PlayerValuation product; the Python Players read model copies the snapshot (#1226). Formula unchanged: Salary uses seasons -1..-3; SalaryProjected blends current season with -1/-2, mapped non-linearly to dollars.'
       matrixKey: fantasyLeagueSettings (league rule) plus fantasyPointsLeagueScoring (input)
       targetOwner: Shared Derived league rule; must not move into data-source/nfl/**
       consumers:
