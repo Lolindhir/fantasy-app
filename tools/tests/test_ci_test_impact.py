@@ -672,9 +672,9 @@ class InventoryTests(unittest.TestCase):
     def test_existing_uncovered_baseline_is_frozen_and_auditable(self):
         data = ci.read_inventory()
         report = ci.validate(ci.ROOT, data)
-        self.assertEqual(14, report["legacyUncovered"])
+        self.assertEqual(13, report["legacyUncovered"])
         self.assertEqual(0, report["explicitlyExceptedUncovered"])
-        self.assertEqual(14, report["currentlyNotInPr"])
+        self.assertEqual(13, report["currentlyNotInPr"])
         # Merely adding to the baseline in the manifest must not legitimize a gap.
         data["coveragePolicy"]["legacyUncoveredTests"].append("tools/tests/test_unreviewed.py")
         with self.assertRaisesRegex(ValueError, "Legacy uncovered-test baseline drift"):
@@ -708,7 +708,7 @@ class InventoryTests(unittest.TestCase):
             }
             counts = ci.validate(ci.ROOT, data)
             self.assertEqual(1, counts["explicitlyExceptedUncovered"])
-            self.assertEqual(15, counts["currentlyNotInPr"])
+            self.assertEqual(14, counts["currentlyNotInPr"])
             # A waiver for an already-covered test is stale and must fail.
             data["coveragePolicy"]["exceptions"]["tools/tests/test_ci_test_impact.py"] = {
                 "issue": "#1113",

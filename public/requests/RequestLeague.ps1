@@ -13,7 +13,6 @@ try {
     Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\LeagueWeekUtils.psm1" -ErrorAction Stop -Force
-    Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\league\PastSeasonsIndexUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
     Import-Module "$PSScriptRoot\utils\player\PlayerValuationUtils.psm1" -ErrorAction Stop -Force
@@ -288,9 +287,13 @@ try {
         LeagueIDPrevious        = $league.previous_league_id
     }
 
+    # Preserve the previous DecisionWindows semantic no-op comparison exactly.
     $decisionCompare = {
         param($oldDecisionWindows, $newDecisionWindows)
-        Test-DecisionWindowReadModelChanged -OldData $oldDecisionWindows -NewData $newDecisionWindows
+        if ($null -eq $oldDecisionWindows) { return $true }
+        $oldJson = $oldDecisionWindows | ConvertTo-Json -Depth 10 -Compress
+        $newJson = $newDecisionWindows | ConvertTo-Json -Depth 10 -Compress
+        return $oldJson -ne $newJson
     }
     Save-JsonFile -Type "DecisionWindows" -Data $decisionWindowsAsJson -CompareScript $decisionCompare -UpdateTimestamp
 
