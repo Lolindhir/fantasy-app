@@ -193,7 +193,7 @@ identityModel:
       source: data-source/nfl/identities/current-identity-adjudications.json
       documentation: data-source/nfl/identities/current-identity-adjudications.md
       provenancePrefix: manual.current-identity-adjudication
-      role: bounded-human-reviewed-current-provider-reassignment
+      role: bounded-human-reviewed-current-provider-resolution
       runtimeStatus: consumed-by-identity-builder
       rule: >
         Rare current-season provider identity gaps that remain unresolved after the
@@ -201,7 +201,11 @@ identityModel:
         versioned adjudication contract. A current adjudication targets one already
         existing durable CanonicalPlayerID, names one or more already existing
         source/provisional CanonicalPlayerIDs and enumerates exactly which provider
-        tokens may be reassigned for one NFL season. It never creates or renames a
+        tokens may be reassigned for one NFL season, except the specifically reviewed
+        confirmed-unowned-provider-token variant (#1236): this has no fabricated
+        source CanonicalPlayerID and can add precisely one previously unowned PFR
+        token, backed by at least two existing strong target anchors and explicit
+        independent evidence. Conflicting current or historical owners fail closed. It never creates or renames a
         CanonicalPlayerID, never bulk-merges two identity records, never turns
         display names into merge evidence and never rewrites raw provider evidence.
         Checkpoint 6Z.7 established the source contract and fail-closed validator;
@@ -244,15 +248,16 @@ identityModel:
           for as long as the upstream still makes it.
       requirements:
         - Status must be confirmed; unresolved review candidates do not belong in the canonical current-adjudication source.
-        - ResolutionKind is either current-provider-reassignment with ConflictPolicy reject-active-conflict, or upstream-claim-override with ConflictPolicy override-named-upstream-claim (see currentIdentityGapResolution.classes.wrongUpstreamClaim).
+        - ResolutionKind is current-provider-reassignment (reject-active-conflict), upstream-claim-override (override-named-upstream-claim), or confirmed-unowned-provider-token (reject-any-conflict, one PFR token only; Issue #1236).
         - Every decision requires a stable AdjudicationID, exact Season, DecisionAuthority, DecisionDate, rationale and non-empty evidence references.
-        - TargetCanonicalPlayerID and every SourceCanonicalPlayerID must already exist in the persisted canonical identity graph, and the target must not also be listed as a source.
+        - TargetCanonicalPlayerID and every listed SourceCanonicalPlayerID must already exist in the persisted canonical identity graph, and the target must not also be listed as a source. The unowned-token kind requires SourceCanonicalPlayerIDs=[] by definition.
         - ProviderAssignments enumerate the only Provider plus ExternalID tokens the decision may reassign; no unlisted provider value transfers implicitly.
         - A decision is active only for its exact observation season and must not silently carry into a later season.
         - For current-provider-reassignment, the target must not already carry a different active value for an assigned provider.
         - An assigned provider token must not be owned by an undeclared third CanonicalPlayerID.
         - A current-provider-reassignment must fail closed rather than override an active provider conflict, with one exception: a conflict whose parties are exactly the declared target and declared sources is the split the decision resolves (a persisted empty provisional record and the full record both claiming the token). Any third party in an active conflict for the token keeps it fail-closed. Otherwise only upstream-claim-override may resolve a conflict, and only the exact upstream claim it names.
-        - Productive materialization retains manual.current-identity-adjudication:<AdjudicationID> provenance on every moved provider claim and is replay-idempotent.
+        - Productive materialization retains manual.current-identity-adjudication:<AdjudicationID> provenance on each assigned provider claim, even when a PFR token was previously unowned, and is replay-idempotent.
+        - An unowned-PFR claim checks canonical primary and alias owners, active conflicts, current-season historical-mapping owners, and two distinct existing strong target provider anchors before attachment. No name-based or arbitrary missing-token inference is permitted.
         - Any future reversal or correction must be explicit and versioned; generated canonical identity or provider-mapping output must never be hand-edited as the source of truth.
     currentIdentityGapResolution:
       status: accepted-partially-implemented

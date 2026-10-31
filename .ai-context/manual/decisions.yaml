@@ -2683,3 +2683,32 @@ decisions:
         - No independent monolithic command chain remains; test-inventory and
           job-wiring regressions must stay strict when coverage evolves.
 
+
+  - id: ADR-078
+    title: Human-reviewed unowned PFR token resolution in the canonical identity builder
+    status: accepted
+    amends: [ADR-037, ADR-041, ADR-055]
+    context: >
+      Issue #1236 found that PFR snap-count token WhitCo05 was unowned although
+      independent PFR/PFF evidence corroborates the durable GSIS/PFF canonical Cody
+      White identity. Existing current adjudications only transfer a token from
+      another canonical owner and cannot assign a genuinely unowned token.
+    decision: >
+      Extend the existing current-identity-adjudication source with the bounded
+      confirmed-unowned-provider-token kind, initially restricted to one PFR token
+      per decision and season. Require two distinct existing GSIS/ESPN/PFF target
+      anchors and independently reviewable evidence; reject any third-party active,
+      alias or overlapping historical mapping ownership or current conflict.
+      The existing builder attaches only the declared PFR token to the durable
+      player, preserves normal provenance and fails closed on disagreement.
+      Replay is idempotent, no name-based matching or generated data edits are allowed.
+    consequences:
+      positive:
+        - The normal Source pipeline can resolve missing PFR snap identities
+          without player-specific code exceptions or fabricated source identities.
+        - Conflicts, historical ownership and unverified anchors cannot silently
+          authorize a player merge or alter another person's ID.
+      negative:
+        - Confirmed hand-reviewed evidence is required for this rare case.
+        - Dependent snap partitions and derived player valuation must be
+          rematerialized and impact-audited before publication.

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from tools.nfl_source_data_lib.canonical_identity import identity_lookup
@@ -104,6 +105,102 @@ class HistoricalIdentityRepairTests(unittest.TestCase):
             )
             self.assertTrue(preserved)
             self.assertEqual(existing, effective)
+
+    def test_frozen_snap_counts_allow_identity_only_enrichment_and_replay(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "2024-01.json"
+            dataset = replace(stats_dataset(root), id="nflverse.snap-counts", kind="weekly-snap-counts")
+            existing = {
+                "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+                "Season": 2024,
+                "Week": 1,
+                "SourceDataset": "nflverse.snap-counts",
+                "Finalized": True,
+                "Records": [
+                    {
+                        "CanonicalPlayerID": None,
+                        "SourceIDs": {"PFR": "WhitCo05"},
+                        "GameID": "2024_01_LV_LAC",
+                        "OffenseSnaps": 11,
+                        "SpecialTeamsSnaps": 14,
+                    },
+                    {
+                        "CanonicalPlayerID": "NFLP-already",
+                        "SourceIDs": {"PFR": "Other01"},
+                        "GameID": "2024_01_LV_LAC",
+                        "OffenseSnaps": 55,
+                        "SpecialTeamsSnaps": 0,
+                    },
+                ],
+            }
+            candidate = json.loads(json.dumps(existing))
+            candidate["Records"][0]["CanonicalPlayerID"] = "NFLP-cody"
+            path.write_text(json.dumps(existing), encoding="utf-8")
+            effective, preserved = effective_partition_payload(
+                dataset, path=path, candidate=candidate,
+                partition_season=2024, observation_season=2026, force=False,
+            )
+            self.assertFalse(preserved)
+            self.assertEqual(candidate, effective)
+            # A second identical materialization is a frozen no-op.
+            path.write_text(json.dumps(effective), encoding="utf-8")
+            same, preserved = effective_partition_payload(
+                dataset, path=path, candidate=candidate,
+                partition_season=2024, observation_season=2026, force=False,
+            )
+            self.assertTrue(preserved)
+            self.assertEqual(candidate, same)
+
+    def test_frozen_snap_counts_reject_semantic_changes_and_identity_reassignment(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / "2024-01.json"
+            dataset = replace(stats_dataset(root), id="nflverse.snap-counts", kind="weekly-snap-counts")
+            existing = {
+                "SchemaVersion": CANONICAL_SCHEMA_VERSION,
+                "Season": 2024,
+                "Week": 1,
+                "SourceDataset": "nflverse.snap-counts",
+                "Finalized": True,
+                "Records": [{
+                    "CanonicalPlayerID": None,
+                    "SourceIDs": {"PFR": "WhitCo05"},
+                    "GameID": "2024_01_LV_LAC",
+                    "OffenseSnaps": 11,
+                    "SpecialTeamsSnaps": 14,
+                }],
+            }
+            path.write_text(json.dumps(existing), encoding="utf-8")
+            changes = [
+                {"OffenseSnaps": 12},
+                {"SpecialTeamsSnaps": 15},
+                {"SourceIDs": {"PFR": "Other01"}},
+                {"GameID": "2024_02_LV_LAC"},
+            ]
+            for mutation in changes:
+                with self.subTest(mutation=mutation):
+                    candidate = json.loads(json.dumps(existing))
+                    candidate["Records"][0].update(mutation)
+                    candidate["Records"][0]["CanonicalPlayerID"] = "NFLP-cody"
+                    effective, preserved = effective_partition_payload(
+                        dataset, path=path, candidate=candidate,
+                        partition_season=2024, observation_season=2026, force=False,
+                    )
+                    self.assertTrue(preserved)
+                    self.assertEqual(existing, effective)
+
+            assigned = json.loads(json.dumps(existing))
+            assigned["Records"][0]["CanonicalPlayerID"] = "NFLP-already"
+            path.write_text(json.dumps(assigned), encoding="utf-8")
+            candidate = json.loads(json.dumps(assigned))
+            candidate["Records"][0]["CanonicalPlayerID"] = "NFLP-cody"
+            effective, preserved = effective_partition_payload(
+                dataset, path=path, candidate=candidate,
+                partition_season=2024, observation_season=2026, force=False,
+            )
+            self.assertTrue(preserved)
+            self.assertEqual(assigned, effective)
 
     def test_verified_legacy_stat_alias_resolves_through_existing_provider_bridge(self) -> None:
         canonical = [

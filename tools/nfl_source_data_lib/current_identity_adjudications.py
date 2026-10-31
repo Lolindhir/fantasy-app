@@ -10,9 +10,11 @@ _ADJUDICATION_PATH = Path(DATA_SOURCE_ROOT) / "nfl/identities/current-identity-a
 _SCHEMA_VERSION = 1
 _REASSIGNMENT_KIND = "current-provider-reassignment"
 _OVERRIDE_KIND = "upstream-claim-override"
+_UNOWNED_KIND = "confirmed-unowned-provider-token"
 _CONFLICT_POLICY_BY_KIND = {
     _REASSIGNMENT_KIND: "reject-active-conflict",
     _OVERRIDE_KIND: "override-named-upstream-claim",
+    _UNOWNED_KIND: "reject-any-conflict",
 }
 _STRONG_ANCHOR_PROVIDERS = frozenset({"GSIS", "ESPN", "PFR", "PFF"})
 
@@ -162,6 +164,35 @@ def _validate_upstream_claim_override(
     }
 
 
+def _validate_unowned_provider_token(item: dict[str, Any], *, context: str,
+                                     assignments: list[dict[str, str]]) -> dict[str, Any]:
+    """Explicitly reviewed *unowned* PFR ID, never a name-derived joining rule.
+
+    Require two different established strong anchors of the target plus reviewable
+    external provenance. Neither a conflicting claim nor an already owned token
+    may be overridden by this resolution kind.
+    """
+    if len(assignments) != 1 or assignments[0]["Provider"] != "PFR":
+        raise ValueError(f"{context}.ProviderAssignments must contain exactly one PFR token")
+    anchors = item.get("IndependentAnchors")
+    if not isinstance(anchors, list) or len(anchors) < 2:
+        raise ValueError(f"{context}.IndependentAnchors requires two strong target anchors")
+    normalized: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for index, anchor in enumerate(anchors):
+        place = f"{context}.IndependentAnchors[{index}]"
+        if not isinstance(anchor, dict):
+            raise ValueError(f"{place} must be an object")
+        provider = _required_text(anchor, "Provider", context=place)
+        if provider not in {"GSIS", "ESPN", "PFF"} or provider in seen:
+            raise ValueError(f"{place}.Provider must be a distinct GSIS/ESPN/PFF anchor")
+        seen.add(provider)
+        external = _required_text(anchor, "ExternalID", context=place)
+        _required_text(anchor, "Summary", context=place)
+        normalized.append({"Provider": provider, "ExternalID": external})
+    return {"IndependentAnchors": sorted(normalized, key=lambda a: a["Provider"])}
+
+
 def load_current_identity_adjudications(
     repo_root: Path,
     known_canonical_ids: set[str],
@@ -243,12 +274,17 @@ def load_current_identity_adjudications(
                 f"player: {target_id}"
             )
 
-        source_ids = _required_canonical_ids(
-            item,
-            "SourceCanonicalPlayerIDs",
-            context=context,
-            known_canonical_ids=known_canonical_ids,
-        )
+        if resolution_kind == _UNOWNED_KIND:
+            source_ids = item.get("SourceCanonicalPlayerIDs")
+            if source_ids != []:
+                raise ValueError(
+                    f"{context}.SourceCanonicalPlayerIDs must be [] for a formerly unowned token"
+                )
+        else:
+            source_ids = _required_canonical_ids(
+                item, "SourceCanonicalPlayerIDs", context=context,
+                known_canonical_ids=known_canonical_ids,
+            )
         if target_id in source_ids:
             raise ValueError(
                 f"{context}.TargetCanonicalPlayerID must not also appear in "
@@ -303,6 +339,10 @@ def load_current_identity_adjudications(
                 assignments=normalized_assignments,
                 overridden_claims=overridden_claims,
             )
+        elif resolution_kind == _UNOWNED_KIND:
+            override_fields = _validate_unowned_provider_token(
+                item, context=context, assignments=normalized_assignments
+            )
 
         evidence = item.get("Evidence")
         if not isinstance(evidence, list) or not evidence:
@@ -345,6 +385,7 @@ def validate_current_identity_adjudications_against_state(
     canonical_players: list[dict[str, Any]],
     mapping_conflicts: list[dict[str, Any]],
     observation_season: int,
+    mapping_claims: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, str]]:
     """Fail closed if a proposed current reassignment contradicts active identity state.
 
@@ -429,7 +470,41 @@ def validate_current_identity_adjudications_against_state(
             for provider, values in (target.get("IDAliases") or {}).items()
         }
 
-        if adjudication.get("ResolutionKind") == _OVERRIDE_KIND:
+        if adjudication.get("ResolutionKind") == _UNOWNED_KIND:
+            assignment = adjudication["ProviderAssignments"][0]
+            token = (str(assignment["Provider"]), str(assignment["ExternalID"]))
+            if token in active_conflict_tokens:
+                raise ValueError(
+                    f"Current identity adjudication {adjudication_id} cannot assign conflicted "
+                    f"previously unowned token: {token}"
+                )
+            owners = token_owners.get(token, set())
+            if owners - {target_id}:
+                raise ValueError(
+                    f"Current identity adjudication {adjudication_id} token is not unowned: "
+                    f"{sorted(owners - {target_id})}"
+                )
+            for claim in mapping_claims or []:
+                if (str(claim.get("Provider")), str(claim.get("ExternalID"))) != token:
+                    continue
+                first = int(claim.get("FirstObservedSeason") or observation_season)
+                last = int(claim.get("LastObservedSeason") or first)
+                if first <= observation_season <= last and str(claim.get("CanonicalPlayerID")) != target_id:
+                    raise ValueError(
+                        f"Current identity adjudication {adjudication_id} conflicts with "
+                        f"historical mapping owner: {claim.get('CanonicalPlayerID')}"
+                    )
+            for anchor in adjudication["IndependentAnchors"]:
+                provider = str(anchor["Provider"])
+                external = str(anchor["ExternalID"])
+                if external not in ({target_ids.get(provider)} | target_aliases.get(provider, set())):
+                    raise ValueError(
+                        f"Current identity adjudication {adjudication_id} missing verified "
+                        f"target anchor {provider}/{external}"
+                    )
+            statuses.append({"AdjudicationID": adjudication_id, "Status": "active"})
+            # The general target-values and undeclared-owner checks run below.
+        elif adjudication.get("ResolutionKind") == _OVERRIDE_KIND:
             statuses.append(
                 {
                     "AdjudicationID": adjudication_id,
@@ -447,7 +522,8 @@ def validate_current_identity_adjudications_against_state(
             )
             continue
 
-        statuses.append({"AdjudicationID": adjudication_id, "Status": "active"})
+        if adjudication.get("ResolutionKind") != _UNOWNED_KIND:
+            statuses.append({"AdjudicationID": adjudication_id, "Status": "active"})
         for assignment in adjudication["ProviderAssignments"]:
             provider = str(assignment["Provider"])
             external_id = str(assignment["ExternalID"])

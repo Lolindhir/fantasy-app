@@ -30,13 +30,14 @@ def _frozen_identity_only_enrichment(
 ) -> bool:
     """Allow null -> CanonicalPlayerID enrichment without reopening frozen facts.
 
-    Applies to player stats and NFL weekly rosters only. A later identity bridge
-    may repair a frozen partition only when every non-identity semantic field is
-    identical and no previously resolved ID changes or disappears.
+    Applies to player stats, NFL weekly rosters, and snap counts. A verified
+    provider identity bridge may repair a frozen partition only when every
+    non-identity semantic field is identical and no previously resolved ID
+    changes or disappears. Snap-count facts never change through this path.
     """
 
     if (candidate.get("SourceDataset") not in {
-        "nflverse.player-stats", "nflverse.weekly-rosters",
+        "nflverse.player-stats", "nflverse.weekly-rosters", "nflverse.snap-counts",
     } or existing.get("SourceDataset") != candidate.get("SourceDataset")):
         return False
     existing_records = existing.get("Records")
