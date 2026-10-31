@@ -23,3 +23,4 @@ Archiv für 2026:
 
 Frühere Dateilinks im Fantasy-Management-Ordner werden nur noch als kurze Verweise erhalten, ohne doppelte Pflege.
 - [Sleeper-Projections / Availability / Shadow-Test – archiviertes Audit (pausiert)](player-week-fantasy/2026/2026-10-31-sleeper-projections-availability-shadow-audit.md)
+- [Team-Opportunity / Rollenstabilität – ursprüngliches Research-Audit (archiviert)](player-week-fantasy/2026/2026-10-31-team-opportunity-role-stability-research-audit.md)
