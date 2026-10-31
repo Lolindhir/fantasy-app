@@ -158,7 +158,13 @@ Assert-True -Condition (-not $canonicalLeagueCoreUtils.Contains("Get-SleeperRost
 Assert-True -Condition (-not $canonicalLeagueCoreUtils.Contains("Invoke-RestMethod")) -Message "Canonical League Core shadow performs a direct HTTP read."
 
 $publishedLeague = Get-Content (Get-Config).LeagueFile -Raw | ConvertFrom-Json
-$canonicalLeagueCoreShadow = Get-CanonicalCurrentLeagueCoreShadow -CanonicalLeagueID "nfl-reise"
+$canonicalLeagueId = [string](Get-Config).CanonicalLeagueID
+$canonicalLeagueCoreShadow = Get-CanonicalCurrentLeagueCoreShadow -CanonicalLeagueID $canonicalLeagueId
+# Implicit metadata default must reproduce every explicit canonical League Core input.
+Assert-StandingsJsonEqual -Actual (Get-CanonicalCurrentLeagueCoreShadow) -Expected $canonicalLeagueCoreShadow -Message "Default League Core shadow mismatch."
+Assert-StandingsJsonEqual -Actual (Get-CanonicalCurrentLeagueRaw) -Expected $canonicalLeagueCoreShadow.League -Message "Default current League raw mismatch."
+Assert-StandingsJsonEqual -Actual (Get-CanonicalCurrentTeamsForLeague) -Expected $canonicalLeagueCoreShadow.Teams -Message "Default current teams mismatch."
+Assert-StandingsJsonEqual -Actual (Get-CanonicalLeagueSeasonLeagues) -Expected (Get-CanonicalLeagueSeasonLeagues -CanonicalLeagueID $canonicalLeagueId) -Message "Default historical League seasons mismatch."
 
 $canonicalPlayoffUtils = Get-Content "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -Raw
 Assert-True -Condition (-not $canonicalPlayoffUtils.Contains("Get-SleeperWinnersBracket")) -Message "Canonical Playoff shadow performs a live Sleeper winners-bracket read."
@@ -166,7 +172,8 @@ Assert-True -Condition (-not $canonicalPlayoffUtils.Contains("Get-SleeperLosersB
 Assert-True -Condition (-not $canonicalPlayoffUtils.Contains("Get-Playoffs")) -Message "Canonical Playoff shadow delegates to the legacy live Playoff adapter."
 Assert-True -Condition (-not $canonicalPlayoffUtils.Contains("Invoke-RestMethod")) -Message "Canonical Playoff shadow performs a direct HTTP read."
 
-$canonicalPlayoffs = Get-CanonicalCurrentPlayoffs -CanonicalLeagueID "nfl-reise"
+$canonicalPlayoffs = Get-CanonicalCurrentPlayoffs -CanonicalLeagueID $canonicalLeagueId
+Assert-StandingsJsonEqual -Actual (Get-CanonicalCurrentPlayoffs) -Expected $canonicalPlayoffs -Message "Default current Playoff mismatch."
 Assert-StandingsJsonEqual -Actual $canonicalPlayoffs -Expected $publishedLeague.Playoffs -Message "Canonical current Playoff shadow differs from published League.json::Playoffs."
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
