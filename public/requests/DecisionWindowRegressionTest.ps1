@@ -34,17 +34,20 @@ try {
 
     Save-JsonFile -TargetFile $tempFile -Type "DecisionWindows" -Data $model -CompareScript $decisionCompare -UpdateTimestamp
     if ((Get-Content -Path $tempFile -Raw) -cne $first) { throw "Unchanged DecisionWindows rewrote JSON." }
-    if ([string](Get-Content -Path $tempTimestampFile -Raw | ConvertFrom-Json).DecisionWindows -ne "2000-01-01T00:00:00Z") {
+    $unchangedTimestamp = (Get-Content -Path $tempTimestampFile -Raw | ConvertFrom-Json).DecisionWindows
+    if ([string]$unchangedTimestamp -ne "2000-01-01T00:00:00Z") {
         throw "Unchanged DecisionWindows updated its timestamp."
     }
 
     $changed = $model | ConvertTo-Json -Depth 10 | ConvertFrom-Json
     $changed.DecisionWindows[0].DecisionWindowID = "2030-09-08T17:20:00Z"
     Save-JsonFile -TargetFile $tempFile -Type "DecisionWindows" -Data $changed -CompareScript $decisionCompare -UpdateTimestamp
-    if ([string](Get-Content -Path $tempFile -Raw | ConvertFrom-Json).DecisionWindows[0].DecisionWindowID -ne "2030-09-08T17:20:00Z") {
+    $updatedWindow = (Get-Content -Path $tempFile -Raw | ConvertFrom-Json).DecisionWindows[0].DecisionWindowID
+    if ([string]$updatedWindow -ne "2030-09-08T17:20:00Z") {
         throw "Changed DecisionWindows did not update JSON."
     }
-    if ([string](Get-Content -Path $tempTimestampFile -Raw | ConvertFrom-Json).DecisionWindows -eq "2000-01-01T00:00:00Z") {
+    $updatedTimestamp = (Get-Content -Path $tempTimestampFile -Raw | ConvertFrom-Json).DecisionWindows
+    if ([string]$updatedTimestamp -eq "2000-01-01T00:00:00Z") {
         throw "Changed DecisionWindows did not update its timestamp."
     }
 }
