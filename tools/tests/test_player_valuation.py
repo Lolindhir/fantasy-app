@@ -600,6 +600,61 @@ class MaterializerIntegrationTests(unittest.TestCase):
             "UnownedOffenseByYear": {str(k): v for k, v in sorted(simulated_snap_weeks.items())},
             "Seasons": scenario,
         }
+        # One-time read-only full Source-builder proof, on the exact PR code.
+        # Rebuild canonical identities and snap partitions in memory; the only
+        # output is CI-log evidence, never repository writes. The temporary
+        # heavy diagnostic is removed after its evidence is recorded (#1236).
+        from nfl_source_data_lib.common import load_registry
+        from nfl_source_data_lib.identity import build_identities
+        from nfl_source_data_lib.phase1 import _build_snap_counts
+
+        registry = load_registry(REPO_ROOT)
+        datasets = {item.id: item for item in registry if item.materialize}
+        canonical, _, source_conflicts, claims, _ = build_identities(
+            REPO_ROOT, datasets, self.season
+        )
+        matched = [row for row in canonical if row["CanonicalPlayerID"] == target_id]
+        self.assertEqual(1, len(matched))
+        cody_ids = matched[0]["IDs"]
+        self.assertEqual(pfr_token, cody_ids.get("PFR"))
+        pfr_claims = [row for row in claims
+                      if row["Provider"] == "PFR" and row["ExternalID"] == pfr_token]
+        self.assertEqual(1, len(pfr_claims))
+        self.assertEqual(target_id, pfr_claims[0]["CanonicalPlayerID"])
+        self.assertIn("manual.current-identity-adjudication:2026-pfr-whitco05-cody-white",
+                      pfr_claims[0]["Sources"])
+        self.assertFalse(any(row.get("Provider") == "PFR" and
+                             row.get("ExternalID") == pfr_token
+                             for row in source_conflicts))
+
+        snap_dataset = datasets["nflverse.snap-counts"]
+        snap_outputs, source_audit, _ = _build_snap_counts(
+            REPO_ROOT, snap_dataset, canonical, self.season, force=True
+        )
+        actual_by_season: dict[int, dict[int, int]] = {}
+        matched_source_rows = 0
+        for output_path, payload in snap_outputs:
+            for item in payload["Records"]:
+                if (item.get("SourceIDs") or {}).get("PFR") != pfr_token:
+                    continue
+                self.assertEqual(target_id, item.get("CanonicalPlayerID"))
+                matched_source_rows += 1
+                if item.get("GameType", "REG") == "REG":
+                    count = int(item.get("OffenseSnaps") or 0)
+                    if count > 0:
+                        season_key = int(payload["Season"])
+                        week_key = int(item["Week"])
+                        by_week = actual_by_season.setdefault(season_key, {})
+                        by_week[week_key] = by_week.get(week_key, 0) + count
+        self.assertGreater(matched_source_rows, 0)
+        for year, weeks in simulated_snap_weeks.items():
+            self.assertEqual(weeks, actual_by_season.get(year, {}))
+        report["SourceRebuildProof"] = {
+            "ReadOnly": True, "CanonicalPlayerID": target_id,
+            "PFR": pfr_token, "MatchedPFRRows": matched_source_rows,
+            "ResolvedSourceIdentityRows": source_audit["resolvedIdentityCount"],
+            "ExpectedOffenseRowsMatchRegenerated": True
+        }
         print("IMPACT_1236_JSON=" + json.dumps(report, ensure_ascii=False, sort_keys=True))
         self.assertEqual(sorted(set(completed + [self.season])),
                          [x["Season"] for x in report["Seasons"]])
