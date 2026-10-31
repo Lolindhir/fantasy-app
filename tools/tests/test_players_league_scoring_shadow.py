@@ -25,6 +25,24 @@ def _player(pid: str, position: str, avg_potential: float, avg_game: float, prev
 
 
 class PureFunctionTests(unittest.TestCase):
+    def test_fantasy_relevant_games_require_offense_or_nonzero_points_for_non_k(self) -> None:
+        weeks = {1: {"points": 10.0, "snaps": 50.0, "kick_attempts": 0.0},
+                 2: {"points": 0.0, "snaps": 0.0, "kick_attempts": 0.0},
+                 3: {"points": 2.0, "snaps": 0.0, "kick_attempts": 0.0},
+                 4: {"points": -2.0, "snaps": 0.0, "kick_attempts": 0.0},
+                 5: {"points": 0.0, "snaps": 12.0, "kick_attempts": 0.0},
+                 6: {"points": 99.0, "snaps": 0.0, "kick_attempts": 0.0}}
+        self.assertEqual([1, 3, 4, 5], sorted(scoring_export.played_weeks(weeks, "WR", 5)))
+        self.assertEqual(10.0, scoring_export.season_view(weeks, "WR", 5, 5)["Total"])
+        self.assertEqual(4, scoring_export.season_view(weeks, "WR", 5, 5)["GamesPlayed"])
+        self.assertTrue(scoring_export.exportable_historical_week(weeks[3]))
+        self.assertTrue(scoring_export.exportable_historical_week(weeks[4]))
+        self.assertFalse(scoring_export.exportable_historical_week(weeks[2]))
+        self.assertTrue(scoring_export.exportable_historical_week(weeks[5]))
+        kicker = {1: {"points": 3.0, "snaps": 0.0, "kick_attempts": 1.0},
+                  2: {"points": 8.0, "snaps": 0.0, "kick_attempts": 0.0}}
+        self.assertEqual([1], sorted(scoring_export.played_weeks(kicker, "K", 2)))
+
     def test_net_round_rounds_half_to_even_on_the_scaled_value(self) -> None:
         # 22.8 / 128 = 0.178125; .NET [math]::Round(x, 5) scales first and rounds half to even.
         self.assertEqual(0.17812, shadow.net_round(22.8 / 128, 5))

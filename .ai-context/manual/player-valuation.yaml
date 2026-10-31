@@ -64,11 +64,17 @@ identity:
     no active Sleeper mapping exists for that season (completed seasons).
 
 contract:
-  version: 2
-  versionHistory: ContractVersion 2 (Issue #1226 step 3a, ADR-076) adds SeasonValues and FormGames to every player row, additively.
+  version: 3
+  versionHistory: >-
+    ContractVersion 2 (Issue #1226 step 3a, ADR-076) adds SeasonValues and FormGames.
+    ContractVersion 3 (Issue #1236) defines GamesPlayed as fantasy-relevant games
+    (non-K offense snaps or nonzero league-scored actual, including negative/ST points).
+    Scoreless ST-only appearances are excluded; K remains attempt-based. Current
+    and historical AvgGame, Inputs, points and salaries use the same semantics.
+    Old v2 snapshots preserve their prior inputs; salary-v1 is not modified.
   rootShape: |
     {
-      "ContractVersion": 2,
+      "ContractVersion": 3,
       "CanonicalLeagueID": "nfl-reise",
       "Season": 2026,
       "AsOfFinalScoredWeek": 4,
@@ -116,6 +122,7 @@ contract:
     - FormGames lists the GameIDs of the last four scored games (final, within the league weeks, week up to AsOfFinalScoredWeek), newest first; it is the basis of a later Form grading (grading-v2) and carries no grade itself.
     - An identity-hold row takes SeasonValues from the held snapshot row (null when none is known) and has empty FormGames; it has no GameHistory (Issue #1226, Q3).
     - Inputs make every row self-describing so models can be re-run and audited without re-reading data-source; they are copies of the league-scored values and carry no extra rounding.
+    - ContractVersion 3: GamesPlayed is fantasy-relevant games, not literal NFL appearances. For non-K it counts finalized regular-season offense-snap games (including zero-point) plus scored games (positive or negative, including ST-only), once per player-week. Scoreless ST-only games do not count. K uses kick attempts. The same game denominator feeds current and historical salary-v1 AvgGame and FantasyPointsAvgGame. SnapsTotal remains offensive for non-K and is not relabeled. No extra games counter is introduced.
     - Players are sorted by row key (ordinal) and keys inside objects have a fixed order, so equal content is byte-equal.
     - No wall-clock timestamp, run ID or commit hash appears in the content (semantic no-op).
   missingVersusZero: >
@@ -130,8 +137,9 @@ inputs:
       League-scored weekly points of the snapshot season (weeks <= AsOfFinalScoredWeek)
       and the three previous seasons from canonical player-stats and snap-counts with
       the canonical ScoringSettings of the snapshot season, applied to all four seasons as
-      RequestPlayers.ps1 does today. AvgGame is points per played game, AvgPotentialGame
-      is points per potential game. Current season: unrounded point sum, averages rounded
+      RequestPlayers.ps1 does today. Under ContractVersion 3, AvgGame is points
+      per fantasy-relevant game (non-K offense snaps or any scored points; K attempts),
+      and AvgPotentialGame is points per potential game. Current season: unrounded point sum, averages rounded
       half-to-even to two decimals, potential = as-of week minus one when the team bye week
       is <= the as-of week (bye 0 without a team, legacy parity). Previous seasons: total
       rounded to two decimals first, then the averages, potential = LastLeagueWeek - 1 of
