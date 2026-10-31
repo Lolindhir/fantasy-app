@@ -517,6 +517,89 @@ class MaterializerIntegrationTests(unittest.TestCase):
                         "ChangedFantasyPointsTotal": diffs.get(f"SeasonMinus{i}.Total", 0)}
                     for i in (1, 2, 3)
                 }
+        # Scenario only: faithfully attach the explicitly adjudicated PFR token's
+        # presently unowned offensive snaps in memory, without editing canonical
+        # identities or snap partitions. Shows Source correction impact separately
+        # from the fantasy-eligible scoring policy.
+        from dataclasses import replace
+
+        pfr_token = "WhitCo05"
+        target_id = "NFLP-caf7c3d6786fcd72e704"
+        simulated_snap_weeks: dict[int, dict[int, int]] = {}
+        for source_season in range(min(completed + [self.season]) - 3, self.season + 1):
+            folder = REPO_ROOT / DATA_SOURCE_ROOT / "nfl" / "snap-counts" / str(source_season)
+            affected: dict[int, int] = {}
+            if folder.is_dir():
+                for week_path in sorted(folder.glob("*.json")):
+                    for event in json.loads(week_path.read_text(encoding="utf-8"))["Records"]:
+                        if (event.get("CanonicalPlayerID") is None and
+                                (event.get("SourceIDs") or {}).get("PFR") == pfr_token and
+                                event.get("GameType", "REG") == "REG"):
+                            snaps = int(event.get("OffenseSnaps") or 0)
+                            if snaps > 0:
+                                week = int(event["Week"])
+                                affected[week] = affected.get(week, 0) + snaps
+            if affected:
+                simulated_snap_weeks[source_season] = affected
+
+        scenario = []
+        for season in sorted(set(completed + [self.season])):
+            before_path = sorted((self.out_root / "player-valuation" /
+                                 self.league_id / str(season)).glob("week-*.json"))[-1]
+            before = json.loads(before_path.read_text(encoding="utf-8"))
+            actual_source = sources.load_season_source(REPO_ROOT, self.league_id, season, self.manifest)
+            players = []
+            extra_weeks = []
+            for player in actual_source.players:
+                if player.canonical_id != target_id:
+                    players.append(player)
+                    continue
+                copied = {year: {week: dict(row) for week, row in weeks.items()}
+                          for year, weeks in player.weeks.items()}
+                for year, missing in simulated_snap_weeks.items():
+                    if year < season - 3 or year > season:
+                        continue
+                    for week, count in missing.items():
+                        rows = copied.setdefault(year, {})
+                        original = rows.get(week)
+                        if original is None:
+                            original = {"Points": 0.0, "Snaps": 0, "KickAttempts": 0,
+                                        "Attempts": 0, "TdPass": 0, "TdRec": 0, "TdRush": 0}
+                        if original["Snaps"] == 0:
+                            extra_weeks.append((year, week))
+                        rows[week] = {**original, "Snaps": original["Snaps"] + count}
+                players.append(replace(player, weeks=copied))
+            latest = before["AsOfFinalScoredWeek"]
+            ctx = pv.SnapshotContext(
+                league_id=self.league_id, season=season,
+                as_of_final_scored_week=latest,
+                scoring_profile=actual_source.scoring_profile,
+                model_ids=before["Models"],
+                team_count=actual_source.team_count,
+                last_league_week=actual_source.last_league_week,
+                bye_weeks=actual_source.bye_weeks,
+            )
+            lookup = derived_data.ExistingSnapshots(self.out_root, self.league_id, season)
+            after = pv.build_snapshot(ctx, players, lookup.lookup_for(latest),
+                                      lookup.lookup_for(latest, "SeasonValues"))
+            old_cody = next(x for x in before["Players"] if x.get("CanonicalPlayerID") == target_id)
+            new_cody = next(x for x in after["Players"] if x.get("CanonicalPlayerID") == target_id)
+            scenario.append({
+                "Season": season, "AsOfWeek": latest,
+                "AdditionalOffensiveSnapWeeks": sorted([list(x) for x in extra_weeks if x[0] <= season]),
+                "CodyCurrentGamesPlayedBefore": old_cody["SeasonValues"]["Current"]["GamesPlayed"],
+                "CodyCurrentGamesPlayedAfter": new_cody["SeasonValues"]["Current"]["GamesPlayed"],
+                "CodySalaryDelta": new_cody["Salary"] - old_cody["Salary"],
+                "CodySalaryProjectedDelta": new_cody["SalaryProjected"] - old_cody["SalaryProjected"],
+                "SalaryCapDelta": after["League"]["SalaryCap"] - before["League"]["SalaryCap"],
+                "SalaryCapProjectedDelta": after["League"]["SalaryCapProjected"] -
+                                           before["League"]["SalaryCapProjected"]
+            })
+        report["PFRCorrectionScenario"] = {
+            "Basis": "Existing unresolved PFR snap rows, score identity unchanged, in-memory only",
+            "UnownedOffenseByYear": {str(k): v for k, v in sorted(simulated_snap_weeks.items())},
+            "Seasons": scenario,
+        }
         print("IMPACT_1236_JSON=" + json.dumps(report, ensure_ascii=False, sort_keys=True))
         self.assertEqual(sorted(set(completed + [self.season])),
                          [x["Season"] for x in report["Seasons"]])
