@@ -331,8 +331,10 @@ def serialize_players(players: Sequence[Mapping[str, Any]]) -> str:
 
 # --- Canonical loading ---------------------------------------------------------------------------------------------
 
-def load_inputs(repo_root: Path, league_id: str, season: int) -> ReadModelInputs:
-    """Read the canonical facts and the player-valuation snapshot of the StatsFinalWeek (fail closed)."""
+def load_inputs(repo_root: Path, league_id: str, season: int, derived_root: Path | None = None) -> ReadModelInputs:
+    """Read the canonical facts and the player-valuation snapshot of the StatsFinalWeek (fail closed).
+
+    ``derived_root`` replaces the repository data-derived root, e.g. a scratch directory of the shadow comparison."""
     import sys
 
     tools = Path(__file__).resolve().parents[1]
@@ -353,7 +355,7 @@ def load_inputs(repo_root: Path, league_id: str, season: int) -> ReadModelInputs
     population = build_population(repo_root, league_id, season)
     players = population["Players"]
 
-    path = snapshot_path(data_derived_dir(repo_root), league_id, season, bounds.final_scored_week)
+    path = snapshot_path(derived_root or data_derived_dir(repo_root), league_id, season, bounds.final_scored_week)
     if not path.is_file():
         raise PlayersReadModelError(f"PlayerValuation snapshot missing at {path}")
     snapshot = json.loads(path.read_text(encoding="utf-8"))
@@ -407,5 +409,5 @@ def load_inputs(repo_root: Path, league_id: str, season: int) -> ReadModelInputs
     )
 
 
-def resolve(repo_root: Path, league_id: str, season: int, as_of: date) -> ReadModelResult:
-    return assemble(load_inputs(repo_root, league_id, season), as_of)
+def resolve(repo_root: Path, league_id: str, season: int, as_of: date, derived_root: Path | None = None) -> ReadModelResult:
+    return assemble(load_inputs(repo_root, league_id, season, derived_root), as_of)
