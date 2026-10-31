@@ -4,11 +4,11 @@ status: accepted-contract-v1
 trackingIssue: 1226
 architectureDecision: ADR-076
 implementationState: >-
-  Issue #1226 step 3b: the function tools/derived_data_lib/players_read_model.py (assemble on prepared inputs, load_inputs
-  from canonical facts and the player-valuation snapshot, published-form change detection) and the CLI
-  tools/players_read_model.py exist; the product extension (3a) is merged. RequestPlayers.ps1 stays productive until the
-  cutover (step 5). The consumer generator players_app_publish.py with the shadow compare (4), the cutover (5) and the
-  cleanup (6) follow in separate pull requests.
+  Issue #1226 step 5: the function tools/derived_data_lib/players_read_model.py, the CLI tools/players_read_model.py and the
+  consumer generator tools/players_app_publish.py (compare = shadow, write = productive) exist. Since the cutover
+  update-players.yml runs players_app_publish.py write (materializes the player-valuation product, then writes the file on
+  a content change with backup and the Players timestamp); the PV hold seed is no longer passed. RequestPlayers.ps1 and the
+  utils/player modules are no longer called and are removed in the cleanup (step 6).
 
 purpose: >-
   Define public/data/Players.json as a pure consumer delivery. One pure function resolves the complete player rows for
