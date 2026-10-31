@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
+from unittest import mock
 import unittest
 from pathlib import Path
 
@@ -10,6 +11,7 @@ SCRIPT_DIRECTORY = Path(__file__).resolve().parents[1]
 if str(SCRIPT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIRECTORY))
 
+import canonical_league_ownership as ownership  # noqa: E402
 from canonical_league_ownership import (  # noqa: E402
     CanonicalOwnershipError,
     build_canonical_ownership_snapshot,
@@ -381,6 +383,44 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
     def _read_json(path: Path) -> object:
         return json.loads(path.read_text(encoding="utf-8"))
 
+
+
+
+class CanonicalLeagueOwnershipCliDefaultsTests(unittest.TestCase):
+    """The FM CLI shares the platform data-meta default, never a fixed league ID."""
+
+    @staticmethod
+    def _register(root: Path, league_id: str) -> None:
+        directory = root / "data-meta" / league_id
+        directory.mkdir(parents=True)
+        (directory / "metadata.json").write_text("{}\n", encoding="utf-8")
+
+    def test_implicit_single_league_and_explicit_multi_league(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self._register(root, "alpha")
+            args = ["canonical-ownership", "--repo-root", temp, "--season", "2026"]
+            with mock.patch("sys.argv", args), mock.patch.dict("os.environ", {"DATA_META_ROOT": str(root / "data-meta")}):
+                self.assertEqual(ownership._parse_args().canonical_league_id, "alpha")
+            self._register(root, "beta")
+            with mock.patch("sys.argv", args + ["--canonical-league-id", "beta"]), \
+                    mock.patch.dict("os.environ", {"DATA_META_ROOT": str(root / "data-meta")}):
+                self.assertEqual(ownership._parse_args().canonical_league_id, "beta")
+
+    def test_missing_or_ambiguous_implicit_league_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            args = ["canonical-ownership", "--repo-root", temp, "--season", "2026"]
+            (root / "data-meta").mkdir()
+            with mock.patch.dict("os.environ", {"DATA_META_ROOT": str(root / "data-meta")}):
+                with mock.patch("sys.argv", args), self.assertRaises(SystemExit) as error:
+                    ownership._parse_args()
+                self.assertEqual(error.exception.code, 2)
+                self._register(root, "alpha")
+                self._register(root, "beta")
+                with mock.patch("sys.argv", args), self.assertRaises(SystemExit) as error:
+                    ownership._parse_args()
+                self.assertEqual(error.exception.code, 2)
 
 if __name__ == "__main__":
     unittest.main()

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -508,14 +509,26 @@ def _parse_args() -> argparse.Namespace:
         type=Path,
         default=Path(__file__).resolve().parents[3],
     )
-    parser.add_argument("--canonical-league-id", default="nfl-reise")
+    parser.add_argument("--canonical-league-id", help="Defaults to the sole registered data-meta league")
     parser.add_argument("--season", type=int, required=True)
     parser.add_argument(
         "--compare-league",
         type=Path,
         help="Repository-relative or absolute public/data/League.json path.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.canonical_league_id is None:
+        # Reuse the shared Data Platform resolver, not a parallel FM league registry.
+        tools_dir = Path(__file__).resolve().parents[3] / "tools"
+        if str(tools_dir) not in sys.path:
+            sys.path.insert(0, str(tools_dir))
+        from league_metadata import LeagueMetadataError, data_meta_root, default_league_id
+
+        try:
+            args.canonical_league_id = default_league_id(data_meta_root(args.repo_root))
+        except LeagueMetadataError as exc:
+            parser.error(str(exc))
+    return args
 
 
 def main() -> int:
