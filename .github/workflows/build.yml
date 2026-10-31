@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       scope:
-        description: "full = complete audit (all Fast, all Deep, legacy build); a Deep group runs only that Deep category on the selected ref"
+        description: "full = complete audit (Core, all Fast, all Deep, restore gate); a Deep group runs only that Deep category on the selected ref"
         type: choice
         default: full
         options:
@@ -29,7 +29,7 @@ jobs:
   # Issue #1122: a pull request runs Core (always) plus the Fast blocks the
   # change can affect. Deep suites never run on a pull request; they run in the
   # weekly full audit or through a manual dispatch of one Deep category. The
-  # legacy full build is part of the full audit only.
+  # the read-only Derived Restore Gate completes the full audit.
   selector:
     name: CI • Selection
     runs-on: ubuntu-latest
@@ -293,7 +293,7 @@ jobs:
   merge-gate:
     name: CI / Merge Gate
     if: ${{ always() }}
-    needs: [selector, fast-contracts, fast-nfl, fast-league, fast-market, fast-consumer, fast-powershell, fast-scheduler, fast-angular, deep-nfl, deep-league, deep-market, deep-consumer, restore-gate, build]
+    needs: [selector, fast-contracts, fast-nfl, fast-league, fast-market, fast-consumer, fast-powershell, fast-scheduler, fast-angular, deep-nfl, deep-league, deep-market, deep-consumer, restore-gate]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -311,7 +311,7 @@ jobs:
   # Issue #471: weekly read-only proof that data-derived can be rebuilt from
   # data-source and data-meta alone. Red on restore-defect, nondeterministic
   # and blocked; stale-published and latent-blocker only appear in the summary.
-  # Audit only (same condition as the legacy build); never part of a pull request.
+  # Audit only; never part of a pull request.
   restore-gate:
     name: CI Audit • Derived Restore Gate
     needs: selector
@@ -329,125 +329,3 @@ jobs:
       - name: Rebuild every Shared Derived product from an empty root (read-only)
         run: python tools/derived_clean_root_audit.py --github-summary
 
-  # Complete read-only audit only for a "full" operator dispatch or the exact
-  # weekly scheduler event. Pull requests never run it.
-  build:
-    needs: selector
-    if: ${{ needs.selector.outputs.mode == 'full' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'repository_dispatch' && github.event.action == 'scheduler-ci-full-audit')) }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install workflow-health test dependency
-        run: python -m pip install "PyYAML>=6,<7"
-
-      # Historical CP1 shadow diagnostic remains only for a manual audit.
-      # Fast Contracts runs the inventory and gating regressions on every PR.
-      - name: CP1 CI test inventory and impact preview (shadow only)
-        if: github.event_name == 'pull_request'
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          python -m unittest tools.tests.test_ci_test_impact -v
-          python tools/ci_test_impact.py shadow
-
-      - name: Run workflow-health regression tests
-        run: python -m unittest tools/tests/test_build_workflow_health_snapshot.py -v
-
-      - name: Run publication-safety regression tests
-        run: |
-          python -m unittest tools.tests.test_rebuild_and_publish -v
-          python -m unittest tools.tests.test_git_transient -v
-          python -m unittest tools.tests.test_workflow_publication_contracts -v
-
-      - name: Run semantic market line publishing gate tests
-        run: python -m unittest tools.tests.test_odds_change_gate -v
-
-      - name: Run NFL data-source regression tests
-        run: |
-          python -m unittest discover -s tools/tests -p "test_nfl_source*.py" -v
-          python -m unittest tools.tests.test_historical_fantasy_scoring -v
-
-      - name: Run ESPN player availability source tests
-        run: python -m unittest tools.tests.test_espn_player_availability -v
-
-      - name: Run Players league-scoring shadow and Sleeper gate
-        run: |
-          python -m unittest tools.tests.test_players_league_scoring_shadow -v
-          python tools/players_league_scoring_shadow.py gate
-
-      - name: Run League data-source regression tests
-        run: python -m unittest discover -s tools/tests -p "test_league_source*.py" -v
-
-      - name: Run historical scoring reconciliation regression tests
-        run: |
-          python -m unittest tools.tests.test_player_scoring_reconciliation -v
-          python -m unittest tools.tests.test_team_week_performance_materialize -v
-
-      - name: Run PlayerValuation model and materializer tests
-        run: |
-          python -m unittest tools.tests.test_derived_data_models -v
-          python -m unittest tools.tests.test_player_valuation -v
-          python -m unittest tools.tests.test_player_valuation_shadow -v
-
-      - name: Run global NFL Game Shared Derived regression tests
-        run: |
-          python -m unittest tools.tests.test_nfl_games_derived -v
-          python -m unittest tools.tests.test_nfl_games_real_source_restore -v
-          python -m unittest tools.tests.test_nfl_games_publisher_contract -v
-
-      - name: Run League history regression tests
-        run: |
-          python -m unittest discover -s tools/tests -p "test_league_transactions.py" -v
-          python -m unittest discover -s tools/tests -p "test_league_drafts.py" -v
-          python -m unittest discover -s tools/tests -p "test_league_history_app_publish.py" -v
-          python -m unittest discover -s tools/tests -p "test_schedule_archive.py" -v
-
-      - name: Run external source registry tests
-        run: python -m unittest tools.tests.test_external_source_registry tools.tests.test_external_source_sleeper_trending tools.tests.test_external_source_fantasycalc tools.tests.test_external_source_fantasypros_dynasty tools.tests.test_external_source_fantasypros_redraft tools.tests.test_external_source_cbs_sports_kicker tools.tests.test_external_source_cbs_sports_offense tools.tests.test_external_source_ffc_adp tools.tests.test_external_source_ffc_kicker_adp tools.tests.test_external_source_ffc_source_quality tools.tests.test_external_source_fftoday_kicker tools.tests.test_external_source_fftoday_offense tools.tests.test_market_observations_preview tools.tests.test_market_observations_restore_preflight tools.tests.test_market_observations_full_restore tools.tests.test_market_observations_product -v
-
-      - name: Run consumer read classification test
-        run: python -m unittest tools.tests.test_consumer_read_classification -v
-
-      - name: Run PowerShell data regression tests
-        shell: pwsh
-        run: |
-          ./public/requests/LeagueReadModelRegressionTest.ps1
-          ./public/requests/ProviderJoinInvariantRegressionTest.ps1
-          ./public/requests/DecisionWindowRegressionTest.ps1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Run central scheduler regression tests
-        run: node --test tools/tests/run-workflow-scheduler*.test.cjs
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run fantasy-team ordering regression tests
-        run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=fantasy-team-order --include=src/app/shared/utils/fantasy-team-order.util.spec.ts
-
-      - name: Run PlayerWeekFantasy consumer regression tests
-        run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=player-week-fantasy --include=src/app/core/services/data.service.spec.ts
-
-      - name: Run Overview weekly-dashboard regression tests
-        run: npx ng test --watch=false --browsers=ChromeHeadless --configuration=overview-weekly-dashboard --include=src/app/testing/overview-weekly-dashboard.karma.spec.ts
-
-      - name: Run full Angular unit test suite
-        run: npx ng test --watch=false --browsers=ChromeHeadless
-
-      - name: Build Angular app
-        shell: pwsh
-        run: ./deploy_action.ps1

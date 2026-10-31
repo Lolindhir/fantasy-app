@@ -2252,6 +2252,7 @@ decisions:
           transitions; the provider timestamp is treated as best available evidence.
 
   - id: ADR-067
+    amendedBy: ADR-077
     title: Pull requests run Core plus selected Fast blocks; Deep runs only in the audit or by manual dispatch
     status: accepted
     amends: ADR-065
@@ -2645,3 +2646,40 @@ decisions:
         - Until the cutover (step 5) the PowerShell generator stays productive and is held equal by the shadow comparison.
         - A hold player no snapshot knows is a visible gap instead of a carried-over old value.
         - The product grows additively (ContractVersion bump) with the season values.
+
+  - id: ADR-077
+    title: Full Repository Audit uses partitioned Core/Fast/Deep and Derived Restore Gate without the monolithic build
+    status: accepted
+    amends: [ADR-065, ADR-067]
+    context: >
+      CP6 still executed the historical full build in addition to Core, every Fast
+      block, all four Deep groups and the Derived Restore Gate. Audit of the old
+      commands proved the Python tests are in the registered lanes and the
+      remaining PowerShell, Scheduler, Angular tests/build and scoring shadow gate
+      have dedicated Fast owners (Issue #1246). The frozen legacy-uncovered test
+      debt stays owned by Issue #1113, not falsely claimed as covered.
+    decision: >
+      Retire the audit-only legacy build job from the existing build.yml.
+      Keep the weekly scheduler-ci-full-audit event and manual full/deep
+      dispatch, unconditional Core, all Fast and Deep jobs, and the read-only
+      Derived Restore Gate. CI / Merge Gate remains fail-closed for the exact
+      selected jobs on PRs, every Fast and Deep job plus restore gate on full
+      audits, and Core plus the selected Deep category on manual Deep dispatch.
+      Coverage inventory checks follow the actual Core/Fast/Deep commands,
+      rather than the deleted monolithic discovery strings. Preserve the
+      13-file frozen Legacy-Uncovered baseline unchanged.
+      No new workflow, schedule, writer, permission, publication scope,
+      persisted data or branch-protection change.
+    rationale: >
+      Once coverage parity is established, the registered partitioned jobs are
+      authoritative; repeating the monolith adds work but no independent
+      required safety checks.
+    consequences:
+      positive:
+        - Eliminate duplicate full-suite execution from weekly and manual audits.
+        - Preserve strict fail-closed Core/Fast/Deep/restore result checking.
+        - Preserve the existing audit scheduler and workflow-health monitoring.
+      negative:
+        - No independent monolithic command chain remains; test-inventory and
+          job-wiring regressions must stay strict when coverage evolves.
+
