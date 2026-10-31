@@ -78,13 +78,13 @@ class ExistingSnapshots:
         self._out_root, self._league_id, self._season = out_root, league_id, season
         self._cache: dict[int, dict[str, dict[str, Any]] | None] = {}
 
-    def _inputs_by_key(self, week: int) -> dict[str, dict[str, Any]] | None:
+    def _rows_by_key(self, week: int) -> dict[str, dict[str, Any]] | None:
         if week not in self._cache:
             path = snapshot_path(self._out_root, self._league_id, self._season, week)
             if path.is_file():
                 payload = json.loads(path.read_text(encoding="utf-8"))
                 self._cache[week] = {
-                    (row["CanonicalPlayerID"] or row["PlayerID"]): row["Inputs"]
+                    (row["CanonicalPlayerID"] or row["PlayerID"]): row
                     for row in payload["Players"] if row.get("Inputs") is not None
                 }
             else:
@@ -94,18 +94,21 @@ class ExistingSnapshots:
     def forget(self, week: int) -> None:
         self._cache.pop(week, None)
 
-    def lookup_for(self, as_of: int):
+    def lookup_for(self, as_of: int, field: str = "Inputs"):
+        """Held ``field`` of a player's row (Inputs, or SeasonValues for the values lookup) with its source week."""
         def lookup(key: str) -> tuple[dict[str, Any] | None, int | None]:
             for week in range(as_of, -1, -1):
-                inputs = (self._inputs_by_key(week) or {}).get(key)
-                if inputs is not None:
-                    return inputs, week
+                row = (self._rows_by_key(week) or {}).get(key)
+                if row is not None:
+                    return row.get(field) if field != "Inputs" else row["Inputs"], week
             return None, None
         return lookup
 
 
 def load_hold_seed(players_file: Path) -> dict[str, dict[str, Any]]:
     """Inputs of the last published Players.json by Sleeper player ID (cutover hold seed, Issue #919 step 5).
+
+    Dropped with the Players cutover (Issue #1226 step 5, ADR-076); until then it also seeds SeasonValues.
 
     Identity-hold players keep the last published scoring values. Once snapshots exist the persisted snapshot is
     the hold source; the published file only covers a hold that no snapshot knows yet (RequestPlayers.ps1 parity).
@@ -163,7 +166,7 @@ def materialize_player_valuation(
             lookup = existing.lookup_for(as_of)
             if hold_seed and season == available[-1] and as_of == source.final_scored_week:
                 lookup = _with_seed(lookup, hold_seed, as_of)
-            snapshot = build_snapshot(context, source.players, lookup)
+            snapshot = build_snapshot(context, source.players, lookup, existing.lookup_for(as_of, "SeasonValues"))
             text = serialize(snapshot)
             total_bytes += len(text.encode("utf-8"))
             held_rows += sum(1 for row in snapshot["Players"] if row["Hold"] is not None)

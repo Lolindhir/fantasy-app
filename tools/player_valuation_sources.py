@@ -24,7 +24,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import DATA_SOURCE_ROOT  # noqa: E402
-from derived_data_lib.player_valuation import PlayerBasis  # noqa: E402
+from derived_data_lib.player_valuation import GameRef, PlayerBasis  # noqa: E402
 from historical_fantasy_scoring import read_json  # noqa: E402
 from nfl_source_data_lib.teams import NflTeamRegistry  # noqa: E402
 from player_week_fantasy import build_scoring_profile_identity  # noqa: E402
@@ -184,10 +184,21 @@ def current_population(repo_root: Path, league_id: str, season: int) -> tuple[li
     return population, Counter(export["Counts"].get("Skipped", {}))
 
 
+WEEK_ROW_KEYS = ("Points", "Snaps", "KickAttempts", "Attempts", "TdPass", "TdRec", "TdRush")
+
+
+def _games_of(history: list[dict[str, Any]] | None) -> tuple[GameRef, ...]:
+    """GameHistory entries (newest first) reduced to what the Form basis needs."""
+    return tuple(
+        GameRef(game_id=str(entry["GameID"]), week=int(entry["Week"]), week_final=bool(entry["WeekFinal"]))
+        for entry in history or []
+    )
+
+
 def _weeks_of(entry_seasons: dict[str, dict[str, dict[str, Any]]]) -> dict[int, dict[int, dict[str, float]]]:
     return {
         int(season): {
-            int(week): {"Points": row["Points"], "Snaps": row["Snaps"], "KickAttempts": row["KickAttempts"]}
+            int(week): {key: row[key] for key in WEEK_ROW_KEYS}
             for week, row in weeks.items()
         }
         for season, weeks in entry_seasons.items()
@@ -215,6 +226,7 @@ def load_season_source(repo_root: Path, league_id: str, season: int, manifest: d
             population=tuple(row["Reasons"]),
             identity_status=entry["Status"],
             weeks=_weeks_of(entry.get("Seasons") or {}),
+            games=_games_of(entry.get("GameHistory")),
         ))
     statuses = Counter(p.identity_status for p in players)
     report = {
