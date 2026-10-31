@@ -7,7 +7,7 @@ from .audit import build_audit
 from .combine import build_combine_files
 from .common import CANONICAL_SCHEMA_VERSION, Dataset, current_source_season, write_json_if_changed
 from .draft import build_draft_files
-from .identity import build_identities
+from .identity import build_identities, current_identity_adjudication_state
 from .lifecycle import effective_partition_payload
 from .mapping_history import build_historical_app_mapping_claims, extend_provider_mapping_payload
 from .phase1 import build_phase1_outputs
@@ -158,12 +158,22 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
             force=force,
         )
 
+    # Only reviewed active unowned-PFR adjudications can repair frozen snap IDs.
+    decisions, _ = current_identity_adjudication_state(repo_root, observation_season)
+    approved_snap_pfr_bindings = frozenset(
+        (assignment["ExternalID"], decision["TargetCanonicalPlayerID"])
+        for decision in decisions
+        if decision["ResolutionKind"] == "confirmed-unowned-provider-token"
+        for assignment in decision["ProviderAssignments"]
+        if assignment["Provider"] == "PFR"
+    )
     phase1_outputs, phase1_audit, phase1_partitions_preserved = build_phase1_outputs(
         repo_root,
         datasets,
         canonical,
         observation_season,
         force=force,
+        approved_snap_pfr_bindings=approved_snap_pfr_bindings,
     )
 
     audit = build_audit(
