@@ -22,3 +22,4 @@ Archiv für 2026:
 - [Vollständige zeitgenössische Research-Checkpoints 3–9](player-week-fantasy/2026/2026-10-31-vegas-v5-checkpoints.md)
 
 Frühere Dateilinks im Fantasy-Management-Ordner werden nur noch als kurze Verweise erhalten, ohne doppelte Pflege.
+- [Sleeper-Projections / Availability / Shadow-Test – archiviertes Audit (pausiert)](player-week-fantasy/2026/2026-10-31-sleeper-projections-availability-shadow-audit.md)
