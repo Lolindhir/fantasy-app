@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import player_valuation_shadow as shadow  # noqa: E402
 import players_league_scoring as scoring  # noqa: E402
 import players_league_scoring_shadow as scoring_shadow  # noqa: E402
+import players_population as population  # noqa: E402
 
 
 def _inputs(avg_potential: float, avg: float) -> dict:
@@ -138,6 +139,8 @@ class LeagueCliDefaultTests(unittest.TestCase):
                 self.assertEqual(scoring.parse_args().league, "test-league")
             with mock.patch("sys.argv", ["shadow", "--repo-root", tmp, "gate"]):
                 self.assertEqual(scoring_shadow.parse_args().league, "test-league")
+            with mock.patch("sys.argv", ["population", "--repo-root", tmp, "export", "--season", "2026", "--out", "unused.json"]):
+                self.assertEqual(population.parse_args().league, "test-league")
             with mock.patch("sys.argv", ["valuation-shadow", "--repo-root", tmp]), \
                     mock.patch.object(shadow, "run_shadow", side_effect=shadow.ShadowError("synthetic")) as run:
                 self.assertEqual(shadow.main(), shadow.EXIT_UNCOMPARABLE)
@@ -156,6 +159,10 @@ class LeagueCliDefaultTests(unittest.TestCase):
                 with self.assertRaises(SystemExit) as error:
                     scoring_shadow.parse_args()
                 self.assertEqual(error.exception.code, 2)
+            with mock.patch("sys.argv", ["population", "--repo-root", tmp, "export", "--season", "2026", "--out", "unused.json"]):
+                with self.assertRaises(SystemExit) as error:
+                    population.parse_args()
+                self.assertEqual(error.exception.code, 2)
             with mock.patch("sys.argv", ["valuation-shadow", "--repo-root", tmp]):
                 with self.assertRaises(SystemExit) as error:
                     shadow.main()
@@ -164,6 +171,8 @@ class LeagueCliDefaultTests(unittest.TestCase):
                 self.assertEqual(scoring.parse_args().league, "beta")
             with mock.patch("sys.argv", ["shadow", "--repo-root", tmp, "--league", "alpha", "gate"]):
                 self.assertEqual(scoring_shadow.parse_args().league, "alpha")
+            with mock.patch("sys.argv", ["population", "--repo-root", tmp, "--league", "beta", "export", "--season", "2026", "--out", "unused.json"]):
+                self.assertEqual(population.parse_args().league, "beta")
             with mock.patch("sys.argv", ["valuation-shadow", "--repo-root", tmp, "--league", "beta"]), \
                     mock.patch.object(shadow, "run_shadow", side_effect=shadow.ShadowError("synthetic")) as run:
                 self.assertEqual(shadow.main(), shadow.EXIT_UNCOMPARABLE)
