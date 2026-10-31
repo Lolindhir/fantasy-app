@@ -62,6 +62,14 @@ def list_league_ids(root: Path | None = None) -> list[str]:
     return sorted(p.name for p in root.iterdir() if p.is_dir() and (p / METADATA_FILE_NAME).exists())
 
 
+def default_league_id(root: Path | None = None) -> str:
+    """The CanonicalLeagueID of the only league in data-meta; fails closed with zero or several leagues."""
+    ids = list_league_ids(root)
+    if len(ids) != 1:
+        raise LeagueMetadataError(f"--league is required: data-meta holds {len(ids)} leagues ({', '.join(ids) or 'none'})")
+    return ids[0]
+
+
 def load_league_metadata(league_id: str, root: Path | None = None) -> dict[str, Any]:
     root = root or data_meta_root()
     path = root / league_id / METADATA_FILE_NAME

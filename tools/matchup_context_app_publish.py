@@ -30,6 +30,8 @@ from typing import Any, Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from league_metadata import data_meta_root, default_league_id  # noqa: E402
+
 from data_roots import DATA_SOURCE_ROOT  # noqa: E402
 from derived_data_lib.fantasy_game_context import resolve_current_context, resolve_historical_season  # noqa: E402
 from derived_data_lib.league_lifecycle import LifecycleError  # noqa: E402
@@ -141,10 +143,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     sub = parser.add_subparsers(dest="command", required=True)
     write = sub.add_parser("write", help="write the App files from the matchup context (semantic no-op)")
-    write.add_argument("--league", default="nfl-reise")
+    write.add_argument("--league", default=None, help="CanonicalLeagueID (default: the only league in data-meta)")
     write.add_argument("--scope", choices=("current", "history", "all"), default="current")
     write.add_argument("--fail-on-error", action="store_true", help="exit 1 when a required model cannot be built")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.league is None:
+        args.league = default_league_id(data_meta_root(args.repo_root))
+    return args
 
 
 def run_write(args: argparse.Namespace) -> int:

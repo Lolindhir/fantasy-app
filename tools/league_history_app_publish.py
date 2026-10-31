@@ -31,6 +31,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from league_metadata import data_meta_root, default_league_id  # noqa: E402
+
 from derived_data_lib.league_drafts import DraftBuildError  # noqa: E402
 from derived_data_lib.league_history import (  # noqa: E402
     HistoryResult, build_history, transactions_document, drafts_document,
@@ -376,11 +378,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     sub = parser.add_subparsers(dest="command", required=True)
     compare = sub.add_parser("compare", help="render the App files in memory and compare them exactly with public/data")
-    compare.add_argument("--league", default="nfl-reise")
+    compare.add_argument("--league", default=None, help="CanonicalLeagueID (default: the only league in data-meta)")
     write = sub.add_parser("write", help="write the App files from the history (semantic no-op)")
-    write.add_argument("--league", default="nfl-reise")
+    write.add_argument("--league", default=None, help="CanonicalLeagueID (default: the only league in data-meta)")
     write.add_argument("--fail-on-error", action="store_true", help="exit 1 when the history cannot be built")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.league is None:
+        args.league = default_league_id(data_meta_root(args.repo_root))
+    return args
 
 
 def run_write(args: argparse.Namespace) -> int:

@@ -109,5 +109,23 @@ class LeagueMetadataLoaderTests(unittest.TestCase):
         self.assertEqual(0, result.returncode, result.stdout + result.stderr)
 
 
+class DefaultLeagueIdTests(unittest.TestCase):
+    def _root(self, *ids):
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        for i in ids:
+            (tmp / i).mkdir()
+            (tmp / i / lm.METADATA_FILE_NAME).write_text("{}", encoding="utf-8")
+        return tmp
+
+    def test_single_league_is_the_default(self):
+        self.assertEqual(lm.default_league_id(self._root("alpha")), "alpha")
+
+    def test_zero_or_several_leagues_fail_closed(self):
+        for ids in ((), ("a", "b")):
+            with self.assertRaises(lm.LeagueMetadataError):
+                lm.default_league_id(self._root(*ids))
+
+
 if __name__ == "__main__":
     unittest.main()

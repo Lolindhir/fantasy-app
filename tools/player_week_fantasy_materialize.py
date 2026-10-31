@@ -66,6 +66,7 @@ from player_week_fantasy import (
     derive_actual_points,
 )
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
+from league_metadata import data_meta_root, default_league_id
 
 POINT_MODEL = "V4-C"
 INTERVAL_MODEL = "V4-C-PI1"
@@ -1177,7 +1178,7 @@ def write_dataset(path: Path, payload: dict[str, Any]) -> bool:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--league", default="nfl-reise")
+    parser.add_argument("--league", default=None, help="CanonicalLeagueID (default: the only league in data-meta)")
     parser.add_argument("--season", type=int, required=True)
     parser.add_argument("--week", type=int, required=True)
     parser.add_argument("--scoring-season", type=int)
@@ -1189,6 +1190,8 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     root = args.repo_root.resolve()
+    if args.league is None:
+        args.league = default_league_id(data_meta_root(root))
     payload = build_player_week_fantasy_dataset(
         root,
         league_id=args.league,

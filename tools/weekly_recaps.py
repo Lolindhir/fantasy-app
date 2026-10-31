@@ -20,6 +20,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from league_metadata import data_meta_root, default_league_id  # noqa: E402
+
 from derived_data_lib.weekly_recaps import WeeklyRecapsError, resolve_weekly_recaps, resolve_with_skips  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest  # noqa: E402
 from matchup_context import diff_values  # noqa: E402
@@ -71,11 +73,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     sub = parser.add_subparsers(dest="command", required=True)
     resolve = sub.add_parser("resolve")
-    resolve.add_argument("--league", default="nfl-reise")
+    resolve.add_argument("--league", default=None, help="CanonicalLeagueID (default: the only league in data-meta)")
     resolve.add_argument("--season", type=int, required=True)
     compare = sub.add_parser("compare")
-    compare.add_argument("--league", default="nfl-reise")
+    compare.add_argument("--league", default=None, help="CanonicalLeagueID (default: the only league in data-meta)")
     args = parser.parse_args(argv)
+    if args.league is None:
+        args.league = default_league_id(data_meta_root(args.repo_root))
     try:
         if args.command == "resolve":
             print(json.dumps(resolve_weekly_recaps(args.repo_root, args.league, args.season), indent=2, ensure_ascii=False))
