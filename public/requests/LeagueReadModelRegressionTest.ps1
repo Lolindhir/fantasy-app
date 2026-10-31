@@ -4,6 +4,7 @@ Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\general\AvatarUtils.psm1" -Force
+Import-Module "$PSScriptRoot\utils\player\PlayerValuationUtils.psm1" -ErrorAction Stop
 
 function Assert-True {
     param(
@@ -250,4 +251,52 @@ Assert-True -Condition $leagueLiveWorkflow.Contains('tools/weekly_recaps_app_pub
 $requestLeaguePublicationText = Get-Content (Join-Path $PSScriptRoot "RequestLeaguePublication.ps1") -Raw
 Assert-True -Condition (-not $requestLeaguePublicationText.Contains("RequestWeeklyRecaps.ps1")) -Message "RequestLeaguePublication still calls the PowerShell WeeklyRecaps generator (Issue 1199 section 4)."
 
-Write-Host "League transaction and overview regression tests passed." -ForegroundColor Green
+# PlayerValuation cap input remains the newest week snapshot for the requested
+# league/season; an empty or cross-league result must fail closed (Issue #1238).
+$tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("league-pv-snapshot-" + [Guid]::NewGuid().ToString("N"))
+$seasonPath = Join-Path $tempRoot "data-derived/player-valuation/fixture-league/2030"
+New-Item -ItemType Directory -Path $seasonPath -Force | Out-Null
+try {
+    foreach ($week in @(2, 9)) {
+        [PSCustomObject]@{
+            CanonicalLeagueID = "fixture-league"
+            Season = 2030
+            AsOfFinalScoredWeek = $week
+            League = [PSCustomObject]@{
+                TeamCount = 4
+                SalaryRelevantTeamSize = 17
+                SalaryCap = (1800 + $week)
+                SalaryCapProjected = (1900 + $week)
+            }
+        } | ConvertTo-Json -Depth 6 | Set-Content -Path (Join-Path $seasonPath ("week-{0:00}.json" -f $week))
+    }
+    $latest = Get-PlayerValuationLatestSnapshot -CanonicalLeagueID "fixture-league" -Season 2030 -RepoRoot $tempRoot
+    Assert-Equal -Actual ([int]$latest.AsOfFinalScoredWeek) -Expected 9 -Message "Latest PV snapshot must select the newest week."
+    Assert-Equal -Actual ([int]$latest.League.TeamCount) -Expected 4 -Message "PV cap input must preserve its team count."
+    Assert-Equal -Actual ([int]$latest.League.SalaryRelevantTeamSize) -Expected 17 -Message "PV cap input must preserve the relevant roster size."
+    Assert-Equal -Actual ([int]$latest.League.SalaryCap) -Expected 1809 -Message "PV cap input must preserve current cap."
+    Assert-Equal -Actual ([int]$latest.League.SalaryCapProjected) -Expected 1909 -Message "PV cap input must preserve projected cap."
+
+    $noSnapshotRejected = $false
+    try {
+        Get-PlayerValuationLatestSnapshot -CanonicalLeagueID "fixture-league" -Season 2031 -RepoRoot $tempRoot | Out-Null
+    }
+    catch { $noSnapshotRejected = [string]$_.Exception.Message -like "*No PlayerValuation snapshot found*" }
+    Assert-True -Condition $noSnapshotRejected -Message "Missing PlayerValuation snapshot must fail closed."
+
+    $badPath = Join-Path $seasonPath "week-09.json"
+    $bad = Get-Content -Path $badPath -Raw | ConvertFrom-Json
+    $bad.CanonicalLeagueID = "other-league"
+    $bad | ConvertTo-Json -Depth 6 | Set-Content -Path $badPath
+    $crossLeagueRejected = $false
+    try {
+        Get-PlayerValuationLatestSnapshot -CanonicalLeagueID "fixture-league" -Season 2030 -RepoRoot $tempRoot | Out-Null
+    }
+    catch { $crossLeagueRejected = [string]$_.Exception.Message -like "*belongs to other-league*" }
+    Assert-True -Condition $crossLeagueRejected -Message "Cross-league valuation snapshot must fail closed."
+}
+finally {
+    Remove-Item -LiteralPath $tempRoot -Recurse -Force -ErrorAction SilentlyContinue
+}
+
+Write-Host "League transaction, overview and PV snapshot regression tests passed." -ForegroundColor Green

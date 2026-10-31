@@ -64,8 +64,9 @@ dataSources:
     path: public/data/Players.json
     generator: tools/players_app_publish.py write (ADR-076, Issue #1226 step 5; the former RequestPlayers.ps1 is no longer called and is removed in step 6)
     helpers:
-      - public/requests/utils/player/PlayerUtils.psm1
-    localDocumentation: public/requests/RequestPlayers.ai-doc.yaml
+      - tools/derived_data_lib/players_read_model.py
+      - tools/players_population.py
+    localDocumentation: .ai-context/manual/players-read-model.yaml
     category: generated-output
     role: Full generated player read model
     description: >
@@ -97,7 +98,7 @@ dataSources:
       rule: >
         A Sleeper player from the canonical snapshot
         (data-source/nfl/platform/sleeper/players.json) belongs in Players.json when it has an
-        app fantasy position (Get-AppFantasyPosition), a valid birth date and at least one
+        app fantasy position (tools/players_population.py::app_fantasy_position), a valid birth date and at least one
         reason: nfl_roster_current_season (canonical season roster or any weekly roster of the
         season), nfl_draft_current_season (canonical NFL draft of the season) or league_owned
         (current fantasy roster incl. Taxi and IR). The two NFL reasons need exactly one
@@ -166,7 +167,7 @@ dataSources:
       requirements:
         - every generated player record has a non-empty canonical ID
         - canonical ID values are globally unique within Players.json
-      validation: public/requests/utils/player/PlayerUtils.psm1::Test-UniquePlayerIds
+      validation: tools/derived_data_lib/players_read_model.py::validate_unique_ids
       failureBehavior: >
         Fail closed before change comparison, timestamp, backup and write. The
         existing last-known-good Players.json remains untouched. Diagnostics list
@@ -175,10 +176,11 @@ dataSources:
     changeDetection:
       issue: 929
       rule: >
-        Compare-Players compares old and new players serialized exactly like the published file
-        (PlayerUtils.psm1::Get-PlayersPublishedJsonDepth, currently 7, re-parsed and sorted by ID).
-        Only a difference in the published content creates a backup, rewrites Players.json and
-        updates Timestamps.Players; an unchanged run ends with "No changes - update skipped.".
+        The Python players_differ comparator validates unique IDs, sorts by ID and compares
+        the published JSON form. Only a change in published content creates a backup,
+        rewrites Players.json and updates Timestamps.Players; an unchanged run is a no-op.
+        The former PowerShell Compare-Players and Get-PlayersPublishedJsonDepth helpers
+        were retired with PlayerUtils.psm1 in Issue #1238 scope 3.
       writeDepth: >
         Robert approved on 2026-10-08 (Issue #935) that Players.json contains everything the script
         writes. Depth 7 publishes Grading[].Value[].GameDetails as a complete object (level 6); at the

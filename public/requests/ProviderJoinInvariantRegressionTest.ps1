@@ -2,7 +2,6 @@ $ErrorActionPreference = "Stop"
 
 Import-Module "$PSScriptRoot\utils\general\ProviderJoinUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\general\SleeperPlayerIdUtils.psm1" -ErrorAction Stop -Force
-Import-Module "$PSScriptRoot\utils\player\PlayerUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\league\TeamUtils.psm1" -ErrorAction Stop -Force
 
 function Test-Throws {
@@ -67,36 +66,9 @@ Test-Throws -ExpectedMessagePart "missing id" -Action {
         -DescriptionProperties @("id", "name") | Out-Null
 }
 
-# Player position resolution: keep supported primary positions, fall back to
-# supported fantasy eligibility for dual-position players, and exclude defensive-only players.
-$primaryWideReceiver = Get-AppFantasyPosition -SleeperPlayer ([PSCustomObject]@{
-    position = "WR"
-    fantasy_positions = @("WR", "DB")
-})
-if ($primaryWideReceiver -ne "WR") {
-    throw "Supported primary Sleeper position was not preserved."
-}
-$dualPositionWideReceiver = Get-AppFantasyPosition -SleeperPlayer ([PSCustomObject]@{
-    position = "DB"
-    fantasy_positions = @("DB", "WR")
-})
-if ($dualPositionWideReceiver -ne "WR") {
-    throw "Dual-position Sleeper player did not fall back to supported WR fantasy eligibility."
-}
-$defensiveOnlyPosition = Get-AppFantasyPosition -SleeperPlayer ([PSCustomObject]@{
-    position = "DB"
-    fantasy_positions = @("DB")
-})
-if ($null -ne $defensiveOnlyPosition) {
-    throw "Defensive-only Sleeper player should remain excluded from the app player model."
-}
-$providerOrderFallback = Get-AppFantasyPosition -SleeperPlayer ([PSCustomObject]@{
-    position = "DB"
-    fantasy_positions = @("DB", "RB", "WR")
-})
-if ($providerOrderFallback -ne "RB") {
-    throw "Fantasy-position fallback did not preserve provider eligibility order."
-}
+# Position fallback and supported App fantasy positions are now covered by
+# tools/tests/test_nfl_source_players_population.py in the Python Fast lane.
+# This test retains independent PowerShell provider and team join guards.
 
 # Team joins: owner/member cardinality is 1:1 and every roster owner must exist.
 $teamLookups = New-SleeperTeamSourceLookups `
