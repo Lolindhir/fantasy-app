@@ -97,8 +97,12 @@ pointPaths:
     points are equal (2,953 of 2,953 player-weeks, weeks 1 to 7 of 2026). Merging the paths would change the meaning of
     PointHistory and lose the season before league start; therefore both stay.
   guard: >-
-    A Fast test on persisted state requires equal current-season weekly points from both paths (step 6). It reads
-    persisted repository data and fails with the differing player-weeks; it does not weaken either path.
+    The persisted Fast test compares current-season aggregate totals from both
+    point paths. New ContractVersion-3 snapshots require exact equality for
+    every resolved player's current-season FantasyPointsTotal, including Cody
+    White's scored stat weeks. Legacy ContractVersion-2 snapshots retain the
+    bounded tolerance only until rematerialized. Cody's separate missing snap
+    identity still needs Source repair for correct GamesPlayed/Salary.
 
 consumerGenerator:
   write: >-

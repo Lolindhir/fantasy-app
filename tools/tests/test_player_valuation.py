@@ -54,13 +54,24 @@ def no_hold(_key: str):
 
 
 class SeasonValuesTests(unittest.TestCase):
-    """SeasonValues and FormGames (ContractVersion 2, Issue #1226 step 3a), synthetic players only."""
+    """SeasonValues and FormGames (ContractVersion 3, Issue #1236), synthetic players only."""
 
     def test_history_values_use_the_rounded_total_and_last_league_week(self) -> None:
         rows = {1: week(10.004), 2: week(20.0), 3: week(0.0, snaps=0), 20: week(99.0)}
         values = pv.history_values(rows, "WR", 17)
         self.assertEqual({"Total": 30.0, "AvgGame": 15.0, "AvgPotentialGame": 1.88, "GamesPlayed": 2,
                           "PotentialGames": 16}, values)
+
+    def test_historical_fantasy_relevant_games_preserve_positive_and_negative_st_scoring(self) -> None:
+        rows = {1: week(10.0), 2: week(0.0, snaps=0), 3: week(2.0, snaps=0),
+                4: week(-2.0, snaps=0), 5: week(0.0, snaps=10), 18: week(50.0)}
+        values = pv.history_values(rows, "WR", 17)
+        self.assertEqual(4, values["GamesPlayed"])
+        self.assertEqual(10.0, values["Total"])
+        self.assertEqual(2.5, values["AvgGame"])
+        self.assertEqual(0.62, values["AvgPotentialGame"])
+        self.assertEqual({"AvgPotentialGame": 0.62, "AvgGame": 2.5},
+                         pv.history_inputs(rows, "WR", 17))
 
     def test_history_inputs_stay_a_projection_of_history_values(self) -> None:
         rows = {1: week(10.0), 2: week(20.0)}
@@ -89,6 +100,22 @@ class SeasonValuesTests(unittest.TestCase):
         self.assertEqual(0.155, values["FantasyPointsAvgSnap"])
         self.assertEqual((1, 1, 2, 4), (values["TouchdownsPassing"], values["TouchdownsReceiving"],
                                          values["TouchdownsRushing"], values["TouchdownsTotal"]))
+
+    def test_fantasy_relevant_games_keep_dylan_sampson_style_scoreless_st_out(self) -> None:
+        rows = {1: week(10.0), 2: week(0.0, snaps=0), 3: week(2.0, snaps=0),
+                4: week(-2.0, snaps=0), 5: week(0.0, snaps=10), 6: week(100.0, snaps=0)}
+        self.assertEqual([10.0, 2.0, -2.0, 0.0], pv.played_points(rows, "RB", 5))
+        self.assertEqual({"AvgPotentialGame": 2.0, "AvgGame": 2.5},
+                         pv.current_inputs(rows, "RB", 5, 9))
+        values = pv.current_values(rows, "RB", 5, 9, True)
+        self.assertEqual(4, values["GamesPlayed"])
+        self.assertEqual(10.0, values["FantasyPointsTotal"])
+        self.assertEqual(2.5, values["FantasyPointsAvgGame"])
+        self.assertEqual(60, values["SnapsTotal"])
+        sampson = {1: week(10.7), 2: week(0.0, snaps=0)}
+        self.assertEqual([10.7], pv.played_points(sampson, "RB", 2))
+        self.assertEqual({"AvgPotentialGame": 5.35, "AvgGame": 10.7},
+                         pv.current_inputs(sampson, "RB", 2, 9))
 
     def test_current_values_of_a_player_without_games_are_zero(self) -> None:
         values = pv.current_values({}, "WR", 5, 3, False)
@@ -135,13 +162,13 @@ class AggregationTests(unittest.TestCase):
         self.assertEqual(-0.01, pv.scaled_round(-0.011, 2))
 
     def test_played_points_filters_position_rule_week_and_orders_by_week(self) -> None:
-        rows = {3: week(7.0), 1: week(10.0), 2: week(99.0, snaps=0), 6: week(50.0)}
+        rows = {3: week(7.0), 1: week(10.0), 2: week(0.0, snaps=0), 6: week(50.0)}
         self.assertEqual([10.0, 7.0], pv.played_points(rows, "WR", 5))
         kicker = {1: week(4.0, snaps=0, kick_attempts=2), 2: week(9.0, snaps=60, kick_attempts=0)}
         self.assertEqual([4.0], pv.played_points(kicker, "K", 5))
 
     def test_current_inputs_potential_games_exclude_a_passed_bye_week(self) -> None:
-        rows = {1: week(10.0), 2: week(20.0), 3: week(5.0, snaps=0)}
+        rows = {1: week(10.0), 2: week(20.0), 3: week(0.0, snaps=0)}
         # played: 10 + 20 = 30 over 2 games; as-of 3 with bye 2 -> potential 2
         self.assertEqual({"AvgPotentialGame": 15.0, "AvgGame": 15.0}, pv.current_inputs(rows, "WR", 3, 2))
         # bye after the as-of week -> potential 3
@@ -417,6 +444,40 @@ class MaterializerIntegrationTests(unittest.TestCase):
         for row in snapshot["Players"]:
             if row["Inputs"] is not None:
                 self.assertEqual({"AvgPotentialGame": 0.0, "AvgGame": 0.0}, row["Inputs"]["Current"])
+
+    def test_v3_current_source_points_match_final_player_week_fantasy(self) -> None:
+        """Permanent Fast guard: corrected new v3 scoring agrees with the other
+        independently scored current-season PWF Actual path on canonical facts.
+        """
+        snapshot = json.loads(self.season_files()[-1].read_text(encoding="utf-8"))
+        self.assertEqual(3, snapshot["ContractVersion"])
+        final_week = snapshot["AsOfFinalScoredWeek"]
+        root = REPO_ROOT / "data-derived" / "player-week-fantasy" / self.league_id / str(self.season)
+        points: dict[str, float] = {}
+        for week_no in range(1, final_week + 1):
+            path = root / f"{week_no:02d}.json"
+            if not path.is_file():
+                self.skipTest(f"persisted current-season PWF missing for week {week_no}")
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            for record in payload["Records"]:
+                actual = record.get("Actual") or {}
+                if actual.get("State") == "final" and actual.get("Points") is not None:
+                    cid = record["CanonicalPlayerID"]
+                    points[cid] = points.get(cid, 0.0) + actual["Points"]
+        differences = []
+        checked = 0
+        for row in snapshot["Players"]:
+            cid = row.get("CanonicalPlayerID")
+            current = (row.get("SeasonValues") or {}).get("Current") or {}
+            if not cid or row.get("Hold") or current.get("FantasyPointsTotal") is None:
+                continue
+            checked += 1
+            total = current["FantasyPointsTotal"]
+            expected = points.get(cid, 0.0)
+            if abs(total - expected) > 0.05:
+                differences.append((cid, total, round(expected, 2)))
+        self.assertGreater(checked, 0)
+        self.assertEqual([], differences, f"new v3 score path diverges from PWF: {differences[:10]}")
 
     def test_unknown_season_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

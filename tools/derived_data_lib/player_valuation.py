@@ -12,11 +12,12 @@ The numeric behaviour reproduces RequestPlayers.ps1 / PlayerLeagueScoringUtils.p
   * previous seasons: played games up to LastLeagueWeek, total rounded to two decimals first, then the
     averages from the rounded total; potential games are LastLeagueWeek - 1.
 
-ContractVersion 2 (ADR-076, Issue #1226 step 3a) adds, additively, the season values the Players consumer used to
-derive itself: SeasonValues (the Players.json aggregates of the current season and the PointHistory of the three
-previous seasons) and FormGames (the last four scored games, the basis of a Form grading). They follow the same
-as-of rule as Inputs: only games of weeks up to AsOfFinalScoredWeek count, so an older snapshot never changes
-when later weeks arrive.
+ContractVersion 2 (ADR-076, Issue #1226 step 3a) added SeasonValues and FormGames.
+ContractVersion 3 (Issue #1236) changes the non-K played-game definition to
+an offensive-snap game OR a game with nonzero fantasy scoring, including negative
+and special-teams-only scoring. Scoreless ST-only participation cannot dilute salary.
+The salary-v1 formula and its serialized input shape remain immutable.
+The historical and current season aggregates obey the same as-of boundaries.
 """
 from __future__ import annotations
 
@@ -25,11 +26,12 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Sequence
 
+from .fantasy_participation import is_fantasy_game
 from .models._common import require_finite
 from .models.registry import get_model
 from .ranking import RankingInput, compute_rankings
 
-CONTRACT_VERSION = 2
+CONTRACT_VERSION = 3
 STATUS_RESOLVED = "resolved"
 HISTORY_KEYS = ("SeasonMinus1", "SeasonMinus2", "SeasonMinus3")
 MODEL_KINDS = {"Salary": "salary", "SalaryCap": "salary-cap", "Grading": "grading"}
@@ -97,8 +99,7 @@ def played_points(weeks: WeekRows, position: str, max_week: int) -> list[float]:
         if week > max_week:
             continue
         row = weeks[week]
-        played = row["KickAttempts"] > 0 if position == "K" else row["Snaps"] > 0
-        if played:
+        if is_fantasy_game(position, row["Snaps"], row["KickAttempts"], row["Points"]):
             points.append(require_finite(row["Points"], "Points"))
     return points
 
@@ -153,7 +154,7 @@ def games_potential(as_of: int, bye_week: int, has_games: bool) -> int:
 def current_values(weeks: WeekRows, position: str, as_of: int, bye_week: int, has_games: bool) -> dict[str, Any]:
     """Current-season aggregates in the Players.json field names (exact point sum, rounded once per field)."""
     rows = [weeks[w] for w in sorted(weeks) if w <= as_of
-            and (weeks[w]["KickAttempts"] > 0 if position == "K" else weeks[w]["Snaps"] > 0)]
+            and is_fantasy_game(position, weeks[w]["Snaps"], weeks[w]["KickAttempts"], weeks[w]["Points"])]
     points = _sequential_sum([require_finite(row["Points"], "Points") for row in rows])
     snaps = int(round(_sequential_sum([row["KickAttempts"] if position == "K" else row["Snaps"] for row in rows])))
     attempts = int(round(_sequential_sum([row.get("Attempts", 0.0) for row in rows])))
