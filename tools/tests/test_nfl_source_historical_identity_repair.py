@@ -191,7 +191,6 @@ class HistoricalIdentityRepairTests(unittest.TestCase):
                         dataset, path=path, candidate=candidate,
                         partition_season=2024, observation_season=2026, force=False,
                         approved_snap_pfr_bindings=frozenset({("WhitCo05", "NFLP-cody")}),
-                approved_snap_pfr_bindings=frozenset({("WhitCo05", "NFLP-cody")}),
                     )
                     self.assertTrue(preserved)
                     self.assertEqual(existing, effective)
