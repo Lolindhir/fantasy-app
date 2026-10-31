@@ -25,7 +25,9 @@ Aktive Kernbereiche:
 - `league-context/` enthält Liga-, Owner-, Format- und Verhandlungskontext.
 - `sources/` enthält Rohquellen und strukturierte Quellenpakete.
 - `knowledge/` enthält abgeleitetes, liga-relevantes Knowledge, sobald es echte Knowledge-Dateien gibt.
-- `analyses/` enthält konkrete Auswertungen und Empfehlungen, sobald Analysen gespeichert werden.
+- `analyses/` enthält konkrete Fantasy-Management-Auswertungen und Empfehlungen, sobald Analysen gespeichert werden.
+
+**Gemeinsame empirische Modellforschung**, etwa zu PlayerWeekFantasy-Punktprognosen, PI1-Intervallen oder Vegas-/Defense-Korrekturen, wird dagegen unter `research/<datenprodukt>/<jahr>/` zentral dokumentiert. App und Fantasy Management verwenden dieselbe Evidenz, ohne sie in Consumer-Artefakten zu duplizieren.
 - `decisions/` enthält getroffene Entscheidungen und Entscheidungsverlauf, sobald Entscheidungen gespeichert werden.
 
 Optionale Bereiche wie `knowledge/players/`, `analyses/`, `decisions/`, `sources/relevant-players/`, `sources/external-rankings/` oder `sources/manual-notes/` werden erst angelegt, wenn dort echte Dateien liegen.

@@ -66,6 +66,7 @@ For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/
 - Human-maintained application AI context belongs in `.ai-context/manual`.
 - Generated application AI context belongs in `.ai-context/generated` and must not be edited manually.
 - Fantasy Management rules, sources, workflows, stored analyses and decisions belong under `fantasy-management/`.
+- Cross-consumer empirical research and model audits belong under `research/<data-product>/<year>/` (e.g. `research/player-week-fantasy/2026/`); this is historical evidence, not a production model source of truth. Shared data-product contracts stay in `.ai-context/manual`, algorithms in `tools`, consumer-specific Fantasy Management analysis in `fantasy-management/analyses`.
 - Repository work tracking belongs in GitHub Issues according to `.ai-context/manual/work-tracking.yaml`; do not create parallel Markdown todo lists.
 - Workflow publication/race-safety classification belongs in `.ai-context/manual/workflow-publication.yaml`.
 - Do not create `docs/ai-context/**` or any parallel AI context documentation unless explicitly requested.
