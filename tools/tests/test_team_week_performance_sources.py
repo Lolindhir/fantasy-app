@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import sys
 import tempfile
-import types
 import unittest
 from pathlib import Path
 
@@ -13,7 +12,7 @@ if str(TOOLS) not in sys.path:
 from team_week_performance_sources import (  # noqa: E402
     WeekSourceNotReady,
     load_verified_week_inputs,
-    resolve_slots_from_existing_rules,
+    resolve_slots_from_league,
     resolve_week_positions,
     validate_final_week,
 )
@@ -46,9 +45,6 @@ class SourcesTest(unittest.TestCase):
         (nfl / "04.json").write_text(json.dumps({"Season": 2024, "Week": 4,
             "Records": [{"CanonicalPlayerID": "a", "Position": "WR"},
                         {"CanonicalPlayerID": "b", "Position": "RB"}]}), encoding="utf-8")
-        ps = self.root / "public/requests/utils/league"
-        ps.mkdir(parents=True)
-        (ps / "ExportWeeklyPerformanceSlots.ps1").write_text("# test bridge", encoding="utf-8")
         self.league = json.loads((league_dir / "league.json").read_text())
         self.calls = []
 
@@ -56,19 +52,9 @@ class SourcesTest(unittest.TestCase):
         self.calls.append(kwargs)
         return True, {"gameA"}
 
-    @staticmethod
-    def bridge(command, **kwargs):
-        assert "-LeaguePath" in command and "-PositionsCsv" in command
-        assert "QB" in command[-1] and "RB" in command[-1]
-        return types.SimpleNamespace(stdout=json.dumps([
-            {"SlotID": "WR-1", "EligiblePositions": ["WR"]},
-            {"SlotID": "FLEX-1", "EligiblePositions": ["RB", "WR", "TE"]},
-            {"SlotID": "REC_FLEX-1", "EligiblePositions": ["WR", "TE"]},
-        ]))
-
     def test_2024_matchup_and_positions_and_slots_and_finality(self):
         params = load_verified_week_inputs(
-            self.root, "nfl-reise", 2024, 4, nfl_finality=self.final, runner=self.bridge
+            self.root, "nfl-reise", 2024, 4, nfl_finality=self.final
         )
         self.assertEqual(params["position_by_player"], {"a": "WR", "b": "RB"})
         self.assertEqual([s.slot_id for s in params["slots"]], ["WR-1", "FLEX-1", "REC_FLEX-1"])
@@ -145,7 +131,7 @@ class SourcesTest(unittest.TestCase):
     def test_canonical_weekly_roster_is_authoritative_without_transactions(self):
         # No transaction directory/snapshots exist in the fixture by design.
         params = load_verified_week_inputs(
-            self.root, "nfl-reise", 2024, 4, nfl_finality=self.final, runner=self.bridge
+            self.root, "nfl-reise", 2024, 4, nfl_finality=self.final
         )
         self.assertEqual(params["matchup_rows"][0]["Players"], self.roster[0]["Players"])
         self.assertFalse((self.root / "data-source/leagues/nfl-reise/seasons/2024/transactions").exists())
@@ -210,7 +196,7 @@ class SourcesTest(unittest.TestCase):
         league_file.write_text(json.dumps(league))
         with self.assertRaisesRegex(WeekSourceNotReady, "Incomplete weekly fantasy team population"):
             load_verified_week_inputs(
-                self.root, "nfl-reise", 2024, 4, nfl_finality=self.final, runner=self.bridge
+                self.root, "nfl-reise", 2024, 4, nfl_finality=self.final
             )
 
     def test_week_identity_mismatch_is_rejected(self):
@@ -219,20 +205,35 @@ class SourcesTest(unittest.TestCase):
         with self.assertRaisesRegex(WeekSourceNotReady, "season/week mismatch"):
             resolve_week_positions(self.root, 2024, 4, self.roster)
 
-    def test_bridge_rejects_duplicate_slot_ids(self):
-        def bad(command, **kwargs):
-            return types.SimpleNamespace(stdout=json.dumps([
-                {"SlotID": "WR-1", "EligiblePositions": ["WR"]},
-                {"SlotID": "WR-1", "EligiblePositions": ["WR"]},
-            ]))
-        with self.assertRaisesRegex(WeekSourceNotReady, "Duplicate slot"):
-            resolve_slots_from_existing_rules(self.root, self.root / "league.json", {"a": "WR"}, runner=bad)
+    def test_2024_special_flex_matches_legacy_slot_contract(self):
+        slots = resolve_slots_from_league(
+            ["QB", "WR", "RB", "FLEX", "WRRB_FLEX", "REC_FLEX", "SUPER_FLEX", "K", "BN"],
+            {"p": "WR", "q": "RB", "r": "QB", "s": "TE", "k": "K"},
+        )
+        self.assertEqual([s.slot_id for s in slots],
+                         ["QB-1", "WR-1", "RB-1", "FLEX-1", "WRRB_FLEX-1", "REC_FLEX-1", "SUPER_FLEX-1", "K-1"])
+        by_id = {s.slot_id: s.eligible_positions for s in slots}
+        self.assertEqual(by_id["FLEX-1"], frozenset({"RB", "WR", "TE"}))
+        self.assertEqual(by_id["WRRB_FLEX-1"], frozenset({"RB", "WR"}))
+        self.assertEqual(by_id["REC_FLEX-1"], frozenset({"WR", "TE"}))
+        self.assertEqual(by_id["SUPER_FLEX-1"], frozenset({"QB", "RB", "WR", "TE"}))
+        self.assertEqual(by_id["K-1"], frozenset({"K"}))
 
-    def test_bridge_failure_is_fail_closed(self):
-        def unavailable(command, **kwargs):
-            raise FileNotFoundError("pwsh not installed")
-        with self.assertRaisesRegex(WeekSourceNotReady, "Cannot resolve lineup slots"):
-            resolve_slots_from_existing_rules(self.root, self.root / "league.json", {"a": "WR"}, runner=unavailable)
+    def test_2025_and_2026_flex_slots_preserve_ordinals_and_full_eligibility(self):
+        for year in (2025, 2026):
+            with self.subTest(year=year):
+                slots = resolve_slots_from_league(["QB", "FLEX", "FLEX", "BN", "FLEX"], {"only": "QB"})
+                self.assertEqual([s.slot_id for s in slots], ["QB-1", "FLEX-1", "FLEX-2", "FLEX-3"])
+                self.assertEqual([s.eligible_positions for s in slots[1:]],
+                                 [frozenset({"RB", "WR", "TE"})] * 3)
+
+    def test_unfillable_or_bench_only_lineup_fails_closed(self):
+        with self.assertRaisesRegex(WeekSourceNotReady, "no eligible position"):
+            resolve_slots_from_league(["DL"], {"p": "WR"})
+        with self.assertRaisesRegex(WeekSourceNotReady, "Cannot resolve canonical starting slots"):
+            resolve_slots_from_league(["BN"], {"p": "WR"})
+        with self.assertRaisesRegex(WeekSourceNotReady, "Cannot resolve canonical starting slots"):
+            resolve_slots_from_league(None, {"p": "WR"})
 
     def test_conflicting_historical_positions_fail_closed(self):
         roster_file = self.root / "data-source/nfl/weekly-rosters/2024/04.json"

@@ -4,7 +4,6 @@ $ErrorActionPreference = 'Stop'
 
 Import-Module "$PSScriptRoot\utils\general\NflTeamRegistryUtils.psm1" -ErrorAction Stop -Force
 Import-Module "$PSScriptRoot\utils\league\DecisionWindowUtils.psm1" -ErrorAction Stop -Force
-Import-Module "$PSScriptRoot\utils\league\LineupRepairabilityEvidenceUtils.psm1" -ErrorAction Stop -Force
 
 function Assert-Equal {
     param($Expected, $Actual, [string]$Message)
@@ -65,20 +64,6 @@ foreach ($combination in $combinations) {
 $unknownModel = New-Model -ScheduleAway $awayLegacy -ScheduleHome $homeLegacy -PlayerTeamOnGame 'NOT-A-TEAM' -PlayerTeamOnBye $byeLegacy
 Assert-Equal 'unknown' (($unknownModel.PlayerLockFacts | Where-Object PlayerID -eq 'p1').Kind) 'unresolvable player team stays unknown'
 
-# Lineup repairability external-acquisition evidence joins players to schedule across key forms.
-$start = [DateTimeOffset]::Parse($kickoff)
-foreach ($combination in $combinations) {
-    $evidence = Get-LineupExternalRepairEvidence `
-        -Players @([PSCustomObject]@{ ID = 'free1'; Position = 'WR'; TeamID = $combination[2] }) `
-        -Teams @([PSCustomObject]@{ Roster = @('other') }) `
-        -Schedule @([PSCustomObject]@{ gameID = 'g1'; gameWeek = 'Week 1'; teamIDAway = $combination[0]; teamIDHome = $combination[1]; gameTime_epoch = [string]$start.ToUnixTimeSeconds() }) `
-        -MutableSlots @([PSCustomObject]@{ SlotType = 'WR' }) `
-        -AcquisitionCapability ([PSCustomObject]@{ State = 'known'; ExternalAddsAllowed = $true; NextWaiverRun = $start.AddHours(-48).ToString('o') }) `
-        -LineupWeek 1 `
-        -AsOfUtc $start.AddHours(-72)
-    Assert-Equal 'available' $evidence.State "evidence state ($($combination -join '/'))"
-    Assert-Equal 1 @($evidence.Candidates).Count "candidate found across key forms ($($combination -join '/'))"
-    Assert-Equal $false $evidence.PlayerEvidenceUnknown "no unknown evidence ($($combination -join '/'))"
-}
+# External-acquisition join regression is now covered by Python Fast test_decision_windows.py (#1238).
 
 Write-Host 'NFL team key join regression checks passed.'

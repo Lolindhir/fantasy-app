@@ -1,6 +1,6 @@
-"""Real-source integration gate for #355 (requires pwsh and canonical repo data).
+"""Real-source integration gate for #355 (requires canonical repo data).
 
-This test runs only on an environment with the production PowerShell bridge.
+This test uses shared Python lineup eligibility; no PowerShell runtime is needed.
 It must never publish derived data, even for a final historical week.
 """
 from __future__ import annotations
@@ -8,7 +8,6 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import shutil
 import tempfile
 import sys
 import unittest
@@ -24,20 +23,19 @@ from team_week_performance_materialize import materialize, materialize_all_final
 from team_week_performance import build_team_week_performance, save_team_week_performance, output_path  # noqa: E402
 from team_week_performance_sources import (  # noqa: E402
     load_verified_week_inputs,
-    resolve_slots_from_existing_rules,
+    resolve_slots_from_league,
 )
 
 REPO_ROOT = TOOLS.parent
 
 
-@deep_only("real-source TeamWeekPerformance replay through PowerShell")
-@unittest.skipUnless(shutil.which("pwsh"), "PowerShell CLI is required for real-source integration")
+@deep_only("real-source TeamWeekPerformance replay through shared Python slot rules")
 class TeamWeekPerformanceIntegrationTests(unittest.TestCase):
     def test_real_2024_slot_bridge_preserves_special_flex(self) -> None:
         league_path = REPO_ROOT / "data-source/leagues/nfl-reise/seasons/2024/league.json"
-        slots = resolve_slots_from_existing_rules(
-            REPO_ROOT, league_path,
-            {"qb": "QB", "rb": "RB", "wr": "WR", "te": "TE", "k": "K"},
+        league = json.loads(league_path.read_text(encoding="utf-8"))
+        slots = resolve_slots_from_league(
+            league["RosterPositions"], {"qb": "QB", "rb": "RB", "wr": "WR", "te": "TE", "k": "K"},
         )
         self.assertEqual(len(slots), 12)
         by_name = {slot.slot_id: slot.eligible_positions for slot in slots}
