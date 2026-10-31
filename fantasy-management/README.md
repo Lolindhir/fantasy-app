@@ -22,6 +22,8 @@ Aktive Kernbereiche:
 
 - `_ai/` enthält Agent-Regeln, Quellenlogik, Workflows, Templates und Schemas.
 - `automation/` enthält die Repo-gesteuerte Steuerungsebene für wiederkehrende Jobs, Trigger, States und Benachrichtigungsregeln.
+- `league-economy/` bündelt ligaweite Salary-, Dead-Cap- und Franchise-Economy-Konzeptpapiere (offene Regelvorschläge, keine Produktivregeln).
+- `league-format/` bündelt ligaweite Diskussions- und Regelvorschläge zu Positionen, Starterplätzen und Scoring (aktuell: [Kicker → FLEX ab 2027](league-format/kicker-removal-proposal.md)).
 - `league-context/` enthält Liga-, Owner-, Format- und Verhandlungskontext.
 - `sources/` enthält Rohquellen und strukturierte Quellenpakete.
 - `knowledge/` enthält abgeleitetes, liga-relevantes Knowledge, sobald es echte Knowledge-Dateien gibt.

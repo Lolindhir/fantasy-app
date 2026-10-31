@@ -63,6 +63,8 @@ For any Rookie Draft, Free-Agent Draft, draft strategy, draft postmortem, draft-
 
 For any league-economy redesign, Salary/Dead-Cap cross-system analysis, team-window, Reload/Rebuild/Hybrid, long-term franchise-economy or shared Offseason redesign task, `fantasy-management/league-economy/AGENTS.md` is additionally mandatory and defines the reading order, comparison framework and synthesis boundary for that research area.
 
+For league-wide format, starter-position, FLEX, kicker-slot or scoring-rule proposals, store research and league-facing discussion papers under `fantasy-management/league-format/` rather than under Mighty Giants-specific `analyses/`. Distinguish proposals from adopted league rules and cross-reference `league-economy/` when changes affect Salary/Cap/Criticality; do not silently treat a proposal as active league settings.
+
 1. `fantasy-management/AGENTS.md`
 2. `.ai-context/manual/work-tracking.yaml` when planning, prioritizing, recording or resuming repository work
 3. `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
@@ -228,6 +230,8 @@ fantasy-management/
     owner-profiles.md
     trade-negotiation-history.md
     league-format-notes.md
+  league-format/
+    kicker-removal-proposal.md
   league-economy/
     AGENTS.md
     salary/

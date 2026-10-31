@@ -426,6 +426,8 @@ Vor einer finalen Offseason-Abstimmung sind weitere Analysen sinnvoll.
 - historische Cap-/Cut-Simulation;
 - Robustheit bei veränderten Starter-/FLEX-Einstellungen.
 
+**Externe Ligaformat-Abhängigkeit (noch kein Beschluss):** Der eigenständige [Regelvorschlag Kicker → fünfter FLEX ab 2027](../league-format/kicker-removal-proposal.md) würde die Positionsnachfrage verändern. Salary-/Criticality-Simulationen müssen bei einem späteren Ligabeschluss das tatsächlich dann gültige Starterformat neu einlesen und kalibrieren. Der Vorschlag ist keine vierte Salary-Designkomponente und wird derzeit nicht als beschlossen angenommen.
+
 ### Systemweite Simulation
 
 Am Ende sollten nicht nur Einzelregeln, sondern komplette Pakete simuliert werden:
