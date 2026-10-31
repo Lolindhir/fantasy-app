@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import json
 import re
-import subprocess
 from pathlib import Path
 from typing import Any, Callable
 
 from weekly_lineup_optimizer import StartingSlot
 from data_roots import DATA_SOURCE_ROOT
+from derived_data_lib.decision_windows import DecisionWindowsError, slot_definitions, slot_eligible
 
 
 class WeekSourceNotReady(ValueError):
@@ -200,51 +200,32 @@ def resolve_week_positions(
         )
     return {player_id: positions[player_id] for player_id in sorted(owned)}
 
-def resolve_slots_from_existing_rules(
-    repo_root: Path, league_file: Path, positions: dict[str, str],
-    *, runner: Callable[..., Any] = subprocess.run,
-) -> list[StartingSlot]:
-    """Call the existing PowerShell FantasyRelevance slot/eligibility helpers.
+def resolve_slots_from_league(roster_positions: list[Any], positions: dict[str, str]) -> list[StartingSlot]:
+    """Resolve historical lineup slots with central Fantasy Relevance Python rules.
 
-    No FLEX/SUPER_FLEX/REC_FLEX rule table is duplicated in Python. The
-    candidate position universe adds canonical fantasy positions so even an
-    unpopulated starter slot still receives its legitimate allowed positions.
+    Include standard fantasy positions for unpopulated slots, matching the old
+    PowerShell adapter, without duplicating any FLEX or eligibility rules.
     """
-    script = repo_root / "public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1"
-    if not script.is_file():
-        raise WeekSourceNotReady(f"Missing existing-rule bridge: {script}")
-    position_universe = sorted(set(positions.values()) | {"QB", "RB", "WR", "TE", "K"})
     try:
-        finished = runner(
-            ["pwsh", "-NoProfile", "-NonInteractive", "-File", str(script),
-             "-LeaguePath", str(league_file), "-PositionsCsv", ",".join(position_universe)],
-            capture_output=True, text=True, check=True,
-        )
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise WeekSourceNotReady(f"Cannot resolve lineup slots using existing FantasyRelevance rules: {exc}") from exc
-    try:
-        data = json.loads(finished.stdout)
-    except (json.JSONDecodeError, TypeError) as exc:
-        raise WeekSourceNotReady("Slot bridge did not produce a valid JSON array") from exc
-    if not isinstance(data, list) or not data:
-        raise WeekSourceNotReady("No starting slots returned by existing league eligibility helper")
+        definitions = slot_definitions(roster_positions)
+    except (DecisionWindowsError, TypeError, AttributeError) as exc:
+        raise WeekSourceNotReady(f"Cannot resolve canonical starting slots: {exc}") from exc
+    universe = sorted(
+        {position.strip().upper() for position in positions.values()
+         if isinstance(position, str) and position.strip()}
+        | {"QB", "RB", "WR", "TE", "K"}
+    )
     slots = []
-    for row in data:
-        if not isinstance(row, dict) or not isinstance(row.get("SlotID"), str):
-            raise WeekSourceNotReady("Invalid slot bridge row")
-        allowed = row.get("EligiblePositions")
-        if not isinstance(allowed, list) or not allowed or not all(isinstance(x, str) and x for x in allowed):
-            raise WeekSourceNotReady(f"Slot {row['SlotID']} has no valid eligible natural positions")
-        slots.append(StartingSlot(row["SlotID"], frozenset(allowed)))
-    if len({slot.slot_id for slot in slots}) != len(slots):
-        raise WeekSourceNotReady("Duplicate slot bridge IDs")
+    for definition in definitions:
+        allowed = frozenset(pos for pos in universe if slot_eligible(pos, definition["SlotType"]))
+        if not allowed:
+            raise WeekSourceNotReady(f"Slot '{definition['SlotID']}' has no eligible position in supplied universe")
+        slots.append(StartingSlot(definition["SlotID"], allowed))
     return slots
-
 
 def load_verified_week_inputs(
     repo_root: Path, canonical_league_id: str, season: int, week: int,
     *, nfl_finality: Callable[..., tuple[bool, set[str]]] | None = None,
-    runner: Callable[..., Any] = subprocess.run,
 ) -> dict[str, Any]:
     """Assemble, but do NOT publish, verified canonical team-week inputs.
 
@@ -253,7 +234,7 @@ def load_verified_week_inputs(
     this deliberately week-scoped award. This adapter does not call the JSON
     writer; unresolved historical positions or week finality fail closed.
     """
-    league_path, league = _league_source(repo_root, canonical_league_id, season)
+    _, league = _league_source(repo_root, canonical_league_id, season)
     evidence = validate_final_week(repo_root, league, season, week, nfl_finality=nfl_finality)
     matchups = _read_json(
         repo_root / DATA_SOURCE_ROOT / "leagues" / canonical_league_id / "seasons" / str(season)
@@ -270,7 +251,7 @@ def load_verified_week_inputs(
             f"Incomplete weekly fantasy team population: expected {expected_teams}, got {len(matchups)}"
         )
     positions = resolve_week_positions(repo_root, season, week, matchups)
-    slots = resolve_slots_from_existing_rules(repo_root, league_path, positions, runner=runner)
+    slots = resolve_slots_from_league(league["RosterPositions"], positions)
     return {
         "canonical_league_id": canonical_league_id,
         "season": season,

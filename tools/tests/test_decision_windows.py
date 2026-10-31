@@ -415,6 +415,42 @@ class RepairabilityTests(unittest.TestCase):
         self.assertFalse(self.evidence([{"PlayerID": "x", "Position": "RB", "TeamID": None}], acquisition)["PlayerEvidenceUnknown"])
         self.assertEqual([], self.evidence([{"PlayerID": "x", "Position": "RB", "TeamID": "EEE"}], acquisition)["Candidates"])  # bye in week 1
 
+    def test_external_acquisition_joins_canonical_and_legacy_team_ids(self):
+        # Port of NflTeamKeyJoinRegressionTest.ps1 external-evidence fixture.
+        def join(value):
+            text = str(value).strip().upper() if value is not None else ""
+            return {"1": "AAA", "2": "BBB", "3": "EEE"}.get(text, text) or None
+
+        def games(away, home):
+            return [
+                {"Week": 1, "HomeTeamID": home, "AwayTeamID": away,
+                 "StartsAtUtc": "2030-09-08T17:00:00Z", "Status": "Scheduled"},
+                {"Week": 2, "HomeTeamID": home, "AwayTeamID": "3",
+                 "StartsAtUtc": "2030-09-15T17:00:00Z", "Status": "Scheduled"},
+            ]
+
+        acquisition = self.model.resolve_acquisition(True, "2030-09-06T17:00:00Z")
+        before = dw.parse_instant("2030-09-05T17:00:00Z", "at")
+        for away, home, team in (("1", "2", "1"), ("AAA", "BBB", "1"),
+                                 ("1", "2", "AAA"), ("AAA", "BBB", "AAA")):
+            with self.subTest(away=away, home=home, team=team):
+                actual = self.model.external_evidence(
+                    [{"PlayerID": "free1", "Position": "WR", "TeamID": team}],
+                    set(), games(away, home), [self.slot("WR-1", "WR")],
+                    acquisition, 1, before, join, dw.slot_eligible,
+                )
+                self.assertEqual(actual, {
+                    "State": "available", "Candidates": [{"PlayerID": "free1", "Position": "WR"}],
+                    "PlayerEvidenceUnknown": False,
+                })
+        unknown = self.model.external_evidence(
+            [{"PlayerID": "free1", "Position": "WR", "TeamID": "NOT-A-TEAM"}],
+            set(), games("1", "2"), [self.slot("WR-1", "WR")],
+            acquisition, 1, before, join, dw.slot_eligible,
+        )
+        self.assertEqual(unknown["Candidates"], [])
+        self.assertTrue(unknown["PlayerEvidenceUnknown"])
+
     def test_add_repairability_marks_problem_slots_only(self):
         rosters = [{"FantasyTeamID": 1, "PlayerIDs": ["p1", "p3", "p5"], "StarterIDs": ["p1"], "StarterSlots": [None, "p1"]}]
         base = dw.build_base_model("L", SEASON, 1, 18, GAMES, rosters, ASSIGN, 2, key)

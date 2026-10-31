@@ -4,12 +4,12 @@ file:
   path: public/data/FantasyGameContext.json
   kind: generated-json-read-model
   generator: public/requests/RequestLeague.ps1
-  baseDerivation: public/requests/utils/league/FantasyGameContextCore.ps1
-  relevanceDerivation: public/requests/utils/league/FantasyRelevanceV2Utils.psm1
-  matchupPreviewDerivation: public/requests/utils/league/FantasyMatchupPreviewUtils.psm1
-  weeklyWatchDerivation: public/requests/utils/league/FantasyWeeklyWatchUtils.psm1
-  scoreProjectionDerivation: public/requests/utils/league/FantasyGameContextUtils.psm1::Add-FantasyGameScoreContext
-  marketProjectionDerivation: public/requests/utils/league/FantasyGameContextUtils.psm1::Add-FantasyGameMarketContext
+  baseDerivation: tools/derived_data_lib/fantasy_game_context.py::build_fantasy_game_context
+  relevanceDerivation: tools/derived_data_lib/fantasy_game_context.py::add_relevance_context
+  matchupPreviewDerivation: tools/derived_data_lib/fantasy_game_context.py::add_preview_context
+  weeklyWatchDerivation: tools/derived_data_lib/fantasy_game_context.py::add_weekly_watch_context
+  scoreProjectionDerivation: tools/derived_data_lib/fantasy_game_context.py::add_score_context
+  marketProjectionDerivation: tools/derived_data_lib/fantasy_game_context.py::add_market_context
   predecessorIssue: 346
   v2Issue: 432
   v2RefinementIssue: 437

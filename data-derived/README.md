@@ -115,8 +115,8 @@ Awards and other consumers; no consumer should recompute these domain values.
 **Historical input adapter:** `tools/team_week_performance_sources.py`
 validates both canonical NFL week finality and the League's scored-week
 boundary, resolves week-specific player positions and delegates all starter/
-FLEX slot eligibility to the existing FantasyRelevance PowerShell helpers
-through `public/requests/utils/league/ExportWeeklyPerformanceSlots.ps1`.
+FLEX slot eligibility to the shared Python `decision_windows.slot_definitions`
+and `decision_windows.slot_eligible` rules (no PowerShell bridge).
 Missing target-week positions may fall back to consistent earlier weeks
 of the same season, then a finalized same-season NFL roster, then only a
 **prior finalized NFL season** with a matching canonical player ID and no
