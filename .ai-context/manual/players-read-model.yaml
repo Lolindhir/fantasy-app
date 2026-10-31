@@ -4,8 +4,11 @@ status: accepted-contract-v1
 trackingIssue: 1226
 architectureDecision: ADR-076
 implementationState: >-
-  Issue #1226 step 2: contract only. RequestPlayers.ps1 stays productive until the cutover (step 5); the product
-  extension (3a), the function (3b), the shadow (4) and the cutover (5) follow in separate pull requests.
+  Issue #1226 step 3b: the function tools/derived_data_lib/players_read_model.py (assemble on prepared inputs, load_inputs
+  from canonical facts and the player-valuation snapshot, published-form change detection) and the CLI
+  tools/players_read_model.py exist; the product extension (3a) is merged. RequestPlayers.ps1 stays productive until the
+  cutover (step 5). The consumer generator players_app_publish.py with the shadow compare (4), the cutover (5) and the
+  cleanup (6) follow in separate pull requests.
 
 purpose: >-
   Define public/data/Players.json as a pure consumer delivery. One pure function resolves the complete player rows for
@@ -42,6 +45,11 @@ function:
     (data-meta LeagueTimeZone). The function and the CLI echo it back. Age = round((AsOfDate - BirthDate) in days / 365.2425, 1);
     an unparsable or missing BirthDate gives null. Same inputs and same AsOfDate give the same rows; the only change
     without an input change is Age when AsOfDate moves (P1).
+  formGradingShape: >-
+    Grading carries a Form row and the Rank row. The Form value keeps its published shape until grading-v2: null without
+    scored games, the bare game object for exactly one game, a list for two to four (a serialization quirk of the PowerShell
+    pipeline that the unchanged contract preserves). The games are selected from GameHistory by the GameIDs of the product
+    FormGames; the function does not choose them.
   determinism: Rows are ordered as today (by the existing sort of RequestPlayers.ps1); the result is a pure function of its inputs.
   failClosed:
     - missing or incomplete Sleeper snapshot, unknown team abbreviation or empty population (players_population errors pass through)
@@ -117,8 +125,8 @@ nonGoals:
 steps:
   - 1 preparations (done, PR 1227): dead read removed, salary_simulation.py on canonical inputs
   - 2 this contract and ADR-076
-  - 3a player-valuation extended additively (Q4), PV shadow proves equality with the published Players.json fields
-  - 3b function players_read_model.py with Fast tests on synthetic players
+  - 3a player-valuation extended additively (Q4), done (PR 1229); the exact equality with the published Players.json fields is proven by the step 4 shadow
+  - 3b function players_read_model.py with Fast tests on synthetic players (done in the step 3b pull request; a local run against the freshly materialized product matched the published file byte for byte at AsOfDate 2026-10-31, the formal shadow is step 4)
   - 4 shadow compare against the published file (validation-shadow, Fast guard, one manual run on main)
   - 5 cutover of update-players.yml (players_app_publish.py write), PV hold seed dropped, runtime measured
   - 6 cleanup: delete RequestPlayers.ps1 and unused player modules, point-path guard, FM trigger to data-derived/player-valuation/**, inventory and registers

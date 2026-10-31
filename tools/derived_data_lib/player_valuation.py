@@ -21,6 +21,7 @@ when later weeks arrive.
 from __future__ import annotations
 
 import copy
+import math
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Sequence
 
@@ -84,7 +85,9 @@ class SnapshotContext:
 def scaled_round(value: float, digits: int) -> float:
     """[math]::Round(value, digits) as PowerShell/.NET does it: scale, then round half to even."""
     factor = 10.0 ** digits
-    return round(value * factor) / factor
+    result = round(value * factor) / factor
+    # .NET keeps the sign of a negative value that rounds to zero (-0.0); Python's int rounding loses it
+    return math.copysign(0.0, value) if result == 0 else result
 
 
 def played_points(weeks: WeekRows, position: str, max_week: int) -> list[float]:
