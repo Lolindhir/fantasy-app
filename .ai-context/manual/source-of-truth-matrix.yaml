@@ -1165,6 +1165,11 @@ consumerReadClassification:
         legacy:Timestamps: app-output-owner
         legacy:Transactions: validation-shadow
       note: 'Consumer generator of the League history products (ADR-057, Issue #999). compare renders the App-shaped Transactions and Drafts files in memory and compares them exactly with the committed public/data files (validation-shadow, never an input). Since step 5b write publishes those files only on semantic change and updates the Transactions and Drafts keys of Timestamps.json (app-output-owner: the writer owns its own freshness timestamp, never an input).'
+    tools/players_app_publish.py:
+      reads:
+        legacy:Players: validation-shadow
+        legacy:Timestamps: validation-shadow
+      note: 'Consumer generator of the published Players file (ADR-076, Issue #1226). compare materializes the player-valuation product into a scratch directory, resolves the players read model at the Players timestamp date in the league time zone and compares the result exactly (field by field and written text) with the published file (validation-shadow, never an input); Timestamps.json only supplies the reference date.'
     tools/decision_windows.py:
       reads:
         legacy:DecisionWindows: validation-shadow
