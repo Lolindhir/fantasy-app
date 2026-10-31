@@ -735,6 +735,7 @@ def current_identity_adjudication_state(
         players,
         list(mappings.get("Conflicts") or []),
         observation_season,
+        mapping_claims=list(mappings.get("Mappings") or []),
     )
     status_by_id = {item["AdjudicationID"]: item["Status"] for item in statuses}
     applicable = [
@@ -931,7 +932,16 @@ def build_identities(
             current_values_by_internal_provider[(internal_id, key)].add(value)
     for (key, value), (target_id, source_ids, provenance) in adjudicated_transfers.items():
         owners = current_claim_owners.get((key, value), set())
-        if owners != {target_id}:
+        if not source_ids:
+            # Reviewed PFR token had no provider owner. The source is the
+            # explicit decision itself, even without an upstream ID candidate.
+            if owners - {target_id}:
+                raise ValueError(
+                    f"Unowned-token adjudication {key}/{value} conflicts with current "
+                    f"provider owners: {sorted(owners - {target_id})}"
+                )
+            current_claim_owners[(key, value)].add(target_id)
+        elif owners != {target_id}:
             continue
         current_claim_sources[(key, value, target_id)].add(provenance)
         current_claim_transfers[(key, value, target_id)].update(source_ids)

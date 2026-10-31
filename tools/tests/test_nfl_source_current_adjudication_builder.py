@@ -87,6 +87,33 @@ class ApplyCurrentAdjudicationTests(unittest.TestCase):
             candidate({"GSIS": "00-0099999"}, existing="NFLP-bystander"),
         ]
 
+    def test_unowned_pfr_assignment_is_exact_and_idempotent(self):
+        existing = self.persisted()
+        existing[0].ids["PFF"] = "61448"
+        decision = {
+            "AdjudicationID": "test-cody",
+            "Season": SEASON,
+            "ResolutionKind": "confirmed-unowned-provider-token",
+            "TargetCanonicalPlayerID": "NFLP-target",
+            "SourceCanonicalPlayerIDs": [],
+            "ProviderAssignments": [{"Provider": "PFR", "ExternalID": "WhitCo05"}],
+            "IndependentAnchors": [{"Provider": "GSIS", "ExternalID": "00-0012345"},
+                                   {"Provider": "PFF", "ExternalID": "61448"}],
+            "Provenance": f"{CURRENT_ADJUDICATION_PROVENANCE}:test-cody",
+        }
+        first, diagnostic = _apply_current_adjudications([decision], existing, [])
+        self.assertEqual([], diagnostic)
+        self.assertEqual("WhitCo05", existing[0].ids["PFR"])
+        self.assertNotIn("PFR", existing[1].ids)
+        self.assertNotIn("PFR", existing[2].ids)
+        self.assertEqual(
+            ("NFLP-target", (), f"{CURRENT_ADJUDICATION_PROVENANCE}:test-cody"),
+            first[("PFR", "WhitCo05")]
+        )
+        replay, again = _apply_current_adjudications([decision], existing, [])
+        self.assertEqual(first, replay)
+        self.assertEqual([], again)
+
     def test_reassignment_moves_tokens_from_sources_to_target_only(self):
         existing = self.persisted()
         transfers, overridden = _apply_current_adjudications([reassignment()], existing, [])

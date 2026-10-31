@@ -61,6 +61,76 @@ class CurrentIdentityAdjudicationTests(unittest.TestCase):
             encoding="utf-8",
         )
 
+    @classmethod
+    def _unowned(cls) -> dict[str, Any]:
+        value = cls._entry(adjudication_id="2026-pfr-unowned")
+        value.update({
+            "ResolutionKind": "confirmed-unowned-provider-token",
+            "ConflictPolicy": "reject-any-conflict",
+            "SourceCanonicalPlayerIDs": [],
+            "ProviderAssignments": [{"Provider": "PFR", "ExternalID": "WhitCo05"}],
+            "IndependentAnchors": [
+                {"Provider": "GSIS", "ExternalID": "00-0035891", "Summary": "Target GSIS from canonical roster"},
+                {"Provider": "PFF", "ExternalID": "61448", "Summary": "Target PFF from canonical roster"},
+            ],
+        })
+        return value
+
+    def test_unowned_pfr_loader_requires_two_independent_anchors_and_no_source_owner(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entry = self._unowned()
+            self._write_source(root, [entry])
+            result = load_current_identity_adjudications(root, {"NFLP-target"}, 2026)
+            self.assertEqual("confirmed-unowned-provider-token", result[0]["ResolutionKind"])
+            self.assertEqual([], result[0]["SourceCanonicalPlayerIDs"])
+            self.assertEqual(2, len(result[0]["IndependentAnchors"]))
+            self.assertEqual([], load_current_identity_adjudications(root, {"NFLP-target"}, 2027))
+            for mutation, message in [
+                ({"SourceCanonicalPlayerIDs": ["NFLP-provisional"]}, "must be"),
+                ({"IndependentAnchors": entry["IndependentAnchors"][:1]}, "two strong"),
+                ({"ProviderAssignments": [{"Provider": "Sleeper", "ExternalID": "7039"}]},
+                 "exactly one PFR"),
+            ]:
+                copy = {**entry, **mutation}
+                self._write_source(root, [copy])
+                with self.assertRaisesRegex(ValueError, message):
+                    load_current_identity_adjudications(root, {"NFLP-target", "NFLP-provisional"}, 2026)
+
+    def test_unowned_pfr_state_rejects_conflicts_and_wrong_anchors(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_source(root, [self._unowned()])
+            decision = load_current_identity_adjudications(root, {"NFLP-target"}, 2026)[0]
+        target = {"CanonicalPlayerID": "NFLP-target",
+                  "IDs": {"GSIS": "00-0035891", "PFF": "61448"}, "IDAliases": {}}
+        good = validate_current_identity_adjudications_against_state([decision], [target], [], 2026)
+        self.assertEqual([{"AdjudicationID": "2026-pfr-unowned", "Status": "active"}], good)
+        claimed = {"CanonicalPlayerID": "NFLP-other", "IDs": {"PFR": "WhitCo05"}, "IDAliases": {}}
+        with self.assertRaisesRegex(ValueError, "token is not unowned"):
+            validate_current_identity_adjudications_against_state([decision], [target, claimed], [], 2026)
+        with self.assertRaisesRegex(ValueError, "conflicted previously unowned"):
+            validate_current_identity_adjudications_against_state(
+                [decision], [target],
+                [{"Provider": "PFR", "ExternalID": "WhitCo05", "FirstObservedSeason": 2026,
+                  "LastObservedSeason": 2026, "CanonicalPlayerIDs": ["NFLP-other"]}], 2026
+            )
+        with self.assertRaisesRegex(ValueError, "missing verified target anchor"):
+            validate_current_identity_adjudications_against_state(
+                [decision], [{**target, "IDs": {"GSIS": "00-0035891", "PFF": "wrong"}}], [], 2026
+            )
+        with self.assertRaisesRegex(ValueError, "historical mapping owner"):
+            validate_current_identity_adjudications_against_state(
+                [decision], [target], [], 2026,
+                mapping_claims=[{"Provider": "PFR", "ExternalID": "WhitCo05",
+                                 "CanonicalPlayerID": "NFLP-other",
+                                 "FirstObservedSeason": 2025, "LastObservedSeason": 2026}]
+            )
+        # Replay is valid: the confirmed token is already attached to its target.
+        validate_current_identity_adjudications_against_state(
+            [decision], [{**target, "IDs": {**target["IDs"], "PFR": "WhitCo05"}}], [], 2026
+        )
+
     def test_confirmed_decision_is_bounded_to_exact_observation_season(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
