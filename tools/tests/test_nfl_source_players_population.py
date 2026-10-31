@@ -82,6 +82,22 @@ class PopulationFixture:
 
 
 class PopulationRuleTests(unittest.TestCase):
+    def test_app_position_matches_retired_powershell_primary_and_fallback(self) -> None:
+        # Port of the last Get-AppFantasyPosition cases from the PowerShell
+        # ProviderJoinInvariantRegressionTest (Issue #1238 scope 3).
+        cases = [
+            ("WR", ["WR", "DB"], "WR"),
+            ("DB", ["DB", "WR"], "WR"),
+            ("DB", ["DB"], None),
+            ("DB", ["DB", "RB", "WR"], "RB"),
+            (" wr ", ["TE"], "WR"),
+            ("DB", [" lb ", " te "], "TE"),
+            ("DB", [], None),
+        ]
+        for primary, eligible, expected in cases:
+            with self.subTest(primary=primary, eligible=eligible):
+                self.assertEqual(pop.app_fantasy_position(primary, eligible), expected)
+
     def build(self, rows: list[dict], **kwargs: object) -> dict:
         fixture = PopulationFixture(rows, **kwargs)
         self.addCleanup(fixture.close)

@@ -33,7 +33,7 @@ architecture:
   rules:
     - The function copies; it does not derive league values. Salary, SalaryProjected, Ranking, Grading, season values, PointHistory, GamesPotential and the Form basis come from the player-valuation snapshot.
     - Source -> derived -> consumer holds for gradings too. Rank grading stays grading-v1. A real Form grading (evaluation instead of game selection) becomes grading-v2 on the same product data so App and Fantasy Management read the same result; it is not part of this work.
-    - The consumer keeps the field names of the Players.json contract, the file rounding and the JSON write depth (Get-PlayersPublishedJsonDepth, 7). The contract of Players.json is unchanged.
+    - The consumer keeps the field names, rounding and published JSON form of Players.json. The former PowerShell Get-PlayersPublishedJsonDepth helper (depth 7) was retired in #1238; the Python serializer preserves the published shape. The contract of Players.json is unchanged.
     - Platform fields, profile fields and injury come from tools/players_population.py (ADR-043); GameHistory from tools/players_game_history.py (ADR-044); Bye weeks from the canonical NFL schedule; depth chart fields from the canonical Sleeper snapshot.
     - No input from public/data, in particular not the previously published Players.json.
     - No wall clock inside the function or the model. Time enters only through AsOfDate.

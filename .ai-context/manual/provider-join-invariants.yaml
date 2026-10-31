@@ -41,7 +41,7 @@ joinAudit:
         - Players.ID (Sleeper player_id from the canonical Sleeper snapshot) is required and globally unique.
         - Since #347 H1b Players.json carries no provider ID (TankID removed); the Tank01 join helpers and the historical Tank01 archive aggregation were removed with #347 G4.
         - Sleeper player_id is optional in the global player catalog, but every non-empty value must be unique before joining.
-      defenseInDepth: public/requests/utils/player/PlayerUtils.psm1::Test-UniquePlayerIds
+      defenseInDepth: tools/derived_data_lib/players_read_model.py::validate_unique_ids
 
   team:
     source: Sleeper
