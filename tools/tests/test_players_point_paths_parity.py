@@ -16,7 +16,6 @@ TOLERANCE = 0.05
 # Known, small divergence (2026-10-31: 5 of 956 players, e.g. identity/team-join edge cases); a systematic
 # drift between the two point paths must still fail. Tracked as follow-up of Issue #1226.
 MAX_DIFFERING_SHARE = 0.02  # only pre-ContractVersion-3 snapshots
-KNOWN_PENDING_IDENTITY = "NFLP-caf7c3d6786fcd72e704"  # Cody White PFR WhitCo05 (#1236)
 
 
 def _newest_snapshot():
@@ -58,10 +57,10 @@ class PointPathParityTests(unittest.TestCase):
                 differing.append((cpid, total, round(expected, 2)))
         self.assertGreater(compared, 0)
         if snapshot["ContractVersion"] >= 3:
-            # All rematerialized totals must match except the independently owned
-            # Cody White PFR source-identity repair (#1236); remove when published.
+            # Corrected fantasy-relevant scoring must agree exactly for every
+            # resolved current-season player, including Cody White's scored weeks.
             self.assertEqual(
-                [], [row for row in differing if row[0] != KNOWN_PENDING_IDENTITY],
+                [], differing,
                 f"ContractVersion-3 point-path differences: {differing[:10]}",
             )
         else:

@@ -98,10 +98,11 @@ pointPaths:
     PointHistory and lose the season before league start; therefore both stay.
   guard: >-
     The persisted Fast test compares current-season aggregate totals from both
-    point paths. New ContractVersion-3 snapshots require exact equality except
-    the explicit Cody White PFR source mapping hold (#1236); remove after that
-    source repair. Legacy ContractVersion-2 snapshots retain the bounded
-    tolerance only until rematerialized. No runtime scoring exception is added.
+    point paths. New ContractVersion-3 snapshots require exact equality for
+    every resolved player's current-season FantasyPointsTotal, including Cody
+    White's scored stat weeks. Legacy ContractVersion-2 snapshots retain the
+    bounded tolerance only until rematerialized. Cody's separate missing snap
+    identity still needs Source repair for correct GamesPlayed/Salary.
 
 consumerGenerator:
   write: >-
