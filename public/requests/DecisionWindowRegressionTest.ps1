@@ -31,11 +31,11 @@ try {
     Save-JsonFile -TargetFile $tempFile -Type "DecisionWindows" -Data $model -CompareScript $decisionCompare -UpdateTimestamp
     $first = Get-Content -Path $tempFile -Raw
     Set-Content -Path $tempTimestampFile -Value '{"DecisionWindows":"2000-01-01T00:00:00Z"}'
+    $beforeTimestamp = Get-Content -Path $tempTimestampFile -Raw
 
     Save-JsonFile -TargetFile $tempFile -Type "DecisionWindows" -Data $model -CompareScript $decisionCompare -UpdateTimestamp
     if ((Get-Content -Path $tempFile -Raw) -cne $first) { throw "Unchanged DecisionWindows rewrote JSON." }
-    $unchangedTimestamp = (Get-Content -Path $tempTimestampFile -Raw | ConvertFrom-Json).DecisionWindows
-    if ([string]$unchangedTimestamp -ne "2000-01-01T00:00:00Z") {
+    if ((Get-Content -Path $tempTimestampFile -Raw) -cne $beforeTimestamp) {
         throw "Unchanged DecisionWindows updated its timestamp."
     }
 
@@ -46,8 +46,7 @@ try {
     if ([string]$updatedWindow -ne "2030-09-08T17:20:00Z") {
         throw "Changed DecisionWindows did not update JSON."
     }
-    $updatedTimestamp = (Get-Content -Path $tempTimestampFile -Raw | ConvertFrom-Json).DecisionWindows
-    if ([string]$updatedTimestamp -eq "2000-01-01T00:00:00Z") {
+    if ((Get-Content -Path $tempTimestampFile -Raw) -ceq $beforeTimestamp) {
         throw "Changed DecisionWindows did not update its timestamp."
     }
 }
