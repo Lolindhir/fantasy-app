@@ -13,7 +13,7 @@ Purpose: reusable workflows for Fantasy Management tasks.
 
 ## Hypothesis and validation workflow
 
-Use this workflow when an analysis produces a plausible but not yet durable empirical conclusion.
+Use this workflow when a **Fantasy-Management-specific** analysis produces a plausible but not yet durable empirical conclusion. Cross-consumer shared-model / shared-data-product research is stored in root `research/<data-product>/<year>/` and uses the same source-lineage, reproducibility and status discipline; it is not Fantasy Management decision analysis.
 
 1. Store the dated baseline under `fantasy-management/analyses/<year>/` as a human-readable Markdown file and, when structured comparison matters, a machine-readable JSON file.
 2. Record the repository ref or commit, concrete input paths, league format, population filters, method version, metrics, sample sizes, limitations and validity note.

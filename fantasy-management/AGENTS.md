@@ -43,6 +43,8 @@ A downstream dependency does not change ownership: classify work by the responsi
 
 This responsibility split does not imply a physical folder migration. `fantasy-management/**` remains the common workspace for both layers until a separate architecture decision explicitly changes that structure.
 
+**Cross-consumer research boundary:** Consumer-neutral empirical studies of shared models and data products (e.g. PlayerWeekFantasy V4-C / PI1 / Vegas / Defense) are archived at root `research/<data-product>/<year>/` and follow root `AGENTS.md`. Fantasy Management strategic, roster and player/team analyses remain under this workspace's `analyses/`. Legacy links can be left as short forwarding pointers instead of duplicating shared research.
+
 ## Required reading order
 
 For Fantasy workspace tasks, read these files as needed:
