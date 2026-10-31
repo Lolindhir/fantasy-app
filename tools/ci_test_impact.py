@@ -130,7 +130,7 @@ def baseline_coverage(root: Path, paths: set[str], inventory: dict | None = None
         and entry["tier"] in {"fast", "deep"}
         and entry["currentPrCoverage"] in {"build", "build-indirect"}
     }
-    indirect = set(re.findall(r"tools\\.tests\\.(test_[a-zA-Z0-9_]+)", bridge))
+    indirect = set(re.findall(r"tools\.tests\.(test_[a-zA-Z0-9_]+)", bridge))
     coverage = {}
     for path in paths:
         name = Path(path).stem
