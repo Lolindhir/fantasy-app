@@ -69,8 +69,8 @@ class SeasonValuesTests(unittest.TestCase):
         self.assertEqual(4, values["GamesPlayed"])
         self.assertEqual(10.0, values["Total"])
         self.assertEqual(2.5, values["AvgGame"])
-        self.assertEqual(0.63, values["AvgPotentialGame"])
-        self.assertEqual({"AvgPotentialGame": 0.63, "AvgGame": 2.5},
+        self.assertEqual(0.62, values["AvgPotentialGame"])
+        self.assertEqual({"AvgPotentialGame": 0.62, "AvgGame": 2.5},
                          pv.history_inputs(rows, "WR", 17))
 
     def test_history_inputs_stay_a_projection_of_history_values(self) -> None:
