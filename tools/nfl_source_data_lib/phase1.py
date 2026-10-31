@@ -97,6 +97,7 @@ def _canonical_partition(
     observation_season: int,
     payload: dict[str, Any],
     force: bool,
+    approved_snap_pfr_bindings: frozenset[tuple[str, str]] = frozenset(),
 ) -> tuple[Path, dict[str, Any], bool]:
     path = repo_root / DATA_SOURCE_ROOT / "nfl" / relative_path
     effective, preserved = effective_partition_payload(
@@ -106,6 +107,7 @@ def _canonical_partition(
         partition_season=season,
         observation_season=observation_season,
         force=force,
+        approved_snap_pfr_bindings=approved_snap_pfr_bindings,
     )
     return path, effective, preserved
 
@@ -1065,6 +1067,7 @@ def _build_snap_counts(
     observation_season: int,
     *,
     force: bool,
+    approved_snap_pfr_bindings: frozenset[tuple[str, str]] = frozenset(),
 ) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
     lookup = identity_lookup(canonical)
     outputs: list[tuple[Path, dict[str, Any]]] = []
@@ -1134,6 +1137,7 @@ def _build_snap_counts(
                 observation_season=observation_season,
                 payload=payload,
                 force=force,
+                approved_snap_pfr_bindings=approved_snap_pfr_bindings,
             )
             outputs.append((path, effective))
             preserved += int(was_preserved)
@@ -1419,6 +1423,7 @@ def build_phase1_outputs(
     observation_season: int,
     *,
     force: bool = False,
+    approved_snap_pfr_bindings: frozenset[tuple[str, str]] = frozenset(),
 ) -> tuple[list[tuple[Path, dict[str, Any]]], dict[str, Any], int]:
     """Build all activated Phase-1 canonical data-source outputs before publication."""
     outputs: list[tuple[Path, dict[str, Any]]] = []
@@ -1520,7 +1525,8 @@ def build_phase1_outputs(
     snaps_dataset = datasets.get("nflverse.snap-counts")
     if snaps_dataset is not None:
         built, coverage, count = _build_snap_counts(
-            repo_root, snaps_dataset, canonical, observation_season, force=force
+            repo_root, snaps_dataset, canonical, observation_season, force=force,
+            approved_snap_pfr_bindings=approved_snap_pfr_bindings,
         )
         outputs.extend(built)
         audit["snapCounts"] = coverage
