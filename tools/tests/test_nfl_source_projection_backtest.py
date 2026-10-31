@@ -92,6 +92,7 @@ class ProjectionWalkForwardContractTests(unittest.TestCase):
         self.assertFalse(_played("K", {"OffenseSnaps": 1.0, "SpecialTeamsSnaps": 0.0}))
 
     def test_real_2024_2025_v1_backtest_is_reproducible(self) -> None:
+        # Baseline after reviewed Cody White PFR identity backfill (#1236, Source phase A).
         report = build_v1_backtest_report(
             ROOT,
             league_id="nfl-reise",
@@ -122,54 +123,54 @@ class ProjectionWalkForwardContractTests(unittest.TestCase):
         self.assertEqual([2024, 2025], report["Seasons"])
         self.assertEqual(
             {
-                "Count": 11361,
-                "MAE": 4.6461,
-                "RMSE": 6.4736,
-                "Bias": -0.2941,
-                "MeanProjection": 7.9246,
-                "MeanActual": 8.2187,
+                "Count": 11369,
+                "MAE": 4.6463,
+                "RMSE": 6.4734,
+                "Bias": -0.2928,
+                "MeanProjection": 7.9217,
+                "MeanActual": 8.2145,
             },
             report["Combined"]["Metrics"],
         )
-        self.assertEqual(11361, report["Combined"]["PredictionCount"])
+        self.assertEqual(11369, report["Combined"]["PredictionCount"])
         self.assertEqual(
             "projection for week W uses only confirmed played-game outcomes from weeks < W",
             report["SeasonReports"][0]["LeakageRule"],
         )
 
         season_2024, season_2025 = report["SeasonReports"]
-        self.assertEqual(5637, season_2024["PredictionCount"])
-        self.assertEqual(629, season_2024["ColdStartCount"])
-        self.assertEqual(6, season_2024["ObservationAudit"]["MissingParticipationEvidenceCount"])
+        self.assertEqual(5638, season_2024["PredictionCount"])
+        self.assertEqual(630, season_2024["ColdStartCount"])
+        self.assertEqual(4, season_2024["ObservationAudit"]["MissingParticipationEvidenceCount"])
         self.assertEqual(
             {
-                "Count": 5637,
-                "MAE": 4.6665,
-                "RMSE": 6.4875,
-                "Bias": -0.3997,
-                "MeanProjection": 7.9805,
-                "MeanActual": 8.3802,
+                "Count": 5638,
+                "MAE": 4.6672,
+                "RMSE": 6.4879,
+                "Bias": -0.3981,
+                "MeanProjection": 7.9806,
+                "MeanActual": 8.3787,
             },
             season_2024["Metrics"],
         )
 
-        self.assertEqual(5724, season_2025["PredictionCount"])
-        self.assertEqual(641, season_2025["ColdStartCount"])
-        self.assertEqual(13, season_2025["ObservationAudit"]["MissingParticipationEvidenceCount"])
+        self.assertEqual(5731, season_2025["PredictionCount"])
+        self.assertEqual(642, season_2025["ColdStartCount"])
+        self.assertEqual(5, season_2025["ObservationAudit"]["MissingParticipationEvidenceCount"])
         self.assertEqual(
             {
-                "Count": 5724,
-                "MAE": 4.626,
-                "RMSE": 6.4598,
-                "Bias": -0.1901,
-                "MeanProjection": 7.8697,
-                "MeanActual": 8.0598,
+                "Count": 5731,
+                "MAE": 4.6258,
+                "RMSE": 6.4592,
+                "Bias": -0.1892,
+                "MeanProjection": 7.8639,
+                "MeanActual": 8.0531,
             },
             season_2025["Metrics"],
         )
 
         self.assertEqual(5.5119, report["Combined"]["ByWeek"]["2"]["MAE"])
-        self.assertEqual(4.3986, report["Combined"]["ByWeek"]["9"]["MAE"])
+        self.assertEqual(4.412, report["Combined"]["ByWeek"]["9"]["MAE"])
         self.assertEqual(6.4911, report["Combined"]["ByPosition"]["QB"]["MAE"])
         self.assertEqual(3.7179, report["Combined"]["ByPosition"]["TE"]["MAE"])
 

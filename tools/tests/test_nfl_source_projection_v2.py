@@ -128,6 +128,7 @@ class ProjectionV2CalibrationTests(unittest.TestCase):
         self.assertEqual(without_holdout["Selected"], with_holdout["Selected"])
 
     def test_real_v2_calibration_and_2025_holdout_are_reproducible(self) -> None:
+        # Source-owned Cody PFR backfill extends replay observations (#1236).
         report = build_v2_calibration_report(
             ROOT,
             league_id="nfl-reise",
@@ -149,15 +150,15 @@ class ProjectionV2CalibrationTests(unittest.TestCase):
         selected = report["Calibration"]["Selected"]
         self.assertEqual(BASELINE_PREVIOUS_POSITION_MEAN, selected["BaselineVariant"])
         self.assertEqual(0.5, selected["K"])
-        self.assertEqual(11297, report["Calibration"]["ComparableObservationCount"])
+        self.assertEqual(11298, report["Calibration"]["ComparableObservationCount"])
         self.assertEqual(
             {
-                "Count": 11297,
-                "MAE": 4.5914,
-                "RMSE": 6.2743,
-                "Bias": -0.1932,
-                "MeanProjection": 8.0762,
-                "MeanActual": 8.2694,
+                "Count": 11298,
+                "MAE": 4.5917,
+                "RMSE": 6.2745,
+                "Bias": -0.1926,
+                "MeanProjection": 8.0761,
+                "MeanActual": 8.2687,
             },
             selected["Metrics"],
         )
@@ -165,46 +166,46 @@ class ProjectionV2CalibrationTests(unittest.TestCase):
         comparable = report["Holdout"]["Comparable"]
         self.assertEqual(
             {
-                "Count": 5724,
-                "MAE": 4.626,
-                "RMSE": 6.4598,
-                "Bias": -0.1901,
-                "MeanProjection": 7.8697,
-                "MeanActual": 8.0598,
+                "Count": 5731,
+                "MAE": 4.6258,
+                "RMSE": 6.4592,
+                "Bias": -0.1892,
+                "MeanProjection": 7.8639,
+                "MeanActual": 8.0531,
             },
             comparable["V1"],
         )
         self.assertEqual(
             {
-                "Count": 5724,
-                "MAE": 4.593,
-                "RMSE": 6.3156,
-                "Bias": -0.0633,
-                "MeanProjection": 7.9965,
-                "MeanActual": 8.0598,
+                "Count": 5731,
+                "MAE": 4.5925,
+                "RMSE": 6.3145,
+                "Bias": -0.0618,
+                "MeanProjection": 7.9913,
+                "MeanActual": 8.0531,
             },
             comparable["V2"],
         )
-        self.assertEqual(0.033, comparable["MAEImprovementPoints"])
-        self.assertEqual(0.7134, comparable["MAEImprovementPercent"])
-        self.assertEqual(0.1442, comparable["RMSEImprovementPoints"])
-        self.assertEqual(2.2323, comparable["RMSEImprovementPercent"])
+        self.assertEqual(0.0333, comparable["MAEImprovementPoints"])
+        self.assertEqual(0.7199, comparable["MAEImprovementPercent"])
+        self.assertEqual(0.1447, comparable["RMSEImprovementPoints"])
+        self.assertEqual(2.2402, comparable["RMSEImprovementPercent"])
         self.assertEqual(5.5937, comparable["V1Breakdowns"]["ByWeek"]["2"]["MAE"])
         self.assertEqual(5.0662, comparable["V2Breakdowns"]["ByWeek"]["2"]["MAE"])
         self.assertEqual(6.6926, comparable["V1Breakdowns"]["ByPosition"]["QB"]["MAE"])
         self.assertEqual(6.5589, comparable["V2Breakdowns"]["ByPosition"]["QB"]["MAE"])
 
         expanded = report["Holdout"]["ExpandedCoverage"]
-        self.assertEqual(641, expanded["AdditionalColdStartPredictions"])
-        self.assertEqual(6365, expanded["TotalPredictions"])
+        self.assertEqual(642, expanded["AdditionalColdStartPredictions"])
+        self.assertEqual(6373, expanded["TotalPredictions"])
         self.assertEqual(
             {
-                "Count": 641,
-                "MAE": 5.9592,
-                "RMSE": 7.0318,
-                "Bias": 2.6514,
-                "MeanProjection": 8.1861,
-                "MeanActual": 5.5347,
+                "Count": 642,
+                "MAE": 5.9615,
+                "RMSE": 7.0325,
+                "Bias": 2.6582,
+                "MeanProjection": 8.1843,
+                "MeanActual": 5.5261,
             },
             expanded["ColdStartMetrics"],
         )
