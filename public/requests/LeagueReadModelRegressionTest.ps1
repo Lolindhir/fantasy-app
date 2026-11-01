@@ -100,6 +100,9 @@ Assert-True -Condition (Compare-PlayoffStandings -oldPlayoffs @($avatarCompareOl
 Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "RequestLeague change detection does not track LeagueIDPrevious."
 Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType','Playoffs')") -Message "RequestLeague change detection does not track canonical Settings, ScoringType and Playoffs structurally."
 Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical structured comparison is not structural."
+Assert-True -Condition $requestLeague.Contains('$oldCurrent.Weeks') -Message "League change detection must compare historical weekly snapshots to avoid retaining stale data."
+Assert-True -Condition $requestLeague.Contains('$newCurrent.Weeks') -Message "League change detection must notice new validated weekly product rows."
+Assert-True -Condition $requestLeague.Contains('$oldWeeksJson -cne $newWeeksJson') -Message "League change detection ignores canonical current-season weekly standings changes."
 
 
 
