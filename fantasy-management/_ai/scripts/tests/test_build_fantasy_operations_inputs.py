@@ -250,6 +250,24 @@ class FantasyOperationsInputsTests(unittest.TestCase):
                 build(root, root / "fantasy-management/automation/input-materialization.json")
             self.assertEqual([date(2026, 8, 8)], observed)
 
+    def test_age_value_changes_invalidate_fingerprint_not_generated_time(self) -> None:
+        import canonical_player_inputs
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            config_path = root / "fantasy-management/automation/input-materialization.json"
+            before, _ = build(root, config_path)
+            original = canonical_player_inputs.load_players
+            def changed_age(*args):
+                rows = original(*args)
+                rows[0]["Age"] = float(rows[0]["Age"]) + 0.1
+                return rows
+            with mock.patch.object(canonical_player_inputs, "load_players", side_effect=changed_age):
+                after, _ = build(root, config_path)
+            self.assertEqual(before["generated_at"], after["generated_at"])
+            self.assertNotEqual(before["input_fingerprint"], after["input_fingerprint"])
+            self.assertEqual(before["sources"], after["sources"])
+
     def test_current_canonical_team_display_matches_published_league(self) -> None:
         root = Path(__file__).resolve().parents[4]
         league_id = "nfl-reise"
