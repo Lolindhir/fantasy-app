@@ -34,6 +34,8 @@ KNOWN_MODEL_IDS: dict[str, frozenset[str]] = {
     "Lifecycle": frozenset({"lifecycle-v1"}),
     "Repairability": frozenset({"repairability-v1"}),
     "TeamRange": frozenset({"team-range-v1"}),
+    "RosterCap": frozenset({"roster-cap-v1"}),
+    "AutoCut": frozenset({"auto-cut-v1"}),
 }
 
 TOP_LEVEL_KEYS = {

@@ -30,6 +30,8 @@ foreach ($s in $manifest.Seasons) {
     Assert-Equal 'lifecycle-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Lifecycle') "Lifecycle model $($s.Season)."
     Assert-Equal 'repairability-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Repairability') "Repairability model $($s.Season)."
     Assert-Equal 'team-range-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'TeamRange') "TeamRange model $($s.Season)."
+    Assert-Equal 'roster-cap-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'RosterCap') "RosterCap model $($s.Season)."
+    Assert-Equal 'auto-cut-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'AutoCut') "AutoCut model $($s.Season)."
 }
 foreach ($retired in @('public/data/Metadata.json', 'public/data/Metadata.ai-doc.yaml', 'data-source/leagues/_bootstrap', 'public/requests/config.ps1')) {
     if (Test-Path (Join-Path $repoRoot $retired)) { throw "Retired legacy path still exists: $retired" }

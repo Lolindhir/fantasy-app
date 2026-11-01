@@ -374,7 +374,7 @@ class RegistryAlignmentTests(unittest.TestCase):
         by_kind = {name: {mid for mid in registry.model_ids() if get_model(mid).KIND == kind}
                    for name, kind in pv.MODEL_KINDS.items()}
         by_kind.update({name: {mid for mid in registry.model_ids() if get_model(mid).KIND == kind}
-                        for name, kind in (("Standings", "standings"), ("Awards", "awards"), ("Lifecycle", "lifecycle"), ("Repairability", "repairability"), ("TeamRange", "team-range"))})
+                        for name, kind in (("Standings", "standings"), ("Awards", "awards"), ("Lifecycle", "lifecycle"), ("Repairability", "repairability"), ("TeamRange", "team-range"), ("RosterCap", "roster-cap"), ("AutoCut", "auto-cut"))})
         known = {name: set(ids) for name, ids in league_metadata.KNOWN_MODEL_IDS.items()}
         self.assertEqual(by_kind, known)
 

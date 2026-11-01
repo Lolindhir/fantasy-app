@@ -265,7 +265,7 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
         return {"market-restore", "consumer-restore"}, "Market-source-implementation"
     if path.startswith(("tools/nfl_games", "tools/derived_data", "tools/derived_clean_root_audit", "tools/player_valuation",
                         "tools/decision_windows", "tools/matchup_context", "tools/league_history", "tools/league_lifecycle", "tools/league_standings", "tools/league_live_derived",
-                        "tools/schedule_archive", "tools/weekly_recaps", "tools/players_read_model", "tools/players_app_publish")):
+                        "tools/schedule_archive", "tools/weekly_recaps", "tools/players_read_model", "tools/players_app_publish", "tools/team_cap_outlook_app_publish")):
         return {"league-pwf-twp", "consumer-restore"}, "Derived-consumer-implementation"
     if path.startswith("public/requests/") and path.endswith((".ps1", ".psm1")):
         return ALL.copy(), "PowerShell-generator-shared"
