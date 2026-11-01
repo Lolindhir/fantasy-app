@@ -175,12 +175,15 @@ class ConsumerReadClassificationTest(unittest.TestCase):
             "tools/new_consumer.py": {"reads": {"legacy:League": "app-read-model-chain"}},
         }}
         self.assertTrue(any("new consumer-to-consumer exception" in s for s in compare_transitional_reads(extra)))
-        path, token, _ = next(iter(TRANSITIONAL_BASELINE))
-        edited_entry = {**registry["consumers"][path], "reads": {
-            **registry["consumers"][path]["reads"], token: "validation-shadow",
-        }}
-        edited = {**registry, "consumers": {**registry["consumers"], path: edited_entry}}
-        self.assertTrue(any("obsolete transitional baseline" in s for s in compare_transitional_reads(edited)))
+        # C8j: the real frozen baseline is now empty. Exercise the obsolete-entry
+        # branch with a simulated historical baseline rather than indexing an empty set.
+        from unittest import mock
+        historical = frozenset({
+            ("tools/derived_data.py", "legacy:Players", "legacy-read-model-pending"),
+        })
+        with mock.patch.dict(globals(), {"TRANSITIONAL_BASELINE": historical}):
+            self.assertTrue(any("obsolete transitional baseline" in s
+                                for s in compare_transitional_reads(registry)))
 
     def test_every_consumer_read_is_classified(self) -> None:
         problems = compare(scan_repository(REPO_ROOT), load_registry())
