@@ -83,16 +83,8 @@ function Get-Compare {
         if (Compare-RegularSeasonStandings -oldRegularSeason $oldLeague.Standings.RegularSeason -newRegularSeason $newLeague.Standings.RegularSeason) { return $true }
         if (Compare-Awards -oldAwards $oldLeague.Standings.Awards -newAwards $newLeague.Standings.Awards) { return $true }
 
-        # The current-season canonical weekly tables are a separately versioned
-        # read-model section. Scalar RegularSeason comparison cannot detect them.
-        $oldCurrent = @($oldLeague.Standings | Where-Object { [string]$_.Season -ceq [string]$oldLeague.Season } | Select-Object -First 1)[0]
-        $newCurrent = @($newLeague.Standings | Where-Object { [string]$_.Season -ceq [string]$newLeague.Season } | Select-Object -First 1)[0]
-        $oldWeeksJson = ConvertTo-Json -InputObject $oldCurrent.Weeks -Depth 12 -Compress
-        $newWeeksJson = ConvertTo-Json -InputObject $newCurrent.Weeks -Depth 12 -Compress
-        if ($oldWeeksJson -cne $newWeeksJson) {
-            Write-Host "Canonical current-week standings changed."
-            return $true
-        }
+        # Scalar season standings comparison does not inspect canonical Weeks[].
+        if (Compare-CurrentStandingWeeks -OldLeague $oldLeague -NewLeague $newLeague) { return $true }
 
         return $false
     }
