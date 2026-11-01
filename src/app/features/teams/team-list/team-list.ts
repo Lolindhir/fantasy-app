@@ -11,14 +11,6 @@ import { PlayerDetailDialogComponent } from '../../../shared/components/player-d
 
 
 
-export interface SalaryCapResult {
-  cap: number;
-  capProjected: number;
-  topPlayers: Player[];
-  topPlayersProjected: Player[];
-}
-
-
 @Component({
   selector: 'app-team-list',
   imports: [
@@ -115,13 +107,9 @@ export class TeamListComponent implements OnInit {
       set.add(playerId);
     }
 
-    // TopSalaryTeam neu berechnen
+    // An excluded roster is an explicit, non-authoritative what-if state.
     const team = this.fantasyTeams.find(t => t.TeamID === teamId);
-    if (team) {
-      const result = this.calculateSalaryCapTopPlayers(team.Roster);
-      team.Salary = result.cap;
-      team.SalaryProjected = result.capProjected;
-    }
+    if (team) Object.assign(team, this.processTeam(team));
   }
 
   // Toggles
@@ -142,57 +130,36 @@ export class TeamListComponent implements OnInit {
   }
 
 
-  private processTeam(team: any, topN: number = this.salaryRelevantTeamSize) {
-    
-    const roster = [...team.Roster];
-
-    // TopSalary aus Team-Roster
-    const result : SalaryCapResult = this.calculateSalaryCapTopPlayers(roster, topN);
-
+  private processTeam(team: any) {
+    const roster = [...team.Roster] as Player[];
+    const excluded = this.excludedPlayersByTeam[team.TeamID] ?? new Set<string>();
+    const isWhatIf = excluded.size > 0;
+    // Real roster usage is never calculated by Angular. The only permitted
+    // local calculation is the user's explicitly modified excluded-roster scenario.
+    const available = !!team.CapOutlook;
+    let salary: number | null = team.CapOutlook?.Current.Usage ?? null;
+    let projected: number | null = team.CapOutlook?.Projected.Usage ?? null;
+    if (available && isWhatIf) {
+      const simulated = roster.filter(p => !excluded.has(p.ID));
+      salary = this.dataService.calculateTopPlayersSalary(
+        simulated, this.salaryRelevantTeamSize, p => p.Salary
+      ).cap;
+      projected = this.dataService.calculateTopPlayersSalary(
+        simulated, this.salaryRelevantTeamSize, p => p.SalaryProjected
+      ).cap;
+    }
     return {
       ...team,
       TopPlayers: this.sortPlayersBySalary(roster, false),
-      Salary: result.cap,
       TopPlayersProjected: this.sortPlayersBySalary(roster, true),
-      SalaryProjected: result.capProjected
+      IsSalaryAvailable: available,
+      IsWhatIf: isWhatIf,
+      Salary: salary,
+      SalaryProjected: projected
     };
   }
 
-  // Berechnet den Salary Cap basierend auf den Top-Spielern
-  private calculateSalaryCapTopPlayers(allPlayers: Player[], topN: number = this.salaryRelevantTeamSize): SalaryCapResult {
-    // Top N Spieler, die nicht exkludiert sind
-    const allExcludedPlayers  = new Set<string>();
 
-    for (const team of this.fantasyTeams) {
-      const excluded = this.excludedPlayersByTeam[team.TeamID] ?? new Set();
-      excluded.forEach(id => allExcludedPlayers.add(id));
-    }
-
-    // Spieler ohne Excludes
-    const allPlayersNonExcluded = allPlayers.filter(p => !allExcludedPlayers.has(p.ID));
-    // Multiplikator ist topN oder Länge der Nicht-Exkludierten, je nachdem was kleiner ist
-    const playerCount = Math.min(topN, allPlayersNonExcluded.length);
-
-    //Salary berechnen
-    const topPlayers = this.sortPlayersBySalary(allPlayersNonExcluded, false).slice(0, playerCount);
-    const avgOverall = playerCount > 0 ? topPlayers.reduce((sum, p) => sum + p.Salary, 0) / playerCount : 0;
-    const cap = avgOverall * playerCount;
-
-    //Projected Salary berechnen
-    const topPlayersProjected = this.sortPlayersBySalary(allPlayersNonExcluded, true).slice(0, playerCount);
-    const avgOverallProjected = playerCount > 0 ? topPlayersProjected.reduce((sum, p) => sum + p.SalaryProjected, 0) / playerCount : 0;
-    const capProjected = avgOverallProjected * playerCount;
-
-
-    return { 
-      cap: cap, 
-      topPlayers: topPlayers,
-      capProjected: capProjected,
-      topPlayersProjected: topPlayersProjected
-    };
-  }
-
-  
   formatSalaryDollars(amount: number, plus: boolean, afterPoint: number): string {
 
     if(amount >= 0){
@@ -228,7 +195,7 @@ export class TeamListComponent implements OnInit {
     const adjustedTopPlayersCount = this.getAdjustedTopPlayersCount(team);
 
     // Überprüfe, ob der Spieler in den Top N des Teams ist
-    const isInTopN: boolean = team.Roster
+    const isInTopN: boolean = [...team.Roster]
       .sort((a: Player, b: Player) => b.Salary - a.Salary)
       .slice(0, adjustedTopPlayersCount)
       .some((p: Player) => p.ID === player.ID);
