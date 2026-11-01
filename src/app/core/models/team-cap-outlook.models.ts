@@ -71,8 +71,8 @@ export function verifyTeamCapOutlook(
       readModel.SalaryRelevantTeamSize !== league.SalaryRelevantTeamSize ||
       readModel.SalaryCap !== league.SalaryCap ||
       readModel.SalaryCapProjected !== league.SalaryCapProjected ||
-      readModel.Models?.RosterCap !== 'roster-cap-v1' ||
-      readModel.Models?.AutoCut !== 'auto-cut-v1' ||
+      typeof readModel.Models?.RosterCap !== 'string' || !readModel.Models.RosterCap.trim() ||
+      typeof readModel.Models?.AutoCut !== 'string' || !readModel.Models.AutoCut.trim() ||
       !Array.isArray(readModel.Teams) || readModel.Teams.length !== league.Teams.length) {
     return verified;
   }
