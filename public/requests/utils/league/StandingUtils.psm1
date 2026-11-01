@@ -218,6 +218,26 @@ function Compare-Awards{
     return $false
 }
 
+# Compare only centrally published current-season Weeks (not historical
+# seasons or all-time summaries). A missing old section must force publication
+# when the new shared weekly evidence becomes available.
+function Compare-CurrentStandingWeeks {
+    param(
+        [Parameter(Mandatory = $true)]$OldLeague,
+        [Parameter(Mandatory = $true)]$NewLeague
+    )
+
+    $oldCurrent = @($OldLeague.Standings | Where-Object { [string]$_.Season -ceq [string]$OldLeague.Season } | Select-Object -First 1)[0]
+    $newCurrent = @($NewLeague.Standings | Where-Object { [string]$_.Season -ceq [string]$NewLeague.Season } | Select-Object -First 1)[0]
+    $oldJson = ConvertTo-Json -InputObject $oldCurrent.Weeks -Depth 12 -Compress
+    $newJson = ConvertTo-Json -InputObject $newCurrent.Weeks -Depth 12 -Compress
+    if ($oldJson -cne $newJson) {
+        Write-Host "Canonical current-week standings changed."
+        return $true
+    }
+    return $false
+}
+
 # ===========================================================================
 # Standings Product Utils
 # ===========================================================================
