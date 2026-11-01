@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 import canonical_player_inputs
+from operations_team_display import enrich_from_members
 from canonical_league_ownership import (
     CanonicalOwnershipError,
     build_canonical_ownership_snapshot,
@@ -812,13 +813,11 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     if config.get("schema_version") != 2:
         raise MaterializationError("Unexpected input materialization config schema version")
     core_sources = config["sources"]
-    league_display_path = root / core_sources["league_display"]
     canonical_identities_path = root / core_sources["canonical_player_identities"]
     canonical_sleeper_players_path = root / core_sources["canonical_sleeper_players"]
     timestamps_path = root / core_sources["timestamps"]
     catalog_path = root / config["source_catalog"]
 
-    league_display = load_json(league_display_path)
     canonical_identities = load_json(canonical_identities_path)
     canonical_sleeper_players = load_json(canonical_sleeper_players_path)
     timestamps = load_json(timestamps_path)
@@ -853,6 +852,10 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             canonical_league_id=canonical_league_id,
             season=canonical_season,
         )
+        display_teams = enrich_from_members(
+            canonical_ownership, root,
+            league_id=canonical_league_id, season=canonical_season,
+        )
         players = canonical_player_inputs.load_players(
             root,
             canonical_league_id,
@@ -874,22 +877,13 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             f"Managed team {team_id} not found in canonical ownership snapshot"
         )
 
-    display_teams = (
-        league_display.get("Teams")
-        if isinstance(league_display, dict) and isinstance(league_display.get("Teams"), list)
-        else []
-    )
     managed_display_team = next(
-        (
-            team
-            for team in display_teams
-            if str(team.get(managed_config["identity_field"])) == team_id
-        ),
+        (team for team in display_teams if str(team.get("TeamID")) == team_id),
         None,
     )
     if managed_display_team is None:
         raise MaterializationError(
-            f"Managed team {team_id} not found in League.json display enrichment"
+            f"Managed team {team_id} not found in canonical display enrichment"
         )
 
     loaded_sources: list[LoadedCatalogSource] = []
@@ -910,7 +904,6 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             loaded_sources.append(resolve_catalog_source(root, definition))
 
     player_timestamp = timestamps.get("Players") if isinstance(timestamps, dict) else None
-    league_timestamp = timestamps.get("League") if isinstance(timestamps, dict) else None
     canonical_league_root = (
         root
         / "data-source"
@@ -919,7 +912,6 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     )
     canonical_season_root = canonical_league_root / "seasons" / str(canonical_season)
     source_files = [
-        source_file("league_display", league_display_path, root, league_timestamp),
         source_file(
             "canonical_league_manifest",
             canonical_league_root / "manifest.json",

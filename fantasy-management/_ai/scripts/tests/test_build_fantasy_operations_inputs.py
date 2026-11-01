@@ -24,6 +24,11 @@ from build_fantasy_operations_inputs import (  # noqa: E402
 )
 
 
+from operations_team_display import enrich_from_members  # noqa: E402
+from canonical_league_ownership import (  # noqa: E402
+    build_canonical_ownership_snapshot,
+    resolve_current_canonical_season,
+)
 from legacy_player_fixture import patch_player_inputs  # noqa: E402
 
 
@@ -164,14 +169,14 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             league["Teams"][0]["Reserve"] = []
             league["Teams"][0]["Taxi"] = []
             league["Teams"][0]["Starter"] = ["3"]
-            league_path.write_text(json.dumps(league), encoding="utf-8")
+            league_path.unlink()  # App League.json is no longer needed
 
             config_path = root / "fantasy-management/automation/input-materialization.json"
             data, _ = build(root, config_path)
 
             self.assertEqual(3, data["managed_team"]["player_count"])
             self.assertEqual("Test Team", data["managed_team"]["name"])
-            self.assertEqual("TST", data["managed_team"]["abbreviation"])
+            self.assertEqual("Tes", data["managed_team"]["abbreviation"])
             quarterback = next(player for player in data["players"] if player["player_id"] == "1")
             receiver = next(player for player in data["players"] if player["player_id"] == "2")
             self.assertEqual(["reserve", "roster"], quarterback["roster_sections"])
@@ -179,11 +184,67 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             self.assertEqual(["roster"], receiver["roster_sections"])
             self.assertTrue(receiver["is_starter"])
             source_ids = {source["id"] for source in data["sources"]}
-            self.assertIn("league_display", source_ids)
+            self.assertNotIn("league_display", source_ids)
             self.assertIn("canonical_league_manifest", source_ids)
             self.assertIn("canonical_league_rosters", source_ids)
             self.assertIn("canonical_player_identities", source_ids)
             self.assertIn("canonical_sleeper_players", source_ids)
+
+    def test_member_fallback_and_invalid_metadata_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            (root / "public/data/League.json").unlink()
+            config_path = root / "fantasy-management/automation/input-materialization.json"
+            path = root / "data-source/leagues/test-league/seasons/2026/members.json"
+            members = json.loads(path.read_text(encoding="utf-8"))
+            members[0]["Metadata"].pop("team_name")
+            path.write_text(json.dumps(members), encoding="utf-8")
+            data, _ = build(root, config_path)
+            self.assertEqual("Team owner-one", data["managed_team"]["name"])
+            self.assertEqual("OwO", data["managed_team"]["abbreviation"])
+
+            members[0]["Metadata"]["team_name"] = 7
+            path.write_text(json.dumps(members), encoding="utf-8")
+            with self.assertRaisesRegex(MaterializationError, "team_name"):
+                build(root, config_path)
+
+            members[0]["Metadata"]["team_name"] = "Test Team"
+            members[0]["CanonicalLeagueMemberID"] = "unknown-member"
+            path.write_text(json.dumps(members), encoding="utf-8")
+            with self.assertRaisesRegex(MaterializationError, "member"):
+                build(root, config_path)
+
+    def test_players_age_reference_still_requires_published_timestamp(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            (root / "public/data/League.json").unlink()
+            config_path = root / "fantasy-management/automation/input-materialization.json"
+            data, _ = build(root, config_path)
+            self.assertIn("timestamps", {source["id"] for source in data["sources"]})
+            path = root / "public/data/Timestamps.json"
+            timestamps = json.loads(path.read_text(encoding="utf-8"))
+            timestamps["Players"] = None
+            path.write_text(json.dumps(timestamps), encoding="utf-8")
+            with self.assertRaisesRegex(MaterializationError, "Players timestamp for the Age reference"):
+                build(root, config_path)
+
+    def test_current_canonical_team_display_matches_published_league(self) -> None:
+        root = Path(__file__).resolve().parents[4]
+        league_id = "nfl-reise"
+        season = resolve_current_canonical_season(root, canonical_league_id=league_id)
+        snapshot = build_canonical_ownership_snapshot(
+            root, canonical_league_id=league_id, season=season
+        )
+        display = enrich_from_members(snapshot, root, league_id=league_id, season=season)
+        league = json.loads((root / "public/data/League.json").read_text(encoding="utf-8"))
+        app_teams = {str(row["TeamID"]): row for row in league["Teams"]}
+        self.assertEqual(set(app_teams), {str(t["TeamID"]) for t in display})
+        for team in display:
+            old = app_teams[str(team["TeamID"])]
+            self.assertEqual((old["Team"], old["TeamAbbr"]),
+                             (team["Team"], team["TeamAbbr"]))
 
     def test_managed_roster_identity_and_ranking_joins_use_canonical_nfl_sources(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -350,7 +411,6 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             "managed_team": {"identity_field": "TeamID", "team_id": 1},
             "canonical_league": {"canonical_league_id": "test-league"},
             "sources": {
-                "league_display": "public/data/League.json",
                 "players": "public/data/Players.json",
                 "canonical_player_identities": "data-source/nfl/identities/players.json",
                 "canonical_sleeper_players": "data-source/nfl/platform/sleeper/players.json",
@@ -370,7 +430,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
                     {
                         "TeamID": 1,
                         "Team": "Test Team",
-                        "TeamAbbr": "TST",
+                        "TeamAbbr": "Tes",
                         "Roster": ["1", "2", "3"],
                         "Reserve": ["1"],
                         "Taxi": [],
@@ -420,6 +480,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
                 {
                     "CanonicalLeagueMemberID": "member-1",
                     "DisplayName": "owner-one",
+                    "Metadata": {"team_name": "Test Team"},
                     "ProviderMappings": [
                         {"Provider": "Sleeper", "ProviderUserID": "user-1"}
                     ],

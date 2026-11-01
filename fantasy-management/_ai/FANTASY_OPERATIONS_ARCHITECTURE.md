@@ -333,8 +333,8 @@ External signal identity is resolved through the configured stable player ID.
 
 Ownership sourcing is now intentionally consumer-scoped during the Phase-2 migration:
 
-- `managed-roster-signals.json` reads TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter` membership productively from Canonical League Source Data through `canonical_league_ownership.py`; `League.json` remains display enrichment for team name/abbreviation in that materializer.
-- `external-signal-relevance.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership union productively from Canonical League Source Data through the same adapter; `League.json` remains Team/TeamAbbr display enrichment in that materializer.
+- `managed-roster-signals.json` reads TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter` membership from Canonical League Source Data; since #1263 C8b team labels use the canonical-member Operations display adapter. `Timestamps.json -> Players` remains the Age reference.
+- `external-signal-relevance.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership from Canonical League Source Data; member-based labels no longer require `League.json` since #1263 C8a.
 - `player-signals.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership union productively from Canonical League Source Data; `League.json` remains a non-membership App enrichment input for managed-team display and `ScoringType` used by projection scoring, plus the existing trigger/freshness bridge for this consumer.
 - `free-agent-signals.json` inherits canonical ownership from `player-signals.json`, and `fa-board-readmodel.json` derives its own availability/occupancy ownership directly from Canonical League Source Data.
 - `free-agent-movement-signals.json` reads league scoring directly from active Canonical League `ScoringSettings`; its scoring evidence fingerprint covers the canonical scoring payload rather than unrelated League state.
