@@ -685,6 +685,14 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             root,
             canonical_league_id=canonical_league_id,
         )
+        canonical_league_path = (
+            root / "data-source" / "leagues" / canonical_league_id
+            / "seasons" / str(canonical_season) / "league.json"
+        )
+        canonical_league = load_canonical_league_rules(
+            canonical_league_path, canonical_league_id, canonical_season
+        )
+
         canonical_snapshot = build_canonical_ownership_snapshot(
             root,
             canonical_league_id=canonical_league_id,
@@ -697,14 +705,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         raise FaBoardMaterializationError(
             f"Canonical FA-board ownership is unavailable: {exc}"
         ) from exc
-
-    canonical_league_path = (
-        root / "data-source" / "leagues" / canonical_league_id
-        / "seasons" / str(canonical_season) / "league.json"
-    )
-    canonical_league = load_canonical_league_rules(
-        canonical_league_path, canonical_league_id, canonical_season
-    )
 
     generated_at = max_timestamp(
         [
