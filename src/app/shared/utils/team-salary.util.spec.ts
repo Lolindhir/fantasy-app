@@ -1,4 +1,8 @@
 import type { DraftPick, FantasyTeam, League, Player } from '../../core/models/fantasy.models';
+import type { RawLeague } from '../../core/models/league.models';
+import type { RawPlayer } from '../../core/models/player.models';
+import { verifyTeamCapOutlook, type TeamCapOutlookReadModel } from '../../core/models/team-cap-outlook.models';
+import { calculateTopPlayersSalary } from './trade-calculator.util';
 import {
   buildTeamSalarySummary,
   getEarliestOpenPicks,
@@ -33,14 +37,62 @@ describe('team salary utilities', () => {
     const second = makePlayer('second', 80, 120, 'WR');
     const third = makePlayer('third', 50, 40, 'RB');
     const summary = buildTeamSalarySummary(
-      makeTeam({ Roster: [first, second, third] }),
+      makeTeam({ Roster: [first, second, third], CapOutlook: {
+        TeamID: 1, Status: 'ready', InputRoster: [],
+        Current: { Usage: 180, TopPlayerIDs: ['first', 'second'], Cuts: [] },
+        Projected: { Usage: 190, TopPlayerIDs: ['second', 'first'], Cuts: [] }
+      } }),
       makeLeague({ SalaryRelevantTeamSize: 2, SalaryCap: 200, SalaryCapProjected: 220 })
     );
 
+    expect(summary.available).toBeTrue();
     expect(summary.current.salary).toBe(180);
     expect(summary.projected.salary).toBe(190);
     expect(summary.current.mostExpensive.map(player => player.ID)).toEqual(['first', 'second']);
     expect(summary.projected.mostExpensive.map(player => player.ID)).toEqual(['second', 'first']);
+  });
+
+  it('does not invent real salary usage when central data is missing', () => {
+    const summary = buildTeamSalarySummary(
+      makeTeam({ Roster: [makePlayer('a', 99, 99, 'QB')] }), makeLeague());
+    expect(summary.available).toBeFalse();
+    expect(summary.health).toBe('unavailable');
+  });
+
+  it('pins Variant A hypothetical calculations against roster-cap-v1 examples', () => {
+    const roster = [70, 60, 50, 40, 30, 20, 10]
+      .map((salary, index) => makePlayer(String(index + 1), salary, salary + 10, 'WR'));
+    expect(calculateTopPlayersSalary(roster, 6, p => p.Salary).cap).toBe(270);
+    expect(calculateTopPlayersSalary(roster, 6, p => p.SalaryProjected).cap).toBe(330);
+  });
+
+  it('rejects stale salary, wrong league and missing roster witnesses without recalculation', () => {
+    const players = [makePlayer('a', 100, 110, 'QB'), makePlayer('b', 80, 90, 'WR')];
+    const league = {
+      LeagueID: '123456', Season: '2026', FinalScoredWeek: 7,
+      SalaryRelevantTeamSize: 2, SalaryCap: 200, SalaryCapProjected: 220,
+      Teams: [{ TeamID: 1, Roster: ['a', 'b'] }]
+    } as unknown as RawLeague;
+    const outlook: TeamCapOutlookReadModel = {
+      ContractVersion: 1, CanonicalLeagueID: 'example', ProviderLeagueID: '123456',
+      Season: 2026, AsOfFinalScoredWeek: 7,
+      Models: { RosterCap: 'roster-cap-v1', AutoCut: 'auto-cut-v1' },
+      SalaryRelevantTeamSize: 2, SalaryCap: 200, SalaryCapProjected: 220,
+      Teams: [{
+        TeamID: 1, Status: 'ready',
+        InputRoster: [
+          { PlayerID: 'a', Salary: 100, SalaryProjected: 110 },
+          { PlayerID: 'b', Salary: 80, SalaryProjected: 90 }
+        ],
+        Current: { Usage: 180, TopPlayerIDs: ['a', 'b'], Cuts: [] },
+        Projected: { Usage: 200, TopPlayerIDs: ['a', 'b'], Cuts: [] }
+      }]
+    };
+    expect(verifyTeamCapOutlook(outlook, league, players as unknown as RawPlayer[]).size).toBe(1);
+    expect(verifyTeamCapOutlook(outlook, league, [makePlayer('a', 101, 110, 'QB'), players[1]] as unknown as RawPlayer[]).size).toBe(0);
+    expect(verifyTeamCapOutlook({ ...outlook, ProviderLeagueID: 'other' }, league, players as unknown as RawPlayer[]).size).toBe(0);
+    expect(verifyTeamCapOutlook({ ...outlook, AsOfFinalScoredWeek: 6 }, league, players as unknown as RawPlayer[]).size).toBe(0);
+    expect(verifyTeamCapOutlook(null, league, players as unknown as RawPlayer[]).size).toBe(0);
   });
 
   it('rolls open-pick summary forward to the earliest season with an available pick', () => {

@@ -60,6 +60,7 @@ export class TradeSimulatorComponent implements OnInit {
       this.league = res.league;
       this.SalaryCap = this.league?.SalaryCap || 0;
       this.SalaryCapProjected = this.league?.SalaryCapProjected || 0;
+      this.salaryRelevantTeamSize = this.league.SalaryRelevantTeamSize;
 
       // Projected Text anpassen
       this.projectedText += " " + (res.league.SeasonAsNumber + 1).toString()
@@ -85,12 +86,7 @@ export class TradeSimulatorComponent implements OnInit {
       .slice(0, this.salaryRelevantTeamSize);
 
     this.tradeResult = {
-      currentSalary:
-        this.dataService.calculateTopPlayersSalary(
-          this.selectedTeam.Roster,
-          this.salaryRelevantTeamSize,
-          p => p.Salary
-        ).cap,
+      currentSalary: this.selectedTeam.CapOutlook?.Current.Usage ?? 0,
 
       newSalary:
         this.dataService.calculateTopPlayersSalary(
@@ -99,12 +95,7 @@ export class TradeSimulatorComponent implements OnInit {
           p => p.Salary
         ).cap,
 
-      currentProjected:
-        this.dataService.calculateTopPlayersSalary(
-          this.selectedTeam.Roster,
-          this.salaryRelevantTeamSize,
-          p => p.SalaryProjected
-        ).cap,
+      currentProjected: this.selectedTeam.CapOutlook?.Projected.Usage ?? 0,
 
       newProjected:
         this.dataService.calculateTopPlayersSalary(
@@ -120,7 +111,7 @@ export class TradeSimulatorComponent implements OnInit {
   get newTeamSalary(): number {
     if (!this.selectedTeam) return 0;
 
-    const topN = 20; // Anzahl Top-Spieler für Salary Cap
+    const topN = this.salaryRelevantTeamSize; // Hypothetical trade calculation only
     const newRoster = this.dataService.getRosterAfterTrade(
       this.selectedTeam.Roster,
       this.outgoingPlayers,
@@ -139,7 +130,7 @@ export class TradeSimulatorComponent implements OnInit {
   get newTeamSalaryProjected(): number {
     if (!this.selectedTeam) return 0;
 
-    const topN = 20; // Anzahl Top-Spieler für Salary Cap
+    const topN = this.salaryRelevantTeamSize; // Hypothetical trade calculation only
     const newRoster = this.dataService.getRosterAfterTrade(
       this.selectedTeam.Roster,
       this.outgoingPlayers,
@@ -157,14 +148,14 @@ export class TradeSimulatorComponent implements OnInit {
 
   get currentTeamSalary(): number {
     if (!this.selectedTeam) return 0;
-    const topN = 20;
-    return this.dataService.calculateTopPlayersSalary(this.selectedTeam.Roster, topN, p => p.Salary).cap;
+    const topN = this.salaryRelevantTeamSize;
+    return this.selectedTeam.CapOutlook?.Current.Usage ?? 0;
   }
 
   get currentTeamSalaryProjected(): number {
     if (!this.selectedTeam) return 0;
-    const topN = 20;
-    return this.dataService.calculateTopPlayersSalary(this.selectedTeam.Roster, topN, p => p.SalaryProjected).cap;
+    const topN = this.salaryRelevantTeamSize;
+    return this.selectedTeam.CapOutlook?.Projected.Usage ?? 0;
   }
 
   get salaryDifference(): number {
