@@ -19,7 +19,7 @@ Automatisch neu abgeleitet werden insbesondere:
 
 - aktuelle Roster-/Taxi-/Reserve-Mitgliedschaft aus `managed-roster-signals.json`, dessen TeamID-1 Membership seit Checkpoint 6Q aus Canonical League Source Data stammt;
 - aktive Kapazität und Belegung auf Basis dieser canonical-derived Membership;
-- feste Starteranforderungen aus `League.json -> RosterSize`;
+- feste Starteranforderungen aus canonical `league.json -> RosterPositions`;
 - aktuelle Taxi-Phase;
 - Positionsbestände und Coverage-Status;
 - gemeinsamer startbarer FLEX-/Skill-Pool und Marge;
@@ -86,4 +86,4 @@ Dafür gelten folgende Leitplanken:
 
 ## Materialisierung
 
-`build_managed_roster_overview.py` erzeugt beide Outputs. Seit Checkpoint 6U liest der Builder Membership/Buckets nicht mehr erneut aus `League.json`, sondern ausschließlich aus dem bereits canonical-active `managed-roster-signals.json`. `League.json` bleibt non-membership Enrichment für Team-Display, Lineup-/RosterSize-Regeln, Reserve-/Taxi-Slots und Phase/Status. Der bestehende Player-Signal-Materialisierungslauf ruft den Overview-Builder nach erfolgreicher Player-Signal-Erzeugung mit auf, sodass keine zweite parallele Operations-Pipeline benötigt wird.
+`build_managed_roster_overview.py` erzeugt beide Outputs. Seit Checkpoint 6U liest der Builder Membership/Buckets nicht mehr erneut aus `League.json`, sondern ausschließlich aus dem bereits canonical-active `managed-roster-signals.json`. Seit C8d kommen Team-Display über kanonische Members, RosterPositions und Taxi-/Reserve-Slots über kanonische saisonale League-Settings. Die Phase kommt weiterhin aus dem gemeinsamen Lifecycle. `League.json` ist kein produktiver Overview-Input mehr. Der bestehende Player-Signal-Materialisierungslauf ruft den Overview-Builder nach erfolgreicher Player-Signal-Erzeugung mit auf, sodass keine zweite parallele Operations-Pipeline benötigt wird.
