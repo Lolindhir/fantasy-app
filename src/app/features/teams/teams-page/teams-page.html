@@ -31,7 +31,8 @@
             </div>
           </div>
 
-          <div class="salary-bars">
+          @if (card.salary.available) {
+           <div class="salary-bars">
             <app-cap-usage-bar
               [label]="'Current ' + (league?.Season || '')"
               [value]="card.salary.current.salary"
@@ -43,6 +44,9 @@
               [cap]="card.salary.projected.cap"
               [compact]="true" />
           </div>
+           } @else {
+             <p class="salary-unavailable">Cap-Belegung derzeit nicht verfügbar.</p>
+           }
 
           <div class="team-meta">
             <span><strong>Active Roster</strong> {{ displayLimit(card.roster.activeRoster.length, card.limits.roster) }}</span>

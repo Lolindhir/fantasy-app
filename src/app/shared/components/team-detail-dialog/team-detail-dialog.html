@@ -27,10 +27,14 @@
             </div>
             <app-salary-health-indicator [status]="salary.health" [compact]="true" />
           </div>
-          <div class="two-column-bars">
+          @if (salary.available) {
+           <div class="two-column-bars">
             <app-cap-usage-bar [label]="'Current ' + league.Season" [value]="salary.current.salary" [cap]="salary.current.cap" />
             <app-cap-usage-bar [label]="'Projected ' + (league.SeasonAsNumber + 1)" [value]="salary.projected.salary" [cap]="salary.projected.cap" />
           </div>
+           } @else {
+             <p>Cap-Belegung derzeit nicht verfügbar.</p>
+           }
         </section>
 
         <section class="section-card">
@@ -155,7 +159,8 @@
             <mat-button-toggle value="projected">Projected {{ league.SeasonAsNumber + 1 }}</mat-button-toggle>
           </mat-button-toggle-group>
         </div>
-        <section class="section-card dominant-cap">
+        @if (salary.available) {
+         <section class="section-card dominant-cap">
           <app-cap-usage-bar [label]="selectedSeasonLabel" [value]="selectedSalary.salary" [cap]="selectedSalary.cap" />
           <div class="comparison-cap">
             <app-cap-usage-bar [label]="comparisonSeasonLabel" [value]="comparisonSalary.salary" [cap]="comparisonSalary.cap" [compact]="true" />
@@ -171,7 +176,10 @@
             <app-salary-asset-leaderboard [players]="selectedSalary.mostExpensive" [lens]="salaryLens" [cap]="selectedSalary.cap" />
           </section>
         </div>
-        <section class="section-card movement-card">
+        } @else {
+           <p>Cap-Belegung derzeit nicht verfügbar.</p>
+         }
+         <section class="section-card movement-card">
           <div class="section-heading"><div><span class="eyebrow">Projected Movement</span><h3>Current → Projected</h3></div></div>
           <div class="movement-grid">
             <div>

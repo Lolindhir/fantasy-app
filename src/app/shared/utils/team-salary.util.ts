@@ -6,10 +6,9 @@ import type {
   Player
 } from '../../core/models/fantasy.models';
 import { getPositionColor } from './position-color.util';
-import { calculateTopPlayersSalary } from './trade-calculator.util';
 
 export type SalaryLens = 'current' | 'projected';
-export type SalaryHealthStatus = 'healthy' | 'watch' | 'over';
+export type SalaryHealthStatus = 'healthy' | 'watch' | 'over' | 'unavailable';
 
 export interface TeamRosterSplit {
   activeRoster: Player[];
@@ -50,6 +49,7 @@ export interface SalaryMovement {
 }
 
 export interface TeamSalarySummary {
+  available: boolean;
   health: SalaryHealthStatus;
   current: TeamSalaryLensSummary;
   projected: TeamSalaryLensSummary;
@@ -92,8 +92,8 @@ export function getTeamRosterLimits(league: League): TeamRosterLimits {
 }
 
 export function buildTeamSalarySummary(team: FantasyTeam, league: League): TeamSalarySummary {
-  const current = buildLensSummary(team.Roster, league, 'current');
-  const projected = buildLensSummary(team.Roster, league, 'projected');
+  const current = buildLensSummary(team, league, 'current');
+  const projected = buildLensSummary(team, league, 'projected');
   const movements = team.Roster
     .map(player => ({
       player,
@@ -104,7 +104,8 @@ export function buildTeamSalarySummary(team: FantasyTeam, league: League): TeamS
     .filter(item => item.delta !== 0);
 
   return {
-    health: getSalaryHealth(current.salary, current.cap, projected.salary, projected.cap),
+    available: !!team.CapOutlook,
+    health: team.CapOutlook ? getSalaryHealth(current.salary, current.cap, projected.salary, projected.cap) : 'unavailable',
     current,
     projected,
     biggestIncreases: movements
@@ -173,23 +174,25 @@ export function getPositionCounts(players: Player[]): Array<{ position: string; 
     .sort((a, b) => positionOrder(a.position) - positionOrder(b.position) || a.position.localeCompare(b.position));
 }
 
-function buildLensSummary(roster: Player[], league: League, lens: SalaryLens): TeamSalaryLensSummary {
+function buildLensSummary(team: FantasyTeam, league: League, lens: SalaryLens): TeamSalaryLensSummary {
+  const roster = team.Roster;
   const selector = lens === 'current'
     ? (player: Player) => player.Salary
     : (player: Player) => player.SalaryProjected;
   const cap = lens === 'current' ? league.SalaryCap : league.SalaryCapProjected;
-  const salaryRelevantTeamSize = league.SalaryRelevantTeamSize || 20;
-  const salaryResult = calculateTopPlayersSalary(roster, salaryRelevantTeamSize, selector);
-
+  const outlook = lens === 'current' ? team.CapOutlook?.Current : team.CapOutlook?.Projected;
+  // The published central model owns Usage/TopPlayerIDs; Angular resolves display identities only.
+  const byId = new Map(roster.map(player => [player.ID, player]));
+  const topPlayers = (outlook?.TopPlayerIDs ?? [])
+    .map(id => byId.get(id))
+    .filter((player): player is Player => !!player);
+  // Numeric zero below is never presented while available=false; it is not a domain fallback.
+  const salary = outlook?.Usage ?? 0;
   return {
-    lens,
-    salary: salaryResult.cap,
-    cap,
-    capSpace: cap - salaryResult.cap,
-    utilization: cap > 0 ? (salaryResult.cap / cap) * 100 : 0,
-    topPlayers: salaryResult.topPlayers,
-    mostExpensive: salaryResult.topPlayers.slice(0, 5),
-    byPosition: buildPositionBreakdown(salaryResult.topPlayers, selector, salaryResult.cap)
+    lens, salary, cap, capSpace: cap - salary,
+    utilization: cap > 0 ? (salary / cap) * 100 : 0,
+    topPlayers, mostExpensive: topPlayers.slice(0, 5),
+    byPosition: buildPositionBreakdown(topPlayers, selector, salary)
   };
 }
 
