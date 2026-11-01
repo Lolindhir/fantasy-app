@@ -208,7 +208,7 @@ consumers:
   fantasyOperations:
     path: fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py, build_player_signal_dataset.py, audit_player_signal_population_relevance.py (all via canonical_player_inputs.py)
     fields: Salary, SalaryProjected from the newest snapshot of the current season; population, Age, Year, IsFreeAgent, Status and injury from tools/players_population.py
-    ageRule: Age = round(days between BirthDate and the date of Timestamps.json Players / 365.2425, 1), the formula of RequestPlayers.ps1 with an explicit reference date so the result is deterministic
+    ageRule: Age uses shared tools/player_age.py with an explicit run-scoped AsOfDate in the canonical league time zone (Issue #1263 C9a); neither published Timestamps.Players nor the app read model determines the Age date
     step: 6
     state: done 2026-10-15; public/data/Players.json is no input of the Operations builders anymore (parity on repository data, 945 players, 0 differing rows)
   fantasyManagement:

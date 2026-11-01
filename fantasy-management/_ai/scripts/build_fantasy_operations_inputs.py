@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 import canonical_player_inputs
+from operations_age_reference import OperationsAgeReferenceError, age_reference_date
 from operations_team_display import enrich_from_members
 from canonical_league_ownership import (
     CanonicalOwnershipError,
@@ -277,15 +278,6 @@ def max_timestamp(values: Iterable[Any]) -> str | None:
     if not parsed:
         return None
     return max(parsed).isoformat().replace("+00:00", "Z")
-
-
-def _player_reference_date(timestamps: Any) -> date:
-    """Reference date for Age: the date of the last Players refresh (deterministic input)."""
-    value = timestamps.get("Players") if isinstance(timestamps, dict) else None
-    parsed = parse_datetime(value)
-    if parsed is None:
-        raise MaterializationError("Timestamps.json has no usable Players timestamp for the Age reference date")
-    return parsed.date()
 
 
 def source_file(source_id: str, path: Path, root: Path, timestamp: Any = None) -> SourceFile:
@@ -860,9 +852,9 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             root,
             canonical_league_id,
             canonical_season,
-            _player_reference_date(timestamps),
+            age_reference_date(root, canonical_league_id),
         )
-    except (CanonicalOwnershipError, canonical_player_inputs.CanonicalPlayerInputsError) as exc:
+    except (CanonicalOwnershipError, canonical_player_inputs.CanonicalPlayerInputsError, OperationsAgeReferenceError) as exc:
         raise MaterializationError(
             f"Canonical managed-roster ownership is unavailable: {exc}"
         ) from exc
@@ -1085,7 +1077,10 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         for item in source_files
     ]
     generated_at = max_timestamp(item.source_timestamp for item in source_files)
-    input_fingerprint = sha256_text(canonical_json(source_records))
+    # Age is a time-dependent derived input: include actual values, not a daily
+    # clock tick, so an unchanged Age vector preserves semantic no-op behavior.
+    age_values = [(row["player_id"], row["app_data"]["age"]) for row in output_players]
+    input_fingerprint = sha256_text(canonical_json({"sources": source_records, "age_values": age_values}))
     coverage = {
         "managed_roster_ids": len(sections_by_player),
         "resolved_players": len(output_players),

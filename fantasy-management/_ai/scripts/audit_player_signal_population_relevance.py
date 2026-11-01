@@ -37,6 +37,7 @@ import build_fantasy_operations_inputs as ops  # noqa: E402
 import build_player_signal_dataset as player_signals  # noqa: E402
 import canonical_nfl_membership as nfl_membership  # noqa: E402
 import canonical_player_inputs  # noqa: E402
+from operations_age_reference import OperationsAgeReferenceError, age_reference_date  # noqa: E402
 import materialize_external_signals as external_signals  # noqa: E402
 from operations_team_display import enrich_from_members  # noqa: E402
 from canonical_league_ownership import (  # noqa: E402
@@ -277,9 +278,9 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
             root,
             canonical_league_id,
             season,
-            ops._player_reference_date(ops.load_json(root / sources["timestamps"])),
+            age_reference_date(root, canonical_league_id),
         )
-    except canonical_player_inputs.CanonicalPlayerInputsError as exc:
+    except (canonical_player_inputs.CanonicalPlayerInputsError, OperationsAgeReferenceError) as exc:
         raise PopulationRelevanceAuditError(f"Canonical player inputs are unavailable: {exc}") from exc
 
     managed_team_id = str(config["managed_team"]["team_id"])

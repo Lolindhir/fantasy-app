@@ -7,9 +7,8 @@ Salary/SalaryProjected from the newest PlayerValuation snapshot of the season
 builders already consume (ID, Age, Year, IsFreeAgent, Injured, InjuryDetails,
 Salary, SalaryProjected, Status), so no builder logic changes.
 
-Age is derived deterministically from BirthDate and an explicit reference
-date (round(days / 365.2425, 1), as RequestPlayers.ps1 does); the builders pass
-the date of the Players timestamp so identical inputs give identical output.
+Age uses the shared pure tools/player_age.py calculation with an explicit
+reference date from the Fantasy Operations run, not a published Players timestamp.
 """
 
 from __future__ import annotations
@@ -25,6 +24,7 @@ if str(REPO_ROOT / "tools") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "tools"))
 
 import players_population  # noqa: E402
+from player_age import age_at as shared_age_at  # noqa: E402
 
 
 class CanonicalPlayerInputsError(RuntimeError):
@@ -42,11 +42,7 @@ def latest_valuation_snapshot(root: Path, league_id: str, season: int) -> dict[s
 def age_at(birth_date: str | None, reference: date) -> float | None:
     if not birth_date:
         return None
-    try:
-        born = date.fromisoformat(birth_date)
-    except ValueError:
-        return None
-    return round((reference - born).days / 365.2425, 1)
+    return shared_age_at(birth_date, reference)
 
 
 def _injury_fields(injury: dict[str, Any]) -> tuple[bool, dict[str, Any]]:

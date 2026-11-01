@@ -263,6 +263,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     fingerprint_payload = {
         "config": config,
         "sources": result["sources"],
+        "age_values": [(row["player_id"], row["app_data"]["age"]) for row in result["players"]],
         "players": [
             {
                 "player_id": player["player_id"],

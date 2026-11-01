@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .player_valuation import bye_week_of, scaled_round
+from player_age import age_at as shared_age_at
 
 PUBLISHED_JSON_DEPTH = 7  # write depth of the Players file (Get-PlayersPublishedJsonDepth); nothing is truncated below it
 FORM_GRADING_TYPE = "Form"
@@ -60,11 +61,7 @@ class ReadModelResult:
 
 def age_at(birth_date: Any, as_of: date) -> float | None:
     """Age in years at ``as_of`` (one decimal, .NET rounding); None for a missing or unparsable birth date."""
-    try:
-        born = datetime.strptime(str(birth_date), "%Y-%m-%d").date()
-    except (TypeError, ValueError):
-        return None
-    return float(scaled_round((as_of - born).days / DAYS_PER_YEAR, 1))
+    return shared_age_at(birth_date, as_of)
 
 
 def injury_details(injury: Mapping[str, Any] | None) -> tuple[bool, dict[str, Any]]:
