@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -Force
+Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\general\AvatarUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\player\PlayerValuationUtils.psm1" -ErrorAction Stop
 
