@@ -17,7 +17,7 @@ def abbreviation(name: str, team_id: int) -> str:
     """Match App TeamUtils::ConvertTo-TeamAbbreviation for human-facing labels."""
     normalized = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", name.strip())
     normalized = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", normalized)
-    normalized = re.sub(r"[^\w]+", " ", normalized).strip()
+    normalized = re.sub(r"[\W_]+", " ", normalized).strip()
     parts = [p for p in normalized.split() if p.casefold() not in {"team", "the"}]
     if not parts:
         return f"T{team_id:02d}"
