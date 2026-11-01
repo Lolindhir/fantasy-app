@@ -254,6 +254,37 @@ class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
         for product in ("league-transactions", "league-drafts"):
             self.assertIn(f"derived-summary/{product}.json", workflow)
 
+
+    def test_isolated_manual_drafts_mode_reuses_weekly_writer_with_no_scheduler_change(self):
+        """#1263 G5: keep manual Drafts restore isolated, without a second workflow file."""
+        import yaml
+
+        workflow_path = TOOLS.parent / ".github/workflows/update-transactions.yml"
+        text = workflow_path.read_text(encoding="utf-8")
+        definition = yaml.safe_load(text)
+        events = definition.get("on", definition.get(True))
+        manual = events["workflow_dispatch"]["inputs"]["mode"]
+        self.assertEqual("all", manual["default"])
+        self.assertEqual(["all", "drafts"], manual["options"])
+        self.assertFalse((TOOLS.parent / ".github/workflows/update-drafts.yml").exists())
+        steps = definition["jobs"]["update"]["steps"]
+        full_step = next(step for step in steps if "historical League Derived" in step.get("name", ""))
+        drafts_step = next(step for step in steps if "Drafts-only" in step.get("name", ""))
+        self.assertIn("inputs.mode != 'drafts'", full_step["if"])
+        self.assertIn("inputs.mode == 'drafts'", drafts_step["if"])
+        for command in (
+            "--scope drafts",
+            "--path data-derived/league-drafts",
+            "derived_data.py materialize --product league-drafts",
+            "league_history_app_publish.py write --fail-on-error",
+            "RequestPastSeasonsIndex.ps1",
+        ):
+            self.assertIn(command, drafts_step["run"])
+        self.assertIn("inputs.mode != 'drafts'", next(
+            step for step in steps if step.get("name") == "Summarize Derived products"
+        )["if"])
+        self.assertIn("repository_dispatch", events)
+
     def test_no_new_scheduler_target_or_live_ten_minute_history_job(self):
         import json
         schedules = json.loads(

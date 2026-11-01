@@ -443,7 +443,7 @@ dataSources:
     updateMode:
       restricted: League Live writes Drafts.json and Transactions.json with tools/league_history_app_publish.py write before RequestLeague.ps1, which only reads Drafts.json (Issue #999 step 5b-2)
       scheduledFull: weekly update-transactions workflow writes the files from the league history product (tools/league_history_app_publish.py write, Issue #999 step 5b)
-      manualFull: workflow_dispatch update-drafts workflow, same writer
+      manualFull: workflow_dispatch mode=drafts of update-transactions workflow, same writer
     timestamped: true
     backup: true
 
@@ -452,14 +452,14 @@ dataSources:
     generator: tools/league_history_app_publish.py
     product: data-derived/league-drafts/<CanonicalLeagueID>/<season>.json
     scheduledWorkflow: .github/workflows/update-transactions.yml
-    manualWorkflow: .github/workflows/update-drafts.yml
+    manualWorkflow: .github/workflows/update-transactions.yml # workflow_dispatch mode=drafts
     category: generated-output
     role: Completed draft history read model
     description: >
       Generated completed draft history by season. Historical draft files are
       disposable consumer outputs of the league-drafts product (ADR-057), refreshed
-      by the weekly update-transactions run or a manually dispatched update-drafts
-      run through tools/league_history_app_publish.py write. The product is
+      by the weekly update-transactions run or a manually dispatched Drafts-only
+      mode in the same workflow through tools/league_history_app_publish.py write. The product is
       materialized in one run in ADR-026 order, so a previous Drafts_<season>.json
       schema can never leak back into freshly generated history.
       A completed current-season draft may exist both here as an archive copy and
@@ -479,7 +479,7 @@ dataSources:
       workflows refresh PastSeasonsIndex.json after the write.
     updateMode:
       scheduled: weekly update-transactions workflow
-      manual: workflow_dispatch on the update-drafts workflow
+      manual: workflow_dispatch mode=drafts on update-transactions workflow
     timestamped: false
     backup: false
 
@@ -676,7 +676,7 @@ notesForAIAgents:
   - Current-season virtual drafts display as Upcoming; later virtual season drafts display as Future.
   - Angular Current Drafts is defined by Season equal to League.Season, Future Drafts by Season greater than League.Season, and Past Drafts by archived seasons lower than League.Season.
   - Angular display issues should not be fixed by changing generated data contracts unless the domain shape is wrong.
-  - Completed draft history is written by the weekly update-transactions run or a manual update-drafts run (tools/league_history_app_publish.py write) and should not refresh in the 10-minute RequestLeague workflow.
+  - Completed draft history is written by the weekly update-transactions run or its manual Drafts-only mode (tools/league_history_app_publish.py write) and should not refresh in the 10-minute RequestLeague workflow.
   - Completed draft history uses Sleeper draft picks as source for completed pick results and final current pick ownership; draft-specific Sleeper traded picks confirm completed trade assets before matching historical Transactions into TradeHistory. Do not reintroduce transaction-based ownership repair for completed draft history.
   - PastSeasonsIndex.json is a generated navigation manifest for historical files and should be regenerated through RequestPastSeasonsIndex.ps1, not edited manually.
 
@@ -773,7 +773,7 @@ sharedDerivedLeagueHistory:
   note: >
     Since the cutover (Issue #999 step 5b) Transactions.json, Drafts.json and past_seasons/Transactions and
     Drafts are consumer deliveries written from these products by tools/league_history_app_publish.py write
-    (update-transactions, update-drafts and League Live); no generated archive is an input. The PowerShell
+    (update-transactions, including its isolated manual Drafts mode, and League Live); no generated archive is an input. The PowerShell
     rebuild modules described above remain in the repository until step 7 but are no longer called by the
     productive workflows.
     Since Issue #471 step 3 the League Live league job also rematerializes the current season of both products
