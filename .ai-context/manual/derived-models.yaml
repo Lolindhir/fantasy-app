@@ -271,3 +271,23 @@ documentation:
     The human-readable description of each model is its module docstring plus this
     contract. The research under fantasy-management/league-economy/salary/ stays
     concept material for future versions and is not the model definition.
+ 
+l10PreActivation:
+  issue: 1237
+  state: registered-pure-models-not-productively-selected
+  models:
+    roster-cap-v1:
+      kind: roster-cap
+      module: tools/derived_data_lib/models/roster_cap/v1.py
+      produces: Stable top-N salary usage for one fantasy roster (not the league-wide cap limit).
+      input: Explicit PlayerID/salary roster and positive top_n; no league or clock defaults.
+    auto-cut-v1:
+      kind: auto-cut
+      module: tools/derived_data_lib/models/auto_cut/v1.py
+      produces: Ordered hypothetical sixth-highest-salary cuts until roster usage is at or under cap, or no sixth player remains.
+      input: Explicit roster, top_n and cap_limit; separately evaluated for current and projected salary.
+  activationBoundary: >
+    Registry entries do not select these models in data-meta, change generated
+    products or App JSON, or authorize a new writer. League/season selection,
+    persisted delivery and interactive Trade Simulator behavior require the
+    separate #1237 consumer-contract decision and safe publication review.
