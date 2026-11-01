@@ -975,6 +975,18 @@ consumerReadClassification:
     the calling file, and the test checks that the helper is defined exactly once in a
     file that carries the matching classified read itself. A new reader helper must be
     added here in the same change.
+  transitionalConsumerReadGuard:
+    issue: 1263
+    test: tools/tests/test_consumer_read_classification.py::test_transitional_consumer_to_consumer_reads_do_not_expand
+    policy: >
+      Existing app-read-model-chain, intentional-overlay and legacy-read-model-pending
+      registrations are migration debt or narrowly justified existing adapters,
+      not authorization to introduce another shared fact sourced from an App
+      consumer. The Fast regression pins the current file/token/category triples.
+      Any new tuple must fail until reviewed against a canonical owner and
+      explicitly resolved; removing or reclassifying old debt requires updating
+      the pinned baseline in the same change as the verified cutover. Classification
+      alone cannot establish semantic parity or prove a read is display-only.
   categories:
     source-layer-acquisition: provider read owned by the data-source acquisition layer; sanctioned
     provider-client: the shared Sleeper HTTP client module (retired in #347 K1 follow-up; category kept for history)
