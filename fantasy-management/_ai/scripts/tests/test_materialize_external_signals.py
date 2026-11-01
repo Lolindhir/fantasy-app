@@ -158,6 +158,34 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             self.assertIn("canonical_league_manifest", source_ids)
             self.assertIn("canonical_league_rosters", source_ids)
 
+    def test_team_display_source_fallback_and_unknown_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            snapshot = build_canonical_ownership_snapshot(
+                root, canonical_league_id="test-league", season=2026
+            )
+            path = root / "data-source/leagues/test-league/seasons/2026/members.json"
+            members = json.loads(path.read_text(encoding="utf-8"))
+            members[0]["Metadata"].pop("team_name")
+            path.write_text(json.dumps(members), encoding="utf-8")
+            view = enrich_from_members(snapshot, root, league_id="test-league", season=2026)
+            self.assertEqual("Team owner-one", view[0]["Team"])
+            self.assertEqual("OwO", view[0]["TeamAbbr"])
+
+            with self.assertRaisesRegex(Exception, "scope mismatch"):
+                enrich_from_members(snapshot, root, league_id="test-league", season=2025)
+            members[0]["CanonicalLeagueMemberID"] = members[1]["CanonicalLeagueMemberID"]
+            path.write_text(json.dumps(members), encoding="utf-8")
+            with self.assertRaisesRegex(Exception, "duplicated"):
+                enrich_from_members(snapshot, root, league_id="test-league", season=2026)
+
+            members[0]["CanonicalLeagueMemberID"] = "member-1"
+            members[0]["Metadata"]["team_name"] = 123
+            path.write_text(json.dumps(members), encoding="utf-8")
+            with self.assertRaisesRegex(Exception, "team_name"):
+                enrich_from_members(snapshot, root, league_id="test-league", season=2026)
+
     def test_current_team_display_golden_parity_with_existing_app(self) -> None:
         root = Path(__file__).resolve().parents[4]
         season = resolve_current_canonical_season(root, canonical_league_id="nfl-reise")
