@@ -6,6 +6,7 @@ weekly validation). No real team, owner or season data is wired in.
 from __future__ import annotations
 
 import copy
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -409,6 +410,38 @@ class AwardsTests(unittest.TestCase):
         before = copy.deepcopy(rows)
         awards.compute(rows, [{"TeamID": 1, "Place": 1, "PlaceOrdinal": "1st"}], {"RegularSeason": []})
         self.assertEqual(before, rows)
+
+
+class StandingsOwnershipGuardTests(unittest.TestCase):
+    """#1263: retired PowerShell standings models must not return as parallel production owners."""
+
+    DEFINITION = re.compile(r"(?im)^\s*function\s+(Get-(?:WinPct|RankedRegularSeasonStandings|OutputStandingsForAllTime))\b")
+    CALL = re.compile(r"(?i)\b(Get-(?:WinPct|RankedRegularSeasonStandings|OutputStandingsForAllTime))\b")
+
+    @classmethod
+    def find_legacy_references(cls, source: str) -> list[str]:
+        return cls.CALL.findall("\n".join(
+            line for line in source.splitlines()
+            if not line.lstrip().startswith("#")
+        ))
+
+    def test_production_powershell_contains_no_retired_standings_models_or_calls(self):
+        root = TOOLS.parent / "public" / "requests"
+        offenders = []
+        for extension in ("*.ps1", "*.psm1"):
+            for path in root.rglob(extension):
+                references = self.find_legacy_references(path.read_text(encoding="utf-8-sig"))
+                if references:
+                    offenders.append(f"{path.relative_to(TOOLS.parent)}: {references}")
+        self.assertEqual([], offenders, "\n".join(offenders))
+
+    def test_guard_detects_a_reintroduced_function_and_call(self):
+        injected = "function Get-RankedRegularSeasonStandings { }\nGet-OutputStandingsForAllTime\n"
+        self.assertEqual(
+            ["Get-RankedRegularSeasonStandings", "Get-OutputStandingsForAllTime"],
+            self.find_legacy_references(injected),
+        )
+        self.assertEqual(["Get-RankedRegularSeasonStandings"], self.DEFINITION.findall(injected))
 
 
 if __name__ == "__main__":

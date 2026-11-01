@@ -297,7 +297,7 @@ dataSources:
     path: public/data/Standings.json
     generator: tools/league_standings_app_publish.py write (renders the league-standings product; the former RequestStandings.ps1 and CanonicalStandingUtils.psm1 were removed in Issue #987 step 5)
     helpers:
-      - public/requests/utils/league/StandingUtils.psm1 (change-detection compare helpers, Get-LeagueStandingsProduct, the consumer read of the league-standings product, and Get-OutputStandingsForAllTime)
+      - public/requests/utils/league/StandingUtils.psm1 (comparison helpers and Get-LeagueStandingsProduct consumer adapter only)
       - public/requests/utils/league/TeamUtils.psm1
     category: generated-output
     role: Hybrid current plus historical standings read model
@@ -306,8 +306,8 @@ dataSources:
       productively from Canonical League data-source under
       data-source/leagues/<CanonicalLeagueID>/seasons/<season> using league, member,
       roster and playoff-bracket facts. Current inputs are kept fresh by the bounded
-      League Core producer before app consumers run. Existing StandingUtils
-      derivation owns Regular Season standings, Playoffs, Awards and AllTime.
+      League Core producer before app consumers run. Shared Derived league-standings (standings-v1 and awards-v1)
+      owns Regular Season standings, Playoffs, Awards and AllTime.
       Season-specific Playoff rows additionally retain OwnerAvatar and TeamAvatar
       from the same season's canonical members.json snapshot so archive consumers
       never resolve historical identity from the current team.
@@ -319,7 +319,7 @@ dataSources:
       (positive = moved up, negative = moved down, 0 = unchanged). The previous
       table is rebuilt from the canonical per-week matchups
       (data-source/leagues/<CanonicalLeagueID>/seasons/<season>/matchups/week-<n>.json)
-      with the same Get-RankedRegularSeasonStandings ranking and tiebreak as the
+      with the same centralized standings-v1 ranking and tiebreak as the
       current table. Both fields are explicit null when no comparison exists
       (fewer than two completed weeks, missing or incomplete week facts, or weekly
       outcomes contradicting a team Record); consumers must not reconstruct or

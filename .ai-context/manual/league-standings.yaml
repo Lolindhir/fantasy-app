@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 987
 architectureDecision: ADR-072
-implementationState: 'cutover done (#987 step 4, approved by Robert 2026-10-29 with unchanged output): tools/league_standings_app_publish.py write materializes the product and renders Standings.json (League Live standings job and weekly update-standings); the draft order reads the product in memory; step 5 removed RequestStandings.ps1, CanonicalStandingUtils.psm1 and the PowerShell derivation functions of StandingUtils.psm1 (compare helpers, Get-LeagueStandingsProduct and Get-OutputStandingsForAllTime remain); the follow-up Issue #1197 moved RequestLeague.ps1, RequestWeeklyRecaps.ps1 and RequestHistoricalAppReadModels.ps1 to read the product through Get-LeagueStandingsProduct'
+implementationState: 'cutover done (#987 step 4, approved by Robert 2026-10-29 with unchanged output): tools/league_standings_app_publish.py write materializes the product and renders Standings.json (League Live standings job and weekly update-standings); the draft order reads the product in memory; step 5 removed RequestStandings.ps1, CanonicalStandingUtils.psm1 and the PowerShell derivation functions of StandingUtils.psm1 (compare helpers and Get-LeagueStandingsProduct remain; #1263 retired dormant PowerShell ranking/all-time functions); the follow-up Issue #1197 moved RequestLeague.ps1, RequestWeeklyRecaps.ps1 and RequestHistoricalAppReadModels.ps1 to read the product through Get-LeagueStandingsProduct'
 
 purpose: >
   Define the Shared Derived Data product LeagueStandings: for one league and one season the
