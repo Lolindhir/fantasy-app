@@ -346,26 +346,30 @@ function resolveCanonicalPlaceDelta(
 }
 
 function buildCurrentOverviewStandingRows(league: League): OverviewStandingRow[] {
-  return buildCurrentStandings(league, league.Teams).map(({ team, displayPlace }) => {
+  const result: OverviewStandingRow[] = [];
+  for (const { team, displayPlace } of buildCurrentStandings(league, league.Teams)) {
+    // Current standings are also generator-owned; missing evidence is not 0-0.
     const placement = team.Placements?.Current?.Regular;
-    const wins = Number(placement?.Wins ?? 0);
-    const losses = Number(placement?.Losses ?? 0);
-    const ties = Number(placement?.Ties ?? 0);
-    return {
+    if (!placement) return [];
+    const { Wins: wins, Losses: losses, Ties: ties, Points: points, PointsAgainst: pointsAgainst } = placement;
+    if ([wins, losses, ties].some(value => !Number.isInteger(value) || value < 0)
+      || !Number.isFinite(points) || !Number.isFinite(pointsAgainst)) return [];
+    result.push({
       team,
       displayPlace,
       wins,
       losses,
       ties,
-      points: Number(placement?.Points ?? team.Points ?? 0),
-      pointsAgainst: Number(placement?.PointsAgainst ?? team.PointsAgainst ?? 0),
+      points,
+      pointsAgainst,
       record: formatStandingRecord(wins, losses, ties),
-      streak: placement?.Streak?.trim() || null,
-      placeDelta: typeof placement?.PlaceDelta === 'number' && Number.isFinite(placement.PlaceDelta)
+      streak: placement.Streak?.trim() || null,
+      placeDelta: typeof placement.PlaceDelta === 'number' && Number.isFinite(placement.PlaceDelta)
         ? placement.PlaceDelta
         : null
-    };
-  });
+    });
+  }
+  return result;
 }
 
 function formatStandingRecord(wins: number, losses: number, ties: number): string {
