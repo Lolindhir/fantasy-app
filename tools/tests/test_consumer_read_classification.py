@@ -159,8 +159,6 @@ TRANSITIONAL_BASELINE = frozenset({
     ("fantasy-management/automation/managed-roster-overview.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/player-signal-materialization.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/runner-config.json", "legacy:League", "intentional-overlay"),
-    ("public/requests/RequestLeague.ps1", "legacy:Drafts", "app-read-model-chain"),
-    ("public/requests/utils/league/TeamDraftPickUtils.psm1", "legacy:Drafts", "app-read-model-chain"),
     ("tools/derived_data.py", "legacy:Players", "legacy-read-model-pending"),
 })
 
@@ -212,8 +210,30 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         self.assertNotIn("legacy:Schedule", scan_text(path, source, names, functions))
         injected = source + "\n$ScheduleFile = $config.ScheduleFile\n"
         self.assertIn("legacy:Schedule", scan_text(path, injected, names, functions))
-        self.assertTrue(any("unclassified read legacy:Schedule" in item
+        self.assertTrue(any("legacy:Schedule" in item and ("unclassified consumer" in item or "unclassified read" in item)
                             for item in compare({path: scan_text(path, injected, names, functions)}, load_registry())))
+
+    def test_request_league_drafts_come_from_shared_derived_only(self) -> None:
+        """#1263 C7: no second App-consumer input for team DraftPicks."""
+        path = "public/requests/RequestLeague.ps1"
+        reader_path = "public/requests/utils/league/TeamDraftPickUtils.psm1"
+        source = (REPO_ROOT / path).read_text(encoding="utf-8-sig")
+        reader = (REPO_ROOT / reader_path).read_text(encoding="utf-8-sig")
+        self.assertIn("Get-LeagueDraftsProduct", source)
+        self.assertNotIn("Get-LeagueDraftsLocal", source)
+        self.assertNotIn("Get-LeagueDraftsLocal", reader)
+        self.assertIn("Get-DataDerivedRoot", reader)
+        self.assertIn("ContractVersion", reader)
+        self.assertNotIn("$config.DraftsFile", reader)
+        names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)
+        self.assertNotIn("legacy:Drafts", scan_text(path, source, names, functions))
+        self.assertNotIn("legacy:Drafts", scan_text(reader_path, reader, names, functions))
+        injected = source + "\n$legacy = $config.DraftsFile\n"
+        self.assertIn("legacy:Drafts", scan_text(path, injected, names, functions))
+        self.assertTrue(any("legacy:Drafts" in item and ("unclassified consumer" in item or "unclassified read" in item)
+                            for item in compare(
+            {path: scan_text(path, injected, names, functions)}, load_registry()
+        )))
 
     def test_every_registered_file_exists(self) -> None:
         missing = [p for p in load_registry()["consumers"] if not (REPO_ROOT / p).is_file()]
@@ -275,7 +295,7 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         registry = load_registry()
         helpers = registry.get("helperReads") or {}
         names = set(read_model_names(REPO_ROOT))
-        self.assertTrue(helpers)
+        self.assertNotIn("Get-LeagueDraftsLocal", helpers)
         problems = []
         for helper, model in helpers.items():
             if model not in names:
@@ -297,7 +317,9 @@ class ConsumerReadClassificationTest(unittest.TestCase):
     def test_helper_call_is_detected_as_read(self) -> None:
         names = read_model_names(REPO_ROOT)
         fns = sleeper_functions(REPO_ROOT)
-        helpers = load_registry()["helperReads"]
+        # Synthetic registration verifies the guard even when all real wrapped
+        # App Drafts.json reader helpers have been retired by #1263 C7.
+        helpers = {"Get-TestAppReader": "Drafts"}
         helper, model = next(iter(helpers.items()))
         call = scan_text("public/requests/New.ps1", f"$x = {helper}\n", names, fns, helpers)
         definition = scan_text("public/requests/New.ps1", f"function {helper} {{ }}\n", names, fns, helpers)

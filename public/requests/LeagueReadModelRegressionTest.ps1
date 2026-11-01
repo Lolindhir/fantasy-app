@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 Import-Module "$PSScriptRoot\utils\league\CanonicalLeagueCoreUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\CanonicalPlayoffUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\league\StandingUtils.psm1" -Force
+Import-Module "$PSScriptRoot\utils\league\TeamDraftPickUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\general\AvatarUtils.psm1" -Force
 Import-Module "$PSScriptRoot\utils\player\PlayerValuationUtils.psm1" -ErrorAction Stop
 
@@ -36,10 +37,11 @@ function Get-OccurrenceCount {
     return ([regex]::Matches($Text, [regex]::Escape($Needle))).Count
 }
 
-# Since Issue 999 step 5b RequestLeague no longer builds Transactions or Drafts itself: the league history
-# consumer generator writes them before RequestLeague runs in League Live; RequestLeague only reads Drafts.json.
+# Since Issue #1263 C7 RequestLeague reads the Shared Derived LeagueDrafts product directly
+# for team pick identities. The separate App Drafts.json publication remains a frontend consumer.
 $requestLeague = Get-Content "$PSScriptRoot\RequestLeague.ps1" -Raw
-Assert-True -Condition $requestLeague.Contains('$drafts = Get-LeagueDraftsLocal') -Message "RequestLeague does not read the Drafts.json written by the league history consumer generator."
+Assert-True -Condition $requestLeague.Contains('Get-LeagueDraftsProduct') -Message "RequestLeague does not consume the Shared Derived LeagueDrafts product."
+Assert-True -Condition (-not $requestLeague.Contains('Get-LeagueDraftsLocal')) -Message "RequestLeague still reads App Drafts.json."
 Assert-True -Condition $requestLeague.Contains("Get-LeagueLifecycle") -Message "RequestLeague does not take the lifecycle from the shared lifecycle model (ADR-073)."
 foreach ($legacy in @("Resolve-LeagueStatusState", "Resolve-LeagueNextWaiverRunUtc", "Resolve-LeagueTradeDeadlineWeek", "Get-LeagueSeasonKickoffUtc", "Get-LeaguePlayoffStartUtc", "LeagueStatusSeasonStartBufferDays")) {
     Assert-Equal -Actual (Get-OccurrenceCount -Text $requestLeague -Needle $legacy) -Expected 0 -Message "RequestLeague still derives lifecycle state itself ($legacy); it belongs to lifecycle-v1."
@@ -71,7 +73,7 @@ $leagueLiveWorkflow = Get-Content (Join-Path (Join-Path $PSScriptRoot "..\..") "
 Assert-True -Condition $leagueLiveWorkflow.Contains("materialization_scope: current") -Message "League Live does not run the combined current League source scope."
 Assert-True -Condition $leagueLiveWorkflow.Contains("RequestLeaguePublication.ps1") -Message "League Live does not publish the App League read model."
 Assert-True -Condition $leagueLiveWorkflow.Contains("league_history_app_publish.py write") -Message "League Live does not write Transactions.json and Drafts.json from the league history product."
-Assert-True -Condition ($leagueLiveWorkflow.IndexOf("league_history_app_publish.py write") -lt $leagueLiveWorkflow.IndexOf("RequestLeaguePublication.ps1")) -Message "League Live must write the league history files before RequestLeague reads Drafts.json."
+Assert-True -Condition $leagueLiveWorkflow.Contains("league_history_app_publish.py write") -Message "The App history output is still published independently; C7 only changes RequestLeague's reader."
 Assert-True -Condition $leagueLiveWorkflow.Contains("league_standings_app_publish.py write") -Message "League Live does not rebuild Standings."
 # Standings must be published before League is built: League.json embeds the published Standings placement context.
 Assert-True -Condition ($leagueLiveWorkflow.IndexOf("league_standings_app_publish.py write") -lt $leagueLiveWorkflow.IndexOf("RequestLeaguePublication.ps1")) -Message "League Live must rebuild Standings before League so team placement context is current."
@@ -184,6 +186,70 @@ Assert-True -Condition (-not $canonicalLeagueCoreUtils.Contains("Invoke-RestMeth
 
 $publishedLeague = Get-Content (Get-Config).LeagueFile -Raw | ConvertFrom-Json
 $canonicalLeagueId = [string](Get-Config).CanonicalLeagueID
+
+# Golden shadow parity on real published data: the consumer-generated Drafts.json
+# is read only in this regression and NEVER by RequestLeague. Compare final sorted
+# PickKeys for every team; the reader's source must be the shared product.
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
+$productDrafts = @(Get-LeagueDraftsProduct -RepoRoot $repoRoot -CanonicalLeagueID $canonicalLeagueId -LeagueYear ([int]$publishedLeague.Season))
+$publishedDrafts = @(Get-Content (Get-Config).DraftsFile -Raw | ConvertFrom-Json)
+$productDraftKeys = @($productDrafts | ForEach-Object { $_.DraftKey } | Sort-Object)
+$publishedDraftKeys = @($publishedDrafts | ForEach-Object { $_.DraftKey } | Sort-Object)
+Assert-StandingsJsonEqual -Actual $productDraftKeys -Expected $publishedDraftKeys -Message "Shared Derived current/future draft identity mismatch."
+$productTeams = @($publishedLeague.Teams | ForEach-Object { [PSCustomObject]@{ TeamID = $_.TeamID } })
+$publishedTeams = @($publishedLeague.Teams | ForEach-Object { [PSCustomObject]@{ TeamID = $_.TeamID } })
+$productTeams = @(Add-DraftPickKeysToTeams -teams $productTeams -drafts $productDrafts)
+$publishedTeams = @(Add-DraftPickKeysToTeams -teams $publishedTeams -drafts $publishedDrafts)
+foreach ($team in $productTeams) {
+    $published = @($publishedTeams | Where-Object { [int]$_.TeamID -eq [int]$team.TeamID })[0]
+    Assert-StandingsJsonEqual -Actual @($team.DraftPicks) -Expected @($published.DraftPicks) -Message "Current/future team pick identities or order diverged for TeamID $($team.TeamID)."
+    $existing = @($publishedLeague.Teams | Where-Object { [int]$_.TeamID -eq [int]$team.TeamID })[0]
+    Assert-StandingsJsonEqual -Actual @($team.DraftPicks) -Expected @($existing.DraftPicks) -Message "Canonical team picks diverged from existing League.json TeamID $($team.TeamID)."
+}
+
+# Fail-closed reader test with ONLY Shared Derived paths present (no public/data).
+$fixtureRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("league-drafts-c7-" + [guid]::NewGuid().ToString("N"))
+$fixtureFolder = Join-Path $fixtureRoot "data-derived/league-drafts/contract-test"
+New-Item -ItemType Directory -Path $fixtureFolder -Force | Out-Null
+try {
+    $fixture = [PSCustomObject]@{
+        ContractVersion = 2; CanonicalLeagueID = 'contract-test'; Season = 2026
+        Drafts = @([PSCustomObject]@{
+            DraftKey = '2026_Rookie'; Season = '2026'; DraftNo = 1
+            Picks = @([PSCustomObject]@{
+                PickKey = '2026_Rookie_R1_OO1'; DraftKey = '2026_Rookie'; Round = 1
+                OriginalOwnerRosterID = 1; CurrentOwnerRosterID = 2
+                OverallPick = $null; PositionInRound = $null
+            })
+        })
+    }
+    $fixturePath = Join-Path $fixtureFolder "2026.json"
+    $fixture | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $fixturePath -Encoding utf8
+    $fixtureDrafts = @(Get-LeagueDraftsProduct -RepoRoot $fixtureRoot -CanonicalLeagueID 'contract-test' -LeagueYear 2026)
+    Assert-Equal -Actual $fixtureDrafts.Count -Expected 1 -Message "Reader failed with only a Shared Derived product."
+    Assert-Equal -Actual $fixtureDrafts[0].Picks[0].CurrentOwnerRosterID -Expected 2 -Message "Reader lost the canonical current pick owner."
+
+    $fixture.ContractVersion = 3
+    $fixture | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $fixturePath -Encoding utf8
+    $caught = $false
+    try { @(Get-LeagueDraftsProduct -RepoRoot $fixtureRoot -CanonicalLeagueID 'contract-test' -LeagueYear 2026) | Out-Null } catch { $caught = $true }
+    Assert-True -Condition $caught -Message "Unsupported LeagueDrafts ContractVersion did not fail closed."
+
+    $fixture.ContractVersion = 2
+    $fixture.Drafts[0].Picks = @($fixture.Drafts[0].Picks[0], $fixture.Drafts[0].Picks[0])
+    $fixture | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $fixturePath -Encoding utf8
+    $caught = $false
+    try { @(Get-LeagueDraftsProduct -RepoRoot $fixtureRoot -CanonicalLeagueID 'contract-test' -LeagueYear 2026) | Out-Null } catch { $caught = $true }
+    Assert-True -Condition $caught -Message "Duplicate canonical PickKey did not fail closed."
+
+    Remove-Item -LiteralPath $fixturePath -Force
+    $caught = $false
+    try { @(Get-LeagueDraftsProduct -RepoRoot $fixtureRoot -CanonicalLeagueID 'contract-test' -LeagueYear 2026) | Out-Null } catch { $caught = $true }
+    Assert-True -Condition $caught -Message "Missing current-season product did not fail closed."
+}
+finally {
+    Remove-Item -LiteralPath $fixtureRoot -Recurse -Force
+}
 $canonicalLeagueCoreShadow = Get-CanonicalCurrentLeagueCoreShadow -CanonicalLeagueID $canonicalLeagueId
 # Implicit metadata default must reproduce every explicit canonical League Core input.
 Assert-StandingsJsonEqual -Actual (Get-CanonicalCurrentLeagueCoreShadow) -Expected $canonicalLeagueCoreShadow -Message "Default League Core shadow mismatch."

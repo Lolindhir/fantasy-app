@@ -15,27 +15,84 @@ catch {
 # Helpers
 # ===========================================================================
 
-function Get-LeagueDraftsLocal {
-    $config = Get-Config
+# Shared Derived LeagueDrafts is the authoritative pick owner (ADR-057).
+# Read only current-season and future product documents, never App Drafts.json.
+# This adapter does not compute draft order, trades, owners or draft identities.
+function Get-LeagueDraftsProduct {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepoRoot,
+        [Parameter(Mandatory = $true)][string]$CanonicalLeagueID,
+        [Parameter(Mandatory = $true)][int]$LeagueYear
+    )
 
-    if (-not (Test-Path $config.DraftsFile)) {
-        Write-Warning "Drafts file not found at $($config.DraftsFile). Returning empty draft list."
-        return @()
+    if ($CanonicalLeagueID -notmatch '^[A-Za-z0-9_-]+$') {
+        throw "Invalid canonical league ID for LeagueDrafts: '$CanonicalLeagueID'."
     }
 
-    try {
-        $raw = Get-Content $config.DraftsFile -Raw
+    $productRoot = Join-Path (Get-DataDerivedRoot -RepoRoot $RepoRoot) 'league-drafts'
+    $leagueRoot = Join-Path $productRoot $CanonicalLeagueID
+    if (-not (Test-Path -LiteralPath $leagueRoot -PathType Container)) {
+        throw "LeagueDrafts product directory missing for '$CanonicalLeagueID'."
+    }
 
-        if ([string]::IsNullOrWhiteSpace($raw)) {
-            return @()
+    $files = @(Get-ChildItem -LiteralPath $leagueRoot -File -Filter '*.json' |
+        Where-Object { $_.BaseName -match '^\d{4}$' -and [int]$_.BaseName -ge $LeagueYear } |
+        Sort-Object { [int]$_.BaseName })
+
+    if ($files.Count -eq 0 -or [int]$files[0].BaseName -ne $LeagueYear) {
+        throw "LeagueDrafts product for current season $LeagueYear is missing."
+    }
+
+    $drafts = [System.Collections.Generic.List[object]]::new()
+    $draftKeys = [System.Collections.Generic.HashSet[string]]::new()
+    $pickKeys = [System.Collections.Generic.HashSet[string]]::new()
+    $expectedSeason = $LeagueYear
+
+    foreach ($file in $files) {
+        $season = [int]$file.BaseName
+        if ($season -ne $expectedSeason) {
+            throw "LeagueDrafts has a gap before season $season (expected $expectedSeason)."
+        }
+        $expectedSeason++
+
+        $product = Get-Content -LiteralPath $file.FullName -Raw -ErrorAction Stop |
+            ConvertFrom-Json -ErrorAction Stop
+        if ([int]$product.ContractVersion -ne 2 -or
+            [string]$product.CanonicalLeagueID -cne $CanonicalLeagueID -or
+            [int]$product.Season -ne $season) {
+            throw "LeagueDrafts product identity/contract mismatch for season $season."
+        }
+        if ($null -eq $product.Drafts -or @($product.Drafts).Count -eq 0) {
+            throw "LeagueDrafts product contains no drafts for season $season."
         }
 
-        return ConvertTo-SafeArray -value ($raw | ConvertFrom-Json)
+        foreach ($draft in @($product.Drafts)) {
+            $draftKey = [string]$draft.DraftKey
+            if ([string]::IsNullOrWhiteSpace($draftKey) -or
+                [int]$draft.Season -ne $season -or
+                $null -eq $draft.DraftNo -or
+                $null -eq $draft.Picks -or
+                -not $draftKeys.Add($draftKey)) {
+                throw "Invalid or duplicate LeagueDrafts identity in season $season."
+            }
+            foreach ($pick in @($draft.Picks)) {
+                if ([string]::IsNullOrWhiteSpace([string]$pick.PickKey) -or
+                    [string]$pick.DraftKey -cne $draftKey -or
+                    $null -eq $pick.Round -or
+                    $null -eq $pick.OriginalOwnerRosterID -or
+                    $null -eq $pick.CurrentOwnerRosterID -or
+                    -not $pickKeys.Add([string]$pick.PickKey)) {
+                    throw "Invalid or duplicate LeagueDrafts pick in '$draftKey'."
+                }
+            }
+            $drafts.Add($draft)
+        }
     }
-    catch {
-        Write-Warning "Could not read Drafts.json at $($config.DraftsFile). $_"
-        return @()
+
+    if ($drafts.Count -eq 0) {
+        throw "LeagueDrafts yielded no current/future drafts for '$CanonicalLeagueID'."
     }
+    return $drafts.ToArray()
 }
 
 function Add-DraftPickKeysToTeams {

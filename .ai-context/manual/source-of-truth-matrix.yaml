@@ -966,8 +966,7 @@ consumerReadClassification:
     sleeper-api:<Function>: a call to a Sleeper client function (the client SleeperUtils.psm1 was retired; its function names stay reserved in the test so a reintroduced call is reported)
     network: an HTTP client call (Invoke-RestMethod, urllib, requests, ...)
     legacy:<Name>: a reference to public/data/<Name>.json, the matching $config.<Name>File or (Get-Config).<Name>File, or a call of a reader helper declared under helperReads
-  helperReads:
-    Get-LeagueDraftsLocal: Drafts
+  helperReads: {}
   helperReadsRule: >
     A reader helper hides the read of a published read model from its callers, so the
     scan would miss every caller (L7, datenprodukte analysis 2026-10-29). Each helper is
@@ -1126,10 +1125,8 @@ consumerReadClassification:
         legacy:League: analysis-snapshot-input
         legacy:Transactions: analysis-snapshot-input
       note: 'Point-in-time salary analysis; population and season inputs come from tools/players_population.py and the PlayerValuation product (Issue #1226 step 1), League/Transactions remain published read models; not a recurring pipeline consumer.'
-    public/requests/RequestLeague.ps1:
-      reads:
-        legacy:Drafts: app-read-model-chain
-      note: 'League generator: reads the newest read-only PlayerValuation season snapshot via PlayerValuationUtils.psm1::Get-PlayerValuationLatestSnapshot for SalaryCap, SalaryCapProjected and SalaryRelevantTeamSize (#1238); no materializer or valuation arithmetic. Publishes DecisionWindows.json from the shared Python Decision Windows function via Get-LeagueDecisionWindows, using Save-JsonFile semantic no-op and timestamp comparison; previous DecisionWindows.json is not a model input. Matchups.json and FantasyGameContext.json are published by tools/matchup_context_app_publish.py, and Standings by the league-standings product. Published Drafts.json is still read through Get-LeagueDraftsLocal (pending migration); Schedule.json is no longer read even for an unused readiness check, because central Lifecycle/DecisionWindows validate canonical NFL schedule and finality themselves (#1263 C3). No new provider/public-data read classification was introduced by #1238.'
+    # RequestLeague.ps1 consumes shared LeagueDrafts products through
+    # TeamDraftPickUtils.psm1::Get-LeagueDraftsProduct (#1263 C7); no App Drafts read.
     public/requests/RequestTeams.ps1:
       reads:
         legacy:Teams: app-output-owner
@@ -1161,10 +1158,8 @@ consumerReadClassification:
       reads:
         legacy:PastSeasonsIndex: app-output-owner
       note: 'Writes PastSeasonsIndex.json.'
-    public/requests/utils/league/TeamDraftPickUtils.psm1:
-      reads:
-        legacy:Drafts: app-read-model-chain
-      note: 'Resolves team DraftPicks from the published Drafts.json (ADR-006); defines the reader helper Get-LeagueDraftsLocal.'
+    # TeamDraftPickUtils.psm1 now reads shared data-derived/league-drafts directly
+    # (Issue #1263 C7), and holds no legacy public/data read classification.
     tools/build_workflow_health_snapshot.py:
       reads:
         network: repository-infrastructure

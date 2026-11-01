@@ -445,11 +445,13 @@ dataSources:
       DisplayStatus is generated directly by the draft generation utilities as a
       UI-safe status label. SleeperStartTime contains the source start_time value
       when present, and DraftStartTimeUtc contains the generated UTC ISO
-      representation used by the league status phase resolver. This file is the
-      only draft output used to enrich League.json team DraftPick references,
-      including picked current-season picks needed for complete-season Draft Capital.
+      representation used by the league status phase resolver. This App file remains the frontend draft view. League.json Team DraftPicks
+      are instead derived independently from the same Shared Derived league-drafts
+      products by Get-LeagueDraftsProduct (TeamDraftPickUtils.psm1, #1263 C7).
+      Completed current-season picks and open future picks retain identical
+      sorted PickKey lists across both App projections.
     updateMode:
-      restricted: League Live writes Drafts.json and Transactions.json with tools/league_history_app_publish.py write before RequestLeague.ps1, which only reads Drafts.json (Issue #999 step 5b-2)
+      restricted: League Live writes Drafts.json and Transactions.json with tools/league_history_app_publish.py write independently. RequestLeague.ps1 now consumes Shared Derived league-drafts products, never Drafts.json (#1263 C7).
       scheduledFull: weekly update-transactions workflow writes the files from the league history product (tools/league_history_app_publish.py write, Issue #999 step 5b)
       manualFull: workflow_dispatch mode=drafts of update-transactions workflow, same writer
     timestamped: true

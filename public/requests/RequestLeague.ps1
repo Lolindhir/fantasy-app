@@ -100,16 +100,13 @@ try {
         exit 1
     }
 
-    # Current Transactions.json and Drafts.json are written from the league history product by the consumer
-    # generator (tools/league_history_app_publish.py write, ADR-057, Issue #999 step 5b) before this script runs
-    # in League Live. League status/phase and team draft picks read the freshly written Drafts.json.
-    $drafts = Get-LeagueDraftsLocal
-    if (-not $drafts -or @($drafts).Count -eq 0) {
-        throw "Drafts.json is missing or empty. The league history consumer generator must run before RequestLeague."
-    }
-    Write-Host "Current drafts loaded from Drafts.json ($(@($drafts).Count))." -ForegroundColor Green
-
+    # Pick ownership comes directly from the product of the league-history owner,
+    # not the separate App Drafts.json consumer publication (Issue #1263 C7).
+    $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
     $league = Get-CanonicalCurrentLeagueRaw -CanonicalLeagueID $CanonicalLeagueID
+    $drafts = @(Get-LeagueDraftsProduct -RepoRoot $repoRoot -CanonicalLeagueID $CanonicalLeagueID -LeagueYear ([int]$league.Season))
+    Write-Host "Current and future drafts loaded from shared LeagueDrafts ($($drafts.Count))." -ForegroundColor Green
+
     $teamData = Get-CanonicalCurrentTeamsForLeague -CanonicalLeagueID $CanonicalLeagueID
     $playoffs = Get-CanonicalCurrentPlayoffs -CanonicalLeagueID $CanonicalLeagueID
     $standingsRepoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
