@@ -22,6 +22,8 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import canonical_league_ownership as canonical_ownership  # noqa: E402
+from canonical_league_lifecycle import LeagueLifecycleUnavailable, resolve_lifecycle_state  # noqa: E402
+from operations_team_display import enrich_from_members  # noqa: E402
 
 SCHEMA_VERSION = 1
 CONFIG_SCHEMA_VERSION = 1
@@ -148,6 +150,43 @@ def load_canonical_league_scoring(root: Path, config: dict[str, Any]) -> dict[st
     if not isinstance(scoring, dict):
         raise KickerStreamingInputError("Canonical league ScoringSettings is missing")
     return scoring
+
+
+def resolve_canonical_league_context(
+    root: Path,
+    config: dict[str, Any],
+    managed_team_id: str,
+    generated_at: Any,
+) -> tuple[int, dict[str, Any], dict[str, Any]]:
+    """Resolve stable TeamID display and shared lifecycle without an App League read."""
+    league_id = config["canonical_league"]["canonical_league_id"]
+    try:
+        season = canonical_ownership.resolve_current_canonical_season(
+            root, canonical_league_id=league_id
+        )
+        snapshot = canonical_ownership.build_canonical_ownership_snapshot(
+            root, canonical_league_id=league_id, season=season
+        )
+        teams = enrich_from_members(snapshot, root, league_id=league_id, season=season)
+    except canonical_ownership.CanonicalOwnershipError as exc:
+        raise KickerStreamingInputError(f"Canonical kicker team display is unavailable: {exc}") from exc
+
+    managed_team = next((team for team in teams if str(team["TeamID"]) == managed_team_id), None)
+    if managed_team is None:
+        raise KickerStreamingInputError(f"Managed team {managed_team_id} not found in canonical league")
+
+    try:
+        lifecycle = resolve_lifecycle_state(root, league_id, season, generated_at)
+    except LeagueLifecycleUnavailable as exc:
+        raise KickerStreamingInputError(f"Canonical kicker league lifecycle unavailable: {exc}") from exc
+    if not isinstance(lifecycle, dict) or (
+        not isinstance(lifecycle.get("Phase"), str)
+        or not isinstance(lifecycle.get("CurrentWeek"), int)
+        or isinstance(lifecycle.get("CurrentWeek"), bool)
+        or lifecycle["CurrentWeek"] < 0
+    ):
+        raise KickerStreamingInputError("Canonical kicker lifecycle has invalid Phase or CurrentWeek")
+    return season, managed_team, lifecycle
 
 
 def kicker_scoring(scoring_settings: dict[str, Any]) -> dict[str, float]:
@@ -373,10 +412,9 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     validate_config(config)
 
     sources = config["sources"]
-    league = load_json(root / sources["league"])
     player_signals = load_json(root / sources["player_signals"])
     free_agent_signals = load_json(root / sources["free_agent_signals"])
-    if not isinstance(league, dict) or not isinstance(player_signals, dict) or not isinstance(free_agent_signals, dict):
+    if not isinstance(player_signals, dict) or not isinstance(free_agent_signals, dict):
         raise KickerStreamingInputError("Kicker Streaming inputs must be JSON objects")
     validate_source(player_signals, "player-signals")
     validate_source(free_agent_signals, "free-agent-signals")
@@ -386,11 +424,9 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         raise KickerStreamingInputError("free-agent-signals does not reference the current player-signals fingerprint")
 
     managed_team_id = str(config["managed_team"]["team_id"])
-    teams = league.get("Teams") if isinstance(league.get("Teams"), list) else []
-    managed_team = next((team for team in teams if str(team.get("TeamID")) == managed_team_id), None)
-    if not isinstance(managed_team, dict):
-        raise KickerStreamingInputError(f"Managed team {managed_team_id} not found")
-
+    season, managed_team, lifecycle = resolve_canonical_league_context(
+        root, config, managed_team_id, player_signals.get("generated_at")
+    )
     scoring = kicker_scoring(load_canonical_league_scoring(root, config))
     held_players = [
         player
@@ -449,9 +485,9 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             "name": managed_team.get("Team"),
         },
         "league": {
-            "season": league.get("Season"),
-            "phase": league.get("Phase"),
-            "current_week": league.get("CurrentWeek"),
+            "season": str(season),
+            "phase": lifecycle["Phase"],
+            "current_week": lifecycle["CurrentWeek"],
             "kicker_scoring": scoring,
             "projection_reconciliation": {
                 "cbs_sports": "50_plus_bucket_requires_50_59_vs_60_plus_bounds",

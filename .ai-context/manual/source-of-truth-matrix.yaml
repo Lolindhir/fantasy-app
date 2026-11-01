@@ -1098,9 +1098,8 @@ consumerReadClassification:
         legacy:Timestamps: freshness-trigger
       note: 'Weekly review job input declaration. The Transactions.json dependency was migrated to the canonical League transaction partition (data-source/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-<n>.json) in the #347 FM-read step; League.json is the display overlay, Timestamps.json the freshness bridge.'
     fantasy-management/automation/kicker-streaming-input-materialization.json:
-      reads:
-        legacy:League: intentional-overlay
-      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from data-source/leagues.'
+      reads: {}
+      note: 'C8f: scoring from canonical season ScoringSettings; team display from canonical member metadata via operations_team_display and phase/week from central lifecycle (ADR-073). No App League.json input.'
     fantasy-management/automation/player-signal-materialization.json:
       reads:
         legacy:Timestamps: freshness-trigger
