@@ -93,7 +93,11 @@ contract:
       computed once in the shared product assembler from the canonical Record prefix through the validated week.
       It is never copied from the current provider Streak for an earlier week. The addition to Weeks.Teams is backward-compatible
       in the derived product SchemaVersion 1; already persisted snapshots without this field need normal re-materialization.
-      Public App JSON does not yet expose Weeks; consumer delivery and Angular cutover require a separate validated checkpoint.
+      In the C6c proposed cutover the existing Standings.json renderer copies these validated Weeks (including Streak)
+      exclusively into the current season and RequestLeague embeds them in League.json. The publisher and workflow stay
+      unchanged. This is an additive existing-public-readmodel contract extension; no new output path exists.
+      Angular shows an empty historical snapshot when the requested week is unavailable or invalid rather than replaying
+      Matchups or falling back to current numbers for a retained historical display week.
     Playoffs: >
       Placement rows from the winners and losers bracket (Place, TeamID, Owner, OwnerAvatarID, TeamName, TeamAvatar, PlaceType, PlaceOrdinal).
       Empty while no placement match is decided.
