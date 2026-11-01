@@ -89,6 +89,30 @@ class CanonicalLeagueOwnershipTests(unittest.TestCase):
             self.assertEqual("member-1", snapshot["Teams"][0]["CanonicalLeagueMemberID"])
             self.assertEqual("99", snapshot["Teams"][0]["ProviderRosterID"])
 
+    def test_canonical_member_display_never_depends_on_app_league(self) -> None:
+        from operations_team_display import enrich_from_members
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            members_path = root / "data-source/leagues/test-league/seasons/2026/members.json"
+            members = self._read_json(members_path)
+            members[0]["Metadata"] = {"team_name": "Mighty Giants"}
+            self._write_json(members_path, members)
+            snapshot = build_canonical_ownership_snapshot(
+                root, canonical_league_id="test-league", season=2026
+            )
+            app_path = root / "public/data/League.json"
+            app_path.unlink()
+            expected = enrich_from_members(snapshot, root, league_id="test-league", season=2026)
+            self.assertEqual((1, "Mighty Giants", "MiG"),
+                             (expected[0]["TeamID"], expected[0]["Team"], expected[0]["TeamAbbr"]))
+            self._write_json(app_path, {"Teams": [{"TeamID": 999, "Team": "Poison"}]})
+            self.assertEqual(expected, enrich_from_members(
+                snapshot, root, league_id="test-league", season=2026
+            ))
+            self.assertFalse(hasattr(ownership, "enrich_canonical_ownership_with_display"))
+
     def test_shadow_parity_matches_member_and_roster_basis_facts(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

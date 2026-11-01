@@ -78,7 +78,7 @@ Issue #1263 C8 subsequently removes its last `public/data/League.json` display i
 Fantasy Operations presentation adapter `operations_team_display.py` joins stable TeamID/member IDs
 to `data-source/leagues/<CanonicalLeagueID>/seasons/<season>/members.json`, using member
 `Metadata.team_name` (or `Team <DisplayName>`) and a presentation-only abbreviation compatible
-with the existing App display convention. The six current team labels/abbreviations are golden-tested
+with the existing App display convention. Since #1263 C8g, the unused ownership-module App-display enrichment helper has been retired; only an explicitly opt-in `canonical_league_ownership.py --compare-league` CLI shadow still reads `League.json` for validation, never for a productive input. The six current team labels/abbreviations are golden-tested
 against `League.json` but the Operations producer never reads it. League roster ownership
 continues to come exclusively from canonical season rosters; the existing output contracts and
 workflow triggering remain unchanged. Other Fantasy Operations consumers still have independent
