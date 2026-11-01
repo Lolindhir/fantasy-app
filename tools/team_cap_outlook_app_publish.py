@@ -199,6 +199,11 @@ def main(argv: list[str] | None = None) -> int:
             print("TeamCapOutlook written" if write(args.repo_root, league_id)
                   else "TeamCapOutlook unchanged")
     except (ValueError, OSError) as error:
+        if args.command == "write":
+            # Never block the existing League.json publisher for a noncritical outlook.
+            # Keep last-good data; the App rejects a stale salary/roster witness.
+            print(f"::warning title=TeamCapOutlook unavailable::{error}", file=sys.stderr)
+            return 0
         print(f"TeamCapOutlook: {error}", file=sys.stderr)
         return 1
     return 0
