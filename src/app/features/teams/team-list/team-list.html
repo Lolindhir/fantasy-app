@@ -183,6 +183,8 @@
   </mat-card-header>
 
   <mat-card-content>
+    <ng-container *ngIf="team.IsSalaryAvailable; else salaryUnavailable">
+    <p *ngIf="team.IsWhatIf"><strong>Was-wäre-wenn:</strong> Berechnung mit manuell ausgeschlossenen Spielern</p>
     <p><strong>Team Salary:</strong> {{ formatSalaryDollars(team.Salary, false, 0) }} ({{ projectedAbr }}: {{ formatSalaryDollars(team.SalaryProjected, false, 0) }})</p>
     <p>
       <strong>Salary Cap Difference:</strong>
@@ -202,6 +204,10 @@
         {{ formatSalaryDollars(team.SalaryProjected - salaryCapProjected, true, 0) }}
       </span>
     </p>
+    </ng-container>
+    <ng-template #salaryUnavailable>
+      <p>Cap-Belegung derzeit nicht verfügbar.</p>
+    </ng-template>
   </mat-card-content>
 
   <mat-card-actions>
