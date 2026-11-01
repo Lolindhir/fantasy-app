@@ -197,6 +197,12 @@ describe('Overview weekly dashboard presentation', () => {
     expect(buildOverviewTopContext(league, model, 2).standings).toEqual([]);
   });
 
+  it('does not treat absent generated current points as zero in a fallback', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 0);
+    (league.Teams[0].Placements.Current.Regular.Points as number | undefined) = undefined;
+    expect(buildOverviewTopContext(league, null, null).standings).toEqual([]);
+  });
+
   it('keeps Week 1 fail-closed when no LastCompletedWeek exists', () => {
     const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
     const model = readModel(null, 1, 'open');
