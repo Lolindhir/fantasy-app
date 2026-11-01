@@ -239,7 +239,7 @@
         {
           "FantasyTeamID": 1,
           "AffectedRosteredPlayerCount": 17,
-          "AffectedStarterCount": 5,
+          "AffectedStarterCount": 6,
           "Players": [
             {
               "PlayerID": "10213",
@@ -263,7 +263,7 @@
               "PlayerID": "11786",
               "NFLTeamID": "JAX",
               "GameID": "20261101_IND@JAX",
-              "IsStarter": false
+              "IsStarter": true
             },
             {
               "PlayerID": "12469",
@@ -1621,7 +1621,7 @@
       "GameID": "20261101_IND@JAX",
       "DecisionWindowID": "2026-11-01T18:00:00Z",
       "StartsAtUtc": "2026-11-01T18:00:00Z",
-      "IsStarter": false
+      "IsStarter": true
     },
     {
       "FantasyTeamID": 1,
@@ -3587,18 +3587,11 @@
   "TeamLineupEvaluations": [
     {
       "FantasyTeamID": 1,
-      "State": "action-required",
+      "State": "ready",
       "ExpectedStarterCount": 13,
-      "StarterCount": 12,
-      "OpenStarterSlots": 1,
-      "Issues": [
-        {
-          "Code": "OPEN_STARTER_SLOT",
-          "State": "action-required",
-          "PlayerID": null,
-          "Count": 1
-        }
-      ]
+      "StarterCount": 13,
+      "OpenStarterSlots": 0,
+      "Issues": []
     },
     {
       "FantasyTeamID": 2,
@@ -3727,14 +3720,14 @@
       {
         "FantasyTeamID": "1",
         "ActiveRosterPlayerCount": 30,
-        "StarterCount": 12,
-        "BenchCount": 18,
+        "StarterCount": 13,
+        "BenchCount": 17,
         "IRCount": 5,
         "TaxiCount": 2,
-        "UnlockedStarterCount": 11,
+        "UnlockedStarterCount": 12,
         "LockedActiveStarterCount": 0,
         "CompletedStarterCount": 1,
-        "EligibleBenchCandidateCount": 14,
+        "EligibleBenchCandidateCount": 13,
         "HasRemainingScoringPath": true,
         "Slots": [
           {
@@ -3970,20 +3963,19 @@
             "SlotType": "K",
             "SlotOrdinal": 1,
             "SlotIndex": 12,
-            "CurrentStarterID": null,
+            "CurrentStarterID": "11786",
             "State": "unlocked",
-            "GameID": null,
-            "DecisionWindowID": null,
-            "StartsAtUtc": null,
-            "ScoringAvailability": null,
-            "Repairability": {
-              "ProblemCode": "OPEN_STARTER_SLOT",
-              "State": "repairable",
-              "Path": "internal-roster",
-              "ReasonCode": "INTERNAL_ASSIGNMENT_AVAILABLE",
-              "InternalCandidateCount": 25,
-              "ExternalCandidateCount": 0
-            }
+            "GameID": "20261101_IND@JAX",
+            "DecisionWindowID": "2026-11-01T18:00:00Z",
+            "StartsAtUtc": "2026-11-01T18:00:00Z",
+            "ScoringAvailability": {
+              "State": "available",
+              "ProviderStatus": "ACTIVE",
+              "Source": "ESPN",
+              "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
+              "ObservedAtUtc": "2026-10-06T21:33:37Z"
+            },
+            "Repairability": null
           }
         ],
         "Players": [
@@ -4100,30 +4092,6 @@
               "FLEX-2",
               "FLEX-3",
               "FLEX-4"
-            ],
-            "IsBenchCandidate": true,
-            "HasDirectScoringPath": false,
-            "HasAlternativePath": true,
-            "ScoringAvailability": {
-              "State": "unknown",
-              "ProviderStatus": null,
-              "Source": "ESPN",
-              "FirstObservedAtUtc": null,
-              "ObservedAtUtc": null
-            }
-          },
-          {
-            "PlayerID": "11786",
-            "Placement": "bench",
-            "Position": "K",
-            "GameState": "unlocked",
-            "GameID": "20261101_IND@JAX",
-            "DecisionWindowID": "2026-11-01T18:00:00Z",
-            "StartsAtUtc": "2026-11-01T18:00:00Z",
-            "LineupSlotID": null,
-            "LineupSlotType": null,
-            "EligibleUnlockedSlotIDs": [
-              "K-1"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
@@ -4618,6 +4586,28 @@
               "Source": "ESPN",
               "FirstObservedAtUtc": "2026-10-07T20:15:05Z",
               "ObservedAtUtc": "2026-10-07T20:15:05Z"
+            }
+          },
+          {
+            "PlayerID": "11786",
+            "Placement": "starter",
+            "Position": "K",
+            "GameState": "unlocked",
+            "GameID": "20261101_IND@JAX",
+            "DecisionWindowID": "2026-11-01T18:00:00Z",
+            "StartsAtUtc": "2026-11-01T18:00:00Z",
+            "LineupSlotID": "K-1",
+            "LineupSlotType": "K",
+            "EligibleUnlockedSlotIDs": [],
+            "IsBenchCandidate": false,
+            "HasDirectScoringPath": true,
+            "HasAlternativePath": false,
+            "ScoringAvailability": {
+              "State": "available",
+              "ProviderStatus": "ACTIVE",
+              "Source": "ESPN",
+              "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
+              "ObservedAtUtc": "2026-10-06T21:33:37Z"
             }
           },
           {
@@ -10866,6 +10856,15 @@
       "Source": "ESPN",
       "FirstObservedAtUtc": "2026-10-23T17:56:50Z",
       "ObservedAtUtc": "2026-10-23T17:56:50Z"
+    },
+    {
+      "PlayerID": "11786",
+      "ESPNPlayerID": "4686361",
+      "State": "available",
+      "ProviderStatus": "ACTIVE",
+      "Source": "ESPN",
+      "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
+      "ObservedAtUtc": "2026-10-06T21:33:37Z"
     },
     {
       "PlayerID": "11646",
