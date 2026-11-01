@@ -69,6 +69,12 @@ class TeamCapOutlookTests(unittest.TestCase):
         with self.assertRaises(pub.OutlookError):
             pub.build("league", 2026, broken, value, metadata())
 
+    def test_live_write_fail_soft_and_explicit_check_fails_closed(self):
+        with mock.patch.object(pub, "write", side_effect=pub.OutlookError("source unavailable")):
+            self.assertEqual(0, pub.main(["write", "--league", "league"]))
+        with mock.patch.object(pub, "load", side_effect=pub.OutlookError("source unavailable")):
+            self.assertEqual(1, pub.main(["check", "--league", "league"]))
+
     def test_published_file_semantic_noop_and_stale_detection_witness(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
