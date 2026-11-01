@@ -39,8 +39,6 @@ $CapDeadline = $config.CapDeadline
 $LeagueTimeZone = $config.LeagueTimeZone
 $CapDeadlineBufferDays = $config.CapDeadlineBufferDays
 
-$ScheduleFile = $config.ScheduleFile
-
 # ===========================================================================
 # 3. Funktionen
 # ===========================================================================
@@ -179,20 +177,10 @@ try {
 
     $currentWeek = 0
     $finalWeek = 0
-    $schedule = $null
-    if (Test-Path $ScheduleFile) {
-        try {
-            $scheduleRaw = Get-Content $ScheduleFile -Raw
-            if ($scheduleRaw) { $schedule = $scheduleRaw | ConvertFrom-Json }
-        } catch {
-            Write-Warning "Could not read existing Schedule.json: $_"
-            $schedule = $null
-        }
-    }
 
-    if (-not $schedule) {
-        throw "Decision Windows require Schedule.json in the League refresh."
-    }
+    # Lifecycle and Decision Windows validate canonical NFL schedule/finality inputs
+    # themselves. The published Schedule read model is another App delivery, not
+    # their source. It must not gate the League generator.
 
     # Status, Phase, weeks, trade and waiver state and the season boundaries come from the shared lifecycle model
     # (lifecycle-v1, ADR-073, Issue 1199); only the display texts are built here.
