@@ -1086,9 +1086,8 @@ consumerReadClassification:
       note: 'League.json: documented FA-board enrichment overlay (6T); Status, Phase, SeasonKickoff and CurrentWeek no longer come from it but from the shared lifecycle function (fantasy-management/_ai/scripts/canonical_league_lifecycle.py, ADR-073, Issue #1199 step 5). The manual league rules come from data-meta/<CanonicalLeagueID>/metadata.json (ADR-054). Timestamps.json: freshness bridge.'
     fantasy-management/automation/input-materialization.json:
       reads:
-        legacy:League: intentional-overlay
         legacy:Timestamps: freshness-trigger
-      note: 'League.json: display overlay. Timestamps.json: freshness bridge and the Age reference date. Since Issue #919 step 6 (2026-10-15) the player inputs no longer come from Players.json: fantasy-management/_ai/scripts/canonical_player_inputs.py reads Salary and SalaryProjected from the newest PlayerValuation snapshot (data-derived/player-valuation, ADR-055) and Age, Year, IsFreeAgent, Status and the injury fields from tools/players_population.py (ADR-043). Parity against the Players.json based output was proven on the repository data: 945 players, 0 differing rows.'
+      note: 'Team display comes from canonical member metadata through the Operations consumer display adapter (Issue #1263 C8b). Timestamps.json remains the freshness bridge and Players Age reference date. Since Issue #919 step 6 (2026-10-15) the player inputs no longer come from Players.json: fantasy-management/_ai/scripts/canonical_player_inputs.py reads Salary and SalaryProjected from the newest PlayerValuation snapshot (data-derived/player-valuation, ADR-055) and Age, Year, IsFreeAgent, Status and the injury fields from tools/players_population.py (ADR-043). Parity against the Players.json based output was proven on the repository data: 945 players, 0 differing rows.'
     fantasy-management/automation/jobs/entity-observation.json:
       reads:
         legacy:League: intentional-overlay

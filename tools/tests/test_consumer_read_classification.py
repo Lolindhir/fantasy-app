@@ -151,7 +151,6 @@ TRANSITIONAL_CATEGORIES = frozenset({
 TRANSITIONAL_BASELINE = frozenset({
     ("fantasy-management/_ai/scripts/canonical_league_ownership.py", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/fa-board-materialization.json", "legacy:League", "intentional-overlay"),
-    ("fantasy-management/automation/input-materialization.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/jobs/entity-observation.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/jobs/weekly-league-review.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/kicker-streaming-input-materialization.json", "legacy:League", "intentional-overlay"),
@@ -196,6 +195,18 @@ class ConsumerReadClassificationTest(unittest.TestCase):
     def test_every_consumer_read_is_classified(self) -> None:
         problems = compare(scan_repository(REPO_ROOT), load_registry())
         self.assertEqual([], problems, "\n".join(problems))
+
+    def test_managed_roster_display_has_no_app_league_input(self) -> None:
+        """#1263 C8b: canonical members own Operations display."""
+        path = "fantasy-management/automation/input-materialization.json"
+        source = (REPO_ROOT / path).read_text(encoding="utf-8")
+        builder = (REPO_ROOT / "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py").read_text(encoding="utf-8")
+        self.assertNotIn('"league_display"', source)
+        self.assertNotIn('"league_display"', builder)
+        self.assertIn("enrich_from_members", builder)
+        names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)
+        self.assertNotIn("legacy:League", scan_text(path, source, names, functions))
+        self.assertIn("legacy:League", scan_text(path, source + '\n"public/data/League.json"', names, functions))
 
     def test_request_league_has_no_published_schedule_input(self) -> None:
         """#1263 G2: the canonical lifecycle/windows own game-time facts, not Schedule.json."""
