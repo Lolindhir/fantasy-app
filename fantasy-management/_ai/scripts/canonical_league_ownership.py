@@ -373,81 +373,16 @@ def build_canonical_ownership_snapshot(
     }
 
 
-def enrich_canonical_ownership_with_display(
-    snapshot: dict[str, Any],
-    app_league: dict[str, Any],
-) -> list[dict[str, Any]]:
-    """Attach app-owned Team/TeamAbbr display metadata by stable TeamID only.
-
-    Legacy League.json roster membership is intentionally ignored. This helper is
-    suitable for consumers that have already cut their ownership basis to the
-    canonical League source but still preserve the existing display contract.
-    """
-
-    canonical_teams = _require_list(snapshot.get("Teams"), "snapshot.Teams")
-    app_teams = _require_list(app_league.get("Teams"), "public/data/League.json.Teams")
-
-    display_by_team_id: dict[int, dict[str, Any]] = {}
-    for index, raw_team in enumerate(app_teams):
-        team = _require_object(raw_team, f"League.json.Teams[{index}]")
-        try:
-            team_id = int(team["TeamID"])
-        except (KeyError, TypeError, ValueError) as exc:
-            raise CanonicalOwnershipError(
-                f"League.json.Teams[{index}] has invalid TeamID."
-            ) from exc
-        if team_id in display_by_team_id:
-            raise CanonicalOwnershipError(
-                f"League.json has duplicate TeamID {team_id}."
-            )
-        display_by_team_id[team_id] = team
-
-    canonical_ids: set[int] = set()
-    enriched: list[dict[str, Any]] = []
-    for index, raw_team in enumerate(canonical_teams):
-        team = _require_object(raw_team, f"snapshot.Teams[{index}]")
-        try:
-            team_id = int(team["TeamID"])
-        except (KeyError, TypeError, ValueError) as exc:
-            raise CanonicalOwnershipError(
-                f"snapshot.Teams[{index}] has invalid TeamID."
-            ) from exc
-        if team_id in canonical_ids:
-            raise CanonicalOwnershipError(
-                f"Canonical ownership snapshot has duplicate TeamID {team_id}."
-            )
-        canonical_ids.add(team_id)
-
-        display = display_by_team_id.get(team_id)
-        if display is None:
-            raise CanonicalOwnershipError(
-                f"League.json display enrichment is missing TeamID {team_id}."
-            )
-
-        enriched.append(
-            {
-                **team,
-                "Team": display.get("Team"),
-                "TeamAbbr": display.get("TeamAbbr"),
-            }
-        )
-
-    extra_display_ids = sorted(set(display_by_team_id) - canonical_ids)
-    if extra_display_ids:
-        raise CanonicalOwnershipError(
-            "League.json display enrichment contains TeamIDs absent from canonical "
-            "ownership: " + ", ".join(str(team_id) for team_id in extra_display_ids)
-        )
-
-    enriched.sort(key=lambda item: int(item["TeamID"]))
-    return enriched
-
-
 def compare_to_app_league(
     snapshot: dict[str, Any],
     app_league: dict[str, Any],
 ) -> list[dict[str, Any]]:
-    """Return exact shadow differences for the ownership/member basis facts."""
+    """Return shadow differences against an explicitly supplied published App read model.
+
+    This is optional validation evidence only, never a production ownership or
+    team-display enrichment path. The App read model is read only if the CLI's
+    --compare-league switch is explicitly supplied.
+    """
 
     app_teams = _require_list(app_league.get("Teams"), "public/data/League.json.Teams")
     by_team_id: dict[int, dict[str, Any]] = {}

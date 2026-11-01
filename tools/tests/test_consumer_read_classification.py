@@ -149,7 +149,6 @@ TRANSITIONAL_CATEGORIES = frozenset({
     "app-read-model-chain", "intentional-overlay", "legacy-read-model-pending",
 })
 TRANSITIONAL_BASELINE = frozenset({
-    ("fantasy-management/_ai/scripts/canonical_league_ownership.py", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/jobs/entity-observation.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/jobs/weekly-league-review.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/runner-config.json", "legacy:League", "intentional-overlay"),
@@ -191,6 +190,27 @@ class ConsumerReadClassificationTest(unittest.TestCase):
     def test_every_consumer_read_is_classified(self) -> None:
         problems = compare(scan_repository(REPO_ROOT), load_registry())
         self.assertEqual([], problems, "\n".join(problems))
+
+    def test_canonical_ownership_legacy_league_is_only_an_explicit_shadow(self) -> None:
+        """An App League reference in the CLI is not a productive display adapter."""
+        path = "fantasy-management/_ai/scripts/canonical_league_ownership.py"
+        source = (REPO_ROOT / path).read_text(encoding="utf-8")
+        self.assertNotIn("def enrich_canonical_ownership_with_display(", source)
+        self.assertIn("def compare_to_app_league(", source)
+        self.assertIn("if args.compare_league:", source)
+        self.assertIn("enrich_from_members", (
+            REPO_ROOT / "fantasy-management/_ai/scripts/operations_team_display.py"
+        ).read_text(encoding="utf-8"))
+        registry = load_registry()
+        reads = registry["consumers"][path]["reads"]
+        self.assertEqual(reads.get("legacy:League"), "validation-shadow")
+        self.assertEqual([], compare_transitional_reads(registry))
+        mutated = {**registry, "consumers": {**registry["consumers"], path: {
+            **registry["consumers"][path],
+            "reads": {**reads, "legacy:League": "intentional-overlay"},
+        }}}
+        self.assertTrue(any("new consumer-to-consumer exception" in problem
+                            for problem in compare_transitional_reads(mutated)))
 
     def test_kicker_streaming_has_no_app_league_dependency(self) -> None:
         path = "fantasy-management/automation/kicker-streaming-input-materialization.json"

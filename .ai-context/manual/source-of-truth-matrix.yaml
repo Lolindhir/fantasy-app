@@ -1027,9 +1027,9 @@ consumerReadClassification:
       note: 'Reads the canonical NFL schedule, game finality and team registry from data-source/nfl (#347 FM-read step); the ESPN and CBS box-score URLs are built for display only, nothing is fetched.'
     fantasy-management/_ai/scripts/canonical_league_ownership.py:
       reads:
-        legacy:League: intentional-overlay
+        legacy:League: validation-shadow
         legacy:Players: mention-only
-      note: 'Ownership and roster membership come from data-source/leagues. League.json is read only as TeamID display enrichment (checkpoint 6P). The Players.json hit is a docstring mention, not a read.'
+      note: 'C8g: canonical ownership comes exclusively from data-source/leagues, and team display from the separate operations_team_display canonical-member adapter. The only remaining App League.json access is the explicitly optional --compare-league CLI parity shadow; no production enrichment or membership input. Players.json remains a docstring mention.'
     tools/external_source/fantasy_football_calculator_adp_core.py:
       reads:
         provider:fantasyfootballcalculator: provider-evidence-fetcher
