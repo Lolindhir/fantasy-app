@@ -85,6 +85,29 @@ class CanonicalPlayerInputsTests(unittest.TestCase):
             self.assertIn(player["Position"], {"QB", "RB", "WR", "TE", "K"})
             self.assertIsInstance(player["IsFreeAgent"], bool)
 
+    def test_current_repository_age_shadow_at_published_players_date(self) -> None:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        from league_metadata import load_league_metadata, data_meta_root
+        metadata = load_league_metadata(LEAGUE_ID, data_meta_root(ROOT))
+        timestamps = json.loads((ROOT / "public/data/Timestamps.json").read_text(encoding="utf-8"))
+        published_date = datetime.fromisoformat(timestamps["Players"].replace("Z", "+00:00")).astimezone(
+            ZoneInfo(metadata["LeagueTimeZone"])
+        ).date()
+        manifest = json.loads(
+            (ROOT / "data-source/leagues" / LEAGUE_ID / "manifest.json").read_text(encoding="utf-8")
+        )
+        season = int(str(manifest["CurrentCanonicalLeagueSeasonID"]).rsplit("-", 1)[-1])
+        canonical = module.load_players(ROOT, LEAGUE_ID, season, published_date)
+        published = {
+            str(player["ID"]): player
+            for player in json.loads((ROOT / "public/data/Players.json").read_text(encoding="utf-8"))
+        }
+        matched = [(row["ID"], row["Age"], published[row["ID"]].get("Age"))
+                   for row in canonical if row["ID"] in published and row["Age"] is not None]
+        self.assertTrue(matched, "No common players for Age shadow")
+        self.assertEqual([], [(pid, actual, expected) for pid, actual, expected in matched if actual != expected])
+
     def test_source_files_name_the_newest_valuation_snapshot(self) -> None:
         manifest = json.loads(
             (ROOT / "data-source" / "leagues" / LEAGUE_ID / "manifest.json").read_text(encoding="utf-8")
