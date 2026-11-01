@@ -23,7 +23,8 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import build_fantasy_operations_inputs as ops  # noqa: E402
 from canonical_league_lifecycle import LeagueLifecycleUnavailable, resolve_lifecycle_state  # noqa: E402
-from canonical_league_ownership import CanonicalOwnershipError, resolve_current_canonical_season  # noqa: E402
+from canonical_league_ownership import CanonicalOwnershipError, build_canonical_ownership_snapshot, resolve_current_canonical_season  # noqa: E402
+from operations_team_display import enrich_from_members  # noqa: E402
 
 
 SCHEMA_VERSION = 1
@@ -234,18 +235,33 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         raise RosterOverviewError("Unexpected managed roster overview config schema version")
 
     sources = config["sources"]
-    league_enrichment_path = root / sources["league_enrichment"]
     signals_path = root / sources["managed_roster_signals"]
     state_path = root / sources["evaluation_state"]
-    league = _load_json(league_enrichment_path)
     signals = _load_json(signals_path)
     state = _load_json(state_path)
     _validate_state(state)
 
     team_id = str(config["managed_team"]["team_id"])
-    managed_team = next((team for team in league.get("Teams") or [] if str(team.get("TeamID")) == team_id), None)
+    canonical_league_id = str((config.get("canonical_league") or {}).get("canonical_league_id") or "").strip()
+    if not canonical_league_id:
+        raise RosterOverviewError("canonical_league.canonical_league_id is required")
+    try:
+        season = resolve_current_canonical_season(root, canonical_league_id=canonical_league_id)
+        season_root = root / "data-source/leagues" / canonical_league_id / "seasons" / str(season)
+        league_path = season_root / "league.json"
+        members_path = season_root / "members.json"
+        league = _load_json(league_path)
+        if league.get("CanonicalLeagueID") != canonical_league_id or league.get("Season") != season:
+            raise RosterOverviewError("Canonical league settings identity mismatch")
+        snapshot = build_canonical_ownership_snapshot(
+            root, canonical_league_id=canonical_league_id, season=season
+        )
+        teams = enrich_from_members(snapshot, root, league_id=canonical_league_id, season=season)
+    except (CanonicalOwnershipError, ValueError, TypeError) as exc:
+        raise RosterOverviewError(f"Canonical league team display unavailable: {exc}") from exc
+    managed_team = next((team for team in teams if str(team.get("TeamID")) == team_id), None)
     if managed_team is None:
-        raise RosterOverviewError(f"Managed team {team_id} not found in League.json enrichment")
+        raise RosterOverviewError(f"Managed team {team_id} not found in canonical league")
     if str((signals.get("managed_team") or {}).get("team_id")) != team_id:
         raise RosterOverviewError("Managed roster signals belong to a different team")
 
@@ -292,25 +308,34 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     active_ids = roster_ids - taxi_ids - reserve_ids
 
-    canonical_league_id = str((config.get("canonical_league") or {}).get("canonical_league_id") or "").strip()
-    if not canonical_league_id:
-        raise RosterOverviewError("canonical_league.canonical_league_id is required to resolve the shared lifecycle")
     try:
         lifecycle = resolve_lifecycle_state(
             root,
             canonical_league_id,
-            resolve_current_canonical_season(root, canonical_league_id=canonical_league_id),
+            season,
             signals.get("generated_at"),
         )
     except (CanonicalOwnershipError, LeagueLifecycleUnavailable) as exc:
         raise RosterOverviewError(f"Shared league lifecycle is unavailable: {exc}") from exc
     taxi_phase = _derive_taxi_phase(lifecycle)
-    roster_size = league.get("RosterSize") if isinstance(league.get("RosterSize"), list) else []
+    roster_size = league.get("RosterPositions")
+    if not isinstance(roster_size, list) or not roster_size or any(
+        not isinstance(position, str) or not position.strip() for position in roster_size
+    ):
+        raise RosterOverviewError("Canonical league RosterPositions must be a non-empty string array")
     fixed_starters, flex_slots, bench_slots = _fixed_starters(roster_size)
     active_capacity = len(roster_size)
-    settings = league.get("Settings") if isinstance(league.get("Settings"), dict) else {}
-    taxi_slots = int(ops.optional_number(settings.get("taxi_slots")) or 0)
-    reserve_slots = int(ops.optional_number(settings.get("reserve_slots")) or 0)
+    settings = league.get("Settings")
+    if not isinstance(settings, dict):
+        raise RosterOverviewError("Canonical league Settings must be an object")
+    slot_counts = {}
+    for key in ("taxi_slots", "reserve_slots"):
+        value = settings.get(key)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise RosterOverviewError(f"Canonical league Settings.{key} must be a non-negative integer")
+        slot_counts[key] = value
+    taxi_slots = slot_counts["taxi_slots"]
+    reserve_slots = slot_counts["reserve_slots"]
 
     coverage_targets = state.get("coverage_targets") if isinstance(state.get("coverage_targets"), dict) else {}
     flex_positions = [str(item).upper() for item in (config.get("policies") or {}).get("flex_eligible_positions", ["RB", "WR", "TE"])]
@@ -484,9 +509,14 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     source_records = [
         {
-            "id": "league_enrichment",
-            "path": _relative(league_enrichment_path, root),
-            "content_sha256": ops.sha256_text(league_enrichment_path.read_text(encoding="utf-8")),
+            "id": "canonical_league_settings",
+            "path": _relative(league_path, root),
+            "content_sha256": ops.sha256_text(league_path.read_text(encoding="utf-8")),
+        },
+        {
+            "id": "canonical_league_members",
+            "path": _relative(members_path, root),
+            "content_sha256": ops.sha256_text(members_path.read_text(encoding="utf-8")),
         },
         {
             "id": "managed_roster_signals",
