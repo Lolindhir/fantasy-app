@@ -150,7 +150,6 @@ TRANSITIONAL_CATEGORIES = frozenset({
 })
 TRANSITIONAL_BASELINE = frozenset({
     ("fantasy-management/_ai/scripts/canonical_league_ownership.py", "legacy:League", "intentional-overlay"),
-    ("fantasy-management/automation/fa-board-materialization.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/jobs/entity-observation.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/jobs/weekly-league-review.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/kicker-streaming-input-materialization.json", "legacy:League", "intentional-overlay"),
@@ -193,6 +192,22 @@ class ConsumerReadClassificationTest(unittest.TestCase):
     def test_every_consumer_read_is_classified(self) -> None:
         problems = compare(scan_repository(REPO_ROOT), load_registry())
         self.assertEqual([], problems, "\n".join(problems))
+
+    def test_fa_board_has_no_app_league_dependency(self) -> None:
+        path = "fantasy-management/automation/fa-board-materialization.json"
+        source = (REPO_ROOT / path).read_text(encoding="utf-8")
+        builder = (REPO_ROOT / "fantasy-management/_ai/scripts/build_fa_board_readmodel.py").read_text(encoding="utf-8")
+        self.assertNotIn('"league_enrichment"', source)
+        self.assertNotIn('"league_enrichment"', builder)
+        self.assertIn("enrich_from_members", builder)
+        self.assertIn("RosterPositions", builder)
+        names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)
+        self.assertNotIn("legacy:League", scan_text(path, source, names, functions))
+        injected = source.replace('"sources": {', '"sources": {"league_enrichment": "public/data/League.json",')
+        self.assertIn("legacy:League", scan_text(path, injected, names, functions))
+        self.assertTrue(any("legacy:League" in item for item in compare(
+            {path: scan_text(path, injected, names, functions)}, load_registry()
+        )))
 
     def test_player_signals_display_has_no_app_league_input(self) -> None:
         """#1263 C8c: canonical members own Player Signals team labels."""

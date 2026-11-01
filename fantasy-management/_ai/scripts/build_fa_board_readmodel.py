@@ -9,7 +9,8 @@ it does not browse, call AI services, or emit add/drop/draft recommendations.
 Availability is fail-closed. A negative ownership result is trusted only when
 Canonical League ownership was fully validated, and a player is considered
 draft-available only when the current Free-Agent draft state is also resolved.
-League.json supplies non-membership league rules/status/display enrichment only.
+Canonical season rules and member metadata supply capacities and team display; only
+`Timestamps.json` remains as a separate freshness bridge.
 Positive ownership or an assigned pick always blocks availability even when
 another source is degraded.
 """
@@ -33,9 +34,9 @@ from canonical_league_lifecycle import LeagueLifecycleUnavailable, resolve_lifec
 from canonical_league_ownership import (
     CanonicalOwnershipError,
     build_canonical_ownership_snapshot,
-    enrich_canonical_ownership_with_display,
     resolve_current_canonical_season,
 )
+from operations_team_display import enrich_from_members  # noqa: E402
 from canonical_league_drafts import (
     CanonicalDraftError,
     drafts_path as canonical_drafts_path,
@@ -159,36 +160,45 @@ def validate_player_signals(source: Any) -> dict[str, Any]:
     return source
 
 
+def load_canonical_league_rules(path: Path, league_id: str, season: int) -> dict[str, Any]:
+    """Fail closed on missing or mismatched canonical rule/capacity evidence."""
+    league = load_json(path)
+    if not isinstance(league, dict):
+        raise FaBoardMaterializationError("Canonical league rules must be an object")
+    if league.get("CanonicalLeagueID") != league_id or league.get("Season") != season:
+        raise FaBoardMaterializationError("Canonical league rules identity or season mismatch")
+    positions = league.get("RosterPositions")
+    if (not isinstance(positions, list) or not positions
+            or any(not isinstance(pos, str) or not pos.strip() for pos in positions)):
+        raise FaBoardMaterializationError("Canonical league RosterPositions must be a non-empty string array")
+    settings = league.get("Settings")
+    if not isinstance(settings, dict):
+        raise FaBoardMaterializationError("Canonical league Settings must be an object")
+    for key in ("taxi_slots", "reserve_slots"):
+        value = settings.get(key)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            raise FaBoardMaterializationError(
+                f"Canonical league Settings.{key} must be a non-negative integer"
+            )
+    return league
+
+
 def build_league_state(
-    league_enrichment: Any,
+    canonical_league: dict[str, Any],
     ownership_teams: Any,
     managed_team_id: str,
     canonical_season: int,
     lifecycle: dict[str, Any] | None = None,
     lifecycle_issue: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Combine canonical ownership with retained App-owned league rule enrichment.
+    """Combine canonical ownership, validated season rules and member display.
 
-    Status, phase, season kickoff and current week come from the shared lifecycle model (ADR-073), not from the
-    League.json delivery; without a lifecycle they stay unknown and the state is incomplete.
+    Status, phase, kickoff and current week come only from shared lifecycle.
     """
-
     issues: list[dict[str, Any]] = []
-    if not isinstance(league_enrichment, dict):
-        return {
-            "complete": False,
-            "issues": [{"severity": "error", "kind": "league_enrichment_not_object"}],
-        }
-
-    settings = (
-        league_enrichment.get("Settings")
-        if isinstance(league_enrichment.get("Settings"), dict)
-        else {}
-    )
-    taxi_slots_raw = optional_number(settings.get("taxi_slots"))
-    reserve_slots_raw = optional_number(settings.get("reserve_slots"))
-    taxi_slots = int(taxi_slots_raw) if isinstance(taxi_slots_raw, (int, float)) else 0
-    reserve_slots = int(reserve_slots_raw) if isinstance(reserve_slots_raw, (int, float)) else 0
+    settings = canonical_league["Settings"]
+    taxi_slots = settings["taxi_slots"]
+    reserve_slots = settings["reserve_slots"]
 
     if not isinstance(ownership_teams, list) or not ownership_teams:
         return {
@@ -277,25 +287,11 @@ def build_league_state(
         issue.get("severity") == "error" for issue in issues
     )
 
-    enrichment_season = optional_text(league_enrichment.get("Season"))
-    if enrichment_season and enrichment_season != str(canonical_season):
-        issues.append(
-            {
-                "severity": "error",
-                "kind": "league_enrichment_season_mismatch",
-                "canonical_season": str(canonical_season),
-                "enrichment_season": enrichment_season,
-            }
-        )
-
     if lifecycle is None:
         issues.append(lifecycle_issue or {"severity": "error", "kind": "league_lifecycle_unavailable"})
         lifecycle = {}
 
-    roster_size = league_enrichment.get("RosterSize")
-    active_capacity = len(roster_size) if isinstance(roster_size, list) else None
-    if active_capacity is None:
-        issues.append({"severity": "error", "kind": "roster_size_missing"})
+    active_capacity = len(canonical_league["RosterPositions"])
 
     complete = not any(issue.get("severity") == "error" for issue in issues)
     return {
@@ -668,12 +664,10 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
     sources = config.get("sources") or {}
     player_signals_path = root / sources["player_signals"]
-    league_enrichment_path = root / sources["league_enrichment"]
     metadata_path = root / sources["league_metadata"]
     timestamps_path = root / sources["timestamps"]
 
     player_signals = validate_player_signals(load_json(player_signals_path))
-    league_enrichment = load_json(league_enrichment_path)
     metadata = load_json(metadata_path)
     timestamps = load_json(timestamps_path)
     if not isinstance(timestamps, dict):
@@ -696,14 +690,21 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             canonical_league_id=canonical_league_id,
             season=canonical_season,
         )
-        ownership_teams = enrich_canonical_ownership_with_display(
-            canonical_snapshot,
-            league_enrichment,
+        ownership_teams = enrich_from_members(
+            canonical_snapshot, root, league_id=canonical_league_id, season=canonical_season
         )
     except CanonicalOwnershipError as exc:
         raise FaBoardMaterializationError(
             f"Canonical FA-board ownership is unavailable: {exc}"
         ) from exc
+
+    canonical_league_path = (
+        root / "data-source" / "leagues" / canonical_league_id
+        / "seasons" / str(canonical_season) / "league.json"
+    )
+    canonical_league = load_canonical_league_rules(
+        canonical_league_path, canonical_league_id, canonical_season
+    )
 
     generated_at = max_timestamp(
         [
@@ -721,7 +722,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         lifecycle_issue = {"severity": "error", "kind": "league_lifecycle_unavailable", "detail": str(exc)}
 
     league_state = build_league_state(
-        league_enrichment,
+        canonical_league,
         ownership_teams,
         managed_team_id,
         canonical_season,
@@ -907,11 +908,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     )
     canonical_season_root = canonical_league_root / "seasons" / str(canonical_season)
     source_records = {
-        "league_enrichment": {
-            "path": sources["league_enrichment"],
-            "content_sha256": source_hash(league_enrichment_path),
-            "source_timestamp": optional_text(timestamps.get("League")),
-        },
         "canonical_league_manifest": {
             "path": (
                 canonical_league_root / "manifest.json"
