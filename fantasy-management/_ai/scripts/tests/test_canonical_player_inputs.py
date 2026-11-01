@@ -25,6 +25,33 @@ class CanonicalPlayerInputsTests(unittest.TestCase):
         self.assertIsNone(module.age_at(None, date(2026, 1, 1)))
         self.assertIsNone(module.age_at("not-a-date", date(2026, 1, 1)))
 
+    def test_age_matches_app_shared_rounding_at_boundaries(self) -> None:
+        from derived_data_lib.players_read_model import age_at as app_age
+        for birth in ("2000-01-01", "2000-02-29", "1998-12-31", None, "bad-date"):
+            for as_of in (date(2026, 1, 1), date(2026, 8, 8), date(2026, 11, 2)):
+                self.assertEqual(app_age(birth, as_of), module.age_at(birth, as_of))
+
+    def test_operations_age_date_is_explicit_or_league_local(self) -> None:
+        import os
+        from unittest import mock
+        import operations_age_reference as ref
+        # Explicit replay bypasses App timestamps and must be stable.
+        with mock.patch.dict(os.environ, {"FM_OPERATIONS_AS_OF_DATE": "2026-08-08"}, clear=True):
+            self.assertEqual(date(2026, 8, 8), ref.age_reference_date(ROOT, LEAGUE_ID))
+        # Same instant is a different local date when the league is west of UTC.
+        with mock.patch.dict(os.environ, {"FM_OPERATIONS_RUN_AT_UTC": "2026-11-02T00:30:00Z"}, clear=True):
+            with mock.patch.object(ref, "load_league_metadata", return_value={"LeagueTimeZone": "America/Los_Angeles"}):
+                self.assertEqual(date(2026, 11, 1), ref.age_reference_date(ROOT, LEAGUE_ID))
+            with mock.patch.object(ref, "load_league_metadata", return_value={"LeagueTimeZone": "UTC"}):
+                self.assertEqual(date(2026, 11, 2), ref.age_reference_date(ROOT, LEAGUE_ID))
+        with mock.patch.dict(os.environ, {"FM_OPERATIONS_RUN_AT_UTC": "2026-11-02T00:30:00"}, clear=True):
+            with mock.patch.object(ref, "load_league_metadata", return_value={"LeagueTimeZone": "UTC"}):
+                with self.assertRaisesRegex(ref.OperationsAgeReferenceError, "UTC-aware"):
+                    ref.age_reference_date(ROOT, LEAGUE_ID)
+        with mock.patch.dict(os.environ, {"FM_OPERATIONS_AS_OF_DATE": "invalid"}, clear=True):
+            with self.assertRaisesRegex(ref.OperationsAgeReferenceError, "YYYY-MM-DD"):
+                ref.age_reference_date(ROOT, LEAGUE_ID)
+
     def test_injury_description_only_exists_with_a_designation(self) -> None:
         injured, details = module._injury_fields({"Status": "", "Notes": "ignored"})
         self.assertFalse(injured)
