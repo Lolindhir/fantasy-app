@@ -8,6 +8,10 @@
 # previous free-agent/movement snapshots are taken from the freshly reset worktree.
 set -euo pipefail
 
+# One immutable instant for every Operations builder, including retries within
+# this materialization attempt. No App-Players timestamp is used for Age.
+export FM_OPERATIONS_RUN_AT_UTC="${FM_OPERATIONS_RUN_AT_UTC:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
+
 RUNNER_TEMP="${RUNNER_TEMP:-$(mktemp -d)}"
 
 previous_free_agent="$RUNNER_TEMP/free-agent-signals.previous.json"
