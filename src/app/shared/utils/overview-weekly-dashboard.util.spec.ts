@@ -283,6 +283,7 @@ describe('Overview weekly dashboard presentation', () => {
       { Season: '2026', Week: 2 } as FantasyGameContextReadModel
     )).toBe(2);
 
+    attachCanonicalWeek(league, 1, [[3, 1, 1, 0], [1, 2, 1, 0], [4, 3, 0, 1], [2, 4, 0, 1]]);
     const context = buildOverviewTopContext(league, model, 2);
     expect(context.lastCompletedWeek).toBe(1);
     expect(context.standings.map(row => [row.team.TeamID, row.record])).toEqual([
@@ -384,6 +385,8 @@ describe('Overview weekly dashboard presentation', () => {
       Summary: { LastCompletedWeek: 2, ActiveOrNextWeek: 3 }
     };
 
+    attachCanonicalWeek(league, 1, [[2, 1, 1, 0], [6, 2, 1, 0], [3, 3, 1, 0], [1, 4, 0, 1], [4, 5, 0, 1], [5, 6, 0, 1]]);
+    attachCanonicalWeek(league, 2, [[2, 1, 2, 0], [3, 2, 2, 0], [6, 3, 1, 1], [1, 4, 1, 1], [4, 5, 0, 2], [5, 6, 0, 2]]);
     const context = buildOverviewTopContext(league, model, 3);
 
     expect(context.lastCompletedWeek).toBe(2);
@@ -427,6 +430,7 @@ describe('Overview weekly dashboard presentation', () => {
       { Season: '2026', Week: 3 } as FantasyGameContextReadModel
     )).toBe(3);
 
+    attachCanonicalWeek(league, 2, [[1, 1, 2, 0], [2, 2, 2, 0], [3, 3, 2, 0], [4, 4, 2, 0]]);
     const context = buildOverviewTopContext(league, model, 3);
     expect(context.lastCompletedWeek).toBe(2);
     expect(context.standings.every(row => row.wins + row.losses + row.ties === 2)).toBeTrue();
@@ -466,6 +470,7 @@ describe('Overview weekly dashboard presentation', () => {
       }
       const league = makeLeague(teams, 1);
       league.PlayoffStartWeek = 14;
+      attachCanonicalWeek(league, 1, [[3, 1, 1, 0], [1, 2, 1, 0], [4, 3, 0, 1], [2, 4, 0, 1]]);
       return league;
     }
 
@@ -493,6 +498,8 @@ describe('Overview weekly dashboard presentation', () => {
       }
       const league = makeLeague(teams, 5);
       league.PlayoffStartWeek = 14;
+      attachCanonicalWeek(league, 4, [[3, 1, 4, 0], [1, 2, 4, 0], [2, 3, 4, 0], [4, 4, 4, 0]]);
+      attachCanonicalWeek(league, 5, [[3, 1, 5, 0], [2, 2, 5, 0], [1, 3, 5, 0], [4, 4, 5, 0]]);
 
       const pairs = [
         [[1, 2], [3, 4]],
