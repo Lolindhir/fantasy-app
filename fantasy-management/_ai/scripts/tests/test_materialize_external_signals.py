@@ -173,7 +173,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             self.assertEqual("Team owner-one", view[0]["Team"])
             self.assertEqual("OwO", view[0]["TeamAbbr"])
 
-            with self.assertRaisesRegex(Exception, "scope mismatch"):
+            with self.assertRaisesRegex(Exception, "league or season mismatch"):
                 enrich_from_members(snapshot, root, league_id="test-league", season=2025)
             members[0]["CanonicalLeagueMemberID"] = members[1]["CanonicalLeagueMemberID"]
             path.write_text(json.dumps(members), encoding="utf-8")
