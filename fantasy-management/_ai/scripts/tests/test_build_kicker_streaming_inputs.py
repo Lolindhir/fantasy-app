@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import jsonschema
 
@@ -13,9 +14,18 @@ SPEC = importlib.util.spec_from_file_location("build_kicker_streaming_inputs", S
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
+REAL_LIFECYCLE = MODULE.resolve_lifecycle_state
 
 
 class KickerStreamingInputTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.lifecycle_stub = mock.patch.object(
+            MODULE, "resolve_lifecycle_state",
+            return_value={"Phase": "Pre Draft", "CurrentWeek": 1},
+        )
+        self.lifecycle_stub.start()
+        self.addCleanup(self.lifecycle_stub.stop)
+
     def write_json(self, root: Path, relative: str, value: object) -> None:
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -136,7 +146,50 @@ class KickerStreamingInputTests(unittest.TestCase):
         self.write_json(
             root,
             "data-source/leagues/test/seasons/2026/league.json",
-            {"CanonicalLeagueID": "test", "Season": 2026, "ScoringSettings": self.scoring()},
+            {
+                "CanonicalLeagueID": "test", "Season": 2026,
+                "Settings": {"num_teams": 2}, "ScoringSettings": self.scoring(),
+            },
+        )
+        self.write_json(
+            root, "fantasy-management/league-context/owner-registry.json",
+            {
+                "version": 3, "canonical_league_id": "test",
+                "owners": [
+                    {"team_id": i, "name": f"Owner {i}", "canonical_league_member_id": f"member-{i}"}
+                    for i in (1, 2)
+                ],
+            },
+        )
+        self.write_json(
+            root, "data-source/leagues/test/seasons/2026/members.json",
+            [
+                {
+                    "CanonicalLeagueMemberID": f"member-{i}",
+                    "DisplayName": f"Owner {i}",
+                    "Metadata": {"team_name": "Mighty Giants" if i == 1 else "Opponent"},
+                    "ProviderMappings": [{"Provider": "Sleeper", "ProviderUserID": f"user-{i}"}],
+                }
+                for i in (1, 2)
+            ],
+        )
+        self.write_json(
+            root, "data-source/leagues/test/seasons/2026/rosters.json",
+            [
+                {
+                    "CanonicalLeagueMemberID": f"member-{i}",
+                    "CanonicalLeagueRosterID": f"roster-{i}",
+                    "ProviderOwnerUserID": f"user-{i}",
+                    "ProviderMappings": [{"Provider": "Sleeper", "ProviderRosterID": str(i)}],
+                    "Players": [
+                        {"CanonicalPlayerID": f"player-{pid}",
+                         "ProviderMappings": [{"Provider": "Sleeper", "ProviderPlayerID": pid}]}
+                        for pid in (["1"] if i == 1 else ["3"])
+                    ],
+                    "Reserve": [], "Taxi": [], "Starters": [],
+                }
+                for i in (1, 2)
+            ],
         )
         self.write_json(
             root,
@@ -176,7 +229,6 @@ class KickerStreamingInputTests(unittest.TestCase):
                 "materialization_id": "test-kicker-streaming-inputs",
                 "managed_team": {"team_id": 1},
                 "sources": {
-                    "league": "public/data/League.json",
                     "player_signals": "fantasy-management/generated/operations/player-signals.json",
                     "free_agent_signals": "fantasy-management/generated/operations/free-agent-signals.json",
                 },
@@ -226,6 +278,38 @@ class KickerStreamingInputTests(unittest.TestCase):
             self.assertEqual(fftoday["points_max"], 218)
             self.assertEqual(fftoday["provider_projected_fantasy_points"], 150)
 
+    def test_app_league_missing_or_poisoned_cannot_change_kicker_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            (root / "public/data/League.json").unlink()
+            expected = MODULE.build(root, config_path)
+            self.assertEqual("Mighty Giants", expected["managed_team"]["name"])
+            self.assertEqual({"season": "2026", "phase": "Pre Draft", "current_week": 1},
+                             {key: expected["league"][key] for key in ("season", "phase", "current_week")})
+            self.write_json(root, "public/data/League.json", {"Season": "1900", "Teams": [], "Phase": "poison"})
+            self.assertEqual(expected, MODULE.build(root, config_path))
+
+    def test_invalid_canonical_team_display_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            path = "data-source/leagues/test/seasons/2026/members.json"
+            members = json.loads((root / path).read_text(encoding="utf-8"))
+            members[0]["Metadata"]["team_name"] = 123
+            self.write_json(root, path, members)
+            with self.assertRaisesRegex(MODULE.KickerStreamingInputError, "Canonical kicker team display"):
+                MODULE.build(root, config_path)
+
+    def test_missing_shared_lifecycle_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            with mock.patch.object(MODULE, "resolve_lifecycle_state",
+                                   side_effect=MODULE.LeagueLifecycleUnavailable("no schedule")):
+                with self.assertRaisesRegex(MODULE.KickerStreamingInputError, "lifecycle unavailable"):
+                    MODULE.build(root, config_path)
+
     def test_reads_scoring_from_canonical_league_not_legacy_scoring_type(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -271,10 +355,15 @@ class KickerStreamingInputTests(unittest.TestCase):
         config_path = root / "fantasy-management/automation/kicker-streaming-input-materialization.json"
         schema_path = root / "fantasy-management/_ai/schemas/kicker-streaming-inputs.schema.json"
 
-        result = MODULE.build(root, config_path)
+        with mock.patch.object(MODULE, "resolve_lifecycle_state", side_effect=REAL_LIFECYCLE):
+            result = MODULE.build(root, config_path)
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         jsonschema.Draft202012Validator(schema).validate(result)
 
+        self.assertEqual(result["managed_team"]["name"], "Mighty Giants")
+        self.assertEqual(result["league"]["season"], "2026")
+        self.assertEqual(result["league"]["phase"], "")
+        self.assertGreaterEqual(result["league"]["current_week"], 0)
         self.assertGreater(result["population"]["candidate_count"], 1)
         self.assertGreater(result["population"]["free_agent_count"], 0)
         self.assertEqual(result["league"]["kicker_scoring"]["fgm_40_49"], 4)
