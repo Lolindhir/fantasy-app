@@ -265,7 +265,7 @@ class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
         events = definition.get("on", definition.get(True))
         manual = events["workflow_dispatch"]["inputs"]["mode"]
         self.assertEqual("all", manual["default"])
-        self.assertEqual(["all", "drafts"], manual["options"])
+        self.assertEqual(["all", "drafts", "index"], manual["options"])
         self.assertFalse((TOOLS.parent / ".github/workflows/update-drafts.yml").exists())
         steps = definition["jobs"]["update"]["steps"]
         full_step = next(step for step in steps if "historical League Derived" in step.get("name", ""))
@@ -281,6 +281,33 @@ class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
         ):
             self.assertIn(command, drafts_step["run"])
         self.assertIn("inputs.mode != 'drafts'", next(
+            step for step in steps if step.get("name") == "Summarize Derived products"
+        )["if"])
+        self.assertIn("repository_dispatch", events)
+
+    def test_isolated_manual_past_seasons_index_mode_without_extra_workflow(self):
+        """#1263 G5: preserve manual index repair, skip full derived refresh."""
+        import yaml
+
+        root = TOOLS.parent
+        definition = yaml.safe_load(
+            (root / ".github/workflows/update-transactions.yml").read_text(encoding="utf-8")
+        )
+        events = definition.get("on", definition.get(True))
+        manual = events["workflow_dispatch"]["inputs"]["mode"]
+        self.assertEqual("all", manual["default"])
+        self.assertIn("index", manual["options"])
+        self.assertFalse((root / ".github/workflows/update-past-seasons-index.yml").exists())
+        steps = definition["jobs"]["update"]["steps"]
+        full = next(step for step in steps if "historical League Derived" in step.get("name", ""))
+        index = next(step for step in steps if "Past Seasons index only" in step.get("name", ""))
+        self.assertIn("inputs.mode != 'index'", full["if"])
+        self.assertIn("inputs.mode == 'index'", index["if"])
+        self.assertIn("--scope past-seasons-index", index["run"])
+        self.assertIn("--path public/data/PastSeasonsIndex.json", index["run"])
+        self.assertIn("RequestPastSeasonsIndex.ps1", index["run"])
+        self.assertNotIn("derived_data.py", index["run"])
+        self.assertIn("inputs.mode != 'index'", next(
             step for step in steps if step.get("name") == "Summarize Derived products"
         )["if"])
         self.assertIn("repository_dispatch", events)
