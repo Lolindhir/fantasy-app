@@ -19,9 +19,9 @@ from materialize_external_signals import (  # noqa: E402
     ownership_for,
     sha256,
 )
+from operations_team_display import enrich_from_members, abbreviation  # noqa: E402
 from canonical_league_ownership import (  # noqa: E402
     build_canonical_ownership_snapshot,
-    enrich_canonical_ownership_with_display,
     resolve_current_canonical_season,
 )
 
@@ -154,7 +154,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             self.assertEqual("Mighty Giants", data["managed_team"]["name"])
             self.assertEqual("MiG", data["managed_team"]["abbreviation"])
             source_ids = {source["id"] for source in data["sources"]}
-            self.assertIn("league_display", source_ids)
+            self.assertNotIn("league_display", source_ids)
             self.assertIn("canonical_league_manifest", source_ids)
             self.assertIn("canonical_league_rosters", source_ids)
 
@@ -193,10 +193,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             canonical_league_id="nfl-reise",
             season=season,
         )
-        league_display = json.loads(
-            (root / "public/data/League.json").read_text(encoding="utf-8")
-        )
-        teams = enrich_canonical_ownership_with_display(snapshot, league_display)
+        teams = enrich_from_members(snapshot, root, league_id="nfl-reise", season=season)
         ownership = build_ownership(teams)
 
         managed_id = str(generated["managed_team"]["team_id"])
@@ -439,6 +436,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                 {
                     "CanonicalLeagueMemberID": "member-1",
                     "DisplayName": "owner-one",
+                    "Metadata": {"team_name": "Mighty Giants"},
                     "ProviderMappings": [
                         {"Provider": "Sleeper", "ProviderUserID": "user-1"}
                     ],
@@ -446,6 +444,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                 {
                     "CanonicalLeagueMemberID": "member-2",
                     "DisplayName": "owner-two",
+                    "Metadata": {"team_name": "Opponent"},
                     "ProviderMappings": [
                         {"Provider": "Sleeper", "ProviderUserID": "user-2"}
                     ],
@@ -633,7 +632,6 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                     "canonical_league_id": "test-league",
                 },
                 "sources": {
-                    "league_display": "public/data/League.json",
                     "canonical_player_identities": (
                         "data-source/nfl/identities/players.json"
                     ),
