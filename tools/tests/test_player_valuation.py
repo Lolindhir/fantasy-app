@@ -528,44 +528,33 @@ if __name__ == "__main__":
     unittest.main()
 
 
-class HoldSeedTests(unittest.TestCase):
-    """Cutover hold seed (Issue #919 step 5): values of the last published Players.json for identity-hold rows."""
+class RetiredHoldSeedContractTests(unittest.TestCase):
+    """ADR-076: valuation holds come only from persisted snapshots."""
 
-    @staticmethod
-    def _player(player_id: str, base: float) -> dict:
-        return {
-            "ID": player_id,
-            "FantasyPointsAvgPotentialGame": base,
-            "FantasyPointsAvgGame": base + 1,
-            "PointHistory": {
-                name: {"AvgPotentialGame": base + i, "AvgGame": base + i + 0.5}
-                for i, name in enumerate(("SeasonMinus1", "SeasonMinus2", "SeasonMinus3"), start=2)
-            },
-        }
+    def test_published_players_seed_interface_is_retired(self):
+        import inspect
+        from unittest import mock
 
-    def test_seed_maps_published_fields_to_inputs_by_sleeper_id(self):
-        import json
-        import tempfile
-        from pathlib import Path
+        self.assertNotIn("hold_seed", inspect.signature(derived_data.materialize_player_valuation).parameters)
+        self.assertFalse(hasattr(derived_data, "load_hold_seed"))
+        self.assertFalse(hasattr(derived_data, "_with_seed"))
+        with mock.patch("sys.argv", [
+            "derived_data.py", "materialize", "--product", "player-valuation",
+            "--hold-seed-players-file", "/tmp/retired.json"
+        ]):
+            with self.assertRaises(SystemExit) as error:
+                derived_data.parse_args()
+            self.assertEqual(2, error.exception.code)
 
-        import derived_data
-
-        broken = {"ID": "9", "FantasyPointsAvgGame": 1.0}  # no PointHistory: cannot seed, must be skipped
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "Players.json"
-            path.write_text(json.dumps([self._player("1", 10.0), broken]), encoding="utf-8")
-            seed = derived_data.load_hold_seed(path)
-        self.assertEqual(set(seed), {"1"})
-        self.assertEqual(seed["1"]["Current"], {"AvgPotentialGame": 10.0, "AvgGame": 11.0})
-        self.assertEqual(seed["1"]["SeasonMinus1"], {"AvgPotentialGame": 12.0, "AvgGame": 12.5})
-        self.assertEqual(seed["1"]["SeasonMinus3"], {"AvgPotentialGame": 14.0, "AvgGame": 14.5})
-
-    def test_seed_is_only_a_fallback_behind_persisted_snapshots(self):
-        import derived_data
-
-        persisted = {"A": ({"Current": "snapshot"}, 3)}
-        lookup = derived_data._with_seed(lambda key: persisted.get(key, (None, None)),
-                                         {"A": {"Current": "seed"}, "B": {"Current": "seed"}}, 5)
-        self.assertEqual(lookup("A"), ({"Current": "snapshot"}, 3))
-        self.assertEqual(lookup("B"), ({"Current": "seed"}, 5))
-        self.assertEqual(lookup("C"), (None, None))
+    def test_hold_lookup_still_reuses_last_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = derived_data.snapshot_path(root, "test-league", 2030, 4)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            inputs = {"Current": {"AvgPotentialGame": 9.0, "AvgGame": 8.0}}
+            path.write_text(json.dumps({"Players": [
+                {"CanonicalPlayerID": None, "PlayerID": "hold-9", "Inputs": inputs}
+            ]}), encoding="utf-8")
+            existing = derived_data.ExistingSnapshots(root, "test-league", 2030)
+            self.assertEqual((inputs, 4), existing.lookup_for(5)("hold-9"))
+            self.assertEqual((None, None), existing.lookup_for(5)("missing"))

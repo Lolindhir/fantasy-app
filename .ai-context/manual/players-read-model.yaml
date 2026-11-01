@@ -73,7 +73,7 @@ holdRule:
     values from the player-valuation snapshot hold row. The previously published Players.json is never read.
   gameHistory: GameHistory of a hold player is an empty list and the run raises a warning.
   gap: A hold player that no snapshot knows is reported as a gap with a warning; no old value is carried over.
-  seed: The PV hold seed (--hold-seed-players-file) is dropped with the cutover. Today 0 hold players exist (PV 2026 week 7, 956 rows).
+  seed: The PV hold seed is retired under ADR-076 and physically removed from the materializer and clean-root audit in Issue #1263 C8j. The 2026 week-7 contract baseline had 0 hold players among 956 rows; future hold rows use persisted valuation snapshots or report a gap without reading a published consumer file.
 
 productOwnedValues:
   decision: Robert 2026-10-30 (Q4, sharpened)
