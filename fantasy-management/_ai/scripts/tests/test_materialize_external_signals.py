@@ -158,6 +158,24 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             self.assertIn("canonical_league_manifest", source_ids)
             self.assertIn("canonical_league_rosters", source_ids)
 
+    def test_current_team_display_golden_parity_with_existing_app(self) -> None:
+        root = Path(__file__).resolve().parents[4]
+        season = resolve_current_canonical_season(root, canonical_league_id="nfl-reise")
+        snapshot = build_canonical_ownership_snapshot(
+            root, canonical_league_id="nfl-reise", season=season
+        )
+        display = enrich_from_members(snapshot, root, league_id="nfl-reise", season=season)
+        league = json.loads((root / "public/data/League.json").read_text(encoding="utf-8"))
+        app = {row["TeamID"]: row for row in league["Teams"]}
+        self.assertEqual(set(app), {row["TeamID"] for row in display})
+        for row in display:
+            old = app[row["TeamID"]]
+            self.assertEqual((old["Team"], old["TeamAbbr"]),
+                             (row["Team"], row["TeamAbbr"]))
+        self.assertEqual("DLC", abbreviation("Team DennisLACards", 5))
+        self.assertEqual("T07", abbreviation("The Team", 7))
+        self.assertEqual("TiB", abbreviation("Team TimpaBay", 6))
+
     def test_repository_external_signal_ownership_matches_canonical_union(self) -> None:
         root = Path(__file__).resolve().parents[4]
         generated = json.loads(
