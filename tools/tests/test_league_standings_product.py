@@ -208,7 +208,7 @@ class AssemblyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             document = build_season(self.inputs(Path(tmp), 2030, "complete", 3, 3), STANDINGS, AWARDS, None, [])
         expected = {
-            1: {1: "1W", 2: "1L", 3: "1W", 4: "1W"},
+            1: {1: "1W", 2: "1L", 3: "1L", 4: "1W"},
             2: {1: "1L", 2: "1W", 3: "1W", 4: "1L"},
             3: {1: "1W", 2: "2W", 3: "1L", 4: "2L"},
         }
