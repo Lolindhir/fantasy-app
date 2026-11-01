@@ -175,6 +175,28 @@ function recaps(): WeeklyRecapsReadModel {
 }
 
 describe('Overview weekly dashboard presentation', () => {
+  it('consumes canonical competition places and Streak rather than replaying Matchups', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 1);
+    attachCanonicalWeek(league, 1, [[1, 1, 1, 0], [2, 1, 1, 0], [3, 3, 0, 1], [4, 4, 0, 1]]);
+    league.Standings[0].Weeks![0].Teams[0].Streak = '1T';
+    const result = buildOverviewTopContext(league, readModel(1, 2), 2);
+    expect(result.standings.map(row => row.displayPlace)).toEqual([1, 1, 3, 4]);
+    expect(result.standings.map(row => row.streak)).toEqual(['1T', '1W', '1W', '1W']);
+    expect(result.standings[0].points).toBe(200);
+  });
+
+  it('fails closed for missing, incomplete or invalid canonical weekly standings', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 1);
+    const model = readModel(1, 2);
+    expect(buildOverviewTopContext(league, model, 2).standings).toEqual([]);
+    attachCanonicalWeek(league, 1, [[1, 1, 1, 0], [2, 2, 1, 0], [3, 3, 0, 1], [4, 4, 0, 1]]);
+    league.Standings[0].Weeks![0].Teams[2].Streak = '';
+    expect(buildOverviewTopContext(league, model, 2).standings).toEqual([]);
+    league.Standings[0].Weeks![0].Teams[2].Streak = '1L';
+    league.Standings[0].Weeks![0].Teams.pop();
+    expect(buildOverviewTopContext(league, model, 2).standings).toEqual([]);
+  });
+
   it('keeps Week 1 fail-closed when no LastCompletedWeek exists', () => {
     const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
     const model = readModel(null, 1, 'open');
