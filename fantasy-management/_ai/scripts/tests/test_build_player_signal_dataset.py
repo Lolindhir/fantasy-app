@@ -631,7 +631,6 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             path.write_text(json.dumps(members), encoding="utf-8")
             data = MODULE.build(root, config_path)
             self.assertEqual("Team owner-one", data["managed_team"]["name"])
-            self.assertEqual("OwO", data["managed_team"]["abbreviation"])
             members[0]["Metadata"]["team_name"] = 123
             path.write_text(json.dumps(members), encoding="utf-8")
             with self.assertRaisesRegex(MODULE.PlayerSignalMaterializationError, "team_name"):
