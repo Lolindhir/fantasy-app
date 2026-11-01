@@ -10,6 +10,7 @@ is covered by test_canonical_player_inputs.py.
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from unittest import mock
 
@@ -17,6 +18,10 @@ import canonical_player_inputs
 
 
 def patch_player_inputs(testcase) -> None:
+    # Freeze the independent C9a Age reference for deterministic legacy fixtures.
+    clock_patch = mock.patch.dict(os.environ, {"FM_OPERATIONS_AS_OF_DATE": "2026-08-08"})
+    clock_patch.start()
+    testcase.addCleanup(clock_patch.stop)
     def load_players(root, league_id, season, reference_date):
         return json.loads((Path(root) / "public/data/Players.json").read_text(encoding="utf-8"))
 
