@@ -30,7 +30,7 @@ def valuation():
 
 
 def metadata():
-    return {"Seasons": {"2026": {"Models": {
+    return {"CurrentProviderLeagueID": "123456", "Seasons": {"2026": {"Models": {
         "RosterCap": "roster-cap-v1", "AutoCut": "auto-cut-v1", "SalaryCap": "salary-cap-v1"}}}}
 
 
