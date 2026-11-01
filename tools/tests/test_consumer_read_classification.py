@@ -148,9 +148,7 @@ def compare(found: dict[str, set[str]], registry: dict) -> list[str]:
 TRANSITIONAL_CATEGORIES = frozenset({
     "app-read-model-chain", "intentional-overlay", "legacy-read-model-pending",
 })
-TRANSITIONAL_BASELINE = frozenset({
-    ("tools/derived_data.py", "legacy:Players", "legacy-read-model-pending"),
-})
+TRANSITIONAL_BASELINE = frozenset()
 
 
 def compare_transitional_reads(registry: dict) -> list[str]:
@@ -208,6 +206,36 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         }}}
         self.assertTrue(any("new consumer-to-consumer exception" in problem
                             for problem in compare_transitional_reads(mutated)))
+
+    def test_player_valuation_retired_published_hold_seed_remains_retired(self) -> None:
+        """A consumer output is never reintroduced as a Shared Derived input."""
+        materializer_path = "tools/derived_data.py"
+        audit_path = "tools/derived_clean_root_audit.py"
+        materializer = (REPO_ROOT / materializer_path).read_text(encoding="utf-8")
+        audit = (REPO_ROOT / audit_path).read_text(encoding="utf-8")
+        self.assertNotIn("def load_hold_seed(", materializer)
+        self.assertNotIn("def _with_seed(", materializer)
+        self.assertNotIn('"--hold-seed-players-file"', materializer)
+        self.assertNotIn("hold_seed_file", audit)
+        self.assertNotIn("load_hold_seed", audit)
+        self.assertNotIn("Players.json", audit)
+        registry = load_registry()
+        self.assertEqual([], compare_transitional_reads(registry))
+        self.assertNotIn(materializer_path, registry["consumers"])
+        names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)
+        self.assertEqual(set(), scan_text(materializer_path, materializer, names, functions))
+        self.assertNotIn("legacy:Players", scan_text(audit_path, audit, names, functions))
+        injected = materializer + '\nplayers = "public/data/Players.json"\n'
+        self.assertIn("legacy:Players", scan_text(materializer_path, injected, names, functions))
+        self.assertTrue(any("unclassified" in issue for issue in compare(
+            {materializer_path: scan_text(materializer_path, injected, names, functions)},
+            registry,
+        )))
+        edited = {**registry, "consumers": {**registry["consumers"], materializer_path: {
+            "reads": {"legacy:Players": "legacy-read-model-pending"},
+        }}}
+        self.assertTrue(any("new consumer-to-consumer exception" in problem
+                            for problem in compare_transitional_reads(edited)))
 
     def test_disabled_weekly_review_declares_only_canonical_lifecycle(self) -> None:
         path = "fantasy-management/automation/jobs/weekly-league-review.json"

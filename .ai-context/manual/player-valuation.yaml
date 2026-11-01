@@ -248,13 +248,14 @@ openPoints:
       current season; past seasons change only after a stat or scoring correction.
   - id: hold-seeding
     text: >
-      Identity-hold rows take Inputs from the existing snapshot (same week, else the newest
-      earlier week of the season). Without any snapshot, tools/derived_data.py
-      --hold-seed-players-file takes the values of the last published Players.json (current season,
-      final scored week only, matched by Sleeper player ID, which is the row key of a hold row
-      without CanonicalPlayerID), exactly as RequestPlayers.ps1 held them before the cutover.
-      A hold row that no source knows keeps null Inputs and the Python Players read model
-      fails closed for it (the pre-cutover PowerShell behaviour was to publish zeros).
+      C8j (Issue #1263) retires the old optional published-player seed from the
+      shared PlayerValuation materializer and read-only restore probe. The former
+      Issue #919 step 5 bootstrap was superseded by ADR-076 on 2026-10-30:
+      previously published consumer rows are not an allowed Derived input.
+      An identity-hold row reuses Inputs of its existing same-week snapshot or
+      newest earlier season week; if none exist, Inputs remain null and the
+      Players consumer reports the documented gap/warning. No new hold writer,
+      source fallback or automatic seed is introduced.
   - id: players-run-materializes-all-seasons
     text: >
       The Python Players consumer tools/players_app_publish.py write materializes every season.
