@@ -203,6 +203,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
         self.assertEqual("DLC", abbreviation("Team DennisLACards", 5))
         self.assertEqual("T07", abbreviation("The Team", 7))
         self.assertEqual("TiB", abbreviation("Team TimpaBay", 6))
+        self.assertEqual("MiG", abbreviation("The_Mighty Giants", 1))
 
     def test_repository_external_signal_ownership_matches_canonical_union(self) -> None:
         root = Path(__file__).resolve().parents[4]
