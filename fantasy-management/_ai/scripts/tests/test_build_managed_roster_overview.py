@@ -11,7 +11,7 @@ SCRIPT_DIRECTORY = Path(__file__).resolve().parents[1]
 if str(SCRIPT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIRECTORY))
 
-from build_managed_roster_overview import build, render_markdown  # noqa: E402
+from build_managed_roster_overview import RosterOverviewError, build, render_markdown  # noqa: E402
 
 
 def fixture_lifecycle(root: Path, canonical_league_id: str, season: int, at: object) -> dict:
@@ -23,7 +23,10 @@ def fixture_lifecycle(root: Path, canonical_league_id: str, season: int, at: obj
 def build_with_fixture_lifecycle(root: Path, config: Path) -> dict:
     with mock.patch("build_managed_roster_overview.resolve_lifecycle_state", side_effect=fixture_lifecycle), mock.patch(
         "build_managed_roster_overview.resolve_current_canonical_season", return_value=2026
-    ):
+    ), mock.patch("build_managed_roster_overview.build_canonical_ownership_snapshot", return_value={
+        "CanonicalLeagueID": "test-league", "Season": 2026,
+        "Teams": [{"TeamID": 1, "CanonicalLeagueMemberID": "member-1"}],
+    }):
         return build(root, config)
 
 
@@ -87,6 +90,34 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             rookie = next(item for item in result["players"] if item["player_id"] == "4")
             self.assertTrue(rookie["is_current_taxi"])
             self.assertFalse(rookie["is_current_active"])
+
+    def test_app_league_roster_settings_do_not_affect_canonical_capacity(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            app_path = root / "public/data/League.json"
+            app_league = json.loads(app_path.read_text(encoding="utf-8"))
+            app_league["RosterSize"] = ["QB"]
+            app_league["Settings"] = {"taxi_slots": 99, "reserve_slots": 99}
+            app_league["Teams"][0]["Team"] = "Incorrect App Name"
+            app_path.write_text(json.dumps(app_league), encoding="utf-8")
+            result = build_with_fixture_lifecycle(root, root / "fantasy-management/automation/managed-roster-overview.json")
+            self.assertEqual(6, result["structure"]["capacity"]["regular_active_capacity"])
+            self.assertEqual(1, result["structure"]["capacity"]["taxi_slots"])
+            self.assertEqual("Mighty Giants", result["team"]["name"])
+            self.assertEqual("MiG", result["team"]["abbreviation"])
+            self.assertNotIn("league_enrichment", {item["id"] for item in result["sources"]})
+
+    def test_invalid_canonical_capacity_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            path = root / "data-source/leagues/test-league/seasons/2026/league.json"
+            league = json.loads(path.read_text(encoding="utf-8"))
+            league["Settings"]["taxi_slots"] = -1
+            path.write_text(json.dumps(league), encoding="utf-8")
+            with self.assertRaisesRegex(RosterOverviewError, "taxi_slots"):
+                build_with_fixture_lifecycle(root, root / "fantasy-management/automation/managed-roster-overview.json")
 
     def test_user_override_wins_over_seed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -180,6 +211,7 @@ class ManagedRosterOverviewTests(unittest.TestCase):
             "public/data",
             "fantasy-management/generated/operations",
             "fantasy-management/automation",
+            "data-source/leagues/test-league/seasons/2026",
         ):
             (root / path).mkdir(parents=True, exist_ok=True)
 
@@ -190,7 +222,6 @@ class ManagedRosterOverviewTests(unittest.TestCase):
                 "managed_team": {"team_id": 1},
                 "canonical_league": {"canonical_league_id": "test-league"},
                 "sources": {
-                    "league_enrichment": "public/data/League.json",
                     "managed_roster_signals": "fantasy-management/generated/operations/managed-roster-signals.json",
                     "evaluation_state": "fantasy-management/automation/roster-evaluation-state.json",
                 },
@@ -220,6 +251,19 @@ class ManagedRosterOverviewTests(unittest.TestCase):
                     }
                 ],
             },
+        )
+        self._write_json(
+            root / "data-source/leagues/test-league/seasons/2026/league.json",
+            {
+                "CanonicalLeagueID": "test-league", "Season": 2026,
+                "RosterPositions": ["QB", "RB", "WR", "FLEX", "K", "BN"],
+                "Settings": {"taxi_slots": 1, "reserve_slots": 1},
+            },
+        )
+        self._write_json(
+            root / "data-source/leagues/test-league/seasons/2026/members.json",
+            [{"CanonicalLeagueMemberID": "member-1", "DisplayName": "Owner",
+              "Metadata": {"team_name": "Mighty Giants"}}],
         )
         self._write_json(
             root / "fantasy-management/generated/operations/managed-roster-signals.json",
