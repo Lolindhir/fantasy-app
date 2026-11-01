@@ -1093,9 +1093,8 @@ consumerReadClassification:
       note: 'C8h: the active read-only entity observation job depends on the canonical-active managed-roster-signals Operations contract instead of App League.json; Timestamps.json remains the unchanged freshness bridge.'
     fantasy-management/automation/jobs/weekly-league-review.json:
       reads:
-        legacy:League: intentional-overlay
         legacy:Timestamps: freshness-trigger
-      note: 'Weekly review job input declaration. The Transactions.json dependency was migrated to the canonical League transaction partition (data-source/leagues/<CanonicalLeagueID>/seasons/<season>/transactions/week-<n>.json) in the #347 FM-read step; League.json is the display overlay, Timestamps.json the freshness bridge.'
+      note: 'C8i: disabled weekly review trigger now resolves FinalScoredWeek via canonical manifest + shared lifecycle/Week-Finality and managed-team display via canonical-active managed-roster-signals; no App League.json read. Canonical transaction partitions unchanged; Timestamps.json still declared for the existing freshness gate. Job remains disabled and non-writing.'
     fantasy-management/automation/player-signal-materialization.json:
       reads:
         legacy:Timestamps: freshness-trigger

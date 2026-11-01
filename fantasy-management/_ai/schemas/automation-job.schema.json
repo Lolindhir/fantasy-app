@@ -256,7 +256,8 @@
           "additionalProperties": false,
           "required": [
             "type",
-            "league_source",
+            "source_type",
+            "canonical_league_id",
             "final_week_field",
             "minimum_data_age_minutes",
             "retry_when_not_ready"
@@ -265,13 +266,15 @@
             "type": {
               "const": "league_week_finalized"
             },
-            "league_source": {
+            "source_type": {
+              "const": "canonical_lifecycle"
+            },
+            "canonical_league_id": {
               "type": "string",
               "minLength": 1
             },
             "final_week_field": {
-              "type": "string",
-              "minLength": 1
+              "const": "FinalScoredWeek"
             },
             "minimum_data_age_minutes": {
               "type": "integer",

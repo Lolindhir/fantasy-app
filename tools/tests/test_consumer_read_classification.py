@@ -149,7 +149,6 @@ TRANSITIONAL_CATEGORIES = frozenset({
     "app-read-model-chain", "intentional-overlay", "legacy-read-model-pending",
 })
 TRANSITIONAL_BASELINE = frozenset({
-    ("fantasy-management/automation/jobs/weekly-league-review.json", "legacy:League", "intentional-overlay"),
     ("tools/derived_data.py", "legacy:Players", "legacy-read-model-pending"),
 })
 
@@ -209,6 +208,26 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         }}}
         self.assertTrue(any("new consumer-to-consumer exception" in problem
                             for problem in compare_transitional_reads(mutated)))
+
+    def test_disabled_weekly_review_declares_only_canonical_lifecycle(self) -> None:
+        path = "fantasy-management/automation/jobs/weekly-league-review.json"
+        source = (REPO_ROOT / path).read_text(encoding="utf-8")
+        import json
+        job = json.loads(source)
+        self.assertFalse(job["enabled"])
+        self.assertEqual(job["trigger"]["source_type"], "canonical_lifecycle")
+        self.assertEqual(job["trigger"]["final_week_field"], "FinalScoredWeek")
+        self.assertNotIn("league_source", job["trigger"])
+        self.assertNotIn("public/data/League.json", source)
+        self.assertTrue(any(dep["path"] == "public/data/Timestamps.json" for dep in job["dependencies"]))
+        names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)
+        self.assertNotIn("legacy:League", scan_text(path, source, names, functions))
+        injected = source.replace('"source_type": "canonical_lifecycle"',
+                                  '"league_source": "public/data/League.json"')
+        self.assertIn("legacy:League", scan_text(path, injected, names, functions))
+        self.assertTrue(any("legacy:League" in issue for issue in compare(
+            {path: scan_text(path, injected, names, functions)}, load_registry()
+        )))
 
     def test_monitoring_control_plane_has_no_app_league_dependency(self) -> None:
         names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)

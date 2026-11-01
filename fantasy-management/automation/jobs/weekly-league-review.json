@@ -7,16 +7,47 @@
   "description": "Erstellt nach einem vollständig aktualisierten Spieltag ein strukturiertes Analysepaket für das verwaltete Team und die gesamte Liga.",
   "trigger": {
     "type": "league_week_finalized",
-    "league_source": "public/data/League.json",
     "final_week_field": "FinalScoredWeek",
     "minimum_data_age_minutes": 60,
-    "retry_when_not_ready": true
+    "retry_when_not_ready": true,
+    "source_type": "canonical_lifecycle",
+    "canonical_league_id": "nfl-reise"
   },
   "dependencies": [
     {
-      "path": "public/data/League.json",
+      "path": "data-source/leagues/{canonical_league_id}/manifest.json",
       "required": true,
-      "condition": "FinalScoredWeek ist größer als last_processed_key und das verwaltete Team ist über die stabile Team-ID auflösbar."
+      "condition": "Das aktive CanonicalLeagueSeasonID löst exakt eine Saison auf; kein App League.json-Fallback."
+    },
+    {
+      "path": "data-source/leagues/{canonical_league_id}/seasons/{season}/league.json",
+      "required": true,
+      "condition": "Kanonische WeekStructure/Scoring-Liga-Quelle ist für die aktive Saison vorhanden."
+    },
+    {
+      "path": "data-meta/{canonical_league_id}/metadata.json",
+      "required": true,
+      "condition": "Lifecycle-Modell und aktuelle Saison-Metadaten sind auflösbar."
+    },
+    {
+      "path": "data-derived/league-drafts/{canonical_league_id}/{season}.json",
+      "required": true,
+      "condition": "Gemeinsamer Lifecycle kann den aktiven Draft-Status ohne App Drafts.json auflösen."
+    },
+    {
+      "path": "data-source/nfl/schedules/{season}.json",
+      "required": true,
+      "condition": "Regulärer Spielplan ist für den Lifecycle vorhanden."
+    },
+    {
+      "path": "data-source/nfl/game-finality/{season}.json",
+      "required": true,
+      "condition": "NFL-Finalität und Liga-Woche können über das gemeinsame Week-Finality-Modell bewertet werden."
+    },
+    {
+      "path": "fantasy-management/generated/operations/managed-roster-signals.json",
+      "required": true,
+      "condition": "Verwaltete Team-ID und aktueller Roster-Kontext werden aus dem kanonisch abgeleiteten Operations-Contract gelesen."
     },
     {
       "path": "public/data/Timestamps.json",
