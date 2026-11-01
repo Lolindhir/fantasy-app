@@ -472,6 +472,66 @@ def discover_json_by_id(
     return result
 
 
+def validate_managed_team_source(root: Path, managed_team: dict[str, Any], report: Report, runner_path: Path) -> None:
+    """Validate the canonical-active FM team source before using monitoring selectors."""
+    expected = "fantasy-management/generated/operations/managed-roster-signals.json"
+    source_ref = managed_team.get("source")
+    if source_ref != expected:
+        report.error(runner_path, f"managed_team.source must use {expected}, got {source_ref!r}")
+        return
+    if managed_team.get("identity_field") != "managed_team.team_id":
+        report.error(runner_path, "managed_team.identity_field must be managed_team.team_id")
+        return
+
+    source_path = root / expected
+    document = load_json(source_path, report)
+    if not isinstance(document, dict):
+        report.error(source_path, "Managed team source must be a JSON object.")
+        return
+    if document.get("schema_version") != 1 or document.get("dataset_id") != "managed-roster-signals":
+        report.error(source_path, "Managed team source must be the schema-version-1 managed-roster-signals dataset.")
+        return
+
+    team = document.get("managed_team")
+    if not isinstance(team, dict):
+        report.error(source_path, "Managed team source has no managed_team object.")
+        return
+    raw_id = managed_team.get("team_id")
+    actual_id = team.get("team_id")
+    if (
+        isinstance(raw_id, bool) or not isinstance(raw_id, (int, str))
+        or isinstance(actual_id, bool) or not isinstance(actual_id, int)
+        or str(raw_id) != str(actual_id)
+    ):
+        report.error(source_path, "Managed team source team_id does not match runner-config.")
+    if not isinstance(team.get("name"), str) or not team["name"].strip():
+        report.error(source_path, "Managed team source display name is missing.")
+
+    players = document.get("players")
+    if not isinstance(players, list) or not players:
+        report.error(source_path, "Managed team source players must be a nonempty array.")
+        return
+    count = team.get("player_count")
+    if isinstance(count, bool) or not isinstance(count, int) or count != len(players):
+        report.error(source_path, "Managed team source player_count differs from players array.")
+    seen: set[str] = set()
+    for index, player in enumerate(players):
+        if not isinstance(player, dict):
+            report.error(source_path, f"Managed team source players[{index}] must be an object.")
+            continue
+        player_id = player.get("player_id")
+        if not isinstance(player_id, str) or not player_id.strip() or player_id in seen:
+            report.error(source_path, f"Managed team source has invalid/duplicate player_id at index {index}.")
+        else:
+            seen.add(player_id)
+        sections = player.get("roster_sections")
+        if (
+            not isinstance(sections, list) or not sections
+            or any(not isinstance(s, str) or s not in {"roster", "reserve", "taxi"} for s in sections)
+        ):
+            report.error(source_path, f"Managed team source has invalid roster_sections at index {index}.")
+
+
 def validate_automation(root: Path | None = None) -> Report:
     root = (root or repo_root_from_script()).resolve()
     report = Report()
@@ -487,13 +547,9 @@ def validate_automation(root: Path | None = None) -> Report:
             report,
             runner_path,
         )
-        managed_team = runner.get("managed_team") or {}
-        source = root / str(managed_team.get("source", ""))
-        if not source.is_file():
-            report.error(
-                runner_path,
-                f"managed_team source does not exist: {rel(source, root)}",
-            )
+        managed_team = runner.get("managed_team")
+        if isinstance(managed_team, dict):
+            validate_managed_team_source(root, managed_team, report, runner_path)
 
     profiles = discover_json_by_id(
         automation_root / "profiles",
