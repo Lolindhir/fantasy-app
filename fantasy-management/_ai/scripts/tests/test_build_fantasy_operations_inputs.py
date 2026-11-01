@@ -5,6 +5,8 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest import mock
+from datetime import date
 from pathlib import Path
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parents[1]
@@ -215,7 +217,7 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             with self.assertRaisesRegex(MaterializationError, "member"):
                 build(root, config_path)
 
-    def test_players_age_reference_still_requires_published_timestamp(self) -> None:
+    def test_players_age_reference_does_not_require_published_timestamp(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._write_fixture(root)
@@ -227,8 +229,26 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             timestamps = json.loads(path.read_text(encoding="utf-8"))
             timestamps["Players"] = None
             path.write_text(json.dumps(timestamps), encoding="utf-8")
-            with self.assertRaisesRegex(MaterializationError, "Players timestamp for the Age reference"):
-                build(root, config_path)
+            result, _ = build(root, config_path)
+            self.assertEqual(
+                [(p["player_id"], p["app_data"]["age"]) for p in data["players"]],
+                [(p["player_id"], p["app_data"]["age"]) for p in result["players"]],
+            )
+            self.assertNotEqual(data["input_fingerprint"], result["input_fingerprint"])
+
+    def test_both_builders_pass_explicit_age_date_to_canonical_players(self) -> None:
+        import canonical_player_inputs
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            original = canonical_player_inputs.load_players
+            observed = []
+            def capture(root_arg, league, season, as_of):
+                observed.append(as_of)
+                return original(root_arg, league, season, as_of)
+            with mock.patch.object(canonical_player_inputs, "load_players", side_effect=capture):
+                build(root, root / "fantasy-management/automation/input-materialization.json")
+            self.assertEqual([date(2026, 8, 8)], observed)
 
     def test_current_canonical_team_display_matches_published_league(self) -> None:
         root = Path(__file__).resolve().parents[4]
