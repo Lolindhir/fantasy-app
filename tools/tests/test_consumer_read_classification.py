@@ -154,7 +154,6 @@ TRANSITIONAL_BASELINE = frozenset({
     ("fantasy-management/automation/jobs/entity-observation.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/jobs/weekly-league-review.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/kicker-streaming-input-materialization.json", "legacy:League", "intentional-overlay"),
-    ("fantasy-management/automation/managed-roster-overview.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/runner-config.json", "legacy:League", "intentional-overlay"),
     ("tools/derived_data.py", "legacy:Players", "legacy-read-model-pending"),
 })
