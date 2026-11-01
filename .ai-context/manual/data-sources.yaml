@@ -308,6 +308,14 @@ dataSources:
       roster and playoff-bracket facts. Current inputs are kept fresh by the bounded
       League Core producer before app consumers run. Shared Derived league-standings (standings-v1 and awards-v1)
       owns Regular Season standings, Playoffs, Awards and AllTime.
+      Only the current-season Standings section additionally publishes Weeks[],
+      a copy of completed, validated league-standings product snapshots including
+      TeamID, Place, Wins/Losses/Ties, Points, PointsAgainst and as-of Streak.
+      League.json embeds this same section via Get-LeagueStandingsProduct so the
+      Angular Overview consumes those weekly facts rather than replaying Matchups.
+      If a requested historical week is missing or malformed, no numbers or
+      rankings may be inferred from the current table. No new writer, delivery
+      file or scheduler is introduced by this read-model extension (Issue #1263).
       Season-specific Playoff rows additionally retain OwnerAvatar and TeamAvatar
       from the same season's canonical members.json snapshot so archive consumers
       never resolve historical identity from the current team.
