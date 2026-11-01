@@ -2712,3 +2712,48 @@ decisions:
         - Confirmed hand-reviewed evidence is required for this rare case.
         - Dependent snap partitions and derived player valuation must be
           rematerialized and impact-audited before publication.
+
+  - id: ADR-079
+    title: Central roster-cap and auto-cut models with a bounded browser what-if exception
+    status: accepted
+    amends: [ADR-005, ADR-037, ADR-055]
+    context: >
+      L10 of the Shared Data Platform (Issue #1237) found productive cap-usage
+      and sixth-highest-salary AutoCut formulas in Angular, in addition to the
+      league-wide salary-cap-v1 model. The static Trade Simulator and the legacy
+      team's manual Exclude interactions require immediate hypothetical calculations.
+      League Live and Players salary publication can refresh independently.
+    decision: >
+      Define pure immutable roster-cap-v1 and auto-cut-v1 in the shared versioned
+      model registry, distinct from the league-wide salary-cap-v1. Each league
+      selects the model IDs by season in hand-maintained data-meta. The existing
+      classified League Live publisher delivers a single v1 App read model,
+      public/data/TeamCapOutlook.json, from canonical league rosters and a
+      persisted PlayerValuation snapshot. It publishes only on semantic change.
+      The App validates ContractVersion, provider league, season, finality, cap
+      limits, ordered roster identity and player salary witnesses, and displays
+      no cap/AutoCut assertion when the result is missing or stale. It reads the
+      model version as provenance, never requires one hard-coded model ID.
+      Actual team usage and cap-cut predictions are readmodel-only in Angular.
+      Only explicitly hypothetical Trade Simulator rosters and manual legacy
+      Exclude scenarios may calculate top-N salary locally, subject to pinned
+      parity tests. No independently scheduled writer or backend RPC is added.
+    rationale: >
+      A static app needs instant exploratory what-if interactions, while real
+      salary rules must have a single canonical owner. Explicit freshness
+      witnesses avoid displaying mismatched salary and roster revisions from
+      independently refreshed App datasets.
+    consequences:
+      positive:
+        - One canonical implementation and one published source for actual
+          roster-cap usage and predicted cap cuts across App consumers.
+        - Per-season model upgrades do not require an Angular release while
+          the App delivery contract remains compatible.
+        - The static browser retains immediate, non-authoritative simulations.
+        - Unavailable inputs are exposed rather than replaced by a fabricated
+          zero cap or silently recomputed AutoCut.
+      negative:
+        - Hypothetical top-N arithmetic remains a narrowly scoped second
+          language implementation until a separately authorized backend exists.
+        - A stale or missing Outlook read model temporarily disables real cap
+          display; publication and salary/roster freshness must be monitored.

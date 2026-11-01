@@ -89,6 +89,8 @@ describe('team salary utilities', () => {
       }]
     };
     expect(verifyTeamCapOutlook(outlook, league, players as unknown as RawPlayer[]).size).toBe(1);
+    expect(verifyTeamCapOutlook({ ...outlook, Models: { RosterCap: 'roster-cap-v2', AutoCut: 'auto-cut-v3' } }, league, players as unknown as RawPlayer[]).size).toBe(1);
+    expect(verifyTeamCapOutlook({ ...outlook, Models: { RosterCap: '', AutoCut: 'auto-cut-v1' } }, league, players as unknown as RawPlayer[]).size).toBe(0);
     expect(verifyTeamCapOutlook(outlook, league, [makePlayer('a', 101, 110, 'QB'), players[1]] as unknown as RawPlayer[]).size).toBe(0);
     expect(verifyTeamCapOutlook({ ...outlook, ProviderLeagueID: 'other' }, league, players as unknown as RawPlayer[]).size).toBe(0);
     expect(verifyTeamCapOutlook({ ...outlook, AsOfFinalScoredWeek: 6 }, league, players as unknown as RawPlayer[]).size).toBe(0);
