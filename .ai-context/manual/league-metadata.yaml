@@ -32,7 +32,7 @@ fields:
     key: Four-digit season string. Every season in the league manifest needs an entry.
     CapDeadline: ISO timestamp; optional per season, but together with CapDeadlineBufferDays. The current season needs it.
     CapDeadlineBufferDays: Exactly one value per season; there is no code fallback.
-    Models: Exactly Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability and TeamRange with a known model ID (salary-v1, salary-cap-v1, grading-v1, standings-v1, awards-v1, lifecycle-v1, repairability-v1, team-range-v1 for all current seasons; TeamRange since Issue #1199 section 3, ADR-075; Standings and Awards since Issue #987, ADR-072; Lifecycle since Issue #1199, ADR-073; Repairability since Issue #1199 section 2, ADR-074).
+    Models: Exactly Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, RosterCap and AutoCut with a known model ID (salary-v1, salary-cap-v1, grading-v1, standings-v1, awards-v1, lifecycle-v1, repairability-v1, team-range-v1 for all current seasons; TeamRange since Issue #1199 section 3, ADR-075; Standings and Awards since Issue #987, ADR-072; Lifecycle since Issue #1199, ADR-073; Repairability since Issue #1199 section 2, ADR-074).
 
 notInMetadata:
   alreadyCanonical:
@@ -78,3 +78,9 @@ validation:
   tests: tools/tests/test_league_source_metadata.py
   powershell: public/requests/LeagueMetadataRegressionTest.ps1 (run by the Python test when pwsh exists, as in CI)
   ci: matched by the existing league-source test discovery (test_league_source*.py); no workflow change.
+
+l10Models:
+  issue: 1237
+  rosterCap: roster-cap-v1; salary usage of a fantasy roster, distinct from league salary-cap-v1
+  autoCut: auto-cut-v1; non-authoritative sixth-highest-salary projection
+  selection: Seasons.<season>.Models.RosterCap and AutoCut; one known version per season, no league parameters

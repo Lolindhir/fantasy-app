@@ -274,7 +274,7 @@ documentation:
  
 l10PreActivation:
   issue: 1237
-  state: registered-pure-models-not-productively-selected
+  state: selected-for-team-cap-outlook-app-delivery
   models:
     roster-cap-v1:
       kind: roster-cap
@@ -291,3 +291,15 @@ l10PreActivation:
     products or App JSON, or authorize a new writer. League/season selection,
     persisted delivery and interactive Trade Simulator behavior require the
     separate #1237 consumer-contract decision and safe publication review.
+
+l10Delivery:
+  issue: 1237
+  path: public/data/TeamCapOutlook.json
+  producer: tools/team_cap_outlook_app_publish.py
+  models: [roster-cap-v1, auto-cut-v1]
+  principles:
+    - The league selects model IDs in data-meta for each season; input values are canonical roster facts and player-valuation.
+    - One current-season App read model; no additional data-derived product and no new workflow.
+    - The producer writes only on semantic changes in the existing League Live publisher.
+    - The input-roster salary witness is used by Angular only for freshness validation, never domain recomputation.
+    - A missing, stale or unknown result must not be interpreted as zero salary or no cut requirement.

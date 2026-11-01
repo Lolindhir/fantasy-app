@@ -14,6 +14,8 @@ $script:KnownModelIds = @{
     Lifecycle = @('lifecycle-v1')
     Repairability = @('repairability-v1')
     TeamRange = @('team-range-v1')
+    RosterCap = @('roster-cap-v1')
+    AutoCut = @('auto-cut-v1')
 }
 $script:TopLevelKeys = @('SchemaVersion', 'CanonicalLeagueID', 'Provider', 'CurrentProviderLeagueID', 'LeagueTimeZone', 'Owners', 'Drafts', 'Seasons')
 $script:SeasonKeys = @('CapDeadline', 'CapDeadlineBufferDays', 'Models')
