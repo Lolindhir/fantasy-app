@@ -1,6 +1,6 @@
 """Tests for the standings-v1 and awards-v1 models (ADR-072, Issue #987 step 2).
 
-Hand-computed constructed leagues pin the PowerShell semantics (tiebreak keys, dense places, .NET rounding,
+Hand-computed constructed leagues pin the PowerShell semantics (tiebreak keys, competition places, .NET rounding,
 weekly validation). No real team, owner or season data is wired in.
 """
 from __future__ import annotations
@@ -100,7 +100,7 @@ class RankingTests(unittest.TestCase):
         self.assertEqual(0.75, standings.win_percentage(team(1, 3, 1, 0, 0, 0, "")))
         self.assertEqual(0.5, standings.win_percentage(team(1, 1, 1, 2, 0, 0, "")))
 
-    def test_order_is_win_pct_then_points_then_points_against_with_dense_places(self):
+    def test_order_is_win_pct_then_points_then_points_against_with_competition_places(self):
         teams = [
             team(1, 2, 1, 0, 300.0, 250.0, "WLW"),
             team(2, 2, 1, 0, 320.0, 260.0, "WWL"),   # same pct, more points -> ahead of team 1
@@ -110,7 +110,14 @@ class RankingTests(unittest.TestCase):
         ]
         ranked = standings.rank_teams(teams)
         self.assertEqual([2, 1, 3, 4, 5], [t["TeamID"] for t in ranked])
-        self.assertEqual([1, 2, 3, 3, 4], [t["PlaceRegular"] for t in ranked])  # dense: next place follows the shared one directly
+        self.assertEqual([1, 2, 3, 3, 5], [t["PlaceRegular"] for t in ranked])  # competition: fourth rank is occupied by the tie
+
+    def test_two_or_three_teams_sharing_first_skip_to_third_or_fourth(self):
+        for tied_count in (2, 3):
+            teams = [team(i, 2, 0, 0, 200.0, 100.0, "WW") for i in range(1, tied_count + 1)]
+            teams.append(team(tied_count + 1, 1, 1, 0, 100.0, 150.0, "WL"))
+            ranked = standings.rank_teams(teams)
+            self.assertEqual([1] * tied_count + [tied_count + 1], [t["PlaceRegular"] for t in ranked])
 
     def test_lower_points_against_wins_the_last_tiebreak(self):
         ranked = standings.rank_teams([team(1, 1, 1, 0, 100.0, 120.0, "WL"), team(2, 1, 1, 0, 100.0, 90.0, "LW")])
@@ -325,6 +332,15 @@ class AllTimeTests(unittest.TestCase):
         self.assertEqual([1, 2], [r["Place"] for r in playoffs])
         self.assertEqual({"Championships": 2, "RunnerUps": 0, "Thirds": 0, "PlaceCumulative": 2, "PlaceAverage": 1.0, "Placements": [1, 1]},
                          {k: playoffs[0][k] for k in ("Championships", "RunnerUps", "Thirds", "PlaceCumulative", "PlaceAverage", "Placements")})
+
+    def test_all_time_regular_season_competition_places_skip_after_exact_tie(self):
+        season = self.season([
+            (1, 1, 5, 1, 600.0, 500.0, "a"),
+            (2, 1, 5, 1, 600.0, 500.0, "b"),
+            (3, 3, 3, 3, 450.0, 550.0, "c"),
+        ], [])
+        regular = standings.all_time_standings([season])["RegularSeason"]
+        self.assertEqual([1, 1, 3], [row["Place"] for row in regular])
 
     def test_place_average_divides_by_the_number_of_seasons(self):
         one = self.season([(1, 1, 1, 0, 10.0, 5.0, "x"), (2, 2, 0, 1, 5.0, 10.0, "x")], [(1, 3, "x")])
