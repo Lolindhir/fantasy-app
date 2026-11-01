@@ -56,12 +56,12 @@ class CleanRootProbeTests(unittest.TestCase):
         self.assertTrue((root / "data-meta").is_symlink())
         self.assertNotEqual(root.resolve(), self.root.resolve())
 
-    def fake_valuation(self, root, out_root, league, seasons, check_only, hold_seed=None):
+    def fake_valuation(self, root, out_root, league, seasons, check_only):
         self.check_isolation(root)
-        self.calls.append(("player-valuation", league, hold_seed is not None))
+        self.calls.append(("player-valuation", league))
         target = out_root / "player-valuation" / league / "2024/week-00.json"
         existing = target.read_text() if target.is_file() else None
-        written = emit(target, self.body("player-valuation", root, existing, hold_seed))
+        written = emit(target, self.body("player-valuation", root, existing))
         return {"Seasons": [{"Written": written, "HeldRowsAcrossSnapshots": 0}]}
 
     def fake_history(self, root, out_root, league, product, seasons, check_only):
@@ -178,16 +178,16 @@ class CleanRootProbeTests(unittest.TestCase):
         self.assertEqual([f"league-drafts/{LEAGUE}"], result["FailedProducts"])
         self.assertFalse(result["ReadyForFullRestore"])
 
-    def test_hold_seed_only_in_the_productive_like_root(self):
+    def test_corrupted_published_players_cannot_seed_normal_restore(self):
         self.publish_all_stable()
         (self.root / "public/data").mkdir(parents=True)
-        (self.root / "public/data/Players.json").write_text("[]")
-        self.hooks["player-valuation"] = lambda root, existing, seed: "seeded" if seed is not None else "stable"
-        with patch.object(probe, "load_hold_seed", return_value={"1": {}}):
-            result = self.run_audit()
-        self.assertEqual("restore-defect", result["Products"][f"player-valuation/{LEAGUE}"]["Status"])
-        self.assertIn((("player-valuation", LEAGUE, True)), self.calls)
-        self.assertIn((("player-valuation", LEAGUE, False)), self.calls)
+        (self.root / "public/data/Players.json").write_text("{poisoned")
+        self.hooks["player-valuation"] = lambda root, existing, extra: (
+            "seeded" if (root / "public/data/Players.json").exists() else "stable"
+        )
+        result = self.run_audit()
+        self.assertEqual("ready", result["Products"][f"player-valuation/{LEAGUE}"]["Status"])
+        self.assertEqual(3, self.calls.count(("player-valuation", LEAGUE)))
 
     def test_second_pass_change_is_nondeterministic(self):
         self.publish_all_stable()

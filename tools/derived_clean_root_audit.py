@@ -4,8 +4,9 @@
 Each product is rebuilt in two isolated temporary roots and compared with the published files:
 
 * empty:  only data-source, data-meta and public/requests are visible; the product is built twice.
-* normal: published data-derived plus the published Standings.json and Players.json (hold seed) are
-          visible, as in a productive run; the product is built once.
+* normal: published data-derived plus historical Standings are visible, as in a
+          productive run; the product is built once. The published Players hold
+          seed was retired by ADR-076 and is never copied or loaded.
 * published: the files in the repository.
 
 Per product (and league) the three-way comparison gives one status:
@@ -28,12 +29,12 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from data_roots import DATA_DERIVED_ROOT, DATA_META_ROOT, DATA_SOURCE_ROOT
 from derived_data import (
     LEAGUE_DRAFTS, LEAGUE_STANDINGS, LEAGUE_TRANSACTIONS,
-    load_hold_seed, materialize_league_history, materialize_league_standings, materialize_player_valuation,
+    materialize_league_history, materialize_league_standings, materialize_player_valuation,
 )
 from historical_pwf_batch import materialize_historical
 from league_metadata import list_league_ids
@@ -56,8 +57,8 @@ FAILING = frozenset({"blocked", "nondeterministic", "restore-defect"})
 HINTS = frozenset({"stale-published", "latent-blocker"})
 LATENT_STANDINGS_ISSUE = "#987"
 STANDINGS_MARKER = "transitional Standings"
-# Published App files a productive run can see; the empty root sees none of them.
-PUBLISHED_APP_FILES = ("Standings.json", "Players.json")
+# Only the historical Standings shadow is copied; the retired player seed is excluded.
+PUBLISHED_APP_FILES = ("Standings.json",)
 EXAMPLE_LIMIT = 12
 
 Unit = tuple[str, str | None]
@@ -95,12 +96,12 @@ def _blocked_reason(report: dict[str, Any]) -> str:
     return f"{report['BlockedCount']} blocked weeks, first: {reasons[:2]}"
 
 
-def _build(unit: Unit, root: Path, hold_seed: Callable[[], dict[str, Any] | None]) -> tuple[int, int]:
+def _build(unit: Unit, root: Path) -> tuple[int, int]:
     """Run the productive generator of one unit in `root`; return (writes, held rows)."""
     product, league = unit
     output = root / DATA_DERIVED_ROOT
     if product == PLAYER_VALUATION:
-        summary = materialize_player_valuation(root, output, league, None, False, hold_seed())
+        summary = materialize_player_valuation(root, output, league, None, False)
         return _written(summary), _held(summary)
     if product in (LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS):
         return _written(materialize_league_history(root, output, league, product, None, False)), 0
@@ -125,17 +126,8 @@ def _build(unit: Unit, root: Path, hold_seed: Callable[[], dict[str, Any] | None
 
 
 def _run_variant(
-    shadow: Path, units: list[Unit], *, passes: int, hold_seed_file: Path | None,
+    shadow: Path, units: list[Unit], *, passes: int,
 ) -> dict[Unit, dict[str, Any]]:
-    seed_cache: list[dict[str, Any] | None] = []
-
-    def hold_seed() -> dict[str, Any] | None:
-        if hold_seed_file is None or not hold_seed_file.is_file():
-            return None
-        if not seed_cache:
-            seed_cache.append(load_hold_seed(hold_seed_file))
-        return seed_cache[0]
-
     results: dict[Unit, dict[str, Any]] = {}
     for unit in units:
         product, league = unit
@@ -143,7 +135,7 @@ def _run_variant(
         results[unit] = entry
         try:
             for index in range(passes):
-                writes, held = _build(unit, shadow, hold_seed)
+                writes, held = _build(unit, shadow)
                 if index == 0:
                     entry["held"] = held
                 entry["writes"].append(writes)
@@ -260,10 +252,8 @@ def audit(repo_root: Path, *, leagues: list[str] | None = None) -> dict[str, Any
         empty_root, normal_root = Path(empty_dir), Path(normal_dir)
         _prepare(empty_root, source, published=False)
         _prepare(normal_root, source, published=True)
-        empty = _run_variant(empty_root, units, passes=2, hold_seed_file=None)
-        normal = _run_variant(
-            normal_root, units, passes=1, hold_seed_file=normal_root / "public/data/Players.json",
-        )
+        empty = _run_variant(empty_root, units, passes=2)
+        normal = _run_variant(normal_root, units, passes=1)
     results: dict[str, dict[str, Any]] = {}
     for unit in units:
         product, league = unit

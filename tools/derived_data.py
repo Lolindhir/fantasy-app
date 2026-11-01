@@ -8,14 +8,16 @@ AsOfFinalScoredWeek, written to <derived root>/player-valuation/<CanonicalLeague
 The model per league and season comes from the league metadata (tools/league_metadata.py, ADR-054);
 the model code lives in tools/derived_data_lib. A snapshot is rebuilt from canonical facts on every run
 and written only on a semantic difference (a second run is a file-level no-op). Since the cutover
-(Issue #919 step 5) RequestPlayers.ps1 runs it and fills Players.json / League.json from the snapshot.
+(Issue #1226, ADR-076) the Python Players consumer materializes the valuation product,
+then publishes its own read model from the snapshot.
 
 Second product family: league-transactions and league-drafts (league-history.yaml, ADR-057, Issue #999),
 written to <derived root>/league-transactions|league-drafts/<CanonicalLeagueID>/<season>.json. Both come
 from one in-memory run in ADR-026 order (the transaction picks carry the draft pick results). The App consumer generator already publishes its own in-memory history
 result; the additive CP2 PlayerRefs do not alter that App delivery until Issue #1100 CP3.
-The optional --hold-seed-players-file explicitly reads the last published
-public/data/Players.json, not a new canonical identity source.
+The obsolete published Players hold seed was retired by ADR-076; no last-published
+App consumer read model is a materialization input. Identity holds reuse only
+persisted PlayerValuation snapshots (see Issue #1263 C8j).
 
 Third product: league-standings (league-standings.yaml, ADR-072, Issue #987), one file per league and season at
 <derived root>/league-standings/<CanonicalLeagueID>/<season>.json with the regular-season table, the weekly tables,
@@ -25,7 +27,6 @@ always rebuilt chronologically in one run; the models come from data-meta (stand
 Usage:
   derived_data.py materialize --product player-valuation|league-transactions|league-drafts|league-standings [--league nfl-reise]
                               [--season 2026 ...] [--out-root DIR] [--check]
-                              [--hold-seed-players-file PUBLISHED_PLAYERS_JSON]   (player-valuation only)
 """
 from __future__ import annotations
 
@@ -105,37 +106,8 @@ class ExistingSnapshots:
         return lookup
 
 
-def load_hold_seed(players_file: Path) -> dict[str, dict[str, Any]]:
-    """Inputs of the last published Players.json by Sleeper player ID (cutover hold seed, Issue #919 step 5).
-
-    Dropped with the Players cutover (Issue #1226 step 5, ADR-076); until then it also seeds SeasonValues.
-
-    Identity-hold players keep the last published scoring values. Once snapshots exist the persisted snapshot is
-    the hold source; the published file only covers a hold that no snapshot knows yet (RequestPlayers.ps1 parity).
-    """
-    players = json.loads(players_file.read_text(encoding="utf-8"))
-    seed: dict[str, dict[str, Any]] = {}
-    for player in players:
-        history = player.get("PointHistory") or {}
-        try:
-            inputs = {"Current": {
-                "AvgPotentialGame": float(player["FantasyPointsAvgPotentialGame"]),
-                "AvgGame": float(player["FantasyPointsAvgGame"]),
-            }}
-            for name in ("SeasonMinus1", "SeasonMinus2", "SeasonMinus3"):
-                inputs[name] = {
-                    "AvgPotentialGame": float(history[name]["AvgPotentialGame"]),
-                    "AvgGame": float(history[name]["AvgGame"]),
-                }
-        except (KeyError, TypeError, ValueError):
-            continue
-        seed[str(player["ID"])] = inputs
-    return seed
-
-
 def materialize_player_valuation(
     repo_root: Path, out_root: Path, league_id: str, seasons: list[int] | None, check_only: bool,
-    hold_seed: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     manifest = sources.league_manifest(repo_root, league_id)
     metadata = load_league_metadata(league_id, data_meta_root(repo_root))
@@ -163,10 +135,8 @@ def materialize_player_valuation(
                 last_league_week=source.last_league_week,
                 bye_weeks=source.bye_weeks,
             )
-            lookup = existing.lookup_for(as_of)
-            if hold_seed and season == available[-1] and as_of == source.final_scored_week:
-                lookup = _with_seed(lookup, hold_seed, as_of)
-            snapshot = build_snapshot(context, source.players, lookup, existing.lookup_for(as_of, "SeasonValues"))
+            snapshot = build_snapshot(context, source.players, existing.lookup_for(as_of),
+                                      existing.lookup_for(as_of, "SeasonValues"))
             text = serialize(snapshot)
             total_bytes += len(text.encode("utf-8"))
             held_rows += sum(1 for row in snapshot["Players"] if row["Hold"] is not None)
@@ -189,15 +159,6 @@ def materialize_player_valuation(
             "HeldRowsAcrossSnapshots": held_rows,
         })
     return summary
-
-
-def _with_seed(lookup, hold_seed: dict[str, dict[str, Any]], as_of: int):
-    def seeded(key: str) -> tuple[dict[str, Any] | None, int | None]:
-        inputs, week = lookup(key)
-        if inputs is None and key in hold_seed:
-            return hold_seed[key], as_of
-        return inputs, week
-    return seeded
 
 
 def league_history_path(out_root: Path, product: str, league_id: str, season: int) -> Path:
@@ -316,8 +277,6 @@ def parse_args() -> argparse.Namespace:
     mat.add_argument("--league", help="CanonicalLeagueID (default: every league in data-meta)")
     mat.add_argument("--season", type=int, action="append", help="only this season (repeatable); default: all manifest seasons")
     mat.add_argument("--out-root", type=Path, help="derived data root (default: the repository's derived root)")
-    mat.add_argument("--hold-seed-players-file", type=Path,
-                     help="published Players.json whose values seed identity-hold rows that no snapshot knows yet")
     mat.add_argument("--check", action="store_true", help="write nothing; exit 3 when any snapshot would change")
     return parser.parse_args()
 
@@ -338,9 +297,8 @@ def main() -> int:
                 for league in leagues
             ]
         else:
-            hold_seed = load_hold_seed(args.hold_seed_players_file) if args.hold_seed_players_file else None
             results = [
-                materialize_player_valuation(args.repo_root, out_root, league, args.season, args.check, hold_seed)
+                materialize_player_valuation(args.repo_root, out_root, league, args.season, args.check)
                 for league in leagues
             ]
     except (sources.SourceError, LeagueMetadataError, LeagueHistorySourceError, standings_sources.StandingsSourceError,
