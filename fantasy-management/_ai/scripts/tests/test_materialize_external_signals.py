@@ -143,7 +143,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             league["Teams"][0]["Reserve"] = ["5"]
             league["Teams"][0]["Taxi"] = []
             league["Teams"][1]["Roster"] = []
-            league_path.write_text(json.dumps(league), encoding="utf-8")
+            league_path.unlink()  # no public App data is required
 
             data, _ = build(root, config_path)
             players = {player["player_id"]: player for player in data["players"]}
