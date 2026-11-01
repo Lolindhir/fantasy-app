@@ -622,6 +622,20 @@ describe('Overview weekly dashboard presentation', () => {
     ]);
   });
 
+  it('accepts shared canonical current places when sorting matchups instead of using previous-season ranks', () => {
+    const teams = [
+      makeTeam(1, 1, 4, 4),
+      makeTeam(2, 1, 3, 3),
+      makeTeam(3, 3, 1, 1),
+      makeTeam(4, 4, 2, 2)
+    ];
+    const result = orderOverviewCurrentMatchups(
+      makeLeague(teams, 1),
+      [matchup('shared-first-place', 3, 1)]
+    );
+    expect(result[0].Participants.map(participant => participant.TeamID)).toEqual([1, 3]);
+  });
+
   it('uses previous-season Overall standings before Week 1 instead of unresolved current places', () => {
     const previousPlaces = [4, 1, 3, 2];
     const teams = previousPlaces.map((place, index) => makeTeam(index + 1, 999, place, index + 1));

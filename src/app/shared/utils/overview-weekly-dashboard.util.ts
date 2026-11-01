@@ -512,15 +512,13 @@ function resolveUsableCurrentPlaces(league: League): ReadonlyMap<string, number>
     currentStanding?.RegularSeason.map(row => [String(row.TeamID), normalizePlace(row.Place)]) ?? []
   );
   const resolved = new Map<string, number>();
-  const seenPlaces = new Set<number>();
-
+  // Equal canonical places are legitimate ties; validate team coverage, not place uniqueness.
   for (const team of league.Teams) {
     const place = rowPlaceByTeam.get(String(team.TeamID))
       ?? normalizePlace(team.Placements?.Current?.Regular?.Place);
-    if (place === null || seenPlaces.has(place)) return null;
+    if (place === null) return null;
 
     resolved.set(String(team.TeamID), place);
-    seenPlaces.add(place);
   }
 
   return resolved;

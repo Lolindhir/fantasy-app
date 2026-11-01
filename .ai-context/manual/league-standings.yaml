@@ -29,7 +29,7 @@ architecture:
     - The product is consumer-neutral. League.json placements, Standings.json, WeeklyRecaps, the draft order and Fantasy Management read the same file; consumer shapes come from consumer generators.
     - public/data/Standings.json and the League.json Standings and Placements keep their current contract (ADR-020 awards stay in Standings.json). They are rendered from the product (step 4) and stay equal for unchanged inputs.
     - Tiebreak and award rules are central, league-independent models (standings-v1, awards-v1). A league only selects a model ID per season in data-meta (ADR-054, ADR-055).
-    - No new tiebreak or award rule is introduced by this product; v1 reproduces the PowerShell behaviour 1:1.
+    - The original cutover reproduced PowerShell 1:1. The only approved v1 correction is #1263: shared ranking ties use competition places (1,1,3), not the previous dense numbering (1,1,2). Tiebreak keys and ordering are unchanged. Git commit 0dcbf1527e1301f75cae61f1c1a457bccffc6dae preserves the previous implementation.
     - Mighty-Giants-specific interpretation (rivals, strategy) stays Fantasy Management insight and never enters the product.
 
 identity:
@@ -87,7 +87,7 @@ contract:
       annotations ClutchPeakerScore and ImprovementScore when the awards model computed them. Display strings (PlaceOrdinal,
       WinPercentageDisplay, StatDisplay) are part of the v1 results because the App contract is unchanged; a later model version may separate them.
     Weeks: >
-      Table after each validated completed week (rank by the same tiebreak function, wins/losses/ties and points rebuilt from the
+      Table after each validated completed week (rank by the same tiebreak function, with competition-place skips after ties, wins/losses/ties and points rebuilt from the
       canonical per-week matchups). Weeks are validated against the Record of every team; a missing, contradicting or incomplete week ends
       the list and later weeks are never inferred.
     Playoffs: >
@@ -179,8 +179,9 @@ implementation:
     tools/derived_data_lib/models/_common.py provides dotnet_round (scale, round half to even, scale back like [math]::Round),
     sequential_sum (no compensated summation) and ps_text (PowerShell number-to-text); the models use no Python round() on money-like values.
   tieOrder: >
-    Teams with a completely equal sort key keep their input order (roster ID order). The PowerShell all-time stage enumerated an unordered
-    hashtable, so the order of such exact ties was undefined there; the shadow comparison (step 3) shows whether it ever mattered.
+    Teams with a completely equal sort key keep their input order (roster ID order). Competition ranking assigns a shared place
+    and skips the consumed ordinal(s) after the tie (1,1,3), per the narrowly approved #1263 standings-v1 bugfix.
+    The PowerShell all-time stage enumerated an unordered hashtable, so the order of exact ties was undefined there.
 
 validation:
   step2: Unit tests with constructed leagues; no real teams or owners are hard-wired in tests.
@@ -197,6 +198,6 @@ validation:
     - tools/tests/test_league_standings_shadow.py (step 3)
 
 nonGoals:
-  - No new tiebreak or award rule (awards-v2 is #964).
+  - No new tiebreak key or award rule (awards-v2 is #964); #1263 explicitly corrects only the dense-place bug within standings-v1.
   - No change of the Standings.json or League.json contract.
   - Hall of Fame (#193) and the all-time playoff tiebreaker (#810) build on the result.

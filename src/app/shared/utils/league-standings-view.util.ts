@@ -164,7 +164,11 @@ export function buildCurrentStandings(league: League, teams: FantasyTeam[]): Cur
 
   return rankedTeams.map((row, index) => ({
     team: row.team,
-    displayPlace: index + 1
+    // Preserve shared standings places (including ties); unranked pre-season rows
+    // keep their existing neutral display order rather than claiming a result.
+    displayPlace: Number.isFinite(row.currentPlace) && row.currentPlace > 0
+      ? row.currentPlace
+      : index + 1
   }));
 }
 

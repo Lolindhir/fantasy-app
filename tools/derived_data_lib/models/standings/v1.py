@@ -64,6 +64,8 @@ def rank_teams(teams: Sequence[Team], all_time: bool = False) -> list[Team]:
     """Get-RankedRegularSeasonStandings: sorted copies with ``PlaceRegular`` (season) or ``Place`` and ``PlaceOrdinal`` (all-time).
 
     Teams of an exact tie keep their input order (the PowerShell all-time hashtable order was undefined).
+    Issue #1263 corrects the original dense-place bug: competition places skip ranks after a tie
+    (1, 1, 3), without changing tiebreak keys or match order.
     """
     if all_time:
         ordered = sorted(teams, key=lambda t: (-t["RegularSeasonWins"], -win_percentage(t), -t["Points"], t["PointsAgainst"]))
@@ -82,7 +84,7 @@ def rank_teams(teams: Sequence[Team], all_time: bool = False) -> list[Team]:
             elif key == last_key:
                 place = last_place
             else:
-                place = (last_place or 0) + 1
+                place = index + 1
         team = dict(source)
         if all_time:
             team["Place"] = place

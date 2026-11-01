@@ -1,5 +1,6 @@
 import type { FantasyTeam, League } from '../../core/models/league.models';
 import {
+  buildCurrentStandings,
   buildSeasonHistory,
   buildSeasonResults,
   getCurrentSeasonAwards
@@ -49,6 +50,19 @@ function team(id: number, playoffPlace: number): FantasyTeam {
     }
   } as unknown as FantasyTeam;
 }
+
+describe('Current standings competition placement', () => {
+  it('keeps canonical shared places 1, 1, 3 instead of renumbering rows', () => {
+    const source = league(true);
+    source.Standings[0].RegularSeason = [
+      { TeamID: 2, Place: 1 },
+      { TeamID: 4, Place: 1 },
+      { TeamID: 6, Place: 3 }
+    ] as typeof source.Standings[0]['RegularSeason'];
+    const rows = buildCurrentStandings(source, [team(2, 2), team(4, 4), team(6, 6)]);
+    expect(rows.map(row => [row.team.TeamID, row.displayPlace])).toEqual([[2, 1], [4, 1], [6, 3]]);
+  });
+});
 
 describe('Regular Season Champion achievement', () => {
   it('uses the season placement and historical TeamID avatar snapshot, not award names', () => {
