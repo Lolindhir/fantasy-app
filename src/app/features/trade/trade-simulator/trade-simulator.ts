@@ -60,7 +60,7 @@ export class TradeSimulatorComponent implements OnInit {
       this.league = res.league;
       this.SalaryCap = this.league?.SalaryCap || 0;
       this.SalaryCapProjected = this.league?.SalaryCapProjected || 0;
-      this.salaryRelevantTeamSize = this.league.SalaryRelevantTeamSize;
+      this.salaryRelevantTeamSize = res.league.SalaryRelevantTeamSize;
 
       // Projected Text anpassen
       this.projectedText += " " + (res.league.SeasonAsNumber + 1).toString()
@@ -148,13 +148,11 @@ export class TradeSimulatorComponent implements OnInit {
 
   get currentTeamSalary(): number {
     if (!this.selectedTeam) return 0;
-    const topN = this.salaryRelevantTeamSize;
     return this.selectedTeam.CapOutlook?.Current.Usage ?? 0;
   }
 
   get currentTeamSalaryProjected(): number {
     if (!this.selectedTeam) return 0;
-    const topN = this.salaryRelevantTeamSize;
     return this.selectedTeam.CapOutlook?.Projected.Usage ?? 0;
   }
 
