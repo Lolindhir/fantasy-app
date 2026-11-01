@@ -641,7 +641,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             with self.assertRaisesRegex(MODULE.PlayerSignalMaterializationError, "member"):
                 MODULE.build(root, config_path)
 
-    def test_players_age_reference_still_requires_timestamp(self) -> None:
+    def test_players_age_reference_does_not_require_published_timestamp(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             config_path = self.prepare_root(root)
@@ -652,8 +652,9 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             timestamps = json.loads(path.read_text(encoding="utf-8"))
             timestamps["Players"] = None
             path.write_text(json.dumps(timestamps), encoding="utf-8")
-            with self.assertRaisesRegex(Exception, "Players timestamp for the Age reference"):
-                MODULE.build(root, config_path)
+            result = MODULE.build(root, config_path)
+            self.assertEqual([(p["player_id"], p["app_data"]["age"]) for p in data["players"]], [(p["player_id"], p["app_data"]["age"]) for p in result["players"]])
+            self.assertNotEqual(data["input_fingerprint"], result["input_fingerprint"])
 
     def test_current_member_display_parity_with_published_app(self) -> None:
         from canonical_league_ownership import (build_canonical_ownership_snapshot, resolve_current_canonical_season)
