@@ -38,6 +38,7 @@ import {
   type PastSeasonsIndex
 } from './data-api.service';
 import { FreeAgentMarketService } from './free-agent-market.service';
+import { verifyTeamCapOutlook } from '../models/team-cap-outlook.models';
 
 export interface LeagueWithPlayers {
   league: League;
@@ -338,7 +339,9 @@ export class DataService {
       players
     });
 
-    this.freeAgentMarketService.enrich(players, teams, data.leagueRaw as RawLeague);
+    const outlooks = verifyTeamCapOutlook(data.capOutlookRaw, data.leagueRaw, data.playersRaw);
+    teams.forEach(team => { team.CapOutlook = outlooks.get(team.TeamID); });
+    this.freeAgentMarketService.enrich(players, teams, data.leagueRaw as RawLeague, outlooks);
 
     return {
       league,
