@@ -147,6 +147,7 @@ def build(
     return {
         "ContractVersion": CONTRACT_VERSION,
         "CanonicalLeagueID": league_id,
+        "ProviderLeagueID": str(metadata["CurrentProviderLeagueID"]),
         "Season": season,
         "AsOfFinalScoredWeek": valuation.get("AsOfFinalScoredWeek"),
         "Models": model_ids,
