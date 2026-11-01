@@ -155,7 +155,6 @@ TRANSITIONAL_BASELINE = frozenset({
     ("fantasy-management/automation/jobs/weekly-league-review.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/kicker-streaming-input-materialization.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/managed-roster-overview.json", "legacy:League", "intentional-overlay"),
-    ("fantasy-management/automation/player-signal-materialization.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/runner-config.json", "legacy:League", "intentional-overlay"),
     ("tools/derived_data.py", "legacy:Players", "legacy-read-model-pending"),
 })
@@ -195,6 +194,21 @@ class ConsumerReadClassificationTest(unittest.TestCase):
     def test_every_consumer_read_is_classified(self) -> None:
         problems = compare(scan_repository(REPO_ROOT), load_registry())
         self.assertEqual([], problems, "\n".join(problems))
+
+    def test_player_signals_display_has_no_app_league_input(self) -> None:
+        """#1263 C8c: canonical members own Player Signals team labels."""
+        path = "fantasy-management/automation/player-signal-materialization.json"
+        source = (REPO_ROOT / path).read_text(encoding="utf-8")
+        builder = (REPO_ROOT / "fantasy-management/_ai/scripts/build_player_signal_dataset.py").read_text(encoding="utf-8")
+        self.assertNotIn('"league_display"', source)
+        self.assertNotIn('"league_display"', builder)
+        self.assertIn("enrich_from_members", builder)
+        names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)
+        self.assertNotIn("legacy:League", scan_text(path, source, names, functions))
+        injected = source.replace('"sources": {', '"sources": {"league_display": "public/data/League.json",')
+        self.assertIn("legacy:League", scan_text(path, injected, names, functions))
+        self.assertTrue(any("legacy:League" in item for item in compare(
+            {path: scan_text(path, injected, names, functions)}, load_registry())))
 
     def test_managed_roster_display_has_no_app_league_input(self) -> None:
         """#1263 C8b: canonical members own Operations display."""

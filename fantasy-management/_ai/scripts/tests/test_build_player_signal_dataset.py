@@ -131,7 +131,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
                     {
                         "TeamID": 2,
                         "Team": "Opponent",
-                        "TeamAbbr": "OPP",
+                        "TeamAbbr": "Opp",
                         "Roster": [],
                         "Reserve": [],
                         "Taxi": [],
@@ -189,6 +189,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
                 {
                     "CanonicalLeagueMemberID": "member-1",
                     "DisplayName": "owner-one",
+                    "Metadata": {"team_name": "Mighty Giants"},
                     "ProviderMappings": [
                         {"Provider": "Sleeper", "ProviderUserID": "user-1"}
                     ],
@@ -196,6 +197,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
                 {
                     "CanonicalLeagueMemberID": "member-2",
                     "DisplayName": "owner-two",
+                    "Metadata": {"team_name": "Opponent"},
                     "ProviderMappings": [
                         {"Provider": "Sleeper", "ProviderUserID": "user-2"}
                     ],
@@ -513,7 +515,6 @@ class PlayerSignalDatasetTests(unittest.TestCase):
                 "managed_team": {"team_id": 1},
                 "canonical_league": {"canonical_league_id": "test-league"},
                 "sources": {
-                    "league_display": "public/data/League.json",
                     "players": "public/data/Players.json",
                     "canonical_player_identities": "data-source/nfl/identities/players.json",
                     "canonical_sleeper_players": "data-source/nfl/platform/sleeper/players.json",
@@ -601,7 +602,7 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             league = json.loads(league_path.read_text(encoding="utf-8"))
             league["Teams"][0]["Roster"] = []
             league["Teams"][1]["Roster"] = ["1", "2"]
-            league_path.write_text(json.dumps(league, indent=2) + "\n", encoding="utf-8")
+            league_path.unlink()  # no public App League.json is required
 
             result = MODULE.build(root, config_path)
             players = {player["player_id"]: player for player in result["players"]}
@@ -613,11 +614,64 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             self.assertEqual("Mighty Giants", result["managed_team"]["name"])
 
             source_ids = {source["id"] for source in result["sources"]}
-            self.assertIn("league_display", source_ids)
+            self.assertNotIn("league_display", source_ids)
             self.assertIn("canonical_league_manifest", source_ids)
             self.assertIn("canonical_league_rosters", source_ids)
             self.assertIn("canonical_player_identities", source_ids)
             self.assertIn("canonical_sleeper_players", source_ids)
+
+    def test_team_display_fallback_and_invalid_member_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            (root / "public/data/League.json").unlink()
+            path = root / "data-source/leagues/test-league/seasons/2026/members.json"
+            members = json.loads(path.read_text(encoding="utf-8"))
+            members[0]["Metadata"].pop("team_name")
+            path.write_text(json.dumps(members), encoding="utf-8")
+            data = MODULE.build(root, config_path)
+            self.assertEqual("Team owner-one", data["managed_team"]["name"])
+            self.assertEqual("OwO", data["managed_team"]["abbreviation"])
+            members[0]["Metadata"]["team_name"] = 123
+            path.write_text(json.dumps(members), encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.PlayerSignalMaterializationError, "team_name"):
+                MODULE.build(root, config_path)
+            members[0]["Metadata"]["team_name"] = "Mighty Giants"
+            members[0]["CanonicalLeagueMemberID"] = "unknown-member"
+            path.write_text(json.dumps(members), encoding="utf-8")
+            with self.assertRaisesRegex(MODULE.PlayerSignalMaterializationError, "member"):
+                MODULE.build(root, config_path)
+
+    def test_players_age_reference_still_requires_timestamp(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            (root / "public/data/League.json").unlink()
+            data = MODULE.build(root, config_path)
+            self.assertIn("timestamps", {source["id"] for source in data["sources"]})
+            path = root / "public/data/Timestamps.json"
+            timestamps = json.loads(path.read_text(encoding="utf-8"))
+            timestamps["Players"] = None
+            path.write_text(json.dumps(timestamps), encoding="utf-8")
+            with self.assertRaisesRegex(Exception, "Players timestamp for the Age reference"):
+                MODULE.build(root, config_path)
+
+    def test_current_member_display_parity_with_published_app(self) -> None:
+        from canonical_league_ownership import (build_canonical_ownership_snapshot, resolve_current_canonical_season)
+        from operations_team_display import enrich_from_members
+        root = Path(__file__).resolve().parents[4]
+        season = resolve_current_canonical_season(root, canonical_league_id="nfl-reise")
+        snapshot = build_canonical_ownership_snapshot(
+            root, canonical_league_id="nfl-reise", season=season
+        )
+        display = enrich_from_members(snapshot, root, league_id="nfl-reise", season=season)
+        league = json.loads((root / "public/data/League.json").read_text(encoding="utf-8"))
+        app = {str(t["TeamID"]): t for t in league["Teams"]}
+        self.assertEqual(set(app), {str(t["TeamID"]) for t in display})
+        for team in display:
+            original = app[str(team["TeamID"])]
+            self.assertEqual((original["Team"], original["TeamAbbr"]),
+                             (team["Team"], team["TeamAbbr"]))
 
     def test_canonical_identity_and_sleeper_fields_override_legacy_player_mirrors(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
