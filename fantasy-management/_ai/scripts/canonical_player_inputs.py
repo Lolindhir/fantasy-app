@@ -25,6 +25,7 @@ if str(REPO_ROOT / "tools") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "tools"))
 
 import players_population  # noqa: E402
+from player_age import age_at as shared_age_at  # noqa: E402
 
 
 class CanonicalPlayerInputsError(RuntimeError):
@@ -46,7 +47,7 @@ def age_at(birth_date: str | None, reference: date) -> float | None:
         born = date.fromisoformat(birth_date)
     except ValueError:
         return None
-    return round((reference - born).days / 365.2425, 1)
+    return shared_age_at(birth_date, reference)
 
 
 def _injury_fields(injury: dict[str, Any]) -> tuple[bool, dict[str, Any]]:
