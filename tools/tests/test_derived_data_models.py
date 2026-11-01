@@ -438,9 +438,6 @@ class SalarySimulationUsesRegistryTests(unittest.TestCase):
         self.assertEqual(self.cap.raw_cap(sorted(salaries, reverse=True)[:20]), self.sim.top_n_cap(salaries, 20, 20))
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class RosterCapV1Tests(unittest.TestCase):
     def test_top_n_and_stable_ties(self) -> None:
@@ -485,4 +482,8 @@ class AutoCutV1Tests(unittest.TestCase):
         for bad in (None, float("inf"), float("nan"), True, "100"):
             with self.assertRaises(ValueError):
                 auto_cut_v1.compute(entries, 6, bad)  # type: ignore[arg-type]
+
+
+if __name__ == "__main__":
+    unittest.main()
 
