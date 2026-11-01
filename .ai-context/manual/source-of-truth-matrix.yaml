@@ -1079,10 +1079,6 @@ consumerReadClassification:
       reads:
         legacy:League: freshness-trigger
       note: 'Decides whether a push touching these paths triggers Operations materialization; it reads no content. The league metadata data-meta/<CanonicalLeagueID>/metadata.json (DraftType binding, J2; ADR-054) is also a trigger path and is not a legacy read.'
-    fantasy-management/automation/external-signal-materialization.json:
-      reads:
-        legacy:League: intentional-overlay
-      note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from data-source/leagues.'
     fantasy-management/automation/fa-board-materialization.json:
       reads:
         legacy:League: intentional-overlay

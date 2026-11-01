@@ -73,10 +73,16 @@ Checkpoint 6Q activated this adapter for `managed-roster-signals.json`, which ge
 
 Issue #919 step 6 (2026-10-15) removes `public/data/Players.json` as an input of `managed-roster-signals.json`, `data-quality.json` and `player-signals.json`. `fantasy-management/_ai/scripts/canonical_player_inputs.py` now supplies the player list: population, Age/Experience, `IsFreeAgent`, Status and the structured Injury contract come from `tools/players_population.py` (ADR-043), Salary/SalaryProjected from the newest PlayerValuation snapshot under `data-derived/player-valuation` (ADR-055). Age uses the date of `Timestamps.json -> Players` as reference date. The earlier statements in this document that `Players.json` remains enrichment for those fields are historical.
 
-Checkpoint 6R activates the same canonical ownership basis for `external-signal-relevance.json`:
-the complete league-wide Roster/Reserve/Taxi union is now read from Canonical League Source Data,
-while `public/data/League.json` supplies only `Team`/`TeamAbbr` display enrichment and the existing
-League-trigger/freshness bridge for that materializer.
+Checkpoint 6R activates the canonical Roster/Reserve/Taxi ownership union for `external-signal-relevance.json`.
+Issue #1263 C8 subsequently removes its last `public/data/League.json` display input: the
+Fantasy Operations presentation adapter `operations_team_display.py` joins stable TeamID/member IDs
+to `data-source/leagues/<CanonicalLeagueID>/seasons/<season>/members.json`, using member
+`Metadata.team_name` (or `Team <DisplayName>`) and a presentation-only abbreviation compatible
+with the existing App display convention. The six current team labels/abbreviations are golden-tested
+against `League.json` but the Operations producer never reads it. League roster ownership
+continues to come exclusively from canonical season rosters; the existing output contracts and
+workflow triggering remain unchanged. Other Fantasy Operations consumers still have independent
+League/Timestamps overlays until their own field-level cutovers.
 
 Checkpoint 6S extends the same Canonical League ownership union to `player-signals.json`. Its ownership status and `league_owned` population reason are canonical-derived. Checkpoint 6Y additionally moves `Name`, fantasy-relevant `Position`, Sleeper `Status`, `IDs.ESPN` and nominal Sleeper depth-chart fields to Canonical NFL Identity/Platform sources. External name+position joins use the Canonical Identity display name first and, only when that join is missing, may fall back to the Canonical Identity `FirstName + LastName` form; they never fall back to the legacy App name, and ambiguous alias matches remain fail-closed. Checkpoint 6Z.1 moves `player-signals.nfl_team` and team-assisted external-source evaluation to Canonical Sleeper `Team`, and Checkpoint C2 (Issue #347, 2026-10-05) replaces the former `has_nfl_team` population reason, which was sourced from `Players.json -> TeamAbbr`, with Canonical NFL roster evidence resolved by CanonicalPlayerID: `canonical_nfl_membership` (latest materialized weekly roster) and `canonical_nfl_recent_history` (current-season season roster or any current-season weekly roster). Provider team fields (Sleeper Team, Tank01 `TeamAbbr`/`IsFreeAgent`) never create population membership. The cutover removed 304 players without NFL roster membership in 2026, no external source or signal and no league ownership, and added none. `Players.json` otherwise remains enrichment for Age/Experience, Salary/SalaryProjected, Tank01 `IsFreeAgent` and the structured Injury contract. `League.json` remains a non-membership enrichment input for managed-team display and `ScoringType` used to reconcile projection components to league scoring.
 

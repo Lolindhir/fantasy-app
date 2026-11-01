@@ -150,7 +150,6 @@ TRANSITIONAL_CATEGORIES = frozenset({
 })
 TRANSITIONAL_BASELINE = frozenset({
     ("fantasy-management/_ai/scripts/canonical_league_ownership.py", "legacy:League", "intentional-overlay"),
-    ("fantasy-management/automation/external-signal-materialization.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/fa-board-materialization.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/input-materialization.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/jobs/entity-observation.json", "legacy:League", "intentional-overlay"),
@@ -232,6 +231,17 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         self.assertIn("legacy:Drafts", scan_text(path, injected, names, functions))
         self.assertTrue(any("legacy:Drafts" in item and ("unclassified consumer" in item or "unclassified read" in item)
                             for item in compare(
+            {path: scan_text(path, injected, names, functions)}, load_registry()
+        )))
+
+    def test_external_signals_config_rejects_restored_app_league_input(self) -> None:
+        path = "fantasy-management/automation/external-signal-materialization.json"
+        source = (REPO_ROOT / path).read_text(encoding="utf-8")
+        names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)
+        self.assertNotIn("legacy:League", scan_text(path, source, names, functions))
+        injected = source.replace('"sources": {', '"sources": {"league_display": "public/data/League.json",')
+        self.assertIn("legacy:League", scan_text(path, injected, names, functions))
+        self.assertTrue(any("legacy:League" in item for item in compare(
             {path: scan_text(path, injected, names, functions)}, load_registry()
         )))
 

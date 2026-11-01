@@ -19,9 +19,9 @@ from materialize_external_signals import (  # noqa: E402
     ownership_for,
     sha256,
 )
+from operations_team_display import enrich_from_members, abbreviation  # noqa: E402
 from canonical_league_ownership import (  # noqa: E402
     build_canonical_ownership_snapshot,
-    enrich_canonical_ownership_with_display,
     resolve_current_canonical_season,
 )
 
@@ -143,7 +143,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             league["Teams"][0]["Reserve"] = ["5"]
             league["Teams"][0]["Taxi"] = []
             league["Teams"][1]["Roster"] = []
-            league_path.write_text(json.dumps(league), encoding="utf-8")
+            league_path.unlink()  # no public App data is required
 
             data, _ = build(root, config_path)
             players = {player["player_id"]: player for player in data["players"]}
@@ -154,9 +154,56 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             self.assertEqual("Mighty Giants", data["managed_team"]["name"])
             self.assertEqual("MiG", data["managed_team"]["abbreviation"])
             source_ids = {source["id"] for source in data["sources"]}
-            self.assertIn("league_display", source_ids)
+            self.assertNotIn("league_display", source_ids)
             self.assertIn("canonical_league_manifest", source_ids)
             self.assertIn("canonical_league_rosters", source_ids)
+
+    def test_team_display_source_fallback_and_unknown_fail_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            snapshot = build_canonical_ownership_snapshot(
+                root, canonical_league_id="test-league", season=2026
+            )
+            path = root / "data-source/leagues/test-league/seasons/2026/members.json"
+            members = json.loads(path.read_text(encoding="utf-8"))
+            members[0]["Metadata"].pop("team_name")
+            path.write_text(json.dumps(members), encoding="utf-8")
+            view = enrich_from_members(snapshot, root, league_id="test-league", season=2026)
+            self.assertEqual("Team owner-one", view[0]["Team"])
+            self.assertEqual("OwO", view[0]["TeamAbbr"])
+
+            with self.assertRaisesRegex(Exception, "league or season mismatch"):
+                enrich_from_members(snapshot, root, league_id="test-league", season=2025)
+            members[0]["CanonicalLeagueMemberID"] = members[1]["CanonicalLeagueMemberID"]
+            path.write_text(json.dumps(members), encoding="utf-8")
+            with self.assertRaisesRegex(Exception, "duplicated"):
+                enrich_from_members(snapshot, root, league_id="test-league", season=2026)
+
+            members[0]["CanonicalLeagueMemberID"] = "member-1"
+            members[0]["Metadata"]["team_name"] = 123
+            path.write_text(json.dumps(members), encoding="utf-8")
+            with self.assertRaisesRegex(Exception, "team_name"):
+                enrich_from_members(snapshot, root, league_id="test-league", season=2026)
+
+    def test_current_team_display_golden_parity_with_existing_app(self) -> None:
+        root = Path(__file__).resolve().parents[4]
+        season = resolve_current_canonical_season(root, canonical_league_id="nfl-reise")
+        snapshot = build_canonical_ownership_snapshot(
+            root, canonical_league_id="nfl-reise", season=season
+        )
+        display = enrich_from_members(snapshot, root, league_id="nfl-reise", season=season)
+        league = json.loads((root / "public/data/League.json").read_text(encoding="utf-8"))
+        app = {row["TeamID"]: row for row in league["Teams"]}
+        self.assertEqual(set(app), {row["TeamID"] for row in display})
+        for row in display:
+            old = app[row["TeamID"]]
+            self.assertEqual((old["Team"], old["TeamAbbr"]),
+                             (row["Team"], row["TeamAbbr"]))
+        self.assertEqual("DLC", abbreviation("Team DennisLACards", 5))
+        self.assertEqual("T07", abbreviation("The Team", 7))
+        self.assertEqual("TiB", abbreviation("Team TimpaBay", 6))
+        self.assertEqual("MiG", abbreviation("The_Mighty Giants", 1))
 
     def test_repository_external_signal_ownership_matches_canonical_union(self) -> None:
         root = Path(__file__).resolve().parents[4]
@@ -193,10 +240,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
             canonical_league_id="nfl-reise",
             season=season,
         )
-        league_display = json.loads(
-            (root / "public/data/League.json").read_text(encoding="utf-8")
-        )
-        teams = enrich_canonical_ownership_with_display(snapshot, league_display)
+        teams = enrich_from_members(snapshot, root, league_id="nfl-reise", season=season)
         ownership = build_ownership(teams)
 
         managed_id = str(generated["managed_team"]["team_id"])
@@ -439,6 +483,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                 {
                     "CanonicalLeagueMemberID": "member-1",
                     "DisplayName": "owner-one",
+                    "Metadata": {"team_name": "Mighty Giants"},
                     "ProviderMappings": [
                         {"Provider": "Sleeper", "ProviderUserID": "user-1"}
                     ],
@@ -446,6 +491,7 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                 {
                     "CanonicalLeagueMemberID": "member-2",
                     "DisplayName": "owner-two",
+                    "Metadata": {"team_name": "Opponent"},
                     "ProviderMappings": [
                         {"Provider": "Sleeper", "ProviderUserID": "user-2"}
                     ],
@@ -633,7 +679,6 @@ class ExternalSignalMaterializationTests(unittest.TestCase):
                     "canonical_league_id": "test-league",
                 },
                 "sources": {
-                    "league_display": "public/data/League.json",
                     "canonical_player_identities": (
                         "data-source/nfl/identities/players.json"
                     ),
