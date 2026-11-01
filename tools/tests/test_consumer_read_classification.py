@@ -149,9 +149,7 @@ TRANSITIONAL_CATEGORIES = frozenset({
     "app-read-model-chain", "intentional-overlay", "legacy-read-model-pending",
 })
 TRANSITIONAL_BASELINE = frozenset({
-    ("fantasy-management/automation/jobs/entity-observation.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/jobs/weekly-league-review.json", "legacy:League", "intentional-overlay"),
-    ("fantasy-management/automation/runner-config.json", "legacy:League", "intentional-overlay"),
     ("tools/derived_data.py", "legacy:Players", "legacy-read-model-pending"),
 })
 
@@ -211,6 +209,22 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         }}}
         self.assertTrue(any("new consumer-to-consumer exception" in problem
                             for problem in compare_transitional_reads(mutated)))
+
+    def test_monitoring_control_plane_has_no_app_league_dependency(self) -> None:
+        names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)
+        for path in (
+            "fantasy-management/automation/runner-config.json",
+            "fantasy-management/automation/jobs/entity-observation.json",
+        ):
+            source = (REPO_ROOT / path).read_text(encoding="utf-8")
+            self.assertNotIn("legacy:League", scan_text(path, source, names, functions))
+            injected = source.replace("fantasy-management/generated/operations/managed-roster-signals.json",
+                                      "public/data/League.json")
+            self.assertIn("legacy:League", scan_text(path, injected, names, functions))
+            self.assertTrue(any("legacy:League" in p for p in compare(
+                {path: scan_text(path, injected, names, functions)}, load_registry()
+            )))
+        self.assertEqual([], compare_transitional_reads(load_registry()))
 
     def test_kicker_streaming_has_no_app_league_dependency(self) -> None:
         path = "fantasy-management/automation/kicker-streaming-input-materialization.json"
