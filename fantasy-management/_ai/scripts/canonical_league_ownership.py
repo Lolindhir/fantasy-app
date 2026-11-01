@@ -373,6 +373,23 @@ def build_canonical_ownership_snapshot(
     }
 
 
+
+def _team_display_abbreviation(name: str, team_id: int) -> str:
+    """Presentation-only counterpart of the App's team abbreviation."""
+    import re
+    words = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\\1 \\2", name.strip())
+    words = re.sub(r"([a-z0-9])([A-Z])", r"\\1 \\2", words)
+    words = re.sub(r"[^\\w]+", " ", words)
+    parts = [part for part in words.split() if part.casefold() not in {"team", "the"}]
+    if not parts:
+        return f"T{team_id:02d}"
+    if len(parts) == 1:
+        return parts[0][:3].capitalize()
+    if len(parts) == 2:
+        return parts[0][:2].capitalize() + parts[1][0].upper()
+    return "".join(part[0].upper() for part in parts[:3])
+
+
 def enrich_canonical_ownership_with_display(
     snapshot: dict[str, Any],
     app_league: dict[str, Any],
