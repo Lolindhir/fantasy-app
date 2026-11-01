@@ -74,12 +74,20 @@ def render_standings(documents: dict[int, dict[str, Any]], league_year: int) -> 
     seasons = []
     for season in sorted(documents, reverse=True):
         document = documents[season]
-        seasons.append({
+        published = {
             "Season": str(season),
             "Playoffs": [_playoff_row(r) for r in document["Playoffs"]],
             "RegularSeason": [_regular_row(r, season == league_year) for r in document["RegularSeason"]],
             "Awards": list(document["Awards"]),
-        })
+        }
+        # Existing published files; current-season snapshots are copied from the
+        # Shared Derived product, never rebuilt by an App consumer.
+        if season == league_year and "Weeks" in document:
+            published["Weeks"] = [
+                {"Week": table["Week"], "Teams": [dict(row) for row in table["Teams"]]}
+                for table in document["Weeks"]
+            ]
+        seasons.append(published)
     all_time = documents[max(documents)]["AllTime"]
     return [{
         "Season": "AllTime",

@@ -48,14 +48,21 @@ class RenderTests(unittest.TestCase):
             self.assertNotIn(field, rendered[2]["RegularSeason"][0])
         self.assertNotIn("Awards", rendered[0])
 
-    def test_new_derived_weekly_streak_does_not_expand_current_app_publication(self):
-        self.documents[2025]["Weeks"] = [
-            {"Week": 1, "Teams": [{"TeamID": 1, "Place": 1, "Streak": "1W"}]}
-        ]
+    def test_current_weekly_standings_are_copied_only_into_current_season(self):
+        current_weeks = [{"Week": 1, "Teams": [
+            {"TeamID": 1, "Place": 1, "Wins": 1, "Losses": 0, "Ties": 0,
+             "Points": 125.5, "PointsAgainst": 85.0, "Streak": "1W"},
+            {"TeamID": 2, "Place": 2, "Wins": 0, "Losses": 1, "Ties": 0,
+             "Points": 85.0, "PointsAgainst": 125.5, "Streak": "1L"},
+        ]}]
+        self.documents[2025]["Weeks"] = current_weeks
+        self.documents[2024]["Weeks"] = current_weeks
         rendered = app.render_standings(self.documents, 2025)
-        self.assertNotIn("Weeks", rendered[1])
+        self.assertEqual(current_weeks, rendered[1]["Weeks"])
         self.assertNotIn("Weeks", rendered[0])
+        self.assertNotIn("Weeks", rendered[2])
         self.assertNotIn("Weeks", app.render_placements(rendered, [1, 2], 2025)[1]["Current"])
+        self.assertNotIn("Weeks", app.render_standings(self.documents, 2024)[1])  # a non-current year
 
     def test_avatar_id_becomes_cdn_url_and_is_not_kept(self):
         row = app.render_standings(self.documents, 2025)[1]["Playoffs"][0]

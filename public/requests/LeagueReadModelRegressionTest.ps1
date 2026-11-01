@@ -100,6 +100,30 @@ Assert-True -Condition (Compare-PlayoffStandings -oldPlayoffs @($avatarCompareOl
 Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "RequestLeague change detection does not track LeagueIDPrevious."
 Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType','Playoffs')") -Message "RequestLeague change detection does not track canonical Settings, ScoringType and Playoffs structurally."
 Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical structured comparison is not structural."
+Assert-True -Condition $requestLeague.Contains('Compare-CurrentStandingWeeks') -Message "League change detection must use the tested central Weeks comparator."
+
+# Runtime coverage: a second identical publication must stay a no-op, while
+# the initial Weeks[] exposure, a revised streak and an additional completed
+# week must all trigger League.json's semantic update.
+$week1 = [PSCustomObject]@{ Week = 1; Teams = @([PSCustomObject]@{
+    TeamID = 1; Place = 1; Wins = 1; Losses = 0; Ties = 0; Points = 120.5; PointsAgainst = 91.1; Streak = '1W'
+}) }
+$oldStandings = [PSCustomObject]@{
+    Season = '2026'
+    Standings = @([PSCustomObject]@{ Season = '2026'; RegularSeason = @() })
+}
+$newStandings = [PSCustomObject]@{
+    Season = '2026'
+    Standings = @([PSCustomObject]@{ Season = '2026'; RegularSeason = @(); Weeks = @($week1) })
+}
+Assert-True -Condition (Compare-CurrentStandingWeeks -OldLeague $oldStandings -NewLeague $newStandings) -Message "Missing old Weeks must force publication."
+$unchangedStandings = $newStandings | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+Assert-True -Condition (-not (Compare-CurrentStandingWeeks -OldLeague $newStandings -NewLeague $unchangedStandings)) -Message "Semantically identical Weeks must be a no-op."
+$unchangedStandings.Standings[0].Weeks[0].Teams[0].Streak = '2W'
+Assert-True -Condition (Compare-CurrentStandingWeeks -OldLeague $newStandings -NewLeague $unchangedStandings) -Message "Updated weekly streak must force publication."
+$unchangedStandings = $newStandings | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+$unchangedStandings.Standings[0].Weeks = @($week1, [PSCustomObject]@{ Week = 2; Teams = @() })
+Assert-True -Condition (Compare-CurrentStandingWeeks -OldLeague $newStandings -NewLeague $unchangedStandings) -Message "New completed week must force publication."
 
 
 

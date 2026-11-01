@@ -83,6 +83,9 @@ function Get-Compare {
         if (Compare-RegularSeasonStandings -oldRegularSeason $oldLeague.Standings.RegularSeason -newRegularSeason $newLeague.Standings.RegularSeason) { return $true }
         if (Compare-Awards -oldAwards $oldLeague.Standings.Awards -newAwards $newLeague.Standings.Awards) { return $true }
 
+        # Scalar season standings comparison does not inspect canonical Weeks[].
+        if (Compare-CurrentStandingWeeks -OldLeague $oldLeague -NewLeague $newLeague) { return $true }
+
         return $false
     }
 }

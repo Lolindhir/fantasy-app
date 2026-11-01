@@ -260,121 +260,60 @@ function buildOverviewStandingsSnapshot(
   displayWeek: number | null,
   useCurrentFallback = true
 ): OverviewStandingRow[] {
-  const fallback = (): OverviewStandingRow[] => useCurrentFallback
-    ? buildCurrentOverviewStandingRows(league)
-    : [];
-
-  if (!readModel || readModel.Season !== league.Season || displayWeek === null) {
-    return fallback();
+  // The only fallback is the separately generated current table before a
+  // historical week is required. No score, streak or ranking replay from Matchups.
+  if (!readModel || displayWeek === null) {
+    return useCurrentFallback ? buildCurrentOverviewStandingRows(league) : [];
   }
+  if (readModel.Season !== league.Season) return [];
 
   const playoffStartWeek = Number(league.PlayoffStartWeek);
-  const targetRegularWeek = Number.isFinite(playoffStartWeek) && playoffStartWeek > 0
+  const completedWeek = Number.isFinite(playoffStartWeek) && playoffStartWeek > 0
     ? Math.min(displayWeek - 1, Math.max(0, playoffStartWeek - 1))
     : Math.max(0, displayWeek - 1);
+  if (completedWeek <= 0) {
+    return useCurrentFallback ? buildCurrentOverviewStandingRows(league) : [];
+  }
 
-  if (targetRegularWeek <= 0) return fallback();
+  const season = league.Standings.find(row => row.Season === league.Season);
+  const snapshot = season?.Weeks?.find(row => row.Week === completedWeek);
+  if (!snapshot || snapshot.Teams.length !== league.Teams.length || league.Teams.length === 0) return [];
 
-  const weeks: MatchupWeekReadModel[] = [];
-  for (let weekNumber = 1; weekNumber <= targetRegularWeek; weekNumber++) {
-    const week = findWeek(readModel, weekNumber);
-    if (!week || week.Stage !== 'regular-season' || week.CompletionState !== 'final') {
-      return fallback();
+  const teams = new Map(league.Teams.map(team => [String(team.TeamID), team]));
+  if (teams.size !== league.Teams.length) return [];
+  const seen = new Set<string>();
+  const standings: OverviewStandingRow[] = [];
+  for (const row of snapshot.Teams) {
+    const key = String(row.TeamID);
+    const team = teams.get(key);
+    const counts = [row.Wins, row.Losses, row.Ties];
+    if (!team || seen.has(key)
+      || !Number.isInteger(row.Place) || row.Place < 1 || row.Place > teams.size
+      || counts.some(count => !Number.isInteger(count) || count < 0)
+      || counts.reduce((total, count) => total + count, 0) !== completedWeek
+      || !Number.isFinite(row.Points) || !Number.isFinite(row.PointsAgainst)
+      || typeof row.Streak !== 'string' || !/^[1-9][0-9]*[WLT]$/.test(row.Streak)) {
+      return []; // incomplete or stale product is unknown, not evidence to replay
     }
-    weeks.push(week);
-  }
-
-  interface SnapshotStats {
-    team: FantasyTeam;
-    wins: number;
-    losses: number;
-    ties: number;
-    points: number;
-    pointsAgainst: number;
-    results: string[];
-  }
-
-  const statsByTeam = new Map<string, SnapshotStats>(
-    league.Teams.map(team => [String(team.TeamID), {
+    seen.add(key);
+    standings.push({
       team,
-      wins: 0,
-      losses: 0,
-      ties: 0,
-      points: 0,
-      pointsAgainst: 0,
-      results: []
-    }])
-  );
-
-  for (const week of weeks) {
-    for (const matchup of week.Matchups) {
-      if (matchup.CompletionState !== 'final' || matchup.Participants.length !== 2 || !matchup.Result) continue;
-
-      const left = matchup.Participants[0];
-      const right = matchup.Participants[1];
-      const leftStats = statsByTeam.get(String(left.TeamID));
-      const rightStats = statsByTeam.get(String(right.TeamID));
-      const leftPoints = Number(left.Points);
-      const rightPoints = Number(right.Points);
-      if (!leftStats || !rightStats || !Number.isFinite(leftPoints) || !Number.isFinite(rightPoints)) {
-        return fallback();
-      }
-
-      leftStats.points += leftPoints;
-      leftStats.pointsAgainst += rightPoints;
-      rightStats.points += rightPoints;
-      rightStats.pointsAgainst += leftPoints;
-
-      if (matchup.Result.Type === 'tie') {
-        leftStats.ties += 1;
-        rightStats.ties += 1;
-        leftStats.results.push('T');
-        rightStats.results.push('T');
-        continue;
-      }
-
-      const winnerID = String(matchup.Result.WinnerTeamID);
-      const leftWon = winnerID === String(left.TeamID);
-      const rightWon = winnerID === String(right.TeamID);
-      if (leftWon === rightWon) return fallback();
-
-      const winner = leftWon ? leftStats : rightStats;
-      const loser = leftWon ? rightStats : leftStats;
-      winner.wins += 1;
-      loser.losses += 1;
-      winner.results.push('W');
-      loser.results.push('L');
-    }
+      displayPlace: row.Place,
+      wins: row.Wins,
+      losses: row.Losses,
+      ties: row.Ties,
+      points: row.Points,
+      pointsAgainst: row.PointsAgainst,
+      record: formatStandingRecord(row.Wins, row.Losses, row.Ties),
+      streak: row.Streak,
+      placeDelta: resolveCanonicalPlaceDelta(team, row.Place, completedWeek, completedWeek)
+    });
   }
 
-  const ranked = [...statsByTeam.values()].sort((a, b) => {
-    const winPctDiff = standingWinPercentage(b) - standingWinPercentage(a);
-    if (winPctDiff !== 0) return winPctDiff;
-
-    const pointsDiff = b.points - a.points;
-    if (pointsDiff !== 0) return pointsDiff;
-
-    const pointsAgainstDiff = a.pointsAgainst - b.pointsAgainst;
-    if (pointsAgainstDiff !== 0) return pointsAgainstDiff;
-
-    return String(a.team.TeamID).localeCompare(String(b.team.TeamID), undefined, { numeric: true });
-  });
-
-  return ranked.map((row, index) => {
-    const displayPlace = index + 1;
-    return {
-      team: row.team,
-      displayPlace,
-      wins: row.wins,
-      losses: row.losses,
-      ties: row.ties,
-      points: roundStandingPoints(row.points),
-      pointsAgainst: roundStandingPoints(row.pointsAgainst),
-      record: formatStandingRecord(row.wins, row.losses, row.ties),
-      streak: formatStandingStreak(row.results),
-      placeDelta: resolveCanonicalPlaceDelta(row.team, displayPlace, targetRegularWeek, row.wins + row.losses + row.ties)
-    };
-  });
+  // Shared ranking can include equal places (competition ranking: 1,1,3).
+  // Stable canonical roster-ID order from the product resolves display-only ties.
+  return standings.sort((a, b) => a.displayPlace - b.displayPlace
+    || Number(a.team.TeamID) - Number(b.team.TeamID));
 }
 
 // The generator owns weekly position changes. Match the historical movement to
@@ -407,48 +346,35 @@ function resolveCanonicalPlaceDelta(
 }
 
 function buildCurrentOverviewStandingRows(league: League): OverviewStandingRow[] {
-  return buildCurrentStandings(league, league.Teams).map(({ team, displayPlace }) => {
+  const result: OverviewStandingRow[] = [];
+  for (const { team, displayPlace } of buildCurrentStandings(league, league.Teams)) {
+    // Current standings are also generator-owned; missing evidence is not 0-0.
     const placement = team.Placements?.Current?.Regular;
-    const wins = Number(placement?.Wins ?? 0);
-    const losses = Number(placement?.Losses ?? 0);
-    const ties = Number(placement?.Ties ?? 0);
-    return {
+    if (!placement) return [];
+    const { Wins: wins, Losses: losses, Ties: ties, Points: points, PointsAgainst: pointsAgainst } = placement;
+    if ([wins, losses, ties].some(value => !Number.isInteger(value) || value < 0)
+      || !Number.isFinite(points) || !Number.isFinite(pointsAgainst)) return [];
+    result.push({
       team,
       displayPlace,
       wins,
       losses,
       ties,
-      points: Number(placement?.Points ?? team.Points ?? 0),
-      pointsAgainst: Number(placement?.PointsAgainst ?? team.PointsAgainst ?? 0),
+      points,
+      pointsAgainst,
       record: formatStandingRecord(wins, losses, ties),
-      streak: placement?.Streak?.trim() || null,
-      placeDelta: typeof placement?.PlaceDelta === 'number' && Number.isFinite(placement.PlaceDelta)
+      streak: placement.Streak?.trim() || null,
+      placeDelta: typeof placement.PlaceDelta === 'number' && Number.isFinite(placement.PlaceDelta)
         ? placement.PlaceDelta
         : null
-    };
-  });
-}
-
-function standingWinPercentage(row: { wins: number; losses: number; ties: number }): number {
-  const games = row.wins + row.losses + row.ties;
-  return games > 0 ? (row.wins + (0.5 * row.ties)) / games : -1;
+    });
+  }
+  return result;
 }
 
 function formatStandingRecord(wins: number, losses: number, ties: number): string {
   const base = `${wins}-${losses}`;
   return ties > 0 ? `${base}-${ties}` : base;
-}
-
-function formatStandingStreak(results: readonly string[]): string | null {
-  if (results.length === 0) return null;
-  const last = results[results.length - 1];
-  let count = 1;
-  for (let index = results.length - 2; index >= 0 && results[index] === last; index--) count++;
-  return `${count}${last}`;
-}
-
-function roundStandingPoints(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
 function getFinalWeek(

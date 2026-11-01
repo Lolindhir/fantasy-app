@@ -94,11 +94,30 @@ export interface AwardInStanding extends Award {
   TeamName: string | null;
 }
 
+/** Validated and centrally ranked regular-season standing after one scored week. */
+export interface StandingWeekTeam {
+  TeamID: number;
+  Place: number;
+  Wins: number;
+  Losses: number;
+  Ties: number;
+  Points: number;
+  PointsAgainst: number;
+  Streak: string;
+}
+
+export interface StandingWeek {
+  Week: number;
+  Teams: StandingWeekTeam[];
+}
+
 export interface Standing {
   Season: string;
   Playoffs?: PlayoffTeam[] | null;
   RegularSeason: RegularSeasonTeam[];
   Awards?: AwardInStanding[];
+  /** Shared Derived current season only; absent in older App publications. */
+  Weeks?: StandingWeek[];
 }
 
 export interface RawLeague {

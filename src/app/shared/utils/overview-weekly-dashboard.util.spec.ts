@@ -86,6 +86,30 @@ function makeLeague(
   } as unknown as League;
 }
 
+/** Test-only central product fixture: standings are supplied, never replayed from Matchups. */
+function attachCanonicalWeek(
+  league: League,
+  week: number,
+  ranked: readonly (readonly [number, number, number, number, number?])[]
+): void {
+  const season = league.Standings.find(row => row.Season === league.Season)!;
+  const table = {
+    Week: week,
+    Teams: ranked.map(([id, place, wins, losses, ties = 0], index) => ({
+      TeamID: id,
+      Place: place,
+      Wins: wins,
+      Losses: losses,
+      Ties: ties,
+      Points: 200 - index * 10,
+      PointsAgainst: 100 + index * 10,
+      Streak: `${week}W`
+    }))
+  };
+  season.Weeks ??= [];
+  season.Weeks.push(table);
+}
+
 function matchup(id: string, a: number, b: number, state: 'open' | 'final' | 'unknown' = 'open'): FantasyMatchupReadModel {
   return {
     FantasyMatchupID: id,
@@ -151,6 +175,34 @@ function recaps(): WeeklyRecapsReadModel {
 }
 
 describe('Overview weekly dashboard presentation', () => {
+  it('consumes canonical competition places and Streak rather than replaying Matchups', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 1);
+    attachCanonicalWeek(league, 1, [[1, 1, 1, 0], [2, 1, 1, 0], [3, 3, 0, 1], [4, 4, 0, 1]]);
+    league.Standings[0].Weeks![0].Teams[0].Streak = '1T';
+    const result = buildOverviewTopContext(league, readModel(1, 2), 2);
+    expect(result.standings.map(row => row.displayPlace)).toEqual([1, 1, 3, 4]);
+    expect(result.standings.map(row => row.streak)).toEqual(['1T', '1W', '1W', '1W']);
+    expect(result.standings[0].points).toBe(200);
+  });
+
+  it('fails closed for missing, incomplete or invalid canonical weekly standings', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 1);
+    const model = readModel(1, 2);
+    expect(buildOverviewTopContext(league, model, 2).standings).toEqual([]);
+    attachCanonicalWeek(league, 1, [[1, 1, 1, 0], [2, 2, 1, 0], [3, 3, 0, 1], [4, 4, 0, 1]]);
+    league.Standings[0].Weeks![0].Teams[2].Streak = '';
+    expect(buildOverviewTopContext(league, model, 2).standings).toEqual([]);
+    league.Standings[0].Weeks![0].Teams[2].Streak = '1L';
+    league.Standings[0].Weeks![0].Teams.pop();
+    expect(buildOverviewTopContext(league, model, 2).standings).toEqual([]);
+  });
+
+  it('does not treat absent generated current points as zero in a fallback', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 0);
+    league.Teams[0].Placements.Current.Regular.Points = undefined as unknown as number;
+    expect(buildOverviewTopContext(league, null, null).standings).toEqual([]);
+  });
+
   it('keeps Week 1 fail-closed when no LastCompletedWeek exists', () => {
     const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
     const model = readModel(null, 1, 'open');
@@ -259,6 +311,7 @@ describe('Overview weekly dashboard presentation', () => {
       { Season: '2026', Week: 2 } as FantasyGameContextReadModel
     )).toBe(2);
 
+    attachCanonicalWeek(league, 1, [[3, 1, 1, 0], [1, 2, 1, 0], [4, 3, 0, 1], [2, 4, 0, 1]]);
     const context = buildOverviewTopContext(league, model, 2);
     expect(context.lastCompletedWeek).toBe(1);
     expect(context.standings.map(row => [row.team.TeamID, row.record])).toEqual([
@@ -360,6 +413,8 @@ describe('Overview weekly dashboard presentation', () => {
       Summary: { LastCompletedWeek: 2, ActiveOrNextWeek: 3 }
     };
 
+    attachCanonicalWeek(league, 1, [[2, 1, 1, 0], [6, 2, 1, 0], [3, 3, 1, 0], [1, 4, 0, 1], [4, 5, 0, 1], [5, 6, 0, 1]]);
+    attachCanonicalWeek(league, 2, [[2, 1, 2, 0], [3, 2, 2, 0], [6, 3, 1, 1], [1, 4, 1, 1], [4, 5, 0, 2], [5, 6, 0, 2]]);
     const context = buildOverviewTopContext(league, model, 3);
 
     expect(context.lastCompletedWeek).toBe(2);
@@ -403,6 +458,7 @@ describe('Overview weekly dashboard presentation', () => {
       { Season: '2026', Week: 3 } as FantasyGameContextReadModel
     )).toBe(3);
 
+    attachCanonicalWeek(league, 2, [[1, 1, 2, 0], [2, 2, 2, 0], [3, 3, 2, 0], [4, 4, 2, 0]]);
     const context = buildOverviewTopContext(league, model, 3);
     expect(context.lastCompletedWeek).toBe(2);
     expect(context.standings.every(row => row.wins + row.losses + row.ties === 2)).toBeTrue();
@@ -442,6 +498,7 @@ describe('Overview weekly dashboard presentation', () => {
       }
       const league = makeLeague(teams, 1);
       league.PlayoffStartWeek = 14;
+      attachCanonicalWeek(league, 1, [[3, 1, 1, 0], [1, 2, 1, 0], [4, 3, 0, 1], [2, 4, 0, 1]]);
       return league;
     }
 
@@ -469,6 +526,8 @@ describe('Overview weekly dashboard presentation', () => {
       }
       const league = makeLeague(teams, 5);
       league.PlayoffStartWeek = 14;
+      attachCanonicalWeek(league, 4, [[3, 1, 4, 0], [1, 2, 4, 0], [2, 3, 4, 0], [4, 4, 4, 0]]);
+      attachCanonicalWeek(league, 5, [[3, 1, 5, 0], [2, 2, 5, 0], [1, 3, 5, 0], [4, 4, 5, 0]]);
 
       const pairs = [
         [[1, 2], [3, 4]],

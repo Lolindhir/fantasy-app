@@ -132,7 +132,27 @@ function makeLeague(teamCount = 8): League {
         PlaceOrdinal: `${team.TeamID}.`,
         Owner: team.Owner,
         TeamName: team.Team
-      }))
+      })),
+      // Fixture of the canonical league-standings product after completed W1.
+      // Display does not reconstruct rank, scores or streaks from Matchups.
+      Weeks: [{
+        Week: 1,
+        Teams: teams.map(team => {
+          const id = team.TeamID;
+          const win = id % 2 === 1;
+          const pairOffset = win ? id - 1 : id - 2;
+          return {
+            TeamID: id,
+            Place: win ? (teamCount - id + 1) / 2 : teamCount / 2 + (teamCount - id + 2) / 2,
+            Wins: win ? 1 : 0,
+            Losses: win ? 0 : 1,
+            Ties: 0,
+            Points: (win ? 120 : 110) + pairOffset,
+            PointsAgainst: (win ? 110 : 120) + pairOffset,
+            Streak: win ? '1W' : '1L'
+          };
+        })
+      }]
     }]
   } as unknown as League;
 }
