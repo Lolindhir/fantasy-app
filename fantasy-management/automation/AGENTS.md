@@ -132,7 +132,7 @@ Interpret them as follows:
 
 - `interval`: eligible only when the minimum interval since the relevant prior evaluation has elapsed.
 - `calendar`: eligible only on configured weekdays and not before the configured local time.
-- `league_week_finalized`: eligible only when the configured final-week field advanced beyond the last processed key and the dependent data is sufficiently fresh.
+- `league_week_finalized`: use only the configured canonical lifecycle resolver at an explicit UTC instant; `FinalScoredWeek` derives from canonical Week-Finality (NFL final games + league-scored leg), not an App `League.json` field. The resolved week must advance beyond the state key and all dependencies and the unchanged minimum-data-age gate must pass before the disabled job could ever become eligible. This trigger does not enable the job or authorize writes.
 - `source_changed`: eligible only when the configured comparison detects a meaningful input change.
 - `deadline_offset`: eligible once for each configured deadline offset and idempotency key.
 - `manual`: never inferred as due; it requires an explicit manual invocation.
