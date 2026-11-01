@@ -260,7 +260,8 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             original = canonical_player_inputs.load_players
             def changed_age(*args):
                 rows = original(*args)
-                rows[0]["Age"] = float(rows[0]["Age"]) + 0.1
+                with_age = next(row for row in rows if row.get("Age") is not None)
+                with_age["Age"] = float(with_age["Age"]) + 0.1
                 return rows
             with mock.patch.object(canonical_player_inputs, "load_players", side_effect=changed_age):
                 after, _ = build(root, config_path)
