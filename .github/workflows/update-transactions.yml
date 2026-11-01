@@ -5,6 +5,15 @@ on:
     types:
       - scheduler-update-transactions
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Full history refresh or isolated Drafts-only refresh'
+        required: false
+        type: choice
+        default: all
+        options:
+          - all
+          - drafts
 
 permissions:
   contents: write
@@ -26,6 +35,7 @@ jobs:
           cache: 'npm'
 
       - name: Rebuild and publish historical League Derived and Transaction data
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode != 'drafts' }}
         run: >-
           python3 tools/rebuild_and_publish.py
           --scope transactions
@@ -44,8 +54,21 @@ jobs:
            python3 tools/weekly_recaps_app_publish.py write --scope history &&
            pwsh ./public/requests/RequestPastSeasonsIndex.ps1'
 
+      - name: Rebuild and publish Drafts-only data (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'drafts' }}
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope drafts
+          --path public/data
+          --path data-derived/league-drafts
+          --
+          bash -euo pipefail -c
+          'python3 tools/derived_data.py materialize --product league-drafts &&
+           python3 tools/league_history_app_publish.py write --fail-on-error &&
+           pwsh ./public/requests/RequestPastSeasonsIndex.ps1'
+
       - name: Summarize Derived products
-        if: always()
+        if: ${{ always() && (github.event_name != 'workflow_dispatch' || inputs.mode != 'drafts') }}
         run: |
           python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import json, os
