@@ -16,6 +16,7 @@ export class SalaryHealthIndicatorComponent {
       case 'healthy': return 'Cap Healthy';
       case 'watch': return 'Cap Watch';
       case 'over': return 'Over Cap';
+      case 'unavailable': return 'Cap Data Unavailable';
     }
   }
 }

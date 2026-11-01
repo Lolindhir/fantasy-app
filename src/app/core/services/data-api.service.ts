@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { forkJoin, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { forkJoin, Observable, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 import type { DecisionWindowsReadModel } from '../models/decision-window.models';
 import type { RawDraft } from '../models/draft.models';
@@ -11,6 +11,7 @@ import type { MatchupsReadModel } from '../models/matchup.models';
 import type { MatchupProjectionsReadModel } from '../models/matchup-projections.models';
 import type { PlayerWeekFantasyReadModel } from '../models/player-week-fantasy.models';
 import type { RawNFLTeam, RawPlayer } from '../models/player.models';
+import type { TeamCapOutlookReadModel } from '../models/team-cap-outlook.models';
 import type { RawTransaction } from '../models/transaction.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 
@@ -19,6 +20,7 @@ export interface LeagueDataLoadResult {
   playersRaw: RawPlayer[];
   nflTeamsRaw: RawNFLTeam[];
   draftsRaw: RawDraft[];
+  capOutlookRaw?: TeamCapOutlookReadModel | null;
 }
 
 export interface MovesDataLoadResult extends LeagueDataLoadResult {
@@ -66,6 +68,10 @@ export class DataApiService {
 
   getLeagueRaw(): Observable<RawLeague> {
     return this.http.get<RawLeague>('data/League.json');
+  }
+
+  getTeamCapOutlookRaw(): Observable<TeamCapOutlookReadModel> {
+    return this.http.get<TeamCapOutlookReadModel>('data/TeamCapOutlook.json');
   }
 
   getPlayersRaw(): Observable<RawPlayer[]> {
@@ -137,7 +143,8 @@ export class DataApiService {
       leagueRaw: this.getLeagueRaw(),
       playersRaw: this.getPlayersRaw(),
       nflTeamsRaw: this.getNflTeamsRaw(),
-      draftsRaw: this.getDraftsRaw()
+      draftsRaw: this.getDraftsRaw(),
+      capOutlookRaw: this.getTeamCapOutlookRaw().pipe(catchError(() => of(null)))
     });
   }
 

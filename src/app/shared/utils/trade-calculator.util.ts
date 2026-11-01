@@ -1,5 +1,6 @@
 import type { Player, TopPlayersSalaryResult } from '../../core/models/player.models';
 
+/** L10 Variant A: non-authoritative salary simulation for hypothetical trade rosters only. */
 export function calculateTopPlayersSalary(
   roster: Player[],
   topN: number,

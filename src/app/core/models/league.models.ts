@@ -1,5 +1,6 @@
 import type { DraftPick } from './draft.models';
 import type { Player } from './player.models';
+import type { TeamCapOutlookReadyTeam } from './team-cap-outlook.models';
 
 export interface DataTimestamps {
   League?: string;
@@ -225,6 +226,8 @@ export interface RawFantasyTeam {
 
 export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'Reserve' | 'Taxi' | 'Starter' | 'DraftPicks' | 'TeamAvatar'> {
   Roster: Player[];
+  /** Verified central result; absence means unknown/stale, never zero cap usage. */
+  CapOutlook?: TeamCapOutlookReadyTeam;
   Reserve: Player[];
   Taxi: Player[];
   Starter: Player[];
