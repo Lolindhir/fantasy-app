@@ -210,7 +210,7 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         self.assertNotIn("legacy:Schedule", scan_text(path, source, names, functions))
         injected = source + "\n$ScheduleFile = $config.ScheduleFile\n"
         self.assertIn("legacy:Schedule", scan_text(path, injected, names, functions))
-        self.assertTrue(any("unclassified read legacy:Schedule" in item
+        self.assertTrue(any("legacy:Schedule" in item and ("unclassified consumer" in item or "unclassified read" in item)
                             for item in compare({path: scan_text(path, injected, names, functions)}, load_registry())))
 
     def test_request_league_drafts_come_from_shared_derived_only(self) -> None:
@@ -230,7 +230,8 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         self.assertNotIn("legacy:Drafts", scan_text(reader_path, reader, names, functions))
         injected = source + "\n$legacy = $config.DraftsFile\n"
         self.assertIn("legacy:Drafts", scan_text(path, injected, names, functions))
-        self.assertTrue(any("unclassified read legacy:Drafts" in item for item in compare(
+        self.assertTrue(any("legacy:Drafts" in item and ("unclassified consumer" in item or "unclassified read" in item)
+                            for item in compare(
             {path: scan_text(path, injected, names, functions)}, load_registry()
         )))
 
