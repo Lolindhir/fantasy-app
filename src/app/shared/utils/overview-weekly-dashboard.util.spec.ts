@@ -199,7 +199,7 @@ describe('Overview weekly dashboard presentation', () => {
 
   it('does not treat absent generated current points as zero in a fallback', () => {
     const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 0);
-    (league.Teams[0].Placements.Current.Regular.Points as number | undefined) = undefined;
+    league.Teams[0].Placements.Current.Regular.Points = undefined as unknown as number;
     expect(buildOverviewTopContext(league, null, null).standings).toEqual([]);
   });
 
