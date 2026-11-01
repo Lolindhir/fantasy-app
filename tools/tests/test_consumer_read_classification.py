@@ -160,7 +160,6 @@ TRANSITIONAL_BASELINE = frozenset({
     ("fantasy-management/automation/player-signal-materialization.json", "legacy:League", "intentional-overlay"),
     ("fantasy-management/automation/runner-config.json", "legacy:League", "intentional-overlay"),
     ("public/requests/RequestLeague.ps1", "legacy:Drafts", "app-read-model-chain"),
-    ("public/requests/RequestLeague.ps1", "legacy:Schedule", "app-read-model-chain"),
     ("public/requests/utils/league/TeamDraftPickUtils.psm1", "legacy:Drafts", "app-read-model-chain"),
     ("tools/derived_data.py", "legacy:Players", "legacy-read-model-pending"),
 })
@@ -200,6 +199,21 @@ class ConsumerReadClassificationTest(unittest.TestCase):
     def test_every_consumer_read_is_classified(self) -> None:
         problems = compare(scan_repository(REPO_ROOT), load_registry())
         self.assertEqual([], problems, "\n".join(problems))
+
+    def test_request_league_has_no_published_schedule_input(self) -> None:
+        """#1263 G2: the canonical lifecycle/windows own game-time facts, not Schedule.json."""
+        path = "public/requests/RequestLeague.ps1"
+        source = (REPO_ROOT / path).read_text(encoding="utf-8-sig")
+        self.assertIn("Get-LeagueLifecycle", source)
+        self.assertIn("Get-LeagueDecisionWindows", source)
+        self.assertNotIn("$ScheduleFile", source)
+        self.assertNotIn("Schedule.json", source)
+        names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)
+        self.assertNotIn("legacy:Schedule", scan_text(path, source, names, functions))
+        injected = source + "\n$ScheduleFile = $config.ScheduleFile\n"
+        self.assertIn("legacy:Schedule", scan_text(path, injected, names, functions))
+        self.assertTrue(any("unclassified read legacy:Schedule" in item
+                            for item in compare({path: scan_text(path, injected, names, functions)}, load_registry())))
 
     def test_every_registered_file_exists(self) -> None:
         missing = [p for p in load_registry()["consumers"] if not (REPO_ROOT / p).is_file()]
