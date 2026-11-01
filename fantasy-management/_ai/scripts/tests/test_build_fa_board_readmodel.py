@@ -154,7 +154,7 @@ class Fixture:
     ):
         self.root = root
         self.config = root / "fantasy-management/automation/fa-board-materialization.json"
-        self.write("public/data/League.json", league_data)
+        self.lifecycle_data = league_data
         self.write(
             "data-meta/test-league/metadata.json",
             {"Drafts": {"Types": [
@@ -181,7 +181,6 @@ class Fixture:
                 "canonical_league": {"canonical_league_id": "test-league"},
                 "sources": {
                     "player_signals": "fantasy-management/generated/operations/player-signals.json",
-                    "league_enrichment": "public/data/League.json",
                     "league_metadata": "data-meta/test-league/metadata.json",
                     "timestamps": "public/data/Timestamps.json",
                 },
@@ -218,6 +217,7 @@ class Fixture:
                 {
                     "CanonicalLeagueMemberID": member_id,
                     "DisplayName": team.get("Team") or f"Owner {team_id}",
+                    "Metadata": {"team_name": team.get("Team") or f"Team {team_id}"},
                     "ProviderMappings": [
                         {"Provider": "Sleeper", "ProviderUserID": owner_id}
                     ],
@@ -270,7 +270,8 @@ class Fixture:
             {
                 "CanonicalLeagueID": "test-league",
                 "Season": 2026,
-                "Settings": {"num_teams": len(teams)},
+                "Settings": {**membership["Settings"], "num_teams": len(teams)},
+                "RosterPositions": list(membership["RosterSize"]),
             },
         )
         self.write(
@@ -288,9 +289,8 @@ class Fixture:
         target.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
     def lifecycle(self, root: Path, canonical_league_id: str, season: int, at: object) -> dict:
-        """Stand-in for the shared lifecycle: the fixture League.json plays the role of the lifecycle result."""
-        league_data = json.loads((self.root / "public/data/League.json").read_text(encoding="utf-8"))
-        return {key: league_data.get(key) for key in ("Status", "Phase", "SeasonKickoff", "CurrentWeek", "FinalScoredWeek")}
+        """Stub for the shared lifecycle, independent of App League.json."""
+        return {key: self.lifecycle_data.get(key) for key in ("Status", "Phase", "SeasonKickoff", "CurrentWeek", "FinalScoredWeek")}
 
     def build(self) -> dict:
         with mock.patch.object(MODULE, "resolve_lifecycle_state", side_effect=self.lifecycle):
@@ -429,17 +429,34 @@ class FaBoardReadmodelTests(unittest.TestCase):
             ):
                 fixture.build()
 
-    def test_missing_app_capacity_rule_does_not_invalidate_canonical_negative_ownership(self) -> None:
-        league_data = league()
-        league_data.pop("RosterSize")
-        result = self.run_fixture([player("free", "Free")], league_data, draft())
+    def test_no_app_league_file_or_poisoned_app_league_changes_board(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Fixture(Path(tmp), [player("free", "Free")], league(), draft())
+            expected = fixture.build()  # No public/data/League.json exists.
+            self.assertEqual("Mighty Giants", expected["managed_team"]["name"])
+            self.assertEqual(13, expected["managed_team_capacity"]["active_roster_capacity"])
+            self.assertNotIn("league_enrichment", expected["sources"])
+            fixture.write("public/data/League.json", {"Season": "1900", "RosterSize": [], "Teams": []})
+            self.assertEqual(expected, fixture.build())
 
-        self.assertEqual("available", row(result, "free")["availability_status"])
-        self.assertEqual("unknown", row(result, "free")["active_slot_cost_on_materialization"])
-        self.assertTrue(
-            result["sources"]["canonical_league_rosters"]["complete_for_negative_ownership"]
-        )
-        self.assertEqual("error", result["quality"]["status"])
+    def test_canonical_capacity_or_identity_invalid_fails_closed(self) -> None:
+        for replacement, error in (
+            ({"RosterPositions": []}, "RosterPositions"),
+            ({"Settings": None}, "Settings"),
+            ({"Settings": {"reserve_slots": True, "taxi_slots": 1}}, "reserve_slots"),
+            ({"Settings": {"reserve_slots": 1, "taxi_slots": -1}}, "taxi_slots"),
+            ({"Season": 2025}, "identity or season mismatch"),
+            ({"CanonicalLeagueID": "wrong-league"}, "identity or season mismatch"),
+        ):
+            with self.subTest(replacement=replacement), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                fixture = Fixture(root, [player("free", "Free")], league(), draft())
+                path = root / "data-source/leagues/test-league/seasons/2026/league.json"
+                data = json.loads(path.read_text(encoding="utf-8"))
+                data.update(replacement)
+                fixture.write("data-source/leagues/test-league/seasons/2026/league.json", data)
+                with self.assertRaisesRegex(MODULE.FaBoardMaterializationError, error):
+                    fixture.build()
 
     def test_missing_current_fa_draft_during_draft_phase_fails_closed(self) -> None:
         result = self.run_fixture([player("unknown", "Unknown")], league(), [])
@@ -508,6 +525,7 @@ class FaBoardReadmodelTests(unittest.TestCase):
             )
 
         rebuilt = MODULE.build(root, config_path)
+        self.assertNotIn("league_enrichment", rebuilt["sources"])
         for key in (
             "managed_team",
             "current_fa_draft",
