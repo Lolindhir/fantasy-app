@@ -38,10 +38,10 @@ import build_player_signal_dataset as player_signals  # noqa: E402
 import canonical_nfl_membership as nfl_membership  # noqa: E402
 import canonical_player_inputs  # noqa: E402
 import materialize_external_signals as external_signals  # noqa: E402
+from operations_team_display import enrich_from_members  # noqa: E402
 from canonical_league_ownership import (  # noqa: E402
     CanonicalOwnershipError,
     build_canonical_ownership_snapshot,
-    enrich_canonical_ownership_with_display,
     resolve_current_canonical_season,
 )
 
@@ -233,7 +233,6 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
 
     canonical_identities = ops.load_json(root / sources["canonical_player_identities"])
     canonical_sleeper_players = ops.load_json(root / sources["canonical_sleeper_players"])
-    league_display = ops.load_json(root / sources["league_display"])
 
     try:
         identity_by_sleeper = ops.build_canonical_identity_by_sleeper(canonical_identities)
@@ -262,9 +261,11 @@ def build(root: Path, config_path: Path, *, include_details: bool = False) -> di
             canonical_league_id=canonical_league_id,
             season=season,
         )
-        ownership_teams = enrich_canonical_ownership_with_display(
+        ownership_teams = enrich_from_members(
             ownership_snapshot,
-            league_display,
+            root,
+            league_id=canonical_league_id,
+            season=season,
         )
     except CanonicalOwnershipError as exc:
         raise PopulationRelevanceAuditError(

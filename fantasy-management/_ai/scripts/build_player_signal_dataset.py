@@ -24,10 +24,10 @@ import build_fantasy_operations_inputs as ops  # noqa: E402
 import canonical_nfl_membership as nfl_membership  # noqa: E402
 import canonical_player_inputs  # noqa: E402
 import materialize_external_signals as external_signals  # noqa: E402
+from operations_team_display import enrich_from_members  # noqa: E402
 from canonical_league_ownership import (  # noqa: E402
     CanonicalOwnershipError,
     build_canonical_ownership_snapshot,
-    enrich_canonical_ownership_with_display,
     resolve_current_canonical_season,
 )
 
@@ -313,14 +313,12 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         raise PlayerSignalMaterializationError("Unexpected player-signal materialization config schema version")
 
     core = config["sources"]
-    league_display_path = root / core["league_display"]
     canonical_identities_path = root / core["canonical_player_identities"]
     canonical_sleeper_players_path = root / core["canonical_sleeper_players"]
     timestamps_path = root / core["timestamps"]
     external_signal_path = root / core["external_signal_relevance"]
     catalog_path = root / config["source_catalog"]
 
-    league_display = ops.load_json(league_display_path)
     canonical_identities = ops.load_json(canonical_identities_path)
     canonical_sleeper_players = ops.load_json(canonical_sleeper_players_path)
     timestamps = ops.load_json(timestamps_path)
@@ -357,9 +355,9 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             canonical_league_id=canonical_league_id,
             season=canonical_season,
         )
-        teams = enrich_canonical_ownership_with_display(
-            canonical_snapshot,
-            league_display,
+        teams = enrich_from_members(
+            canonical_snapshot, root,
+            league_id=canonical_league_id, season=canonical_season,
         )
     except CanonicalOwnershipError as exc:
         raise PlayerSignalMaterializationError(
@@ -390,7 +388,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     activity_by_player, activity_metadata = activity_index(external_signal_document)
 
     player_timestamp = timestamps.get("Players") if isinstance(timestamps, dict) else None
-    league_timestamp = timestamps.get("League") if isinstance(timestamps, dict) else None
     external_signal_timestamp = external_signal_document.get("generated_at") if isinstance(external_signal_document, dict) else None
     canonical_league_root = (
         root
@@ -400,7 +397,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     )
     canonical_season_root = canonical_league_root / "seasons" / str(canonical_season)
     input_sources = [
-        ops.source_file("league_display", league_display_path, root, league_timestamp),
         ops.source_file(
             "canonical_league_manifest",
             canonical_league_root / "manifest.json",

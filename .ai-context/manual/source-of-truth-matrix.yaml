@@ -1108,9 +1108,8 @@ consumerReadClassification:
       note: 'League.json is the documented display/scoring-enrichment overlay of migrated Fantasy Management consumers; membership comes from data-source/leagues.'
     fantasy-management/automation/player-signal-materialization.json:
       reads:
-        legacy:League: intentional-overlay
         legacy:Timestamps: freshness-trigger
-      note: 'League.json: managed-team display and ScoringType overlay (6S). Timestamps.json: freshness bridge and the Age reference date. Since Issue #919 step 6 (2026-10-15) the population list, Age, Year, IsFreeAgent and the injury fields come from tools/players_population.py and Salary/SalaryProjected from the newest PlayerValuation snapshot, both through fantasy-management/_ai/scripts/canonical_player_inputs.py; Players.json is no input anymore.'
+      note: 'C8c: team display comes from canonical member metadata via operations_team_display; league scoring already comes directly from canonical league ScoringSettings (#347 A2). Timestamps.json: freshness bridge and unchanged Players Age reference date. Since Issue #919 step 6 (2026-10-15) the population list, Age, Year, IsFreeAgent and the injury fields come from tools/players_population.py and Salary/SalaryProjected from the newest PlayerValuation snapshot, both through fantasy-management/_ai/scripts/canonical_player_inputs.py; Players.json is no input anymore.'
     fantasy-management/automation/runner-config.json:
       reads:
         legacy:League: intentional-overlay
