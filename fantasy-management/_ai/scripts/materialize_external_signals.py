@@ -13,10 +13,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+from operations_team_display import enrich_from_members
 from canonical_league_ownership import (
     CanonicalOwnershipError,
     build_canonical_ownership_snapshot,
-    enrich_canonical_ownership_with_display,
     resolve_current_canonical_season,
 )
 
@@ -514,7 +514,6 @@ def build(
 
     paths = {key: root / value for key, value in config["sources"].items()}
     catalog_path = root / config["signal_catalog"]
-    league_display = load_json(paths["league_display"])
     canonical_identities = load_json(paths["canonical_player_identities"])
     canonical_sleeper_players = load_json(paths["canonical_sleeper_players"])
     quality = load_json(paths["base_quality"])
@@ -552,9 +551,8 @@ def build(
             canonical_league_id=canonical_league_id,
             season=canonical_season,
         )
-        teams = enrich_canonical_ownership_with_display(
-            canonical_snapshot,
-            league_display,
+        teams = enrich_from_members(
+            canonical_snapshot, root, league_id=canonical_league_id, season=canonical_season
         )
     except CanonicalOwnershipError as exc:
         raise ExternalSignalMaterializationError(
@@ -583,7 +581,6 @@ def build(
     )
     canonical_season_root = canonical_league_root / "seasons" / str(canonical_season)
     records = [
-        file_record("league_display", paths["league_display"], root),
         file_record(
             "canonical_league_manifest",
             canonical_league_root / "manifest.json",
