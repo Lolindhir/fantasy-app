@@ -71,7 +71,7 @@ contract:
       "AsOf": { "LeagueScoredWeek": <int>, "CompletedWeeks": <int> },
       "Teams": [ { "TeamID", "CanonicalLeagueRosterID", "Owner", "OwnerAvatarID", "TeamName", "TeamAvatar" } ],
       "RegularSeason": [ <row> ],
-      "Weeks": [ { "Week", "Teams": [ { "TeamID", "Place", "Wins", "Losses", "Ties", "Points", "PointsAgainst" } ] } ],
+      "Weeks": [ { "Week", "Teams": [ { "TeamID", "Place", "Wins", "Losses", "Ties", "Points", "PointsAgainst", "Streak" } ] } ],
       "Playoffs": [ <row> ],
       "Awards": [ <award> ],
       "AllTime": { "ThroughSeason": <int|null>, "Playoffs": [ <row> ], "RegularSeason": [ <row> ] }
@@ -89,7 +89,11 @@ contract:
     Weeks: >
       Table after each validated completed week (rank by the same tiebreak function, with competition-place skips after ties, wins/losses/ties and points rebuilt from the
       canonical per-week matchups). Weeks are validated against the Record of every team; a missing, contradicting or incomplete week ends
-      the list and later weeks are never inferred.
+      the list and later weeks are never inferred. Streak is the current run of consecutive W, L or T events (e.g. 2W),
+      computed once in the shared product assembler from the canonical Record prefix through the validated week.
+      It is never copied from the current provider Streak for an earlier week. The addition to Weeks.Teams is backward-compatible
+      in the derived product SchemaVersion 1; already persisted snapshots without this field need normal re-materialization.
+      Public App JSON does not yet expose Weeks; consumer delivery and Angular cutover require a separate validated checkpoint.
     Playoffs: >
       Placement rows from the winners and losers bracket (Place, TeamID, Owner, OwnerAvatarID, TeamName, TeamAvatar, PlaceType, PlaceOrdinal).
       Empty while no placement match is decided.
@@ -169,7 +173,7 @@ failClosed:
 
 implementation:
   models: tools/derived_data_lib/models/standings/v1.py and tools/derived_data_lib/models/awards/v1.py (pure functions, registered in registry.py)
-  assembly: tools/derived_data_lib/league_standings.py (pure; SeasonInputs, build_season)
+  assembly: tools/derived_data_lib/league_standings.py (pure; SeasonInputs, build_season; validated weekly Streak enrichment)
   sources: tools/league_standings_sources.py (canonical league facts, port of CanonicalStandingUtils.psm1)
   materializer: tools/derived_data.py materialize --product league-standings [--league] [--season] [--out-root] [--check]
   chaining: >
