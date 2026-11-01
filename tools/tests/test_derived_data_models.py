@@ -21,6 +21,8 @@ if str(TOOLS) not in sys.path:
 
 import players_league_scoring_shadow as shadow  # noqa: E402
 from derived_data_lib.models import registry  # noqa: E402
+from derived_data_lib.models.auto_cut import v1 as auto_cut_v1  # noqa: E402
+from derived_data_lib.models.roster_cap import v1 as roster_cap_v1  # noqa: E402
 from derived_data_lib.models.grading import v1 as grading_v1  # noqa: E402
 from derived_data_lib.models.salary import v1 as salary_v1  # noqa: E402
 from derived_data_lib.models.salary_cap import v1 as salary_cap_v1  # noqa: E402
@@ -59,7 +61,7 @@ class OracleMixin(unittest.TestCase):
 
 class RegistryTests(unittest.TestCase):
     def test_registered_ids_are_sorted_and_complete(self) -> None:
-        self.assertEqual(["awards-v1", "grading-v1", "lifecycle-v1", "repairability-v1", "salary-cap-v1", "salary-v1", "standings-v1", "team-range-v1"], registry.model_ids())
+        self.assertEqual(["auto-cut-v1", "awards-v1", "grading-v1", "lifecycle-v1", "repairability-v1", "roster-cap-v1", "salary-cap-v1", "salary-v1", "standings-v1", "team-range-v1"], registry.model_ids())
 
     def test_get_model_returns_the_module_and_checks_the_kind(self) -> None:
         self.assertIs(salary_v1, registry.get_model("salary-v1"))
@@ -98,6 +100,8 @@ class RegistryTests(unittest.TestCase):
             {key: dict(value) if hasattr(value, "keys") else value for key, value in salary_v1.PARAMS.items()},
         )
         self.assertEqual({"SalaryRelevantTeamSize": 20, "Factor": 0.9}, dict(salary_cap_v1.PARAMS))
+        self.assertEqual({"TieOrder": "input-stable"}, dict(roster_cap_v1.PARAMS))
+        self.assertEqual({"CutSalaryRank": 6}, dict(auto_cut_v1.PARAMS))
         self.assertEqual(
             {"AcquisitionPolicy": "acquisition-waiver-only-v1", "ExternalAcquisitionMode": "waiver-only",
              "ImmediateFreeAgentAddsAllowed": False, "TradeRepairAllowed": False},
@@ -434,5 +438,52 @@ class SalarySimulationUsesRegistryTests(unittest.TestCase):
         self.assertEqual(self.cap.raw_cap(sorted(salaries, reverse=True)[:20]), self.sim.top_n_cap(salaries, 20, 20))
 
 
+
+class RosterCapV1Tests(unittest.TestCase):
+    def test_top_n_and_stable_ties(self) -> None:
+        entries = [roster_cap_v1.SalaryEntry("a", 10), roster_cap_v1.SalaryEntry("b", 10),
+                   roster_cap_v1.SalaryEntry("c", 4)]
+        self.assertEqual(roster_cap_v1.RosterCapResult(20, ("a", "b")), roster_cap_v1.compute(entries, 2))
+        self.assertEqual(roster_cap_v1.RosterCapResult(24, ("a", "b", "c")), roster_cap_v1.compute(entries, 5))
+        self.assertEqual(roster_cap_v1.RosterCapResult(0, ()), roster_cap_v1.compute([], 20))
+
+    def test_invalid_inputs_fail_closed(self) -> None:
+        for top_n in (0, -1, True, 1.5):
+            with self.assertRaises(ValueError):
+                roster_cap_v1.compute([], top_n)  # type: ignore[arg-type]
+        invalid_rosters = (
+            [roster_cap_v1.SalaryEntry("", 1)],
+            [roster_cap_v1.SalaryEntry("a", 1), roster_cap_v1.SalaryEntry("a", 2)],
+            [roster_cap_v1.SalaryEntry("a", float("nan"))],
+            [roster_cap_v1.SalaryEntry("a", float("inf"))],
+        )
+        for entries in invalid_rosters:
+            with self.assertRaises(ValueError):
+                roster_cap_v1.compute(entries, 1)
+
+
+class AutoCutV1Tests(unittest.TestCase):
+    def test_iteration_and_stopping_conditions(self) -> None:
+        entries = [roster_cap_v1.SalaryEntry(str(i), salary)
+                   for i, salary in enumerate((10, 9, 8, 7, 6, 5, 4, 3), 1)]
+        decisions = auto_cut_v1.compute(entries, 6, 42)
+        self.assertEqual(["6", "7", "8"], [cut.player_id for cut in decisions])
+        self.assertEqual([(45, 44), (44, 43), (43, 40)],
+                         [(cut.cap_before_cut, cut.cap_after_cut) for cut in decisions])
+        self.assertEqual([1, 2, 3], [cut.cut_order for cut in decisions])
+        self.assertTrue(all(cut.salary_rank == 6 for cut in decisions))
+        self.assertEqual((), auto_cut_v1.compute(entries, 6, 45))
+        self.assertEqual(8, len(entries))  # input is never mutated
+
+    def test_tie_order_and_cap_validation(self) -> None:
+        entries = [roster_cap_v1.SalaryEntry(str(i), 10) for i in range(8)]
+        self.assertEqual(["5", "6", "7"], [cut.player_id for cut in auto_cut_v1.compute(entries, 6, 54)])
+        self.assertEqual((), auto_cut_v1.compute(entries, 6, 60))
+        for bad in (None, float("inf"), float("nan"), True, "100"):
+            with self.assertRaises(ValueError):
+                auto_cut_v1.compute(entries, 6, bad)  # type: ignore[arg-type]
+
+
 if __name__ == "__main__":
     unittest.main()
+
