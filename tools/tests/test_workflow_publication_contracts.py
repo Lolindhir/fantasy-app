@@ -22,7 +22,6 @@ REBUILD_WRITERS = {
     "update-standings.yml",
     "update-teams.yml",
     "sync-nfl-player-availability.yml",
-    "update-past-seasons-index.yml",
     "clean-backups.yml",
 }
 

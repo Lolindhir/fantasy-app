@@ -7,13 +7,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Full history refresh or isolated Drafts-only refresh'
+        description: 'Full history, Drafts-only, or Past Seasons index-only refresh'
         required: false
         type: choice
         default: all
         options:
           - all
           - drafts
+          - index
 
 permissions:
   contents: write
@@ -35,7 +36,7 @@ jobs:
           cache: 'npm'
 
       - name: Rebuild and publish historical League Derived and Transaction data
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.mode != 'drafts' }}
+        if: ${{ github.event_name != 'workflow_dispatch' || (inputs.mode != 'drafts' && inputs.mode != 'index') }}
         run: >-
           python3 tools/rebuild_and_publish.py
           --scope transactions
@@ -67,8 +68,17 @@ jobs:
            python3 tools/league_history_app_publish.py write --fail-on-error &&
            pwsh ./public/requests/RequestPastSeasonsIndex.ps1'
 
+      - name: Rebuild and publish Past Seasons index only (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'index' }}
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope past-seasons-index
+          --path public/data/PastSeasonsIndex.json
+          --
+          pwsh ./public/requests/RequestPastSeasonsIndex.ps1
+
       - name: Summarize Derived products
-        if: ${{ always() && (github.event_name != 'workflow_dispatch' || inputs.mode != 'drafts') }}
+        if: ${{ always() && (github.event_name != 'workflow_dispatch' || (inputs.mode != 'drafts' && inputs.mode != 'index')) }}
         run: |
           python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
           import json, os
