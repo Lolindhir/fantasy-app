@@ -141,7 +141,62 @@ def compare(found: dict[str, set[str]], registry: dict) -> list[str]:
     return problems
 
 
+
+# #1263 C2: only pre-existing, explicitly classified transitional reads are
+# tolerated while their source-to-derived cutovers remain pending. A registry
+# category does not itself authorize a consumer-to-consumer dependency.
+TRANSITIONAL_CATEGORIES = frozenset({
+    "app-read-model-chain", "intentional-overlay", "legacy-read-model-pending",
+})
+TRANSITIONAL_BASELINE = frozenset({
+    ("fantasy-management/_ai/scripts/canonical_league_ownership.py", "legacy:League", "intentional-overlay"),
+    ("fantasy-management/automation/external-signal-materialization.json", "legacy:League", "intentional-overlay"),
+    ("fantasy-management/automation/fa-board-materialization.json", "legacy:League", "intentional-overlay"),
+    ("fantasy-management/automation/input-materialization.json", "legacy:League", "intentional-overlay"),
+    ("fantasy-management/automation/jobs/entity-observation.json", "legacy:League", "intentional-overlay"),
+    ("fantasy-management/automation/jobs/weekly-league-review.json", "legacy:League", "intentional-overlay"),
+    ("fantasy-management/automation/kicker-streaming-input-materialization.json", "legacy:League", "intentional-overlay"),
+    ("fantasy-management/automation/managed-roster-overview.json", "legacy:League", "intentional-overlay"),
+    ("fantasy-management/automation/player-signal-materialization.json", "legacy:League", "intentional-overlay"),
+    ("fantasy-management/automation/runner-config.json", "legacy:League", "intentional-overlay"),
+    ("public/requests/RequestLeague.ps1", "legacy:Drafts", "app-read-model-chain"),
+    ("public/requests/RequestLeague.ps1", "legacy:Schedule", "app-read-model-chain"),
+    ("public/requests/utils/league/TeamDraftPickUtils.psm1", "legacy:Drafts", "app-read-model-chain"),
+    ("tools/derived_data.py", "legacy:Players", "legacy-read-model-pending"),
+})
+
+
+def compare_transitional_reads(registry: dict) -> list[str]:
+    actual = {
+        (path, token, category)
+        for path, entry in registry["consumers"].items()
+        for token, category in (entry.get("reads") or {}).items()
+        if category in TRANSITIONAL_CATEGORIES
+    }
+    problems = [f"new consumer-to-consumer exception: {entry}" for entry in sorted(actual - TRANSITIONAL_BASELINE)]
+    problems.extend(f"obsolete transitional baseline: {entry}" for entry in sorted(TRANSITIONAL_BASELINE - actual))
+    return problems
+
 class ConsumerReadClassificationTest(unittest.TestCase):
+
+    def test_transitional_consumer_to_consumer_reads_do_not_expand(self) -> None:
+        """Known G2/G3 debt is frozen, not a reusable exemption for future domain reads."""
+        self.assertEqual([], compare_transitional_reads(load_registry()))
+
+    def test_new_or_silently_reclassified_transitional_reads_are_detected(self) -> None:
+        registry = load_registry()
+        extra = {**registry, "consumers": {
+            **registry["consumers"],
+            "tools/new_consumer.py": {"reads": {"legacy:League": "app-read-model-chain"}},
+        }}
+        self.assertTrue(any("new consumer-to-consumer exception" in s for s in compare_transitional_reads(extra)))
+        path, token, _ = next(iter(TRANSITIONAL_BASELINE))
+        edited_entry = {**registry["consumers"][path], "reads": {
+            **registry["consumers"][path]["reads"], token: "validation-shadow",
+        }}
+        edited = {**registry, "consumers": {**registry["consumers"], path: edited_entry}}
+        self.assertTrue(any("obsolete transitional baseline" in s for s in compare_transitional_reads(edited)))
+
     def test_every_consumer_read_is_classified(self) -> None:
         problems = compare(scan_repository(REPO_ROOT), load_registry())
         self.assertEqual([], problems, "\n".join(problems))
