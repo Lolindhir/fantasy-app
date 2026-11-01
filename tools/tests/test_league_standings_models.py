@@ -265,6 +265,21 @@ class WeeklyTableTests(unittest.TestCase):
         short = {"Week": 1, "Entries": self.weeks[0]["Entries"][:3]}
         self.assertEqual([], standings.weekly_tables(self.teams, [short], 1))
 
+    def test_weekly_table_skips_competition_places_after_two_exact_ties(self):
+        teams = [
+            team(1, 1, 0, 0, 120.0, 100.0, "W"),
+            team(2, 1, 0, 0, 120.0, 100.0, "W"),
+            team(3, 1, 0, 0, 110.0, 90.0, "W"),
+            team(4, 0, 1, 0, 100.0, 120.0, "L"),
+            team(5, 0, 1, 0, 100.0, 120.0, "L"),
+            team(6, 0, 1, 0, 90.0, 110.0, "L"),
+        ]
+        week = matchup_week(1, ((1, 120.0), (4, 100.0)),
+                              ((2, 120.0), (5, 100.0)),
+                              ((3, 110.0), (6, 90.0)))
+        table = standings.weekly_tables(teams, [week], 1)[0]
+        self.assertEqual([1, 1, 3, 4, 4, 6], [row["Place"] for row in table["Teams"]])
+
     def test_a_tied_game_counts_as_a_tie_for_both_teams(self):
         teams = [team(1, 0, 0, 1, 100.0, 100.0, "T"), team(2, 0, 0, 1, 100.0, 100.0, "T")]
         tables = standings.weekly_tables(teams, [matchup_week(1, ((1, 100.0), (2, 100.0)))], 1)
