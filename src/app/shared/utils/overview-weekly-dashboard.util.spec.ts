@@ -86,6 +86,30 @@ function makeLeague(
   } as unknown as League;
 }
 
+/** Test-only central product fixture: standings are supplied, never replayed from Matchups. */
+function attachCanonicalWeek(
+  league: League,
+  week: number,
+  ranked: readonly (readonly [number, number, number, number, number?])[]
+): void {
+  const season = league.Standings.find(row => row.Season === league.Season)!;
+  const table = {
+    Week: week,
+    Teams: ranked.map(([id, place, wins, losses, ties = 0], index) => ({
+      TeamID: id,
+      Place: place,
+      Wins: wins,
+      Losses: losses,
+      Ties: ties,
+      Points: 200 - index * 10,
+      PointsAgainst: 100 + index * 10,
+      Streak: `${week}W`
+    }))
+  };
+  season.Weeks ??= [];
+  season.Weeks.push(table);
+}
+
 function matchup(id: string, a: number, b: number, state: 'open' | 'final' | 'unknown' = 'open'): FantasyMatchupReadModel {
   return {
     FantasyMatchupID: id,
