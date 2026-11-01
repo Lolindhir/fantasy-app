@@ -37,6 +37,7 @@ architecture:
     - Platform fields, profile fields and injury come from tools/players_population.py (ADR-043); GameHistory from tools/players_game_history.py (ADR-044); Bye weeks from the canonical NFL schedule; depth chart fields from the canonical Sleeper snapshot.
     - No input from public/data, in particular not the previously published Players.json.
     - No wall clock inside the function or the model. Time enters only through AsOfDate.
+    - Age arithmetic is shared with Fantasy Operations via the pure tools/player_age.py helper; no consumer-to-consumer import is required.
 
 function:
   signature: resolve(repo_root, CanonicalLeagueID, Season, AsOfDate) -> {Players, Warnings}
