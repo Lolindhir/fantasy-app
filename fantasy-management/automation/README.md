@@ -32,7 +32,7 @@ Damit gilt:
 
 Der maschinenlesbare Begriff für das Team, auf dessen Interessen die Automation optimiert, lautet `managed_team`.
 
-- Das Team wird über die stabile ID aus `public/data/League.json` aufgelöst.
+- Das Team wird über die stabile Team-ID im FM-eigenen `fantasy-management/generated/operations/managed-roster-signals.json` aufgelöst; dieser Contract stammt aus kanonischen Liga-Quellen. App `League.json` ist kein Runner-Input mehr.
 - Der aktuelle Franchise-Name ist nur ein dynamischer Anzeigename.
 - Eine Umbenennung verändert keine Job-IDs, Pfade, States, Profile oder Analysen.
 - `own_team` wäre aus Agent-Sicht mehrdeutig; `master_team` ist semantisch unklar.
@@ -48,7 +48,7 @@ Der maschinenlesbare Begriff für das Team, auf dessen Interessen die Automation
 - `state/{job-id}.json` enthält veränderlichen persistenten Zustand eines Jobs.
 - `fantasy-management/generated/operations/` enthält ausschließlich reproduzierbare, deterministische Operations-Read-Models.
 - `fantasy-management/analyses/` enthält gespeicherte Analyse-Outputs.
-- `public/data/` bleibt Source of Truth für aktuelle Liga- und App-Daten.
+- `data-source/leagues/` besitzt die kanonischen Liga-Basisfakten. `public/data/` enthält generierte App-Readmodels; `Timestamps.json` bleibt ein separater Freshness-Bridge-Input.
 
 ## Generisches Observation-Modell
 

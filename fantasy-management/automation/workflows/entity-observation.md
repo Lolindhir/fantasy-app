@@ -39,9 +39,9 @@ fantasy-management/automation/state/entity-observation-targets/{target_id}.json
 
 1. Read `managed_team` from the runner config.
 2. Load the configured source.
-3. Resolve exactly one team by `identity_field` and `team_id`.
-4. Read the current display name only for human-facing output.
-5. Fail closed when no team or more than one team matches.
+3. Resolve exactly the configured stable `team_id` against the nested `managed_team.team_id` of the FM-owned `managed-roster-signals` dataset (not an App `Teams[]` field).
+4. Use `managed_team.name` only for human-facing output; team membership originates from canonical league rosters.
+5. Fail closed on missing/mismatched team identity, invalid player records or missing source; do not fall back to App `League.json`.
 6. Never use the current display name as a state key, path component or configuration identity.
 
 ## 2. Resolve target sets

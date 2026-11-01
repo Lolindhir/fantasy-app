@@ -22,10 +22,10 @@ Required parameters:
 
 ## Resolution
 
-1. Resolve `managed_team` from `runner-config.json` against current `public/data/League.json`.
-2. Read every configured membership field from that team.
-3. Treat `null` or a missing optional membership field as an empty list.
-4. Union all player IDs and deduplicate them before creating targets.
+1. Resolve `managed_team` from `runner-config.json` against its `managed-roster-signals.json` input (the managed team ID/display and roster come from canonical league ownership and members).
+2. Require `dataset_id=managed-roster-signals`, `schema_version=1` and a unique `managed_team.team_id` matching the configured ID; do not read App `League.json` for membership.
+3. Use `players[].player_id` and `players[].roster_sections` as the membership basis; compare the configured `membership_fields` (`Roster`, `Reserve`, `Taxi`) case-insensitively against `roster`, `reserve`, `taxi`.
+4. Fail closed on missing/invalid lists, missing/duplicate player IDs, or a `managed_team.player_count` mismatch; union/deduplicate the selected IDs. A player with overlapping `roster` and `reserve`/`taxi` stays one target.
 5. Load `player_source_path` once and resolve selected Sleeper IDs through `players[].player_id`.
 6. Fail closed when a selected ID cannot be resolved to exactly one current player-signal record.
 7. Build each entity with:

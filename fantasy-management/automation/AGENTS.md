@@ -48,7 +48,7 @@ Use `managed_team` as the canonical neutral term for the fantasy team whose inte
 
 - Resolve it from `runner-config.json`.
 - Identify it by the stable configured team ID and identity field.
-- Resolve the current display name from the configured league source at runtime.
+- Resolve the current display name from the configured FM-owned managed-roster-signals Operations dataset by stable TeamID; its membership and display derive from canonical league data.
 - Never use a franchise display name as a durable key, path, schema enum, state key or automation perspective.
 - A team-name change must not require job, target, profile or state migration.
 
