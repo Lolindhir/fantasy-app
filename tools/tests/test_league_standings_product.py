@@ -20,7 +20,7 @@ if str(TOOLS) not in sys.path:
 
 import derived_data  # noqa: E402
 import league_standings_sources as sources  # noqa: E402
-from derived_data_lib.league_standings import build_season  # noqa: E402
+from derived_data_lib.league_standings import add_validated_weekly_streaks, build_season  # noqa: E402
 from derived_data_lib.models import registry  # noqa: E402
 
 LEAGUE = "test-league"
@@ -203,6 +203,46 @@ class AssemblyTests(unittest.TestCase):
         self.assertEqual(2030, document["AllTime"]["ThroughSeason"])  # a completed season counts in its own all-time standing
         self.assertEqual(["Best Performer", "Streaker", "Overperformer", "Brick Wall", "Clutch Peaker"], [a["Name"] for a in document["Awards"]])
         json.dumps(document)
+
+    def test_weekly_streak_is_derived_from_validated_record_prefix_not_current_provider_streak(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            document = build_season(self.inputs(Path(tmp), 2030, "complete", 3, 3), STANDINGS, AWARDS, None, [])
+        expected = {
+            1: {1: "1W", 2: "1L", 3: "1L", 4: "1W"},
+            2: {1: "1L", 2: "1W", 3: "1W", 4: "1L"},
+            3: {1: "1W", 2: "2W", 3: "1L", 4: "2L"},
+        }
+        for week in document["Weeks"]:
+            self.assertEqual(expected[week["Week"]], {
+                row["TeamID"]: row["Streak"] for row in week["Teams"]
+            })
+
+    def test_weekly_streak_handles_ties_and_does_not_mutate_validated_tables(self):
+        tables = [
+            {"Week": 1, "Teams": [{"TeamID": 1}, {"TeamID": 2}]},
+            {"Week": 2, "Teams": [{"TeamID": 1}, {"TeamID": 2}]},
+            {"Week": 3, "Teams": [{"TeamID": 1}, {"TeamID": 2}]},
+        ]
+        original = copy.deepcopy(tables)
+        enriched = add_validated_weekly_streaks(
+            tables, [{"TeamID": 1, "Record": "TTW"}, {"TeamID": 2, "Record": "TTL"}]
+        )
+        self.assertEqual(original, tables)
+        self.assertEqual([["1T", "1T"], ["2T", "2T"], ["1W", "1L"]],
+                         [[row["Streak"] for row in t["Teams"]] for t in enriched])
+
+    def test_weekly_streak_never_infers_an_unvalidated_or_missing_week(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            inputs = self.inputs(Path(tmp), 2031, "in_season", 2, 3, playoffs=False)
+        document = build_season(inputs, STANDINGS, AWARDS, None, [])
+        self.assertEqual([1, 2], [t["Week"] for t in document["Weeks"]])
+        self.assertTrue(all(row["Streak"] for table in document["Weeks"] for row in table["Teams"]))
+        self.assertEqual([], add_validated_weekly_streaks([], inputs.teams))
+        with self.assertRaisesRegex(ValueError, "canonical Record"):
+            add_validated_weekly_streaks(
+                [{"Week": 3, "Teams": [{"TeamID": 1}]}],
+                [{"TeamID": 1, "Record": "WL"}]
+            )
 
     def test_the_weekly_history_feeds_the_row_movement_fields(self):
         with tempfile.TemporaryDirectory() as tmp:

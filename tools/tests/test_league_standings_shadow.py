@@ -48,6 +48,15 @@ class RenderTests(unittest.TestCase):
             self.assertNotIn(field, rendered[2]["RegularSeason"][0])
         self.assertNotIn("Awards", rendered[0])
 
+    def test_new_derived_weekly_streak_does_not_expand_current_app_publication(self):
+        self.documents[2025]["Weeks"] = [
+            {"Week": 1, "Teams": [{"TeamID": 1, "Place": 1, "Streak": "1W"}]}
+        ]
+        rendered = app.render_standings(self.documents, 2025)
+        self.assertNotIn("Weeks", rendered[1])
+        self.assertNotIn("Weeks", rendered[0])
+        self.assertNotIn("Weeks", app.render_placements(rendered, [1, 2], 2025)[1]["Current"])
+
     def test_avatar_id_becomes_cdn_url_and_is_not_kept(self):
         row = app.render_standings(self.documents, 2025)[1]["Playoffs"][0]
         self.assertEqual("https://sleepercdn.com/avatars/av1", row["OwnerAvatar"])

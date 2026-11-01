@@ -35,6 +35,32 @@ class SeasonInputs:
     weekly_matchups: list[dict[str, Any]]
 
 
+def add_validated_weekly_streaks(
+    weekly_tables: list[dict[str, Any]],
+    teams: Sequence[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Enrich only validated standings weeks with as-of streaks from canonical records.
+
+    The standings model already checked each W/L/T character against the matching
+    week's final fantasy scores. Never use the provider's current Streak for a
+    historical week, infer a missing week, or change standings-v1's algorithm.
+    """
+    records = {team["TeamID"]: team["Record"] or "" for team in teams}
+    result = []
+    for table in weekly_tables:
+        week = table["Week"]
+        rows = []
+        for entry in table["Teams"]:
+            record = records[entry["TeamID"]]
+            if not isinstance(week, int) or week < 1 or len(record) < week or record[week - 1] not in "WLT":
+                raise ValueError(f"Validated weekly streak has no canonical Record for team {entry['TeamID']} in week {week}")
+            latest = record[week - 1]
+            count = len(record[:week]) - len(record[:week].rstrip(latest))
+            rows.append({**entry, "Streak": f"{count}{latest}"})
+        result.append({**table, "Teams": rows})
+    return result
+
+
 def build_season(
     inputs: SeasonInputs,
     standings_model: Any,
@@ -49,7 +75,9 @@ def build_season(
     """
     teams = sorted(inputs.teams, key=lambda t: t["TeamID"])
     completed_weeks = min(inputs.league_scored_week, inputs.regular_season_games)
-    tables = standings_model.weekly_tables(teams, inputs.weekly_matchups, completed_weeks)
+    tables = add_validated_weekly_streaks(
+        standings_model.weekly_tables(teams, inputs.weekly_matchups, completed_weeks), teams
+    )
     team_ids = [t["TeamID"] for t in teams]
     rows = standings_model.regular_season_rows(
         teams,
