@@ -656,6 +656,24 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             self.assertEqual([(p["player_id"], p["app_data"]["age"]) for p in data["players"]], [(p["player_id"], p["app_data"]["age"]) for p in result["players"]])
             self.assertNotEqual(data["input_fingerprint"], result["input_fingerprint"])
 
+    def test_age_value_changes_invalidate_fingerprint_without_changing_sources(self) -> None:
+        from unittest import mock
+        import canonical_player_inputs
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            before = MODULE.build(root, config_path)
+            original = canonical_player_inputs.load_players
+            def changed_age(*args):
+                rows = original(*args)
+                rows[0]["Age"] = float(rows[0]["Age"]) + 0.1
+                return rows
+            with mock.patch.object(canonical_player_inputs, "load_players", side_effect=changed_age):
+                after = MODULE.build(root, config_path)
+            self.assertEqual(before["generated_at"], after["generated_at"])
+            self.assertEqual(before["sources"], after["sources"])
+            self.assertNotEqual(before["input_fingerprint"], after["input_fingerprint"])
+
     def test_current_member_display_parity_with_published_app(self) -> None:
         from canonical_league_ownership import (build_canonical_ownership_snapshot, resolve_current_canonical_season)
         from operations_team_display import enrich_from_members
