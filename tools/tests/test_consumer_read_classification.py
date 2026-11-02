@@ -162,7 +162,95 @@ def compare_transitional_reads(registry: dict) -> list[str]:
     problems.extend(f"obsolete transitional baseline: {entry}" for entry in sorted(TRANSITIONAL_BASELINE - actual))
     return problems
 
+def check_productive_edge_audit(edges: object, root: Path) -> list[str]:
+    """Validate G1's bounded declarations; never claim automatic callgraph coverage."""
+    errors: list[str] = []
+    if not isinstance(edges, list) or not edges:
+        return ["empty productive edge audit"]
+    seen: set[str] = set()
+    types = {"source-fact", "normalized", "shared-derived", "consumer-adapter",
+             "display-only", "hypothetical", "state-feedback", "blocked/unknown"}
+    for index, row in enumerate(edges):
+        if not isinstance(row, dict):
+            errors.append(f"invalid edge {index}: must be a mapping")
+            continue
+        edge_id = row.get("id")
+        if not isinstance(edge_id, str) or not edge_id or edge_id in seen:
+            errors.append(f"missing/duplicate edge id {index}")
+        else:
+            seen.add(edge_id)
+        if row.get("type") not in types:
+            errors.append(f"invalid semantic edge type {index}")
+        if row.get("status") not in {"verified", "blocked", "unknown"}:
+            errors.append(f"invalid edge status {index}")
+        if row.get("status") == "verified" and row.get("owner") in ("unresolved", None, ""):
+            errors.append(f"unverified owner for edge {index}")
+        for key in ("source", "owner", "product", "unavailable"):
+            if not isinstance(row.get(key), str) or not row[key].strip():
+                errors.append(f"missing edge field {index}: {key}")
+        for key in ("consumers", "identity", "evidenceFiles"):
+            values = row.get(key)
+            if not isinstance(values, list) or not values or any(
+                not isinstance(v, str) or not v.strip() for v in values
+            ):
+                errors.append(f"missing edge list {index}: {key}")
+        files = row.get("evidenceFiles")
+        if isinstance(files, list):
+            for path in files:
+                if (not isinstance(path, str) or path.startswith("/") or ".." in Path(path).parts
+                        or not (root / path).is_file()):
+                    errors.append(f"missing/unsafe evidence path {index}: {path}")
+    return errors
+
+
 class ConsumerReadClassificationTest(unittest.TestCase):
+
+    def test_g1_productive_edge_inventory_has_owner_identity_and_evidence(self) -> None:
+        audit = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))["productiveEdgeAudit"]
+        self.assertEqual("partial", audit["status"])
+        self.assertEqual(1263, audit["issue"])
+        self.assertEqual([], check_productive_edge_audit(audit["edges"], REPO_ROOT))
+        self.assertTrue(any(row["status"] == "blocked" for row in audit["edges"]))
+        self.assertTrue(any(row["status"] == "unknown" for row in audit["edges"]))
+        valid = next(row for row in audit["edges"] if row["status"] == "verified")
+        for change, token in (
+            ({"type": "invalid"}, "invalid semantic edge type"),
+            ({"owner": "unresolved"}, "unverified owner"),
+            ({"evidenceFiles": ["nonexistent/untrusted.py"]}, "missing/unsafe evidence path"),
+            ({"identity": []}, "missing edge list"),
+        ):
+            self.assertTrue(any(token in reason for reason in check_productive_edge_audit(
+                [{**valid, **change}], REPO_ROOT
+            )), change)
+
+    def test_g3_bye_week_source_contract_matches_canonical_runtime(self) -> None:
+        matrix = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))["matrix"]
+        bye = matrix["byeWeek"]
+        source = (REPO_ROOT / "tools/player_valuation_sources.py").read_text(encoding="utf-8")
+        reader = (REPO_ROOT / "tools/derived_data_lib/players_read_model.py").read_text(encoding="utf-8")
+        self.assertEqual("canonical-schedule-derived-active", bye["migrationState"])
+        self.assertEqual("tools/player_valuation_sources.py::team_bye_weeks", bye["derivedOwner"])
+        self.assertIn("data-source/nfl/schedules/<season>.json", bye["durableCanonicalPrimary"])
+        self.assertNotIn("Tank01", bye["fallback"])
+        self.assertIn('DATA_SOURCE_ROOT / "nfl/schedules"', source)
+        self.assertIn('schedule.get("SourceDataset") != "nflverse.schedules"', source)
+        self.assertIn('bye_weeks=sources.team_bye_weeks(repo_root, season)', reader)
+        self.assertNotIn("Tank01", reader)
+
+    def test_g6_angular_standings_uses_shared_weekly_table_not_score_replay(self) -> None:
+        # This is a narrowly scoped domain-replay guard. Display matchup ordering
+        # stays allowed; sorting any Angular array is NOT categorically prohibited.
+        source = (REPO_ROOT / "src/app/shared/utils/overview-weekly-dashboard.util.ts").read_text(encoding="utf-8")
+        start = source.index("function buildOverviewStandingsSnapshot(")
+        end = source.find("\nfunction ", start + 1)
+        routine = source[start:end if end >= 0 else len(source)]
+        self.assertIn("season?.Weeks?.find(", routine)
+        self.assertIn("snapshot.Teams", routine)
+        self.assertNotIn("lastWeek.Matchups", routine)
+        self.assertNotIn("standingsWinPercentage(", routine)
+        self.assertNotIn("rank_teams(", routine)
+        # Negative fixture: a reintroduced Matchups-based ranking is detectable.
+        self.assertIn("lastWeek.Matchups", routine + "\nconst ranking = lastWeek.Matchups;")
 
     def test_transitional_consumer_to_consumer_reads_do_not_expand(self) -> None:
         """Known G2/G3 debt is frozen, not a reusable exemption for future domain reads."""

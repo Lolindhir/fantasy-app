@@ -326,7 +326,7 @@ matrix:
     lifecycle: seasonal-finalizable
     historyCoverage: 2002-present
     freshness: roster pipeline daily around 07:00 UTC
-    migrationState: canonical-active-runtime-not-migrated
+    migrationState: canonical-active-population-evidence-platform-state-separate
     guards:
       - season roster must not replace weekly history for in-season team changes
       - Sleeper team fields are platform metadata and cannot silently override canonical NFL membership
@@ -344,7 +344,7 @@ matrix:
     lifecycle: seasonal-finalizable
     historyCoverage: 1920-present
     freshness: daily around 07:00 UTC
-    migrationState: canonical-active-runtime-not-migrated
+    migrationState: canonical-active-population-evidence-platform-profile-separate
     guards:
       - season-level row is not proof of a player's team for every week in that season
 
@@ -363,7 +363,7 @@ matrix:
     lifecycle: dynamic platform state
     historyCoverage: no canonical historical guarantee from current app path
     freshness: Sleeper recommends persisting player map and refreshing no more than about daily
-    migrationState: canonical-active-runtime-not-migrated
+    migrationState: canonical-active-platform-snapshot-runtime-consumed
     guards:
       - Sleeper-specific depth fields are not automatically the canonical NFL depth-chart source
       - Sleeper player_id remains the current Players.json ID contract
@@ -468,17 +468,19 @@ matrix:
   byeWeek:
     facts:
       - current-season bye week used in player read model
-    durableCanonicalPrimary: derived-source-not-yet-formally-migrated
-    currentRuntimePrimary: canonical NFL schedules and team registry consumed by the Python Players read model and PlayerValuation sources to derive season bye weeks; no Tank01 path (#1226)
-    secondary:
-      - future derivation from canonical nflverse schedule is the preferred candidate once schedules are active
-    fallback: Tank01 during migration
+    durableCanonicalPrimary: data-source/nfl/schedules/<season>.json (nflverse schedules)
+    derivedOwner: tools/player_valuation_sources.py::team_bye_weeks
+    currentRuntimePrimary: canonical NFL REG schedule via team_bye_weeks, consumed by Python Players read model and PlayerValuation (#1226)
+    secondary: []
+    fallback: none; missing or inconsistent canonical NFL schedule raises SourceError
     identityKey: NFL team + season
     lifecycle: seasonal-derived
-    historyCoverage: follows schedule coverage when migrated
-    migrationState: derivation-rule-to-validate-during-generator-migration
+    historyCoverage: follows canonical schedule coverage
+    migrationState: canonical-schedule-derived-active
     guards:
-      - derive from explicit team schedule rather than treating a player provider metadata field as permanent truth
+      - derive from explicit canonical NFL regular-season schedule; exactly one no-game week per team
+      - unknown or ambiguous schedule remains unavailable, never a valid zero
+      - do not reintroduce Tank01 or App Players.json as the ByeWeek source
 
   fantasyLeagueSettings:
     facts:
@@ -1259,3 +1261,210 @@ consumerReadClassification:
       reads:
         network: repository-infrastructure
       note: 'GitHub API access for repository operations; no fantasy base fact.'
+
+# G1 sampled, code-verified productive edges within the canonical Source-of-Truth Matrix.
+# Additional source families and all residual cross-layer edges require independent auditing.
+productiveEdgeAudit: {
+    "issue": 1263,
+    "checkpoint": "G1-G3",
+    "scope": "evidence-backed-partial-inventory-not-a-complete-callgraph",
+    "status": "partial",
+    "principle": "A canonical Source/Model remains the fact owner; App/FM outputs are consumer deliveries. Missing/blocked ownership never silently becomes verified.",
+    "edgeTypes": [
+      "source-fact",
+      "normalized",
+      "shared-derived",
+      "consumer-adapter",
+      "display-only",
+      "hypothetical",
+      "state-feedback",
+      "blocked/unknown"
+    ],
+    "edges": [
+      {
+        "id": "nfl-schedule-bye",
+        "type": "shared-derived",
+        "status": "verified",
+        "source": "data-source/nfl/schedules/<Season>.json",
+        "owner": "tools/player_valuation_sources.py::team_bye_weeks",
+        "product": "team-by-bye-week",
+        "consumers": [
+          "tools/derived_data_lib/players_read_model.py"
+        ],
+        "identity": [
+          "Season",
+          "NFLTeam"
+        ],
+        "evidenceFiles": [
+          "tools/player_valuation_sources.py",
+          "tools/derived_data_lib/players_read_model.py"
+        ],
+        "unavailable": "Missing/invalid REG schedule blocks"
+      },
+      {
+        "id": "nfl-roster-population",
+        "type": "normalized",
+        "status": "verified",
+        "source": "canonical NFL roster, weekly rosters and NFL draft",
+        "owner": "tools/players_population.py::build_population",
+        "product": "Player population",
+        "consumers": [
+          "tools/derived_data_lib/players_read_model.py"
+        ],
+        "identity": [
+          "Season",
+          "CanonicalPlayerID",
+          "SleeperID"
+        ],
+        "evidenceFiles": [
+          "tools/players_population.py",
+          "tools/derived_data_lib/players_read_model.py"
+        ],
+        "unavailable": "Missing roster/snapshot blocks"
+      },
+      {
+        "id": "sleeper-platform-current",
+        "type": "source-fact",
+        "status": "verified",
+        "source": "data-source/nfl/platform/sleeper/players.json",
+        "owner": "tools/players_population.py::load_snapshot",
+        "product": "Current Sleeper status/profile",
+        "consumers": [
+          "tools/derived_data_lib/players_read_model.py"
+        ],
+        "identity": [
+          "SleeperID",
+          "CanonicalPlayerID"
+        ],
+        "evidenceFiles": [
+          "tools/players_population.py",
+          "tools/derived_data_lib/players_read_model.py"
+        ],
+        "unavailable": "Missing/duplicate platform evidence blocks"
+      },
+      {
+        "id": "canonical-league-lifecycle",
+        "type": "shared-derived",
+        "status": "verified",
+        "source": "canonical League, NFL week finality, data-meta",
+        "owner": "tools/derived_data_lib/league_lifecycle.py",
+        "product": "FinalScoredWeek at explicit evaluation instant",
+        "consumers": [
+          "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
+        ],
+        "identity": [
+          "CanonicalLeagueID",
+          "Season",
+          "Week",
+          "EvaluationInstant"
+        ],
+        "evidenceFiles": [
+          "tools/derived_data_lib/league_lifecycle.py",
+          "fantasy-management/_ai/scripts/canonical_league_lifecycle.py",
+          "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
+        ],
+        "unavailable": "Ambiguous/nonfinal inputs block"
+      },
+      {
+        "id": "league-full-refresh-evidence",
+        "type": "state-feedback",
+        "status": "verified",
+        "source": "data-source/_sync/league-refresh-witnesses/<LeagueID>/<Season>-week-<Week>.json",
+        "owner": "tools/league_source_refresh_witness.py",
+        "product": "Full-sync completion evidence with source hashes",
+        "consumers": [
+          "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
+        ],
+        "identity": [
+          "CanonicalLeagueSeasonID",
+          "ProviderLeagueID",
+          "Week"
+        ],
+        "evidenceFiles": [
+          "tools/league_source_refresh_witness.py",
+          "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
+        ],
+        "unavailable": "Missing, changed, future or young witness blocks"
+      },
+      {
+        "id": "standings-to-angular",
+        "type": "consumer-adapter",
+        "status": "verified",
+        "source": "data-derived/league-standings/<LeagueID>/<Season>.json",
+        "owner": "tools/league_standings_app_publish.py",
+        "product": "App Standings.Weeks readmodel",
+        "consumers": [
+          "src/app/shared/utils/overview-weekly-dashboard.util.ts"
+        ],
+        "identity": [
+          "CanonicalLeagueID",
+          "Season",
+          "Week"
+        ],
+        "evidenceFiles": [
+          "tools/league_standings_app_publish.py",
+          "src/app/shared/utils/overview-weekly-dashboard.util.ts"
+        ],
+        "unavailable": "Missing weekly table is unknown not score replay"
+      },
+      {
+        "id": "fm-freshness-monitoring",
+        "type": "consumer-adapter",
+        "status": "verified",
+        "source": "fantasy-management/generated/operations/source-freshness.json",
+        "owner": "fantasy-management/_ai/scripts/build_source_freshness_gate.py",
+        "product": "Provider heartbeat readiness",
+        "consumers": [
+          "fantasy-management/automation/jobs/entity-observation.json"
+        ],
+        "identity": [
+          "SourceID",
+          "RunInstant"
+        ],
+        "evidenceFiles": [
+          "fantasy-management/_ai/scripts/build_source_freshness_gate.py",
+          "fantasy-management/automation/jobs/entity-observation.json"
+        ],
+        "unavailable": "Block/degraded/no-event policy not App Timestamps"
+      },
+      {
+        "id": "nfl-player-profile-durable",
+        "type": "blocked/unknown",
+        "status": "unknown",
+        "source": "Field-specific Sleeper and nflverse inputs",
+        "owner": "unresolved",
+        "product": "Unified durable profile owner",
+        "consumers": [
+          "tools/players_population.py"
+        ],
+        "identity": [
+          "CanonicalPlayerID",
+          "ProfileField"
+        ],
+        "evidenceFiles": [
+          "tools/players_population.py"
+        ],
+        "unavailable": "No accepted single durable field-level owner; runtime adapter exists"
+      },
+      {
+        "id": "market-observations-rights",
+        "type": "blocked/unknown",
+        "status": "blocked",
+        "source": "External market provider datasets",
+        "owner": "Issue #988 rights and writer gate",
+        "product": "Shared market observations",
+        "consumers": [
+          "fantasy-management/automation/jobs/entity-observation.json"
+        ],
+        "identity": [
+          "Provider",
+          "Dataset",
+          "Snapshot"
+        ],
+        "evidenceFiles": [
+          "fantasy-management/automation/jobs/entity-observation.json"
+        ],
+        "unavailable": "Publication and retention rights not accepted for all datasets"
+      }
+    ]
+  }
