@@ -656,6 +656,39 @@ class PlayerSignalDatasetTests(unittest.TestCase):
             self.assertEqual([(p["player_id"], p["app_data"]["age"]) for p in data["players"]], [(p["player_id"], p["app_data"]["age"]) for p in result["players"]])
             self.assertNotEqual(data["input_fingerprint"], result["input_fingerprint"])
 
+    def test_canonical_source_provenance_uses_hash_not_app_timestamp(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config_path = self.prepare_root(root)
+            before = MODULE.build(root, config_path)
+            tracked = {"players", "canonical_player_identities", "canonical_sleeper_players"}
+            by_id = {row["id"]: row for row in before["sources"]}
+            self.assertTrue(tracked <= set(by_id))
+            for source_id in tracked:
+                source = by_id[source_id]
+                self.assertIsNone(source["source_timestamp"])
+                self.assertEqual(
+                    MODULE.ops.sha256_text((root / source["path"]).read_text(encoding="utf-8")),
+                    source["content_sha256"],
+                )
+            self.assertIn("timestamps", by_id)
+            self.assertIsNotNone(by_id["timestamps"]["source_timestamp"])
+
+            timestamps_path = root / "public/data/Timestamps.json"
+            timestamps = json.loads(timestamps_path.read_text(encoding="utf-8"))
+            timestamps["Players"] = None
+            timestamps_path.write_text(json.dumps(timestamps), encoding="utf-8")
+            after = MODULE.build(root, config_path)
+            after_by_id = {row["id"]: row for row in after["sources"]}
+            self.assertEqual(
+                {source_id: by_id[source_id] for source_id in tracked},
+                {source_id: after_by_id[source_id] for source_id in tracked},
+            )
+            self.assertEqual(before["players"], after["players"])
+            self.assertEqual(before["generated_at"], after["generated_at"])
+            self.assertEqual(before["quality"], after["quality"])
+            self.assertNotEqual(before["input_fingerprint"], after["input_fingerprint"])
+
     def test_age_value_changes_invalidate_fingerprint_without_changing_sources(self) -> None:
         from unittest import mock
         import canonical_player_inputs
@@ -938,6 +971,13 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         jsonschema.Draft202012Validator(schema).validate(result)
 
+        canonical_source_ids = {
+            "player_valuation", "canonical_player_profiles", "canonical_nfl_rosters"
+        }
+        sources = {row["id"]: row for row in result["sources"]}
+        self.assertTrue(canonical_source_ids <= set(sources))
+        self.assertTrue(all(sources[source_id]["source_timestamp"] is None for source_id in canonical_source_ids))
+        self.assertIn("timestamps", sources)  # C9b.2 retains the legacy generated_at bridge
         self.assertGreater(result["population"]["player_count"], 100)
         self.assertNotEqual(result["quality"]["status"], "error")
         kickers = [player for player in result["players"] if player["position"] == "K"]
