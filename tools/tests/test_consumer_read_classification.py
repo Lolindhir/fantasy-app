@@ -223,6 +223,42 @@ class ConsumerReadClassificationTest(unittest.TestCase):
                 [{**valid, **change}], REPO_ROOT
             )), change)
 
+    def test_g1_expanded_productive_edge_owner_boundaries(self) -> None:
+        """Pin code-evidenced G1 additions without claiming exhaustive callgraph coverage."""
+        audit = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))["productiveEdgeAudit"]
+        by_id = {row["id"]: row for row in audit["edges"]}
+        required = {
+            "canonical-standings-model",
+            "canonical-league-history-model",
+            "league-drafts-to-league-home",
+            "standings-to-draft-order",
+            "player-valuation-to-app-players",
+            "player-week-fantasy-app-delivery",
+            "fm-canonical-league-ownership",
+            "fm-canonical-member-display",
+            "fm-age-evaluation-reference",
+            "fm-fa-board-lifecycle-evaluation",
+            "league-finality-to-standings",
+        }
+        self.assertTrue(required <= by_id.keys())
+        self.assertTrue(all(by_id[key]["status"] == "verified" for key in required))
+        self.assertEqual("display-only", by_id["fm-canonical-member-display"]["type"])
+        self.assertEqual("partial", audit["status"])
+
+        league = (REPO_ROOT / "public/requests/RequestLeague.ps1").read_text(encoding="utf-8")
+        self.assertIn("Get-LeagueDraftsProduct", league)
+        self.assertIn("Get-LeagueStandingsProduct", league)
+        self.assertNotIn("Get-LeagueDraftsLocal", league)
+        history = (REPO_ROOT / "tools/league_history_sources.py").read_text(encoding="utf-8")
+        self.assertIn("make_standings_loader", history)
+        players = (REPO_ROOT / "tools/players_app_publish.py").read_text(encoding="utf-8")
+        self.assertIn("derived_data.materialize_player_valuation(", players)
+        ops = (REPO_ROOT / "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("age_reference_date(", ops)
+        self.assertIn("enrich_from_members(", ops)
+
     def test_g3_bye_week_source_contract_matches_canonical_runtime(self) -> None:
         matrix = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))["matrix"]
         bye = matrix["byeWeek"]
