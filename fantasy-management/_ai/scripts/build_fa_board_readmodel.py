@@ -26,7 +26,7 @@ import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Literal
+from typing import Any, Literal
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
@@ -116,13 +116,6 @@ def parse_datetime(value: Any) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
-
-
-def max_timestamp(values: Iterable[Any]) -> str | None:
-    parsed = [item for item in (parse_datetime(value) for value in values) if item is not None]
-    if not parsed:
-        return None
-    return max(parsed).isoformat().replace("+00:00", "Z")
 
 
 def normalize_status(value: Any) -> str:
