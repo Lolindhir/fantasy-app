@@ -1079,10 +1079,6 @@ consumerReadClassification:
       reads:
         legacy:League: freshness-trigger
       note: 'Decides whether a push touching these paths triggers Operations materialization; it reads no content. The league metadata data-meta/<CanonicalLeagueID>/metadata.json (DraftType binding, J2; ADR-054) is also a trigger path and is not a legacy read.'
-    fantasy-management/automation/jobs/entity-observation.json:
-      reads:
-        legacy:Timestamps: freshness-trigger
-      note: 'C8h: the active read-only entity observation job depends on the canonical-active managed-roster-signals Operations contract instead of App League.json; Timestamps.json remains the unchanged freshness bridge.'
     fantasy-management/automation/jobs/weekly-league-review.json:
       reads:
         legacy:Timestamps: freshness-trigger

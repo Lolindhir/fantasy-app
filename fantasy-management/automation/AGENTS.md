@@ -190,7 +190,7 @@ Current scheduled monitoring may deliver these layers directly in the notificati
 ## Data-readiness rules
 
 - Read current league state from current repository data, not from prior analysis files.
-- Check `public/data/Timestamps.json` when generated-data freshness matters.
+- Check `fantasy-management/generated/operations/source-freshness.json` and enforce `decision`, `affected_signal_families` and `no_event_conclusion_allowed` before scheduled monitoring. App `Timestamps.json` only records publication content changes and is never a substitute for provider refresh success.
 - Use the current Fantasy Operations data-quality report before relying on prepared monitoring inputs.
 - Do not infer completeness only from a frontend version or deployment timestamp.
 - Treat missing, stale or internally conflicting required data as incomplete when the active data contract says it is blocking or material.

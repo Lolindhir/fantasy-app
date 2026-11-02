@@ -48,7 +48,7 @@ Der maschinenlesbare Begriff für das Team, auf dessen Interessen die Automation
 - `state/{job-id}.json` enthält veränderlichen persistenten Zustand eines Jobs.
 - `fantasy-management/generated/operations/` enthält ausschließlich reproduzierbare, deterministische Operations-Read-Models.
 - `fantasy-management/analyses/` enthält gespeicherte Analyse-Outputs.
-- `data-source/leagues/` besitzt die kanonischen Liga-Basisfakten. `public/data/` enthält generierte App-Readmodels; `Timestamps.json` bleibt ein separater Freshness-Bridge-Input.
+- `data-source/leagues/` besitzt die kanonischen Liga-Basisfakten. `public/data/` enthält generierte App-Readmodels; `Timestamps.json` protokolliert ausschließlich deren Inhaltsänderungen. Das aktive Entity Observation Monitoring prüft seinen Provider-Refresh über `generated/operations/source-freshness.json` (C9c.2), nicht über App-Timestamps. Die deaktivierte Weekly Review bleibt separat bei ihrer konservativen Aktualisierungsprüfung bis ein unabhängiger post-finality Liga-Evidenzvertrag nachgewiesen ist.
 
 ## Generisches Observation-Modell
 
