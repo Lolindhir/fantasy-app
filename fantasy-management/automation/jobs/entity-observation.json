@@ -17,9 +17,9 @@
       "condition": "Kanonisch abgeleitete Teamidentität und vollständige Roster/Reserve/Taxi-Mitgliedschaft des verwalteten Teams sind im validerbaren Managed-Roster-Signals-Contract verfügbar."
     },
     {
-      "path": "public/data/Timestamps.json",
+      "path": "fantasy-management/generated/operations/source-freshness.json",
       "required": true,
-      "condition": "Für verwendete aktuelle Repo-Daten ist ein plausibler Freshness-Stand verfügbar."
+      "condition": "Zentrales Provider-Freshness-Gate aus erfolgreichen Refresh-Heartbeats validieren: decision=block unterbindet normales Monitoring; proceed_degraded begrenzt es auf weiterhin unterstützte Signalfamilien, und no_event_conclusion_allowed=false verbietet die Schlussfolgerung keine Änderungen. App Timestamps sind kein Fetch- oder Readiness-Beweis."
     },
     {
       "path": "fantasy-management/generated/operations/player-signals.json",
