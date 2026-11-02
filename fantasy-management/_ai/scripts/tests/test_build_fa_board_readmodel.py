@@ -184,7 +184,6 @@ class Fixture:
                 "sources": {
                     "player_signals": "fantasy-management/generated/operations/player-signals.json",
                     "league_metadata": "data-meta/test-league/metadata.json",
-                    "timestamps": "public/data/Timestamps.json",
                 },
                 "output": {"fa_board_readmodel": "fantasy-management/generated/operations/fa-board-readmodel.json"},
             },
@@ -345,8 +344,10 @@ class FaBoardReadmodelTests(unittest.TestCase):
             self.assertEqual(baseline["players"], updated["players"])
             self.assertEqual(baseline["managed_team_capacity"], updated["managed_team_capacity"])
             self.assertEqual(baseline["quality"], updated["quality"])
-            self.assertNotEqual(baseline["generated_at"], updated["generated_at"])
-            self.assertNotEqual(baseline["input_fingerprint"], updated["input_fingerprint"])
+            self.assertEqual(baseline, updated)
+            # Even a missing App Timestamps.json is not an FA-board dependency.
+            (fixture.root / "public/data/Timestamps.json").unlink()
+            self.assertEqual(baseline, fixture.build(at_utc=NOW))
 
     def test_kickoff_transition_updates_taxi_and_fingerprint_without_source_change(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
