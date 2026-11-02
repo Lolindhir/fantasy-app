@@ -1079,14 +1079,6 @@ consumerReadClassification:
       reads:
         legacy:League: freshness-trigger
       note: 'Decides whether a push touching these paths triggers Operations materialization; it reads no content. The league metadata data-meta/<CanonicalLeagueID>/metadata.json (DraftType binding, J2; ADR-054) is also a trigger path and is not a legacy read.'
-    fantasy-management/automation/fa-board-materialization.json:
-      reads:
-        legacy:Timestamps: freshness-trigger
-      note: 'C8e: Canonical member team display via operations_team_display and canonical season league.json RosterPositions/Settings supply FA-board enrichment; shared lifecycle supplies phase/week/kickoff (ADR-073). data-meta owns draft type classification (ADR-054). Timestamps.json remains freshness bridge.'
-    fantasy-management/automation/input-materialization.json:
-      reads:
-        legacy:Timestamps: freshness-trigger
-      note: 'Team display comes from canonical member metadata through the Operations consumer display adapter (Issue #1263 C8b). Timestamps.json remains the freshness bridge and Players Age reference date. Since Issue #919 step 6 (2026-10-15) the player inputs no longer come from Players.json: fantasy-management/_ai/scripts/canonical_player_inputs.py reads Salary and SalaryProjected from the newest PlayerValuation snapshot (data-derived/player-valuation, ADR-055) and Age, Year, IsFreeAgent, Status and the injury fields from tools/players_population.py (ADR-043). Parity against the Players.json based output was proven on the repository data: 945 players, 0 differing rows.'
     fantasy-management/automation/jobs/entity-observation.json:
       reads:
         legacy:Timestamps: freshness-trigger
@@ -1095,10 +1087,6 @@ consumerReadClassification:
       reads:
         legacy:Timestamps: freshness-trigger
       note: 'C8i: disabled weekly review trigger now resolves FinalScoredWeek via canonical manifest + shared lifecycle/Week-Finality and managed-team display via canonical-active managed-roster-signals; no App League.json read. Canonical transaction partitions unchanged; Timestamps.json still declared for the existing freshness gate. Job remains disabled and non-writing.'
-    fantasy-management/automation/player-signal-materialization.json:
-      reads:
-        legacy:Timestamps: freshness-trigger
-      note: 'C8c: team display comes from canonical member metadata via operations_team_display; league scoring already comes directly from canonical league ScoringSettings (#347 A2). Timestamps.json: freshness bridge and unchanged Players Age reference date. Since Issue #919 step 6 (2026-10-15) the population list, Age, Year, IsFreeAgent and the injury fields come from tools/players_population.py and Salary/SalaryProjected from the newest PlayerValuation snapshot, both through fantasy-management/_ai/scripts/canonical_player_inputs.py; Players.json is no input anymore.'
     fantasy-management/league-economy/salary/simulation/salary_simulation.py:
       reads:
         legacy:League: analysis-snapshot-input

@@ -218,34 +218,29 @@ class FantasyOperationsInputsTests(unittest.TestCase):
             with self.assertRaisesRegex(MaterializationError, "member"):
                 build(root, config_path)
 
-    def test_players_age_reference_does_not_require_published_timestamp(self) -> None:
+    def test_missing_app_timestamps_does_not_affect_managed_roster(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._write_fixture(root)
             (root / "public/data/League.json").unlink()
             config_path = root / "fantasy-management/automation/input-materialization.json"
-            data, _ = build(root, config_path)
-            self.assertIn("timestamps", {source["id"] for source in data["sources"]})
-            path = root / "public/data/Timestamps.json"
-            timestamps = json.loads(path.read_text(encoding="utf-8"))
-            timestamps["Players"] = None
-            path.write_text(json.dumps(timestamps), encoding="utf-8")
-            result, _ = build(root, config_path)
-            self.assertEqual(
-                [(p["player_id"], p["app_data"]["age"]) for p in data["players"]],
-                [(p["player_id"], p["app_data"]["age"]) for p in result["players"]],
-            )
-            self.assertNotEqual(data["input_fingerprint"], result["input_fingerprint"])
+            before, quality_before = build(root, config_path)
+            self.assertNotIn("timestamps", {source["id"] for source in before["sources"]})
+            (root / "public/data/Timestamps.json").unlink()
+            after, quality_after = build(root, config_path)
+            self.assertEqual(before, after)
+            self.assertEqual(quality_before, quality_after)
 
     def test_canonical_source_provenance_uses_hash_not_app_timestamp(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self._write_fixture(root)
             config_path = root / "fantasy-management/automation/input-materialization.json"
-            before, quality_before = build(root, config_path)
+            before, _ = build(root, config_path)
             tracked = {"players", "canonical_player_identities", "canonical_sleeper_players"}
             sources_before = {row["id"]: row for row in before["sources"]}
             self.assertTrue(tracked <= set(sources_before))
+            self.assertNotIn("timestamps", sources_before)
             for source_id in tracked:
                 source = sources_before[source_id]
                 self.assertIsNone(source["source_timestamp"])
@@ -253,27 +248,10 @@ class FantasyOperationsInputsTests(unittest.TestCase):
                     sha256_text((root / source["path"]).read_text(encoding="utf-8")),
                     source["content_sha256"],
                 )
-            self.assertIn("timestamps", sources_before)
-            self.assertIsNotNone(sources_before["timestamps"]["source_timestamp"])
-
-            # A changed App publication instant may change the bridge source,
-            # but must never be represented as a canonical file refresh.
             timestamps_path = root / "public/data/Timestamps.json"
-            timestamps = json.loads(timestamps_path.read_text(encoding="utf-8"))
-            timestamps["Players"] = None
-            timestamps_path.write_text(json.dumps(timestamps), encoding="utf-8")
-            after, quality_after = build(root, config_path)
-            sources_after = {row["id"]: row for row in after["sources"]}
-            self.assertEqual(
-                {source_id: sources_before[source_id] for source_id in tracked},
-                {source_id: sources_after[source_id] for source_id in tracked},
-            )
-            self.assertEqual(before["players"], after["players"])
-            # The separate App timestamp record still determines the legacy
-            # aggregate generated_at until C9b.2; only canonical records are independent.
-            self.assertEqual(after["generated_at"], sources_after["timestamps"]["source_timestamp"])
-            self.assertEqual(quality_before["status"], quality_after["status"])
-            self.assertNotEqual(before["input_fingerprint"], after["input_fingerprint"])
+            timestamps_path.write_text('{"League":"2099-01-01T00:00:00Z","Players":null}', encoding="utf-8")
+            after, _ = build(root, config_path)
+            self.assertEqual(before, after)
 
     def test_both_builders_pass_explicit_age_date_to_canonical_players(self) -> None:
         import canonical_player_inputs
@@ -491,7 +469,6 @@ class FantasyOperationsInputsTests(unittest.TestCase):
                 "players": "public/data/Players.json",
                 "canonical_player_identities": "data-source/nfl/identities/players.json",
                 "canonical_sleeper_players": "data-source/nfl/platform/sleeper/players.json",
-                "timestamps": "public/data/Timestamps.json",
             },
             "source_catalog": "fantasy-management/_ai/operations-source-catalog.json",
             "outputs": {

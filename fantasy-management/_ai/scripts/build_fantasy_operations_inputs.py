@@ -807,12 +807,10 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
     core_sources = config["sources"]
     canonical_identities_path = root / core_sources["canonical_player_identities"]
     canonical_sleeper_players_path = root / core_sources["canonical_sleeper_players"]
-    timestamps_path = root / core_sources["timestamps"]
     catalog_path = root / config["source_catalog"]
 
     canonical_identities = load_json(canonical_identities_path)
     canonical_sleeper_players = load_json(canonical_sleeper_players_path)
-    timestamps = load_json(timestamps_path)
     catalog = load_json(catalog_path)
     validate_catalog(catalog)
     identity_by_sleeper = build_canonical_identity_by_sleeper(canonical_identities)
@@ -940,12 +938,6 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             "canonical_sleeper_players",
             canonical_sleeper_players_path,
             root,
-        ),
-        source_file(
-            "timestamps",
-            timestamps_path,
-            root,
-            max_timestamp(timestamps.values()) if isinstance(timestamps, dict) else None,
         ),
         source_file("operations_source_catalog", catalog_path, root),
         *source_observation_files,
