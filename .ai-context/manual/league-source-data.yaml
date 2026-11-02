@@ -876,3 +876,25 @@ fullLeagueRefreshWitness:
     - If finality/identity changes mid-run, or evidence is incomplete/contradictory, skip the witness and preserve the normal Source publication.
     - Consumer rollout must independently validate identity, finality, the exact input fingerprint and minimum data age; stale retained witness bytes alone never prove readiness.
   rollback: Revert C9c.3 implementation and workflow changes; orphaned source-owned witness files are inert until an independent consumer cutover.
+
+weeklyLeagueReviewConsumer:
+  issue: 1263
+  checkpoint: C9c.4
+  status: disabled-read-only-consumer-cutover
+  job: fantasy-management/automation/jobs/weekly-league-review.json
+  resolver: fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py
+  witness: data-source/_sync/league-refresh-witnesses/<CanonicalLeagueID>/<Season>-week-<WW>.json
+  contract: >-
+    A candidate FinalScoredWeek from canonical lifecycle must match a persisted source-owned
+    full-sync witness for the exact canonical league, current season, provider season mapping
+    and finalized week. The consumer recalculates the canonical Week-Finality evidence and
+    the producer-owned complete raw/metadata/canonical input SHA-256 inventory and semantic
+    fingerprint; an embedded hash alone does not authorize readiness. An observation whose
+    SucceededAtUtc is in the future or less than minimum_data_age_minutes=60 before the
+    explicitly supplied evaluation instant blocks. Pre-final or mismatching/absent inputs
+    fail closed. No App Timestamps fallback and no provider market heartbeat substitution.
+  boundary: >-
+    Source witness is read-only to this disabled consumer. The resolver reports readiness
+    separately from week advancement; job_activation_or_write_authorized remains false.
+    No scheduling, enablement, notification, permission, State or analysis publication changes.
+  rollback: Revert the declarative dependency/resolver/tests/doc consumer change. Preserve the source-owned witness producer and previously published proof untouched.

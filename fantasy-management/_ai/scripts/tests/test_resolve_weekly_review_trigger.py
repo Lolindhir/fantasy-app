@@ -53,7 +53,9 @@ class WeeklyReviewTriggerTests(unittest.TestCase):
                 self.assertEqual(result["final_scored_week"], 7)
                 self.assertEqual(result["candidate_key"], "2026-week-7")
                 self.assertTrue(result["advanced_beyond_last_processed"])
-                self.assertFalse(result["freshness_gate_evaluated"])
+                self.assertTrue(result["freshness_gate_evaluated"])
+                self.assertEqual(result["source_refresh_gate_state"], "blocked")
+                self.assertTrue(result["source_refresh_gate_reason"].startswith("source_refresh_"))
                 self.assertFalse(result["job_activation_or_write_authorized"])
                 resolver.assert_called_once()
                 self.assertEqual(resolver.call_args.args[1:3], ("test", 2026))
@@ -71,6 +73,8 @@ class WeeklyReviewTriggerTests(unittest.TestCase):
                 data = weekly.resolve_trigger(root, self.trigger, at_utc="2026-09-01T12:00:00+00:00")
                 self.assertFalse(data["advanced_beyond_last_processed"])
                 self.assertIsNone(data["candidate_key"])
+                self.assertFalse(data["freshness_gate_evaluated"])
+                self.assertEqual(data["source_refresh_gate_state"], "not_applicable")
             with mock.patch.object(weekly, "resolve_lifecycle_state", return_value=self.mock_lifecycle(1)):
                 data = weekly.resolve_trigger(root, self.trigger, at_utc="2026-09-01T12:00:00+00:00",
                                               last_processed_key="2025-week-17")
@@ -111,6 +115,95 @@ class WeeklyReviewTriggerTests(unittest.TestCase):
             with self.assertRaises(weekly.WeeklyReviewTriggerUnavailable):
                 weekly.resolve_trigger(root, self.trigger, at_utc="2026-11-01T20:00:00Z")
 
+
+    def test_full_witness_readiness_requires_60_min_verified_source_evidence(self) -> None:
+        candidate = {
+            "CanonicalLeagueID": "test",
+            "CanonicalLeagueSeasonID": "test-2026",
+            "ProviderLeagueID": "12345",
+            "Season": 2026,
+            "Week": 7,
+            "FinalityFingerprint": "finalized-week-fingerprint",
+        }
+        inputs = [
+            {"path": "data-source/leagues/test/seasons/2026/league.json", "sha256": "a" * 64},
+            {"path": "data-source/providers/sleeper/leagues/12345/matchups/week-7.json", "sha256": "b" * 64},
+        ]
+        path_rel = "data-source/_sync/league-refresh-witnesses/test/2026-week-07.json"
+        witness = {
+            "schemaVersion": 1,
+            **candidate,
+            "Scope": "full",
+            "SucceededAtUtc": "2026-11-02T10:00:00Z",
+            "Inputs": inputs,
+            "InputsFingerprint": weekly._digest({"identity": candidate, "inputs": inputs}),
+        }
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.manifest(root)
+            path = root / path_rel
+            path.parent.mkdir(parents=True)
+            def put(value):
+                path.write_text(json.dumps(value), encoding="utf-8")
+            put(witness)
+            with (
+                mock.patch.object(weekly, "resolve_lifecycle_state", return_value=self.mock_lifecycle(7)),
+                mock.patch.object(weekly, "_current_candidates", return_value=[candidate]),
+                mock.patch.object(weekly, "_inputs", return_value=inputs),
+            ):
+                def check(instant: str) -> dict:
+                    result = weekly.resolve_trigger(
+                        root, self.trigger, at_utc=instant, last_processed_key="2026-week-6"
+                    )
+                    self.assertTrue(result["advanced_beyond_last_processed"])
+                    self.assertTrue(result["freshness_gate_evaluated"])
+                    self.assertFalse(result["job_activation_or_write_authorized"])
+                    return result
+
+                waiting = check("2026-11-02T10:59:59Z")
+                self.assertEqual(waiting["source_refresh_gate_reason"], "source_refresh_minimum_age_not_met")
+                self.assertEqual(check("2026-11-02T09:00:00Z")["source_refresh_gate_reason"],
+                                 "source_refresh_from_future")
+                ready = check("2026-11-02T11:00:00Z")
+                self.assertEqual(ready["source_refresh_gate_state"], "ready")
+                self.assertEqual(ready["source_refresh_gate_reason"], "validated_full_refresh_after_finality")
+                self.assertEqual(ready["source_refresh_succeeded_at_utc"], "2026-11-02T10:00:00+00:00")
+                self.assertTrue(check("2026-11-03T12:00:00Z")["source_refresh_gate_state"] == "ready")
+
+                bad = [
+                    ("Scope", "current", "source_refresh_identity_or_finality_mismatch"),
+                    ("Week", 6, "source_refresh_identity_or_finality_mismatch"),
+                    ("Season", 2025, "source_refresh_identity_or_finality_mismatch"),
+                    ("ProviderLeagueID", "9999", "source_refresh_identity_or_finality_mismatch"),
+                    ("CanonicalLeagueSeasonID", "test-2025", "source_refresh_identity_or_finality_mismatch"),
+                    ("FinalityFingerprint", "stale", "source_refresh_identity_or_finality_mismatch"),
+                    ("InputsFingerprint", "0" * 64, "source_refresh_inputs_changed"),
+                    ("Inputs", [], "source_refresh_inputs_changed"),
+                    ("SucceededAtUtc", "not-a-date", "source_refresh_witness_unverifiable:WeeklyReviewTriggerUnavailable"),
+                ]
+                for field, value, reason in bad:
+                    with self.subTest(field=field):
+                        put({**witness, field: value})
+                        result = check("2026-11-02T12:00:00Z")
+                        self.assertEqual(result["source_refresh_gate_state"], "blocked")
+                        self.assertEqual(result["source_refresh_gate_reason"], reason)
+                put(witness)
+                with mock.patch.object(weekly, "_inputs", side_effect=ValueError("forged metadata")):
+                    self.assertEqual(
+                        check("2026-11-02T12:00:00Z")["source_refresh_gate_reason"],
+                        "source_refresh_witness_unverifiable:ValueError",
+                    )
+                with mock.patch.object(weekly, "_current_candidates", return_value=[{**candidate, "Week": 8}]):
+                    self.assertEqual(
+                        check("2026-11-02T12:00:00Z")["source_refresh_gate_reason"],
+                        "canonical_finality_or_season_mismatch",
+                    )
+                path.unlink()
+                self.assertEqual(
+                    check("2026-11-02T12:00:00Z")["source_refresh_gate_reason"],
+                    "source_refresh_witness_missing",
+                )
+
     def test_repository_job_schema_and_canonical_parity(self) -> None:
         root = SCRIPTS.parents[2]
         job = json.loads((root / "fantasy-management/automation/jobs/weekly-league-review.json").read_text(encoding="utf-8"))
@@ -140,6 +233,9 @@ class WeeklyReviewTriggerTests(unittest.TestCase):
         self.assertEqual(result["final_scored_week"], published_app_week,
                          "Canonical lifecycle and current published App FinalScoredWeek must agree.")
         self.assertTrue(result["advanced_beyond_last_processed"] if published_app_week > 0 else not result["advanced_beyond_last_processed"])
+        self.assertIn(result["source_refresh_gate_state"], {"ready", "blocked", "not_applicable"})
+        self.assertFalse(result["job_activation_or_write_authorized"])
+        self.assertNotIn("public/data/Timestamps.json", json.dumps(job))
 
 
 if __name__ == "__main__":

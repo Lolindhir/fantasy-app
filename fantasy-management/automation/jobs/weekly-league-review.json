@@ -50,9 +50,9 @@
       "condition": "Verwaltete Team-ID und aktueller Roster-Kontext werden aus dem kanonisch abgeleiteten Operations-Contract gelesen."
     },
     {
-      "path": "public/data/Timestamps.json",
+      "path": "data-source/_sync/league-refresh-witnesses/{canonical_league_id}/{season}-week-{final_scored_week:02d}.json",
       "required": true,
-      "condition": "relevante Ligadaten wurden nach Abschluss des Spieltags aktualisiert"
+      "condition": "Nur Full-Sync Source-Owned Success-Witness für dieselbe CanonicalLeagueSeasonID/ProviderLeagueID/FinalScoredWeek, vollständige Roh-/Canonical-Hashes und NFL-Finalität unabhängig gegen aktuelle Quellen prüfen; SucceededAtUtc muss nach bereits finaler Woche beobachtet worden sein und zum Auswertungszeitpunkt mindestens minimum_data_age_minutes (60) zurückliegen. Fehlender, zu junger oder abweichender Nachweis blockiert die Review ohne App-Timestamps-Fallback."
     },
     {
       "path": "data-source/leagues/{canonical_league_id}/seasons/{season}/transactions/week-{final_scored_week}.json",
