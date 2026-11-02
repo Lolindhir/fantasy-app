@@ -69,6 +69,10 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(["scheduler"], self.choose("tools/run-workflow-scheduler-runtime.cjs")["blocks"])
         self.assertEqual(["scheduler"], self.choose(".github/workflow-schedules.json")["blocks"])
 
+    def test_league_full_refresh_witness_selects_source_impact_families(self):
+        selected = set(self.choose("tools/league_source_refresh_witness.py")["selected"])
+        self.assertEqual({"nfl-identity-replay", "league-pwf-twp", "consumer-restore"}, selected)
+
     def test_league_history_change_selects_derived_families_not_identity_or_market(self):
         selected = set(self.choose("tools/league_history_app_publish.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)

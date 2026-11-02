@@ -247,6 +247,9 @@ jobs:
               case "$path" in
                 data-source/providers/sleeper/leagues/*|data-source/leagues/*|data-source/_sync/last-league-failure.json)
                   ;;
+                data-source/_sync/league-refresh-witnesses/*/*.json)
+                  [[ "$materialization_scope" == "full" ]] || unexpected+=("$path")
+                  ;;
                 *)
                   unexpected+=("$path")
                   ;;
@@ -579,6 +582,17 @@ jobs:
             echo "League source publish attempt $attempt/$max_attempts"
             reset_to_main
 
+            # A final week must already be final BEFORE this full acquisition.
+            # A failed/missing witness preflight never blocks the canonical source publisher.
+            witness_preflight=""
+            if [[ "$materialization_scope" == "full" ]]; then
+              witness_preflight="$(mktemp)"
+              if ! python3 tools/league_source_refresh_witness.py prepare > "$witness_preflight"; then
+                echo "::warning::Full League witness preflight unavailable; source sync continues."
+                witness_preflight=""
+              fi
+            fi
+
             raw_stdout="$(mktemp)"
             raw_stderr="$(mktemp)"
             raw_log="$(mktemp)"
@@ -769,6 +783,21 @@ jobs:
               echo "League canonical materialization is not a semantic no-op on the second pass." >&2
               write_failure_diagnostic "semantic-noop" "$noop_status" "$noop_log"
               exit "$noop_status"
+            fi
+
+            # Only a successful full raw sync + canonical materialization + no-op
+            # validation may mint a source-owned, week-scoped success witness.
+            # Missing or inconsistent witness evidence fails CLOSED for the witness,
+            # not for the existing canonical data publication.
+            if [[ "$materialization_scope" == "full" && -n "$witness_preflight" ]]; then
+              if ! python3 tools/league_source_refresh_witness.py complete \
+                --preflight "$witness_preflight" \
+                --raw-result "$raw_stdout" \
+                --canonical-result "$materialize_log"; then
+                echo "::warning::Full League refresh witness denied; existing source publication continues."
+                git restore -- data-source/_sync/league-refresh-witnesses
+                git clean -fd -- data-source/_sync/league-refresh-witnesses
+              fi
             fi
 
             mkdir -p data-source/_sync

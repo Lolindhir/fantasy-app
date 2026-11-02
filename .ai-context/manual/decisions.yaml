@@ -2757,3 +2757,32 @@ decisions:
           language implementation until a separately authorized backend exists.
         - A stale or missing Outlook read model temporarily disables real cap
           display; publication and salary/roster freshness must be monitored.
+
+  - id: ADR-080
+    title: Bounded full League Source refresh witnesses without App timestamp coupling
+    status: accepted
+    context: >-
+      A weekly retrospective needs a source-success observation after canonical week-finality.
+      App Timestamps only record semantic publication changes; successful ten-minute current
+      League runs do not refetch all previous-week matchup partitions, while the existing
+      daily full League Source sync does. GitHub Actions head SHA alone is not a proof
+      of the exact checked-out/published canonical revision.
+    decision: >-
+      Reuse the existing full League Source sync and its two-phase rebuild/retry publisher.
+      After successful raw sync, canonical validation and second-pass no-op, emit at most
+      a week-scoped source-owned success witness for a week already final at preflight;
+      bind it to canonical identity, provider partitions, raw metadata, canonical SHA-256
+      inputs and week-specific NFL finality evidence. No new workflow, schedule, credentials,
+      app output, derived model or automated Fantasy State writer. No timestamp-only daily
+      publication: preserve a successful observation when its semantic fingerprint matches.
+      Changes or invalid evidence during the run deny the witness but not the existing
+      canonical source publication. Consumer cutover and activation are separate approvals.
+    consequences:
+      positive:
+        - One source-owned verification surface, independent of App publication time.
+        - Full coverage of the finalized week's raw matchup and transaction partitions.
+        - No publication churn when successful reruns inspect unchanged source facts.
+      negative:
+        - A weekly consumer cannot use the witness without an independent fingerprint
+          recheck and age/finality policy; the next full cycle may delay that review.
+        - Additional bounded persisted metadata under the existing shared writer scope.

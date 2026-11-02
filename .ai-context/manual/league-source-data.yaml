@@ -850,3 +850,29 @@ matchupEmptyStarterSlots:
     starters plus canonical EmptyStarterSlots to equal the configured league starter
     positions. Real starters still require unambiguous NFL game-finality evidence;
     an absent/invalid count cannot authorize finalization.
+
+fullLeagueRefreshWitness:
+  issue: 1263
+  checkpoint: C9c.3
+  status: source-witness-only; no-consumer-cutover
+  owner: .github/workflows/sync-league-source-data.yml
+  implementation: tools/league_source_refresh_witness.py
+  pathPattern: data-source/_sync/league-refresh-witnesses/<CanonicalLeagueID>/<Season>-week-<WW>.json
+  intent: >-
+    A bounded, source-owned proof that a previously canonical-final LeagueScoredWeek was covered
+    by successful FULL current-season Sleeper acquisition, canonical materialization and a
+    second-pass semantic no-op validation. Not an App data timestamp, provider market heartbeat,
+    scoring declaration or authorization for Weekly Review activation.
+  identity: [CanonicalLeagueID, CanonicalLeagueSeasonID, ProviderLeagueID, Season, Week, Scope, schemaVersion]
+  proof: >-
+    Preflight finality is revalidated after the full Source chain. The witness includes
+    week-specific canonical NFL finality fingerprint, exact canonical/raw path SHA-256 and
+    validated raw metadata content hashes; InputsFingerprint identifies the validated source
+    revision without any circular SHA of the witness commit. The successful observation
+    time is preserved across semantically identical full reruns.
+  restrictions:
+    - Only the existing full League Source writer may publish this path; current/partial/manual scoped refreshes do not mint proof.
+    - No new scheduling, permissions, app/operations readmodel output, or qualitative State writes.
+    - If finality/identity changes mid-run, or evidence is incomplete/contradictory, skip the witness and preserve the normal Source publication.
+    - Consumer rollout must independently validate identity, finality, the exact input fingerprint and minimum data age; stale retained witness bytes alone never prove readiness.
+  rollback: Revert C9c.3 implementation and workflow changes; orphaned source-owned witness files are inert until an independent consumer cutover.
