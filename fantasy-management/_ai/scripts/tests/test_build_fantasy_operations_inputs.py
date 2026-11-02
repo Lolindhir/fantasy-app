@@ -20,6 +20,7 @@ from build_fantasy_operations_inputs import (  # noqa: E402
     MaterializationError,
     build,
     canonical_json,
+    sha256_text,
     derive_injury_signal,
     evaluate_catalog_source_observation,
     normalize_name,
@@ -235,6 +236,42 @@ class FantasyOperationsInputsTests(unittest.TestCase):
                 [(p["player_id"], p["app_data"]["age"]) for p in result["players"]],
             )
             self.assertNotEqual(data["input_fingerprint"], result["input_fingerprint"])
+
+    def test_canonical_source_provenance_uses_hash_not_app_timestamp(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_fixture(root)
+            config_path = root / "fantasy-management/automation/input-materialization.json"
+            before, quality_before = build(root, config_path)
+            tracked = {"players", "canonical_player_identities", "canonical_sleeper_players"}
+            sources_before = {row["id"]: row for row in before["sources"]}
+            self.assertTrue(tracked <= set(sources_before))
+            for source_id in tracked:
+                source = sources_before[source_id]
+                self.assertIsNone(source["source_timestamp"])
+                self.assertEqual(
+                    sha256_text((root / source["path"]).read_text(encoding="utf-8")),
+                    source["content_sha256"],
+                )
+            self.assertIn("timestamps", sources_before)
+            self.assertIsNotNone(sources_before["timestamps"]["source_timestamp"])
+
+            # A changed App publication instant may change the bridge source,
+            # but must never be represented as a canonical file refresh.
+            timestamps_path = root / "public/data/Timestamps.json"
+            timestamps = json.loads(timestamps_path.read_text(encoding="utf-8"))
+            timestamps["Players"] = None
+            timestamps_path.write_text(json.dumps(timestamps), encoding="utf-8")
+            after, quality_after = build(root, config_path)
+            sources_after = {row["id"]: row for row in after["sources"]}
+            self.assertEqual(
+                {source_id: sources_before[source_id] for source_id in tracked},
+                {source_id: sources_after[source_id] for source_id in tracked},
+            )
+            self.assertEqual(before["players"], after["players"])
+            self.assertEqual(before["generated_at"], after["generated_at"])
+            self.assertEqual(quality_before["status"], quality_after["status"])
+            self.assertNotEqual(before["input_fingerprint"], after["input_fingerprint"])
 
     def test_both_builders_pass_explicit_age_date_to_canonical_players(self) -> None:
         import canonical_player_inputs
