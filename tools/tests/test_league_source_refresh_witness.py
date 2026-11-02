@@ -135,6 +135,16 @@ class LeagueRefreshWitnessTests(unittest.TestCase):
                      completed_at=self.at)
         self.assertFalse(self._witness().exists())
 
+    def test_failed_first_witness_cleanup_does_not_restore_untracked_prefix(self):
+        workflow = (TOOLS.parent / ".github/workflows/sync-league-source-data.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            "if git ls-files -- data-source/_sync/league-refresh-witnesses | grep -q .; then",
+            workflow,
+        )
+        self.assertIn("git clean -fd -- data-source/_sync/league-refresh-witnesses", workflow)
+
     def test_new_finality_during_run_denies_witness(self):
         before = prepare(self.root)
         league_path = f"data-source/leagues/{self.league}/seasons/2026/league.json"
