@@ -99,7 +99,7 @@ The dataset joins:
 
 Projection providers remain independent. Comparable rank percentiles may be summarized across projection providers, but provider fantasy-point projections are retained separately and must not be averaged because provider scoring contracts can differ and are not Mighty-Giants scoring.
 
-The compact FA-board decision-infrastructure contract is built from freshly materialized `player-signals.json`, Canonical League ownership, canonical season rules/capacities and member-derived team display, the current-season Canonical League drafts (`data-source/leagues/<CanonicalLeagueID>/seasons/<season>/drafts.json`, classified through the league metadata `data-meta/<CanonicalLeagueID>/metadata.json` Drafts.Types) and `Timestamps.json`:
+The compact FA-board decision-infrastructure contract is built from freshly materialized `player-signals.json`, Canonical League ownership, canonical season rules/capacities and member-derived team display, the current-season Canonical League drafts (`data-source/leagues/<CanonicalLeagueID>/seasons/<season>/drafts.json`, classified through the league metadata `data-meta/<CanonicalLeagueID>/metadata.json` Drafts.Types) and `Timestamps.json` (transitional provenance only). Since C9b.2, the shared UTC run instant (not a source timestamp) drives lifecycle and Taxi decisions:
 
 ```text
 fantasy-management/automation/fa-board-materialization.json
@@ -333,10 +333,10 @@ External signal identity is resolved through the configured stable player ID.
 
 Ownership sourcing is now intentionally consumer-scoped during the Phase-2 migration:
 
-- `managed-roster-signals.json` reads TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter` membership from Canonical League Source Data; since #1263 C8b team labels use the canonical-member Operations display adapter. `Timestamps.json -> Players` remains the Age reference.
+- `managed-roster-signals.json` reads TeamID 1 `Roster`, `Reserve`, `Taxi` and `Starter` membership from Canonical League Source Data; since #1263 C8b team labels use the canonical-member Operations display adapter. Age uses a run-scoped AsOfDate (C9a), with hash-only canonical source provenance (C9b.1).
 - `external-signal-relevance.json` reads the complete league-wide `Roster`/`Reserve`/`Taxi` ownership from Canonical League Source Data; member-based labels no longer require `League.json` since #1263 C8a.
-- `player-signals.json` reads league-wide `Roster`/`Reserve`/`Taxi` ownership from Canonical League Source Data, scoring from canonical `ScoringSettings` (#347 A2), and display from canonical members via `operations_team_display` (#1263 C8c). `Timestamps.json -> Players` continues to anchor Age and the existing freshness source record.
-- `free-agent-signals.json` inherits canonical ownership from `player-signals.json`; `fa-board-readmodel.json` derives availability/occupancy and league capacities from Canonical League and member labels, retaining Timestamps.json only for freshness.
+- `player-signals.json` reads league-wide `Roster`/`Reserve`/`Taxi` ownership from Canonical League Source Data, scoring from canonical `ScoringSettings` (#347 A2), and display from canonical members via `operations_team_display` (#1263 C8c). Age uses run-scoped AsOfDate (C9a); the separate App timestamps source remains a transitional freshness/provenance input until C9c.
+- `free-agent-signals.json` inherits canonical ownership from `player-signals.json`; `fa-board-readmodel.json` derives availability/occupancy and league capacities from Canonical League and member labels. Lifecycle/Taxi decisions use the shared UTC run instant (C9b.2); Timestamps.json remains transitional generated_at/provenance until C9c.
 - `free-agent-movement-signals.json` reads league scoring directly from active Canonical League `ScoringSettings`; its scoring evidence fingerprint covers the canonical scoring payload rather than unrelated League state.
 - `managed-roster-overview.json` inherits TeamID 1 membership/buckets from canonical-active `managed-roster-signals.json`; C8d migrated display and capacity to canonical members/season settings, with shared lifecycle for phase.
 - Any remaining not-yet-migrated ownership consumers retain their explicitly documented contracts.

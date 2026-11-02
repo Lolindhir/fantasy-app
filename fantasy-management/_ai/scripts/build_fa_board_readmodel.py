@@ -9,8 +9,10 @@ it does not browse, call AI services, or emit add/drop/draft recommendations.
 Availability is fail-closed. A negative ownership result is trusted only when
 Canonical League ownership was fully validated, and a player is considered
 draft-available only when the current Free-Agent draft state is also resolved.
-Canonical season rules and member metadata supply capacities and team display; only
-`Timestamps.json` remains as a separate freshness bridge.
+Canonical season rules and member metadata supply capacities and team display;
+`Timestamps.json` remains only as a separate provenance/freshness bridge.
+Lifecycle and Taxi eligibility are evaluated at the shared explicit UTC run instant,
+never at a source timestamp or App publication time.
 Positive ownership or an assigned pick always blocks availability even when
 another source is degraded.
 """
@@ -37,6 +39,7 @@ from canonical_league_ownership import (
     resolve_current_canonical_season,
 )
 from operations_team_display import enrich_from_members  # noqa: E402
+from operations_run_instant import OperationsRunInstantError, run_instant_iso_utc  # noqa: E402
 from canonical_league_drafts import (
     CanonicalDraftError,
     drafts_path as canonical_drafts_path,
@@ -466,7 +469,7 @@ def reserve_eligibility(player: dict[str, Any], league_state: dict[str, Any]) ->
     return False
 
 
-def taxi_window_status(league_state: dict[str, Any], generated_at: str | None) -> str:
+def taxi_window_status(league_state: dict[str, Any], evaluated_at_utc: str | None) -> str:
     if not league_state.get("complete"):
         return UNKNOWN
     settings = league_state.get("settings") or {}
@@ -477,15 +480,15 @@ def taxi_window_status(league_state: dict[str, Any], generated_at: str | None) -
     # document the integer-to-calendar mapping in its public API contract. Do not
     # invent that mapping. We only call the window open when current canonical
     # league state independently proves we are still in the draft/preseason phase
-    # and the materialized source time is before the configured season kickoff.
+    # and the explicit evaluation instant is before the configured season kickoff.
     phase = normalize_status(league_state.get("league_phase"))
     status = normalize_status(league_state.get("league_status"))
     kickoff = parse_datetime(league_state.get("season_kickoff"))
-    generated = parse_datetime(generated_at)
+    evaluated = parse_datetime(evaluated_at_utc)
     prelock_phase = "DRAFT" in phase or status in {"DRAFT_SEASON", "PRE_DRAFT", "DRAFTING"}
-    if prelock_phase and kickoff is not None and generated is not None and generated < kickoff:
+    if prelock_phase and kickoff is not None and evaluated is not None and evaluated < kickoff:
         return "open_preseason"
-    if kickoff is not None and generated is not None and generated >= kickoff:
+    if kickoff is not None and evaluated is not None and evaluated >= kickoff:
         return "closed_or_locked"
     return UNKNOWN
 
@@ -514,13 +517,13 @@ def taxi_prelock_eligibility(player: dict[str, Any], league_state: dict[str, Any
     return True
 
 
-def taxi_eligibility_now(player: dict[str, Any], league_state: dict[str, Any], generated_at: str | None) -> Eligibility:
+def taxi_eligibility_now(player: dict[str, Any], league_state: dict[str, Any], evaluated_at_utc: str | None) -> Eligibility:
     prelock = taxi_prelock_eligibility(player, league_state)
     if prelock is False:
         return False
     if prelock == UNKNOWN:
         return UNKNOWN
-    window = taxi_window_status(league_state, generated_at)
+    window = taxi_window_status(league_state, evaluated_at_utc)
     if window == "open_preseason":
         return True
     if window in {"closed_no_slots", "closed_or_locked"}:
@@ -706,6 +709,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             f"Canonical FA-board ownership is unavailable: {exc}"
         ) from exc
 
+    # Backward-compatible source provenance only, not the evaluation clock.
     generated_at = max_timestamp(
         [
             player_signals.get("generated_at"),
@@ -713,11 +717,15 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             timestamps.get("Players"),
         ]
     ) or optional_text(player_signals.get("generated_at"))
+    try:
+        evaluated_at_utc = run_instant_iso_utc()
+    except OperationsRunInstantError as exc:
+        raise FaBoardMaterializationError(str(exc)) from exc
 
     lifecycle: dict[str, Any] | None = None
     lifecycle_issue: dict[str, Any] | None = None
     try:
-        lifecycle = resolve_lifecycle_state(root, canonical_league_id, canonical_season, generated_at)
+        lifecycle = resolve_lifecycle_state(root, canonical_league_id, canonical_season, evaluated_at_utc)
     except LeagueLifecycleUnavailable as exc:
         lifecycle_issue = {"severity": "error", "kind": "league_lifecycle_unavailable", "detail": str(exc)}
 
@@ -792,7 +800,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         pending_eligibilities.append(
             (
                 reserve_eligibility(player, league_state),
-                taxi_eligibility_now(player, league_state, generated_at),
+                taxi_eligibility_now(player, league_state, evaluated_at_utc),
             )
         )
 
@@ -827,7 +835,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
 
         reserve_now = reserve_eligibility(player, league_state)
         taxi_prelock = taxi_prelock_eligibility(player, league_state)
-        taxi_now = taxi_eligibility_now(player, league_state, generated_at)
+        taxi_now = taxi_eligibility_now(player, league_state, evaluated_at_utc)
 
         materialization_cost: SlotCost = UNKNOWN
         immediate_cost: SlotCost = UNKNOWN
@@ -968,6 +976,21 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
         "sources": source_records,
         "active_draft_key": optional_text(current_draft.get("DraftKey")) if current_draft else None,
         "managed_team_id": managed_team_id,
+        # The clock instant itself is excluded: no fingerprint churn when its
+        # downstream decisions are unchanged. Semantic changes at kickoff or
+        # phase boundaries invalidate the board independently of source hashes.
+        "evaluation_semantics": {
+            "league_phase": league_state.get("league_phase"),
+            "league_status": league_state.get("league_status"),
+            "current_week": league_state.get("current_week"),
+            "taxi_window_status": taxi_window_status(league_state, evaluated_at_utc),
+            "player_decisions": [
+                (row["player_id"], row["availability_status"],
+                 row["taxi_eligible_now"], row["active_slot_cost_now"],
+                 row["active_slot_cost_on_materialization"])
+                for row in output_players
+            ],
+        },
     }
 
     quality_status = "error" if any(issue.get("severity") == "error" for issue in quality_issues) else "warning" if quality_issues else "ok"
@@ -998,7 +1021,7 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             "taxi_slots": taxi_slots,
             "taxi_occupied": len(managed_taxi),
             "taxi_free_before_pending": taxi_capacity,
-            "taxi_window_status": taxi_window_status(league_state, generated_at),
+            "taxi_window_status": taxi_window_status(league_state, evaluated_at_utc),
             "pending_special_capacity_exact": not any(
                 reserve == UNKNOWN or taxi == UNKNOWN for reserve, taxi in pending_eligibilities
             ),

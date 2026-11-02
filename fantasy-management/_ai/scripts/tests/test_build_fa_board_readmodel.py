@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -155,6 +156,7 @@ class Fixture:
         self.root = root
         self.config = root / "fantasy-management/automation/fa-board-materialization.json"
         self.lifecycle_data = league_data
+        self.lifecycle_instants: list[str] = []
         self.write(
             "data-meta/test-league/metadata.json",
             {"Drafts": {"Types": [
@@ -290,11 +292,13 @@ class Fixture:
 
     def lifecycle(self, root: Path, canonical_league_id: str, season: int, at: object) -> dict:
         """Stub for the shared lifecycle, independent of App League.json."""
+        self.lifecycle_instants.append(str(at))
         return {key: self.lifecycle_data.get(key) for key in ("Status", "Phase", "SeasonKickoff", "CurrentWeek", "FinalScoredWeek")}
 
-    def build(self) -> dict:
-        with mock.patch.object(MODULE, "resolve_lifecycle_state", side_effect=self.lifecycle):
-            return MODULE.build(self.root, self.config)
+    def build(self, *, at_utc: str = NOW) -> dict:
+        with mock.patch.dict(os.environ, {"FM_OPERATIONS_RUN_AT_UTC": at_utc}):
+            with mock.patch.object(MODULE, "resolve_lifecycle_state", side_effect=self.lifecycle):
+                return MODULE.build(self.root, self.config)
 
 
 def row(result: dict, pid: str) -> dict:
@@ -320,6 +324,55 @@ class FaBoardReadmodelTests(unittest.TestCase):
                 canonical_membership=canonical_membership,
                 **fixture_kwargs,
             ).build()
+
+    def test_app_timestamp_cannot_move_lifecycle_or_taxi_clock(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Fixture(
+                Path(tmp), [player("rookie", "Rookie", years=0)],
+                league(reserve_slots=0, taxi_slots=1), draft(),
+            )
+            baseline = fixture.build(at_utc=NOW)
+            self.assertEqual("open_preseason", baseline["managed_team_capacity"]["taxi_window_status"])
+            self.assertTrue(row(baseline, "rookie")["taxi_eligible_now"])
+            self.assertEqual(NOW, fixture.lifecycle_instants[-1])
+            # A future App publication marker must not act as an evaluation clock.
+            fixture.write("public/data/Timestamps.json", {
+                "League": "2026-10-01T00:00:00Z",
+                "Players": "2026-10-01T00:00:00Z",
+            })
+            updated = fixture.build(at_utc=NOW)
+            self.assertEqual(NOW, fixture.lifecycle_instants[-1])
+            self.assertEqual(baseline["players"], updated["players"])
+            self.assertEqual(baseline["managed_team_capacity"], updated["managed_team_capacity"])
+            self.assertEqual(baseline["quality"], updated["quality"])
+            self.assertNotEqual(baseline["generated_at"], updated["generated_at"])
+            self.assertNotEqual(baseline["input_fingerprint"], updated["input_fingerprint"])
+
+    def test_kickoff_transition_updates_taxi_and_fingerprint_without_source_change(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Fixture(
+                Path(tmp), [player("rookie", "Rookie", years=0)],
+                league(reserve_slots=0, taxi_slots=1), draft(),
+            )
+            before = fixture.build(at_utc=NOW)
+            still_preseason = fixture.build(at_utc="2026-09-04T08:00:00Z")
+            after = fixture.build(at_utc="2026-09-10T00:20:00Z")
+            self.assertEqual(before, still_preseason)  # no per-run timestamp churn
+            self.assertEqual("open_preseason", before["managed_team_capacity"]["taxi_window_status"])
+            self.assertTrue(row(before, "rookie")["taxi_eligible_now"])
+            self.assertEqual("closed_or_locked", after["managed_team_capacity"]["taxi_window_status"])
+            self.assertFalse(row(after, "rookie")["taxi_eligible_now"])
+            self.assertEqual(before["generated_at"], after["generated_at"])
+            self.assertEqual(before["sources"], after["sources"])
+            self.assertNotEqual(before["input_fingerprint"], after["input_fingerprint"])
+            self.assertEqual("2026-09-10T00:20:00Z", fixture.lifecycle_instants[-1])
+
+    def test_invalid_explicit_run_clock_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture = Fixture(Path(tmp), [player("rookie", "Rookie", years=0)], league(), draft())
+            for invalid in ("not-a-time", "2026-09-03T08:00:00"):
+                with self.assertRaisesRegex(MODULE.FaBoardMaterializationError, "FM_OPERATIONS_RUN_AT_UTC"):
+                    fixture.build(at_utc=invalid)
 
     def test_opponent_rostered_and_taxi_buckets_block_availability(self) -> None:
         result = self.run_fixture(
