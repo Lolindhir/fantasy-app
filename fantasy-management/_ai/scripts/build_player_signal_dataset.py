@@ -316,13 +316,11 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     core = config["sources"]
     canonical_identities_path = root / core["canonical_player_identities"]
     canonical_sleeper_players_path = root / core["canonical_sleeper_players"]
-    timestamps_path = root / core["timestamps"]
     external_signal_path = root / core["external_signal_relevance"]
     catalog_path = root / config["source_catalog"]
 
     canonical_identities = ops.load_json(canonical_identities_path)
     canonical_sleeper_players = ops.load_json(canonical_sleeper_players_path)
-    timestamps = ops.load_json(timestamps_path)
     external_signal_document = ops.load_json(external_signal_path)
     catalog = ops.load_json(catalog_path)
     ops.validate_catalog(catalog)
@@ -434,12 +432,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             "canonical_sleeper_players",
             canonical_sleeper_players_path,
             root,
-        ),
-        ops.source_file(
-            "timestamps",
-            timestamps_path,
-            root,
-            ops.max_timestamp(timestamps.values()) if isinstance(timestamps, dict) else None,
         ),
         ops.source_file("operations_source_catalog", catalog_path, root),
         ops.source_file("external_signal_relevance", external_signal_path, root, external_signal_timestamp),
