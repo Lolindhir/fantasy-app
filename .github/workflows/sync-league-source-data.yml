@@ -795,7 +795,11 @@ jobs:
                 --raw-result "$raw_stdout" \
                 --canonical-result "$materialize_log"; then
                 echo "::warning::Full League refresh witness denied; existing source publication continues."
-                git restore -- data-source/_sync/league-refresh-witnesses
+                # On the first failed witness attempt this prefix may not yet
+                # contain a tracked file; git restore would exit 1 under set -e.
+                if git ls-files -- data-source/_sync/league-refresh-witnesses | grep -q .; then
+                  git restore -- data-source/_sync/league-refresh-witnesses
+                fi
                 git clean -fd -- data-source/_sync/league-refresh-witnesses
               fi
             fi

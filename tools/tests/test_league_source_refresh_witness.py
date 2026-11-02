@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -134,6 +136,28 @@ class LeagueRefreshWitnessTests(unittest.TestCase):
             complete(self.root, before, self.raw_result, self.canonical_result,
                      completed_at=self.at)
         self.assertFalse(self._witness().exists())
+
+    def test_failed_first_witness_cleanup_does_not_restore_untracked_prefix(self):
+        workflow = (TOOLS.parent / ".github/workflows/sync-league-source-data.yml").read_text(
+            encoding="utf-8"
+        )
+        guard = re.search(
+            r"# On the first failed witness attempt.*?git clean -fd -- "
+            r"data-source/_sync/league-refresh-witnesses",
+            workflow, flags=re.DOTALL,
+        )
+        self.assertIsNotNone(guard, "Production witness-cleanup script must remain covered")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            untracked = root / WITNESS_ROOT / "test-league" / "2026-week-01.json"
+            untracked.parent.mkdir(parents=True)
+            untracked.write_text('{"partial": true}', encoding="utf-8")
+            subprocess.run(
+                ["bash", "-e", "-c", guard.group(0)], cwd=root,
+                check=True, capture_output=True, text=True,
+            )
+            self.assertFalse(untracked.exists(), "Failed witness candidate must be cleaned")
 
     def test_new_finality_during_run_denies_witness(self):
         before = prepare(self.root)
