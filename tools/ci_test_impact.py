@@ -254,7 +254,8 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
         return {"league-pwf-twp", "consumer-restore"}, "Shared-Derived"
     if path.startswith(("tools/nfl_source_data_lib/", "tools/nfl_source_data.py")):
         return ALL.copy(), "NFL-source-implementation"
-    if path.startswith(("tools/league_source_data", "tools/league_source_data_lib/")):
+    if path.startswith(("tools/league_source_data", "tools/league_source_data_lib/",
+                        "tools/league_source_refresh_witness.py")):
         return {"nfl-identity-replay", "league-pwf-twp", "consumer-restore"}, "League-source-implementation"
     if path.startswith(("tools/player_week_fantasy", "tools/team_week_performance",
                         "tools/historical_fantasy_scoring", "tools/historical_derived_orchestrate",
