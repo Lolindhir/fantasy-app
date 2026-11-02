@@ -895,7 +895,6 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
         if usable:
             loaded_sources.append(resolve_catalog_source(root, definition))
 
-    player_timestamp = timestamps.get("Players") if isinstance(timestamps, dict) else None
     canonical_league_root = (
         root
         / "data-source"
@@ -924,8 +923,10 @@ def build(root: Path, config_path: Path) -> tuple[dict[str, Any], dict[str, Any]
             canonical_season_root / "rosters.json",
             root,
         ),
+        # Canonical player files have their own content identity; the App
+        # Players publication timestamp is not their source-refresh time.
         *(
-            source_file(source_id, path, root, player_timestamp)
+            source_file(source_id, path, root)
             for source_id, path in canonical_player_inputs.source_files(
                 root, canonical_league_id, canonical_season
             )

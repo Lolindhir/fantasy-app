@@ -388,7 +388,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     ownership = external_signals.build_ownership(teams)
     activity_by_player, activity_metadata = activity_index(external_signal_document)
 
-    player_timestamp = timestamps.get("Players") if isinstance(timestamps, dict) else None
     external_signal_timestamp = external_signal_document.get("generated_at") if isinstance(external_signal_document, dict) else None
     canonical_league_root = (
         root
@@ -418,8 +417,10 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             canonical_season_root / "rosters.json",
             root,
         ),
+        # Do not attribute the App Players publication instant to unrelated
+        # canonical population, roster, profile or valuation sources.
         *(
-            ops.source_file(source_id, path, root, player_timestamp)
+            ops.source_file(source_id, path, root)
             for source_id, path in canonical_player_inputs.source_files(
                 root, canonical_league_id, canonical_season
             )
