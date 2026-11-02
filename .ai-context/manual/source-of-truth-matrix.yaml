@@ -1121,6 +1121,10 @@ consumerReadClassification:
       note: 'Writes PastSeasonsIndex.json.'
     # TeamDraftPickUtils.psm1 now reads shared data-derived/league-drafts directly
     # (Issue #1263 C7), and holds no legacy public/data read classification.
+    tools/audit_workflow_job_costs.py:
+      reads:
+        network: repository-infrastructure
+      note: 'G5 manually invoked, read-only GitHub Actions runs/jobs API audit; no fantasy provider facts, repository writes or activation (#1263).'
     tools/build_workflow_health_snapshot.py:
       reads:
         network: repository-infrastructure
