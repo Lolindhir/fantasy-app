@@ -10,7 +10,7 @@ Availability is fail-closed. A negative ownership result is trusted only when
 Canonical League ownership was fully validated, and a player is considered
 draft-available only when the current Free-Agent draft state is also resolved.
 Canonical season rules and member metadata supply capacities and team display;
-`Timestamps.json` remains only as a separate provenance/freshness bridge.
+
 Lifecycle and Taxi eligibility are evaluated at the shared explicit UTC run instant,
 never at a source timestamp or App publication time.
 Positive ownership or an assigned pick always blocks availability even when
@@ -668,13 +668,9 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     sources = config.get("sources") or {}
     player_signals_path = root / sources["player_signals"]
     metadata_path = root / sources["league_metadata"]
-    timestamps_path = root / sources["timestamps"]
 
     player_signals = validate_player_signals(load_json(player_signals_path))
     metadata = load_json(metadata_path)
-    timestamps = load_json(timestamps_path)
-    if not isinstance(timestamps, dict):
-        timestamps = {}
 
     managed_team_id = str((config.get("managed_team") or {}).get("team_id"))
     canonical_config = config.get("canonical_league") or {}
@@ -709,14 +705,9 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             f"Canonical FA-board ownership is unavailable: {exc}"
         ) from exc
 
-    # Backward-compatible source provenance only, not the evaluation clock.
-    generated_at = max_timestamp(
-        [
-            player_signals.get("generated_at"),
-            timestamps.get("League"),
-            timestamps.get("Players"),
-        ]
-    ) or optional_text(player_signals.get("generated_at"))
+    # Upstream Operations source timestamp, never an App publication marker.
+    # Lifecycle/Taxi decisions still use evaluated_at_utc independently.
+    generated_at = optional_text(player_signals.get("generated_at"))
     try:
         evaluated_at_utc = run_instant_iso_utc()
     except OperationsRunInstantError as exc:
@@ -963,11 +954,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             "content_sha256": source_hash(player_signals_path),
             "source_timestamp": optional_text(player_signals.get("generated_at")),
             "input_fingerprint": optional_text(player_signals.get("input_fingerprint")),
-        },
-        "timestamps": {
-            "path": sources["timestamps"],
-            "content_sha256": source_hash(timestamps_path),
-            "source_timestamp": max_timestamp(timestamps.values()),
         },
     }
 
