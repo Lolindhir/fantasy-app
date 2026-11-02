@@ -50,7 +50,7 @@ class SourceFreshnessGateConfigTests(unittest.TestCase):
         self.assertEqual("notification_only", job["output"]["mode"])
         self.assertEqual("material_changes_only", job["notification"]["mode"])
 
-    def test_weekly_review_stays_disabled_with_independent_postfinality_gate_unresolved(self) -> None:
+    def test_weekly_review_stays_disabled_with_verified_full_source_refresh_dependency(self) -> None:
         root = Path(__file__).resolve().parents[4]
         job = json.loads(
             (root / "fantasy-management/automation/jobs/weekly-league-review.json").read_text(encoding="utf-8")
@@ -58,10 +58,18 @@ class SourceFreshnessGateConfigTests(unittest.TestCase):
         self.assertFalse(job["enabled"])
         self.assertEqual("canonical_lifecycle", job["trigger"]["source_type"])
         self.assertEqual(60, job["trigger"]["minimum_data_age_minutes"])
-        # The weekly league post-finality data proof is not a provider freshness heartbeat.
-        # Keep this conservative legacy dependency until an independent replacement exists.
-        self.assertIn("public/data/Timestamps.json", {item["path"] for item in job["dependencies"]})
+        paths = [item["path"] for item in job["dependencies"]]
+        witness_path = ("data-source/_sync/league-refresh-witnesses/"
+                        "{canonical_league_id}/{season}-week-{final_scored_week:02d}.json")
+        self.assertEqual(1, paths.count(witness_path))
+        self.assertNotIn("public/data/Timestamps.json", paths)
+        condition = next(x["condition"] for x in job["dependencies"] if x["path"] == witness_path)
+        for invariant in ("Full-Sync", "CanonicalLeagueSeasonID", "FinalScoredWeek",
+                          "SucceededAtUtc", "minimum_data_age_minutes", "blockiert"):
+            self.assertIn(invariant, condition)
         self.assertTrue(job["trigger"]["retry_when_not_ready"])
+        self.assertEqual("analysis_bundle", job["output"]["mode"])
+        self.assertEqual("always_on_completion", job["notification"]["mode"])
 
 
 if __name__ == "__main__":

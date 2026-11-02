@@ -250,9 +250,11 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         self.assertEqual(job["trigger"]["final_week_field"], "FinalScoredWeek")
         self.assertNotIn("league_source", job["trigger"])
         self.assertNotIn("public/data/League.json", source)
-        self.assertTrue(any(dep["path"] == "public/data/Timestamps.json" for dep in job["dependencies"]))
+        self.assertNotIn("public/data/Timestamps.json", source)
+        self.assertTrue(any("league-refresh-witnesses/" in dep["path"]
+                            for dep in job["dependencies"]))
         names, functions = read_model_names(REPO_ROOT), sleeper_functions(REPO_ROOT)
-        self.assertNotIn("legacy:League", scan_text(path, source, names, functions))
+        self.assertEqual(set(), scan_text(path, source, names, functions))
         injected = source.replace('"source_type": "canonical_lifecycle"',
                                   '"league_source": "public/data/League.json"')
         self.assertIn("legacy:League", scan_text(path, injected, names, functions))

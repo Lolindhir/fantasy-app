@@ -2,9 +2,10 @@
 """Read-only resolution of the disabled Weekly League Review trigger (#1263 C8i).
 
 FinalScoredWeek comes from the same shared canonical lifecycle and Week-Finality
-model as the App generator. This module never reads App League.json or writes
-job State, activates the disabled job, or treats an advanced week as proof of
-the separately retained minimum-data-age/freshness and dependency gates.
+model as the App generator. The disabled job's separate post-finality
+readiness gate revalidates the source-owned full League refresh witness
+(C9c.4), including exact source hashes, identity and 60 minutes since
+successful refresh. This module never writes State, runs or activates the job.
 """
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,18 @@ from canonical_league_ownership import (  # noqa: E402
 from canonical_league_lifecycle import (  # noqa: E402
     LeagueLifecycleUnavailable,
     resolve_lifecycle_state,
+)
+
+# Shared-source fingerprints and finality have ONE owner. This is a read-only
+# import; it never calls the witness writer or performs a provider acquisition.
+TOOLS_DIR = SCRIPT_DIR.parents[2] / "tools"
+if str(TOOLS_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOLS_DIR))
+from league_source_refresh_witness import (  # noqa: E402
+    WITNESS_ROOT,
+    _current_candidates,
+    _digest,
+    _inputs,
 )
 
 
@@ -83,6 +96,83 @@ def _advanced(season: int, final_week: int, last_processed_key: str | None) -> b
     return prev_season < season or final_week > prev_week
 
 
+def _source_refresh_gate(
+    root: Path,
+    league_id: str,
+    season: int,
+    final_week: int,
+    *,
+    at_utc: datetime,
+    minimum_data_age_minutes: int,
+) -> dict[str, Any]:
+    """Fail-closed verification, never permission to execute the disabled job."""
+    if final_week == 0:
+        return {
+            "freshness_gate_evaluated": False,
+            "source_refresh_gate_state": "not_applicable",
+            "source_refresh_gate_reason": "no_final_scored_week",
+            "source_refresh_succeeded_at_utc": None,
+        }
+
+    def blocked(reason: str) -> dict[str, Any]:
+        return {
+            "freshness_gate_evaluated": True,
+            "source_refresh_gate_state": "blocked",
+            "source_refresh_gate_reason": reason,
+            "source_refresh_succeeded_at_utc": None,
+        }
+
+    try:
+        current = [candidate for candidate in _current_candidates(root)
+                   if candidate["CanonicalLeagueID"] == league_id]
+        if len(current) != 1:
+            return blocked("canonical_league_identity_unavailable")
+        candidate = current[0]
+        if candidate["Season"] != season or candidate["Week"] != final_week:
+            return blocked("canonical_finality_or_season_mismatch")
+        proof_path = (root / WITNESS_ROOT / league_id
+                      / f"{season}-week-{final_week:02d}.json")
+        if not proof_path.is_file():
+            return blocked("source_refresh_witness_missing")
+        witness = json.loads(proof_path.read_text(encoding="utf-8"))
+        if not isinstance(witness, dict):
+            return blocked("source_refresh_witness_invalid")
+        expected_identity = {
+            "schemaVersion": 1,
+            "CanonicalLeagueID": candidate["CanonicalLeagueID"],
+            "CanonicalLeagueSeasonID": candidate["CanonicalLeagueSeasonID"],
+            "ProviderLeagueID": candidate["ProviderLeagueID"],
+            "Season": candidate["Season"],
+            "Week": candidate["Week"],
+            "FinalityFingerprint": candidate["FinalityFingerprint"],
+            "Scope": "full",
+        }
+        if any(type(witness.get(key)) is not type(value) or witness.get(key) != value
+               for key, value in expected_identity.items()):
+            return blocked("source_refresh_identity_or_finality_mismatch")
+        # Recompute the complete source revision, INCLUDING raw Sleeper content
+        # metadata validation. A stored hash is not self-authenticating evidence.
+        inputs = _inputs(root, candidate)
+        fingerprint = _digest({"identity": candidate, "inputs": inputs})
+        if (witness.get("Inputs") != inputs
+                or witness.get("InputsFingerprint") != fingerprint):
+            return blocked("source_refresh_inputs_changed")
+        succeeded_at = _instant(witness.get("SucceededAtUtc"))
+        age = at_utc - succeeded_at
+        if age.total_seconds() < 0:
+            return blocked("source_refresh_from_future")
+        if age < timedelta(minutes=minimum_data_age_minutes):
+            return blocked("source_refresh_minimum_age_not_met")
+        return {
+            "freshness_gate_evaluated": True,
+            "source_refresh_gate_state": "ready",
+            "source_refresh_gate_reason": "validated_full_refresh_after_finality",
+            "source_refresh_succeeded_at_utc": succeeded_at.isoformat(),
+        }
+    except (OSError, ValueError, TypeError, KeyError, IndexError, WeeklyReviewTriggerUnavailable) as exc:
+        return blocked(f"source_refresh_witness_unverifiable:{type(exc).__name__}")
+
+
 def resolve_trigger(
     root: Path,
     trigger: dict[str, Any],
@@ -90,7 +180,7 @@ def resolve_trigger(
     at_utc: str,
     last_processed_key: str | None = None,
 ) -> dict[str, Any]:
-    """Evaluate only canonical week advancement, not freshness, eligibility or writes."""
+    """Evaluate canonical advancement and read-only witness readiness; never write."""
     league_id = _validate_trigger(trigger)
     instant = _instant(at_utc)
     try:
@@ -107,6 +197,11 @@ def resolve_trigger(
     if isinstance(final_week, bool) or not isinstance(final_week, int) or final_week < 0 or final_week > 25:
         raise WeeklyReviewTriggerUnavailable("Canonical FinalScoredWeek is missing or invalid.")
     is_new = _advanced(season, final_week, last_processed_key)
+    freshness = _source_refresh_gate(
+        root, league_id, season, final_week,
+        at_utc=instant,
+        minimum_data_age_minutes=trigger["minimum_data_age_minutes"],
+    )
     return {
         "canonical_league_id": league_id,
         "season": season,
@@ -114,7 +209,7 @@ def resolve_trigger(
         "final_scored_week": final_week,
         "candidate_key": f"{season}-week-{final_week}" if final_week > 0 else None,
         "advanced_beyond_last_processed": is_new,
-        "freshness_gate_evaluated": False,
+        **freshness,
         "job_activation_or_write_authorized": False,
     }
 

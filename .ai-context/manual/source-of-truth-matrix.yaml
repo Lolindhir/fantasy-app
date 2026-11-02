@@ -1079,10 +1079,6 @@ consumerReadClassification:
       reads:
         legacy:League: freshness-trigger
       note: 'Decides whether a push touching these paths triggers Operations materialization; it reads no content. The league metadata data-meta/<CanonicalLeagueID>/metadata.json (DraftType binding, J2; ADR-054) is also a trigger path and is not a legacy read.'
-    fantasy-management/automation/jobs/weekly-league-review.json:
-      reads:
-        legacy:Timestamps: freshness-trigger
-      note: 'C8i: disabled weekly review trigger now resolves FinalScoredWeek via canonical manifest + shared lifecycle/Week-Finality and managed-team display via canonical-active managed-roster-signals; no App League.json read. Canonical transaction partitions unchanged; Timestamps.json still declared for the existing freshness gate. Job remains disabled and non-writing.'
     fantasy-management/league-economy/salary/simulation/salary_simulation.py:
       reads:
         legacy:League: analysis-snapshot-input
