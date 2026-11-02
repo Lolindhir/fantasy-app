@@ -269,7 +269,9 @@ class FantasyOperationsInputsTests(unittest.TestCase):
                 {source_id: sources_after[source_id] for source_id in tracked},
             )
             self.assertEqual(before["players"], after["players"])
-            self.assertEqual(before["generated_at"], after["generated_at"])
+            # The separate App timestamp record still determines the legacy
+            # aggregate generated_at until C9b.2; only canonical records are independent.
+            self.assertEqual(after["generated_at"], sources_after["timestamps"]["source_timestamp"])
             self.assertEqual(quality_before["status"], quality_after["status"])
             self.assertNotEqual(before["input_fingerprint"], after["input_fingerprint"])
 
