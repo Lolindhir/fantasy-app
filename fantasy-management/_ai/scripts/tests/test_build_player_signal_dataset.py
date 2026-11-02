@@ -971,13 +971,13 @@ class PlayerSignalDatasetTests(unittest.TestCase):
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         jsonschema.Draft202012Validator(schema).validate(result)
 
-        canonical_source_ids = {
-            "player_valuation", "canonical_player_profiles", "canonical_nfl_rosters"
-        }
+        # These builder tests deliberately stub canonical_player_inputs.source_files
+        # with a minimal 'players' fixture; the real canonical file inventory is
+        # independently covered by test_canonical_player_inputs.py.
         sources = {row["id"]: row for row in result["sources"]}
-        self.assertTrue(canonical_source_ids <= set(sources))
-        self.assertTrue(all(sources[source_id]["source_timestamp"] is None for source_id in canonical_source_ids))
-        self.assertIn("timestamps", sources)  # C9b.2 retains the legacy generated_at bridge
+        self.assertIn("players", sources)
+        self.assertIsNone(sources["players"]["source_timestamp"])
+        self.assertIn("timestamps", sources)  # transitional generated_at bridge
         self.assertGreater(result["population"]["player_count"], 100)
         self.assertNotEqual(result["quality"]["status"], "error")
         kickers = [player for player in result["players"] if player["position"] == "K"]
