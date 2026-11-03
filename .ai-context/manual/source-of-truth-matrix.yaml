@@ -2268,5 +2268,206 @@ sourceFamilyCoverageAudit: {
       ],
       "remaining": "Shared market persist/write and dataset-specific rights remain gated by #988 and #741; no inference from prior sample."
     }
+  ],
+  "downstreamRoutes": [
+    {
+      "id": "nfl-games-to-game-context",
+      "product": "nfl-games",
+      "status": "linked-partial",
+      "workflow": ".github/workflows/sync-nfl-source-data.yml",
+      "writeScope": "data-derived/nfl-games",
+      "meaning": "Source full-sync or scoped schedule-odds activates conditional rebuild-and-retry NFL-Games publication; computed FantasyGameContext optionally enriches its market view from the derived season partition.",
+      "remaining": "NFL Live finality alone does not activate this writer; observed no-op, corrections, exact freshness and exhaustive readers remain unverified.",
+      "evidence": [
+        {
+          "file": ".github/workflows/sync-nfl-source-data.yml",
+          "contains": "nfl_games_derived:"
+        },
+        {
+          "file": ".github/workflows/sync-nfl-source-data.yml",
+          "contains": "inputs.materialization_scope != 'game-finality'"
+        },
+        {
+          "file": ".github/workflows/sync-nfl-source-data.yml",
+          "contains": "inputs.dataset == 'nflverse.schedule-odds'"
+        },
+        {
+          "file": ".github/workflows/sync-nfl-source-data.yml",
+          "contains": "--path data-derived/nfl-games"
+        },
+        {
+          "file": ".github/workflows/sync-nfl-source-data.yml",
+          "contains": "tools/nfl_games_materialize.py --all-seasons --write"
+        },
+        {
+          "file": "tools/derived_data_lib/fantasy_game_context.py",
+          "contains": "derived_path = repo_root / DATA_DERIVED_ROOT / \"nfl-games\" / f\"{season}.json\""
+        },
+        {
+          "file": "tools/derived_data_lib/fantasy_game_context.py",
+          "contains": "if derived_path.is_file() else None"
+        },
+        {
+          "file": "src/app/core/services/data-api.service.ts",
+          "contains": "data/FantasyGameContext.json"
+        }
+      ]
+    },
+    {
+      "id": "team-week-performance-live-to-recaps",
+      "product": "team-week-performance",
+      "status": "linked-partial",
+      "workflow": ".github/workflows/league-live.yml",
+      "writeScope": "data-derived/team-week-performance",
+      "meaning": "Ten-minute League Live materializes newest current-season finalized TWP before writing WeeklyRecaps; the recap consumer validates derived partition identity and finality.",
+      "remaining": "League Live TWP may be fail-soft with prior file retained; live no-op/staleness and award parity still require observation.",
+      "evidence": [
+        {
+          "file": ".github/workflows/league-live.yml",
+          "contains": "python3 tools/league_live_derived_refresh.py &&"
+        },
+        {
+          "file": ".github/workflows/league-live.yml",
+          "contains": "python3 tools/weekly_recaps_app_publish.py write --fail-on-error"
+        },
+        {
+          "file": ".github/workflows/league-live.yml",
+          "contains": "--path data-derived/team-week-performance"
+        },
+        {
+          "file": "tools/league_live_derived_refresh.py",
+          "contains": "refresh_team_week_performance"
+        },
+        {
+          "file": "tools/league_live_derived_refresh.py",
+          "contains": "write=True, require_pwf=False"
+        },
+        {
+          "file": "tools/derived_data_lib/weekly_recaps.py",
+          "contains": "\"team-week-performance\" / league_id"
+        },
+        {
+          "file": "tools/derived_data_lib/weekly_recaps.py",
+          "contains": "\"State\": \"unavailable\""
+        },
+        {
+          "file": "src/app/core/services/data-api.service.ts",
+          "contains": "data/WeeklyRecaps.json"
+        }
+      ]
+    },
+    {
+      "id": "team-week-performance-historical-backfill",
+      "product": "team-week-performance",
+      "status": "linked-partial",
+      "workflow": ".github/workflows/update-standings.yml",
+      "writeScope": "data-derived/team-week-performance",
+      "meaning": "Separate weekly historical TWP publisher runs all-finalized canonical preflight before any write, with no second App publisher.",
+      "remaining": "Actual historical coverage, restore and change/no-op rates remain unverified; optional PWF parity is not the official awards gate.",
+      "evidence": [
+        {
+          "file": ".github/workflows/update-standings.yml",
+          "contains": "historical_twp:"
+        },
+        {
+          "file": ".github/workflows/update-standings.yml",
+          "contains": "--scope team-week-performance"
+        },
+        {
+          "file": ".github/workflows/update-standings.yml",
+          "contains": "--path data-derived/team-week-performance"
+        },
+        {
+          "file": ".github/workflows/update-standings.yml",
+          "contains": "tools/team_week_performance_materialize.py --all-finalized --write"
+        },
+        {
+          "file": "tools/team_week_performance_materialize.py",
+          "contains": "if write and not blocked:"
+        },
+        {
+          "file": "tools/team_week_performance_materialize.py",
+          "contains": "save_team_week_performance(repo_root, model)"
+        },
+        {
+          "file": "tools/derived_data_lib/weekly_recaps.py",
+          "contains": "\"team-week-performance\" / league_id"
+        }
+      ]
+    },
+    {
+      "id": "computed-matchup-context-to-app",
+      "product": "fantasy-game-context-and-matchups",
+      "status": "linked-partial",
+      "workflow": ".github/workflows/league-live.yml",
+      "writeScope": "public/data",
+      "meaning": "League Live publishes computed Matchups and FantasyGameContext into current App readmodels after PWF/current-derived refresh; Angular Data API reads both.",
+      "remaining": "Historical App publication is a separate invocation; full finality/freshness/no-op and all readers remain unverified.",
+      "evidence": [
+        {
+          "file": ".github/workflows/league-live.yml",
+          "contains": "python3 tools/player_week_fantasy_refresh.py &&"
+        },
+        {
+          "file": ".github/workflows/league-live.yml",
+          "contains": "python3 tools/matchup_context_app_publish.py write --fail-on-error"
+        },
+        {
+          "file": ".github/workflows/league-live.yml",
+          "contains": "--path public/data"
+        },
+        {
+          "file": "tools/matchup_context_app_publish.py",
+          "contains": "writer.put(\"Matchups.json\", resolve_matchups("
+        },
+        {
+          "file": "tools/matchup_context_app_publish.py",
+          "contains": "writer.put(\"FantasyGameContext.json\", context"
+        },
+        {
+          "file": "src/app/core/services/data-api.service.ts",
+          "contains": "data/Matchups.json"
+        },
+        {
+          "file": "src/app/core/services/data-api.service.ts",
+          "contains": "data/FantasyGameContext.json"
+        }
+      ]
+    },
+    {
+      "id": "team-range-projections-to-app",
+      "product": "matchup-projections",
+      "status": "linked-partial",
+      "workflow": ".github/workflows/league-live.yml",
+      "writeScope": "public/data",
+      "meaning": "League Live's PlayerWeekFantasy refresh computes in-memory FantasyGameContext and calls the central team-range publisher; Angular reads its App projection delivery.",
+      "remaining": "Missing context skips the projection; complete freshness and all-consumer reachability remain unverified.",
+      "evidence": [
+        {
+          "file": ".github/workflows/league-live.yml",
+          "contains": "python3 tools/player_week_fantasy_refresh.py &&"
+        },
+        {
+          "file": ".github/workflows/league-live.yml",
+          "contains": "--path public/data"
+        },
+        {
+          "file": "tools/player_week_fantasy_refresh.py",
+          "contains": "context = resolve_current_context("
+        },
+        {
+          "file": "tools/player_week_fantasy_refresh.py",
+          "contains": "publish_matchup_projections("
+        },
+        {
+          "file": "tools/matchup_projection.py",
+          "contains": "OUTPUT_PATH = Path(\"public/data/MatchupProjections.json\")"
+        },
+        {
+          "file": "src/app/core/services/data-api.service.ts",
+          "contains": "data/MatchupProjections.json"
+        }
+      ]
+    }
   ]
 }
