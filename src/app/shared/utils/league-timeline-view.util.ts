@@ -29,6 +29,7 @@ export interface LeagueTimelineItem {
   label: string;
   value: string;
   detail: string | null;
+  gameweeksDetail?: string;
 }
 
 export interface LeagueTimelineNflTeamBrand {
@@ -264,17 +265,26 @@ function buildPlayoffMilestone(
   const validWeek = league.PlayoffStartWeek > 0 && league.PlayoffStartWeek <= league.LastLeagueWeek;
   if (!validWeek) return null;
 
+  // CurrentWeek is the first unfinished regular-season game week. When the
+  // schedule has no open games (CurrentWeek = 0), use the scored-week milestone.
+  const remainingFromWeek = currentWeek > 0
+    ? currentWeek
+    : Math.min(Math.max(league.FinalScoredWeek + 1, 1), league.LastLeagueWeek);
+  const remainingGameweeks = Math.max(0, league.PlayoffStartWeek - remainingFromWeek);
+  const gameweeksDetail = `${remainingGameweeks} gameweek${remainingGameweeks === 1 ? '' : 's'} left`;
+
   if (playoffStart && playoffStart.getTime() > now.getTime()) {
     return {
       icon: '🏆',
       label: 'Playoffs',
       value: `Week ${league.PlayoffStartWeek}`,
-      detail: formatCountdown(playoffStart.getTime() - now.getTime())
+      detail: formatCountdown(playoffStart.getTime() - now.getTime()),
+      gameweeksDetail
     };
   }
 
   return league.PlayoffStartWeek > currentWeek
-    ? buildWeekItem('Playoffs', league.PlayoffStartWeek, '🏆')
+    ? { ...buildWeekItem('Playoffs', league.PlayoffStartWeek, '🏆'), gameweeksDetail }
     : null;
 }
 
