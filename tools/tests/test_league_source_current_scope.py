@@ -235,6 +235,11 @@ class SourceValidationSparseCheckoutContracts(unittest.TestCase):
 
     def test_sparse_input_guard_checks_parity_and_rejects_oversized_sources(self) -> None:
         workflow = self._workflow()
+        guard_lines = re.findall(
+            r"^          for path in (.+); do$", workflow, flags=re.MULTILINE,
+        )
+        self.assertEqual(2, len(guard_lines), "Both scoped guards must verify real inputs")
+        self.assertEqual(guard_lines[0], guard_lines[1])
         for path in (
             "tools/tests/test_league_source_current_scope.py",
             "data-source/league-registry.json",
@@ -244,7 +249,7 @@ class SourceValidationSparseCheckoutContracts(unittest.TestCase):
             "data-source/nfl/identities/provider-mappings.json",
             "data-source/providers/sleeper",
         ):
-            self.assertEqual(2, workflow.count(f'"{path}"'), path)
+            self.assertIn(f'"{path}"', guard_lines[0], path)
         self.assertEqual(2, workflow.count("Historical player stats unexpectedly checked out"))
         self.assertEqual(2, workflow.count("Historical rosters unexpectedly checked out"))
         self.assertEqual(2, workflow.count("Missing required current-scope input"))
