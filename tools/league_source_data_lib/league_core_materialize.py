@@ -215,7 +215,11 @@ def _existing_week_structure(
         raise ValueError("Sleeper settings.last_scored_leg must be an integer or null") from exc
     if scored < 0 or (live_last_scored_leg is not None and isinstance(live_last_scored_leg, float) and not live_last_scored_leg.is_integer()):
         raise ValueError("Sleeper settings.last_scored_leg must be a non-negative integer")
-    week_ceiling = week_structure.get("ExpectedLastLeagueWeek") or week_structure.get("FinalLeagueWeek")
+    week_ceiling = (
+        week_structure.get("ExpectedLastLeagueWeek")
+        or week_structure.get("FinalLeagueWeek")
+        or week_structure.get("NFLRegularSeasonWeekCeiling")
+    )
     if type(week_ceiling) is not int or week_ceiling < 1 or scored > week_ceiling:
         raise ValueError(
             f"Sleeper last_scored_leg {scored} exceeds or cannot be bounded by accepted League WeekStructure end {week_ceiling!r}"

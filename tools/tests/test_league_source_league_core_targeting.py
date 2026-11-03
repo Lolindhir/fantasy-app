@@ -438,6 +438,26 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
         finally:
             temporary.cleanup()
 
+    def test_scored_week_uses_nfl_ceiling_when_playoff_end_is_not_projectable(self) -> None:
+        temporary, root = self._root_with_registry()
+        try:
+            self._write_fixture(root)
+            season_path = root / "data-source/leagues/test-league/seasons/2026/league.json"
+            baseline = json.loads(season_path.read_text(encoding="utf-8"))
+            baseline["WeekStructure"]["FinalLeagueWeek"] = None
+            baseline["WeekStructure"]["NFLRegularSeasonWeekCeiling"] = 18
+            season_path.write_text(json.dumps(baseline), encoding="utf-8")
+            outputs = plan_league_core_materialization(
+                root, "test-league", load_league_registry(root),
+                PlayerMappingResolver.load(root), seasons={2026},
+            )
+            projected = next(item.value["WeekStructure"] for item in outputs if item.path.name == "league.json")
+            self.assertIsNone(projected["FinalLeagueWeek"])
+            self.assertEqual(projected["NFLRegularSeasonWeekCeiling"], 18)
+            self.assertEqual(projected["LastScoredLeg"], 1)
+        finally:
+            temporary.cleanup()
+
     def test_scored_week_rejects_out_of_bounds_and_invalid_provider_evidence(self) -> None:
         temporary, root = self._root_with_registry()
         try:
