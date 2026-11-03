@@ -1269,478 +1269,573 @@ consumerReadClassification:
 # G1 sampled, code-verified productive edges within the canonical Source-of-Truth Matrix.
 # Additional source families and all residual cross-layer edges require independent auditing.
 productiveEdgeAudit: {
-    "issue": 1263,
-    "checkpoint": "G1-extension-2026-11-02",
-    "scope": "evidence-backed-partial-inventory-not-a-complete-callgraph",
-    "status": "partial",
-    "principle": "A canonical Source/Model remains the fact owner; App/FM outputs are consumer deliveries. Missing/blocked ownership never silently becomes verified.",
-    "edgeTypes": [
-      "source-fact",
-      "normalized",
-      "shared-derived",
-      "consumer-adapter",
-      "display-only",
-      "hypothetical",
-      "state-feedback",
-      "blocked/unknown"
-    ],
-    "edges": [
-      {
-        "id": "nfl-schedule-bye",
-        "type": "shared-derived",
-        "status": "verified",
-        "source": "data-source/nfl/schedules/<Season>.json",
-        "owner": "tools/player_valuation_sources.py::team_bye_weeks",
-        "product": "team-by-bye-week",
-        "consumers": [
-          "tools/derived_data_lib/players_read_model.py"
-        ],
-        "identity": [
-          "Season",
-          "NFLTeam"
-        ],
-        "evidenceFiles": [
-          "tools/player_valuation_sources.py",
-          "tools/derived_data_lib/players_read_model.py"
-        ],
-        "unavailable": "Missing/invalid REG schedule blocks"
-      },
-      {
-        "id": "nfl-roster-population",
-        "type": "normalized",
-        "status": "verified",
-        "source": "canonical NFL roster, weekly rosters and NFL draft",
-        "owner": "tools/players_population.py::build_population",
-        "product": "Player population",
-        "consumers": [
-          "tools/derived_data_lib/players_read_model.py"
-        ],
-        "identity": [
-          "Season",
-          "CanonicalPlayerID",
-          "SleeperID"
-        ],
-        "evidenceFiles": [
-          "tools/players_population.py",
-          "tools/derived_data_lib/players_read_model.py"
-        ],
-        "unavailable": "Missing roster/snapshot blocks"
-      },
-      {
-        "id": "sleeper-platform-current",
-        "type": "source-fact",
-        "status": "verified",
-        "source": "data-source/nfl/platform/sleeper/players.json",
-        "owner": "tools/players_population.py::load_snapshot",
-        "product": "Current Sleeper status/profile",
-        "consumers": [
-          "tools/derived_data_lib/players_read_model.py"
-        ],
-        "identity": [
-          "SleeperID",
-          "CanonicalPlayerID"
-        ],
-        "evidenceFiles": [
-          "tools/players_population.py",
-          "tools/derived_data_lib/players_read_model.py"
-        ],
-        "unavailable": "Missing/duplicate platform evidence blocks"
-      },
-      {
-        "id": "canonical-league-lifecycle",
-        "type": "shared-derived",
-        "status": "verified",
-        "source": "canonical League, NFL week finality, data-meta",
-        "owner": "tools/derived_data_lib/league_lifecycle.py",
-        "product": "FinalScoredWeek at explicit evaluation instant",
-        "consumers": [
-          "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "Week",
-          "EvaluationInstant"
-        ],
-        "evidenceFiles": [
-          "tools/derived_data_lib/league_lifecycle.py",
-          "fantasy-management/_ai/scripts/canonical_league_lifecycle.py",
-          "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
-        ],
-        "unavailable": "Ambiguous/nonfinal inputs block"
-      },
-      {
-        "id": "league-full-refresh-evidence",
-        "type": "state-feedback",
-        "status": "verified",
-        "source": "data-source/_sync/league-refresh-witnesses/<LeagueID>/<Season>-week-<Week>.json",
-        "owner": "tools/league_source_refresh_witness.py",
-        "product": "Full-sync completion evidence with source hashes",
-        "consumers": [
-          "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
-        ],
-        "identity": [
-          "CanonicalLeagueSeasonID",
-          "ProviderLeagueID",
-          "Week"
-        ],
-        "evidenceFiles": [
-          "tools/league_source_refresh_witness.py",
-          "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
-        ],
-        "unavailable": "Missing, changed, future or young witness blocks"
-      },
-      {
-        "id": "standings-to-angular",
-        "type": "consumer-adapter",
-        "status": "verified",
-        "source": "data-derived/league-standings/<LeagueID>/<Season>.json",
-        "owner": "tools/league_standings_app_publish.py",
-        "product": "App Standings.Weeks readmodel",
-        "consumers": [
-          "src/app/shared/utils/overview-weekly-dashboard.util.ts"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "Week"
-        ],
-        "evidenceFiles": [
-          "tools/league_standings_app_publish.py",
-          "src/app/shared/utils/overview-weekly-dashboard.util.ts"
-        ],
-        "unavailable": "Missing weekly table is unknown not score replay"
-      },
-      {
-        "id": "fm-freshness-monitoring",
-        "type": "consumer-adapter",
-        "status": "verified",
-        "source": "fantasy-management/generated/operations/source-freshness.json",
-        "owner": "fantasy-management/_ai/scripts/build_source_freshness_gate.py",
-        "product": "Provider heartbeat readiness",
-        "consumers": [
-          "fantasy-management/automation/jobs/entity-observation.json"
-        ],
-        "identity": [
-          "SourceID",
-          "RunInstant"
-        ],
-        "evidenceFiles": [
-          "fantasy-management/_ai/scripts/build_source_freshness_gate.py",
-          "fantasy-management/automation/jobs/entity-observation.json"
-        ],
-        "unavailable": "Block/degraded/no-event policy not App Timestamps"
-      },
-      {
-        "id": "canonical-standings-model",
-        "type": "shared-derived",
-        "status": "verified",
-        "source": "data-source/leagues/<LeagueID>/seasons/<Season>/{league,members,rosters,brackets,matchups} plus canonical week finality",
-        "owner": "tools/derived_data_lib/league_standings.py",
-        "product": "data-derived/league-standings/<LeagueID>/<Season>.json (regular, weekly, playoffs, awards, all-time)",
-        "consumers": [
-          "tools/league_standings_app_publish.py"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "StandingsModelID",
-          "AwardsModelID",
-          "ScoredWeek"
-        ],
-        "evidenceFiles": [
-          "tools/league_standings_sources.py",
-          "tools/derived_data_lib/league_standings.py",
-          "tools/league_standings_app_publish.py"
-        ],
-        "unavailable": "Missing/ambiguous canonical team, provider joins or week-finality evidence fails closed"
-      },
-      {
-        "id": "canonical-league-history-model",
-        "type": "shared-derived",
-        "status": "verified",
-        "source": "canonical League transactions/drafts, data-meta draft/owner definitions and hand-maintained transaction overlay",
-        "owner": "tools/derived_data_lib/league_history.py::build_history",
-        "product": "data-derived/league-transactions and data-derived/league-drafts",
-        "consumers": [
-          "tools/league_history_app_publish.py"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "DraftKey",
-          "PickKey",
-          "TransactionID"
-        ],
-        "evidenceFiles": [
-          "tools/league_history_sources.py",
-          "tools/derived_data_lib/league_history.py",
-          "tools/league_history_app_publish.py"
-        ],
-        "unavailable": "Missing/ambiguous canonical draft/provider identities or manual overlay blocks history materialization"
-      },
-      {
-        "id": "league-drafts-to-league-home",
-        "type": "consumer-adapter",
-        "status": "verified",
-        "source": "data-derived/league-drafts/<LeagueID>/<Season>.json",
-        "owner": "tools/derived_data_lib/league_history.py",
-        "product": "Current and future draft-pick ownership in League.json Teams",
-        "consumers": [
-          "public/requests/utils/league/TeamDraftPickUtils.psm1",
-          "public/requests/RequestLeague.ps1"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "DraftKey",
-          "PickKey",
-          "CurrentOwnerRosterID"
-        ],
-        "evidenceFiles": [
-          "public/requests/utils/league/TeamDraftPickUtils.psm1",
-          "public/requests/RequestLeague.ps1",
-          "tools/derived_data_lib/league_history.py"
-        ],
-        "unavailable": "Missing current-season product, year gaps or duplicate draft/pick identities fail closed; App Drafts.json is not the owner"
-      },
-      {
-        "id": "standings-to-draft-order",
-        "type": "shared-derived",
-        "status": "verified",
-        "source": "canonical League standings inputs and selected standings model",
-        "owner": "tools/derived_data_lib/league_standings.py",
-        "product": "In-memory standings product for configured draft-order calculation",
-        "consumers": [
-          "tools/league_history_sources.py"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "StandingsModelID",
-          "DraftType"
-        ],
-        "evidenceFiles": [
-          "tools/league_history_sources.py",
-          "tools/league_standings_sources.py",
-          "tools/derived_data_lib/league_standings.py"
-        ],
-        "unavailable": "Standings source error blocks only draft paths requiring this order; published App Standings.json is not an input"
-      },
-      {
-        "id": "player-valuation-to-app-players",
-        "type": "consumer-adapter",
-        "status": "verified",
-        "source": "canonical NFL/League player facts with season-specific selected valuation model",
-        "owner": "tools/derived_data_lib/player_valuation.py",
-        "product": "data-derived/player-valuation/<LeagueID>/<Season>/week-<Week>.json delivered as public/data/Players.json",
-        "consumers": [
-          "tools/players_app_publish.py",
-          "tools/derived_data_lib/players_read_model.py"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "AsOfFinalScoredWeek",
-          "CanonicalPlayerID",
-          "ModelSelection",
-          "AsOfDate"
-        ],
-        "evidenceFiles": [
-          "tools/player_valuation_sources.py",
-          "tools/derived_data_lib/player_valuation.py",
-          "tools/derived_data.py",
-          "tools/players_app_publish.py",
-          "tools/derived_data_lib/players_read_model.py"
-        ],
-        "unavailable": "Missing/ambiguous current canonical facts blocks publication; identity hold reads only persisted PlayerValuation snapshot, never prior Players readmodel"
-      },
-      {
-        "id": "player-week-fantasy-app-delivery",
-        "type": "consumer-adapter",
-        "status": "verified",
-        "source": "data-derived/player-week-fantasy/<LeagueID>/<Season> snapshots",
-        "owner": "tools/player_week_fantasy.py",
-        "product": "App PlayerWeekFantasy.json delivery (no scoring recomputation)",
-        "consumers": [
-          "tools/player_week_fantasy_app_publish.py"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "Week",
-          "ScoringProfile",
-          "CanonicalPlayerID"
-        ],
-        "evidenceFiles": [
-          "tools/player_week_fantasy.py",
-          "tools/player_week_fantasy_app_publish.py"
-        ],
-        "unavailable": "Missing derived contract or incomplete canonical-to-Sleeper identity blocks delivery; no App readmodel is upstream"
-      },
-      {
-        "id": "fm-canonical-league-ownership",
-        "type": "consumer-adapter",
-        "status": "verified",
-        "source": "data-source/leagues canonical season and owner-registry canonical member bridge",
-        "owner": "fantasy-management/_ai/scripts/canonical_league_ownership.py",
-        "product": "Validated Fantasy Operations roster ownership snapshot",
-        "consumers": [
-          "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
-          "fantasy-management/_ai/scripts/build_player_signal_dataset.py",
-          "fantasy-management/_ai/scripts/build_fa_board_readmodel.py"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "CanonicalLeagueMemberID",
-          "TeamID",
-          "CanonicalPlayerID"
-        ],
-        "evidenceFiles": [
-          "fantasy-management/_ai/scripts/canonical_league_ownership.py",
-          "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
-          "fantasy-management/_ai/scripts/build_player_signal_dataset.py",
-          "fantasy-management/_ai/scripts/build_fa_board_readmodel.py"
-        ],
-        "unavailable": "Incomplete member/roster mapping is not proof of free agency; fail closed on ambiguity"
-      },
-      {
-        "id": "fm-canonical-member-display",
-        "type": "display-only",
-        "status": "verified",
-        "source": "data-source/leagues/<LeagueID>/seasons/<Season>/members.json",
-        "owner": "fantasy-management/_ai/scripts/operations_team_display.py",
-        "product": "Operations team names and presentation abbreviations",
-        "consumers": [
-          "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
-          "fantasy-management/_ai/scripts/build_fa_board_readmodel.py"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "CanonicalLeagueMemberID",
-          "TeamID"
-        ],
-        "evidenceFiles": [
-          "fantasy-management/_ai/scripts/operations_team_display.py",
-          "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
-          "fantasy-management/_ai/scripts/build_fa_board_readmodel.py"
-        ],
-        "unavailable": "Missing, duplicate or mismatched member labels block enrichment; presentation abbreviations are not shared domain facts"
-      },
-      {
-        "id": "fm-age-evaluation-reference",
-        "type": "consumer-adapter",
-        "status": "verified",
-        "source": "FM_OPERATIONS_RUN_AT_UTC (or explicit replay date) and data-meta LeagueTimeZone",
-        "owner": "fantasy-management/_ai/scripts/operations_age_reference.py::age_reference_date",
-        "product": "Run-scoped league-local date for player Age",
-        "consumers": [
-          "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
-          "fantasy-management/_ai/scripts/build_player_signal_dataset.py"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "RunInstant",
-          "LeagueTimeZone",
-          "OptionalReplayAsOfDate"
-        ],
-        "evidenceFiles": [
-          "fantasy-management/_ai/scripts/operations_age_reference.py",
-          "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
-          "fantasy-management/_ai/scripts/build_player_signal_dataset.py"
-        ],
-        "unavailable": "Invalid replay date, missing time-zone config or bad run instant blocks; provider freshness and App Timestamps are unrelated"
-      },
-      {
-        "id": "fm-fa-board-lifecycle-evaluation",
-        "type": "consumer-adapter",
-        "status": "verified",
-        "source": "Single FM Operations run instant plus canonical League lifecycle and ownership",
-        "owner": "fantasy-management/_ai/scripts/build_fa_board_readmodel.py",
-        "product": "FA Board taxi/reserve availability at explicit evaluation instant",
-        "consumers": [
-          "fantasy-management/automation/fa-board-materialization.json"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "RunInstant",
-          "CanonicalPlayerID",
-          "TeamID"
-        ],
-        "evidenceFiles": [
-          "fantasy-management/_ai/scripts/build_fa_board_readmodel.py",
-          "fantasy-management/_ai/scripts/operations_run_instant.py",
-          "fantasy-management/automation/fa-board-materialization.json"
-        ],
-        "unavailable": "Unresolved league state or insufficient ownership/draft/season rules is unknown or unavailable, not an inferred available player"
-      },
-      {
-        "id": "league-finality-to-standings",
-        "type": "shared-derived",
-        "status": "verified",
-        "source": "canonical NFL games and stats plus League scoring evidence",
-        "owner": "tools/derived_data_lib/week_finality.py",
-        "product": "LeagueScoredWeek / completed-week boundary",
-        "consumers": [
-          "tools/league_standings_sources.py"
-        ],
-        "identity": [
-          "CanonicalLeagueID",
-          "Season",
-          "Week",
-          "NFLFinality",
-          "LeagueScoring"
-        ],
-        "evidenceFiles": [
-          "tools/derived_data_lib/week_finality.py",
-          "tools/league_standings_sources.py"
-        ],
-        "unavailable": "Missing games, stats or league-scoring evidence is unknown rather than a final week"
-      },
-      {
-        "id": "nfl-player-profile-durable",
-        "type": "blocked/unknown",
-        "status": "unknown",
-        "source": "Field-specific Sleeper and nflverse inputs",
-        "owner": "unresolved",
-        "product": "Unified durable profile owner",
-        "consumers": [
-          "tools/players_population.py"
-        ],
-        "identity": [
-          "CanonicalPlayerID",
-          "ProfileField"
-        ],
-        "evidenceFiles": [
-          "tools/players_population.py"
-        ],
-        "unavailable": "No accepted single durable field-level owner; runtime adapter exists"
-      },
-      {
-        "id": "market-observations-rights",
-        "type": "blocked/unknown",
-        "status": "blocked",
-        "source": "External market provider datasets",
-        "owner": "Issue #988 rights and writer gate",
-        "product": "Shared market observations",
-        "consumers": [
-          "fantasy-management/automation/jobs/entity-observation.json"
-        ],
-        "identity": [
-          "Provider",
-          "Dataset",
-          "Snapshot"
-        ],
-        "evidenceFiles": [
-          "fantasy-management/automation/jobs/entity-observation.json"
-        ],
-        "unavailable": "Publication and retention rights not accepted for all datasets"
-      }
-    ]
-  }
+  "issue": 1263,
+  "checkpoint": "G1-extension-2026-11-02",
+  "scope": "evidence-backed-partial-inventory-not-a-complete-callgraph",
+  "status": "partial",
+  "principle": "A canonical Source/Model remains the fact owner; App/FM outputs are consumer deliveries. Missing/blocked ownership never silently becomes verified.",
+  "edgeTypes": [
+    "source-fact",
+    "normalized",
+    "shared-derived",
+    "consumer-adapter",
+    "display-only",
+    "hypothetical",
+    "state-feedback",
+    "blocked/unknown"
+  ],
+  "edges": [
+    {
+      "id": "nfl-schedule-bye",
+      "type": "shared-derived",
+      "status": "verified",
+      "source": "data-source/nfl/schedules/<Season>.json",
+      "owner": "tools/player_valuation_sources.py::team_bye_weeks",
+      "product": "team-by-bye-week",
+      "consumers": [
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "identity": [
+        "Season",
+        "NFLTeam"
+      ],
+      "evidenceFiles": [
+        "tools/player_valuation_sources.py",
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "unavailable": "Missing/invalid REG schedule blocks"
+    },
+    {
+      "id": "nfl-roster-population",
+      "type": "normalized",
+      "status": "verified",
+      "source": "canonical NFL roster, weekly rosters and NFL draft",
+      "owner": "tools/players_population.py::build_population",
+      "product": "Player population",
+      "consumers": [
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "identity": [
+        "Season",
+        "CanonicalPlayerID",
+        "SleeperID"
+      ],
+      "evidenceFiles": [
+        "tools/players_population.py",
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "unavailable": "Missing roster/snapshot blocks"
+    },
+    {
+      "id": "sleeper-platform-current",
+      "type": "source-fact",
+      "status": "verified",
+      "source": "data-source/nfl/platform/sleeper/players.json",
+      "owner": "tools/players_population.py::load_snapshot",
+      "product": "Current Sleeper status/profile",
+      "consumers": [
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "identity": [
+        "SleeperID",
+        "CanonicalPlayerID"
+      ],
+      "evidenceFiles": [
+        "tools/players_population.py",
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "unavailable": "Missing/duplicate platform evidence blocks"
+    },
+    {
+      "id": "canonical-league-lifecycle",
+      "type": "shared-derived",
+      "status": "verified",
+      "source": "canonical League, NFL week finality, data-meta",
+      "owner": "tools/derived_data_lib/league_lifecycle.py",
+      "product": "FinalScoredWeek at explicit evaluation instant",
+      "consumers": [
+        "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "Week",
+        "EvaluationInstant"
+      ],
+      "evidenceFiles": [
+        "tools/derived_data_lib/league_lifecycle.py",
+        "fantasy-management/_ai/scripts/canonical_league_lifecycle.py",
+        "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
+      ],
+      "unavailable": "Ambiguous/nonfinal inputs block"
+    },
+    {
+      "id": "league-full-refresh-evidence",
+      "type": "state-feedback",
+      "status": "verified",
+      "source": "data-source/_sync/league-refresh-witnesses/<LeagueID>/<Season>-week-<Week>.json",
+      "owner": "tools/league_source_refresh_witness.py",
+      "product": "Full-sync completion evidence with source hashes",
+      "consumers": [
+        "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
+      ],
+      "identity": [
+        "CanonicalLeagueSeasonID",
+        "ProviderLeagueID",
+        "Week"
+      ],
+      "evidenceFiles": [
+        "tools/league_source_refresh_witness.py",
+        "fantasy-management/_ai/scripts/resolve_weekly_review_trigger.py"
+      ],
+      "unavailable": "Missing, changed, future or young witness blocks"
+    },
+    {
+      "id": "standings-to-angular",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "data-derived/league-standings/<LeagueID>/<Season>.json",
+      "owner": "tools/league_standings_app_publish.py",
+      "product": "App Standings.Weeks readmodel",
+      "consumers": [
+        "src/app/shared/utils/overview-weekly-dashboard.util.ts"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "Week"
+      ],
+      "evidenceFiles": [
+        "tools/league_standings_app_publish.py",
+        "src/app/shared/utils/overview-weekly-dashboard.util.ts"
+      ],
+      "unavailable": "Missing weekly table is unknown not score replay"
+    },
+    {
+      "id": "fm-freshness-monitoring",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "fantasy-management/generated/operations/source-freshness.json",
+      "owner": "fantasy-management/_ai/scripts/build_source_freshness_gate.py",
+      "product": "Provider heartbeat readiness",
+      "consumers": [
+        "fantasy-management/automation/jobs/entity-observation.json"
+      ],
+      "identity": [
+        "SourceID",
+        "RunInstant"
+      ],
+      "evidenceFiles": [
+        "fantasy-management/_ai/scripts/build_source_freshness_gate.py",
+        "fantasy-management/automation/jobs/entity-observation.json"
+      ],
+      "unavailable": "Block/degraded/no-event policy not App Timestamps"
+    },
+    {
+      "id": "canonical-standings-model",
+      "type": "shared-derived",
+      "status": "verified",
+      "source": "data-source/leagues/<LeagueID>/seasons/<Season>/{league,members,rosters,brackets,matchups} plus canonical week finality",
+      "owner": "tools/derived_data_lib/league_standings.py",
+      "product": "data-derived/league-standings/<LeagueID>/<Season>.json (regular, weekly, playoffs, awards, all-time)",
+      "consumers": [
+        "tools/league_standings_app_publish.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "StandingsModelID",
+        "AwardsModelID",
+        "ScoredWeek"
+      ],
+      "evidenceFiles": [
+        "tools/league_standings_sources.py",
+        "tools/derived_data_lib/league_standings.py",
+        "tools/league_standings_app_publish.py"
+      ],
+      "unavailable": "Missing/ambiguous canonical team, provider joins or week-finality evidence fails closed"
+    },
+    {
+      "id": "canonical-league-history-model",
+      "type": "shared-derived",
+      "status": "verified",
+      "source": "canonical League transactions/drafts, data-meta draft/owner definitions and hand-maintained transaction overlay",
+      "owner": "tools/derived_data_lib/league_history.py::build_history",
+      "product": "data-derived/league-transactions and data-derived/league-drafts",
+      "consumers": [
+        "tools/league_history_app_publish.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "DraftKey",
+        "PickKey",
+        "TransactionID"
+      ],
+      "evidenceFiles": [
+        "tools/league_history_sources.py",
+        "tools/derived_data_lib/league_history.py",
+        "tools/league_history_app_publish.py"
+      ],
+      "unavailable": "Missing/ambiguous canonical draft/provider identities or manual overlay blocks history materialization"
+    },
+    {
+      "id": "league-drafts-to-league-home",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "data-derived/league-drafts/<LeagueID>/<Season>.json",
+      "owner": "tools/derived_data_lib/league_history.py",
+      "product": "Current and future draft-pick ownership in League.json Teams",
+      "consumers": [
+        "public/requests/utils/league/TeamDraftPickUtils.psm1",
+        "public/requests/RequestLeague.ps1"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "DraftKey",
+        "PickKey",
+        "CurrentOwnerRosterID"
+      ],
+      "evidenceFiles": [
+        "public/requests/utils/league/TeamDraftPickUtils.psm1",
+        "public/requests/RequestLeague.ps1",
+        "tools/derived_data_lib/league_history.py"
+      ],
+      "unavailable": "Missing current-season product, year gaps or duplicate draft/pick identities fail closed; App Drafts.json is not the owner"
+    },
+    {
+      "id": "standings-to-draft-order",
+      "type": "shared-derived",
+      "status": "verified",
+      "source": "canonical League standings inputs and selected standings model",
+      "owner": "tools/derived_data_lib/league_standings.py",
+      "product": "In-memory standings product for configured draft-order calculation",
+      "consumers": [
+        "tools/league_history_sources.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "StandingsModelID",
+        "DraftType"
+      ],
+      "evidenceFiles": [
+        "tools/league_history_sources.py",
+        "tools/league_standings_sources.py",
+        "tools/derived_data_lib/league_standings.py"
+      ],
+      "unavailable": "Standings source error blocks only draft paths requiring this order; published App Standings.json is not an input"
+    },
+    {
+      "id": "player-valuation-to-app-players",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "canonical NFL/League player facts with season-specific selected valuation model",
+      "owner": "tools/derived_data_lib/player_valuation.py",
+      "product": "data-derived/player-valuation/<LeagueID>/<Season>/week-<Week>.json delivered as public/data/Players.json",
+      "consumers": [
+        "tools/players_app_publish.py",
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "AsOfFinalScoredWeek",
+        "CanonicalPlayerID",
+        "ModelSelection",
+        "AsOfDate"
+      ],
+      "evidenceFiles": [
+        "tools/player_valuation_sources.py",
+        "tools/derived_data_lib/player_valuation.py",
+        "tools/derived_data.py",
+        "tools/players_app_publish.py",
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "unavailable": "Missing/ambiguous current canonical facts blocks publication; identity hold reads only persisted PlayerValuation snapshot, never prior Players readmodel"
+    },
+    {
+      "id": "player-week-fantasy-app-delivery",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "data-derived/player-week-fantasy/<LeagueID>/<Season> snapshots",
+      "owner": "tools/player_week_fantasy.py",
+      "product": "App PlayerWeekFantasy.json delivery (no scoring recomputation)",
+      "consumers": [
+        "tools/player_week_fantasy_app_publish.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "Week",
+        "ScoringProfile",
+        "CanonicalPlayerID"
+      ],
+      "evidenceFiles": [
+        "tools/player_week_fantasy.py",
+        "tools/player_week_fantasy_app_publish.py"
+      ],
+      "unavailable": "Missing derived contract or incomplete canonical-to-Sleeper identity blocks delivery; no App readmodel is upstream"
+    },
+    {
+      "id": "fm-canonical-league-ownership",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "data-source/leagues canonical season and owner-registry canonical member bridge",
+      "owner": "fantasy-management/_ai/scripts/canonical_league_ownership.py",
+      "product": "Validated Fantasy Operations roster ownership snapshot",
+      "consumers": [
+        "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
+        "fantasy-management/_ai/scripts/build_player_signal_dataset.py",
+        "fantasy-management/_ai/scripts/build_fa_board_readmodel.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "CanonicalLeagueMemberID",
+        "TeamID",
+        "CanonicalPlayerID"
+      ],
+      "evidenceFiles": [
+        "fantasy-management/_ai/scripts/canonical_league_ownership.py",
+        "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
+        "fantasy-management/_ai/scripts/build_player_signal_dataset.py",
+        "fantasy-management/_ai/scripts/build_fa_board_readmodel.py"
+      ],
+      "unavailable": "Incomplete member/roster mapping is not proof of free agency; fail closed on ambiguity"
+    },
+    {
+      "id": "fm-canonical-member-display",
+      "type": "display-only",
+      "status": "verified",
+      "source": "data-source/leagues/<LeagueID>/seasons/<Season>/members.json",
+      "owner": "fantasy-management/_ai/scripts/operations_team_display.py",
+      "product": "Operations team names and presentation abbreviations",
+      "consumers": [
+        "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
+        "fantasy-management/_ai/scripts/build_fa_board_readmodel.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "CanonicalLeagueMemberID",
+        "TeamID"
+      ],
+      "evidenceFiles": [
+        "fantasy-management/_ai/scripts/operations_team_display.py",
+        "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
+        "fantasy-management/_ai/scripts/build_fa_board_readmodel.py"
+      ],
+      "unavailable": "Missing, duplicate or mismatched member labels block enrichment; presentation abbreviations are not shared domain facts"
+    },
+    {
+      "id": "fm-age-evaluation-reference",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "FM_OPERATIONS_RUN_AT_UTC (or explicit replay date) and data-meta LeagueTimeZone",
+      "owner": "fantasy-management/_ai/scripts/operations_age_reference.py::age_reference_date",
+      "product": "Run-scoped league-local date for player Age",
+      "consumers": [
+        "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
+        "fantasy-management/_ai/scripts/build_player_signal_dataset.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "RunInstant",
+        "LeagueTimeZone",
+        "OptionalReplayAsOfDate"
+      ],
+      "evidenceFiles": [
+        "fantasy-management/_ai/scripts/operations_age_reference.py",
+        "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
+        "fantasy-management/_ai/scripts/build_player_signal_dataset.py"
+      ],
+      "unavailable": "Invalid replay date, missing time-zone config or bad run instant blocks; provider freshness and App Timestamps are unrelated"
+    },
+    {
+      "id": "fm-fa-board-lifecycle-evaluation",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "Single FM Operations run instant plus canonical League lifecycle and ownership",
+      "owner": "fantasy-management/_ai/scripts/build_fa_board_readmodel.py",
+      "product": "FA Board taxi/reserve availability at explicit evaluation instant",
+      "consumers": [
+        "fantasy-management/automation/fa-board-materialization.json"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "RunInstant",
+        "CanonicalPlayerID",
+        "TeamID"
+      ],
+      "evidenceFiles": [
+        "fantasy-management/_ai/scripts/build_fa_board_readmodel.py",
+        "fantasy-management/_ai/scripts/operations_run_instant.py",
+        "fantasy-management/automation/fa-board-materialization.json"
+      ],
+      "unavailable": "Unresolved league state or insufficient ownership/draft/season rules is unknown or unavailable, not an inferred available player"
+    },
+    {
+      "id": "league-finality-to-standings",
+      "type": "shared-derived",
+      "status": "verified",
+      "source": "canonical NFL games and stats plus League scoring evidence",
+      "owner": "tools/derived_data_lib/week_finality.py",
+      "product": "LeagueScoredWeek / completed-week boundary",
+      "consumers": [
+        "tools/league_standings_sources.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "Week",
+        "NFLFinality",
+        "LeagueScoring"
+      ],
+      "evidenceFiles": [
+        "tools/derived_data_lib/week_finality.py",
+        "tools/league_standings_sources.py"
+      ],
+      "unavailable": "Missing games, stats or league-scoring evidence is unknown rather than a final week"
+    },
+    {
+      "id": "nfl-player-profile-durable",
+      "type": "blocked/unknown",
+      "status": "unknown",
+      "source": "Field-specific Sleeper and nflverse inputs",
+      "owner": "unresolved",
+      "product": "Unified durable profile owner",
+      "consumers": [
+        "tools/players_population.py"
+      ],
+      "identity": [
+        "CanonicalPlayerID",
+        "ProfileField"
+      ],
+      "evidenceFiles": [
+        "tools/players_population.py"
+      ],
+      "unavailable": "No accepted single durable field-level owner; runtime adapter exists"
+    },
+    {
+      "id": "market-observations-rights",
+      "type": "blocked/unknown",
+      "status": "blocked",
+      "source": "External market provider datasets",
+      "owner": "Issue #988 rights and writer gate",
+      "product": "Shared market observations",
+      "consumers": [
+        "fantasy-management/automation/jobs/entity-observation.json"
+      ],
+      "identity": [
+        "Provider",
+        "Dataset",
+        "Snapshot"
+      ],
+      "evidenceFiles": [
+        "fantasy-management/automation/jobs/entity-observation.json"
+      ],
+      "unavailable": "Publication and retention rights not accepted for all datasets"
+    },
+    {
+      "id": "nfl-games-canonical-materialization",
+      "type": "shared-derived",
+      "status": "verified",
+      "source": "data-source/nfl/{schedules,game-finality,schedule-odds}/<Season>.json",
+      "owner": "tools/derived_data_lib/nfl_games.py::build_nfl_games",
+      "product": "data-derived/nfl-games/<Season>.json",
+      "consumers": [
+        "tools/nfl_games_materialize.py"
+      ],
+      "identity": [
+        "Season",
+        "GameID",
+        "SourceDataset"
+      ],
+      "evidenceFiles": [
+        "tools/nfl_games_materialize.py",
+        "tools/derived_data_lib/nfl_games.py"
+      ],
+      "unavailable": "Missing source partition or invalid GameID joins block; write opt-in; workflow consumer coverage not proven"
+    },
+    {
+      "id": "team-week-performance-canonical-materialization",
+      "type": "shared-derived",
+      "status": "verified",
+      "source": "canonical league matchups and weekly NFL positions, scoring profile, NFL/League finality",
+      "owner": "tools/team_week_performance.py::build_team_week_performance",
+      "product": "data-derived/team-week-performance/<LeagueID>/<Season>/<Week>.json",
+      "consumers": [
+        "tools/team_week_performance_materialize.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "Week",
+        "CanonicalPlayerID",
+        "ScoringProfile"
+      ],
+      "evidenceFiles": [
+        "tools/team_week_performance_sources.py",
+        "tools/team_week_performance.py",
+        "tools/team_week_performance_materialize.py"
+      ],
+      "unavailable": "Unfinalized weeks, missing positions and incomplete roster evidence block materialization"
+    },
+    {
+      "id": "matchup-context-canonical-app-delivery",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "canonical league matchups and NFL schedule/finality plus computed decision windows/lifecycle",
+      "owner": "tools/derived_data_lib/matchup_context.py and tools/derived_data_lib/fantasy_game_context.py",
+      "product": "App Matchups/FantasyGameContext current and history",
+      "consumers": [
+        "tools/matchup_context_app_publish.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "Week",
+        "FantasyMatchupID",
+        "EvaluationInstant"
+      ],
+      "evidenceFiles": [
+        "tools/derived_data_lib/matchup_context.py",
+        "tools/derived_data_lib/fantasy_game_context.py",
+        "tools/matchup_context_app_publish.py"
+      ],
+      "unavailable": "Missing current matchups fail; incomplete optional context/history retains previous delivery with warning"
+    },
+    {
+      "id": "matchup-projections-central-model-delivery",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "in-memory computed FantasyGameContext, PlayerWeekFantasy projection delivery and Decision Windows",
+      "owner": "tools/derived_data_lib/models/team_range/v1.py",
+      "product": "public/data/MatchupProjections.json",
+      "consumers": [
+        "tools/matchup_projection.py",
+        "tools/player_week_fantasy_refresh.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "Week",
+        "FantasyMatchupID",
+        "FantasyTeamID",
+        "TeamRangeModelID"
+      ],
+      "evidenceFiles": [
+        "tools/matchup_projection.py",
+        "tools/player_week_fantasy_refresh.py",
+        "tools/derived_data_lib/models/team_range/v1.py"
+      ],
+      "unavailable": "No matchup context skips output; failed decision windows only suppress availability enrichment"
+    }
+  ]
+}
 
 # G1/G6 coverage ledger: source families and downstream products are distinct counts.
 # All linked-partial rows remain incomplete pending independent graph/reachability review.
@@ -2065,13 +2160,15 @@ sourceFamilyCoverageAudit: {
   "downstreamProducts": [
     {
       "product": "nfl-games",
-      "status": "unmapped",
-      "edgeIds": [],
+      "status": "linked-partial",
+      "edgeIds": [
+        "nfl-games-canonical-materialization"
+      ],
       "evidenceFiles": [
         "tools/nfl_games_materialize.py",
         "tools/derived_data_lib/nfl_games.py"
       ],
-      "remaining": "Trace Source schedule/finality/odds → shared NFL games → App consumers and publication conditions."
+      "remaining": "A bounded model/materialization edge is code-evidenced; production workflow reachability, complete consumer coverage, refresh and historical restoration remain unverified."
     },
     {
       "product": "player-week-fantasy",
@@ -2087,13 +2184,15 @@ sourceFamilyCoverageAudit: {
     },
     {
       "product": "team-week-performance",
-      "status": "unmapped",
-      "edgeIds": [],
+      "status": "linked-partial",
+      "edgeIds": [
+        "team-week-performance-canonical-materialization"
+      ],
       "evidenceFiles": [
         "tools/team_week_performance.py",
         "tools/team_week_performance_materialize.py"
       ],
-      "remaining": "Explicitly inventory canonical league/NFL/points inputs and both shared/App consumers."
+      "remaining": "A bounded model/materialization edge is code-evidenced; production workflow reachability, complete consumer coverage, refresh and historical restoration remain unverified."
     },
     {
       "product": "league-standings",
@@ -2123,22 +2222,26 @@ sourceFamilyCoverageAudit: {
     },
     {
       "product": "fantasy-game-context-and-matchups",
-      "status": "unmapped",
-      "edgeIds": [],
+      "status": "linked-partial",
+      "edgeIds": [
+        "matchup-context-canonical-app-delivery"
+      ],
       "evidenceFiles": [
         "tools/derived_data_lib/matchup_context.py",
         "tools/matchup_context_app_publish.py"
       ],
-      "remaining": "Declare source→DecisionWindows→Shared Model→App chains, time/finality and freshness."
+      "remaining": "A bounded model/materialization edge is code-evidenced; production workflow reachability, complete consumer coverage, refresh and historical restoration remain unverified."
     },
     {
       "product": "matchup-projections",
-      "status": "unmapped",
-      "edgeIds": [],
+      "status": "linked-partial",
+      "edgeIds": [
+        "matchup-projections-central-model-delivery"
+      ],
       "evidenceFiles": [
         "tools/matchup_projection.py"
       ],
-      "remaining": "Establish cross-consumer derivation versus App-specific projection owner and source lineage."
+      "remaining": "A bounded model/materialization edge is code-evidenced; production workflow reachability, complete consumer coverage, refresh and historical restoration remain unverified."
     },
     {
       "product": "fantasy-operations-readmodels",

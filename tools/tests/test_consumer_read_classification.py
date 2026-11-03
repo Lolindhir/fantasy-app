@@ -408,7 +408,7 @@ class ConsumerReadClassificationTest(unittest.TestCase):
             (lambda a: a["families"][2].update(status="verified"), "invalid source family status"),
             (lambda a: a["families"][2].update(evidenceFiles=["missing/traversal.py"]), "missing/unsafe source family evidence"),
             (lambda a: a["families"][2].update(remaining=""), "missing source family remaining"),
-            (lambda a: a["downstreamProducts"][0].update(edgeIds=["canonical-standings-model"]), "unmapped downstream product claims edges"),
+            (lambda a: a["downstreamProducts"][0].update(status="unmapped", edgeIds=["canonical-standings-model"]), "unmapped downstream product claims edges"),
             (lambda a: a.update(status="complete"), "source-family audit must stay partial"),
         )
         for change, expected in alterations:
@@ -417,6 +417,26 @@ class ConsumerReadClassificationTest(unittest.TestCase):
                 change(candidate)
                 errors = check_source_family_coverage_audit(matrix, candidate, REPO_ROOT)
                 self.assertTrue(any(expected in error for error in errors), errors)
+
+    def test_g1_derived_product_links_keep_partial_and_code_witnesses(self) -> None:
+        document = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))
+        edges = {r["id"]: r for r in document["productiveEdgeAudit"]["edges"]}
+        products = {r["product"]: r for r in document["sourceFamilyCoverageAudit"]["downstreamProducts"]}
+        witnesses = {
+            "nfl-games": ("nfl-games-canonical-materialization", "tools/nfl_games_materialize.py", "build_nfl_games(*inputs)"),
+            "team-week-performance": ("team-week-performance-canonical-materialization", "tools/team_week_performance_materialize.py", "load_verified_week_inputs("),
+            "fantasy-game-context-and-matchups": ("matchup-context-canonical-app-delivery", "tools/matchup_context_app_publish.py", "resolve_matchups("),
+            "matchup-projections": ("matchup-projections-central-model-delivery", "tools/player_week_fantasy_refresh.py", "publish_matchup_projections("),
+        }
+        for name, (edge, path, code_witness) in witnesses.items():
+            with self.subTest(name=name):
+                self.assertEqual("linked-partial", products[name]["status"])
+                self.assertIn(edge, products[name]["edgeIds"])
+                self.assertEqual("verified", edges[edge]["status"])
+                self.assertIn(code_witness, (REPO_ROOT / path).read_text(encoding="utf-8"))
+                self.assertIn("remain unverified", products[name]["remaining"])
+        self.assertEqual("partial", document["productiveEdgeAudit"]["status"])
+        self.assertEqual("partial", document["sourceFamilyCoverageAudit"]["status"])
 
     def test_g3_bye_week_source_contract_matches_canonical_runtime(self) -> None:
         matrix = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))["matrix"]
