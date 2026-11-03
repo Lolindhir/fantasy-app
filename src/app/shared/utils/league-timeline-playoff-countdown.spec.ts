@@ -113,7 +113,7 @@ describe('league timeline playoff countdown', () => {
     expect(view?.milestones).toContain(jasmine.objectContaining({
       label: 'Playoffs',
       value: 'Week 14',
-      detail: '1 day',
+      detail: '1 day 0 h',
       gameweeksDetail: '0 gameweeks left'
     }));
   });
