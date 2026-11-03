@@ -9,6 +9,8 @@ from pathlib import Path
 TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
+from team_week_performance import build_team_week_performance, save_team_week_performance, output_path  # noqa: E402
+from derived_data_lib.weekly_recaps import team_awards  # noqa: E402
 from team_week_performance_sources import (  # noqa: E402
     WeekSourceNotReady,
     load_verified_week_inputs,
@@ -204,6 +206,75 @@ class SourcesTest(unittest.TestCase):
         roster_file.write_text(json.dumps({"Season": 2024, "Week": 5, "Records": []}))
         with self.assertRaisesRegex(WeekSourceNotReady, "season/week mismatch"):
             resolve_week_positions(self.root, 2024, 4, self.roster)
+
+    def test_historical_correction_rebuilds_awards_and_restores_byte_identically(self):
+        """A corrected scored week stays stale until its verified partition is rebuilt.
+
+        The mutation and all writes are confined to setUp's temporary repo root.
+        """
+        league_file = self.root / "data-source/leagues/nfl-reise/seasons/2024/league.json"
+        league = json.loads(league_file.read_text(encoding="utf-8"))
+        league["RosterPositions"] = ["WR", "BN"]
+        league_file.write_text(json.dumps(league), encoding="utf-8")
+        weekly = self.root / "data-source/nfl/weekly-rosters/2024/04.json"
+        positions = json.loads(weekly.read_text(encoding="utf-8"))
+        positions["Records"][1]["Position"] = "WR"
+        weekly.write_text(json.dumps(positions), encoding="utf-8")
+
+        matchup_file = self.root / "data-source/leagues/nfl-reise/seasons/2024/matchups/week-4.json"
+        original = [{
+            "CanonicalLeagueRosterID": "rosterA", "Week": 4,
+            "ProviderMappings": [{"Provider": "Sleeper", "ProviderRosterID": "1"}],
+            "Players": [{"CanonicalPlayerID": "a"}, {"CanonicalPlayerID": "b"}],
+            "Starters": [{"CanonicalPlayerID": "a"}],
+            "PlayerPoints": [
+                {"Player": {"CanonicalPlayerID": "a"}, "Points": 5},
+                {"Player": {"CanonicalPlayerID": "b"}, "Points": 8},
+            ],
+            "StarterPoints": [{"Player": {"CanonicalPlayerID": "a"}, "Points": 5}],
+            "Points": 5,
+        }]
+        matchup_file.write_text(json.dumps(original), encoding="utf-8")
+
+        def rebuild():
+            inputs = load_verified_week_inputs(
+                self.root, "nfl-reise", 2024, 4, nfl_finality=self.final
+            )
+            return build_team_week_performance(**inputs)
+
+        def projection():
+            rows = json.loads(matchup_file.read_text(encoding="utf-8"))
+            return team_awards(self.root, "nfl-reise", 2024, 4, rows, {"1"})
+
+        before = rebuild()
+        self.assertTrue(save_team_week_performance(self.root, before))
+        output = output_path(self.root, before)
+        initial_bytes = output.read_bytes()
+        self.assertEqual(8, projection()["BestManager"][0]["PotentialPoints"])
+        self.assertFalse(save_team_week_performance(self.root, before))
+
+        corrected = json.loads(matchup_file.read_text(encoding="utf-8"))
+        corrected[0]["PlayerPoints"][1]["Points"] = 17
+        matchup_file.write_text(json.dumps(corrected), encoding="utf-8")
+        # Current consumer accepts a structurally valid prior partition: a
+        # correction requires the existing producer to rebuild it.
+        self.assertEqual(8, projection()["BestManager"][0]["PotentialPoints"])
+        revised = rebuild()
+        self.assertEqual(before["FinalityEvidence"], revised["FinalityEvidence"])
+        self.assertEqual(before["ScoringProfile"]["SettingsHash"],
+                         revised["ScoringProfile"]["SettingsHash"])
+        self.assertTrue(save_team_week_performance(self.root, revised))
+        self.assertNotEqual(initial_bytes, output.read_bytes())
+        self.assertEqual(17, projection()["BestManager"][0]["PotentialPoints"])
+        self.assertFalse(save_team_week_performance(self.root, revised))
+
+        # A correction rollback restores exact bytes and then becomes a no-op.
+        matchup_file.write_text(json.dumps(original), encoding="utf-8")
+        restored = rebuild()
+        self.assertEqual(before, restored)
+        self.assertTrue(save_team_week_performance(self.root, restored))
+        self.assertEqual(initial_bytes, output.read_bytes())
+        self.assertFalse(save_team_week_performance(self.root, restored))
 
     def test_2024_special_flex_matches_legacy_slot_contract(self):
         slots = resolve_slots_from_league(
