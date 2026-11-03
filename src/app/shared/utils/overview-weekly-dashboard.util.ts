@@ -52,6 +52,10 @@ export interface OverviewLastMatchup {
 
 export interface OverviewTopContext {
   standings: OverviewStandingRow[];
+  /** Which complete regular-season table was actually rendered. */
+  standingsAsOfWeek: number | null;
+  /** True only when a newer requested standings snapshot was unavailable. */
+  standingsIsFallback: boolean;
   lastCompletedWeek: number | null;
   lastMatchups: OverviewLastMatchup[];
 }
@@ -62,6 +66,12 @@ export interface OverviewRecapSelection {
   players: WeeklyRecapKeyPlayer[];
   awards: WeeklyRecapTeamAwards | null;
   prominent: boolean;
+}
+
+interface OverviewStandingsSnapshot {
+  rows: OverviewStandingRow[];
+  asOfWeek: number | null;
+  isFallback: boolean;
 }
 
 interface OverviewEffectiveStandingContext {
@@ -153,12 +163,19 @@ export function buildOverviewTopContext(
   readModel: MatchupsReadModel | null | undefined,
   displayWeek: number | null = readModel?.Summary.ActiveOrNextWeek ?? null
 ): OverviewTopContext {
-  const standings = buildOverviewStandingsSnapshot(league, readModel, displayWeek);
+  const snapshot = buildOverviewStandingsSnapshot(league, readModel, displayWeek);
+  const standings = snapshot.rows;
   const lastWeek = displayWeek === null
     ? getLastCompletedWeek(readModel)
     : getFinalWeek(readModel, displayWeek - 1);
   if (!lastWeek) {
-    return { standings, lastCompletedWeek: null, lastMatchups: [] };
+    return {
+      standings,
+      standingsAsOfWeek: snapshot.asOfWeek,
+      standingsIsFallback: snapshot.isFallback,
+      lastCompletedWeek: null,
+      lastMatchups: []
+    };
   }
 
   const teamByID = new Map(league.Teams.map(team => [String(team.TeamID), team]));
@@ -166,8 +183,9 @@ export function buildOverviewTopContext(
     league,
     readModel,
     lastWeek.Week,
+    false,
     false
-  );
+  ).rows;
   const orderedLastMatchups = orderOverviewCurrentMatchups(
     league,
     lastWeek.Matchups,
@@ -199,6 +217,8 @@ export function buildOverviewTopContext(
 
   return {
     standings,
+    standingsAsOfWeek: snapshot.asOfWeek,
+    standingsIsFallback: snapshot.isFallback,
     lastCompletedWeek: lastWeek.Week,
     lastMatchups
   };
@@ -258,62 +278,91 @@ function buildOverviewStandingsSnapshot(
   league: League,
   readModel: MatchupsReadModel | null | undefined,
   displayWeek: number | null,
-  useCurrentFallback = true
-): OverviewStandingRow[] {
-  // The only fallback is the separately generated current table before a
-  // historical week is required. No score, streak or ranking replay from Matchups.
+  useCurrentFallback = true,
+  allowEarlierSnapshot = true
+): OverviewStandingsSnapshot {
+  const unavailable: OverviewStandingsSnapshot = { rows: [], asOfWeek: null, isFallback: false };
+
+  // Before any completed week, the separately generated current table remains
+  // the only permitted fallback. Never replay Matchups to fabricate standings.
   if (!readModel || displayWeek === null) {
-    return useCurrentFallback ? buildCurrentOverviewStandingRows(league) : [];
+    return {
+      ...unavailable,
+      rows: useCurrentFallback ? buildCurrentOverviewStandingRows(league) : []
+    };
   }
-  if (readModel.Season !== league.Season) return [];
+  if (readModel.Season !== league.Season) return unavailable;
 
   const playoffStartWeek = Number(league.PlayoffStartWeek);
   const completedWeek = Number.isFinite(playoffStartWeek) && playoffStartWeek > 0
     ? Math.min(displayWeek - 1, Math.max(0, playoffStartWeek - 1))
     : Math.max(0, displayWeek - 1);
   if (completedWeek <= 0) {
-    return useCurrentFallback ? buildCurrentOverviewStandingRows(league) : [];
+    return {
+      ...unavailable,
+      rows: useCurrentFallback ? buildCurrentOverviewStandingRows(league) : []
+    };
   }
 
   const season = league.Standings.find(row => row.Season === league.Season);
-  const snapshot = season?.Weeks?.find(row => row.Week === completedWeek);
-  if (!snapshot || snapshot.Teams.length !== league.Teams.length || league.Teams.length === 0) return [];
-
+  // The next fantasy matchup week can be available before the canonical
+  // standings producer has finalized its predecessor. Use only already
+  // published, validated weekly tables, never today's team records as W(N-1).
+  const candidates = (season?.Weeks ?? [])
+    .filter(row => Number.isInteger(row.Week)
+      && row.Week > 0
+      && row.Week <= completedWeek
+      && (allowEarlierSnapshot || row.Week === completedWeek))
+    .sort((left, right) => right.Week - left.Week);
   const teams = new Map(league.Teams.map(team => [String(team.TeamID), team]));
-  if (teams.size !== league.Teams.length) return [];
-  const seen = new Set<string>();
-  const standings: OverviewStandingRow[] = [];
-  for (const row of snapshot.Teams) {
-    const key = String(row.TeamID);
-    const team = teams.get(key);
-    const counts = [row.Wins, row.Losses, row.Ties];
-    if (!team || seen.has(key)
-      || !Number.isInteger(row.Place) || row.Place < 1 || row.Place > teams.size
-      || counts.some(count => !Number.isInteger(count) || count < 0)
-      || counts.reduce((total, count) => total + count, 0) !== completedWeek
-      || !Number.isFinite(row.Points) || !Number.isFinite(row.PointsAgainst)
-      || typeof row.Streak !== 'string' || !/^[1-9][0-9]*[WLT]$/.test(row.Streak)) {
-      return []; // incomplete or stale product is unknown, not evidence to replay
+  if (teams.size !== league.Teams.length || league.Teams.length === 0) return unavailable;
+
+  for (const candidate of candidates) {
+    if (candidate.Teams.length !== league.Teams.length) continue;
+
+    const seen = new Set<string>();
+    const standings: OverviewStandingRow[] = [];
+    let valid = true;
+    for (const row of candidate.Teams) {
+      const key = String(row.TeamID);
+      const team = teams.get(key);
+      const counts = [row.Wins, row.Losses, row.Ties];
+      if (!team || seen.has(key)
+        || !Number.isInteger(row.Place) || row.Place < 1 || row.Place > teams.size
+        || counts.some(count => !Number.isInteger(count) || count < 0)
+        || counts.reduce((total, count) => total + count, 0) !== candidate.Week
+        || !Number.isFinite(row.Points) || !Number.isFinite(row.PointsAgainst)
+        || typeof row.Streak !== 'string' || !/^[1-9][0-9]*[WLT]$/.test(row.Streak)) {
+        valid = false;
+        break;
+      }
+      seen.add(key);
+      standings.push({
+        team,
+        displayPlace: row.Place,
+        wins: row.Wins,
+        losses: row.Losses,
+        ties: row.Ties,
+        points: row.Points,
+        pointsAgainst: row.PointsAgainst,
+        record: formatStandingRecord(row.Wins, row.Losses, row.Ties),
+        streak: row.Streak,
+        placeDelta: resolveCanonicalPlaceDelta(team, row.Place, candidate.Week, candidate.Week)
+      });
     }
-    seen.add(key);
-    standings.push({
-      team,
-      displayPlace: row.Place,
-      wins: row.Wins,
-      losses: row.Losses,
-      ties: row.Ties,
-      points: row.Points,
-      pointsAgainst: row.PointsAgainst,
-      record: formatStandingRecord(row.Wins, row.Losses, row.Ties),
-      streak: row.Streak,
-      placeDelta: resolveCanonicalPlaceDelta(team, row.Place, completedWeek, completedWeek)
-    });
+    if (!valid || standings.length !== league.Teams.length) continue;
+
+    // Shared competition ranking allows equal places (1,1,3).
+    return {
+      rows: standings.sort((a, b) => a.displayPlace - b.displayPlace
+        || Number(a.team.TeamID) - Number(b.team.TeamID)),
+      asOfWeek: candidate.Week,
+      isFallback: candidate.Week < completedWeek
+    };
   }
 
-  // Shared ranking can include equal places (competition ranking: 1,1,3).
-  // Stable canonical roster-ID order from the product resolves display-only ties.
-  return standings.sort((a, b) => a.displayPlace - b.displayPlace
-    || Number(a.team.TeamID) - Number(b.team.TeamID));
+  // No complete canonical historical table: fail closed, not a partial league.
+  return unavailable;
 }
 
 // The generator owns weekly position changes. Match the historical movement to
