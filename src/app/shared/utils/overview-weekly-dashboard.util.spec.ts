@@ -219,6 +219,17 @@ describe('Overview weekly dashboard presentation', () => {
     expect(complete.standings.map(row => row.record)).toEqual(['7-1', '6-2', '4-4', '3-5']);
   });
 
+  it('stops at the last regular-season standings snapshot during playoffs', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 14);
+    league.PlayoffStartWeek = 14;
+    attachCanonicalWeek(league, 13, [[1, 1, 13, 0], [2, 2, 12, 1], [3, 3, 11, 2], [4, 4, 10, 3]]);
+
+    const context = buildOverviewTopContext(league, readModel(14, 15), 15);
+    expect(context.standingsAsOfWeek).toBe(13);
+    expect(context.standingsIsFallback).toBeFalse();
+    expect(context.standings.length).toBe(4);
+  });
+
   it('never substitutes future snapshots or invents a current table for a missing as-of week', () => {
     const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 3);
     attachCanonicalWeek(league, 3, [[1, 1, 3, 0], [2, 2, 2, 1], [3, 3, 1, 2], [4, 4, 0, 3]]);

@@ -318,7 +318,7 @@ function buildOverviewStandingsSnapshot(
   if (teams.size !== league.Teams.length || league.Teams.length === 0) return unavailable;
 
   for (const candidate of candidates) {
-    if (candidate.Teams.length !== league.Teams.length) continue;
+    if (!Array.isArray(candidate.Teams) || candidate.Teams.length !== league.Teams.length) continue;
 
     const seen = new Set<string>();
     const standings: OverviewStandingRow[] = [];
