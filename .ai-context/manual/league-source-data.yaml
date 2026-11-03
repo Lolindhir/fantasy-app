@@ -430,12 +430,15 @@ phase2TargetedFreshnessScopes:
       monitoring: important / repository_dispatch / 45-minute staleness (league-live.yml)
       publication: rebuild-and-retry via delegated League Source producer
     weekStructureRule: >
-      WeekStructure is intentionally outside the fast League Core scope because it
-      depends on broader matchup/history evidence. The scoped materializer preserves
-      the already accepted canonical WeekStructure from the target season's existing
-      league.json and fails closed if that baseline or its League/Season/Provider
-      identity is missing or contradictory. Full League Source materialization remains
-      the owner of recomputing WeekStructure.
+      The fast League Core scope updates ONLY WeekStructure.LastScoredLeg directly
+      from the freshly acquired Sleeper league settings (including late provider
+      corrections), with identity, season and accepted last-week bounds validated
+      fail-closed. All other WeekStructure fields remain the previously accepted
+      canonical historical/bracket baseline, because deriving their structure needs
+      broad matchup/history evidence. Full League Source materialization remains
+      the sole owner of recomputing those structural fields. This lets the existing
+      ten-minute Standings and League pipeline consume scored-week advancement
+      independently of NFL player stats or the daily 04:30 full source acquisition.
     identityGuard: >
       Bootstrap CurrentProviderLeagueID, manifest CurrentProviderLeagueID, exactly one
       canonical season mapping and the live/persisted current Sleeper league season

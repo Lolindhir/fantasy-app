@@ -166,6 +166,7 @@ def _existing_week_structure(
     season_id: str,
     season: int,
     provider_league_id: str,
+    live_last_scored_leg: object,
 ) -> dict:
     path = season_root / "league.json"
     raw = _read_json(path)
@@ -200,7 +201,26 @@ def _existing_week_structure(
             "League Core scope requires an existing accepted canonical WeekStructure; "
             "run full League Source materialization first"
         )
-    return week_structure
+    # Only the scoring watermark is a current-season provider fact. The rest
+    # of WeekStructure requires the full-history matchup/bracket materializer.
+    # Preserve the accepted structural baseline while preventing the scored
+    # week from lagging until the next daily full source refresh.
+    if str(week_structure.get("Season")) != str(season):
+        raise ValueError(f"Existing canonical WeekStructure season mismatch: {path}")
+    if isinstance(live_last_scored_leg, bool):
+        raise ValueError("Sleeper settings.last_scored_leg must be an integer or null")
+    try:
+        scored = int(live_last_scored_leg) if live_last_scored_leg is not None and str(live_last_scored_leg).strip() else 0
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Sleeper settings.last_scored_leg must be an integer or null") from exc
+    if scored < 0 or (live_last_scored_leg is not None and isinstance(live_last_scored_leg, float) and not live_last_scored_leg.is_integer()):
+        raise ValueError("Sleeper settings.last_scored_leg must be a non-negative integer")
+    week_ceiling = week_structure.get("ExpectedLastLeagueWeek") or week_structure.get("FinalLeagueWeek")
+    if type(week_ceiling) is not int or week_ceiling < 1 or scored > week_ceiling:
+        raise ValueError(
+            f"Sleeper last_scored_leg {scored} exceeds or cannot be bounded by accepted League WeekStructure end {week_ceiling!r}"
+        )
+    return {**week_structure, "LastScoredLeg": scored or None}
 
 
 def plan_league_core_materialization(
@@ -287,6 +307,7 @@ def plan_league_core_materialization(
             season_id,
             season,
             provider_league_id,
+            (league_raw.get("settings") or {}).get("last_scored_leg"),
         )
         league_settings = league_raw.get("settings") or {}
         league = {

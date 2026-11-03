@@ -312,6 +312,7 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
                     "Season": 2026,
                     "FinalLeagueWeek": 17,
                     "HighestAssignedMatchupWeek": 2,
+                    "LastScoredLeg": 1,
                 },
             )
 
@@ -407,6 +408,55 @@ class LeagueSourceCoreTargetingTests(unittest.TestCase):
                 "winners",
             )
 
+    def test_scored_week_advances_independently_of_historical_week_structure(self) -> None:
+        temporary, root = self._root_with_registry()
+        try:
+            self._write_fixture(root)
+            registry = load_league_registry(root)
+            resolver = PlayerMappingResolver.load(root)
+            raw_path = root / "data-source/providers/sleeper/leagues/2000000000000000000/league.json"
+            raw = json.loads(raw_path.read_text(encoding="utf-8"))
+            raw["settings"]["last_scored_leg"] = 2
+            raw_path.write_text(json.dumps(raw), encoding="utf-8")
+
+            outputs = plan_league_core_materialization(
+                root, "test-league", registry, resolver, seasons={2026}
+            )
+            league = next(item for item in outputs if item.path.name == "league.json")
+            self.assertEqual(league.value["WeekStructure"], {
+                "Season": 2026,
+                "FinalLeagueWeek": 17,
+                "HighestAssignedMatchupWeek": 2,
+                "LastScoredLeg": 2,
+            })
+            first = persist_canonical_outputs(outputs)
+            self.assertGreater(first["CanonicalFilesChanged"], 0)
+            second = persist_canonical_outputs(plan_league_core_materialization(
+                root, "test-league", registry, resolver, seasons={2026}
+            ))
+            self.assertEqual(second["CanonicalFilesChanged"], 0)
+        finally:
+            temporary.cleanup()
+
+    def test_scored_week_rejects_out_of_bounds_and_invalid_provider_evidence(self) -> None:
+        temporary, root = self._root_with_registry()
+        try:
+            self._write_fixture(root)
+            registry = load_league_registry(root)
+            resolver = PlayerMappingResolver.load(root)
+            raw_path = root / "data-source/providers/sleeper/leagues/2000000000000000000/league.json"
+            raw = json.loads(raw_path.read_text(encoding="utf-8"))
+            for value in (18, -1, True, "bad"):
+                with self.subTest(value=value):
+                    raw["settings"]["last_scored_leg"] = value
+                    raw_path.write_text(json.dumps(raw), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        plan_league_core_materialization(
+                            root, "test-league", registry, resolver, seasons={2026}
+                        )
+        finally:
+            temporary.cleanup()
+
     def test_current_scope_fails_closed_on_manifest_provider_mismatch(self) -> None:
         temporary, root = self._root_with_registry()
         try:
@@ -501,10 +551,15 @@ class CurrentRepositoryLeagueCoreScopeIntegrationTests(unittest.TestCase):
 
         league_output = next(output for output in outputs if output.path.name == "league.json")
         existing_league = json.loads(league_output.path.read_text(encoding="utf-8"))
+        expected = dict(existing_league["WeekStructure"])
+        expected["LastScoredLeg"] = json.loads(
+            (repo_root / "data-source/providers/sleeper/leagues"
+             / provider_league_id / "league.json").read_text(encoding="utf-8")
+        )["settings"]["last_scored_leg"]
         self.assertEqual(
             league_output.value["WeekStructure"],
-            existing_league["WeekStructure"],
-            "League Core scope must preserve the accepted canonical WeekStructure baseline",
+            expected,
+            "League Core must update only the live scored week, preserving other accepted structural facts",
         )
 
         winners_output = next(

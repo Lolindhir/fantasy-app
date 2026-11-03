@@ -1528,7 +1528,11 @@ decisions:
       League.json embeds the published Standings placement. The scope current is not a new materializer: tools/
       league_source_data.py --current-scope runs the League Core, transaction-window and draft planners in that order and
       merges their results; tests/test_league_source_current_scope.py proves identical files and semantic no-op behaviour
-      against the three single scopes. The pipeline owns its concurrency group league-live without cancel-in-progress; the
+      against the three single scopes. The fast current League Core materializer refreshes only the
+      provider-confirmed WeekStructure.LastScoredLeg from the same acquired raw Sleeper league,
+      retaining all other accepted full-history WeekStructure fields and their full-only owner;
+      this prevents Tuesday's scored-week readiness from depending on the daily full sync.
+      The pipeline owns its concurrency group league-live without cancel-in-progress; the
       source job additionally takes league-source-data-sync so the daily full League source sync never writes in parallel.
       The former targets league, league-core-source, league-transaction-source and league-draft-source and the workflows
       sync-league-core, sync-league-transactions, sync-league-drafts and update-league are removed; update-standings.yml
