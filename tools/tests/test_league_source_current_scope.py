@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -173,6 +174,82 @@ class CurrentScopeArgumentTests(unittest.TestCase):
         self.assertEqual(item["Dependencies"], ["league-core", "shared", "transactions", "drafts"])
         self.assertEqual(item["MaterializationScope"], "current")
 
+
+
+class SourceValidationSparseCheckoutContracts(unittest.TestCase):
+    """G5 fail-closed profile checks for the existing shared Source workflow."""
+
+    def _workflow(self) -> str:
+        return (REPO / ".github/workflows/sync-league-source-data.yml").read_text(
+            encoding="utf-8"
+        )
+
+    def test_current_pr_and_live_use_the_same_blobless_sparse_profile(self) -> None:
+        workflow = self._workflow()
+        profiles = re.findall(
+            r"^          sparse-checkout: \|\n((?:^            [^\n]+\n)+)",
+            workflow, flags=re.MULTILINE,
+        )
+        self.assertEqual(2, len(profiles), "PR proof must use the exact production profile")
+        self.assertEqual(profiles[0], profiles[1])
+        directories = set(profiles[0].strip().splitlines())
+        selected = {entry.strip() for entry in directories}
+        self.assertEqual(
+            {
+                "tools", ".github/workflows", "data-meta",
+                "data-source/leagues", "data-source/providers/sleeper",
+                "data-source/nfl/schedules", "data-source/nfl/identities",
+            }, selected,
+        )
+        self.assertNotIn("data-source", selected)  # would pull multi-GB historical sources
+        self.assertNotIn("data-source/nfl/player-stats", selected)
+        self.assertNotIn("data-source/nfl/weekly-rosters", selected)
+        self.assertNotIn("filter: blob:none", workflow)  # checkout filter overrides sparse input
+        self.assertEqual(2, workflow.count("remote.origin.partialclonefilter"))
+
+    def test_full_noncurrent_source_modes_and_publisher_remain_unchanged(self) -> None:
+        workflow = self._workflow()
+        validate = workflow.split("\n  validate:\n", 1)[1].split(
+            "\n  validate_current_sparse_pr:\n", 1
+        )[0]
+        self.assertIn("if: env.MATERIALIZATION_SCOPE == 'current'", validate)
+        self.assertIn("if: env.MATERIALIZATION_SCOPE != 'current'", validate)
+        self.assertEqual(2, validate.count("uses: actions/checkout@v7"))
+        self.assertIn('full)\n              python -m unittest discover -s tools/tests', validate)
+        self.assertIn("python tools/league_source_data.py validate", validate)
+
+        pr = workflow.split("\n  validate_current_sparse_pr:\n", 1)[1].split(
+            "\n  sync:\n", 1
+        )[0]
+        self.assertIn("if: github.event_name == 'pull_request'", pr)
+        self.assertIn("contents: read", pr)
+        self.assertIn("tools.tests.test_league_source_current_scope -v", pr)
+        self.assertIn("tools.tests.test_league_source_transaction_window", pr)
+        self.assertIn("python tools/league_source_data.py validate", pr)
+        sync = workflow.split("\n  sync:\n", 1)[1]
+        self.assertIn("needs: validate", sync)
+        self.assertIn("name: Checkout main", sync)
+        self.assertIn("token: $" + "{{ secrets.PAT_PUSH }}", sync)
+        self.assertIn("name: Sync, materialize and publish League source data", sync)
+        self.assertNotIn("sparse-checkout:", sync)
+
+    def test_sparse_input_guard_checks_parity_and_rejects_oversized_sources(self) -> None:
+        workflow = self._workflow()
+        for path in (
+            "tools/tests/test_league_source_current_scope.py",
+            "data-source/league-registry.json",
+            "data-meta/nfl-reise/metadata.json",
+            "data-source/leagues/nfl-reise/manifest.json",
+            "data-source/nfl/schedules/2026.json",
+            "data-source/nfl/identities/provider-mappings.json",
+            "data-source/providers/sleeper",
+        ):
+            self.assertEqual(2, workflow.count(f'"{path}"'), path)
+        self.assertEqual(2, workflow.count("Historical player stats unexpectedly checked out"))
+        self.assertEqual(2, workflow.count("Historical rosters unexpectedly checked out"))
+        self.assertEqual(2, workflow.count("Missing required current-scope input"))
+        self.assertEqual(2, workflow.count("core.sparseCheckout"))
+        self.assertEqual(2, workflow.count("Blobless Git filter missing"))
 
 if __name__ == "__main__":
     unittest.main()
