@@ -139,6 +139,7 @@ describe('league timeline playoff countdown', () => {
       now: new Date('2026-11-03T10:00:00Z')
     });
 
-    expect(view?.milestones.some(item => item.label === 'Playoffs')).toBeFalse();
+    // With no other upcoming milestones or operational items, the timeline is absent.
+    expect(view).toBeNull();
   });
 });
