@@ -340,7 +340,10 @@ export class DataService {
     });
 
     const outlooks = verifyTeamCapOutlook(data.capOutlookRaw, data.leagueRaw, data.playersRaw);
-    teams.forEach(team => { team.CapOutlook = outlooks.get(team.TeamID); });
+    teams.forEach(team => {
+      team.CapOutlook = outlooks.get(team.TeamID);
+      team.CapOutlookAsOfWeek = team.CapOutlook ? data.capOutlookRaw?.AsOfFinalScoredWeek : undefined;
+    });
     this.freeAgentMarketService.enrich(players, teams, data.leagueRaw as RawLeague, outlooks);
 
     return {

@@ -69,7 +69,7 @@ describe('team salary utilities', () => {
   it('rejects stale salary, wrong league and missing roster witnesses without recalculation', () => {
     const players = [makePlayer('a', 100, 110, 'QB'), makePlayer('b', 80, 90, 'WR')];
     const league = {
-      LeagueID: '123456', Season: '2026', FinalScoredWeek: 7,
+      LeagueID: '123456', Season: '2026', FinalScoredWeek: 7, LastLeagueWeek: 17,
       SalaryRelevantTeamSize: 2, SalaryCap: 200, SalaryCapProjected: 220,
       Teams: [{ TeamID: 1, Roster: ['a', 'b'] }]
     } as unknown as RawLeague;
@@ -89,11 +89,29 @@ describe('team salary utilities', () => {
       }]
     };
     expect(verifyTeamCapOutlook(outlook, league, players as unknown as RawPlayer[]).size).toBe(1);
+    // Scored week and player-stat valuation week are independent milestones.
+    const advancedLeague = { ...league, FinalScoredWeek: 8 };
+    expect(verifyTeamCapOutlook(outlook, advancedLeague, players as unknown as RawPlayer[]).size).toBe(1);
+    const laggingLeague = { ...league, FinalScoredWeek: 6 };
+    expect(verifyTeamCapOutlook(outlook, laggingLeague, players as unknown as RawPlayer[]).size).toBe(1);
     expect(verifyTeamCapOutlook({ ...outlook, Models: { RosterCap: 'roster-cap-v2', AutoCut: 'auto-cut-v3' } }, league, players as unknown as RawPlayer[]).size).toBe(1);
     expect(verifyTeamCapOutlook({ ...outlook, Models: { RosterCap: '', AutoCut: 'auto-cut-v1' } }, league, players as unknown as RawPlayer[]).size).toBe(0);
-    expect(verifyTeamCapOutlook(outlook, league, [makePlayer('a', 101, 110, 'QB'), players[1]] as unknown as RawPlayer[]).size).toBe(0);
-    expect(verifyTeamCapOutlook({ ...outlook, ProviderLeagueID: 'other' }, league, players as unknown as RawPlayer[]).size).toBe(0);
-    expect(verifyTeamCapOutlook({ ...outlook, AsOfFinalScoredWeek: 6 }, league, players as unknown as RawPlayer[]).size).toBe(0);
+    expect(verifyTeamCapOutlook(outlook, advancedLeague, [makePlayer('a', 101, 110, 'QB'), players[1]] as unknown as RawPlayer[]).size).toBe(0);
+    // Projected is the in-season moving salary; a different revision must still
+    // fail closed even when the completed League week is allowed to differ.
+    expect(verifyTeamCapOutlook(outlook, advancedLeague, [makePlayer('a', 100, 111, 'QB'), players[1]] as unknown as RawPlayer[]).size).toBe(0);
+    expect(verifyTeamCapOutlook(outlook, advancedLeague, [
+      makePlayer('b', 80, 90, 'WR'), makePlayer('a', 100, 110, 'QB')
+    ] as unknown as RawPlayer[]).size).toBe(1);
+    expect(verifyTeamCapOutlook({ ...outlook, ProviderLeagueID: 'other' }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
+    expect(verifyTeamCapOutlook({ ...outlook, AsOfFinalScoredWeek: -1 }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
+    expect(verifyTeamCapOutlook({ ...outlook, AsOfFinalScoredWeek: 18 }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
+    expect(verifyTeamCapOutlook({ ...outlook, AsOfFinalScoredWeek: 7.5 }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
+    expect(verifyTeamCapOutlook({ ...outlook, SalaryCapProjected: 221 }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
+    const readyTeam = outlook.Teams[0];
+    if (readyTeam.Status !== 'ready') throw new Error('Test fixture must be a ready team');
+    const reversedRosterWitness = { ...readyTeam, InputRoster: [...readyTeam.InputRoster].reverse() };
+    expect(verifyTeamCapOutlook({ ...outlook, Teams: [reversedRosterWitness] }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
     expect(verifyTeamCapOutlook(null, league, players as unknown as RawPlayer[]).size).toBe(0);
   });
 
