@@ -55,6 +55,19 @@ app-league-matchups {
   text-transform: uppercase;
 }
 
+.weekly-context-asof {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--weekly-muted);
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.weekly-context-asof--full { display: none; }
+
 .weekly-context-heading mat-icon {
   width: 16px;
   height: 16px;
@@ -738,6 +751,8 @@ app-league-matchups {
 @container (min-width: 768px) {
   .weekly-context-row { min-height: 38px; padding: 5px 12px; }
   .weekly-context-heading { min-height: 40px; padding-inline: 12px; font-size: 0.7rem; }
+  .weekly-context-asof--full { display: inline; }
+  .weekly-context-asof--compact { display: none; }
   .weekly-standing-row { grid-template-columns: 20px 28px minmax(0, 1fr) 38px 3.9ch; column-gap: 7px; }
   .weekly-standing-record { font-size: 0.78rem; }
   .weekly-standing-movement { font-size: 0.86rem; }

@@ -439,8 +439,14 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         start = source.index("function buildOverviewStandingsSnapshot(")
         end = source.find("\nfunction ", start + 1)
         routine = source[start:end if end >= 0 else len(source)]
-        self.assertIn("season?.Weeks?.find(", routine)
-        self.assertIn("snapshot.Teams", routine)
+        # Both exact-week selection and a validated earlier-week fallback are
+        # presentation-only reads of the canonical League Standings product.
+        self.assertIn("const season = league.Standings.find(", routine)
+        self.assertIn("const candidates = (season?.Weeks ?? [])", routine)
+        self.assertIn("row.Week <= completedWeek", routine)
+        self.assertIn("candidate.Teams", routine)
+        self.assertIn("counts.reduce((total, count) => total + count, 0) !== candidate.Week", routine)
+        self.assertIn("resolveCanonicalPlaceDelta(team, row.Place, candidate.Week, candidate.Week)", routine)
         self.assertNotIn("lastWeek.Matchups", routine)
         self.assertNotIn("standingsWinPercentage(", routine)
         self.assertNotIn("rank_teams(", routine)

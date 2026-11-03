@@ -185,6 +185,60 @@ describe('Overview weekly dashboard presentation', () => {
     expect(result.standings[0].points).toBe(200);
   });
 
+  it('shows W7 as the latest confirmed standings when W9 matchups already exist but W8 standings lag', () => {
+    const teams = [1, 2, 3, 4].map(id => makeTeam(id, id, id, id));
+    const league = makeLeague(teams, 7);
+    attachCanonicalWeek(league, 7, [[3, 1, 6, 1], [2, 2, 5, 2], [1, 3, 4, 3], [4, 4, 3, 4]]);
+    // Current roster records could already reflect W8; they must not become a W8 snapshot.
+    league.Teams[0].Placements.Current.Regular.Wins = 8;
+    league.Teams[0].Placements.Current.Regular.PlaceDelta = 2;
+
+    const context = buildOverviewTopContext(league, readModel(8, 9), 9);
+    expect(context.standingsAsOfWeek).toBe(7);
+    expect(context.standingsIsFallback).toBeTrue();
+    expect(context.standings.map(row => [row.team.TeamID, row.record])).toEqual([
+      [3, '6-1'], [2, '5-2'], [1, '4-3'], [4, '3-4']
+    ]);
+    expect(context.standings.find(row => row.team.TeamID === 1)?.placeDelta).toBeNull();
+  });
+
+  it('uses an older valid snapshot only when the requested week is missing or incomplete', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 8);
+    attachCanonicalWeek(league, 7, [[3, 1, 6, 1], [2, 2, 5, 2], [1, 3, 4, 3], [4, 4, 3, 4]]);
+    attachCanonicalWeek(league, 8, [[3, 1, 7, 1], [2, 2, 6, 2], [1, 3, 4, 4], [4, 4, 3, 5]]);
+    const week8 = league.Standings[0].Weeks!.find(row => row.Week === 8)!;
+    week8.Teams[0].Streak = ''; // A partially published snapshot is not accepted.
+    const incomplete = buildOverviewTopContext(league, readModel(8, 9), 9);
+    expect(incomplete.standingsAsOfWeek).toBe(7);
+    expect(incomplete.standingsIsFallback).toBeTrue();
+
+    week8.Teams[0].Streak = '1W';
+    const complete = buildOverviewTopContext(league, readModel(8, 9), 9);
+    expect(complete.standingsAsOfWeek).toBe(8);
+    expect(complete.standingsIsFallback).toBeFalse();
+    expect(complete.standings.map(row => row.record)).toEqual(['7-1', '6-2', '4-4', '3-5']);
+  });
+
+  it('stops at the last regular-season standings snapshot during playoffs', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 14);
+    league.PlayoffStartWeek = 14;
+    attachCanonicalWeek(league, 13, [[1, 1, 13, 0], [2, 2, 12, 1], [3, 3, 11, 2], [4, 4, 10, 3]]);
+
+    const context = buildOverviewTopContext(league, readModel(14, 15), 15);
+    expect(context.standingsAsOfWeek).toBe(13);
+    expect(context.standingsIsFallback).toBeFalse();
+    expect(context.standings.length).toBe(4);
+  });
+
+  it('never substitutes future snapshots or invents a current table for a missing as-of week', () => {
+    const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 3);
+    attachCanonicalWeek(league, 3, [[1, 1, 3, 0], [2, 2, 2, 1], [3, 3, 1, 2], [4, 4, 0, 3]]);
+    const result = buildOverviewTopContext(league, readModel(1, 2), 2);
+    expect(result.standings).toEqual([]);
+    expect(result.standingsAsOfWeek).toBeNull();
+    expect(result.standingsIsFallback).toBeFalse();
+  });
+
   it('fails closed for missing, incomplete or invalid canonical weekly standings', () => {
     const league = makeLeague([1, 2, 3, 4].map(id => makeTeam(id, id, id, id)), 1);
     const model = readModel(1, 2);

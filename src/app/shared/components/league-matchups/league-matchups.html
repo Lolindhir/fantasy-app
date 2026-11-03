@@ -3,6 +3,16 @@
     <a routerLink="/standings" class="weekly-context-half weekly-context-half--standings">
       <div class="weekly-context-heading">
         <span>Standings</span>
+        <span
+          *ngIf="context.standingsIsFallback && context.standingsAsOfWeek !== null"
+          class="weekly-context-asof"
+          role="note"
+          [attr.aria-label]="'Latest confirmed standings: through Week ' + context.standingsAsOfWeek"
+          [title]="'Latest confirmed standings: through Week ' + context.standingsAsOfWeek"
+        >
+          <span class="weekly-context-asof--full">Through Week {{ context.standingsAsOfWeek }}</span>
+          <span class="weekly-context-asof--compact" aria-hidden="true">Through W{{ context.standingsAsOfWeek }}</span>
+        </span>
         <mat-icon aria-hidden="true">chevron_right</mat-icon>
       </div>
 
