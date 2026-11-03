@@ -402,7 +402,7 @@ workflows:
     relevantEvents:
     - repository_dispatch
     staleAfterMinutes: 11520
-    rationale: Weekly Standings fallback and all-finalized PlayerWeekFantasy remain independent jobs; historical TeamWeekPerformance runs only after the PWF job succeeds and publishes exclusively data-derived/team-week-performance using the same classified rebuild-and-retry helper. A blocked or failed PWF/TWP producer fails the weekly workflow without suppressing independent Standings output. Current Standings and live PWF remain owned by ten-minute League Live. The long staleness threshold reflects the weekly cadence.
+    rationale: Weekly Standings fallback, all-finalized PlayerWeekFantasy and historical TeamWeekPerformance are three independent jobs. TWP does not require successful PWF and publishes exclusively data-derived/team-week-performance through the same classified rebuild-and-retry helper; official Sleeper-scored awards tolerate independent NFL/PWF parity warnings. A blocked historical producer fails its own job without suppressing independent Standings output. The weekly TWP run is the existing periodic recovery path for corrected older scored weeks; the next normal League Live App publication reprojects WeeklyRecaps. Current Standings, current-week PWF and newest-scored-week TWP remain owned by ten-minute League Live. The long staleness threshold reflects the weekly cadence.
   .github/workflows/update-teams.yml:
     category: routine
     relevantEvents:
