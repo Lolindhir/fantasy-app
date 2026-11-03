@@ -261,6 +261,28 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         twp = workflow.split("\n  historical_twp:\n", 1)[1]
         self.assertNotIn("\n    needs:", twp)
 
+    def test_weekly_correction_repair_docs_match_independent_twp_producer(self):
+        root = TOOLS.parent
+        publication = (root / ".ai-context/manual/workflow-publication.yaml").read_text(
+            encoding="utf-8"
+        )
+        monitoring = (root / ".ai-context/manual/workflow-monitoring.yaml").read_text(
+            encoding="utf-8"
+        )
+        twp = (root / ".ai-context/manual/team-week-performance.yaml").read_text(
+            encoding="utf-8"
+        )
+        readme = (root / "data-derived/README.md").read_text(encoding="utf-8")
+        self.assertIn("three independent jobs", publication)
+        self.assertIn("TWP does NOT need historical PWF success", publication)
+        self.assertIn("next successful weekly rerun", publication)
+        self.assertIn("are three independent jobs", monitoring)
+        self.assertIn("without --require-pwf", twp)
+        self.assertIn("next successful", twp)
+        self.assertIn("three\nindependent jobs", readme)
+        self.assertIn("without a Source-diff monitor", readme)
+        self.assertNotIn("dependent on successful PWF publication", readme)
+
     def test_no_new_scheduler_and_live_pwf_keeps_existing_publication(self):
         root = TOOLS.parent
         schedule = json.loads((root / ".github/workflow-schedules.json").read_text(encoding="utf-8"))

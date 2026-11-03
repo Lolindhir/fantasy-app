@@ -91,7 +91,7 @@ aborts the PWF batch before any write; the publisher scopes the commit to
 `data-derived/player-week-fantasy/**` and retries from latest `main` on a
 publication race. No new scheduler or special restore system is involved.
 
-## TeamWeekPerformance (historical weekly publisher configured)
+## TeamWeekPerformance (active historical weekly publisher)
 
 Target dataset:
 
@@ -137,32 +137,39 @@ python3 tools/team_week_performance_materialize.py --league nfl-reise --season 2
 # All registered leagues and seasons, strict finalized-week PWF parity, read-only.
 python3 tools/team_week_performance_materialize.py --all-finalized --require-pwf
 
-# The established weekly update-standings.yml job invokes this behind its
-# dedicated rebuild-and-retry publisher, after the historical PWF job succeeds:
-python3 tools/team_week_performance_materialize.py --all-finalized --write --require-pwf
+# The established weekly update-standings.yml historical_twp job invokes
+# this independently of historical PWF, behind its scoped rebuild-and-retry writer:
+python3 tools/team_week_performance_materialize.py --all-finalized --write
 ```
 
 All target weeks are discovered from canonical `data-meta` / league
 manifests, never from the App's existing output inventory. NFL game finality,
-league scored-week bounds, historical player positions, real historical
-lineup eligibility, official matchup scoring and final PWF parity must pass
-for every week before any output is written. The narrowly versioned 2025/W06
-exception is accepted without rewriting either score. A blocked candidate
-prevents the entire batch write; unchanged output is a semantic no-op.
+league scored-week bounds, historical player positions, historical lineup
+eligibility and official Sleeper matchup scoring must pass for every week
+before any output is written. Independent NFL/PWF parity is non-blocking
+in the normal writer; strict `--require-pwf` remains available for separate
+read-only audits (including the narrowly governed 2025/W06 divergence).
+A blocked canonical candidate prevents the entire batch write;
+unchanged output is a semantic no-op.
 
-The existing weekly `APP • Data • Standings` target schedules three jobs:
-Standings independently, historical PlayerWeekFantasy, then historical
-TeamWeekPerformance (dependent on successful PWF publication). The TWP
-publisher uses `tools/rebuild_and_publish.py` with **only**
-`data-derived/team-week-performance/**` allowed, rechecks on the latest
+The existing weekly `APP • Data • Standings` target schedules **three
+independent jobs**: Standings, historical PlayerWeekFantasy and historical
+TeamWeekPerformance. The TWP publisher uses
+`tools/rebuild_and_publish.py` with **only**
+`data-derived/team-week-performance/**` allowed, rechecks latest
 `main` after publication races and does not alter Source, App, UI, live League
-refresh or Scheduler configuration.
+refresh or Scheduler configuration. It recalculates every finalized week
+each weekly tick; corrections to old canonical matchup facts therefore
+rebuild the affected partitions without a Source-diff monitor. The next normal
+League Live App writer reprojects WeeklyRecaps from the resulting Derived
+snapshots. Recovery after a correction is contingent on a successful weekly
+job and is not immediate or revision-atomic.
 
-Acceptance baseline: the manual read-only historical Derived preflight
-[run #40030010930](https://github.com/Lolindhir/fantasy-app/actions/runs/40030010930)
+Historical acceptance baseline: the manual read-only historical Derived
+preflight [run #40030010930](https://github.com/Lolindhir/fantasy-app/actions/runs/40030010930)
 passed **40/40** completed league weeks, `PWFWouldChange=0`,
 `TWPWouldChange=37`, one approved scoring divergence and `SecondPassNoop=true`.
-Only 2026 W03-W05 were published on `main` before this weekly writer activation.
-A successful first real TWP publication followed by an unchanged no-op run and
-a complete 40-file inventory is required for production acceptance. This is
-not an App publisher or a second scheduled workflow.
+This was a pre-activation result, not the current partition inventory.
+Issue #471 was closed after actual historical publication and subsequent
+successful no-op runs on 2026-10-31. No new App publisher, extra cron,
+fingerprint engine or source-diff scheduler feed was activated.

@@ -16,6 +16,9 @@ from team_week_performance_materialize import (  # noqa: E402
     discover_finalized_weeks, materialize_all_finalized, materialize, verify_pwf_actual_parity,
 )
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT, DATA_META_ROOT  # noqa: E402
+from team_week_performance import build_team_week_performance, output_path  # noqa: E402
+from weekly_lineup_optimizer import StartingSlot  # noqa: E402
+from derived_data_lib.weekly_recaps import team_awards  # noqa: E402
 
 
 class MaterializerParityTests(unittest.TestCase):
@@ -236,6 +239,102 @@ class BatchMaterializerTests(unittest.TestCase):
             self.assertFalse(report["WriteAborted"])
             self.assertEqual([w["Changed"] for w in report["Weeks"]], [True, False])
             self.assertEqual(save.call_count, 2)
+
+    def test_weekly_all_finalized_rebuild_repairs_older_week_without_rewriting_latest(self) -> None:
+        """A weekly batch must not skip a changed older week when the latest week is stable.
+
+        Both official Source and derived output live exclusively under the temporary
+        fixture root. The real TWP builder and persistence/recap consumer are used;
+        only candidate discovery and independent finality/PWF preflight are stubbed.
+        """
+        def write_source(week: int, bench_points: int) -> None:
+            path = (self.root / DATA_SOURCE_ROOT / "leagues/nfl-reise/seasons/2026"
+                    / "matchups" / f"week-{week}.json")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            starter, bench = f"w{week}-starter", f"w{week}-bench"
+            rows = [{
+                "Week": week,
+                "CanonicalLeagueRosterID": "roster-one",
+                "ProviderMappings": [{"Provider": "Sleeper", "ProviderRosterID": "1"}],
+                "Players": [{"CanonicalPlayerID": starter}, {"CanonicalPlayerID": bench}],
+                "Starters": [{"CanonicalPlayerID": starter}],
+                "PlayerPoints": [
+                    {"Player": {"CanonicalPlayerID": starter}, "Points": 10},
+                    {"Player": {"CanonicalPlayerID": bench}, "Points": bench_points},
+                ],
+                "StarterPoints": [
+                    {"Player": {"CanonicalPlayerID": starter}, "Points": 10},
+                ],
+                "Points": 10,
+            }]
+            path.write_text(json.dumps(rows), encoding="utf-8")
+
+        def checked(root: Path, league: str, season: int, week: int, *,
+                    require_pwf: bool = False) -> tuple[dict, dict]:
+            path = (root / DATA_SOURCE_ROOT / "leagues" / league / "seasons"
+                    / str(season) / "matchups" / f"week-{week}.json")
+            rows = json.loads(path.read_text(encoding="utf-8"))
+            positions = {
+                player["CanonicalPlayerID"]: "WR"
+                for row in rows for player in row["Players"]
+            }
+            model = build_team_week_performance(
+                canonical_league_id=league, season=season, week=week,
+                scoring_settings={"rec": 1},
+                slots=[StartingSlot("WR-1", frozenset({"WR"}))],
+                matchup_rows=rows, expected_team_count=1,
+                position_by_player=positions, finalized=True,
+                finality_evidence=(
+                    f"data-source/nfl/game-finality/{season}.json:REG-W{week};"
+                    "league:scored-week-confirmed"
+                ),
+            )
+            return model, {"State": "not-available"}
+
+        def published_potential(week: int) -> float:
+            path = (self.root / DATA_SOURCE_ROOT / "leagues/nfl-reise/seasons/2026"
+                    / "matchups" / f"week-{week}.json")
+            rows = json.loads(path.read_text(encoding="utf-8"))
+            result = team_awards(self.root, "nfl-reise", 2026, week, rows, {"1"})
+            self.assertEqual(result["State"], "available")
+            return result["BestManager"][0]["PotentialPoints"]
+
+        write_source(3, 15)
+        write_source(4, 18)
+        targets = [("nfl-reise", 2026, 3), ("nfl-reise", 2026, 4)]
+        with patch("team_week_performance_materialize.discover_finalized_weeks",
+                   return_value=targets), patch(
+                       "team_week_performance_materialize._checked_week",
+                       side_effect=checked):
+            initial = materialize_all_finalized(self.root, write=True)
+            self.assertEqual((initial["TargetCount"], initial["BlockedCount"],
+                              initial["ChangedCount"]), (2, 0, 2))
+            old = output_path(self.root, checked(self.root, "nfl-reise", 2026, 3)[0])
+            latest = output_path(self.root, checked(self.root, "nfl-reise", 2026, 4)[0])
+            old_bytes, latest_bytes = old.read_bytes(), latest.read_bytes()
+            self.assertEqual(published_potential(3), 15)
+            self.assertEqual(published_potential(4), 18)
+            self.assertEqual(materialize_all_finalized(self.root, write=True)["ChangedCount"], 0)
+
+            # A source correction is *not* detected by reading the old partition.
+            write_source(3, 20)
+            self.assertEqual(published_potential(3), 15)
+            repaired = materialize_all_finalized(self.root, write=True)
+            self.assertEqual(repaired["ChangedCount"], 1)
+            self.assertEqual([x["Changed"] for x in repaired["Weeks"]], [True, False])
+            self.assertEqual(published_potential(3), 20)
+            self.assertEqual(published_potential(4), 18)
+            self.assertNotEqual(old.read_bytes(), old_bytes)
+            self.assertEqual(latest.read_bytes(), latest_bytes)
+            self.assertEqual(materialize_all_finalized(self.root, write=True)["ChangedCount"], 0)
+
+            # A rollback recovers byte-identical old history, not just equal awards.
+            write_source(3, 15)
+            restored = materialize_all_finalized(self.root, write=True)
+            self.assertEqual(restored["ChangedCount"], 1)
+            self.assertEqual(old.read_bytes(), old_bytes)
+            self.assertEqual(latest.read_bytes(), latest_bytes)
+            self.assertEqual(materialize_all_finalized(self.root, write=True)["ChangedCount"], 0)
 
     def test_unexpected_errors_are_not_converted_to_unavailable_data(self) -> None:
         with patch("team_week_performance_materialize.discover_finalized_weeks",
