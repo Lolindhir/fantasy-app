@@ -1,6 +1,8 @@
 """Fail-closed and no-skip regression cases for League Live shadow observation (#1263 G5)."""
 from __future__ import annotations
 
+import json
+
 from pathlib import Path
 import tempfile
 import unittest
@@ -140,6 +142,82 @@ class ShadowDecisionTests(unittest.TestCase):
         self.assertIn("Rebuild and publish League, PlayerWeekFantasy", workflow)
         self.assertIn("cancel-in-progress: false", workflow)
 
+
+
+class ShadowLogComparisonTests(unittest.TestCase):
+    def log(self, stage: str = "league", at: str = "2026-11-03T20:17:31Z",
+            changed_path: str | None = None, no_op: bool = True) -> str:
+        trees = {name: "a" * 40 for name in shadow.STAGE_INPUTS[stage]}
+        if changed_path:
+            trees[changed_path] = "b" * 40
+        row = {
+            "schemaVersion": shadow.SCHEMA, "stage": stage, "atUtc": at,
+            "checkedOutHead": "c" * 40, "decision": "would-run", "enforced": False,
+            "inputTrees": trees, "inputFingerprint": shadow.fingerprint(trees),
+            "missingOutputs": [], "reasonCodes": ["missing-previous-successful-attestation"],
+        }
+        return ("20:01 log before\n20:02 LEAGUE_LIVE_SHADOW " + json.dumps(row)
+                + "\n" + ("Generator produced no repository changes. Nothing to publish."
+                          if no_op else "Generator produced changes"))
+
+    def test_equal_input_evidence_never_authorizes_skip(self):
+        observed = shadow.compare_observed_logs(self.log(), self.log(at="2026-11-03T20:31:30Z"))
+        self.assertEqual("same-observed-inputs", observed["classification"])
+        self.assertEqual([], observed["changedPaths"])
+        self.assertTrue(observed["previousPublisherNoOpLogMarker"])
+        self.assertTrue(observed["currentPublisherNoOpLogMarker"])
+        self.assertFalse(observed["safeToSkip"])
+        self.assertFalse(observed["enforced"])
+        self.assertIn("temporal-boundary-safety", observed["unproven"])
+
+    def test_source_finality_derived_meta_changes_invalidate_input_equality(self):
+        for path in ("data-source", "data-derived", "data-meta"):
+            with self.subTest(path=path):
+                observed = shadow.compare_observed_logs(
+                    self.log(), self.log(at="2026-11-03T20:31:30Z", changed_path=path))
+                self.assertEqual("changed-input-revision", observed["classification"])
+                self.assertEqual([path], observed["changedPaths"])
+                self.assertFalse(observed["safeToSkip"])
+
+    def test_different_stages_rejected(self):
+        with self.assertRaisesRegex(ValueError, "stages"):
+            shadow.compare_observed_logs(self.log("standings"), self.log("league"))
+
+    def test_duplicate_missing_malformed_observations_are_rejected(self):
+        good = self.log()
+        for text in (good + "\n" + good, "no shadow record", "LEAGUE_LIVE_SHADOW {bad-json"):
+            with self.subTest(text=text[:25]):
+                with self.assertRaises(ValueError):
+                    shadow.compare_observed_logs(text, good)
+
+    def test_nonmonotonic_time_bad_signature_and_missing_output_fail_closed(self):
+        earlier = self.log()
+        reversed_order = shadow.compare_observed_logs(
+            earlier, self.log(at="2026-11-03T20:00:00Z"))
+        self.assertEqual("unverifiable", reversed_order["classification"])
+        bad = self.log(at="2026-11-03T20:31:30Z").replace('"inputFingerprint": "', '"inputFingerprint": "bad')
+        self.assertEqual("unverifiable", shadow.compare_observed_logs(earlier, bad)["classification"])
+        absent = self.log(at="2026-11-03T20:31:30Z").replace('"missingOutputs": []', '"missingOutputs": ["public/data/League.json"]')
+        self.assertEqual("unverifiable", shadow.compare_observed_logs(earlier, absent)["classification"])
+
+    def test_publisher_noop_is_only_log_marker_not_asserted_success(self):
+        result = shadow.compare_observed_logs(
+            self.log(), self.log(at="2026-11-03T20:31:30Z", no_op=False))
+        self.assertEqual("same-observed-inputs", result["classification"])
+        self.assertFalse(result["currentPublisherNoOpLogMarker"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_compare_log_files_cli_keeps_existing_live_stage_separate(self):
+        with tempfile.TemporaryDirectory() as temp:
+            earlier, later = Path(temp) / "earlier.log", Path(temp) / "later.log"
+            earlier.write_text(self.log(), encoding="utf-8")
+            later.write_text(self.log(at="2026-11-03T20:31:30Z"), encoding="utf-8")
+            with patch("builtins.print") as printed:
+                rc = shadow.main(["--compare-log-files", str(earlier), str(later)])
+            self.assertEqual(0, rc)
+            self.assertEqual("same-observed-inputs", json.loads(printed.call_args[0][0])["classification"])
+            self.assertFalse(json.loads(printed.call_args[0][0])["safeToSkip"])
+            self.assertEqual(2, shadow.main(["--compare-log-files", str(earlier), str(Path(temp) / "missing")]))
 
 if __name__ == "__main__":
     unittest.main()

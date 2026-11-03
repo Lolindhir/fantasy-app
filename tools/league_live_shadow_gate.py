@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 import subprocess
@@ -135,15 +136,104 @@ def publish_observation(observation: dict[str, Any]) -> None:
             stream.write("- Reasons: " + ", ".join(observation["reasonCodes"]) + "\n")
 
 
+
+def parse_observed_log(log_text: str) -> dict[str, Any]:
+    """Extract exactly one shadow observation from an existing GitHub job log."""
+    marker = "LEAGUE_LIVE_SHADOW "
+    records = [line.partition(marker)[2].strip() for line in log_text.splitlines() if marker in line]
+    if len(records) != 1:
+        raise ValueError(f"Expected exactly one League Live shadow observation, got {len(records)}")
+    try:
+        value = json.loads(records[0])
+    except json.JSONDecodeError as error:
+        raise ValueError("Malformed League Live shadow JSON") from error
+    if not isinstance(value, dict):
+        raise ValueError("Shadow observation must be an object")
+    return value
+
+
+def _verified_observed_signature(row: dict[str, Any]) -> bool:
+    stage = row.get("stage")
+    if (stage not in STAGE_INPUTS or row.get("schemaVersion") != SCHEMA
+            or row.get("enforced") is not False or row.get("decision") not in {"would-run", "would-skip"}
+            or not isinstance(row.get("missingOutputs"), list) or row["missingOutputs"]
+            or not isinstance(row.get("checkedOutHead"), str)
+            or not re.fullmatch(r"[0-9a-f]{40}", row["checkedOutHead"])):
+        return False
+    trees = row.get("inputTrees")
+    if not isinstance(trees, dict) or set(trees) != set(STAGE_INPUTS[stage]):
+        return False
+    if not all(isinstance(v, str) and re.fullmatch(r"[0-9a-f]{40}", v) for v in trees.values()):
+        return False
+    return fingerprint(trees) == row.get("inputFingerprint")
+
+
+def compare_observed_logs(previous_log: str, current_log: str) -> dict[str, Any]:
+    """Compare real log signatures, not prior-success or temporal attestations.
+
+    Log no-op markers alone do not prove a GitHub job completed successfully or
+    that a downstream publication was healthy. No stage is ever skipped here.
+    """
+    previous, current = parse_observed_log(previous_log), parse_observed_log(current_log)
+    if previous.get("stage") != current.get("stage") or previous.get("stage") not in STAGE_INPUTS:
+        raise ValueError("Different or unknown League Live shadow stages")
+    reasons = []
+    try:
+        previous_at, current_at = utc(previous.get("atUtc")), utc(current.get("atUtc"))
+        if current_at <= previous_at:
+            reasons.append("non-monotonic-observation-times")
+    except (TypeError, ValueError):
+        reasons.append("observation-time-unverifiable")
+    if not _verified_observed_signature(previous) or not _verified_observed_signature(current):
+        reasons.append("incomplete-or-tampered-signature")
+    changed = []
+    if not reasons:
+        changed = sorted(p for p in STAGE_INPUTS[current["stage"]]
+                         if previous["inputTrees"][p] != current["inputTrees"][p])
+    return {
+        "schemaVersion": SCHEMA, "stage": current["stage"],
+        "classification": ("unverifiable" if reasons else
+                           "changed-input-revision" if changed else "same-observed-inputs"),
+        "changedPaths": changed,
+        "previousHead": previous.get("checkedOutHead"),
+        "currentHead": current.get("checkedOutHead"),
+        "previousInputFingerprint": previous.get("inputFingerprint"),
+        "currentInputFingerprint": current.get("inputFingerprint"),
+        "previousPublisherNoOpLogMarker": "Generator produced no repository changes. Nothing to publish." in previous_log,
+        "currentPublisherNoOpLogMarker": "Generator produced no repository changes. Nothing to publish." in current_log,
+        "reasonCodes": sorted(reasons),
+        "safeToSkip": False,
+        "enforced": False,
+        "unproven": ["prior-success-attestation", "cross-workflow-revision-and-race-safety",
+                     "fail-soft-recovery-cleanliness", "temporal-boundary-safety"],
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--stage", choices=sorted(STAGE_INPUTS), required=True)
+    p.add_argument("--stage", choices=sorted(STAGE_INPUTS))
     p.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     p.add_argument("--at", help="Current UTC time; defaults to process UTC now")
     p.add_argument("--source-status", default="unknown")
     p.add_argument("--upstream-status", default="unknown")
     p.add_argument("--prior-json", type=Path, help="Independent prior attestation for offline shadow replay")
+    p.add_argument("--compare-log-files", nargs=2, type=Path,
+                   metavar=("EARLIER_JOB_LOG", "LATER_JOB_LOG"),
+                   help="Offline read-only comparison of two downloaded GitHub job logs")
     args = p.parse_args(argv)
+    if args.compare_log_files:
+        if args.stage is not None or args.prior_json is not None:
+            p.error("--compare-log-files cannot be combined with --stage or --prior-json")
+        try:
+            earlier, later = (path.read_text(encoding="utf-8", errors="replace")
+                              for path in args.compare_log_files)
+            print(json.dumps(compare_observed_logs(earlier, later), sort_keys=True))
+            return 0
+        except (OSError, ValueError, TypeError) as error:
+            print(f"G5 shadow log comparison unavailable: {error}", file=sys.stderr)
+            return 2
+    if args.stage is None:
+        p.error("--stage is required for the existing live shadow observation")
     try:
         current = collect(args.repo_root, args.stage,
                           args.at or datetime.now(timezone.utc).isoformat(),
