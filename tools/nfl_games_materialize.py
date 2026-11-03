@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Global NFL Game Shared-Derived materializer (#1077).
 
-Read-only by default; --write is a deliberate opt-in and is NOT wired into a
-workflow. Inputs are only season-partitioned canonical NFL Source facts.
+Read-only by default; --write is a deliberate opt-in used by the dependent
+NFL Games Derived workflow after a successful full Source sync or scoped
+schedule-odds refresh. Inputs are only season-partitioned canonical NFL Source facts.
 """
 from __future__ import annotations
 

@@ -739,7 +739,7 @@ jobs:
         shell: bash
         run: |
           echo "## Global NFL Game Shared Derived" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Trigger: successful full NFL Source sync only (not game-finality live)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Trigger: successful full NFL Source sync or scoped schedule-odds refresh (not game-finality live)" >> "$GITHUB_STEP_SUMMARY"
           echo "- Generated write-set: data-derived/nfl-games/** only" >> "$GITHUB_STEP_SUMMARY"
           echo "- Publisher: rebuild-and-retry from latest main, no-op on unchanged content" >> "$GITHUB_STEP_SUMMARY"
 
