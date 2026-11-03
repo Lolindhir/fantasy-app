@@ -315,6 +315,66 @@ def check_source_family_coverage_audit(matrix: object, audit: object, root: Path
     return issues
 
 
+def check_downstream_route_audit(audit: object, root: Path) -> list[str]:
+    """Code and workflow trace inventory only; never a live or complete reachability assertion."""
+    if not isinstance(audit, dict) or not isinstance(audit.get("downstreamRoutes"), list):
+        return ["missing downstream route audit"]
+    expected = {
+        "nfl-games-to-game-context": "nfl-games",
+        "team-week-performance-live-to-recaps": "team-week-performance",
+        "team-week-performance-historical-backfill": "team-week-performance",
+        "computed-matchup-context-to-app": "fantasy-game-context-and-matchups",
+        "team-range-projections-to-app": "matchup-projections",
+    }
+    products = {p.get("product"): p for p in audit.get("downstreamProducts", []) if isinstance(p, dict)}
+    issues: list[str] = []
+    seen: set[str] = set()
+    cache: dict[str, str] = {}
+    for i, route in enumerate(audit["downstreamRoutes"]):
+        if not isinstance(route, dict):
+            issues.append(f"invalid downstream route {i}")
+            continue
+        rid = route.get("id")
+        if rid not in expected or rid in seen:
+            issues.append(f"unknown/duplicate downstream route: {rid}")
+        seen.add(rid)
+        if rid in expected and route.get("product") != expected[rid]:
+            issues.append(f"wrong downstream route product: {rid}")
+        if products.get(route.get("product"), {}).get("status") != "linked-partial":
+            issues.append(f"nonpartial downstream route product: {rid}")
+        if route.get("status") != "linked-partial":
+            issues.append(f"false downstream route completion: {rid}")
+        if route.get("writeScope") not in {"data-derived/nfl-games", "data-derived/team-week-performance", "public/data"}:
+            issues.append(f"invalid downstream route write scope: {rid}")
+        for field in ("meaning", "remaining"):
+            if not isinstance(route.get(field), str) or not route[field].strip():
+                issues.append(f"missing downstream route {field}: {rid}")
+        witnesses = route.get("evidence")
+        if not isinstance(witnesses, list) or len(witnesses) < 4:
+            issues.append(f"missing downstream route evidence: {rid}")
+            continue
+        path_set: set[str] = set()
+        for witness in witnesses:
+            if not isinstance(witness, dict):
+                issues.append(f"invalid downstream route witness: {rid}")
+                continue
+            path, needle = witness.get("file"), witness.get("contains")
+            if (not isinstance(path, str) or not isinstance(needle, str) or not needle
+                    or Path(path).is_absolute() or ".." in Path(path).parts or not (root / path).is_file()):
+                issues.append(f"missing/unsafe downstream route witness: {rid}")
+                continue
+            path_set.add(path)
+            if path not in cache:
+                cache[path] = (root / path).read_text(encoding="utf-8")
+            if needle not in cache[path]:
+                issues.append(f"stale downstream route witness: {rid} {path}")
+        if route.get("workflow") not in path_set or not str(route.get("workflow", "")).startswith(".github/workflows/"):
+            issues.append(f"unwitnessed downstream workflow: {rid}")
+    for rid in sorted(set(expected) - seen):
+        issues.append(f"missing downstream route: {rid}")
+    return issues
+
+
 class ConsumerReadClassificationTest(unittest.TestCase):
 
     def test_g1_productive_edge_inventory_has_owner_identity_and_evidence(self) -> None:
@@ -437,6 +497,30 @@ class ConsumerReadClassificationTest(unittest.TestCase):
                 self.assertIn("remain unverified", products[name]["remaining"])
         self.assertEqual("partial", document["productiveEdgeAudit"]["status"])
         self.assertEqual("partial", document["sourceFamilyCoverageAudit"]["status"])
+
+    def test_g1_downstream_publication_routes_are_witnessed(self) -> None:
+        audit = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))["sourceFamilyCoverageAudit"]
+        self.assertEqual(5, len(audit["downstreamRoutes"]))
+        self.assertEqual([], check_downstream_route_audit(audit, REPO_ROOT))
+        self.assertEqual("partial", audit["status"])
+
+    def test_g6_downstream_publication_route_negative_cases_fail_closed(self) -> None:
+        from copy import deepcopy
+        audit = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))["sourceFamilyCoverageAudit"]
+        changes = (
+            (lambda a: a["downstreamRoutes"].pop(), "missing downstream route"),
+            (lambda a: a["downstreamRoutes"][0].update(status="complete"), "false downstream route completion"),
+            (lambda a: a["downstreamRoutes"][0].update(product="league-standings"), "wrong downstream route product"),
+            (lambda a: a["downstreamRoutes"][0].update(writeScope="data-source"), "invalid downstream route write scope"),
+            (lambda a: a["downstreamRoutes"][0]["evidence"][0].update(contains="not-an-existing-job"), "stale downstream route witness"),
+            (lambda a: a["downstreamRoutes"][0].update(evidence=[]), "missing downstream route evidence"),
+        )
+        for mutate, expected in changes:
+            with self.subTest(expected=expected):
+                candidate = deepcopy(audit)
+                mutate(candidate)
+                issues = check_downstream_route_audit(candidate, REPO_ROOT)
+                self.assertTrue(any(expected in issue for issue in issues), issues)
 
     def test_g3_bye_week_source_contract_matches_canonical_runtime(self) -> None:
         matrix = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))["matrix"]
