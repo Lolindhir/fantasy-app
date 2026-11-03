@@ -1,6 +1,6 @@
 schemaVersion: 1
 domain: team-week-performance
-status: weekly-historical-publisher-configured-pending-live-acceptance
+status: active-weekly-historical-and-current-scored-week-publication
 trackingIssue: 355
 
 purpose: >
@@ -18,7 +18,7 @@ physicalOwner:
     optimizer: tools/weekly_lineup_optimizer.py::maximize_lineup
     canonicalInputAdapter: tools/team_week_performance_sources.py::load_verified_week_inputs
     lineupEligibilityRules: tools/derived_data_lib/decision_windows.py::slot_definitions/slot_eligible
-  status: current-2026-weeks-03-05-on-main-full-history-publication-pending
+  status: published-finalized-history-with-weekly-recovery
   delivery: >
     Current App projection checkpoint #355: tools/derived_data_lib/weekly_recaps.py reads finalized
     TeamWeekPerformance and maps canonical roster IDs to week-specific
@@ -26,8 +26,12 @@ physicalOwner:
     explicitly unavailable; a present invalid one fails closed. Existing
     league-live.yml / RequestLeaguePublication.ps1 retains App publication
     ownership; the independent weekly Shared-Derived backfill adds no second App
-    publisher or cron. As of activation the existing Shared Derived partitions
-    are 2026 W03-W05; 37 further scored weeks require productive publication.
+    publisher or cron. The finalized historical backlog was published through
+    the existing weekly writer (Issue #471, closed 2026-10-31), with current
+    league-scored weeks refreshed in ten-minute League Live. A legitimate
+    correction to an older finalized week is picked up by the next successful
+    weekly all-finalized recalculation (not a direct source-revision watcher);
+    the following League Live App publication reprojects WeeklyRecaps.
     The strictly accepted 2025/W06 scoring divergence remains governed by #698.
 
 identity:
@@ -234,9 +238,19 @@ historicalOrchestrationPreflight:
     - A manual historical preflight skips all League Live writer jobs and checks out main without writable credentials, with job-level contents: read.
     - The manual preflight itself never publishes. The separately approved weekly TWP Shared-Derived writer is tracked in #471; App publication and state-aware incremental scheduling remain separately gated.
   publicationHandoff: >-
-    Weekly historical TWP publication was approved with exact
+    Historical TWP publication was approved with exact
     data-derived/team-week-performance/** scope following successful 40-week
-    read-only PWF/TWP preflight (#40030010930). The standalone weekly job uses
-    latest-main rebuild-and-retry and strict --require-pwf; its first live
-    40-week publication and follow-up semantic no-op require independent
-    acceptance before #471 Step 2 is closed. Never use a one-off migration workflow.
+    read-only PWF/TWP preflight (#40030010930). Issue #471 was closed after
+    live publication and semantic no-op acceptance on 2026-10-31. The existing
+    weekly update-standings.yml::historical_twp job is independent of the
+    historical_pwf job: it uses latest-main rebuild-and-retry and
+    --all-finalized --write, without --require-pwf. Official Sleeper awards
+    are not blocked by missing or divergent independent NFL/PWF scoring;
+    strict --require-pwf is reserved for explicitly requested audits.
+    It recalculates all finalized weeks each weekly tick and byte-skips
+    unchanged results; League Live publishes the App projection afterward,
+    retaining its newest-scored-week-only incremental TWP writer. This is
+    periodic recovery, not a source-revision-based invalidation mechanism,
+    and a missed/blocked weekly job can delay it beyond one week.
+    No automatic source-diff scheduler feed is activated. Never use a
+    one-off migration workflow.
