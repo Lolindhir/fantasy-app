@@ -1125,6 +1125,17 @@ consumerReadClassification:
       reads:
         network: repository-infrastructure
       note: 'G5 manually invoked, read-only GitHub Actions runs/jobs API audit; no fantasy provider facts, repository writes or activation (#1263).'
+    tools/league_live_shadow_gate.py:
+      reads:
+        legacy:DecisionWindows: validation-shadow
+        legacy:FantasyGameContext: validation-shadow
+        legacy:League: validation-shadow
+        legacy:Matchups: validation-shadow
+        legacy:PlayerWeekFantasy: validation-shadow
+        legacy:Standings: validation-shadow
+        legacy:Timestamps: validation-shadow
+        legacy:WeeklyRecaps: validation-shadow
+      note: 'G5 League Live non-blocking shadow observer (#1263): these App output paths are checked for existence only as negative evidence for a hypothetical skip, never parsed for Domain inputs or republished. Input revision fingerprints cover repository Source/Derived/code trees. Missing previous/race/recovery/clock proof always yields would-run; no productive job is skipped.'
     tools/build_workflow_health_snapshot.py:
       reads:
         network: repository-infrastructure
