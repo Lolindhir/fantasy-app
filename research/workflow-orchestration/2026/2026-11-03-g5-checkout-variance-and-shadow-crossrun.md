@@ -25,6 +25,23 @@ Checkout seconds: minimum 142, median 368.5, maximum 512 across these ten runs. 
 
 All four jobs currently perform separate full-tree, shallow Git checkouts with `fetch-depth: 1` (LFS disabled). Two of the jobs are repository branch writers via the publication/rebuild contract; they require the coherent latest target tree and existing retry semantics. Reusing workspace across independent hosted runners is not automatic. Do **not** blindly remove checkout/fetch or add sparse paths to productive publishers: working-tree reset and complete input/output coverage are safety-critical.
 
+## Current repository tree volume: direct Git tree evidence
+
+A read-only `git/trees/<tree-sha>?recursive=1` census of current `main` at `b2a010d` returned **5,125 tracked blobs under `data-source/` totaling about 3,755 MB uncompressed**. GitHub's repository metadata `size=1,519,138` KiB is a separate, compressed/storage-oriented indicator, **not** the bytes fetched by an Actions checkout. All seven queried subtrees returned `truncated=false`.
+
+Major tracked current-tree `data-source/` segments by summed blob bytes (rounded decimal MB):
+
+| Path | Files | Blob bytes, MB |
+|---|---:|---:|
+| `nfl/player-stats` | 580 | 2,129 |
+| `nfl/weekly-rosters` | 517 | 557 |
+| `providers/nflverse/weekly-rosters` | 50 | 277 |
+| `providers/nflverse/player-stats` | 56 | 214 |
+| `nfl/snap-counts` | 286 | 171 |
+| `nfl/identities` | 6 | 108 |
+
+Those first four directories alone represent ~3.18 GB of uncompressed tracked current blobs. This strongly supports investigating narrower **read-only validation** checkouts first; it is **not** proof of actual transferred bytes, cache state, provider rights, or suitability of sparse checkouts for live publishers. It also suggests a broader future data-volume/storage review, separately authorized from this G5 observational checkpoint. Do not delete/move canonical files or change data owners as a byproduct of timing optimization.
+
 ## Three consecutive live shadow runs and observed no-ops
 
 The first three post-merge runs, [41709714044](https://github.com/Lolindhir/fantasy-app/actions/runs/41709714044), [41712156849](https://github.com/Lolindhir/fantasy-app/actions/runs/41712156849), and [41713719862](https://github.com/Lolindhir/fantasy-app/actions/runs/41713719862), all completed successfully with original branch writers executed. Their exact job logs show:
