@@ -35,6 +35,8 @@ class NflGamesPublisherContractTests(unittest.TestCase):
         contract = yaml.safe_load(
             (ROOT / ".ai-context/manual/nfl-games.yaml").read_text(encoding="utf-8")
         )
+        self.assertIn("finality", contract["invalidation"])
+        self.assertIn("Moneyline", contract["ignoreForThisProduct"])
         operation = contract["operation"]
         self.assertEqual("full-source-or-scoped-schedule-odds", operation["sourceTrigger"])
         self.assertIn("unrelated-targeted-NFL-source-dataset-refresh", operation["excludedTriggers"])
