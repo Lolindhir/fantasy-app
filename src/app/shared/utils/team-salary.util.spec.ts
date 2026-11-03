@@ -108,7 +108,10 @@ describe('team salary utilities', () => {
     expect(verifyTeamCapOutlook({ ...outlook, AsOfFinalScoredWeek: 18 }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
     expect(verifyTeamCapOutlook({ ...outlook, AsOfFinalScoredWeek: 7.5 }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
     expect(verifyTeamCapOutlook({ ...outlook, SalaryCapProjected: 221 }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
-    expect(verifyTeamCapOutlook({ ...outlook, Teams: [{ ...outlook.Teams[0], InputRoster: outlook.Teams[0].Status === 'ready' ? [...outlook.Teams[0].InputRoster].reverse() : [] }] }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
+    const readyTeam = outlook.Teams[0];
+    if (readyTeam.Status !== 'ready') throw new Error('Test fixture must be a ready team');
+    const reversedRosterWitness = { ...readyTeam, InputRoster: [...readyTeam.InputRoster].reverse() };
+    expect(verifyTeamCapOutlook({ ...outlook, Teams: [reversedRosterWitness] }, advancedLeague, players as unknown as RawPlayer[]).size).toBe(0);
     expect(verifyTeamCapOutlook(null, league, players as unknown as RawPlayer[]).size).toBe(0);
   });
 
