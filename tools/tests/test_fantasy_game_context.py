@@ -6,6 +6,7 @@ from __future__ import annotations
 import copy
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -13,6 +14,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from derived_data_lib import fantasy_game_context as fgc  # noqa: E402
+from nfl_games_materialize import materialize as materialize_nfl_games  # noqa: E402
 from derived_data_lib.matchup_context import MatchupContextError, parse_instant_text  # noqa: E402
 
 
@@ -287,6 +289,75 @@ class ScoreAndMarketTests(unittest.TestCase):
             fgc.add_market_context({"SchemaVersion": 5, "Games": []}, [], "2025", 7, derived)
         with self.assertRaises(MatchupContextError):
             fgc.add_market_context(copy.deepcopy(context), schedule, "2026", 8, derived)
+
+    def test_canonical_odds_correction_rebuilds_market_without_touching_live_source(self):
+        """Source correction propagates only after the isolated Derived rebuild."""
+        game_id = "2026_07_PIT_NO"
+        with tempfile.TemporaryDirectory(prefix="nfl-odds-correction-") as temp:
+            root = Path(temp)
+            nfl = root / "data-source/nfl"
+            schedule = {"Season": 2026, "SourceDataset": "nflverse.schedules", "Games": [{
+                "GameID": game_id, "Week": 7, "GameType": "REG",
+                "GameDay": "2026-10-25", "GameTime": "13:00",
+                "AwayTeam": "PIT", "HomeTeam": "NO",
+                "AwayScore": None, "HomeScore": None,
+            }]}
+            finality = {"Season": 2026, "SourceDataset": "nflverse.game-finality",
+                        "Games": [{"GameID": game_id, "Week": 7, "GameType": "REG", "Final": False}]}
+            odds = {"Season": 2026, "SourceDataset": "nflverse.schedule-odds",
+                    "SpreadConvention": "away spread; positive favors home",
+                    "Games": [{"GameID": game_id, "Week": 7, "GameType": "REG",
+                               "SpreadLine": -3, "TotalLine": 44.5}]}
+            for folder, document in (("schedules", schedule),
+                                     ("game-finality", finality), ("schedule-odds", odds)):
+                path = nfl / folder / "2026.json"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(document), encoding="utf-8")
+            odds_path = nfl / "schedule-odds/2026.json"
+            derived_path = root / "data-derived/nfl-games/2026.json"
+
+            def market():
+                context = {"SchemaVersion": 5, "Games": [
+                    {"GameID": "display-pit-no", "AwayTeamID": "PIT", "HomeTeamID": "NO"}]}
+                bridge = [{"gameID": "display-pit-no", "CanonicalGameID": game_id}]
+                derived = json.loads(derived_path.read_text(encoding="utf-8"))
+                return fgc.add_market_context(context, bridge, "2026", 7, derived)["Games"][0]["Market"]
+
+            original = materialize_nfl_games(root, 2026, write=True)
+            self.assertTrue(original["Written"])
+            original_bytes = derived_path.read_bytes()
+            self.assertEqual(-3, market()["SpreadLine"])
+            self.assertFalse(materialize_nfl_games(root, 2026, write=True)["Written"])
+
+            odds["Games"][0]["SpreadLine"] = -5
+            odds_path.write_text(json.dumps(odds), encoding="utf-8")
+            # The old market still passes schema and identity checks.
+            self.assertEqual(-3, market()["SpreadLine"])
+            preview = materialize_nfl_games(root, 2026)
+            self.assertTrue(preview["WouldWrite"])
+            self.assertFalse(preview["Written"])
+            self.assertEqual(original_bytes, derived_path.read_bytes())
+            self.assertTrue(materialize_nfl_games(root, 2026, write=True)["Written"])
+            self.assertEqual(
+                {"SpreadLine": -5.0, "TotalLine": 44.5,
+                 "ImpliedAwayPoints": 24.75, "ImpliedHomePoints": 19.75},
+                market(),
+            )
+            self.assertFalse(materialize_nfl_games(root, 2026, write=True)["Written"])
+
+            # Invalid correction fails before overwriting the valid partition.
+            corrected_bytes = derived_path.read_bytes()
+            odds["Games"][0]["SpreadLine"] = 100
+            odds_path.write_text(json.dumps(odds), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "spread exceeds total"):
+                materialize_nfl_games(root, 2026, write=True)
+            self.assertEqual(corrected_bytes, derived_path.read_bytes())
+
+            odds["Games"][0]["SpreadLine"] = -3
+            odds_path.write_text(json.dumps(odds), encoding="utf-8")
+            self.assertTrue(materialize_nfl_games(root, 2026, write=True)["Written"])
+            self.assertEqual(original_bytes, derived_path.read_bytes())
+            self.assertFalse(materialize_nfl_games(root, 2026, write=True)["Written"])
 
     def test_market_is_omitted_for_the_historical_schema(self):
         facts = fgc.current_matchup_facts("2026", 1, sleeper_rows())
