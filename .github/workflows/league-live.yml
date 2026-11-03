@@ -107,6 +107,14 @@ jobs:
           ref: main
           fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
+      - name: G5 shadow decision - Standings (observe only)
+        continue-on-error: true
+        run: >-
+          python3 tools/league_live_shadow_gate.py
+          --stage standings
+          --source-status "${{ needs.source.result }}"
+          --upstream-status "${{ needs.source.result }}"
+
 
       # The Standings writer is Python-only (no pwsh) and a semantic no-op writes nothing, so it runs every
       # tick. A change-detection gate would miss LeagueScoredWeek moves: the week basis depends on NFL game
@@ -137,6 +145,14 @@ jobs:
           ref: main
           fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
+      - name: G5 shadow decision - League (observe only)
+        continue-on-error: true
+        run: >-
+          python3 tools/league_live_shadow_gate.py
+          --stage league
+          --source-status "${{ needs.source.result }}"
+          --upstream-status "${{ needs.standings.result }}"
+
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
