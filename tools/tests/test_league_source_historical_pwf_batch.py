@@ -275,7 +275,7 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         readme = (root / "data-derived/README.md").read_text(encoding="utf-8")
         self.assertIn("three independent jobs", publication)
         self.assertIn("TWP does NOT need historical PWF success", publication)
-        self.assertIn("periodic recovery", publication)
+        self.assertIn("next successful weekly rerun", publication)
         self.assertIn("are three independent jobs", monitoring)
         self.assertIn("without --require-pwf", twp)
         self.assertIn("next successful", twp)
