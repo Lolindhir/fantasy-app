@@ -67,7 +67,15 @@ export function verifyTeamCapOutlook(
   if (!readModel || readModel.ContractVersion !== 1 ||
       !readModel.CanonicalLeagueID || readModel.ProviderLeagueID !== String(league.LeagueID) ||
       readModel.Season !== Number(league.Season) ||
-      readModel.AsOfFinalScoredWeek !== league.FinalScoredWeek ||
+      // PlayerValuation follows StatsFinalWeek, not LeagueScoredWeek. A newer
+      // Sleeper-scored week cannot invalidate otherwise identical salaries.
+      // Reject invalid or out-of-season evidence, then compare every roster
+      // and both salary witnesses against the currently delivered Players.
+      !Number.isInteger(readModel.AsOfFinalScoredWeek) ||
+      readModel.AsOfFinalScoredWeek < 0 ||
+      !Number.isInteger(league.LastLeagueWeek) ||
+      league.LastLeagueWeek < 1 ||
+      readModel.AsOfFinalScoredWeek > league.LastLeagueWeek ||
       readModel.SalaryRelevantTeamSize !== league.SalaryRelevantTeamSize ||
       readModel.SalaryCap !== league.SalaryCap ||
       readModel.SalaryCapProjected !== league.SalaryCapProjected ||

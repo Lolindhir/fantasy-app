@@ -32,6 +32,9 @@
             <app-cap-usage-bar [label]="'Current ' + league.Season" [value]="salary.current.salary" [cap]="salary.current.cap" />
             <app-cap-usage-bar [label]="'Projected ' + (league.SeasonAsNumber + 1)" [value]="salary.projected.salary" [cap]="salary.projected.cap" />
           </div>
+          @if (team.CapOutlookAsOfWeek !== undefined && team.CapOutlookAsOfWeek !== league.FinalScoredWeek) {
+            <p class="cap-valuation-asof">Projected valuation through Week {{ team.CapOutlookAsOfWeek }}</p>
+          }
            } @else {
              <p>Cap-Belegung derzeit nicht verfügbar.</p>
            }
@@ -166,6 +169,9 @@
             <app-cap-usage-bar [label]="comparisonSeasonLabel" [value]="comparisonSalary.salary" [cap]="comparisonSalary.cap" [compact]="true" />
           </div>
         </section>
+        @if (team.CapOutlookAsOfWeek !== undefined && team.CapOutlookAsOfWeek !== league.FinalScoredWeek) {
+          <p class="cap-valuation-asof">Projected valuation through Week {{ team.CapOutlookAsOfWeek }}</p>
+        }
         <div class="salary-grid">
           <section class="section-card">
             <div class="section-heading"><div><span class="eyebrow">Salary by Position</span><h3>{{ selectedSeasonLabel }}</h3></div></div>

@@ -247,6 +247,8 @@ export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'Reserve' |
   Roster: Player[];
   /** Verified central result; absence means unknown/stale, never zero cap usage. */
   CapOutlook?: TeamCapOutlookReadyTeam;
+  /** Provenance of a verified cap outlook; StatsFinalWeek may lag LeagueScoredWeek. */
+  CapOutlookAsOfWeek?: number;
   Reserve: Player[];
   Taxi: Player[];
   Starter: Player[];
