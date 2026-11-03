@@ -203,6 +203,118 @@ def check_productive_edge_audit(edges: object, root: Path) -> list[str]:
     return errors
 
 
+
+def check_source_family_coverage_audit(matrix: object, audit: object, root: Path) -> list[str]:
+    """Validate all Source-family classifications without claiming full cross-language reachability."""
+    issues: list[str] = []
+    if not isinstance(matrix, dict) or not isinstance(audit, dict):
+        return ["invalid source-family audit or canonical matrix"]
+    if audit.get("status") != "partial" or audit.get("issue") != 1263:
+        issues.append("source-family audit must stay partial and issue-backed")
+    edge_list = (audit.get("_edgeList") or [])
+    if not isinstance(edge_list, list):
+        return issues + ["invalid audited edge list"]
+    edges = {
+        row["id"]: row for row in edge_list
+        if isinstance(row, dict) and isinstance(row.get("id"), str)
+    }
+    source_families = audit.get("families")
+    if not isinstance(source_families, list):
+        return issues + ["missing source-family coverage rows"]
+    names: set[str] = set()
+    actual_names = set(matrix)
+    valid_states = {"linked-partial", "unknown", "blocked", "out-of-runtime"}
+    for i, row in enumerate(source_families):
+        if not isinstance(row, dict):
+            issues.append(f"invalid source family row {i}")
+            continue
+        name = row.get("family")
+        if not isinstance(name, str) or not name or name in names:
+            issues.append(f"duplicate/missing source family at {i}")
+        else:
+            names.add(name)
+        state = row.get("status")
+        if state not in valid_states:
+            issues.append(f"invalid source family status: {name}: {state}")
+        refs = row.get("edgeIds")
+        if not isinstance(refs, list) or any(not isinstance(v, str) for v in refs):
+            issues.append(f"invalid source family edgeIds: {name}")
+            refs = []
+        for ref in refs:
+            if ref not in edges:
+                issues.append(f"stale source family edge reference: {name}: {ref}")
+        if state == "linked-partial" and not any(
+            ref in edges and edges[ref].get("status") == "verified" for ref in refs
+        ):
+            issues.append(f"unverified linked source family: {name}")
+        if state == "out-of-runtime" and refs:
+            issues.append(f"retired/non-runtime family cannot claim active edge: {name}")
+        for field in ("supported", "remaining"):
+            if not isinstance(row.get(field), str) or not row[field].strip():
+                issues.append(f"missing source family {field}: {name}")
+        evidence = row.get("evidenceFiles")
+        if not isinstance(evidence, list) or not evidence:
+            issues.append(f"missing source family evidence: {name}")
+        else:
+            for evidence_file in evidence:
+                if (not isinstance(evidence_file, str)
+                    or not evidence_file
+                    or Path(evidence_file).is_absolute()
+                    or ".." in Path(evidence_file).parts
+                    or not (root / evidence_file).is_file()):
+                    issues.append(f"missing/unsafe source family evidence: {name}: {evidence_file}")
+    for missing in sorted(actual_names - names):
+        issues.append(f"missing source family: {missing}")
+    for extra in sorted(names - actual_names):
+        issues.append(f"unrecognized source family: {extra}")
+    if len(matrix) != 23:
+        issues.append("source family baseline drift: expected 23 canonical families")
+
+    products = audit.get("downstreamProducts")
+    if not isinstance(products, list) or not products:
+        return issues + ["missing separately audited downstream products"]
+    product_names: set[str] = set()
+    for i, row in enumerate(products):
+        if not isinstance(row, dict):
+            issues.append(f"invalid downstream product row {i}")
+            continue
+        name = row.get("product")
+        if not isinstance(name, str) or not name or name in product_names:
+            issues.append(f"duplicate/missing downstream product at {i}")
+        else:
+            product_names.add(name)
+        state = row.get("status")
+        if state not in {"linked-partial", "unmapped", "blocked"}:
+            issues.append(f"invalid downstream product status: {name}")
+        refs = row.get("edgeIds")
+        if not isinstance(refs, list) or any(not isinstance(v, str) for v in refs):
+            issues.append(f"invalid downstream product edgeIds: {name}")
+            refs = []
+        for ref in refs:
+            if ref not in edges:
+                issues.append(f"stale downstream product edge reference: {name}: {ref}")
+        if state == "linked-partial" and not any(
+            ref in edges and edges[ref].get("status") == "verified" for ref in refs
+        ):
+            issues.append(f"unverified downstream product: {name}")
+        if state == "unmapped" and refs:
+            issues.append(f"unmapped downstream product claims edges: {name}")
+        if not isinstance(row.get("remaining"), str) or not row["remaining"].strip():
+            issues.append(f"missing downstream product gap: {name}")
+        files = row.get("evidenceFiles")
+        if not isinstance(files, list) or not files:
+            issues.append(f"missing downstream product evidence: {name}")
+        else:
+            for evidence_file in files:
+                if (not isinstance(evidence_file, str)
+                    or not evidence_file
+                    or Path(evidence_file).is_absolute()
+                    or ".." in Path(evidence_file).parts
+                    or not (root / evidence_file).is_file()):
+                    issues.append(f"missing/unsafe downstream product evidence: {name}: {evidence_file}")
+    return issues
+
+
 class ConsumerReadClassificationTest(unittest.TestCase):
 
     def test_g1_productive_edge_inventory_has_owner_identity_and_evidence(self) -> None:
@@ -258,6 +370,53 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         )
         self.assertIn("age_reference_date(", ops)
         self.assertIn("enrich_from_members(", ops)
+
+
+    def test_g1_all_23_source_families_have_bounded_evidence_and_separate_products(self) -> None:
+        document = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))
+        audit = document["sourceFamilyCoverageAudit"]
+        self.assertEqual("partial", audit["status"])
+        self.assertEqual(23, len(audit["families"]))
+        self.assertEqual(9, len(audit["downstreamProducts"]))
+        self.assertEqual(
+            [],
+            check_source_family_coverage_audit(
+                document["matrix"],
+                {**audit, "_edgeList": document["productiveEdgeAudit"]["edges"]},
+                REPO_ROOT,
+            ),
+        )
+        statuses = {r["family"]: r["status"] for r in audit["families"]}
+        self.assertEqual("out-of-runtime", statuses["nflGameBoxscoreLegacy"])
+        self.assertEqual("blocked", statuses["nflContracts"])
+        self.assertEqual("unknown", statuses["nflPlayerProfile"])
+        self.assertEqual("unknown", statuses["nflDepthChart"])
+        self.assertEqual("linked-partial", statuses["byeWeek"])
+        self.assertEqual("unresolved", document["matrix"]["nflPlayerProfile"]["durableCanonicalPrimary"])
+        self.assertEqual("retired-347-g4", document["matrix"]["nflGameBoxscoreLegacy"]["migrationState"])
+
+    def test_g6_source_family_coverage_negative_cases_fail_closed(self) -> None:
+        from copy import deepcopy
+        document = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))
+        baseline = {**document["sourceFamilyCoverageAudit"],
+                    "_edgeList": document["productiveEdgeAudit"]["edges"]}
+        matrix = document["matrix"]
+        alterations = (
+            (lambda a: a["families"].pop(), "missing source family"),
+            (lambda a: a["families"][0].update(family="not-a-source"), "unrecognized source family"),
+            (lambda a: a["families"][2]["edgeIds"].append("no-such-verified-edge"), "stale source family edge reference"),
+            (lambda a: a["families"][2].update(status="verified"), "invalid source family status"),
+            (lambda a: a["families"][2].update(evidenceFiles=["missing/traversal.py"]), "missing/unsafe source family evidence"),
+            (lambda a: a["families"][2].update(remaining=""), "missing source family remaining"),
+            (lambda a: a["downstreamProducts"][0].update(edgeIds=["canonical-standings-model"]), "unmapped downstream product claims edges"),
+            (lambda a: a.update(status="complete"), "source-family audit must stay partial"),
+        )
+        for change, expected in alterations:
+            with self.subTest(expected=expected):
+                candidate = deepcopy(baseline)
+                change(candidate)
+                errors = check_source_family_coverage_audit(matrix, candidate, REPO_ROOT)
+                self.assertTrue(any(expected in error for error in errors), errors)
 
     def test_g3_bye_week_source_contract_matches_canonical_runtime(self) -> None:
         matrix = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))["matrix"]

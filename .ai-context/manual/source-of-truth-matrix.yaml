@@ -1741,3 +1741,429 @@ productiveEdgeAudit: {
       }
     ]
   }
+
+# G1/G6 coverage ledger: source families and downstream products are distinct counts.
+# All linked-partial rows remain incomplete pending independent graph/reachability review.
+sourceFamilyCoverageAudit: {
+  "issue": 1263,
+  "status": "partial",
+  "scope": "all-direct-matrix-source-families-with-bounded-links-not-exhaustive-callgraph",
+  "purpose": "An existing verified edge establishes only a partial family link, never complete ownership or downstream reachability.",
+  "coverageStates": [
+    "linked-partial",
+    "unknown",
+    "blocked",
+    "out-of-runtime"
+  ],
+  "downstreamStates": [
+    "linked-partial",
+    "unmapped",
+    "blocked"
+  ],
+  "families": [
+    {
+      "family": "nflPersonIdentity",
+      "status": "unknown",
+      "edgeIds": [
+        "nfl-roster-population",
+        "sleeper-platform-current"
+      ],
+      "evidenceFiles": [
+        "tools/nfl_source_data_lib/identity.py",
+        "tools/players_population.py"
+      ],
+      "supported": "Canonical identity graph and cross-provider joins are active; the linked population edges are downstream evidence, not the graph owner.",
+      "remaining": "Declare a direct canonical identity→population/scoring/consumer lineage edge and audit historical identity coverage."
+    },
+    {
+      "family": "nflPlayerProfile",
+      "status": "unknown",
+      "edgeIds": [
+        "nfl-player-profile-durable",
+        "nfl-roster-population"
+      ],
+      "evidenceFiles": [
+        "tools/nfl_source_data_lib/player_profiles.py",
+        "tools/players_population.py"
+      ],
+      "supported": "Runtime profile projection combines explicit canonical nflverse and Sleeper evidence.",
+      "remaining": "Durable field-level owner and history coverage remain unresolved; keep profile distinct from roster and injury facts."
+    },
+    {
+      "family": "nflDraftHistory",
+      "status": "linked-partial",
+      "edgeIds": [
+        "nfl-roster-population"
+      ],
+      "evidenceFiles": [
+        "tools/nfl_source_data_lib/draft.py",
+        "tools/players_population.py"
+      ],
+      "supported": "Canonical NFL draft season records are a current player-population reason.",
+      "remaining": "Full canonical draft history consumers and identity/history repair routes are not traced by this single edge."
+    },
+    {
+      "family": "nflCombine",
+      "status": "unknown",
+      "edgeIds": [],
+      "evidenceFiles": [
+        "tools/nfl_source_data_lib/combine.py"
+      ],
+      "supported": "Canonical Combine producer exists and uses resolved PFR/CanonicalPlayerID links.",
+      "remaining": "No end-to-end productive consumer edge is declared; do not claim that Combine fields are delivered in Players."
+    },
+    {
+      "family": "nflSchedule",
+      "status": "linked-partial",
+      "edgeIds": [
+        "nfl-schedule-bye",
+        "league-finality-to-standings"
+      ],
+      "evidenceFiles": [
+        "public/requests/utils/general/CanonicalScheduleUtils.psm1",
+        "tools/player_valuation_sources.py"
+      ],
+      "supported": "Canonical REG schedule supplies Bye Weeks and league finality inputs.",
+      "remaining": "App Schedule publication, global nfl-games and other consumer paths need explicit edge-by-edge inventory."
+    },
+    {
+      "family": "nflGameFinality",
+      "status": "linked-partial",
+      "edgeIds": [
+        "league-finality-to-standings",
+        "canonical-league-lifecycle"
+      ],
+      "evidenceFiles": [
+        "tools/nfl_source_data_lib/finality_materialize.py",
+        "tools/derived_data_lib/week_finality.py",
+        "public/requests/RequestSchedule.ps1"
+      ],
+      "supported": "Canonical game finality contributes week-scoped finality and league lifecycle.",
+      "remaining": "Direct Schedule and nfl-games publication, invalidations and canceled/postponed semantics need full consumer tracing."
+    },
+    {
+      "family": "nflGameBoxscoreLegacy",
+      "status": "out-of-runtime",
+      "edgeIds": [],
+      "evidenceFiles": [
+        "tools/players_game_history.py",
+        "public/requests/RequestSchedule.ps1"
+      ],
+      "supported": "Legacy Tank01 boxscore Games.json publisher is retired under #347 G4; game history now uses canonical NFL facts.",
+      "remaining": "Continue scanning for dormant legacy uses; retirement is not proof that all files in the repository are audited."
+    },
+    {
+      "family": "nflPlayerWeeklyStats",
+      "status": "linked-partial",
+      "edgeIds": [
+        "player-valuation-to-app-players",
+        "player-week-fantasy-app-delivery"
+      ],
+      "evidenceFiles": [
+        "tools/players_league_scoring.py",
+        "tools/player_week_fantasy_materialize.py"
+      ],
+      "supported": "Canonical player-stat partitions feed league scoring and shared PlayerWeekFantasy production.",
+      "remaining": "Game/season source partition, correction-window invalidation and all cross-consumer dependencies remain incompletely traced."
+    },
+    {
+      "family": "fantasyPointsLeagueScoring",
+      "status": "linked-partial",
+      "edgeIds": [
+        "player-valuation-to-app-players",
+        "player-week-fantasy-app-delivery"
+      ],
+      "evidenceFiles": [
+        "tools/players_league_scoring.py",
+        "tools/player_week_fantasy_materialize.py"
+      ],
+      "supported": "Canonical player stats plus league-specific scoring settings feed separate valuation and PWF paths.",
+      "remaining": "Scoring profile/version and historical parity for all consumers remain to be mapped independently."
+    },
+    {
+      "family": "nflSnapCounts",
+      "status": "linked-partial",
+      "edgeIds": [
+        "player-valuation-to-app-players"
+      ],
+      "evidenceFiles": [
+        "tools/players_league_scoring.py",
+        "tools/players_game_history.py"
+      ],
+      "supported": "Canonical snap partitions support scoring participation and historical game rows.",
+      "remaining": "Full player-usage and PWF/Operations consumer lineage and pre-2012 unavailable semantics need review."
+    },
+    {
+      "family": "nflWeeklyRosterMembership",
+      "status": "linked-partial",
+      "edgeIds": [
+        "nfl-roster-population"
+      ],
+      "evidenceFiles": [
+        "tools/players_population.py"
+      ],
+      "supported": "Canonical weekly NFL rosters are population evidence, not Sleeper current-team truth.",
+      "remaining": "Verify week-by-week historical membership and all downstream consumers beyond player population."
+    },
+    {
+      "family": "nflSeasonRosterProfile",
+      "status": "linked-partial",
+      "edgeIds": [
+        "nfl-roster-population"
+      ],
+      "evidenceFiles": [
+        "tools/players_population.py"
+      ],
+      "supported": "Season NFL rosters contribute canonical population evidence.",
+      "remaining": "Season roster is not every-week membership; all historical consumer paths are not established."
+    },
+    {
+      "family": "sleeperPlayerPlatformFacts",
+      "status": "linked-partial",
+      "edgeIds": [
+        "sleeper-platform-current"
+      ],
+      "evidenceFiles": [
+        "tools/players_population.py",
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "supported": "Persisted canonical Sleeper player snapshot supplies current platform-only status/profile fields.",
+      "remaining": "Current-snapshot age, provenance, and historical platform-state consumers require separate review."
+    },
+    {
+      "family": "nflInjuriesCurrent",
+      "status": "linked-partial",
+      "edgeIds": [
+        "sleeper-platform-current"
+      ],
+      "evidenceFiles": [
+        "tools/players_population.py",
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "supported": "Current Sleeper injury fields reach the Python Players population/read-model path.",
+      "remaining": "The platform edge alone does not prove all injury fields, downstream Operations readiness or historical timeline coverage."
+    },
+    {
+      "family": "nflDepthChart",
+      "status": "unknown",
+      "edgeIds": [
+        "sleeper-platform-current"
+      ],
+      "evidenceFiles": [
+        "tools/players_population.py",
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "supported": "Sleeper depth position/order are active platform fields with null on absence.",
+      "remaining": "Durable NFL depth-chart source and historical snapshot policy are unresolved; do not promote platform depth into canonical NFL role."
+    },
+    {
+      "family": "nflContracts",
+      "status": "blocked",
+      "edgeIds": [],
+      "evidenceFiles": [
+        ".ai-context/manual/nfl-source-data.yaml",
+        "tools/nfl_source_data.py"
+      ],
+      "supported": "Candidate nflverse contracts dataset is registered/planned, not an accepted active app source.",
+      "remaining": "No canonical runtime owner; source evaluation and licensing/attribution permission gate before persistence or publication."
+    },
+    {
+      "family": "nflPlayerConvenienceMetadata",
+      "status": "unknown",
+      "edgeIds": [],
+      "evidenceFiles": [
+        "tools/players_population.py",
+        "tools/nfl_source_data_lib/player_profiles.py"
+      ],
+      "supported": "Profile and provider mappings support display links/images as convenience enrichment.",
+      "remaining": "Declare exact display-only consumer edge and provenance; links are not identity evidence."
+    },
+    {
+      "family": "nflFreeAgentAndAvailabilityStatus",
+      "status": "linked-partial",
+      "edgeIds": [
+        "sleeper-platform-current"
+      ],
+      "evidenceFiles": [
+        "tools/players_population.py",
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "supported": "Current NFL employment/free-agent display is derived from Sleeper platform Team/status and team registry.",
+      "remaining": "Must verify every downstream field and keep NFL employment distinct from fantasy-league draft/add eligibility."
+    },
+    {
+      "family": "byeWeek",
+      "status": "linked-partial",
+      "edgeIds": [
+        "nfl-schedule-bye"
+      ],
+      "evidenceFiles": [
+        "tools/player_valuation_sources.py",
+        "tools/derived_data_lib/players_read_model.py"
+      ],
+      "supported": "Canonical nflverse REG schedule drives fail-closed per-team/season Bye Week derivation.",
+      "remaining": "This confirmed derivation is not a claim of complete Schedule/PlayerValuation/Operations dependency coverage."
+    },
+    {
+      "family": "fantasyLeagueSettings",
+      "status": "linked-partial",
+      "edgeIds": [
+        "canonical-league-lifecycle",
+        "fm-fa-board-lifecycle-evaluation",
+        "player-valuation-to-app-players"
+      ],
+      "evidenceFiles": [
+        "tools/league_metadata.py",
+        "tools/players_league_scoring.py",
+        "fantasy-management/_ai/scripts/canonical_league_ownership.py"
+      ],
+      "supported": "Canonical league-season settings and manual data-meta rules feed lifecycle and consumer-specific derivations.",
+      "remaining": "Field-level ownership and every scoring/model/profile/settings consumer still require complete lineage."
+    },
+    {
+      "family": "fantasyLeagueRostersAndTeams",
+      "status": "linked-partial",
+      "edgeIds": [
+        "canonical-standings-model",
+        "fm-canonical-league-ownership"
+      ],
+      "evidenceFiles": [
+        "tools/league_standings_sources.py",
+        "fantasy-management/_ai/scripts/canonical_league_ownership.py"
+      ],
+      "supported": "Canonical League roster/member facts feed shared standings and Fantasy Operations ownership adapter.",
+      "remaining": "Audit all League Live/App teams, Taxi/IR joins and account/time/league identity variants."
+    },
+    {
+      "family": "fantasyLeagueTransactions",
+      "status": "linked-partial",
+      "edgeIds": [
+        "canonical-league-history-model"
+      ],
+      "evidenceFiles": [
+        "tools/league_history_sources.py",
+        "tools/derived_data_lib/league_history.py"
+      ],
+      "supported": "Canonical Sleeper transaction and manual overlay feed shared LeagueHistory.",
+      "remaining": "All archive/publisher and EffectiveAt correction paths still need complete model/consumer reachability."
+    },
+    {
+      "family": "fantasyLeagueDraftsAndPickOwnership",
+      "status": "linked-partial",
+      "edgeIds": [
+        "canonical-league-history-model",
+        "league-drafts-to-league-home"
+      ],
+      "evidenceFiles": [
+        "tools/league_history_sources.py",
+        "public/requests/utils/league/TeamDraftPickUtils.psm1"
+      ],
+      "supported": "Shared LeagueDrafts determines current/future pick ownership supplied to League home.",
+      "remaining": "Full history, provider draft ID/virtual draft boundaries and other App/Operations readers are not exhaustively traced."
+    }
+  ],
+  "downstreamProducts": [
+    {
+      "product": "nfl-games",
+      "status": "unmapped",
+      "edgeIds": [],
+      "evidenceFiles": [
+        "tools/nfl_games_materialize.py",
+        "tools/derived_data_lib/nfl_games.py"
+      ],
+      "remaining": "Trace Source schedule/finality/odds → shared NFL games → App consumers and publication conditions."
+    },
+    {
+      "product": "player-week-fantasy",
+      "status": "linked-partial",
+      "edgeIds": [
+        "player-week-fantasy-app-delivery"
+      ],
+      "evidenceFiles": [
+        "tools/player_week_fantasy_materialize.py",
+        "tools/player_week_fantasy_app_publish.py"
+      ],
+      "remaining": "Trace entire score/identity/config/version/season path, not merely App delivery."
+    },
+    {
+      "product": "team-week-performance",
+      "status": "unmapped",
+      "edgeIds": [],
+      "evidenceFiles": [
+        "tools/team_week_performance.py",
+        "tools/team_week_performance_materialize.py"
+      ],
+      "remaining": "Explicitly inventory canonical league/NFL/points inputs and both shared/App consumers."
+    },
+    {
+      "product": "league-standings",
+      "status": "linked-partial",
+      "edgeIds": [
+        "canonical-standings-model",
+        "standings-to-angular"
+      ],
+      "evidenceFiles": [
+        "tools/league_standings_sources.py",
+        "tools/league_standings_app_publish.py"
+      ],
+      "remaining": "Trace every standings week/historical/awards/legacy consumer including #193."
+    },
+    {
+      "product": "league-transactions-and-drafts",
+      "status": "linked-partial",
+      "edgeIds": [
+        "canonical-league-history-model",
+        "league-drafts-to-league-home"
+      ],
+      "evidenceFiles": [
+        "tools/league_history_sources.py",
+        "tools/league_history_app_publish.py"
+      ],
+      "remaining": "Trace every historical partition, source revision and dependent App publisher."
+    },
+    {
+      "product": "fantasy-game-context-and-matchups",
+      "status": "unmapped",
+      "edgeIds": [],
+      "evidenceFiles": [
+        "tools/derived_data_lib/matchup_context.py",
+        "tools/matchup_context_app_publish.py"
+      ],
+      "remaining": "Declare source→DecisionWindows→Shared Model→App chains, time/finality and freshness."
+    },
+    {
+      "product": "matchup-projections",
+      "status": "unmapped",
+      "edgeIds": [],
+      "evidenceFiles": [
+        "tools/matchup_projection.py"
+      ],
+      "remaining": "Establish cross-consumer derivation versus App-specific projection owner and source lineage."
+    },
+    {
+      "product": "fantasy-operations-readmodels",
+      "status": "linked-partial",
+      "edgeIds": [
+        "fm-canonical-league-ownership",
+        "fm-age-evaluation-reference",
+        "fm-fa-board-lifecycle-evaluation"
+      ],
+      "evidenceFiles": [
+        "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",
+        "fantasy-management/_ai/scripts/build_fa_board_readmodel.py"
+      ],
+      "remaining": "Trace complete signal/roster/market sources and run-age/freshness/State boundaries (#201/#202/#204)."
+    },
+    {
+      "product": "market-observations",
+      "status": "blocked",
+      "edgeIds": [
+        "market-observations-rights"
+      ],
+      "evidenceFiles": [
+        "fantasy-management/automation/jobs/entity-observation.json"
+      ],
+      "remaining": "Shared market persist/write and dataset-specific rights remain gated by #988 and #741; no inference from prior sample."
+    }
+  ]
+}
