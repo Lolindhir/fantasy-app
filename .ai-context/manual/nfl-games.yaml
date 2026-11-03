@@ -81,17 +81,18 @@ operation:
   check: python3 tools/nfl_games_materialize.py --season 2026 --check
   full: python3 tools/nfl_games_materialize.py --all-seasons
   publication: >
-    After a successful normal full nfl-source sync, the existing
-    sync-nfl-source-data.yml runs a dependent nfl_games_derived job that verifies
+    After a successful normal full NFL Source sync or a successful targeted
+    nflverse.schedule-odds Source refresh, sync-nfl-source-data.yml runs a
+    dependent nfl_games_derived job that verifies
     real-source clean-root restore, then executes the existing rebuild-and-retry
     publisher from current main with scope nfl-games and only
     data-derived/nfl-games as allowed write destination.
   activation: gated-by-PR1082-green-CI-and-first-production-publish
   workflow: .github/workflows/sync-nfl-source-data.yml
-  sourceTrigger: daily-full-only
+  sourceTrigger: full-source-or-scoped-schedule-odds
   excludedTriggers:
     - nfl-live-game-finality
-    - targeted-NFL-source-dataset-refresh
+    - unrelated-targeted-NFL-source-dataset-refresh
     - league-live
   outputScope: data-derived/nfl-games/**
   noSeparateScheduler: true
