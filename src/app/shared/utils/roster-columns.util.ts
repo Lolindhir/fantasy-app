@@ -63,3 +63,10 @@ export function decodeColumns(raw: string | null, layout: RosterLayout): RosterM
 export function encodeColumns(columns: readonly RosterMetric[]): string {
   return JSON.stringify({ version: 1, columns });
 }
+
+/** Compact display of existing dollar amounts in the mobile team roster only. */
+export function formatCompactRosterSalary(amount: number, withPositiveSign = false): string {
+  if (!Number.isFinite(amount)) return '—';
+  const sign = amount < 0 ? '-' : withPositiveSign ? '+' : '';
+  return `${sign}$${(Math.abs(amount) / 1_000_000).toFixed(1)}M`;
+}

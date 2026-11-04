@@ -141,3 +141,35 @@
   .season-row { grid-template-columns: 48px 58px minmax(0, 1fr); }
   .season-row > :nth-child(4), .season-row > :nth-child(5) { grid-column: 3; }
 }
+
+
+/* Team Roster only: on phones keep identity sticky without consuming half the table.
+   At ~390px viewport, rank + identity + PPG + Salary + Proj. fit in ~333px. */
+@media (max-width: 600px) {
+  .roster-table-scroll .team-roster-compact .mat-column-rank {
+    width: 22px; min-width: 22px; max-width: 22px;
+  }
+  .roster-table-scroll .team-roster-compact .mat-column-name {
+    width: clamp(108px, 29vw, 120px);
+    min-width: clamp(108px, 29vw, 120px);
+    max-width: clamp(108px, 29vw, 120px);
+  }
+  .roster-table-scroll .team-roster-compact .mat-column-ppg {
+    width: 44px; min-width: 44px; max-width: 44px;
+  }
+  .roster-table-scroll .team-roster-compact .mat-column-ranking {
+    width: 58px; min-width: 58px; max-width: 58px;
+  }
+  .roster-table-scroll .team-roster-compact .mat-column-depth {
+    width: 66px; min-width: 66px; max-width: 66px;
+  }
+  .roster-table-scroll .team-roster-compact .mat-column-age {
+    width: 40px; min-width: 40px; max-width: 40px;
+  }
+  .roster-table-scroll .team-roster-compact .mat-column-salary {
+    width: 72px; min-width: 72px; max-width: 72px;
+  }
+  .roster-table-scroll .team-roster-compact .mat-column-salaryProjected {
+    width: 80px; min-width: 80px; max-width: 80px;
+  }
+}
