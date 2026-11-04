@@ -150,8 +150,10 @@
               <mat-button-toggle value="all">All</mat-button-toggle>
               <mat-button-toggle value="performance">Performance</mat-button-toggle>
               <mat-button-toggle value="financial">Financial</mat-button-toggle>
-              <mat-button-toggle value="custom">Custom</mat-button-toggle>
             </mat-button-toggle-group>
+            @if (rosterColumnPreset === 'custom') {
+              <span class="roster-columns-note">Custom selection</span>
+            }
 
             <div class="roster-column-checkboxes" aria-label="Visible roster metrics">
               @for (option of rosterMetricOptions; track option.id) {
