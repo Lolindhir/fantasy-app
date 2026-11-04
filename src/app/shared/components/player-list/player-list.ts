@@ -5,7 +5,8 @@ import { MatDialog } from '@angular/material/dialog';
 import type { FantasyTeam, Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
-import { getPlayerDepthChartLabel } from '../../utils/player-sort.util';
+import { formatPlayerFantasyPointsPerGame, getPlayerDepthChartLabel } from '../../utils/player-sort.util';
+import { getCombinedRanking, getPreviousCombinedRanking } from '../../utils/team-roster-view.util';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
 export type PlayerListColumn =
@@ -15,6 +16,9 @@ export type PlayerListColumn =
   | 'position'
   | 'team'
   | 'depth'
+  | 'ppg'
+  | 'ranking'
+  | 'age'
   | 'salary'
   | 'salaryProjected'
   | 'fantasyTeam'
@@ -63,6 +67,7 @@ export class PlayerListComponent {
   @Input() projectedAbr = 'Proj.';
   @Input() showProjectedMarket = false;
   @Input() showDepth = false;
+  @Input() stickyIdentity = false;
 
   // Optional für TeamList-Exclude-Use-Case
   @Input() isExcludedFn?: (teamId: string, playerId: string) => boolean;
@@ -135,6 +140,17 @@ export class PlayerListComponent {
 
   getDepthChartLabel(player: Player): string {
     return getPlayerDepthChartLabel(player) ?? '—';
+  }
+
+  getPpgLabel(player: Player): string {
+    return formatPlayerFantasyPointsPerGame(player);
+  }
+
+  getRankingLabel(player: Player): string {
+    const current = getCombinedRanking(player);
+    if (current !== undefined) return `#${current}`;
+    const previous = getPreviousCombinedRanking(player);
+    return previous !== undefined ? `Prev #${previous}` : '—';
   }
 
   getMarketText(player: Player): string {
