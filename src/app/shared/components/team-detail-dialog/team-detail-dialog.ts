@@ -154,7 +154,7 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
 
     return this.isMobile
       ? ['rank', 'name', ...sortColumn, 'salary', 'salaryProjected']
-      : ['rank', 'picture', 'name', 'position', 'team', ...sortColumn, 'salary', 'salaryProjected'];
+      : ['rank', 'picture', 'name', 'position', 'team', ...sortColumn, 'ppg', 'salary', 'salaryProjected'];
   }
 
   get rosterDynamicColumnHeader(): string {

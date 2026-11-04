@@ -1,5 +1,6 @@
 import type { DecisionWindowPlayerLockFact } from '../../core/models/decision-window.models';
 import type { Player, RankingEntry } from '../../core/models/player.models';
+import { formatPlayerFantasyPointsPerGame } from './player-sort.util';
 import {
   buildRosterPlayerGroups,
   formatRosterNextLockValue,
@@ -100,6 +101,23 @@ describe('team roster view utilities', () => {
       .toEqual(['younger', 'middle', 'older']);
     expect(sortRosterPlayers([middle, older, younger], 'ageDesc').map(player => player.ID))
       .toEqual(['older', 'middle', 'younger']);
+  });
+
+  it('sorts current PPG descending, stabilizes ties and leaves unplayed players last', () => {
+    const high = makePlayer('high', { gamesPlayed: 5, avgPoints: 19.85 });
+    const tieB = makePlayer('tie-b', { gamesPlayed: 7, avgPoints: 10.2 });
+    const tieA = makePlayer('tie-a', { gamesPlayed: 3, avgPoints: 10.2 });
+    const zero = makePlayer('zero', { gamesPlayed: 2, avgPoints: 0 });
+    const unplayed = makePlayer('unplayed', { gamesPlayed: 0, avgPoints: 20 });
+
+    const sorted = sortRosterPlayers([unplayed, tieB, zero, high, tieA], 'ppgDesc');
+    expect(sorted.map(player => player.ID)).toEqual(['high', 'tie-a', 'tie-b', 'zero', 'unplayed']);
+    expect(formatPlayerFantasyPointsPerGame(high)).toBe('19.9');
+    expect(formatPlayerFantasyPointsPerGame(zero)).toBe('0.0');
+    expect(formatPlayerFantasyPointsPerGame(unplayed)).toBe('—');
+
+    const groups = buildRosterPlayerGroups([tieB, unplayed, high, tieA], 'position', 'ppgDesc');
+    expect(groups[0].players.map(player => player.ID)).toEqual(['high', 'tie-a', 'tie-b', 'unplayed']);
   });
 
   it('groups future players by exact next lock window and keeps the selected sort inside each group', () => {
@@ -262,6 +280,8 @@ interface PlayerOptions {
   age?: number;
   currentRank?: number;
   previousRank?: number;
+  gamesPlayed?: number;
+  avgPoints?: number;
 }
 
 function makePlayer(id: string, options: PlayerOptions = {}): Player {
@@ -276,7 +296,7 @@ function makePlayer(id: string, options: PlayerOptions = {}): Player {
     Salary: options.salary ?? 0,
     SalaryProjected: options.projected ?? 0,
     Age: options.age ?? 25,
-    Stats: { Ranking: ranking }
+    Stats: { Ranking: ranking, GamesPlayed: options.gamesPlayed ?? 0, FantasyPointsAvgGame: options.avgPoints ?? 0 }
   } as unknown as Player;
 }
 
