@@ -1,5 +1,5 @@
 import {
-  decodeColumns, defaultColumns, encodeColumns, normalizeColumns,
+  decodeColumns, defaultColumns, encodeColumns, normalizeColumns, formatCompactRosterSalary,
   presetColumns, selectedPreset, storageKey, toggleMetric
 } from './roster-columns.util';
 
@@ -34,4 +34,13 @@ describe('roster column preferences', () => {
     expect(decodeColumns('{"version":1,"columns":["unknown"]}', 'mobile'))
       .toEqual(defaultColumns('mobile'));
   });
+  it('keeps mobile roster salary amounts readable within narrow metric columns', () => {
+    expect(formatCompactRosterSalary(54_000_000)).toBe('$54.0M');
+    expect(formatCompactRosterSalary(40_800_000)).toBe('$40.8M');
+    expect(formatCompactRosterSalary(-13_200_000, true)).toBe('-$13.2M');
+    expect(formatCompactRosterSalary(900_000, true)).toBe('+$0.9M');
+    expect(formatCompactRosterSalary(0)).toBe('$0.0M');
+    expect(formatCompactRosterSalary(Number.NaN)).toBe('—');
+  });
+
 });
