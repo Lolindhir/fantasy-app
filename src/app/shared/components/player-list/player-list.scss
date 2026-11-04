@@ -180,3 +180,55 @@
     padding: 1px 4px;
   }
 }
+
+
+/* Extra density applies only to the team-dialog phone variant. */
+@media (max-width: 600px) {
+  .team-roster-metrics.team-roster-compact .player-name-cell {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .team-roster-metrics.team-roster-compact .player-name {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px !important;
+  }
+
+  .team-roster-metrics.team-roster-compact .compact-meta {
+    gap: 2px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .team-roster-metrics.team-roster-compact .compact-meta img:first-child {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+  }
+
+  .team-roster-metrics.team-roster-compact .compact-meta img:nth-child(2) {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+  }
+
+  .team-roster-metrics.team-roster-compact .chip-position {
+    min-width: 22px;
+    padding: 1px 2px;
+    font-size: 12px;
+  }
+
+  .team-roster-metrics.team-roster-compact .player-salary {
+    font-size: 12px !important;
+  }
+
+  .team-roster-metrics.team-roster-compact .player-salary-difference {
+    font-size: 11px !important;
+    white-space: nowrap;
+  }
+}
