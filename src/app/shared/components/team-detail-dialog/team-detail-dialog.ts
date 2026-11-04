@@ -10,6 +10,7 @@ import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../../
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
+import { formatPlayerFantasyPointsPerGame } from '../../utils/player-sort.util';
 import { PlayerPicturePipe } from '../../pipes/player-picture.pipe';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { formatDecisionWindowsUpdatedAt } from '../../utils/decision-window-view.util';
@@ -154,7 +155,7 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
 
     return this.isMobile
       ? ['rank', 'name', ...sortColumn, 'salary', 'salaryProjected']
-      : ['rank', 'picture', 'name', 'position', 'team', ...sortColumn, 'ppg', 'salary', 'salaryProjected'];
+      : ['rank', 'picture', 'name', 'position', 'team', ...sortColumn, 'salary', 'salaryProjected'];
   }
 
   get rosterDynamicColumnHeader(): string {
@@ -164,6 +165,8 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
         return 'Age';
       case 'ranking':
         return 'Rank';
+      case 'ppgDesc':
+        return 'PPG';
       case 'nextLock':
         return 'Next Lock';
       default:
@@ -340,6 +343,8 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
         const previousRank = getPreviousCombinedRanking(player);
         return previousRank !== undefined ? `Prev #${previousRank}` : '—';
       }
+      case 'ppgDesc':
+        return formatPlayerFantasyPointsPerGame(player);
       case 'nextLock':
         return this.rosterNextLockContext
           ? formatRosterNextLockValue(player, this.rosterNextLockContext)
@@ -412,6 +417,7 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
 
   private get showsRosterSortColumn(): boolean {
     return this.rosterSort === 'ranking'
+      || this.rosterSort === 'ppgDesc'
       || this.rosterSort === 'ageAsc'
       || this.rosterSort === 'ageDesc'
       || this.rosterSort === 'nextLock';
