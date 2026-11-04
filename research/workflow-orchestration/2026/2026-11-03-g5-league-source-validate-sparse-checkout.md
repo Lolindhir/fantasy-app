@@ -44,3 +44,7 @@ Before merging, inspect exact-PR-head CI Core, Fast League and Merge Gate **and*
 The intended reduction is only the Source validation checkout, at most one of four sequential job checkouts. It does **not** solve the other three publisher checkout costs. Use enough runs to avoid attributing GitHub network variability to this one change. A PR-only same-commit comparison is stronger than a across-day anecdote but is not a controlled runner/network experiment.
 
 Failure or unexpectedly slow sparse behavior warrants reverting the PR's workflow and test/report changes; no canonical data or storage migration is needed. Continue #1263 G5 before any new production gating or Source/Derived ownership changes.
+
+## Mainline reconciliation — 2026-11-04
+
+After independent #1319 Draft and #1323 PWF repairs were merged, G5 was reconciled with current `main` (`4be3abb`) as merge commit `1b8f597`, retaining exactly the original three-file scope. Both existing modified paths were byte-identical on main to the PR's original branch base, so no conflicting G5 edits or source semantics were introduced. The earlier PR CI results predate this merge: **do not rely on them for the updated head**. Require new exact-head Repository CI and native Source PR validation before merging; keep production Source writers untouched and measure only naturally scheduled postmerge League Live.
