@@ -144,6 +144,62 @@ class ShadowDecisionTests(unittest.TestCase):
 
 
 
+    def test_league_shadow_inventory_includes_future_draft_contract_surfaces(self):
+        required = {
+            "public/data/Drafts.json",
+            "public/data/Transactions.json",
+            "data-derived/league-drafts",
+            "data-derived/league-transactions",
+        }
+        self.assertTrue(required <= set(shadow.STAGE_OUTPUTS["league"]))
+        # A directory existing is not proof that all configured future seasons
+        # have coherent partitions; that remains a separate production gate.
+
+    def test_missing_draft_partition_root_or_app_drafts_forces_offline_run(self):
+        for missing in ("data-derived/league-drafts", "public/data/Drafts.json",
+                        "data-derived/league-transactions", "public/data/Transactions.json"):
+            with self.subTest(missing=missing):
+                current, prior = self.evidence("league")
+                current["missingOutputs"] = [missing]
+                result = shadow.decide(current, prior)
+                self.assertEqual("would-run", result["decision"])
+                self.assertIn("missing-or-unknown-output", result["reasonCodes"])
+                self.assertFalse(result["enforced"])
+
+    def test_forged_finality_race_and_attestation_cannot_authorize_skip(self):
+        cases = (
+            ("prior", "completedSuccessfully", "success"),
+            ("prior", "outputsValidated", 1),
+            ("prior", "clockBoundaryProof", "true"),
+            ("prior", "raceFree", 1),
+            ("prior", "recoveryClean", "yes"),
+            ("current", "raceFree", "true"),
+            ("current", "recoveryClean", 1),
+        )
+        for owner, field, bad in cases:
+            with self.subTest(owner=owner, field=field):
+                current, prior = self.evidence("league")
+                (current if owner == "current" else prior)[field] = bad
+                result = shadow.decide(current, prior)
+                self.assertEqual("would-run", result["decision"])
+                self.assertFalse(result["enforced"])
+
+    def test_prior_revision_clock_and_league_scope_must_match(self):
+        cases = (
+            ("schemaVersion", 2),
+            ("stage", "standings"),
+            ("scope", "nfl-reise/2026"),
+            ("processedAtUtc", "2026-11-03T19:31:00Z"),
+            ("validUntilUtc", "2026-11-03T19:29:59Z"),
+        )
+        for key, bad in cases:
+            with self.subTest(key=key):
+                current, prior = self.evidence("league")
+                prior[key] = bad
+                self.assertEqual("would-run", shadow.decide(current, prior)["decision"])
+
+
+
 class ShadowLogComparisonTests(unittest.TestCase):
     def log(self, stage: str = "league", at: str = "2026-11-03T20:17:31Z",
             changed_path: str | None = None, no_op: bool = True) -> str:
