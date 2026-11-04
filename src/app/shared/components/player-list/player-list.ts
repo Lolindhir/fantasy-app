@@ -6,6 +6,7 @@ import type { FantasyTeam, Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { formatPlayerFantasyPointsPerGame, getPlayerDepthChartLabel } from '../../utils/player-sort.util';
+import { formatCompactRosterSalary } from '../../utils/roster-columns.util';
 import { getCombinedRanking, getPreviousCombinedRanking } from '../../utils/team-roster-view.util';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
@@ -68,6 +69,7 @@ export class PlayerListComponent {
   @Input() showProjectedMarket = false;
   @Input() showDepth = false;
   @Input() stickyIdentity = false;
+  @Input() compactRosterSalary = false;
 
   // Optional für TeamList-Exclude-Use-Case
   @Input() isExcludedFn?: (teamId: string, playerId: string) => boolean;
@@ -177,6 +179,10 @@ export class PlayerListComponent {
       : player.FreeAgentMarketInfo;
 
     return info?.Reason ?? '';
+  }
+
+  formatMobileRosterSalary(amount: number, withPositiveSign = false): string {
+    return formatCompactRosterSalary(amount, withPositiveSign);
   }
 
   formatSalaryDollars(amount: number, plus: boolean, afterPoint: number): string {
