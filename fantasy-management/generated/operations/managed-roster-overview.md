@@ -27,7 +27,7 @@ Taxi phase: `locked`
 
 | Pos | Player | Area | Role | Security | Structural function | Coverage role | Boundary | Churn |
 |---|---|---|---|---|---|---|---|---|
-| K | Cam Little | active | unclassified | unclassified | unclassified | unclassified | no | no |
+| K | Ka'imi Fairbairn | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | QB | Jaxson Dart | reserve | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | QB | Jayden Daniels | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | QB | Michael Penix Jr. | active | unclassified | unclassified | unclassified | unclassified | no | no |
