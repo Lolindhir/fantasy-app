@@ -31,11 +31,59 @@
 .cap-valuation-asof { margin: 10px 0 0; color: #64748b; font-size: 11px; line-height: 1.4; }
 .salary-tab > .cap-valuation-asof { margin: -9px 2px 0; }
 .roster-lock-freshness { margin-top: -5px; padding-left: 2px; color: #64748b; font-size: 10px; }
+.roster-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+.roster-columns-button { min-height: 40px; font-size: 12px; white-space: nowrap; }
+.roster-columns-button mat-icon { margin-right: 4px; }
+.roster-column-picker {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  min-width: 0;
+  border: 1px solid #dbe1e8;
+  border-radius: 10px;
+  background: #fff;
+}
+.roster-preset-toggle { display: flex; flex-wrap: wrap; width: max-content; max-width: 100%; }
+.roster-preset-toggle .mat-button-toggle-label-content { padding: 0 10px; font-size: 12px; }
+.roster-column-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px 10px;
+}
+.roster-column-checkboxes .mat-mdc-checkbox label { font-size: 12px; }
+.roster-columns-note { font-size: 11px; color: #64748b; }
+.roster-table-scroll {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+.roster-table-scroll app-player-list { display: block; width: max-content; min-width: 100%; }
+.roster-table-scroll .team-roster-metrics {
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+}
+.roster-table-scroll .team-roster-metrics .table-text { box-sizing: border-box; }
+.roster-table-scroll .mat-column-rank { width: 32px; min-width: 32px; max-width: 32px; }
+.roster-table-scroll .mat-column-picture { width: 56px; min-width: 56px; max-width: 56px; }
+.roster-table-scroll .mat-column-name { width: 174px; min-width: 174px; max-width: 174px; }
+.roster-table-scroll .mat-column-position { width: 48px; min-width: 48px; max-width: 48px; }
+.roster-table-scroll .mat-column-team { width: 48px; min-width: 48px; max-width: 48px; box-shadow: 2px 0 3px rgba(15, 23, 42, .09); }
+.roster-table-scroll .mat-column-ppg { width: 65px; min-width: 65px; max-width: 65px; }
+.roster-table-scroll .mat-column-ranking { width: 80px; min-width: 80px; max-width: 80px; }
+.roster-table-scroll .mat-column-depth { width: 94px; min-width: 94px; max-width: 94px; }
+.roster-table-scroll .mat-column-age { width: 52px; min-width: 52px; max-width: 52px; }
+.roster-table-scroll .mat-column-salary { width: 112px; min-width: 112px; max-width: 112px; }
+.roster-table-scroll .mat-column-salaryProjected { width: 144px; min-width: 144px; max-width: 144px; }
+.roster-table-scroll .mat-column-dynamicStat { min-width: 122px; }
 .roster-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 150px)); gap: 8px; align-items: center; justify-content: start; }
 .roster-control { width: 150px; font-size: 12px; --mat-form-field-container-height: 40px; --mat-form-field-container-vertical-padding: 8px; }
 .roster-control .mat-mdc-form-field-infix { min-height: 40px; padding-top: 8px; padding-bottom: 8px; }
 .roster-control .mat-mdc-floating-label, .roster-control .mat-mdc-select-value { font-size: 12px; }
-.roster-section { display: grid; gap: 8px; }
+.roster-section { display: grid; gap: 8px; min-width: 0; }
 .roster-section h4 { margin: 0; display: flex; align-items: baseline; gap: 7px; font-size: 15px; }
 .roster-section h4 span { color: #6b7280; font-size: 12px; font-weight: 500; }
 .salary-toggle-row { display: flex; justify-content: center; }
@@ -82,6 +130,13 @@
   .two-column-bars, .overview-grid, .salary-grid, .movement-grid { grid-template-columns: 1fr; }
   .roster-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 7px; }
   .roster-control { width: 100%; min-width: 0; }
+  .roster-columns-button { width: 100%; }
+  .roster-column-checkboxes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .roster-preset-toggle { width: 100%; }
+  .roster-preset-toggle .mat-button-toggle { flex: 1 1 auto; }
+  .roster-preset-toggle .mat-button-toggle-label-content { padding: 0 6px; font-size: 11px; }
+  .roster-table-scroll .mat-column-rank { width: 28px; min-width: 28px; max-width: 28px; }
+  .roster-table-scroll .mat-column-name { width: 155px; min-width: 155px; max-width: 155px; box-shadow: 2px 0 3px rgba(15, 23, 42, .09); }
   .legacy-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .season-row { grid-template-columns: 48px 58px minmax(0, 1fr); }
   .season-row > :nth-child(4), .season-row > :nth-child(5) { grid-column: 3; }

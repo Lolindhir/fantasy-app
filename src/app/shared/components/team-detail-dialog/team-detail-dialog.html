@@ -98,7 +98,8 @@
 
     <mat-tab label="Roster">
       <div class="tab-content roster-tab">
-        <div class="roster-controls" aria-label="Roster grouping and sorting">
+        <div class="roster-toolbar">
+          <div class="roster-controls" aria-label="Roster grouping and sorting">
           <mat-form-field class="roster-control" appearance="outline" subscriptSizing="dynamic">
             <mat-label>Group by</mat-label>
             <mat-select [(value)]="rosterGroup">
@@ -132,21 +133,59 @@
               <mat-option value="name">Name</mat-option>
             </mat-select>
           </mat-form-field>
+          </div>
+          <button mat-stroked-button type="button" class="roster-columns-button"
+            (click)="showRosterColumnPicker = !showRosterColumnPicker"
+            [attr.aria-expanded]="showRosterColumnPicker" aria-controls="roster-column-picker">
+            <mat-icon>view_column</mat-icon>
+            Columns ({{ selectedRosterMetrics.length }})
+          </button>
         </div>
+
+        @if (showRosterColumnPicker) {
+          <div class="roster-column-picker" id="roster-column-picker">
+            <mat-button-toggle-group [value]="rosterColumnPreset"
+              (change)="chooseRosterColumnPreset($event.value)"
+              aria-label="Roster column preset" class="roster-preset-toggle">
+              <mat-button-toggle value="all">All</mat-button-toggle>
+              <mat-button-toggle value="performance">Performance</mat-button-toggle>
+              <mat-button-toggle value="financial">Financial</mat-button-toggle>
+            </mat-button-toggle-group>
+            @if (rosterColumnPreset === 'custom') {
+              <span class="roster-columns-note">Custom selection</span>
+            }
+
+            <div class="roster-column-checkboxes" aria-label="Visible roster metrics">
+              @for (option of rosterMetricOptions; track option.id) {
+                <mat-checkbox
+                  [checked]="hasRosterMetric(option.id)"
+                  [disabled]="selectedRosterMetrics.length === 1 && hasRosterMetric(option.id)"
+                  (change)="toggleRosterColumn(option.id, $event.checked)">
+                  {{ option.label }}
+                </mat-checkbox>
+              }
+            </div>
+            <button mat-button type="button" (click)="resetRosterColumns()">Reset to default</button>
+            <span class="roster-columns-note">Scroll sideways to view additional columns.</span>
+          </div>
+        }
 
         @for (group of rosterGroups; track group.key) {
           <section class="roster-section">
             <h4>{{ group.label }} <span>{{ rosterGroupCount(group) }}</span></h4>
             @if (group.players.length) {
-              <app-player-list
+              <div #rosterScroll class="roster-table-scroll" (scroll)="onRosterHorizontalScroll($event)"
+                role="region" [attr.aria-label]="group.label + ' roster data'">
+                <app-player-list
                 [players]="group.players"
                 [columns]="playerColumns"
                 [compact]="isMobile"
                 [team]="team"
-                [showDepth]="rosterSort === 'depth'"
+                [stickyIdentity]="true"
                 [dynamicColumnHeader]="rosterDynamicColumnHeader"
                 [dynamicColumnValueFn]="getRosterDynamicColumnValue"
-              />
+                />
+              </div>
             } @else {
               <p class="empty-state">{{ rosterGroupEmptyText(group) }}</p>
             }
