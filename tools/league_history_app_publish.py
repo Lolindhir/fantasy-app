@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Consumer generator: App-shaped Transactions and Drafts from the league history products (ADR-057, Issue #999).
 
-Takes the Shared Derived products (data-derived/league-transactions and league-drafts, or the in-memory
-result of derived_data_lib.league_history.build_history) and renders exactly the files the App reads today:
+The write path reads the persisted Shared Derived product documents (data-derived/league-transactions
+and league-drafts), verifies them against the canonical expected history and renders the App files.
+The separate compare command retains an independently computed canonical diagnostic:
 
   public/data/Transactions.json                       Transactions of the current season
   public/data/past_seasons/Transactions/Transactions_<season>.json   earlier seasons
@@ -31,6 +32,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from data_roots import data_derived_dir  # noqa: E402
 from league_metadata import data_meta_root, default_league_id  # noqa: E402
 
 from derived_data_lib.league_drafts import DraftBuildError  # noqa: E402
@@ -274,6 +276,50 @@ def render(
     }
 
 
+
+# ---------------------------------------------------------------------------- authoritative persisted Shared Derived inputs
+
+def verified_product_history(
+    repo_root: Path, league_id: str, expected: HistoryResult,
+) -> tuple[HistoryResult, tuple[dict[int, dict[str, dict[str, Any]]],
+                              dict[int, dict[str, dict[str, Any]]]]]:
+    """Render only from persisted Derived, never an independently newer App history.
+
+    The canonical build is an exact parity witness, not the published App input:
+    a missing, unsupported or stale current/future season blocks publication.
+    The weekly backstop builds historical partitions; League Live writes the
+    current transaction season and every actual current/future draft season.
+    """
+    root = data_derived_dir(repo_root)
+    def read(product: str, season: int, field: str, canonical: list[dict[str, Any]]):
+        path = root / product / league_id / f"{season}.json"
+        payload = _load(path)
+        if (not isinstance(payload, dict) or payload.get("ContractVersion") != 2
+                or payload.get("CanonicalLeagueID") != league_id
+                or payload.get("Season") != season):
+            raise ValueError(f"Invalid Shared Derived {product} contract: {path}")
+        value = payload.get(field)
+        if not isinstance(value, list) or value != canonical:
+            raise ValueError(f"Stale Shared Derived {product}/{league_id}/{season}: canonical parity failed")
+        refs = payload.get("PlayerRefs")
+        if not isinstance(refs, dict):
+            raise ValueError(f"Missing Shared Derived PlayerRefs: {path}")
+        return value, refs
+
+    transactions: dict[int, list[dict[str, Any]]] = {}
+    drafts: dict[int, list[dict[str, Any]]] = {}
+    transaction_refs: dict[int, dict[str, dict[str, Any]]] = {}
+    draft_refs: dict[int, dict[str, dict[str, Any]]] = {}
+    for year, canonical in sorted(expected.transactions.items()):
+        transactions[year], transaction_refs[year] = read(
+            "league-transactions", year, "Transactions", canonical,
+        )
+    for year, canonical in sorted(expected.drafts.items()):
+        drafts[year], draft_refs[year] = read("league-drafts", year, "Drafts", canonical)
+    if not drafts or not transactions:
+        raise ValueError(f"Shared Derived history missing for {league_id}")
+    return HistoryResult(transactions, drafts, []), (transaction_refs, draft_refs)
+
 # ---------------------------------------------------------------------------- writing
 
 
@@ -394,7 +440,8 @@ def run_write(args: argparse.Namespace) -> int:
         history = build_history(inputs)
         if history.unresolved:
             raise DraftBuildError(f"Transaction picks without a unique draft identity: {history.unresolved}")
-        rendered = render(history, inputs.league_year, build_player_references(args.repo_root, args.league, history))
+        persisted, refs = verified_product_history(args.repo_root, args.league, history)
+        rendered = render(persisted, inputs.league_year, refs)
     except Exception as error:  # fail-closed product: keep the last good files, report visibly
         print(f"::warning title=League history not published::{type(error).__name__}: {error}", file=sys.stderr)
         print("League history could not be built; the last good App files stay unchanged.", file=sys.stderr)
