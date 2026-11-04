@@ -13,8 +13,8 @@ then publishes its own read model from the snapshot.
 
 Second product family: league-transactions and league-drafts (league-history.yaml, ADR-057, Issue #999),
 written to <derived root>/league-transactions|league-drafts/<CanonicalLeagueID>/<season>.json. Both come
-from one in-memory run in ADR-026 order (the transaction picks carry the draft pick results). The App consumer generator already publishes its own in-memory history
-result; the additive CP2 PlayerRefs do not alter that App delivery until Issue #1100 CP3.
+from one in-memory run in ADR-026 order (the transaction picks carry the draft pick results). The App consumer generator verifies canonical parity and renders from persisted
+Shared Derived product documents, including the CP2 season-scoped PlayerRefs (Issue #1319).
 The obsolete published Players hold seed was retired by ADR-076; no last-published
 App consumer read model is a materialization input. Identity holds reuse only
 persisted PlayerValuation snapshots (see Issue #1263 C8j).
@@ -171,7 +171,12 @@ def league_transactions_path(out_root: Path, league_id: str, season: int) -> Pat
 
 def materialize_league_history(
     repo_root: Path, out_root: Path, league_id: str, product: str, seasons: list[int] | None, check_only: bool,
+    *, minimum_season: int | None = None,
 ) -> dict[str, Any]:
+    # The ten-minute League Live job refreshes the current and all dynamically
+    # generated future Draft partitions. Historical years remain weekly-only.
+    if minimum_season is not None and (product != LEAGUE_DRAFTS or seasons is not None):
+        raise ValueError("minimum_season is only supported for unfiltered league-drafts")
     inputs = load_inputs(repo_root, league_id)
     if seasons:
         unknown = [s for s in seasons if s not in inputs.seasons]
@@ -195,7 +200,12 @@ def materialize_league_history(
             documents[season] = (
                 drafts_document(league_id, season, drafts, resolver.resolve, names), len(drafts)
             )
-    wanted = sorted(documents) if not seasons else [s for s in sorted(set(seasons)) if s in documents]
+    if minimum_season is not None:
+        wanted = [year for year in sorted(documents) if year >= minimum_season]
+        if not wanted or wanted[0] != minimum_season:
+            raise sources.SourceError(f"No current Draft partition for season {minimum_season}")
+    else:
+        wanted = sorted(documents) if not seasons else [s for s in sorted(set(seasons)) if s in documents]
     summary: dict[str, Any] = {"Product": product, "CanonicalLeagueID": league_id, "Seasons": []}
     for season in wanted:
         document, count = documents[season]

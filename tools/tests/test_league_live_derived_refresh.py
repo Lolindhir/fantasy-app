@@ -2,7 +2,10 @@
 from __future__ import annotations
 
 import io
+import json
 import sys
+import tempfile
+from types import SimpleNamespace
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
@@ -37,13 +40,18 @@ class RefreshTests(unittest.TestCase):
             result = refresh.refresh(ROOT)
         return result, history_mock, discover_mock, twp_mock, err.getvalue()
 
-    def test_every_league_and_only_current_season_newest_week(self):
+    def test_every_league_current_transactions_future_drafts_and_newest_week(self):
         weeks = [("lg-a", 2030, 1), ("lg-a", 2030, 3), ("lg-a", 2030, 2)]
         result, history, discover, twp, _ = self.run_refresh(weeks=weeks)
         self.assertEqual(4, history.call_count)  # two products for each of two leagues
         for call in history.call_args_list:
-            self.assertEqual([2030], call.args[4])
             self.assertFalse(call.args[5])
+            if call.args[3] == refresh.LEAGUE_DRAFTS:
+                self.assertIsNone(call.args[4])
+                self.assertEqual(2030, call.kwargs["minimum_season"])
+            else:
+                self.assertEqual([2030], call.args[4])
+                self.assertNotIn("minimum_season", call.kwargs)
         self.assertEqual(2, discover.call_count)
         for call in discover.call_args_list:
             self.assertEqual([2030], call.kwargs["seasons"])
@@ -89,6 +97,62 @@ class RefreshTests(unittest.TestCase):
         self.assertTrue(history_rows and all(r["Status"] == "blocked" for r in history_rows))
         self.assertIn("::warning title=league-transactions not refreshed", err)
         twp.assert_called()  # an independent product still runs
+
+
+
+class DynamicFutureDraftSelectionTests(unittest.TestCase):
+    def test_materializer_selects_all_generated_future_years_without_historical_writes(self):
+        import derived_data
+        from derived_data_lib.league_history import HistoryResult
+
+        fake_history = HistoryResult(
+            transactions={2026: []},
+            drafts={year: [{"DraftKey": f"{year}_Rookie", "DraftType": "Rookie", "Picks": []}]
+                    for year in (2025, 2026, 2027, 2028, 2029, 2030)},
+            unresolved=[],
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = root / "data-derived"
+            with patch.object(derived_data, "load_inputs", return_value=SimpleNamespace(seasons=[2025, 2026])), \
+                    patch.object(derived_data, "build_history", return_value=fake_history), \
+                    patch.object(derived_data, "provider_draft_names", return_value={}), \
+                    patch.object(derived_data, "LeaguePlayerReferenceResolver") as resolver, \
+                    patch.object(derived_data, "drafts_document", side_effect=lambda league, year, drafts, *args: {
+                        "ContractVersion": 2, "CanonicalLeagueID": league, "Season": year,
+                        "PlayerRefs": {}, "Drafts": drafts,
+                    }):
+                first = derived_data.materialize_league_history(
+                    root, output, "test-league", derived_data.LEAGUE_DRAFTS,
+                    None, False, minimum_season=2026,
+                )
+                self.assertEqual([2026, 2027, 2028, 2029, 2030],
+                                 [row["Season"] for row in first["Seasons"]])
+                self.assertTrue(all(row["Written"] == 1 for row in first["Seasons"]))
+                self.assertFalse((output / "league-drafts/test-league/2025.json").exists())
+                second = derived_data.materialize_league_history(
+                    root, output, "test-league", derived_data.LEAGUE_DRAFTS,
+                    None, False, minimum_season=2026,
+                )
+                self.assertTrue(all(row["Written"] == 0 for row in second["Seasons"]))
+                self.assertEqual(5, len(list((output / "league-drafts/test-league").glob("*.json"))))
+                self.assertEqual(
+                    2030,
+                    json.loads((output / "league-drafts/test-league/2030.json").read_text())["Season"],
+                )
+
+    def test_minimum_season_cannot_filter_transactions_or_conflict_with_explicit_years(self):
+        import derived_data
+        with self.assertRaisesRegex(ValueError, "only supported"):
+            derived_data.materialize_league_history(
+                ROOT, ROOT, "test-league", derived_data.LEAGUE_TRANSACTIONS,
+                None, False, minimum_season=2026,
+            )
+        with self.assertRaisesRegex(ValueError, "only supported"):
+            derived_data.materialize_league_history(
+                ROOT, ROOT, "test-league", derived_data.LEAGUE_DRAFTS,
+                [2026], False, minimum_season=2026,
+            )
 
 
 class LeagueLiveStepOrderTests(unittest.TestCase):
