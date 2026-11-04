@@ -3,7 +3,8 @@
 
 For every league in data-meta this keeps the products that the App already shows in step with it:
 
-* league-transactions and league-drafts of the league's current season
+* league-transactions of the current season and league-drafts of the current
+  plus every configured open future draft season (no hard-coded year limit)
   (same materializer as the weekly update-transactions run, tools/derived_data.py),
 * TeamWeekPerformance (Best Manager / Best Coach) of the newest league-scored week of the current
   season (same strict materializer as the weekly run, tools/team_week_performance_materialize.py,
@@ -48,9 +49,18 @@ def refresh_history(repo_root: Path, league_id: str, season: int) -> list[dict[s
     for product in (LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS):
         entry: dict[str, Any] = {"Product": product, "Season": season}
         try:
-            summary = materialize_league_history(
-                repo_root, data_derived_dir(repo_root), league_id, product, [season], False,
-            )
+            if product == LEAGUE_DRAFTS:
+                # A trade made in 2026 can change 2027+ pick owners. Build the
+                # actual draft seasons from metadata/provider status, not a fixed
+                # future horizon or a transaction-season-only output filter.
+                summary = materialize_league_history(
+                    repo_root, data_derived_dir(repo_root), league_id, product,
+                    None, False, minimum_season=season,
+                )
+            else:
+                summary = materialize_league_history(
+                    repo_root, data_derived_dir(repo_root), league_id, product, [season], False,
+                )
         except Exception as error:  # fail-closed product: keep the last good file, report visibly
             entry.update(Status="blocked", Reason=f"{type(error).__name__}: {error}")
             _warn(f"{product} not refreshed", f"{league_id}/{season}: {entry['Reason']}")

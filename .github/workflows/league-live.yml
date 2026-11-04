@@ -4,7 +4,7 @@ name: APP • Pipeline • League Live
 #   source    current League Core + transactions + drafts, one run and one pair of commits
 #   standings league-standings product and Standings.json (Python writer, semantic no-op; Issue #987 step 4)
 #   league    App League plus PlayerWeekFantasy/MatchupProjections and, in the same publication, the
-#             current-season Shared Derived refresh (league-transactions/-drafts, newest scored-week
+#             current-transactions + current/future Drafts Derived refresh (newest scored-week
 #             TeamWeekPerformance; Issue #471 step 3)
 # Standings runs before League because League.json embeds the published Standings placement.
 
@@ -162,10 +162,10 @@ jobs:
 
       # One generator run and one commit for League and PlayerWeekFantasy/MatchupProjections:
       # two pushes seconds apart made the Deploy of the first one cancel itself.
-      # Products before consumers: the current-season Shared Derived refresh (league-transactions,
-      # league-drafts, TeamWeekPerformance) runs first so the App files and WeeklyRecaps are rendered from
-      # the fresh product. It reads only data-source and is fail-soft (warning, last good file stays), so an
-      # unfinished week can never block the App League publication. data-derived commits do not deploy.
+      # Derived before consumers: current LeagueTransactions and current+all future LeagueDrafts,
+      # plus the newest scored-week TeamWeekPerformance. The App history writer verifies the
+      # persisted Shared Derived products against canonical inputs and fails closed on stale
+      # Drafts/Transactions; independent unready TeamWeekPerformance remains fail-soft. data-derived commits do not deploy.
       # Products before consumers: the PlayerWeekFantasy/MatchupProjections refresh no longer depends on an App file
       # (target week from the lifecycle LineupWeek, ADR-075), so it runs before the App files. Matchups.json and
       # FantasyGameContext.json are rendered from the computed matchup context by tools/matchup_context_app_publish.py
@@ -185,7 +185,7 @@ jobs:
           'python3 tools/league_live_derived_refresh.py &&
           python3 tools/player_week_fantasy_refresh.py &&
           python3 tools/matchup_context_app_publish.py write --fail-on-error &&
-          python3 tools/league_history_app_publish.py write &&
+          python3 tools/league_history_app_publish.py write --fail-on-error &&
           python3 tools/weekly_recaps_app_publish.py write --fail-on-error &&
           pwsh ./public/requests/RequestLeaguePublication.ps1 &&
           python3 tools/team_cap_outlook_app_publish.py write'
