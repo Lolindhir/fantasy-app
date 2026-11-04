@@ -5,7 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import type { FantasyTeam, Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
-import { getPlayerDepthChartLabel } from '../../utils/player-sort.util';
+import { formatPlayerFantasyPointsPerGame, getPlayerDepthChartLabel } from '../../utils/player-sort.util';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
 export type PlayerListColumn =
@@ -15,6 +15,7 @@ export type PlayerListColumn =
   | 'position'
   | 'team'
   | 'depth'
+  | 'ppg'
   | 'salary'
   | 'salaryProjected'
   | 'fantasyTeam'
@@ -63,6 +64,7 @@ export class PlayerListComponent {
   @Input() projectedAbr = 'Proj.';
   @Input() showProjectedMarket = false;
   @Input() showDepth = false;
+  @Input() showCompactPpg = false;
 
   // Optional für TeamList-Exclude-Use-Case
   @Input() isExcludedFn?: (teamId: string, playerId: string) => boolean;
@@ -135,6 +137,10 @@ export class PlayerListComponent {
 
   getDepthChartLabel(player: Player): string {
     return getPlayerDepthChartLabel(player) ?? '—';
+  }
+
+  getPpgDisplay(player: Player): string {
+    return formatPlayerFantasyPointsPerGame(player);
   }
 
   getMarketText(player: Player): string {

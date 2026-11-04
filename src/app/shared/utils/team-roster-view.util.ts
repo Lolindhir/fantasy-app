@@ -1,9 +1,9 @@
 import type { DecisionWindowPlayerLockFact } from '../../core/models/decision-window.models';
 import type { Player } from '../../core/models/player.models';
-import { comparePlayersByDepthChart } from './player-sort.util';
+import { comparePlayersByDepthChart, getPlayerFantasyPointsPerGame } from './player-sort.util';
 
 export type RosterGroupMode = 'rosterStatus' | 'position' | 'rankingStatus' | 'lockStatus' | 'none';
-export type RosterSortMode = 'salary' | 'projected' | 'ranking' | 'depth' | 'ageAsc' | 'ageDesc' | 'name' | 'nextLock';
+export type RosterSortMode = 'salary' | 'projected' | 'ranking' | 'ppgDesc' | 'depth' | 'ageAsc' | 'ageDesc' | 'name' | 'nextLock';
 
 export interface RosterPlayerGroup {
   key: string;
@@ -174,6 +174,13 @@ export function sortRosterPlayers(
         return b.SalaryProjected - a.SalaryProjected || nameCompare;
       case 'ranking':
         return compareCombinedRanking(a, b) || nameCompare;
+      case 'ppgDesc': {
+        const averageA = getPlayerFantasyPointsPerGame(a);
+        const averageB = getPlayerFantasyPointsPerGame(b);
+        if (averageA === undefined) return averageB === undefined ? nameCompare : 1;
+        if (averageB === undefined) return -1;
+        return averageB - averageA || nameCompare;
+      }
       case 'depth':
         return comparePlayersByDepthChart(a, b);
       case 'ageAsc':

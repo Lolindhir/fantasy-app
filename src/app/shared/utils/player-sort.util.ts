@@ -2,6 +2,17 @@ import type { Player, SortField } from '../../core/models/player.models';
 
 const PLAYER_POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF', 'DST'];
 
+export function getPlayerFantasyPointsPerGame(player: Player): number | undefined {
+  if ((player.Stats?.GamesPlayed ?? 0) <= 0) return undefined;
+  const average = player.Stats?.FantasyPointsAvgGame;
+  return typeof average === 'number' && Number.isFinite(average) ? average : undefined;
+}
+
+export function formatPlayerFantasyPointsPerGame(player: Player): string {
+  const average = getPlayerFantasyPointsPerGame(player);
+  return average === undefined ? '—' : average.toFixed(1);
+}
+
 export function getPlayerDepthChartOrder(player: Player): number | undefined {
   const value = Number(player.SleeperDepthChartOrder);
   return Number.isFinite(value) && value > 0 ? value : undefined;
