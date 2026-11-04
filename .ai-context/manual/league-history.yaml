@@ -139,10 +139,13 @@ contract:
     The App never projects a current NFL team, roster, status or an invented
     linkable Player into historical events. Angular uses the historical evidence
     first, then its legacy current-player/provider-PlayerName/ID fallbacks.
-    The publisher rebuilds references using the same CP2 Shared Derived resolver
-    directly from canonical source evidence during its in-memory history run,
-    without persisted Derived or old public/data archives as inputs. All unknown
-    fields stay absent/null, not guessed.
+    The App publisher (Issue #1319) verifies a canonical in-memory history against
+    the persisted LeagueTransactions/LeagueDrafts documents. All delivered records
+    and season-scoped PlayerRefs come from the persisted Derived products, not a
+    newer App-only calculation. Missing or stale partitions prevent publication.
+    Historical partitions remain weekly-owned; League Live refreshes the current
+    transaction season and every configured current/future Draft season. No
+    public/data archive is an input; unknown fields stay absent/null, not guessed.
   fieldRules:
     - Unknown is null, never 0 or an empty string (PositionInRound and OverallPick of RoundOnly picks, PlayerID of open picks, SleeperStartTime of drafts without a start time).
     - Status values keep their current meaning (Open, Picked for picks; Virtual, PreDraft, Drafting, Complete for drafts, other provider statuses passed through).
@@ -267,6 +270,22 @@ leagueLiveIncrementalRefresh:
     semantic difference. Leagues are iterated from data-meta; no league ID is hard-coded.
     Older seasons stay with the weekly run below. A product that cannot be built keeps its last
     good file and raises a warning; the chain is not failed.
+
+leagueLiveFutureDraftParity:
+  trackingIssue: 1319
+  workflow: .github/workflows/league-live.yml
+  producer: tools/league_live_derived_refresh.py
+  behavior: >-
+    Each League Live tick materializes current-season LeagueTransactions and
+    current plus all dynamically configured future-season LeagueDrafts from
+    the existing canonical builder. Historical partitions remain with weekly
+    full-history materialization. The App writer reads persisted Derived product
+    documents including PlayerRefs and checks them against canonical history;
+    RequestLeague consumes those same products. Missing, stale or invalid
+    partitions abort App publication, under existing rebuild-and-retry semantics.
+  exclusions: >-
+    No new scheduler, producer, source owner, draft identity, transaction-season
+    reclassification or App JSON shape.
 
 weeklyDerivedPublication:
   trackingIssue: 471

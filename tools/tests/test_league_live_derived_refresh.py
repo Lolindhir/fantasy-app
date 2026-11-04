@@ -40,7 +40,7 @@ class RefreshTests(unittest.TestCase):
             result = refresh.refresh(ROOT)
         return result, history_mock, discover_mock, twp_mock, err.getvalue()
 
-    def test_every_league_and_only_current_season_newest_week(self):
+    def test_every_league_current_transactions_future_drafts_and_newest_week(self):
         weeks = [("lg-a", 2030, 1), ("lg-a", 2030, 3), ("lg-a", 2030, 2)]
         result, history, discover, twp, _ = self.run_refresh(weeks=weeks)
         self.assertEqual(4, history.call_count)  # two products for each of two leagues
