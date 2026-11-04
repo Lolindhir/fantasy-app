@@ -79,8 +79,39 @@ jobs:
     env:
       MATERIALIZATION_SCOPE: ${{ inputs.materialization_scope || 'full' }}
     steps:
-      - name: Checkout repository
+      # Only League Live's current-scope read-only validation gets a sparse/blobless checkout.
+      # Full and targeted source modes keep their previous complete checkout/test coverage.
+      # Source sync and all downstream branch writers remain separate and unchanged.
+      - name: Checkout repository (current scope sparse)
+        if: env.MATERIALIZATION_SCOPE == 'current'
         uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            tools
+            .github/workflows
+            data-meta
+            data-source/leagues
+            data-source/providers/sleeper
+            data-source/nfl/schedules
+            data-source/nfl/identities
+
+      - name: Checkout repository
+        if: env.MATERIALIZATION_SCOPE != 'current'
+        uses: actions/checkout@v7
+
+      - name: Verify current-scope sparse checkout inputs
+        if: env.MATERIALIZATION_SCOPE == 'current'
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git config --get core.sparseCheckout)" == "true" ]] || { echo "Sparse checkout disabled" >&2; exit 1; }
+          [[ "$(git config --get remote.origin.partialclonefilter)" == "blob:none" ]] || { echo "Blobless Git filter missing" >&2; exit 1; }
+          for path in "tools/league_source_data.py" "tools/tests/test_league_source_league_core_targeting.py" "tools/tests/test_league_source_transaction_targeting.py" "tools/tests/test_league_source_transaction_window.py" "tools/tests/test_league_source_draft_targeting.py" "tools/tests/test_league_source_current_scope.py" "data-source/league-registry.json" "data-meta/nfl-reise/metadata.json" "data-source/leagues/nfl-reise/manifest.json" "data-source/providers/sleeper" "data-source/nfl/schedules/2026.json" "data-source/nfl/identities/provider-mappings.json" ".github/workflows/sync-league-source-data.yml"; do
+            [[ -e "$path" ]] || { echo "Missing required current-scope input: $path" >&2; exit 1; }
+          done
+          [[ ! -e "data-source/nfl/player-stats" ]] || { echo "Historical player stats unexpectedly checked out" >&2; exit 1; }
+          [[ ! -e "data-source/nfl/weekly-rosters" ]] || { echo "Historical rosters unexpectedly checked out" >&2; exit 1; }
+          echo "G5 current-scope sparse/blobless checkout verified (read-only; no downstream writer affected)." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Python
         uses: actions/setup-python@v7
@@ -123,6 +154,61 @@ jobs:
               exit 2
               ;;
           esac
+
+      - name: Validate League data-source registry and bootstrap
+        run: python tools/league_source_data.py validate
+
+  # PR-only execution of the exact current-scope sparse profile *before* activation.
+  # The normal PR validate job still runs the full source regression suite.
+  validate_current_sparse_pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository (PR current scope sparse)
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            tools
+            .github/workflows
+            data-meta
+            data-source/leagues
+            data-source/providers/sleeper
+            data-source/nfl/schedules
+            data-source/nfl/identities
+
+      - name: Verify current-scope sparse checkout inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$(git config --get core.sparseCheckout)" == "true" ]] || { echo "Sparse checkout disabled" >&2; exit 1; }
+          [[ "$(git config --get remote.origin.partialclonefilter)" == "blob:none" ]] || { echo "Blobless Git filter missing" >&2; exit 1; }
+          for path in "tools/league_source_data.py" "tools/tests/test_league_source_league_core_targeting.py" "tools/tests/test_league_source_transaction_targeting.py" "tools/tests/test_league_source_transaction_window.py" "tools/tests/test_league_source_draft_targeting.py" "tools/tests/test_league_source_current_scope.py" "data-source/league-registry.json" "data-meta/nfl-reise/metadata.json" "data-source/leagues/nfl-reise/manifest.json" "data-source/providers/sleeper" "data-source/nfl/schedules/2026.json" "data-source/nfl/identities/provider-mappings.json" ".github/workflows/sync-league-source-data.yml"; do
+            [[ -e "$path" ]] || { echo "Missing required current-scope input: $path" >&2; exit 1; }
+          done
+          [[ ! -e "data-source/nfl/player-stats" ]] || { echo "Historical player stats unexpectedly checked out" >&2; exit 1; }
+          [[ ! -e "data-source/nfl/weekly-rosters" ]] || { echo "Historical rosters unexpectedly checked out" >&2; exit 1; }
+          echo "G5 current-scope sparse/blobless checkout verified (read-only; no downstream writer affected)." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Test actual League Live current-scope commands
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest \
+            tools.tests.test_league_source_league_core_targeting \
+            tools.tests.test_league_source_transaction_targeting \
+            tools.tests.test_league_source_transaction_window \
+            tools.tests.test_league_source_draft_targeting \
+            -v
+          # Full persisted data is required; the parity test must not skip for a missing fixture.
+          python -m unittest tools.tests.test_league_source_current_scope -v
 
       - name: Validate League data-source registry and bootstrap
         run: python tools/league_source_data.py validate
