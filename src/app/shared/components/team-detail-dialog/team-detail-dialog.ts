@@ -23,8 +23,6 @@ import { isTeamDecisionWindowActiveStatus } from '../../utils/team-decision-wind
 import {
   buildRosterPlayerGroups,
   formatRosterNextLockValue,
-  getCombinedRanking,
-  getPreviousCombinedRanking,
   isCombinedRankingAvailable,
   type RosterGroupMode,
   type RosterNextLockContext,
@@ -349,26 +347,60 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   }
 
   getRosterDynamicColumnValue = (player: Player): string => {
-    switch (this.rosterSort) {
-      case 'ageAsc':
-      case 'ageDesc':
-        return `${player.Age}`;
-      case 'ranking': {
-        const currentRank = getCombinedRanking(player);
-        if (currentRank !== undefined) return `#${currentRank}`;
-        const previousRank = getPreviousCombinedRanking(player);
-        return previousRank !== undefined ? `Prev #${previousRank}` : '—';
-      }
-      case 'ppgDesc':
-        return formatPlayerFantasyPointsPerGame(player);
-      case 'nextLock':
-        return this.rosterNextLockContext
-          ? formatRosterNextLockValue(player, this.rosterNextLockContext)
-          : 'Unknown';
-      default:
-        return '';
-    }
+    return this.rosterNextLockContext
+      ? formatRosterNextLockValue(player, this.rosterNextLockContext)
+      : 'Unknown';
   };
+
+  hasRosterMetric(metric: RosterMetric): boolean {
+    return this.selectedRosterMetrics.includes(metric);
+  }
+
+  chooseRosterColumnPreset(preset: RosterPreset): void {
+    if (preset !== 'custom') this.setRosterMetrics(presetColumns(preset));
+  }
+
+  toggleRosterColumn(metric: RosterMetric, enabled: boolean): void {
+    this.setRosterMetrics(toggleMetric(this.selectedRosterMetrics, metric, enabled));
+  }
+
+  resetRosterColumns(): void {
+    this.setRosterMetrics(defaultColumns(this.rosterLayout));
+  }
+
+  onRosterHorizontalScroll(event: Event): void {
+    const source = event.target as HTMLElement | null;
+    if (!source || !this.rosterScrollAreas) return;
+    const left = source.scrollLeft;
+    for (const item of this.rosterScrollAreas.toArray()) {
+      const other = item.nativeElement;
+      if (other !== source && other.scrollLeft !== left) other.scrollLeft = left;
+    }
+  }
+
+  private setRosterMetrics(columns: RosterMetric[]): void {
+    const layout = this.rosterLayout;
+    if (layout === 'mobile') this.rosterColumnsMobile = columns;
+    else this.rosterColumnsDesktop = columns;
+
+    try {
+      window.localStorage.setItem(storageKey(layout), encodeColumns(columns));
+    } catch {
+      // Browser storage is optional; the current view still works.
+    }
+  }
+
+  private restoreRosterColumnSettings(): void {
+    for (const layout of ['desktop', 'mobile'] as const) {
+      try {
+        const columns = decodeColumns(window.localStorage.getItem(storageKey(layout)), layout);
+        if (layout === 'desktop') this.rosterColumnsDesktop = columns;
+        else this.rosterColumnsMobile = columns;
+      } catch {
+        // Private-mode/restricted storage falls back to in-memory defaults.
+      }
+    }
+  }
 
   openTeamDecisionWindow(window: DecisionWindow, template: TemplateRef<unknown>): void {
     this.selectedDecisionWindow = window;
@@ -429,14 +461,6 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
 
   historicalPlayerName(pick: DraftPick): string {
     return pick.PlayerRef?.Name || pick.PlayerName || this.historicalPlayer(pick)?.Name || 'Unknown player';
-  }
-
-  private get showsRosterSortColumn(): boolean {
-    return this.rosterSort === 'ranking'
-      || this.rosterSort === 'ppgDesc'
-      || this.rosterSort === 'ageAsc'
-      || this.rosterSort === 'ageDesc'
-      || this.rosterSort === 'nextLock';
   }
 
   private loadDecisionWindowEnrichment(): void {
