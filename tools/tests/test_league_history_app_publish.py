@@ -7,7 +7,10 @@ few minutes. These tests pin the presentation rules with constructed leagues.
 """
 from __future__ import annotations
 
+import copy
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -227,6 +230,92 @@ class WriteTests(unittest.TestCase):
             self.assertEqual("2027-01-01T00:00:00Z", json.loads((root / "public/data/Timestamps.json").read_text(encoding="utf-8"))["Drafts"])
             self.assertNotIn("public/data/past_seasons/Drafts/Drafts_2025.json", second)
 
+
+
+
+class PersistedSharedDerivedReadTests(unittest.TestCase):
+    """#1319: App output cannot be newer than the persisted provider products."""
+
+    def setUp(self):
+        self.drafts = drafts_by_season(
+            build([provider_draft("d1", "2026", "complete", name="rookie")],
+                  open_count=2)
+        )
+        rookie = next(d for d in self.drafts[2027] if d["DraftKey"] == "2027_Rookie")
+        by_key = {p["PickKey"]: p for p in rookie["Picks"]}
+        # Three real-shaped keys from the 2026-11-03 trade; a synthetic owner 5
+        # is valid even if the baseline fixture creates only three team slots.
+        by_key["2027_Rookie_R1_OO3"]["CurrentOwnerRosterID"] = 5
+        by_key["2027_Rookie_R2_OO3"]["CurrentOwnerRosterID"] = 5
+        extra = copy.deepcopy(by_key["2027_Rookie_R2_OO3"])
+        extra.update(PickKey="2027_Rookie_R3_OO5", Round=3,
+                     OriginalOwnerRosterID=5, CurrentOwnerRosterID=3)
+        rookie["Picks"].append(extra)
+        self.history = HistoryResult(transactions={2026: []},
+                                     drafts=self.drafts, unresolved=[])
+
+    def _write_products(self, root, history=None, *, corrupt=None):
+        history = history or self.history
+        for kind, attribute in (("league-transactions", "transactions"),
+                                ("league-drafts", "drafts")):
+            for year, rows in getattr(history, attribute).items():
+                path = root / "data-derived" / kind / "nfl-reise" / f"{year}.json"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                document = {
+                    "ContractVersion": 2, "CanonicalLeagueID": "nfl-reise",
+                    "Season": year, "PlayerRefs": {},
+                    "Transactions" if kind == "league-transactions" else "Drafts": rows,
+                }
+                if corrupt == (kind, year):
+                    document["ContractVersion"] = 999
+                path.write_text(json.dumps(document), encoding="utf-8")
+
+    def test_2026_trade_is_delivered_from_persisted_future_drafts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_products(root)
+            persisted, refs = publish.verified_product_history(root, "nfl-reise", self.history)
+            delivered = publish.render(persisted, 2026, refs)
+            current_picks = {
+                p["PickKey"]: p["CurrentOwnerRosterID"]
+                for d in delivered["Drafts"]["current"] for p in d["Picks"]
+            }
+            self.assertEqual(5, current_picks["2027_Rookie_R1_OO3"])
+            self.assertEqual(5, current_picks["2027_Rookie_R2_OO3"])
+            self.assertEqual(3, current_picks["2027_Rookie_R3_OO5"])
+            self.assertIn(2028, persisted.drafts)  # dynamic future horizon
+            self.assertEqual([], persisted.transactions[2026])
+            # Unchanged persisted docs yield byte-identical App payloads.
+            unchanged, unchanged_refs = publish.verified_product_history(root, "nfl-reise", self.history)
+            self.assertEqual(delivered, publish.render(unchanged, 2026, unchanged_refs))
+
+    def test_stale_2027_product_blocks_newer_consumer_publication(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_products(root)
+            path = root / "data-derived/league-drafts/nfl-reise/2027.json"
+            stale = json.loads(path.read_text())
+            rookie = next(x for x in stale["Drafts"] if x["DraftKey"] == "2027_Rookie")
+            for p in rookie["Picks"]:
+                if p["PickKey"] in ("2027_Rookie_R1_OO3", "2027_Rookie_R2_OO3"):
+                    p["CurrentOwnerRosterID"] = 3
+                if p["PickKey"] == "2027_Rookie_R3_OO5":
+                    p["CurrentOwnerRosterID"] = 5
+            path.write_text(json.dumps(stale))
+            with self.assertRaisesRegex(ValueError, "Stale Shared Derived league-drafts"):
+                publish.verified_product_history(root, "nfl-reise", self.history)
+
+    def test_missing_future_year_or_invalid_contract_fails_closed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_products(root)
+            missing = root / "data-derived/league-drafts/nfl-reise/2028.json"
+            missing.unlink()
+            with self.assertRaises(FileNotFoundError):
+                publish.verified_product_history(root, "nfl-reise", self.history)
+            self._write_products(root, corrupt=("league-drafts", 2027))
+            with self.assertRaisesRegex(ValueError, "Invalid Shared Derived"):
+                publish.verified_product_history(root, "nfl-reise", self.history)
 
 
 class WeeklyLeagueDerivedPublicationTests(unittest.TestCase):
