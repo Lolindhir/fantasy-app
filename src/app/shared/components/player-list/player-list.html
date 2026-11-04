@@ -4,6 +4,7 @@
   [trackBy]="trackByPlayerId"
   class="mat-elevation-z2 full-width"
   [class.team-roster-metrics]="stickyIdentity"
+  [class.team-roster-compact]="stickyIdentity && compact"
 >
 
   <!-- Rang -->
@@ -34,7 +35,7 @@
     <th mat-header-cell *matHeaderCellDef class="table-text">Player</th>
     <td mat-cell *matCellDef="let player" class="table-text">
       <div class="player-name-cell clickable" (click)="openPlayerDetail(player)">
-        <div class="player-name">{{ player.NameShort }}</div>
+        <div class="player-name" [attr.title]="stickyIdentity && compact ? player.Name : null">{{ player.NameShort }}</div>
 
         <div *ngIf="compact" class="compact-meta">
           <img loading="lazy" decoding="async" *ngIf="player.Picture" [src]="player.Picture" alt="Image" width="34" />
@@ -110,7 +111,7 @@
   <ng-container matColumnDef="salary">
     <th mat-header-cell *matHeaderCellDef class="table-text">Salary</th>
     <td mat-cell *matCellDef="let player" class="table-text player-salary">
-      {{ player.SalaryDisplay }}
+      <span [attr.title]="compactRosterSalary ? player.SalaryDisplay : null">{{ compactRosterSalary ? formatMobileRosterSalary(player.Salary) : player.SalaryDisplay }}</span>
     </td>
   </ng-container>
 
@@ -119,7 +120,7 @@
     <th mat-header-cell *matHeaderCellDef class="table-text">{{ projectedAbr }}</th>
     <td mat-cell *matCellDef="let player" class="table-text player-salary">
       <div class="salary-projected-cell">
-        <div>{{ player.SalaryProjectedDisplay }}</div>
+        <div [attr.title]="compactRosterSalary ? player.SalaryProjectedDisplay : null">{{ compactRosterSalary ? formatMobileRosterSalary(player.SalaryProjected) : player.SalaryProjectedDisplay }}</div>
 
         <div class="player-salary-difference">
           <span
@@ -128,7 +129,9 @@
               'negative-diff': player.SalaryProjected - player.Salary < 0
             }"
           >
-            {{ formatSalaryDollars(player.SalaryProjected - player.Salary, true, 1) }}
+            {{ compactRosterSalary
+              ? formatMobileRosterSalary(player.SalaryProjected - player.Salary, true)
+              : formatSalaryDollars(player.SalaryProjected - player.Salary, true, 1) }}
           </span>
         </div>
       </div>
