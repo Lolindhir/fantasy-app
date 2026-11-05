@@ -211,6 +211,12 @@ def audit_draft_content(repo_root: Path, league_id: str) -> dict[str, Any]:
     products are verified too. No writer, network request or Git state mutation.
     This is content evidence, NOT a prior-success/race/clock attestation.
     """
+    # Direct `python tools/league_live_shadow_gate.py` execution puts tools/
+    # rather than the repository root on sys.path. Keep this CLI independent
+    # of the runner's optional PYTHONPATH configuration.
+    root = str(Path(__file__).resolve().parents[1])
+    if root not in sys.path:
+        sys.path.insert(0, root)
     from tools.league_history_app_publish import (
         _difference, build_history, load_inputs, render, verified_product_history,
     )
