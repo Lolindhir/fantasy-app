@@ -278,6 +278,10 @@ export class DataService {
     return this.dataApiService.getPastMatchupsRaw(path);
   }
 
+  getPastWeeklyRecapsRaw(path: string): Observable<WeeklyRecapsReadModel> {
+    return this.dataApiService.getPastWeeklyRecapsRaw(path);
+  }
+
   getLeagueWithPlayers(sortFields: SortField[] = ['NameLast']): Observable<LeagueWithPlayers> {
     return this.dataApiService.getLeagueData().pipe(
       map(data => this.mapLeagueData(data, sortFields))
