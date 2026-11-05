@@ -33,14 +33,14 @@ Die aktive Cap-Formel bleibt für alle Tests strukturell gleich: **6 Teams × 20
 |---|---:|---:|
 | Neu berechnetes Cap | **432.611.104 $** | **437.083.780 $** |
 | Cap-Differenz zu A | – | +4,47 Mio. $ |
-| Anteil der teuersten 10 an den marktweiten Top 120 | 17.4 % | 21.6 % |
-| Anteil der teuersten 20 an den marktweiten Top 120 | 30.9 % | 36.2 % |
-| Anteil der teuersten 40 an den marktweiten Top 120 | 51.9 % | 56.4 % |
-| QB-Anteil an marktweiter Top-120-Salary-Masse | 34.0 % | 30.2 % |
-| RB-Anteil an marktweiter Top-120-Salary-Masse | 25.7 % | 27.6 % |
-| WR-Anteil an marktweiter Top-120-Salary-Masse | 32.9 % | 33.2 % |
-| TE-Anteil an marktweiter Top-120-Salary-Masse | 6.0 % | 7.2 % |
-| K-Anteil an marktweiter Top-120-Salary-Masse | 1.3 % | 1.8 % |
+| Anteil der teuersten 10 an den marktweiten Top 120 | 17,4 % | 21,6 % |
+| Anteil der teuersten 20 an den marktweiten Top 120 | 30,9 % | 36,2 % |
+| Anteil der teuersten 40 an den marktweiten Top 120 | 51,9 % | 56,4 % |
+| QB-Anteil an marktweiter Top-120-Salary-Masse | 34,0 % | 30,2 % |
+| RB-Anteil an marktweiter Top-120-Salary-Masse | 25,7 % | 27,6 % |
+| WR-Anteil an marktweiter Top-120-Salary-Masse | 32,9 % | 33,2 % |
+| TE-Anteil an marktweiter Top-120-Salary-Masse | 6,0 % | 7,2 % |
+| K-Anteil an marktweiter Top-120-Salary-Masse | 1,3 % | 1,8 % |
 
 Die Criticality-Formel ist **kein pauschaler Cap-Cut**: Das endogene Cap liegt rund 1 % höher, gleichzeitig steigt die Kostenkonzentration auf die Topspieler. Teilweise werden QB aus der mittleren Salary-Spitze günstiger, Elite-WR/RB dagegen teurer. Es kann deshalb mehr Kernbelastung und zugleich günstigere Tiefe geben. **Eine bessere League Economy folgt daraus nicht automatisch.**
 
@@ -73,7 +73,7 @@ Die Criticality-Formel ist **kein pauschaler Cap-Cut**: Das endogene Cap liegt r
 | Team TimpaBay | 429,0 | 437,1 | 475,1 | 474,1 | 460,5 | 462,6 |
 | **Modell-Cap** | **432,6** | **437,1** | **432,6** | **437,1** | **432,6** | **437,1** |
 
-Den tatsächlichen **05.11.-Current-Cap-Readmodel-Wert** behandelt [CP1, Abschnitt 4.1](2026-11-05-salary-cap-cp1-baseline.md#gegencheck-mit-dem-aktuellen-w8-cap-readmodel.md) getrennt. Dort sind **5/6** Teams über dem real veröffentlichten Current Cap, Flo **+83.218.306 $**; hier beträgt Flos Differenz zum **homogenen Modell-Cap** bei A/B etwas weniger. Beides darf nicht summiert werden.
+Den tatsächlichen **05.11.-Current-Cap-Readmodel-Wert** behandelt [CP1, Abschnitt 4.1](2026-11-05-salary-cap-cp1-baseline.md#gegencheck-mit-dem-aktuellen-w8-cap-readmodel) getrennt. Dort sind **5/6** Teams über dem real veröffentlichten Current Cap, Flo **+83.218.306 $**; hier beträgt Flos Differenz zum **homogenen Modell-Cap** bei A/B etwas weniger. Beides darf nicht summiert werden.
 
 ## 5. Draft-Effekt: nicht nur Regular-Season-Transaktionen
 
