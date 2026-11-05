@@ -19,9 +19,9 @@ Taxi phase: `locked`
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
 | QB | 5 | 4 | 2 | 2 | 1 | 3 | 4 | preferred_met |
-| RB | 10 | 9 | 2 | 6 | 1 | – | – | pool_managed |
+| RB | 11 | 10 | 2 | 6 | 1 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
-| WR | 17 | 12 | 2 | 7 | 1 | – | – | pool_managed |
+| WR | 16 | 11 | 2 | 7 | 1 | – | – | pool_managed |
 
 ## Players
 
@@ -36,6 +36,7 @@ Taxi phase: `locked`
 | RB | Breece Hall | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | RB | Cam Skattebo | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | RB | Chase Brown | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| RB | D'Andre Swift | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | RB | Dylan Sampson | active | prospect | conditional | development | development | yes | no |
 | RB | Jeremiyah Love | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | RB | Jonathon Brooks | reserve | prospect | hold | development | development | no | no |
@@ -63,7 +64,6 @@ Taxi phase: `locked`
 | WR | Puka Nacua | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | WR | Tetairoa McMillan | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Travis Hunter | active | unclassified | unclassified | unclassified | unclassified | no | no |
-| WR | Tre Tucker | active | unclassified | unclassified | unclassified | unclassified | no | no |
 
 ## Comparison boundary pool
 
