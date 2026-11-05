@@ -58,8 +58,8 @@ describe('roster column preferences', () => {
     expect(mobileRosterColumnTrackWidth('name')).toBe('110px');
 
     expect(mobileRosterMinimumTableWidth(two)).toBe(284);
-    expect(mobileRosterMinimumTableWidth(four)).toBe(340);
-    expect(mobileRosterMinimumTableWidth(six)).toBe(492);
+    expect(mobileRosterMinimumTableWidth(four)).toBe(344);
+    expect(mobileRosterMinimumTableWidth(six)).toBe(496);
     expect(mobileRosterFlexibleMetricCount(two)).toBe(2);
     expect(mobileRosterFlexibleMetricCount(four)).toBe(4);
     expect(mobileRosterFlexibleMetricCount(six)).toBe(6);
