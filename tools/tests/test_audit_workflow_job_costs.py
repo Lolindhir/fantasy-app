@@ -9,6 +9,7 @@ from unittest.mock import patch
 from tools import audit_workflow_job_costs as audit
 from tools import league_source_receipt_audit as source
 from tools import league_current_noop_audit as current
+from tools import league_live_recovery_audit as recovery
 
 
 def run(run_id, day="2026-11-01", moment="12:00:00Z", conclusion="success"):
@@ -886,6 +887,184 @@ class G5CurrentScopeNoOpRevisionTests(unittest.TestCase):
                 "--repo", "Lolindhir/fantasy-app", "--run-id", "42088460708",
             ]))
 
+
+
+
+class G5LeagueLiveRecoveryObservationTests(unittest.TestCase):
+    """Derived fail-soft observation never elevates a green job to skip proof."""
+
+    def rows(self):
+        return [
+            {"CanonicalLeagueID": "nfl-reise", "Season": 2026,
+             "Product": "league-transactions", "Status": "unchanged"},
+            {"CanonicalLeagueID": "nfl-reise", "Season": 2026,
+             "Product": "league-drafts", "Status": "unchanged"},
+            {"CanonicalLeagueID": "nfl-reise", "Season": 2026,
+             "Product": "team-week-performance", "Status": "unchanged",
+             "Week": 8, "PlayerWeekFantasyParity": {
+                 "State": "verified", "Compared": 177}},
+        ]
+
+    def log(self, rows=None, *, attempt="1/3", no_op=True):
+        body = json.dumps(self.rows() if rows is None else rows,
+                          indent=2, sort_keys=True)
+        lines = [
+            f"2026-11-01T04:15:58Z Rebuild/publish attempt {attempt} for league.",
+        ]
+        lines += ["2026-11-01T04:15:58Z " + line for line in body.splitlines()]
+        if no_op:
+            lines.append("2026-11-01T04:15:59Z Generator produced no repository changes. Nothing to publish.")
+        return "\n".join(lines)
+
+    def test_valid_reports_still_never_prove_recovery_race_or_skip(self):
+        evidence = recovery.parse_derived_refresh(self.log(), {"nfl-reise"})
+        self.assertEqual("derived-producer-reported-complete", evidence["status"])
+        self.assertTrue(evidence["noBlockedDerivedRowsObserved"])
+        self.assertEqual(3, len(evidence["products"]))
+        self.assertTrue(evidence["noOpPublisherMessageObserved"])
+        self.assertFalse(evidence["safeToSkip"])
+        self.assertFalse(evidence["enforced"])
+
+    def test_blocked_twp_and_history_are_not_masked_by_green_noop(self):
+        for product, state in (("team-week-performance", "blocked"),
+                               ("team-week-performance", "no-scored-week"),
+                               ("league-drafts", "blocked"),
+                               ("league-transactions", "blocked")):
+            with self.subTest(product=product, state=state):
+                rows = self.rows()
+                next(r for r in rows if r["Product"] == product)["Status"] = state
+                report = recovery.parse_derived_refresh(self.log(rows), {"nfl-reise"})
+                self.assertEqual("blocked", report["status"])
+                self.assertFalse(report["noBlockedDerivedRowsObserved"])
+                self.assertIn("blocked-or-unready-derived-product", report["reasonCodes"])
+
+    def test_twp_parity_missing_or_nonverified_blocks(self):
+        for parity in (None, {}, {"State": "blocked"},
+                       {"State": "accepted-divergence"}):
+            with self.subTest(parity=parity):
+                rows = self.rows()
+                rows[-1]["PlayerWeekFantasyParity"] = parity
+                report = recovery.parse_derived_refresh(self.log(rows), {"nfl-reise"})
+                self.assertIn("twp-week-or-parity-not-verified", report["reasonCodes"])
+                self.assertFalse(report["safeToSkip"])
+
+    def test_missing_duplicate_extra_malformed_or_unhashable_rows_block(self):
+        cases = [
+            self.rows()[:2],
+            self.rows() + [self.rows()[0]],
+            self.rows() + [{"CanonicalLeagueID": "other", "Season": 2026,
+                            "Product": "league-drafts", "Status": "unchanged"}],
+            self.rows() + ["not-a-product"],
+        ]
+        invalid = self.rows()
+        invalid[1]["Status"] = []
+        cases.append(invalid)
+        for rows in cases:
+            with self.subTest(rows=str(rows)[:90]):
+                report = recovery.parse_derived_refresh(self.log(rows), {"nfl-reise"})
+                self.assertEqual("blocked", report["status"])
+                self.assertFalse(report["safeToSkip"])
+
+    def test_retry_truncation_shell_echo_and_noop_contradictions_block(self):
+        cases = [
+            self.log(attempt="2/3"),
+            self.log() + "\n2026-11-01T04:16:00Z Rebuild/publish attempt 2/3 for league.",
+            self.log().replace("2026-11-01T04:15:58Z ]", ""),
+            self.log().replace('"Status": "unchanged"', '"Status": "changed"', 1),
+            self.log().replace("Generator produced no repository changes. Nothing to publish.",
+                               "Generator produced no repository changes. Nothing to publish.\n"
+                               "2026-11-01T04:16:00Z Generator produced no repository changes. Nothing to publish."),
+            "2026-11-01T04:15:58Z \x1b[36;1mRebuild/publish attempt 1/3 for league.\x1b[0m",
+        ]
+        for payload in cases:
+            with self.subTest(log=payload[:95]):
+                report = recovery.parse_derived_refresh(payload, {"nfl-reise"})
+                self.assertEqual("blocked", report["status"])
+                self.assertFalse(report["safeToSkip"])
+
+    def audit(self, mutate=None):
+        run, jobs, ref, compare = G5LastLeagueLiveProvenanceTests().evidence()
+        payload = self.log()
+        if mutate:
+            run, jobs, ref, compare, payload = mutate(run, jobs, ref, compare, payload)
+        reads = []
+        def fetch(resource, params):
+            reads.append(resource)
+            if resource == f"actions/runs/{run['id']}":
+                return run
+            if resource == f"actions/runs/{run['id']}/jobs":
+                return {"total_count": len(jobs), "jobs": jobs}
+            if resource == "git/ref/heads/main":
+                return ref
+            if resource.startswith("compare/"):
+                return compare
+            self.fail("unexpected read " + resource)
+        log_calls = []
+        def job_log(job_id):
+            log_calls.append(job_id)
+            return payload
+        result = recovery.audit_run(
+            fetch, job_log, "Lolindhir/fantasy-app", run["id"], {"nfl-reise"},
+            datetime(2026, 11, 5, 4, 19, tzinfo=timezone.utc),
+        )
+        return result, reads, log_calls
+
+    def test_authenticated_run_completion_and_derived_report_are_separate(self):
+        r, reads, log_calls = self.audit()
+        self.assertEqual("producer-reported-complete", r["status"])
+        self.assertTrue(r["jobCompletionVerified"])
+        self.assertTrue(r["currentMainUnchangedDuringAudit"])
+        self.assertTrue(r["noBlockedDerivedRowsObserved"])
+        self.assertEqual(2, reads.count("git/ref/heads/main"))
+        self.assertEqual(1, len(log_calls))
+        for key in ("publicationCommitVerified", "allOutputsValidated",
+                    "recoveryClean", "raceFree", "safeToSkip", "enforced"):
+            self.assertIs(r[key], False, key)
+
+    def test_failed_or_in_progress_workflow_never_inspects_derived_log(self):
+        for status, conclusion in (("completed", "failure"),
+                                   ("in_progress", None)):
+            with self.subTest(status=status):
+                def altered(run, jobs, ref, cmp, log):
+                    run["status"] = status
+                    run["conclusion"] = conclusion
+                    return run, jobs, ref, cmp, log
+                result, _, log_calls = self.audit(altered)
+                self.assertEqual("blocked", result["status"])
+                self.assertFalse(result["jobCompletionVerified"])
+                self.assertEqual([], log_calls)
+
+    def test_moving_ref_and_missing_or_skipped_league_job_fail_closed(self):
+        def moved(run, jobs, ref, cmp, log):
+            class MovingRef(dict):
+                def __init__(self, before):
+                    super().__init__(before)
+                    self.reads = 0
+                def get(self, key, default=None):
+                    if key == "object":
+                        self.reads += 1
+                        return ({"sha": "f"*40} if self.reads > 2
+                                else super().get(key, default))
+                    return super().get(key, default)
+            return run, jobs, MovingRef(ref), cmp, log
+        result, _, _ = self.audit(moved)
+        self.assertEqual("blocked", result["status"])
+        self.assertIn("Main revision advanced during audit", result["reasonCodes"][0])
+        def skipped(run, jobs, ref, cmp, log):
+            for job in jobs:
+                if job["name"] == "league" and job["run_attempt"] == run["run_attempt"]:
+                    job["conclusion"] = "skipped"
+            return run, jobs, ref, cmp, log
+        result, _, no_log = self.audit(skipped)
+        self.assertEqual("blocked", result["status"])
+        self.assertEqual([], no_log)
+
+    def test_cli_missing_token_is_read_only_fail_closed(self):
+        with patch.dict("os.environ", {"GH_TOKEN": "", "GITHUB_TOKEN": ""}):
+            self.assertEqual(2, recovery.main([
+                "--repo", "Lolindhir/fantasy-app",
+                "--run-id", "42094886471", "--league", "nfl-reise",
+            ]))
 
 def source_path():
     return ".github/workflows/sync-league-source-data.yml"
