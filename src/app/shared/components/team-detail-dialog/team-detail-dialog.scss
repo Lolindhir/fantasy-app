@@ -180,13 +180,20 @@
     box-shadow: 1px 0 2px rgba(15, 23, 42, .05);
   }
 
-  /* The colgroup owns metric widths. Every selected metric, including the
-     first one and the conditional Next Lock column, has equal gutters. */
+  /* Metric contents are centered independent of column count or overflow.
+     Keep the sticky rank/player cells left-aligned and their widths fixed. */
   .roster-table-scroll .team-roster-compact th:not(.mat-column-rank):not(.mat-column-name),
   .roster-table-scroll .team-roster-compact td:not(.mat-column-rank):not(.mat-column-name) {
     width: auto;
     min-width: 0;
     max-width: none;
     padding: 1px 8px !important;
+    text-align: center;
+  }
+
+  /* Projected salary uses a nested column flex layout: center both amount
+     and colored difference, not just the parent table cell's text. */
+  .roster-table-scroll .team-roster-compact .salary-projected-cell {
+    align-items: center;
   }
 }
