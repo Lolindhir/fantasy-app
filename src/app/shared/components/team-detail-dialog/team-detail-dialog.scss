@@ -143,46 +143,50 @@
 }
 
 
-/* Team Roster only: on phones keep identity sticky without consuming half the table.
-   At ~390px viewport, rank + identity + PPG + Salary + Proj. fit in ~333px. */
+/* Team Roster mobile: native <colgroup> locks identity widths. Any available
+   extra room is spread equally among metrics, not into the sticky player area.
+   CSS container units use the scroll viewport, also inside the dialog. */
 @media (max-width: 600px) {
-  .roster-table-scroll .team-roster-compact .mat-column-rank {
-    width: 22px; min-width: 22px; max-width: 22px;
+  .roster-table-scroll {
+    container-type: inline-size;
   }
-  /* Keep the identity opaque during horizontal scrolling, but match the
-     Material table surface instead of creating a bright white block. */
+
+  .roster-table-scroll .team-roster-compact {
+    --roster-flex-extra: max(
+      0px,
+      calc((100cqw - var(--roster-min-table-width)) / var(--roster-metric-count))
+    );
+    width: max(100cqw, var(--roster-min-table-width));
+    min-width: var(--roster-min-table-width);
+    table-layout: fixed;
+  }
+
+  .roster-table-scroll .team-roster-compact .mat-column-rank {
+    width: 22px;
+    min-width: 22px;
+    max-width: 22px;
+  }
+
+  /* Sticky cells must remain opaque while scrolling, with a subtle edge. */
   .roster-table-scroll .team-roster-compact .mat-column-rank,
   .roster-table-scroll .team-roster-compact .mat-column-name {
     background: var(--mat-table-background-color, #fef8fc);
   }
+
   .roster-table-scroll .team-roster-compact .mat-column-name {
-    width: clamp(98px, calc(29vw - 10px), 110px);
-    min-width: clamp(98px, calc(29vw - 10px), 110px);
-    max-width: clamp(98px, calc(29vw - 10px), 110px);
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
     box-shadow: 1px 0 2px rgba(15, 23, 42, .05);
   }
-  /* First scrollable metric starts with some breathing room regardless of
-     which metric is selected; other metric columns retain their density. */
-  .roster-table-scroll .team-roster-compact th.mat-column-name + th,
-  .roster-table-scroll .team-roster-compact td.mat-column-name + td {
-    padding-left: 8px !important;
-  }
-  .roster-table-scroll .team-roster-compact .mat-column-ppg {
-    width: 44px; min-width: 44px; max-width: 44px;
-  }
-  .roster-table-scroll .team-roster-compact .mat-column-ranking {
-    width: 58px; min-width: 58px; max-width: 58px;
-  }
-  .roster-table-scroll .team-roster-compact .mat-column-depth {
-    width: 66px; min-width: 66px; max-width: 66px;
-  }
-  .roster-table-scroll .team-roster-compact .mat-column-age {
-    width: 40px; min-width: 40px; max-width: 40px;
-  }
-  .roster-table-scroll .team-roster-compact .mat-column-salary {
-    width: 72px; min-width: 72px; max-width: 72px;
-  }
-  .roster-table-scroll .team-roster-compact .mat-column-salaryProjected {
-    width: 80px; min-width: 80px; max-width: 80px;
+
+  /* The colgroup owns metric widths. Every selected metric, including the
+     first one and the conditional Next Lock column, has equal gutters. */
+  .roster-table-scroll .team-roster-compact th:not(.mat-column-rank):not(.mat-column-name),
+  .roster-table-scroll .team-roster-compact td:not(.mat-column-rank):not(.mat-column-name) {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    padding: 1px 8px !important;
   }
 }

@@ -1,5 +1,6 @@
 import {
   decodeColumns, defaultColumns, encodeColumns, normalizeColumns, formatCompactRosterSalary,
+  mobileRosterColumnMinWidth, mobileRosterColumnTrackWidth, mobileRosterFlexibleMetricCount, mobileRosterMinimumTableWidth,
   presetColumns, selectedPreset, storageKey, toggleMetric
 } from './roster-columns.util';
 
@@ -41,6 +42,37 @@ describe('roster column preferences', () => {
     expect(formatCompactRosterSalary(900_000, true)).toBe('+$0.9M');
     expect(formatCompactRosterSalary(0)).toBe('$0.0M');
     expect(formatCompactRosterSalary(Number.NaN)).toBe('—');
+  });
+
+
+  it('keeps the fixed identity constant for two, four and six selected metrics', () => {
+    const two = ['rank', 'name', 'salary', 'salaryProjected'];
+    const four = ['rank', 'name', 'ppg', 'ranking', 'depth', 'age'];
+    const six = [...four, 'salary', 'salaryProjected'];
+
+    expect(two.slice(0, 2)).toEqual(four.slice(0, 2));
+    expect(four.slice(0, 2)).toEqual(six.slice(0, 2));
+    expect(mobileRosterColumnMinWidth('rank')).toBe(22);
+    expect(mobileRosterColumnMinWidth('name')).toBe(110);
+    expect(mobileRosterColumnTrackWidth('rank')).toBe('22px');
+    expect(mobileRosterColumnTrackWidth('name')).toBe('110px');
+
+    expect(mobileRosterMinimumTableWidth(two)).toBe(284);
+    expect(mobileRosterMinimumTableWidth(four)).toBe(344);
+    expect(mobileRosterMinimumTableWidth(six)).toBe(496);
+    expect(mobileRosterFlexibleMetricCount(two)).toBe(2);
+    expect(mobileRosterFlexibleMetricCount(four)).toBe(4);
+    expect(mobileRosterFlexibleMetricCount(six)).toBe(6);
+    expect(mobileRosterColumnTrackWidth('ppg'))
+      .toBe('calc(44px + var(--roster-flex-extra))');
+  });
+
+  it('includes Next Lock in the same mobile metric width calculation', () => {
+    const columns = ['rank', 'name', 'dynamicStat', 'ppg', 'salary'];
+    expect(mobileRosterMinimumTableWidth(columns)).toBe(370);
+    expect(mobileRosterFlexibleMetricCount(columns)).toBe(3);
+    expect(mobileRosterColumnTrackWidth('dynamicStat'))
+      .toBe('calc(122px + var(--roster-flex-extra))');
   });
 
 });

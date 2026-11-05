@@ -6,7 +6,7 @@ import type { FantasyTeam, Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { formatPlayerFantasyPointsPerGame, getPlayerDepthChartLabel } from '../../utils/player-sort.util';
-import { formatCompactRosterSalary } from '../../utils/roster-columns.util';
+import { formatCompactRosterSalary, mobileRosterColumnTrackWidth, mobileRosterFlexibleMetricCount, mobileRosterMinimumTableWidth } from '../../utils/roster-columns.util';
 import { getCombinedRanking, getPreviousCombinedRanking } from '../../utils/team-roster-view.util';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
@@ -101,6 +101,18 @@ export class PlayerListComponent {
       'depth',
       ...this.columns.slice(firstMetricIndex)
     ];
+  }
+
+  get mobileRosterMinimumWidth(): number {
+    return mobileRosterMinimumTableWidth(this.displayedColumns);
+  }
+
+  get mobileRosterMetricCount(): number {
+    return mobileRosterFlexibleMetricCount(this.displayedColumns);
+  }
+
+  mobileRosterTrackWidth(column: PlayerListColumn): string {
+    return mobileRosterColumnTrackWidth(column);
   }
 
   trackByPlayerId(index: number, player: Player): string {
