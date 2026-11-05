@@ -12,8 +12,13 @@ import json
 import os
 import re
 import sys
+from pathlib import Path
 from typing import Any, Callable
 
+# Direct python tools/league_source_receipt_audit.py must work without PYTHONPATH.
+ROOT = str(Path(__file__).resolve().parents[1])
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 from tools import audit_workflow_job_costs as github
 
 SHA = re.compile(r"^[0-9a-f]{40}$")
