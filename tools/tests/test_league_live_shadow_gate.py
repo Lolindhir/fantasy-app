@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from tools import league_live_shadow_gate as shadow
 
@@ -198,6 +199,109 @@ class ShadowDecisionTests(unittest.TestCase):
                 prior[key] = bad
                 self.assertEqual("would-run", shadow.decide(current, prior)["decision"])
 
+
+
+
+
+class DraftContentAuditTests(unittest.TestCase):
+    def fixture(self):
+        drafts = [
+            {"DraftKey": "2026_Rookie", "Season": "2026",
+             "Picks": [{"PickKey": "2026_Rookie_R1_OO1", "CurrentOwnerRosterID": 2}]},
+            {"DraftKey": "2031_Rookie", "Season": "2031",
+             "Picks": [{"PickKey": "2031_Rookie_R1_OO2", "CurrentOwnerRosterID": 1}]},
+            {"DraftKey": "2032_Free_Agent", "Season": "2032",
+             "Picks": [{"PickKey": "2032_Free_Agent_R1_OO1", "CurrentOwnerRosterID": 2}]},
+        ]
+        teams = [
+            {"TeamID": 1, "DraftPicks": ["2031_Rookie_R1_OO2"]},
+            {"TeamID": 2, "DraftPicks": ["2026_Rookie_R1_OO1", "2032_Free_Agent_R1_OO1"]},
+        ]
+        return drafts, teams
+
+    def test_owner_projection_has_dynamic_future_years_and_trades(self):
+        drafts, teams = self.fixture()
+        self.assertEqual([], shadow.compare_draft_owner_membership(drafts, teams))
+        self.assertEqual({2026, 2031, 2032}, {int(d["Season"]) for d in drafts})
+
+    def test_owner_projection_rejects_missing_extra_duplicate_and_wrong_team(self):
+        drafts, teams = self.fixture()
+        wrong = [{"TeamID": 1, "DraftPicks": [
+            "2031_Rookie_R1_OO2", "2026_Rookie_R1_OO1", "extraneous"]},
+                 {"TeamID": 2, "DraftPicks": [
+                     "2026_Rookie_R1_OO1", "2032_Free_Agent_R1_OO1"]}]
+        result = shadow.compare_draft_owner_membership(drafts, wrong)
+        self.assertIn("league-owner-mismatch:2026_Rookie_R1_OO1", result)
+        self.assertIn("duplicate-league-pick-key:2026_Rookie_R1_OO1", result)
+        self.assertIn("league-extra-pick:extraneous", result)
+        missing = [{"TeamID": 1, "DraftPicks": []}, {"TeamID": 2, "DraftPicks": []}]
+        self.assertIn("league-missing-pick:2031_Rookie_R1_OO2",
+                      shadow.compare_draft_owner_membership(drafts, missing))
+        duplicate_drafts = list(drafts) + [drafts[0]]
+        self.assertIn("duplicate-app-pick-key:2026_Rookie_R1_OO1",
+                      shadow.compare_draft_owner_membership(duplicate_drafts, teams))
+
+    def test_owner_projection_rejects_unknown_team_and_malformed_inputs(self):
+        drafts, teams = self.fixture()
+        drafts[0]["Picks"][0]["CurrentOwnerRosterID"] = 99
+        self.assertIn("owner-has-no-team:2026_Rookie_R1_OO1",
+                      shadow.compare_draft_owner_membership(drafts, teams))
+        self.assertTrue(shadow.compare_draft_owner_membership([], teams))
+        self.assertTrue(shadow.compare_draft_owner_membership(drafts, [{"TeamID": 1, "DraftPicks": "not-list"}]))
+
+    def test_offline_audit_reuses_history_and_never_authorizes_live_skip(self):
+        drafts, teams = self.fixture()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = root / "public/data"
+            data.mkdir(parents=True)
+            (data / "Drafts.json").write_text(json.dumps(drafts), encoding="utf-8")
+            (data / "League.json").write_text(json.dumps({"Teams": teams}), encoding="utf-8")
+            with patch("tools.league_history_app_publish.load_inputs",
+                       return_value=SimpleNamespace(league_year=2026)), patch(
+                       "tools.league_history_app_publish.build_history",
+                       return_value=SimpleNamespace(unresolved=[])), patch(
+                       "tools.league_history_app_publish.verified_product_history",
+                       return_value=(object(), None)), patch(
+                       "tools.league_history_app_publish.render",
+                       return_value={"Drafts": {"current": drafts}}):
+                result = shadow.audit_draft_content(root, "nfl-reise")
+                self.assertEqual("verified", result["status"])
+                self.assertEqual([2026, 2031, 2032], result["draftSeasons"])
+                self.assertEqual(3, result["picks"])
+                self.assertTrue(result["contentParityVerified"])
+                self.assertFalse(result["safeToSkip"])
+                self.assertFalse(result["enforced"])
+                (data / "Drafts.json").write_text("[]", encoding="utf-8")
+                invalid = shadow.audit_draft_content(root, "nfl-reise")
+                self.assertEqual("blocked", invalid["status"])
+                self.assertFalse(invalid["contentParityVerified"])
+
+    def test_offline_audit_missing_future_derived_partition_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch("tools.league_history_app_publish.load_inputs",
+                       return_value=SimpleNamespace(league_year=2026)), patch(
+                       "tools.league_history_app_publish.build_history",
+                       return_value=SimpleNamespace(unresolved=[])), patch(
+                       "tools.league_history_app_publish.verified_product_history",
+                       side_effect=ValueError("Stale Shared Derived league-drafts/2031")):
+                result = shadow.audit_draft_content(Path(tmp), "nfl-reise")
+                self.assertEqual("blocked", result["status"])
+                self.assertFalse(result["contentParityVerified"])
+                self.assertFalse(result["safeToSkip"])
+                self.assertIn("2031", result["errors"][0])
+
+    def test_offline_audit_cli_is_separate_from_live_and_requires_league(self):
+        with patch.object(shadow, "audit_draft_content", return_value={
+            "contentParityVerified": True, "safeToSkip": False, "enforced": False,
+        }) as audit:
+            with patch("builtins.print"):
+                self.assertEqual(0, shadow.main(["--audit-draft-content", "--league", "nfl-reise"]))
+            audit.assert_called_once()
+        with self.assertRaises(SystemExit):
+            shadow.main(["--audit-draft-content"])
+        with self.assertRaises(SystemExit):
+            shadow.main(["--audit-draft-content", "--league", "nfl-reise", "--stage", "league"])
 
 
 class ShadowLogComparisonTests(unittest.TestCase):
