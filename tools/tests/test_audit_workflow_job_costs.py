@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from unittest.mock import patch
 
 from tools import audit_workflow_job_costs as audit
+from tools import league_source_receipt_audit as source
 
 
 def run(run_id, day="2026-11-01", moment="12:00:00Z", conclusion="success"):
@@ -458,6 +459,217 @@ class G5PublicationReceiptTests(unittest.TestCase):
             audit.NoCredentialRedirect().redirect_request(
                 request, None, 302, "Found", {}, "http://storage.example.net/log",
             )
+
+
+
+class G5SourceSyncTwoPhaseReceiptTests(unittest.TestCase):
+    """Actual raw->canonical commits versus unverified no-push observations."""
+
+    def fixture(self):
+        repo = "Lolindhir/fantasy-app"
+        started = "4454dcf30a3ba0315b5d3c7fb1526eab4405bc72"
+        rawsha = "8c8bb7159399170d4ae187b6923439a8f7d0daf9"
+        canonsha = "3fc5691db879604c02ba0ff663d794abf771278c"
+        main = "f92184a87bd77202ea21b5945c4c8663f117eb5f"
+        run = {
+            "id": 41962202248, "run_attempt": 1, "path": source_path(),
+            "head_branch": "main", "head_sha": started,
+            "repository": {"full_name": repo}, "event": "repository_dispatch",
+            "status": "completed", "conclusion": "success",
+            "created_at": "2026-11-05T03:32:10Z",
+            "updated_at": "2026-11-05T03:37:26Z",
+        }
+        jobs = [
+            {
+                "id": 11 + index, "run_id": run["id"], "run_attempt": 1,
+                "name": name, "status": "completed", "conclusion": "success",
+                "started_at": "2026-11-05T03:33:00Z" if name == "validate"
+                              else "2026-11-05T03:37:00Z",
+                "completed_at": "2026-11-05T03:34:00Z" if name == "validate"
+                                else "2026-11-05T03:37:24Z",
+            }
+            for index, name in enumerate(("validate", "sync"))
+        ]
+        jobs.append(dict(jobs[0], id=20, name="validate_current_sparse_pr",
+                         conclusion="skipped"))
+        commits = {
+            rawsha: {
+                "sha": rawsha, "parents": [{"sha": started}],
+                "commit": {
+                    "message": "data(league-source): refresh Sleeper league raw sources • 2026-11-05 04:37 CET",
+                    "author": {"email": "41898282+github-actions[bot]@users.noreply.github.com"},
+                    "committer": {"date": "2026-11-05T03:37:14Z"},
+                },
+                "files": [{"filename": "data-source/providers/sleeper/leagues/abc/matchups/week-10.json"}],
+            },
+            canonsha: {
+                "sha": canonsha, "parents": [{"sha": rawsha}],
+                "commit": {
+                    "message": "data(league-source): materialize canonical league sources • 2026-11-05 04:37 CET",
+                    "author": {"email": "41898282+github-actions[bot]@users.noreply.github.com"},
+                    "committer": {"date": "2026-11-05T03:37:20Z"},
+                },
+                "files": [{"filename": "data-source/leagues/nfl-reise/seasons/2026/matchups/week-10.json"},
+                          {"filename": "data-source/_sync/league-refresh-witnesses/nfl-reise/2026-week-08.json"}],
+            },
+        }
+        log = "\n".join([
+            "2026-11-05T03:37:05.6169881Z League source publish attempt 1/3",
+            "2026-11-05T03:37:14.3826880Z [main 8c8bb71] data(league-source): refresh Sleeper league raw sources • 2026-11-05 04:37 CET",
+            "2026-11-05T03:37:15.9968153Z To https://github.com/Lolindhir/fantasy-app.git",
+            "2026-11-05T03:37:15.9968546Z    4454dcf..8c8bb71  HEAD -> main",
+            "2026-11-05T03:37:20.9879663Z [main 3fc5691] data(league-source): materialize canonical league sources • 2026-11-05 04:37 CET",
+            "2026-11-05T03:37:22.7382133Z To https://github.com/Lolindhir/fantasy-app.git",
+            "2026-11-05T03:37:22.7382505Z    8c8bb71..3fc5691  HEAD -> main",
+            "2026-11-05T03:37:22.7441209Z League data-source publish succeeded.",
+        ])
+        return run, jobs, main, commits, log
+
+    def evaluate(self, modify=None):
+        run, jobs, main, commits, log = self.fixture()
+        if modify:
+            run, jobs, main, commits, log = modify(run, jobs, main, commits, log)
+        fetched: list[str] = []
+        def fetch(resource, params):
+            fetched.append(resource)
+            if resource == f"actions/runs/{run['id']}":
+                return run
+            if resource == f"actions/runs/{run['id']}/jobs":
+                return {"total_count": len(jobs), "jobs": jobs}
+            if resource == "git/ref/heads/main":
+                return {"ref": "refs/heads/main", "object": {"sha": main}}
+            if resource.startswith("commits/"):
+                prefix = resource.split("/", 1)[1]
+                return next(value for sha, value in commits.items() if sha.startswith(prefix))
+            if resource.startswith("compare/"):
+                begin, end = resource.split("/", 1)[1].split("...")
+                return {"status": "ahead", "behind_by": 0, "ahead_by": 3,
+                        "base_commit": {"sha": begin},
+                        "merge_base_commit": {"sha": begin},
+                        "commits": [{"sha": "b" * 40}, {"sha": end}]}
+            self.fail("unexpected API endpoint: " + resource)
+        result = source.audit_source_sync(
+            fetch, lambda job_id: log, "Lolindhir/fantasy-app", run["id"],
+            datetime(2026, 11, 5, 5, 10, tzinfo=timezone.utc),
+        )
+        return result, fetched
+
+    def test_real_full_sync_correlates_raw_and_canonical_chain(self):
+        result, fetched = self.evaluate()
+        self.assertEqual("both-publication-commits-correlated", result["status"])
+        self.assertTrue(result["sourcePublishChainVerified"])
+        self.assertTrue(result["jobCompletionVerified"])
+        self.assertEqual(
+            "8c8bb7159399170d4ae187b6923439a8f7d0daf9",
+            result["phases"]["canonical"]["publishedParentSha"],
+        )
+        for flag in ("rawNoOpVerified", "canonicalNoOpVerified", "safeToSkip",
+                     "enforced", "timeAndFinalityVerified", "raceFree", "recoveryClean",
+                     "outputsValidated"):
+            self.assertFalse(result[flag], flag)
+        self.assertIn("commits/8c8bb71", fetched)
+        self.assertIn("commits/3fc5691", fetched)
+
+    def test_no_push_observation_does_not_prove_raw_or_canonical_noop(self):
+        def change(run, jobs, main, commits, log):
+            log = ("2026-11-05T03:37:05Z League source publish attempt 1/3\n"
+                   "2026-11-05T03:37:20Z No canonical League data-source changes detected.")
+            return run, jobs, main, commits, log
+        result, fetched = self.evaluate(change)
+        self.assertFalse(result["sourcePublishChainVerified"])
+        self.assertEqual("no-push-observed", result["phases"]["raw"]["state"])
+        self.assertEqual("no-op-observed", result["phases"]["canonical"]["state"])
+        self.assertFalse(result["rawNoOpVerified"])
+        self.assertFalse(result["canonicalNoOpVerified"])
+        self.assertFalse(result["safeToSkip"])
+        self.assertFalse(any(p.startswith("commits/") for p in fetched))
+
+    def test_raw_push_with_canonical_noop_only_proves_raw_commit(self):
+        def change(run, jobs, main, commits, log):
+            log = "\n".join(log.splitlines()[:4] + [
+                "2026-11-05T03:37:22Z No canonical League data-source changes detected."
+            ])
+            return run, jobs, main, commits, log
+        result, fetched = self.evaluate(change)
+        self.assertTrue(result["phases"]["raw"]["publicationCommitVerified"])
+        self.assertEqual("no-op-observed", result["phases"]["canonical"]["state"])
+        self.assertFalse(result["sourcePublishChainVerified"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_missing_or_wrong_push_log_or_duplicate_marker_fails_closed(self):
+        edits = (
+            lambda s: s.replace("To https://github.com/Lolindhir/fantasy-app.git",
+                                "To https://github.com/wrong/repo.git"),
+            lambda s: s + "\n" + "\n".join(s.splitlines()[4:]),
+            lambda s: s.replace("8c8bb71..3fc5691  HEAD -> main",
+                                "8c8bb71..3fc5691  HEAD -> other"),
+            lambda s: s.replace("League source publish attempt 1/3",
+                                "League source publish attempt 2/3"),
+            lambda s: s.replace("[main 3fc5691]", "[main fffffff]"),
+        )
+        for edit in edits:
+            with self.subTest(edit=str(edit)):
+                def change(run, jobs, main, commits, log):
+                    return run, jobs, main, commits, edit(log)
+                result, _ = self.evaluate(change)
+                self.assertFalse(result["sourcePublishChainVerified"])
+                self.assertFalse(result["safeToSkip"])
+
+    def test_commit_mismatches_and_out_of_scope_files_block(self):
+        modifiers = (
+            lambda commits: commits["3fc5691db879604c02ba0ff663d794abf771278c"]["parents"].__setitem__(0, {"sha": "f" * 40}),
+            lambda commits: commits["3fc5691db879604c02ba0ff663d794abf771278c"]["files"].append({"filename": "data-meta/nfl-reise/metadata.json"}),
+            lambda commits: commits["8c8bb7159399170d4ae187b6923439a8f7d0daf9"]["commit"].__setitem__("message", "data(league-source): wrong scope"),
+            lambda commits: commits["8c8bb7159399170d4ae187b6923439a8f7d0daf9"]["commit"]["committer"].__setitem__("date", "2026-11-05T03:50:00Z"),
+        )
+        for modify in modifiers:
+            with self.subTest(case=str(modify)):
+                def change(run, jobs, main, commits, log):
+                    modify(commits)
+                    return run, jobs, main, commits, log
+                result, _ = self.evaluate(change)
+                self.assertFalse(result["sourcePublishChainVerified"])
+                self.assertFalse(result["safeToSkip"])
+
+    def test_failed_run_or_missing_sync_job_never_claims_chain(self):
+        for mode in ("failed", "missing", "other-repo", "incomplete"):
+            with self.subTest(mode=mode):
+                def change(run, jobs, main, commits, log):
+                    if mode == "failed":
+                        run["conclusion"] = "failure"
+                    elif mode == "missing":
+                        jobs[:] = [job for job in jobs if job["name"] != "sync"]
+                    elif mode == "other-repo":
+                        run["repository"]["full_name"] = "other/repository"
+                    else:
+                        jobs[1]["conclusion"] = "skipped"
+                    return run, jobs, main, commits, log
+                result, fetched = self.evaluate(change)
+                self.assertEqual("blocked", result["status"])
+                self.assertFalse(result["jobCompletionVerified"])
+                self.assertFalse(any(p.startswith("commits/") for p in fetched))
+
+    def test_existing_league_live_job_name_is_supported_without_new_writer(self):
+        def change(run, jobs, main, commits, log):
+            run["path"] = audit.LEAGUE_LIVE_PATH
+            jobs[0]["name"] = "source / validate"
+            jobs[1]["name"] = "source / sync"
+            jobs += [dict(jobs[0], id=90, name="standings"),
+                     dict(jobs[0], id=91, name="league")]
+            return run, jobs, main, commits, log
+        result, _ = self.evaluate(change)
+        self.assertTrue(result["sourcePublishChainVerified"])
+        self.assertFalse(result["enforced"])
+
+    def test_cli_without_token_fails_without_network_or_dispatch(self):
+        with patch.dict("os.environ", {"GH_TOKEN": "", "GITHUB_TOKEN": ""}):
+            self.assertEqual(2, source.main([
+                "--repo", "Lolindhir/fantasy-app", "--run-id", "41962202248",
+            ]))
+
+
+def source_path():
+    return ".github/workflows/sync-league-source-data.yml"
 
 
 if __name__ == "__main__":
