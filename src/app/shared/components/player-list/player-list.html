@@ -5,7 +5,14 @@
   class="mat-elevation-z2 full-width"
   [class.team-roster-metrics]="stickyIdentity"
   [class.team-roster-compact]="stickyIdentity && compact"
+  [style.--roster-min-table-width]="stickyIdentity && compact ? mobileRosterMinimumWidth + 'px' : null"
+  [style.--roster-metric-count]="stickyIdentity && compact ? mobileRosterMetricCount : null"
 >
+  <!-- Native table tracks keep the two sticky identity columns fixed while
+       distributing remaining viewport width only across selected metrics. -->
+  <colgroup *ngIf="stickyIdentity && compact">
+    <col *ngFor="let column of displayedColumns" [style.width]="mobileRosterTrackWidth(column)" />
+  </colgroup>
 
   <!-- Rang -->
   <ng-container matColumnDef="rank" [sticky]="stickyIdentity">
