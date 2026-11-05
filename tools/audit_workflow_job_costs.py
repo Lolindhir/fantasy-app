@@ -236,17 +236,214 @@ def summarize(runs: list[dict[str, Any]], fetch: Fetcher, sample_per_stratum: in
     }
 
 
+
+# G5 read-only provenance witness for the last *regular* League Live run.
+# Job completion is deliberately distinct from publication-commit provenance,
+# output freshness, finality, cross-writer races, and permission to skip.
+LEAGUE_LIVE_PATH = ".github/workflows/league-live.yml"
+LEAGUE_LIVE_REQUIRED_JOBS = frozenset({
+    "source / validate", "source / sync", "standings", "league",
+})
+LEAGUE_LIVE_ALLOWED_SKIPS = frozenset({
+    "historical_preflight", "source / validate_current_sparse_pr",
+})
+
+
+def evaluate_last_league_live_run(
+    run: dict[str, Any], jobs: list[dict[str, Any]],
+    branch_ref: dict[str, Any], comparison: dict[str, Any],
+    *, repo: str, observed_at: datetime,
+) -> dict[str, Any]:
+    """Validate independent GitHub API run/job evidence, never authorize a skip.
+
+    A successful Actions run does *not* identify its generated publication commit:
+    run.head_sha is the workflow's START revision, not the output commit.
+    """
+    errors: set[str] = set()
+    run_id = run.get("id")
+    attempt = run.get("run_attempt")
+    head = run.get("head_sha")
+    metadata = run.get("repository")
+    if (type(run_id) is not int or run_id <= 0 or
+            type(attempt) is not int or attempt <= 0):
+        errors.add("invalid-run-identity-or-attempt")
+    if (not isinstance(metadata, dict) or
+            metadata.get("full_name") != repo or
+            run.get("path") != LEAGUE_LIVE_PATH or
+            run.get("head_branch") != "main" or
+            run.get("event") != "repository_dispatch"):
+        errors.add("wrong-repository-workflow-branch-or-event")
+    if run.get("status") != "completed" or run.get("conclusion") != "success":
+        errors.add("latest-run-not-completed-successfully")
+    if not (isinstance(head, str) and len(head) == 40
+            and all(c in "0123456789abcdef" for c in head)):
+        errors.add("invalid-run-head-sha")
+    try:
+        created = parse_utc(run.get("created_at"))
+        updated = parse_utc(run.get("updated_at"))
+        at = observed_at.astimezone(timezone.utc)
+        if updated < created or at < updated:
+            errors.add("run-time-order-or-observation-invalid")
+    except (AuditError, AttributeError, ValueError):
+        errors.add("run-timestamps-unverifiable")
+
+    seen: dict[str, dict[str, Any]] = {}
+    if not isinstance(jobs, list):
+        errors.add("missing-or-invalid-jobs")
+        jobs = []
+    for job in jobs:
+        if not isinstance(job, dict):
+            errors.add("malformed-job")
+            continue
+        job_attempt = job.get("run_attempt")
+        if type(job_attempt) is not int or job_attempt <= 0:
+            errors.add("job-attempt-unverifiable")
+            continue
+        if type(attempt) is not int or job_attempt != attempt:
+            if type(attempt) is int and job_attempt > attempt:
+                errors.add("future-job-attempt")
+            continue  # Older rerun attempts are not current evidence.
+        name = job.get("name")
+        if not isinstance(name, str) or not name or name in seen:
+            errors.add("duplicate-or-unnamed-current-job")
+            continue
+        seen[name] = job
+        if job.get("run_id") != run_id:
+            errors.add("job-run-identity-mismatch")
+        if job.get("status") != "completed":
+            errors.add("incomplete-current-job")
+        if name in LEAGUE_LIVE_ALLOWED_SKIPS:
+            if job.get("conclusion") not in {"skipped", "success"}:
+                errors.add("invalid-optional-job-conclusion")
+        elif job.get("conclusion") != "success":
+            errors.add("non-success-current-job")
+        if job.get("conclusion") == "success":
+            try:
+                started = parse_utc(job.get("started_at"))
+                completed = parse_utc(job.get("completed_at"))
+                if completed < started:
+                    errors.add("invalid-job-completion-order")
+                if "created" in locals() and started < created:
+                    errors.add("job-starts-before-run")
+                if "updated" in locals() and completed > updated:
+                    errors.add("job-completes-after-run-update")
+            except (AuditError, TypeError, ValueError):
+                errors.add("job-timestamps-unverifiable")
+    if LEAGUE_LIVE_REQUIRED_JOBS - seen.keys():
+        errors.add("missing-required-live-job")
+    if (not isinstance(branch_ref, dict) or branch_ref.get("ref") != "refs/heads/main"
+            or not isinstance(branch_ref.get("object"), dict)):
+        errors.add("main-ref-unverifiable")
+        main_sha = None
+    else:
+        main_sha = branch_ref["object"].get("sha")
+        if not (isinstance(main_sha, str) and len(main_sha) == 40
+                and all(c in "0123456789abcdef" for c in main_sha)):
+            errors.add("main-head-invalid")
+    compare_sound = (
+        isinstance(comparison, dict)
+        and comparison.get("status") in {"identical", "ahead"}
+        and comparison.get("behind_by") == 0
+        and isinstance(comparison.get("base_commit"), dict)
+        and comparison["base_commit"].get("sha") == head
+        and isinstance(comparison.get("merge_base_commit"), dict)
+        and comparison["merge_base_commit"].get("sha") == head
+    )
+    if compare_sound and comparison["status"] == "identical":
+        compare_sound = (main_sha == head and comparison.get("ahead_by") == 0)
+    elif compare_sound and comparison["status"] == "ahead":
+        commits = comparison.get("commits")
+        compare_sound = (
+            type(comparison.get("ahead_by")) is int
+            and comparison["ahead_by"] > 0
+            and isinstance(commits, list) and bool(commits)
+            and isinstance(commits[-1], dict)
+            and commits[-1].get("sha") == main_sha
+        )
+    if not compare_sound:
+        errors.add("main-not-proven-descendant-of-run-start")
+    # The comparison response is separately fetched from the live main ref,
+    # not a cached assumption about the target branch.
+    return {
+        "schemaVersion": 1,
+        "mode": "offline-latest-league-live-provenance",
+        "repository": repo,
+        "runId": run_id,
+        "runAttempt": attempt,
+        "runHeadSha": head,
+        "mainHeadSha": main_sha,
+        "mainAdvancedSinceRunStart": (main_sha != head if main_sha and head else None),
+        "requiredJobs": sorted(LEAGUE_LIVE_REQUIRED_JOBS),
+        "verifiedJobs": sorted(set(seen) & LEAGUE_LIVE_REQUIRED_JOBS),
+        "status": "job-completion-confirmed" if not errors else "blocked",
+        "jobCompletionVerified": not errors,
+        "reasonCodes": sorted(errors),
+        # The API proves only *which jobs finished successfully*, not what
+        # immutable output commit they published or what clock boundaries hold.
+        "publicationCommitVerified": False,
+        "outputsValidated": False,
+        "timeAndFinalityVerified": False,
+        "raceFree": False,
+        "recoveryClean": False,
+        "safeToSkip": False,
+        "enforced": False,
+    }
+
+
+def audit_latest_league_live_run(
+    fetch: Fetcher, repo: str, observed_at: datetime,
+) -> dict[str, Any]:
+    """Read GitHub's latest unfiltered run; never cherry-pick an older success."""
+    response = fetch("actions/workflows/league-live.yml/runs", {
+        "per_page": 2, "page": 1,
+    })
+    rows = response.get("workflow_runs")
+    if (type(response.get("total_count")) is not int
+            or response["total_count"] < 1
+            or not isinstance(rows, list) or not rows
+            or not isinstance(rows[0], dict)):
+        raise AuditError("Latest League Live run unavailable; refusing stale success")
+    latest = rows[0]
+    if len(rows) > 1 and (
+            not isinstance(rows[1], dict) or
+            parse_utc(rows[1].get("created_at")) > parse_utc(latest.get("created_at"))):
+        raise AuditError("Latest League Live run order unverifiable")
+    run_id = latest.get("id")
+    if type(run_id) is not int or run_id <= 0:
+        raise AuditError("Invalid latest run identity")
+    jobs = fetch_jobs(fetch, run_id)
+    ref = fetch("git/ref/heads/main", {})
+    main_sha = (ref.get("object") or {}).get("sha")
+    run_head = latest.get("head_sha")
+    if (not isinstance(main_sha, str) or not isinstance(run_head, str)
+            or len(main_sha) != 40 or len(run_head) != 40
+            or any(c not in "0123456789abcdef" for c in main_sha + run_head)):
+        raise AuditError("Cannot compare an invalid branch/run SHA")
+    compare = fetch(f"compare/{run_head}...{main_sha}", {})
+    return evaluate_last_league_live_run(
+        latest, jobs, ref, compare, repo=repo, observed_at=observed_at,
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", required=True, help="GitHub OWNER/REPO")
-    parser.add_argument("--start", required=True, help="UTC date inclusive, YYYY-MM-DD")
-    parser.add_argument("--end", required=True, help="UTC date exclusive, YYYY-MM-DD")
+    parser.add_argument("--start", help="UTC date inclusive, YYYY-MM-DD for cost census")
+    parser.add_argument("--end", help="UTC date exclusive, YYYY-MM-DD for cost census")
+    parser.add_argument("--audit-latest-league-live", action="store_true",
+                        help="read-only latest-run provenance proof; never enables a skip")
     parser.add_argument("--sample-per-stratum", type=int, default=3)
     parser.add_argument("--max-job-requests", type=int, default=500)
     args = parser.parse_args(argv)
     try:
-        start, end = date.fromisoformat(args.start), date.fromisoformat(args.end)
-        if start >= end or args.sample_per_stratum < 1 or args.max_job_requests < 1:
+        if args.audit_latest_league_live and (args.start is not None or args.end is not None):
+            raise AuditError("Latest-run proof cannot be combined with cost-census dates")
+        if not args.audit_latest_league_live and (args.start is None or args.end is None):
+            raise AuditError("Cost census requires --start and --end")
+        start, end = ((date.fromisoformat(args.start), date.fromisoformat(args.end))
+                      if not args.audit_latest_league_live else (None, None))
+        if ((not args.audit_latest_league_live and start >= end)
+                or args.sample_per_stratum < 1 or args.max_job_requests < 1):
             raise AuditError("Invalid date window or sampling request")
         if len(args.repo.split("/")) != 2 or any(
             not part or not all(c.isalnum() or c in "-_." for c in part)
@@ -257,6 +454,10 @@ def main(argv: list[str] | None = None) -> int:
         if not token:
             raise AuditError("Set GH_TOKEN or GITHUB_TOKEN (read-only Actions permission)")
         fetch = api_fetch(args.repo, token)
+        if args.audit_latest_league_live:
+            result = audit_latest_league_live_run(fetch, args.repo, datetime.now(timezone.utc))
+            print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+            return 0 if result["jobCompletionVerified"] else 2
         result = summarize(fetch_runs(fetch, start, end), fetch,
                            args.sample_per_stratum, args.max_job_requests)
         result.update({"repository": args.repo, "startUtcInclusive": args.start,
