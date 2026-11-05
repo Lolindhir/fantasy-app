@@ -105,7 +105,7 @@ def parse_derived_refresh(log: str, expected_leagues: set[str]) -> dict[str, Any
         if identity in actual:
             reasons.add("duplicate-derived-product")
         actual.add(identity)
-        if status not in ALLOWED or type(status) is not str:
+        if type(status) is not str or status not in ALLOWED:
             reasons.add("blocked-or-unready-derived-product")
         parity = row.get("PlayerWeekFantasyParity")
         if product == "team-week-performance":
