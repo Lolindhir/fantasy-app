@@ -134,6 +134,10 @@ export class DataApiService {
     return this.http.get<MatchupsReadModel>(this.normalizeDataPath(path));
   }
 
+  getPastWeeklyRecapsRaw(path: string): Observable<WeeklyRecapsReadModel> {
+    return this.http.get<WeeklyRecapsReadModel>(this.normalizeDataPath(path));
+  }
+
   getPastFantasyGameContextRaw(path: string): Observable<HistoricalFantasyGameContextSeason> {
     return this.http.get<HistoricalFantasyGameContextSeason>(this.normalizeDataPath(path));
   }
