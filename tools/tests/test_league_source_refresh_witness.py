@@ -153,6 +153,7 @@ class LeagueRefreshWitnessTests(unittest.TestCase):
         self.assertFalse(self._audit_full()["sourceWitnessVerified"])
 
     def test_offline_witness_canonical_raw_or_finality_change_after_commit(self):
+        self._commit_audit_fixture()
         for kind in ("canonical", "raw-metadata", "finality"):
             with self.subTest(kind=kind):
                 # Each subtest uses its own test fixture root because setUp is
@@ -173,8 +174,6 @@ class LeagueRefreshWitnessTests(unittest.TestCase):
                     data = json.loads(original)
                     data["Games"][0]["GameID"] = "other-game"
                     path.write_text(json.dumps(data), encoding="utf-8")
-                if not (self.root / ".git").exists():
-                    self._commit_audit_fixture(complete_witness=False)
                 subprocess.run(["git", "add", "-A"], cwd=self.root, check=True)
                 subprocess.run(["git", "commit", "-qm", kind], cwd=self.root,
                                check=True)
