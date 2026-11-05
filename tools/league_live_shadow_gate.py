@@ -142,6 +142,113 @@ def publish_observation(observation: dict[str, Any]) -> None:
 
 
 
+
+def compare_draft_owner_membership(drafts: Any, teams: Any) -> list[str]:
+    """Read-only key/owner parity; draft definitions and order come from canonical history.
+
+    Do not rederive draft creation, trading or League's presentation sort order.
+    This only verifies that each published PickKey is assigned to exactly one
+    matching TeamID. A direct App-to-App equality check is insufficient unless
+    the independently built canonical Derived->App parity also succeeded.
+    """
+    if not isinstance(drafts, list) or not drafts or not isinstance(teams, list) or not teams:
+        return ["missing-or-invalid-draft-or-team-list"]
+    errors: list[str] = []
+    owners: dict[str, int] = {}
+    for draft in drafts:
+        if not isinstance(draft, dict) or not isinstance(draft.get("Picks"), list):
+            errors.append("malformed-app-draft")
+            continue
+        for pick in draft["Picks"]:
+            if not isinstance(pick, dict):
+                errors.append("malformed-app-pick")
+                continue
+            key, owner = pick.get("PickKey"), pick.get("CurrentOwnerRosterID")
+            if not isinstance(key, str) or not key or type(owner) is not int:
+                errors.append("missing-pick-key-or-owner")
+            elif key in owners:
+                errors.append("duplicate-app-pick-key:" + key)
+            else:
+                owners[key] = owner
+    assigned: dict[str, int] = {}
+    known_teams: set[int] = set()
+    for team in teams:
+        if not isinstance(team, dict):
+            errors.append("malformed-league-team")
+            continue
+        team_id, picks = team.get("TeamID"), team.get("DraftPicks")
+        if type(team_id) is not int or team_id in known_teams:
+            errors.append("missing-or-duplicate-team-id")
+            continue
+        known_teams.add(team_id)
+        if not isinstance(picks, list):
+            errors.append("missing-team-draft-picks:" + str(team_id))
+            continue
+        for key in picks:
+            if not isinstance(key, str) or not key:
+                errors.append("malformed-team-pick-key:" + str(team_id))
+            elif key in assigned:
+                errors.append("duplicate-league-pick-key:" + key)
+            else:
+                assigned[key] = team_id
+    for key, owner in sorted(owners.items()):
+        if owner not in known_teams:
+            errors.append("owner-has-no-team:" + key)
+        if key not in assigned:
+            errors.append("league-missing-pick:" + key)
+        elif assigned[key] != owner:
+            errors.append("league-owner-mismatch:" + key)
+    for key in sorted(assigned.keys() - owners.keys()):
+        errors.append("league-extra-pick:" + key)
+    return sorted(set(errors))
+
+
+def audit_draft_content(repo_root: Path, league_id: str) -> dict[str, Any]:
+    """Offline-only parity against canonical history, persisted Derived and App.
+
+    Reuse the authoritative History builder and consumer renderer, rather than
+    inventing a future-year horizon or a second pick-owner model. Historical
+    products are verified too. No writer, network request or Git state mutation.
+    This is content evidence, NOT a prior-success/race/clock attestation.
+    """
+    from tools.league_history_app_publish import (
+        _difference, build_history, load_inputs, render, verified_product_history,
+    )
+
+    result: dict[str, Any] = {
+        "schemaVersion": SCHEMA, "mode": "offline-draft-content",
+        "canonicalLeagueID": league_id, "status": "blocked",
+        "contentParityVerified": False, "safeToSkip": False, "enforced": False,
+    }
+    try:
+        inputs = load_inputs(repo_root, league_id)
+        history = build_history(inputs)
+        if history.unresolved:
+            raise ValueError("Canonical history has unresolved pick identities")
+        persisted, references = verified_product_history(repo_root, league_id, history)
+        rendered = render(persisted, inputs.league_year, references)
+        expected_drafts = rendered["Drafts"]["current"]
+        app_drafts = json.loads((repo_root / "public/data/Drafts.json").read_text(encoding="utf-8"))
+        league = json.loads((repo_root / "public/data/League.json").read_text(encoding="utf-8"))
+        if not isinstance(league, dict):
+            raise ValueError("League App payload is not an object")
+        errors = _difference(expected_drafts, app_drafts)
+        errors.extend(compare_draft_owner_membership(expected_drafts, league.get("Teams")))
+        if not expected_drafts:
+            errors.append("canonical-history-has-no-current-or-future-drafts")
+        years = sorted({int(d["Season"]) for d in expected_drafts})
+        result.update(
+            draftSeasons=years, drafts=len(expected_drafts),
+            picks=sum(len(d["Picks"]) for d in expected_drafts),
+            errors=errors[:25], errorCount=len(errors),
+        )
+        if not errors:
+            result.update(status="verified", contentParityVerified=True)
+    except (OSError, ValueError, TypeError, KeyError, ImportError) as error:
+        result.update(errors=[type(error).__name__ + ": " + str(error)], errorCount=1)
+    return result
+
+
 def parse_observed_log(log_text: str) -> dict[str, Any]:
     """Extract exactly one shadow observation from an existing GitHub job log."""
     marker = "LEAGUE_LIVE_SHADOW "
@@ -217,6 +324,9 @@ def compare_observed_logs(previous_log: str, current_log: str) -> dict[str, Any]
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--stage", choices=sorted(STAGE_INPUTS))
+    p.add_argument("--audit-draft-content", action="store_true",
+                   help="offline-only canonical/Derived/App draft parity (no job skipping)")
+    p.add_argument("--league", help="canonical league identity for the offline audit")
     p.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     p.add_argument("--at", help="Current UTC time; defaults to process UTC now")
     p.add_argument("--source-status", default="unknown")
@@ -226,6 +336,16 @@ def main(argv: list[str] | None = None) -> int:
                    metavar=("EARLIER_JOB_LOG", "LATER_JOB_LOG"),
                    help="Offline read-only comparison of two downloaded GitHub job logs")
     args = p.parse_args(argv)
+    if args.audit_draft_content:
+        if args.stage is not None or args.prior_json is not None or args.compare_log_files:
+            p.error("--audit-draft-content cannot be combined with live/compare modes")
+        if not args.league:
+            p.error("--audit-draft-content requires --league")
+        result = audit_draft_content(args.repo_root, args.league)
+        print(json.dumps(result, sort_keys=True))
+        return 0 if result["contentParityVerified"] else 2
+    if args.league:
+        p.error("--league is only supported with --audit-draft-content")
     if args.compare_log_files:
         if args.stage is not None or args.prior_json is not None:
             p.error("--compare-log-files cannot be combined with --stage or --prior-json")
