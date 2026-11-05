@@ -149,3 +149,37 @@ standards:
       method: Inspect player image usage in templates.
       evidence: Only the listed large-portrait surfaces use PictureLarge with a Picture fallback; all other surfaces bind Picture; no template builds or rewrites image URLs.
     references: ["#436", "#913", "#917"]
+- id: FDS-012
+    level: MUST
+    scope: historical player events (Moves, Trades, past Drafts and future player move histories) and their player detail drilldowns
+    rule: >
+      Historical event identity presents facts applicable at the event time, not
+      today's NFL affiliation or position retroactively. Show the historical NFL
+      team logo/abbreviation only when a unique player identity and time-scoped
+      membership are supported by canonical evidence; use the event-time position
+      only where it is supported. If either fact cannot be established, omit that
+      historical field silently, without placeholders, missing-data indicators
+      or substitution from the current player snapshot. A player identity
+      drilldown opens the current Player Detail only when its identity is
+      verified; never open a different current player via a reused provider ID.
+      Historic events remain immutable context, while the detail surface owns
+      the latest available player facts. Do not invent a current detail profile
+      for players absent from the current player read model.
+    rationale: >
+      Historical transactions explain what changed at that time. Current player
+      details answer where the player is now. Mixing those timelines creates
+      misleading move history, especially for NFL team transfers and retired
+      players. The historical portrait may serve as an identity aid without
+      claiming that the photo itself was taken at the event time.
+    review:
+      method: >
+        Inspect historical Moves and Draft samples with intra-season NFL transfers,
+        year-over-year team changes, unavailable membership and reused/retired
+        provider identities, then follow eligible player detail links.
+      evidence: >
+        The historical mark and position are never replaced by today's values;
+        unknown event-time facts disappear quietly; verified links show current
+        details for the same canonical player, while unsafe links remain inert.
+    exceptions:
+      - A historical event with no applicable or provable NFL affiliation does not show an NFL team mark; this is the unavailable-affiliation exception to FDS-002.
+    references: ["#200", "#1100", "#593"]
