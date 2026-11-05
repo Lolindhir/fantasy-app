@@ -135,8 +135,8 @@ Zwei bewusst extreme, **nur statische** Prüfgrößen:
 | Team TimpaBay | 75,2 % | 75,8 % | 3 | 3 |
 
 Flos Entwicklung des Top-10-Kerns:
-- **09.09.:** A/B **76.2 %** des Caps, C/D **81.7 %**; im vereinfachten Kern-erhalten-Cutmodell mindestens **2** versus **5** teure Tiefenspieler abgeben.
-- **05.11.:** A/B **87.8 %** des Caps, C/D **96.8 %**; im gleichen Extremmodell mindestens **7** versus **14** Tiefenspieler abgeben.
+- **09.09.:** A/B **76,2 %** des Caps, C/D **81,7 %**; im vereinfachten Kern-erhalten-Cutmodell mindestens **2** versus **5** teure Tiefenspieler abgeben.
+- **05.11.:** A/B **87,8 %** des Caps, C/D **96,8 %**; im gleichen Extremmodell mindestens **7** versus **14** Tiefenspieler abgeben.
 
 Das passt zu der Hypothese, dass ein positionsrelevanzbasiertes Salary den **Erhalt eines Elitekerns** wirtschaftlich teurer machen kann – ohne dessen Verkauf **fest vorzuschreiben**. Eine weitere mögliche Folge ist gerade, dass Tiefenspieler durch kurzfristig preiswerte Alternativen ersetzt werden; ob daraus **mehr echte Rookie-Entwicklung** wird, zeigt dieser Test **noch nicht**.
 
