@@ -333,13 +333,7 @@ export function buildSeasonHistory(league: League): SeasonHistoryViewModel {
           };
         });
 
-      const awards = [...(standing.Awards ?? [])]
-        .filter(isDynamicSeasonAward)
-        .sort((a, b) =>
-          (a.Type?.Order ?? 999) - (b.Type?.Order ?? 999)
-          || a.Name.localeCompare(b.Name)
-        )
-        .map(award => mapSeasonHistoryAward(award));
+      const awards = buildSeasonAwardItems(standing.Awards ?? []);
 
       return {
         season: standing.Season,
@@ -357,6 +351,17 @@ export function buildSeasonHistory(league: League): SeasonHistoryViewModel {
 
 export function getPreviousChampion(teams: FantasyTeam[]): FantasyTeam | undefined {
   return teams.find(team => team.Placements.Previous.Playoffs?.Place === 1);
+}
+
+/** Maps any list of generated awards to uniform, data-driven award cards (no per-award-name logic). */
+export function buildSeasonAwardItems(awards: AwardInStanding[]): SeasonHistoryAwardItem[] {
+  return awards
+    .filter(isDynamicSeasonAward)
+    .sort((a, b) =>
+      (a.Type?.Order ?? 999) - (b.Type?.Order ?? 999)
+      || a.Name.localeCompare(b.Name)
+    )
+    .map(award => mapSeasonHistoryAward(award));
 }
 
 export function getCurrentSeasonAwards(league: League): AwardInStanding[] {

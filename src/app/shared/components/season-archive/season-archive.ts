@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
 import { RegularSeasonStandingsListComponent } from '../regular-season-standings-list/regular-season-standings-list';
+import { SeasonAwardsComponent } from '../season-awards/season-awards';
 import { SeasonResultsComponent } from '../season-results/season-results';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import type {
@@ -17,6 +18,7 @@ import type {
     CommonModule,
     SharedMaterialImports,
     SeasonResultsComponent,
+    SeasonAwardsComponent,
     RegularSeasonStandingsListComponent
   ],
   templateUrl: './season-archive.html',

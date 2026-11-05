@@ -1,0 +1,81 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.season-awards {
+  margin-top: 12px;
+}
+
+.season-awards__title {
+  margin: 8px 0 8px;
+}
+
+.season-awards__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 640px) {
+  .season-awards__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 960px) {
+  .season-awards__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.season-award {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.season-award__icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #eee;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.season-award__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.season-award__name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.season-award__owner {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.season-award__stat {
+  font-size: 0.75rem;
+  color: #777;
+  overflow-wrap: anywhere;
+}
