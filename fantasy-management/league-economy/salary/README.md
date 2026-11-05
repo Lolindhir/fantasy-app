@@ -36,6 +36,7 @@ Die Simulation vom **05.10.2026** bleibt als **historischer Vergleich** bestehen
 ## Quantitative Analysen (`analyses/`)
 
 - [CP1 – Salary-/League-Economy-Baseline (05.11.2026)](analyses/2026-11-05-salary-cap-cp1-baseline.md) – fixierte historische Roster-/Cap-Zeitreihe, 2024–2026er Transaktions-/Draft-Inventar und methodische Grenzen für [Issue #1344](https://github.com/Lolindhir/fantasy-app/issues/1344); keine Ligaregel.
+- [CP2a – A/B/C-Stresstest (05.11.2026)](analyses/2026-11-05-salary-cap-cp2-abc-stress-test.md) – kontrollierte Vergleichspreise, permanenter Cap-Vollzug als kontrafaktischer Transaktions-Stresstest und Grenzen; CP2-Fachentscheidung noch offen, [Issue #1344](https://github.com/Lolindhir/fantasy-app/issues/1344).
 
 
 Datierte Salary-Berechnungen liegen unter derselben Root (jeweils `.md` und `.json`):
