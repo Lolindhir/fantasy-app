@@ -124,15 +124,15 @@ class G5LastLeagueLiveProvenanceTests(unittest.TestCase):
             "path": audit.LEAGUE_LIVE_PATH, "head_branch": "main",
             "head_sha": sha, "event": "repository_dispatch",
             "status": "completed", "conclusion": "success",
-            "created_at": "2026-11-05T04:12:13Z",
-            "updated_at": "2026-11-05T04:16:01Z",
+            "created_at": "2026-11-01T04:12:13Z",
+            "updated_at": "2026-11-01T04:16:01Z",
         }
         jobs = [
             {
                 "id": index, "run_id": latest["id"], "run_attempt": 2,
                 "name": name, "status": "completed", "conclusion": "success",
-                "started_at": "2026-11-05T04:12:14Z",
-                "completed_at": "2026-11-05T04:16:00Z",
+                "started_at": "2026-11-01T04:12:14Z",
+                "completed_at": "2026-11-01T04:16:00Z",
             }
             for index, name in enumerate(sorted(audit.LEAGUE_LIVE_REQUIRED_JOBS), 1)
         ]
@@ -157,6 +157,7 @@ class G5LastLeagueLiveProvenanceTests(unittest.TestCase):
         comparison = {
             "status": "ahead", "behind_by": 0, "ahead_by": 2,
             "base_commit": {"sha": sha}, "merge_base_commit": {"sha": sha},
+            "commits": [{"sha": "c" * 40}, {"sha": main}],
         }
         return latest, jobs, ref, comparison
 
@@ -189,7 +190,7 @@ class G5LastLeagueLiveProvenanceTests(unittest.TestCase):
             ("head_branch", "feature"),
             ("run_attempt", None),
             ("head_sha", "not-sha"),
-            ("updated_at", "2026-11-05T04:09:01Z"),
+            ("updated_at", "2026-11-01T04:09:01Z"),
         )
         for field, bad in cases:
             with self.subTest(field=field):
@@ -205,7 +206,7 @@ class G5LastLeagueLiveProvenanceTests(unittest.TestCase):
             ("name", "different"), ("status", "in_progress"),
             ("conclusion", "skipped"), ("run_id", 999),
             ("run_attempt", 3), ("started_at", None),
-            ("completed_at", "2026-11-05T04:10:00Z"),
+            ("completed_at", "2026-11-01T04:10:00Z"),
         ):
             with self.subTest(field=name):
                 run, jobs, ref, comparison = self.evidence()
@@ -232,10 +233,15 @@ class G5LastLeagueLiveProvenanceTests(unittest.TestCase):
         run, jobs, ref, comparison = self.evidence()
         comparison["merge_base_commit"]["sha"] = "c" * 40
         self.assertEqual("blocked", self.evaluate(run, jobs, ref, comparison)["status"])
+        run, jobs, ref, comparison = self.evidence()
+        comparison["commits"][-1]["sha"] = "d" * 40
+        self.assertIn("main-not-proven-descendant-of-run-start",
+                      self.evaluate(run, jobs, ref, comparison)["reasonCodes"])
 
     def test_latest_unfiltered_api_run_never_falls_back_to_old_success(self):
         run, jobs, ref, comparison = self.evidence()
         latest = dict(run, id=41966328999, conclusion="failure")
+        jobs = [dict(j, run_id=latest["id"]) for j in jobs]
         older_success = dict(run, id=41966328830)
         requested = []
         def fetch(resource, params):
