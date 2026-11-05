@@ -2,6 +2,17 @@ import type { Player, SortField } from '../../core/models/player.models';
 
 const PLAYER_POSITION_ORDER = ['QB', 'RB', 'WR', 'TE', 'K', 'DEF', 'DST'];
 
+// Sleeper has one nominal depth slot per player, which can describe a different
+// side of a dual-role player (for example WR Travis Hunter listed as RCB #1).
+// Do not present a defensive depth order as an offensive fantasy position rank.
+const DEPTH_CHART_SLOTS_BY_POSITION: Readonly<Record<string, readonly string[]>> = {
+  QB: ['QB'],
+  RB: ['RB'],
+  WR: ['WR', 'LWR', 'RWR', 'SWR'],
+  TE: ['TE'],
+  K: ['K']
+};
+
 export function getPlayerFantasyPointsPerGame(player: Player): number | undefined {
   if ((player.Stats?.GamesPlayed ?? 0) <= 0) return undefined;
   const average = player.Stats?.FantasyPointsAvgGame;
@@ -15,7 +26,14 @@ export function formatPlayerFantasyPointsPerGame(player: Player): string {
 
 export function getPlayerDepthChartOrder(player: Player): number | undefined {
   const value = Number(player.SleeperDepthChartOrder);
-  return Number.isFinite(value) && value > 0 ? value : undefined;
+  if (!Number.isFinite(value) || value <= 0) return undefined;
+
+  const depthSlot = player.SleeperDepthChartPosition?.trim().toUpperCase();
+  if (depthSlot && !DEPTH_CHART_SLOTS_BY_POSITION[player.Position]?.includes(depthSlot)) {
+    return undefined;
+  }
+
+  return value;
 }
 
 export function getPlayerDepthChartLabel(player: Player): string | undefined {
