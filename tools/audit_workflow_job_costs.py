@@ -442,7 +442,8 @@ def main(argv: list[str] | None = None) -> int:
             raise AuditError("Cost census requires --start and --end")
         start, end = ((date.fromisoformat(args.start), date.fromisoformat(args.end))
                       if not args.audit_latest_league_live else (None, None))
-        if start >= end or args.sample_per_stratum < 1 or args.max_job_requests < 1:
+        if ((not args.audit_latest_league_live and start >= end)
+                or args.sample_per_stratum < 1 or args.max_job_requests < 1):
             raise AuditError("Invalid date window or sampling request")
         if len(args.repo.split("/")) != 2 or any(
             not part or not all(c.isalnum() or c in "-_." for c in part)
