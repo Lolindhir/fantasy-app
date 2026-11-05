@@ -40,6 +40,8 @@ Datierte Salary-Berechnungen liegen unter derselben Root (jeweils `.md` und `.js
 - [`2026-07-31-three-year-history-baseline.md`](analyses/2026-07-31-three-year-history-baseline.md): Salary-Effizienz-Baseline mit Drei-Jahres-Historie.
 - [`2026-10-02-criticality-normalization-k15.md`](analyses/2026-10-02-criticality-normalization-k15.md): Kritikalitäts-Normalisierung (Centered-25, Top-10%-Referenz, k=1,5), führendes Arbeitsmodell.
 - [`2026-10-05-salary-simulation.md`](analyses/2026-10-05-salary-simulation.md): Historisches Simulationspaket auf Liga-Scoring (Issue #879): Criticality-Kurven neu, Szenarien für Bandbreite, k, Rang-Population, **damals voll additives** Base Minimum und Rookie-Verträge, Cap-Rückkopplung, Zeitpunkt der Salary-Umstellung, Dead Cap aus echten Cuts. Dazu JSON und Spielertabelle als CSV.
+- [`2026-11-05-flo-cap-impact-case-study.md`](analyses/2026-11-05-flo-cap-impact-case-study.md): **Fallstudie Flo / Just Bill 2026** – acht Juni-Cap-Cuts, nachfolgende Free-Agent-Draft-Umverteilung, Kader- und Salary-Rekonstruktion, Ergebnisse und offene Fragen zur gewünschten Wirkung des Salary Caps. Datierter empirischer Befund, keine neue Regel.
+
 
 ## Simulation (`simulation/`)
 
