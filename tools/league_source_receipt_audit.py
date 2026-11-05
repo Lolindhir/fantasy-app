@@ -30,6 +30,7 @@ PHASE_MESSAGES = {
 COMMIT_LINE = re.compile(
     rf"^(?P<time>{STAMP}) \[main (?P<sha>[0-9a-f]{{7,40}})\] "
     r"data\(league-source\): (?P<subject>refresh Sleeper league raw sources|materialize canonical league sources)"
+    r"(?:\s+•\s+\d{4}-\d\d-\d\d \d\d:\d\d (?:CET|CEST|UTC))?$"
 )
 PUSH_LINE = re.compile(
     rf"^(?P<time>{STAMP})\s+(?P<old>[0-9a-f]{{7,40}})\.\."
