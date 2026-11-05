@@ -64,6 +64,8 @@ import {
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 import { findNflTeam } from '../../utils/nfl-team-key.util';
+import { TeamRivalryHistoryService } from '../../services/team-rivalry-history.service';
+import { buildHeadToHead, formatRivalryRecord, isPlayoffsComplete } from '../../utils/team-rivalry.util';
 
 type LeagueMatchupContextMode = 'current' | 'previous';
 
@@ -124,6 +126,7 @@ export class LeagueMatchupsComponent {
   private readonly dataService = inject(DataService);
   private readonly dialog = inject(MatDialog);
   private readonly teamDialog = inject(TeamDetailDialogService);
+  private readonly rivalryHistory = inject(TeamRivalryHistoryService);
   private latestFantasyContextState: FantasyContextState | null = null;
 
   private readonly matchups$ = this.dataService.getMatchups().pipe(
@@ -131,6 +134,12 @@ export class LeagueMatchupsComponent {
     shareReplay({ bufferSize: 1, refCount: true })
   );
   private readonly matchupsReadModelSignal = toSignal(this.matchups$, { initialValue: null });
+
+  private readonly rivalrySeasonsSignal = toSignal(
+    this.rivalryHistory.getSeasons().pipe(catchError(() => of(null))),
+    { initialValue: null }
+  );
+  private readonly headToHeadCache = new Map<string, string | null>();
 
   private readonly weeklyRecaps$ = (this.dataService.getWeeklyRecaps?.() ?? of(null)).pipe(
     catchError(() => of(null)),
@@ -273,6 +282,24 @@ export class LeagueMatchupsComponent {
         };
       })
       .filter((matchup): matchup is LeagueMatchupView => !!matchup);
+  }
+
+  /** All-time record of the left team against the right team ("ABC 3-2 XYZ"); null without a counted game. */
+  headToHead(matchup: LeagueMatchupView): string | null {
+    const seasons = this.rivalrySeasonsSignal();
+    if (!seasons) return null;
+    const key = `${matchup.left.team.TeamID}-${matchup.right.team.TeamID}-${seasons.length}`;
+    if (this.headToHeadCache.has(key)) return this.headToHeadCache.get(key) ?? null;
+
+    const record = buildHeadToHead(matchup.left.team.TeamID, matchup.right.team.TeamID, seasons, {
+      filter: 'all',
+      isSeasonComplete: season => isPlayoffsComplete(season, this.league.SeasonAsNumber, this.league.Status)
+    });
+    const label = record
+      ? `${matchup.left.team.TeamAbbr || matchup.left.team.Team} ${formatRivalryRecord(record)} ${matchup.right.team.TeamAbbr || matchup.right.team.Team}`
+      : null;
+    this.headToHeadCache.set(key, label);
+    return label;
   }
 
   currentContext(context: FantasyGameContextReadModel | null): FantasyGameContextReadModel | null {

@@ -43,6 +43,11 @@ export interface RivalryOptions {
   isSeasonComplete: (season: string) => boolean;
 }
 
+/** Playoffs are over for archived seasons and for the current season once the league is Completed. */
+export function isPlayoffsComplete(season: string, currentSeason: number, leagueStatus: string): boolean {
+  return Number(season) < currentSeason || leagueStatus === 'Completed';
+}
+
 export function formatRivalryRecord(record: Pick<RivalryRecord, 'wins' | 'losses' | 'ties'>): string {
   return record.ties > 0
     ? `${record.wins}-${record.losses}-${record.ties}`
@@ -144,4 +149,14 @@ export function buildRivalryRecords(
 
 function roundPoints(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+/** All-time record of one team against one specific opponent, or null when they never played a counted game. */
+export function buildHeadToHead(
+  teamId: number,
+  opponentId: number,
+  seasons: readonly MatchupsReadModel[],
+  options: RivalryOptions
+): RivalryRecord | null {
+  return buildRivalryRecords(teamId, seasons, options).find(record => record.opponentId === opponentId) ?? null;
 }
