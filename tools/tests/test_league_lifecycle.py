@@ -15,6 +15,7 @@ sys.path.insert(0, str(TOOLS))
 
 import derived_data_lib.league_lifecycle as lifecycle  # noqa: E402
 import league_lifecycle as cli  # noqa: E402
+import league_live_invalidation_audit as invalidation  # noqa: E402
 from derived_data_lib.models import registry  # noqa: E402
 from derived_data_lib.models.lifecycle import v1  # noqa: E402
 
@@ -441,6 +442,137 @@ class ShadowCompareTests(unittest.TestCase):
         self.assertEqual(2, self.run_compare("--at", "2030-07-01T00:00:00Z").returncode)
         (self.root / "public/data/Timestamps.json").unlink()
         self.assertEqual(1, self.run_compare().returncode)
+
+
+
+class G5TemporalAndCrossWriterInvalidationTests(unittest.TestCase):
+    """No real skip: known hazards across time or Git-tree changes block."""
+
+    def quiet_facts(self, **extra):
+        return facts(settings=settings(disable_adds=1), **extra)
+
+    def audit(self, f, start, end):
+        return invalidation.audit_temporal_window(f, v1, at(start), at(end))
+
+    def test_quiet_short_interval_is_only_known_clock_clear_not_skip(self):
+        result = self.audit(self.quiet_facts(),
+                            "2030-09-08T15:00:00Z", "2030-09-08T15:10:00Z")
+        self.assertEqual("known-clock-window-clear", result["status"])
+        self.assertTrue(result["knownClockWindowClear"])
+        self.assertEqual([], result["crossedBoundaries"])
+        for key in ("independentProviderFreshnessVerified",
+                    "independentNflFinalityVerified", "timeAndFinalityVerified",
+                    "safeToSkip", "enforced"):
+            self.assertFalse(result[key], key)
+
+    def test_kickoff_between_equal_endpoint_lifecycle_states_blocks(self):
+        f = self.quiet_facts()
+        before, after = at("2030-09-08T16:59:00Z"), at("2030-09-08T17:01:00Z")
+        self.assertEqual(v1.resolve(f, before)["Status"],
+                         v1.resolve(f, after)["Status"])
+        result = invalidation.audit_temporal_window(f, v1, before, after)
+        self.assertFalse(result["knownClockWindowClear"])
+        self.assertIn("known-clock-boundary-crossed", result["reasonCodes"])
+        self.assertIn("nonfinal-nfl-game-already-started", result["reasonCodes"])
+        self.assertTrue(any(x["kind"].startswith("NflGameKickoff:")
+                            for x in result["crossedBoundaries"]))
+        self.assertFalse(result["safeToSkip"])
+
+    def test_known_waiver_processing_boundary_forces_revalidation(self):
+        f = facts()
+        result = self.audit(f, "2030-09-08T09:59:00Z", "2030-09-08T10:01:00Z")
+        self.assertIn("known-clock-boundary-crossed", result["reasonCodes"])
+        self.assertTrue(any(x["kind"] == "NextWaiverRun"
+                            for x in result["crossedBoundaries"]))
+
+    def test_cap_and_season_start_window_boundaries_are_detected(self):
+        f = self.quiet_facts(drafts=[draft("Virtual")])
+        cap = self.audit(f, "2030-07-02T23:59:00Z",
+                         "2030-07-03T00:01:00Z")
+        self.assertIn("known-clock-boundary-crossed", cap["reasonCodes"])
+        self.assertTrue(any(x["kind"] == "CapWindowEnd"
+                            for x in cap["crossedBoundaries"]))
+        kickoff = self.audit(self.quiet_facts(),
+                             "2030-09-01T16:59:00Z",
+                             "2030-09-01T17:01:00Z")
+        self.assertIn("known-clock-boundary-crossed", kickoff["reasonCodes"])
+        self.assertTrue(any(x["kind"] == "SeasonWindowStart"
+                            for x in kickoff["crossedBoundaries"]))
+
+    def test_unknown_waiver_schedule_and_dst_warnings_fail_closed(self):
+        unknown = facts(settings=settings(daily_waivers=0))
+        result = self.audit(unknown, "2030-09-08T15:00:00Z",
+                            "2030-09-08T15:10:00Z")
+        self.assertIn("waiver-schedule-unverifiable", result["reasonCodes"])
+        invalid_modes = facts(settings=settings(
+            daily_waivers_days=encode_days([3, 3, 3, 3, 3, 3, 3])
+        ))
+        result = self.audit(invalid_modes, "2030-09-08T15:00:00Z",
+                            "2030-09-08T15:10:00Z")
+        self.assertIn("lifecycle-warning-unresolved", result["reasonCodes"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_active_nonfinal_game_even_without_new_boundary_blocks(self):
+        result = self.audit(self.quiet_facts(),
+                            "2030-09-08T18:00:00Z", "2030-09-08T18:05:00Z")
+        self.assertIn("nonfinal-nfl-game-already-started", result["reasonCodes"])
+        self.assertFalse(result["knownClockWindowClear"])
+
+    def test_missing_kickoff_and_invalid_observation_window_block(self):
+        f = self.quiet_facts(games=[v1.Game(1, "unknown", None, False)])
+        result = self.audit(f, "2030-09-08T15:00:00Z",
+                            "2030-09-08T15:10:00Z")
+        self.assertIn("unresolved-nfl-game-kickoff", result["reasonCodes"])
+        for before, after in (
+            (at("2030-09-08T15:00:00Z"), at("2030-09-08T15:00:00Z")),
+            (at("2030-09-08T15:00:00Z"), at("2030-09-08T17:00:00Z")),
+            (datetime(2030, 9, 8, 15), at("2030-09-08T15:10:00Z")),
+        ):
+            with self.subTest(before=before, after=after):
+                invalid = invalidation.audit_temporal_window(
+                    self.quiet_facts(), v1, before, after)
+                self.assertEqual("blocked", invalid["status"])
+                self.assertFalse(invalid["safeToSkip"])
+
+    def test_all_stage_dependencies_must_match_exact_git_trees(self):
+        from league_live_shadow_gate import STAGE_INPUTS
+        paths = STAGE_INPUTS["league"]
+        before = {name: "a"*40 for name in paths}
+        same = invalidation.compare_stage_roots("league", before, dict(before))
+        self.assertTrue(same["dependencyTreesUnchanged"])
+        self.assertFalse(same["raceFree"])
+        self.assertFalse(same["safeToSkip"])
+        after = {**before, "data-derived": "b"*40,
+                 "public/data": "c"*40}
+        changed = invalidation.compare_stage_roots("league", before, after)
+        self.assertEqual(["data-derived", "public/data"],
+                         changed["changedDependencyRoots"])
+        self.assertIn("cross-writer-input-revision-changed", changed["reasonCodes"])
+        self.assertFalse(changed["dependencyTreesUnchanged"])
+        self.assertFalse(changed["safeToSkip"])
+
+    def test_missing_unknown_or_malformed_tree_fingerprint_fails_closed(self):
+        from league_live_shadow_gate import STAGE_INPUTS
+        paths = STAGE_INPUTS["standings"]
+        before = {name: "a"*40 for name in paths}
+        for bad in (dict(before, **{"data-source": "fake"}),
+                    {k: v for k, v in before.items() if k != "data-source"},
+                    dict(before, **{"untracked": "b"*40})):
+            with self.subTest(bad=bad):
+                result = invalidation.compare_stage_roots("standings", before, bad)
+                self.assertFalse(result["dependencyTreesUnchanged"])
+                self.assertIn("missing-or-invalid-revision-tree", result["reasonCodes"])
+        with self.assertRaises(ValueError):
+            invalidation.compare_stage_roots("unknown", before, before)
+
+    def test_offline_runner_with_invalid_revision_fails_without_writes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            result = invalidation.audit_repo_window(
+                Path(tmp), LEAGUE, SEASON, "league", "wrong-sha",
+                at("2030-09-08T15:00:00Z"), at("2030-09-08T15:10:00Z"))
+            self.assertEqual("blocked", result["status"])
+            self.assertFalse(result["safeToSkip"])
+            self.assertFalse(result["dependencyTreesUnchanged"])
 
 
 if __name__ == "__main__":
