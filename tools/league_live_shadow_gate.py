@@ -34,7 +34,12 @@ STAGE_OUTPUTS = {
     "league": ("public/data/League.json", "public/data/DecisionWindows.json",
                "public/data/Matchups.json", "public/data/FantasyGameContext.json",
                "public/data/PlayerWeekFantasy.json", "public/data/WeeklyRecaps.json",
-               "public/data/Timestamps.json"),
+               "public/data/Timestamps.json",
+               # Existence is only a weak readiness signal: exact configured
+               # future-season partitions and owner parity require separate
+               # canonical evidence before any real early exit.
+               "public/data/Drafts.json", "public/data/Transactions.json",
+               "data-derived/league-drafts", "data-derived/league-transactions"),
 }
 
 
