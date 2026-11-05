@@ -83,7 +83,7 @@ const MOBILE_ROSTER_MIN_WIDTH_PX: Readonly<Record<string, number>> = {
   ppg: 44,
   ranking: 58,
   depth: 66,
-  age: 40,
+  age: 44,
   salary: 72,
   salaryProjected: 80,
   dynamicStat: 122
