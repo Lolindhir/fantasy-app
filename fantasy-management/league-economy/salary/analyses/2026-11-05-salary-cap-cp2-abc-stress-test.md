@@ -79,6 +79,8 @@ Den tatsächlichen **05.11.-Current-Cap-Readmodel-Wert** behandelt [CP1, Abschni
 
 Im 2026er Free-Agent-Draft wurden **30** Spieler erfolgreich ausgewählt. Im archivierten Post-Draft-Kader vom 09.09. gehören davon **17** zu den 20 teuersten Spielern ihrer jeweiligen Teams, sowohl mit A- als auch mit C-Bepreisung. Das belegt, dass Draftzugänge in einer permanenten Cap-Regel nicht schlicht als kostenloses Sonderfenster gelten dürfen.
 
+**Direkte Rookie-Grenze der A/B/C-Reihe:** Für **30 von 30 gedrafteten 2026er Rookies** liefert die eingefrorene Preisquelle in **beiden** isolierten Preisvarianten (heutiges Performance-Salary A/B und Criticality ohne Rookie Contracts C/D) ein **Salary von 0 $**. Dies ist ein bestätigter Datensatzbefund, kein neuer Rookie-Salary-Vorschlag. Er macht die A/B/C-Reihe zu einem starken Test für Veteranen-Knappheit und Cap-Vollzug, aber **nicht** zu einem ausreichenden Test für mehrjährige Rookie-Vertragsüberschüsse. Genau dafür existiert der separate, noch nicht produktive dreijährige Rookie-Contract-Konzeptbaustein. Ein beobachteter Nullpreis darf weder mit einem bereits geltenden Y1-Draftvertrag noch mit der ökonomischen Bedeutung eines Taxi-/Rosterplatzes verwechselt werden.
+
 Vom archivierten Vor-FA-Kader vom 25.08. bis zum 09.09. verändern sich die Team-Roster außerdem durch andere Aktivitäten. Die Differenz ist deshalb ein **beobachteter Zeitraum**, nicht die isolierte marginale Wirkung jedes einzelnen Draft-Picks. Die genaue atomare Validierung von Draft-Picks versus nachfolgenden Drops bleibt Teil der späteren fachlichen Cap-Vollzugsspezifikation (Issue #1344, G4).
 
 ## 6. Transaktions-Replay nach dem Post-Draft-Freeze
