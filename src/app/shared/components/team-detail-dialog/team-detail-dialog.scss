@@ -149,10 +149,23 @@
   .roster-table-scroll .team-roster-compact .mat-column-rank {
     width: 22px; min-width: 22px; max-width: 22px;
   }
+  /* Keep the identity opaque during horizontal scrolling, but match the
+     Material table surface instead of creating a bright white block. */
+  .roster-table-scroll .team-roster-compact .mat-column-rank,
   .roster-table-scroll .team-roster-compact .mat-column-name {
-    width: clamp(108px, 29vw, 120px);
-    min-width: clamp(108px, 29vw, 120px);
-    max-width: clamp(108px, 29vw, 120px);
+    background: var(--mat-table-background-color, #fef8fc);
+  }
+  .roster-table-scroll .team-roster-compact .mat-column-name {
+    width: clamp(98px, calc(29vw - 10px), 110px);
+    min-width: clamp(98px, calc(29vw - 10px), 110px);
+    max-width: clamp(98px, calc(29vw - 10px), 110px);
+    box-shadow: 1px 0 2px rgba(15, 23, 42, .05);
+  }
+  /* First scrollable metric starts with some breathing room regardless of
+     which metric is selected; other metric columns retain their density. */
+  .roster-table-scroll .team-roster-compact th.mat-column-name + th,
+  .roster-table-scroll .team-roster-compact td.mat-column-name + td {
+    padding-left: 8px !important;
   }
   .roster-table-scroll .team-roster-compact .mat-column-ppg {
     width: 44px; min-width: 44px; max-width: 44px;
