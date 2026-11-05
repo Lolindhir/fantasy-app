@@ -1043,7 +1043,7 @@ class G5LeagueLiveRecoveryObservationTests(unittest.TestCase):
                 def get(self, key, default=None):
                     if key == "object":
                         self.reads += 1
-                        return ({"sha": "f"*40} if self.reads > 1
+                        return ({"sha": "f"*40} if self.reads > 2
                                 else super().get(key, default))
                     return super().get(key, default)
             return run, jobs, MovingRef(ref), cmp, log
