@@ -340,14 +340,27 @@ def evaluate_last_league_live_run(
         if not (isinstance(main_sha, str) and len(main_sha) == 40
                 and all(c in "0123456789abcdef" for c in main_sha)):
             errors.add("main-head-invalid")
-    if not isinstance(comparison, dict) or (
-        comparison.get("status") not in {"identical", "ahead"}
-        or comparison.get("behind_by") != 0
-        or not isinstance(comparison.get("base_commit"), dict)
-        or comparison["base_commit"].get("sha") != head
-        or not isinstance(comparison.get("merge_base_commit"), dict)
-        or comparison["merge_base_commit"].get("sha") != head
-    ):
+    compare_sound = (
+        isinstance(comparison, dict)
+        and comparison.get("status") in {"identical", "ahead"}
+        and comparison.get("behind_by") == 0
+        and isinstance(comparison.get("base_commit"), dict)
+        and comparison["base_commit"].get("sha") == head
+        and isinstance(comparison.get("merge_base_commit"), dict)
+        and comparison["merge_base_commit"].get("sha") == head
+    )
+    if compare_sound and comparison["status"] == "identical":
+        compare_sound = (main_sha == head and comparison.get("ahead_by") == 0)
+    elif compare_sound and comparison["status"] == "ahead":
+        commits = comparison.get("commits")
+        compare_sound = (
+            type(comparison.get("ahead_by")) is int
+            and comparison["ahead_by"] > 0
+            and isinstance(commits, list) and bool(commits)
+            and isinstance(commits[-1], dict)
+            and commits[-1].get("sha") == main_sha
+        )
+    if not compare_sound:
         errors.add("main-not-proven-descendant-of-run-start")
     # The comparison response is separately fetched from the live main ref,
     # not a cached assumption about the target branch.
