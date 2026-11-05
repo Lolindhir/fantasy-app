@@ -62,6 +62,7 @@ import {
   type FantasyGameContextDialogData
 } from '../fantasy-game-context-dialog/fantasy-game-context-dialog';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
+import { ChampionBadgeComponent } from '../champion-badge/champion-badge';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 import { findNflTeam } from '../../utils/nfl-team-key.util';
 
@@ -109,7 +110,8 @@ interface FantasyContextState {
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
-    TeamIdentityComponent
+    TeamIdentityComponent,
+    ChampionBadgeComponent
   ],
   templateUrl: './league-matchups.html',
   styleUrls: [
