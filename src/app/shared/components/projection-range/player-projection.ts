@@ -12,4 +12,8 @@ import type { PlayerProjectionView } from '../../utils/projection-range.util';
 })
 export class PlayerProjectionComponent {
   @Input({ required: true }) view!: PlayerProjectionView;
+  /** Larger type for detail surfaces; the matchup dialog keeps the compact size. */
+  @Input() size: 'compact' | 'large' = 'compact';
+  /** Hide the "Proj. x" label when the value is already shown by the host surface. */
+  @Input() showValue = true;
 }

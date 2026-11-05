@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { BehaviorSubject, combineLatest, forkJoin, of } from 'rxjs';
 import { catchError, map, shareReplay, switchMap, tap } from 'rxjs/operators';
 
@@ -47,11 +48,17 @@ interface MovesSelectionContext {
 })
 export class LeagueActivityComponent {
   private readonly dataService = inject(DataService);
+  private readonly route = inject(ActivatedRoute);
   private readonly selectedFilter$ = new BehaviorSubject<MovesFilter>('all');
-  private readonly selectedSeason$ = new BehaviorSubject<string | null>(null);
+  private readonly selectedSeason$ = new BehaviorSubject<string | null>(
+    this.route.snapshot.queryParamMap.get('season')
+  );
 
   loadFailed = false;
   selectedFilter: MovesFilter = 'all';
+  /** Set by links such as the Player Journey (?season=2025&tx=<TransactionID>); highlighted once. */
+  linkedTransactionID: string | null = this.route.snapshot.queryParamMap.get('tx');
+  private pendingScroll = this.linkedTransactionID;
 
   readonly moveCategory = getMoveCategory;
 
@@ -137,8 +144,24 @@ export class LeagueActivityComponent {
       Drafts: drafts,
       Teams: leagueData.teams
     })),
+    tap(() => this.scrollToLinkedTransaction()),
     shareReplay({ bufferSize: 1, refCount: true })
   );
+
+  isLinkedTransaction(transactionID: string): boolean {
+    return this.linkedTransactionID === transactionID;
+  }
+
+  private scrollToLinkedTransaction(): void {
+    const id = this.pendingScroll;
+    if (!id) return;
+    setTimeout(() => {
+      const element = document.getElementById('move-' + id);
+      if (!element) return;
+      this.pendingScroll = null;
+      element.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 0);
+  }
 
   setFilter(filter: MovesFilter): void {
     if (this.selectedFilter === filter) {

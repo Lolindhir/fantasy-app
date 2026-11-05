@@ -1,17 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, Inject, OnInit, ViewEncapsulation } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { Component, Inject, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
-import { MatTabsModule } from '@angular/material/tabs';
+import { MatTabsModule, type MatTabChangeEvent } from '@angular/material/tabs';
 import { Chart, Filler, BarController, BarElement, LineController, LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Legend } from 'chart.js';
 import type { ChartConfiguration, ChartOptions } from 'chart.js';
 
 import type { Player, PointHistorySeason, PlayerStats } from '../../../core/models/fantasy.models';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
+import { DataService } from '../../../core/services/data.service';
 import { formatPlayerPositionDepth } from '../../utils/player-sort.util';
+import { buildPlayerJourney, type PlayerJourney, type PlayerJourneyEvent } from '../../utils/player-journey.util';
+import type { PlayerWeekProjectionView } from '../../utils/player-week-projection.util';
+import { PlayerProjectionComponent } from '../projection-range/player-projection';
 
 // Registrierung
 Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, CategoryScale, BarController, BarElement, Title, Tooltip, Legend);
@@ -28,7 +33,8 @@ Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, C
     MatButtonModule,
     MatChipsModule,
     MatIconModule,
-    PositionStylePipe
+    PositionStylePipe,
+    PlayerProjectionComponent
   ],
   templateUrl: './player-detail-dialog.html',
   styleUrls: ['./player-detail-dialog.scss']
@@ -49,6 +55,15 @@ export class PlayerDetailDialogComponent implements OnInit {
     }
   };
 
+  private readonly dataService = inject(DataService);
+  private readonly dialog = inject(MatDialog);
+  private readonly router = inject(Router);
+
+  /** Published projection of the current App week; null while loading or when the player has no record. */
+  weekProjection: PlayerWeekProjectionView | null = null;
+  journey: PlayerJourney | null = null;
+  journeyState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
+
   constructor(
     @Inject(MAT_DIALOG_DATA) public player: Player,
     private dialogRef: MatDialogRef<PlayerDetailDialogComponent>
@@ -56,6 +71,53 @@ export class PlayerDetailDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.prepareChart();
+    this.dataService.getPlayerWeekProjections().subscribe(projections => {
+      this.weekProjection = projections.get(String(this.player.ID)) ?? null;
+    });
+  }
+
+  onTabChange(event: MatTabChangeEvent): void {
+    if (event.tab.textLabel === 'Journey') this.loadJourney();
+  }
+
+  private loadJourney(): void {
+    if (this.journeyState !== 'idle') return;
+    this.journeyState = 'loading';
+    this.dataService.getPlayerJourneySources().subscribe({
+      next: ({ transactions, drafts, teams }) => {
+        this.journey = buildPlayerJourney(this.player.ID, transactions, drafts, teams);
+        this.journeyState = 'ready';
+      },
+      error: () => {
+        this.journeyState = 'error';
+      }
+    });
+  }
+
+  journeyIcon(event: PlayerJourneyEvent): string {
+    switch (event.kind) {
+      case 'drafted': return 'emoji_events';
+      case 'traded': return 'swap_horiz';
+      case 'added': return 'person_add';
+      case 'dropped': return 'person_remove';
+    }
+  }
+
+  journeyTitle(event: PlayerJourneyEvent): string {
+    switch (event.kind) {
+      case 'drafted': return 'Drafted';
+      case 'traded': return 'Traded';
+      case 'added': return 'Added';
+      case 'dropped': return 'Dropped';
+    }
+  }
+
+  openMove(event: PlayerJourneyEvent): void {
+    if (!event.transactionID) return;
+    void this.router.navigate(['/moves'], {
+      queryParams: { season: event.season, tx: event.transactionID }
+    });
+    this.dialog.closeAll();
   }
 
   close(): void {

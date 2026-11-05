@@ -8,6 +8,7 @@ import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { formatPlayerFantasyPointsPerGame, getPlayerDepthChartLabel } from '../../utils/player-sort.util';
 import { formatCompactRosterSalary, mobileRosterColumnTrackWidth, mobileRosterFlexibleMetricCount, mobileRosterMinimumTableWidth } from '../../utils/roster-columns.util';
 import { getCombinedRanking, getPreviousCombinedRanking } from '../../utils/team-roster-view.util';
+import { weekProjectionText, type PlayerWeekProjectionView } from '../../utils/player-week-projection.util';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
 export type PlayerListColumn =
@@ -18,6 +19,7 @@ export type PlayerListColumn =
   | 'team'
   | 'depth'
   | 'ppg'
+  | 'weekProjection'
   | 'ranking'
   | 'age'
   | 'salary'
@@ -70,6 +72,8 @@ export class PlayerListComponent {
   @Input() showDepth = false;
   @Input() stickyIdentity = false;
   @Input() compactRosterSalary = false;
+  /** Published projection of the current week per Sleeper player ID, for the "weekProjection" column. */
+  @Input() weekProjections: ReadonlyMap<string, PlayerWeekProjectionView> | null = null;
 
   // Optional für TeamList-Exclude-Use-Case
   @Input() isExcludedFn?: (teamId: string, playerId: string) => boolean;
@@ -158,6 +162,20 @@ export class PlayerListComponent {
 
   getPpgLabel(player: Player): string {
     return formatPlayerFantasyPointsPerGame(player);
+  }
+
+  getWeekProjectionLabel(player: Player): string {
+    return weekProjectionText(this.weekProjections, player.ID);
+  }
+
+  getWeekProjectionRange(player: Player): string | null {
+    return this.weekProjections?.get(String(player.ID))?.rangeText ?? null;
+  }
+
+  getWeekProjectionTitle(player: Player): string | null {
+    const view = this.weekProjections?.get(String(player.ID));
+    if (!view?.rangeText) return null;
+    return `Week ${view.week} projection, ${view.levelLabel} range ${view.rangeText}`;
   }
 
   getRankingLabel(player: Player): string {

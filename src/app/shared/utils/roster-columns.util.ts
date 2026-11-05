@@ -1,12 +1,13 @@
-export type RosterMetric = 'ppg' | 'ranking' | 'depth' | 'age' | 'salary' | 'salaryProjected';
+export type RosterMetric = 'ppg' | 'weekProjection' | 'ranking' | 'depth' | 'age' | 'salary' | 'salaryProjected';
 export type RosterLayout = 'desktop' | 'mobile';
 export type RosterPreset = 'all' | 'performance' | 'financial' | 'custom';
 
 export const METRICS: readonly RosterMetric[] = [
-  'ppg', 'ranking', 'depth', 'age', 'salary', 'salaryProjected'
+  'ppg', 'weekProjection', 'ranking', 'depth', 'age', 'salary', 'salaryProjected'
 ];
 export const METRIC_LABELS: Readonly<Record<RosterMetric, string>> = {
   ppg: 'Points per Game',
+  weekProjection: 'Projection (this week)',
   ranking: 'Combined Ranking',
   depth: 'Depth Chart',
   age: 'Age',
@@ -81,6 +82,7 @@ const MOBILE_ROSTER_MIN_WIDTH_PX: Readonly<Record<string, number>> = {
   rank: 22,
   name: 110,
   ppg: 44,
+  weekProjection: 58,
   ranking: 58,
   depth: 66,
   age: 44,

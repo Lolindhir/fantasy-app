@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { forkJoin, Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
 
 import { mapRawLeagueData } from '../mappers/league.mapper';
 import { mapRawPlayerToPlayer } from '../mappers/player.mapper';
@@ -27,6 +27,7 @@ import type {
 import type { RawTransaction, Transaction } from '../models/transaction.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import { mergeCompletedRawTransactions } from '../utils/transaction-history.util';
+import { buildPlayerWeekProjections, type PlayerWeekProjectionView } from '../../shared/utils/player-week-projection.util';
 import { sortPlayers } from '../../shared/utils/player-sort.util';
 import {
   calculateTopPlayersSalary,
@@ -45,6 +46,12 @@ export interface LeagueWithPlayers {
   players: Player[];
   teams: FantasyTeam[];
   drafts: RawDraft[];
+}
+
+export interface PlayerJourneySources {
+  transactions: Transaction[];
+  drafts: RawDraft[];
+  teams: FantasyTeam[];
 }
 
 export interface LeagueWithPlayersAndTransactions extends LeagueWithPlayers {
@@ -136,6 +143,8 @@ export class DataService {
 
   private dataApiService = inject(DataApiService);
   private freeAgentMarketService = inject(FreeAgentMarketService);
+  private playerWeekProjections$?: Observable<ReadonlyMap<string, PlayerWeekProjectionView>>;
+  private playerJourneySources$?: Observable<PlayerJourneySources>;
 
   getLeagueTimestamp(): Observable<string | undefined> {
     return this.dataApiService.getTimestamps().pipe(map(ts => ts.League));
@@ -212,6 +221,59 @@ export class DataService {
 
   getPlayerWeekFantasy(): Observable<PlayerWeekFantasyReadModel> {
     return this.dataApiService.getPlayerWeekFantasyRaw();
+  }
+
+  /**
+   * Published projection of the current App week per Sleeper player ID (pure join, nothing is
+   * calculated). When the file cannot be read the map is empty and lists show "–".
+   */
+  getPlayerWeekProjections(): Observable<ReadonlyMap<string, PlayerWeekProjectionView>> {
+    this.playerWeekProjections$ ??= this.getPlayerWeekFantasy().pipe(
+      map(model => buildPlayerWeekProjections(model)),
+      catchError(() => of(buildPlayerWeekProjections(null))),
+      shareReplay({ bufferSize: 1, refCount: false })
+    );
+    return this.playerWeekProjections$;
+  }
+
+  /**
+   * All completed transactions and drafts of the league history (current season plus every past
+   * season the index lists), for chaining one player's journey. Missing past files are skipped.
+   */
+  getPlayerJourneySources(): Observable<PlayerJourneySources> {
+    this.playerJourneySources$ ??= this.getLeagueWithPlayers().pipe(
+      switchMap(({ league, drafts, teams }) =>
+        this.getPastSeasonsIndex().pipe(
+          catchError(() => of({ GeneratedAt: null, Seasons: [] } as PastSeasonsIndex)),
+          switchMap(index => {
+            const seasons = (index.Seasons ?? []).filter(entry => Number(entry.Season) < Number(league.Season));
+            const transactionPaths = seasons
+              .map(entry => entry.Resources?.Transactions)
+              .flatMap(resource => resource?.Exists === true && resource.Path ? [resource.Path] : []);
+            const draftPaths = seasons
+              .map(entry => entry.Resources?.Drafts)
+              .flatMap(resource => resource?.Exists === true && resource.Path ? [resource.Path] : []);
+            const pastDrafts$ = draftPaths.length
+              ? forkJoin(draftPaths.map(path =>
+                this.getPastDraftsRaw(path).pipe(catchError(() => of([] as RawDraft[]))))
+              )
+              : of([] as RawDraft[][]);
+            return forkJoin({
+              transactions: this.getTransactionsForSources(true, transactionPaths),
+              pastDrafts: pastDrafts$
+            }).pipe(
+              map(({ transactions, pastDrafts }) => ({
+                transactions,
+                drafts: [...drafts, ...pastDrafts.flat()],
+                teams
+              }))
+            );
+          })
+        )
+      ),
+      shareReplay({ bufferSize: 1, refCount: false })
+    );
+    return this.playerJourneySources$;
   }
 
   getMatchupProjections(): Observable<MatchupProjectionsReadModel> {
