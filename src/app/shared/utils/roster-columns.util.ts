@@ -70,3 +70,40 @@ export function formatCompactRosterSalary(amount: number, withPositiveSign = fal
   const sign = amount < 0 ? '-' : withPositiveSign ? '+' : '';
   return `${sign}$${(Math.abs(amount) / 1_000_000).toFixed(1)}M`;
 }
+
+
+/**
+ * Minimum pixel budgets for the compact Team Detail Roster. These dimensions
+ * are the single source for the mobile <colgroup>; spare width is assigned to
+ * data columns only, never to the sticky number / player identity.
+ */
+const MOBILE_ROSTER_MIN_WIDTH_PX: Readonly<Record<string, number>> = {
+  rank: 22,
+  name: 110,
+  ppg: 44,
+  ranking: 58,
+  depth: 66,
+  age: 40,
+  salary: 72,
+  salaryProjected: 80,
+  dynamicStat: 122
+};
+
+export function mobileRosterColumnMinWidth(column: string): number {
+  return MOBILE_ROSTER_MIN_WIDTH_PX[column] ?? 80;
+}
+
+export function mobileRosterMinimumTableWidth(columns: readonly string[]): number {
+  return columns.reduce((total, column) => total + mobileRosterColumnMinWidth(column), 0);
+}
+
+export function mobileRosterFlexibleMetricCount(columns: readonly string[]): number {
+  return Math.max(1, columns.filter(column => column !== 'rank' && column !== 'name').length);
+}
+
+export function mobileRosterColumnTrackWidth(column: string): string {
+  const minimum = mobileRosterColumnMinWidth(column);
+  return column === 'rank' || column === 'name'
+    ? `${minimum}px`
+    : `calc(${minimum}px + var(--roster-flex-extra))`;
+}
