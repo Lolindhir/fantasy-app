@@ -1,0 +1,62 @@
+<section class="section-card trophy-room" aria-label="Trophy Room">
+  <span class="eyebrow">Trophy Room</span>
+
+  @if (isEmpty) {
+    <p class="empty-state">No titles or podium finishes yet.</p>
+  } @else {
+    @if (room.rings.length) {
+      <h4 class="trophy-room__heading">Championship rings</h4>
+      <div class="trophy-room__rings">
+        @for (ring of room.rings; track ring.season) {
+          <button type="button" class="trophy-ring" [attr.aria-label]="ring.season + ' championship ring, open large view'" (click)="openRing(ring)">
+            <img [src]="ringSrc(ring)" alt="" (error)="onRingError(ring)" />
+            <strong>{{ ring.season }}</strong>
+          </button>
+        }
+      </div>
+    }
+
+    @if (room.banners.length) {
+      <h4 class="trophy-room__heading">Banners</h4>
+      <div class="trophy-room__banners">
+        @for (banner of room.banners; track banner.season) {
+          <app-achievement-banner
+            [season]="banner.season"
+            [achievementLabel]="banner.label"
+            [accent]="banner.accent"
+            [subjectName]="banner.teamName || banner.owner"
+            [subjectAvatar]="banner.teamAvatar"
+            [secondaryAvatar]="banner.ownerAvatar"
+            [emblemSrc]="banner.emblemSrc"
+            [achievementBadgeSrc]="banner.isRegularSeasonChampion ? 'assets/awards/ui/award-regular-season.png' : null"
+          ></app-achievement-banner>
+        }
+      </div>
+    }
+
+    @if (room.plaques.length) {
+      <h4 class="trophy-room__heading">Regular Season titles</h4>
+      <div class="trophy-room__plaques">
+        @for (plaque of room.plaques; track plaque.season) {
+          <app-achievement-plaque
+            [season]="plaque.season"
+            [subjectName]="plaque.teamName || plaque.owner"
+            [subjectAvatar]="plaque.teamAvatar"
+            [secondaryAvatar]="plaque.ownerAvatar"
+          ></app-achievement-plaque>
+        }
+      </div>
+    }
+  }
+</section>
+
+<ng-template #ringDetail>
+  @if (selectedRing; as ring) {
+    <div class="trophy-ring-detail">
+      <img [src]="ringSrc(ring)" [alt]="ring.season + ' championship ring'" (error)="onRingError(ring)" />
+      <h3>{{ ring.season }} League Champion</h3>
+      <p>{{ ring.teamName || 'Champion' }}</p>
+      <button type="button" class="trophy-ring-detail__close" (click)="closeRing()">Close</button>
+    </div>
+  }
+</ng-template>

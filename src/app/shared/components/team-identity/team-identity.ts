@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, inject } from '@angular/core';
 
 import type { FantasyTeam } from '../../../core/models/league.models';
+import { ChampionBadgeComponent } from '../champion-badge/champion-badge';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 
 export type TeamIdentityElement = 'logo' | 'abbr' | 'name' | 'owner';
@@ -11,7 +12,7 @@ export type TeamIdentityAlign = 'start' | 'end';
 @Component({
   selector: 'app-team-identity',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ChampionBadgeComponent],
   templateUrl: './team-identity.html',
   styleUrl: './team-identity.scss'
 })
@@ -21,11 +22,17 @@ export class TeamIdentityComponent {
   @Input() size: TeamIdentitySize = 'medium';
   @Input() align: TeamIdentityAlign = 'start';
   @Input() interactive = true;
+  /** Opt-in per surface (#662): shows the defending-champion trophy badge on the logo. */
+  @Input() championBadge = false;
 
   private teamDetailDialog = inject(TeamDetailDialogService);
 
   hasElement(element: TeamIdentityElement): boolean {
     return this.elements.includes(element);
+  }
+
+  get showChampionBadge(): boolean {
+    return this.championBadge && this.hasElement('logo') && this.team.IsDefendingChampion === true;
   }
 
   get hasText(): boolean {
@@ -57,7 +64,7 @@ export class TeamIdentityComponent {
   }
 
   get ariaLabel(): string {
-    return `Open ${this.displayName} team details`;
+    return `Open ${this.displayName} team details${this.showChampionBadge ? ' (defending champion)' : ''}`;
   }
 
   openTeam(): void {

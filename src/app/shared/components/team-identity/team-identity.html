@@ -1,9 +1,16 @@
 <ng-template #identityContent>
-  <span *ngIf="hasElement('logo')" class="team-identity__avatar" aria-hidden="true">
-    <img *ngIf="team.Avatar; else avatarFallbackTemplate" [src]="team.Avatar" alt="" />
-    <ng-template #avatarFallbackTemplate>
-      <span>{{ avatarFallback }}</span>
-    </ng-template>
+  <span *ngIf="hasElement('logo')" class="team-identity__logo">
+    <span class="team-identity__avatar" aria-hidden="true">
+      <img *ngIf="team.Avatar; else avatarFallbackTemplate" [src]="team.Avatar" alt="" />
+      <ng-template #avatarFallbackTemplate>
+        <span>{{ avatarFallback }}</span>
+      </ng-template>
+    </span>
+    <app-champion-badge
+      *ngIf="showChampionBadge"
+      class="team-identity__champion-badge"
+      title="Defending Champion"
+    ></app-champion-badge>
   </span>
 
   <span *ngIf="hasText" class="team-identity__copy" [title]="displayName">

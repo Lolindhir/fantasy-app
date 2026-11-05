@@ -1,0 +1,61 @@
+:host { display: block; }
+
+.trophy-room__heading {
+  margin: 14px 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.trophy-room__rings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.trophy-ring {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 84px;
+  padding: 10px 6px 8px;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 11px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.trophy-ring:hover { border-color: #d4a017; }
+.trophy-ring:focus-visible { outline: 2px solid var(--mat-sys-primary, #3f51b5); outline-offset: 2px; }
+.trophy-ring img { width: 56px; height: 56px; object-fit: contain; }
+.trophy-ring strong { font-size: 13px; font-variant-numeric: tabular-nums; }
+
+.trophy-room__banners {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 118px));
+  gap: 8px;
+  align-items: start;
+}
+
+.trophy-room__plaques {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 270px));
+  gap: 10px;
+}
+
+.trophy-ring-detail {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 22px 26px;
+  text-align: center;
+}
+
+.trophy-ring-detail img { width: min(280px, 72vw); height: auto; object-fit: contain; }
+.trophy-ring-detail h3 { margin: 6px 0 0; }
+.trophy-ring-detail p { margin: 0; color: #6b7280; }
+.trophy-ring-detail__close { margin-top: 8px; padding: 6px 16px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font: inherit; cursor: pointer; }

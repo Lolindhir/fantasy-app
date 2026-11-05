@@ -41,6 +41,23 @@
   text-align: right;
 }
 
+.team-identity__logo {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.team-identity__champion-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  /* Scales with the avatar; never smaller than a legible 13px. */
+  --champion-badge-size: max(13px, calc(var(--team-identity-avatar-size, 28px) * 0.45));
+  width: var(--champion-badge-size);
+  height: var(--champion-badge-size);
+  pointer-events: none;
+}
+
 .team-identity__avatar {
   display: grid;
   place-items: center;
@@ -145,4 +162,14 @@
 .team-identity--large .team-identity__owner {
   margin-top: 3px;
   font-size: var(--team-identity-owner-font-size, 0.8rem);
+}
+
+.team-identity--medium .team-identity__champion-badge {
+  --champion-badge-size: max(13px, calc(var(--team-identity-avatar-size, 36px) * 0.42));
+}
+
+.team-identity--large .team-identity__champion-badge {
+  --champion-badge-size: max(15px, calc(var(--team-identity-avatar-size, 48px) * 0.38));
+  right: -5px;
+  bottom: -5px;
 }
