@@ -12,14 +12,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.parse import urlencode, urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
 PER_PAGE = 100
 MAX_SEARCH_RESULTS = 1000
@@ -425,6 +426,226 @@ def audit_latest_league_live_run(
     )
 
 
+
+# G5: one authenticated writer-log + immutable commit receipt, offline only.
+# This never proves whole-pipeline freshness or authorizes a skipped job.
+PUB_SCOPES = {"standings": "standings", "league": "league"}
+PUB_LOG_LIMIT = 12_000_000
+PUB_LINE = re.compile(
+    r"^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d+)?Z)\s+"
+    r"([0-9a-f]{7,40})\.\.([0-9a-f]{7,40})\s+HEAD -> main\s*$"
+)
+
+
+class NoCredentialRedirect(HTTPRedirectHandler):
+    """Do not forward the GitHub API credential to signed log storage."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if urlsplit(newurl).scheme != "https":
+            raise AuditError("Refusing insecure GitHub job log redirect")
+        return Request(newurl, headers={
+            "Accept": "text/plain", "User-Agent": "fantasy-app-g5-receipt",
+        }, method="GET")
+
+
+def fetch_job_log(repo: str, token: str, job_id: int) -> str:
+    """Read job log from GitHub API, including credential-stripped redirect."""
+    if type(job_id) is not int or job_id <= 0:
+        raise AuditError("Invalid job identity")
+    req = Request(
+        f"https://api.github.com/repos/{repo}/actions/jobs/{job_id}/logs",
+        headers={"Accept": "application/vnd.github+json",
+                 "Authorization": f"Bearer {token}",
+                 "User-Agent": "fantasy-app-g5-receipt",
+                 "X-GitHub-Api-Version": "2022-11-28"},
+    )
+    try:
+        with build_opener(NoCredentialRedirect).open(req, timeout=40) as response:
+            data = response.read(PUB_LOG_LIMIT + 1)
+    except (HTTPError, URLError, TimeoutError) as error:
+        raise AuditError(f"Job log unavailable: {type(error).__name__}") from error
+    if len(data) > PUB_LOG_LIMIT:
+        raise AuditError("Job log exceeded audit size limit")
+    try:
+        return data.decode("utf-8-sig")
+    except UnicodeDecodeError as error:
+        raise AuditError("Job log was not UTF-8 text") from error
+
+
+def parse_publication_push(log: str, repo: str) -> dict[str, Any]:
+    """Accept one actual git push + adjacent publisher success, not echoed script."""
+    if not isinstance(log, str) or not log:
+        return {"state": "blocked", "reasonCodes": ["missing-job-log"]}
+    lines = log.splitlines()
+    candidates = []
+    for i, line in enumerate(lines):
+        found = PUB_LINE.fullmatch(line.strip())
+        if not found:
+            continue
+        nearby = lines[max(0, i-3):i]
+        after = lines[i+1:i+4]
+        remote = "To https://github.com/" + repo
+        if any(x.strip().endswith(remote) for x in nearby) and any(
+            "Rebuilt generated-data publish succeeded on attempt " in x and
+            "\u001b[" not in x for x in after
+        ):
+            candidates.append(found.groups())
+    if len(candidates) != 1:
+        if not candidates and (
+            "Generator produced no repository changes. Nothing to publish." in log
+            or "No staged generated-data changes detected. Nothing to publish." in log
+        ):
+            return {"state": "no-op-observed",
+                    "reasonCodes": ["no-published-commit-in-job"]}
+        return {"state": "blocked",
+                "reasonCodes": ["ambiguous-or-missing-confirmed-push"]}
+    at, old, new = candidates[0]
+    return {"state": "push-observed", "atUtc": at,
+            "previousPrefix": old, "publishedPrefix": new,
+            "reasonCodes": []}
+
+
+def verify_publication_commit(
+    run: dict[str, Any], job: dict[str, Any], observed: dict[str, Any],
+    commit: dict[str, Any], comparison: dict[str, Any], main_sha: str,
+    *, scope: str,
+) -> dict[str, Any]:
+    """Verify the *single job's* commit receipt, not data freshness or skip."""
+    reasons: set[str] = set(observed.get("reasonCodes") or [])
+    published = commit.get("sha") if isinstance(commit, dict) else None
+    parents = commit.get("parents") if isinstance(commit, dict) else None
+    details = commit.get("commit") if isinstance(commit, dict) else None
+    if observed.get("state") != "push-observed":
+        reasons.add("no-confirmed-push")
+    if not isinstance(published, str) or len(published) != 40 or not published.startswith(
+        str(observed.get("publishedPrefix"))
+    ):
+        reasons.add("commit-sha-mismatch")
+    if not isinstance(parents, list) or len(parents) != 1 or not isinstance(
+        parents[0], dict
+    ) or not str(parents[0].get("sha", "")).startswith(str(observed.get("previousPrefix"))):
+        reasons.add("commit-parent-mismatch")
+    if not isinstance(details, dict):
+        reasons.add("missing-commit-metadata")
+        details = {}
+    person = details.get("author")
+    if not isinstance(person, dict) or person.get("email") != "github-actions@github.com":
+        reasons.add("commit-author-mismatch")
+    message = details.get("message")
+    if not isinstance(message, str) or not message.startswith(f"data({scope}): "):
+        reasons.add("commit-scope-mismatch")
+    files = commit.get("files") if isinstance(commit, dict) else None
+    if (not isinstance(files, list) or not files or len(files) >= 300 or
+            any(not isinstance(v, dict) or not isinstance(v.get("filename"), str)
+                for v in files)):
+        reasons.add("commit-files-unavailable-or-truncated")
+        files = []
+    allowed = (
+        "public/data/", "data-derived/player-week-fantasy/",
+        "data-derived/team-week-performance/", "data-derived/league-transactions/",
+        "data-derived/league-drafts/",
+    ) if scope == "league" else (
+        "public/data/", "data-derived/league-standings/",
+    )
+    if any(not v["filename"].startswith(allowed) for v in files):
+        reasons.add("commit-files-outside-writer-scope")
+    try:
+        committer = details.get("committer")
+        committed_at = parse_utc(committer.get("date") if isinstance(committer, dict) else None)
+        started = parse_utc(job.get("started_at"))
+        ended = parse_utc(job.get("completed_at"))
+        pushed_at = parse_utc(observed.get("atUtc"))
+        if not started <= committed_at <= pushed_at <= ended:
+            reasons.add("commit-time-outside-job")
+    except (AuditError, TypeError, ValueError):
+        reasons.add("commit-time-unverified")
+    if (scope not in PUB_SCOPES or job.get("name") != scope
+            or job.get("run_id") != run.get("id")
+            or job.get("run_attempt") != run.get("run_attempt")
+            or job.get("status") != "completed"
+            or job.get("conclusion") != "success"):
+        reasons.add("job-run-identity-mismatch")
+    ancestry = (
+        isinstance(comparison, dict)
+        and comparison.get("status") in {"ahead", "identical"}
+        and comparison.get("behind_by") == 0
+        and isinstance(comparison.get("base_commit"), dict)
+        and comparison["base_commit"].get("sha") == published
+        and isinstance(comparison.get("merge_base_commit"), dict)
+        and comparison["merge_base_commit"].get("sha") == published
+    )
+    if ancestry and comparison["status"] == "identical":
+        ancestry = published == main_sha and comparison.get("ahead_by") == 0
+    elif ancestry:
+        commits = comparison.get("commits")
+        ancestry = (type(comparison.get("ahead_by")) is int
+                    and comparison["ahead_by"] > 0
+                    and isinstance(commits, list) and bool(commits)
+                    and isinstance(commits[-1], dict)
+                    and commits[-1].get("sha") == main_sha)
+    if not ancestry:
+        reasons.add("publication-not-on-observed-main")
+    return {
+        "status": "publication-commit-correlated" if not reasons else "blocked",
+        "stage": scope, "publicationCommitSha": published,
+        "changedPaths": sorted(v["filename"] for v in files),
+        "publicationCommitVerified": not reasons,
+        "reasonCodes": sorted(reasons),
+        "outputsValidated": False, "timeAndFinalityVerified": False,
+        "raceFree": False, "recoveryClean": False,
+        "safeToSkip": False, "enforced": False,
+    }
+
+
+def audit_publication_receipt(
+    fetch: Fetcher, get_log: Callable[[int], str], repo: str,
+    run_id: int, scope: str, observed_at: datetime,
+) -> dict[str, Any]:
+    """Read-only receipt for one explicit run; older success is never a fallback."""
+    if type(run_id) is not int or run_id <= 0 or scope not in PUB_SCOPES:
+        raise AuditError("Invalid publication run/stage")
+    run = fetch(f"actions/runs/{run_id}", {})
+    jobs = fetch_jobs(fetch, run_id)
+    ref = fetch("git/ref/heads/main", {})
+    main_sha = (ref.get("object") or {}).get("sha")
+    head = run.get("head_sha")
+    if (not isinstance(main_sha, str) or len(main_sha) != 40
+            or not isinstance(head, str) or len(head) != 40):
+        raise AuditError("Missing run or main SHA")
+    run_compare = fetch(f"compare/{head}...{main_sha}", {})
+    run_proof = evaluate_last_league_live_run(
+        run, jobs, ref, run_compare, repo=repo, observed_at=observed_at,
+    )
+    if not run_proof["jobCompletionVerified"]:
+        return {"status": "blocked", "runId": run_id,
+                "reasonCodes": run_proof["reasonCodes"],
+                "jobCompletionVerified": False,
+                "publicationCommitVerified": False,
+                "safeToSkip": False, "enforced": False}
+    matched = [j for j in jobs if j.get("run_attempt") == run.get("run_attempt")
+               and j.get("name") == scope]
+    if len(matched) != 1 or type(matched[0].get("id")) is not int:
+        raise AuditError("Writer job missing or ambiguous")
+    job = matched[0]
+    extracted = parse_publication_push(get_log(job["id"]), repo)
+    if extracted["state"] != "push-observed":
+        return {"status": extracted["state"], "runId": run_id, "stage": scope,
+                "jobCompletionVerified": True,
+                "reasonCodes": extracted["reasonCodes"],
+                "publicationCommitVerified": False,
+                "safeToSkip": False, "enforced": False}
+    commit = fetch(f"commits/{extracted['publishedPrefix']}", {})
+    sha = commit.get("sha")
+    if not isinstance(sha, str) or len(sha) != 40:
+        raise AuditError("Published Git SHA could not be resolved")
+    comparison = fetch(f"compare/{sha}...{main_sha}", {})
+    evidence = verify_publication_commit(
+        run, job, extracted, commit, comparison, main_sha, scope=scope,
+    )
+    return {"mode": "offline-publication-receipt", "runId": run_id,
+            "jobId": job["id"], "jobCompletionVerified": True,
+            "observedMainSha": main_sha, **evidence}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", required=True, help="GitHub OWNER/REPO")
@@ -432,17 +653,26 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--end", help="UTC date exclusive, YYYY-MM-DD for cost census")
     parser.add_argument("--audit-latest-league-live", action="store_true",
                         help="read-only latest-run provenance proof; never enables a skip")
+    parser.add_argument("--audit-publication-run-id", type=int,
+                        help="read-only publication commit receipt for one League Live run")
+    parser.add_argument("--publication-stage", choices=sorted(PUB_SCOPES),
+                        help="standings or league, required with the publication run ID")
     parser.add_argument("--sample-per-stratum", type=int, default=3)
     parser.add_argument("--max-job-requests", type=int, default=500)
     args = parser.parse_args(argv)
     try:
+        publication_mode = args.audit_publication_run_id is not None
+        if publication_mode and (args.audit_latest_league_live or args.start is not None or args.end is not None or not args.publication_stage):
+            raise AuditError("Publication receipt needs a stage and no other audit mode")
+        if not publication_mode and args.publication_stage is not None:
+            raise AuditError("--publication-stage requires --audit-publication-run-id")
         if args.audit_latest_league_live and (args.start is not None or args.end is not None):
             raise AuditError("Latest-run proof cannot be combined with cost-census dates")
-        if not args.audit_latest_league_live and (args.start is None or args.end is None):
+        if not args.audit_latest_league_live and not publication_mode and (args.start is None or args.end is None):
             raise AuditError("Cost census requires --start and --end")
         start, end = ((date.fromisoformat(args.start), date.fromisoformat(args.end))
-                      if not args.audit_latest_league_live else (None, None))
-        if ((not args.audit_latest_league_live and start >= end)
+                      if not (args.audit_latest_league_live or publication_mode) else (None, None))
+        if ((not (args.audit_latest_league_live or publication_mode) and start >= end)
                 or args.sample_per_stratum < 1 or args.max_job_requests < 1):
             raise AuditError("Invalid date window or sampling request")
         if len(args.repo.split("/")) != 2 or any(
@@ -454,6 +684,13 @@ def main(argv: list[str] | None = None) -> int:
         if not token:
             raise AuditError("Set GH_TOKEN or GITHUB_TOKEN (read-only Actions permission)")
         fetch = api_fetch(args.repo, token)
+        if publication_mode:
+            result = audit_publication_receipt(fetch,
+                lambda job_id: fetch_job_log(args.repo, token, job_id),
+                args.repo, args.audit_publication_run_id, args.publication_stage,
+                datetime.now(timezone.utc))
+            print(json.dumps(result, sort_keys=True, separators=(",", ":")))
+            return 0 if result["publicationCommitVerified"] else 2
         if args.audit_latest_league_live:
             result = audit_latest_league_live_run(fetch, args.repo, datetime.now(timezone.utc))
             print(json.dumps(result, sort_keys=True, separators=(",", ":")))

@@ -308,5 +308,157 @@ class G5LastLeagueLiveProvenanceTests(unittest.TestCase):
         self.assertEqual(2, audit.main(["--repo", "Lolindhir/fantasy-app"]))
 
 
+
+class G5PublicationReceiptTests(unittest.TestCase):
+    """Never turn one published commit into a whole-pipeline skip proof."""
+
+    def evidence(self):
+        run, jobs, ref, run_compare = G5LastLeagueLiveProvenanceTests().evidence()
+        scope_job = next(j for j in jobs if j["name"] == "league"
+                         and j["run_attempt"] == run["run_attempt"])
+        old = "d" * 40
+        published = "c" * 40
+        log = (
+            "2026-11-01T04:15:58.100Z To https://github.com/Lolindhir/fantasy-app\n"
+            "2026-11-01T04:15:58.200Z    ddddddd..ccccccc  HEAD -> main\n"
+            "2026-11-01T04:15:58.300Z Rebuilt generated-data publish succeeded on attempt 1.\n"
+        )
+        commit = {
+            "sha": published,
+            "parents": [{"sha": old}],
+            "commit": {
+                "message": "data(league): FantasyGameContext, Timestamps",
+                "author": {"email": "github-actions@github.com"},
+                "committer": {"date": "2026-11-01T04:15:57Z"},
+            },
+            "files": [{"filename": "public/data/FantasyGameContext.json"},
+                      {"filename": "public/data/Timestamps.json"}],
+        }
+        receipt_compare = {
+            "status": "ahead", "behind_by": 0, "ahead_by": 2,
+            "base_commit": {"sha": published},
+            "merge_base_commit": {"sha": published},
+            "commits": [{"sha": "e" * 40}, {"sha": ref["object"]["sha"]}],
+        }
+        return run, jobs, ref, run_compare, scope_job, log, commit, receipt_compare
+
+    def evaluate(self, changes=None, log=None):
+        run, jobs, ref, run_cmp, job, good_log, commit, receipt_cmp = self.evidence()
+        if changes is not None:
+            changes(run, jobs, ref, run_cmp, job, commit, receipt_cmp)
+        fetched = []
+        def fetch(resource, params):
+            fetched.append(resource)
+            if resource == f"actions/runs/{run['id']}":
+                return run
+            if resource == f"actions/runs/{run['id']}/jobs":
+                return {"total_count": len(jobs), "jobs": jobs}
+            if resource == "git/ref/heads/main":
+                return ref
+            if resource == f"compare/{run['head_sha']}...{ref['object']['sha']}":
+                return run_cmp
+            if resource == f"commits/{'c'*7}":
+                return commit
+            if resource == f"compare/{commit['sha']}...{ref['object']['sha']}":
+                return receipt_cmp
+            raise AssertionError("unexpected request: " + resource)
+        result = audit.audit_publication_receipt(
+            fetch, lambda id: log if log is not None else good_log,
+            "Lolindhir/fantasy-app", run["id"], "league",
+            datetime(2026, 11, 5, 4, 19, tzinfo=timezone.utc),
+        )
+        return result, fetched
+
+    def test_realistic_authenticated_push_binds_immutable_commit(self):
+        result, fetched = self.evaluate()
+        self.assertEqual("publication-commit-correlated", result["status"])
+        self.assertTrue(result["publicationCommitVerified"])
+        self.assertTrue(result["jobCompletionVerified"])
+        self.assertEqual("c" * 40, result["publicationCommitSha"])
+        self.assertEqual(["public/data/FantasyGameContext.json",
+                          "public/data/Timestamps.json"], result["changedPaths"])
+        self.assertIn("commits/ccccccc", fetched)
+        for name in ("outputsValidated", "timeAndFinalityVerified", "raceFree",
+                     "recoveryClean", "safeToSkip", "enforced"):
+            self.assertIs(result[name], False, name)
+
+    def test_noop_is_not_a_publication_receipt(self):
+        result, fetched = self.evaluate(log=(
+            "2026-11-01T04:15:58Z Generator produced no repository changes. Nothing to publish.\n"
+        ))
+        self.assertEqual("no-op-observed", result["status"])
+        self.assertFalse(result["publicationCommitVerified"])
+        self.assertFalse(result["safeToSkip"])
+        self.assertNotIn("commits/ccccccc", fetched)
+
+    def test_unattributed_or_ambiguous_push_fails_closed(self):
+        _, _, _, _, _, log, _, _ = self.evidence()
+        for bad in (
+            log.replace("Rebuilt generated-data publish succeeded", "Unverified push"),
+            log.replace("To https://github.com/Lolindhir/fantasy-app",
+                        "To https://github.com/another/repository"),
+            log + log,
+            "2026-11-01T04:15:58Z  ddddddd..ccccccc  HEAD -> feature\n",
+        ):
+            with self.subTest(log=bad[:70]):
+                result, _ = self.evaluate(log=bad)
+                self.assertEqual("blocked", result["status"])
+                self.assertFalse(result["publicationCommitVerified"])
+
+    def test_wrong_commit_parent_author_scope_paths_and_clock_fail_closed(self):
+        cases = (
+            lambda r, j, ref, c, job, commit, pc:
+                commit["parents"].__setitem__(0, {"sha": "f" * 40}),
+            lambda r, j, ref, c, job, commit, pc:
+                commit["commit"]["author"].__setitem__("email", "other@example.com"),
+            lambda r, j, ref, c, job, commit, pc:
+                commit["commit"].__setitem__("message", "data(players): unrelated"),
+            lambda r, j, ref, c, job, commit, pc:
+                commit["files"].append({"filename": "data-meta/nfl-reise/metadata.json"}),
+            lambda r, j, ref, c, job, commit, pc:
+                commit["commit"]["committer"].__setitem__("date", "2026-11-01T04:10:00Z"),
+            lambda r, j, ref, c, job, commit, pc:
+                pc.__setitem__("status", "diverged"),
+            lambda r, j, ref, c, job, commit, pc:
+                pc["commits"][-1].__setitem__("sha", "f" * 40),
+        )
+        for i, mutate in enumerate(cases):
+            with self.subTest(case=i):
+                result, _ = self.evaluate(changes=mutate)
+                self.assertEqual("blocked", result["status"])
+                self.assertFalse(result["publicationCommitVerified"])
+                self.assertFalse(result["safeToSkip"])
+
+    def test_incomplete_or_failed_run_never_reads_writer_log(self):
+        for outcome in ("failure", "cancelled", None):
+            with self.subTest(outcome=outcome):
+                def change(run, jobs, ref, cmp, job, commit, pc):
+                    run["conclusion"] = outcome
+                result, fetched = self.evaluate(changes=change)
+                self.assertEqual("blocked", result["status"])
+                self.assertFalse(result["jobCompletionVerified"])
+                self.assertNotIn("commits/ccccccc", fetched)
+
+    def test_evidence_timestamp_must_be_within_exact_job(self):
+        run, jobs, ref, cmp, job, log, commit, pc = self.evidence()
+        bad = log.replace("04:15:58", "04:18:58")
+        result, _ = self.evaluate(log=bad)
+        self.assertEqual("blocked", result["status"])
+        self.assertIn("commit-time-outside-job", result["reasonCodes"])
+
+    def test_authorization_stripped_on_log_storage_redirect(self):
+        from urllib.request import Request
+        request = Request("https://api.github.com/repos/owner/repo/actions/jobs/1/logs",
+                          headers={"Authorization": "Bearer sensitive-token"})
+        redirected = audit.NoCredentialRedirect().redirect_request(
+            request, None, 302, "Found", {}, "https://storage.example.net/signed/log",
+        )
+        self.assertFalse(redirected.has_header("Authorization"))
+        with self.assertRaises(audit.AuditError):
+            audit.NoCredentialRedirect().redirect_request(
+                request, None, 302, "Found", {}, "http://storage.example.net/log",
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
