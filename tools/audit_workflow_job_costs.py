@@ -539,7 +539,11 @@ def verify_publication_commit(
                 for v in files)):
         reasons.add("commit-files-unavailable-or-truncated")
         files = []
-    allowed = ("public/data/", "data-derived/") if scope == "league" else (
+    allowed = (
+        "public/data/", "data-derived/player-week-fantasy/",
+        "data-derived/team-week-performance/", "data-derived/league-transactions/",
+        "data-derived/league-drafts/",
+    ) if scope == "league" else (
         "public/data/", "data-derived/league-standings/",
     )
     if any(not v["filename"].startswith(allowed) for v in files):
