@@ -15,6 +15,8 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
+from league_full_refresh_witness_audit import audit_full_witness  # noqa: E402
+
 from league_source_refresh_witness import (  # noqa: E402
     WITNESS_ROOT, _digest, complete, prepare,
 )
@@ -86,6 +88,132 @@ class LeagueRefreshWitnessTests(unittest.TestCase):
 
     def _witness(self):
         return self.root / WITNESS_ROOT / self.league / "2026-week-01.json"
+
+    def _commit_audit_fixture(self, *, complete_witness=True):
+        if complete_witness:
+            preflight = prepare(self.root)
+            complete(self.root, preflight, self.raw_result, self.canonical_result,
+                     completed_at=self.at)
+        commands = [
+            ("init", "-q"),
+            ("config", "user.email", "test@example.com"),
+            ("config", "user.name", "Fixture"),
+            ("add", "-A"),
+            ("commit", "-qm", "test: immutable source fixture"),
+        ]
+        for args in commands:
+            subprocess.run(["git", *args], cwd=self.root, check=True,
+                           capture_output=True, text=True)
+
+    def _audit_full(self, *, age_hours=2, at=None):
+        result = audit_full_witness(
+            self.root, self.league, observed_at=at or datetime(
+                2026, 11, 2, 9, tzinfo=timezone.utc
+            ), max_age_hours=age_hours,
+        )
+        self.assertIs(result["safeToSkip"], False)
+        self.assertIs(result["enforced"], False)
+        self.assertIs(result["currentScopeNoOpVerified"], False)
+        self.assertIs(result["lastSuccessfulRunVerified"], False)
+        self.assertIs(result["providerFreshnessVerified"], False)
+        self.assertIs(result["timeAndFinalityVerified"], False)
+        return result
+
+    def test_offline_full_week_witness_pinned_to_clean_commit(self):
+        self._commit_audit_fixture()
+        r = self._audit_full()
+        self.assertEqual("historical-full-week-content-confirmed", r["status"])
+        self.assertTrue(r["sourceWitnessVerified"])
+        self.assertTrue(r["contentRevisionVerified"])
+        self.assertTrue(r["observedAgeBoundVerified"])
+        self.assertEqual(1, r["finalizedWeek"])
+        self.assertEqual(2026, r["season"])
+        self.assertEqual(40, len(r["observedCommitSha"]))
+        self.assertEqual(18, r["coveredInputCount"])
+        self.assertEqual([], r["reasonCodes"])
+
+    def test_offline_witness_missing_or_wrong_identity_fails_closed(self):
+        self._commit_audit_fixture(complete_witness=False)
+        self.assertFalse(self._audit_full()["sourceWitnessVerified"])
+        r = audit_full_witness(
+            self.root, "other-league", observed_at=datetime(
+                2026, 11, 2, 9, tzinfo=timezone.utc
+            ),
+        )
+        self.assertFalse(r["sourceWitnessVerified"])
+        self.assertFalse(r["safeToSkip"])
+
+    def test_offline_witness_dirty_or_untracked_root_fails_closed(self):
+        self._commit_audit_fixture()
+        self._write("untracked.json", {"untrusted": True})
+        self.assertIn("clean Git revision", self._audit_full()["reasonCodes"][0])
+        (self.root / "untracked.json").unlink()
+        self._write(f"data-source/leagues/{self.league}/seasons/2026/rosters.json",
+                    [{"different": True}])
+        self.assertFalse(self._audit_full()["sourceWitnessVerified"])
+
+    def test_offline_witness_canonical_raw_or_finality_change_after_commit(self):
+        for kind in ("canonical", "raw-metadata", "finality"):
+            with self.subTest(kind=kind):
+                # Each subtest uses its own test fixture root because setUp is
+                # called only once; save/restore the bytes and commit changes.
+                if kind == "canonical":
+                    path = self.canon / "rosters.json"
+                    original = path.read_bytes()
+                    path.write_text('[{"changed":true}]', encoding="utf-8")
+                elif kind == "raw-metadata":
+                    path = self.raw / "rosters.metadata.json"
+                    original = path.read_bytes()
+                    data = json.loads(original)
+                    data["ContentSha256"] = "0" * 64
+                    path.write_text(json.dumps(data), encoding="utf-8")
+                else:
+                    path = self.root / "data-source/nfl/game-finality/2026.json"
+                    original = path.read_bytes()
+                    data = json.loads(original)
+                    data["Games"][0]["GameID"] = "other-game"
+                    path.write_text(json.dumps(data), encoding="utf-8")
+                if not (self.root / ".git").exists():
+                    self._commit_audit_fixture(complete_witness=False)
+                subprocess.run(["git", "add", "-A"], cwd=self.root, check=True)
+                subprocess.run(["git", "commit", "-qm", kind], cwd=self.root,
+                               check=True)
+                self.assertFalse(self._audit_full()["sourceWitnessVerified"])
+                path.write_bytes(original)
+                subprocess.run(["git", "add", "-A"], cwd=self.root, check=True)
+                subprocess.run(["git", "commit", "-qm", "restore"], cwd=self.root,
+                               check=True)
+
+    def test_offline_witness_tampered_scope_input_fingerprint_and_future_clock(self):
+        self._commit_audit_fixture()
+        path = self._witness()
+        original = json.loads(path.read_text(encoding="utf-8"))
+        for key, value in (
+            ("Scope", "current"),
+            ("InputsFingerprint", "0" * 64),
+            ("Inputs", []),
+            ("SucceededAtUtc", "2030-01-01T00:00:00Z"),
+        ):
+            with self.subTest(key=key):
+                data = {**original, key: value}
+                path.write_text(json.dumps(data, sort_keys=True), encoding="utf-8")
+                subprocess.run(["git", "add", "-A"], cwd=self.root, check=True)
+                subprocess.run(["git", "commit", "-qm", "tamper"], cwd=self.root,
+                               check=True)
+                self.assertFalse(self._audit_full()["sourceWitnessVerified"])
+                path.write_text(json.dumps(original, sort_keys=True), encoding="utf-8")
+                subprocess.run(["git", "add", "-A"], cwd=self.root, check=True)
+                subprocess.run(["git", "commit", "-qm", "restore"], cwd=self.root,
+                               check=True)
+
+    def test_offline_witness_expired_age_and_invalid_clock(self):
+        self._commit_audit_fixture()
+        self.assertFalse(self._audit_full(age_hours=0.5)["sourceWitnessVerified"])
+        self.assertFalse(self._audit_full(age_hours=0)["sourceWitnessVerified"])
+        self.assertFalse(audit_full_witness(
+            self.root, self.league,
+            observed_at=datetime(2026, 11, 2, 9),
+        )["sourceWitnessVerified"])
 
     def test_full_after_prior_finality_writes_once_and_noops(self):
         before = prepare(self.root)
