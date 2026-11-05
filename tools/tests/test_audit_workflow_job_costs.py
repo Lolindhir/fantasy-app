@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import unittest
+import json
 from datetime import datetime, timezone
 from unittest.mock import patch
 
 from tools import audit_workflow_job_costs as audit
 from tools import league_source_receipt_audit as source
+from tools import league_current_noop_audit as current
 
 
 def run(run_id, day="2026-11-01", moment="12:00:00Z", conclusion="success"):
@@ -665,6 +667,223 @@ class G5SourceSyncTwoPhaseReceiptTests(unittest.TestCase):
         with patch.dict("os.environ", {"GH_TOKEN": "", "GITHUB_TOKEN": ""}):
             self.assertEqual(2, source.main([
                 "--repo", "Lolindhir/fantasy-app", "--run-id", "41962202248",
+            ]))
+
+
+
+
+class G5CurrentScopeNoOpRevisionTests(unittest.TestCase):
+    """Job-reported zero changes at a Git tree, never source freshness or skip."""
+
+    def fixture(self):
+        run, jobs, main, _commits, _old_log = G5SourceSyncTwoPhaseReceiptTests().fixture()
+        raw = {
+            "Leagues": [{
+                "CanonicalLeagueID": "nfl-reise", "Scope": "current",
+                "AcquisitionScope": "current",
+                "Dependencies": ["sleeper.league", "sleeper.matchups"],
+                "Parts": ["league-core", "transactions", "drafts"],
+                "DatasetPartitions": 16, "RawFilesChanged": 0,
+                "MetadataFilesChanged": 0,
+                "CurrentProviderLeagueID": "1354177383984267264",
+                "CurrentLeagueCoreScope": {
+                    "Season": 2026, "ProviderLeagueID": "1354177383984267264",
+                    "CurrentMatchupWeek": 9,
+                },
+                "CurrentTransactionWindow": {
+                    "CanonicalLeagueID": "nfl-reise", "Season": 2026,
+                    "CurrentWeek": 9, "Weeks": [8, 9],
+                },
+                "CurrentDraftScope": {
+                    "Season": 2026, "ProviderLeagueID": "1354177383984267264",
+                },
+            }]
+        }
+        row = raw["Leagues"][0]
+        canonical = {
+            "Leagues": [{
+                "CanonicalLeagueID": row["CanonicalLeagueID"],
+                "Scope": "current", "MaterializationScope": "current",
+                "Dependencies": ["raw-sleeper-league", "raw-sleeper-matchups"],
+                "Parts": list(row["Parts"]), "CanonicalFiles": 9,
+                "CanonicalFilesChanged": 0,
+                "CurrentLeagueCoreScope": dict(row["CurrentLeagueCoreScope"]),
+                "CurrentTransactionWindow": dict(row["CurrentTransactionWindow"]),
+                "CurrentDraftScope": dict(row["CurrentDraftScope"]),
+            }]
+        }
+        return run, jobs, main, raw, canonical
+
+    def log(self, run, raw, canonical):
+        def block(data):
+            return "\n".join(
+                "2026-11-05T03:37:15Z " + line
+                for line in json.dumps(data, indent=2).splitlines()
+            )
+        return "\n".join([
+            "2026-11-05T03:37:05Z League source publish attempt 1/3",
+            "2026-11-05T03:37:10Z HEAD is now at 4454dcf before-source",
+            block(raw),
+            "2026-11-05T03:37:16Z HEAD is now at 4454dcf before-materialize",
+            block(canonical),
+            block(canonical),
+            "2026-11-05T03:37:23Z No canonical League data-source changes detected.",
+        ])
+
+    def evaluate(self, change=None, *, main_tree_changed=False, main_moves=False):
+        run, jobs, main, raw, canonical = self.fixture()
+        log = self.log(run, raw, canonical)
+        if change:
+            run, jobs, main, log = change(run, jobs, main, log)
+        start_sha = run["head_sha"]
+        fetched = []
+        ref_reads = 0
+        roots = list(current.INPUT_ROOTS)
+        root_shas = {name: f"{index+1:x}"*40 for index, name in enumerate(roots)}
+        def fetch(resource, params):
+            nonlocal ref_reads
+            fetched.append(resource)
+            if resource == f"actions/runs/{run['id']}":
+                return run
+            if resource == f"actions/runs/{run['id']}/jobs":
+                return {"total_count": len(jobs), "jobs": jobs}
+            if resource == "git/ref/heads/main":
+                ref_reads += 1
+                return {"ref": "refs/heads/main", "object": {
+                    "sha": ("f"*40 if main_moves and ref_reads > 1 else main)
+                }}
+            if resource.startswith("compare/"):
+                a, b = resource[len("compare/"):].split("...")
+                if a == b:
+                    return {"status": "identical", "behind_by": 0, "ahead_by": 0,
+                            "base_commit": {"sha": a},
+                            "merge_base_commit": {"sha": a}}
+                return {"status": "ahead", "behind_by": 0, "ahead_by": 1,
+                        "base_commit": {"sha": a},
+                        "merge_base_commit": {"sha": a},
+                        "commits": [{"sha": b}]}
+            if resource.startswith("commits/"):
+                prefix = resource[len("commits/"):]
+                if start_sha.startswith(prefix):
+                    sha, tree = start_sha, "a"*40
+                elif main.startswith(prefix):
+                    sha, tree = main, "b"*40
+                else:
+                    self.fail("unexpected commit " + resource)
+                return {"sha": sha, "commit": {"tree": {"sha": tree}}}
+            if resource.startswith("git/trees/"):
+                sha = resource[len("git/trees/"):]
+                if sha not in {"a"*40, "b"*40}:
+                    self.fail("unexpected tree " + resource)
+                is_main = sha == "b"*40
+                return {"sha": sha, "truncated": False,
+                        "tree": [
+                            {"path": name, "type": "tree",
+                             "sha": ("d"*40 if main_tree_changed and is_main
+                                     and name == "data-source" else root_shas[name])}
+                            for name in roots
+                        ]}
+            self.fail("unexpected endpoint " + resource)
+        result = current.audit_current_scope_noop(
+            fetch, lambda _job: log, "Lolindhir/fantasy-app", run["id"],
+            datetime(2026, 11, 5, 5, 10, tzinfo=timezone.utc),
+        )
+        return result, fetched
+
+    def test_actual_current_scope_zero_counts_bind_to_revision_only(self):
+        result, fetched = self.evaluate()
+        self.assertEqual("run-revision-noop-reported", result["status"])
+        self.assertTrue(result["jobCompletionVerified"])
+        self.assertTrue(result["reportedNoOpAtSourceRevisionVerified"])
+        self.assertTrue(result["currentMainInputTreesUnchanged"])
+        self.assertEqual(["nfl-reise"], result["canonicalLeagueIDs"])
+        self.assertEqual(16, result["rawPartitionsChecked"])
+        self.assertEqual(9, result["canonicalFilesChecked"])
+        self.assertEqual([], result["reasonCodes"])
+        self.assertIn("git/trees/" + "a"*40, fetched)
+        for flag in ("independentProviderFreshnessVerified",
+                     "independentCanonicalReplayVerified",
+                     "allSourceDerivedAppOutputsValidated",
+                     "timeAndFinalityVerified", "raceFree", "recoveryClean",
+                     "safeToSkip", "enforced"):
+            self.assertIs(result[flag], False, flag)
+
+    def test_new_main_source_tree_invalidates_current_reuse_not_history(self):
+        result, _ = self.evaluate(main_tree_changed=True)
+        self.assertTrue(result["reportedNoOpAtSourceRevisionVerified"])
+        self.assertFalse(result["currentMainInputTreesUnchanged"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_raw_or_canonical_changes_and_second_pass_drift_block(self):
+        for data, field, bad in (
+            ("raw", "RawFilesChanged", 1),
+            ("raw", "MetadataFilesChanged", 1),
+            ("raw", "DatasetPartitions", 0),
+            ("canonical", "CanonicalFilesChanged", 2),
+            ("canonical", "CanonicalFiles", 0),
+            ("canonical", "MaterializationScope", "full"),
+        ):
+            with self.subTest(data=data, field=field):
+                run, jobs, main, raw, canonical = self.fixture()
+                (raw if data == "raw" else canonical)["Leagues"][0][field] = bad
+                def altered(r, j, m, _):
+                    return r, j, m, self.log(r, raw, canonical)
+                result, _ = self.evaluate(altered)
+                self.assertFalse(result["reportedNoOpAtSourceRevisionVerified"])
+                self.assertFalse(result["safeToSkip"])
+        def altered_second(r, j, m, log):
+            return r, j, m, log.replace(
+                '"CanonicalFiles": 9', '"CanonicalFiles": 8', 1
+            )
+        result, _ = self.evaluate(altered_second)
+        self.assertFalse(result["reportedNoOpAtSourceRevisionVerified"])
+
+    def test_retry_reset_race_missing_result_push_and_marker_block(self):
+        edits = [
+            lambda s: s.replace("attempt 1/3", "attempt 2/3"),
+            lambda s: s.replace("HEAD is now at 4454dcf before-materialize",
+                                "HEAD is now at 8888888 before-materialize"),
+            lambda s: s.replace('"Leagues":', '"WrongKey":', 1),
+            lambda s: s.replace("No canonical League data-source changes detected.",
+                                "Canonical change was published."),
+            lambda s: s + "\n2026-11-05T03:37:23Z    4454dcf..bbbbbbb HEAD -> main",
+            lambda s: s.replace("No canonical League data-source changes detected.",
+                                "No canonical League data-source changes detected.\n"
+                                "2026-11-05T03:37:24Z No canonical League data-source changes detected."),
+        ]
+        for edit in edits:
+            with self.subTest(name=str(edit)):
+                def altered(run, jobs, main, log):
+                    return run, jobs, main, edit(log)
+                result, _ = self.evaluate(altered)
+                self.assertFalse(result["reportedNoOpAtSourceRevisionVerified"])
+                self.assertFalse(result["safeToSkip"])
+
+    def test_run_failure_missing_validation_or_incomplete_source_blocks(self):
+        for mode in ("run", "validate", "source"):
+            with self.subTest(mode=mode):
+                def altered(run, jobs, main, log):
+                    if mode == "run":
+                        run["conclusion"] = "failure"
+                    elif mode == "validate":
+                        jobs[:] = [x for x in jobs if x["name"] != "validate"]
+                    else:
+                        next(x for x in jobs if x["name"] == "sync")["status"] = "in_progress"
+                    return run, jobs, main, log
+                result, _ = self.evaluate(altered)
+                self.assertFalse(result["reportedNoOpAtSourceRevisionVerified"])
+                self.assertFalse(result["safeToSkip"])
+
+    def test_main_moves_during_audit_denies_revision_proof(self):
+        result, _ = self.evaluate(main_moves=True)
+        self.assertEqual("blocked", result["status"])
+        self.assertIn("Main advanced during audit", result["reasonCodes"][0])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_cli_missing_token_never_fetches_or_dispatches(self):
+        with patch.dict("os.environ", {"GH_TOKEN": "", "GITHUB_TOKEN": ""}):
+            self.assertEqual(2, current.main([
+                "--repo", "Lolindhir/fantasy-app", "--run-id", "42088460708",
             ]))
 
 
