@@ -47,7 +47,9 @@ import { PlayerListComponent, type PlayerListColumn } from '../player-list/playe
 import { SalaryAssetLeaderboardComponent } from '../salary-asset-leaderboard/salary-asset-leaderboard';
 import { SalaryHealthIndicatorComponent } from '../salary-health-indicator/salary-health-indicator';
 import { SalaryPositionDonutComponent } from '../salary-position-donut/salary-position-donut';
+import { TeamInjuryReportComponent } from '../team-injury-report/team-injury-report';
 import { TeamLineupTabComponent } from '../team-lineup-tab/team-lineup-tab';
+import { TeamRivalsTabComponent } from '../team-rivals-tab/team-rivals-tab';
 
 export interface TeamDetailDialogData {
   team: FantasyTeam;
@@ -100,7 +102,9 @@ interface TeamHistoryRow {
     SalaryAssetLeaderboardComponent,
     SalaryHealthIndicatorComponent,
     SalaryPositionDonutComponent,
-    TeamLineupTabComponent
+    TeamInjuryReportComponent,
+    TeamLineupTabComponent,
+    TeamRivalsTabComponent
   ],
   templateUrl: './team-detail-dialog.html',
   styleUrl: './team-detail-dialog.scss'
@@ -121,6 +125,10 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   readonly positionCounts = getPositionCounts(this.data.team.Roster);
   readonly combinedRankingAvailable = isCombinedRankingAvailable(this.data.league.FinalScoredWeek);
   readonly decisionWindowPhaseActive = isTeamDecisionWindowActiveStatus(this.data.league.Status);
+  /** Starters are only meaningful while a lineup week is active; otherwise the injury report shows none. */
+  readonly currentStarterIds: ReadonlySet<string> | null = this.decisionWindowPhaseActive
+    ? new Set(this.data.team.Starter.map(player => player.ID))
+    : null;
   readonly rosterMetricOptions = METRICS.map(id => ({ id, label: METRIC_LABELS[id] }));
   @ViewChildren('rosterScroll') private rosterScrollAreas!: QueryList<ElementRef<HTMLDivElement>>;
 

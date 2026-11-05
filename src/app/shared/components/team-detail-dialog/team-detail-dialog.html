@@ -98,6 +98,7 @@
 
     <mat-tab label="Roster">
       <div class="tab-content roster-tab">
+        <app-team-injury-report [team]="team" [starterIds]="currentStarterIds" [lockContext]="rosterNextLockContext" />
         <div class="roster-toolbar">
           <div class="roster-controls" aria-label="Roster grouping and sorting">
           <mat-form-field class="roster-control" appearance="outline" subscriptSizing="dynamic">
@@ -321,6 +322,14 @@
           </div>
         </section>
       </div>
+    </mat-tab>
+
+    <mat-tab label="Rivals">
+      <ng-template matTabContent>
+        <div class="tab-content rivals-tab">
+          <app-team-rivals-tab [team]="team" [league]="league" />
+        </div>
+      </ng-template>
     </mat-tab>
   </mat-tab-group>
 

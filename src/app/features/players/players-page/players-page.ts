@@ -7,6 +7,7 @@ import type { Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../../shared/shared-material-imports';
 import { PlayerListColumn, PlayerListComponent } from '../../../shared/components/player-list/player-list';
 import { comparePlayersByDepthChart } from '../../../shared/utils/player-sort.util';
+import { isPlayerInjured } from '../../../shared/utils/team-injury-report.util';
 
 type PlayerMarketFilter =
   | 'all'
@@ -14,6 +15,8 @@ type PlayerMarketFilter =
   | 'freeAgents'
   | 'projectedCapCuts'
   | 'rostered';
+
+type PlayerHealthFilter = 'all' | 'injured';
 
 type PlayerSortOption =
   | 'salaryDesc'
@@ -55,6 +58,9 @@ export class PlayersPageComponent implements OnInit {
 
   // Default: All Players
   marketFilter: PlayerMarketFilter = 'all';
+
+  // Default: all players regardless of injury status
+  healthFilter: PlayerHealthFilter = 'all';
 
   // Default: Salary
   sortOption: PlayerSortOption = 'salaryDesc';
@@ -150,6 +156,7 @@ export class PlayersPageComponent implements OnInit {
     result = this.applySearchFilter(result);
     result = this.applyPositionFilter(result);
     result = this.applyMarketFilter(result);
+    result = this.applyHealthFilter(result);
     result = this.applySort(result);
 
     this.filteredPlayers = result;
@@ -165,6 +172,7 @@ export class PlayersPageComponent implements OnInit {
     this.searchText = '';
     this.selectedPosition = 'ALL';
     this.marketFilter = 'all';
+    this.healthFilter = 'all';
     this.sortOption = 'salaryDesc';
     this.showProjectedSalary = false;
     this.showProjectedMarket = false;
@@ -289,6 +297,10 @@ export class PlayersPageComponent implements OnInit {
       default:
         return players;
     }
+  }
+
+  private applyHealthFilter(players: Player[]): Player[] {
+    return this.healthFilter === 'injured' ? players.filter(isPlayerInjured) : players;
   }
 
   private applySort(players: Player[]): Player[] {

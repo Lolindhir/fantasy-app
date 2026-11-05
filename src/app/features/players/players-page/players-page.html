@@ -48,6 +48,14 @@
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>Health</mat-label>
+        <mat-select [(ngModel)]="healthFilter" (selectionChange)="applyFilters()">
+          <mat-option value="all">All Players</mat-option>
+          <mat-option value="injured">Injured</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="filter-field">
         <mat-label>Sort</mat-label>
         <mat-select [(ngModel)]="sortOption" (selectionChange)="applyFilters()">
           <mat-option value="salaryDesc">Salary</mat-option>
