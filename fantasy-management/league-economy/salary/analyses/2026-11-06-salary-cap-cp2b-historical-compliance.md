@@ -4,7 +4,7 @@
 
 ## 1. Kernergebnis mit evidenzgetrenntem Status
 
-1. **Historisch exakt nachgewiesen:** Für sechs 2026er Git-Snapshots sind sämtliche individuellen Spieler-Salaries direkt aus dem **damals committeten** \`public/data/Players.json\` zugänglich. Alle in \`League.json\` gehaltenen IDs sind enthalten; in **6/6 Snapshots** entspricht der aus marktweiten Top 120 berechnete Cap dem jeweils publizierten \`SalaryCap\` **dollargenau**.
+1. **Historisch exakt nachgewiesen:** Für sechs 2026er Git-Snapshots sind sämtliche individuellen Spieler-Salaries direkt aus dem **damals committeten** `public/data/Players.json` zugänglich. Alle in `League.json` gehaltenen IDs sind enthalten; in **6/6 Snapshots** entspricht der aus marktweiten Top 120 berechnete Cap dem jeweils publizierten `SalaryCap` **dollargenau**.
 2. **Beobachteter Effekt:** Die Offseason-Deadline brachte die Liga am 29.06. und 25.08. auf **0/6** Over-Cap-Teams, am 09.09. nach FA-Draft und Änderungen wieder auf **4/6** und am 05.11. auf **5/6**. Das ist kein geltender In-Season-Regelverstoß.
 3. **Kontrafaktischer Cut-only-Befund:** In den **gespeicherten** September- und November-Lineups aller sechs Teams reichen – unter bewusst vereinfachten Annahmen – ausschließlich Abgänge von **momentanen Nichtstartern**, um das jeweils getestete Cap zu erreichen. Das bedeutet aber **nicht**, dass nur austauschbare Spieler betroffen wären: teure Backups/Verletzte wie Lamar Jackson, Jalen Hurts, De'Von Achane und Jordan Love haben hohen tatsächlichen und zukünftigen Wert.
 4. **Trade-Gegenprobe:** Am 29.06. gab es für Brock Purdy aus Flos acht Juni-Cuts bei den anderen fünf damaligen Teams **keinen** direkt ohne Gegenabgang cap-finanzierbaren Käufer. Ein theoretischer Trade gegen Picks ist daher **nicht** mit einem belegten realisierbaren Angebot gleichzusetzen.
@@ -14,20 +14,20 @@
 
 ### 2.1 2026: voll archivierte Spieler-Salaries statt Oktober-Backcast
 
-Für jeden Zeitpunkt wurden **beide** Dateiversionen vom **identischen Git-Commit** abgerufen: \`public/data/League.json\` (alle sechs Rosters, Cap) und \`public/data/Players.json\` (je Spieler \`ID\`, \`Salary\`; Spielerpopulation und Preise können sich zwischen Versionen unterscheiden). Bei jedem Kader werden alle eindeutig gehaltenen Spieler-IDs nach \`Players[].Salary\` bewertet, absteigend sortiert, **Top 20** summiert. Das endogene Cap wird aus den marktweiten **Top 120** berechnet (\`0,9 × Summe Top120 / 6\`, auf ganze Dollar gerundet).
+Für jeden Zeitpunkt wurden **beide** Dateiversionen vom **identischen Git-Commit** abgerufen: `public/data/League.json` (alle sechs Rosters, Cap) und `public/data/Players.json` (je Spieler `ID`, `Salary`; Spielerpopulation und Preise können sich zwischen Versionen unterscheiden). Bei jedem Kader werden alle eindeutig gehaltenen Spieler-IDs nach `Players[].Salary` bewertet, absteigend sortiert, **Top 20** summiert. Das endogene Cap wird aus den marktweiten **Top 120** berechnet (`0,9 × Summe Top120 / 6`, auf ganze Dollar gerundet).
 
-| Zeitpunkt | Git-Commit für beide Dateiversionen | Blob \`Players.json\` | Publiziertes Cap | Aus Players neu errechnet | fehlende gehaltene IDs |
+| Zeitpunkt | Git-Commit für beide Dateiversionen | Blob `Players.json` | Publiziertes Cap | Aus Players neu errechnet | fehlende gehaltene IDs |
 |---|---|---|---:|---:|---:|
-| 07.06. vor Cuts | [5b4ed63172deae79759e7150f8511bd2ea3edb4e](https://github.com/Lolindhir/fantasy-app/blob/5b4ed63172deae79759e7150f8511bd2ea3edb4e/public/data/Players.json) | \`1bd0afccc6909e3dbfe11518af11f1a7fd4fe093\` | 434.255.984 $ | 434.255.984 $ | 0 |
-| 09.06. nach Cuts | [7ece134fec39741aba8e82bda554f8f13e8bead4](https://github.com/Lolindhir/fantasy-app/blob/7ece134fec39741aba8e82bda554f8f13e8bead4/public/data/Players.json) | \`f0174366022365d53f6cd7b252a5dcc8b90caab3\` | 434.255.984 $ | 434.255.984 $ | 0 |
-| 29.06. vor Deadline | [85e22feb064fdaf2257d6c3149c8d1655ada0908](https://github.com/Lolindhir/fantasy-app/blob/85e22feb064fdaf2257d6c3149c8d1655ada0908/public/data/Players.json) | \`21001d6c0819dbbcb3deff084d63fe377714541c\` | 434.255.984 $ | 434.255.984 $ | 0 |
-| 25.08. vor FA-Draft | [539aae40da3de444000805cea3170a116fae129d](https://github.com/Lolindhir/fantasy-app/blob/539aae40da3de444000805cea3170a116fae129d/public/data/Players.json) | \`72c021c0fdc6bc7b19c4e32221b3b47e43973513\` | 434.255.984 $ | 434.255.984 $ | 0 |
-| 09.09. nach FA-Draft | [b40956172a704ff616008d7835f527b86f128063](https://github.com/Lolindhir/fantasy-app/blob/b40956172a704ff616008d7835f527b86f128063/public/data/Players.json) | \`f8cc9a97cbe19eed6907a7630da053052a35e577\` | 434.255.984 $ | 434.255.984 $ | 0 |
-| 05.11. Woche 8 final | [799be2a25203f18face8185303f32b31be3d40a7](https://github.com/Lolindhir/fantasy-app/blob/799be2a25203f18face8185303f32b31be3d40a7/public/data/Players.json) | \`6459aef56b661eb9f3f83ac6c2516577d328cf93\` | 427.653.631 $ | 427.653.631 $ | 0 |
+| 07.06. vor Cuts | [5b4ed63172deae79759e7150f8511bd2ea3edb4e](https://github.com/Lolindhir/fantasy-app/blob/5b4ed63172deae79759e7150f8511bd2ea3edb4e/public/data/Players.json) | `1bd0afccc6909e3dbfe11518af11f1a7fd4fe093` | 434.255.984 $ | 434.255.984 $ | 0 |
+| 09.06. nach Cuts | [7ece134fec39741aba8e82bda554f8f13e8bead4](https://github.com/Lolindhir/fantasy-app/blob/7ece134fec39741aba8e82bda554f8f13e8bead4/public/data/Players.json) | `f0174366022365d53f6cd7b252a5dcc8b90caab3` | 434.255.984 $ | 434.255.984 $ | 0 |
+| 29.06. vor Deadline | [85e22feb064fdaf2257d6c3149c8d1655ada0908](https://github.com/Lolindhir/fantasy-app/blob/85e22feb064fdaf2257d6c3149c8d1655ada0908/public/data/Players.json) | `21001d6c0819dbbcb3deff084d63fe377714541c` | 434.255.984 $ | 434.255.984 $ | 0 |
+| 25.08. vor FA-Draft | [539aae40da3de444000805cea3170a116fae129d](https://github.com/Lolindhir/fantasy-app/blob/539aae40da3de444000805cea3170a116fae129d/public/data/Players.json) | `72c021c0fdc6bc7b19c4e32221b3b47e43973513` | 434.255.984 $ | 434.255.984 $ | 0 |
+| 09.09. nach FA-Draft | [b40956172a704ff616008d7835f527b86f128063](https://github.com/Lolindhir/fantasy-app/blob/b40956172a704ff616008d7835f527b86f128063/public/data/Players.json) | `f8cc9a97cbe19eed6907a7630da053052a35e577` | 434.255.984 $ | 434.255.984 $ | 0 |
+| 05.11. Woche 8 final | [799be2a25203f18face8185303f32b31be3d40a7](https://github.com/Lolindhir/fantasy-app/blob/799be2a25203f18face8185303f32b31be3d40a7/public/data/Players.json) | `6459aef56b661eb9f3f83ac6c2516577d328cf93` | 427.653.631 $ | 427.653.631 $ | 0 |
 
 **Kontrollrechnung:** Flo 07.06. **547.568.190 $** → 09.06. **427.729.579 $** = **119.838.611 $** tatsächlich historisch dokumentierte Top-20-Entlastung. Der frühere, offen als Oktoberpreis-Proxy ausgewiesene CP1-Betrag **109.086.072 $** wird **nicht** als exakter Juni-Wert weiterverwendet. Beide Zahlen beziehen sich auf unterschiedliche Datengrundlagen; die historische Fallstudie wird nicht stillschweigend überschrieben.
 
-Die November-Player-Valuation-Dateien \`data-derived/player-valuation/nfl-reise/2026/week-00.json\` und \`week-08.json\` konnten ebenfalls vollständig über die GitHub-Blob-/Contents-Schnittstelle geladen werden; sie besitzen bei **956/956** gemeinsamen Spielern identisches **Salary** (unterschiedliche laufende \`SalaryProjected\` sind erwartbar). Die **historischen** \`Players.json\`-Stände vom September und November unterscheiden sich hingegen bei **385 von 933** gemeinsamen IDs im Salary, was die Bedeutung des **As-of-Preisstichtags** unterstreicht. Eine konkrete Ursache (Modell-/Datenmigration, Population, Änderung der Salary-Basis) ist damit **nicht bewiesen**. Insbesondere ist **permanente Cap-Kontrolle nicht dasselbe wie dauerndes Salary-Repricing**.
+Die November-Player-Valuation-Dateien `data-derived/player-valuation/nfl-reise/2026/week-00.json` und `week-08.json` konnten ebenfalls vollständig über die GitHub-Blob-/Contents-Schnittstelle geladen werden; sie besitzen bei **956/956** gemeinsamen Spielern identisches **Salary** (unterschiedliche laufende `SalaryProjected` sind erwartbar). Die **historischen** `Players.json`-Stände vom September und November unterscheiden sich hingegen bei **385 von 933** gemeinsamen IDs im Salary, was die Bedeutung des **As-of-Preisstichtags** unterstreicht. Eine konkrete Ursache (Modell-/Datenmigration, Population, Änderung der Salary-Basis) ist damit **nicht bewiesen**. Insbesondere ist **permanente Cap-Kontrolle nicht dasselbe wie dauerndes Salary-Repricing**.
 
 ### 2.2 Exakte Cap-Zeitreihe (Mio. $)
 
@@ -42,7 +42,7 @@ Die November-Player-Valuation-Dateien \`data-derived/player-valuation/nfl-reise/
 | **Jeweiliges Cap** | **434,26** | **434,26** | **434,26** | **434,26** | **434,26** | **427,65** |
 | **Teams oberhalb Cap** | **3/6** | **2/6** | **0/6** | **0/6** | **4/6** | **5/6** |
 
-**Alle Werte aus den damals gemeinsam committeten League-/Players-Dateien.** Der Schritt vom August zum September ist besonders sauber: Bei **1.242 gemeinsamen PlayerIDs** ist das \`Salary\` in beiden Marktdateien **unverändert**; die Marktpopulation tauscht je 20 Einträge, das Cap bleibt gleich. Die Veränderung der sechs Team-Cap-Belegungen ist hier eine tatsächliche Rosterbewegung, nicht Preisrevaluation. Im November liegt jedoch ein **anderer** Preis-/Populationsstand vor. Keine der Tabellen beweist hypothetische Titelwahrscheinlichkeiten.
+**Alle Werte aus den damals gemeinsam committeten League-/Players-Dateien.** Der Schritt vom August zum September ist besonders sauber: Bei **1.242 gemeinsamen PlayerIDs** ist das `Salary` in beiden Marktdateien **unverändert**; die Marktpopulation tauscht je 20 Einträge, das Cap bleibt gleich. Die Veränderung der sechs Team-Cap-Belegungen ist hier eine tatsächliche Rosterbewegung, nicht Preisrevaluation. Im November liegt jedoch ein **anderer** Preis-/Populationsstand vor. Keine der Tabellen beweist hypothetische Titelwahrscheinlichkeiten.
 
 ## 3. Transparentes Testregelwerk für B und C – **nur Annahmen, kein Ligaentscheid** (G4)
 
@@ -51,7 +51,7 @@ Die November-Player-Valuation-Dateien \`data-derived/player-valuation/nfl-reise/
 | **Salary-Stichtag** | Für einen In-Season-Vollzug zunächst einmal bewerteten Salary-Vektor und endogenes Cap **fixieren**; keine automatische wöchentliche Preisanpassung | Welcher genaue Salary-Check/Zyklus setzt das Pricing neu? Was geschieht bei technischen Datenkorrekturen? |
 | **Beginn** | Test startet bei einem nach der Deadline tatsächlich **legalen** Kader: 29.06. und 25.08. A/B **6/6** unter Cap | Zeitpunkt und Umgang mit Rookie-/FA-Draft, Wechsel von Offseason zu Regular Season |
 | **Transaktionspakete** | Alle Spieler-**Adds und Drops gemeinsam** ausführen; **beide Seiten eines Trades** nach gesamtem Paket bewerten; Spieler mit niedriger Salary zählen nur, wenn sie nach Top-20-Neurechnung hineingelangen | Sollen Entlastungscuts unmittelbar zum Trade gehören dürfen? Grace-Window/Atomicity für unterschiedliche Systeme |
-| **Gültigkeit für Kader** | \`Teams[].Roster\` enthält Spieler auf Taxi und Reserve bereits; Top 20 daraus bilden, ohne Duplikate. Startende 13 Spieler sind keine eigene Salary-Ausnahme | Künftige Ausnahme-/Lock-Regeln für Taxi/IR, konkrete Kader- und Eligibility-Restriktionen |
+| **Gültigkeit für Kader** | `Teams[].Roster` enthält Spieler auf Taxi und Reserve bereits; Top 20 daraus bilden, ohne Duplikate. Startende 13 Spieler sind keine eigene Salary-Ausnahme | Künftige Ausnahme-/Lock-Regeln für Taxi/IR, konkrete Kader- und Eligibility-Restriktionen |
 | **Drafts** | Jeder Draft-Pick ist ein Spielerzugang. Wenn bei A/B das Cap durch ihn überschritten würde, sind **kompensierende Entscheidungen** erforderlich; den Pick nicht rückwirkend für ungültig erklären | Picks sofort cap-pflichtig, oder Draft-/Cut-Window mit anschließender Compliance? |
 | **Waiver/FA** | Vollständiger Add/Drop-Claim als Bundle statt Preis des Zugangs isoliert; Transfer darf ohne bereinigte Vorbilanz nicht als „legal“ klassifiziert werden | Reihenfolge konkurrierender Waiver, Bündelung mehrerer Claims, Settle-/Rollback-Mechanik |
 | **Over-Cap-Roster** | Als **Diagnose** zwei Semantiken vergleichen: strikter Post-Event-Check und „No Worsening“ (nur Verbesserung/Neutralität). Beides **nicht beschlossen** | Fairer Übergang von einem heute erlaubten Over-Cap-Zustand zu permanenten Regeln; Cuts zur Bereinigung nicht blockieren |
@@ -64,26 +64,26 @@ Die November-Player-Valuation-Dateien \`data-derived/player-valuation/nfl-reise/
 **A/B = tatsächliches Salary vom 25.08., Cap 434.255.984 $; C = isolierter Criticality-k1,5-Preisvektor aus der alten, ausdrücklich abgegrenzten [05.10.-CSV](2026-10-05-salary-simulation-players.csv) und daraus endogenes Cap 437.083.780 $.** Die C-Preise sind eine Modellalternative, **nicht** die damals geltenden Salaries. Das ist ein kontrollierter Szenarioblick auf identische Kader, **kein kausaler Vergleich eines vollständig gleichdatigen Modell-Deployments**.
 
 - 25.08., **vor** FA-Draft: A/B **0/6** Teams über Cap, C **2/6**.
-- 2026 Free-Agent-Draft: **30/30** Picks mit PlayerID, alle in der 25.08.-Rosterbasis noch **nicht gehalten**. Naiv **nur** diese Picks in \`OverallPick\`-Reihenfolge hinzufügen, **ohne** zwischenzeitliche Cuts/Trades: **5** Picks überschreiten bei A/B erstmals die Grenze aus einem vorher legalen Zustand; bei C **3** (andere Teams waren schon beim Start über dem modellierten C-Cap). **13** A/B- bzw. **15** C-Picks erhöhen die Cap-Belegung eines danach über Cap liegenden Teams.
+- 2026 Free-Agent-Draft: **30/30** Picks mit PlayerID, alle in der 25.08.-Rosterbasis noch **nicht gehalten**. Naiv **nur** diese Picks in `OverallPick`-Reihenfolge hinzufügen, **ohne** zwischenzeitliche Cuts/Trades: **5** Picks überschreiten bei A/B erstmals die Grenze aus einem vorher legalen Zustand; bei C **3** (andere Teams waren schon beim Start über dem modellierten C-Cap). **13** A/B- bzw. **15** C-Picks erhöhen die Cap-Belegung eines danach über Cap liegenden Teams.
 - 09.09., tatsächlicher fertig aktualisierter Kader nach weiteren Bewegungen: A/B **4/6**, C **5/6** über Cap. Die naive Draft-only-Zwischenstufe weicht erwartbar von den dokumentierten Endkadern ab, weil es nach oder um den Draft weitere Cuts/Transfers gab.
 - Die genannten **5 bzw. 3** sind **keine verbotenen Draftpicks**; bei permanentem Cap müssten Zeitpunkt und Möglichkeit eines gleichzeitigen/finalen Ausgleichs geklärt werden. **30** erfolgreiche FA-Picks werden nicht als 30 Transaktionen mit vollständigem Bundle- und Cut-Kontext ausgegeben.
 
-Als zusätzliche Robustheit: Bei der tatsächlichen \`Players.json\`-Preispopulation sind die Salaries aller **1.242** zwischen 25.08. und 09.09. gemeinsam vorhandenen Spieler identisch. Die beschriebene erneute Grenzüberschreitung entsteht im untersuchten Zeitraum damit nicht aus einer verdeckten Neubewertung gemeinsamer Spieler.
+Als zusätzliche Robustheit: Bei der tatsächlichen `Players.json`-Preispopulation sind die Salaries aller **1.242** zwischen 25.08. und 09.09. gemeinsam vorhandenen Spieler identisch. Die beschriebene erneute Grenzüberschreitung entsteht im untersuchten Zeitraum damit nicht aus einer verdeckten Neubewertung gemeinsamer Spieler.
 
 ## 5. Kann man unter Cap kommen und alle derzeitigen Starter halten?
 
-**Cut-only-Existenzprobe:** Für den dokumentierten 09.09.- und 05.11.-Kader pro Team die derzeitige **\`Teams[].Starter\`**-Menge einfrieren. Alle Nichtstarter aus \`Roster \ Starter\` nach Salary absteigend sortieren und jeweils den teuersten Nichtstarter entfernen. Nach jedem Schritt **Top 20 erneut bestimmen**. Stoppen, sobald die Cap-Belastung unter dem Preis-/Cap-Modell liegt. Keine neuen Adds, keine Trades, **kein** Dead Cap; Taxi/Reserve dürfen nur bei nach aktuellem Regelwerk erlaubtem Cut verlassen werden. Diese deterministische Strategie minimiert die **Anzahl** der Nichtstarter-Cuts für dieses Cut-only-Ziel, aber **nicht** den sportlichen Schaden und unterstellt keine Managerpräferenz.
+**Cut-only-Existenzprobe:** Für den dokumentierten 09.09.- und 05.11.-Kader pro Team die derzeitige **`Teams[].Starter`**-Menge einfrieren. **Preisstichtage klar trennen:** September A/B = tatsächlicher September; November A = tatsächlicher November; November B = Septemberpreise samt damaligem Cap **hypothetisch eingefroren** (alle in November gehaltenen Spieler-IDs sind darin vorhanden); C = isolierte Criticality aus dem Oktober-Vektor. Alle Nichtstarter aus `Roster minus Starter` nach Salary absteigend sortieren und jeweils den teuersten Nichtstarter entfernen. Nach jedem Schritt **Top 20 erneut bestimmen**. Stoppen, sobald die Cap-Belastung unter dem Preis-/Cap-Modell liegt. Keine neuen Adds, keine Trades, **kein** Dead Cap; Taxi/Reserve dürfen nur bei nach aktuellem Regelwerk erlaubtem Cut verlassen werden. Diese deterministische Strategie minimiert die **Anzahl** der Nichtstarter-Cuts für dieses Cut-only-Ziel, aber **nicht** den sportlichen Schaden und unterstellt keine Managerpräferenz.
 
-| Team | 09.09. A/B echte Preise | 09.09. C Criticality | 05.11. A/B echte Preise | 05.11. C Criticality |
-|---|---:|---:|---:|---:|
-| Mighty Giants | 0 | 1 | 1 | 1 |
-| Ruhr Valley Packers | 2 | 5 | 2 | 2 |
-| Just Bill (Flo) | 1 | 3 | 3 | 6 |
-| Mammoth Marauders | 2 | 2 | 2 | 1 |
-| DennisLACards | 0 | 0 | 0 | 0 |
-| TimpaBay | 2 | 2 | 2 | 2 |
-| **Summe, nur jetztige Nichtstarter** | **7** | **13** | **10** | **12** |
-| **Kader mit Starterzwang im Cut-only-Modell** | **0/6** | **0/6** | **0/6** | **0/6** |
+| Team | 09.09. A/B echte Preise | 09.09. C Criticality | 05.11. A echte Preise | 05.11. B mit **fixierten Septemberpreisen** | 05.11. C Criticality |
+|---|---:|---:|---:|---:|---:|
+| Mighty Giants | 0 | 1 | 1 | 1 | 1 |
+| Ruhr Valley Packers | 2 | 5 | 2 | 1 | 2 |
+| Just Bill (Flo) | 1 | 3 | 3 | 3 | 6 |
+| Mammoth Marauders | 2 | 2 | 2 | 1 | 1 |
+| DennisLACards | 0 | 0 | 0 | 0 | 0 |
+| TimpaBay | 2 | 2 | 2 | 2 | 2 |
+| **Summe, nur jetzige Nichtstarter** | **7** | **13** | **10** | **8** | **12** |
+| **Kader mit Starterzwang im Cut-only-Modell** | **0/6** | **0/6** | **0/6** | **0/6** | **0/6** |
 
 Die Zahl **0/6** ist ein **wichtiger Gegenbefund**: Unsere bisher gewünschte Wirkung „etablierte Starter abgeben müssen“ ist **nicht nachgewiesen**. Auch das Criticality-Modell kann die **auf dem Snapshot eingetragenen** 13 Starter stehenlassen, wenn ein Manager dafür mehr teure Alternativen/Absicherungen aufgibt.
 
@@ -91,12 +91,13 @@ Die Zahl **0/6** ist ein **wichtiger Gegenbefund**: Unsere bisher gewünschte Wi
 
 ### Beispiel Flo – 05.11. (nur illustrative Starter-erhalten-Cutfolge)
 
-- **B, aktuelles November-Salary, Cap 427,65 Mio.:** Lamar Jackson, Kyler Murray, DJ Moore (3 Nichtstarter) → Top-20-Belastung 510,87 → **425,30 Mio. $**.
+- **A, tatsächlicher November-Preisstand, Cap 427,65 Mio.:** Lamar Jackson, Kyler Murray, DJ Moore (3 Nichtstarter) → Top-20-Belastung 510,87 → **425,30 Mio. $**.
+- **B, hypothetisch seit September eingefrorener Preisstand, Cap 434,26 Mio.:** Dieselben drei Nichtstarter → 507,89 → **419,02 Mio. $**. Sämtliche 05.11. gehaltenen Spieler-IDs sind im September-Preisstand vorhanden, es ist kein Nullpreis-Fallback nötig.
 - **C, Criticality, Cap 437,08 Mio.:** Lamar Jackson, DJ Moore, Kyler Murray, Brandon Aubrey, Jordan Addison, Kirk Cousins (6 Nichtstarter) → Top-20-Belastung 549,13 → **432,90 Mio. $**.
-- Lamar Jackson ist im 05.11.-Kader nicht als Starter eingetragen, aber in \`Players.json\` mit **16,02 Fantasy-Punkten je NFL-Spiel 2026** und **16,70** in 2025 geführt; zugleich aktuelle Verletzungs-/Out-Information. Kirk Cousins (ebenfalls Nichtstarter) besitzt **20,58 Fantasy-Punkte je NFL-Spiel 2026** in diesem Wochenstand. Diese Spieler pauschal „belanglose Bank“ zu nennen wäre sachlich falsch.
+- Lamar Jackson ist im 05.11.-Kader nicht als Starter eingetragen, aber in `Players.json` mit **16,02 Fantasy-Punkten je NFL-Spiel 2026** und **16,70** in 2025 geführt; zugleich aktuelle Verletzungs-/Out-Information. Kirk Cousins (ebenfalls Nichtstarter) besitzt **20,58 Fantasy-Punkte je NFL-Spiel 2026** in diesem Wochenstand. Diese Spieler pauschal „belanglose Bank“ zu nennen wäre sachlich falsch.
 - Jan könnte unter B rein rechnerisch Jalen Hurts (IR, **2025 19,07 PPG**) und Trevor Lawrence (2026 **19,66 PPG**) verlieren, ohne die eingefrorene Starterliste anzurühren. Packers könnten De'Von Achane (2025 **20,18 PPG**) und A.J. Brown abgeben; TimpaBay Jordan Love (2026 **19,36 PPG**) und Matthew Stafford.
 
-**Sportlicher Proxy und Grenzen:** Die Fantasy-Punkte sind **tatsächlich veröffentlichte NFL-Spielerdaten** bis zur finalen Woche 8 (bzw. 2025 im \`PointHistory.SeasonMinus1\`), **keine** projizierten künftigen Starts oder echten Punkteverluste der Fantasy-Teams. Ein verletzter QB kann aktuell nicht sofort ersetzt werden, hat aber Franchise-/Absicherungswert; ein sportlich starker Ersatzspieler verliert nicht zwingend automatisch den Markt. Ein echter Replacement-Test muss Wochen-/Positionsanforderungen und Verfügbarkeit während desselben Fensters berücksichtigen.
+**Sportlicher Proxy und Grenzen:** Die Fantasy-Punkte sind **tatsächlich veröffentlichte NFL-Spielerdaten** bis zur finalen Woche 8 (bzw. 2025 im `PointHistory.SeasonMinus1`), **keine** projizierten künftigen Starts oder echten Punkteverluste der Fantasy-Teams. Ein verletzter QB kann aktuell nicht sofort ersetzt werden, hat aber Franchise-/Absicherungswert; ein sportlich starker Ersatzspieler verliert nicht zwingend automatisch den Markt. Ein echter Replacement-Test muss Wochen-/Positionsanforderungen und Verfügbarkeit während desselben Fensters berücksichtigen.
 
 ### Stichtagsgetreuer grober Free-Agent-Replacement-Check
 
@@ -163,7 +164,7 @@ for label, commit in SNAPSHOTS.items():
         print(label, team["TeamID"], usage(team["Roster"], salary), cap)
 ~~~
 
-Für Criticality C/D zusätzlich den **datierten** Preisvektor \`salary_B_k15_ohne_vertraege\` aus der 05.10.-Simulation laden und dessen Cap aus der **dazugehörigen Gesamtmarktpopulation** endogen neu bilden (nicht historische A-Preise mit C-Cap vermischen). Die Nonstarter-Cut-Existenzprobe folgt dem deterministischen Schritt „höchstes Salary außerhalb \`Starter\` entfernen, Top 20 neu bilden“, bis unter dem jeweiligen Cap. Das ist kein Policy-Vorschlag.
+Für Criticality C/D zusätzlich den **datierten** Preisvektor `salary_B_k15_ohne_vertraege` aus der 05.10.-Simulation laden und dessen Cap aus der **dazugehörigen Gesamtmarktpopulation** endogen neu bilden (nicht historische A-Preise mit C-Cap vermischen). Die Nonstarter-Cut-Existenzprobe folgt dem deterministischen Schritt „höchstes Salary außerhalb `Starter` entfernen, Top 20 neu bilden“, bis unter dem jeweiligen Cap. Das ist kein Policy-Vorschlag.
 
 **QA der tatsächlichen Auswertung:** 6/6 historische Cap-Neuberechnungen stimmen dollar-genau, **0** fehlende Roster-IDs, 1.242 identisch bepreiste gemeinsame PlayerIDs August→September, archivierter Flo-Cut-Differenzwert neu exakt berechnet; September-/November-Cut-only-Stressprobe für alle 6 Teams unter B/C, 8 Juni-Cuts gegen fünf hypothetische direkte Käufer getestet; Week-8-PPG der betroffenen Nichtstarter aus demselben eingefrorenen November-Players-Stand.
 
