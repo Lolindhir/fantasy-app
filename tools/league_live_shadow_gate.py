@@ -335,7 +335,7 @@ def compare_observed_logs(previous_log: str, current_log: str) -> dict[str, Any]
 OFFLINE_REQUIRED_SURFACES = {
     "standings": STAGE_OUTPUTS["standings"],
     "league": (*STAGE_OUTPUTS["league"], "data-derived/player-week-fantasy",
-               "data-derived/team-week-performance", "public/data/TeamCapOutlook.json"),
+               "data-derived/team-week-performance"),
 }
 
 
