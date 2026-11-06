@@ -112,7 +112,8 @@ class RoutingTests(unittest.TestCase):
         result = self.choose("tools/league_live_output_revision_audit.py")
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, set(result["selected"]))
         self.assertFalse(result["uncertain"])
-        self.assertEqual([], result["blocks"])
+        self.assertEqual(["powershell"], result["blocks"])
+        # Existing Derived-to-PowerShell coverage stays intact.
         # Unknown unrelated scripts must still fail closed.
         unknown = self.choose("tools/new_unclassified_output_researcher.py")
         self.assertEqual(set(ci.GROUPS), set(unknown["selected"]))
