@@ -203,6 +203,258 @@ class ShadowDecisionTests(unittest.TestCase):
 
 
 
+
+class OfflinePreflightProtocolTests(unittest.TestCase):
+    """Finite synthetic protocol evidence only; no production attestation."""
+
+    def evidence(self, stage="league"):
+        sha = lambda char: char * 40
+        trees = {name: sha("a") for name in shadow.STAGE_INPUTS[stage]}
+        outputs = {
+            path if path.endswith(".json") else path + "/nfl-reise/2026.json": sha("b")
+            for path in shadow.OFFLINE_REQUIRED_SURFACES[stage]
+        }
+        if stage == "league":
+            # Dynamic future Draft seasons must be supplied by canonical metadata,
+            # never inferred from a hard-coded current+one-year horizon.
+            outputs["data-derived/league-drafts/nfl-reise/2032.json"] = sha("c")
+        scope = [{"league": "nfl-reise", "season": 2026}]
+        receipt = {
+            "schemaVersion": 1, "stage": stage, "scope": scope,
+            "revision": sha("d"), "sourceRevision": sha("e"),
+            "inputTrees": trees, "publishedOutputs": outputs,
+            "publishedAtUtc": "2026-11-05T10:00:00Z",
+            "acquisitionId": "sleeper-2026-11-05-10",
+            "producer": {"success": True, "attempt": 1,
+                         "outputsComplete": True, "recoveryDebt": []},
+        }
+        current = {
+            "stage": stage, "scope": list(scope),
+            "revision": receipt["revision"],
+            "sourceRevision": receipt["sourceRevision"],
+            "inputTrees": dict(trees),
+            "requiredOutputs": dict(outputs),
+            "observedOutputs": dict(outputs),
+            "asOfUtc": "2026-11-05T10:05:00Z",
+            "providerEvidence": {
+                "status": "verified", "sourceRevision": sha("e"),
+                "acquisitionId": receipt["acquisitionId"],
+                "observedAtUtc": "2026-11-05T10:04:00Z",
+                "expiresAtUtc": "2026-11-05T10:10:00Z",
+            },
+            "finalityEvidence": {"status": "verified",
+                                 "sourceRevision": sha("e"),
+                                 "activeNonfinal": False,
+                                 "unknownKickoffs": False},
+            "clockEvidence": {"status": "clear",
+                              "fromUtc": "2026-11-05T10:00:00Z",
+                              "toUtc": "2026-11-05T10:05:00Z",
+                              "crossedBoundaries": []},
+        }
+        trace = [
+            {"action": "acquire", "sha": sha("d")},
+            {"action": "compare", "sha": sha("d")},
+            {"action": "skip", "sha": sha("d")},
+            {"action": "release", "sha": sha("d")},
+        ]
+        return receipt, current, trace
+
+    def assert_run(self, receipt, current, trace, reason):
+        result = shadow.assess_offline_preflight_protocol(receipt, current, trace)
+        self.assertEqual("would-run", result["decision"])
+        self.assertIn(reason, result["reasonCodes"])
+        self.assertIs(result["safeToSkip"], False)
+        self.assertIs(result["enforced"], False)
+        self.assertIs(result["independentEvidenceVerified"], False)
+
+    def test_synthetic_complete_case_is_only_would_skip_not_activation(self):
+        for stage in shadow.STAGE_INPUTS:
+            with self.subTest(stage=stage):
+                receipt, current, trace = self.evidence(stage)
+                result = shadow.assess_offline_preflight_protocol(receipt, current, trace)
+                self.assertEqual("would-skip", result["decision"])
+                self.assertTrue(result["syntheticProtocolConsistent"])
+                self.assertFalse(result["safeToSkip"])
+                self.assertFalse(result["raceFree"])
+                self.assertFalse(result["recoveryClean"])
+                self.assertFalse(result["independentEvidenceVerified"])
+                self.assertFalse(result["enforced"])
+
+    def test_missing_or_wrong_receipts_fail_closed(self):
+        for mutation, reason in [
+            (lambda r,c: r.update(schemaVersion=2), "unknown-or-mismatched-stage-contract"),
+            (lambda r,c: r.update(stage="standings"), "unknown-or-mismatched-stage-contract"),
+            (lambda r,c: c.update(revision="f"*40), "unbound-or-different-publication-revision"),
+            (lambda r,c: c.update(sourceRevision="f"*40), "unbound-or-different-publication-revision"),
+            (lambda r,c: r.update(revision="not-sha"), "unbound-or-different-publication-revision"),
+        ]:
+            with self.subTest(mutation=reason):
+                r,c,t=self.evidence()
+                mutation(r,c)
+                self.assert_run(r,c,t,reason)
+        _,c,t=self.evidence()
+        self.assert_run(None,c,t,"missing-or-malformed-protocol-evidence")
+
+    def test_full_canonical_league_season_scope_must_match(self):
+        cases=[
+            (lambda r,c: r["scope"].clear()),
+            (lambda r,c: c["scope"].append({"league":"nfl-reise","season":2027})),
+            (lambda r,c: c["scope"].append({"league":"nfl-reise","season":2026})),
+            (lambda r,c: c["scope"][0].update(season="2026")),
+            (lambda r,c: c["scope"][0].update(league="../escape")),
+            (lambda r,c: r["scope"].append({"league":"other","season":2024})),
+        ]
+        for index, mutation in enumerate(cases):
+            with self.subTest(case=index):
+                r,c,t=self.evidence()
+                mutation(r,c)
+                self.assert_run(r,c,t,"canonical-league-season-scope-unverified")
+
+    def test_dependency_tree_changes_and_missing_roots_fail_closed(self):
+        for path in shadow.STAGE_INPUTS["league"]:
+            with self.subTest(path=path):
+                r,c,t=self.evidence()
+                c["inputTrees"][path]="f"*40
+                self.assert_run(r,c,t,"changed-or-incomplete-dependency-trees")
+        r,c,t=self.evidence()
+        c["inputTrees"].pop("data-meta")
+        self.assert_run(r,c,t,"changed-or-incomplete-dependency-trees")
+
+    def test_future_draft_partitions_and_outputs_are_exact(self):
+        path="data-derived/league-drafts/nfl-reise/2032.json"
+        for owner in ("requiredOutputs","observedOutputs"):
+            with self.subTest(owner=owner):
+                r,c,t=self.evidence()
+                c[owner].pop(path)
+                self.assert_run(r,c,t,"incomplete-or-stale-published-output-manifest")
+        r,c,t=self.evidence()
+        r["publishedOutputs"].pop(path)
+        self.assert_run(r,c,t,"incomplete-or-stale-published-output-manifest")
+        r,c,t=self.evidence()
+        c["observedOutputs"][path]="f"*40
+        self.assert_run(r,c,t,"incomplete-or-stale-published-output-manifest")
+        r,c,t=self.evidence()
+        c["requiredOutputs"]["data-derived/league-drafts/../forged"]="f"*40
+        self.assert_run(r,c,t,"incomplete-or-stale-published-output-manifest")
+        r,c,t=self.evidence()
+        for source in (r["publishedOutputs"],c["requiredOutputs"],c["observedOutputs"]):
+            for path in list(source):
+                if path.startswith("data-derived/team-week-performance"):
+                    source.pop(path)
+        self.assert_run(r,c,t,"required-output-surface-missing")
+
+    def test_prior_fail_soft_and_ambiguous_producer_never_qualify(self):
+        for name, value in [
+            ("success", False), ("success", "true"),
+            ("attempt", 2), ("attempt", True),
+            ("outputsComplete", None),
+            ("recoveryDebt", [{"product":"team-week-performance","status":"blocked"}]),
+            ("recoveryDebt", [{"product":"team-week-performance","status":"no-scored-week"}]),
+            ("recoveryDebt", [{"product":"league-drafts","status":"blocked"}]),
+            ("recoveryDebt", [{"product":"team-week-performance","parity":"accepted-divergence"}]),
+        ]:
+            with self.subTest(name=name,value=value):
+                r,c,t=self.evidence()
+                r["producer"][name]=value
+                self.assert_run(r,c,t,"prior-producer-or-fail-soft-recovery-not-proven")
+
+    def test_provider_freshness_gaps_expiry_and_silent_change(self):
+        cases=[
+            ("status","unknown"),
+            ("sourceRevision","f"*40),
+            ("acquisitionId","different"),
+            ("observedAtUtc","2026-11-05T10:06:00Z"),
+            ("expiresAtUtc","2026-11-05T10:05:00Z"),
+        ]
+        for key,value in cases:
+            with self.subTest(key=key):
+                r,c,t=self.evidence()
+                c["providerEvidence"][key]=value
+                self.assert_run(r,c,t,"provider-freshness-window-unverified")
+        r,c,t=self.evidence()
+        c.pop("providerEvidence")
+        self.assert_run(r,c,t,"missing-or-malformed-temporal-evidence")
+
+    def test_nfl_finality_unknown_or_active_forces_run(self):
+        for key,value in [
+            ("status","unknown"), ("sourceRevision","f"*40),
+            ("activeNonfinal",True), ("activeNonfinal",None),
+            ("unknownKickoffs",True),
+        ]:
+            with self.subTest(key=key):
+                r,c,t=self.evidence()
+                c["finalityEvidence"][key]=value
+                self.assert_run(r,c,t,"nfl-finality-state-unverified")
+
+    def test_waiver_kickoff_cap_and_rollover_crossings_force_run(self):
+        for boundary in ("WaiverRun","NflGameKickoff","CapWindowEnd","SeasonWindowStart"):
+            with self.subTest(boundary=boundary):
+                r,c,t=self.evidence()
+                c["clockEvidence"]["crossedBoundaries"]=[boundary]
+                self.assert_run(r,c,t,"clock-waiver-or-rollover-window-unverified")
+        r,c,t=self.evidence()
+        c["clockEvidence"]["fromUtc"]="2026-11-05T10:01:00Z"
+        self.assert_run(r,c,t,"clock-waiver-or-rollover-window-unverified")
+        r,c,t=self.evidence()
+        c["asOfUtc"]="2026-11-05T09:59:00Z"
+        self.assert_run(r,c,t,"non-forward-observation-clock")
+
+    def test_race_while_locked_or_between_check_and_skip_is_rejected(self):
+        for position in (1,2,3):
+            with self.subTest(position=position):
+                r,c,t=self.evidence()
+                t.insert(position,{"action":"commit","sha":"f"*40})
+                self.assert_run(r,c,t,"cross-writer-commit-inside-critical-section")
+        r,c,t=self.evidence()
+        t.insert(0,{"action":"commit","sha":"f"*40})
+        self.assert_run(r,c,t,"input-commit-before-skip-linearization")
+
+    def test_post_skip_invalidation_loss_or_missing_rebuild_is_rejected(self):
+        for extra in [
+            [{"action":"commit","sha":"f"*40}],
+            [{"action":"commit","sha":"f"*40},{"action":"enqueue","sha":"f"*40}],
+            [{"action":"commit","sha":"f"*40},{"action":"rebuild","sha":"f"*40}],
+        ]:
+            with self.subTest(extra=extra):
+                r,c,t=self.evidence()
+                t.extend(extra)
+                self.assert_run(r,c,t,"dependency-commit-not-reconciled")
+        r,c,t=self.evidence()
+        t.extend([{"action":"commit","sha":"f"*40},
+                  {"action":"enqueue","sha":"f"*40},
+                  {"action":"rebuild","sha":"f"*40}])
+        result=shadow.assess_offline_preflight_protocol(r,c,t)
+        self.assertEqual("would-skip",result["decision"])
+        self.assertFalse(result["safeToSkip"])  # Finite trace is NOT live race safety.
+
+    def test_race_missing_lock_release_and_unknown_events_rejected(self):
+        cases=[
+            ([{"action":"compare","sha":"d"*40},{"action":"skip","sha":"d"*40},
+              {"action":"release","sha":"d"*40}],"invalid-or-incomplete-synthetic-race-trace"),
+            ([{"action":"acquire","sha":"d"*40},{"action":"compare","sha":"d"*40},
+              {"action":"skip","sha":"d"*40},{"action":"skip","sha":"d"*40}],"skip-outside-verified-critical-section"),
+            ([{"action":"acquire","sha":"d"*40},{"action":"compare","sha":"d"*40},
+              {"action":"skip","sha":"d"*40},{"action":"mystery","sha":"d"*40},
+              {"action":"release","sha":"d"*40}],"unknown-synthetic-race-action"),
+            ([{"action":"acquire","sha":"d"*40},{"action":"compare","sha":"d"*40},
+              {"action":"skip","sha":"d"*40},{"action":"release","sha":"d"*40},
+              {"action":"commit","sha":"bad"}],"malformed-synthetic-race-event"),
+        ]
+        for event_trace,reason in cases:
+            with self.subTest(reason=reason):
+                r,c,_=self.evidence()
+                self.assert_run(r,c,event_trace,reason)
+
+    def test_offline_fixture_has_no_live_executor_or_skip_path(self):
+        workflow=(Path(__file__).resolve().parents[2]/".github/workflows/league-live.yml").read_text()
+        self.assertNotIn("assess_offline_preflight_protocol",workflow)
+        self.assertNotIn("replay_offline_skip_race",workflow)
+        r,c,t=self.evidence()
+        self.assertEqual("would-skip",shadow.assess_offline_preflight_protocol(r,c,t)["decision"])
+        self.assertFalse(shadow.assess_offline_preflight_protocol(r,c,t)["safeToSkip"])
+
+
+
 class DraftContentAuditTests(unittest.TestCase):
     def fixture(self):
         drafts = [
