@@ -10,6 +10,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from tools import league_live_shadow_gate as shadow
+from tools import league_live_output_revision_audit as output_audit
 
 
 class ShadowDecisionTests(unittest.TestCase):
@@ -452,6 +453,258 @@ class OfflinePreflightProtocolTests(unittest.TestCase):
         r,c,t=self.evidence()
         self.assertEqual("would-skip",shadow.assess_offline_preflight_protocol(r,c,t)["decision"])
         self.assertFalse(shadow.assess_offline_preflight_protocol(r,c,t)["safeToSkip"])
+
+
+
+
+class ImmutableOutputRevisionAuditTests(unittest.TestCase):
+    """Read-only fake Git object graph, with actual canonical blob SHA-1 checks."""
+
+    class Fixture:
+        def __init__(self, leagues=("nfl-reise",), horizon=3):
+            import hashlib
+            self.files = {}
+            self.horizon = horizon
+            self.leagues = leagues
+            for league in leagues:
+                season = 2026
+                self.put_json(f"data-meta/{league}/metadata.json", {
+                    "SchemaVersion": 1, "CanonicalLeagueID": league,
+                    "CurrentProviderLeagueID": "1354177383984267264",
+                    "Drafts": {"UpcomingDraftCount": horizon,
+                               "UpcomingDraftCountMode": "PerDraftType",
+                               "Types": [{"DraftType": "Rookie"}]},
+                })
+                self.put_json(f"data-source/leagues/{league}/manifest.json", {
+                    "CanonicalLeagueID": league,
+                    "CurrentCanonicalLeagueSeasonID": f"{league}-{season}",
+                    "CurrentProviderLeagueID": "1354177383984267264",
+                    "Seasons": [{"Season": 2024}, {"Season": 2025},
+                                {"Season": 2026}],
+                })
+                for year in range(2024, 2027 + horizon):
+                    self.files[f"data-derived/league-drafts/{league}/{year}.json"] = b"{}"
+                for year in (2024, 2025, 2026):
+                    self.files[f"data-derived/league-transactions/{league}/{year}.json"] = b"{}"
+                for product in ("team-week-performance", "player-week-fantasy"):
+                    for week in (1, 8):
+                        self.files[f"data-derived/{product}/{league}/2026/{week:02}.json"] = b"{}"
+            for path in output_audit.APP_FILES:
+                self.files[path] = b"{}"
+            self.compile()
+
+        def put_json(self, path, value):
+            self.files[path] = json.dumps(value, sort_keys=True).encode("utf-8")
+
+        def compile(self):
+            import hashlib
+            import base64
+            root = {}
+            self.blobs = {}
+            self.trees = {}
+            for path, data in sorted(self.files.items()):
+                blob = hashlib.sha1(b"blob " + str(len(data)).encode() +
+                                    b"\x00" + data).hexdigest()
+                self.blobs[blob] = {
+                    "sha": blob, "encoding": "base64", "size": len(data),
+                    "content": base64.b64encode(data).decode("ascii"),
+                }
+                node = root
+                parts = path.split("/")
+                for part in parts[:-1]:
+                    node = node.setdefault(part, {})
+                node[parts[-1]] = ("blob", blob)
+            def seal(node):
+                entries = []
+                for name, value in sorted(node.items()):
+                    typ, sha = value if isinstance(value, tuple) else ("tree", seal(value))
+                    entries.append({"path": name, "type": typ, "sha": sha})
+                tree_sha = hashlib.sha1(
+                    json.dumps(entries, sort_keys=True).encode("utf-8")
+                ).hexdigest()
+                self.trees[tree_sha] = {"sha": tree_sha, "truncated": False,
+                                        "tree": entries}
+                return tree_sha
+            root_sha = seal(root)
+            self.sha = hashlib.sha1(("commit:" + root_sha).encode()).hexdigest()
+            self.commit = {"sha": self.sha, "commit": {"tree": {"sha": root_sha}}}
+
+        def fetch(self, resource, params):
+            if params:
+                raise AssertionError("Unexpected params")
+            if resource == f"commits/{self.sha}":
+                return self.commit
+            if resource.startswith("git/trees/"):
+                return self.trees[resource.split("/")[-1]]
+            if resource.startswith("git/blobs/"):
+                return self.blobs[resource.split("/")[-1]]
+            raise AssertionError("Unexpected Git API path " + resource)
+
+        def report(self):
+            return output_audit.audit_immutable_outputs(self.fetch, self.sha)
+
+    def assert_blocked(self, fixture, fragment):
+        result = fixture.report()
+        self.assertEqual("blocked", result["status"])
+        self.assertTrue(any(fragment in code for code in result["reasonCodes"]),
+                        result["reasonCodes"])
+        self.assertFalse(result["selectedGitOutputBlobIdsVerified"])
+        self.assertFalse(result["safeToSkip"])
+        self.assertFalse(result["enforced"])
+
+    def test_realistic_selected_tree_proof_remains_no_go(self):
+        f = self.Fixture()
+        result = f.report()
+        self.assertTrue(result["selectedGitOutputBlobIdsVerified"])
+        self.assertTrue(result["metadataMinimumDraftYearsVerified"])
+        self.assertEqual("immutable-selected-output-blobs-observed", result["status"])
+        self.assertEqual([2026, 2027, 2028, 2029],
+                         result["leagueCoverage"][0]["minimumConfiguredDraftYears"])
+        self.assertIn("data-derived/league-drafts/nfl-reise/2029.json",
+                      result["selectedOutputBlobs"])
+        for flag in ("completeOutputInventoryVerified", "providerDraftHorizonVerified",
+                     "outputSemanticParityVerified", "successfulProducerRunVerified",
+                     "independentProviderFreshnessVerified", "independentNflFinalityVerified",
+                     "recoveryClean", "raceFree", "safeToSkip", "enforced"):
+            self.assertIs(result[flag], False, flag)
+
+    def test_two_leagues_are_discovered_not_hard_coded(self):
+        f = self.Fixture(leagues=("alpha", "nfl-reise"))
+        result = f.report()
+        self.assertEqual(["alpha", "nfl-reise"], result["canonicalLeagueIDs"])
+        self.assertEqual(2, len(result["leagueCoverage"]))
+        self.assertFalse(result["safeToSkip"])
+
+    def test_missing_dynamic_future_draft_file_fails_closed(self):
+        f = self.Fixture()
+        f.files.pop("data-derived/league-drafts/nfl-reise/2029.json")
+        f.compile()
+        self.assert_blocked(f, "metadata-minimum-future-drafts-missing")
+
+    def test_increasing_metadata_horizon_discovers_new_required_draft(self):
+        f = self.Fixture()
+        f.put_json("data-meta/nfl-reise/metadata.json", {
+            "SchemaVersion": 1, "CanonicalLeagueID": "nfl-reise",
+            "CurrentProviderLeagueID": "1354177383984267264",
+            "Drafts": {"UpcomingDraftCount": 6,
+                       "UpcomingDraftCountMode": "PerDraftType",
+                       "Types": [{"DraftType": "Rookie"}]},
+        })
+        f.compile()
+        self.assert_blocked(f, "metadata-minimum-future-drafts-missing")
+
+    def test_extra_actual_future_partitions_are_collected_not_suppressed(self):
+        f = self.Fixture()
+        f.files["data-derived/league-drafts/nfl-reise/2035.json"] = b"{}"
+        f.compile()
+        result = f.report()
+        self.assertTrue(result["selectedGitOutputBlobIdsVerified"])
+        self.assertIn(2035, result["leagueCoverage"][0]["observedDraftYears"])
+        self.assertFalse(result["providerDraftHorizonVerified"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_missing_current_transactions_or_pwf_twp_fails_closed(self):
+        cases = (
+            ("data-derived/league-transactions/nfl-reise/2026.json",
+             "current-product-season-missing"),
+            ("data-derived/team-week-performance/nfl-reise/2026/01.json",
+             "missing"),
+            ("data-derived/player-week-fantasy/nfl-reise/2026/08.json",
+             "missing"),
+        )
+        for path, _ in cases:
+            with self.subTest(path=path):
+                f = self.Fixture()
+                if path.endswith("/2026.json"):
+                    f.files.pop(path)
+                else:
+                    parent = path.rsplit("/", 1)[0]
+                    for current in list(f.files):
+                        if current.startswith(parent + "/"):
+                            f.files.pop(current)
+                f.compile()
+                self.assert_blocked(f, "current-product-season-missing" if
+                                    path.endswith("/2026.json") else
+                                    "current-product-season-missing")
+
+    def test_missing_app_output_fails_closed(self):
+        f = self.Fixture()
+        f.files.pop(output_audit.APP_FILES[0])
+        f.compile()
+        self.assert_blocked(f, "required-git-entry-missing")
+
+    def test_invalid_week_partition_fails_closed(self):
+        for name in ("00.json", "24.json", "week-8.json"):
+            with self.subTest(name=name):
+                f = self.Fixture()
+                f.files[f"data-derived/team-week-performance/nfl-reise/2026/{name}"] = b"{}"
+                f.compile()
+                self.assert_blocked(f, "invalid-week-partition")
+
+    def test_stray_derived_league_without_metadata_fails_closed(self):
+        f = self.Fixture()
+        f.files["data-derived/league-drafts/rogue/2026.json"] = b"{}"
+        f.compile()
+        self.assert_blocked(f, "missing-or-extra-derived-league")
+
+    def test_missing_manifest_and_identity_drift_fail_closed(self):
+        f = self.Fixture()
+        f.files.pop("data-source/leagues/nfl-reise/manifest.json")
+        f.compile()
+        self.assert_blocked(f, "required-git-entry-missing")
+        f = self.Fixture()
+        f.put_json("data-source/leagues/nfl-reise/manifest.json", {
+            "CanonicalLeagueID": "nfl-reise",
+            "CurrentCanonicalLeagueSeasonID": "nfl-reise-2025",
+            "CurrentProviderLeagueID": "other",
+            "Seasons": [{"Season": 2025}],
+        })
+        f.compile()
+        self.assert_blocked(f, "metadata-manifest-season-identity-mismatch")
+
+    def test_corrupt_canonical_blob_digest_and_wrong_ref_fail_closed(self):
+        f = self.Fixture()
+        meta = f.files["data-meta/nfl-reise/metadata.json"]
+        import hashlib
+        blob_sha = hashlib.sha1(b"blob " + str(len(meta)).encode() + b"\0" + meta).hexdigest()
+        f.blobs[blob_sha]["content"] = "e30="  # different bytes, same claimed SHA
+        self.assert_blocked(f, "canonical-blob-digest-mismatch")
+        result = output_audit.audit_immutable_outputs(f.fetch, "not-a-sha")
+        self.assertFalse(result["selectedGitOutputBlobIdsVerified"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_wrong_or_truncated_tree_fail_closed(self):
+        f = self.Fixture()
+        root_sha = f.commit["commit"]["tree"]["sha"]
+        f.trees[root_sha]["truncated"] = True
+        self.assert_blocked(f, "incomplete-or-wrong-git-tree")
+        f = self.Fixture()
+        f.commit["commit"]["tree"]["sha"] = "x" * 40
+        self.assert_blocked(f, "commit-tree-not-independently-resolved")
+
+    def test_duplicate_git_tree_entry_fails_closed(self):
+        f = self.Fixture()
+        root_sha = f.commit["commit"]["tree"]["sha"]
+        f.trees[root_sha]["tree"].append(dict(f.trees[root_sha]["tree"][0]))
+        self.assert_blocked(f, "invalid-or-duplicate-git-tree-entry")
+
+    def test_result_fingerprint_is_stable_and_changes_with_output(self):
+        a = self.Fixture()
+        left = a.report()
+        self.assertEqual(left["selectedOutputFingerprint"], a.report()["selectedOutputFingerprint"])
+        a.files["public/data/League.json"] = b'{"changed":true}'
+        a.compile()
+        right = a.report()
+        self.assertTrue(right["selectedGitOutputBlobIdsVerified"])
+        self.assertNotEqual(left["selectedOutputFingerprint"], right["selectedOutputFingerprint"])
+        self.assertFalse(right["safeToSkip"])
+
+    def test_no_production_workflow_invocation_or_skip_authorization(self):
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/league-live.yml").read_text()
+        self.assertNotIn("league_live_output_revision_audit.py", workflow)
+        result = self.Fixture().report()
+        self.assertFalse(result["safeToSkip"])
+        self.assertFalse(result["enforced"])
 
 
 
