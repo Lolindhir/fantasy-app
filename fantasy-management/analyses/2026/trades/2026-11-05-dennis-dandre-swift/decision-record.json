@@ -1,0 +1,392 @@
+{
+  "schema_version": "1.0.0",
+  "type": "trade_decision_record",
+  "record_id": "trade-2026-11-05-dennis-dandre-swift",
+  "trade_id": "sleeper-1424008779854282752",
+  "transaction_date": "2026-11-05",
+  "created_at": "2026-11-06T10:54:00Z",
+  "record_origin": "reconstructed",
+  "reconstruction": {
+    "reconstruction_date": "2026-11-06",
+    "reconstruction_confidence": 4,
+    "outcome_firewall_acknowledged": true,
+    "limitations": [
+      "The Sleeper trade and exact originating rookie pick are independently confirmed, but the final asset selection was resolved on-platform after Robert's initial 2026-11-04 chat acceptance.",
+      "The relevant WhatsApp exchange and the original ChatGPT analysis are contemporary evidence supplied in the active conversation; the reconstruction was authored two days later and is not a direct contemporaneous self-scored Decision State.",
+      "Robert explicitly expressed fear that a young WR could break out after being traded, alongside clear willingness to accept; he did not assign numerical decision-confidence or outcome-uncertainty ratings, or formally self-label his decision margin. Those are intentionally left null/unknown.",
+      "The pretrade Week-9 +6.7-point estimate was a simplified lineup optimization against projections, not a verified realized improvement, an injury-adjusted playoff forecast, or an independently reproduced model.",
+      "Historical FantasyCalc market values were generated for an 8-team Superflex PPR market, while the actual league contains six teams, two fixed QBs, two fixed TEs and four FLEX positions. The generic 2027 fourth-round valuation does not directly resolve the six-team rookie shelf.",
+      "No post-trade Week-9 player performance, subsequently learned usage, future salary model, or final 2027 rookie draft position is included in the original thesis."
+    ]
+  },
+  "transaction": {
+    "counterparty": {
+      "team_id": 5,
+      "team_name": "Team DennisLACards",
+      "owner_name": "Dennis"
+    },
+    "assets_received": [
+      {
+        "asset_id": "sleeper-player-6790",
+        "asset_type": "player",
+        "label": "D'Andre Swift",
+        "player_id": "6790",
+        "player_name": "D'Andre Swift"
+      }
+    ],
+    "assets_sent": [
+      {
+        "asset_id": "sleeper-player-10213",
+        "asset_type": "player",
+        "label": "Tre Tucker",
+        "player_id": "10213",
+        "player_name": "Tre Tucker"
+      },
+      {
+        "asset_id": "2027_Rookie_R4_OO2",
+        "asset_type": "rookie_pick",
+        "label": "2027 Rookie 4th originally belonging to Marcel / Ruhr Valley Packers",
+        "season": 2027,
+        "draft_key": "2027_Rookie",
+        "pick_key": "2027_Rookie_R4_OO2",
+        "pick_label": "Round 4",
+        "original_owner_team_id": 2
+      }
+    ],
+    "transaction_refs": [
+      "public/data/Transactions.json#TransactionID=1424008779854282752",
+      "public/data/Drafts.json#PickKey=2027_Rookie_R4_OO2",
+      "fantasy-management/league-context/trade-negotiation-history.md#2026-11-04-to-2026-11-05--dennis--teamid-5--swift-for-tre-tucker-and-marcels-2027-rookie-4th"
+    ]
+  },
+  "evidence_basis": [
+    {
+      "evidence_id": "E1",
+      "source_type": "canonical_transaction",
+      "source_ref": "public/data/Transactions.json#TransactionID=1424008779854282752",
+      "as_of": "2026-11-05T10:00:10Z",
+      "ex_ante_relevant": true,
+      "evidence_confidence": 5,
+      "note": "Sleeper confirms Swift (6790) to TeamID 1, Tucker (10213) and the exact 2027 Rookie 4th (OO2) to TeamID 5, with complete status in Week 9."
+    },
+    {
+      "evidence_id": "E2",
+      "source_type": "repository_snapshot",
+      "source_ref": "public/data/Drafts.json#PickKey=2027_Rookie_R4_OO2",
+      "as_of": "2026-11-05T10:00:10Z",
+      "ex_ante_relevant": true,
+      "evidence_confidence": 5,
+      "note": "PickKey 2027_Rookie_R4_OO2 was originally held by TeamID 2 (Marcel), moved to Mighty Giants in September, then to Dennis in this trade. It was a Rookie, not Free Agent, fourth. No overall slot has yet been assigned."
+    },
+    {
+      "evidence_id": "E3",
+      "source_type": "contemporary_chat",
+      "source_ref": "user_supplied_whatsapp:2026-11-04:robert-dennis-swift-discussion",
+      "as_of": "2026-11-04T21:11:00Z",
+      "ex_ante_relevant": true,
+      "evidence_confidence": 5,
+      "note": "Robert and Dennis explicitly accepted Swift for Tucker plus one 2027 Rookie 4th. Robert discussed Monangai injury hedge, Tucker's potential at age 25, fear of selling youth, and protected Nabers. Dennis expressed Tucker skepticism then self-corrected his Nabers request and accepted without added assets."
+    },
+    {
+      "evidence_id": "E4",
+      "source_type": "stored_negotiation_history",
+      "source_ref": "fantasy-management/league-context/trade-negotiation-history.md#2026-11-04-to-2026-11-05--dennis--teamid-5--swift-for-tre-tucker-and-marcels-2027-rookie-4th",
+      "as_of": "2026-11-04T21:11:00Z",
+      "ex_ante_relevant": true,
+      "evidence_confidence": 5,
+      "note": "Distilled contemporary negotiation preserves opening Tucker+rookie-4th price, KTC/Dynasty Daddy discussion, Dennis's re-evaluation and unchanged acceptance. This supplies context but not numerical ex-ante decision confidence."
+    },
+    {
+      "evidence_id": "E5",
+      "source_type": "market_snapshot",
+      "source_ref": "data-source/market/market-value/fantasycalc/dynasty-superflex-ppr-8-team/snapshots/2026-11-03/ranking.csv",
+      "as_of": "2026-11-03T00:00:00Z",
+      "ex_ante_relevant": true,
+      "evidence_confidence": 5,
+      "note": "Historical 8-team dynasty market: Swift 3,076; Tucker 1,509; generic 2027 mid Rookie 4th 850 (early 936). Contextual pricing only; not a calibrated six-team trade value."
+    },
+    {
+      "evidence_id": "E6",
+      "source_type": "contemporary_analysis",
+      "source_ref": "conversation:2026-11-03-to-2026-11-04:swift-tucker-roster-and-week-9-lineup",
+      "as_of": "2026-11-04T20:00:00Z",
+      "ex_ante_relevant": true,
+      "evidence_confidence": 4,
+      "note": "Pretrade analysis estimated approximately +6.7 projected Week-9 starting-lineup points if Swift replaced a lower projected FLEX option. Robert and assistant discussed 30/30 active roster occupancy, 1:1 active WR-to-RB swap, six-team positional scarcity and many WR upside bets."
+    },
+    {
+      "evidence_id": "E7",
+      "source_type": "canonical_transaction",
+      "source_ref": "public/data/Transactions.json#TransactionID=1400904559005532160",
+      "as_of": "2026-09-02T00:00:00Z",
+      "ex_ante_relevant": true,
+      "evidence_confidence": 5,
+      "note": "Prior completed Marcel trade conveyed the exact 2027 Rookie 4th (OO2) to Robert in exchange for the 2026 Free Agent 4.04. This establishes the incoming pick's provenance, not its eventual draft outcome."
+    },
+    {
+      "evidence_id": "E8",
+      "source_type": "repository_snapshot",
+      "source_ref": "public/data/League.json#Season=2026",
+      "as_of": "2026-11-04T00:00:00Z",
+      "ex_ante_relevant": true,
+      "evidence_confidence": 4,
+      "note": "League has six teams and 2 QB / 2 RB / 2 WR / 2 TE / 4 FLEX / 1 K slots; top four reach playoffs. Current canonical contract is used for format context; no retroactive player-performance inference."
+    }
+  ],
+  "decision_context": {
+    "objective": "Convert some of Mighty Giants' excess speculative WR depth into a more immediately usable RB for the 2026 playoff push while preserving high-value young core assets and a viable 2027/longer-horizon team.",
+    "season_phase": "regular_season",
+    "roster_context": "The user held many high-upside WRs (including Waddle, Brian Thomas Jr., Marvin Harrison Jr. and McConkey) and multiple RB options. Tucker was a recently re-acquired waiver upside bet. Both sides were active players, allowing a 1-for-1 active roster swap at 30/30 without a new forced cut; Brooks was on IR and giving him away would not solve the active-slot issue. Kyle Monangai was already rostered, making Swift a possible same-team usage hedge with upside and cannibalization limitations.",
+    "cap_salary_context": "No binding salary-cap requirement during the 2026 regular season; offseason/2027 cap implications were not the immediate decision constraint and must be re-evaluated later. The near-term transaction objective was usable lineup points and roster slot balance, not cap relief.",
+    "team_window": "Mighty Giants were a 4–4 playoff contender after Week 8 with a strong dynasty core, facing a more dominant Flo/Just Bill. The intended strategy was selective win-now strengthening without sacrificing top prospects or an original high rookie pick.",
+    "market_context": "Dennis was shifting toward a rebuild and explicitly indicated Swift as a player he considered trading. KeepTradeCut and Dynasty Daddy disagreed on aggregate package valuation; FantasyCalc on 2026-11-03 valued Swift materially above Tucker plus a generic 2027 Rookie fourth in an eight-team baseline. The six-team rookie-pick shelf and four FLEX starters required a league-specific interpretation rather than one universal calculator.",
+    "why_now": "Dennis had just sold Christian McCaffrey to Flo; Robert wanted a realistic playoff RB addition without chasing Flo's premium trade. The opening Swift-for-Tucker-plus-Rookie-4th deal solved the active-roster constraint and was accepted on 2026-11-04 without a higher counter price; Sleeper executed it on 2026-11-05.",
+    "constraints": [
+      "30/30 active roster slots pretrade meant a pick-only Swift acquisition would need a separate active roster exit; Brooks on IR would not by itself free the needed active spot.",
+      "Do not sacrifice Malik Nabers, premium dynasty core players or an early Rookie first to close a secondary win-now upgrade.",
+      "Waddle's role and upside after a substantial NFL investment deserved independent reassessment, not an opportunistic sell-low to acquire Swift.",
+      "Tucker remained a genuine breakout bet; his waiver origin did not make him valueless.",
+      "A 2027 Rookie 4th is a materially earlier absolute selection in a six-team draft than the same round in a larger league; pick origin and eventual slot should be tracked.",
+      "Holding Swift and Monangai provides coverage but does not create two independent RB1 workloads when both are healthy.",
+      "The explicit full-year 2027 salary/cap effect was not quantified when deciding the November trade."
+    ]
+  },
+  "theses": [
+    {
+      "thesis_id": "T1",
+      "statement": "Swift should improve Mighty Giants' optimal active starting lineup during the remaining 2026 regular season / playoffs versus continuing to roster Tucker; the simplified Week-9 pretrade projection indicated about +6.7 points, not a guaranteed weekly gain.",
+      "confidence": null,
+      "horizon": "season",
+      "falsification_conditions": [
+        "Swift's healthy weekly usage or scoring fails to beat the relevant RB/WR/FLEX replacement opportunities enough to affect actual start decisions.",
+        "Tucker produces comparable or superior startable utility in Mighty Giants' four-FLEX environment."
+      ]
+    },
+    {
+      "thesis_id": "T2",
+      "statement": "Rostered Kyle Monangai provides an injury/role contingency for Swift and improves the Mighty Giants' ability to retain Chicago backfield fantasy usage if Swift misses time or declines; when both are healthy, they may cannibalize usage.",
+      "confidence": null,
+      "horizon": "multi_year",
+      "falsification_conditions": [
+        "Monangai does not receive materially expanded workload in plausible Swift-absence scenarios.",
+        "The Bears' workload changes so that neither player provides reliably startable fantasy usage or both are simultaneously underutilized."
+      ]
+    },
+    {
+      "thesis_id": "T3",
+      "statement": "Trading one active WR for one active RB addresses positional portfolio congestion and preserves immediate roster legality without a separate cut, while keeping core WR upside options.",
+      "confidence": null,
+      "horizon": "immediate",
+      "falsification_conditions": [
+        "The swap causes an unanticipated roster limit problem or materially damages required WR starter/flex coverage.",
+        "Keeping Tucker would have been required for scarce WR coverage despite the other rostered receivers."
+      ]
+    },
+    {
+      "thesis_id": "T4",
+      "statement": "Giving up Tucker's breakout option and a 2027 Rookie 4th is an acceptable dynasty opportunity cost for Swift at this specific opening price, provided no premium pick or protected young core asset is added.",
+      "confidence": null,
+      "horizon": "multi_year",
+      "falsification_conditions": [
+        "Tucker's role and long-term value develop enough that the lost upside plus rookie-pick shelf far outweighs Swift's realized and preserved utility.",
+        "A comparably useful RB could realistically have been acquired without sacrificing either Tucker or the Rookie 4th at the decision date."
+      ]
+    },
+    {
+      "thesis_id": "T5",
+      "statement": "The controlled buy supports 2026 playoff competitiveness without forcing a CMC-style all-in or sacrificing Nabers, Brooks, Fannin, Waddle or early 2027 Rookie picks.",
+      "confidence": null,
+      "horizon": "season",
+      "falsification_conditions": [
+        "This exact trade materially undermines the retained core or unexpectedly forces a premium follow-on sacrifice.",
+        "The intended playoff lineup benefit proves negligible relative to the material loss of the outgoing draft asset and upside player."
+      ]
+    }
+  ],
+  "alternatives": [
+    {
+      "description": "Do not trade; retain Tucker, Marcel's 2027 Rookie 4th and full long-term upside optionality.",
+      "reason_not_chosen": "Robert was dissatisfied with the breadth of WR-only future bets and wanted a controlled RB upgrade to improve the 2026 playoff path while preserving the core.",
+      "status": "less_preferred"
+    },
+    {
+      "description": "Jonathon Brooks plus Robert's 2027 Rookie 3rd for Swift.",
+      "reason_not_chosen": "Brooks was on IR and retained 2027 upside; an IR player leaving while Swift joined the active roster would not itself solve 30/30 active occupancy.",
+      "status": "rejected"
+    },
+    {
+      "description": "Jaylen Waddle for Swift, possibly a higher return or additional pick.",
+      "reason_not_chosen": "Waddle remained a valued longer-term bet; the user wanted to avoid selling him low, especially given the previous Watson/Kincaid trade and the NFL first-round investment in Waddle.",
+      "status": "rejected"
+    },
+    {
+      "description": "Pick-only compensation, such as a 2027 Rookie 2nd.",
+      "reason_not_chosen": "The active roster was already full; a pick-only trade would require an additional cut or active-player trade. A second also carried significant six-team rookie value.",
+      "status": "less_preferred"
+    },
+    {
+      "description": "Tre Tucker plus a 2027 Rookie 3rd as a possible negotiation concession.",
+      "reason_not_chosen": "Dennis accepted the original Tucker + Rookie 4th structure; increasing the pick was unnecessary, and a six-team Rookie 3rd has notable absolute draft value.",
+      "status": "not_pursued"
+    },
+    {
+      "description": "Pursue an alternative veteran RB such as Javonte Williams.",
+      "reason_not_chosen": "The Swift opportunity was explicitly available from Dennis and complemented the already rostered Monangai. No alternative transaction was agreed on these terms.",
+      "status": "not_pursued"
+    }
+  ],
+  "protected_assets": [
+    {
+      "asset": {
+        "asset_id": "sleeper-player-11632",
+        "asset_type": "player",
+        "label": "Malik Nabers",
+        "player_id": "11632",
+        "player_name": "Malik Nabers"
+      },
+      "reason": "Robert categorically rejected Dennis's one-for-one Swift/Nabers idea, citing Nabers' greater projected production, younger age and personal Giants attachment."
+    },
+    {
+      "asset": {
+        "asset_id": "sleeper-player-11583",
+        "asset_type": "player",
+        "label": "Jonathon Brooks",
+        "player_id": "11583",
+        "player_name": "Jonathon Brooks"
+      },
+      "reason": "Longer-term injured prospect with significant downside but still real 2027 upside; IR-to-active trade construction also did not solve the roster occupancy."
+    },
+    {
+      "asset": {
+        "asset_id": "sleeper-player-7526",
+        "asset_type": "player",
+        "label": "Jaylen Waddle",
+        "player_id": "7526",
+        "player_name": "Jaylen Waddle"
+      },
+      "reason": "User regarded Waddle as a longer-term investment whose market slump and team investment warranted patience rather than a sell-low."
+    },
+    {
+      "asset": {
+        "asset_id": "sleeper-player-12506",
+        "asset_type": "player",
+        "label": "Harold Fannin Jr.",
+        "player_id": "12506",
+        "player_name": "Harold Fannin Jr."
+      },
+      "reason": "Protected upside TE mentioned in Dennis's earlier expensive McCaffrey ask; a relatively modest Swift upgrade did not justify adding him."
+    },
+    {
+      "asset": {
+        "asset_id": "2027_Rookie_R1_OO1",
+        "asset_type": "rookie_pick",
+        "label": "Mighty Giants' own 2027 Rookie 1st",
+        "season": 2027,
+        "draft_key": "2027_Rookie",
+        "pick_key": "2027_Rookie_R1_OO1",
+        "pick_label": "Round 1",
+        "original_owner_team_id": 1
+      },
+      "reason": "The user explicitly wanted a measured buy, not a premium rookie pick expenditure to catch Flo."
+    }
+  ],
+  "price_ceiling": {
+    "known": false,
+    "description": "The explicitly accepted opening price was Tucker plus one of Robert's 2027 Rookie 4ths at Dennis's selection; prior analysis discussed Tucker plus a Rookie 3rd as a possible concession but Robert did not affirm a formal maximum/walk-away boundary. Dennis accepted the fourth without additional compensation.",
+    "execution_vs_ceiling": "unknown",
+    "reason_if_above": null
+  },
+  "known_risks": [
+    {
+      "risk_id": "R1",
+      "description": "Tucker (25) could substantially break out after leaving, echoing Robert's explicit fear of having sold previous young players before improvement.",
+      "likelihood": "medium",
+      "impact": "high"
+    },
+    {
+      "risk_id": "R2",
+      "description": "Swift (about 28 at the decision) could decline or suffer injury; Monangai is an uncertain hedge rather than guaranteed equal replacement.",
+      "likelihood": "medium",
+      "impact": "high"
+    },
+    {
+      "risk_id": "R3",
+      "description": "Swift and Monangai could split or cannibalize weekly touches, weakening the perceived 2026 upgrade.",
+      "likelihood": "medium",
+      "impact": "medium"
+    },
+    {
+      "risk_id": "R4",
+      "description": "The transferred Rookie 4th may end up relatively early within the six-team format (overall #19–24) and provide more future player value than generic calculator models show.",
+      "likelihood": "medium",
+      "impact": "medium"
+    },
+    {
+      "risk_id": "R5",
+      "description": "External values and pregame projection calculations may be poorly calibrated to the league's unusual six-team, two-TE, four-FLEX structure.",
+      "likelihood": "high",
+      "impact": "medium"
+    },
+    {
+      "risk_id": "R6",
+      "description": "Swift could carry meaningful 2027 cap/salary opportunity cost even though current regular-season salary limits did not block the deal.",
+      "likelihood": "unknown",
+      "impact": "medium"
+    }
+  ],
+  "decision_state_at_execution": {
+    "decision_confidence": null,
+    "outcome_uncertainty": null,
+    "gut_feeling": "mixed",
+    "decision_margin": "unknown",
+    "confidence_rationale": "Contemporary messages document real interest and prompt agreement at the unchanged opening price, plus explicit fear that Tucker could become the next young asset whose breakout Robert missed. There is no direct self-rating of conviction in this exact trade/price; it is intentionally not inferred from the final 'Deal' alone. Gut feeling 'mixed' is a provisional qualitative interpretation of the simultaneous positive action and downside concern, awaiting user calibration.",
+    "primary_confidence_driver": "A controlled price that converted crowded WR upside into more immediately startable RB production, preserved active roster capacity, and added a Swift/Monangai pairing without giving up core assets.",
+    "primary_source_of_doubt": "Long-term risk that 25-year-old Tucker develops into a significant receiver after being moved, combined with Swift's age, split backfield and the loss of a relatively early six-team Rookie 4th.",
+    "known_personal_biases": [
+      "Recency/regret sensitivity from earlier experiences Robert associated with trading away Christian Watson and Tyler Warren.",
+      "Giants fandom influenced Robert's unwillingness to include Malik Nabers; he identified this explicitly.",
+      "Potential competitive pressure to keep pace with Flo after the McCaffrey trade.",
+      "Potential comfort bias from already rostering Kyle Monangai as an assumed Swift hedge."
+    ],
+    "state_provenance": "reconstructed_contemporary_evidence"
+  },
+  "portfolio_links": [
+    {
+      "linked_trade_id": "sleeper-1400904559005532160",
+      "relationship": "pick_chain",
+      "description": "Robert acquired Marcel's original 2027 Rookie 4th (2027_Rookie_R4_OO2) by sending Marcel 2026 FA 4.04 on 2026-09-02; that **same pick**, not Robert's own fourth, was sent to Dennis in the Swift deal. This link is asset provenance, not a claim the trades formed one planned strategy."
+    }
+  ],
+  "review_plan": [
+    {
+      "review_kind": "early_signal",
+      "trigger_type": "relative_interval",
+      "trigger_value": "After approximately 4–6 relevant 2026 games following the trade in which Swift and Tucker have meaningful opportunities",
+      "purpose": "Compare roles, snaps/routes/touches, actual start decisions and Monangai usage to the expected Week-9 lineup upgrade; do not issue a final winner/loser grade from a small sample."
+    },
+    {
+      "review_kind": "season_end",
+      "trigger_type": "season_checkpoint",
+      "trigger_value": "End of the 2026 Mighty Giants fantasy season / after 2026 playoffs",
+      "purpose": "Evaluate 2026 playoff utility of Swift versus lost WR depth, keeping process and outcome distinct."
+    },
+    {
+      "review_kind": "asset_resolution",
+      "trigger_type": "event",
+      "trigger_value": "When the transferred 2027 Rookie 4th (2027_Rookie_R4_OO2) receives an exact overall slot or is exercised/traded again",
+      "purpose": "Resolve the six-team pick's actual shelf and quantify ex-ante opportunity cost without grading the original trade solely by the eventual rookie."
+    },
+    {
+      "review_kind": "year_1",
+      "trigger_type": "season_checkpoint",
+      "trigger_value": "After the 2027 NFL/fantasy season",
+      "purpose": "Evaluate Tucker's subsequent role/market value and Swift/Monangai dynasty utility and cap cost relative to the explicitly long-term tradeoff."
+    }
+  ],
+  "seal": {
+    "status": "draft",
+    "sealed_at": null,
+    "sealed_with_user_confirmation": false
+  },
+  "corrections": []
+}
