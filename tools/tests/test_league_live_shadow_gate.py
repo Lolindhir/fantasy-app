@@ -625,7 +625,7 @@ class ImmutableOutputRevisionAuditTests(unittest.TestCase):
                 f.compile()
                 self.assert_blocked(f, "current-product-season-missing" if
                                     path.endswith("/2026.json") else
-                                    "current-product-season-missing")
+                                    "required-git-entry-missing")
 
     def test_missing_app_output_fails_closed(self):
         f = self.Fixture()
