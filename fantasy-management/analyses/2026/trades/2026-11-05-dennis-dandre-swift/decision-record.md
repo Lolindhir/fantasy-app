@@ -1,6 +1,6 @@
 # Trade Decision Record – D'Andre Swift für Tre Tucker + 2027 Rookie-4th
 
-> **Status: ENTWURF (`draft`) — noch nicht versiegelt.** Dieser aus zeitnahen Gesprächen rekonstruierte Entscheidungszustand dient dem späteren Review ohne Hindsight Bias. Numerische subjektive Ratings wurden damals nicht ausdrücklich erfasst und bleiben bis zu Roberts Kalibrierung offen. Alle Aussagen unter „Erwartungen“ sind **ex ante**, keine beobachteten Ergebnisse.
+> **Status: VERSIEGELT (`sealed`) am 06.11.2026**, nach Roberts ausdrücklicher Zustimmung zur ex-ante Kalibrierung. Die subjektiven Zahlen wurden am 04.11. nicht selbst erfasst, sondern am 06.11. auf Grundlage der damaligen Aussagen von Robert bestätigt. Alle Aussagen unter „Erwartungen“ sind **ex ante**, keine beobachteten Ergebnisse. Spätere Outcomes werden ausschließlich in separaten Reviews ergänzt.
 
 ## Metadaten
 
@@ -11,6 +11,7 @@
 - Ursprung: `reconstructed` (aus Chat und Quellen unmittelbar nach der Ausführung).
 - Rekonstruktions-Confidence: **4/5** für die Gesamtrekonstruktion; Transaktions- und Pick-Fakten **5/5**.
 - Outcome-Firewall: **ja**. Keine späteren Spiele oder Wertentwicklungen in die ursprüngliche Entscheidungsbegründung eingerechnet.
+- **Seal-Freigabe:** 06.11.2026 durch Robert (Bestätigung der vorgeschlagenen Kalibrierung 4/5, 4/5, gemischt/leicht positiv).
 - Kanonische strukturierte Fassung: [decision-record.json](decision-record.json).
 
 ## 1. Exakte Transaktion
@@ -56,6 +57,7 @@ Nach Week 8 stand Mighty Giants bei **4–4**; Flo hatte sein Team durch Christi
 | E6 | Damalige Week-9-Lineup-Diskussion | Grobe +6,7-Punkte-Projektion; kein Outcome und keine belastbare Championship-Wahrscheinlichkeit. |
 | E7 | Sleeper #1400904559005532160 vom 02.09.2026 | Historische Herkunft des an Dennis abgegebenen Marcel-Picks. |
 | E8 | `public/data/League.json` | Sechs Teams; besondere Starter- und FLEX-Struktur. |
+| E9 | Roberts ausdrückliche Chat-Bestätigung vom **06.11.2026** | Retrospektive Ex-ante-Kalibrierung: Decision Confidence **4/5**, Outcome Uncertainty **4/5**, Bauchgefühl **gemischt/leicht positiv**. Kein nachträgliches Outcome-Urteil. |
 
 ## 4. Ex-ante-Thesen (noch nicht bewertet)
 
@@ -67,7 +69,7 @@ Nach Week 8 stand Mighty Giants bei **4–4**; Flo hatte sein Team durch Christi
 | **T4** | Die aufgegebene Tucker-Wette + ein Rookie-4th ist als Preis für Swift vertretbar. | Mehrjährig | Tuckers Breakout-Pfad, erhaltene Swift-Nutzung, Wert/Slot des Rookie-4ths; nicht nur retrospektive Punkte. |
 | **T5** | Wir stärken den Playoff-Anlauf kontrolliert, ohne Nabers, Brooks, Fannin, Waddle oder einen frühen Rookie-Pick preiszugeben. | 2026 | Tatsächlich behaltene Kernassets und realisierter kurzfristiger Startnutzen. |
 
-Die Thesen sind **zu prüfen**, nicht als richtig vorausgesetzt. Ihre jeweiligen numerischen Confidence-Werte bleiben bis zur Kalibrierung `null`. Die vollständigen Falsifikationsbedingungen stehen im JSON.
+Die Thesen sind **zu prüfen**, nicht als richtig vorausgesetzt. Ihre **individuellen Thesis-Confidence-Werte** sind nicht separat von Robert bewertet und bleiben `null`; die bestätigte **Decision Confidence für den Gesamttrade beträgt 4/5**. Die vollständigen Falsifikationsbedingungen stehen im JSON.
 
 ## 5. Bewusste Alternativen und geschützte Assets
 
@@ -97,11 +99,11 @@ Die Thesen sind **zu prüfen**, nicht als richtig vorausgesetzt. Ihre jeweiligen
 
 | Messgröße | Rekonstruktionsstatus |
 |---|---|
-| **Decision Confidence** | **offen / `null`** (Robert hat nicht selbst 1–5 bewertet) |
-| **Outcome Uncertainty** | **offen / `null`** (keine eigene 1–5-Bewertung) |
-| **Gut Feeling** | **`mixed` – vorläufig**: Interesse/Abschlussfreude plus ausdrücklich benannte Verlustangst |
-| **Decision Margin** | **`unknown`** bis zur Kalibrierung |
-| **Provenienz** | `reconstructed_contemporary_evidence` |
+| **Decision Confidence** | **4/5 – bestätigt**: klare Überzeugung vom Preis trotz signifikanter Tucker-Upside-Bedenken |
+| **Outcome Uncertainty** | **4/5 – bestätigt**: große plausible Ergebnisspanne, insbesondere Tuckers Breakout vs. Swifts unmittelbarer Nutzen |
+| **Gut Feeling** | **`mixed` – bestätigt, leicht positiv**: Interesse/Abschlussfreude plus ausdrücklich benannte Verlustangst |
+| **Decision Margin** | **`unknown`**: von Robert nicht separat bewertet, keine erfundene Einstufung |
+| **Provenienz** | `mixed_reconstruction`: zeitgenössischer Chat + Nutzerkalibrierung vom 06.11.2026 |
 
 **Primärer Confidence-Treiber:** Günstiger, unverändert angenommener WR→RB-Preis und Monangai als persönlicher Swift-Hedge.
 
@@ -128,9 +130,9 @@ Diese Verbindung beschreibt die **echte Pick-Herkunft**, keine vorab geplante la
 ## 10. Rekonstruktionsgrenzen und Seal
 
 - Originales WhatsApp-Material ist **verdichtete zeitgenössische Evidenz**; es wird kein vollständiger privater Chat exportiert.
-- Numerische Confidence/Uncertainty und formaler Margin-Wert konnten nicht unmittelbar aus Roberts Nachrichten übernommen werden.
-- Nach erfolgter Kalibrierung durch Robert und seiner ausdrücklichen Bestätigung kann die **ex-ante-Fassung versiegelt** werden.
-- **Seal-Status:** `draft`; `sealed_at: null`; `sealed_with_user_confirmation: false`.
+- Die **numerischen Ex-ante-Skalen wurden nicht am Ausführungstag** von Robert vergeben. Am 06.11.2026 bestätigte Robert die rückblickende, quellenbasierte Einordnung von **Decision Confidence 4/5**, **Outcome Uncertainty 4/5** und **gemischtem, leicht positivem Bauchgefühl**. Der formale Margin-Wert wurde nicht separat bewertet.
+- **Seal-Status:** `sealed`; `sealed_at: 2026-11-06T20:11:01.559Z`; `sealed_with_user_confirmation: true`.
+- **Ab jetzt unveränderliche Ex-ante-Thesen und Risiken**; spätere Bewertungen gehören ausschließlich in gesonderte Reviews.
 - **Corrections:** Keine.
 
 Der vollständige maschinenlesbare Datensatz mit Evidenz-/Risiko-/Thesis-IDs und Falsifikationsbedingungen steht in [decision-record.json](decision-record.json).
