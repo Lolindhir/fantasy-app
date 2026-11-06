@@ -840,7 +840,7 @@ class RunReceiptCorrelationTests(unittest.TestCase):
         for key,value,reason in [
             ("runAttempt",None,"source-run-attempt-not-verified"),
             ("runAttempt",True,"source-run-attempt-not-verified"),
-            ("sourcePublishChainVerified",False,"source-complete-chain-contradicted"),
+            ("sourcePublishChainVerified",False,"source-partial-chain-not-a-clean-noop-observation"),
         ]:
             with self.subTest(key=key):
                 args=list(self.evidence())
@@ -954,7 +954,8 @@ class RunReceiptCorrelationTests(unittest.TestCase):
                           side_effect=[args[1],args[2]]), \
              patch.object(run_receipts.recovery,"audit_run",return_value=args[3]), \
              patch.object(run_receipts.outputs,"audit_immutable_outputs",
-                          side_effect=AssertionError("must not read old blobs")):
+                          side_effect=AssertionError("must not read old blobs")), \
+             patch.object(run_receipts.source,"_ancestry",return_value=True):
             result=run_receipts.audit_run(
                 lambda _p,_q:{"ref":"refs/heads/main","object":{"sha":"f"*40}},
                 lambda job:"","Lolindhir/fantasy-app",101,{"nfl-reise"},
