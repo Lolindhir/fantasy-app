@@ -114,11 +114,14 @@ class Snapshot:
                 not 1 <= blob["size"] <= 262144):
             raise SnapshotError("missing-or-invalid-canonical-blob:" + path)
         try:
-            data = base64.b64decode(blob["content"], validate=False)
-            if len(data) != blob["size"] or hashlib.sha1(
-                b"blob " + str(len(data)).encode() + b"\0" + data
-            ).hexdigest() != sha:
-                raise SnapshotError("canonical-blob-digest-mismatch:" + path)
+            data = base64.b64decode(blob["content"], validate=True)
+        except (ValueError, TypeError) as exc:
+            raise SnapshotError("canonical-blob-unreadable:" + path) from exc
+        if len(data) != blob["size"] or hashlib.sha1(
+            b"blob " + str(len(data)).encode() + b"\0" + data
+        ).hexdigest() != sha:
+            raise SnapshotError("canonical-blob-digest-mismatch:" + path)
+        try:
             value = json.loads(data.decode("utf-8"))
         except (UnicodeError, ValueError, TypeError) as exc:
             raise SnapshotError("canonical-json-unreadable:" + path) from exc
