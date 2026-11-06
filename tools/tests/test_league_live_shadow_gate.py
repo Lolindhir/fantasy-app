@@ -11,6 +11,7 @@ from types import SimpleNamespace
 
 from tools import league_live_shadow_gate as shadow
 from tools import league_live_output_revision_audit as output_audit
+from tools import league_live_run_receipt_audit as run_receipts
 
 
 class ShadowDecisionTests(unittest.TestCase):
@@ -705,6 +706,270 @@ class ImmutableOutputRevisionAuditTests(unittest.TestCase):
         result = self.Fixture().report()
         self.assertFalse(result["safeToSkip"])
         self.assertFalse(result["enforced"])
+
+
+
+
+class RunReceiptCorrelationTests(unittest.TestCase):
+    """Authenticated-input protocol boundaries, not real live skip clearance."""
+
+    def evidence(self):
+        main = "f" * 40
+        phases = {
+            "raw": {"state": "publication-commit-correlated",
+                    "publicationCommitVerified": True,
+                    "publicationCommitSha": "a" * 40},
+            "canonical": {"state": "publication-commit-correlated",
+                          "publicationCommitVerified": True,
+                          "publicationCommitSha": "b" * 40},
+        }
+        src = {"runId": 101, "runAttempt": 1, "jobCompletionVerified": True,
+               "mainAtAudit": main, "sourcePublishChainVerified": True,
+               "phases": phases, "reasonCodes": []}
+        standings = {"runId": 101, "stage": "standings", "jobCompletionVerified": True,
+                     "observedMainSha": main, "status": "publication-commit-correlated",
+                     "publicationCommitVerified": True,
+                     "publicationCommitSha": "c" * 40}
+        league = {"runId": 101, "stage": "league", "jobCompletionVerified": True,
+                  "observedMainSha": main, "status": "publication-commit-correlated",
+                  "publicationCommitVerified": True, "publicationCommitSha": "d" * 40}
+        rec = {"runId": 101, "jobCompletionVerified": True,
+               "observedMainSha": main, "currentMainUnchangedDuringAudit": True,
+               "producerReportsComplete": True, "noBlockedDerivedRowsObserved": True,
+               "status": "producer-reported-complete", "expectedLeagueIDs": ["nfl-reise"]}
+        blobs = {"revision": "d" * 40, "selectedGitOutputBlobIdsVerified": True,
+                 "metadataMinimumDraftYearsVerified": True,
+                 "status": "immutable-selected-output-blobs-observed",
+                 "canonicalLeagueIDs": ["nfl-reise"],
+                 "selectedOutputCount": 24, "selectedOutputFingerprint": "e" * 64}
+        return src, standings, league, rec, blobs
+
+    def combine(self, src, standings, league, rec, blobs, *, main="f"*40, ancestry=None):
+        return run_receipts.reconcile(
+            101, {"nfl-reise"}, main, src, standings, league, rec, blobs,
+            ancestry if ancestry is not None else lambda old, new: True,
+        )
+
+    def assert_blocked(self, args, reason, **kwargs):
+        result = self.combine(*args, **kwargs)
+        self.assertEqual("blocked", result["status"])
+        self.assertIn(reason, result["reasonCodes"])
+        self.assertFalse(result["safeToSkip"])
+        self.assertFalse(result["enforced"])
+
+    def test_confirmed_writer_commits_have_selected_blobs_not_full_receipt(self):
+        fields = self.evidence()
+        result = self.combine(*fields)
+        self.assertEqual("correlated-read-only-observations", result["status"])
+        self.assertTrue(result["jobsAndDerivedReportsCorrelated"])
+        self.assertTrue(result["sourceTwoPhasePublicationChainVerified"])
+        self.assertTrue(result["verifiedStageCommitAncestry"])
+        self.assertTrue(result["leagueCommitSelectedGitBlobsVerified"])
+        self.assertEqual({"standings":"c"*40,"league":"d"*40},
+                         result["stagePublicationCommits"])
+        self.assertEqual([], result["noOpStagesObserved"])
+        for field in ("completePublicationReceiptVerified", "fullOutputInventoryVerified",
+                      "providerFreshnessVerified", "nflFinalityVerified", "recoveryClean",
+                      "raceFree", "safeToSkip", "enforced"):
+            self.assertIs(result[field], False, field)
+        self.assertTrue(result["unproven"])
+
+    def test_normal_noop_has_no_new_publication_commits(self):
+        src, standings, league, rec, _ = self.evidence()
+        src["sourcePublishChainVerified"] = False
+        src["phases"]["raw"] = {"state": "no-push-observed",
+                                  "publicationCommitVerified": False}
+        src["phases"]["canonical"] = {"state": "no-op-observed",
+                                        "publicationCommitVerified": False}
+        src["reasonCodes"] = ["missing-complete-two-phase-publication-chain"]
+        for stage in (standings, league):
+            stage.pop("publicationCommitSha")
+            stage.pop("observedMainSha")
+            stage["status"] = "no-op-observed"
+            stage["publicationCommitVerified"] = False
+        result = self.combine(src, standings, league, rec, None)
+        self.assertEqual("correlated-read-only-observations", result["status"])
+        self.assertEqual(["league", "source-canonical", "standings"],
+                         result["noOpStagesObserved"])
+        self.assertEqual({}, result["stagePublicationCommits"])
+        self.assertFalse(result["sourceTwoPhasePublicationChainVerified"])
+        self.assertFalse(result["leagueCommitSelectedGitBlobsVerified"])
+        self.assertFalse(result["safeToSkip"])
+        self.assertIn("no-commit-noop-has-no-new-immutable-publication-receipt",
+                      result["unproven"])
+
+    def test_noop_cannot_reuse_prior_artifact_or_fake_commit(self):
+        src, standings, league, rec, blobs = self.evidence()
+        league["status"] = "no-op-observed"
+        league["publicationCommitVerified"] = False
+        self.assert_blocked((src,standings,league,rec,blobs),
+                            "league-publisher-evidence-unverifiable")
+        src, standings, league, rec, blobs = self.evidence()
+        league["status"] = "no-op-observed"
+        league.pop("publicationCommitSha")
+        league["publicationCommitVerified"] = False
+        self.assert_blocked((src,standings,league,rec,blobs),
+                            "unattributed-output-snapshot-without-league-push")
+
+    def test_wrong_run_id_rejected_for_each_job(self):
+        for part in range(4):
+            with self.subTest(part=part):
+                args = list(self.evidence())
+                args[part]["runId"] = 102
+                name = ("source","standings","league","recovery")[part]
+                self.assert_blocked(args, name+"-job-or-run-not-correlated")
+
+    def test_no_failed_or_unknown_job_is_silent_success(self):
+        for part in range(4):
+            with self.subTest(part=part):
+                args = list(self.evidence())
+                args[part]["jobCompletionVerified"] = False
+                name = ("source","standings","league","recovery")[part]
+                self.assert_blocked(args, name+"-job-or-run-not-correlated")
+
+    def test_main_revision_mismatch_rejected_by_each_stage(self):
+        names = ("source","standings","league","recovery")
+        keys = ("mainAtAudit","observedMainSha","observedMainSha","observedMainSha")
+        for part, (name,key) in enumerate(zip(names,keys)):
+            with self.subTest(part=part):
+                args = list(self.evidence())
+                args[part][key] = "0" * 40
+                self.assert_blocked(args, name+"-observed-main-revision-mismatch")
+
+    def test_wrong_producer_attempt_and_derived_recovery_fail_closed(self):
+        for key,value,reason in [
+            ("runAttempt",None,"source-run-attempt-not-verified"),
+            ("runAttempt",True,"source-run-attempt-not-verified"),
+            ("sourcePublishChainVerified",False,"source-partial-chain-not-a-clean-noop-observation"),
+        ]:
+            with self.subTest(key=key):
+                args=list(self.evidence())
+                args[0][key]=value
+                self.assert_blocked(args,reason)
+        for key,value in [
+            ("producerReportsComplete",False),
+            ("noBlockedDerivedRowsObserved",False),
+            ("status","blocked"),
+        ]:
+            with self.subTest(key=key):
+                args=list(self.evidence())
+                args[3][key]=value
+                self.assert_blocked(args,"derived-producer-recovery-status-incomplete")
+        args=list(self.evidence())
+        args[3]["expectedLeagueIDs"] = ["unrelated"]
+        self.assert_blocked(args,"recovery-league-scope-not-correlated")
+
+    def test_partial_source_failure_is_not_treated_as_clean_noop(self):
+        args=list(self.evidence())
+        args[0]["sourcePublishChainVerified"]=False
+        args[0]["reasonCodes"]=["source-raw-publish-failed"]
+        self.assert_blocked(args,"source-partial-chain-not-a-clean-noop-observation")
+        args=list(self.evidence())
+        args[0]["phases"]["raw"]["publicationCommitVerified"]=False
+        self.assert_blocked(args,"source-raw-push-unverified")
+
+    def test_ambiguous_or_forged_standings_and_league_publications(self):
+        for part,name in ((1,"standings"),(2,"league")):
+            for field,value in (("publicationCommitVerified",1),
+                                ("status","blocked"),("publicationCommitSha","bogus")):
+                with self.subTest(part=part,field=field):
+                    args=list(self.evidence())
+                    args[part][field]=value
+                    self.assert_blocked(args,name+"-publisher-evidence-unverifiable")
+
+    def test_cross_stage_commit_reordering_and_missing_ancestry(self):
+        args=self.evidence()
+        self.assert_blocked(args,"cross-stage-publication-ancestry-not-verified",
+                            ancestry=lambda a,b: False)
+        def failure(_a,_b):
+            raise ValueError("ancestry API unavailable")
+        self.assert_blocked(args,"cross-stage-publication-ancestry-not-verified",
+                            ancestry=failure)
+
+    def test_immutable_blob_snapshot_must_bind_exact_league_commit_and_scope(self):
+        for key,value in [
+            ("revision","f"*40),
+            ("selectedGitOutputBlobIdsVerified",False),
+            ("metadataMinimumDraftYearsVerified",None),
+            ("canonicalLeagueIDs",["other"]),
+            ("selectedOutputCount",0),
+            ("selectedOutputCount",True),
+            ("selectedOutputFingerprint","missing"),
+        ]:
+            with self.subTest(field=key):
+                args=list(self.evidence())
+                args[4][key]=value
+                self.assert_blocked(args,"published-league-selected-blob-inventory-not-verified")
+        args=list(self.evidence())
+        args[4]=None
+        self.assert_blocked(args,"published-league-output-snapshot-missing")
+
+    def test_invalid_scope_and_missing_reports_fail_closed(self):
+        args=self.evidence()
+        result=run_receipts.reconcile(101,set(),"f"*40,*args,lambda a,b:True)
+        self.assertEqual(["invalid-run-main-or-league-scope"],result["reasonCodes"])
+        self.assertFalse(result["safeToSkip"])
+        args=list(self.evidence())
+        args[3]=None
+        self.assert_blocked(args,"missing-or-malformed-stage-evidence")
+
+    def test_orchestrator_checks_stable_main_ref_and_does_not_install_skip(self):
+        args=self.evidence()
+        main_ref={"ref":"refs/heads/main","object":{"sha":"f"*40}}
+        with patch.object(run_receipts.source,"audit_source_sync",return_value=args[0]), \
+             patch.object(run_receipts.github,"audit_publication_receipt",
+                          side_effect=[args[1],args[2]]), \
+             patch.object(run_receipts.recovery,"audit_run",return_value=args[3]), \
+             patch.object(run_receipts.outputs,"audit_immutable_outputs",return_value=args[4]), \
+             patch.object(run_receipts.source,"_ancestry",return_value=True):
+            def fetch(resource,_params):
+                self.assertEqual("git/ref/heads/main",resource)
+                return dict(main_ref)
+            result=run_receipts.audit_run(fetch,lambda job:"", "Lolindhir/fantasy-app",
+                                          101,{"nfl-reise"},shadow.utc("2026-11-06T18:00:00Z"))
+        self.assertEqual("correlated-read-only-observations",result["status"])
+        self.assertFalse(result["safeToSkip"])
+        moved=[{"ref":"refs/heads/main","object":{"sha":"f"*40}},
+               {"ref":"refs/heads/main","object":{"sha":"e"*40}}]
+        with patch.object(run_receipts.source,"audit_source_sync",return_value=args[0]), \
+             patch.object(run_receipts.github,"audit_publication_receipt",
+                          side_effect=[args[1],args[2]]), \
+             patch.object(run_receipts.recovery,"audit_run",return_value=args[3]), \
+             patch.object(run_receipts.outputs,"audit_immutable_outputs",return_value=args[4]):
+            result=run_receipts.audit_run(
+                lambda _resource,_params:moved.pop(0), lambda job:"",
+                "Lolindhir/fantasy-app",101,{"nfl-reise"},
+                shadow.utc("2026-11-06T18:00:00Z"))
+        self.assertEqual("blocked",result["status"])
+        self.assertIn("Main changed",result["reasonCodes"][0])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_noop_orchestrator_never_fetches_prior_output_blobs(self):
+        args=list(self.evidence())
+        args[2].update(status="no-op-observed",publicationCommitVerified=False)
+        args[2].pop("publicationCommitSha")
+        args[2].pop("observedMainSha")
+        with patch.object(run_receipts.source,"audit_source_sync",return_value=args[0]), \
+             patch.object(run_receipts.github,"audit_publication_receipt",
+                          side_effect=[args[1],args[2]]), \
+             patch.object(run_receipts.recovery,"audit_run",return_value=args[3]), \
+             patch.object(run_receipts.outputs,"audit_immutable_outputs",
+                          side_effect=AssertionError("must not read old blobs")), \
+             patch.object(run_receipts.source,"_ancestry",return_value=True):
+            result=run_receipts.audit_run(
+                lambda _p,_q:{"ref":"refs/heads/main","object":{"sha":"f"*40}},
+                lambda job:"","Lolindhir/fantasy-app",101,{"nfl-reise"},
+                shadow.utc("2026-11-06T18:00:00Z"))
+        self.assertEqual("correlated-read-only-observations",result["status"])
+        self.assertFalse(result["leagueCommitSelectedGitBlobsVerified"])
+        self.assertEqual(["league"], result["noOpStagesObserved"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_missing_token_fails_closed_without_network(self):
+        with patch.dict("os.environ",{"GH_TOKEN":"","GITHUB_TOKEN":""}):
+            self.assertEqual(2,run_receipts.main([
+                "--repo","Lolindhir/fantasy-app","--run-id","101",
+                "--league","nfl-reise"]))
 
 
 
