@@ -119,6 +119,15 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(set(ci.GROUPS), set(unknown["selected"]))
         self.assertTrue(unknown["uncertain"])
 
+    def test_g5_correlated_run_receipt_audit_stays_in_existing_fast_families(self):
+        result = self.choose("tools/league_live_run_receipt_audit.py")
+        self.assertEqual({"league-pwf-twp", "consumer-restore"}, set(result["selected"]))
+        self.assertEqual(["powershell"], result["blocks"])
+        self.assertFalse(result["uncertain"])
+        unknown = self.choose("tools/new_unknown_live_preflight.py")
+        self.assertEqual(set(ci.GROUPS), set(unknown["selected"]))
+        self.assertTrue(unknown["uncertain"])
+
     def test_documentation_and_canonical_contracts_select_no_block(self):
         for path in ("docs/contributing.md", ".ai-context/manual/decisions.yaml"):
             with self.subTest(path=path):
