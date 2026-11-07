@@ -106,6 +106,11 @@ export class TeamRivalsTabComponent implements OnInit {
     return view.record.opponentId;
   }
 
+  /** The util keeps games chronological (lastGame relies on it); the list shows the newest first. */
+  gamesNewestFirst(view: RivalryOpponentView): RivalryGame[] {
+    return [...view.record.games].reverse();
+  }
+
   trackGame(_: number, game: RivalryGame): string {
     return `${game.season}-${game.week}-${game.stage}`;
   }

@@ -49,7 +49,7 @@
 
           @if (isExpanded(view.record.opponentId)) {
             <ul class="rival-games" [id]="'rival-games-' + view.record.opponentId">
-              @for (game of view.record.games; track trackGame($index, game)) {
+              @for (game of gamesNewestFirst(view); track trackGame($index, game)) {
                 <li class="rival-game">
                   <span class="rival-outcome" [ngClass]="'rival-outcome--' + game.outcome">{{ outcomeLetter(game) }}</span>
                   <span class="rival-game-when">{{ gameLabel(game) }}</span>
