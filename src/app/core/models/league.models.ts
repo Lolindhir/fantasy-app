@@ -256,6 +256,8 @@ export interface FantasyTeam extends Omit<RawFantasyTeam, 'Roster' | 'Reserve' |
   DraftPicks: DraftPick[];
   Avatar: string;
   Standing: number;
+  /** Frontend-derived from decided playoff standings: reigning champion until a new one is decided. */
+  IsDefendingChampion?: boolean;
   Wins: number;
   Losses: number;
   Ties: number;

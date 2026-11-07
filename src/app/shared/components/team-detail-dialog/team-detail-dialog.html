@@ -1,6 +1,11 @@
 <div class="team-dialog">
   <header class="team-dialog-header">
-    <img class="team-logo" [src]="team.Avatar" [alt]="displayTeamName() + ' logo'" />
+    <span class="team-logo-wrap">
+      <img class="team-logo" [src]="team.Avatar" [alt]="displayTeamName() + ' logo'" />
+      @if (team.IsDefendingChampion) {
+        <app-champion-badge class="team-logo-champion" title="Defending Champion" />
+      }
+    </span>
     <div class="team-identity">
       <h2>{{ displayTeamName() }}</h2>
       <p>{{ team.Owner }} @if (team.TeamAbbr) { · {{ team.TeamAbbr }} }</p>
@@ -313,6 +318,7 @@
           <div class="summary-stat"><strong>{{ team.RegularSeasonWins }}</strong><span>Regular Season Titles</span></div>
           <div class="summary-stat"><strong>{{ allTimeRecord }}</strong><span>All-time Record</span></div>
         </section>
+        <app-trophy-room [league]="league" [team]="team" />
         <section class="section-card">
           <span class="eyebrow">Season History</span>
           <div class="season-history">

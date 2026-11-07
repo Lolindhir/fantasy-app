@@ -40,6 +40,7 @@ import {
   type TeamSalaryLensSummary
 } from '../../utils/team-salary.util';
 import { CapUsageBarComponent } from '../cap-usage-bar/cap-usage-bar';
+import { ChampionBadgeComponent } from '../champion-badge/champion-badge';
 import { DecisionWindowContextPopoverComponent } from '../decision-window-context-popover/decision-window-context-popover';
 import { DraftPickContextTriggerComponent } from '../draft-pick-context/draft-pick-context-trigger';
 import type { DraftPickContext, DraftPickOwnerDisplay } from '../draft-pick-context/draft-pick-context.models';
@@ -50,6 +51,7 @@ import { SalaryPositionDonutComponent } from '../salary-position-donut/salary-po
 import { TeamInjuryReportComponent } from '../team-injury-report/team-injury-report';
 import { TeamLineupTabComponent } from '../team-lineup-tab/team-lineup-tab';
 import { TeamRivalsTabComponent } from '../team-rivals-tab/team-rivals-tab';
+import { TrophyRoomComponent } from '../trophy-room/trophy-room';
 
 export interface TeamDetailDialogData {
   team: FantasyTeam;
@@ -97,6 +99,7 @@ interface TeamHistoryRow {
     PositionStylePipe,
     PlayerListComponent,
     CapUsageBarComponent,
+    ChampionBadgeComponent,
     DecisionWindowContextPopoverComponent,
     DraftPickContextTriggerComponent,
     SalaryAssetLeaderboardComponent,
@@ -104,7 +107,8 @@ interface TeamHistoryRow {
     SalaryPositionDonutComponent,
     TeamInjuryReportComponent,
     TeamLineupTabComponent,
-    TeamRivalsTabComponent
+    TeamRivalsTabComponent,
+    TrophyRoomComponent
   ],
   templateUrl: './team-detail-dialog.html',
   styleUrl: './team-detail-dialog.scss'

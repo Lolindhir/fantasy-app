@@ -23,9 +23,12 @@
           [class.weekly-standing-row--playoff-cutline]="row.displayPlace === playoffCutlineStartPlace"
         >
           <strong class="weekly-standing-rank">{{ row.displayPlace }}</strong>
-          <span class="weekly-team-avatar">
-            <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
-            <span *ngIf="!row.team.Avatar">{{ teamShortName(row.team).slice(0, 2) }}</span>
+          <span class="weekly-team-logo">
+            <span class="weekly-team-avatar">
+              <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
+              <span *ngIf="!row.team.Avatar">{{ teamShortName(row.team).slice(0, 2) }}</span>
+            </span>
+            <app-champion-badge *ngIf="row.team.IsDefendingChampion" class="weekly-team-champion" title="Defending Champion"></app-champion-badge>
           </span>
           <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(row.team) }}</span>
           <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(row.team) }}</span>
@@ -62,9 +65,12 @@
             [class.weekly-last-side--winner]="participant.isWinner"
           >
             <span class="weekly-last-team">
-              <span class="weekly-team-avatar weekly-team-avatar--last">
-                <img *ngIf="participant.team.Avatar" [src]="participant.team.Avatar" alt="" />
-                <span *ngIf="!participant.team.Avatar">{{ teamShortName(participant.team).slice(0, 2) }}</span>
+              <span class="weekly-team-logo">
+                <span class="weekly-team-avatar weekly-team-avatar--last">
+                  <img *ngIf="participant.team.Avatar" [src]="participant.team.Avatar" alt="" />
+                  <span *ngIf="!participant.team.Avatar">{{ teamShortName(participant.team).slice(0, 2) }}</span>
+                </span>
+                <app-champion-badge *ngIf="participant.team.IsDefendingChampion" class="weekly-team-champion" title="Defending Champion"></app-champion-badge>
               </span>
               <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(participant.team) }}</span>
               <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(participant.team) }}</span>
@@ -108,6 +114,7 @@
             <div class="matchup-scoreboard">
               <div class="matchup-team matchup-team--left">
                 <app-team-identity
+                  [championBadge]="true"
                   class="matchup-team-identity matchup-team-identity--mobile"
                   [team]="matchup.left.team"
                   [elements]="mobileTeamIdentityElements"
@@ -115,6 +122,7 @@
                   size="large"
                 ></app-team-identity>
                 <app-team-identity
+                  [championBadge]="true"
                   class="matchup-team-identity matchup-team-identity--desktop"
                   [team]="matchup.left.team"
                   [elements]="desktopTeamIdentityElements"
@@ -149,6 +157,7 @@
 
               <div class="matchup-team matchup-team--right">
                 <app-team-identity
+                  [championBadge]="true"
                   class="matchup-team-identity matchup-team-identity--mobile"
                   [team]="matchup.right.team"
                   [elements]="mobileTeamIdentityElements"
@@ -157,6 +166,7 @@
                   align="end"
                 ></app-team-identity>
                 <app-team-identity
+                  [championBadge]="true"
                   class="matchup-team-identity matchup-team-identity--desktop"
                   [team]="matchup.right.team"
                   [elements]="desktopTeamIdentityElements"
