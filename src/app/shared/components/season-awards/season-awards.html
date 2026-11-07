@@ -19,9 +19,9 @@
           <span class="season-award__team-avatar"><img [src]="award.teamAvatar" alt="" /></span>
           <span *ngIf="award.ownerAvatar" class="season-award__owner-avatar"><img [src]="award.ownerAvatar" alt="" /></span>
         </span>
+        <span class="season-award__team">{{ award.teamName || award.owner }}</span>
       </button>
       <span class="season-award__details" *ngIf="isOpen(i)">
-        <span class="season-award__team">{{ award.teamName || award.owner }}</span>
         <span class="season-award__owner" *ngIf="award.teamName">{{ award.owner }}</span>
         <span class="season-award__stat" *ngIf="award.statDisplay">{{ award.statDisplay }}</span>
       </span>
