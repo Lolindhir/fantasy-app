@@ -14,20 +14,26 @@
 
 .season-awards__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 480px) {
+  .season-awards__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 720px) {
   .season-awards__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 960px) {
+@media (min-width: 1000px) {
   .season-awards__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -66,16 +72,16 @@
 .season-award__name {
   font-size: 0.85rem;
   font-weight: 700;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .season-award__owner {
   font-size: 0.85rem;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .season-award__stat {
   font-size: 0.75rem;
   color: #777;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
