@@ -1,5 +1,5 @@
 import type { FantasyTeam, Player } from '../../core/models/fantasy.models';
-import { formatRosterNextLockValue, type RosterNextLockContext } from './team-roster-view.util';
+import { compareRosterNextLock, formatRosterNextLockValue, type RosterNextLockContext } from './team-roster-view.util';
 
 /**
  * Injury statuses as reported by the provider (Players.json InjuryDetails.Designation). Only
@@ -19,8 +19,17 @@ export interface InjuryReportRow {
   lockLabel: string | null;
 }
 
+/** Lineup view: most urgent first (a starter who is Out matters more than a Questionable one). */
 const SEVERITY: Record<InjuryKind, number> = {
   out: 0, ir: 1, pup: 2, doubtful: 3, questionable: 4, unknown: 5
+};
+
+/**
+ * Roster view: the long-term cases sit at the bottom, the short-term uncertainty on top
+ * (Unknown, Questionable, Doubtful, Out, PUP, IR).
+ */
+const ROSTER_RANK: Record<InjuryKind, number> = {
+  unknown: 0, questionable: 1, doubtful: 2, out: 3, pup: 4, ir: 5
 };
 
 /** A player counts as injured when the data flags an injury (not merely roster-inactive). */
@@ -50,19 +59,28 @@ export function injuryLabel(kind: InjuryKind): string {
   }
 }
 
+export type InjuryReportMode = 'roster' | 'lineup';
+
 export interface InjuryReportOptions {
-  /** Starter IDs of the current lineup week; omit outside the lineup phase (stale starters are not meaningful). */
+  /**
+   * roster: the whole roster, ordered by designation (starter/bench is irrelevant there).
+   * lineup: only starters of the current lineup week, ordered by next lock, then severity.
+   */
+  mode?: InjuryReportMode;
+  /** Starter IDs of the current lineup week; required for the lineup mode. */
   starterIds?: ReadonlySet<string> | null;
   lockContext?: RosterNextLockContext;
 }
 
 export function buildTeamInjuryReport(team: FantasyTeam, options: InjuryReportOptions = {}): InjuryReportRow[] {
+  const mode = options.mode ?? 'roster';
   const taxiIds = new Set(team.Taxi.map(player => player.ID));
   const irIds = new Set(team.Reserve.map(player => player.ID));
   const starterIds = options.starterIds ?? null;
 
-  return team.Roster
+  const rows = team.Roster
     .filter(isPlayerInjured)
+    .filter(player => mode === 'roster' || (starterIds?.has(player.ID) ?? false))
     .map(player => {
       const kind = injuryKind(player);
       const isStarter = starterIds?.has(player.ID) ?? false;
@@ -73,15 +91,20 @@ export function buildTeamInjuryReport(team: FantasyTeam, options: InjuryReportOp
         description: (player.InjuryDetails?.Description ?? '').trim(),
         placement: irIds.has(player.ID) ? 'ir' : taxiIds.has(player.ID) ? 'taxi' : 'active',
         isStarter,
-        lockLabel: isStarter && options.lockContext
+        lockLabel: mode === 'lineup' && isStarter && options.lockContext
           ? formatRosterNextLockValue(player, options.lockContext)
           : null
       } satisfies InjuryReportRow;
-    })
-    .sort((a, b) =>
-      Number(b.isStarter) - Number(a.isStarter)
-      || SEVERITY[a.kind] - SEVERITY[b.kind]
-      || a.player.Name.localeCompare(b.player.Name, 'en', { sensitivity: 'base' })
-      || a.player.ID.localeCompare(b.player.ID)
-    );
+    });
+
+  const byName = (a: InjuryReportRow, b: InjuryReportRow): number =>
+    a.player.Name.localeCompare(b.player.Name, 'en', { sensitivity: 'base' })
+    || a.player.ID.localeCompare(b.player.ID);
+
+  if (mode === 'lineup') {
+    const byLock = options.lockContext ? compareRosterNextLock(options.lockContext) : null;
+    return rows.sort((a, b) =>
+      (byLock ? byLock(a.player, b.player) : 0) || SEVERITY[a.kind] - SEVERITY[b.kind] || byName(a, b));
+  }
+  return rows.sort((a, b) => ROSTER_RANK[a.kind] - ROSTER_RANK[b.kind] || byName(a, b));
 }

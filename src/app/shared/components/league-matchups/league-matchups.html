@@ -180,6 +180,12 @@
               <mat-icon class="matchup-primary-chevron" aria-hidden="true">chevron_right</mat-icon>
             </div>
 
+            <div *ngIf="headToHead(matchup) as h2h" class="matchup-h2h"
+              [attr.aria-label]="'All-time head-to-head ' + h2h">
+              <span class="matchup-h2h-label">All-time</span>
+              <strong>{{ h2h }}</strong>
+            </div>
+
             <ng-container *ngIf="fantasyContextState$ | async as contextState">
               <div
                 *ngIf="contextState.decisionWindows?.Season === league.Season && contextState.decisionWindows?.LineupWeek === week"

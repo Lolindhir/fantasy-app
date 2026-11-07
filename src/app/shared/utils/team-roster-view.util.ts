@@ -224,6 +224,12 @@ export function formatRosterNextLockValue(
   }
 }
 
+/** Comparator by next lock (soonest kickoff first, then unknown/no-team/bye/locked) for arbitrary player lists. */
+export function compareRosterNextLock(context: RosterNextLockContext): (a: Player, b: Player) => number {
+  const facts = buildTeamLockFactMap(context);
+  return (a, b) => compareNextLockPlayers(a, b, facts, context.now);
+}
+
 function buildGroup(
   key: string,
   label: string,

@@ -1,15 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Injector, Input, OnInit, inject } from '@angular/core';
-import { catchError, forkJoin, of } from 'rxjs';
 
 import type { FantasyTeam, League } from '../../../core/models/fantasy.models';
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
-import { DataService } from '../../../core/services/data.service';
+import { TeamRivalryHistoryService } from '../../services/team-rivalry-history.service';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import {
   buildRivalryRecords,
   formatRivalryRecord,
+  isPlayoffsComplete,
   type RivalryFilter,
   type RivalryGame,
   type RivalryRecord
@@ -34,7 +34,7 @@ interface RivalryOpponentView {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TeamRivalsTabComponent implements OnInit {
-  private readonly dataService = inject(DataService);
+  private readonly history = inject(TeamRivalryHistoryService);
   private readonly injector = inject(Injector);
   private readonly cdr = inject(ChangeDetectorRef);
 
@@ -48,36 +48,23 @@ export class TeamRivalsTabComponent implements OnInit {
   private seasons: MatchupsReadModel[] = [];
 
   ngOnInit(): void {
-    this.dataService.getPastSeasonsIndex().pipe(catchError(() => of(null))).subscribe(index => {
-      const paths = (index?.Seasons ?? [])
-        .filter(season => Number(season.Season) < this.league.SeasonAsNumber)
-        .map(season => season.Resources['Matchups'])
-        .filter((resource): resource is { Path: string; Exists: boolean } =>
-          !!resource && resource.Exists && typeof resource.Path === 'string' && resource.Path.length > 0)
-        .map(resource => resource.Path);
-
-      forkJoin([
-        this.dataService.getMatchups(),
-        ...paths.map(path => this.dataService.getPastMatchupsRaw(path).pipe(catchError(() => of(null))))
-      ]).pipe(catchError(() => of(null))).subscribe(results => {
-        if (!results) {
-          this.state = 'unavailable';
-        } else {
-          this.seasons = results.filter((season): season is MatchupsReadModel => !!season);
-          this.state = 'ready';
-          this.opponents = this.computeOpponents();
-        }
-        this.cdr.markForCheck();
-      });
+    this.history.getSeasons().subscribe(seasons => {
+      if (!seasons) {
+        this.state = 'unavailable';
+      } else {
+        this.seasons = seasons;
+        this.state = 'ready';
+        this.opponents = this.computeOpponents();
+      }
+      this.cdr.markForCheck();
     });
   }
 
   private computeOpponents(): RivalryOpponentView[] {
     return buildRivalryRecords(this.team.TeamID, this.seasons, {
       filter: this.filter,
-      // Playoffs are only countable once over: earlier seasons always, the current one when completed.
-      isSeasonComplete: season =>
-        Number(season) < this.league.SeasonAsNumber || this.league.Status === 'Completed'
+      // Playoffs are only countable once over.
+      isSeasonComplete: season => isPlayoffsComplete(season, this.league.SeasonAsNumber, this.league.Status)
     }).map(record => {
       const opponent = this.league.Teams.find(candidate => Number(candidate.TeamID) === record.opponentId);
       return {
@@ -136,8 +123,35 @@ export class TeamRivalsTabComponent implements OnInit {
     return `${game.season} W${game.week}`;
   }
 
+  /** One decimal, no thousands separator: easier to scan than "1,962.26". */
   points(value: number): string {
-    return value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+    return value.toFixed(1);
+  }
+
+  /** Overall tone of a record: more wins than losses is green, fewer is red. */
+  recordTone(record: RivalryRecord): 'win' | 'loss' | 'even' {
+    return record.wins > record.losses ? 'win' : record.wins < record.losses ? 'loss' : 'even';
+  }
+
+  /** Signed point differential (PF - PA) of a whole record. */
+  differential(record: RivalryRecord): string {
+    return this.signed(record.pointsFor - record.pointsAgainst);
+  }
+
+  differentialTone(record: RivalryRecord): 'win' | 'loss' | 'even' {
+    const diff = Math.round((record.pointsFor - record.pointsAgainst) * 10);
+    return diff > 0 ? 'win' : diff < 0 ? 'loss' : 'even';
+  }
+
+  /** Signed margin of one game from the viewpoint of this team; null without scores. */
+  gameMargin(game: RivalryGame): string | null {
+    if (game.teamPoints === null || game.opponentPoints === null) return null;
+    return this.signed(game.teamPoints - game.opponentPoints);
+  }
+
+  private signed(value: number): string {
+    const rounded = Math.round(value * 10) / 10;
+    return `${rounded > 0 ? '+' : ''}${rounded.toFixed(1)}`;
   }
 
   isBiggestWin(view: RivalryOpponentView, game: RivalryGame): boolean {

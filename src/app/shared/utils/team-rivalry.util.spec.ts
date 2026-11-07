@@ -5,9 +5,11 @@ import type {
   MatchupsReadModel
 } from '../../core/models/matchup.models';
 import {
+  buildHeadToHead,
   buildRivalryRecords,
   formatRivalryRecord,
   isConsolationMatchup,
+  isPlayoffsComplete,
   type RivalryOptions
 } from './team-rivalry.util';
 
@@ -150,5 +152,21 @@ describe('team rivalry utilities', () => {
       [3, 'regular-season', [duel(1, 1, 3, 0)]]
     ]);
     expect(buildRivalryRecords(1, [data], allComplete).map(record => record.opponentId)).toEqual([5, 3]);
+  });
+
+  it('builds a head-to-head record against exactly one opponent, or null without games', () => {
+    const data = season('2024', [
+      [1, 'regular-season', [duel(1, 10, 2, 5), duel(3, 1, 4, 2)]],
+      [2, 'regular-season', [duel(2, 9, 1, 7)]]
+    ]);
+    const record = buildHeadToHead(1, 2, [data], allComplete);
+    expect(record && formatRivalryRecord(record)).toBe('1-1');
+    expect(buildHeadToHead(1, 4, [data], allComplete)).toBeNull();
+  });
+
+  it('treats playoffs as complete for archived seasons and a completed current season only', () => {
+    expect(isPlayoffsComplete('2024', 2025, 'In-Season')).toBeTrue();
+    expect(isPlayoffsComplete('2025', 2025, 'Playoffs')).toBeFalse();
+    expect(isPlayoffsComplete('2025', 2025, 'Completed')).toBeTrue();
   });
 });

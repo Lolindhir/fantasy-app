@@ -1,18 +1,15 @@
 <section class="injury-report" aria-label="Injury report">
   @if (rows.length === 0) {
     <div class="injury-head injury-head--static">
-      <span class="eyebrow">Injury Report</span>
-      <span class="injury-empty">No injured players</span>
+      <span class="eyebrow">{{ mode === 'lineup' ? 'Lineup Alerts' : 'Injury Report' }}</span>
+      <span class="injury-empty">{{ mode === 'lineup' ? 'No injured starters' : 'No injured players' }}</span>
     </div>
   } @else {
     <button type="button" class="injury-head" (click)="toggle()"
       [attr.aria-expanded]="expanded" aria-controls="team-injury-list">
       <span class="injury-title">
-        <span class="eyebrow">Injury Report</span>
-        <strong>{{ rows.length }} injured</strong>
-        @if (starterCount > 0) {
-          <span class="injury-starters">{{ starterCount }} {{ starterCount === 1 ? 'starter' : 'starters' }}</span>
-        }
+        <span class="eyebrow">{{ mode === 'lineup' ? 'Lineup Alerts' : 'Injury Report' }}</span>
+        <strong>{{ rows.length }} {{ mode === 'lineup' ? (rows.length === 1 ? 'starter affected' : 'starters affected') : 'injured' }}</strong>
       </span>
       <span class="injury-summary">
         @for (chip of summary; track chip.kind) {
@@ -40,7 +37,6 @@
                 <strong class="injury-name">{{ row.player.Name }}</strong>
                 <span class="injury-meta">
                   <span class="injury-position" [ngStyle]="row.player.Position | positionStyle">{{ row.player.Position }}</span>
-                  @if (row.isStarter) { <span class="injury-role">Starter</span> }
                   @if (placementLabel(row); as placement) { <span class="injury-placement">{{ placement }}</span> }
                   @if (row.description) { <span class="injury-description">{{ row.description }}</span> }
                 </span>
