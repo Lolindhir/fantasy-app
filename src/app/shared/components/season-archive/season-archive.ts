@@ -3,6 +3,7 @@ import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { RegularSeasonStandingsListComponent } from '../regular-season-standings-list/regular-season-standings-list';
+import { SeasonAwardsComponent } from '../season-awards/season-awards';
 import { SeasonResultsComponent } from '../season-results/season-results';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import type {
@@ -19,6 +20,7 @@ import type {
     RouterLink,
     SharedMaterialImports,
     SeasonResultsComponent,
+    SeasonAwardsComponent,
     RegularSeasonStandingsListComponent
   ],
   templateUrl: './season-archive.html',

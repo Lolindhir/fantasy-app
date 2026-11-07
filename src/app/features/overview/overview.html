@@ -412,17 +412,10 @@
   ></app-season-results>
 
   <!-- 🔥 Awards -->
-  <section class="awards" *ngIf="vm.league.IsFinished && vm.awards.length > 0">
-    <h3>Season Awards</h3>
-    <div class="awards-grid">
-      <div *ngFor="let award of vm.awards" class="award-card">
-        <div class="award-icon">{{award.Icon}}</div>
-        <div class="award-name">{{ award.Name }}</div>
-        <div class="award-owner">- {{ award.Owner }} -</div>
-        <div class="award-stat">{{ award.StatDisplay }}</div>
-      </div>
-    </div>
-  </section>
+  <app-season-awards
+    *ngIf="vm.league.IsFinished"
+    [awards]="vm.awards"
+  ></app-season-awards>
 
   <app-all-time-standings
     [standings]="vm.allTimeStandings"

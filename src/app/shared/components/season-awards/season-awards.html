@@ -1,0 +1,18 @@
+<section class="season-awards" *ngIf="awards && awards.length > 0">
+  <h3 class="season-awards__title">{{ title }}</h3>
+
+  <ul class="season-awards__grid">
+    <li
+      *ngFor="let award of awards; trackBy: trackAward"
+      class="season-award"
+      [attr.title]="award.tooltip"
+    >
+      <span class="season-award__icon" aria-hidden="true">{{ award.icon }}</span>
+      <span class="season-award__body">
+        <span class="season-award__name">{{ award.name }}</span>
+        <span class="season-award__owner">{{ award.owner }}</span>
+        <span class="season-award__stat" *ngIf="award.statDisplay">{{ award.statDisplay }}</span>
+      </span>
+    </li>
+  </ul>
+</section>

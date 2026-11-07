@@ -18,6 +18,7 @@ import { getMoveCategory } from '../league-activity/moves-view-model.util';
 import { AllTimeStandingsComponent } from '../../shared/components/all-time-standings/all-time-standings';
 import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
 import { PlayerDetailDialogComponent } from '../../shared/components/player-detail-dialog/player-detail-dialog';
+import { SeasonAwardsComponent } from '../../shared/components/season-awards/season-awards';
 import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
 import { TransactionCardComponent } from '../../shared/components/transaction-card/transaction-card';
 import { PositionStylePipe } from '../../shared/pipes/position-style.pipe';
@@ -33,6 +34,7 @@ import {
   buildCurrentStandings,
   buildSeasonResults,
   getCurrentSeasonAwards,
+  buildSeasonAwardItems,
   getPreviousChampion
 } from '../../shared/utils/league-standings-view.util';
 
@@ -127,6 +129,7 @@ interface SeasonLeaderCard {
     RouterLink,
     SharedMaterialImports,
     SeasonResultsComponent,
+    SeasonAwardsComponent,
     AllTimeStandingsComponent,
     CurrentStandingsComponent,
     TransactionCardComponent,
@@ -223,7 +226,7 @@ export class OverviewComponent {
       const seasonLeaders = activeLeague ? this.buildSeasonLeaders(league, teams) : [];
       const recentMoves = activeLeague ? this.buildRecentMoves(transactions, currentSeason) : [];
       const lastWaiverPickAt = buildLastWaiverPickByTeam(transactions, currentSeason);
-      const awards = getCurrentSeasonAwards(league);
+      const awards = buildSeasonAwardItems(getCurrentSeasonAwards(league));
       const deadline = this.parseDeadline(league.CapDeadline);
       const deadlineDisplay = deadline.toLocaleDateString();
       const now = new Date();
