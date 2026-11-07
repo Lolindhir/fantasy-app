@@ -96,7 +96,15 @@ export class WeeksPageComponent {
           ? this.dataService.getWeeklyRecaps()
           : option.recapsPath ? this.dataService.getPastWeeklyRecapsRaw(option.recapsPath) : of(null);
         const contextsSource: Observable<FantasyGameContextReadModel[]> = option.isCurrent
-          ? this.dataService.getFantasyGameContext().pipe(map(context => [context]))
+          ? combineLatest({
+              active: this.dataService.getFantasyGameContext().pipe(catchError(() => of(null))),
+              finished: this.dataService.getFantasyGameContextHistory().pipe(
+                map(history => history.Weeks ?? []),
+                catchError(() => of([] as FantasyGameContextReadModel[]))
+              )
+            }).pipe(map(({ active, finished }) => active
+              ? [...finished.filter(week => week.Week !== active.Week), active]
+              : finished))
           : option.contextPath
             ? this.dataService.getPastFantasyGameContextRaw(option.contextPath).pipe(map(season => season.Weeks ?? []))
             : of([]);
