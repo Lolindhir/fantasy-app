@@ -29,9 +29,11 @@
               [attr.aria-controls]="'rival-games-' + view.record.opponentId"
               [attr.aria-label]="'Show all games against ' + view.name">
               <span class="rival-record">
-                <strong>{{ view.recordLabel }}</strong>
-                <span class="rival-meta">
-                  {{ points(view.record.pointsFor) }} PF · {{ points(view.record.pointsAgainst) }} PA
+                <strong class="rival-record-value" [ngClass]="'rival-tone--' + recordTone(view.record)">{{ view.recordLabel }}</strong>
+                <span class="rival-stats">
+                  <span class="rival-stat"><span class="rival-stat-label">PF</span>{{ points(view.record.pointsFor) }}</span>
+                  <span class="rival-stat"><span class="rival-stat-label">PA</span>{{ points(view.record.pointsAgainst) }}</span>
+                  <span class="rival-stat rival-stat--diff" [ngClass]="'rival-tone--' + differentialTone(view.record)">{{ differential(view.record) }}</span>
                 </span>
               </span>
               <span class="rival-last">
@@ -51,7 +53,16 @@
                 <li class="rival-game">
                   <span class="rival-outcome" [ngClass]="'rival-outcome--' + game.outcome">{{ outcomeLetter(game) }}</span>
                   <span class="rival-game-when">{{ gameLabel(game) }}</span>
-                  <span class="rival-game-score">{{ scoreLabel(game) }}</span>
+                  <span class="rival-game-score" [ngClass]="'rival-game-score--' + game.outcome">
+                    @if (game.teamPoints !== null && game.opponentPoints !== null) {
+                      <strong class="rival-score-own">{{ points(game.teamPoints) }}</strong>
+                      <span class="rival-score-sep" aria-hidden="true">–</span>
+                      <span class="rival-score-opp">{{ points(game.opponentPoints) }}</span>
+                    } @else { – }
+                  </span>
+                  @if (gameMargin(game); as margin) {
+                    <span class="rival-margin" [ngClass]="'rival-tone--' + game.outcome">{{ margin }}</span>
+                  }
                   <span class="rival-game-tags">
                     @if (game.stage === 'playoffs') { <span class="rival-tag rival-tag--playoffs">Playoffs</span> }
                     @if (isBiggestWin(view, game)) { <span class="rival-tag rival-tag--win">Biggest win</span> }

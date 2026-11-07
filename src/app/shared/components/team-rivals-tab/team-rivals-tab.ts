@@ -123,8 +123,35 @@ export class TeamRivalsTabComponent implements OnInit {
     return `${game.season} W${game.week}`;
   }
 
+  /** One decimal, no thousands separator: easier to scan than "1,962.26". */
   points(value: number): string {
-    return value.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+    return value.toFixed(1);
+  }
+
+  /** Overall tone of a record: more wins than losses is green, fewer is red. */
+  recordTone(record: RivalryRecord): 'win' | 'loss' | 'even' {
+    return record.wins > record.losses ? 'win' : record.wins < record.losses ? 'loss' : 'even';
+  }
+
+  /** Signed point differential (PF - PA) of a whole record. */
+  differential(record: RivalryRecord): string {
+    return this.signed(record.pointsFor - record.pointsAgainst);
+  }
+
+  differentialTone(record: RivalryRecord): 'win' | 'loss' | 'even' {
+    const diff = Math.round((record.pointsFor - record.pointsAgainst) * 10);
+    return diff > 0 ? 'win' : diff < 0 ? 'loss' : 'even';
+  }
+
+  /** Signed margin of one game from the viewpoint of this team; null without scores. */
+  gameMargin(game: RivalryGame): string | null {
+    if (game.teamPoints === null || game.opponentPoints === null) return null;
+    return this.signed(game.teamPoints - game.opponentPoints);
+  }
+
+  private signed(value: number): string {
+    const rounded = Math.round(value * 10) / 10;
+    return `${rounded > 0 ? '+' : ''}${rounded.toFixed(1)}`;
   }
 
   isBiggestWin(view: RivalryOpponentView, game: RivalryGame): boolean {
