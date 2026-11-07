@@ -203,6 +203,7 @@ describe('WeeksPageComponent', () => {
 
     const row = host.querySelector('.week-matchup') as HTMLButtonElement;
     expect(row.disabled).toBeTrue();
+    expect(host.querySelector('.week-matchup-chevron')).toBeNull();
   });
 
   it('enables the matchup detail for a finished week of the running season from the history file', async () => {
@@ -217,6 +218,9 @@ describe('WeeksPageComponent', () => {
 
     // Default week is the last settled week (2), which only the history file covers.
     expect((host.querySelector('.week-matchup') as HTMLButtonElement).disabled).toBeFalse();
+    // One tap target: the team identities inside the row are not separate buttons.
+    expect(host.querySelectorAll('.week-matchup app-team-identity button').length).toBe(0);
+    expect(host.querySelector('.week-matchup-chevron')).not.toBeNull();
   });
 
   it('shows the season grid with a playoff group and opens a week from its header', async () => {
