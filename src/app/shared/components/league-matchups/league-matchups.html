@@ -466,108 +466,17 @@
       <div>
         <h2>Week {{ recapWeek }} Recap</h2>
       </div>
-      <span *ngIf="compact" class="weekly-recap-density">Quick look</span>
+      <span class="weekly-recap-heading-actions">
+        <span *ngIf="compact" class="weekly-recap-density">Quick look</span>
+        <a class="weekly-recap-all-weeks" routerLink="/weeks">All weeks</a>
+      </span>
     </div>
 
-    <ng-container *ngIf="weeklyRecap as recap; else recapUnavailable">
-      <div class="weekly-recap-grid">
-        <div class="weekly-recap-group">
-          <h3>Key NFL Games</h3>
-          <div class="weekly-recap-list weekly-recap-list--games">
-            <article *ngFor="let game of recap.games" class="weekly-recap-game" [attr.aria-label]="recapGameAriaLabel(game)">
-              <div class="weekly-recap-game-lockup">
-                <span class="weekly-recap-nfl-team">
-                  <img *ngIf="nflLogo(game.AwayNFLTeamID) as awayLogo" [src]="awayLogo" alt="" />
-                  <strong>{{ nflAbbr(game.AwayNFLTeamID) }}</strong>
-                </span>
-                <strong class="weekly-recap-nfl-score">{{ formatNflScore(game.AwayScore) }}–{{ formatNflScore(game.HomeScore) }}</strong>
-                <span class="weekly-recap-nfl-team weekly-recap-nfl-team--home">
-                  <img *ngIf="nflLogo(game.HomeNFLTeamID) as homeLogo" [src]="homeLogo" alt="" />
-                  <strong>{{ nflAbbr(game.HomeNFLTeamID) }}</strong>
-                </span>
-              </div>
-            </article>
-          </div>
-        </div>
-
-        <div class="weekly-recap-group">
-          <h3>Key Fantasy Players</h3>
-          <div class="weekly-recap-list weekly-recap-list--players">
-            <button
-              *ngFor="let player of recap.players"
-              type="button"
-              class="weekly-recap-player"
-              [disabled]="!recapPlayerDetailAvailable(player)"
-              [attr.aria-label]="'Open ' + recapPlayerName(player) + ' player details'"
-              (click)="openRecapPlayerDetail(player)"
-            >
-              <span class="weekly-recap-player-picture">
-                <img loading="lazy" decoding="async" *ngIf="recapPlayerPicture(player) as picture" class="weekly-recap-player-portrait" [src]="picture" alt="" />
-                <span *ngIf="!recapPlayerPicture(player)">{{ player.Position }}</span>
-              </span>
-              <span class="weekly-recap-player-copy">
-                <strong>{{ recapPlayerName(player) }}</strong>
-                <span>{{ player.Position }} · {{ nflAbbr(player.NFLTeamID) }}</span>
-              </span>
-              <strong class="weekly-recap-player-points">{{ formatFantasyPoints(player.Points) }}</strong>
-            </button>
-          </div>
-        </div>
-
-        <div *ngIf="recap.awards as awards" class="weekly-recap-group weekly-recap-group--awards">
-          <h3>Weekly Team Awards</h3>
-          <div class="weekly-recap-awards">
-            <article class="weekly-recap-award" aria-label="Best Coach award">
-              <h4 class="weekly-recap-award-title"><mat-icon aria-hidden="true">gps_fixed</mat-icon>Best Coach</h4>
-              <div *ngFor="let winner of awards.BestCoach" class="weekly-recap-award-winner">
-                <button type="button" class="weekly-recap-award-owner"
-                  [disabled]="!awardTeamExists(winner.FantasyTeamID)"
-                  [attr.aria-label]="'Open ' + awardOwnerName(winner.FantasyTeamID) + ' team details'"
-                  (click)="openAwardTeamDetails(winner.FantasyTeamID)">
-                  <span class="weekly-recap-award-avatar">
-                    <img *ngIf="awardOwnerAvatar(winner.FantasyTeamID) as avatar" [src]="avatar" alt="" loading="lazy" decoding="async" />
-                    <span *ngIf="!awardOwnerAvatar(winner.FantasyTeamID)">{{ awardOwnerName(winner.FantasyTeamID).charAt(0) }}</span>
-                  </span>
-                  <span class="weekly-recap-award-identity">
-                    <strong>{{ awardOwnerName(winner.FantasyTeamID) }}</strong>
-                    <span class="weekly-recap-award-team" *ngIf="awardTeamName(winner.FantasyTeamID) as teamName">{{ teamName }}</span>
-                  </span>
-                </button>
-                <strong class="weekly-recap-award-value">{{ formatAwardEfficiency(winner.EfficiencyPercent) }}%</strong>
-                <span class="weekly-recap-award-extra">{{ formatFantasyPoints(winner.ActualStarterPoints) }} / {{ formatFantasyPoints(winner.PotentialPoints) }} possible pts</span>
-              </div>
-              <div *ngIf="awards.BestCoach.length === 0" class="weekly-recap-award-empty">No eligible winner</div>
-            </article>
-
-            <article class="weekly-recap-award" aria-label="Best Manager award">
-              <h4 class="weekly-recap-award-title"><mat-icon aria-hidden="true">workspace_premium</mat-icon>Best Manager</h4>
-              <div *ngFor="let winner of awards.BestManager" class="weekly-recap-award-winner">
-                <button type="button" class="weekly-recap-award-owner"
-                  [disabled]="!awardTeamExists(winner.FantasyTeamID)"
-                  [attr.aria-label]="'Open ' + awardOwnerName(winner.FantasyTeamID) + ' team details'"
-                  (click)="openAwardTeamDetails(winner.FantasyTeamID)">
-                  <span class="weekly-recap-award-avatar">
-                    <img *ngIf="awardOwnerAvatar(winner.FantasyTeamID) as avatar" [src]="avatar" alt="" loading="lazy" decoding="async" />
-                    <span *ngIf="!awardOwnerAvatar(winner.FantasyTeamID)">{{ awardOwnerName(winner.FantasyTeamID).charAt(0) }}</span>
-                  </span>
-                  <span class="weekly-recap-award-identity">
-                    <strong>{{ awardOwnerName(winner.FantasyTeamID) }}</strong>
-                    <span class="weekly-recap-award-team" *ngIf="awardTeamName(winner.FantasyTeamID) as teamName">{{ teamName }}</span>
-                  </span>
-                </button>
-                <strong class="weekly-recap-award-value">{{ formatFantasyPoints(winner.PotentialPoints) }}<span class="weekly-recap-award-unit"> pts</span></strong>
-                <span class="weekly-recap-award-extra">Highest roster potential</span>
-              </div>
-              <div *ngIf="awards.BestManager.length === 0" class="weekly-recap-award-empty">No eligible winner</div>
-            </article>
-          </div>
-        </div>
-      </div>
-    </ng-container>
-
-    <ng-template #recapUnavailable>
-      <div class="weekly-recap-empty">Completed-week recap data is not available yet.</div>
-    </ng-template>
+    <app-week-recap-content
+      [recap]="weeklyRecap"
+      [teams]="league.Teams"
+      [nflTeams]="nflTeams"
+    ></app-week-recap-content>
   </section>
 </ng-template>
 

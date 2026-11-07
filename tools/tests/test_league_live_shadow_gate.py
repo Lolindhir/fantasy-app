@@ -10,6 +10,8 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 from tools import league_live_shadow_gate as shadow
+from tools import league_live_output_revision_audit as output_audit
+from tools import league_live_run_receipt_audit as run_receipts
 
 
 class ShadowDecisionTests(unittest.TestCase):
@@ -200,6 +202,809 @@ class ShadowDecisionTests(unittest.TestCase):
                 self.assertEqual("would-run", shadow.decide(current, prior)["decision"])
 
 
+
+
+
+
+class OfflinePreflightProtocolTests(unittest.TestCase):
+    """Finite synthetic protocol evidence only; no production attestation."""
+
+    def evidence(self, stage="league"):
+        sha = lambda char: char * 40
+        trees = {name: sha("a") for name in shadow.STAGE_INPUTS[stage]}
+        outputs = {
+            path if path.endswith(".json") else path + "/nfl-reise/2026.json": sha("b")
+            for path in shadow.OFFLINE_REQUIRED_SURFACES[stage]
+        }
+        if stage == "league":
+            # Dynamic future Draft seasons must be supplied by canonical metadata,
+            # never inferred from a hard-coded current+one-year horizon.
+            outputs["data-derived/league-drafts/nfl-reise/2032.json"] = sha("c")
+        scope = [{"league": "nfl-reise", "season": 2026}]
+        receipt = {
+            "schemaVersion": 1, "stage": stage, "scope": scope,
+            "revision": sha("d"), "sourceRevision": sha("e"),
+            "inputTrees": trees, "publishedOutputs": outputs,
+            "publishedAtUtc": "2026-11-05T10:00:00Z",
+            "acquisitionId": "sleeper-2026-11-05-10",
+            "producer": {"success": True, "attempt": 1,
+                         "outputsComplete": True, "recoveryDebt": []},
+        }
+        current = {
+            "stage": stage, "scope": list(scope),
+            "revision": receipt["revision"],
+            "sourceRevision": receipt["sourceRevision"],
+            "inputTrees": dict(trees),
+            "requiredOutputs": dict(outputs),
+            "observedOutputs": dict(outputs),
+            "asOfUtc": "2026-11-05T10:05:00Z",
+            "providerEvidence": {
+                "status": "verified", "sourceRevision": sha("e"),
+                "acquisitionId": receipt["acquisitionId"],
+                "observedAtUtc": "2026-11-05T10:04:00Z",
+                "expiresAtUtc": "2026-11-05T10:10:00Z",
+            },
+            "finalityEvidence": {"status": "verified",
+                                 "sourceRevision": sha("e"),
+                                 "activeNonfinal": False,
+                                 "unknownKickoffs": False},
+            "clockEvidence": {"status": "clear",
+                              "fromUtc": "2026-11-05T10:00:00Z",
+                              "toUtc": "2026-11-05T10:05:00Z",
+                              "crossedBoundaries": []},
+        }
+        trace = [
+            {"action": "acquire", "sha": sha("d")},
+            {"action": "compare", "sha": sha("d")},
+            {"action": "skip", "sha": sha("d")},
+            {"action": "release", "sha": sha("d")},
+        ]
+        return receipt, current, trace
+
+    def assert_run(self, receipt, current, trace, reason):
+        result = shadow.assess_offline_preflight_protocol(receipt, current, trace)
+        self.assertEqual("would-run", result["decision"])
+        self.assertIn(reason, result["reasonCodes"])
+        self.assertIs(result["safeToSkip"], False)
+        self.assertIs(result["enforced"], False)
+        self.assertIs(result["independentEvidenceVerified"], False)
+
+    def test_synthetic_complete_case_is_only_would_skip_not_activation(self):
+        for stage in shadow.STAGE_INPUTS:
+            with self.subTest(stage=stage):
+                receipt, current, trace = self.evidence(stage)
+                result = shadow.assess_offline_preflight_protocol(receipt, current, trace)
+                self.assertEqual("would-skip", result["decision"])
+                self.assertTrue(result["syntheticProtocolConsistent"])
+                self.assertFalse(result["safeToSkip"])
+                self.assertFalse(result["raceFree"])
+                self.assertFalse(result["recoveryClean"])
+                self.assertFalse(result["independentEvidenceVerified"])
+                self.assertFalse(result["enforced"])
+
+    def test_missing_or_wrong_receipts_fail_closed(self):
+        for mutation, reason in [
+            (lambda r,c: r.update(schemaVersion=2), "unknown-or-mismatched-stage-contract"),
+            (lambda r,c: r.update(stage="standings"), "unknown-or-mismatched-stage-contract"),
+            (lambda r,c: c.update(revision="f"*40), "unbound-or-different-publication-revision"),
+            (lambda r,c: c.update(sourceRevision="f"*40), "unbound-or-different-publication-revision"),
+            (lambda r,c: r.update(revision="not-sha"), "unbound-or-different-publication-revision"),
+        ]:
+            with self.subTest(mutation=reason):
+                r,c,t=self.evidence()
+                mutation(r,c)
+                self.assert_run(r,c,t,reason)
+        _,c,t=self.evidence()
+        self.assert_run(None,c,t,"missing-or-malformed-protocol-evidence")
+
+    def test_full_canonical_league_season_scope_must_match(self):
+        cases=[
+            (lambda r,c: r["scope"].clear()),
+            (lambda r,c: c["scope"].append({"league":"nfl-reise","season":2027})),
+            (lambda r,c: c["scope"].append({"league":"nfl-reise","season":2026})),
+            (lambda r,c: c["scope"][0].update(season="2026")),
+            (lambda r,c: c["scope"][0].update(league="../escape")),
+            (lambda r,c: r["scope"].append({"league":"other","season":2024})),
+        ]
+        for index, mutation in enumerate(cases):
+            with self.subTest(case=index):
+                r,c,t=self.evidence()
+                mutation(r,c)
+                self.assert_run(r,c,t,"canonical-league-season-scope-unverified")
+
+    def test_dependency_tree_changes_and_missing_roots_fail_closed(self):
+        for path in shadow.STAGE_INPUTS["league"]:
+            with self.subTest(path=path):
+                r,c,t=self.evidence()
+                c["inputTrees"][path]="f"*40
+                self.assert_run(r,c,t,"changed-or-incomplete-dependency-trees")
+        r,c,t=self.evidence()
+        c["inputTrees"].pop("data-meta")
+        self.assert_run(r,c,t,"changed-or-incomplete-dependency-trees")
+
+    def test_future_draft_partitions_and_outputs_are_exact(self):
+        path="data-derived/league-drafts/nfl-reise/2032.json"
+        for owner in ("requiredOutputs","observedOutputs"):
+            with self.subTest(owner=owner):
+                r,c,t=self.evidence()
+                c[owner].pop(path)
+                self.assert_run(r,c,t,"incomplete-or-stale-published-output-manifest")
+        r,c,t=self.evidence()
+        r["publishedOutputs"].pop(path)
+        self.assert_run(r,c,t,"incomplete-or-stale-published-output-manifest")
+        r,c,t=self.evidence()
+        c["observedOutputs"][path]="f"*40
+        self.assert_run(r,c,t,"incomplete-or-stale-published-output-manifest")
+        r,c,t=self.evidence()
+        c["requiredOutputs"]["data-derived/league-drafts/../forged"]="f"*40
+        self.assert_run(r,c,t,"incomplete-or-stale-published-output-manifest")
+        r,c,t=self.evidence()
+        for source in (r["publishedOutputs"],c["requiredOutputs"],c["observedOutputs"]):
+            for path in list(source):
+                if path.startswith("data-derived/team-week-performance"):
+                    source.pop(path)
+        self.assert_run(r,c,t,"required-output-surface-missing")
+
+    def test_prior_fail_soft_and_ambiguous_producer_never_qualify(self):
+        for name, value in [
+            ("success", False), ("success", "true"),
+            ("attempt", 2), ("attempt", True),
+            ("outputsComplete", None),
+            ("recoveryDebt", [{"product":"team-week-performance","status":"blocked"}]),
+            ("recoveryDebt", [{"product":"team-week-performance","status":"no-scored-week"}]),
+            ("recoveryDebt", [{"product":"league-drafts","status":"blocked"}]),
+            ("recoveryDebt", [{"product":"team-week-performance","parity":"accepted-divergence"}]),
+        ]:
+            with self.subTest(name=name,value=value):
+                r,c,t=self.evidence()
+                r["producer"][name]=value
+                self.assert_run(r,c,t,"prior-producer-or-fail-soft-recovery-not-proven")
+
+    def test_provider_freshness_gaps_expiry_and_silent_change(self):
+        cases=[
+            ("status","unknown"),
+            ("sourceRevision","f"*40),
+            ("acquisitionId","different"),
+            ("observedAtUtc","2026-11-05T10:06:00Z"),
+            ("expiresAtUtc","2026-11-05T10:05:00Z"),
+        ]
+        for key,value in cases:
+            with self.subTest(key=key):
+                r,c,t=self.evidence()
+                c["providerEvidence"][key]=value
+                self.assert_run(r,c,t,"provider-freshness-window-unverified")
+        r,c,t=self.evidence()
+        c.pop("providerEvidence")
+        self.assert_run(r,c,t,"missing-or-malformed-temporal-evidence")
+
+    def test_nfl_finality_unknown_or_active_forces_run(self):
+        for key,value in [
+            ("status","unknown"), ("sourceRevision","f"*40),
+            ("activeNonfinal",True), ("activeNonfinal",None),
+            ("unknownKickoffs",True),
+        ]:
+            with self.subTest(key=key):
+                r,c,t=self.evidence()
+                c["finalityEvidence"][key]=value
+                self.assert_run(r,c,t,"nfl-finality-state-unverified")
+
+    def test_waiver_kickoff_cap_and_rollover_crossings_force_run(self):
+        for boundary in ("WaiverRun","NflGameKickoff","CapWindowEnd","SeasonWindowStart"):
+            with self.subTest(boundary=boundary):
+                r,c,t=self.evidence()
+                c["clockEvidence"]["crossedBoundaries"]=[boundary]
+                self.assert_run(r,c,t,"clock-waiver-or-rollover-window-unverified")
+        r,c,t=self.evidence()
+        c["clockEvidence"]["fromUtc"]="2026-11-05T10:01:00Z"
+        self.assert_run(r,c,t,"clock-waiver-or-rollover-window-unverified")
+        r,c,t=self.evidence()
+        c["asOfUtc"]="2026-11-05T09:59:00Z"
+        self.assert_run(r,c,t,"non-forward-observation-clock")
+
+    def test_race_while_locked_or_between_check_and_skip_is_rejected(self):
+        for position in (1,2,3):
+            with self.subTest(position=position):
+                r,c,t=self.evidence()
+                t.insert(position,{"action":"commit","sha":"f"*40})
+                self.assert_run(r,c,t,"cross-writer-commit-inside-critical-section")
+        r,c,t=self.evidence()
+        t.insert(0,{"action":"commit","sha":"f"*40})
+        self.assert_run(r,c,t,"input-commit-before-skip-linearization")
+
+    def test_post_skip_invalidation_loss_or_missing_rebuild_is_rejected(self):
+        for extra in [
+            [{"action":"commit","sha":"f"*40}],
+            [{"action":"commit","sha":"f"*40},{"action":"enqueue","sha":"f"*40}],
+            [{"action":"commit","sha":"f"*40},{"action":"rebuild","sha":"f"*40}],
+        ]:
+            with self.subTest(extra=extra):
+                r,c,t=self.evidence()
+                t.extend(extra)
+                self.assert_run(r,c,t,"dependency-commit-not-reconciled")
+        r,c,t=self.evidence()
+        t.extend([{"action":"commit","sha":"f"*40},
+                  {"action":"enqueue","sha":"f"*40},
+                  {"action":"rebuild","sha":"f"*40}])
+        result=shadow.assess_offline_preflight_protocol(r,c,t)
+        self.assertEqual("would-skip",result["decision"])
+        self.assertFalse(result["safeToSkip"])  # Finite trace is NOT live race safety.
+
+    def test_race_missing_lock_release_and_unknown_events_rejected(self):
+        cases=[
+            ([{"action":"compare","sha":"d"*40},{"action":"skip","sha":"d"*40},
+              {"action":"release","sha":"d"*40}],"invalid-or-incomplete-synthetic-race-trace"),
+            ([{"action":"acquire","sha":"d"*40},{"action":"compare","sha":"d"*40},
+              {"action":"skip","sha":"d"*40},{"action":"skip","sha":"d"*40}],"skip-outside-verified-critical-section"),
+            ([{"action":"acquire","sha":"d"*40},{"action":"compare","sha":"d"*40},
+              {"action":"skip","sha":"d"*40},{"action":"mystery","sha":"d"*40},
+              {"action":"release","sha":"d"*40}],"unknown-synthetic-race-action"),
+            ([{"action":"acquire","sha":"d"*40},{"action":"compare","sha":"d"*40},
+              {"action":"skip","sha":"d"*40},{"action":"release","sha":"d"*40},
+              {"action":"commit","sha":"bad"}],"malformed-synthetic-race-event"),
+        ]
+        for event_trace,reason in cases:
+            with self.subTest(reason=reason):
+                r,c,_=self.evidence()
+                self.assert_run(r,c,event_trace,reason)
+
+    def test_offline_fixture_has_no_live_executor_or_skip_path(self):
+        workflow=(Path(__file__).resolve().parents[2]/".github/workflows/league-live.yml").read_text()
+        self.assertNotIn("assess_offline_preflight_protocol",workflow)
+        self.assertNotIn("replay_offline_skip_race",workflow)
+        r,c,t=self.evidence()
+        self.assertEqual("would-skip",shadow.assess_offline_preflight_protocol(r,c,t)["decision"])
+        self.assertFalse(shadow.assess_offline_preflight_protocol(r,c,t)["safeToSkip"])
+
+
+
+
+class ImmutableOutputRevisionAuditTests(unittest.TestCase):
+    """Read-only fake Git object graph, with actual canonical blob SHA-1 checks."""
+
+    class Fixture:
+        def __init__(self, leagues=("nfl-reise",), horizon=3):
+            import hashlib
+            self.files = {}
+            self.horizon = horizon
+            self.leagues = leagues
+            for league in leagues:
+                season = 2026
+                self.put_json(f"data-meta/{league}/metadata.json", {
+                    "SchemaVersion": 1, "CanonicalLeagueID": league,
+                    "CurrentProviderLeagueID": "1354177383984267264",
+                    "Drafts": {"UpcomingDraftCount": horizon,
+                               "UpcomingDraftCountMode": "PerDraftType",
+                               "Types": [{"DraftType": "Rookie"}]},
+                })
+                self.put_json(f"data-source/leagues/{league}/manifest.json", {
+                    "CanonicalLeagueID": league,
+                    "CurrentCanonicalLeagueSeasonID": f"{league}-{season}",
+                    "CurrentProviderLeagueID": "1354177383984267264",
+                    "Seasons": [{"Season": 2024}, {"Season": 2025},
+                                {"Season": 2026}],
+                })
+                for year in range(2024, 2027 + horizon):
+                    self.files[f"data-derived/league-drafts/{league}/{year}.json"] = b"{}"
+                for year in (2024, 2025, 2026):
+                    self.files[f"data-derived/league-transactions/{league}/{year}.json"] = b"{}"
+                for product in ("team-week-performance", "player-week-fantasy"):
+                    for week in (1, 8):
+                        self.files[f"data-derived/{product}/{league}/2026/{week:02}.json"] = b"{}"
+            for path in output_audit.APP_FILES:
+                self.files[path] = b"{}"
+            self.compile()
+
+        def put_json(self, path, value):
+            self.files[path] = json.dumps(value, sort_keys=True).encode("utf-8")
+
+        def compile(self):
+            import hashlib
+            import base64
+            root = {}
+            self.blobs = {}
+            self.trees = {}
+            for path, data in sorted(self.files.items()):
+                blob = hashlib.sha1(b"blob " + str(len(data)).encode() +
+                                    b"\x00" + data).hexdigest()
+                self.blobs[blob] = {
+                    "sha": blob, "encoding": "base64", "size": len(data),
+                    "content": base64.b64encode(data).decode("ascii"),
+                }
+                node = root
+                parts = path.split("/")
+                for part in parts[:-1]:
+                    node = node.setdefault(part, {})
+                node[parts[-1]] = ("blob", blob)
+            def seal(node):
+                entries = []
+                for name, value in sorted(node.items()):
+                    typ, sha = value if isinstance(value, tuple) else ("tree", seal(value))
+                    entries.append({"path": name, "type": typ, "sha": sha})
+                tree_sha = hashlib.sha1(
+                    json.dumps(entries, sort_keys=True).encode("utf-8")
+                ).hexdigest()
+                self.trees[tree_sha] = {"sha": tree_sha, "truncated": False,
+                                        "tree": entries}
+                return tree_sha
+            root_sha = seal(root)
+            self.sha = hashlib.sha1(("commit:" + root_sha).encode()).hexdigest()
+            self.commit = {"sha": self.sha, "commit": {"tree": {"sha": root_sha}}}
+
+        def fetch(self, resource, params):
+            if params:
+                raise AssertionError("Unexpected params")
+            if resource == f"commits/{self.sha}":
+                return self.commit
+            if resource.startswith("git/trees/"):
+                return self.trees[resource.split("/")[-1]]
+            if resource.startswith("git/blobs/"):
+                return self.blobs[resource.split("/")[-1]]
+            raise AssertionError("Unexpected Git API path " + resource)
+
+        def report(self):
+            return output_audit.audit_immutable_outputs(self.fetch, self.sha)
+
+    def assert_blocked(self, fixture, fragment):
+        result = fixture.report()
+        self.assertEqual("blocked", result["status"])
+        self.assertTrue(any(fragment in code for code in result["reasonCodes"]),
+                        result["reasonCodes"])
+        self.assertFalse(result["selectedGitOutputBlobIdsVerified"])
+        self.assertFalse(result["safeToSkip"])
+        self.assertFalse(result["enforced"])
+
+    def test_realistic_selected_tree_proof_remains_no_go(self):
+        f = self.Fixture()
+        result = f.report()
+        self.assertTrue(result["selectedGitOutputBlobIdsVerified"])
+        self.assertTrue(result["metadataMinimumDraftYearsVerified"])
+        self.assertEqual("immutable-selected-output-blobs-observed", result["status"])
+        self.assertEqual([2026, 2027, 2028, 2029],
+                         result["leagueCoverage"][0]["minimumConfiguredDraftYears"])
+        self.assertIn("data-derived/league-drafts/nfl-reise/2029.json",
+                      result["selectedOutputBlobs"])
+        for flag in ("completeOutputInventoryVerified", "providerDraftHorizonVerified",
+                     "outputSemanticParityVerified", "successfulProducerRunVerified",
+                     "independentProviderFreshnessVerified", "independentNflFinalityVerified",
+                     "recoveryClean", "raceFree", "safeToSkip", "enforced"):
+            self.assertIs(result[flag], False, flag)
+
+    def test_two_leagues_are_discovered_not_hard_coded(self):
+        f = self.Fixture(leagues=("alpha", "nfl-reise"))
+        result = f.report()
+        self.assertEqual(["alpha", "nfl-reise"], result["canonicalLeagueIDs"])
+        self.assertEqual(2, len(result["leagueCoverage"]))
+        self.assertFalse(result["safeToSkip"])
+
+    def test_missing_dynamic_future_draft_file_fails_closed(self):
+        f = self.Fixture()
+        f.files.pop("data-derived/league-drafts/nfl-reise/2029.json")
+        f.compile()
+        self.assert_blocked(f, "metadata-minimum-future-drafts-missing")
+
+    def test_increasing_metadata_horizon_discovers_new_required_draft(self):
+        f = self.Fixture()
+        f.put_json("data-meta/nfl-reise/metadata.json", {
+            "SchemaVersion": 1, "CanonicalLeagueID": "nfl-reise",
+            "CurrentProviderLeagueID": "1354177383984267264",
+            "Drafts": {"UpcomingDraftCount": 6,
+                       "UpcomingDraftCountMode": "PerDraftType",
+                       "Types": [{"DraftType": "Rookie"}]},
+        })
+        f.compile()
+        self.assert_blocked(f, "metadata-minimum-future-drafts-missing")
+
+    def test_extra_actual_future_partitions_are_collected_not_suppressed(self):
+        f = self.Fixture()
+        f.files["data-derived/league-drafts/nfl-reise/2035.json"] = b"{}"
+        f.compile()
+        result = f.report()
+        self.assertTrue(result["selectedGitOutputBlobIdsVerified"])
+        self.assertIn(2035, result["leagueCoverage"][0]["observedDraftYears"])
+        self.assertFalse(result["providerDraftHorizonVerified"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_missing_current_transactions_or_pwf_twp_fails_closed(self):
+        cases = (
+            ("data-derived/league-transactions/nfl-reise/2026.json",
+             "current-product-season-missing"),
+            ("data-derived/team-week-performance/nfl-reise/2026/01.json",
+             "missing"),
+            ("data-derived/player-week-fantasy/nfl-reise/2026/08.json",
+             "missing"),
+        )
+        for path, _ in cases:
+            with self.subTest(path=path):
+                f = self.Fixture()
+                if path.endswith("/2026.json"):
+                    f.files.pop(path)
+                else:
+                    parent = path.rsplit("/", 1)[0]
+                    for current in list(f.files):
+                        if current.startswith(parent + "/"):
+                            f.files.pop(current)
+                f.compile()
+                self.assert_blocked(f, "current-product-season-missing" if
+                                    path.endswith("/2026.json") else
+                                    "required-git-entry-missing")
+
+    def test_missing_app_output_fails_closed(self):
+        f = self.Fixture()
+        f.files.pop(output_audit.APP_FILES[0])
+        f.compile()
+        self.assert_blocked(f, "required-git-entry-missing")
+
+    def test_invalid_week_partition_fails_closed(self):
+        for name in ("00.json", "24.json", "week-8.json"):
+            with self.subTest(name=name):
+                f = self.Fixture()
+                f.files[f"data-derived/team-week-performance/nfl-reise/2026/{name}"] = b"{}"
+                f.compile()
+                self.assert_blocked(f, "invalid-week-partition")
+
+    def test_stray_derived_league_without_metadata_fails_closed(self):
+        f = self.Fixture()
+        f.files["data-derived/league-drafts/rogue/2026.json"] = b"{}"
+        f.compile()
+        self.assert_blocked(f, "missing-or-extra-derived-league")
+
+    def test_missing_manifest_and_identity_drift_fail_closed(self):
+        f = self.Fixture()
+        f.files.pop("data-source/leagues/nfl-reise/manifest.json")
+        f.compile()
+        self.assert_blocked(f, "required-git-entry-missing")
+        f = self.Fixture()
+        f.put_json("data-source/leagues/nfl-reise/manifest.json", {
+            "CanonicalLeagueID": "nfl-reise",
+            "CurrentCanonicalLeagueSeasonID": "nfl-reise-2025",
+            "CurrentProviderLeagueID": "other",
+            "Seasons": [{"Season": 2025}],
+        })
+        f.compile()
+        self.assert_blocked(f, "metadata-manifest-season-identity-mismatch")
+
+    def test_github_line_wrapped_canonical_blobs_still_verify_real_git_sha(self):
+        # GitHub's Git Blob API content is base64 with embedded LF. A Windows
+        # style CRLF response must also survive without weakening SHA checks.
+        f = self.Fixture()
+        for blob in f.blobs.values():
+            encoded = blob["content"]
+            blob["content"] = "\n".join(encoded[i:i + 60] for i in range(0, len(encoded), 60)) + "\n"
+        report = f.report()
+        self.assertTrue(report["selectedGitOutputBlobIdsVerified"], report["reasonCodes"])
+        self.assertFalse(report["safeToSkip"])
+        f = self.Fixture()
+        for blob in f.blobs.values():
+            encoded = blob["content"]
+            blob["content"] = "\r\n".join(encoded[i:i + 60] for i in range(0, len(encoded), 60)) + "\r\n"
+        report = f.report()
+        self.assertTrue(report["selectedGitOutputBlobIdsVerified"], report["reasonCodes"])
+        self.assertFalse(report["safeToSkip"])
+
+    def test_github_base64_whitespace_and_corruption_remain_fail_closed(self):
+        for suffix in (" ", "\t", "\r", "\f", "#"):
+            with self.subTest(suffix=repr(suffix)):
+                f = self.Fixture()
+                import hashlib
+                data = f.files["data-meta/nfl-reise/metadata.json"]
+                sha = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+                f.blobs[sha]["content"] += suffix
+                self.assert_blocked(f, "canonical-blob-unreadable")
+        # Even a well-formed re-wrapped payload cannot impersonate the same Git blob.
+        f = self.Fixture()
+        import hashlib
+        data = f.files["data-meta/nfl-reise/metadata.json"]
+        sha = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+        f.blobs[sha]["content"] = "e30=\n"
+        self.assert_blocked(f, "canonical-blob-digest-mismatch")
+
+    def test_corrupt_canonical_blob_digest_and_wrong_ref_fail_closed(self):
+        f = self.Fixture()
+        meta = f.files["data-meta/nfl-reise/metadata.json"]
+        import hashlib
+        blob_sha = hashlib.sha1(b"blob " + str(len(meta)).encode() + b"\0" + meta).hexdigest()
+        f.blobs[blob_sha]["content"] = "e30="  # different bytes, same claimed SHA
+        self.assert_blocked(f, "canonical-blob-digest-mismatch")
+        result = output_audit.audit_immutable_outputs(f.fetch, "not-a-sha")
+        self.assertFalse(result["selectedGitOutputBlobIdsVerified"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_wrong_or_truncated_tree_fail_closed(self):
+        f = self.Fixture()
+        root_sha = f.commit["commit"]["tree"]["sha"]
+        f.trees[root_sha]["truncated"] = True
+        self.assert_blocked(f, "incomplete-or-wrong-git-tree")
+        f = self.Fixture()
+        f.commit["commit"]["tree"]["sha"] = "x" * 40
+        self.assert_blocked(f, "commit-tree-not-independently-resolved")
+
+    def test_duplicate_git_tree_entry_fails_closed(self):
+        f = self.Fixture()
+        root_sha = f.commit["commit"]["tree"]["sha"]
+        f.trees[root_sha]["tree"].append(dict(f.trees[root_sha]["tree"][0]))
+        self.assert_blocked(f, "invalid-or-duplicate-git-tree-entry")
+
+    def test_result_fingerprint_is_stable_and_changes_with_output(self):
+        a = self.Fixture()
+        left = a.report()
+        self.assertEqual(left["selectedOutputFingerprint"], a.report()["selectedOutputFingerprint"])
+        a.files["public/data/League.json"] = b'{"changed":true}'
+        a.compile()
+        right = a.report()
+        self.assertTrue(right["selectedGitOutputBlobIdsVerified"])
+        self.assertNotEqual(left["selectedOutputFingerprint"], right["selectedOutputFingerprint"])
+        self.assertFalse(right["safeToSkip"])
+
+    def test_no_production_workflow_invocation_or_skip_authorization(self):
+        workflow = (Path(__file__).resolve().parents[2] / ".github/workflows/league-live.yml").read_text()
+        self.assertNotIn("league_live_output_revision_audit.py", workflow)
+        result = self.Fixture().report()
+        self.assertFalse(result["safeToSkip"])
+        self.assertFalse(result["enforced"])
+
+
+
+
+class RunReceiptCorrelationTests(unittest.TestCase):
+    """Authenticated-input protocol boundaries, not real live skip clearance."""
+
+    def evidence(self):
+        main = "f" * 40
+        phases = {
+            "raw": {"state": "publication-commit-correlated",
+                    "publicationCommitVerified": True,
+                    "publicationCommitSha": "a" * 40},
+            "canonical": {"state": "publication-commit-correlated",
+                          "publicationCommitVerified": True,
+                          "publicationCommitSha": "b" * 40},
+        }
+        src = {"runId": 101, "runAttempt": 1, "jobCompletionVerified": True,
+               "mainAtAudit": main, "sourcePublishChainVerified": True,
+               "phases": phases, "reasonCodes": []}
+        standings = {"runId": 101, "stage": "standings", "jobCompletionVerified": True,
+                     "observedMainSha": main, "status": "publication-commit-correlated",
+                     "publicationCommitVerified": True,
+                     "publicationCommitSha": "c" * 40}
+        league = {"runId": 101, "stage": "league", "jobCompletionVerified": True,
+                  "observedMainSha": main, "status": "publication-commit-correlated",
+                  "publicationCommitVerified": True, "publicationCommitSha": "d" * 40}
+        rec = {"runId": 101, "jobCompletionVerified": True,
+               "observedMainSha": main, "currentMainUnchangedDuringAudit": True,
+               "producerReportsComplete": True, "noBlockedDerivedRowsObserved": True,
+               "status": "producer-reported-complete", "expectedLeagueIDs": ["nfl-reise"]}
+        blobs = {"revision": "d" * 40, "selectedGitOutputBlobIdsVerified": True,
+                 "metadataMinimumDraftYearsVerified": True,
+                 "status": "immutable-selected-output-blobs-observed",
+                 "canonicalLeagueIDs": ["nfl-reise"],
+                 "selectedOutputCount": 24, "selectedOutputFingerprint": "e" * 64}
+        return src, standings, league, rec, blobs
+
+    def combine(self, src, standings, league, rec, blobs, *, main="f"*40, ancestry=None):
+        return run_receipts.reconcile(
+            101, {"nfl-reise"}, main, src, standings, league, rec, blobs,
+            ancestry if ancestry is not None else lambda old, new: True,
+        )
+
+    def assert_blocked(self, args, reason, **kwargs):
+        result = self.combine(*args, **kwargs)
+        self.assertEqual("blocked", result["status"])
+        self.assertIn(reason, result["reasonCodes"])
+        self.assertFalse(result["safeToSkip"])
+        self.assertFalse(result["enforced"])
+
+    def test_confirmed_writer_commits_have_selected_blobs_not_full_receipt(self):
+        fields = self.evidence()
+        result = self.combine(*fields)
+        self.assertEqual("correlated-read-only-observations", result["status"])
+        self.assertTrue(result["jobsAndDerivedReportsCorrelated"])
+        self.assertTrue(result["sourceTwoPhasePublicationChainVerified"])
+        self.assertTrue(result["verifiedStageCommitAncestry"])
+        self.assertTrue(result["leagueCommitSelectedGitBlobsVerified"])
+        self.assertEqual({"standings":"c"*40,"league":"d"*40},
+                         result["stagePublicationCommits"])
+        self.assertEqual([], result["noOpStagesObserved"])
+        for field in ("completePublicationReceiptVerified", "fullOutputInventoryVerified",
+                      "providerFreshnessVerified", "nflFinalityVerified", "recoveryClean",
+                      "raceFree", "safeToSkip", "enforced"):
+            self.assertIs(result[field], False, field)
+        self.assertTrue(result["unproven"])
+
+    def test_normal_noop_has_no_new_publication_commits(self):
+        src, standings, league, rec, _ = self.evidence()
+        src["sourcePublishChainVerified"] = False
+        src["phases"]["raw"] = {"state": "no-push-observed",
+                                  "publicationCommitVerified": False}
+        src["phases"]["canonical"] = {"state": "no-op-observed",
+                                        "publicationCommitVerified": False}
+        src["reasonCodes"] = ["missing-complete-two-phase-publication-chain"]
+        for stage in (standings, league):
+            stage.pop("publicationCommitSha")
+            stage.pop("observedMainSha")
+            stage["status"] = "no-op-observed"
+            stage["publicationCommitVerified"] = False
+        result = self.combine(src, standings, league, rec, None)
+        self.assertEqual("correlated-read-only-observations", result["status"])
+        self.assertEqual(["league", "source-canonical", "standings"],
+                         result["noOpStagesObserved"])
+        self.assertEqual({}, result["stagePublicationCommits"])
+        self.assertFalse(result["sourceTwoPhasePublicationChainVerified"])
+        self.assertFalse(result["leagueCommitSelectedGitBlobsVerified"])
+        self.assertFalse(result["safeToSkip"])
+        self.assertIn("no-commit-noop-has-no-new-immutable-publication-receipt",
+                      result["unproven"])
+
+    def test_noop_cannot_reuse_prior_artifact_or_fake_commit(self):
+        src, standings, league, rec, blobs = self.evidence()
+        league["status"] = "no-op-observed"
+        league["publicationCommitVerified"] = False
+        self.assert_blocked((src,standings,league,rec,blobs),
+                            "league-publisher-evidence-unverifiable")
+        src, standings, league, rec, blobs = self.evidence()
+        league["status"] = "no-op-observed"
+        league.pop("publicationCommitSha")
+        league["publicationCommitVerified"] = False
+        self.assert_blocked((src,standings,league,rec,blobs),
+                            "unattributed-output-snapshot-without-league-push")
+
+    def test_wrong_run_id_rejected_for_each_job(self):
+        for part in range(4):
+            with self.subTest(part=part):
+                args = list(self.evidence())
+                args[part]["runId"] = 102
+                name = ("source","standings","league","recovery")[part]
+                self.assert_blocked(args, name+"-job-or-run-not-correlated")
+
+    def test_no_failed_or_unknown_job_is_silent_success(self):
+        for part in range(4):
+            with self.subTest(part=part):
+                args = list(self.evidence())
+                args[part]["jobCompletionVerified"] = False
+                name = ("source","standings","league","recovery")[part]
+                self.assert_blocked(args, name+"-job-or-run-not-correlated")
+
+    def test_main_revision_mismatch_rejected_by_each_stage(self):
+        names = ("source","standings","league","recovery")
+        keys = ("mainAtAudit","observedMainSha","observedMainSha","observedMainSha")
+        for part, (name,key) in enumerate(zip(names,keys)):
+            with self.subTest(part=part):
+                args = list(self.evidence())
+                args[part][key] = "0" * 40
+                self.assert_blocked(args, name+"-observed-main-revision-mismatch")
+
+    def test_wrong_producer_attempt_and_derived_recovery_fail_closed(self):
+        for key,value,reason in [
+            ("runAttempt",None,"source-run-attempt-not-verified"),
+            ("runAttempt",True,"source-run-attempt-not-verified"),
+            ("sourcePublishChainVerified",False,"source-partial-chain-not-a-clean-noop-observation"),
+        ]:
+            with self.subTest(key=key):
+                args=list(self.evidence())
+                args[0][key]=value
+                self.assert_blocked(args,reason)
+        for key,value in [
+            ("producerReportsComplete",False),
+            ("noBlockedDerivedRowsObserved",False),
+            ("status","blocked"),
+        ]:
+            with self.subTest(key=key):
+                args=list(self.evidence())
+                args[3][key]=value
+                self.assert_blocked(args,"derived-producer-recovery-status-incomplete")
+        args=list(self.evidence())
+        args[3]["expectedLeagueIDs"] = ["unrelated"]
+        self.assert_blocked(args,"recovery-league-scope-not-correlated")
+
+    def test_partial_source_failure_is_not_treated_as_clean_noop(self):
+        args=list(self.evidence())
+        args[0]["sourcePublishChainVerified"]=False
+        args[0]["reasonCodes"]=["source-raw-publish-failed"]
+        self.assert_blocked(args,"source-partial-chain-not-a-clean-noop-observation")
+        args=list(self.evidence())
+        args[0]["phases"]["raw"]["publicationCommitVerified"]=False
+        self.assert_blocked(args,"source-raw-push-unverified")
+
+    def test_ambiguous_or_forged_standings_and_league_publications(self):
+        for part,name in ((1,"standings"),(2,"league")):
+            for field,value in (("publicationCommitVerified",1),
+                                ("status","blocked"),("publicationCommitSha","bogus")):
+                with self.subTest(part=part,field=field):
+                    args=list(self.evidence())
+                    args[part][field]=value
+                    self.assert_blocked(args,name+"-publisher-evidence-unverifiable")
+
+    def test_cross_stage_commit_reordering_and_missing_ancestry(self):
+        args=self.evidence()
+        self.assert_blocked(args,"cross-stage-publication-ancestry-not-verified",
+                            ancestry=lambda a,b: False)
+        def failure(_a,_b):
+            raise ValueError("ancestry API unavailable")
+        self.assert_blocked(args,"cross-stage-publication-ancestry-not-verified",
+                            ancestry=failure)
+
+    def test_immutable_blob_snapshot_must_bind_exact_league_commit_and_scope(self):
+        for key,value in [
+            ("revision","f"*40),
+            ("selectedGitOutputBlobIdsVerified",False),
+            ("metadataMinimumDraftYearsVerified",None),
+            ("canonicalLeagueIDs",["other"]),
+            ("selectedOutputCount",0),
+            ("selectedOutputCount",True),
+            ("selectedOutputFingerprint","missing"),
+        ]:
+            with self.subTest(field=key):
+                args=list(self.evidence())
+                args[4][key]=value
+                self.assert_blocked(args,"published-league-selected-blob-inventory-not-verified")
+        args=list(self.evidence())
+        args[4]=None
+        self.assert_blocked(args,"published-league-output-snapshot-missing")
+
+    def test_invalid_scope_and_missing_reports_fail_closed(self):
+        args=self.evidence()
+        result=run_receipts.reconcile(101,set(),"f"*40,*args,lambda a,b:True)
+        self.assertEqual(["invalid-run-main-or-league-scope"],result["reasonCodes"])
+        self.assertFalse(result["safeToSkip"])
+        args=list(self.evidence())
+        args[3]=None
+        self.assert_blocked(args,"missing-or-malformed-stage-evidence")
+
+    def test_orchestrator_checks_stable_main_ref_and_does_not_install_skip(self):
+        args=self.evidence()
+        main_ref={"ref":"refs/heads/main","object":{"sha":"f"*40}}
+        with patch.object(run_receipts.source,"audit_source_sync",return_value=args[0]), \
+             patch.object(run_receipts.github,"audit_publication_receipt",
+                          side_effect=[args[1],args[2]]), \
+             patch.object(run_receipts.recovery,"audit_run",return_value=args[3]), \
+             patch.object(run_receipts.outputs,"audit_immutable_outputs",return_value=args[4]), \
+             patch.object(run_receipts.source,"_ancestry",return_value=True):
+            def fetch(resource,_params):
+                self.assertEqual("git/ref/heads/main",resource)
+                return dict(main_ref)
+            result=run_receipts.audit_run(fetch,lambda job:"", "Lolindhir/fantasy-app",
+                                          101,{"nfl-reise"},shadow.utc("2026-11-06T18:00:00Z"))
+        self.assertEqual("correlated-read-only-observations",result["status"])
+        self.assertFalse(result["safeToSkip"])
+        moved=[{"ref":"refs/heads/main","object":{"sha":"f"*40}},
+               {"ref":"refs/heads/main","object":{"sha":"e"*40}}]
+        with patch.object(run_receipts.source,"audit_source_sync",return_value=args[0]), \
+             patch.object(run_receipts.github,"audit_publication_receipt",
+                          side_effect=[args[1],args[2]]), \
+             patch.object(run_receipts.recovery,"audit_run",return_value=args[3]), \
+             patch.object(run_receipts.outputs,"audit_immutable_outputs",return_value=args[4]):
+            result=run_receipts.audit_run(
+                lambda _resource,_params:moved.pop(0), lambda job:"",
+                "Lolindhir/fantasy-app",101,{"nfl-reise"},
+                shadow.utc("2026-11-06T18:00:00Z"))
+        self.assertEqual("blocked",result["status"])
+        self.assertIn("Main changed",result["reasonCodes"][0])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_noop_orchestrator_never_fetches_prior_output_blobs(self):
+        args=list(self.evidence())
+        args[2].update(status="no-op-observed",publicationCommitVerified=False)
+        args[2].pop("publicationCommitSha")
+        args[2].pop("observedMainSha")
+        with patch.object(run_receipts.source,"audit_source_sync",return_value=args[0]), \
+             patch.object(run_receipts.github,"audit_publication_receipt",
+                          side_effect=[args[1],args[2]]), \
+             patch.object(run_receipts.recovery,"audit_run",return_value=args[3]), \
+             patch.object(run_receipts.outputs,"audit_immutable_outputs",
+                          side_effect=AssertionError("must not read old blobs")), \
+             patch.object(run_receipts.source,"_ancestry",return_value=True):
+            result=run_receipts.audit_run(
+                lambda _p,_q:{"ref":"refs/heads/main","object":{"sha":"f"*40}},
+                lambda job:"","Lolindhir/fantasy-app",101,{"nfl-reise"},
+                shadow.utc("2026-11-06T18:00:00Z"))
+        self.assertEqual("correlated-read-only-observations",result["status"])
+        self.assertFalse(result["leagueCommitSelectedGitBlobsVerified"])
+        self.assertEqual(["league"], result["noOpStagesObserved"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_missing_token_fails_closed_without_network(self):
+        with patch.dict("os.environ",{"GH_TOKEN":"","GITHUB_TOKEN":""}):
+            self.assertEqual(2,run_receipts.main([
+                "--repo","Lolindhir/fantasy-app","--run-id","101",
+                "--league","nfl-reise"]))
 
 
 

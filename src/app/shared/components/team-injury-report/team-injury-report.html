@@ -1,0 +1,58 @@
+<section class="injury-report" aria-label="Injury report">
+  @if (rows.length === 0) {
+    <div class="injury-head injury-head--static">
+      <span class="eyebrow">Injury Report</span>
+      <span class="injury-empty">No injured players</span>
+    </div>
+  } @else {
+    <button type="button" class="injury-head" (click)="toggle()"
+      [attr.aria-expanded]="expanded" aria-controls="team-injury-list">
+      <span class="injury-title">
+        <span class="eyebrow">Injury Report</span>
+        <strong>{{ rows.length }} injured</strong>
+        @if (starterCount > 0) {
+          <span class="injury-starters">{{ starterCount }} {{ starterCount === 1 ? 'starter' : 'starters' }}</span>
+        }
+      </span>
+      <span class="injury-summary">
+        @for (chip of summary; track chip.kind) {
+          <span class="injury-chip" [ngClass]="'injury-chip--' + chip.kind">{{ chip.label }} {{ chip.count }}</span>
+        }
+      </span>
+      <mat-icon aria-hidden="true">{{ expanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </button>
+
+    @if (expanded) {
+      <ul class="injury-list" id="team-injury-list">
+        @for (row of rows; track trackRow($index, row)) {
+          <li>
+            <button type="button" class="injury-row" [ngClass]="'injury-row--' + row.kind"
+              (click)="openPlayer(row.player)">
+              <span class="injury-photo-wrap">
+                @if (row.player.Picture) {
+                  <img class="injury-photo" [src]="row.player.Picture | playerPicture" alt="" loading="lazy" decoding="async" />
+                }
+                @if (nflLogo(row.player); as logo) {
+                  <img class="injury-nfl-logo" [src]="logo" alt="" />
+                }
+              </span>
+              <span class="injury-copy">
+                <strong class="injury-name">{{ row.player.Name }}</strong>
+                <span class="injury-meta">
+                  <span class="injury-position" [ngStyle]="row.player.Position | positionStyle">{{ row.player.Position }}</span>
+                  @if (row.isStarter) { <span class="injury-role">Starter</span> }
+                  @if (placementLabel(row); as placement) { <span class="injury-placement">{{ placement }}</span> }
+                  @if (row.description) { <span class="injury-description">{{ row.description }}</span> }
+                </span>
+              </span>
+              <span class="injury-status">
+                <span class="injury-chip injury-chip--solid" [ngClass]="'injury-chip--' + row.kind">{{ row.label }}</span>
+                @if (row.lockLabel; as lock) { <span class="injury-lock">{{ lock }}</span> }
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

@@ -327,6 +327,222 @@ def compare_observed_logs(previous_log: str, current_log: str) -> dict[str, Any]
     }
 
 
+
+# An isolated, pure protocol model for G5 feasibility tests. This is NOT called
+# by collect/decide, existing GitHub Actions, or any publication path. All
+# attestation fields are caller-supplied synthetic evidence: even a full match
+# is never an independently verified production skip authorization.
+OFFLINE_REQUIRED_SURFACES = {
+    "standings": STAGE_OUTPUTS["standings"],
+    "league": (*STAGE_OUTPUTS["league"], "data-derived/player-week-fantasy",
+               "data-derived/team-week-performance"),
+}
+
+
+def replay_offline_skip_race(events: Any, pinned_sha: str) -> list[str]:
+    """Check a finite, synthetic lock/check/skip/reconcile interleaving.
+
+    This models obligations of a *hypothetical* cross-writer protocol, NOT
+    evidence that GitHub writers actually hold a shared lock, have reliable
+    invalidation delivery or are serialized after this trace ends.
+    """
+    def valid_sha(value: Any) -> bool:
+        return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}", value) is not None
+
+    if (not valid_sha(pinned_sha) or not isinstance(events, list)
+            or not 4 <= len(events) <= 60):
+        return ["invalid-or-incomplete-synthetic-race-trace"]
+    problems: set[str] = set()
+    locked = False
+    compared = False
+    skipped = False
+    released = False
+    head = pinned_sha
+    pending: set[str] = set()
+    queued: set[str] = set()
+    for event in events:
+        if (not isinstance(event, dict) or set(event) != {"action", "sha"}
+                or not isinstance(event.get("action"), str)
+                or not valid_sha(event.get("sha"))):
+            problems.add("malformed-synthetic-race-event")
+            break
+        action, sha = event["action"], event["sha"]
+        if action == "acquire":
+            if locked or compared or skipped or released or sha != head:
+                problems.add("invalid-lock-acquisition")
+            locked = True
+        elif action == "compare":
+            if not locked or compared or skipped or sha != head or sha != pinned_sha:
+                problems.add("compare-not-atomic-or-revision-changed")
+            compared = True
+        elif action == "skip":
+            if not locked or not compared or skipped or sha != pinned_sha or sha != head:
+                problems.add("skip-outside-verified-critical-section")
+            skipped = True
+        elif action == "release":
+            if not locked or not skipped or released or sha != head:
+                problems.add("invalid-skip-lock-release")
+            locked = False
+            released = True
+        elif action == "commit":
+            if locked:
+                problems.add("cross-writer-commit-inside-critical-section")
+            if not released:
+                problems.add("input-commit-before-skip-linearization")
+            if sha == head:
+                problems.add("ambiguous-commit-revision")
+            head = sha
+            if released:
+                pending.add(sha)
+        elif action == "enqueue":
+            if not released or sha not in pending or sha in queued:
+                problems.add("missing-or-duplicate-invalidation-enqueue")
+            else:
+                queued.add(sha)
+        elif action == "rebuild":
+            if not released or sha not in queued:
+                problems.add("reconciliation-without-durable-invalidation")
+            else:
+                queued.remove(sha)
+                pending.remove(sha)
+        else:
+            problems.add("unknown-synthetic-race-action")
+    if locked or not compared or not skipped or not released:
+        problems.add("incomplete-atomic-skip-sequence")
+    if pending or queued:
+        problems.add("dependency-commit-not-reconciled")
+    return sorted(problems)
+
+
+def assess_offline_preflight_protocol(receipt: Any, observed: Any,
+                                      race_events: Any) -> dict[str, Any]:
+    """Check synthetic evidence completeness, not real producer authenticity.
+
+    The expected partitions and digests MUST eventually be discovered and
+    independently checked against canonical state at one immutable revision.
+    Caller-supplied objects cannot establish provider freshness, finality,
+    output parity, or a GitHub cross-writer lock. No live caller may use this
+    function to suppress a job.
+    """
+    def valid_sha(value: Any) -> bool:
+        return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{40}", value) is not None
+
+    reasons: set[str] = set()
+    result = {"schemaVersion": 1, "mode": "offline-synthetic-preflight-protocol",
+              "decision": "would-run", "reasonCodes": [],
+              "syntheticProtocolConsistent": False,
+              "independentEvidenceVerified": False, "raceFree": False,
+              "recoveryClean": False, "safeToSkip": False, "enforced": False}
+    if not isinstance(receipt, dict) or not isinstance(observed, dict):
+        result["reasonCodes"] = ["missing-or-malformed-protocol-evidence"]
+        return result
+    stage = observed.get("stage")
+    if (stage not in OFFLINE_REQUIRED_SURFACES or receipt.get("stage") != stage
+            or type(receipt.get("schemaVersion")) is not int
+            or receipt["schemaVersion"] != 1):
+        reasons.add("unknown-or-mismatched-stage-contract")
+
+    def valid_scope(value: Any) -> bool:
+        if not isinstance(value, list) or not value:
+            return False
+        keys: set[tuple[str, int]] = set()
+        for row in value:
+            if not isinstance(row, dict) or set(row) != {"league", "season"}:
+                return False
+            league, season = row["league"], row["season"]
+            if (not isinstance(league, str) or
+                    not re.fullmatch(r"[A-Za-z0-9_-]+", league) or
+                    type(season) is not int or not 2000 <= season <= 2200 or
+                    (league, season) in keys):
+                return False
+            keys.add((league, season))
+        return value == sorted(value, key=lambda r: (r["league"], r["season"]))
+
+    if (not valid_scope(receipt.get("scope"))
+            or not valid_scope(observed.get("scope"))
+            or receipt.get("scope") != observed.get("scope")):
+        reasons.add("canonical-league-season-scope-unverified")
+    receipt_head = receipt.get("revision")
+    if (not valid_sha(receipt_head) or receipt_head != observed.get("revision")
+            or not valid_sha(receipt.get("sourceRevision"))
+            or receipt.get("sourceRevision") != observed.get("sourceRevision")):
+        reasons.add("unbound-or-different-publication-revision")
+    if stage in STAGE_INPUTS:
+        inputs = receipt.get("inputTrees")
+        latest = observed.get("inputTrees")
+        expected_paths = set(STAGE_INPUTS[stage])
+        if (not isinstance(inputs, dict) or set(inputs) != expected_paths
+                or not isinstance(latest, dict) or set(latest) != expected_paths
+                or any(not valid_sha(v) for v in list(inputs.values()) + list(latest.values()))
+                or inputs != latest):
+            reasons.add("changed-or-incomplete-dependency-trees")
+    producer = receipt.get("producer")
+    if (not isinstance(producer, dict) or
+            producer.get("success") is not True or
+            type(producer.get("attempt")) is not int or producer["attempt"] != 1 or
+            producer.get("outputsComplete") is not True or
+            producer.get("recoveryDebt") != []):
+        reasons.add("prior-producer-or-fail-soft-recovery-not-proven")
+    outputs = receipt.get("publishedOutputs")
+    required = observed.get("requiredOutputs")
+    actual = observed.get("observedOutputs")
+
+    def valid_outputs(value: Any) -> bool:
+        return (isinstance(value, dict) and bool(value) and
+                all(isinstance(path, str) and path and not path.startswith("/")
+                    and ".." not in path.split("/") and valid_sha(digest)
+                    for path, digest in value.items()))
+
+    if (not valid_outputs(outputs) or not valid_outputs(required)
+            or not valid_outputs(actual) or outputs != required or
+            actual != required):
+        reasons.add("incomplete-or-stale-published-output-manifest")
+    if stage in OFFLINE_REQUIRED_SURFACES and valid_outputs(required):
+        if any(not any(path == root or path.startswith(root + "/")
+                       for path in required)
+               for root in OFFLINE_REQUIRED_SURFACES[stage]):
+            reasons.add("required-output-surface-missing")
+    try:
+        processed = utc(receipt["publishedAtUtc"])
+        now = utc(observed["asOfUtc"])
+        freshness = observed["providerEvidence"]
+        finality = observed["finalityEvidence"]
+        clock = observed["clockEvidence"]
+        if now <= processed:
+            reasons.add("non-forward-observation-clock")
+        if (not isinstance(freshness, dict)
+                or freshness.get("status") != "verified"
+                or freshness.get("sourceRevision") != observed.get("sourceRevision")
+                or freshness.get("acquisitionId") != receipt.get("acquisitionId")
+                or not isinstance(freshness.get("acquisitionId"), str)
+                or not freshness["acquisitionId"]
+                or not utc(freshness["observedAtUtc"]) <= now < utc(freshness["expiresAtUtc"])):
+            reasons.add("provider-freshness-window-unverified")
+        if (not isinstance(finality, dict) or
+                finality.get("status") != "verified" or
+                finality.get("sourceRevision") != observed.get("sourceRevision") or
+                finality.get("activeNonfinal") is not False or
+                finality.get("unknownKickoffs") is not False):
+            reasons.add("nfl-finality-state-unverified")
+        if (not isinstance(clock, dict) or
+                clock.get("status") != "clear" or
+                utc(clock["fromUtc"]) != processed or
+                utc(clock["toUtc"]) != now or
+                clock.get("crossedBoundaries") != []):
+            reasons.add("clock-waiver-or-rollover-window-unverified")
+    except (KeyError, TypeError, ValueError, OverflowError):
+        reasons.add("missing-or-malformed-temporal-evidence")
+    race_reasons = replay_offline_skip_race(race_events, receipt_head)
+    reasons.update(race_reasons)
+    result.update(
+        decision="would-skip" if not reasons else "would-run",
+        syntheticProtocolConsistent=not reasons,
+        reasonCodes=sorted(reasons),
+    )
+    return result
+
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--stage", choices=sorted(STAGE_INPUTS))

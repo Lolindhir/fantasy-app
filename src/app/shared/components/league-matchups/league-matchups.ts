@@ -24,12 +24,8 @@ import type {
   MatchupParticipant,
   MatchupsReadModel
 } from '../../../core/models/matchup.models';
-import type { NFLTeam, Player } from '../../../core/models/player.models';
-import type {
-  WeeklyRecapKeyGame,
-  WeeklyRecapKeyPlayer,
-  WeeklyRecapsReadModel
-} from '../../../core/models/weekly-recap.models';
+import type { NFLTeam } from '../../../core/models/player.models';
+import type { WeeklyRecapsReadModel } from '../../../core/models/weekly-recap.models';
 import { DataService } from '../../../core/services/data.service';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import {
@@ -61,8 +57,8 @@ import {
   FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
 } from '../fantasy-game-context-dialog/fantasy-game-context-dialog';
-import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 import { ChampionBadgeComponent } from '../champion-badge/champion-badge';
+import { WeekRecapContentComponent } from '../week-recap-content/week-recap-content';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 import { findNflTeam } from '../../utils/nfl-team-key.util';
 
@@ -111,6 +107,7 @@ interface FantasyContextState {
     MatDialogModule,
     MatIconModule,
     TeamIdentityComponent,
+    WeekRecapContentComponent,
     ChampionBadgeComponent
   ],
   templateUrl: './league-matchups.html',
@@ -396,13 +393,12 @@ export class LeagueMatchupsComponent {
     return current ? getMustWatchGames(current).slice(0, 5) : [];
   }
 
-  nflLogo(teamID: string | number): string | null {
-    return findNflTeam(this.nflTeamsSignal(), teamID)?.Logo || null;
+  get nflTeams(): NFLTeam[] {
+    return this.nflTeamsSignal();
   }
 
-  nflAbbr(teamID: string | number): string {
-    const team = findNflTeam(this.nflTeamsSignal(), teamID);
-    return team?.Abv || String(teamID);
+  nflLogo(teamID: string | number): string | null {
+    return findNflTeam(this.nflTeamsSignal(), teamID)?.Logo || null;
   }
 
   gameIsLiveForFantasy(game: FantasyGameContextGame): boolean {
@@ -432,32 +428,6 @@ export class LeagueMatchupsComponent {
     return value === null || !Number.isFinite(value) ? '–' : `≈${this.nflScoreFormatter.format(value)}`;
   }
 
-  /** Awards describe the Owner, not the franchise logo or mixed team Avatar. */
-  awardOwnerName(teamID: string | number): string {
-    return this.teamForID(teamID)?.Owner?.trim() || `Team ${teamID}`;
-  }
-
-  awardOwnerAvatar(teamID: string | number): string | null {
-    return this.teamForID(teamID)?.OwnerAvatar?.trim() || null;
-  }
-
-  awardTeamName(teamID: string | number): string | null {
-    return this.teamForID(teamID)?.Team?.trim() || null;
-  }
-
-  awardTeamExists(teamID: string | number): boolean {
-    return this.teamForID(teamID) !== null;
-  }
-
-  openAwardTeamDetails(teamID: string | number): void {
-    const team = this.teamForID(teamID);
-    if (team) this.teamDialog.open(team.TeamID);
-  }
-
-  formatAwardEfficiency(value: number): string {
-    return Number.isFinite(value) ? this.pointsForFormatter.format(value) : '–';
-  }
-
   formatFantasyPoints(value: number | null | undefined): string {
     if (value === null || value === undefined || !Number.isFinite(Number(value))) return '–';
     return this.matchupScoreFormatter.format(Number(value));
@@ -466,47 +436,6 @@ export class LeagueMatchupsComponent {
   formatNflScore(value: number | null | undefined): string {
     if (value === null || value === undefined || !Number.isFinite(Number(value))) return '–';
     return this.nflScoreFormatter.format(Number(value));
-  }
-
-  recapGameAriaLabel(game: WeeklyRecapKeyGame): string {
-    return `${this.nflAbbr(game.AwayNFLTeamID)} at ${this.nflAbbr(game.HomeNFLTeamID)}, ${this.formatNflScore(game.AwayScore)} to ${this.formatNflScore(game.HomeScore)}`;
-  }
-
-  recapPlayer(player: WeeklyRecapKeyPlayer): Player | null {
-    for (const team of this.league.Teams) {
-      const resolved = team.Roster.find(candidate => String(candidate.ID) === String(player.PlayerID));
-      if (resolved) return resolved;
-    }
-    return null;
-  }
-
-  recapPlayerName(player: WeeklyRecapKeyPlayer): string {
-    const resolved = this.recapPlayer(player);
-    return resolved?.NameShort || resolved?.Name || `Player ${player.PlayerID}`;
-  }
-
-  recapPlayerPicture(player: WeeklyRecapKeyPlayer): string | null {
-    return this.recapPlayer(player)?.Picture || null;
-  }
-
-  recapPlayerNflLogo(player: WeeklyRecapKeyPlayer): string | null {
-    return this.nflLogo(player.NFLTeamID);
-  }
-
-  recapPlayerDetailAvailable(player: WeeklyRecapKeyPlayer): boolean {
-    return this.recapPlayer(player) !== null;
-  }
-
-  openRecapPlayerDetail(player: WeeklyRecapKeyPlayer): void {
-    const resolved = this.recapPlayer(player);
-    if (!resolved) return;
-
-    this.dialog.open(PlayerDetailDialogComponent, {
-      data: resolved,
-      width: '800px',
-      maxHeight: '90vh',
-      panelClass: 'player-dialog'
-    });
   }
 
   openTeam(teamID: string | number): void {

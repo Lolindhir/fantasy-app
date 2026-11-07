@@ -1,0 +1,75 @@
+<div class="rivals">
+  <div class="rivals-toolbar">
+    <div>
+      <span class="eyebrow">Head-to-Head</span>
+      <h3>Record vs. every team</h3>
+    </div>
+    <mat-button-toggle-group class="rivals-filter" [value]="filter" (change)="setFilter($event.value)"
+      aria-label="Rivalry game filter" hideSingleSelectionIndicator>
+      <mat-button-toggle value="all">All</mat-button-toggle>
+      <mat-button-toggle value="regular">Regular Season</mat-button-toggle>
+      <mat-button-toggle value="playoffs">Playoffs</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  @switch (state) {
+    @case ('loading') { <p class="rivals-note">Loading matchup history…</p> }
+    @case ('unavailable') { <p class="rivals-note">Matchup history is currently unavailable.</p> }
+    @default {
+      @for (view of opponents; track trackOpponent($index, view)) {
+        <section class="rival-card" [class.rival-card--open]="isExpanded(view.record.opponentId)">
+          <div class="rival-summary">
+            <button type="button" class="rival-identity" (click)="openOpponent(view.record.opponentId)"
+              [attr.aria-label]="'Open ' + view.name + ' team details'">
+              <img class="rival-avatar" [src]="view.avatar" alt="" loading="lazy" decoding="async" />
+              <strong class="rival-name">{{ view.name }}</strong>
+            </button>
+            <button type="button" class="rival-toggle" (click)="toggle(view.record.opponentId)"
+              [attr.aria-expanded]="isExpanded(view.record.opponentId)"
+              [attr.aria-controls]="'rival-games-' + view.record.opponentId"
+              [attr.aria-label]="'Show all games against ' + view.name">
+              <span class="rival-record">
+                <strong>{{ view.recordLabel }}</strong>
+                <span class="rival-meta">
+                  {{ points(view.record.pointsFor) }} PF · {{ points(view.record.pointsAgainst) }} PA
+                </span>
+              </span>
+              <span class="rival-last">
+                <span class="rival-meta">Last meeting</span>
+                <span class="rival-last-line">
+                  <span class="rival-outcome" [ngClass]="'rival-outcome--' + view.record.lastGame.outcome">{{ outcomeLetter(view.record.lastGame) }}</span>
+                  {{ gameLabel(view.record.lastGame) }}
+                </span>
+              </span>
+              <mat-icon aria-hidden="true">{{ isExpanded(view.record.opponentId) ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </button>
+          </div>
+
+          @if (isExpanded(view.record.opponentId)) {
+            <ul class="rival-games" [id]="'rival-games-' + view.record.opponentId">
+              @for (game of view.record.games; track trackGame($index, game)) {
+                <li class="rival-game">
+                  <span class="rival-outcome" [ngClass]="'rival-outcome--' + game.outcome">{{ outcomeLetter(game) }}</span>
+                  <span class="rival-game-when">{{ gameLabel(game) }}</span>
+                  <span class="rival-game-score">{{ scoreLabel(game) }}</span>
+                  <span class="rival-game-tags">
+                    @if (game.stage === 'playoffs') { <span class="rival-tag rival-tag--playoffs">Playoffs</span> }
+                    @if (isBiggestWin(view, game)) { <span class="rival-tag rival-tag--win">Biggest win</span> }
+                    @if (isClosestLoss(view, game)) { <span class="rival-tag rival-tag--loss">Closest loss</span> }
+                  </span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      } @empty {
+        <p class="rivals-note">No completed games for this filter yet.</p>
+      }
+      @if (opponents.length) {
+        <p class="rivals-note">
+          Completed games {{ seasonSpan }}, counted by team ID. Consolation games are not counted.
+        </p>
+      }
+    }
+  }
+</div>
