@@ -54,6 +54,10 @@ completionState:
     and may be final before the week is. week-finality.yaml lists it as out of scope. The exact rules are those of MatchupReadModelCore.ps1
     (Resolve-MrmActiveCompletionState, Resolve-MrmNonActiveCompletionState) and are ported 1:1.
   unknownRule: Missing or ambiguous evidence stays unknown; a zero or empty score is never a final result.
+  byeStarterRule: >-
+    Outside the active week a starter whose NFL team has no game in the week is on bye and counts as final (0 points) only when the bye is proven by
+    canonical facts - the player is absent from that week's weekly roster, the previous and the next weekly roster both exist and name the same single
+    team, and that team plays in the canonical REG schedule of the season but not in the week. Any missing or disagreeing evidence stays unknown.
 
 function:
   signature: resolve(repo_root, CanonicalLeagueID, Season, AtUtc) -> object
