@@ -7,10 +7,14 @@
       class="season-award"
       [attr.title]="award.tooltip"
     >
-      <span class="season-award__icon" aria-hidden="true">{{ award.icon }}</span>
+      <span class="season-award__avatar-stack">
+        <span class="season-award__team-avatar"><img [src]="award.teamAvatar" alt="" /></span>
+        <span *ngIf="award.ownerAvatar" class="season-award__owner-avatar"><img [src]="award.ownerAvatar" alt="" /></span>
+        <span class="season-award__badge" aria-hidden="true">{{ award.icon }}</span>
+      </span>
       <span class="season-award__body">
         <span class="season-award__name">{{ award.name }}</span>
-        <span class="season-award__owner">{{ award.owner }}</span>
+        <span class="season-award__team">{{ award.teamName || award.owner }}</span>
         <span class="season-award__stat" *ngIf="award.statDisplay">{{ award.statDisplay }}</span>
       </span>
     </li>

@@ -4,7 +4,7 @@ import { SeasonAwardsComponent } from './season-awards';
 import type { SeasonHistoryAwardItem } from '../../utils/league-standings-view.util';
 
 function award(name: string, icon: string): SeasonHistoryAwardItem {
-  return { key: name, icon, name, displayText: name, owner: `Owner ${name}`, teamName: null, statDisplay: `${name} stat`, tooltip: name, order: 1 };
+  return { key: name, icon, name, displayText: name, owner: `Owner ${name}`, teamName: null, teamAvatar: 'x.png', ownerAvatar: null, statDisplay: `${name} stat`, tooltip: name, order: 1 };
 }
 
 describe('SeasonAwardsComponent', () => {

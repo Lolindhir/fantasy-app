@@ -124,6 +124,8 @@ export interface SeasonHistoryAwardItem {
   displayText: string;
   owner: string;
   teamName: string | null;
+  teamAvatar: string;
+  ownerAvatar: string | null;
   statDisplay: string;
   tooltip: string;
   order: number;
@@ -333,7 +335,7 @@ export function buildSeasonHistory(league: League): SeasonHistoryViewModel {
           };
         });
 
-      const awards = buildSeasonAwardItems(standing.Awards ?? []);
+      const awards = buildSeasonAwardItems(standing.Awards ?? [], standing.Playoffs);
 
       return {
         season: standing.Season,
@@ -354,14 +356,19 @@ export function getPreviousChampion(teams: FantasyTeam[]): FantasyTeam | undefin
 }
 
 /** Maps any list of generated awards to uniform, data-driven award cards (no per-award-name logic). */
-export function buildSeasonAwardItems(awards: AwardInStanding[]): SeasonHistoryAwardItem[] {
+export function buildSeasonAwardItems(
+  awards: AwardInStanding[],
+  seasonIdentities: { TeamID: string | number; OwnerAvatar?: string | null; TeamAvatar?: string | null }[] | null | undefined = []
+): SeasonHistoryAwardItem[] {
+  // Identity snapshot of the same season (via TeamID); never the current team identity.
+  const identities = new Map((seasonIdentities ?? []).map(row => [String(row.TeamID), row]));
   return awards
     .filter(isDynamicSeasonAward)
     .sort((a, b) =>
       (a.Type?.Order ?? 999) - (b.Type?.Order ?? 999)
       || a.Name.localeCompare(b.Name)
     )
-    .map(award => mapSeasonHistoryAward(award));
+    .map(award => mapSeasonHistoryAward(award, identities.get(String(award.TeamID))));
 }
 
 export function getCurrentSeasonAwards(league: League): AwardInStanding[] {
@@ -468,10 +475,13 @@ function buildAwardCollectorHighlight(
   };
 }
 
-function mapSeasonHistoryAward(award: AwardInStanding): SeasonHistoryAwardItem {
+function mapSeasonHistoryAward(
+  award: AwardInStanding,
+  identity?: { OwnerAvatar?: string | null; TeamAvatar?: string | null }
+): SeasonHistoryAwardItem {
   const displayText = award.Name;
   const typeText = award.Type?.DisplayText || award.Type?.Name;
-  const tooltipParts = [displayText, typeText, award.Owner, award.StatDisplay].filter(Boolean);
+  const tooltipParts = [displayText, typeText, award.TeamName, award.Owner, award.StatDisplay].filter(Boolean);
 
   return {
     key: award.Name,
@@ -480,6 +490,8 @@ function mapSeasonHistoryAward(award: AwardInStanding): SeasonHistoryAwardItem {
     displayText,
     owner: award.Owner,
     teamName: award.TeamName,
+    teamAvatar: identity?.TeamAvatar?.trim() || 'assets/default-team-avatar.png',
+    ownerAvatar: identity?.OwnerAvatar?.trim() || null,
     statDisplay: award.StatDisplay,
     tooltip: tooltipParts.join(' • '),
     order: award.Type?.Order ?? 999
