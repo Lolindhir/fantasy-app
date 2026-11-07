@@ -9,6 +9,7 @@ import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import {
   buildTeamInjuryReport,
+  type InjuryReportMode,
   type InjuryKind,
   type InjuryReportRow
 } from '../../utils/team-injury-report.util';
@@ -34,6 +35,8 @@ export class TeamInjuryReportComponent implements OnChanges {
   private readonly dialog = inject(MatDialog);
 
   @Input({ required: true }) team!: FantasyTeam;
+  /** roster: whole roster by designation; lineup: starters of the current week only. */
+  @Input() mode: InjuryReportMode = 'roster';
   /** Starters of the current lineup week; only passed while the lineup phase is active. */
   @Input() starterIds: ReadonlySet<string> | null = null;
   @Input() lockContext?: RosterNextLockContext;
@@ -42,10 +45,9 @@ export class TeamInjuryReportComponent implements OnChanges {
 
   rows: InjuryReportRow[] = [];
   summary: InjurySummaryChip[] = [];
-  starterCount = 0;
 
   ngOnChanges(): void {
-    this.rows = buildTeamInjuryReport(this.team, { starterIds: this.starterIds, lockContext: this.lockContext });
+    this.rows = buildTeamInjuryReport(this.team, { mode: this.mode, starterIds: this.starterIds, lockContext: this.lockContext });
     const counts = new Map<InjuryKind, InjurySummaryChip>();
     for (const row of this.rows) {
       const chip = counts.get(row.kind) ?? { kind: row.kind, label: row.label, count: 0 };
@@ -53,7 +55,6 @@ export class TeamInjuryReportComponent implements OnChanges {
       counts.set(row.kind, chip);
     }
     this.summary = [...counts.values()];
-    this.starterCount = this.rows.filter(row => row.isStarter).length;
   }
 
   toggle(): void {

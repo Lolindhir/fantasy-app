@@ -33,19 +33,45 @@ describe('team injury report utilities', () => {
     expect(buildTeamInjuryReport(team([healthy]))).toEqual([]);
   });
 
-  it('sorts starters first, then by severity, then by name', () => {
+  it('roster mode orders by designation with the long-term cases at the bottom and ignores starters', () => {
     const rows = buildTeamInjuryReport(
       team([
-        player('q', 'Questionable'),
+        player('ir', 'IR'),
         player('o', 'Out'),
         player('d', 'Doubtful'),
         player('sq', 'Questionable'),
+        player('aq', 'Questionable'),
         player('u', '', true)
       ]),
       { starterIds: new Set(['sq']) }
     );
-    expect(rows.map(row => row.player.ID)).toEqual(['sq', 'o', 'd', 'q', 'u']);
-    expect(rows[0].isStarter).toBeTrue();
+    expect(rows.map(row => row.player.ID)).toEqual(['u', 'aq', 'sq', 'd', 'o', 'ir']);
+    expect(rows.every(row => row.lockLabel === null)).toBeTrue();
+  });
+
+  it('lineup mode keeps only starters, soonest lock first, then most severe', () => {
+    const lock = (id: string, startsAt: string) => ({
+      FantasyTeamID: 1, PlayerID: id, NFLTeamID: 'GB', Kind: 'scheduled' as const, GameID: 'g-' + id,
+      DecisionWindowID: 'w-' + id, StartsAtUtc: startsAt, IsStarter: true
+    });
+    const rows = buildTeamInjuryReport(
+      team([player('late-out', 'Out'), player('early-q', 'Questionable'), player('early-out', 'Out'), player('bench', 'Out')]),
+      {
+        mode: 'lineup',
+        starterIds: new Set(['late-out', 'early-q', 'early-out']),
+        lockContext: {
+          fantasyTeamId: 1,
+          now: new Date('2026-11-08T10:00:00Z'),
+          playerLockFacts: [
+            lock('late-out', '2026-11-08T21:25:00Z'),
+            lock('early-q', '2026-11-08T18:00:00Z'),
+            lock('early-out', '2026-11-08T18:00:00Z')
+          ]
+        }
+      }
+    );
+    expect(rows.map(row => row.player.ID)).toEqual(['early-out', 'early-q', 'late-out']);
+    expect(rows.every(row => row.isStarter && row.lockLabel !== null)).toBeTrue();
   });
 
   it('marks IR and Taxi placement and does not flag starters without lineup context', () => {
@@ -57,10 +83,11 @@ describe('team injury report utilities', () => {
     expect(rows.every(row => !row.isStarter && row.lockLabel === null)).toBeTrue();
   });
 
-  it('adds a lock hint for starters only', () => {
+  it('adds a lock hint in lineup mode only', () => {
     const starter = player('s', 'Out');
     const bench = player('b', 'Out');
     const rows = buildTeamInjuryReport(team([starter, bench]), {
+      mode: 'lineup',
       starterIds: new Set(['s']),
       lockContext: {
         fantasyTeamId: 1,
@@ -71,8 +98,8 @@ describe('team injury report utilities', () => {
         }]
       }
     });
+    expect(rows.length).toBe(1);
     expect(rows[0].lockLabel).toBe('Locked');
-    expect(rows[1].lockLabel).toBeNull();
   });
 
   it('carries the provider description unchanged', () => {

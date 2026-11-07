@@ -81,6 +81,7 @@
     @if (decisionWindowPhaseActive) {
       <mat-tab label="Lineup">
         <div class="tab-content lineup-tab">
+          <app-team-injury-report [team]="team" mode="lineup" [starterIds]="currentStarterIds" [lockContext]="rosterNextLockContext" />
           <app-team-lineup-tab
             [model]="decisionWindows"
             [fantasyTeamId]="team.TeamID"
@@ -98,7 +99,7 @@
 
     <mat-tab label="Roster">
       <div class="tab-content roster-tab">
-        <app-team-injury-report [team]="team" [starterIds]="currentStarterIds" [lockContext]="rosterNextLockContext" />
+        <app-team-injury-report [team]="team" mode="roster" />
         <div class="roster-toolbar">
           <div class="roster-controls" aria-label="Roster grouping and sorting">
           <mat-form-field class="roster-control" appearance="outline" subscriptSizing="dynamic">
