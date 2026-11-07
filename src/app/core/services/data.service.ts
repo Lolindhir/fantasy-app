@@ -9,7 +9,8 @@ import type { DecisionWindowsReadModel } from '../models/decision-window.models'
 import type { RawDraft } from '../models/draft.models';
 import type {
   FantasyGameContextProjectionDisplay,
-  FantasyGameContextReadModel
+  FantasyGameContextReadModel,
+  HistoricalFantasyGameContextSeason
 } from '../models/fantasy-game-context.models';
 import type { FantasyTeam, League, RawLeague } from '../models/league.models';
 import type { MatchupProjectionsReadModel } from '../models/matchup-projections.models';
@@ -272,6 +273,10 @@ export class DataService {
 
   getPastDraftsRaw(path: string): Observable<RawDraft[]> {
     return this.dataApiService.getPastDraftsRaw(path);
+  }
+
+  getPastFantasyGameContextRaw(path: string): Observable<HistoricalFantasyGameContextSeason> {
+    return this.dataApiService.getPastFantasyGameContextRaw(path);
   }
 
   getPastMatchupsRaw(path: string): Observable<MatchupsReadModel> {

@@ -1,16 +1,22 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 import { catchError, combineLatest, map, of, switchMap, type Observable } from 'rxjs';
 
+import type { FantasyGameContextReadModel } from '../../core/models/fantasy-game-context.models';
 import type { MatchupsReadModel } from '../../core/models/matchup.models';
 import type { NFLTeam } from '../../core/models/player.models';
 import type { WeeklyRecapsReadModel } from '../../core/models/weekly-recap.models';
 import { DataService } from '../../core/services/data.service';
+import {
+  FantasyGameContextDialogComponent,
+  type FantasyGameContextDialogData
+} from '../../shared/components/fantasy-game-context-dialog/fantasy-game-context-dialog';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../../shared/components/team-identity/team-identity';
 import { WeekRecapContentComponent } from '../../shared/components/week-recap-content/week-recap-content';
 import {
@@ -31,18 +37,20 @@ interface SeasonData {
   season: string;
   matchups: MatchupsReadModel | null;
   recaps: WeeklyRecapsReadModel | null;
+  contexts: FantasyGameContextReadModel[];
 }
 
 @Component({
   selector: 'app-weeks-page',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatFormFieldModule, MatSelectModule, TeamIdentityComponent, WeekRecapContentComponent],
+  imports: [CommonModule, MatCardModule, MatDialogModule, MatFormFieldModule, MatSelectModule, TeamIdentityComponent, WeekRecapContentComponent],
   templateUrl: './weeks-page.html',
   styleUrl: './weeks-page.scss'
 })
 export class WeeksPageComponent {
   private readonly dataService = inject(DataService);
   private readonly route = inject(ActivatedRoute);
+  private readonly dialog = inject(MatDialog);
 
   readonly activeTab = signal<WeeksTab>('week');
   readonly identityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
@@ -86,11 +94,17 @@ export class WeeksPageComponent {
         const recapsSource: Observable<WeeklyRecapsReadModel | null> = option.isCurrent
           ? this.dataService.getWeeklyRecaps()
           : option.recapsPath ? this.dataService.getPastWeeklyRecapsRaw(option.recapsPath) : of(null);
+        const contextsSource: Observable<FantasyGameContextReadModel[]> = option.isCurrent
+          ? this.dataService.getFantasyGameContext().pipe(map(context => [context]))
+          : option.contextPath
+            ? this.dataService.getPastFantasyGameContextRaw(option.contextPath).pipe(map(season => season.Weeks ?? []))
+            : of([]);
+        const contexts$ = contextsSource.pipe(catchError(() => of([] as FantasyGameContextReadModel[])));
         const matchups$ = matchupsSource.pipe(catchError(() => of(null)));
         const recaps$ = recapsSource.pipe(catchError(() => of(null)));
 
-        return combineLatest({ matchups: matchups$, recaps: recaps$ }).pipe(
-          map(({ matchups, recaps }): SeasonData => ({ season: option.season, matchups, recaps }))
+        return combineLatest({ matchups: matchups$, recaps: recaps$, contexts: contexts$ }).pipe(
+          map(({ matchups, recaps, contexts }): SeasonData => ({ season: option.season, matchups, recaps, contexts }))
         );
       })
     ),
@@ -115,6 +129,13 @@ export class WeeksPageComponent {
 
   readonly scoreboard = computed(() => buildWeekScoreboard(this.selectedWeekModel(), this.teams()));
 
+  /** FantasyMatchupIDs whose detail can be opened (the context of the selected week contains them). */
+  private readonly selectedWeekContext = computed(() => {
+    const season = this.activeSeason()?.season;
+    const week = this.selectedWeek();
+    return this.data()?.contexts.find(context => String(context.Season) === season && context.Week === week) ?? null;
+  });
+
   readonly recap = computed(() => {
     const season = this.activeSeason()?.season ?? '';
     return selectWeekRecap(this.data()?.recaps, season, this.selectedWeekModel());
@@ -128,6 +149,34 @@ export class WeeksPageComponent {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
   });
+
+  canOpenMatchup(matchupID: string): boolean {
+    return !!this.selectedWeekContext()?.FantasyMatchups.some(matchup => matchup.FantasyMatchupID === matchupID);
+  }
+
+  openMatchup(matchupID: string): void {
+    const context = this.selectedWeekContext();
+    const league = this.base()?.leagueData.league;
+    if (!context || !league || !this.canOpenMatchup(matchupID)) return;
+    const data: FantasyGameContextDialogData = {
+      mode: 'matchup',
+      context,
+      decisionWindows: null,
+      matchups: this.data()?.matchups ?? null,
+      nflTeams: this.nflTeams(),
+      league,
+      fantasyMatchupId: matchupID
+    };
+    this.dialog.open(FantasyGameContextDialogComponent, {
+      data,
+      width: 'calc(100vw - 16px)',
+      maxWidth: '760px',
+      maxHeight: 'calc(100dvh - 16px)',
+      autoFocus: false,
+      restoreFocus: true,
+      panelClass: 'fantasy-context-dialog-panel'
+    });
+  }
 
   selectTab(tab: WeeksTab): void {
     this.activeTab.set(tab);

@@ -22,6 +22,8 @@ export interface WeeksSeasonOption {
   /** Null for the current season (loaded from Matchups.json / WeeklyRecaps.json). */
   matchupsPath: string | null;
   recapsPath: string | null;
+  /** Historical FantasyGameContext used to open a matchup's detail; null when the season has none. */
+  contextPath?: string | null;
 }
 
 export interface WeekTab {
@@ -92,10 +94,13 @@ export function buildWeeksSeasonOptions(
       matchupsPath: entry.Resources.Matchups!.Path,
       recapsPath: entry.Resources.WeeklyRecaps?.Exists === true
         ? entry.Resources.WeeklyRecaps.Path || null
+        : null,
+      contextPath: entry.Resources.FantasyGameContext?.Exists === true
+        ? entry.Resources.FantasyGameContext.Path || null
         : null
     }));
 
-  return [{ season: currentSeason, isCurrent: true, matchupsPath: null, recapsPath: null }, ...past];
+  return [{ season: currentSeason, isCurrent: true, matchupsPath: null, recapsPath: null, contextPath: null }, ...past];
 }
 
 /** A requested season is honored only when it is selectable; otherwise the current season applies. */
