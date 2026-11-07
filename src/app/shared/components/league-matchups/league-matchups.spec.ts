@@ -144,6 +144,8 @@ describe('LeagueMatchupsComponent scoring overview', () => {
 
   const league = {
     Season: '2026',
+    SeasonAsNumber: 2026,
+    Status: 'In-Season',
     FinalScoredWeek: 1,
     Teams: [
       { TeamID: 1, Team: 'Left Team', TeamAbbr: 'LFT', Owner: 'Left Owner', Avatar: null },
@@ -153,11 +155,28 @@ describe('LeagueMatchupsComponent scoring overview', () => {
 
   beforeEach(async () => {
     const dataService = jasmine.createSpyObj<DataService>('DataService', [
-      'getFantasyGameContext', 'getDecisionWindows', 'getMatchups', 'getNflTeams'
+      'getFantasyGameContext', 'getDecisionWindows', 'getMatchups', 'getNflTeams', 'getPastSeasonsIndex', 'getPastMatchupsRaw'
     ]);
     dataService.getFantasyGameContext.and.returnValue(of(context));
     dataService.getDecisionWindows.and.returnValue(of(decisionWindows));
     dataService.getMatchups.and.returnValue(of(matchups));
+    dataService.getPastSeasonsIndex.and.returnValue(of({
+      Seasons: [{ Season: '2025', Resources: { Matchups: { Path: 'data/past_seasons/Matchups/Matchups_2025.json', Exists: true } } }]
+    } as unknown as Parameters<typeof of>[0]) as unknown as ReturnType<DataService['getPastSeasonsIndex']>);
+    dataService.getPastMatchupsRaw.and.returnValue(of({
+      SchemaVersion: 1, Season: '2025', Summary: { LastCompletedWeek: 1, ActiveOrNextWeek: null },
+      Weeks: [{
+        Week: 1, Stage: 'regular-season', FirstKickoffUtc: null, CompletionState: 'final',
+        Matchups: [{
+          FantasyMatchupID: 'p1', CompletionState: 'final',
+          Participants: [
+            { TeamID: 1, Points: 100, ScoreKind: 'standard' },
+            { TeamID: 2, Points: 90, ScoreKind: 'standard' }
+          ],
+          Result: { Type: 'win', WinnerTeamID: 1 }
+        }]
+      }]
+    } as MatchupsReadModel));
     dataService.getNflTeams.and.returnValue(of([
       { ID: 'A', Name: 'Away', Abv: 'AAA', Logo: 'away-logo' },
       { ID: 'H', Name: 'Home', Abv: 'HHH', Logo: 'home-logo' }
@@ -203,6 +222,11 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     matchupTarget!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     expect(matchupSpy).toHaveBeenCalledTimes(2);
     expect(gameSpy).not.toHaveBeenCalled();
+  });
+
+  it('shows the all-time head-to-head record of the displayed matchup', () => {
+    const h2h = (fixture.nativeElement as HTMLElement).querySelector('.matchup-h2h');
+    expect(h2h?.textContent?.replace(/\s+/g, ' ').trim()).toBe('All-timeLFT 1-0 RGT');
   });
 
   it('renders non-zero scores in one neutral shared score plate without inferring Final', () => {

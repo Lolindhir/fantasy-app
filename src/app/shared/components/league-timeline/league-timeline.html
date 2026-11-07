@@ -18,7 +18,7 @@
               (click)="openDecisionWindow(decisionWindowDialog)"
             >
               <span class="league-timeline-operational-heading">
-                <span aria-hidden="true">{{ item.icon }}</span>
+                <app-glyph aria-hidden="true" [glyph]="item.icon"></app-glyph>
                 <span>{{ item.label }}</span>
               </span>
               <span class="league-timeline-operational-value-row">
@@ -79,7 +79,7 @@
               (click)="openWaiverPriority(waiverPriorityDialog)"
             >
               <span class="league-timeline-operational-heading">
-                <span aria-hidden="true">{{ item.icon }}</span>
+                <app-glyph aria-hidden="true" [glyph]="item.icon"></app-glyph>
                 <span>{{ item.label }}</span>
               </span>
               <strong class="league-timeline-operational-value">{{ item.value }}</strong>
@@ -126,7 +126,7 @@
               [ngClass]="item.tone ? 'league-timeline-tone--' + item.tone : null"
             >
               <span class="league-timeline-operational-heading">
-                <span aria-hidden="true">{{ item.icon }}</span>
+                <app-glyph aria-hidden="true" [glyph]="item.icon"></app-glyph>
                 <span>{{ item.label }}</span>
               </span>
               <strong class="league-timeline-operational-value">{{ item.value }}</strong>
@@ -139,7 +139,7 @@
 
     <div *ngIf="view.milestones.length > 0" class="league-timeline-milestones">
       <span *ngFor="let milestone of view.milestones" class="league-timeline-milestone">
-        <span aria-hidden="true">{{ milestone.icon }}</span>
+        <app-glyph aria-hidden="true" [glyph]="milestone.icon"></app-glyph>
         <span>{{ milestone.label }}</span>
         <strong>· {{ milestone.value }}</strong>
         <span *ngIf="milestone.detail" class="league-timeline-milestone-detail">in {{ milestone.detail }}</span>
@@ -152,7 +152,7 @@
     <div class="league-timeline-eyebrow">Next milestone</div>
 
     <div *ngIf="view.primary as primary" class="league-timeline-primary">
-      <span class="league-timeline-icon" aria-hidden="true">{{ primary.icon }}</span>
+      <app-glyph class="league-timeline-icon" aria-hidden="true" [glyph]="primary.icon"></app-glyph>
       <div class="league-timeline-primary-copy">
         <div class="league-timeline-label">{{ primary.label }}</div>
         <div class="league-timeline-value">{{ primary.value }}</div>
@@ -161,7 +161,7 @@
     </div>
 
     <div *ngIf="view.secondary as secondary" class="league-timeline-secondary">
-      <span aria-hidden="true">{{ secondary.icon }}</span>
+      <app-glyph aria-hidden="true" [glyph]="secondary.icon"></app-glyph>
       <span class="league-timeline-secondary-label">{{ secondary.label }}</span>
       <strong>{{ secondary.value }}</strong>
       <span *ngIf="secondary.detail" class="league-timeline-secondary-detail">· {{ secondary.detail }}</span>

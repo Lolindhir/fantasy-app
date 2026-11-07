@@ -1,3 +1,4 @@
+import { GlyphComponent } from '../glyph/glyph';
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
@@ -7,7 +8,7 @@ import type { LeagueLegacyHighlight } from '../../utils/league-standings-view.ut
 @Component({
   selector: 'app-league-legacy-summary',
   standalone: true,
-  imports: [CommonModule, SharedMaterialImports],
+  imports: [CommonModule, SharedMaterialImports, GlyphComponent],
   templateUrl: './league-legacy-summary.html',
   styleUrl: './league-legacy-summary.scss'
 })

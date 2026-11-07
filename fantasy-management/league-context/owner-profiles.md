@@ -289,6 +289,7 @@ Draft and roster-construction tendencies:
   - 2026: Fernando Mendoza at 2.02.
 - **Confirmed, high confidence:** Reacts to failed contention with a decisive rebuild pivot rather than indefinitely protecting the original construction.
   - 2025 and 2026 rookie classes added Jeanty, Tetairoa McMillan, Judkins, Tyson and Mendoza.
+  - In November 2026 he traded Christian McCaffrey to Flo for younger/pick assets and explicitly said D'Andre Swift was also on his list of movable players after reviewing the app. This is evidence of his **current rebuild window**, not a permanent preference for selling veterans.
 - **Provisional, medium confidence:** Will accept substantial early age and injury concentration when pursuing immediate upside.
 - **Provisional, medium-low confidence:** When Dennis strongly wants a specific incoming asset, he may optimize the immediate roster move locally and underweight the opportunity cost or market value of the boundary asset used to create the roster spot.
   - On 2026-09-09, after acquiring Kaelon Black, Dennis created room by dropping Isaiah Likely before Week 1. Likely already carried a plausible starting-role path entering the season and Marcel claimed him the same day, providing immediate league-demand evidence independent of Likely's later Week-1 production.
@@ -300,11 +301,17 @@ Negotiation tendencies:
 - **Confirmed, high confidence:** Dennis prefers a much lower information density than Robert's default style.
   - In May 2026 Dennis explicitly said Robert's detailed initial 1.02 offer and explanation overwhelmed him, delayed his answer and contributed to the message being forgotten.
   - Treat this direct statement as a communication preference even though the sample is small.
-- **Provisional, medium-high confidence:** Dennis wants to perform his own research rather than rely on the seller's evaluation.
-  - After the detailed offer he said he needed to sit down and research before responding.
-  - His later counter reflected his own difficulty valuing Troy Franklin and Dylan Sampson rather than simply accepting Robert's framing.
+- **Confirmed, high confidence:** Dennis performs his own research when he cannot confidently value an offered asset, rather than simply accepting Robert's explanation.
+  - In May 2026 he asked for time to research after the detailed 1.02 discussion; his later counter reflected his difficulty valuing Troy Franklin and Dylan Sampson.
+  - In November 2026 he said he had not followed Tre Tucker and was hesitant because Tucker had recently been a league Free Agent. He independently compared KeepTradeCut with Dynasty Daddy, recognized their large valuation disagreement and subsequently reassessed his own Nabers suggestion after checking a Dynasty analyzer.
+  - **Communication implication:** Give him one simple construction and room to verify it. Offer a short, factual role/upside explanation when he explicitly identifies an unfamiliar player, not a defensive multi-source sales pitch.
 - **Provisional, medium confidence:** He can make a meaningful concession to close a deal once the construction is simple enough and he wants the transaction.
   - In the 2026 1.02/1.03 negotiation he said giving up FA 1.01 was difficult but still accepted Robert's cleaner counter.
+  - On 2026-11-04, after raising concerns about Tucker and briefly asking for Malik Nabers, he acknowledged that his Nabers suggestion was unfair after checking his analyzer and **returned to the unchanged opening offer** (Swift for Tucker + one 2027 Rookie 4th). The completed Sleeper trade used **Marcel's original 2027 Rookie 4th** (`2027_Rookie_R4_OO2`). This is good evidence of self-correction in this case, not proof of a general discount rule.
+- **Candidate, medium confidence:** A recently waiver-available young player he has not personally followed can feel less valuable to him than the same player looks on a market calculator.
+  - In the November 2026 Swift negotiation, Tucker's recent Free Agent history was Dennis's explicit objection. He ultimately accepted Tucker plus a Rookie 4th after doing his own research and receiving a candid explanation; do not generalize this into blanket avoidance of waiver pickups.
+- **Candidate, low-medium confidence:** He may briefly test a premium counter-asset even when it is substantially more valuable than his own player.
+  - He asked for Malik Nabers in a Swift one-for-one concept, then **voluntarily recognized the mismatch** after consulting a dynasty analyzer. One probe is not evidence that he persistently overprices assets.
 - **Candidate, low-medium confidence:** Extra late-round quantity is not automatically attractive.
   - In July 2026 he declined 5.03 + 5.05 for 4.02 without countering, saying the current order was fine.
 - **Candidate, low-medium confidence:** Dynasty horizon can override short-term frustration on a young asset.
@@ -313,10 +320,15 @@ Negotiation tendencies:
 Recommended approach for Robert:
 
 - Keep the first message short: exact trade, one or two reasons, no multi-paragraph scouting dossier.
-- Give Dennis room to research independently.
+- Give Dennis room to research independently; delayed assessment is not automatically rejection.
+- If the incoming player is unfamiliar or recently waiver-available, give brief and balanced evidence on age, role/opportunity and uncertainty, **without presenting a projection as fact**. Do not rely solely on one calculator.
+- Public calculators can disagree materially, especially in this six-team league. Check exact Rookie versus Free Agent pick identity and absolute pick position; do not pressure him to accept the tool most favorable to our offer.
 - Present alternatives sequentially rather than listing several branches at once.
-- If he says a component is hard to value, simplify the structure before adding more variables.
+- If he says a component is hard to value, first answer the specific uncertainty; do not automatically improve the pick or add players.
+- Keep protected elite assets protected with a friendly, categorical no if required. His Nabers self-correction shows that a clear boundary need not end discussions.
 - A clean "this is my offer / what would you change?" is likely more effective than proving fairness in advance.
+- Refresh his **current** contender/rebuild window rather than assuming November 2026 preferences persist in future seasons.
+- Detailed evidence and exact chronology: `trade-negotiation-history.md`, entry **2026-11-04 to 2026-11-05 — Dennis — Swift for Tucker + 2027 Rookie 4th**.
 
 ## TeamID 6 / Tim (Team TimpaBay)
 

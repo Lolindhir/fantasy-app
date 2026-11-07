@@ -8,6 +8,7 @@ import type {
   RawLeague
 } from '../models/league.models';
 import type { Player } from '../models/player.models';
+import { getDefendingChampionTeamId } from '../../shared/utils/championship.util';
 import { sortFantasyTeamsByNeutralOrder } from '../../shared/utils/fantasy-team-order.util';
 
 export interface LeagueMappingContext {
@@ -29,6 +30,11 @@ export function mapRawLeagueData(context: LeagueMappingContext): LeagueMappingRe
 
   const teams = leagueRaw.Teams.map(team => mapRawFantasyTeamToFantasyTeam(team, draftPickByKey));
   assignTeamRosters(teams, leagueRaw.Teams, players);
+  const isFinished = ['Finished', 'Completed'].includes(leagueRaw.Status);
+  const defendingChampionId = getDefendingChampionTeamId(leagueRaw.Standings, leagueRaw.Season, isFinished);
+  teams.forEach(team => {
+    team.IsDefendingChampion = defendingChampionId !== null && String(team.TeamID) === defendingChampionId;
+  });
   const neutralTeams = sortFantasyTeamsByNeutralOrder(teams);
 
   const league: League = {
@@ -42,7 +48,7 @@ export function mapRawLeagueData(context: LeagueMappingContext): LeagueMappingRe
     SalaryCapDisplay: formatSalaryDollars(leagueRaw.SalaryCap),
     SalaryCapProjected: leagueRaw.SalaryCapProjected,
     SalaryCapProjectedDisplay: formatSalaryDollars(leagueRaw.SalaryCapProjected),
-    IsFinished: ['Finished', 'Completed'].includes(leagueRaw.Status),
+    IsFinished: isFinished,
     SeasonAsNumber: +leagueRaw.Season
   };
 

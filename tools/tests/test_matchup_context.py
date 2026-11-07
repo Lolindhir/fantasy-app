@@ -406,3 +406,51 @@ class ShadowCompareTests(unittest.TestCase):
             self.assertEqual(["X: missing in published file"], report["past_seasons/Matchups/Matchups_2029.json"])
             self.assertEqual([], report["past_seasons/FantasyGameContext/FantasyGameContext_2029.json"])
             self.assertEqual(before, sorted(str(p) for p in Path(root).rglob("*")))
+
+
+class ByeStarterTests(unittest.TestCase):
+    """A starter on bye has no game in the week; it counts as final only when the bye is proven by the canonical facts."""
+
+    def setUp(self):
+        self.fx = Fixture()
+        self.addCleanup(self.fx.close)
+        fx = self.fx
+        fx.league["Settings"]["playoff_week_start"] = 4
+        fx.league["WeekStructure"]["PlayoffStartWeek"] = 4
+        fx.write_league()
+        games = json.loads((fx.root / f"data-source/nfl/schedules/{SEASON}.json").read_text(encoding="utf-8"))
+        games["Games"] += [
+            {"GameID": "g4", "GameType": "REG", "Week": 1, "GameDay": "2030-09-10", "GameTime": "20:15", "AwayTeam": "EEE", "HomeTeam": "FFF"},
+            {"GameID": "g5", "GameType": "REG", "Week": 3, "GameDay": "2030-09-24", "GameTime": "20:15", "AwayTeam": "EEE", "HomeTeam": "FFF"},
+        ]
+        fx.write(fx.root / f"data-source/nfl/schedules/{SEASON}.json", games)
+        fx.write(fx.root / f"data-source/nfl/game-finality/{SEASON}.json", {"SchemaVersion": 2, "Season": SEASON, "Games": [
+            {"GameID": g["GameID"], "GameType": "REG", "Week": g["Week"], "Final": True} for g in games["Games"]]})
+        fx.write_week(2, [row(1, "NFLP-1", 5.0, matchup=2, week=2), row(2, "NFLP-9", 0.0, matchup=2, week=2)])
+        self.write_roster(1, [("NFLP-1", "AAA"), ("NFLP-9", "EEE")])
+        self.write_roster(2, [("NFLP-1", "AAA")])
+        self.write_roster(3, [("NFLP-1", "AAA"), ("NFLP-9", "EEE")])
+
+    def write_roster(self, week, players):
+        self.fx.write(self.fx.root / f"data-source/nfl/weekly-rosters/{SEASON}/{week:02d}.json", {
+            "SchemaVersion": 2, "Season": SEASON, "Week": week, "Records": [{"CanonicalPlayerID": p, "Team": t} for p, t in players]})
+
+    def state(self):
+        model = self.fx.model("2030-10-01T18:00:00Z")
+        return next(w for w in model["Weeks"] if w["Week"] == 2)["Matchups"][0]["CompletionState"]
+
+    def test_a_starter_on_bye_proven_by_neighbour_weeks_is_final(self):
+        self.assertEqual("final", self.state())
+
+    def test_a_missing_neighbour_roster_keeps_the_bye_unknown(self):
+        (self.fx.root / f"data-source/nfl/weekly-rosters/{SEASON}/03.json").unlink()
+        self.assertEqual("unknown", self.state())
+
+    def test_disagreeing_neighbour_teams_keep_the_bye_unknown(self):
+        self.write_roster(3, [("NFLP-1", "AAA"), ("NFLP-9", "CCC")])
+        self.assertEqual("unknown", self.state())
+
+    def test_a_player_without_any_team_evidence_stays_unknown(self):
+        self.write_roster(1, [("NFLP-1", "AAA")])
+        self.write_roster(3, [("NFLP-1", "AAA")])
+        self.assertEqual("unknown", self.state())

@@ -134,6 +134,15 @@ export class DataApiService {
     return this.http.get<MatchupsReadModel>(this.normalizeDataPath(path));
   }
 
+  getPastWeeklyRecapsRaw(path: string): Observable<WeeklyRecapsReadModel> {
+    return this.http.get<WeeklyRecapsReadModel>(this.normalizeDataPath(path));
+  }
+
+  /** Context of all finished weeks of the running season (League Live); the file may not exist yet. */
+  getFantasyGameContextHistoryRaw(): Observable<HistoricalFantasyGameContextSeason> {
+    return this.http.get<HistoricalFantasyGameContextSeason>('data/FantasyGameContextHistory.json');
+  }
+
   getPastFantasyGameContextRaw(path: string): Observable<HistoricalFantasyGameContextSeason> {
     return this.http.get<HistoricalFantasyGameContextSeason>(this.normalizeDataPath(path));
   }

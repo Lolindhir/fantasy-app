@@ -24,12 +24,8 @@ import type {
   MatchupParticipant,
   MatchupsReadModel
 } from '../../../core/models/matchup.models';
-import type { NFLTeam, Player } from '../../../core/models/player.models';
-import type {
-  WeeklyRecapKeyGame,
-  WeeklyRecapKeyPlayer,
-  WeeklyRecapsReadModel
-} from '../../../core/models/weekly-recap.models';
+import type { NFLTeam } from '../../../core/models/player.models';
+import type { WeeklyRecapsReadModel } from '../../../core/models/weekly-recap.models';
 import { DataService } from '../../../core/services/data.service';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 import {
@@ -61,9 +57,12 @@ import {
   FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
 } from '../fantasy-game-context-dialog/fantasy-game-context-dialog';
-import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
+import { ChampionBadgeComponent } from '../champion-badge/champion-badge';
+import { WeekRecapContentComponent } from '../week-recap-content/week-recap-content';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 import { findNflTeam } from '../../utils/nfl-team-key.util';
+import { TeamRivalryHistoryService } from '../../services/team-rivalry-history.service';
+import { buildHeadToHead, formatRivalryRecord, isPlayoffsComplete } from '../../utils/team-rivalry.util';
 
 type LeagueMatchupContextMode = 'current' | 'previous';
 
@@ -109,7 +108,9 @@ interface FantasyContextState {
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
-    TeamIdentityComponent
+    TeamIdentityComponent,
+    WeekRecapContentComponent,
+    ChampionBadgeComponent
   ],
   templateUrl: './league-matchups.html',
   styleUrls: [
@@ -124,6 +125,7 @@ export class LeagueMatchupsComponent {
   private readonly dataService = inject(DataService);
   private readonly dialog = inject(MatDialog);
   private readonly teamDialog = inject(TeamDetailDialogService);
+  private readonly rivalryHistory = inject(TeamRivalryHistoryService);
   private latestFantasyContextState: FantasyContextState | null = null;
 
   private readonly matchups$ = this.dataService.getMatchups().pipe(
@@ -131,6 +133,12 @@ export class LeagueMatchupsComponent {
     shareReplay({ bufferSize: 1, refCount: true })
   );
   private readonly matchupsReadModelSignal = toSignal(this.matchups$, { initialValue: null });
+
+  private readonly rivalrySeasonsSignal = toSignal(
+    this.rivalryHistory.getSeasons().pipe(catchError(() => of(null))),
+    { initialValue: null }
+  );
+  private readonly headToHeadCache = new Map<string, string | null>();
 
   private readonly weeklyRecaps$ = (this.dataService.getWeeklyRecaps?.() ?? of(null)).pipe(
     catchError(() => of(null)),
@@ -275,6 +283,24 @@ export class LeagueMatchupsComponent {
       .filter((matchup): matchup is LeagueMatchupView => !!matchup);
   }
 
+  /** All-time record of the left team against the right team ("ABC 3-2 XYZ"); null without a counted game. */
+  headToHead(matchup: LeagueMatchupView): string | null {
+    const seasons = this.rivalrySeasonsSignal();
+    if (!seasons) return null;
+    const key = `${matchup.left.team.TeamID}-${matchup.right.team.TeamID}-${seasons.length}`;
+    if (this.headToHeadCache.has(key)) return this.headToHeadCache.get(key) ?? null;
+
+    const record = buildHeadToHead(matchup.left.team.TeamID, matchup.right.team.TeamID, seasons, {
+      filter: 'all',
+      isSeasonComplete: season => isPlayoffsComplete(season, this.league.SeasonAsNumber, this.league.Status)
+    });
+    const label = record
+      ? `${matchup.left.team.TeamAbbr || matchup.left.team.Team} ${formatRivalryRecord(record)} ${matchup.right.team.TeamAbbr || matchup.right.team.Team}`
+      : null;
+    this.headToHeadCache.set(key, label);
+    return label;
+  }
+
   currentContext(context: FantasyGameContextReadModel | null): FantasyGameContextReadModel | null {
     return isFantasyGameContextForLeagueWeek(context, this.league.Season, this.week) ? context : null;
   }
@@ -394,13 +420,12 @@ export class LeagueMatchupsComponent {
     return current ? getMustWatchGames(current).slice(0, 5) : [];
   }
 
-  nflLogo(teamID: string | number): string | null {
-    return findNflTeam(this.nflTeamsSignal(), teamID)?.Logo || null;
+  get nflTeams(): NFLTeam[] {
+    return this.nflTeamsSignal();
   }
 
-  nflAbbr(teamID: string | number): string {
-    const team = findNflTeam(this.nflTeamsSignal(), teamID);
-    return team?.Abv || String(teamID);
+  nflLogo(teamID: string | number): string | null {
+    return findNflTeam(this.nflTeamsSignal(), teamID)?.Logo || null;
   }
 
   gameIsLiveForFantasy(game: FantasyGameContextGame): boolean {
@@ -430,32 +455,6 @@ export class LeagueMatchupsComponent {
     return value === null || !Number.isFinite(value) ? '–' : `≈${this.nflScoreFormatter.format(value)}`;
   }
 
-  /** Awards describe the Owner, not the franchise logo or mixed team Avatar. */
-  awardOwnerName(teamID: string | number): string {
-    return this.teamForID(teamID)?.Owner?.trim() || `Team ${teamID}`;
-  }
-
-  awardOwnerAvatar(teamID: string | number): string | null {
-    return this.teamForID(teamID)?.OwnerAvatar?.trim() || null;
-  }
-
-  awardTeamName(teamID: string | number): string | null {
-    return this.teamForID(teamID)?.Team?.trim() || null;
-  }
-
-  awardTeamExists(teamID: string | number): boolean {
-    return this.teamForID(teamID) !== null;
-  }
-
-  openAwardTeamDetails(teamID: string | number): void {
-    const team = this.teamForID(teamID);
-    if (team) this.teamDialog.open(team.TeamID);
-  }
-
-  formatAwardEfficiency(value: number): string {
-    return Number.isFinite(value) ? this.pointsForFormatter.format(value) : '–';
-  }
-
   formatFantasyPoints(value: number | null | undefined): string {
     if (value === null || value === undefined || !Number.isFinite(Number(value))) return '–';
     return this.matchupScoreFormatter.format(Number(value));
@@ -464,47 +463,6 @@ export class LeagueMatchupsComponent {
   formatNflScore(value: number | null | undefined): string {
     if (value === null || value === undefined || !Number.isFinite(Number(value))) return '–';
     return this.nflScoreFormatter.format(Number(value));
-  }
-
-  recapGameAriaLabel(game: WeeklyRecapKeyGame): string {
-    return `${this.nflAbbr(game.AwayNFLTeamID)} at ${this.nflAbbr(game.HomeNFLTeamID)}, ${this.formatNflScore(game.AwayScore)} to ${this.formatNflScore(game.HomeScore)}`;
-  }
-
-  recapPlayer(player: WeeklyRecapKeyPlayer): Player | null {
-    for (const team of this.league.Teams) {
-      const resolved = team.Roster.find(candidate => String(candidate.ID) === String(player.PlayerID));
-      if (resolved) return resolved;
-    }
-    return null;
-  }
-
-  recapPlayerName(player: WeeklyRecapKeyPlayer): string {
-    const resolved = this.recapPlayer(player);
-    return resolved?.NameShort || resolved?.Name || `Player ${player.PlayerID}`;
-  }
-
-  recapPlayerPicture(player: WeeklyRecapKeyPlayer): string | null {
-    return this.recapPlayer(player)?.Picture || null;
-  }
-
-  recapPlayerNflLogo(player: WeeklyRecapKeyPlayer): string | null {
-    return this.nflLogo(player.NFLTeamID);
-  }
-
-  recapPlayerDetailAvailable(player: WeeklyRecapKeyPlayer): boolean {
-    return this.recapPlayer(player) !== null;
-  }
-
-  openRecapPlayerDetail(player: WeeklyRecapKeyPlayer): void {
-    const resolved = this.recapPlayer(player);
-    if (!resolved) return;
-
-    this.dialog.open(PlayerDetailDialogComponent, {
-      data: resolved,
-      width: '800px',
-      maxHeight: '90vh',
-      panelClass: 'player-dialog'
-    });
   }
 
   openTeam(teamID: string | number): void {

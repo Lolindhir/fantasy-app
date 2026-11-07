@@ -1,0 +1,70 @@
+:host { display: block; min-width: 0; }
+.rivals { display: grid; gap: 10px; min-width: 0; }
+.eyebrow { color: #6b7280; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .055em; }
+h3 { margin: 2px 0 0; font-size: 17px; font-weight: 650; }
+.rivals-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.rivals-filter { max-width: 100%; }
+.rivals-note { margin: 0; color: #64748b; font-size: 12px; line-height: 1.4; }
+
+.rival-card {
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, .32);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .04);
+  min-width: 0;
+}
+.rival-summary { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; }
+.rival-identity, .rival-toggle {
+  border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.rival-identity { display: flex; align-items: center; gap: 10px; padding: 10px 6px 10px 12px; min-width: 0; }
+.rival-avatar { width: 34px; height: 34px; border-radius: 9px; object-fit: contain; background: #f8fafc; flex: none; }
+.rival-name { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rival-toggle { display: flex; align-items: center; gap: 14px; padding: 10px 10px 10px 6px; }
+.rival-record { display: grid; justify-items: end; gap: 3px; }
+.rival-record-value { font-size: 22px; line-height: 1.1; font-weight: 750; font-variant-numeric: tabular-nums; }
+.rival-stats { display: flex; align-items: baseline; gap: 10px; font-size: 12px; font-weight: 600; color: #1e293b; font-variant-numeric: tabular-nums; }
+.rival-stat-label { margin-right: 3px; color: #94a3b8; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+.rival-stat--diff { font-weight: 750; }
+.rival-tone--win { color: var(--lifecycle-final-fg); }
+.rival-tone--loss { color: #b91c1c; }
+.rival-tone--even, .rival-tone--tie { color: #475569; }
+.rival-meta { color: #64748b; font-size: 11px; white-space: nowrap; }
+.rival-last { display: grid; gap: 1px; }
+.rival-last-line { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; white-space: nowrap; }
+
+.rival-outcome {
+  display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 6px;
+  font-size: 11px; font-weight: 800; background: #64748b; color: #fff;
+}
+.rival-outcome--win { background: var(--lifecycle-final); }
+.rival-outcome--loss { background: #dc2626; }
+
+.rival-games { list-style: none; margin: 0; padding: 0 12px 10px; display: grid; gap: 2px; border-top: 1px solid #eef0f3; }
+.rival-game {
+  display: grid; grid-template-columns: 20px 66px auto auto minmax(0, 1fr); align-items: center; gap: 10px;
+  padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px;
+}
+.rival-game:last-child { border-bottom: 0; }
+.rival-game-when { color: #94a3b8; font-size: 11px; }
+.rival-game-score { display: inline-flex; align-items: baseline; gap: 5px; font-variant-numeric: tabular-nums; }
+.rival-score-own { font-size: 15px; font-weight: 800; color: #0f172a; }
+.rival-score-opp { font-size: 13px; font-weight: 500; color: #64748b; }
+.rival-score-sep { color: #cbd5e1; }
+.rival-game-score--win .rival-score-own { color: var(--lifecycle-final-fg); }
+.rival-game-score--loss .rival-score-own { color: #b91c1c; }
+.rival-margin { font-size: 11px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.rival-game-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.rival-tag { border-radius: 999px; padding: 1px 7px; font-size: 10px; font-weight: 650; white-space: nowrap; }
+.rival-tag--playoffs { background: var(--lifecycle-active-bg); color: var(--lifecycle-active-fg); }
+.rival-tag--win { background: var(--lifecycle-final-bg); color: var(--lifecycle-final-fg); }
+.rival-tag--loss { background: #fef2f2; color: #b91c1c; }
+
+@media (max-width: 600px) {
+  .rival-summary { grid-template-columns: minmax(0, 1fr); }
+  .rival-identity { padding: 10px 12px 2px; }
+  .rival-toggle { justify-content: space-between; gap: 8px; padding: 2px 10px 10px 12px; }
+  .rival-record { justify-items: start; }
+  .rival-game { grid-template-columns: 20px 58px auto auto; }
+  .rival-game-tags { grid-column: 2 / -1; justify-content: flex-start; }
+}

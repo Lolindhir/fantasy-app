@@ -1,0 +1,97 @@
+:host { display: block; min-width: 0; }
+
+.injury-report {
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, .32);
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .04);
+  min-width: 0;
+}
+
+.eyebrow { color: #6b7280; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .055em; }
+
+.injury-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+
+  &--static { cursor: default; justify-content: space-between; }
+}
+
+.injury-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; }
+.injury-title strong { font-size: 14px; }
+.injury-summary { display: flex; flex-wrap: wrap; gap: 5px; margin-left: auto; justify-content: flex-end; }
+.injury-empty { color: #64748b; font-size: 13px; }
+
+.injury-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.injury-chip--out, .injury-chip--ir, .injury-chip--pup {
+  background: #fef2f2; border-color: #fecaca; color: #b91c1c;
+}
+.injury-chip--out.injury-chip--solid, .injury-chip--ir.injury-chip--solid, .injury-chip--pup.injury-chip--solid {
+  background: var(--lifecycle-problem); border-color: var(--lifecycle-problem); color: #fff;
+}
+.injury-chip--doubtful { background: #fff1f2; border-color: #fda4af; color: #be123c; }
+.injury-chip--doubtful.injury-chip--solid { background: #e11d48; border-color: #e11d48; color: #fff; }
+.injury-chip--questionable { background: #fefce8; border-color: #fef08a; color: #a16207; }
+.injury-chip--questionable.injury-chip--solid { background: #a16207; border-color: #a16207; color: #fff; }
+/* Unknown is review/fail-closed (FDS-005): amber, dashed. */
+.injury-chip--unknown {
+  background: #fffbeb; border: 1px dashed var(--lifecycle-review); color: var(--lifecycle-review-fg);
+}
+
+.injury-list { list-style: none; margin: 0; padding: 0 10px 10px; display: grid; gap: 6px; }
+
+.injury-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &--out, &--ir, &--pup { border-color: #fecaca; background: #fef2f2; }
+  &--doubtful { border-color: #fda4af; background: #fff1f2; }
+  &--questionable { border-color: #fef08a; background: #fefce8; }
+  &--unknown { border: 1px dashed var(--lifecycle-review); background: #fffbeb; }
+}
+
+.injury-photo-wrap { position: relative; display: grid; place-items: center; width: 34px; height: 34px; }
+.injury-photo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #eef2f7; }
+.injury-nfl-logo {
+  position: absolute; right: -2px; bottom: -2px; width: 14px; height: 14px; object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, .2));
+}
+
+.injury-copy { display: grid; gap: 2px; min-width: 0; }
+.injury-name { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.injury-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; color: #64748b; font-size: 11px; min-width: 0; }
+.injury-position { border-radius: 999px; padding: 1px 6px; font-size: 10px; font-weight: 650; }
+.injury-placement { color: #64748b; font-weight: 600; }
+
+.injury-status { display: grid; justify-items: end; gap: 3px; }
+.injury-lock { color: #475569; font-size: 10px; white-space: nowrap; }

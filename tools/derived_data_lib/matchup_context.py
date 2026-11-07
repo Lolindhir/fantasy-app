@@ -457,14 +457,35 @@ def weekly_assignment_map(repo_root: Path, season: int, week: int) -> dict[str, 
     return {key: sorted(set(teams)) for key, teams in assignments.items()}
 
 
+def neighbour_week_teams(repo_root: Path, season: int, week: int) -> dict[str, list[str]]:
+    """CanonicalPlayerID to the NFL teams on which the previous and the next weekly roster agree (both must exist).
+
+    A player on bye is absent from the weekly roster of that week; this agreed team is the only evidence for the bye check.
+    """
+    before = weekly_assignment_map(repo_root, season, week - 1) if week > 1 else None
+    after = weekly_assignment_map(repo_root, season, week + 1)
+    if before is None or after is None:
+        return {}
+    return {key: teams for key, teams in before.items() if len(teams) == 1 and after.get(key) == teams}
+
+
 # ---------------------------------------------------------------------------------------------------------------------
 # CompletionState
 
 
 def starter_game_resolution(
-    starter: Any, week_games: list[dict[str, Any]], assignments: dict[str, list[str]] | None, finality: dict[str, Any] | None
+    starter: Any,
+    week_games: list[dict[str, Any]],
+    assignments: dict[str, list[str]] | None,
+    finality: dict[str, Any] | None,
+    season_teams: set[str] | None = None,
+    bye_teams: dict[str, list[str]] | None = None,
 ) -> str:
-    """open | final | unknown for the single NFL game of one starter (Get-MrmStarterGameResolution)."""
+    """open | final | unknown for the single NFL game of one starter (Get-MrmStarterGameResolution).
+
+    A starter whose team has no game in the week is on bye and counts as final (0 points), but only when every resolved team is
+    proven to play in the canonical season schedule (``season_teams``); otherwise the missing game stays unknown.
+    """
     if finality is None or assignments is None:
         return "unknown"
     player = value_of(starter, "Player")
@@ -479,6 +500,11 @@ def starter_game_resolution(
         if re.fullmatch(r"[A-Z]{2,3}", provider_id):
             teams.append(provider_id)
     teams = sorted(set(teams))
+    if not teams and bye_teams and canonical_id in bye_teams:
+        # Not on the weekly roster of this week: only the team agreed by the neighbouring weeks can prove a bye (checked below).
+        teams = sorted(set(bye_teams[canonical_id]))
+        if any(_text(value_of(g, side)).strip().upper() in teams for g in week_games for side in ("AwayTeam", "HomeTeam")):
+            return "unknown"
     if not teams:
         return "unknown"
     candidates: dict[str, dict[str, Any]] = {}
@@ -487,6 +513,8 @@ def starter_game_resolution(
         home = _text(value_of(game, "HomeTeam")).strip().upper()
         if away in teams or home in teams:
             candidates.setdefault(_text(value_of(game, "GameID")).lower(), game)
+    if not candidates and season_teams is not None and all(team in season_teams for team in teams):
+        return "final"
     if len(candidates) != 1:
         return "unknown"
     game_id = _text(value_of(next(iter(candidates.values())), "GameID"))
@@ -551,6 +579,8 @@ def non_active_completion_state(
     finality: dict[str, Any] | None,
     first_kickoff: str | None,
     at_utc: datetime,
+    season_teams: set[str] | None = None,
+    bye_teams: dict[str, list[str]] | None = None,
 ) -> str:
     """CompletionState of a matchup outside the active lineup week (Resolve-MrmNonActiveCompletionState)."""
     if not _blank(first_kickoff):
@@ -577,7 +607,7 @@ def non_active_completion_state(
         elif len(starters) + empty != expected:
             unknown = True
         for starter in starters:
-            resolution = starter_game_resolution(starter, week_games, assignments, finality)
+            resolution = starter_game_resolution(starter, week_games, assignments, finality, season_teams, bye_teams)
             if resolution == "open":
                 return "open"
             if resolution == "unknown":
@@ -642,6 +672,9 @@ def build_matchups_model(
         raise MatchupContextError(f"Canonical league matchup source is incomplete for {league_id} season {season}.")
     league_source = _read(league_file, "Canonical league source")
     games = schedule_games(repo_root, season)
+    season_teams = {
+        _text(value_of(g, side)).strip().upper() for g in games for side in ("AwayTeam", "HomeTeam") if not _blank(value_of(g, side))
+    }
     finality = finality_map(repo_root, season)
     last_week = known_last_week(league_source)
     structure = value_of(league_source, "WeekStructure")
@@ -684,13 +717,17 @@ def build_matchups_model(
             except ValueError:
                 pass
 
+        bye_teams = neighbour_week_teams(repo_root, season, week) if assignments is not None else None
+
         views: list[dict[str, Any]] = []
         for pairing in pairings:
             team_ids = [p["TeamID"] for p in pairing["Participants"]]
             if week == active_week and decision_facts is not None:
                 completion = active_completion_state(team_ids, decision_facts)
             else:
-                completion = non_active_completion_state(pairing, league_source, week_games, assignments, finality, first_kickoff, at_utc)
+                completion = non_active_completion_state(
+                    pairing, league_source, week_games, assignments, finality, first_kickoff, at_utc, season_teams, bye_teams
+                )
             if pairing["ScoreEvidenceUnknown"] and completion == "final":
                 completion = "unknown"
             if completion == "final" and any(p["Points"] is None for p in pairing["Participants"]):

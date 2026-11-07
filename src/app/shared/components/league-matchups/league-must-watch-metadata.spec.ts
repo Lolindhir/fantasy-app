@@ -218,11 +218,14 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
       'getDecisionWindows',
       'getMatchups',
       'getNflTeams',
-      'getWeeklyRecaps'
+      'getWeeklyRecaps',
+      'getPastSeasonsIndex'
     ]);
     dataService.getFantasyGameContext.and.returnValue(of(makeContext()));
     dataService.getDecisionWindows.and.returnValue(of(makeDecisionWindows()));
     dataService.getMatchups.and.returnValue(of(makeMatchups()));
+    // No archived seasons: the head-to-head line stays hidden in these specs.
+    dataService.getPastSeasonsIndex.and.returnValue(of({ Seasons: [] } as unknown as ReturnType<DataService['getPastSeasonsIndex']> extends import('rxjs').Observable<infer T> ? T : never));
     dataService.getNflTeams.and.returnValue(of([
       { ID: 'A', Name: 'Away', Abv: 'AAA', Logo: '/away.svg' },
       { ID: 'H', Name: 'Home', Abv: 'HHH', Logo: '/home.svg' }

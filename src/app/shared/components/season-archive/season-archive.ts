@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { RegularSeasonStandingsListComponent } from '../regular-season-standings-list/regular-season-standings-list';
 import { SeasonResultsComponent } from '../season-results/season-results';
@@ -15,6 +16,7 @@ import type {
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     SharedMaterialImports,
     SeasonResultsComponent,
     RegularSeasonStandingsListComponent
