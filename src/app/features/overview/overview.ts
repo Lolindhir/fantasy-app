@@ -226,7 +226,10 @@ export class OverviewComponent {
       const seasonLeaders = activeLeague ? this.buildSeasonLeaders(league, teams) : [];
       const recentMoves = activeLeague ? this.buildRecentMoves(transactions, currentSeason) : [];
       const lastWaiverPickAt = buildLastWaiverPickByTeam(transactions, currentSeason);
-      const awards = buildSeasonAwardItems(getCurrentSeasonAwards(league));
+      const awards = buildSeasonAwardItems(
+        getCurrentSeasonAwards(league),
+        league.Standings.find(standing => standing.Season === league.Season)?.Playoffs
+      );
       const deadline = this.parseDeadline(league.CapDeadline);
       const deadlineDisplay = deadline.toLocaleDateString();
       const now = new Date();
