@@ -22,8 +22,22 @@ describe('SeasonAwardsComponent', () => {
     const cards = el.querySelectorAll('.season-award');
     expect(cards.length).toBe(3);
     expect(cards[1].textContent).toContain('Beta');
-    expect(cards[1].textContent).toContain('Owner Beta');
-    expect(cards[1].textContent).toContain('Beta stat');
+    expect(cards[1].textContent).toContain('B');
+  });
+
+  it('shows details only after tapping a tile', () => {
+    const fixture = TestBed.createComponent(SeasonAwardsComponent);
+    fixture.componentInstance.awards = [award('Alpha', 'A'), award('Beta', 'B')];
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.textContent).not.toContain('Beta stat');
+    (el.querySelectorAll('.season-award__tile')[1] as HTMLElement).click();
+    fixture.detectChanges();
+    expect(el.textContent).toContain('Owner Beta');
+    expect(el.textContent).toContain('Beta stat');
+    (el.querySelectorAll('.season-award__tile')[1] as HTMLElement).click();
+    fixture.detectChanges();
+    expect(el.textContent).not.toContain('Beta stat');
   });
 
   it('renders nothing for an empty or missing list', () => {

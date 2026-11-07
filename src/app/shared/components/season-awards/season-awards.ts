@@ -19,6 +19,16 @@ export class SeasonAwardsComponent {
   @Input() awards: SeasonHistoryAwardItem[] | null | undefined;
   @Input() title = 'Season Awards';
 
+  private openIndex: number | null = null;
+
+  isOpen(index: number): boolean {
+    return this.openIndex === index;
+  }
+
+  toggle(index: number): void {
+    this.openIndex = this.openIndex === index ? null : index;
+  }
+
   trackAward(index: number, award: SeasonHistoryAwardItem): string {
     return `${award.key}:${award.owner}:${index}`;
   }

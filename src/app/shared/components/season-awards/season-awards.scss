@@ -14,54 +14,84 @@
 
 .season-awards__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-@media (min-width: 480px) {
-  .season-awards__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 720px) {
+@media (min-width: 560px) {
   .season-awards__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1000px) {
+@media (min-width: 800px) {
   .season-awards__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
+@media (min-width: 1100px) {
+  .season-awards__grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
 .season-award {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
   min-width: 0;
-  padding: 8px;
   border: 1px solid #c8aa72;
-  border-left: 3px solid #927341;
   border-radius: 8px;
   background: linear-gradient(105deg, #fbf7ec 0%, #f6efdc 100%);
 }
 
+.season-award--open {
+  grid-column: 1 / -1;
+}
+
+.season-award__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 6px 8px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.season-award__icon {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.season-award__name {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+  color: #927341;
+  overflow-wrap: break-word;
+}
+
 .season-award__avatar-stack {
   position: relative;
-  flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
+  margin-top: 2px;
 }
 
 .season-award__team-avatar {
   display: block;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   overflow: hidden;
   border: 2px solid #927341;
   border-radius: 50%;
@@ -78,45 +108,24 @@
 
 .season-award__owner-avatar {
   position: absolute;
-  right: -4px;
+  right: -6px;
   bottom: -4px;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   overflow: hidden;
   border: 2px solid #f6efdc;
   border-radius: 50%;
   background: #fff;
 }
 
-.season-award__badge {
-  position: absolute;
-  left: -6px;
-  top: -6px;
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border: 1px solid #c8aa72;
-  border-radius: 50%;
-  background: linear-gradient(105deg, #e8d7a8, #f3e8c6);
-  font-size: 0.8rem;
-  line-height: 1;
-}
-
-.season-award__body {
+.season-award__details {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px 10px;
+  text-align: center;
   line-height: 1.25;
-}
-
-.season-award__name {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #927341;
-  overflow-wrap: break-word;
 }
 
 .season-award__team {
@@ -127,6 +136,7 @@
   overflow-wrap: break-word;
 }
 
+.season-award__owner,
 .season-award__stat {
   font-size: 0.75rem;
   color: #7a6a52;
