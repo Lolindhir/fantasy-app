@@ -18,6 +18,8 @@
         </mat-panel-description>
       </mat-expansion-panel-header>
 
+      <a class="season-weeks-link" routerLink="/weeks" [queryParams]="{ season: season.season }">View weeks</a>
+
       <app-season-results
         [results]="playoffResultsViewModel(season)"
         [showTitle]="false"

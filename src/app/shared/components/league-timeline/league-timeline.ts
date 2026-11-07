@@ -1,3 +1,4 @@
+import { GlyphComponent } from '../glyph/glyph';
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnDestroy, OnInit, TemplateRef } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -22,6 +23,7 @@ import { TeamIdentityComponent } from '../team-identity/team-identity';
   standalone: true,
   imports: [
     CommonModule,
+    GlyphComponent,
     MatDialogModule,
     DecisionWindowContextPopoverComponent,
     DecisionWindowMatchupContextComponent,

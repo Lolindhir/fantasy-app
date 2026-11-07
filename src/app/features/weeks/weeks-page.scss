@@ -1,0 +1,362 @@
+:host {
+  display: block;
+  --weekly-card-border: rgba(148, 163, 184, 0.35);
+  --weekly-card-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  --weekly-muted: #64748b;
+  --weekly-text: #172033;
+  --weekly-accent: #7c3aed;
+}
+
+.weeks-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.weeks-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.weeks-season-select {
+  width: 150px;
+}
+
+.weeks-empty-card {
+  color: var(--weekly-muted);
+}
+
+/* Week bar */
+.week-bar {
+  display: flex;
+  gap: 6px;
+  padding: 2px 2px 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.week-chip {
+  flex: 0 0 auto;
+  min-width: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--weekly-card-border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--weekly-text);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.week-chip--open {
+  color: #94a3b8;
+}
+
+.week-chip--playoff {
+  border-color: rgba(124, 58, 237, 0.55);
+}
+
+.week-chip--first-playoff {
+  margin-left: 8px;
+}
+
+.week-chip--active {
+  border-color: #3b82f6;
+  background: #3b82f6;
+  color: #fff;
+}
+
+.week-bar-legend {
+  margin: -6px 2px 0;
+  color: var(--weekly-muted);
+  font-size: 0.68rem;
+}
+
+/* Week results */
+.week-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.week-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 5px;
+  color: var(--weekly-text);
+  font-size: 1.1rem;
+  font-weight: 850;
+}
+
+.week-stage {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.1);
+  color: var(--weekly-accent);
+  font-size: 0.6rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.week-scoreboards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 8px;
+  margin: 0 5px;
+}
+
+/* One compact row per matchup; the whole row opens the matchup detail. */
+.week-matchup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--weekly-card-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--weekly-card-shadow);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.week-matchup--static,
+.week-matchup:disabled {
+  cursor: default;
+  color: inherit;
+}
+
+.week-matchup--open {
+  background: #f8fafc;
+}
+
+.week-matchup-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.week-matchup-side {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 6px;
+  border-radius: 8px;
+}
+
+.week-matchup-side--right {
+  flex-direction: row-reverse;
+}
+
+/* Winner is a local tint, not a recolored score (FDS-006). */
+.week-matchup-side--winner {
+  background: rgba(59, 130, 246, 0.09);
+}
+
+.week-matchup-team {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.week-identity--mobile { display: none; }
+
+.week-matchup-score {
+  flex: 0 0 auto;
+  color: var(--weekly-text);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+
+.week-matchup-state {
+  align-self: flex-start;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.56rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.week-matchup-state--final { background: #dcfce7; color: #166534; }
+.week-matchup-state--open { background: #dbeafe; color: #1d4ed8; }
+.week-matchup-state--unknown { background: #fef3c7; color: #92400e; }
+
+.week-team-fallback {
+  color: var(--weekly-muted);
+  font-weight: 700;
+}
+
+.week-recap {
+  margin-top: 4px;
+}
+
+/* Season grid */
+.season-grid-section {
+  margin: 0 5px;
+}
+
+.season-grid-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--weekly-card-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--weekly-card-shadow);
+}
+
+.season-grid {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.season-grid th,
+.season-grid td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.season-grid thead th {
+  background: #f8fafc;
+  color: var(--weekly-muted);
+  font-size: 0.64rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+/* Fixed week column keeps the week visible while the teams scroll sideways. */
+.season-grid-week-col {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 44px;
+  background: #fff;
+  box-shadow: 1px 0 0 #e2e8f0;
+}
+
+.season-grid thead .season-grid-week-col {
+  z-index: 2;
+  background: #f8fafc;
+}
+
+.season-grid-team-head {
+  min-width: 64px;
+}
+
+.season-grid-head-logo { display: none; }
+
+.season-grid-week-button {
+  padding: 2px 6px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.season-grid-divider th {
+  padding: 3px 8px;
+  background: rgba(124, 58, 237, 0.08);
+  color: var(--weekly-accent);
+  font-size: 0.6rem;
+  font-weight: 850;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.season-grid-row--playoff .season-grid-week-col {
+  box-shadow: inset 3px 0 0 rgba(124, 58, 237, 0.55), 1px 0 0 #e2e8f0;
+}
+
+.season-grid-cell {
+  min-width: 62px;
+}
+
+.season-grid-points {
+  color: var(--weekly-text);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.season-grid-outcome {
+  margin-left: 4px;
+  color: #94a3b8;
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+
+.season-grid-cell--win .season-grid-outcome {
+  color: var(--weekly-muted);
+}
+
+.season-grid-cell--high {
+  background: rgba(124, 58, 237, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(124, 58, 237, 0.45);
+}
+
+.season-grid-legend {
+  margin: 6px 2px 0;
+  color: var(--weekly-muted);
+  font-size: 0.68rem;
+}
+
+@media (max-width: 640px) {
+  .week-identity--desktop { display: none; }
+  .week-identity--mobile { display: inline-flex; }
+
+  .week-scoreboards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .week-matchup-score {
+    font-size: 0.95rem;
+  }
+
+  /* Compact season grid: six teams fit a phone; larger leagues scroll sideways. */
+  .season-grid th,
+  .season-grid td {
+    padding: 5px 2px;
+  }
+
+  .season-grid-week-col {
+    min-width: 30px;
+  }
+
+  .season-grid-team-head {
+    min-width: 0;
+  }
+
+  .season-grid-head-full { display: none; }
+  .season-grid-head-logo { display: inline-block; }
+
+  .season-grid-cell {
+    min-width: 0;
+  }
+
+  .season-grid-points {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+
+  .season-grid-outcome {
+    display: block;
+    margin: 0;
+    font-size: 0.5rem;
+    line-height: 1;
+  }
+}

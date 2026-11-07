@@ -1,5 +1,5 @@
-<span class="projection" role="group" [attr.aria-label]="view.ariaLabel">
-  <span class="value"><small>Proj.</small> {{ view.projected }}</span>
+<span class="projection" [class.large]="size === 'large'" role="group" [attr.aria-label]="view.ariaLabel">
+  <span *ngIf="showValue" class="value"><small>Proj.</small> {{ view.projected }}</span>
   <span *ngIf="view.bar as bar" class="whisker" aria-hidden="true">
     <i [style.left.%]="bar.left" [style.width.%]="bar.width"></i><u [style.left.%]="bar.marker"></u>
   </span>

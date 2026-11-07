@@ -827,6 +827,56 @@ Evidence / source:
 - Current WhatsApp negotiation excerpt supplied directly by Robert on 2026-09-02, covering 17:41 to 18:03 local time.
 - Deal and target are chat-confirmed; re-check current Sleeper-derived draft/transaction data when official platform provenance matters.
 
+## 2026-11-04 to 2026-11-05 — Dennis / TeamID 5 — Swift for Tre Tucker and Marcel's 2027 Rookie 4th
+
+Context:
+
+- Dennis had shifted into a 2027-oriented rebuild. On 2026-11-04 he explicitly told Robert that D'Andre Swift was one of the players he himself had considered trading after revisiting the league-app views.
+- The discussion followed Dennis's 2026-11-03 completed trade of Christian McCaffrey plus Dennis's 2027 Rookie 3rd to Flo for Braelon Allen and Flo's 2027 Rookie 1st + 2nd (Sleeper transaction `1423460033521283072`). Robert saw a substantial contrast with an earlier CMC proposal Dennis had made to him: Robert recollected that Dennis had asked for Robert's Rookie 1st, Harold Fannin Jr. and Jonathon Brooks while returning only a 4th/5th-type pick alongside CMC. The exact earlier proposal is **Robert-reported context**, not a separately verified Dennis quote or confirmed transaction.
+- Robert wanted an immediate RB upgrade and a pairing with Kyle Monangai, while avoiding a costly win-now overreaction and keeping high-upside dynasty assets. His WR roster included numerous younger development and rebound bets, making a WR-for-RB consolidation appealing. He had obtained Tucker on waivers in Week 7, but still considered Tucker's age and breakout possibility meaningful.
+- The parties discussed a six-team league with unusually early **absolute** rookie-pick positions for any given round. Both KTC and Dynasty Daddy were used as third-party reference points, but neither calculator's standard format was established as an exact fit for this league.
+
+Assets / offer and communication path:
+
+1. **Opening, 2026-11-04:** Robert asked for Swift in exchange for Tre Tucker + **one 2027 Rookie 4th**. The asset type was explicitly Rookie, not Free Agent. Robert ultimately offered Dennis a choice between Robert's own Rookie 4th and the Rookie 4th originally owned by Marcel/Ruhr Valley Packers.
+2. **Initial consideration:** Dennis said he would review the offer later that day; Swift was already on his own list of movable players.
+3. **Calculator comparison:** Dennis shared a KeepTradeCut screenshot with Swift 5,613 + 3,586 single-asset value adjustment = 9,199 versus Tucker 3,824 + generic 2027 mid 4th 2,182 = 6,006. After Robert questioned compatibility with the six-team format, Dennis said he could not find a six-team setting. Dennis then independently shared a Dynasty Daddy screenshot showing Swift 2,852 versus Tucker 1,725 + generic mid 4th 844 = 2,569 (a much smaller difference). These are **screenshotted historical calculator outputs**, not current or league-calibrated fair values.
+4. **Substantive objection:** Dennis explained that he had not followed Tucker and was unsure how to value him. Tucker's recent Free Agent availability in their league made the asset appear less convincing to him. This was uncertainty about a specific incoming asset, **not a categorical rejection** of Swift negotiations or of Rookie 4th picks.
+5. **Robert's response:** Robert explained his view that Tucker had become a leading Las Vegas receiving option after Jakobi Meyers's departure, acknowledged Tucker as a 25-year-old upside gamble rather than a proven asset, and admitted the personal risk of again trading away a young player who might break out (referencing his own feelings about earlier Watson/Warren moves). Robert also explained that already rostering Monangai made the Swift trade palatable. These were Robert's **contemporaneous player beliefs and trade rationale**, not independent verification of Tucker's future role.
+6. **Premium-asset probe:** Dennis asked whether a Swift-for-Malik-Nabers trade was conceivable. Robert clearly declined, calling Nabers both more productive and much younger, as well as a favored Giants player. Dennis checked a Dynasty analyzer and **explicitly recognized that his Nabers suggestion was unfair**, explaining that he had underestimated Nabers because of his perception of the current season.
+7. **Agreement, 2026-11-04 22:11 local:** Dennis returned to the **unchanged original terms** and asked whether Swift for Tucker + a Rookie 4th still stood. Robert accepted: “Deal 🤝”. Robert made **no concession** in asset quality or pick round following the objection and Nabers probe.
+
+Outcome / exact platform confirmation:
+
+- Sleeper transaction `1424008779854282752`, **complete** on **2026-11-05**, Week 9; this supersedes the earlier chat-only acceptance status.
+- **Mighty Giants / Robert (TeamID 1) receive:** D'Andre Swift (Sleeper PlayerID `6790`).
+- **Team DennisLACards / Dennis (TeamID 5) receive:** Tre Tucker (Sleeper PlayerID `10213`) and **Marcel's / Ruhr Valley Packers' original 2027 Rookie 4th** (`PickKey: 2027_Rookie_R4_OO2`, original owner roster ID 2, previous holder roster ID 1, new holder roster ID 5). Dennis therefore used the offered pick-choice option to take **Marcel's** pick; Mighty Giants' own original 2027 Rookie 4th was **not** part of this trade.
+- No Fannin, Brooks, Waddle, Nabers, Rookie 1st, 2nd or 3rd moved in this Swift transaction.
+
+Observed tendencies / evidence strength:
+
+- **Direct, high confidence for this negotiation:** Dennis explicitly identified Swift as tradable before he evaluated Robert's offer. His initial reservations centered on his own uncertainty about Tucker and the player's recent waiver availability.
+- **Repeated process signal, medium-high confidence:** Dennis researched the trade independently and shared competing tool outputs, reinforcing his earlier stated preference for doing his own research rather than processing a dense sales pitch.
+- **Case-specific, medium confidence:** He used outside trade tools as a reference, recognized material disagreement between them, self-corrected his own overly high Nabers ask and returned to Robert's original offer without demanding another asset.
+- **Case-specific, low-medium confidence:** He tested a much more valuable counter-asset (Nabers), but abandoned the idea himself after checking. This does **not** establish that Dennis systematically opens with unreasonable prices.
+- **Case-specific, medium confidence:** Transparent discussion of the seller's own prospect/regret concerns did not visibly prevent closure; the record does not prove that this transparency *caused* acceptance.
+- The earlier Robert-reported CMC proposal and the separate Flo/CMC transaction reveal **different deal constructions and counterparties**; they are not sufficient alone to infer a stable Dennis price rule or motive.
+
+Follow-up strategy:
+
+- Open with **one short, complete offer** and a clear reason it may fit Dennis's current roster window; give him space for independent research.
+- A recently added/waiver-acquired player may require **credible role, opportunity and age evidence**, not just an aggregated trade-calculator score. Explain upside **and** uncertainty rather than overselling.
+- When he cites a value tool, clarify the assumptions (especially six-team lineup, relative starter quality, Rookie versus Free Agent picks and exact overall draft slot); avoid insisting one public calculator is definitive.
+- If Dennis suggests a protected elite asset, set a friendly but **firm boundary**. His Nabers self-correction shows a brief refusal can be sufficient; do not automatically raise the current offer or introduce more components.
+- Track his current rebuild / win-now objectives afresh at every future approach. Do not interpret the waiver-history objection as proof that he never values young breakout candidates.
+
+Evidence / source:
+
+- Direct WhatsApp exchange supplied by Robert, 2026-11-04 approximately 10:12–22:11 local time, including KTC and Dynasty Daddy screenshots and Robert's report of the prior CMC ask.
+- Confirmed completed transaction: `public/data/Transactions.json`, Sleeper ID `1424008779854282752`, 2026-11-05; original Rookie 4th ownership verified via `public/data/Drafts.json` / transaction `1400904559005532160` (2026-09-02 Marcel-to-Robert transfer).
+- Separate completed Dennis/Flo CMC trade: `public/data/Transactions.json`, ID `1423460033521283072` (2026-11-03).
+- Value and role comments are historical communication evidence, **not** evergreen player evaluations.
+
 ## Cross-manager communication memory for Robert
 
 These are interaction-level observations from the supplied WhatsApp exports and later directly supplied negotiations. They supplement, but do not replace, each manager's individual profile.

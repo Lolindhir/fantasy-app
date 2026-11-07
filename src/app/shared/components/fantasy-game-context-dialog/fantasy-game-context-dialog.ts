@@ -523,7 +523,7 @@ export class FantasyGameContextDialogComponent {
 
   matchupStateLabel(matchup: FantasyGameContextMatchup): string {
     const remaining = matchup.RemainingRelevance;
-    if (!remaining) return 'Current starter exposure';
+    if (!remaining) return this.data.context.ScoringState === 'final' ? 'Final score' : 'Current starter exposure';
 
     return matchupSportsStateLabel(
       remaining.State,

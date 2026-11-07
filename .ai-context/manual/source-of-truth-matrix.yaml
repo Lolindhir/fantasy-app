@@ -1166,6 +1166,7 @@ consumerReadClassification:
     tools/matchup_context_app_publish.py:
       reads:
         legacy:FantasyGameContext: app-output-owner
+        legacy:FantasyGameContextHistory: app-output-owner
         legacy:Matchups: app-output-owner
         legacy:Timestamps: app-output-owner
       note: 'Consumer generator of the matchup context (ADR-075, Issue #1199 section 3 step 7). write renders Matchups.json, FantasyGameContext.json and the past_seasons Matchups and FantasyGameContext files from the computed matchup context (data-source, products, lifecycle and Decision Windows functions, data-meta) and publishes them only on a semantic difference. It reads the existing App files only to detect that difference and to list the FantasyGameContext history seasons, and updates the Matchups and FantasyGameContext keys of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'

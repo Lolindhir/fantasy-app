@@ -2,11 +2,14 @@
 from __future__ import annotations
 
 import unittest
+import json
 from datetime import datetime, timezone
 from unittest.mock import patch
 
 from tools import audit_workflow_job_costs as audit
 from tools import league_source_receipt_audit as source
+from tools import league_current_noop_audit as current
+from tools import league_live_recovery_audit as recovery
 
 
 def run(run_id, day="2026-11-01", moment="12:00:00Z", conclusion="success"):
@@ -667,6 +670,401 @@ class G5SourceSyncTwoPhaseReceiptTests(unittest.TestCase):
                 "--repo", "Lolindhir/fantasy-app", "--run-id", "41962202248",
             ]))
 
+
+
+
+class G5CurrentScopeNoOpRevisionTests(unittest.TestCase):
+    """Job-reported zero changes at a Git tree, never source freshness or skip."""
+
+    def fixture(self):
+        run, jobs, main, _commits, _old_log = G5SourceSyncTwoPhaseReceiptTests().fixture()
+        raw = {
+            "Leagues": [{
+                "CanonicalLeagueID": "nfl-reise", "Scope": "current",
+                "AcquisitionScope": "current",
+                "Dependencies": ["sleeper.league", "sleeper.matchups"],
+                "Parts": ["league-core", "transactions", "drafts"],
+                "DatasetPartitions": 16, "RawFilesChanged": 0,
+                "MetadataFilesChanged": 0,
+                "CurrentProviderLeagueID": "1354177383984267264",
+                "CurrentLeagueCoreScope": {
+                    "Season": 2026, "ProviderLeagueID": "1354177383984267264",
+                    "CurrentMatchupWeek": 9,
+                },
+                "CurrentTransactionWindow": {
+                    "CanonicalLeagueID": "nfl-reise", "Season": 2026,
+                    "CurrentWeek": 9, "Weeks": [8, 9],
+                },
+                "CurrentDraftScope": {
+                    "Season": 2026, "ProviderLeagueID": "1354177383984267264",
+                },
+            }]
+        }
+        row = raw["Leagues"][0]
+        canonical = {
+            "Leagues": [{
+                "CanonicalLeagueID": row["CanonicalLeagueID"],
+                "Scope": "current", "MaterializationScope": "current",
+                "Dependencies": ["raw-sleeper-league", "raw-sleeper-matchups"],
+                "Parts": list(row["Parts"]), "CanonicalFiles": 9,
+                "CanonicalFilesChanged": 0,
+                "CurrentLeagueCoreScope": dict(row["CurrentLeagueCoreScope"]),
+                "CurrentTransactionWindow": dict(row["CurrentTransactionWindow"]),
+                "CurrentDraftScope": dict(row["CurrentDraftScope"]),
+            }]
+        }
+        return run, jobs, main, raw, canonical
+
+    def log(self, run, raw, canonical):
+        def block(data):
+            return "\n".join(
+                "2026-11-05T03:37:15Z " + line
+                for line in json.dumps(data, indent=2).splitlines()
+            )
+        return "\n".join([
+            "2026-11-05T03:37:05Z League source publish attempt 1/3",
+            "2026-11-05T03:37:10Z HEAD is now at 4454dcf before-source",
+            block(raw),
+            "2026-11-05T03:37:16Z HEAD is now at 4454dcf before-materialize",
+            block(canonical),
+            block(canonical),
+            "2026-11-05T03:37:23Z No canonical League data-source changes detected.",
+        ])
+
+    def evaluate(self, change=None, *, main_tree_changed=False, main_moves=False):
+        run, jobs, main, raw, canonical = self.fixture()
+        log = self.log(run, raw, canonical)
+        if change:
+            run, jobs, main, log = change(run, jobs, main, log)
+        start_sha = run["head_sha"]
+        fetched = []
+        ref_reads = 0
+        roots = list(current.INPUT_ROOTS)
+        root_shas = {name: f"{index+1:x}"*40 for index, name in enumerate(roots)}
+        def fetch(resource, params):
+            nonlocal ref_reads
+            fetched.append(resource)
+            if resource == f"actions/runs/{run['id']}":
+                return run
+            if resource == f"actions/runs/{run['id']}/jobs":
+                return {"total_count": len(jobs), "jobs": jobs}
+            if resource == "git/ref/heads/main":
+                ref_reads += 1
+                return {"ref": "refs/heads/main", "object": {
+                    "sha": ("f"*40 if main_moves and ref_reads > 1 else main)
+                }}
+            if resource.startswith("compare/"):
+                a, b = resource[len("compare/"):].split("...")
+                if a == b:
+                    return {"status": "identical", "behind_by": 0, "ahead_by": 0,
+                            "base_commit": {"sha": a},
+                            "merge_base_commit": {"sha": a}}
+                return {"status": "ahead", "behind_by": 0, "ahead_by": 1,
+                        "base_commit": {"sha": a},
+                        "merge_base_commit": {"sha": a},
+                        "commits": [{"sha": b}]}
+            if resource.startswith("commits/"):
+                prefix = resource[len("commits/"):]
+                if start_sha.startswith(prefix):
+                    sha, tree = start_sha, "a"*40
+                elif main.startswith(prefix):
+                    sha, tree = main, "b"*40
+                else:
+                    self.fail("unexpected commit " + resource)
+                return {"sha": sha, "commit": {"tree": {"sha": tree}}}
+            if resource.startswith("git/trees/"):
+                sha = resource[len("git/trees/"):]
+                if sha not in {"a"*40, "b"*40}:
+                    self.fail("unexpected tree " + resource)
+                is_main = sha == "b"*40
+                return {"sha": sha, "truncated": False,
+                        "tree": [
+                            {"path": name, "type": "tree",
+                             "sha": ("d"*40 if main_tree_changed and is_main
+                                     and name == "data-source" else root_shas[name])}
+                            for name in roots
+                        ]}
+            self.fail("unexpected endpoint " + resource)
+        result = current.audit_current_scope_noop(
+            fetch, lambda _job: log, "Lolindhir/fantasy-app", run["id"],
+            datetime(2026, 11, 5, 5, 10, tzinfo=timezone.utc),
+        )
+        return result, fetched
+
+    def test_actual_current_scope_zero_counts_bind_to_revision_only(self):
+        result, fetched = self.evaluate()
+        self.assertEqual("run-revision-noop-reported", result["status"])
+        self.assertTrue(result["jobCompletionVerified"])
+        self.assertTrue(result["reportedNoOpAtSourceRevisionVerified"])
+        self.assertTrue(result["currentMainInputTreesUnchanged"])
+        self.assertEqual(["nfl-reise"], result["canonicalLeagueIDs"])
+        self.assertEqual(16, result["rawPartitionsChecked"])
+        self.assertEqual(9, result["canonicalFilesChecked"])
+        self.assertEqual([], result["reasonCodes"])
+        self.assertIn("git/trees/" + "a"*40, fetched)
+        for flag in ("independentProviderFreshnessVerified",
+                     "independentCanonicalReplayVerified",
+                     "allSourceDerivedAppOutputsValidated",
+                     "timeAndFinalityVerified", "raceFree", "recoveryClean",
+                     "safeToSkip", "enforced"):
+            self.assertIs(result[flag], False, flag)
+
+    def test_new_main_source_tree_invalidates_current_reuse_not_history(self):
+        result, _ = self.evaluate(main_tree_changed=True)
+        self.assertTrue(result["reportedNoOpAtSourceRevisionVerified"])
+        self.assertFalse(result["currentMainInputTreesUnchanged"])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_raw_or_canonical_changes_and_second_pass_drift_block(self):
+        for data, field, bad in (
+            ("raw", "RawFilesChanged", 1),
+            ("raw", "MetadataFilesChanged", 1),
+            ("raw", "DatasetPartitions", 0),
+            ("canonical", "CanonicalFilesChanged", 2),
+            ("canonical", "CanonicalFiles", 0),
+            ("canonical", "MaterializationScope", "full"),
+        ):
+            with self.subTest(data=data, field=field):
+                run, jobs, main, raw, canonical = self.fixture()
+                (raw if data == "raw" else canonical)["Leagues"][0][field] = bad
+                def altered(r, j, m, _):
+                    return r, j, m, self.log(r, raw, canonical)
+                result, _ = self.evaluate(altered)
+                self.assertFalse(result["reportedNoOpAtSourceRevisionVerified"])
+                self.assertFalse(result["safeToSkip"])
+        def altered_second(r, j, m, log):
+            return r, j, m, log.replace(
+                '"CanonicalFiles": 9', '"CanonicalFiles": 8', 1
+            )
+        result, _ = self.evaluate(altered_second)
+        self.assertFalse(result["reportedNoOpAtSourceRevisionVerified"])
+
+    def test_retry_reset_race_missing_result_push_and_marker_block(self):
+        edits = [
+            lambda s: s.replace("attempt 1/3", "attempt 2/3"),
+            lambda s: s.replace("HEAD is now at 4454dcf before-materialize",
+                                "HEAD is now at 8888888 before-materialize"),
+            lambda s: s.replace('"Leagues":', '"WrongKey":', 1),
+            lambda s: s.replace("No canonical League data-source changes detected.",
+                                "Canonical change was published."),
+            lambda s: s + "\n2026-11-05T03:37:23Z    4454dcf..bbbbbbb HEAD -> main",
+            lambda s: s.replace("No canonical League data-source changes detected.",
+                                "No canonical League data-source changes detected.\n"
+                                "2026-11-05T03:37:24Z No canonical League data-source changes detected."),
+        ]
+        for edit in edits:
+            with self.subTest(name=str(edit)):
+                def altered(run, jobs, main, log):
+                    return run, jobs, main, edit(log)
+                result, _ = self.evaluate(altered)
+                self.assertFalse(result["reportedNoOpAtSourceRevisionVerified"])
+                self.assertFalse(result["safeToSkip"])
+
+    def test_run_failure_missing_validation_or_incomplete_source_blocks(self):
+        for mode in ("run", "validate", "source"):
+            with self.subTest(mode=mode):
+                def altered(run, jobs, main, log):
+                    if mode == "run":
+                        run["conclusion"] = "failure"
+                    elif mode == "validate":
+                        jobs[:] = [x for x in jobs if x["name"] != "validate"]
+                    else:
+                        next(x for x in jobs if x["name"] == "sync")["status"] = "in_progress"
+                    return run, jobs, main, log
+                result, _ = self.evaluate(altered)
+                self.assertFalse(result["reportedNoOpAtSourceRevisionVerified"])
+                self.assertFalse(result["safeToSkip"])
+
+    def test_main_moves_during_audit_denies_revision_proof(self):
+        result, _ = self.evaluate(main_moves=True)
+        self.assertEqual("blocked", result["status"])
+        self.assertIn("Main advanced during audit", result["reasonCodes"][0])
+        self.assertFalse(result["safeToSkip"])
+
+    def test_cli_missing_token_never_fetches_or_dispatches(self):
+        with patch.dict("os.environ", {"GH_TOKEN": "", "GITHUB_TOKEN": ""}):
+            self.assertEqual(2, current.main([
+                "--repo", "Lolindhir/fantasy-app", "--run-id", "42088460708",
+            ]))
+
+
+
+
+class G5LeagueLiveRecoveryObservationTests(unittest.TestCase):
+    """Derived fail-soft observation never elevates a green job to skip proof."""
+
+    def rows(self):
+        return [
+            {"CanonicalLeagueID": "nfl-reise", "Season": 2026,
+             "Product": "league-transactions", "Status": "unchanged"},
+            {"CanonicalLeagueID": "nfl-reise", "Season": 2026,
+             "Product": "league-drafts", "Status": "unchanged"},
+            {"CanonicalLeagueID": "nfl-reise", "Season": 2026,
+             "Product": "team-week-performance", "Status": "unchanged",
+             "Week": 8, "PlayerWeekFantasyParity": {
+                 "State": "verified", "Compared": 177}},
+        ]
+
+    def log(self, rows=None, *, attempt="1/3", no_op=True):
+        body = json.dumps(self.rows() if rows is None else rows,
+                          indent=2, sort_keys=True)
+        lines = [
+            f"2026-11-01T04:15:58Z Rebuild/publish attempt {attempt} for league.",
+        ]
+        lines += ["2026-11-01T04:15:58Z " + line for line in body.splitlines()]
+        if no_op:
+            lines.append("2026-11-01T04:15:59Z Generator produced no repository changes. Nothing to publish.")
+        return "\n".join(lines)
+
+    def test_valid_reports_still_never_prove_recovery_race_or_skip(self):
+        evidence = recovery.parse_derived_refresh(self.log(), {"nfl-reise"})
+        self.assertEqual("derived-producer-reported-complete", evidence["status"])
+        self.assertTrue(evidence["noBlockedDerivedRowsObserved"])
+        self.assertEqual(3, len(evidence["products"]))
+        self.assertTrue(evidence["noOpPublisherMessageObserved"])
+        self.assertFalse(evidence["safeToSkip"])
+        self.assertFalse(evidence["enforced"])
+
+    def test_blocked_twp_and_history_are_not_masked_by_green_noop(self):
+        for product, state in (("team-week-performance", "blocked"),
+                               ("team-week-performance", "no-scored-week"),
+                               ("league-drafts", "blocked"),
+                               ("league-transactions", "blocked")):
+            with self.subTest(product=product, state=state):
+                rows = self.rows()
+                next(r for r in rows if r["Product"] == product)["Status"] = state
+                report = recovery.parse_derived_refresh(self.log(rows), {"nfl-reise"})
+                self.assertEqual("blocked", report["status"])
+                self.assertFalse(report["noBlockedDerivedRowsObserved"])
+                self.assertIn("blocked-or-unready-derived-product", report["reasonCodes"])
+
+    def test_twp_parity_missing_or_nonverified_blocks(self):
+        for parity in (None, {}, {"State": "blocked"},
+                       {"State": "accepted-divergence"}):
+            with self.subTest(parity=parity):
+                rows = self.rows()
+                rows[-1]["PlayerWeekFantasyParity"] = parity
+                report = recovery.parse_derived_refresh(self.log(rows), {"nfl-reise"})
+                self.assertIn("twp-week-or-parity-not-verified", report["reasonCodes"])
+                self.assertFalse(report["safeToSkip"])
+
+    def test_missing_duplicate_extra_malformed_or_unhashable_rows_block(self):
+        cases = [
+            self.rows()[:2],
+            self.rows() + [self.rows()[0]],
+            self.rows() + [{"CanonicalLeagueID": "other", "Season": 2026,
+                            "Product": "league-drafts", "Status": "unchanged"}],
+            self.rows() + ["not-a-product"],
+        ]
+        invalid = self.rows()
+        invalid[1]["Status"] = []
+        cases.append(invalid)
+        for rows in cases:
+            with self.subTest(rows=str(rows)[:90]):
+                report = recovery.parse_derived_refresh(self.log(rows), {"nfl-reise"})
+                self.assertEqual("blocked", report["status"])
+                self.assertFalse(report["safeToSkip"])
+
+    def test_retry_truncation_shell_echo_and_noop_contradictions_block(self):
+        cases = [
+            self.log(attempt="2/3"),
+            self.log() + "\n2026-11-01T04:16:00Z Rebuild/publish attempt 2/3 for league.",
+            self.log().replace("2026-11-01T04:15:58Z ]", ""),
+            self.log().replace('"Status": "unchanged"', '"Status": "changed"', 1),
+            self.log().replace("Generator produced no repository changes. Nothing to publish.",
+                               "Generator produced no repository changes. Nothing to publish.\n"
+                               "2026-11-01T04:16:00Z Generator produced no repository changes. Nothing to publish."),
+            "2026-11-01T04:15:58Z \x1b[36;1mRebuild/publish attempt 1/3 for league.\x1b[0m",
+        ]
+        for payload in cases:
+            with self.subTest(log=payload[:95]):
+                report = recovery.parse_derived_refresh(payload, {"nfl-reise"})
+                self.assertEqual("blocked", report["status"])
+                self.assertFalse(report["safeToSkip"])
+
+    def audit(self, mutate=None):
+        run, jobs, ref, compare = G5LastLeagueLiveProvenanceTests().evidence()
+        payload = self.log()
+        if mutate:
+            run, jobs, ref, compare, payload = mutate(run, jobs, ref, compare, payload)
+        reads = []
+        def fetch(resource, params):
+            reads.append(resource)
+            if resource == f"actions/runs/{run['id']}":
+                return run
+            if resource == f"actions/runs/{run['id']}/jobs":
+                return {"total_count": len(jobs), "jobs": jobs}
+            if resource == "git/ref/heads/main":
+                return ref
+            if resource.startswith("compare/"):
+                return compare
+            self.fail("unexpected read " + resource)
+        log_calls = []
+        def job_log(job_id):
+            log_calls.append(job_id)
+            return payload
+        result = recovery.audit_run(
+            fetch, job_log, "Lolindhir/fantasy-app", run["id"], {"nfl-reise"},
+            datetime(2026, 11, 5, 4, 19, tzinfo=timezone.utc),
+        )
+        return result, reads, log_calls
+
+    def test_authenticated_run_completion_and_derived_report_are_separate(self):
+        r, reads, log_calls = self.audit()
+        self.assertEqual("producer-reported-complete", r["status"])
+        self.assertTrue(r["jobCompletionVerified"])
+        self.assertTrue(r["currentMainUnchangedDuringAudit"])
+        self.assertTrue(r["noBlockedDerivedRowsObserved"])
+        self.assertEqual(2, reads.count("git/ref/heads/main"))
+        self.assertEqual(1, len(log_calls))
+        for key in ("publicationCommitVerified", "allOutputsValidated",
+                    "recoveryClean", "raceFree", "safeToSkip", "enforced"):
+            self.assertIs(r[key], False, key)
+
+    def test_failed_or_in_progress_workflow_never_inspects_derived_log(self):
+        for status, conclusion in (("completed", "failure"),
+                                   ("in_progress", None)):
+            with self.subTest(status=status):
+                def altered(run, jobs, ref, cmp, log):
+                    run["status"] = status
+                    run["conclusion"] = conclusion
+                    return run, jobs, ref, cmp, log
+                result, _, log_calls = self.audit(altered)
+                self.assertEqual("blocked", result["status"])
+                self.assertFalse(result["jobCompletionVerified"])
+                self.assertEqual([], log_calls)
+
+    def test_moving_ref_and_missing_or_skipped_league_job_fail_closed(self):
+        def moved(run, jobs, ref, cmp, log):
+            class MovingRef(dict):
+                def __init__(self, before):
+                    super().__init__(before)
+                    self.reads = 0
+                def get(self, key, default=None):
+                    if key == "object":
+                        self.reads += 1
+                        return ({"sha": "f"*40} if self.reads > 2
+                                else super().get(key, default))
+                    return super().get(key, default)
+            return run, jobs, MovingRef(ref), cmp, log
+        result, _, _ = self.audit(moved)
+        self.assertEqual("blocked", result["status"])
+        self.assertIn("Main revision advanced during audit", result["reasonCodes"][0])
+        def skipped(run, jobs, ref, cmp, log):
+            for job in jobs:
+                if job["name"] == "league" and job["run_attempt"] == run["run_attempt"]:
+                    job["conclusion"] = "skipped"
+            return run, jobs, ref, cmp, log
+        result, _, no_log = self.audit(skipped)
+        self.assertEqual("blocked", result["status"])
+        self.assertEqual([], no_log)
+
+    def test_cli_missing_token_is_read_only_fail_closed(self):
+        with patch.dict("os.environ", {"GH_TOKEN": "", "GITHUB_TOKEN": ""}):
+            self.assertEqual(2, recovery.main([
+                "--repo", "Lolindhir/fantasy-app",
+                "--run-id", "42094886471", "--league", "nfl-reise",
+            ]))
 
 def source_path():
     return ".github/workflows/sync-league-source-data.yml"

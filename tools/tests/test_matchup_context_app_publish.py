@@ -76,6 +76,26 @@ class CurrentTests(RepoCase):
         self.assertEqual({"Week": 7}, json.loads((self.data / "FantasyGameContext.json").read_text(encoding="utf-8")))
         self.assertTrue((self.data / "Matchups.json").is_file())
 
+    def test_finished_weeks_of_running_season_go_to_a_cache_safe_file(self):
+        history = {"Season": "2026", "ScoringState": "partial", "Weeks": [{"Week": 1}]}
+        with mock.patch.object(publish, "resolve_matchups", return_value={"Season": 2026}), \
+                mock.patch.object(publish, "resolve_current_context", return_value=None), \
+                mock.patch.object(publish, "resolve_current_season_history", return_value=history):
+            writer = publish.Writer(self.root, NOW)
+            publish.write_current(self.root, LEAGUE, writer, NOW)
+            writer.finish()
+        self.assertEqual(history, json.loads((self.data / "FantasyGameContextHistory.json").read_text(encoding="utf-8")))
+        self.assertFalse((self.data / "past_seasons").exists())
+
+    def test_finished_weeks_error_warns_and_keeps_file(self):
+        write_json(self.data / "FantasyGameContextHistory.json", {"Old": True})
+        with mock.patch.object(publish, "resolve_matchups", return_value={"Season": 2026}), \
+                mock.patch.object(publish, "resolve_current_context", return_value=None), \
+                mock.patch.object(publish, "resolve_current_season_history", side_effect=MatchupContextError("incomplete")):
+            writer = publish.Writer(self.root, NOW)
+            publish.write_current(self.root, LEAGUE, writer, NOW)
+        self.assertEqual({"Old": True}, json.loads((self.data / "FantasyGameContextHistory.json").read_text(encoding="utf-8")))
+
     def test_context_error_warns_and_keeps_file(self):
         with mock.patch.object(publish, "resolve_matchups", return_value={"Season": 2026}), \
                 mock.patch.object(publish, "resolve_current_context", side_effect=MatchupContextError("no evidence")):

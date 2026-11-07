@@ -19,6 +19,7 @@
     <div class="standing-place">{{ row.displayPlace }}</div>
 
     <app-team-identity
+      [championBadge]="true"
       class="standing-team-identity standing-team-identity--mobile"
       [team]="row.team"
       [elements]="mobileTeamIdentityElements"
@@ -26,6 +27,7 @@
     ></app-team-identity>
 
     <app-team-identity
+      [championBadge]="true"
       class="standing-team-identity standing-team-identity--desktop"
       [team]="row.team"
       [elements]="desktopTeamIdentityElements"
@@ -59,6 +61,7 @@
 
         <div class="standing-detailed-team">
           <app-team-identity
+            [championBadge]="true"
             class="standing-detailed-identity"
             [team]="row.team"
             [elements]="detailedTeamIdentityElements"

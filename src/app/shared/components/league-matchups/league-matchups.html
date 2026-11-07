@@ -23,9 +23,12 @@
           [class.weekly-standing-row--playoff-cutline]="row.displayPlace === playoffCutlineStartPlace"
         >
           <strong class="weekly-standing-rank">{{ row.displayPlace }}</strong>
-          <span class="weekly-team-avatar">
-            <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
-            <span *ngIf="!row.team.Avatar">{{ teamShortName(row.team).slice(0, 2) }}</span>
+          <span class="weekly-team-logo">
+            <span class="weekly-team-avatar">
+              <img *ngIf="row.team.Avatar" [src]="row.team.Avatar" alt="" />
+              <span *ngIf="!row.team.Avatar">{{ teamShortName(row.team).slice(0, 2) }}</span>
+            </span>
+            <app-champion-badge *ngIf="row.team.IsDefendingChampion" class="weekly-team-champion" title="Defending Champion"></app-champion-badge>
           </span>
           <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(row.team) }}</span>
           <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(row.team) }}</span>
@@ -62,9 +65,12 @@
             [class.weekly-last-side--winner]="participant.isWinner"
           >
             <span class="weekly-last-team">
-              <span class="weekly-team-avatar weekly-team-avatar--last">
-                <img *ngIf="participant.team.Avatar" [src]="participant.team.Avatar" alt="" />
-                <span *ngIf="!participant.team.Avatar">{{ teamShortName(participant.team).slice(0, 2) }}</span>
+              <span class="weekly-team-logo">
+                <span class="weekly-team-avatar weekly-team-avatar--last">
+                  <img *ngIf="participant.team.Avatar" [src]="participant.team.Avatar" alt="" />
+                  <span *ngIf="!participant.team.Avatar">{{ teamShortName(participant.team).slice(0, 2) }}</span>
+                </span>
+                <app-champion-badge *ngIf="participant.team.IsDefendingChampion" class="weekly-team-champion" title="Defending Champion"></app-champion-badge>
               </span>
               <span class="weekly-team-identity weekly-team-identity--short">{{ teamShortName(participant.team) }}</span>
               <span class="weekly-team-identity weekly-team-identity--full">{{ teamDisplayName(participant.team) }}</span>
@@ -108,6 +114,7 @@
             <div class="matchup-scoreboard">
               <div class="matchup-team matchup-team--left">
                 <app-team-identity
+                  [championBadge]="true"
                   class="matchup-team-identity matchup-team-identity--mobile"
                   [team]="matchup.left.team"
                   [elements]="mobileTeamIdentityElements"
@@ -115,6 +122,7 @@
                   size="large"
                 ></app-team-identity>
                 <app-team-identity
+                  [championBadge]="true"
                   class="matchup-team-identity matchup-team-identity--desktop"
                   [team]="matchup.left.team"
                   [elements]="desktopTeamIdentityElements"
@@ -149,6 +157,7 @@
 
               <div class="matchup-team matchup-team--right">
                 <app-team-identity
+                  [championBadge]="true"
                   class="matchup-team-identity matchup-team-identity--mobile"
                   [team]="matchup.right.team"
                   [elements]="mobileTeamIdentityElements"
@@ -157,6 +166,7 @@
                   align="end"
                 ></app-team-identity>
                 <app-team-identity
+                  [championBadge]="true"
                   class="matchup-team-identity matchup-team-identity--desktop"
                   [team]="matchup.right.team"
                   [elements]="desktopTeamIdentityElements"
@@ -168,6 +178,12 @@
               </div>
 
               <mat-icon class="matchup-primary-chevron" aria-hidden="true">chevron_right</mat-icon>
+            </div>
+
+            <div *ngIf="headToHead(matchup) as h2h" class="matchup-h2h"
+              [attr.aria-label]="'All-time head-to-head ' + h2h">
+              <span class="matchup-h2h-label">All-time</span>
+              <strong>{{ h2h }}</strong>
             </div>
 
             <ng-container *ngIf="fantasyContextState$ | async as contextState">
@@ -456,108 +472,17 @@
       <div>
         <h2>Week {{ recapWeek }} Recap</h2>
       </div>
-      <span *ngIf="compact" class="weekly-recap-density">Quick look</span>
+      <span class="weekly-recap-heading-actions">
+        <span *ngIf="compact" class="weekly-recap-density">Quick look</span>
+        <a class="weekly-recap-all-weeks" routerLink="/weeks">All weeks</a>
+      </span>
     </div>
 
-    <ng-container *ngIf="weeklyRecap as recap; else recapUnavailable">
-      <div class="weekly-recap-grid">
-        <div class="weekly-recap-group">
-          <h3>Key NFL Games</h3>
-          <div class="weekly-recap-list weekly-recap-list--games">
-            <article *ngFor="let game of recap.games" class="weekly-recap-game" [attr.aria-label]="recapGameAriaLabel(game)">
-              <div class="weekly-recap-game-lockup">
-                <span class="weekly-recap-nfl-team">
-                  <img *ngIf="nflLogo(game.AwayNFLTeamID) as awayLogo" [src]="awayLogo" alt="" />
-                  <strong>{{ nflAbbr(game.AwayNFLTeamID) }}</strong>
-                </span>
-                <strong class="weekly-recap-nfl-score">{{ formatNflScore(game.AwayScore) }}–{{ formatNflScore(game.HomeScore) }}</strong>
-                <span class="weekly-recap-nfl-team weekly-recap-nfl-team--home">
-                  <img *ngIf="nflLogo(game.HomeNFLTeamID) as homeLogo" [src]="homeLogo" alt="" />
-                  <strong>{{ nflAbbr(game.HomeNFLTeamID) }}</strong>
-                </span>
-              </div>
-            </article>
-          </div>
-        </div>
-
-        <div class="weekly-recap-group">
-          <h3>Key Fantasy Players</h3>
-          <div class="weekly-recap-list weekly-recap-list--players">
-            <button
-              *ngFor="let player of recap.players"
-              type="button"
-              class="weekly-recap-player"
-              [disabled]="!recapPlayerDetailAvailable(player)"
-              [attr.aria-label]="'Open ' + recapPlayerName(player) + ' player details'"
-              (click)="openRecapPlayerDetail(player)"
-            >
-              <span class="weekly-recap-player-picture">
-                <img loading="lazy" decoding="async" *ngIf="recapPlayerPicture(player) as picture" class="weekly-recap-player-portrait" [src]="picture" alt="" />
-                <span *ngIf="!recapPlayerPicture(player)">{{ player.Position }}</span>
-              </span>
-              <span class="weekly-recap-player-copy">
-                <strong>{{ recapPlayerName(player) }}</strong>
-                <span>{{ player.Position }} · {{ nflAbbr(player.NFLTeamID) }}</span>
-              </span>
-              <strong class="weekly-recap-player-points">{{ formatFantasyPoints(player.Points) }}</strong>
-            </button>
-          </div>
-        </div>
-
-        <div *ngIf="recap.awards as awards" class="weekly-recap-group weekly-recap-group--awards">
-          <h3>Weekly Team Awards</h3>
-          <div class="weekly-recap-awards">
-            <article class="weekly-recap-award" aria-label="Best Coach award">
-              <h4 class="weekly-recap-award-title"><mat-icon aria-hidden="true">gps_fixed</mat-icon>Best Coach</h4>
-              <div *ngFor="let winner of awards.BestCoach" class="weekly-recap-award-winner">
-                <button type="button" class="weekly-recap-award-owner"
-                  [disabled]="!awardTeamExists(winner.FantasyTeamID)"
-                  [attr.aria-label]="'Open ' + awardOwnerName(winner.FantasyTeamID) + ' team details'"
-                  (click)="openAwardTeamDetails(winner.FantasyTeamID)">
-                  <span class="weekly-recap-award-avatar">
-                    <img *ngIf="awardOwnerAvatar(winner.FantasyTeamID) as avatar" [src]="avatar" alt="" loading="lazy" decoding="async" />
-                    <span *ngIf="!awardOwnerAvatar(winner.FantasyTeamID)">{{ awardOwnerName(winner.FantasyTeamID).charAt(0) }}</span>
-                  </span>
-                  <span class="weekly-recap-award-identity">
-                    <strong>{{ awardOwnerName(winner.FantasyTeamID) }}</strong>
-                    <span class="weekly-recap-award-team" *ngIf="awardTeamName(winner.FantasyTeamID) as teamName">{{ teamName }}</span>
-                  </span>
-                </button>
-                <strong class="weekly-recap-award-value">{{ formatAwardEfficiency(winner.EfficiencyPercent) }}%</strong>
-                <span class="weekly-recap-award-extra">{{ formatFantasyPoints(winner.ActualStarterPoints) }} / {{ formatFantasyPoints(winner.PotentialPoints) }} possible pts</span>
-              </div>
-              <div *ngIf="awards.BestCoach.length === 0" class="weekly-recap-award-empty">No eligible winner</div>
-            </article>
-
-            <article class="weekly-recap-award" aria-label="Best Manager award">
-              <h4 class="weekly-recap-award-title"><mat-icon aria-hidden="true">workspace_premium</mat-icon>Best Manager</h4>
-              <div *ngFor="let winner of awards.BestManager" class="weekly-recap-award-winner">
-                <button type="button" class="weekly-recap-award-owner"
-                  [disabled]="!awardTeamExists(winner.FantasyTeamID)"
-                  [attr.aria-label]="'Open ' + awardOwnerName(winner.FantasyTeamID) + ' team details'"
-                  (click)="openAwardTeamDetails(winner.FantasyTeamID)">
-                  <span class="weekly-recap-award-avatar">
-                    <img *ngIf="awardOwnerAvatar(winner.FantasyTeamID) as avatar" [src]="avatar" alt="" loading="lazy" decoding="async" />
-                    <span *ngIf="!awardOwnerAvatar(winner.FantasyTeamID)">{{ awardOwnerName(winner.FantasyTeamID).charAt(0) }}</span>
-                  </span>
-                  <span class="weekly-recap-award-identity">
-                    <strong>{{ awardOwnerName(winner.FantasyTeamID) }}</strong>
-                    <span class="weekly-recap-award-team" *ngIf="awardTeamName(winner.FantasyTeamID) as teamName">{{ teamName }}</span>
-                  </span>
-                </button>
-                <strong class="weekly-recap-award-value">{{ formatFantasyPoints(winner.PotentialPoints) }}<span class="weekly-recap-award-unit"> pts</span></strong>
-                <span class="weekly-recap-award-extra">Highest roster potential</span>
-              </div>
-              <div *ngIf="awards.BestManager.length === 0" class="weekly-recap-award-empty">No eligible winner</div>
-            </article>
-          </div>
-        </div>
-      </div>
-    </ng-container>
-
-    <ng-template #recapUnavailable>
-      <div class="weekly-recap-empty">Completed-week recap data is not available yet.</div>
-    </ng-template>
+    <app-week-recap-content
+      [recap]="weeklyRecap"
+      [teams]="league.Teams"
+      [nflTeams]="nflTeams"
+    ></app-week-recap-content>
   </section>
 </ng-template>
 

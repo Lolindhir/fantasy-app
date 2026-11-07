@@ -55,7 +55,7 @@ export class App implements OnInit {
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe(() => {
 
-        switch (this.router.url) {
+        switch (this.router.url.split('?')[0]) {
 
           case '/':
             this.currentPage = 'Overview';
@@ -67,6 +67,10 @@ export class App implements OnInit {
 
           case '/standings':
             this.currentPage = 'Standings';
+            break;
+
+          case '/weeks':
+            this.currentPage = 'Weeks';
             break;
 
           case '/players':

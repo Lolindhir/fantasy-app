@@ -1,3 +1,4 @@
+import { GlyphComponent } from '../../shared/components/glyph/glyph';
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
@@ -124,6 +125,7 @@ interface SeasonLeaderCard {
   selector: 'app-overview',
   imports: [
     CommonModule,
+    GlyphComponent,
     RouterLink,
     SharedMaterialImports,
     SeasonResultsComponent,
