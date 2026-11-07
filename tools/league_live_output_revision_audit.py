@@ -114,7 +114,11 @@ class Snapshot:
                 not 1 <= blob["size"] <= 262144):
             raise SnapshotError("missing-or-invalid-canonical-blob:" + path)
         try:
-            data = base64.b64decode(blob["content"], validate=True)
+            # GitHub's Git Blobs API legitimately line-wraps base64 content.
+            # Normalize only CRLF/LF separators; strict base64 validation and
+            # the independently recomputed Git blob SHA-1 remain mandatory.
+            encoded = blob["content"].replace("\r\n", "\n").replace("\n", "")
+            data = base64.b64decode(encoded, validate=True)
         except (ValueError, TypeError) as exc:
             raise SnapshotError("canonical-blob-unreadable:" + path) from exc
         if len(data) != blob["size"] or hashlib.sha1(
