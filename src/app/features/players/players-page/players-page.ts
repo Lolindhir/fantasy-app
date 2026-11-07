@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { DataService } from '../../../core/services/data.service';
 import type { Player } from '../../../core/models/fantasy.models';
 import { SharedMaterialImports } from '../../../shared/shared-material-imports';
+import type { PlayerWeekProjectionView } from '../../../shared/utils/player-week-projection.util';
 import { PlayerListColumn, PlayerListComponent } from '../../../shared/components/player-list/player-list';
 import { comparePlayersByDepthChart } from '../../../shared/utils/player-sort.util';
 import { isPlayerInjured } from '../../../shared/utils/team-injury-report.util';
@@ -65,6 +66,7 @@ export class PlayersPageComponent implements OnInit {
   // Default: Salary
   sortOption: PlayerSortOption = 'salaryDesc';
 
+  weekProjections: ReadonlyMap<string, PlayerWeekProjectionView> | null = null;
   showProjectedSalary = false;
   showProjectedMarket = false;
 
@@ -81,6 +83,7 @@ export class PlayersPageComponent implements OnInit {
     'team',
     'salary',
     'salaryProjected',
+    'weekProjection',
     'dynamicStat',
     'fantasyTeam'
   ];
@@ -100,6 +103,10 @@ export class PlayersPageComponent implements OnInit {
     this.dataService.getLeagueWithPlayers(['Salary']).subscribe(({ players }) => {
       this.allPlayers = players;
       this.applyFilters();
+    });
+
+    this.dataService.getPlayerWeekProjections().subscribe(projections => {
+      this.weekProjections = projections;
     });
 
     this.dataService.getLatestTimestamp().subscribe(ts => {
@@ -132,6 +139,7 @@ export class PlayersPageComponent implements OnInit {
         'team',
         'salaryProjected',
         'salary',
+        'weekProjection',
         'dynamicStat',
         'fantasyTeam'
       ];

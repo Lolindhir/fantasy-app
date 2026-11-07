@@ -6,10 +6,18 @@ import {
 
 describe('roster column preferences', () => {
   it('uses complete desktop and performance mobile defaults', () => {
-    expect(defaultColumns('desktop')).toEqual(['ppg', 'ranking', 'depth', 'age', 'salary', 'salaryProjected']);
+    expect(defaultColumns('desktop')).toEqual(['ppg', 'weekProjection', 'ranking', 'depth', 'age', 'salary', 'salaryProjected']);
     expect(defaultColumns('mobile')).toEqual(['ppg', 'ranking', 'depth', 'age']);
     expect(selectedPreset(defaultColumns('desktop'))).toBe('all');
     expect(selectedPreset(defaultColumns('mobile'))).toBe('performance');
+  });
+
+  it('shows the weekly projection by default on desktop only and keeps it selectable on mobile', () => {
+    expect(defaultColumns('desktop')).toContain('weekProjection');
+    expect(defaultColumns('mobile')).not.toContain('weekProjection');
+    expect(toggleMetric(defaultColumns('mobile'), 'weekProjection', true))
+      .toEqual(['ppg', 'weekProjection', 'ranking', 'depth', 'age']);
+    expect(normalizeColumns(['salary', 'weekProjection'], 'mobile')).toEqual(['weekProjection', 'salary']);
   });
 
   it('canonicalizes selection order, rejects unknown fields and avoids an empty metric list', () => {

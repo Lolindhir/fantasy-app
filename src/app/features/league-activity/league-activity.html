@@ -109,6 +109,8 @@
             <div class="date-cards">
               @for (transaction of group.Transactions; track transaction.Season + '_' + transaction.TransactionID) {
                 <app-transaction-card
+                  [attr.id]="'move-' + transaction.TransactionID"
+                  [class.move-linked]="isLinkedTransaction(transaction.TransactionID)"
                   [transaction]="transaction"
                   [category]="moveCategory(transaction)"
                   density="compact"

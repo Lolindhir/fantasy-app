@@ -44,6 +44,7 @@ import { ChampionBadgeComponent } from '../champion-badge/champion-badge';
 import { DecisionWindowContextPopoverComponent } from '../decision-window-context-popover/decision-window-context-popover';
 import { DraftPickContextTriggerComponent } from '../draft-pick-context/draft-pick-context-trigger';
 import type { DraftPickContext, DraftPickOwnerDisplay } from '../draft-pick-context/draft-pick-context.models';
+import type { PlayerWeekProjectionView } from '../../utils/player-week-projection.util';
 import { PlayerListComponent, type PlayerListColumn } from '../player-list/player-list';
 import { SalaryAssetLeaderboardComponent } from '../salary-asset-leaderboard/salary-asset-leaderboard';
 import { SalaryHealthIndicatorComponent } from '../salary-health-indicator/salary-health-indicator';
@@ -142,6 +143,7 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   rosterColumnsDesktop: RosterMetric[] = defaultColumns('desktop');
   rosterColumnsMobile: RosterMetric[] = defaultColumns('mobile');
   showRosterColumnPicker = false;
+  weekProjections: ReadonlyMap<string, PlayerWeekProjectionView> | null = null;
   selectedTabIndex = this.data.initialTab === 'lineup' && this.decisionWindowPhaseActive ? 1 : 0;
   isMobile = window.innerWidth <= 600;
   historicalDraftGroups: HistoricalDraftGroup[] = [];
@@ -160,6 +162,9 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.restoreRosterColumnSettings();
     this.loadDraftHistory();
+    this.subscriptions.add(this.dataService.getPlayerWeekProjections().subscribe(projections => {
+      this.weekProjections = projections;
+    }));
     if (!this.decisionWindowPhaseActive) return;
 
     this.startMinuteAlignedClock();

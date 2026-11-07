@@ -24,9 +24,33 @@
 <mat-dialog-content class="dialog-content">
 
   <!-- 🏈 Overview Tab -->
-  <mat-tab-group>
+  <mat-tab-group (selectedTabChange)="onTabChange($event)">
     <mat-tab label="Overview">
       <div class="dialog-overview">
+
+        <section class="week-card" aria-label="This week">
+          <header class="week-card__header">
+            <h3>This Week</h3>
+            <span *ngIf="weekProjection" class="week-card__week">Week {{ weekProjection.week }}</span>
+          </header>
+          <div class="week-card__body">
+            <div class="week-card__block">
+              <span class="week-card__label">Projection</span>
+              <span class="week-card__value" [class.week-card__value--missing]="!weekProjection?.projection">
+                {{ weekProjection?.projectedText ?? '–' }}
+              </span>
+              <app-player-projection *ngIf="weekProjection?.projection as projection"
+                [view]="projection" size="large" [showValue]="false"></app-player-projection>
+              <span *ngIf="weekProjection?.levelLabel" class="week-card__note">{{ weekProjection?.levelLabel }} range</span>
+              <span *ngIf="!weekProjection?.projection" class="week-card__note">No projection available</span>
+            </div>
+            <div *ngIf="weekProjection?.result as result" class="week-card__block">
+              <span class="week-card__label">{{ result.state === 'live' ? 'Live' : 'Result' }}</span>
+              <span class="week-card__value">{{ result.pointsText }}</span>
+              <span class="week-card__note">fantasy points</span>
+            </div>
+          </div>
+        </section>
 
         <div class="dialog-info">
 
@@ -213,6 +237,67 @@
           <tr mat-header-row *matHeaderRowDef="['season','total','avgGame','games']"></tr>
           <tr mat-row *matRowDef="let row; columns: ['season','total','avgGame','games']"></tr>
         </table>
+      </div>
+    </mat-tab>
+
+    <!-- 🧭 Journey Tab -->
+    <ng-template #journeyTeam let-team>
+      <span class="journey-team" [title]="team.Team">
+        <img *ngIf="team.Avatar" [src]="team.Avatar" alt="" width="20" height="20" />
+        <span>{{ team.Team }}</span>
+      </span>
+    </ng-template>
+    <mat-tab label="Journey">
+      <div class="journey">
+        @switch (journeyState) {
+          @case ('error') {
+            <p class="journey-state">The league history could not be loaded.</p>
+          }
+          @case ('ready') {
+            @if (journey && journey.teams.length) {
+              <div class="journey-teams" aria-label="Fantasy teams">
+                <span class="label">Fantasy teams</span>
+                @for (team of journey.teams; track team.TeamID) {
+                  <ng-container *ngTemplateOutlet="journeyTeam; context: { $implicit: team }"></ng-container>
+                }
+              </div>
+            }
+            @if (journey && journey.events.length) {
+              <ol class="journey-timeline">
+                @for (event of journey.events; track $index) {
+                  <li class="journey-event journey-event--{{ event.kind }}">
+                    <mat-icon class="journey-icon" aria-hidden="true">{{ journeyIcon(event) }}</mat-icon>
+                    <div class="journey-body">
+                      <div class="journey-title">
+                        <strong>{{ journeyTitle(event) }}</strong>
+                        @if (event.kind === 'traded') {
+                          @if (event.fromTeam) { <ng-container *ngTemplateOutlet="journeyTeam; context: { $implicit: event.fromTeam }"></ng-container> } @else { <span>Unknown team</span> }
+                          <mat-icon class="journey-arrow" aria-label="to">arrow_forward</mat-icon>
+                          @if (event.team) { <ng-container *ngTemplateOutlet="journeyTeam; context: { $implicit: event.team }"></ng-container> } @else { <span>Unknown team</span> }
+                        } @else {
+                          <span class="journey-by">by</span>
+                          @if (event.team) { <ng-container *ngTemplateOutlet="journeyTeam; context: { $implicit: event.team }"></ng-container> } @else { <span>Unknown team</span> }
+                        }
+                      </div>
+                      <div class="journey-meta">
+                        <span>{{ event.dateApproximate ? event.season : (event.at | date:'mediumDate') }}</span>
+                        <span>{{ event.detail }}</span>
+                        @if (event.transactionID) {
+                          <button type="button" class="journey-link" (click)="openMove(event)">View in Moves</button>
+                        }
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ol>
+            } @else {
+              <p class="journey-state">No league history for this player yet.</p>
+            }
+          }
+          @default {
+            <p class="journey-state">Loading league history…</p>
+          }
+        }
       </div>
     </mat-tab>
 
