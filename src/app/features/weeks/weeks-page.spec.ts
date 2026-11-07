@@ -4,6 +4,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { of, throwError } from 'rxjs';
 
 import type { FantasyTeam } from '../../core/models/league.models';
+import type { FantasyGameContextReadModel, HistoricalFantasyGameContextSeason } from '../../core/models/fantasy-game-context.models';
 import type { MatchupsReadModel } from '../../core/models/matchup.models';
 import type { WeeklyRecapsReadModel } from '../../core/models/weekly-recap.models';
 import { DataService, type LeagueWithPlayers } from '../../core/services/data.service';
@@ -102,7 +103,8 @@ describe('WeeksPageComponent', () => {
       'getPastMatchupsRaw',
       'getPastWeeklyRecapsRaw',
       'getFantasyGameContext',
-      'getPastFantasyGameContextRaw'
+      'getPastFantasyGameContextRaw',
+      'getFantasyGameContextHistory'
     ]);
     dataService.getLeagueWithPlayers.and.returnValue(of({
       league: { Season: '2026' },
@@ -122,6 +124,7 @@ describe('WeeksPageComponent', () => {
     ])));
     dataService.getPastWeeklyRecapsRaw.and.returnValue(of(recaps('2025', [1])));
     dataService.getFantasyGameContext.and.returnValue(throwError(() => new Error('missing')));
+    dataService.getFantasyGameContextHistory.and.returnValue(throwError(() => new Error('missing')));
     dataService.getPastFantasyGameContextRaw.and.returnValue(throwError(() => new Error('missing')));
   });
 
@@ -200,6 +203,20 @@ describe('WeeksPageComponent', () => {
 
     const row = host.querySelector('.week-matchup') as HTMLButtonElement;
     expect(row.disabled).toBeTrue();
+  });
+
+  it('enables the matchup detail for a finished week of the running season from the history file', async () => {
+    const context = (week: number) => ({
+      Season: '2026',
+      Week: week,
+      FantasyMatchups: [{ FantasyMatchupID: `2026-${week}` }]
+    }) as unknown as FantasyGameContextReadModel;
+    dataService.getFantasyGameContext.and.returnValue(of(context(3)));
+    dataService.getFantasyGameContextHistory.and.returnValue(of({ Weeks: [context(2)] } as unknown as HistoricalFantasyGameContextSeason));
+    const host = await create();
+
+    // Default week is the last settled week (2), which only the history file covers.
+    expect((host.querySelector('.week-matchup') as HTMLButtonElement).disabled).toBeFalse();
   });
 
   it('shows the season grid with a playoff group and opens a week from its header', async () => {

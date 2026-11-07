@@ -200,6 +200,6 @@ export interface HistoricalFantasyGameContextSeason {
   SchemaVersion: number;
   LeagueID: string | number;
   Season: string;
-  ScoringState: 'final';
+  ScoringState: 'final' | 'partial';
   Weeks: FantasyGameContextReadModel[];
 }

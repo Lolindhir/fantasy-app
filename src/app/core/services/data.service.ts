@@ -337,6 +337,10 @@ export class DataService {
     return this.dataApiService.getPastDraftsRaw(path);
   }
 
+  getFantasyGameContextHistory(): Observable<HistoricalFantasyGameContextSeason> {
+    return this.dataApiService.getFantasyGameContextHistoryRaw();
+  }
+
   getPastFantasyGameContextRaw(path: string): Observable<HistoricalFantasyGameContextSeason> {
     return this.dataApiService.getPastFantasyGameContextRaw(path);
   }
