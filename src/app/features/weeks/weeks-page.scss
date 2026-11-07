@@ -136,11 +136,31 @@
   background: #f8fafc;
 }
 
+/* A tappable row is one target: hover and press feedback plus a "Details" hint. */
+.week-matchup:not(:disabled):hover {
+  border-color: rgba(59, 130, 246, 0.55);
+}
+
+.week-matchup:not(:disabled):active {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+.week-matchup-chevron {
+  color: #3b82f6;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .week-matchup-main {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
   gap: 10px;
+}
+
+.week-matchup-main--openable {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
 }
 
 .week-matchup-side {

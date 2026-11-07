@@ -81,9 +81,9 @@
               [class.week-matchup--open]="matchup.state === 'open'"
               [class.week-matchup--static]="!canOpenMatchup(matchup.matchupID)"
               [disabled]="!canOpenMatchup(matchup.matchupID)"
-              [attr.aria-label]="'Open matchup details'"
+              [attr.aria-label]="canOpenMatchup(matchup.matchupID) ? 'Open matchup details' : null"
               (click)="openMatchup(matchup.matchupID)">
-              <span class="week-matchup-main">
+              <span class="week-matchup-main" [class.week-matchup-main--openable]="canOpenMatchup(matchup.matchupID)">
                 @for (participant of matchup.participants; track participant.teamID; let last = $last) {
                   <span
                     class="week-matchup-side"
@@ -95,11 +95,13 @@
                           class="week-identity week-identity--desktop"
                           [team]="participant.team"
                           [elements]="identityElements"
+                          [interactive]="!canOpenMatchup(matchup.matchupID)"
                           size="small"></app-team-identity>
                         <app-team-identity
                           class="week-identity week-identity--mobile"
                           [team]="participant.team"
                           [elements]="compactIdentityElements"
+                          [interactive]="!canOpenMatchup(matchup.matchupID)"
                           size="small"></app-team-identity>
                       } @else {
                         <span class="week-team-fallback">{{ teamLabel(participant.teamID, null) }}</span>
@@ -107,6 +109,9 @@
                     </span>
                     <strong class="week-matchup-score">{{ formatPoints(participant.points) }}</strong>
                   </span>
+                }
+                @if (canOpenMatchup(matchup.matchupID)) {
+                  <span class="week-matchup-chevron" aria-hidden="true">›</span>
                 }
               </span>
               @if (matchup.isTie || matchup.state !== 'final') {
