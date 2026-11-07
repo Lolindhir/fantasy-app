@@ -17,7 +17,7 @@
     }
 
     @if (room.banners.length) {
-      <h4 class="trophy-room__heading">Banners</h4>
+      <hr class="trophy-room__divider" />
       <div class="trophy-room__banners">
         @for (banner of room.banners; track banner.season) {
           <app-achievement-banner
@@ -35,7 +35,7 @@
     }
 
     @if (room.plaques.length) {
-      <h4 class="trophy-room__heading">Regular Season titles</h4>
+      <hr class="trophy-room__divider" />
       <div class="trophy-room__plaques">
         @for (plaque of room.plaques; track plaque.season) {
           <app-achievement-plaque

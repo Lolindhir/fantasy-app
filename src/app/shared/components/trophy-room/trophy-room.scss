@@ -34,11 +34,25 @@
 .trophy-ring img { width: 56px; height: 56px; object-fit: contain; }
 .trophy-ring strong { font-size: 13px; font-variant-numeric: tabular-nums; }
 
+.trophy-room__divider {
+  margin: 16px 0 12px;
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+}
+
 .trophy-room__banners {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(104px, 118px));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  align-items: start;
+  align-items: flex-start;
+}
+
+.trophy-room__banners app-achievement-banner { width: 118px; flex: 0 0 auto; }
+
+/* Mobile: keep banners small so several are visible at once. */
+@media (max-width: 700px) {
+  .trophy-room__banners { gap: 6px; }
+  .trophy-room__banners app-achievement-banner { zoom: 0.6; }
 }
 
 .trophy-room__plaques {
@@ -59,3 +73,4 @@
 .trophy-ring-detail h3 { margin: 6px 0 0; }
 .trophy-ring-detail p { margin: 0; color: #6b7280; }
 .trophy-ring-detail__close { margin-top: 8px; padding: 6px 16px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font: inherit; cursor: pointer; }
+.eyebrow + .trophy-room__divider { display: none; }
