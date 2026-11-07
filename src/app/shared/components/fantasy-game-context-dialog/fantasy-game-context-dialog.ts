@@ -186,6 +186,8 @@ export interface FantasyGameContextDialogData {
   league: League;
   gameId?: string;
   fantasyMatchupId?: string;
+  /** Optional all-time head-to-head label such as "ABC 3-2 XYZ". */
+  headToHead?: string | null;
 }
 
 @Component({

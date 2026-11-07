@@ -224,9 +224,11 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     expect(gameSpy).not.toHaveBeenCalled();
   });
 
-  it('shows the all-time head-to-head record of the displayed matchup', () => {
-    const h2h = (fixture.nativeElement as HTMLElement).querySelector('.matchup-h2h');
-    expect(h2h?.textContent?.replace(/\s+/g, ' ').trim()).toBe('All-timeLFT 1-0 RGT');
+  it('keeps the all-time head-to-head out of the card and hands it to the matchup dialog', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelector('.matchup-h2h')).toBeNull();
+    const matchup = component.matchups[0];
+    expect(component.headToHead(matchup)).toBe('LFT 1-0 RGT');
   });
 
   it('renders non-zero scores in one neutral shared score plate without inferring Final', () => {
