@@ -990,8 +990,12 @@ def historical_decision_facts(
     return {"DecisionWindows": windows, "PlayerLockFacts": locks}
 
 
-def resolve_historical_season(repo_root: Path, league_id: str, season: int) -> dict[str, Any]:
+def resolve_historical_season(
+    repo_root: Path, league_id: str, season: int, max_week: int | None = None, scoring_state: str = "final"
+) -> dict[str, Any]:
     """The FantasyGameContext history document of a completed season (SchemaVersion 1, ScoringState final).
+
+    ``max_week`` limits the document to the finished weeks of a running season (see ``resolve_current_season_history``).
 
     Raises MatchupContextError when the canonical evidence (league source, matchups, schedule, weekly rosters) is incomplete.
     """
@@ -1012,6 +1016,8 @@ def resolve_historical_season(repo_root: Path, league_id: str, season: int) -> d
         last_week = to_int(value_of(value_of(league, "Settings"), "last_scored_leg"))
     if last_week <= 0:
         raise MatchupContextError(f"Historical FantasyGameContext {season} cannot resolve the final fantasy week.")
+    if max_week is not None:
+        last_week = min(last_week, max_week)
     try:
         schedule = build_schedule(repo_root, season, HISTORY_GAME_TYPES)
     except ScheduleArchiveError as exc:
@@ -1030,7 +1036,21 @@ def resolve_historical_season(repo_root: Path, league_id: str, season: int) -> d
 
         decision = historical_decision_facts(week, schedule, facts, weekly_assignment_map(repo_root, season, week), team_key)
         weeks.append(build_fantasy_game_context(league_id, str(season), week, decision, facts, schedule, True, team_key, parse_instant_text))
-    return {"SchemaVersion": 1, "LeagueID": league_id, "Season": str(season), "ScoringState": "final", "Weeks": weeks}
+    return {"SchemaVersion": 1, "LeagueID": league_id, "Season": str(season), "ScoringState": scoring_state, "Weeks": weeks}
+
+
+def resolve_current_season_history(repo_root: Path, league_id: str, season: int, at_utc: Any) -> dict[str, Any]:
+    """FantasyGameContext history of the finished weeks (up to LeagueScoredWeek) of the running season.
+
+    Same document shape as the history of a completed season, but ScoringState is ``partial`` because the season is still
+    running. Weeks come from canonical matchups and weekly rosters like the history of completed seasons.
+    """
+    from .league_lifecycle import resolve_lifecycle
+
+    if at_utc.tzinfo is None:
+        raise MatchupContextError("AtUtc must be timezone-aware")
+    scored = int(resolve_lifecycle(repo_root, league_id, season, at_utc)["FinalScoredWeek"])
+    return resolve_historical_season(repo_root, league_id, season, max_week=scored, scoring_state="partial")
 
 
 def resolve_current_context(repo_root: Path, league_id: str, season: int, at_utc: Any) -> dict[str, Any] | None:
@@ -1081,5 +1101,5 @@ def resolve_current_context(repo_root: Path, league_id: str, season: int, at_utc
 __all__ = [
     "add_market_context", "add_preview_context", "add_relevance_context", "add_score_context", "add_weekly_watch_context",
     "build_fantasy_game_context", "current_matchup_facts", "outcome_state", "paired_matchup_facts", "point_map",
-    "resolve_current_context", "resolve_historical_season", "canonical_matchup_facts", "historical_decision_facts",
+    "resolve_current_context", "resolve_current_season_history", "resolve_historical_season", "canonical_matchup_facts", "historical_decision_facts",
 ]

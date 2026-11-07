@@ -83,6 +83,7 @@ outputs:
   matchups: The season Matchups object exactly as in public/data/Matchups.json (all weeks with pairings, nullable effective scores, FantasyMatchupID, CompletionState, results, stage, first kickoff, Summary).
   fantasyGameContext: The FantasyGameContext of the matchup week exactly as in public/data/FantasyGameContext.json (schema 6; games with relevance and impact per team, matchup view with counterfactual, preview, MustWatch ranking, final scores, market).
   projections: The team projections exactly as in public/data/MatchupProjections.json (ProjectedFinalScore and 50/80/90 percent ranges per FantasyMatchupID and team; method Id and version from the model).
+  currentSeasonHistory: 'Finished weeks of the running season (weeks up to LeagueScoredWeek) are published as public/data/FantasyGameContextHistory.json (same document shape as the history of a completed season, ScoringState partial, weekly rosters instead of Decision Windows). It is deliberately not under past_seasons, which is cached long-term and excluded from build cache busting. Written by tools/matchup_context_app_publish.py write --scope current in League Live, only on a semantic difference; an incomplete week keeps the last file.'
   history: For a completed season the same Matchups and FantasyGameContext objects as the history files past_seasons/Matchups_<season>.json and past_seasons/FantasyGameContext_<season>.json (weekly rosters instead of Decision Windows).
   asOfUtc: Additive; the App delivery drops it so that unchanged inputs keep a semantic no-op.
 
@@ -94,7 +95,7 @@ projectionModel:
 
 delivery:
   generator: tools/matchup_context_app_publish.py write
-  files: [public/data/Matchups.json, public/data/FantasyGameContext.json, public/data/MatchupProjections.json, public/data/past_seasons/Matchups/Matchups_<season>.json, public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json]
+  files: [public/data/Matchups.json, public/data/FantasyGameContext.json, public/data/MatchupProjections.json, public/data/past_seasons/Matchups/Matchups_<season>.json, public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json, public/data/FantasyGameContextHistory.json]
   rule: Written only on a semantic difference; an existing file is never an input; incomplete evidence keeps the last file and warns (Save-HistoricalReadModelIfChanged semantics, Issue #1189).
   orderInLeagueLive: PlayerWeekFantasy refresh, then this generator, then RequestLeague/RequestLeaguePublication (products before consumers).
 

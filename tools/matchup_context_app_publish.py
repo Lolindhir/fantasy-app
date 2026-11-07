@@ -6,6 +6,7 @@ fantasy_game_context.py); nothing is read from public/data:
 
   public/data/Matchups.json                                   season Matchups model of the current season
   public/data/FantasyGameContext.json                         FantasyGameContext of the current lineup week
+  public/data/FantasyGameContextHistory.json                  finished weeks of the current season (ScoringState partial)
   public/data/past_seasons/Matchups/Matchups_<season>.json    completed earlier seasons
   public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json   history of earlier seasons
 
@@ -33,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from league_metadata import data_meta_root, default_league_id  # noqa: E402
 
 from data_roots import DATA_SOURCE_ROOT  # noqa: E402
-from derived_data_lib.fantasy_game_context import resolve_current_context, resolve_historical_season  # noqa: E402
+from derived_data_lib.fantasy_game_context import resolve_current_context, resolve_current_season_history, resolve_historical_season  # noqa: E402
 from derived_data_lib.league_lifecycle import LifecycleError  # noqa: E402
 from derived_data_lib.matchup_context import MatchupContextError, resolve_matchups  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest  # noqa: E402
@@ -124,6 +125,12 @@ def write_current(repo_root: Path, league_id: str, writer: Writer, at_utc: datet
     context = _guarded("FantasyGameContext", lambda: resolve_current_context(repo_root, league_id, season, at_utc))
     if context is not None:
         writer.put("FantasyGameContext.json", context, "FantasyGameContext")
+    # Not under past_seasons: that tree is cached long-term, while this file changes with every finished week.
+    finished = _guarded(
+        "FantasyGameContextHistory", lambda: resolve_current_season_history(repo_root, league_id, season, at_utc)
+    )
+    if finished is not None:
+        writer.put("FantasyGameContextHistory.json", finished)
 
 
 def write_history(repo_root: Path, league_id: str, writer: Writer, at_utc: datetime) -> None:
