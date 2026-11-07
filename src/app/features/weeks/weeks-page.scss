@@ -104,50 +104,67 @@
 
 .week-scoreboards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 8px;
   margin: 0 5px;
 }
 
+/* One compact row per matchup; the whole row opens the matchup detail. */
 .week-matchup {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
+  gap: 2px;
+  width: 100%;
+  padding: 6px 10px;
   border: 1px solid var(--weekly-card-border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: #fff;
   box-shadow: var(--weekly-card-shadow);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.week-matchup--static,
+.week-matchup:disabled {
+  cursor: default;
+  color: inherit;
 }
 
 .week-matchup--open {
   background: #f8fafc;
 }
 
-.week-matchup-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.week-matchup-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
 }
 
-.week-matchup-row {
+.week-matchup-side {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 4px 8px;
-  border-left: 3px solid transparent;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 6px;
   border-radius: 8px;
 }
 
-/* Winner is a local tint and accent, not a recolored score (FDS-006). */
-.week-matchup-row--winner {
-  border-left-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.07);
+.week-matchup-side--right {
+  flex-direction: row-reverse;
+}
+
+/* Winner is a local tint, not a recolored score (FDS-006). */
+.week-matchup-side--winner {
+  background: rgba(59, 130, 246, 0.09);
 }
 
 .week-matchup-team {
   min-width: 0;
+  overflow: hidden;
 }
 
 .week-identity--mobile { display: none; }
@@ -155,18 +172,18 @@
 .week-matchup-score {
   flex: 0 0 auto;
   color: var(--weekly-text);
-  font-size: 1.25rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
   font-weight: 900;
 }
 
 .week-matchup-state {
   align-self: flex-start;
-  padding: 2px 8px;
+  padding: 1px 7px;
   border-radius: 999px;
   background: #f1f5f9;
   color: #64748b;
-  font-size: 0.58rem;
+  font-size: 0.56rem;
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -220,25 +237,26 @@
   text-transform: uppercase;
 }
 
-.season-grid-playoff-head {
-  color: var(--weekly-accent) !important;
-}
-
-/* Fixed team column keeps the identity visible while the weeks scroll. */
-.season-grid-team-col {
+/* Fixed week column keeps the week visible while the teams scroll sideways. */
+.season-grid-week-col {
   position: sticky;
   left: 0;
   z-index: 1;
-  min-width: 56px;
+  min-width: 44px;
   background: #fff;
-  text-align: left !important;
   box-shadow: 1px 0 0 #e2e8f0;
 }
 
-.season-grid thead .season-grid-team-col {
+.season-grid thead .season-grid-week-col {
   z-index: 2;
   background: #f8fafc;
 }
+
+.season-grid-team-head {
+  min-width: 64px;
+}
+
+.season-grid-head-logo { display: none; }
 
 .season-grid-week-button {
   padding: 2px 6px;
@@ -250,9 +268,18 @@
   cursor: pointer;
 }
 
-.season-grid-week--playoff-start,
-.season-grid-cell--playoff-start {
-  border-left: 2px solid rgba(124, 58, 237, 0.55);
+.season-grid-divider th {
+  padding: 3px 8px;
+  background: rgba(124, 58, 237, 0.08);
+  color: var(--weekly-accent);
+  font-size: 0.6rem;
+  font-weight: 850;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.season-grid-row--playoff .season-grid-week-col {
+  box-shadow: inset 3px 0 0 rgba(124, 58, 237, 0.55), 1px 0 0 #e2e8f0;
 }
 
 .season-grid-cell {
@@ -293,5 +320,43 @@
 
   .week-scoreboards {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .week-matchup-score {
+    font-size: 0.95rem;
+  }
+
+  /* Compact season grid: six teams fit a phone; larger leagues scroll sideways. */
+  .season-grid th,
+  .season-grid td {
+    padding: 5px 2px;
+  }
+
+  .season-grid-week-col {
+    min-width: 30px;
+  }
+
+  .season-grid-team-head {
+    min-width: 0;
+  }
+
+  .season-grid-head-full { display: none; }
+  .season-grid-head-logo { display: inline-block; }
+
+  .season-grid-cell {
+    min-width: 0;
+  }
+
+  .season-grid-points {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+
+  .season-grid-outcome {
+    display: block;
+    margin: 0;
+    font-size: 0.5rem;
+    line-height: 1;
   }
 }

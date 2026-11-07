@@ -80,7 +80,7 @@ describe('weeks view util', () => {
       const options = buildWeeksSeasonOptions(index, '2026');
 
       expect(options.map(option => option.season)).toEqual(['2026', '2025', '2024']);
-      expect(options[0]).toEqual({ season: '2026', isCurrent: true, matchupsPath: null, recapsPath: null });
+      expect(options[0]).toEqual({ season: '2026', isCurrent: true, matchupsPath: null, recapsPath: null, contextPath: null });
       expect(options[1].recapsPath).toBeNull();
       expect(options[2].recapsPath).toBe('data/r24.json');
     });

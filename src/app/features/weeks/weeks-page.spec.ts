@@ -100,7 +100,9 @@ describe('WeeksPageComponent', () => {
       'getMatchups',
       'getWeeklyRecaps',
       'getPastMatchupsRaw',
-      'getPastWeeklyRecapsRaw'
+      'getPastWeeklyRecapsRaw',
+      'getFantasyGameContext',
+      'getPastFantasyGameContextRaw'
     ]);
     dataService.getLeagueWithPlayers.and.returnValue(of({
       league: { Season: '2026' },
@@ -119,6 +121,8 @@ describe('WeeksPageComponent', () => {
       { week: 2, stage: 'playoffs', state: 'final' }
     ])));
     dataService.getPastWeeklyRecapsRaw.and.returnValue(of(recaps('2025', [1])));
+    dataService.getFantasyGameContext.and.returnValue(throwError(() => new Error('missing')));
+    dataService.getPastFantasyGameContextRaw.and.returnValue(throwError(() => new Error('missing')));
   });
 
   it('opens the last completed week of the current season with scores and a recap', async () => {
@@ -191,14 +195,23 @@ describe('WeeksPageComponent', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('No matchup data is available for 2026.');
   });
 
+  it('keeps the compact matchup row inert while no matchup detail is available', async () => {
+    const host = await create();
+
+    const row = host.querySelector('.week-matchup') as HTMLButtonElement;
+    expect(row.disabled).toBeTrue();
+  });
+
   it('shows the season grid with a playoff group and opens a week from its header', async () => {
     const host = await create({ season: '2025' });
 
     (Array.from(host.querySelectorAll('.activity-tab')).find(tab => tab.textContent?.trim() === 'Season') as HTMLElement).click();
     fixture.detectChanges();
 
-    expect(host.querySelectorAll('.season-grid tbody tr').length).toBe(2);
-    expect(host.querySelector('.season-grid-playoff-head')?.textContent).toContain('Playoffs');
+    // Teams are columns, weeks are rows: two weeks plus the playoff divider row.
+    expect(host.querySelectorAll('.season-grid tbody tr').length).toBe(3);
+    expect(host.querySelectorAll('.season-grid-team-head').length).toBe(2);
+    expect(host.querySelector('.season-grid-divider')?.textContent).toContain('Playoffs');
     expect(host.querySelectorAll('.season-grid-cell--high').length).toBeGreaterThan(0);
 
     (host.querySelectorAll('.season-grid-week-button')[1] as HTMLElement).click();

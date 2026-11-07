@@ -75,34 +75,46 @@
 
         <div class="week-scoreboards">
           @for (matchup of scoreboard(); track matchup.matchupID) {
-            <article class="week-matchup" [class.week-matchup--open]="matchup.state === 'open'">
-              <div class="week-matchup-rows">
-                @for (participant of matchup.participants; track participant.teamID) {
-                  <div class="week-matchup-row" [class.week-matchup-row--winner]="participant.isWinner">
+            <button
+              type="button"
+              class="week-matchup"
+              [class.week-matchup--open]="matchup.state === 'open'"
+              [class.week-matchup--static]="!canOpenMatchup(matchup.matchupID)"
+              [disabled]="!canOpenMatchup(matchup.matchupID)"
+              [attr.aria-label]="'Open matchup details'"
+              (click)="openMatchup(matchup.matchupID)">
+              <span class="week-matchup-main">
+                @for (participant of matchup.participants; track participant.teamID; let last = $last) {
+                  <span
+                    class="week-matchup-side"
+                    [class.week-matchup-side--right]="last"
+                    [class.week-matchup-side--winner]="participant.isWinner">
                     <span class="week-matchup-team">
                       @if (participant.team) {
                         <app-team-identity
                           class="week-identity week-identity--desktop"
                           [team]="participant.team"
                           [elements]="identityElements"
-                          size="medium"></app-team-identity>
+                          size="small"></app-team-identity>
                         <app-team-identity
                           class="week-identity week-identity--mobile"
                           [team]="participant.team"
                           [elements]="compactIdentityElements"
-                          size="medium"></app-team-identity>
+                          size="small"></app-team-identity>
                       } @else {
                         <span class="week-team-fallback">{{ teamLabel(participant.teamID, null) }}</span>
                       }
                     </span>
                     <strong class="week-matchup-score">{{ formatPoints(participant.points) }}</strong>
-                  </div>
+                  </span>
                 }
-              </div>
-              <span class="week-matchup-state" [ngClass]="'week-matchup-state--' + matchup.state">
-                {{ matchup.isTie ? 'Final · Tie' : stateLabel(matchup.state) }}
               </span>
-            </article>
+              @if (matchup.isTie || matchup.state !== 'final') {
+                <span class="week-matchup-state" [ngClass]="'week-matchup-state--' + matchup.state">
+                  {{ matchup.isTie ? 'Final · Tie' : stateLabel(matchup.state) }}
+                </span>
+              }
+            </button>
           }
         </div>
 
@@ -127,46 +139,40 @@
           <div class="season-grid-scroll">
             <table class="season-grid">
               <thead>
-                <tr class="season-grid-groups">
-                  <th class="season-grid-team-col" rowspan="2" scope="col">Team</th>
-                  @if (grid.regularWeekCount > 0) {
-                    <th scope="colgroup" [attr.colspan]="grid.regularWeekCount">Regular season</th>
-                  }
-                  @if (grid.playoffWeekCount > 0) {
-                    <th scope="colgroup" class="season-grid-playoff-head" [attr.colspan]="grid.playoffWeekCount">Playoffs</th>
-                  }
-                </tr>
                 <tr>
-                  @for (week of grid.weeks; track week.week) {
-                    <th
-                      scope="col"
-                      class="season-grid-week"
-                      [class.season-grid-week--playoff-start]="week.week === firstPlayoffWeek()"
-                      [class.season-grid-week--playoff]="week.isPlayoff">
-                      <button type="button" class="season-grid-week-button" [attr.aria-label]="'Open week ' + week.week" (click)="openWeek(week.week)">
-                        {{ week.week }}
-                      </button>
+                  <th class="season-grid-week-col" scope="col">Week</th>
+                  @for (row of grid.rows; track row.teamID) {
+                    <th scope="col" class="season-grid-team-head">
+                      @if (row.team) {
+                        <app-team-identity class="season-grid-head-full" [team]="row.team" [elements]="compactIdentityElements" size="small"></app-team-identity>
+                        <app-team-identity class="season-grid-head-logo" [team]="row.team" [elements]="logoOnlyElements" size="small"></app-team-identity>
+                      } @else {
+                        <span class="week-team-fallback">{{ teamLabel(row.teamID, null) }}</span>
+                      }
                     </th>
                   }
                 </tr>
               </thead>
               <tbody>
-                @for (row of grid.rows; track row.teamID) {
-                  <tr>
-                    <th scope="row" class="season-grid-team-col">
-                      @if (row.team) {
-                        <app-team-identity [team]="row.team" [elements]="compactIdentityElements" size="small"></app-team-identity>
-                      } @else {
-                        <span class="week-team-fallback">{{ teamLabel(row.teamID, null) }}</span>
-                      }
+                @for (week of grid.weeks; track week.week; let index = $index) {
+                  @if (week.week === firstPlayoffWeek()) {
+                    <tr class="season-grid-divider">
+                      <th [attr.colspan]="grid.rows.length + 1" scope="colgroup">Playoffs</th>
+                    </tr>
+                  }
+                  <tr [class.season-grid-row--playoff]="week.isPlayoff">
+                    <th scope="row" class="season-grid-week-col">
+                      <button type="button" class="season-grid-week-button" [attr.aria-label]="'Open week ' + week.week" (click)="openWeek(week.week)">
+                        {{ week.week }}
+                      </button>
                     </th>
-                    @for (cell of row.cells; track cell.week) {
+                    @for (row of grid.rows; track row.teamID) {
+                      @let cell = row.cells[index];
                       <td
                         class="season-grid-cell"
                         [class.season-grid-cell--high]="cell.isWeekHigh"
                         [class.season-grid-cell--win]="cell.outcome === 'win'"
-                        [class.season-grid-cell--loss]="cell.outcome === 'loss'"
-                        [class.season-grid-cell--playoff-start]="cell.week === firstPlayoffWeek()">
+                        [class.season-grid-cell--loss]="cell.outcome === 'loss'">
                         <span class="season-grid-points">{{ formatPoints(cell.points) }}</span>
                         @if (cell.outcome) {
                           <span class="season-grid-outcome">{{ cell.outcome === 'win' ? 'W' : cell.outcome === 'loss' ? 'L' : 'T' }}</span>
@@ -179,7 +185,7 @@
             </table>
           </div>
           <p class="season-grid-legend">
-            Points per week with the result (W/L/T). The highest score of a week is marked. Tap a week number to open it.
+            Points per week with the result (W/L/T). The highest score of a week is marked. Tap a week number to open it. Regular season and playoffs are separated by a divider.
           </p>
         </section>
       }
