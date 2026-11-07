@@ -256,6 +256,8 @@
   min-width: 64px;
 }
 
+.season-grid-head-logo { display: none; }
+
 .season-grid-week-button {
   padding: 2px 6px;
   border: none;
@@ -322,5 +324,39 @@
 
   .week-matchup-score {
     font-size: 0.95rem;
+  }
+
+  /* Compact season grid: six teams fit a phone; larger leagues scroll sideways. */
+  .season-grid th,
+  .season-grid td {
+    padding: 5px 2px;
+  }
+
+  .season-grid-week-col {
+    min-width: 30px;
+  }
+
+  .season-grid-team-head {
+    min-width: 0;
+  }
+
+  .season-grid-head-full { display: none; }
+  .season-grid-head-logo { display: inline-block; }
+
+  .season-grid-cell {
+    min-width: 0;
+  }
+
+  .season-grid-points {
+    display: block;
+    font-size: 0.72rem;
+    line-height: 1.1;
+  }
+
+  .season-grid-outcome {
+    display: block;
+    margin: 0;
+    font-size: 0.5rem;
+    line-height: 1;
   }
 }

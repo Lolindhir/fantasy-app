@@ -144,7 +144,8 @@
                   @for (row of grid.rows; track row.teamID) {
                     <th scope="col" class="season-grid-team-head">
                       @if (row.team) {
-                        <app-team-identity [team]="row.team" [elements]="compactIdentityElements" size="small"></app-team-identity>
+                        <app-team-identity class="season-grid-head-full" [team]="row.team" [elements]="compactIdentityElements" size="small"></app-team-identity>
+                        <app-team-identity class="season-grid-head-logo" [team]="row.team" [elements]="logoOnlyElements" size="small"></app-team-identity>
                       } @else {
                         <span class="week-team-fallback">{{ teamLabel(row.teamID, null) }}</span>
                       }

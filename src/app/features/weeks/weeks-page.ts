@@ -54,6 +54,7 @@ export class WeeksPageComponent {
 
   readonly activeTab = signal<WeeksTab>('week');
   readonly identityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
+  readonly logoOnlyElements: readonly TeamIdentityElement[] = ['logo'];
   readonly compactIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
 
   private readonly requestedSeason = signal<string | null>(this.route.snapshot.queryParamMap.get('season'));
