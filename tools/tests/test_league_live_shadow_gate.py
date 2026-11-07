@@ -663,6 +663,41 @@ class ImmutableOutputRevisionAuditTests(unittest.TestCase):
         f.compile()
         self.assert_blocked(f, "metadata-manifest-season-identity-mismatch")
 
+    def test_github_line_wrapped_canonical_blobs_still_verify_real_git_sha(self):
+        # GitHub's Git Blob API content is base64 with embedded LF. A Windows
+        # style CRLF response must also survive without weakening SHA checks.
+        f = self.Fixture()
+        for blob in f.blobs.values():
+            encoded = blob["content"]
+            blob["content"] = "\n".join(encoded[i:i + 60] for i in range(0, len(encoded), 60)) + "\n"
+        report = f.report()
+        self.assertTrue(report["selectedGitOutputBlobIdsVerified"], report["reasonCodes"])
+        self.assertFalse(report["safeToSkip"])
+        f = self.Fixture()
+        for blob in f.blobs.values():
+            encoded = blob["content"]
+            blob["content"] = "\r\n".join(encoded[i:i + 60] for i in range(0, len(encoded), 60)) + "\r\n"
+        report = f.report()
+        self.assertTrue(report["selectedGitOutputBlobIdsVerified"], report["reasonCodes"])
+        self.assertFalse(report["safeToSkip"])
+
+    def test_github_base64_whitespace_and_corruption_remain_fail_closed(self):
+        for suffix in (" ", "\t", "\r", "\f", "#"):
+            with self.subTest(suffix=repr(suffix)):
+                f = self.Fixture()
+                import hashlib
+                data = f.files["data-meta/nfl-reise/metadata.json"]
+                sha = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+                f.blobs[sha]["content"] += suffix
+                self.assert_blocked(f, "canonical-blob-unreadable")
+        # Even a well-formed re-wrapped payload cannot impersonate the same Git blob.
+        f = self.Fixture()
+        import hashlib
+        data = f.files["data-meta/nfl-reise/metadata.json"]
+        sha = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+        f.blobs[sha]["content"] = "e30=\n"
+        self.assert_blocked(f, "canonical-blob-digest-mismatch")
+
     def test_corrupt_canonical_blob_digest_and_wrong_ref_fail_closed(self):
         f = self.Fixture()
         meta = f.files["data-meta/nfl-reise/metadata.json"]
