@@ -496,7 +496,8 @@ export class LeagueMatchupsComponent {
       matchups: state.matchups,
       nflTeams: state.nflTeams,
       league: this.league,
-      fantasyMatchupId: resolved.FantasyMatchupID
+      fantasyMatchupId: resolved.FantasyMatchupID,
+      headToHead: this.headToHead(matchup)
     });
   }
 
