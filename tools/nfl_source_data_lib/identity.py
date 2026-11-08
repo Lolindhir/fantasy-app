@@ -7,8 +7,11 @@ from typing import Any
 
 from .canonical_identity import identity_lookup
 from .current_identity_adjudications import (
+    MERGE_KIND,
     load_current_identity_adjudications,
+    normalize_person_name,
     validate_current_identity_adjudications_against_state,
+    verify_duplicate_pair,
 )
 from .common import (
     CANONICAL_PLAYER_ID_FIELD,
@@ -787,6 +790,8 @@ def _apply_current_adjudications(
     transfers: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {}
     overridden: list[dict[str, Any]] = []
     for decision in decisions:
+        if decision.get("ResolutionKind") == MERGE_KIND:
+            continue  # merged after the components exist, see _apply_duplicate_merges
         target_id = str(decision["TargetCanonicalPlayerID"])
         source_ids = {str(value) for value in decision["SourceCanonicalPlayerIDs"]}
         provenance = str(decision["Provenance"])
@@ -828,6 +833,84 @@ def _apply_current_adjudications(
                 provenance,
             )
     return transfers, overridden
+
+
+def _view_from_candidates(members: list[IdentityCandidate]) -> dict[str, Any]:
+    ids: dict[str, set[str]] = defaultdict(set)
+    for member in members:
+        for key, value in member.ids.items():
+            if value:
+                ids[key].add(value)
+    return {
+        "IDs": dict(ids),
+        "BirthDates": {m.birth_date for m in members if m.birth_date},
+        "Positions": {m.position for m in members if m.position},
+        "Names": {normalize_person_name(m.name) for m in members if m.name},
+    }
+
+
+def _apply_duplicate_merges(
+    uf: UnionFind,
+    candidates: list[IdentityCandidate],
+    decisions: list[dict[str, Any]],
+) -> dict[tuple[str, str], tuple[str, tuple[str, ...], str]]:
+    """Merge the components of declared canonical duplicates into their target.
+
+    Runs on the finished candidate graph so that a duplicate which only this very
+    run would create (its CanonicalPlayerID is the deterministic seed ID) is merged
+    in the same pass as one that is already persisted; otherwise the second
+    materialization would differ from the first. Every merged pair is verified
+    against the real candidate evidence (``verify_duplicate_pair``) and a failure
+    stops the build. Returns the token transfers of the merged duplicates.
+    """
+    transfers: dict[tuple[str, str], tuple[str, tuple[str, ...], str]] = {}
+    for decision in decisions:
+        if decision.get("ResolutionKind") != MERGE_KIND:
+            continue
+        target_id = str(decision["TargetCanonicalPlayerID"])
+        duplicate_ids = {str(value) for value in decision["DuplicateCanonicalPlayerIDs"]}
+        components = _component_members(uf, candidates)
+
+        def provisional_ids(indexes: list[int]) -> set[str]:
+            members = [candidates[idx] for idx in indexes]
+            existing = {m.existing_internal_id for m in members if m.existing_internal_id}
+            return existing or {stable_internal_id(_seed_for_component(members))}
+
+        target_roots = [r for r, idx in components.items() if target_id in provisional_ids(idx)]
+        duplicate_roots = [
+            r for r, idx in components.items() if provisional_ids(idx) & duplicate_ids
+        ]
+        if not duplicate_roots:
+            continue
+        if len(target_roots) != 1:
+            raise ValueError(
+                f"Duplicate merge {decision['AdjudicationID']} needs exactly one component for "
+                f"target {target_id}, found {len(target_roots)}"
+            )
+        target_members = [candidates[idx] for idx in components[target_roots[0]]]
+        for root in duplicate_roots:
+            indexes = components[root]
+            members = [candidates[idx] for idx in indexes]
+            duplicate_id = sorted(provisional_ids(indexes) & duplicate_ids)[0]
+            verify_duplicate_pair(
+                decision,
+                _view_from_candidates(target_members),
+                _view_from_candidates(members),
+                duplicate_id=duplicate_id,
+            )
+            provenance = str(decision["Provenance"])
+            sources = tuple(
+                sorted(duplicate_ids | {str(v) for v in decision["SourceCanonicalPlayerIDs"]})
+            )
+            for member in members:
+                if member.existing_internal_id in duplicate_ids:
+                    member.existing_internal_id = target_id
+                for key, value in member.ids.items():
+                    if value:
+                        transfers[(key, value)] = (target_id, sources, provenance)
+            for idx in indexes:
+                uf.union(idx, components[target_roots[0]][0])
+    return transfers
 
 
 def build_identities(
@@ -890,6 +973,7 @@ def build_identities(
     candidate_index = {id(candidate): idx for idx, candidate in enumerate(candidates)}
     uf = _build_components(candidates)
     upgraded_candidates = _apply_placeholder_gsis_upgrades(uf, candidates)
+    adjudicated_transfers.update(_apply_duplicate_merges(uf, candidates, adjudications))
     components = _component_members(uf, candidates)
 
     root_internal: dict[int, str] = {}
