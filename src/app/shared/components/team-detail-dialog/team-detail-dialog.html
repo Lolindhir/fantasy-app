@@ -320,7 +320,6 @@
           <div class="summary-stat"><strong>{{ team.RegularSeasonWins }}</strong><span>Regular Season Titles</span></div>
           <div class="summary-stat"><strong>{{ allTimeRecord }}</strong><span>All-time Record</span></div>
         </section>
-        <app-trophy-room [league]="league" [team]="team" />
         <section class="section-card">
           <span class="eyebrow">Season History</span>
           <div class="season-history">
@@ -330,6 +329,14 @@
           </div>
         </section>
       </div>
+    </mat-tab>
+
+    <mat-tab label="Trophy Room">
+      <ng-template matTabContent>
+        <div class="tab-content trophy-room-tab">
+          <app-trophy-room [league]="league" [team]="team" />
+        </div>
+      </ng-template>
     </mat-tab>
 
     <mat-tab label="Rivals">
