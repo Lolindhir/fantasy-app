@@ -471,6 +471,30 @@
         {"Source": "data-source/nfl/snap-counts/2026/01.json",
          "Summary": "Unresolved PFR WhitCo05 appears for LV WR Cody White with 11 offensive snaps, 14 ST snaps."}
       ]
+    },
+    {
+      "AdjudicationID": "2026-sleeper-13603-gregory-desrosiers-merge",
+      "Season": 2026,
+      "Status": "confirmed",
+      "DecisionAuthority": "repository-owner-approved-review",
+      "DecisionDate": "2026-11-08",
+      "ResolutionKind": "confirmed-canonical-duplicate-merge",
+      "ConflictPolicy": "reject-conflict-outside-declared-pair",
+      "TargetCanonicalPlayerID": "NFLP-b13fe7848e3b3cc094ed",
+      "DuplicateCanonicalPlayerIDs": ["NFLP-e6aea0a0c30a32d9f33e"],
+      "SourceCanonicalPlayerIDs": ["NFLP-03e167d31cc790f1d775"],
+      "ProviderAssignments": [],
+      "SubjectLabel": "Gregory Desrosiers (duplicate record)",
+      "Rationale": "After 2026-sleeper-13603-gregory-desrosiers the nflverse.ff-player-ids row (Sleeper 13603, ESPN 4691889, MFL, Sportradar, Rotowire, FantasyData) still forms a second canonical record for the same person as the nflverse.players record (GSIS 00-0041376, Tank01 4691889). The Tank01 ID of the target equals the ESPN ID of the duplicate, and birth date, name and position agree. The merge moves the duplicate's tokens onto the target instead of leaving the person split across two records.",
+      "IndependentAnchors": [
+        {"Kind": "cross-provider-id-equality", "TargetProvider": "Tank01", "DuplicateProvider": "ESPN", "ExternalID": "4691889", "Summary": "Tank01 4691889 on the target equals ESPN 4691889 on the duplicate."},
+        {"Kind": "attribute-agreement", "Fields": ["BirthDate", "NormalizedName", "Position"], "Summary": "Both records: Gregory Desrosiers, RB, born 2001-03-27 (LAC)."}
+      ],
+      "Evidence": [
+        {"Source": "nflverse.players raw-latest", "Summary": "GSIS 00-0041376: Gregory Desrosiers, RB, LAC, born 2001-03-27."},
+        {"Source": "nflverse.ff-player-ids raw-latest", "Summary": "Sleeper 13603 with ESPN 4691889, MFL 17821: Gregory Desrosiers, RB, LAC, born 2001-03-27."},
+        {"Source": "2026-sleeper-13603-gregory-desrosiers", "Summary": "Existing reviewed adjudication already established Sleeper 13603 and Tank01 4691889 as this person."}
+      ]
     }
   ]
 }
