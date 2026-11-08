@@ -71,6 +71,34 @@ class WorkflowCheckoutDepthTest(unittest.TestCase):
         self.assertFalse(_is_full_history({"uses": "actions/setup-python@v7", "with": {"fetch-depth": 0}}))
 
 
+class LeagueJobHasNoNodeDependencyTest(unittest.TestCase):
+    """G5 AP4 (Issue #1263): the League Live league job needs no Node.js setup."""
+
+    CHAIN_TOOLS = (
+        "tools/rebuild_and_publish.py",
+        "tools/league_live_derived_refresh.py",
+        "tools/player_week_fantasy_refresh.py",
+        "tools/matchup_context_app_publish.py",
+        "tools/league_history_app_publish.py",
+        "tools/weekly_recaps_app_publish.py",
+        "tools/team_cap_outlook_app_publish.py",
+        ".github/scripts/Invoke-GeneratedDataCommit.ps1",
+    )
+
+    def test_league_job_has_no_setup_node_and_chain_never_invokes_node(self) -> None:
+        import re
+
+        workflow = yaml.safe_load((ROOT / ".github" / "workflows" / "league-live.yml").read_text(encoding="utf-8"))
+        uses = [str(step.get("uses", "")) for step in workflow["jobs"]["league"]["steps"]]
+        self.assertFalse([item for item in uses if item.startswith("actions/setup-node")])
+        sources = [ROOT / rel for rel in self.CHAIN_TOOLS]
+        sources += [path for path in sorted((ROOT / "tools").rglob("*.py")) if "tests" not in path.parts]
+        sources += sorted((ROOT / "public" / "requests").rglob("*.ps*1"))
+        pattern = re.compile(r"\b(node|npm|npx)\b")
+        offenders = [str(path.relative_to(ROOT)) for path in sources if pattern.search(path.read_text(encoding="utf-8"))]
+        self.assertEqual([], offenders)
+
+
 if __name__ == "__main__":
     unittest.main()
 
