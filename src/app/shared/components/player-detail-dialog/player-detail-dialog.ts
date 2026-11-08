@@ -74,7 +74,7 @@ export class PlayerDetailDialogComponent implements OnInit {
   }
 
   onTabChange(event: MatTabChangeEvent): void {
-    if (event.tab.textLabel === 'Journey') this.loadJourney();
+    if (event.tab.textLabel === 'Moves') this.loadJourney();
   }
 
   private loadJourney(): void {

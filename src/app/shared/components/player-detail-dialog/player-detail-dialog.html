@@ -35,19 +35,17 @@
           </header>
           <div class="week-card__body">
             <div class="week-card__block">
-              <span class="week-card__label">Projection</span>
+              <span class="week-card__label">Proj.</span>
               <span class="week-card__value" [class.week-card__value--missing]="!weekProjection?.projection">
                 {{ weekProjection?.projectedText ?? '–' }}
               </span>
-              <app-player-projection *ngIf="weekProjection?.projection as projection"
+              <app-player-projection *ngIf="weekProjection?.projection as projection" class="week-card__range"
                 [view]="projection" [showValue]="false"></app-player-projection>
-              <span *ngIf="weekProjection?.levelLabel" class="week-card__note">{{ weekProjection?.levelLabel }} range</span>
               <span *ngIf="!weekProjection?.projection" class="week-card__note">No projection available</span>
             </div>
             <div *ngIf="weekProjection?.result as result" class="week-card__block">
               <span class="week-card__label">{{ result.state === 'live' ? 'Live' : 'Result' }}</span>
               <span class="week-card__value">{{ result.pointsText }}</span>
-              <span class="week-card__note">fantasy points</span>
             </div>
           </div>
         </section>
