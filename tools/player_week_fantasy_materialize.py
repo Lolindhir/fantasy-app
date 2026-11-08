@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import math
 from collections import defaultdict
@@ -533,7 +534,48 @@ def _current_usage_history(
     return dict(result)
 
 
+_MODEL_STATE_MEMO: dict[tuple[str, int, str], dict[str, Any]] | None = None
+
+
+@contextlib.contextmanager
+def memoized_model_state():
+    """Process-internal memo of the calibrated model state for one refresh run (Issue #1263, G5 E3).
+
+    Opt-in and never persisted: inside the scope, repeated builds with identical inputs
+    (repository root, target season, scoring settings) reuse one result instead of re-parsing
+    five seasons of stats. The state depends only on those inputs and the canonical player-stats,
+    snap-count and fumble-event partitions, which a refresh run does not modify. Outside the
+    scope every call recomputes, as before.
+    """
+    global _MODEL_STATE_MEMO
+    previous = _MODEL_STATE_MEMO
+    _MODEL_STATE_MEMO = {} if previous is None else previous
+    try:
+        yield
+    finally:
+        _MODEL_STATE_MEMO = previous
+
+
 def _build_model_state(
+    repo_root: Path,
+    *,
+    target_season: int,
+    scoring: dict[str, Any],
+) -> dict[str, Any]:
+    memo = _MODEL_STATE_MEMO
+    if memo is None:
+        return _compute_model_state(repo_root, target_season=target_season, scoring=scoring)
+    key = (
+        str(repo_root.resolve()),
+        target_season,
+        json.dumps(scoring, sort_keys=True, default=str),
+    )
+    if key not in memo:
+        memo[key] = _compute_model_state(repo_root, target_season=target_season, scoring=scoring)
+    return memo[key]
+
+
+def _compute_model_state(
     repo_root: Path,
     *,
     target_season: int,
