@@ -174,9 +174,9 @@
         <div class="fgc-matchup-vs">
           <ng-container *ngIf="fantasyMatchupScore(selectedMatchup) as score; else matchupVsOnly">
             <span class="fgc-matchup-score" aria-label="Fantasy matchup score">
-              <strong>{{ formatFantasyPoints(score.Left) }}</strong>
+              <strong [ngClass]="scoreTone(score, 'left')">{{ formatFantasyPoints(score.Left) }}</strong>
               <b aria-hidden="true">–</b>
-              <strong>{{ formatFantasyPoints(score.Right) }}</strong>
+              <strong [ngClass]="scoreTone(score, 'right')">{{ formatFantasyPoints(score.Right) }}</strong>
             </span>
           </ng-container>
           <ng-template #matchupVsOnly><span>VS</span></ng-template>
