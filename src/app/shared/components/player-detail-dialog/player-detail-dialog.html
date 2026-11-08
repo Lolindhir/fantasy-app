@@ -40,7 +40,7 @@
                 {{ weekProjection?.projectedText ?? '–' }}
               </span>
               <app-player-projection *ngIf="weekProjection?.projection as projection"
-                [view]="projection" size="large" [showValue]="false"></app-player-projection>
+                [view]="projection" [showValue]="false"></app-player-projection>
               <span *ngIf="weekProjection?.levelLabel" class="week-card__note">{{ weekProjection?.levelLabel }} range</span>
               <span *ngIf="!weekProjection?.projection" class="week-card__note">No projection available</span>
             </div>
@@ -240,28 +240,20 @@
       </div>
     </mat-tab>
 
-    <!-- 🧭 Journey Tab -->
+    <!-- 🧭 Moves Tab (player timeline) -->
     <ng-template #journeyTeam let-team>
       <span class="journey-team" [title]="team.Team">
         <img *ngIf="team.Avatar" [src]="team.Avatar" alt="" width="20" height="20" />
         <span>{{ team.Team }}</span>
       </span>
     </ng-template>
-    <mat-tab label="Journey">
+    <mat-tab label="Moves">
       <div class="journey">
         @switch (journeyState) {
           @case ('error') {
             <p class="journey-state">The league history could not be loaded.</p>
           }
           @case ('ready') {
-            @if (journey && journey.teams.length) {
-              <div class="journey-teams" aria-label="Fantasy teams">
-                <span class="label">Fantasy teams</span>
-                @for (team of journey.teams; track team.TeamID) {
-                  <ng-container *ngTemplateOutlet="journeyTeam; context: { $implicit: team }"></ng-container>
-                }
-              </div>
-            }
             @if (journey && journey.events.length) {
               <ol class="journey-timeline">
                 @for (event of journey.events; track $index) {
@@ -282,9 +274,6 @@
                       <div class="journey-meta">
                         <span>{{ event.dateApproximate ? event.season : (event.at | date:'mediumDate') }}</span>
                         <span>{{ event.detail }}</span>
-                        @if (event.transactionID) {
-                          <button type="button" class="journey-link" (click)="openMove(event)">View in Moves</button>
-                        }
                       </div>
                     </div>
                   </li>
