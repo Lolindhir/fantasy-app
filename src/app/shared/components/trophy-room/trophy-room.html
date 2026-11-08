@@ -1,11 +1,8 @@
 <section class="section-card trophy-room" aria-label="Trophy Room">
-  <span class="eyebrow">Trophy Room</span>
-
   @if (isEmpty) {
     <p class="empty-state">No titles or podium finishes yet.</p>
   } @else {
     @if (room.rings.length) {
-      <h4 class="trophy-room__heading">Championship rings</h4>
       <div class="trophy-room__rings">
         @for (ring of room.rings; track ring.season) {
           <button type="button" class="trophy-ring" [attr.aria-label]="ring.season + ' championship ring, open large view'" (click)="openRing(ring)">

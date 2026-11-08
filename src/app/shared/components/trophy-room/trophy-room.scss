@@ -1,14 +1,5 @@
 :host { display: block; }
 
-.trophy-room__heading {
-  margin: 14px 0 8px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #6b7280;
-}
-
 .trophy-room__rings {
   display: flex;
   flex-wrap: wrap;
@@ -40,26 +31,20 @@
   border-top: 1px solid #e5e7eb;
 }
 
-.trophy-room__banners {
+/* Banners and plaques share one scale so they always change together. */
+:host { --trophy-zoom: 1; }
+@media (max-width: 700px) { :host { --trophy-zoom: 0.6; } }
+
+.trophy-room__banners,
+.trophy-room__plaques {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   align-items: flex-start;
 }
 
-.trophy-room__banners app-achievement-banner { width: 118px; flex: 0 0 auto; }
-
-/* Mobile: keep banners small so several are visible at once. */
-@media (max-width: 700px) {
-  .trophy-room__banners { gap: 6px; }
-  .trophy-room__banners app-achievement-banner { zoom: 0.6; }
-}
-
-.trophy-room__plaques {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 270px));
-  gap: 10px;
-}
+.trophy-room__banners app-achievement-banner { width: 118px; flex: 0 0 auto; zoom: var(--trophy-zoom); }
+.trophy-room__plaques app-achievement-plaque { width: 270px; max-width: 100%; flex: 0 0 auto; zoom: var(--trophy-zoom); }
 
 .trophy-ring-detail {
   display: grid;
@@ -73,4 +58,3 @@
 .trophy-ring-detail h3 { margin: 6px 0 0; }
 .trophy-ring-detail p { margin: 0; color: #6b7280; }
 .trophy-ring-detail__close { margin-top: 8px; padding: 6px 16px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font: inherit; cursor: pointer; }
-.eyebrow + .trophy-room__divider { display: none; }
