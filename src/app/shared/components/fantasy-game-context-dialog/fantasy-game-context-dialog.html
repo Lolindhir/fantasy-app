@@ -192,6 +192,10 @@
         </button>
       </section>
 
+      <p *ngIf="data.headToHead as h2h" class="fgc-matchup-h2h" [ngClass]="data.headToHeadTone ? 'fgc-matchup-h2h--' + data.headToHeadTone : ''" [attr.aria-label]="'All-time head-to-head ' + h2h">
+        <span>All-time</span> <strong>{{ h2h }}</strong>
+      </p>
+
       <app-matchup-range-chart *ngIf="matchupRange(selectedMatchup) as range" [view]="range"></app-matchup-range-chart>
 
       <section *ngIf="selectedMatchup.RemainingRelevance as remaining" class="fgc-signal-strip fgc-matchup-signal-strip">
