@@ -139,6 +139,7 @@ export class LeagueMatchupsComponent {
     { initialValue: null }
   );
   private readonly headToHeadCache = new Map<string, string | null>();
+  private readonly headToHeadToneCache = new Map<string, 'lead' | 'trail' | 'tie'>();
 
   private readonly weeklyRecaps$ = (this.dataService.getWeeklyRecaps?.() ?? of(null)).pipe(
     catchError(() => of(null)),
@@ -283,7 +284,7 @@ export class LeagueMatchupsComponent {
       .filter((matchup): matchup is LeagueMatchupView => !!matchup);
   }
 
-  /** All-time record of the left team against the right team ("ABC 3-2 XYZ"); null without a counted game. */
+  /** All-time record of the left team against the right team ("3-2"); null without a counted game. */
   headToHead(matchup: LeagueMatchupView): string | null {
     const seasons = this.rivalrySeasonsSignal();
     if (!seasons) return null;
@@ -294,11 +295,23 @@ export class LeagueMatchupsComponent {
       filter: 'all',
       isSeasonComplete: season => isPlayoffsComplete(season, this.league.SeasonAsNumber, this.league.Status)
     });
-    const label = record
-      ? `${matchup.left.team.TeamAbbr || matchup.left.team.Team} ${formatRivalryRecord(record)} ${matchup.right.team.TeamAbbr || matchup.right.team.Team}`
-      : null;
+    const label = record ? formatRivalryRecord(record) : null;
     this.headToHeadCache.set(key, label);
+    if (record) {
+      this.headToHeadToneCache.set(
+        key,
+        record.wins > record.losses ? 'lead' : record.wins < record.losses ? 'trail' : 'tie'
+      );
+    }
     return label;
+  }
+
+  /** Tone of the all-time record from the left team's view: lead (green), trail (red) or tie. */
+  headToHeadTone(matchup: LeagueMatchupView): 'lead' | 'trail' | 'tie' | null {
+    if (!this.headToHead(matchup)) return null;
+    const seasons = this.rivalrySeasonsSignal();
+    const key = `${matchup.left.team.TeamID}-${matchup.right.team.TeamID}-${seasons?.length ?? 0}`;
+    return this.headToHeadToneCache.get(key) ?? null;
   }
 
   currentContext(context: FantasyGameContextReadModel | null): FantasyGameContextReadModel | null {
@@ -497,7 +510,8 @@ export class LeagueMatchupsComponent {
       nflTeams: state.nflTeams,
       league: this.league,
       fantasyMatchupId: resolved.FantasyMatchupID,
-      headToHead: this.headToHead(matchup)
+      headToHead: this.headToHead(matchup),
+      headToHeadTone: this.headToHeadTone(matchup)
     });
   }
 

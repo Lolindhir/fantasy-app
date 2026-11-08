@@ -188,6 +188,8 @@ export interface FantasyGameContextDialogData {
   fantasyMatchupId?: string;
   /** Optional all-time head-to-head label such as "ABC 3-2 XYZ". */
   headToHead?: string | null;
+  /** Record from the left team's view: lead (green), trail (red) or tie (neutral). */
+  headToHeadTone?: 'lead' | 'trail' | 'tie' | null;
 }
 
 @Component({

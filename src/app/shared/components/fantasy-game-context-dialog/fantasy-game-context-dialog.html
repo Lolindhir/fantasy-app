@@ -192,7 +192,7 @@
         </button>
       </section>
 
-      <p *ngIf="data.headToHead as h2h" class="fgc-matchup-h2h" [attr.aria-label]="'All-time head-to-head ' + h2h">
+      <p *ngIf="data.headToHead as h2h" class="fgc-matchup-h2h" [ngClass]="data.headToHeadTone ? 'fgc-matchup-h2h--' + data.headToHeadTone : ''" [attr.aria-label]="'All-time head-to-head ' + h2h">
         <span>All-time</span> <strong>{{ h2h }}</strong>
       </p>
 

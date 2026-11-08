@@ -228,7 +228,7 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelector('.matchup-h2h')).toBeNull();
     const matchup = component.matchups[0];
-    expect(component.headToHead(matchup)).toBe('LFT 1-0 RGT');
+    expect(component.headToHead(matchup)).toBe('1-0');
   });
 
   it('renders non-zero scores in one neutral shared score plate without inferring Final', () => {
