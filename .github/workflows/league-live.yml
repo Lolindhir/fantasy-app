@@ -183,11 +183,9 @@ jobs:
           --upstream-status "${{ needs.standings.result }}"
 
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
+      # G5 AP4 (Issue #1263): no Node.js setup here. Nothing in this job's command chain (Python tools, pwsh
+      # RequestLeaguePublication, rebuild_and_publish.py, the generated-commit script) invokes node or npm; the
+      # setup step only restored an unused npm cache (about 10 s per ten-minute tick).
 
       # One generator run and one commit for League and PlayerWeekFantasy/MatchupProjections:
       # two pushes seconds apart made the Deploy of the first one cancel itself.
