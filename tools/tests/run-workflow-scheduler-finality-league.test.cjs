@@ -22,7 +22,9 @@ test('League Live has no push coupling to generated Schedule or Games data', () 
 
   assert.doesNotMatch(content, /\n  push:\s*\n/);
   assert.doesNotMatch(content, /public\/data\/Games\.json/);
-  assert.doesNotMatch(content, /public\/data\/Timestamps\.json/);
+  // Timestamps.json may appear in the sparse checkout profile of the standings job; a push trigger
+  // path filter (YAML list item) is what must not exist.
+  assert.doesNotMatch(content, /-\s+['"]?public\/data\/Timestamps\.json/);
 });
 
 test('League Live run satisfies only an already-due scheduler slot', () => {
