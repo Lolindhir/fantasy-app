@@ -101,12 +101,41 @@ jobs:
     if: ${{ !cancelled() && !inputs.historical_preflight }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      # G5 AP2c (Issue #1263): the Python-only Standings writer reads tools, data-meta, the canonical league
+      # source, the NFL schedule/finality partitions and its own outputs (League.json, Standings.json,
+      # Timestamps.json, data-derived/league-standings). A forced regeneration in a sparse clone is
+      # byte-identical to the complete tree (player-stats only feeds NflStatsComplete, not LeagueScoredWeek).
+      # rebuild_and_publish.py fetches and resets the branch tip itself, which honors the sparse profile;
+      # the generated-commit script lives in .github/scripts. Output paths are unchanged.
+      - name: Checkout repository (sparse, blobless)
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/scripts/
+            /.github/workflow-schedules.json
+            /tools/
+            /data-meta/
+            /data-source/leagues/
+            /data-source/nfl/schedules/
+            /data-source/nfl/game-finality/
+            /public/data/League.json
+            /public/data/Standings.json
+            /public/data/Timestamps.json
+            /data-derived/league-standings/
+
+      - name: Verify Standings sparse inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in tools/league_standings_app_publish.py tools/rebuild_and_publish.py .github/scripts/Invoke-GeneratedDataCommit.ps1 data-meta data-source/leagues data-source/nfl/schedules data-source/nfl/game-finality public/data/League.json public/data/Standings.json public/data/Timestamps.json data-derived/league-standings; do
+            [[ -e "$path" ]] || { echo "Missing Standings sparse input: $path" >&2; exit 1; }
+          done
+          echo "- Standings checkout: sparse/blobless profile verified" >> "$GITHUB_STEP_SUMMARY"
       - name: G5 shadow decision - Standings (observe only)
         continue-on-error: true
         run: >-
