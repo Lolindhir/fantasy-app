@@ -20,8 +20,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Checkout repository
+      # G5 AP1 (Issue #1263): the scheduler is read-only with respect to the repository. It reads
+      # only the scheduler modules, the schedule config and the canonical NFL schedule/finality
+      # partitions (nfl-game-window.cjs); state is read and written through the GitHub API.
+      - name: Checkout repository (sparse, blobless)
         uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/workflow-schedules.json
+            /tools/*.cjs
+            /data-source/nfl/schedules/
+            /data-source/nfl/game-finality/
+
+      - name: Verify scheduler inputs (fall back to a complete checkout)
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for path in .github/workflow-schedules.json tools/run-workflow-scheduler-entry.cjs tools/run-workflow-scheduler-runtime.cjs tools/run-workflow-scheduler.cjs tools/run-project-field-sync-scheduler.cjs tools/run-workflow-scheduler-summary.cjs tools/nfl-game-window.cjs; do
+            [[ -f "$path" ]] || { echo "::warning::Missing scheduler input in sparse checkout: $path"; missing=1; }
+          done
+          [[ -d data-source/nfl/schedules && -d data-source/nfl/game-finality ]] || { echo "::warning::Missing NFL schedule/finality partitions in sparse checkout"; missing=1; }
+          if (( missing != 0 )); then
+            echo "Falling back to a complete checkout (behavior-preserving)."
+            git sparse-checkout disable
+            echo "- Scheduler checkout: sparse profile incomplete, complete checkout used" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Scheduler checkout: sparse/blobless profile verified" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Dispatch due workflows
         uses: actions/github-script@v7

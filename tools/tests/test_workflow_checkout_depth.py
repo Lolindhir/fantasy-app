@@ -73,3 +73,70 @@ class WorkflowCheckoutDepthTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SchedulerSparseCheckoutTest(unittest.TestCase):
+    """G5 AP1 (Issue #1263): the scheduler job checks out only what it reads.
+
+    The scheduler reads the scheduler modules, the schedule config and the canonical NFL
+    schedule/finality partitions; state goes through the GitHub API. Every static require()
+    of the scheduler module tree and every data root of nfl-game-window.cjs must be covered
+    by the sparse profile, otherwise a later change would break the critical scheduler.
+    """
+
+    SCHEDULER_MODULES = (
+        "run-workflow-scheduler-entry.cjs",
+        "run-workflow-scheduler-runtime.cjs",
+        "run-workflow-scheduler.cjs",
+        "run-project-field-sync-scheduler.cjs",
+        "run-workflow-scheduler-summary.cjs",
+        "nfl-game-window.cjs",
+    )
+
+    def _checkout_step(self) -> dict:
+        data = yaml.safe_load((WORKFLOWS / "scheduler.yml").read_text(encoding="utf-8"))
+        steps = data["jobs"]["dispatch"]["steps"]
+        return next(s for s in steps if str(s.get("uses", "")).startswith("actions/checkout@"))
+
+    def test_checkout_is_sparse_and_blobless(self) -> None:
+        with_ = self._checkout_step()["with"]
+        self.assertEqual("blob:none", with_["filter"])
+        self.assertIs(False, with_["sparse-checkout-cone-mode"])
+        patterns = [p.strip() for p in with_["sparse-checkout"].splitlines() if p.strip()]
+        self.assertEqual(
+            [
+                "/.github/workflow-schedules.json",
+                "/tools/*.cjs",
+                "/data-source/nfl/schedules/",
+                "/data-source/nfl/game-finality/",
+            ],
+            patterns,
+        )
+
+    def test_scheduler_requires_stay_inside_sparse_profile(self) -> None:
+        import re
+
+        for name in self.SCHEDULER_MODULES:
+            source = (ROOT / "tools" / name).read_text(encoding="utf-8")
+            for target in re.findall(r"require\(\s*['\"]([^'\"]+)['\"]\s*\)", source):
+                if target.startswith("node:"):
+                    continue  # built-in module
+                self.assertTrue(target.startswith("./") and target.endswith(".cjs"), f"{name} requires {target}")
+                self.assertTrue((ROOT / "tools" / target[2:]).is_file(), f"{name}: {target} missing")
+            # only the documented data roots and config may be read from the checkout
+            for forbidden in ("data-meta", "data-derived", "public/data", "fantasy-management"):
+                self.assertNotIn(forbidden, source, f"{name} reads {forbidden}, not in the sparse profile")
+        window = (ROOT / "tools" / "nfl-game-window.cjs").read_text(encoding="utf-8")
+        self.assertIn("scheduleDir: 'data-source/nfl'", window)
+        self.assertIn("'schedules'", window)
+        self.assertIn("'game-finality'", window)
+        # no other scheduler module may read data-source
+        for name in self.SCHEDULER_MODULES:
+            if name != "nfl-game-window.cjs":
+                self.assertNotIn("data-source", (ROOT / "tools" / name).read_text(encoding="utf-8"))
+
+    def test_incomplete_sparse_profile_falls_back_to_complete_checkout(self) -> None:
+        source = (WORKFLOWS / "scheduler.yml").read_text(encoding="utf-8")
+        self.assertIn("git sparse-checkout disable", source)
+        for module in self.SCHEDULER_MODULES:
+            self.assertIn(f"tools/{module}", source)
