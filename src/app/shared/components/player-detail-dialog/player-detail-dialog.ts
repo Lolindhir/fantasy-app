@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Inject, OnInit, ViewEncapsulation, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
@@ -56,8 +55,6 @@ export class PlayerDetailDialogComponent implements OnInit {
   };
 
   private readonly dataService = inject(DataService);
-  private readonly dialog = inject(MatDialog);
-  private readonly router = inject(Router);
 
   /** Published projection of the current App week; null while loading or when the player has no record. */
   weekProjection: PlayerWeekProjectionView | null = null;
@@ -110,14 +107,6 @@ export class PlayerDetailDialogComponent implements OnInit {
       case 'added': return 'Added';
       case 'dropped': return 'Dropped';
     }
-  }
-
-  openMove(event: PlayerJourneyEvent): void {
-    if (!event.transactionID) return;
-    void this.router.navigate(['/moves'], {
-      queryParams: { season: event.season, tx: event.transactionID }
-    });
-    this.dialog.closeAll();
   }
 
   close(): void {
