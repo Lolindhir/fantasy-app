@@ -45,12 +45,19 @@ jobs:
       schedule_changed: ${{ steps.detect.outputs.schedule_changed }}
       run_schedule: ${{ steps.detect.outputs.run_schedule }}
     steps:
-      - name: Checkout repository
+      # G5 AP3c (Issue #1263): detection only compares tree entries of two commits (git diff BASE HEAD),
+      # which never reads the working tree. The checkout therefore materializes no data files; the
+      # conservative fallbacks (missing/unfetchable base) are unchanged.
+      - name: Checkout repository (sparse, blobless)
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/
 
       - name: Detect changed NFL inputs
         id: detect
