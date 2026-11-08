@@ -265,11 +265,12 @@ jobs:
           for path in tools/league_source_data.py tools/git_transient.py tools/rebuild_and_publish.py data-source/league-registry.json data-meta/nfl-reise/metadata.json data-source/leagues/nfl-reise/manifest.json data-source/providers/sleeper data-source/nfl/schedules/2026.json data-source/nfl/identities/provider-mappings.json; do
             [[ -e "$path" ]] || { echo "::warning::Missing sparse input: $path"; missing=1; }
           done
+          [[ "$(git config --get remote.origin.partialclonefilter)" == "blob:none" ]] || echo "::warning::Blobless Git filter missing; sparse checkout still limits the working tree"
           if (( missing != 0 )); then
             git sparse-checkout disable
             echo "- League source checkout: sparse profile incomplete, complete checkout used" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "- League source checkout: sparse/blobless profile verified" >> "$GITHUB_STEP_SUMMARY"
+            echo "- League source checkout: sparse/blobless profile verified (partialclonefilter=$(git config --get remote.origin.partialclonefilter || echo none))" >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Record main before sync

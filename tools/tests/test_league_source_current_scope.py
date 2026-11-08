@@ -207,7 +207,7 @@ class SourceValidationSparseCheckoutContracts(unittest.TestCase):
         self.assertNotIn("data-source/nfl/player-stats", selected)
         self.assertNotIn("data-source/nfl/weekly-rosters", selected)
         self.assertNotIn("filter: blob:none", workflow)  # checkout filter overrides sparse input
-        self.assertEqual(2, workflow.count("remote.origin.partialclonefilter"))
+        self.assertEqual(4, workflow.count("remote.origin.partialclonefilter"))  # + sync verify (G5 E1)
 
     def test_full_noncurrent_source_modes_and_publisher_remain_unchanged(self) -> None:
         workflow = self._workflow()
@@ -259,7 +259,7 @@ class SourceValidationSparseCheckoutContracts(unittest.TestCase):
         self.assertEqual(2, workflow.count("Historical rosters unexpectedly checked out"))
         self.assertEqual(2, workflow.count("Missing required current-scope input"))
         self.assertEqual(3, workflow.count("core.sparseCheckout"))  # + sync fallback verify (G5 E1)
-        self.assertEqual(2, workflow.count("Blobless Git filter missing"))
+        self.assertEqual(3, workflow.count("Blobless Git filter missing"))  # + sync verify (G5 E1)
 
 
 class SyncSparseGitMechanicsTest(unittest.TestCase):
