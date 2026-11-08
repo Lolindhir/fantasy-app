@@ -11,10 +11,15 @@ _SCHEMA_VERSION = 1
 _REASSIGNMENT_KIND = "current-provider-reassignment"
 _OVERRIDE_KIND = "upstream-claim-override"
 _UNOWNED_KIND = "confirmed-unowned-provider-token"
+MERGE_KIND = "confirmed-canonical-duplicate-merge"
+_MERGE_ANCHOR_CROSS = "cross-provider-id-equality"
+_MERGE_ANCHOR_ATTRIBUTES = "attribute-agreement"
+_MERGE_REQUIRED_ATTRIBUTES = frozenset({"BirthDate", "NormalizedName", "Position"})
 _CONFLICT_POLICY_BY_KIND = {
     _REASSIGNMENT_KIND: "reject-active-conflict",
     _OVERRIDE_KIND: "override-named-upstream-claim",
     _UNOWNED_KIND: "reject-any-conflict",
+    MERGE_KIND: "reject-conflict-outside-declared-pair",
 }
 _STRONG_ANCHOR_PROVIDERS = frozenset({"GSIS", "ESPN", "PFR", "PFF"})
 
@@ -193,6 +198,164 @@ def _validate_unowned_provider_token(item: dict[str, Any], *, context: str,
     return {"IndependentAnchors": sorted(normalized, key=lambda a: a["Provider"])}
 
 
+def normalize_person_name(value: Any) -> str:
+    return "".join(ch for ch in str(value or "").lower() if ch.isalnum())
+
+
+def _validate_duplicate_merge(
+    item: dict[str, Any],
+    *,
+    context: str,
+    target_id: str,
+    source_ids: list[str],
+) -> dict[str, Any]:
+    """Format-validate a ``confirmed-canonical-duplicate-merge``.
+
+    The duplicates may legitimately not exist yet (they can only be created by the
+    very materialization that this decision then merges), so existence and the
+    content anchors are verified against the real records by the state validator
+    and by the identity builder, never here.
+    """
+    duplicates = item.get("DuplicateCanonicalPlayerIDs")
+    if not isinstance(duplicates, list) or not duplicates:
+        raise ValueError(f"{context}.DuplicateCanonicalPlayerIDs must be a non-empty array")
+    normalized_duplicates: list[str] = []
+    for index, value in enumerate(duplicates):
+        duplicate_id = str(value or "").strip()
+        if not duplicate_id:
+            raise ValueError(f"{context}.DuplicateCanonicalPlayerIDs[{index}] must be a non-empty string")
+        if duplicate_id in normalized_duplicates:
+            raise ValueError(f"{context}.DuplicateCanonicalPlayerIDs contains duplicate: {duplicate_id}")
+        if duplicate_id == target_id or duplicate_id in source_ids:
+            raise ValueError(
+                f"{context}.DuplicateCanonicalPlayerIDs must not contain the target or a source: "
+                f"{duplicate_id}"
+            )
+        normalized_duplicates.append(duplicate_id)
+
+    anchors = item.get("IndependentAnchors")
+    if not isinstance(anchors, list) or len(anchors) < 2:
+        raise ValueError(
+            f"{context}.IndependentAnchors requires a '{_MERGE_ANCHOR_CROSS}' anchor and an "
+            f"'{_MERGE_ANCHOR_ATTRIBUTES}' anchor"
+        )
+    cross: list[dict[str, str]] = []
+    attribute_seen = False
+    for index, anchor in enumerate(anchors):
+        place = f"{context}.IndependentAnchors[{index}]"
+        if not isinstance(anchor, dict):
+            raise ValueError(f"{place} must be an object")
+        kind = _required_text(anchor, "Kind", context=place)
+        _required_text(anchor, "Summary", context=place)
+        if kind == _MERGE_ANCHOR_CROSS:
+            target_provider = _required_text(anchor, "TargetProvider", context=place)
+            duplicate_provider = _required_text(anchor, "DuplicateProvider", context=place)
+            if target_provider == duplicate_provider:
+                raise ValueError(
+                    f"{place} must equate two different providers (same-provider equality is "
+                    "no independent anchor)"
+                )
+            cross.append(
+                {
+                    "Kind": kind,
+                    "TargetProvider": target_provider,
+                    "DuplicateProvider": duplicate_provider,
+                    "ExternalID": _required_text(anchor, "ExternalID", context=place),
+                }
+            )
+        elif kind == _MERGE_ANCHOR_ATTRIBUTES:
+            fields = anchor.get("Fields")
+            if not isinstance(fields, list) or not _MERGE_REQUIRED_ATTRIBUTES <= {
+                str(value) for value in fields
+            }:
+                raise ValueError(
+                    f"{place}.Fields must include {sorted(_MERGE_REQUIRED_ATTRIBUTES)}"
+                )
+            attribute_seen = True
+        else:
+            raise ValueError(
+                f"{place}.Kind must be '{_MERGE_ANCHOR_CROSS}' or '{_MERGE_ANCHOR_ATTRIBUTES}'"
+            )
+    if not cross or not attribute_seen:
+        raise ValueError(
+            f"{context}.IndependentAnchors needs both a '{_MERGE_ANCHOR_CROSS}' and an "
+            f"'{_MERGE_ANCHOR_ATTRIBUTES}' anchor"
+        )
+    return {
+        "DuplicateCanonicalPlayerIDs": sorted(normalized_duplicates),
+        "IndependentAnchors": sorted(
+            cross, key=lambda a: (a["TargetProvider"], a["DuplicateProvider"], a["ExternalID"])
+        ),
+    }
+
+
+def verify_duplicate_pair(
+    adjudication: dict[str, Any],
+    target_view: dict[str, Any],
+    duplicate_view: dict[str, Any],
+    *,
+    duplicate_id: str,
+) -> None:
+    """Fail closed unless two identity views are provably the same person.
+
+    A *view* is ``{"IDs": {provider: set[str]}, "BirthDates": set, "Positions": set,
+    "Names": set}`` (names already normalized). Names alone are never an anchor: the
+    pair needs equal non-empty BirthDate, Position and name, one equal ID value held
+    under two different providers, and no provider on which the two disagree.
+    """
+    adjudication_id = str(adjudication["AdjudicationID"])
+
+    def reject(reason: str) -> None:
+        raise ValueError(
+            f"Current identity adjudication {adjudication_id} cannot merge {duplicate_id} into "
+            f"{adjudication['TargetCanonicalPlayerID']}: {reason}"
+        )
+
+    for field, key in (("BirthDate", "BirthDates"), ("Position", "Positions"), ("name", "Names")):
+        target_values = {str(v) for v in target_view.get(key) or set() if str(v or "").strip()}
+        duplicate_values = {str(v) for v in duplicate_view.get(key) or set() if str(v or "").strip()}
+        if len(target_values) != 1 or target_values != duplicate_values:
+            reject(
+                f"{field} is missing or differs (target {sorted(target_values)}, "
+                f"duplicate {sorted(duplicate_values)})"
+            )
+    target_ids = target_view.get("IDs") or {}
+    duplicate_ids = duplicate_view.get("IDs") or {}
+    for anchor in adjudication["IndependentAnchors"]:
+        if anchor.get("Kind") != _MERGE_ANCHOR_CROSS:
+            continue
+        external_id = str(anchor["ExternalID"])
+        if external_id in target_ids.get(str(anchor["TargetProvider"]), set()) and (
+            external_id in duplicate_ids.get(str(anchor["DuplicateProvider"]), set())
+        ):
+            break
+    else:
+        reject("the declared cross-provider ID equality anchor is not carried by both records")
+    for provider in sorted(set(target_ids) & set(duplicate_ids)):
+        if target_ids[provider] and duplicate_ids[provider] and target_ids[provider] != duplicate_ids[provider]:
+            reject(
+                f"provider {provider} contradicts (target {sorted(target_ids[provider])}, "
+                f"duplicate {sorted(duplicate_ids[provider])})"
+            )
+
+
+def view_from_record(record: dict[str, Any]) -> dict[str, Any]:
+    ids: dict[str, set[str]] = {}
+    for provider, value in (record.get("IDs") or {}).items():
+        if str(value or "").strip():
+            ids.setdefault(str(provider), set()).add(str(value))
+    for provider, values in (record.get("IDAliases") or {}).items():
+        for value in values or []:
+            if str(value or "").strip():
+                ids.setdefault(str(provider), set()).add(str(value))
+    return {
+        "IDs": ids,
+        "BirthDates": {str(record["BirthDate"])} if record.get("BirthDate") else set(),
+        "Positions": {str(record["Position"])} if record.get("Position") else set(),
+        "Names": {normalize_person_name(record["Name"])} if record.get("Name") else set(),
+    }
+
+
 def load_current_identity_adjudications(
     repo_root: Path,
     known_canonical_ids: set[str],
@@ -280,6 +443,15 @@ def load_current_identity_adjudications(
                 raise ValueError(
                     f"{context}.SourceCanonicalPlayerIDs must be [] for a formerly unowned token"
                 )
+        elif resolution_kind == MERGE_KIND:
+            raw_sources = item.get("SourceCanonicalPlayerIDs")
+            if raw_sources == []:
+                source_ids = []
+            else:
+                source_ids = _required_canonical_ids(
+                    item, "SourceCanonicalPlayerIDs", context=context,
+                    known_canonical_ids=known_canonical_ids,
+                )
         else:
             source_ids = _required_canonical_ids(
                 item, "SourceCanonicalPlayerIDs", context=context,
@@ -297,7 +469,14 @@ def load_current_identity_adjudications(
         _required_text(item, "DecisionDate", context=context)
 
         assignments = item.get("ProviderAssignments")
-        if not isinstance(assignments, list) or not assignments:
+        if resolution_kind == MERGE_KIND:
+            if assignments not in (None, []):
+                raise ValueError(
+                    f"{context}.ProviderAssignments must be empty for ResolutionKind "
+                    f"'{MERGE_KIND}' (a merge moves every token of the duplicate)"
+                )
+            assignments = []
+        elif not isinstance(assignments, list) or not assignments:
             raise ValueError(f"{context}.ProviderAssignments must be a non-empty array")
 
         normalized_assignments: list[dict[str, str]] = []
@@ -343,6 +522,10 @@ def load_current_identity_adjudications(
             override_fields = _validate_unowned_provider_token(
                 item, context=context, assignments=normalized_assignments
             )
+        elif resolution_kind == MERGE_KIND:
+            override_fields = _validate_duplicate_merge(
+                item, context=context, target_id=target_id, source_ids=list(source_ids)
+            )
 
         evidence = item.get("Evidence")
         if not isinstance(evidence, list) or not evidence:
@@ -376,8 +559,39 @@ def load_current_identity_adjudications(
             }
         )
 
+    _validate_merge_topology(entries)
     decisions.sort(key=lambda item: item["AdjudicationID"])
     return decisions
+
+
+def _validate_merge_topology(entries: list[dict[str, Any]]) -> None:
+    """No chains: a merged duplicate is nobody's target, source or second duplicate."""
+    by_season: dict[int, list[dict[str, Any]]] = {}
+    for item in entries:
+        by_season.setdefault(item["Season"], []).append(item)
+    for season, items in by_season.items():
+        duplicates: dict[str, str] = {}
+        for item in items:
+            if item["ResolutionKind"] != MERGE_KIND:
+                continue
+            for duplicate_id in item["DuplicateCanonicalPlayerIDs"]:
+                if duplicate_id in duplicates:
+                    raise ValueError(
+                        f"Duplicate {duplicate_id} is merged by two adjudications in {season}: "
+                        f"{duplicates[duplicate_id]}, {item['AdjudicationID']}"
+                    )
+                duplicates[duplicate_id] = item["AdjudicationID"]
+        for item in items:
+            related = {str(item["TargetCanonicalPlayerID"])} | {
+                str(value) for value in item.get("SourceCanonicalPlayerIDs") or []
+            }
+            for related_id in related:
+                owner = duplicates.get(related_id)
+                if owner is not None and owner != item["AdjudicationID"]:
+                    raise ValueError(
+                        f"Adjudication {item['AdjudicationID']} uses {related_id}, which "
+                        f"{owner} merges away as a duplicate (chains are not allowed)"
+                    )
 
 
 def validate_current_identity_adjudications_against_state(
@@ -448,11 +662,21 @@ def validate_current_identity_adjudications_against_state(
             active_conflict_tokens.add((provider, external_id))
             active_conflict_members.setdefault((provider, external_id), set()).update(members)
 
+    # Duplicates a merge declares are parties of the split every other decision of the
+    # same target resolves: they may appear as conflict members and token owners.
+    merged_duplicates: dict[str, set[str]] = {}
+    for adjudication in adjudications:
+        if adjudication.get("ResolutionKind") == MERGE_KIND:
+            merged_duplicates.setdefault(
+                str(adjudication["TargetCanonicalPlayerID"]), set()
+            ).update(str(value) for value in adjudication["DuplicateCanonicalPlayerIDs"])
+
     statuses: list[dict[str, str]] = []
     for adjudication in adjudications:
         adjudication_id = str(adjudication["AdjudicationID"])
         target_id = str(adjudication["TargetCanonicalPlayerID"])
         source_ids = {str(value) for value in adjudication["SourceCanonicalPlayerIDs"]}
+        extra_ids = merged_duplicates.get(target_id, set())
         target = by_id.get(target_id)
         if target is None:
             raise ValueError(
@@ -469,6 +693,22 @@ def validate_current_identity_adjudications_against_state(
             str(provider): {str(value) for value in values or [] if str(value or "").strip()}
             for provider, values in (target.get("IDAliases") or {}).items()
         }
+
+        if adjudication.get("ResolutionKind") == MERGE_KIND:
+            statuses.append(
+                {
+                    "AdjudicationID": adjudication_id,
+                    "Status": _validate_merge_against_state(
+                        adjudication,
+                        by_id=by_id,
+                        token_owners=token_owners,
+                        active_conflict_members=active_conflict_members,
+                        mapping_claims=mapping_claims or [],
+                        observation_season=observation_season,
+                    ),
+                }
+            )
+            continue
 
         if adjudication.get("ResolutionKind") == _UNOWNED_KIND:
             assignment = adjudication["ProviderAssignments"][0]
@@ -533,7 +773,7 @@ def validate_current_identity_adjudications_against_state(
             # the split this decision resolves; any third party keeps it fail-closed.
             conflict_members = active_conflict_members.get(token, set())
             if token in active_conflict_tokens and (
-                not conflict_members or not conflict_members <= source_ids | {target_id}
+                not conflict_members or not conflict_members <= source_ids | {target_id} | extra_ids
             ):
                 raise ValueError(
                     f"Current identity adjudication {adjudication_id} cannot override active "
@@ -552,7 +792,7 @@ def validate_current_identity_adjudications_against_state(
                 )
 
             owners = token_owners.get(token, set())
-            unexpected = owners - source_ids - {target_id}
+            unexpected = owners - source_ids - {target_id} - extra_ids
             if unexpected:
                 raise ValueError(
                     f"Current identity adjudication {adjudication_id} provider token "
@@ -560,6 +800,67 @@ def validate_current_identity_adjudications_against_state(
                 )
 
     return statuses
+
+
+def _validate_merge_against_state(
+    adjudication: dict[str, Any],
+    *,
+    by_id: dict[str, dict[str, Any]],
+    token_owners: dict[tuple[str, str], set[str]],
+    active_conflict_members: dict[tuple[str, str], set[str]],
+    mapping_claims: list[dict[str, Any]],
+    observation_season: int,
+) -> str:
+    """Verify a duplicate merge against the persisted records that already exist.
+
+    A duplicate that is not persisted yet (or no longer is) is reported as
+    ``superseded-by-upstream``; the identity builder verifies the same pair against
+    the freshly built component before it merges anything.
+    """
+    adjudication_id = str(adjudication["AdjudicationID"])
+    target_id = str(adjudication["TargetCanonicalPlayerID"])
+    source_ids = {str(value) for value in adjudication["SourceCanonicalPlayerIDs"]}
+    present = [
+        str(value) for value in adjudication["DuplicateCanonicalPlayerIDs"] if str(value) in by_id
+    ]
+    if not present:
+        return "superseded-by-upstream"
+    pair = {target_id, *present}
+    allowed = pair | source_ids
+    for duplicate_id in present:
+        verify_duplicate_pair(
+            adjudication,
+            view_from_record(by_id[target_id]),
+            view_from_record(by_id[duplicate_id]),
+            duplicate_id=duplicate_id,
+        )
+    for record_id in pair:
+        for token in _record_tokens(by_id[record_id]):
+            outsiders = token_owners.get(token, set()) - allowed
+            if outsiders:
+                raise ValueError(
+                    f"Current identity adjudication {adjudication_id} token {token[0]}/{token[1]} "
+                    f"has an owner outside the declared pair: {sorted(outsiders)}"
+                )
+            members = active_conflict_members.get(token, set())
+            if members and not members <= allowed:
+                raise ValueError(
+                    f"Current identity adjudication {adjudication_id} token {token[0]}/{token[1]} "
+                    f"is in an active conflict with a third identity: {sorted(members - allowed)}"
+                )
+            for claim in mapping_claims:
+                if (str(claim.get("Provider")), str(claim.get("ExternalID"))) != token:
+                    continue
+                first = int(claim.get("FirstObservedSeason") or observation_season)
+                last = int(claim.get("LastObservedSeason") or first)
+                owner = str(claim.get("CanonicalPlayerID"))
+                if first <= observation_season <= last and owner not in allowed:
+                    raise ValueError(
+                        f"Current identity adjudication {adjudication_id} token "
+                        f"{token[0]}/{token[1]} has a historical mapping owner outside the "
+                        f"declared pair: {owner}"
+                    )
+    return "active"
 
 
 def _validate_override_against_state(
