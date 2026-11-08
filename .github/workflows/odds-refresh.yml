@@ -24,11 +24,30 @@ jobs:
       season: ${{ steps.observe.outputs.season }}
       publish: ${{ steps.observe.outputs.publish }}
     steps:
-      - name: Checkout canonical main
+      # G5 AP3a (Issue #1263): the observer is read-only with respect to the repository and persists state
+      # through the GitHub API only (odds-refresh-state CAS, unchanged). A traced run reads exactly the
+      # tools code, data-source/registry.json and the canonical schedules/schedule-odds partitions.
+      - name: Checkout canonical main (sparse, blobless)
         uses: actions/checkout@v4
         with:
           ref: main
           persist-credentials: false
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /tools/
+            /data-source/registry.json
+            /data-source/nfl/schedules/
+            /data-source/nfl/schedule-odds/
+
+      - name: Verify observer sparse inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for path in tools/odds_observation.py tools/odds_state_publish.py data-source/registry.json data-source/nfl/schedules data-source/nfl/schedule-odds; do
+            [[ -e "$path" ]] || { echo "Missing observer sparse input: $path" >&2; exit 1; }
+          done
+          echo "- Observer checkout: sparse/blobless profile verified" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
