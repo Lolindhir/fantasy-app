@@ -344,14 +344,6 @@ export class FantasyGameContextDialogComponent {
     return orientMatchupScore(matchup, displayTeamIDs, matchup.FinalScores);
   }
 
-  /** Leader green, trailing side red, level scores neutral. */
-  scoreTone(score: { Left: number; Right: number }, side: MatchupDisplaySide): string {
-    const diff = score.Left - score.Right;
-    if (Math.abs(diff) < 0.005) return 'fgc-score--tie';
-    const leads = side === 'left' ? diff > 0 : diff < 0;
-    return leads ? 'fgc-score--lead' : 'fgc-score--trail';
-  }
-
   matchupTeamID(matchup: FantasyGameContextMatchup, side: MatchupDisplaySide): string | number {
     const teamIDs = this.displayTeamIDsFor(matchup);
     return teamIDs[side === 'left' ? 0 : 1];
