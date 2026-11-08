@@ -16,4 +16,10 @@ import type { SeasonHistoryAwardItem } from '../../utils/league-standings-view.u
 })
 export class SeasonAwardDialogComponent {
   readonly award = inject<SeasonHistoryAwardItem>(MAT_DIALOG_DATA);
+
+  /** The generated stat text separates its facts with " | "; show one fact per line. */
+  readonly statLines: string[] = (this.award.statDisplay ?? '')
+    .split('|')
+    .map(part => part.trim())
+    .filter(part => part.length > 0);
 }

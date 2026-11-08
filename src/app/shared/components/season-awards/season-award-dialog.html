@@ -10,5 +10,7 @@
   </span>
   <span class="season-award-dialog__team">{{ award.teamName || award.owner }}</span>
   <span class="season-award-dialog__owner" *ngIf="award.teamName">{{ award.owner }}</span>
-  <span class="season-award-dialog__stat" *ngIf="award.statDisplay">{{ award.statDisplay }}</span>
+  <div class="season-award-dialog__stats" *ngIf="statLines.length > 0">
+    <span class="season-award-dialog__stat" *ngFor="let line of statLines">{{ line }}</span>
+  </div>
 </div>
