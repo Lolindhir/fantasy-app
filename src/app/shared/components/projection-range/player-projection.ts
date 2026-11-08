@@ -16,4 +16,11 @@ export class PlayerProjectionComponent {
   @Input() size: 'compact' | 'large' = 'compact';
   /** Hide the "Proj. x" label when the value is already shown by the host surface. */
   @Input() showValue = true;
+  /** Show the lower and upper bound left and right of the bar instead of under it. */
+  @Input() inline = false;
+
+  get bounds(): [string, string] | null {
+    const parts = this.view.rangeText?.split(' – ');
+    return parts && parts.length === 2 ? [parts[0], parts[1]] : null;
+  }
 }

@@ -1,7 +1,16 @@
-<span class="projection" [class.large]="size === 'large'" role="group" [attr.aria-label]="view.ariaLabel">
+<span class="projection" [class.inline]="inline && !!bounds" [class.large]="size === 'large'" role="group" [attr.aria-label]="view.ariaLabel">
   <span *ngIf="showValue" class="value"><small>Proj.</small> {{ view.projected }}</span>
-  <span *ngIf="view.bar as bar" class="whisker" aria-hidden="true">
-    <i [style.left.%]="bar.left" [style.width.%]="bar.width"></i><u [style.left.%]="bar.marker"></u>
-  </span>
-  <span *ngIf="view.rangeText" class="range" aria-hidden="true">{{ view.rangeText }}</span>
+  <ng-container *ngIf="inline && bounds && view.bar as bar; else stacked">
+    <span class="range range--low" aria-hidden="true">{{ bounds[0] }}</span>
+    <span class="whisker" aria-hidden="true">
+      <i [style.left.%]="bar.left" [style.width.%]="bar.width"></i><u [style.left.%]="bar.marker"></u>
+    </span>
+    <span class="range range--high" aria-hidden="true">{{ bounds[1] }}</span>
+  </ng-container>
+  <ng-template #stacked>
+    <span *ngIf="view.bar as bar" class="whisker" aria-hidden="true">
+      <i [style.left.%]="bar.left" [style.width.%]="bar.width"></i><u [style.left.%]="bar.marker"></u>
+    </span>
+    <span *ngIf="view.rangeText" class="range" aria-hidden="true">{{ view.rangeText }}</span>
+  </ng-template>
 </span>
