@@ -1,3 +1,4 @@
+import { MatDialog } from '@angular/material/dialog';
 import { TestBed } from '@angular/core/testing';
 
 import { SeasonAwardsComponent } from './season-awards';
@@ -25,7 +26,7 @@ describe('SeasonAwardsComponent', () => {
     expect(cards[1].textContent).toContain('B');
   });
 
-  it('shows details only after tapping a tile', () => {
+  it('opens a detail dialog with owner and stat when a tile is tapped', () => {
     const fixture = TestBed.createComponent(SeasonAwardsComponent);
     fixture.componentInstance.awards = [award('Alpha', 'A'), award('Beta', 'B')];
     fixture.detectChanges();
@@ -33,11 +34,10 @@ describe('SeasonAwardsComponent', () => {
     expect(el.textContent).not.toContain('Beta stat');
     (el.querySelectorAll('.season-award__tile')[1] as HTMLElement).click();
     fixture.detectChanges();
-    expect(el.textContent).toContain('Owner Beta');
-    expect(el.textContent).toContain('Beta stat');
-    (el.querySelectorAll('.season-award__tile')[1] as HTMLElement).click();
-    fixture.detectChanges();
-    expect(el.textContent).not.toContain('Beta stat');
+    const dialogText = document.querySelector('app-season-award-dialog')?.textContent ?? '';
+    expect(dialogText).toContain('Owner Beta');
+    expect(dialogText).toContain('Beta stat');
+    TestBed.inject(MatDialog).closeAll();
   });
 
   it('renders nothing for an empty or missing list', () => {

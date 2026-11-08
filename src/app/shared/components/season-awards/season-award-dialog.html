@@ -1,0 +1,14 @@
+<div class="season-award-dialog">
+  <button mat-icon-button mat-dialog-close class="season-award-dialog__close" aria-label="Close">
+    <mat-icon>close</mat-icon>
+  </button>
+  <span class="season-award-dialog__icon" aria-hidden="true">{{ award.icon }}</span>
+  <h2 class="season-award-dialog__name">{{ award.name }}</h2>
+  <span class="season-award-dialog__avatar-stack">
+    <span class="season-award-dialog__team-avatar"><img [src]="award.teamAvatar" alt="" /></span>
+    <span *ngIf="award.ownerAvatar" class="season-award-dialog__owner-avatar"><img [src]="award.ownerAvatar" alt="" /></span>
+  </span>
+  <span class="season-award-dialog__team">{{ award.teamName || award.owner }}</span>
+  <span class="season-award-dialog__owner" *ngIf="award.teamName">{{ award.owner }}</span>
+  <span class="season-award-dialog__stat" *ngIf="award.statDisplay">{{ award.statDisplay }}</span>
+</div>
