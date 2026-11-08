@@ -243,6 +243,24 @@ class GameFinalityWorkflowContractTests(unittest.TestCase):
         self.assertIn('write_failure_diagnostic "post-materialize-audit"', source)
         self.assertIn("Post-materialization repo-state audit (attempt", source)
 
+    def test_failure_diagnostic_is_owned_per_scope(self) -> None:
+        # Issue #1263 G5 AP0b: a scoped success must never clear the full-sync failure.
+        source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        self.assertIn('failure_diagnostic_file="data-source/_sync/last-failure.json"', source)
+        self.assertIn(
+            'failure_diagnostic_file="data-source/_sync/last-failure.${materialization_scope}.json"', source
+        )
+        # no hard-coded removal or write of the shared file outside the scoped variable
+        self.assertEqual(source.count("rm -f data-source/_sync/last-failure"), 0)
+        self.assertEqual(source.count('rm -f "$failure_diagnostic_file"'), 1)
+        self.assertIn('git add -- "$failure_diagnostic_file"', source)
+        self.assertIn('FAILURE_DIAGNOSTIC_FILE="$failure_diagnostic_file"', source)
+        self.assertIn('payload["materializationScope"]', source)
+        # the scoped write-set guard admits only the own scope's diagnostic
+        self.assertIn('[[ "$path" == "$failure_diagnostic_file" ]]', source)
+        # every publication step that records a failure goes through the scoped helper
+        self.assertNotIn('Path("data-source/_sync/last-failure.json")', source)
+
     def test_scoped_workflow_emits_requested_observability(self) -> None:
         source = (WORKFLOWS / "sync-nfl-source-data.yml").read_text(encoding="utf-8")
         for marker in (

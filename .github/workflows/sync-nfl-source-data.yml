@@ -197,6 +197,13 @@ jobs:
               exit 2
               ;;
           esac
+          # Failure diagnostics are owned per scope (Issue #1263 G5 AP0b): a successful
+          # scoped run may only clear its own scope's diagnostic, never the full-sync one.
+          # The full scope keeps the legacy file name so existing state stays valid.
+          failure_diagnostic_file="data-source/_sync/last-failure.json"
+          if [[ "$materialization_scope" != "full" ]]; then
+            failure_diagnostic_file="data-source/_sync/last-failure.${materialization_scope}.json"
+          fi
           if [[ "$materialization_scope" == "game-finality" ]]; then
             if [[ "${DATASET:-}" != "nflverse.game-finality" ]]; then
               echo "game-finality scope requires dataset=nflverse.game-finality" >&2
@@ -391,7 +398,7 @@ jobs:
                   continue
                 fi
               fi
-              if [[ "$path" == "data-source/_sync/last-failure.json" ]]; then
+              if [[ "$path" == "$failure_diagnostic_file" ]]; then
                 continue
               fi
               unexpected+=("$path")
@@ -413,6 +420,7 @@ jobs:
               mkdir -p data-source/_sync
 
               PHASE="$phase" EXIT_CODE="$exit_code" LOG_FILE="$log_file" \
+                FAILURE_DIAGNOSTIC_FILE="$failure_diagnostic_file" \
                 python - <<'PY'
           import json
           import os
@@ -436,14 +444,15 @@ jobs:
               "forceInput": (os.environ.get("FORCE") or "false").lower() == "true",
               "errorTail": lines[-80:],
           }
-          Path("data-source/_sync/last-failure.json").write_text(
+          payload["materializationScope"] = os.environ.get("MATERIALIZATION_SCOPE") or "full"
+          Path(os.environ["FAILURE_DIAGNOSTIC_FILE"]).write_text(
               json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
               encoding="utf-8",
           )
           PY
 
               assert_source_data_only
-              git add -- data-source/_sync/last-failure.json
+              git add -- "$failure_diagnostic_file"
               if git diff --cached --quiet; then
                 echo "Failure diagnostic already matches main."
                 return 0
@@ -659,7 +668,7 @@ jobs:
             if [[ "$materialization_scope" == "full" ]]; then
               python tools/nfl_source_data.py audit | tee -a "$materialize_log"
             fi
-            rm -f data-source/_sync/last-failure.json
+            rm -f "$failure_diagnostic_file"
             assert_source_data_only
             assert_scoped_canonical_write_set
 
