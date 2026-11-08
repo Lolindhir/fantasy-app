@@ -223,12 +223,54 @@ jobs:
     outputs:
       main_before_sync: ${{ steps.base.outputs.main_before_sync }}
     steps:
-      - name: Checkout main
+      # G5 E1 (Issue #1263): the current scope reads only the profile below (proven by a strace of the exact
+      # workflow commands) and writes only data-source/providers/sleeper/leagues, data-source/leagues and
+      # data-source/_sync. Full and targeted scopes keep the complete checkout. Token, branch, write paths and
+      # the publication loop are unchanged; an incomplete profile falls back to a complete checkout.
+      - name: Checkout main (current scope sparse, blobless)
+        if: env.MATERIALIZATION_SCOPE == 'current'
         uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/scripts/
+            /tools/
+            /data-meta/
+            /data-source/*.json
+            /data-source/nfl/*.json
+            /data-source/leagues/
+            /data-source/providers/sleeper/
+            /data-source/nfl/schedules/
+            /data-source/nfl/identities/
+            /data-source/_sync/
+
+      - name: Checkout main
+        if: env.MATERIALIZATION_SCOPE != 'current'
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Verify current-scope sparse inputs (fall back to a complete checkout)
+        if: env.MATERIALIZATION_SCOPE == 'current'
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          [[ "$(git config --get core.sparseCheckout)" == "true" ]] || { echo "::warning::Sparse checkout disabled"; missing=1; }
+          for path in tools/league_source_data.py tools/git_transient.py tools/rebuild_and_publish.py data-source/league-registry.json data-meta/nfl-reise/metadata.json data-source/leagues/nfl-reise/manifest.json data-source/providers/sleeper data-source/nfl/schedules/2026.json data-source/nfl/identities/provider-mappings.json; do
+            [[ -e "$path" ]] || { echo "::warning::Missing sparse input: $path"; missing=1; }
+          done
+          if (( missing != 0 )); then
+            git sparse-checkout disable
+            echo "- League source checkout: sparse profile incomplete, complete checkout used" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- League source checkout: sparse/blobless profile verified" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Record main before sync
         id: base
