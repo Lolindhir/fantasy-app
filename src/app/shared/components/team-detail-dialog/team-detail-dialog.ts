@@ -3,7 +3,7 @@ import { Component, ElementRef, HostListener, OnDestroy, OnInit, QueryList, Temp
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
-import { Subscription, forkJoin, timer } from 'rxjs';
+import { Subscription, catchError, forkJoin, of, timer } from 'rxjs';
 
 import type { DecisionWindow, DecisionWindowsReadModel } from '../../../core/models/decision-window.models';
 import type { DraftPick, FantasyTeam, League, Player, RawDraft } from '../../../core/models/fantasy.models';
@@ -50,6 +50,8 @@ import { SalaryAssetLeaderboardComponent } from '../salary-asset-leaderboard/sal
 import { SalaryHealthIndicatorComponent } from '../salary-health-indicator/salary-health-indicator';
 import { SalaryPositionDonutComponent } from '../salary-position-donut/salary-position-donut';
 import { TeamInjuryReportComponent } from '../team-injury-report/team-injury-report';
+import type { WeeklyRecapSeasonEfficiency } from '../../../core/models/weekly-recap.models';
+import { buildLineupEfficiencyLookup, formatEfficiency } from '../../utils/lineup-efficiency.util';
 import { TeamLineupTabComponent } from '../team-lineup-tab/team-lineup-tab';
 import { TeamRivalsTabComponent } from '../team-rivals-tab/team-rivals-tab';
 import { TrophyRoomComponent } from '../trophy-room/trophy-room';
@@ -143,6 +145,8 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   rosterColumnsDesktop: RosterMetric[] = defaultColumns('desktop');
   rosterColumnsMobile: RosterMetric[] = defaultColumns('mobile');
   showRosterColumnPicker = false;
+  /** Season lineup efficiency of this team (generator value of WeeklyRecaps.json); null while unknown. */
+  lineupEfficiency: WeeklyRecapSeasonEfficiency | null = null;
   weekProjections: ReadonlyMap<string, PlayerWeekProjectionView> | null = null;
   selectedTabIndex = this.data.initialTab === 'lineup' && this.decisionWindowPhaseActive ? 1 : 0;
   isMobile = window.innerWidth <= 600;
@@ -162,6 +166,11 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.restoreRosterColumnSettings();
     this.loadDraftHistory();
+    this.subscriptions.add(this.dataService.getWeeklyRecaps().pipe(catchError(() => of(null))).subscribe(recaps => {
+      this.lineupEfficiency = recaps && recaps.Season === this.league.Season
+        ? buildLineupEfficiencyLookup(recaps, this.league.Season).season(this.team.TeamID)
+        : null;
+    }));
     this.subscriptions.add(this.dataService.getPlayerWeekProjections().subscribe(projections => {
       this.weekProjections = projections;
     }));
@@ -246,6 +255,11 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
       playerLockFacts: this.decisionWindows.PlayerLockFacts,
       now: this.now
     };
+  }
+
+  get lineupEfficiencyLabel(): string | null {
+    const value = this.lineupEfficiency;
+    return value && value.EfficiencyPercent !== null ? formatEfficiency(value.EfficiencyPercent) : null;
   }
 
   get selectedSalary(): TeamSalaryLensSummary {

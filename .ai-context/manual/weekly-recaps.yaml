@@ -46,6 +46,20 @@ decisions:
   R5: League Live writes only the current season; completed seasons are written by the weekly update-transactions run together with the matchup-context history.
   R6: After section 3, the remaining FantasyGameContext/Matchup PowerShell (WeeklyRecapMatchupFacts.psm1) is deleted together with the recap PowerShell.
 
+lineupEfficiency:
+  issue: 1408
+  summary: >-
+    Additive fields of the unchanged SchemaVersion 1 contract (no new file, writer or write path). The team-week-performance partition is only read.
+  weekFields: >-
+    Each week gets TeamPerformance: one entry per team (FantasyTeamID, ActualStarterPoints, PotentialPoints, MissedPoints, EfficiencyPercent, OptimalLineup[{SlotID,
+    PlayerID, CanonicalPlayerID, Points}]), copied from the validated partition and joined to FantasyTeamID exactly like TeamAwards. It is null when the partition is
+    missing (unknown, never zero). PlayerID is the Sleeper ID of the App contract resolved through the weekly roster of that week, null when unknown.
+  seasonFields: >-
+    The season model gets SeasonEfficiency: per team sum(ActualStarterPoints), sum(PotentialPoints), MissedPoints and EfficiencyPercent = Actual / Potential * 100
+    (4 decimals) over the recap weeks that have a partition, plus Weeks (the number of weeks counted). Computed in the generator; the frontend only displays it.
+  compatibility: Files without the fields stay valid (all fields optional for the frontend); older archives gain them with the next weekly update-transactions run.
+  consumers: Weeks page season grid (Efficiency view), team detail Franchise Snapshot, matchup dialog optimal lineup of final weeks.
+
 selectionRules:
   weekBasis: A week gets a recap exactly when week <= LeagueScoredWeek. Weeks after it are absent, not empty.
   starters: Only actual starters (IsStarter) count. A starter without realized point evidence fails closed.
@@ -82,7 +96,7 @@ consumers:
 
 nonGoals:
   - New selection rules or awards (#499 stays separate).
-  - Changes to the WeeklyRecaps.json contract other than R2 at the edge.
+  - Changes to the WeeklyRecaps.json contract other than R2 at the edge and the additive lineupEfficiency fields (Issue #1408).
   - A persisted recap product.
   - Frontend changes.
 

@@ -22,6 +22,7 @@ import type {
 import type { FantasyTeam, League } from '../../../core/models/league.models';
 import type { MatchupProjectionTeam } from '../../../core/models/matchup-projections.models';
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
+import type { WeeklyRecapTeamPerformance } from '../../../core/models/weekly-recap.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
 import { MatchupRangeChartComponent } from '../projection-range/matchup-range-chart';
 import { PlayerProjectionComponent } from '../projection-range/player-projection';
@@ -51,6 +52,12 @@ import {
   type MatchupPlayerStatusTeamView
 } from '../matchup-player-status/matchup-player-status.util';
 import { findNflTeam } from '../../utils/nfl-team-key.util';
+import {
+  buildOptimalLineupView,
+  formatEfficiency,
+  slotLabel,
+  type OptimalLineupView
+} from '../../utils/lineup-efficiency.util';
 
 interface FantasyGamePlayerDisplay {
   PlayerID: string;
@@ -190,6 +197,10 @@ export interface FantasyGameContextDialogData {
   headToHead?: string | null;
   /** Record from the left team's view: lead (green), trail (red) or tie (neutral). */
   headToHeadTone?: 'lead' | 'trail' | 'tie' | null;
+  /** Complete player list used to name the optimal lineup (the rosters only hold today's players). */
+  players?: Player[];
+  /** Generator lineup efficiency of this week (final weeks only); the optimal lineup section is hidden without it. */
+  lineupEfficiency?: WeeklyRecapTeamPerformance[] | null;
 }
 
 @Component({
@@ -224,6 +235,8 @@ export class FantasyGameContextDialogComponent {
   readonly matchup: FantasyGameContextMatchup | null;
   readonly matchupTeamIDs: MatchupDisplayTeamIDs | null;
   readonly playerStatusTeams: readonly MatchupPlayerStatusTeamView[];
+  /** Optimal lineups of both teams in display order; empty when the generator has no values for this week. */
+  readonly optimalLineups: readonly OptimalLineupView[];
 
   constructor(@Inject(MAT_DIALOG_DATA) readonly data: FantasyGameContextDialogData) {
     this.game = data.gameId
@@ -244,7 +257,11 @@ export class FantasyGameContextDialogComponent {
     this.playerStatusTeams = this.matchup && this.matchupTeamIDs
       ? this.buildPlayerStatus(this.matchup, this.matchupTeamIDs)
       : [];
+    this.optimalLineups = this.buildOptimalLineups();
   }
+
+  readonly formatEfficiency = formatEfficiency;
+  readonly slotLabel = slotLabel;
 
   get hasPlayerStatus(): boolean {
     return hasMatchupPlayerStatus(this.playerStatusTeams);
@@ -701,7 +718,19 @@ export class FantasyGameContextDialogComponent {
     return this.data.league.Teams.find(candidate => String(candidate.TeamID) === String(teamID)) ?? null;
   }
 
+  private buildOptimalLineups(): OptimalLineupView[] {
+    const performance = this.data.lineupEfficiency;
+    if (!this.matchup || !this.matchupTeamIDs || !performance?.length) return [];
+    const players = this.data.players ?? this.data.league.Teams.flatMap(team => team.Roster);
+    return this.matchupTeamIDs.flatMap(teamID => {
+      const team = performance.find(candidate => String(candidate.FantasyTeamID) === String(teamID));
+      return team ? [buildOptimalLineupView(team, players)] : [];
+    });
+  }
+
   private findPlayer(playerID: string): Player | null {
+    const listed = this.data.players?.find(candidate => String(candidate.ID) === String(playerID));
+    if (listed) return listed;
     for (const team of this.data.league.Teams) {
       const player = team.Roster.find(candidate => String(candidate.ID) === String(playerID));
       if (player) return player;

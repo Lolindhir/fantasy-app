@@ -716,3 +716,79 @@
 .fgc-matchup-h2h--lead strong { color: #15803d; }
 .fgc-matchup-h2h--trail { border-color: #fca5a5; background: #fef2f2; }
 .fgc-matchup-h2h--trail strong { color: #b91c1c; }
+
+.fgc-optimal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fgc-optimal-card {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #edf0f5;
+  border-radius: 12px;
+  background: #fafbfc;
+}
+
+.fgc-optimal-summary {
+  margin: 6px 0 0;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.fgc-optimal-summary span {
+  color: #7c8799;
+  font-weight: 700;
+}
+
+.fgc-optimal-details summary {
+  margin-top: 8px;
+  color: #6d28d9;
+  font-size: 0.7rem;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.fgc-optimal-slots {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fgc-optimal-slots li {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+}
+
+.fgc-optimal-slot {
+  color: #7c8799;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+.fgc-optimal-name {
+  overflow: hidden;
+  color: #263247;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fgc-optimal-points {
+  color: #475569;
+  font-weight: 850;
+}
+
+@media (max-width: 520px) {
+  .fgc-optimal-grid {
+    grid-template-columns: 1fr;
+  }
+}

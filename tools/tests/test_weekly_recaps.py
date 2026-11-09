@@ -217,5 +217,56 @@ class TeamAwardsTests(unittest.TestCase):
             self.awards(rows)
 
 
+class TeamPerformanceTests(TeamAwardsTests):
+    """Lineup efficiency projection: exact partition values, missing partition is None, season value from the generator."""
+
+    def setUp(self):
+        super().setUp()
+        for i, team in enumerate(self.derived["Teams"], start=1):
+            team["OptimalLineup"] = [
+                {"CanonicalPlayerID": f"c{i}", "Points": 10 + i, "SlotID": "QB-1"},
+                {"CanonicalPlayerID": "unknown", "Points": 5, "SlotID": "RB-1"},
+            ]
+        self.identity = wr.roster_identity_map([{"CanonicalPlayerID": f"c{i}", "SourceIDs": {"Sleeper": f"s{i}"}} for i in range(1, 7)])
+
+    def both(self, identity=None):
+        return wr.team_awards_and_performance(self.root, "test-league", 2026, 4, self.rows, self.participants, identity)
+
+    def test_missing_partition_is_none_not_zero(self):
+        awards, performance = self.both()
+        self.assertEqual("unavailable", awards["State"])
+        self.assertIsNone(performance)
+
+    def test_values_equal_partition(self):
+        self.write()
+        _, performance = self.both(self.identity)
+        self.assertEqual(list(range(1, 7)), [t["FantasyTeamID"] for t in performance])
+        for team in performance:
+            source = self.derived["Teams"][team["FantasyTeamID"] - 1]
+            for key in ("ActualStarterPoints", "PotentialPoints", "MissedPoints", "EfficiencyPercent"):
+                self.assertEqual(source[key], team[key])
+        first = performance[0]["OptimalLineup"]
+        self.assertEqual(("QB-1", "s1", "c1", 11), tuple(first[0][k] for k in ("SlotID", "PlayerID", "CanonicalPlayerID", "Points")))
+        self.assertIsNone(first[1]["PlayerID"], "an unknown canonical player stays null")
+
+    def test_null_efficiency_stays_null(self):
+        self.derived["Teams"][0]["EfficiencyPercent"] = None
+        self.derived["Awards"] = {"BestManagerRosterIDs": [], "BestCoachRosterIDs": []}
+        self.write()
+        self.assertIsNone(self.both()[1][0]["EfficiencyPercent"])
+
+    def test_season_efficiency_sums_weeks_with_partition(self):
+        weeks = [
+            {"TeamPerformance": [{"FantasyTeamID": 1, "ActualStarterPoints": 80, "PotentialPoints": 100}]},
+            {"TeamPerformance": None},
+            {"TeamPerformance": [{"FantasyTeamID": 1, "ActualStarterPoints": 90.5, "PotentialPoints": 100}]},
+        ]
+        self.assertEqual(
+            [{"FantasyTeamID": 1, "ActualStarterPoints": 170.5, "PotentialPoints": 200, "MissedPoints": 29.5, "EfficiencyPercent": 85.25, "Weeks": 2}],
+            wr.season_efficiency(weeks),
+        )
+        self.assertEqual([], wr.season_efficiency([{"TeamPerformance": None}]))
+
+
 if __name__ == "__main__":
     unittest.main()
