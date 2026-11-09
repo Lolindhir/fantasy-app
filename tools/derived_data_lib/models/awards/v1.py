@@ -5,9 +5,10 @@ was completed), Clutch Peaker (needs playoff placements), Most Improved (needs t
 given before the first completed regular-season game. The first team in table order wins an exact tie of an
 award score. The rows of the regular-season table gain the score annotations ClutchPeakerScore and
 ImprovementScore because the App contract carries them (Standings.json); they are part of the result.
-Display strings (StatDisplay) are part of the v1 result because the App contract is unchanged, including the
-closing parenthesis of the Brick Wall text. #964 follows as ``awards-v2``.
-Immutable after its first productive use; any change is ``awards-v2``.
+Display strings (StatDisplay) are part of the v1 result because the App contract is unchanged. The stray closing
+parenthesis of the Brick Wall text was a bug and was fixed in place (exception to the immutability rule of ADR-055,
+approved by the owner as a bugfix). #964 follows as ``awards-v2``.
+Immutable after its first productive use; any other change is ``awards-v2``.
 """
 from __future__ import annotations
 
@@ -82,7 +83,7 @@ def compute(
     wall = _first_max(rows, "IronWillScore")
     awards.append(_award("Brick Wall", "RegularSeason", "1F9F1",
                          f"Points Against per Game: {ps_text(wall['PointsAgainstPerGame'])} | League Difference: "
-                         f"{ps_text(wall['PointsAgainstPerGameDiffLeagueAvg'])} | Wins: {ps_text(wall['Wins'])})", wall))
+                         f"{ps_text(wall['PointsAgainstPerGameDiffLeagueAvg'])} | Wins: {ps_text(wall['Wins'])}", wall))
 
     if playoffs:
         by_team = {p["TeamID"]: p for p in playoffs}
