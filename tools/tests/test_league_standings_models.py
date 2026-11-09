@@ -393,7 +393,7 @@ class AwardsTests(unittest.TestCase):
         self.assertEqual({}, annotations)
         self.assertEqual("Points: 300.5 | Points per Game: 100.17", result[0]["StatDisplay"])
         self.assertEqual("Longest Streak: 1 Wins | Record: WLW", result[1]["StatDisplay"])
-        self.assertRegex(result[3]["StatDisplay"], r"^Points Against per Game: .+ \| League Difference: .+ \| Wins: \d+\)$")  # v1 keeps the closing parenthesis
+        self.assertRegex(result[3]["StatDisplay"], r"^Points Against per Game: .+ \| League Difference: .+ \| Wins: \d+$")  # no stray closing parenthesis (bugfix in v1)
         self.assertEqual({"Name": "RegularSeason", "DisplayText": "Regular Season", "Order": 2}, result[0]["Type"])
         self.assertEqual("1F525", result[0]["IconUnicode"])
 
