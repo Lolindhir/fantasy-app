@@ -1,8 +1,10 @@
-<section class="section-card trophy-room" aria-label="Trophy Room">
-  @if (isEmpty) {
+@if (isEmpty) {
+  <section class="section-card trophy-room" aria-label="Trophy Room">
     <p class="empty-state">No titles or podium finishes yet.</p>
-  } @else {
-    @if (room.rings.length) {
+  </section>
+} @else {
+  @if (room.rings.length) {
+    <section class="section-card trophy-room" aria-label="Championship rings">
       <div class="trophy-room__rings">
         @for (ring of room.rings; track ring.season) {
           <button type="button" class="trophy-ring" [attr.aria-label]="ring.season + ' championship ring, open large view'" (click)="openRing(ring)">
@@ -11,9 +13,11 @@
           </button>
         }
       </div>
-    }
+    </section>
+  }
 
-    @if (room.banners.length) {
+  @if (room.banners.length) {
+    <section class="section-card trophy-room" aria-label="Season banners">
       <div class="trophy-room__banners">
         @for (banner of room.banners; track banner.season) {
           <app-achievement-banner
@@ -28,10 +32,11 @@
           ></app-achievement-banner>
         }
       </div>
-    }
+    </section>
+  }
 
-    @if (room.plaques.length) {
-      <hr class="trophy-room__divider" />
+  @if (room.plaques.length) {
+    <section class="section-card trophy-room" aria-label="Regular season plaques">
       <div class="trophy-room__plaques">
         @for (plaque of room.plaques; track plaque.season) {
           <app-achievement-plaque
@@ -42,9 +47,9 @@
           ></app-achievement-plaque>
         }
       </div>
-    }
+    </section>
   }
-</section>
+}
 
 <ng-template #ringDetail>
   @if (selectedRing; as ring) {
