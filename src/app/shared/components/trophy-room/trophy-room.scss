@@ -32,8 +32,8 @@
 }
 
 /* Banners and plaques share one scale so they always change together. */
-:host { --trophy-zoom: 1; }
-@media (max-width: 700px) { :host { --trophy-zoom: 0.6; } }
+:host { --trophy-zoom: 1; --trophy-plaque-zoom: 1; }
+@media (max-width: 700px) { :host { --trophy-zoom: 0.7; --trophy-plaque-zoom: 0.8; } }
 
 .trophy-room__banners,
 .trophy-room__plaques {
@@ -44,7 +44,7 @@
 }
 
 .trophy-room__banners app-achievement-banner { width: 118px; flex: 0 0 auto; zoom: var(--trophy-zoom); }
-.trophy-room__plaques app-achievement-plaque { width: 270px; max-width: 100%; flex: 0 0 auto; zoom: var(--trophy-zoom); }
+.trophy-room__plaques app-achievement-plaque { width: 270px; max-width: 100%; flex: 0 0 auto; zoom: var(--trophy-plaque-zoom); }
 
 .trophy-ring-detail {
   display: grid;
