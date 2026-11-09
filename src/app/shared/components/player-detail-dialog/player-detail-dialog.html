@@ -156,7 +156,18 @@
         <!-- Fantasy Points -->
         <ng-container matColumnDef="points">
           <th mat-header-cell *matHeaderCellDef>Points</th>
-          <td mat-cell *matCellDef="let g">{{ g.FantasyPoints <= 0 ? '–' : g.FantasyPoints }}</td>
+          <td mat-cell *matCellDef="let g"
+              [class.game-points--met]="g.Projection?.Result === 'met'"
+              [class.game-points--missed]="g.Projection?.Result === 'missed'">{{ g.FantasyPoints <= 0 ? '–' : g.FantasyPoints }}</td>
+        </ng-container>
+
+        <!-- Projection; the result is classified by the generator -->
+        <ng-container matColumnDef="projection">
+          <th mat-header-cell *matHeaderCellDef>Proj.</th>
+          <td mat-cell *matCellDef="let g" class="game-projection">
+            <ng-container *ngIf="g.Projection as projection; else noProjection">{{ projection.Points | number:'1.1-1' }}</ng-container>
+            <ng-template #noProjection>–</ng-template>
+          </td>
         </ng-container>
 
         <!-- Touchdowns -->
@@ -197,13 +208,13 @@
         </ng-container>
 
         <ng-container *ngIf="player.Position != 'K'">
-          <tr mat-header-row *matHeaderRowDef="['week','opponent','points','touchdowns']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['week','opponent','points','touchdowns']"></tr>
+          <tr mat-header-row *matHeaderRowDef="['week','opponent','projection','points','touchdowns']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['week','opponent','projection','points','touchdowns']"></tr>
         </ng-container>
 
         <ng-container *ngIf="player.Position === 'K'">
-          <tr mat-header-row *matHeaderRowDef="['week','opponent','points','fgs','xps']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['week','opponent','points','fgs','xps']"></tr>
+          <tr mat-header-row *matHeaderRowDef="['week','opponent','projection','points','fgs','xps']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['week','opponent','projection','points','fgs','xps']"></tr>
         </ng-container>
       </table>
     </mat-tab>

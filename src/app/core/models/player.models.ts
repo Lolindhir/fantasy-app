@@ -58,6 +58,17 @@ export interface GameHistory {
   Rushing?: RushingStats;
   Receiving?: ReceivingStats;
   Kicking?: KickingStats;
+  /** Generator-owned projection of this game (PlayerWeekFantasy); null when no projection exists. Absent in older files. */
+  Projection?: GameProjection | null;
+}
+
+/** Result against the projection, classified by the generator: met = points reach the projection (equal counts). */
+export type GameProjectionResult = 'met' | 'missed';
+
+export interface GameProjection {
+  Points: number;
+  /** Null while the game or its points are not final. */
+  Result: GameProjectionResult | null;
 }
 
 export interface GameDetails {

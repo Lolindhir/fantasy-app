@@ -62,7 +62,8 @@ def valuation(**overrides) -> dict:
     return base
 
 
-def inputs(population=None, rows=None, histories=None, depth=None, bye=None, basis=None) -> prm.ReadModelInputs:
+def inputs(population=None, rows=None, histories=None, depth=None, bye=None, basis=None, canonical_ids=None,
+           projections=None) -> prm.ReadModelInputs:
     population = population if population is not None else [entry("1")]
     return prm.ReadModelInputs(
         league_id="test-league", season=2030, bounds=BOUNDS, population=population,
@@ -70,7 +71,91 @@ def inputs(population=None, rows=None, histories=None, depth=None, bye=None, bas
         game_histories=histories if histories is not None else {"1": [game("g3", 3), game("g2", 2), game("g1", 1)]},
         depth_charts=depth if depth is not None else {"1": {"Position": "WR", "Order": 2}},
         bye_weeks=bye if bye is not None else {"AAA": 7}, roster_basis=basis or {},
+        canonical_ids=canonical_ids or {}, projections=projections or {},
     )
+
+
+def pwf_record(points=10.0, actual_state="final") -> dict:
+    return {"CanonicalPlayerID": "C1", "Actual": {"Points": 1.0, "State": actual_state},
+            "Projection": {"Points": points, "Status": "available"}}
+
+
+class ProjectionTests(unittest.TestCase):
+    def test_reduction_copies_the_projection_and_unknown_stays_null(self) -> None:
+        self.assertEqual({"Points": 7.5, "ActualFinal": True}, prm.projection_from_record(pwf_record(points=7.5)))
+        self.assertIsNone(prm.projection_from_record({"Projection": {"Points": None, "Status": "insufficient-history"}}))
+        self.assertFalse(prm.projection_from_record(pwf_record(actual_state="unavailable"))["ActualFinal"])
+
+    def test_equal_counts_as_met(self) -> None:
+        self.assertEqual("met", prm.projection_result(10.0, 10.0))
+        self.assertEqual("met", prm.projection_result(10.01, 10.0))
+        self.assertEqual("missed", prm.projection_result(9.99, 10.0))
+
+    def test_games_join_by_canonical_id_and_week(self) -> None:
+        histories = {"1": [game(f"g{w}", w, FantasyPoints=p) for w, p in {1: 20.0, 2: 10.0, 3: 2.0}.items()]}
+        projections = {("C1", w): prm.projection_from_record(pwf_record(points=10.0)) for w in (1, 2)}
+        row = prm.assemble(inputs(histories=histories, canonical_ids={"1": "C1"}, projections=projections), AS_OF).players[0]
+        by_week = {g["GameDetails"]["Week"]: g["Projection"] for g in row["GameHistory"]}
+        self.assertEqual({"Points": 10.0, "Result": "met"}, by_week[1])
+        self.assertEqual("met", by_week[2]["Result"])
+        self.assertIsNone(by_week[3])  # no record for the week
+
+    def test_missing_identity_or_record_gives_null(self) -> None:
+        row = prm.assemble(inputs(canonical_ids={"1": "C1"}), AS_OF).players[0]
+        self.assertTrue(all(g["Projection"] is None for g in row["GameHistory"]))
+        no_identity = prm.assemble(inputs(projections={("C1", 1): prm.projection_from_record(pwf_record())}), AS_OF).players[0]
+        self.assertTrue(all(g["Projection"] is None for g in no_identity["GameHistory"]))
+
+    def test_unsettled_games_carry_the_projection_but_no_result(self) -> None:
+        histories = {"1": [game("g1", 1, final=False, FantasyPoints=99.0), game("g2", 2, FantasyPoints=99.0)]}
+        projections = {("C1", 1): prm.projection_from_record(pwf_record()),
+                       ("C1", 2): prm.projection_from_record(pwf_record(actual_state="unavailable"))}
+        row = prm.assemble(inputs(histories=histories, canonical_ids={"1": "C1"}, projections=projections), AS_OF).players[0]
+        self.assertEqual([None, None], [g["Projection"]["Result"] for g in row["GameHistory"]])
+        self.assertEqual([10.0, 10.0], [g["Projection"]["Points"] for g in row["GameHistory"]])
+
+    def test_form_games_stay_unchanged_and_hold_players_have_no_projection(self) -> None:
+        histories = {"1": [game(f"g{w}", w) for w in (1, 2, 3)]}
+        projections = {("C1", w): prm.projection_from_record(pwf_record()) for w in (1, 2, 3)}
+        with_projection = prm.assemble(inputs(histories=histories, canonical_ids={"1": "C1"}, projections=projections),
+                                       AS_OF).players[0]
+        self.assertTrue(all("Projection" not in g for g in with_projection["Grading"][0]["Value"]))
+        hold = prm.assemble(inputs(rows={"1": valuation(Hold={"Reason": "identity"})}, canonical_ids={"1": "C1"},
+                                   projections=projections), AS_OF).players[0]
+        self.assertEqual([], hold["GameHistory"])
+
+
+class LoadProjectionsTests(unittest.TestCase):
+    def _write(self, root: Path, week: int, records: list, season: int = 2030) -> None:
+        folder = root / "data-derived" / "player-week-fantasy" / "test-league" / str(season)
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f"{week:02d}.json").write_text(json.dumps(
+            {"CanonicalLeagueID": "test-league", "Season": season, "Week": week, "Records": records}), encoding="utf-8")
+
+    def test_reads_weeks_skips_unprojected_players_and_tolerates_a_missing_folder(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual({}, prm.load_projections(root, "test-league", 2030))
+            self._write(root, 2, [pwf_record(),
+                                  {"CanonicalPlayerID": "C2", "Projection": {"Points": None, "Status": "insufficient-history"}}])
+            loaded = prm.load_projections(root, "test-league", 2030)
+            self.assertEqual({("C1", 2)}, set(loaded))
+
+    def test_duplicate_player_or_foreign_snapshot_fails_closed(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write(root, 1, [pwf_record(), pwf_record()])
+            with self.assertRaises(prm.PlayersReadModelError):
+                prm.load_projections(root, "test-league", 2030)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write(root, 1, [pwf_record()], season=2030)
+            folder = root / "data-derived" / "player-week-fantasy" / "test-league" / "2030"
+            (folder / "01.json").write_text(json.dumps({"CanonicalLeagueID": "other", "Season": 2030, "Week": 1, "Records": []}))
+            with self.assertRaises(prm.PlayersReadModelError):
+                prm.load_projections(root, "test-league", 2030)
 
 
 class AgeAndInjuryTests(unittest.TestCase):
