@@ -171,8 +171,9 @@ jobs:
       # G5 E2 (Issue #1263): exclusion profile. The generator chain below reads (strace of the exact commands) only
       # recent NFL seasons (PWF model: target season minus 5 up to minus 1), the sleeper provider, tools, data-meta,
       # data-derived and public/data. Excluded are only folders and old seasons the chain provably never reads:
-      # player-stats before 2021, weekly-rosters before 2021, all providers except sleeper, public/data/backup
-      # (no command of the chain writes backups), fantasy-management, market, assets, docs, research and src.
+      # player-stats before 2021, weekly-rosters before 2021, all providers except sleeper,
+      # fantasy-management, market, assets, docs, research and src. public/data stays complete: RequestLeague writes
+      # public/data/backup (Save-JsonFile -CreateBackup) and rebuild_and_publish runs git add -A on public/data.
       # Newer seasons (2021 onward, including every future one) stay included automatically; a missing needed file
       # fails the run closed, and the verify step falls back to a complete checkout. Paths, token and rights unchanged.
       - name: Checkout repository (exclusion profile, blobless)
@@ -190,7 +191,6 @@ jobs:
             !/src/
             !/public/assets/
             !/public/docs/
-            !/public/data/backup/
             !/data-source/market/
             !/data-source/providers/*/
             /data-source/providers/sleeper/

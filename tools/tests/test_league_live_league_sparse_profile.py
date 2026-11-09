@@ -19,14 +19,6 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / ".github" / "workflows" / "league-live.yml"
 
-CHAIN_TOOLS = (
-    "tools/league_live_derived_refresh.py", "tools/player_week_fantasy_refresh.py",
-    "tools/matchup_context_app_publish.py", "tools/league_history_app_publish.py",
-    "tools/weekly_recaps_app_publish.py", "tools/team_cap_outlook_app_publish.py",
-    "public/requests/RequestLeaguePublication.ps1",
-)
-
-
 def job() -> dict:
     return yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))["jobs"]["league"]
 
@@ -53,7 +45,7 @@ class LeagueSparseProfileTest(unittest.TestCase):
         excluded = {e[1:] for e in entries if e.startswith("!")}
         for required in (
             "/fantasy-management/", "/research/", "/src/", "/public/assets/", "/public/docs/",
-            "/public/data/backup/", "/data-source/market/", "/data-source/providers/*/",
+            "/data-source/market/", "/data-source/providers/*/",
         ):
             self.assertIn(required, excluded)
         self.assertIn("/data-source/providers/sleeper/", entries)
@@ -64,6 +56,7 @@ class LeagueSparseProfileTest(unittest.TestCase):
         for dependency in ("/tools/", "/data-meta/", "/data-derived/", "/public/data/", "/public/requests/", "/.github/"):
             self.assertFalse(any(dependency.startswith(e) for e in excluded), dependency)
             self.assertNotIn(dependency, excluded)
+        self.assertNotIn("/public/data/backup/", excluded)  # RequestLeague writes League backups there
 
     def test_publication_scope_and_fallback_are_unchanged(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
@@ -78,10 +71,6 @@ class LeagueSparseProfileTest(unittest.TestCase):
         verify = next(s for s in job()["steps"] if "Verify League sparse inputs" in str(s.get("name", "")))
         self.assertIn("git sparse-checkout disable", verify["run"])
         self.assertIn("player-stats/2025", verify["run"])
-
-    def test_the_chain_never_writes_backups_into_the_excluded_backup_folder(self) -> None:
-        for rel in CHAIN_TOOLS:
-            self.assertNotIn("backup", (ROOT / rel).read_text(encoding="utf-8").lower(), rel)
 
     def test_profile_applied_by_git_includes_future_seasons_and_drops_only_old_ones(self) -> None:
         files = [
@@ -109,8 +98,13 @@ class LeagueSparseProfileTest(unittest.TestCase):
             (repo / ".git" / "info" / "sparse-checkout").write_text("\n".join(profile()) + "\n")
             git(repo, "checkout", "-q", "main")
             present = {rel for rel in files if (repo / rel).exists()}
+            # regression: a new untracked League backup must be addable like rebuild_and_publish does
+            (repo / "public" / "data" / "backup").mkdir(parents=True, exist_ok=True)
+            (repo / "public" / "data" / "backup" / "League_new.json").write_text("n")
+            add = subprocess.run(["git", "add", "-A", "--", "public/data"], cwd=repo, capture_output=True, text=True)
+            self.assertEqual(0, add.returncode, add.stderr)
         absent = {
-            "public/data/backup/b.json", "fantasy-management/f.md", "src/app/a.ts", "research/r.md",
+            "fantasy-management/f.md", "src/app/a.ts", "research/r.md",
             "public/assets/a.png", "public/docs/d.md", "data-source/market/m.json",
             "data-source/providers/espn/x.json", "data-source/providers/nflverse/y.csv",
         } | {
