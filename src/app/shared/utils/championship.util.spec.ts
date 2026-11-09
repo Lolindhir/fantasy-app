@@ -4,7 +4,8 @@ import {
   buildTrophyRoom,
   getDefendingChampionTeamId,
   getLatestChampionSeason,
-  getSeasonRingSrc
+  getSeasonRingSrc,
+  DEFAULT_TEAM_AVATAR_SRC
 } from './championship.util';
 
 function playoff(place: number, teamId: number, extra: Record<string, unknown> = {}) {
@@ -71,6 +72,13 @@ describe('championship util', () => {
     const room = buildTrophyRoom({ Standings: standings, Season: '2026', IsFinished: false }, { TeamID: 7 });
     expect(room.banners[0].teamName).toBe('Old Name');
     expect(room.banners[0].teamAvatar).toBe('old-avatar');
+  });
+
+  it('falls back to the default team logo like the Standings when a season has no stored logo', () => {
+    const noLogo = [standing('2024', [playoff(1, 5, { TeamAvatar: '' }), playoff(2, 3)], 5)];
+    const room = buildTrophyRoom({ Standings: noLogo, Season: '2026', IsFinished: false }, { TeamID: 5 });
+    expect(room.banners[0].teamAvatar).toBe(DEFAULT_TEAM_AVATAR_SRC);
+    expect(room.plaques[0].teamAvatar).toBe(DEFAULT_TEAM_AVATAR_SRC);
   });
 
   it('uses the season ring path contract and a generic fallback constant', () => {

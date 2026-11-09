@@ -1,6 +1,9 @@
 import type { FantasyTeam, League, Standing } from '../../core/models/fantasy.models';
 
 /** Generic championship ring used until a season-specific artwork exists (#662, F14/F15). */
+/** Same fallback the Standings season results use when a season has no stored team logo. */
+export const DEFAULT_TEAM_AVATAR_SRC = 'assets/default-team-avatar.png';
+
 export const GENERIC_CHAMPIONSHIP_RING_SRC = 'assets/awards/ui/award-championship-ring.png';
 
 /** Storage contract for season-specific rings (#662, F15). A missing file falls back to the generic ring. */
@@ -114,7 +117,7 @@ export function buildTrophyRoom(
       const entry: TrophyRoomSeasonEntry = {
         season,
         teamName: playoff.TeamName,
-        teamAvatar: playoff.TeamAvatar?.trim() || null,
+        teamAvatar: playoff.TeamAvatar?.trim() || DEFAULT_TEAM_AVATAR_SRC,
         ownerAvatar: playoff.OwnerAvatar?.trim() || null,
         owner: playoff.Owner
       };
@@ -133,7 +136,7 @@ export function buildTrophyRoom(
       plaques.push({
         season,
         teamName: regularWinner.TeamName ?? playoff?.TeamName ?? null,
-        teamAvatar: playoff?.TeamAvatar?.trim() || null,
+        teamAvatar: playoff?.TeamAvatar?.trim() || DEFAULT_TEAM_AVATAR_SRC,
         ownerAvatar: playoff?.OwnerAvatar?.trim() || null,
         owner: regularWinner.Owner
       });
