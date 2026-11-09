@@ -16,6 +16,7 @@ import { formatPlayerPositionDepth } from '../../utils/player-sort.util';
 import { buildPlayerJourney, type PlayerJourney, type PlayerJourneyEvent } from '../../utils/player-journey.util';
 import type { PlayerWeekProjectionView } from '../../utils/player-week-projection.util';
 import { PlayerProjectionComponent } from '../projection-range/player-projection';
+import { SalaryHistoryChartComponent } from '../salary-history-chart/salary-history-chart';
 
 // Registrierung
 Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, CategoryScale, BarController, BarElement, Title, Tooltip, Legend);
@@ -33,7 +34,8 @@ Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, C
     MatChipsModule,
     MatIconModule,
     PositionStylePipe,
-    PlayerProjectionComponent
+    PlayerProjectionComponent,
+    SalaryHistoryChartComponent
   ],
   templateUrl: './player-detail-dialog.html',
   styleUrls: ['./player-detail-dialog.scss']
@@ -141,6 +143,18 @@ export class PlayerDetailDialogComponent implements OnInit {
         }
       ]
     };
+  }
+
+  /** Generator-owned change of the projected salary; null when unknown (shown as a dash). */
+  formatSalaryChange(value: number | null | undefined): string {
+    if (value == null) return '–';
+    const absolute = Math.abs(value);
+    const text = absolute >= 1_000_000 ? `$${(absolute / 1_000_000).toFixed(1)}m` : `$${(absolute / 1_000).toFixed(0)}k`;
+    return value > 0 ? `+${text}` : value < 0 ? `-${text}` : text;
+  }
+
+  salaryChangeClass(value: number | null | undefined): string {
+    return value == null || value === 0 ? '' : value > 0 ? 'salary-change--up' : 'salary-change--down';
   }
 
   get rankingTotal(): number | undefined {

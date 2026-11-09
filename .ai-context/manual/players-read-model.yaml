@@ -64,6 +64,7 @@ inputs:
   weekBounds: tools/derived_data_lib/week_finality.py (StatsFinalWeek, LeagueScoredWeek) and the league WeekStructure
   gameHistory: tools/players_game_history.py (inside the players_league_scoring.py export, ADR-044)
   schedule: data-source/nfl/schedules/<season>.json (Bye weeks)
+  salaryWeeks: data-derived/player-valuation/<CanonicalLeagueID>/<season>/week-<NN>.json for NN = 0..StatsFinalWeek (read only, Issue #1410; Salary and SalaryProjected per week)
   projections: data-derived/player-week-fantasy/<CanonicalLeagueID>/<season>/<WW>.json (read only, Issue #1409; Projection.Points and the 80-percent PredictionRange per CanonicalPlayerID and week)
   depthChart: data-source/nfl/platform/sleeper/players.json
   leagueMetadata: data-meta/<CanonicalLeagueID>/metadata.json (LeagueTimeZone, model choice)
@@ -90,6 +91,34 @@ projectionJoin:
     The Form grading keeps its published game objects without Projection (copies are taken before the join); all other fields
     and the semantic no-op comparison are unchanged.
   tests: tools/tests/test_players_read_model.py (synthetic data only)
+
+salaryHistoryJoin:
+  issue: 1410
+  decision: Robert 2026-11-09 (W8 a, W9 a, W10 d)
+  change: >-
+    Additive fields only. The player-valuation snapshots of weeks 0 to StatsFinalWeek are read (already written by the same
+    run) and never changed; no new file, writer, workflow or permission (write scope stays public/data plus
+    data-derived/player-valuation).
+  selfReview: >-
+    Ownership: the weekly values already live in the product (one snapshot per week), so Players.json only copies them into
+    a per-player series, like the season values. The change is a plain difference of two copied values and is computed in the
+    consumer function, not stored in the product, because no other consumer needs it and no new product field or ContractVersion
+    bump is warranted. Identity: row key of the product (CanonicalPlayerID, else Sleeper PlayerID) per week. Invalidation: a
+    rematerialized snapshot changes the series on the next run; the semantic no-op comparison covers the new fields.
+  fields: >-
+    SalaryHistory = [{Week, Salary, SalaryProjected}] for every week 0..StatsFinalWeek of the current season (week 0 = before
+    week 1), values copied from the snapshot of that week. A missing snapshot file or a player without a row in a week is
+    null, never 0. SalaryProjectedChange = {SinceSeasonStart, SinceLastWeek}: SalaryProjected of the final week minus week 0 /
+    minus the previous week, null when either value is unknown or the base week does not exist.
+  salaryIsConstant: >-
+    salary-v1 derives Salary from the three previous seasons only, so Salary is identical in every week of a season
+    (verified on the 2026 snapshots). Only SalaryProjected moves in season; a Salary change would always be 0 and is therefore
+    not published (deviation from the working name SalaryChange in Issue #1410, reported to Robert). A future model with
+    in-season Salary would add a field additively.
+  frontend: >-
+    Angular shows the curve (player detail tab Salary) and a Salary Movers card on the Overview; the card only filters
+    (rostered players) and sorts by SalaryProjectedChange.SinceLastWeek, it calculates nothing.
+  tests: tools/tests/test_players_read_model.py, src/app/shared/utils/salary-movers.util.spec.ts (synthetic data only)
 
 holdRule:
   decision: Robert 2026-10-30 (Q3)
@@ -159,4 +188,5 @@ steps:
   - 4 shadow compare against the published file (validation-shadow, Fast guard, one manual run on main)
   - 5 cutover of update-players.yml (players_app_publish.py write), PV hold seed dropped, runtime measured
   - 7 additive projection join (Issue #1409): GameHistory[].Projection from the player-week-fantasy product (read only)
+  - 8 additive salary history (Issue #1410): SalaryHistory and SalaryProjectedChange from the player-valuation snapshots (read only)
   - 6 cleanup (done): delete RequestPlayers.ps1 and unused player modules, point-path guard, FM trigger to data-derived/player-valuation/**, inventory and registers

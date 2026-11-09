@@ -55,6 +55,8 @@ class ReadModelInputs:
     # Issue #1409: PlayerWeekFantasy is only read. Sleeper ID -> CanonicalPlayerID and (CanonicalPlayerID, week) -> reduced record.
     canonical_ids: Mapping[str, str] = field(default_factory=dict)
     projections: Mapping[tuple[str, int], Mapping[str, Any]] = field(default_factory=dict)
+    # Issue #1410: the player-valuation snapshots of weeks 0..StatsFinalWeek are only read. week -> row key -> {Salary, SalaryProjected}.
+    salary_weeks: Mapping[int, Mapping[str, Mapping[str, Any]]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -199,6 +201,39 @@ def form_value(games: list[dict[str, Any]]) -> Any:
     return games[0] if len(games) == 1 else games
 
 
+def valuation_row_key(row: Mapping[str, Any]) -> str:
+    """Row key of a player-valuation row: CanonicalPlayerID when present, otherwise the Sleeper PlayerID (player-valuation.yaml)."""
+    return str(row.get("CanonicalPlayerID") or row.get("PlayerID"))
+
+
+def salary_history(
+    valuation: Mapping[str, Any], salary_weeks: Mapping[int, Mapping[str, Mapping[str, Any]]], final_week: int
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Salary and SalaryProjected per week 0..final_week plus SalaryProjectedChange, copied from the snapshots (Issue #1410).
+
+    A week without a snapshot or without a row for the player is null, never 0. SalaryProjectedChange is the generator-owned
+    difference of the SalaryProjected (SinceSeasonStart against week 0, SinceLastWeek against the previous week); null when
+    either value is unknown. Salary itself is derived from the previous seasons only (salary-v1) and constant within a
+    season, so only SalaryProjected moves; a change of Salary would always be 0 and is not published. The frontend only sorts and shows these values."""
+    key = valuation_row_key(valuation)
+    history: list[dict[str, Any]] = []
+    for week in range(0, final_week + 1):
+        row = (salary_weeks.get(week) or {}).get(key)
+        history.append({
+            "Week": week,
+            "Salary": float(row["Salary"]) if row and row.get("Salary") is not None else None,
+            "SalaryProjected": float(row["SalaryProjected"]) if row and row.get("SalaryProjected") is not None else None,
+        })
+
+    def change(base_week: int) -> float | None:
+        if base_week < 0 or base_week >= final_week:
+            return None
+        now, before = history[final_week]["SalaryProjected"], history[base_week]["SalaryProjected"]
+        return None if now is None or before is None else now - before
+
+    return history, {"SinceSeasonStart": change(0), "SinceLastWeek": change(final_week - 1)}
+
+
 def _copy(value: Any) -> Any:
     return json.loads(json.dumps(value))
 
@@ -246,6 +281,7 @@ def assemble(inputs: ReadModelInputs, as_of: date) -> ReadModelResult:
         by_game = {game["GameID"]: game for game in history}
         form = [_copy(by_game[game_id]) for game_id in valuation.get("FormGames") or [] if game_id in by_game]
         attach_projections(history, inputs.canonical_ids.get(sleeper_id), inputs.projections)
+        salary_weeks, salary_change = salary_history(valuation, inputs.salary_weeks, bounds.final_scored_week)
 
         team = entry.get("TeamAbbr")
         bye = bye_week_of(team, inputs.bye_weeks)
@@ -274,6 +310,8 @@ def assemble(inputs: ReadModelInputs, as_of: date) -> ReadModelResult:
             "Number": str(number) if number is not None else "",
             "Salary": float(valuation["Salary"]),
             "SalaryProjected": float(valuation["SalaryProjected"]),
+            "SalaryHistory": salary_weeks,
+            "SalaryProjectedChange": salary_change,
             "Picture": entry.get("Picture"),
             "PictureLarge": entry.get("PictureLarge"),
             "FantasyPros": entry.get("FantasyPros"),
@@ -394,6 +432,30 @@ def load_projections(repo_root: Path, league_id: str, season: int) -> dict[tuple
     return result
 
 
+def load_salary_weeks(
+    derived_root: Path, league_id: str, season: int, final_week: int
+) -> dict[int, dict[str, dict[str, Any]]]:
+    """Read the player-valuation snapshots of weeks 0..final_week (read only, Issue #1410); a missing week file gives no entry."""
+    from derived_data import snapshot_path
+
+    weeks: dict[int, dict[str, dict[str, Any]]] = {}
+    for week in range(0, final_week + 1):
+        path = snapshot_path(derived_root, league_id, season, week)
+        if not path.is_file():
+            continue
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if (payload.get("CanonicalLeagueID"), payload.get("Season"), payload.get("AsOfFinalScoredWeek")) != (league_id, season, week):
+            raise PlayersReadModelError(f"PlayerValuation snapshot {path} does not match {league_id} {season} week {week}")
+        rows: dict[str, dict[str, Any]] = {}
+        for row in payload.get("Players") or []:
+            key = valuation_row_key(row)
+            if key in rows:
+                raise PlayersReadModelError(f"PlayerValuation snapshot {path} lists {key} twice")
+            rows[key] = {"Salary": row.get("Salary"), "SalaryProjected": row.get("SalaryProjected")}
+        weeks[week] = rows
+    return weeks
+
+
 def load_inputs(repo_root: Path, league_id: str, season: int, derived_root: Path | None = None) -> ReadModelInputs:
     """Read the canonical facts and the player-valuation snapshot of the StatsFinalWeek (fail closed).
 
@@ -448,6 +510,7 @@ def load_inputs(repo_root: Path, league_id: str, season: int, derived_root: Path
         if entry.get("Status") == "resolved" and entry.get("CanonicalPlayerID")
     }
     projections = load_projections(repo_root, league_id, season)
+    salary_weeks = load_salary_weeks(derived_root or data_derived_dir(repo_root), league_id, season, bounds.final_scored_week)
 
     sleeper_path = repo_root / DATA_SOURCE_ROOT / "nfl" / "platform" / "sleeper" / "players.json"
     if not sleeper_path.is_file():
@@ -478,6 +541,7 @@ def load_inputs(repo_root: Path, league_id: str, season: int, derived_root: Path
         roster_basis=population.get("RosterBasis") or {},
         canonical_ids=canonical_ids,
         projections=projections,
+        salary_weeks=salary_weeks,
     )
 
 

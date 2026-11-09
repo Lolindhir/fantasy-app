@@ -151,6 +151,19 @@ export interface FreeAgentMarketInfo {
   CapAfterCutDisplay?: string;
 }
 
+/** One player-valuation snapshot week; null while the week or the player is not in that snapshot (never 0). */
+export interface SalaryHistoryEntry {
+  Week: number;
+  Salary: number | null;
+  SalaryProjected: number | null;
+}
+
+/** Generator-owned change of SalaryProjected (Salary itself is constant within a season); null when unknown. */
+export interface SalaryProjectedChange {
+  SinceSeasonStart: number | null;
+  SinceLastWeek: number | null;
+}
+
 export interface RawPlayer {
   ID: string;
   Name: string;
@@ -161,6 +174,9 @@ export interface RawPlayer {
   IsFreeAgent: boolean;
   Salary: number;
   SalaryProjected: number;
+  /** Salary and SalaryProjected per week of the current season (week 0 = before week 1); absent in older files. */
+  SalaryHistory?: SalaryHistoryEntry[] | null;
+  SalaryProjectedChange?: SalaryProjectedChange | null;
   Age: number;
   Year: number;
   Picture: string;

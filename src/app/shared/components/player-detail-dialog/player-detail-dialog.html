@@ -249,6 +249,23 @@
       </div>
     </mat-tab>
 
+    <!-- 💲 Salary Tab (weekly salary curve of the current season) -->
+    <mat-tab label="Salary" *ngIf="player.SalaryHistory?.length">
+      <div class="dialog-salary">
+        <div class="salary-summary">
+          <div class="salary-summary__item">
+            <span class="label">Since last week</span>
+            <strong [ngClass]="salaryChangeClass(player.SalaryProjectedChange?.SinceLastWeek)">{{ formatSalaryChange(player.SalaryProjectedChange?.SinceLastWeek) }}</strong>
+          </div>
+          <div class="salary-summary__item">
+            <span class="label">Since season start</span>
+            <strong [ngClass]="salaryChangeClass(player.SalaryProjectedChange?.SinceSeasonStart)">{{ formatSalaryChange(player.SalaryProjectedChange?.SinceSeasonStart) }}</strong>
+          </div>
+        </div>
+        <app-salary-history-chart [history]="player.SalaryHistory"></app-salary-history-chart>
+      </div>
+    </mat-tab>
+
     <!-- 🧭 Moves Tab (player timeline) -->
     <ng-template #journeyTeam let-team>
       <span class="journey-team" [title]="team.Team">

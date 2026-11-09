@@ -51,7 +51,7 @@ def game(game_id: str, week: int, final: bool = True, **extra) -> dict:
 
 def valuation(**overrides) -> dict:
     base = {
-        "Hold": None, "Salary": 1000, "SalaryProjected": 900,
+        "Hold": None, "PlayerID": "1", "Salary": 1000, "SalaryProjected": 900,
         "Ranking": [{"Type": "Total", "Value": 3}],
         "Grading": [{"Type": "Rank", "Value": 3, "Rank": 3, "Grade": "B"}],
         "SeasonValues": {"Current": dict(CURRENT), "SeasonMinus1": dict(HISTORY), "SeasonMinus2": dict(HISTORY),
@@ -63,7 +63,7 @@ def valuation(**overrides) -> dict:
 
 
 def inputs(population=None, rows=None, histories=None, depth=None, bye=None, basis=None, canonical_ids=None,
-           projections=None) -> prm.ReadModelInputs:
+           projections=None, salary_weeks=None) -> prm.ReadModelInputs:
     population = population if population is not None else [entry("1")]
     return prm.ReadModelInputs(
         league_id="test-league", season=2030, bounds=BOUNDS, population=population,
@@ -72,6 +72,7 @@ def inputs(population=None, rows=None, histories=None, depth=None, bye=None, bas
         depth_charts=depth if depth is not None else {"1": {"Position": "WR", "Order": 2}},
         bye_weeks=bye if bye is not None else {"AAA": 7}, roster_basis=basis or {},
         canonical_ids=canonical_ids or {}, projections=projections or {},
+        salary_weeks=salary_weeks or {},
     )
 
 
@@ -123,6 +124,77 @@ class ProjectionTests(unittest.TestCase):
         hold = prm.assemble(inputs(rows={"1": valuation(Hold={"Reason": "identity"})}, canonical_ids={"1": "C1"},
                                    projections=projections), AS_OF).players[0]
         self.assertEqual([], hold["GameHistory"])
+
+
+def week_rows(**salaries) -> dict:
+    """row key -> {Salary, SalaryProjected} of one valuation snapshot; salaries given as key=Salary."""
+    return {key: {"Salary": value, "SalaryProjected": None if value is None else value + 10} for key, value in salaries.items()}
+
+
+class SalaryHistoryTests(unittest.TestCase):
+    def test_history_lists_every_week_up_to_the_final_week_and_change_comes_from_the_generator(self) -> None:
+        weeks = {w: week_rows(**{"1": 100 + w * 10}) for w in range(0, 6)}
+        row = prm.assemble(inputs(rows={"1": valuation(Salary=150, SalaryProjected=160)}, salary_weeks=weeks), AS_OF).players[0]
+        self.assertEqual(list(range(0, 6)), [h["Week"] for h in row["SalaryHistory"]])
+        self.assertEqual({"Salary": 120.0, "SalaryProjected": 130.0, "Week": 2}, dict(sorted(row["SalaryHistory"][2].items())))
+        self.assertEqual({"SinceSeasonStart": 50.0, "SinceLastWeek": 10.0}, row["SalaryProjectedChange"])
+
+    def test_missing_week_file_or_row_is_null_never_zero_and_blocks_the_change(self) -> None:
+        weeks = {0: week_rows(**{"1": 100}), 4: week_rows(**{"2": 5}), 5: week_rows(**{"1": 130})}
+        row = prm.assemble(inputs(salary_weeks=weeks), AS_OF).players[0]
+        by_week = {h["Week"]: h for h in row["SalaryHistory"]}
+        for week in (1, 2, 3, 4):
+            self.assertEqual({"Week": week, "Salary": None, "SalaryProjected": None}, by_week[week])
+        self.assertEqual({"SinceSeasonStart": 30.0, "SinceLastWeek": None}, row["SalaryProjectedChange"])
+
+    def test_player_that_is_new_this_week_has_no_change(self) -> None:
+        weeks = {5: week_rows(**{"1": 130})}
+        row = prm.assemble(inputs(salary_weeks=weeks), AS_OF).players[0]
+        self.assertEqual({"SinceSeasonStart": None, "SinceLastWeek": None}, row["SalaryProjectedChange"])
+
+    def test_canonical_player_id_is_the_row_key_when_present(self) -> None:
+        weeks = {w: week_rows(**{"C9": 10 * w}) for w in range(0, 6)}
+        valuation_row = valuation(CanonicalPlayerID="C9")
+        row = prm.assemble(inputs(rows={"1": valuation_row}, salary_weeks=weeks), AS_OF).players[0]
+        self.assertEqual(40.0, row["SalaryHistory"][4]["Salary"])
+
+    def test_week_zero_season_has_a_single_entry_and_no_change(self) -> None:
+        history, change = prm.salary_history(valuation(), {0: week_rows(**{"1": 100})}, 0)
+        self.assertEqual([{"Week": 0, "Salary": 100.0, "SalaryProjected": 110.0}], history)
+        self.assertEqual({"SinceSeasonStart": None, "SinceLastWeek": None}, change)
+
+
+class LoadSalaryWeeksTests(unittest.TestCase):
+    def _write(self, root: Path, week: int, players: list, week_in_file: int | None = None) -> None:
+        folder = root / "player-valuation" / "test-league" / "2030"
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f"week-{week:02d}.json").write_text(json.dumps({
+            "CanonicalLeagueID": "test-league", "Season": 2030,
+            "AsOfFinalScoredWeek": week if week_in_file is None else week_in_file, "Players": players}), encoding="utf-8")
+
+    def test_reads_available_weeks_and_skips_missing_files(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write(root, 0, [{"PlayerID": "1", "Salary": 5, "SalaryProjected": 6}])
+            self._write(root, 2, [{"PlayerID": "1", "CanonicalPlayerID": "C1", "Salary": 7, "SalaryProjected": 8}])
+            loaded = prm.load_salary_weeks(root, "test-league", 2030, 3)
+            self.assertEqual({0, 2}, set(loaded))
+            self.assertEqual({"1": {"Salary": 5, "SalaryProjected": 6}}, loaded[0])
+            self.assertEqual({"C1"}, set(loaded[2]))
+
+    def test_duplicate_row_or_foreign_snapshot_fails_closed(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write(root, 1, [{"PlayerID": "1"}, {"PlayerID": "1"}])
+            with self.assertRaises(prm.PlayersReadModelError):
+                prm.load_salary_weeks(root, "test-league", 2030, 1)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write(root, 1, [], week_in_file=3)
+            with self.assertRaises(prm.PlayersReadModelError):
+                prm.load_salary_weeks(root, "test-league", 2030, 1)
 
 
 class LoadProjectionsTests(unittest.TestCase):
@@ -209,7 +281,8 @@ class AssembleTests(unittest.TestCase):
     def test_row_copies_the_product_values_and_keeps_the_contract_keys(self) -> None:
         row = prm.assemble(inputs(), AS_OF).players[0]
         self.assertEqual(["ID", "Name", "NameFirst", "NameLast", "NameShort", "TeamID", "TeamAbbr", "ByeWeek", "Status",
-                          "IsFreeAgent", "Position", "Age", "Year", "Number", "Salary", "SalaryProjected", "Picture",
+                          "IsFreeAgent", "Position", "Age", "Year", "Number", "Salary", "SalaryProjected", "SalaryHistory",
+                          "SalaryProjectedChange", "Picture",
                           "PictureLarge", "FantasyPros", "ESPN", "SleeperDepthChartPosition", "SleeperDepthChartOrder",
                           "College", "HighSchool", "Injured", "InjuryDetails", "GamesPlayed", "GamesPotential",
                           "SnapsTotal", "AttemptsTotal", "FantasyPointsTotal", "FantasyPointsAvgGame",
