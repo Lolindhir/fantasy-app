@@ -168,12 +168,55 @@ jobs:
     if: ${{ !cancelled() && !inputs.historical_preflight }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      # G5 E2 (Issue #1263): exclusion profile. The generator chain below reads (strace of the exact commands) only
+      # recent NFL seasons (PWF model: target season minus 5 up to minus 1), the sleeper provider, tools, data-meta,
+      # data-derived and public/data. Excluded are only folders and old seasons the chain provably never reads:
+      # player-stats before 2021, weekly-rosters before 2021, all providers except sleeper,
+      # fantasy-management, market, assets, docs, research and src. public/data stays complete: RequestLeague writes
+      # public/data/backup (Save-JsonFile -CreateBackup) and rebuild_and_publish runs git add -A on public/data.
+      # Newer seasons (2021 onward, including every future one) stay included automatically; a missing needed file
+      # fails the run closed, and the verify step falls back to a complete checkout. Paths, token and rights unchanged.
+      - name: Checkout repository (exclusion profile, blobless)
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/fantasy-management/
+            !/research/
+            !/src/
+            !/public/assets/
+            !/public/docs/
+            !/data-source/market/
+            !/data-source/providers/*/
+            /data-source/providers/sleeper/
+            !/data-source/nfl/player-stats/19*/
+            !/data-source/nfl/player-stats/200*/
+            !/data-source/nfl/player-stats/201*/
+            !/data-source/nfl/player-stats/2020/
+            !/data-source/nfl/weekly-rosters/19*/
+            !/data-source/nfl/weekly-rosters/200*/
+            !/data-source/nfl/weekly-rosters/201*/
+            !/data-source/nfl/weekly-rosters/2020/
+
+      - name: Verify League sparse inputs (fall back to a complete checkout)
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for path in tools/rebuild_and_publish.py tools/player_week_fantasy_refresh.py .github/scripts/Invoke-GeneratedDataCommit.ps1 public/requests/RequestLeaguePublication.ps1 data-meta data-derived/player-valuation data-source/leagues data-source/providers/sleeper data-source/nfl/schedules data-source/nfl/identities data-source/nfl/player-stats/2025 data-source/nfl/weekly-rosters/2025 public/data/League.json; do
+            [[ -e "$path" ]] || { echo "::warning::Missing League sparse input: $path"; missing=1; }
+          done
+          if (( missing != 0 )); then
+            git sparse-checkout disable
+            echo "- League checkout: sparse profile incomplete, complete checkout used" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- League checkout: exclusion profile verified (partialclonefilter=$(git config --get remote.origin.partialclonefilter || echo none))" >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: G5 shadow decision - League (observe only)
         continue-on-error: true
         run: >-
