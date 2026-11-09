@@ -145,12 +145,57 @@ jobs:
           echo "## NFL Source Sync" >> "$GITHUB_STEP_SUMMARY"
           echo "- Queue before job start: ${queue_seconds}s" >> "$GITHUB_STEP_SUMMARY"
 
+      # G5 E5 (Issue #1263): the game-finality scope (NFL Live finality job) reads and writes only the registry, tools,
+      # the canonical and raw schedules and game-finality partitions and data-source/_sync (strace of the exact
+      # commands). It therefore gets a sparse, blobless checkout; every other scope keeps the complete checkout.
+      # Token, branch, write paths, concurrency and the publication loop are unchanged. An incomplete profile falls
+      # back to a complete checkout (verify step below).
+      - name: Checkout main (game-finality sparse, blobless)
+        if: inputs.materialization_scope == 'game-finality'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/scripts/
+            /tools/
+            /data-source/*.json
+            /data-source/nfl/*.json
+            /data-source/leagues/*/manifest.json
+            /data-source/nfl/schedules/
+            /data-source/nfl/game-finality/
+            /data-source/providers/nflverse/schedules/
+            /data-source/providers/nflverse/game-finality/
+            /data-source/_sync/
+
       - name: Checkout main
+        if: inputs.materialization_scope != 'game-finality'
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: ${{ (inputs.materialization_scope == 'game-finality' || inputs.materialization_scope == 'schedule-odds') && 1 || 0 }}
           token: ${{ secrets.PAT_PUSH }}
+
+      - name: Verify game-finality sparse inputs (fall back to a complete checkout)
+        if: inputs.materialization_scope == 'game-finality'
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          [[ "$(git config --get core.sparseCheckout)" == "true" ]] || { echo "::warning::Sparse checkout disabled"; missing=1; }
+          for path in tools/nfl_source_data.py tools/git_transient.py data-source/registry.json data-source/leagues/nfl-reise/manifest.json data-source/nfl/teams.json data-source/nfl/schedules data-source/nfl/game-finality data-source/providers/nflverse/schedules/raw-latest.csv data-source/providers/nflverse/schedules/metadata.json data-source/providers/nflverse/game-finality/raw-latest.csv data-source/providers/nflverse/game-finality/metadata.json; do
+            [[ -e "$path" ]] || { echo "::warning::Missing sparse input: $path"; missing=1; }
+          done
+          [[ "$(git config --get remote.origin.partialclonefilter)" == "blob:none" ]] || echo "::warning::Blobless Git filter missing; sparse checkout still limits the working tree"
+          if (( missing != 0 )); then
+            git sparse-checkout disable
+            echo "- Game-finality checkout: sparse profile incomplete, complete checkout used" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Game-finality checkout: sparse/blobless profile verified (partialclonefilter=$(git config --get remote.origin.partialclonefilter || echo none))" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Record main before sync
         id: base
