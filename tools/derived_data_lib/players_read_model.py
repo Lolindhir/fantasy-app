@@ -25,10 +25,8 @@ PUBLISHED_JSON_DEPTH = 7  # write depth of the Players file (Get-PlayersPublishe
 FORM_GRADING_TYPE = "Form"
 RANK_GRADING_TYPE = "Rank"
 MIN_VALUATION_CONTRACT_VERSION = 2
-PROJECTION_RANGE_LEVEL = 0.8  # display level of the per-game range (Issue #1409, Robert W5 a)
-PROJECTION_ABOVE = "above"
-PROJECTION_WITHIN = "within"
-PROJECTION_BELOW = "below"
+PROJECTION_MET = "met"
+PROJECTION_MISSED = "missed"
 DAYS_PER_YEAR = 365.2425
 
 
@@ -158,47 +156,27 @@ def game_history_entry(entry: Mapping[str, Any], playoff_start_week: int, last_l
 def projection_from_record(record: Mapping[str, Any]) -> dict[str, Any] | None:
     """Reduce one PlayerWeekFantasy record to the values the Game Log needs (copied, never recomputed).
 
-    None without a projection point value (for example insufficient history); unknown stays null, never 0. The range is the
-    PredictionRanges entry of PROJECTION_RANGE_LEVEL; when it is missing the bounds are null.
+    None without a projection point value (for example insufficient history); unknown stays null, never 0.
     """
-    projection = record.get("Projection") or {}
-    points = projection.get("Points")
+    points = (record.get("Projection") or {}).get("Points")
     if points is None:
         return None
-    lower = upper = None
-    for item in projection.get("PredictionRanges") or []:
-        if item.get("Level") == PROJECTION_RANGE_LEVEL:
-            lower, upper = item.get("Lower"), item.get("Upper")
-            break
-    return {
-        "Points": float(points),
-        "RangeLevel": PROJECTION_RANGE_LEVEL,
-        "RangeLower": None if lower is None else float(lower),
-        "RangeUpper": None if upper is None else float(upper),
-        "ActualFinal": (record.get("Actual") or {}).get("State") == "final",
-    }
+    return {"Points": float(points), "ActualFinal": (record.get("Actual") or {}).get("State") == "final"}
 
 
-def projection_result(points: float, lower: float | None, upper: float | None) -> str | None:
-    """Classify a result against the range; None when the range is unknown."""
-    if lower is None or upper is None:
-        return None
-    if points > upper:
-        return PROJECTION_ABOVE
-    if points < lower:
-        return PROJECTION_BELOW
-    return PROJECTION_WITHIN
+def projection_result(points: float, projected: float) -> str:
+    """Result against the projection: met when the points reach it (equal counts), else missed."""
+    return PROJECTION_MET if points >= projected else PROJECTION_MISSED
 
 
 def attach_projections(
     history: list[dict[str, Any]], canonical_id: str | None, projections: Mapping[tuple[str, int], Mapping[str, Any]],
-) -> dict[str, Any] | None:
-    """Add Projection to every game (None without a PlayerWeekFantasy value) and return the season record.
+) -> None:
+    """Add Projection {Points, Result} to every game (None without a PlayerWeekFantasy value).
 
-    A game is classified only when its week is final and the PlayerWeekFantasy Actual is final, so a result that is not yet
-    settled is never counted. The season record is None when no game could be classified.
+    Result is set only when the week is final and the PlayerWeekFantasy Actual is final, so an unsettled result is never
+    classified (null).
     """
-    counts = {PROJECTION_ABOVE: 0, PROJECTION_WITHIN: 0, PROJECTION_BELOW: 0}
     for game in history:
         reduced = projections.get((canonical_id, game["GameDetails"]["Week"])) if canonical_id else None
         if reduced is None:
@@ -206,17 +184,8 @@ def attach_projections(
             continue
         result = None
         if game["GameDetails"]["WeekFinal"] and reduced["ActualFinal"]:
-            result = projection_result(game["FantasyPoints"], reduced["RangeLower"], reduced["RangeUpper"])
-        if result is not None:
-            counts[result] += 1
-        game["Projection"] = {
-            "Points": reduced["Points"], "RangeLevel": reduced["RangeLevel"],
-            "RangeLower": reduced["RangeLower"], "RangeUpper": reduced["RangeUpper"], "Result": result,
-        }
-    games = sum(counts.values())
-    if games == 0:
-        return None
-    return {"Games": games, "Above": counts[PROJECTION_ABOVE], "Within": counts[PROJECTION_WITHIN], "Below": counts[PROJECTION_BELOW]}
+            result = projection_result(game["FantasyPoints"], reduced["Points"])
+        game["Projection"] = {"Points": reduced["Points"], "Result": result}
 
 
 def form_value(games: list[dict[str, Any]]) -> Any:
@@ -276,7 +245,7 @@ def assemble(inputs: ReadModelInputs, as_of: date) -> ReadModelResult:
             ]
         by_game = {game["GameID"]: game for game in history}
         form = [_copy(by_game[game_id]) for game_id in valuation.get("FormGames") or [] if game_id in by_game]
-        projection_record = attach_projections(history, inputs.canonical_ids.get(sleeper_id), inputs.projections)
+        attach_projections(history, inputs.canonical_ids.get(sleeper_id), inputs.projections)
 
         team = entry.get("TeamAbbr")
         bye = bye_week_of(team, inputs.bye_weeks)
@@ -335,7 +304,6 @@ def assemble(inputs: ReadModelInputs, as_of: date) -> ReadModelResult:
             "TouchdownsReceiving": current["TouchdownsReceiving"],
             "TouchdownsRushing": current["TouchdownsRushing"],
             "GameHistory": history,
-            "ProjectionRecord": projection_record,
         })
 
     rows.sort(key=lambda row: row["ID"])

@@ -123,13 +123,6 @@
 
     <!-- 🧾 Game Log -->
     <mat-tab label="Game Log" *ngIf="player.GameHistoryFull?.length">
-      <p *ngIf="player.ProjectionRecord as record" class="game-log-record">
-        <span class="game-log-record__title">Vs. projection range</span>
-        <span class="game-log-record__item game-log-record__item--above">{{ record.Above }} above</span>
-        <span class="game-log-record__item">{{ record.Within }} within</span>
-        <span class="game-log-record__item game-log-record__item--below">{{ record.Below }} below</span>
-        <span class="game-log-record__note">{{ record.Games }} games</span>
-      </p>
       <table mat-table [dataSource]="player.GameHistoryFull ?? []" class="mat-elevation-z1">
 
         <!-- Week -->
@@ -164,20 +157,15 @@
         <ng-container matColumnDef="points">
           <th mat-header-cell *matHeaderCellDef>Points</th>
           <td mat-cell *matCellDef="let g"
-              [class.game-points--above]="g.Projection?.Result === 'above'"
-              [class.game-points--below]="g.Projection?.Result === 'below'">{{ g.FantasyPoints <= 0 ? '–' : g.FantasyPoints }}</td>
+              [class.game-points--met]="g.Projection?.Result === 'met'"
+              [class.game-points--missed]="g.Projection?.Result === 'missed'">{{ g.FantasyPoints <= 0 ? '–' : g.FantasyPoints }}</td>
         </ng-container>
 
-        <!-- Projection (80 % range), classified by the generator -->
+        <!-- Projection; the result is classified by the generator -->
         <ng-container matColumnDef="projection">
           <th mat-header-cell *matHeaderCellDef>Proj.</th>
           <td mat-cell *matCellDef="let g" class="game-projection">
-            <ng-container *ngIf="g.Projection as projection; else noProjection">
-              <span class="game-projection__value">{{ projection.Points | number:'1.1-1' }}</span>
-              <small *ngIf="projection.RangeLower !== null && projection.RangeUpper !== null" class="game-projection__range">
-                {{ projection.RangeLower | number:'1.1-1' }} – {{ projection.RangeUpper | number:'1.1-1' }}
-              </small>
-            </ng-container>
+            <ng-container *ngIf="g.Projection as projection; else noProjection">{{ projection.Points | number:'1.1-1' }}</ng-container>
             <ng-template #noProjection>–</ng-template>
           </td>
         </ng-container>

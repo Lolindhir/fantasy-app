@@ -62,24 +62,13 @@ export interface GameHistory {
   Projection?: GameProjection | null;
 }
 
-/** Result against the projection range, classified by the generator. */
-export type GameProjectionResult = 'above' | 'within' | 'below';
+/** Result against the projection, classified by the generator: met = points reach the projection (equal counts). */
+export type GameProjectionResult = 'met' | 'missed';
 
 export interface GameProjection {
   Points: number;
-  RangeLevel: number;
-  RangeLower: number | null;
-  RangeUpper: number | null;
-  /** Null while the game or its points are not final or the range is unknown. */
+  /** Null while the game or its points are not final. */
   Result: GameProjectionResult | null;
-}
-
-/** Season record of results against the projection range, counted by the generator. */
-export interface ProjectionRecord {
-  Games: number;
-  Above: number;
-  Within: number;
-  Below: number;
 }
 
 export interface GameDetails {
@@ -203,8 +192,6 @@ export interface RawPlayer {
   Ranking: RankingEntry[];
   PointHistory: PointHistory;
   GameHistory?: GameHistory[];
-  /** Null without a classified game; absent in older files. */
-  ProjectionRecord?: ProjectionRecord | null;
 }
 
 export interface Player extends Omit<RawPlayer, 'TeamID' | 'GamesPlayed' | 'GamesPotential' | 'FantasyPointsTotal' | 'FantasyPointsAvgGame' | 'FantasyPointsAvgPotentialGame' | 'FantasyPointsAvgSnap' | 'FantasyPointsAvgAttempt' | 'TouchdownsTotal' | 'TouchdownsPassing' | 'TouchdownsReceiving' | 'TouchdownsRushing' | 'Ranking' | 'PointHistory'> {
