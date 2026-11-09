@@ -167,6 +167,58 @@ host {
   opacity: 0.6;
 }
 
+/* ---------- Game Log: projection ---------- */
+.game-projection {
+  white-space: nowrap;
+}
+
+.game-projection__value {
+  display: block;
+}
+
+.game-projection__range {
+  display: block;
+  color: rgba(0, 0, 0, 0.55);
+  font-size: 0.72rem;
+  line-height: 1.1;
+}
+
+/* A result outside the 80 % range: green above, red below, neutral within. */
+.game-points--above {
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.game-points--below {
+  color: #c62828;
+  font-weight: 600;
+}
+
+.game-log-record {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin: 8px 0;
+  font-size: 0.85rem;
+}
+
+.game-log-record__title {
+  font-weight: 600;
+}
+
+.game-log-record__item--above {
+  color: #2e7d32;
+}
+
+.game-log-record__item--below {
+  color: #c62828;
+}
+
+.game-log-record__note {
+  color: rgba(0, 0, 0, 0.55);
+}
+
 /* ---------- Stats Grid ---------- */
 .dialog-stats-grid {
   display: grid;

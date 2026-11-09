@@ -147,6 +147,10 @@ dataSources:
       failClosed:
         - a stat or snap row naming a game missing in the canonical schedule
         - a stat row without scored points
+    projectionJoin: >
+      Issue #1409 adds GameHistory[].Projection (PlayerWeekFantasy projection and 80-percent range with a generator-classified Result)
+      and the player field ProjectionRecord (season counts above, within, below), read-only from the player-week-fantasy product;
+      details in .ai-context/manual/players-read-model.yaml (projectionJoin).
     retiredProviderInputs:
       - input: Tank01 getNFLPlayerList and live Sleeper /players/nfl
         status: replaced by the canonical population export (#347 H1b)

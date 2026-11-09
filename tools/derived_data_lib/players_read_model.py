@@ -25,6 +25,10 @@ PUBLISHED_JSON_DEPTH = 7  # write depth of the Players file (Get-PlayersPublishe
 FORM_GRADING_TYPE = "Form"
 RANK_GRADING_TYPE = "Rank"
 MIN_VALUATION_CONTRACT_VERSION = 2
+PROJECTION_RANGE_LEVEL = 0.8  # display level of the per-game range (Issue #1409, Robert W5 a)
+PROJECTION_ABOVE = "above"
+PROJECTION_WITHIN = "within"
+PROJECTION_BELOW = "below"
 DAYS_PER_YEAR = 365.2425
 
 
@@ -50,6 +54,9 @@ class ReadModelInputs:
     depth_charts: Mapping[str, Mapping[str, Any]]      # Sleeper ID -> {"Position", "Order"}
     bye_weeks: Mapping[str, int]                       # canonical team -> bye week
     roster_basis: Mapping[str, Any] = field(default_factory=dict)
+    # Issue #1409: PlayerWeekFantasy is only read. Sleeper ID -> CanonicalPlayerID and (CanonicalPlayerID, week) -> reduced record.
+    canonical_ids: Mapping[str, str] = field(default_factory=dict)
+    projections: Mapping[tuple[str, int], Mapping[str, Any]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -148,6 +155,70 @@ def game_history_entry(entry: Mapping[str, Any], playoff_start_week: int, last_l
     return game
 
 
+def projection_from_record(record: Mapping[str, Any]) -> dict[str, Any] | None:
+    """Reduce one PlayerWeekFantasy record to the values the Game Log needs (copied, never recomputed).
+
+    None without a projection point value (for example insufficient history); unknown stays null, never 0. The range is the
+    PredictionRanges entry of PROJECTION_RANGE_LEVEL; when it is missing the bounds are null.
+    """
+    projection = record.get("Projection") or {}
+    points = projection.get("Points")
+    if points is None:
+        return None
+    lower = upper = None
+    for item in projection.get("PredictionRanges") or []:
+        if item.get("Level") == PROJECTION_RANGE_LEVEL:
+            lower, upper = item.get("Lower"), item.get("Upper")
+            break
+    return {
+        "Points": float(points),
+        "RangeLevel": PROJECTION_RANGE_LEVEL,
+        "RangeLower": None if lower is None else float(lower),
+        "RangeUpper": None if upper is None else float(upper),
+        "ActualFinal": (record.get("Actual") or {}).get("State") == "final",
+    }
+
+
+def projection_result(points: float, lower: float | None, upper: float | None) -> str | None:
+    """Classify a result against the range; None when the range is unknown."""
+    if lower is None or upper is None:
+        return None
+    if points > upper:
+        return PROJECTION_ABOVE
+    if points < lower:
+        return PROJECTION_BELOW
+    return PROJECTION_WITHIN
+
+
+def attach_projections(
+    history: list[dict[str, Any]], canonical_id: str | None, projections: Mapping[tuple[str, int], Mapping[str, Any]],
+) -> dict[str, Any] | None:
+    """Add Projection to every game (None without a PlayerWeekFantasy value) and return the season record.
+
+    A game is classified only when its week is final and the PlayerWeekFantasy Actual is final, so a result that is not yet
+    settled is never counted. The season record is None when no game could be classified.
+    """
+    counts = {PROJECTION_ABOVE: 0, PROJECTION_WITHIN: 0, PROJECTION_BELOW: 0}
+    for game in history:
+        reduced = projections.get((canonical_id, game["GameDetails"]["Week"])) if canonical_id else None
+        if reduced is None:
+            game["Projection"] = None
+            continue
+        result = None
+        if game["GameDetails"]["WeekFinal"] and reduced["ActualFinal"]:
+            result = projection_result(game["FantasyPoints"], reduced["RangeLower"], reduced["RangeUpper"])
+        if result is not None:
+            counts[result] += 1
+        game["Projection"] = {
+            "Points": reduced["Points"], "RangeLevel": reduced["RangeLevel"],
+            "RangeLower": reduced["RangeLower"], "RangeUpper": reduced["RangeUpper"], "Result": result,
+        }
+    games = sum(counts.values())
+    if games == 0:
+        return None
+    return {"Games": games, "Above": counts[PROJECTION_ABOVE], "Within": counts[PROJECTION_WITHIN], "Below": counts[PROJECTION_BELOW]}
+
+
 def form_value(games: list[dict[str, Any]]) -> Any:
     """Form grading value as published today: null without scored games, the bare game for exactly one, else the list.
 
@@ -204,7 +275,8 @@ def assemble(inputs: ReadModelInputs, as_of: date) -> ReadModelResult:
                 for item in inputs.game_histories.get(sleeper_id, [])
             ]
         by_game = {game["GameID"]: game for game in history}
-        form = [by_game[game_id] for game_id in valuation.get("FormGames") or [] if game_id in by_game]
+        form = [_copy(by_game[game_id]) for game_id in valuation.get("FormGames") or [] if game_id in by_game]
+        projection_record = attach_projections(history, inputs.canonical_ids.get(sleeper_id), inputs.projections)
 
         team = entry.get("TeamAbbr")
         bye = bye_week_of(team, inputs.bye_weeks)
@@ -263,6 +335,7 @@ def assemble(inputs: ReadModelInputs, as_of: date) -> ReadModelResult:
             "TouchdownsReceiving": current["TouchdownsReceiving"],
             "TouchdownsRushing": current["TouchdownsRushing"],
             "GameHistory": history,
+            "ProjectionRecord": projection_record,
         })
 
     rows.sort(key=lambda row: row["ID"])
@@ -328,6 +401,31 @@ def serialize_players(players: Sequence[Mapping[str, Any]]) -> str:
 
 # --- Canonical loading ---------------------------------------------------------------------------------------------
 
+def load_projections(repo_root: Path, league_id: str, season: int) -> dict[tuple[str, int], dict[str, Any]]:
+    """Read the PlayerWeekFantasy snapshots of the season (read only, Issue #1409); (CanonicalPlayerID, week) -> reduced record.
+
+    A missing week file simply gives no projection for that week. A duplicate player record in one week fails closed."""
+    from data_roots import data_derived_dir
+
+    folder = data_derived_dir(repo_root) / "player-week-fantasy" / league_id / str(season)
+    result: dict[tuple[str, int], dict[str, Any]] = {}
+    if not folder.is_dir():
+        return result
+    for path in sorted(folder.glob("*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        if (payload.get("CanonicalLeagueID"), payload.get("Season")) != (league_id, season):
+            raise PlayersReadModelError(f"PlayerWeekFantasy snapshot {path} does not match {league_id} {season}")
+        week = int(payload["Week"])
+        for record in payload.get("Records") or []:
+            key = (str(record["CanonicalPlayerID"]), week)
+            if key in result:
+                raise PlayersReadModelError(f"PlayerWeekFantasy snapshot {path} lists {key[0]} twice")
+            reduced = projection_from_record(record)
+            if reduced is not None:
+                result[key] = reduced
+    return result
+
+
 def load_inputs(repo_root: Path, league_id: str, season: int, derived_root: Path | None = None) -> ReadModelInputs:
     """Read the canonical facts and the player-valuation snapshot of the StatsFinalWeek (fail closed).
 
@@ -376,6 +474,13 @@ def load_inputs(repo_root: Path, league_id: str, season: int, derived_root: Path
         if entry.get("Status") == "resolved"
     }
 
+    canonical_ids = {
+        sleeper_id: str(entry["CanonicalPlayerID"])
+        for sleeper_id, entry in export["Players"].items()
+        if entry.get("Status") == "resolved" and entry.get("CanonicalPlayerID")
+    }
+    projections = load_projections(repo_root, league_id, season)
+
     sleeper_path = repo_root / DATA_SOURCE_ROOT / "nfl" / "platform" / "sleeper" / "players.json"
     if not sleeper_path.is_file():
         raise PlayersReadModelError(f"Canonical Sleeper players snapshot is required for depth charts: {sleeper_path}")
@@ -403,6 +508,8 @@ def load_inputs(repo_root: Path, league_id: str, season: int, derived_root: Path
         depth_charts=depth_charts,
         bye_weeks=sources.team_bye_weeks(repo_root, season),
         roster_basis=population.get("RosterBasis") or {},
+        canonical_ids=canonical_ids,
+        projections=projections,
     )
 
 
