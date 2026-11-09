@@ -349,6 +349,40 @@
         </div>
       </section>
 
+      <section *ngIf="optimalLineups.length > 0" class="fgc-section fgc-optimal-section">
+        <div class="fgc-section-heading">
+          <div>
+            <span class="fgc-card-label">Lineup efficiency</span>
+            <h3>Optimal lineup</h3>
+          </div>
+        </div>
+        <div class="fgc-optimal-grid">
+          <article *ngFor="let lineup of optimalLineups" class="fgc-optimal-card">
+            <button type="button" class="fgc-team-identity" (click)="openTeam(lineup.teamID)">
+              <img *ngIf="teamAvatar(lineup.teamID) as avatar" [src]="avatar" alt="" />
+              <span>
+                <strong>{{ teamShortName(lineup.teamID) }}</strong>
+                <small>{{ formatEfficiency(lineup.efficiency) }} efficiency</small>
+              </span>
+            </button>
+            <p class="fgc-optimal-summary">
+              {{ formatFantasyPoints(lineup.actual) }} of {{ formatFantasyPoints(lineup.potential) }} pts
+              <span>· {{ formatFantasyPoints(lineup.missed) }} left on the bench</span>
+            </p>
+            <details class="fgc-optimal-details">
+              <summary>Best possible lineup</summary>
+              <ol class="fgc-optimal-slots">
+                <li *ngFor="let slot of lineup.slots">
+                  <span class="fgc-optimal-slot">{{ slotLabel(slot.slot) }}</span>
+                  <span class="fgc-optimal-name">{{ slot.name }}</span>
+                  <strong class="fgc-optimal-points">{{ formatFantasyPoints(slot.points) }}</strong>
+                </li>
+              </ol>
+            </details>
+          </article>
+        </div>
+      </section>
+
       <section *ngIf="showCounterfactual(selectedMatchup)" class="fgc-section fgc-counterfactual-section">
         <span class="fgc-card-label">Completed impact</span>
         <p *ngIf="selectedMatchup.CounterfactualState === 'available'">

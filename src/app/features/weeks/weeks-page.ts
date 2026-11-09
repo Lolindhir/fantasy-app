@@ -20,6 +20,11 @@ import {
 import { TeamIdentityComponent, type TeamIdentityElement } from '../../shared/components/team-identity/team-identity';
 import { WeekRecapContentComponent } from '../../shared/components/week-recap-content/week-recap-content';
 import {
+  buildLineupEfficiencyLookup,
+  formatEfficiency,
+  hasLineupEfficiency
+} from '../../shared/utils/lineup-efficiency.util';
+import {
   buildSeasonGrid,
   buildWeekScoreboard,
   buildWeekTabs,
@@ -32,6 +37,7 @@ import {
 } from '../../shared/utils/weeks-view.util';
 
 type WeeksTab = 'week' | 'season';
+type SeasonGridMode = 'points' | 'efficiency';
 
 interface SeasonData {
   season: string;
@@ -53,6 +59,7 @@ export class WeeksPageComponent {
   private readonly dialog = inject(MatDialog);
 
   readonly activeTab = signal<WeeksTab>('week');
+  readonly gridMode = signal<SeasonGridMode>('points');
   readonly identityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
   readonly logoOnlyElements: readonly TeamIdentityElement[] = ['logo'];
   readonly compactIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
@@ -145,12 +152,31 @@ export class WeeksPageComponent {
     return this.data()?.contexts.find(context => String(context.Season) === season && context.Week === week) ?? null;
   });
 
+  private readonly selectedRecapWeek = computed(() => {
+    const recaps = this.data()?.recaps;
+    return recaps && recaps.Season === this.activeSeason()?.season
+      ? recaps.Weeks.find(week => week.Week === this.selectedWeek()) ?? null
+      : null;
+  });
+
   readonly recap = computed(() => {
     const season = this.activeSeason()?.season ?? '';
     return selectWeekRecap(this.data()?.recaps, season, this.selectedWeekModel());
   });
 
   readonly seasonGrid = computed(() => buildSeasonGrid(this.data()?.matchups, this.teams()));
+
+  /** Lineup efficiency values of the generator for the active season (null entries stay unknown). */
+  readonly efficiency = computed(() => buildLineupEfficiencyLookup(this.data()?.recaps, this.activeSeason()?.season ?? ''));
+
+  readonly efficiencyAvailable = computed(() => {
+    const grid = this.seasonGrid();
+    return !!grid && hasLineupEfficiency(this.efficiency(), grid.rows.map(row => row.teamID), grid.weeks.map(week => week.week));
+  });
+
+  /** The efficiency view is only offered (and shown) when the season has generator values. */
+  readonly effectiveGridMode = computed<SeasonGridMode>(() =>
+    this.gridMode() === 'efficiency' && this.efficiencyAvailable() ? 'efficiency' : 'points');
 
   readonly firstPlayoffWeek = computed(() => this.weekTabs().find(tab => tab.isPlayoff)?.week ?? null);
 
@@ -174,7 +200,9 @@ export class WeeksPageComponent {
       matchups: this.data()?.matchups ?? null,
       nflTeams: this.nflTeams(),
       league,
-      fantasyMatchupId: matchupID
+      fantasyMatchupId: matchupID,
+      players: this.base()?.leagueData.players ?? [],
+      lineupEfficiency: this.selectedRecapWeek()?.TeamPerformance ?? null
     };
     this.dialog.open(FantasyGameContextDialogComponent, {
       data,
@@ -189,6 +217,14 @@ export class WeeksPageComponent {
 
   selectTab(tab: WeeksTab): void {
     this.activeTab.set(tab);
+  }
+
+  selectGridMode(mode: SeasonGridMode): void {
+    this.gridMode.set(mode);
+  }
+
+  formatEfficiency(value: number | null | undefined): string {
+    return formatEfficiency(value);
   }
 
   selectSeason(season: string): void {

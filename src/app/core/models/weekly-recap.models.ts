@@ -37,16 +37,49 @@ export interface WeeklyRecapTeamAwards {
   BestCoach: WeeklyRecapBestCoach[];
 }
 
+/** One slot of a team's optimal (best possible) lineup of a week, as published by the generator. */
+export interface WeeklyRecapOptimalSlot {
+  SlotID: string;
+  /** Sleeper PlayerID of the App contract; null when the weekly roster does not know the player. */
+  PlayerID: string | null;
+  CanonicalPlayerID: string | null;
+  Points: number;
+}
+
+/** Lineup efficiency of one team and week (generator values; the frontend only displays them). */
+export interface WeeklyRecapTeamPerformance {
+  FantasyTeamID: number;
+  ActualStarterPoints: number;
+  PotentialPoints: number;
+  MissedPoints: number;
+  EfficiencyPercent: number | null;
+  OptimalLineup: WeeklyRecapOptimalSlot[];
+}
+
+/** Season lineup efficiency of one team: sum(Actual) / sum(Potential) over the weeks counted in `Weeks`. */
+export interface WeeklyRecapSeasonEfficiency {
+  FantasyTeamID: number;
+  ActualStarterPoints: number;
+  PotentialPoints: number;
+  MissedPoints: number;
+  EfficiencyPercent: number | null;
+  Weeks: number;
+}
+
 export interface WeeklyRecapWeek {
   Week: number;
   KeyGames: WeeklyRecapKeyGame[];
   KeyPlayers: WeeklyRecapKeyPlayer[];
   /** Optional for compatibility with season archives generated before team awards. */
   TeamAwards?: WeeklyRecapTeamAwards;
+  /** Lineup efficiency per team; null when the week has no team-week-performance partition, absent in older files. */
+  TeamPerformance?: WeeklyRecapTeamPerformance[] | null;
 }
 
 export interface WeeklyRecapsReadModel {
   SchemaVersion: 1;
   Season: string;
   Weeks: WeeklyRecapWeek[];
+  /** Absent in files generated before lineup efficiency. */
+  SeasonEfficiency?: WeeklyRecapSeasonEfficiency[];
 }

@@ -73,6 +73,9 @@
               <div><dt>Season</dt><dd>{{ seasonSummary.season }} · {{ seasonSummary.record }}</dd></div>
               <div><dt>Current standing</dt><dd>{{ team.Standing > 0 ? ordinal(team.Standing) : 'Not started' }}</dd></div>
               <div><dt>Championships</dt><dd>{{ team.Championships }}</dd></div>
+              @if (lineupEfficiencyLabel) {
+                <div><dt>Lineup efficiency</dt><dd>{{ lineupEfficiencyLabel }}</dd></div>
+              }
               <div><dt>All-time record</dt><dd>{{ allTimeRecord }}</dd></div>
               @if (earliestOpenPicks) {
                 <div><dt>Next open picks</dt><dd>{{ earliestOpenPicks.season }} · {{ earliestOpenPicks.count }}</dd></div>

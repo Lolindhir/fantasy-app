@@ -287,9 +287,26 @@ def team_awards(
     repo_root: Path, league_id: str, season: int, week: int, matchup_rows: list[Any], participants: set[str]
 ) -> dict[str, Any]:
     """Best Manager and Best Coach of the team-week-performance partition; a missing partition is unavailable, never zero."""
+    return team_awards_and_performance(repo_root, league_id, season, week, matchup_rows, participants)[0]
+
+
+def team_awards_and_performance(
+    repo_root: Path,
+    league_id: str,
+    season: int,
+    week: int,
+    matchup_rows: list[Any],
+    participants: set[str],
+    identity_map: dict[str, dict[str, dict[str, str]]] | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]] | None]:
+    """TeamAwards plus the per-team lineup efficiency of one week from the same validated partition.
+
+    The efficiency list is ``None`` (unknown, never zero) when the partition is missing. ``OptimalLineup`` players carry the Sleeper
+    PlayerID of the App contract (``None`` when the weekly roster does not know the canonical player) next to the CanonicalPlayerID.
+    """
     path = repo_root / DATA_DERIVED_ROOT / "team-week-performance" / league_id / str(season) / f"{week:02d}.json"
     if not path.is_file():
-        return {"State": "unavailable", "BestManager": [], "BestCoach": []}
+        return {"State": "unavailable", "BestManager": [], "BestCoach": []}, None
     derived = _read(path, "TeamWeekPerformance partition")
     where = f"{season}/W{week}"
     if (
@@ -371,6 +388,59 @@ def team_awards(
                     }
                 )
         result[name] = sorted(winners, key=lambda w: w["CanonicalLeagueRosterID"])
+    by_canonical = (identity_map or {}).get("ByCanonical", {})
+    performance: list[dict[str, Any]] = []
+    for roster_id, team in teams.items():
+        efficiency = value_of(team, "EfficiencyPercent")
+        lineup = []
+        for slot in collection(value_of(team, "OptimalLineup")):
+            canonical_id = _text(value_of(slot, "CanonicalPlayerID"))
+            player_id = _text(by_canonical.get(canonical_id, {}).get("PlayerID"))
+            lineup.append(
+                {
+                    "SlotID": _text(value_of(slot, "SlotID")),
+                    "PlayerID": player_id or None,
+                    "CanonicalPlayerID": canonical_id or None,
+                    "Points": _num(value_of(slot, "Points") or 0),
+                }
+            )
+        performance.append(
+            {
+                "FantasyTeamID": roster_to_team[roster_id],
+                "ActualStarterPoints": _num(value_of(team, "ActualStarterPoints") or 0),
+                "PotentialPoints": _num(value_of(team, "PotentialPoints") or 0),
+                "MissedPoints": _num(value_of(team, "MissedPoints") or 0),
+                "EfficiencyPercent": None if efficiency is None else _num(efficiency),
+                "OptimalLineup": lineup,
+            }
+        )
+    performance.sort(key=lambda p: p["FantasyTeamID"])
+    return result, performance
+
+
+def season_efficiency(weeks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Season lineup efficiency per team: sum(Actual) / sum(Potential) over the weeks with a partition (the frontend only displays it)."""
+    totals: dict[int, dict[str, Any]] = {}
+    for week in weeks:
+        for team in week.get("TeamPerformance") or []:
+            entry = totals.setdefault(team["FantasyTeamID"], {"Actual": 0.0, "Potential": 0.0, "Weeks": 0})
+            entry["Actual"] += float(team["ActualStarterPoints"])
+            entry["Potential"] += float(team["PotentialPoints"])
+            entry["Weeks"] += 1
+    result = []
+    for team_id in sorted(totals):
+        entry = totals[team_id]
+        actual, potential = round(entry["Actual"], 4), round(entry["Potential"], 4)
+        result.append(
+            {
+                "FantasyTeamID": team_id,
+                "ActualStarterPoints": _num(actual),
+                "PotentialPoints": _num(potential),
+                "MissedPoints": _num(round(potential - actual, 4)),
+                "EfficiencyPercent": _num(round(actual / potential * 100, 4)) if potential > 0 else None,
+                "Weeks": entry["Weeks"],
+            }
+        )
     return result
 
 
@@ -415,7 +485,7 @@ def resolve_with_skips(repo_root: Path, league_id: str, season: int) -> tuple[di
         finality = resolve_week_finality(repo_root, league_id, season)
     except WeekFinalityError as exc:
         raise WeeklyRecapsError(str(exc)) from exc
-    empty = {"SchemaVersion": 1, "Season": str(season), "Weeks": []}
+    empty = {"SchemaVersion": 1, "Season": str(season), "Weeks": [], "SeasonEfficiency": []}
     scored = int(finality["LeagueScoredWeek"])
     if scored <= 0:
         return empty, []
@@ -458,6 +528,7 @@ def resolve_with_skips(repo_root: Path, league_id: str, season: int) -> tuple[di
         except MatchupContextError as exc:
             raise WeeklyRecapsError(str(exc)) from exc
         try:
+            identity_map = roster_identity_map(_weekly_roster_rows(repo_root, season, week))
             recap = build_week_recap(
                 week,
                 matchup_ids,
@@ -465,13 +536,15 @@ def resolve_with_skips(repo_root: Path, league_id: str, season: int) -> tuple[di
                 facts,
                 schedule,
                 canonical_schedule,
-                roster_identity_map(_weekly_roster_rows(repo_root, season, week)),
+                identity_map,
                 order,
                 team_key,
             )
         except EvidenceGap as exc:
             skipped.append((week, str(exc)))
             continue
-        recap["TeamAwards"] = team_awards(repo_root, league_id, season, week, rows, set(team_values))
+        recap["TeamAwards"], recap["TeamPerformance"] = team_awards_and_performance(
+            repo_root, league_id, season, week, rows, set(team_values), identity_map
+        )
         weeks.append(recap)
-    return {"SchemaVersion": 1, "Season": str(season), "Weeks": weeks}, skipped
+    return {"SchemaVersion": 1, "Season": str(season), "Weeks": weeks, "SeasonEfficiency": season_efficiency(weeks)}, skipped
