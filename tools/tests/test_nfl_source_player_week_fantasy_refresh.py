@@ -455,5 +455,53 @@ class RefreshErrorTests(unittest.TestCase):
                     refresh.refresh(root)
 
 
+class ModelStateMemoTests(unittest.TestCase):
+    """G5 E3 (Issue #1263): process-internal memo, opt-in, never persisted."""
+
+    def setUp(self):
+        import player_week_fantasy_materialize as materialize
+        self.materialize = materialize
+
+    def _calls(self, scope):
+        built = []
+
+        def fake(repo_root, *, target_season, scoring):
+            built.append((target_season, dict(scoring)))
+            return {"Season": target_season, "n": len(built)}
+
+        with mock.patch.object(self.materialize, "_compute_model_state", fake):
+            with scope():
+                root = Path(".")
+                first = self.materialize._build_model_state(root, target_season=2026, scoring={"a": 1, "b": 2})
+                second = self.materialize._build_model_state(root, target_season=2026, scoring={"b": 2, "a": 1})
+                other_season = self.materialize._build_model_state(root, target_season=2025, scoring={"a": 1, "b": 2})
+                other_scoring = self.materialize._build_model_state(root, target_season=2026, scoring={"a": 9})
+        return built, first, second, other_season, other_scoring
+
+    def test_identical_inputs_compute_once_inside_the_scope(self):
+        built, first, second, other_season, other_scoring = self._calls(self.materialize.memoized_model_state)
+        self.assertIs(first, second)
+        self.assertEqual(3, len(built))  # identical key once, season and scoring changes recompute
+        self.assertIsNot(first, other_season)
+        self.assertIsNot(first, other_scoring)
+
+    def test_without_the_scope_every_call_recomputes(self):
+        built, first, second, *_ = self._calls(contextlib.nullcontext)
+        self.assertEqual(4, len(built))
+        self.assertIsNot(first, second)
+
+    def test_scope_ends_and_leaves_no_state_behind(self):
+        with self.materialize.memoized_model_state():
+            pass
+        self.assertIsNone(self.materialize._MODEL_STATE_MEMO)
+
+    def test_refresh_runs_inside_the_memo_scope(self):
+        seen = []
+        with mock.patch.object(refresh, "_refresh", lambda root, at: seen.append(self.materialize._MODEL_STATE_MEMO is not None) or {}):
+            refresh.refresh(Path("."), datetime(2026, 1, 1, tzinfo=timezone.utc))
+        self.assertEqual([True], seen)
+        self.assertIsNone(self.materialize._MODEL_STATE_MEMO)
+
+
 if __name__ == "__main__":
     unittest.main()

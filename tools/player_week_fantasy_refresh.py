@@ -36,6 +36,7 @@ from player_week_fantasy_app_publish import materialize_app_player_week_fantasy 
 from player_week_fantasy_materialize import (  # noqa: E402
     _week_finality,
     build_player_week_fantasy_dataset,
+    memoized_model_state,
     output_path,
     write_dataset,
 )
@@ -134,6 +135,13 @@ def refresh_previous_scored_week(
 
 
 def refresh(repo_root: Path, at_utc: datetime | None = None) -> dict[str, Any]:
+    # G5 E3 (Issue #1263): the current-week build and the previous-week repair use identical model
+    # inputs; compute the calibrated model state once per process (no persisted cache).
+    with memoized_model_state():
+        return _refresh(repo_root, at_utc)
+
+
+def _refresh(repo_root: Path, at_utc: datetime | None = None) -> dict[str, Any]:
     root = repo_root.resolve()
     at_utc = at_utc or datetime.now(timezone.utc)
     league_id, season, week = resolve_target(root, at_utc)
