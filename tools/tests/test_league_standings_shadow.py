@@ -23,7 +23,7 @@ def playoff(team_id, place):
 
 
 def award(team_id):
-    return {"Name": "Best Performer", "Type": "x", "IconUnicode": "i", "StatDisplay": "1", "TeamID": team_id, "Owner": f"o{team_id}", "TeamName": f"t{team_id}"}
+    return {"Name": "Best Performer", "Type": {"Name": "RegularSeason", "DisplayText": "Regular Season", "Order": 2}, "IconUnicode": "1F525", "StatDisplay": "1", "TeamID": team_id, "Owner": f"o{team_id}", "TeamName": f"t{team_id}"}
 
 
 def document(season, with_movement):
@@ -119,6 +119,33 @@ class RenderTests(unittest.TestCase):
     def test_legacy_missing_current_season_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "2027"):
             app.render_legacy_highlights(self.documents, 2027)
+
+    def test_award_legend_aggregates_existing_shared_award_types(self):
+        expected = [{"Key": "RegularSeason", "DisplayText": "Regular Season", "IconUnicode": "1F525",
+                     "Order": 2, "Occurrences": 2}]
+        self.assertEqual(expected, app.render_award_legend(self.documents))
+        self.assertEqual(expected, app.render_standings(self.documents, 2025)[0]["AwardLegend"])
+        self.assertNotIn("AwardLegend", self.documents[2025]["AllTime"])
+        self.documents[2025]["Awards"].append({
+            "Name": "Regular Season King", "Type": {"Name": "RegularSeason", "DisplayText": "Regular Season", "Order": 2},
+            "TeamID": 2, "IconUnicode": "1F451",
+        })
+        self.assertEqual(expected, app.render_award_legend(self.documents))
+
+    def test_award_legend_order_and_first_source_icon_are_stable(self):
+        self.documents[2025]["Awards"].append({
+            "Name": "Weekly Star", "Type": {"Name": "Playoffs", "DisplayText": "Playoffs", "Order": 1},
+            "TeamID": 2, "IconUnicode": "2605",
+        })
+        legend = app.render_award_legend(self.documents)
+        self.assertEqual(["Playoffs", "RegularSeason"], [entry["Key"] for entry in legend])
+        self.assertEqual("1F525", legend[1]["IconUnicode"])
+        self.assertEqual(2, legend[1]["Occurrences"])
+
+    def test_award_legend_fails_closed_on_invalid_award_type(self):
+        self.documents[2025]["Awards"][0]["Type"] = "not-an-award-type"
+        with self.assertRaisesRegex(ValueError, "Invalid award Type"):
+            app.render_award_legend(self.documents)
 
     def test_all_time_percentage_display_uses_existing_model_format(self):
         for pct, expected in ((0.7037, ".704"), (1.0, "1.000"), (0.0, ".000"), (-1, None), (None, None)):
