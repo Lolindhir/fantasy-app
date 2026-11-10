@@ -1,24 +1,24 @@
 import type { Player } from '../../core/models/fantasy.models';
 import { buildSalaryMovers } from './salary-movers.util';
 
-function player(id: string, sinceLastWeek: number | null | undefined, extra: Partial<Player> = {}): Player {
+function player(id: string, delta: number | null | undefined, extra: Partial<Player> = {}): Player {
   return {
     ID: id,
     Name: `Player ${id}`,
-    SalaryProjectedChange: sinceLastWeek === undefined ? undefined : { SinceSeasonStart: null, SinceLastWeek: sinceLastWeek },
+    SalaryProjectedDelta: delta,
     ...extra
   } as unknown as Player;
 }
 
 describe('buildSalaryMovers', () => {
-  it('sorts by the generator-owned change and splits up and down', () => {
+  it('sorts by the generator-owned delta and splits up and down', () => {
     const movers = buildSalaryMovers([player('a', 5), player('b', -7), player('c', 9), player('d', -2)]);
     expect(movers.up.map(m => m.player.ID)).toEqual(['c', 'a']);
     expect(movers.down.map(m => m.player.ID)).toEqual(['b', 'd']);
-    expect(movers.up[0].change).toBe(9);
+    expect(movers.up[0].delta).toBe(9);
   });
 
-  it('skips unknown, missing and zero changes instead of treating them as 0', () => {
+  it('skips unknown, missing and zero deltas instead of treating them as 0', () => {
     const movers = buildSalaryMovers([player('a', null), player('b', undefined), player('c', 0), player('d', 3)]);
     expect(movers.up.map(m => m.player.ID)).toEqual(['d']);
     expect(movers.down).toEqual([]);
@@ -31,7 +31,7 @@ describe('buildSalaryMovers', () => {
     expect(buildSalaryMovers(players, () => true, 2).up.length).toBe(2);
   });
 
-  it('orders equal changes deterministically by name', () => {
+  it('orders equal deltas deterministically by name', () => {
     const movers = buildSalaryMovers([player('b', 4), player('a', 4)]);
     expect(movers.up.map(m => m.player.ID)).toEqual(['a', 'b']);
   });

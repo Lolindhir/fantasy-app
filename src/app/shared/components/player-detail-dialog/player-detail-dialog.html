@@ -249,20 +249,22 @@
       </div>
     </mat-tab>
 
-    <!-- 💲 Salary Tab (weekly salary curve of the current season) -->
+    <!-- 💲 Salary Tab (salary per season, newest first) -->
     <mat-tab label="Salary" *ngIf="player.SalaryHistory?.length">
       <div class="dialog-salary">
-        <div class="salary-summary">
-          <div class="salary-summary__item">
-            <span class="label">Since last week</span>
-            <strong [ngClass]="salaryChangeClass(player.SalaryProjectedChange?.SinceLastWeek)">{{ formatSalaryChange(player.SalaryProjectedChange?.SinceLastWeek) }}</strong>
-          </div>
-          <div class="salary-summary__item">
-            <span class="label">Since season start</span>
-            <strong [ngClass]="salaryChangeClass(player.SalaryProjectedChange?.SinceSeasonStart)">{{ formatSalaryChange(player.SalaryProjectedChange?.SinceSeasonStart) }}</strong>
-          </div>
-        </div>
         <app-salary-history-chart [history]="player.SalaryHistory"></app-salary-history-chart>
+        <table class="salary-rows">
+          <thead><tr><th>Season</th><th>Salary</th><th>Change</th></tr></thead>
+          <tbody>
+            @for (row of salaryRows; track row.label) {
+              <tr [class.salary-rows__projected]="row.projected">
+                <td>{{ row.label }}</td>
+                <td>{{ formatSalaryAmount(row.salary) }}</td>
+                <td [ngClass]="salaryChangeClass(row.change)">{{ formatSalaryChange(row.change) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
       </div>
     </mat-tab>
 

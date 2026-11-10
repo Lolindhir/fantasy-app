@@ -19,8 +19,6 @@ import { AllTimeStandingsComponent } from '../../shared/components/all-time-stan
 import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
 import { PlayerDetailDialogComponent } from '../../shared/components/player-detail-dialog/player-detail-dialog';
 import { SeasonAwardsComponent } from '../../shared/components/season-awards/season-awards';
-import { SalaryMoversComponent } from '../../shared/components/salary-movers/salary-movers';
-import { buildSalaryMovers } from '../../shared/utils/salary-movers.util';
 import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
 import { TransactionCardComponent } from '../../shared/components/transaction-card/transaction-card';
 import { PositionStylePipe } from '../../shared/pipes/position-style.pipe';
@@ -135,7 +133,6 @@ interface SeasonLeaderCard {
     AllTimeStandingsComponent,
     CurrentStandingsComponent,
     TransactionCardComponent,
-    SalaryMoversComponent,
     PositionStylePipe
   ],
   standalone: true,
@@ -228,7 +225,6 @@ export class OverviewComponent {
       const seasonPulse = activeLeague ? this.buildSeasonPulse(league) : null;
       const seasonLeaders = activeLeague ? this.buildSeasonLeaders(league, teams) : [];
       const recentMoves = activeLeague ? this.buildRecentMoves(transactions, currentSeason) : [];
-      const salaryMovers = activeLeague ? buildSalaryMovers(players, player => !!player.TeamFantasy) : null;
       const lastWaiverPickAt = buildLastWaiverPickByTeam(transactions, currentSeason);
       const awards = buildSeasonAwardItems(
         getCurrentSeasonAwards(league),
@@ -259,7 +255,6 @@ export class OverviewComponent {
         seasonPulse,
         seasonLeaders,
         recentMoves,
-        salaryMovers,
         lastWaiverPickAt,
         awards,
         deadlineDisplay,

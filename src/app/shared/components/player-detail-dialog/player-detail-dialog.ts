@@ -145,7 +145,31 @@ export class PlayerDetailDialogComponent implements OnInit {
     };
   }
 
-  /** Generator-owned change of the projected salary; null when unknown (shown as a dash). */
+  /**
+   * Salary rows, newest first: the projection for the next season (delta to the current salary), then every season with
+   * its generator-owned change to the previous year. Only reordering and labelling happens here.
+   */
+  get salaryRows(): { label: string; salary: number | null; change: number | null; projected: boolean }[] {
+    const history = this.player.SalaryHistory ?? [];
+    const latest = history[history.length - 1];
+    const rows = [...history].reverse().map(h => ({ label: String(h.Season), salary: h.Salary, change: h.Change, projected: false }));
+    if (latest?.SalaryProjected != null) {
+      rows.unshift({
+        label: `${latest.Season + 1} (projected)`,
+        salary: latest.SalaryProjected,
+        change: this.player.SalaryProjectedDelta ?? null,
+        projected: true
+      });
+    }
+    return rows;
+  }
+
+  formatSalaryAmount(value: number | null): string {
+    if (value == null) return '–';
+    return value >= 1_000_000 ? `$${(value / 1_000_000).toFixed(1)}m` : `$${(value / 1_000).toFixed(0)}k`;
+  }
+
+  /** Generator-owned change; null when unknown (shown as a dash). */
   formatSalaryChange(value: number | null | undefined): string {
     if (value == null) return '–';
     const absolute = Math.abs(value);

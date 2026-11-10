@@ -7,7 +7,7 @@ import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import type { SalaryMover, SalaryMovers } from '../../utils/salary-movers.util';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
-/** Largest projected-salary moves since the previous week; selection and change values come from the generator data. */
+/** Players whose projected salary differs most from the current one; selection and delta values come from the generator data. */
 @Component({
   selector: 'app-salary-movers',
   standalone: true,
@@ -31,9 +31,9 @@ export class SalaryMoversComponent {
   }
 
   formatChange(mover: SalaryMover): string {
-    const absolute = Math.abs(mover.change);
+    const absolute = Math.abs(mover.delta);
     const text = absolute >= 1_000_000 ? `$${(absolute / 1_000_000).toFixed(1)}m` : `$${(absolute / 1_000).toFixed(0)}k`;
-    return mover.change > 0 ? `+${text}` : `-${text}`;
+    return mover.delta > 0 ? `+${text}` : `-${text}`;
   }
 
   formatSalary(value: number): string {

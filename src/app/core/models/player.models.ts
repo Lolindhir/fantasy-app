@@ -151,17 +151,14 @@ export interface FreeAgentMarketInfo {
   CapAfterCutDisplay?: string;
 }
 
-/** One player-valuation snapshot week; null while the week or the player is not in that snapshot (never 0). */
+/** Salary of one league season (final player-valuation snapshot); null while the season or the player is not in a snapshot (never 0). */
 export interface SalaryHistoryEntry {
-  Week: number;
+  Season: number;
   Salary: number | null;
+  /** Projection for the following season as of that season's final snapshot. */
   SalaryProjected: number | null;
-}
-
-/** Generator-owned change of SalaryProjected (Salary itself is constant within a season); null when unknown. */
-export interface SalaryProjectedChange {
-  SinceSeasonStart: number | null;
-  SinceLastWeek: number | null;
+  /** Generator-owned difference of Salary to the previous listed season; null when unknown or for the first season. */
+  Change: number | null;
 }
 
 export interface RawPlayer {
@@ -174,9 +171,10 @@ export interface RawPlayer {
   IsFreeAgent: boolean;
   Salary: number;
   SalaryProjected: number;
-  /** Salary and SalaryProjected per week of the current season (week 0 = before week 1); absent in older files. */
+  /** Salary per league season, oldest first; absent in older files. */
   SalaryHistory?: SalaryHistoryEntry[] | null;
-  SalaryProjectedChange?: SalaryProjectedChange | null;
+  /** Generator-owned SalaryProjected minus Salary of the current season; null when unknown. */
+  SalaryProjectedDelta?: number | null;
   Age: number;
   Year: number;
   Picture: string;
