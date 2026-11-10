@@ -132,6 +132,46 @@ class WriteTests(unittest.TestCase):
         )
         patcher.start()
         self.addCleanup(patcher.stop)
+        manifest_patcher = patch.multiple(
+            app.standings_sources,
+            manifest=lambda root, league: {"CurrentCanonicalLeagueSeasonID": "league-a-2025"},
+            current_season=lambda manifest: 2025,
+        )
+        manifest_patcher.start()
+        self.addCleanup(manifest_patcher.stop)
+
+    def test_write_does_not_require_published_league(self):
+        import json
+        (self.root / "public/data/League.json").unlink()
+        app.write_standings(self.root, "league-a", self.now)
+        delivered = json.loads((self.root / "public/data/Standings.json").read_text())
+        self.assertIn("PreviousWeekPlace", delivered[1]["RegularSeason"][0])
+        self.assertNotIn("PreviousWeekPlace", delivered[2]["RegularSeason"][0])
+
+    def test_stale_published_league_season_does_not_change_output(self):
+        import json
+        (self.root / "public/data/League.json").write_text('{"Season": "2024"}')
+        app.write_standings(self.root, "league-a", self.now)
+        delivered = json.loads((self.root / "public/data/Standings.json").read_text())
+        self.assertEqual("2025", delivered[1]["Season"])
+        self.assertIn("PreviousWeekPlace", delivered[1]["RegularSeason"][0])
+        self.assertNotIn("PreviousWeekPlace", delivered[2]["RegularSeason"][0])
+
+    def test_missing_manifest_fails_before_any_publication(self):
+        from unittest.mock import patch
+        with patch.object(app.standings_sources, "manifest", side_effect=FileNotFoundError("manifest missing")):
+            with patch.object(app, "materialize_league_standings", side_effect=AssertionError("must not materialize")):
+                with self.assertRaises(FileNotFoundError):
+                    app.write_standings(self.root, "league-a", self.now)
+        self.assertFalse((self.root / "public/data/Standings.json").exists())
+
+    def test_inconsistent_current_season_fails_before_any_publication(self):
+        from unittest.mock import patch
+        with patch.object(app.standings_sources, "current_season", return_value=2026):
+            with patch.object(app, "materialize_league_standings", side_effect=AssertionError("must not materialize")):
+                with self.assertRaisesRegex(ValueError, "2026 missing"):
+                    app.write_standings(self.root, "league-a", self.now)
+        self.assertFalse((self.root / "public/data/Standings.json").exists())
 
     def test_first_write_creates_file_and_timestamp_second_is_noop(self):
         changed = app.write_standings(self.root, "league-a", self.now)
