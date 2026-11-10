@@ -15,7 +15,7 @@
       <path class="line line--salary" [attr.d]="path(segment)" />
     }
     @for (point of points; track point.label) {
-      <circle class="dot" [class.dot--projected]="point.label.endsWith('proj.')" [attr.cx]="point.x" [attr.cy]="point.y" r="3.5">
+      <circle class="dot" [class.dot--projected]="$last && projectionLine.length > 0" [attr.cx]="point.x" [attr.cy]="point.y" r="3.5">
         <title>{{ point.label }}: {{ formatMoney(point.value) }}</title>
       </circle>
     }

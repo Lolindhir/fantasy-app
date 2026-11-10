@@ -155,7 +155,7 @@ export class PlayerDetailDialogComponent implements OnInit {
     const rows = [...history].reverse().map(h => ({ label: String(h.Season), salary: h.Salary, change: h.Change, projected: false }));
     if (latest?.SalaryProjected != null) {
       rows.unshift({
-        label: `${latest.Season + 1} (projected)`,
+        label: `${latest.Season + 1}`,
         salary: latest.SalaryProjected,
         change: this.player.SalaryProjectedDelta ?? null,
         projected: true

@@ -93,7 +93,7 @@ export class SalaryHistoryChartComponent {
     });
 
     if (projected != null) {
-      const point = { label: `${latest.Season + 1} proj.`, x: xOf(slots - 1), y: yOf(projected), value: projected };
+      const point = { label: `${latest.Season + 1}`, x: xOf(slots - 1), y: yOf(projected), value: projected };
       this.xTicks.push({ x: point.x, label: point.label });
       const last = this.points.length && this.points[this.points.length - 1].label === String(latest.Season)
         ? this.points[this.points.length - 1]

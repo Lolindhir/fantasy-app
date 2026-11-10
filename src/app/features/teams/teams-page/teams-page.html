@@ -74,16 +74,5 @@
         </mat-card>
       }
     </section>
-
-    @if (salaryMovers && (salaryMovers.up.length || salaryMovers.down.length)) {
-      <section class="salary-impact" aria-label="Salary impact">
-        <div class="salary-impact__heading">
-          <div class="salary-impact__eyebrow">Rostered players</div>
-          <h2>Salary Impact</h2>
-          <p>Biggest differences between current and projected {{ (league?.SeasonAsNumber || 0) + 1 }} salary</p>
-        </div>
-        <app-salary-movers [movers]="salaryMovers" />
-      </section>
-    }
   }
 </main>

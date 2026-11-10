@@ -22,6 +22,8 @@ import { SeasonAwardsComponent } from '../../shared/components/season-awards/sea
 import { SeasonResultsComponent } from '../../shared/components/season-results/season-results';
 import { TransactionCardComponent } from '../../shared/components/transaction-card/transaction-card';
 import { PositionStylePipe } from '../../shared/pipes/position-style.pipe';
+import { SalaryMoversComponent } from '../../shared/components/salary-movers/salary-movers';
+import { buildSalaryMovers } from '../../shared/utils/salary-movers.util';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import {
   compareDraftPicksByDraftOrder,
@@ -133,6 +135,7 @@ interface SeasonLeaderCard {
     AllTimeStandingsComponent,
     CurrentStandingsComponent,
     TransactionCardComponent,
+    SalaryMoversComponent,
     PositionStylePipe
   ],
   standalone: true,
@@ -261,7 +264,8 @@ export class OverviewComponent {
         deadlineInfo,
         offSeason,
         draftSeason,
-        activeLeague
+        activeLeague,
+        salaryMovers: offSeason ? buildSalaryMovers(players, player => !!player.TeamFantasy) : null
       };
     })
   );

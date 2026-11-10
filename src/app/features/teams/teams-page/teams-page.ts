@@ -6,9 +6,7 @@ import { RouterLink } from '@angular/router';
 import type { FantasyTeam, League } from '../../../core/models/fantasy.models';
 import { DataService } from '../../../core/services/data.service';
 import { CapUsageBarComponent } from '../../../shared/components/cap-usage-bar/cap-usage-bar';
-import { SalaryMoversComponent } from '../../../shared/components/salary-movers/salary-movers';
 import { SalaryHealthIndicatorComponent } from '../../../shared/components/salary-health-indicator/salary-health-indicator';
-import { buildSalaryMovers, type SalaryMovers } from '../../../shared/utils/salary-movers.util';
 import { TeamDetailDialogService } from '../../../shared/services/team-detail-dialog.service';
 import { SharedMaterialImports } from '../../../shared/shared-material-imports';
 import {
@@ -41,8 +39,7 @@ interface TeamCardViewModel {
     MatProgressSpinnerModule,
     SharedMaterialImports,
     CapUsageBarComponent,
-    SalaryHealthIndicatorComponent,
-    SalaryMoversComponent
+    SalaryHealthIndicatorComponent
   ],
   templateUrl: './teams-page.html',
   styleUrl: './teams-page.scss'
@@ -50,7 +47,6 @@ interface TeamCardViewModel {
 export class TeamsPageComponent implements OnInit {
   league?: League;
   cards: TeamCardViewModel[] = [];
-  salaryMovers: SalaryMovers | null = null;
   loading = true;
 
   constructor(
@@ -59,9 +55,8 @@ export class TeamsPageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.dataService.getLeagueWithPlayers(['Salary']).subscribe(({ league, teams, players }) => {
+    this.dataService.getLeagueWithPlayers(['Salary']).subscribe(({ league, teams }) => {
       this.league = league;
-      this.salaryMovers = buildSalaryMovers(players, player => !!player.TeamFantasy);
       this.cards = teams.map(team => ({
         team,
         salary: buildTeamSalarySummary(team, league),
