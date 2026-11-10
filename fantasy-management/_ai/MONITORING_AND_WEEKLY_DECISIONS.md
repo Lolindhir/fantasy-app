@@ -452,6 +452,8 @@ Der spätere Workflow soll mindestens liefern:
 - wichtigste Start/Sit- und Boundary-Entscheidungen einschließlich relevanter Alternativen und Entscheidungskonfidenz;
 - gemeinsamer FLEX-Portfolio-Check mit den vier gewählten FLEX-Spielern, wesentlichen Bench-Kandidaten, kumulierten Injury-/Usage-/Workload-Risiken, bewusstem Floor-/Ceiling-Trade-off und offenen Rechecks;
 - tragende externe Experten-/Usage-Evidenz, wesentliche Quellendivergenzen und die Begründung eines etwaigen Reversal-Gates;
+- ein datierter Nachweis der externen Pregame-Quellenzeilen für materielle Grenzfälle inklusive Capture-Zeit/Evidenzstatus nach dem **Week-Evidence-Vertrag**;
+- eine zeitlich getrennte Decision-Opportunity-Timeline nach Kickoff-/Informations-Epochen einschließlich tatsächlich verfügbarer Alternativen;
 - empfohlene AutoSub-/Substitute-Paarungen einschließlich Trigger, Lock-/Timing-Punkt und nicht abgesichertem Residual Risk;
 - empfohlene Waiver Adds;
 - zugehörige Drops;
@@ -467,9 +469,42 @@ Der spätere Workflow soll mindestens liefern:
 - Entscheidungskonfidenz;
 - zeitkritische nächste Aktion.
 
+### Week-Evidence-Vertrag: Pregame-Capture, Entscheidungszeitfenster, Usage und Finalität
+
+Dieser verbindliche Nachweisstandard gilt für **materielle Weekly Start/Sit-/FLEX-Grenzen** sowie deren späteres Postmortem. Er konkretisiert die vorhandenen Experten-, Usage-, Chronologie- und Scoring-Regeln, ohne einen zweiten Quellen- oder Entscheidungs-Speicher oder einen neuen automatisierten Writer einzuführen.
+
+**1. Pregame-Quellenzeilen vor dem jeweiligen Lock dokumentieren (nicht nachträglich behaupten).**
+
+- Für jeden relevanten strittigen Starter und realistischen Bench-Kandidaten die **tatsächlich konsultierten einzelnen Ranking-/Grade-/Start-Sit-Datenpunkte** möglichst noch **vor dessen Lock** festhalten. Je Quelle sind mindestens **Analyst/Herausgeber, Titel, URL, Quelltyp** (gemeinsames PPR-FLEX-Ranking, Positionsranking, Grade, Projektion, Injury-/Rollenbericht), NFL-Woche und Scoring-Format, veröffentlichte/angezeigte Update-Zeit, **eigene Capture-Zeit samt Zeitzone**, Spielername/ID und konkreter Rang/Grade bzw. kurz **eigenständig paraphrasierte** Begründung zu dokumentieren. Unbekannte Zeitpunkte ausdrücklich als unbekannt angeben.
+- Quellenunabhängigkeit prüfen: abgeleitete FantasyPros-Grades, ECR und gemeinsame Primärprognosen zählen nicht mehrfach als unabhängige Stimmen. Keine ganzen Rankings, urheberrechtlich geschützten Artikel oder langen Passagen speichern; nur punktuelle Fakten und kurze eigene Interpretation.
+- Für **jede entscheidungsrelevante Quelle/Zeile** einen Evidenzstatus festhalten: `pre_lock_captured` (konkrete Zeile nachweisbar vor Lock notiert), `pre_lock_referenced_unarchived` (damals konsultiert, aber Zeile/Revision nicht bewahrt), `post_lock_only` (erst nach Lock gesehen) oder `unavailable`. Eine nachträglich sichtbar aktualisierte Seite ist **keine** automatisch belegte frühere Originalversion. `post_lock_only` nie als ursprüngliche Decision-Evidenz benutzen, fehlende frühere Werte nicht erfinden.
+- Der Nachweis gehört in die **datierte Ex-ante-Analyse**, sofern deren Persistierung ausdrücklich freigegeben ist; ansonsten in die aktuelle Antwort. Das Postmortem verlinkt die unveränderte Ex-ante-Akte und benennt offene Lücken. **Keine** automatische Quellenarchivierung, Scraping-Pipeline, neue globale Ranking-Wahrheit oder stillschweigende Persistenzautorisierung.
+
+**2. Entscheidungen in getrennten Cutoff-Epochen statt in einem rückwirkend gemischten Wochenstand führen.**
+
+- Eine **Decision-Opportunity-Timeline** mit jedem tatsächlich relevanten Kickoff-/Informations-Lock führen, insbesondere **Thursday**, frühem International-/Sunday-Spiel, normalen/late Sunday-Fenstern und **Monday Night**; Sonderzeiten haben Vorrang vor starren Fenstern. Ein neuer datierter Stand entsteht auch bei wesentlich neuer Inactive-, Injury-, Waiver- oder Trade-Evidenz.
+- Je Cutoff mindestens festhalten: **Entscheidungszeit/Zeitzone**, nächster Kickoff und individuelle Locks, aktuell gehaltene und wirklich spielberechtigte Alternativen, bereits gelockte/noch mögliche Slots, neu bekannte Verfügbarkeit, gültige externe Pregame-Evidenz, Kandidatenvergleich, bestätigte Nutzerausführung und belegte AutoSub-Paarungen samt Trigger oder `unconfirmed`.
+- Frühere Scores dürfen eine spätere Matchup-State-Entscheidung beeinflussen, aber **niemals** als ursprüngliche Begründung eines früheren Starts ausgegeben werden. Ein Spieler ist erst **nach abgeschlossenem Add/Waiver** als neu erworbene Alternative verfügbar. Bei Reversal ursprüngliches Urteil, neues Evidenz-Delta und neuen Cutoff protokollieren; alte Ex-ante-Zustände nicht überschreiben.
+- Same-Information-Re-Decision nur **innerhalb derselben tatsächlich dokumentierten Informationsepoche**; Full-Week-/Best-Ball-Oracle stets klar als Ex-post-Konstruktion und nicht als realen damaligen Entscheidungsraum deklarieren.
+
+**3. Usage-Pflichtvergleich: Snaps reichen allein nicht als Rollenbeleg.**
+
+- Bei materiellen RB-/WR-/TE-Grenzen für **Starter und Alternativen** aus derselben NFL-Woche/vergleichbaren Quelle nach Möglichkeit **Offense-Snaps/-Share, Routes/-Participation und konkrete Ball-Opportunities** nebeneinanderstellen: für **RB** Carries, Targets/Receptions, nach Möglichkeit Passing-Down/Goal-Line/Two-Minute-Arbeit; für **WR/TE** Routes, Targets/Target Share, Receptions und bei Relevanz Air Yards/Red-Zone. Für **QB** nach Bedarf Dropbacks/Attempts/Rush-Arbeit; für **K** Attempts, Distanz/Team-Scoring statt irrelevanter Offense-Snaps.
+- Für Postgame-Reviews grundsätzlich **alle kontrollierten Spieler** (Starter, aktive Bank, Reserve, Taxi) erfassen. Bei **tatsächlich eingesetzten** RB/WR/TE die drei Opportunity-Familien nach Möglichkeit nebeneinander dokumentieren, nicht nur den Snap-%-Wert. Ist die Quelle unvollständig, nur belegte Felder angeben; fehlen Routes/Targets/Touches, die **Rollenbewertung als offen** markieren. Week-übergreifende Veränderungen mit vorheriger Woche und normalem Konkurrenz-/Game-Script-Kontext abgleichen.
+- Die Unterschiede **belegte Null**, **nicht gespielt**, **inactive**, **Bye**, **IR/Reserve**, **im Provider-Feed fehlend** und **nicht finalisiert** dürfen nicht verschmolzen werden. Keine Targets aus Snap-% schätzen; weder hoher Snap-Anteil noch ein einzelner TD beweist stabile Receiving-Opportunity. Earned Opportunity von verletzungs-/tradebedingt **vacated** Opportunity trennen.
+
+**4. Postgame-Finalitätsbrücke: vier voneinander unabhängige Datenebenen.**
+
+- Vor Aussagen zu finalisiertem Week-Scoring, Usage, Best Ball oder Modellgüte eine kleine **Evidence-Gate-Matrix** führen: **A NFL-Game-Finality** (erwartete/finale Spiele), **B offizielles Liga-Matchup** (Week, CompletionState, gewertete Starter, Team-/Gegnerpunkte), **C Derived PlayerWeekFantasy-Actuals** (identische Week, Finality/Availability, Spieler-Abdeckung und Scoring-Fingerprint) und **D NFL Snap-/Usage-Feed** (Game-Abdeckung, `Finalized`, fehlende Routes/Touches/Targets). Je Ebene den Datenpfad, abgerufenen Stand/Blob-SHA und Datenstatus notieren; nicht verfügbare Felder ausdrücklich kennzeichnen.
+- **`league_scoring_verified__derived_pending`:** Wenn Liga-Matchup final ist und alle gewerteten Starter korrekt aufsummieren, darf das **Ligaergebnis** als final berichtet und das Wochen-Postmortem mit expliziten offenen Derived-/Usage-Gates archiviert werden. Nicht behaupten, die Usage-Daten oder die PlayerWeekFantasy-Actuals seien ebenfalls final.
+- **`reconciled`:** Erst wenn dieselbe NFL-Woche und CanonicalPlayerID auf derselben Scoringbasis für sämtliche relevanten Starter und materiellen Bench-Alternativen zwischen **finalem Liga-Matchup und finalen Derived-Actuals** übereinstimmen, diese Derived-Istwerte für einen **finalen** Modellbenchmark verwenden. Snap-/Route-/Target-Daten sind eigenständige NFL-Rollen-Evidenz, keine Fantasy-Scoring-Actuals.
+- **`pending_reconciliation`:** Bei abweichenden Werten, fehlender Finalität oder unvollständiger Feed-Abdeckung konkrete Differenzen, betroffene Spieler/Quellen und fehlende Spiele nennen; nicht still einen Feed als final umdeuten, nicht durch V4-C-Erwartungswerte auffüllen, keine unvereinbaren Source-/Derived-/App-Daten zu einer erfundenen Wahrheit zusammenziehen. Diese Statusbegriffe sind **nur Analysekennzeichnungen**, keine neuen produktiven Pipeline-Felder. Reparatur-Writer/Validatoren bleiben eigenständig freigabepflichtig.
+
+**Prüfbarkeit/Abnahme pro Review:** Ex-ante-Quellenliste mit Cutoff-Status, nachvollziehbare Decision-Epochen, vergleichbare Opportunity-Werte oder explizite Lücken für die maßgeblichen Kandidaten, vierteilige Finalitätsmatrix und klar getrennte Decision-/Outcome-/Modellbefunde. Bestehende Wochenreviews werden nicht rückwirkend umgeschrieben; eine spätere Ergänzung braucht einen neuen datierten Reviewstand.
+
 ### Post-Week Roster + Lineup Retrospective
 
-Nach vollständiger Fantasy-Scoring-Finality einer Woche kann ein abgeschlossenes Mighty-Giants-Postmortem erstellt werden. Es ist eine retrospektive Analyse und darf den damaligen Ex-ante-Entscheidungszustand nicht mit späterem Wissen überschreiben.
+Nach vollständiger Fantasy-Scoring-Finality einer Woche kann ein abgeschlossenes Mighty-Giants-Postmortem erstellt werden. Es ist eine retrospektive Analyse und darf den damaligen Ex-ante-Entscheidungszustand nicht mit späterem Wissen überschreiben. Die vierteilige Finalitätsbrücke und der rosterweite Usage-Nachweis des **Week-Evidence-Vertrags** oben gelten ergänzend; Scoring-Finality darf nicht mit Derived-/Snap-Finality verwechselt werden.
 
 Verbindliche Leitplanken:
 
