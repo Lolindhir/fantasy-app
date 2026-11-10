@@ -16,6 +16,8 @@ export interface PlayerWeekResultView {
   state: Extract<PlayerWeekFantasyActualState, 'live' | 'final'> | 'game-log';
   /** Real score of the week (not an estimate), e.g. "12.4". */
   pointsText: string;
+  /** Real points compared with the published projection; null without a projection. */
+  tone: 'above' | 'below' | 'even' | null;
 }
 
 export interface PlayerWeekProjectionView {
@@ -23,6 +25,8 @@ export interface PlayerWeekProjectionView {
   week: number;
   /** Null unless the published projection status is "available" and carries points. */
   projection: PlayerProjectionView | null;
+  /** Published projected points, null without an available projection. */
+  projectedValue: number | null;
   /** "10.6" or "–". */
   projectedText: string;
   /** "6.6 – 39.1" for the published display level, null without a range. */
@@ -80,11 +84,16 @@ export function buildPlayerWeekProjections(
       season: model.Season,
       week: model.Week,
       projection: view,
+      projectedValue: available ? Number(points) : null,
       projectedText: view ? view.projected : MISSING_PROJECTION_TEXT,
       rangeText: view?.rangeText ?? null,
       levelLabel: view?.rangeText && level !== null ? `${Math.round(level * 100)}%` : null,
       result: hasResult
-        ? { state: actual.State as 'live' | 'final', pointsText: formatScore(Number(actual.Points)) }
+        ? {
+          state: actual.State as 'live' | 'final',
+          pointsText: formatScore(Number(actual.Points)),
+          tone: resultTone(Number(actual.Points), available ? Number(points) : null)
+        }
         : null
     });
   }
@@ -107,7 +116,19 @@ export function resolveWeekResult(
   const entry = gameLog?.find(game => Number(game.GameDetails?.Week) === view.week);
   const points = entry?.FantasyPoints;
   if (points === null || points === undefined || !Number.isFinite(Number(points))) return null;
-  return { state: 'game-log', pointsText: formatScore(Number(points)) };
+  return {
+    state: 'game-log',
+    pointsText: formatScore(Number(points)),
+    tone: resultTone(Number(points), view.projectedValue)
+  };
+}
+
+/** Plain comparison of two published numbers; no model rule involved. */
+function resultTone(actual: number, projected: number | null): PlayerWeekResultView['tone'] {
+  if (projected === null) return null;
+  if (actual > projected) return 'above';
+  if (actual < projected) return 'below';
+  return 'even';
 }
 
 /** Cell text for lists: the projected points or "–". */

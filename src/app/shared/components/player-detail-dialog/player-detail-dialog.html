@@ -28,27 +28,32 @@
     <mat-tab label="Overview">
       <div class="dialog-overview">
 
-        <section class="week-card" aria-label="This week">
-          <header class="week-card__header">
-            <h3>This Week</h3>
-            <span *ngIf="weekProjection" class="week-card__week">Week {{ weekProjection.week }}</span>
-          </header>
-          <div class="week-card__body">
-            <div class="week-card__block">
-              <span class="week-card__label">Proj.</span>
-              <span class="week-card__value" [class.week-card__value--missing]="!weekProjection?.projection">
-                {{ weekProjection?.projectedText ?? '–' }}
-              </span>
-              <app-player-projection *ngIf="weekProjection?.projection as projection" class="week-card__range"
-                [view]="projection" [showValue]="false" [inline]="true"></app-player-projection>
-              <span *ngIf="!weekProjection?.projection" class="week-card__note">No projection available</span>
+        <div class="week-row">
+          <section *ngIf="weekResult as result" class="actual-card"
+                   [class.actual-card--above]="result.tone === 'above'"
+                   [class.actual-card--below]="result.tone === 'below'"
+                   [attr.aria-label]="result.state === 'live' ? 'Live points' : 'Actual points'">
+            <span class="actual-card__label">{{ result.state === 'live' ? 'Live' : 'Actual' }}</span>
+            <span class="actual-card__value">{{ result.pointsText }}</span>
+          </section>
+          <section class="week-card" aria-label="This week">
+            <header class="week-card__header">
+              <h3>This Week</h3>
+              <span *ngIf="weekProjection" class="week-card__week">Week {{ weekProjection.week }}</span>
+            </header>
+            <div class="week-card__body">
+              <div class="week-card__block">
+                <span class="week-card__label">Proj.</span>
+                <span class="week-card__value" [class.week-card__value--missing]="!weekProjection?.projection">
+                  {{ weekProjection?.projectedText ?? '–' }}
+                </span>
+                <app-player-projection *ngIf="weekProjection?.projection as projection" class="week-card__range"
+                  [view]="projection" [showValue]="false" [inline]="true"></app-player-projection>
+                <span *ngIf="!weekProjection?.projection" class="week-card__note">No projection available</span>
+              </div>
             </div>
-            <div *ngIf="weekResult as result" class="week-card__block">
-              <span class="week-card__label">{{ result.state === 'live' ? 'Live' : (result.state === 'final' ? 'Result' : 'Actual') }}</span>
-              <span class="week-card__value">{{ result.pointsText }}</span>
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
         <div class="dialog-info">
 
