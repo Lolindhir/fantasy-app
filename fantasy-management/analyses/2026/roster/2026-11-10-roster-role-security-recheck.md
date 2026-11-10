@@ -27,12 +27,12 @@
 | RB | Dylan Sampson | active | `backup` | `hold` | – | prospect/conditional | Browns-Change-of-Pace/Receiving-Rolle: Weeks 7-9 ca. 55 % Snaps und 5,7 Targets pro Spiel; nicht länger rein theoretischer Prospect. |
 | RB | Jeremiyah Love | active | `core_starter` | `locked` | – | core_starter/locked | Elite-Dynasty-Asset, aktuell auf NFL-IR wegen Sprunggelenk; kein sofortiger Startable-Player. |
 | RB | Jonathon Brooks | reserve | `prospect` | `conditional` | – | prospect/hold | Langfristiger Recovery-Stash mit erheblichem Gesundheits-/Rollenrisiko; Reserve belegt keinen aktiven Platz. |
-| RB | Kenneth Walker III | active | `core_starter` | `locked` | – | unclassified | Kansas-City-Lead-Back und elite aktuelle TD-/Scrimmage-Produktion; Upgrade von Rotation/Strong Hold. |
+| RB | Kenneth Walker III | active | `core_starter` | `locked` | – | starter_rotation/strong_hold | Kansas-City-Lead-Back und elite aktuelle TD-/Scrimmage-Produktion; Upgrade von Rotation/Strong Hold. |
 | RB | Kyle Monangai | active | `backup` | `hold` | – | backup/strong_hold | Bears-RB2 mit Kontingenz-Upside hinter eigenem Swift, derzeit Verletzungs-/Verfügbarkeitsrisiko; kein automatischer Premium-Hold. |
 | RB | Saquon Barkley | active | `starter_rotation` | `strong_hold` | – | starter_rotation/strong_hold | Win-now-Produktion mit zunehmendem Alters-, Verletzungs- und Cap-Risiko; kein unantastbarer Dynasty-Core. |
 | RB | Seth McGowan | active | `backup` | `hold` | – | unclassified | Von Colts bestätigter RB2 hinter Jonathan Taylor: 20-33 % Snaps in den letzten Wochen, 4,8 YPC bei 43 Läufen; starker Contingency-Pfad. |
 | TE | Colston Loveland | active | `starter_rotation` | `strong_hold` | – | starter_rotation/strong_hold | Young-TE mit substanziellem Volumen und Premium-Marktwert; in Liga mit 2 Pflicht-TEs klarer Starter. |
-| TE | Harold Fannin Jr. | active | `starter_rotation` | `strong_hold` | – | unclassified | Reale Browns-TE-Usage ca. 86 % Snaps und 6,5 Targets im jüngsten Fenster; Upgrade von Backup. |
+| TE | Harold Fannin Jr. | active | `starter_rotation` | `strong_hold` | – | backup/strong_hold | Reale Browns-TE-Usage ca. 86 % Snaps und 6,5 Targets im jüngsten Fenster; Upgrade von Backup. |
 | TE | Trey McBride | active | `core_starter` | `locked` | – | core_starter/locked | Hochwertiger TE-Kern bei zwei festen TE-Spots. |
 | TE | Tyler Warren | active | `starter_rotation` | `strong_hold` | – | starter_rotation/strong_hold | Junger hochrangiger Starter/Flex-TE; vierte TE-Option ist in diesem Ligaformat wertvoll. |
 | WR | Alec Pierce | reserve | `backup` | `hold` | – | backup/hold | Reserve/IR: Recovery-/Return-Option; Recheck bei Aktivierung und knapper IR-Kapazität. |
