@@ -107,6 +107,9 @@ contract:
     AllTime: >
       Overall (playoff placement) and regular-season all-time standing through the last completed season at or before Season
       (ThroughSeason). A season in progress is not part of its own AllTime; ThroughSeason is null before the first completed season.
+      The App consumer generator adds WinPercentageDisplay to AllTime.RegularSeason and League.json
+      Placements.AllTime.Regular from the existing model WinPercentage using the v1 three-decimal formatter.
+      Without completed games (WinPercentage = -1), the display is null; the shared product stays unchanged.
   determinism:
     - Compact JSON, fixed key order from the builder, no timestamps and no wall-clock input.
     - Floating-point semantics follow .NET (round half to even after scaling, sequential accumulation); sums never use Python's compensated sum.
