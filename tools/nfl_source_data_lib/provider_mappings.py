@@ -350,3 +350,98 @@ def build_provider_mapping_payload(
         known_canonical_ids,
     )
     return apply_identity_adjudications(payload, adjudication_claims)
+
+
+def retire_merged_duplicate_mappings(
+    payload: dict[str, Any],
+    decisions: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Re-own the persisted mappings of a merged (retired) duplicate to its target.
+
+    A ``confirmed-canonical-duplicate-merge`` retires the duplicate's
+    CanonicalPlayerID, so no persisted mapping or active conflict may keep
+    pointing at it. Its mappings (every season) move to the target and merge with
+    an equal mapping of the target; tokens the decision declares as contaminated
+    belong to another person and are dropped from the duplicate. Conflicts that
+    only existed between the duplicate and the target disappear, other conflicts
+    keep their remaining owners. Historical resolution records and reconciliations
+    stay as evidence. Without a merge decision the payload is returned unchanged.
+    """
+    merges = [d for d in decisions if d.get("ResolutionKind") == "confirmed-canonical-duplicate-merge"]
+    if not merges:
+        return payload
+    target_of: dict[str, str] = {}
+    contaminated: dict[str, set[tuple[str, str]]] = {}
+    for decision in merges:
+        for duplicate_id in decision["DuplicateCanonicalPlayerIDs"]:
+            target_of[str(duplicate_id)] = str(decision["TargetCanonicalPlayerID"])
+            contaminated[str(duplicate_id)] = {
+                (str(t["Provider"]), str(t["ExternalID"]))
+                for t in decision.get("ContaminatedTokens") or []
+            }
+
+    mappings: list[dict[str, Any]] = []
+    moved: list[dict[str, Any]] = []
+    for item in payload.get("Mappings", []):
+        owner = str(item.get("CanonicalPlayerID") or "")
+        if owner not in target_of:
+            mappings.append(item)
+            continue
+        token = (str(item.get("Provider")), str(item.get("ExternalID")))
+        if token not in contaminated[owner]:
+            moved.append({**item, "CanonicalPlayerID": target_of[owner]})
+    for item in moved:
+        # Only a mapping of the target whose interval overlaps or touches the moved
+        # one is the same validity span; unrelated spans of the target stay as they are.
+        same = next(
+            (
+                other
+                for other in mappings
+                if (other.get("Provider"), other.get("ExternalID"), other.get("CanonicalPlayerID"))
+                == (item["Provider"], item["ExternalID"], item["CanonicalPlayerID"])
+                and int(other["FirstObservedSeason"]) <= int(item["LastObservedSeason"]) + 1
+                and int(item["FirstObservedSeason"]) <= int(other["LastObservedSeason"]) + 1
+            ),
+            None,
+        )
+        if same is None:
+            mappings.append(item)
+            continue
+        same["FirstObservedSeason"] = min(int(same["FirstObservedSeason"]), int(item["FirstObservedSeason"]))
+        same["LastObservedSeason"] = max(int(same["LastObservedSeason"]), int(item["LastObservedSeason"]))
+        same["Sources"] = sorted(set(same.get("Sources") or []) | set(item.get("Sources") or []))
+    if moved:
+        mappings.sort(
+            key=lambda item: (
+                item["Provider"], item["ExternalID"],
+                item["FirstObservedSeason"], item["CanonicalPlayerID"],
+            )
+        )
+
+    conflicts: list[dict[str, Any]] = []
+    for conflict in payload.get("Conflicts", []):
+        owners = [str(v) for v in conflict.get("CanonicalPlayerIDs") or []]
+        if not any(owner in target_of for owner in owners):
+            conflicts.append(conflict)
+            continue
+        token = (str(conflict.get("Provider")), str(conflict.get("ExternalID")))
+        remaining: list[str] = []
+        sources: dict[str, set[str]] = defaultdict(set)
+        for owner in owners:
+            if owner in target_of and token in contaminated[owner]:
+                continue
+            new_owner = target_of.get(owner, owner)
+            if new_owner not in remaining:
+                remaining.append(new_owner)
+            sources[new_owner].update(
+                str(v) for v in (conflict.get("SourcesByCanonicalPlayerID") or {}).get(owner, [])
+            )
+        if len(remaining) < 2:
+            continue
+        rebuilt = {**conflict, "CanonicalPlayerIDs": sorted(remaining)}
+        if conflict.get("SourcesByCanonicalPlayerID"):
+            rebuilt["SourcesByCanonicalPlayerID"] = {
+                owner: sorted(values) for owner, values in sorted(sources.items()) if values
+            }
+        conflicts.append(rebuilt)
+    return {**payload, "Mappings": mappings, "Conflicts": conflicts}
