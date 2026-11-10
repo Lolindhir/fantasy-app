@@ -31,8 +31,15 @@ def document(season, with_movement):
         "RegularSeason": [regular(1, 1, with_movement), regular(2, 2, with_movement)],
         "Playoffs": [playoff(1, 1), playoff(2, 2)],
         "Awards": [award(1)],
-        "AllTime": {"ThroughSeason": season, "Playoffs": [{"Place": 1, "TeamID": 1, "Owner": "o1", "TeamName": "t1"}],
-                    "RegularSeason": [regular(1, 1, False)]},
+        "Teams": [{"TeamID": 1}, {"TeamID": 2}],
+        "AllTime": {
+            "ThroughSeason": season,
+            "Playoffs": [
+                {"Place": 1, "TeamID": 1, "Owner": "o1", "TeamName": "t1", "Championships": 1, "RunnerUps": 0, "Thirds": 0},
+                {"Place": 2, "TeamID": 2, "Owner": "o2", "TeamName": "t2", "Championships": 0, "RunnerUps": 1, "Thirds": 0},
+            ],
+            "RegularSeason": [regular(1, 1, False), regular(2, 2, False)],
+        },
     }
 
 
@@ -73,6 +80,45 @@ class RenderTests(unittest.TestCase):
         self.documents[2025]["AllTime"]["ThroughSeason"] = 2025
         self.documents[2025]["AllTime"]["Playoffs"][0]["Place"] = 7
         self.assertEqual(7, app.render_standings(self.documents, 2025)[0]["Playoffs"][0]["Place"])
+
+    def test_legacy_highlights_use_shared_results_in_a_stable_order(self):
+        legacy = app.render_standings(self.documents, 2025)[0]["LegacyHighlights"]
+        self.assertEqual([
+            {"Key": "ChampOfChamps", "TeamID": 1},
+            {"Key": "RegularSeasonKing", "TeamID": 1},
+            {"Key": "PodiumMachine", "TeamID": 1, "Count": 1},
+            {"Key": "AwardCollector", "TeamID": 1, "Count": 2},
+        ], legacy)
+        self.assertNotIn("LegacyHighlights", self.documents[2025]["AllTime"])
+
+    def test_podium_and_award_tiebreakers_do_not_recompute_in_angular(self):
+        # Two podiums beat one regardless of all-time place.
+        second = self.documents[2025]["AllTime"]["Playoffs"][1]
+        second.update({"Championships": 1, "RunnerUps": 1, "Thirds": 0})
+        highlights = app.render_legacy_highlights(self.documents, 2025)
+        self.assertEqual({"Key": "PodiumMachine", "TeamID": 2, "Count": 2}, highlights[2])
+
+        # Award counts, then distinct names, then overall place, exactly as the former UI.
+        self.documents[2024]["Awards"] = [{"Name": "A", "TeamID": 1}, {"Name": "B", "TeamID": 1}]
+        self.documents[2025]["Awards"] = [{"Name": "A", "TeamID": 2}, {"Name": "B", "TeamID": 2},
+                                           {"Name": "Regular Season King", "TeamID": 2}]
+        winner = app.render_legacy_highlights(self.documents, 2025)[-1]
+        self.assertEqual({"Key": "AwardCollector", "TeamID": 1, "Count": 2}, winner)
+        self.documents[2025]["Awards"][1]["Name"] = "C"
+        self.documents[2025]["Awards"].append({"Name": "D", "TeamID": 2})
+        winner = app.render_legacy_highlights(self.documents, 2025)[-1]
+        self.assertEqual({"Key": "AwardCollector", "TeamID": 2, "Count": 3}, winner)
+
+    def test_legacy_restricts_placement_winners_to_current_rosters(self):
+        self.documents[2025]["Teams"] = [{"TeamID": 2}]
+        legacy = app.render_legacy_highlights(self.documents, 2025)
+        self.assertEqual([2, 2, 2], [row["TeamID"] for row in legacy[:3]])
+        # Historical award holders remain eligible even if no longer on a current roster.
+        self.assertEqual(1, legacy[-1]["TeamID"])
+
+    def test_legacy_missing_current_season_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "2027"):
+            app.render_legacy_highlights(self.documents, 2027)
 
     def test_all_time_percentage_display_uses_existing_model_format(self):
         for pct, expected in ((0.7037, ".704"), (1.0, "1.000"), (0.0, ".000"), (-1, None), (None, None)):
