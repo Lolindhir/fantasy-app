@@ -38,6 +38,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import league_standings_sources as standings_sources  # noqa: E402
+from derived_data_lib.models.standings.v1 import format_win_percentage  # noqa: E402
 from derived_data import LEAGUE_STANDINGS, build_league_standings, league_history_path, materialize_league_standings  # noqa: E402
 from league_metadata import data_meta_root, default_league_id, list_league_ids  # noqa: E402
 
@@ -52,6 +53,19 @@ def _regular_row(row: dict[str, Any], is_current: bool) -> dict[str, Any]:
     if not is_current:
         for field in MOVEMENT_FIELDS:
             rendered.pop(field, None)
+    return rendered
+
+
+def _all_time_regular_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Consumer-only display projection; the shared model owns WinPercentage."""
+    rendered = dict(row)
+    pct = row.get("WinPercentage")
+    if pct is None or pct == -1:  # no completed games: model's unavailable sentinel
+        rendered["WinPercentageDisplay"] = None
+    elif isinstance(pct, bool) or not isinstance(pct, (int, float)) or not 0 <= pct <= 1:
+        raise ValueError(f"Invalid all-time WinPercentage for {row.get('TeamID')}: {pct!r}")
+    else:
+        rendered["WinPercentageDisplay"] = format_win_percentage(pct)
     return rendered
 
 
@@ -92,7 +106,7 @@ def render_standings(documents: dict[int, dict[str, Any]], league_year: int) -> 
     return [{
         "Season": "AllTime",
         "Playoffs": [_playoff_row(r) for r in all_time["Playoffs"]],
-        "RegularSeason": [dict(r) for r in all_time["RegularSeason"]],
+        "RegularSeason": [_all_time_regular_row(r) for r in all_time["RegularSeason"]],
     }] + seasons
 
 

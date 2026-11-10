@@ -52,7 +52,7 @@ export interface RegularSeasonTeam {
   /** Current season only: PreviousWeekPlace - Place (positive = moved up); null if no comparison exists. */
   PlaceDelta?: number | null;
   WinPercentage?: number;
-  WinPercentageDisplay?: string;
+  WinPercentageDisplay?: string | null;
   WinPercentageDiffLeagueAvg?: number;
   WinPercentageHistory?: number[];
   PointDifference?: number;
@@ -193,7 +193,9 @@ export interface PlacementRegularSeason extends Placement {
   }>;
 }
 
-export interface PlacementRegularSeasonAllTime extends Omit<PlacementRegularSeason, 'Record' | 'Streak'> {
+export interface PlacementRegularSeasonAllTime extends Omit<PlacementRegularSeason, 'Record' | 'Streak' | 'WinPercentageDisplay'> {
+  /** Additive All-Time display projection; null/absent when no completed games or on old publications. */
+  WinPercentageDisplay?: string | null;
   RegularSeasonWins: number;
 }
 

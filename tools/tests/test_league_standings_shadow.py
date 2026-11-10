@@ -74,6 +74,23 @@ class RenderTests(unittest.TestCase):
         self.documents[2025]["AllTime"]["Playoffs"][0]["Place"] = 7
         self.assertEqual(7, app.render_standings(self.documents, 2025)[0]["Playoffs"][0]["Place"])
 
+    def test_all_time_percentage_display_uses_existing_model_format(self):
+        for pct, expected in ((0.7037, ".704"), (1.0, "1.000"), (0.0, ".000"), (-1, None), (None, None)):
+            with self.subTest(pct=pct):
+                self.documents[2025]["AllTime"]["RegularSeason"][0]["WinPercentage"] = pct
+                rendered = app.render_standings(self.documents, 2025)
+                self.assertEqual(expected, rendered[0]["RegularSeason"][0]["WinPercentageDisplay"])
+                placements = app.render_placements(rendered, [1, 2], 2025)
+                self.assertEqual(expected, placements[1]["AllTime"]["Regular"]["WinPercentageDisplay"])
+                self.assertNotIn("WinPercentageDisplay", self.documents[2025]["AllTime"]["RegularSeason"][0])
+
+    def test_all_time_percentage_display_rejects_invalid_values(self):
+        for pct in (float("nan"), float("inf"), True, "0.5", 1.2):
+            with self.subTest(pct=pct):
+                self.documents[2025]["AllTime"]["RegularSeason"][0]["WinPercentage"] = pct
+                with self.assertRaises(ValueError):
+                    app.render_standings(self.documents, 2025)
+
     def test_empty_documents_fail(self):
         with self.assertRaises(ValueError):
             app.render_standings({}, 2025)
