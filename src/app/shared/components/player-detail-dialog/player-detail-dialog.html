@@ -123,7 +123,7 @@
 
     <!-- 🧾 Game Log -->
     <mat-tab label="Game Log" *ngIf="player.GameHistoryFull?.length">
-      <table mat-table [dataSource]="player.GameHistoryFull ?? []" class="mat-elevation-z1">
+      <table mat-table [dataSource]="player.GameHistoryFull ?? []" class="mat-elevation-z1 game-log-table">
 
         <!-- Week -->
         <ng-container matColumnDef="week">
@@ -208,13 +208,13 @@
         </ng-container>
 
         <ng-container *ngIf="player.Position != 'K'">
-          <tr mat-header-row *matHeaderRowDef="['week','opponent','projection','points','touchdowns']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['week','opponent','projection','points','touchdowns']"></tr>
+          <tr mat-header-row *matHeaderRowDef="['week','opponent','points','projection','touchdowns']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['week','opponent','points','projection','touchdowns']"></tr>
         </ng-container>
 
         <ng-container *ngIf="player.Position === 'K'">
-          <tr mat-header-row *matHeaderRowDef="['week','opponent','projection','points','fgs','xps']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['week','opponent','projection','points','fgs','xps']"></tr>
+          <tr mat-header-row *matHeaderRowDef="['week','opponent','points','projection','fgs','xps']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['week','opponent','points','projection','fgs','xps']"></tr>
         </ng-container>
       </table>
     </mat-tab>
