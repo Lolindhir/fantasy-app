@@ -902,9 +902,17 @@ def _apply_duplicate_merges(
             sources = tuple(
                 sorted(duplicate_ids | {str(v) for v in decision["SourceCanonicalPlayerIDs"]})
             )
+            # Tokens the review declared as upstream contamination belong to another
+            # person: they are dropped from the duplicate's evidence and never move.
+            contaminated = {
+                (str(t["Provider"]), str(t["ExternalID"]))
+                for t in decision.get("ContaminatedTokens") or []
+            }
             for member in members:
                 if member.existing_internal_id in duplicate_ids:
                     member.existing_internal_id = target_id
+                for key in [k for k, v in member.ids.items() if (k, v) in contaminated]:
+                    del member.ids[key]
                 for key, value in member.ids.items():
                     if value:
                         transfers[(key, value)] = (target_id, sources, provenance)
