@@ -10,7 +10,7 @@ Rendering rules (identical to the current contract):
   * ``Standings.json`` is ``AllTime`` first, then every season newest first; the weekly movement fields
     (PreviousWeekPlace, PlaceDelta, WeeklyMovements) exist only on the rows of the current season.
   * Playoff rows carry ``OwnerAvatar`` as CDN URL (the product stores the provider avatar ID).
-  * Placements: ``Current`` (League.Season), ``Previous`` (Season - 1) and ``AllTime`` per team with the
+  * Placements: ``Current`` (canonical manifest season), ``Previous`` (Season - 1) and ``AllTime`` per team with the
     Playoffs and Regular row without TeamID/Owner/TeamName. Season awards stay in the Standings sections only;
     the placements carry no copy (Issue #1195).
 
@@ -187,15 +187,19 @@ def write_standings(repo_root: Path, league_id: str, now: datetime | None = None
     The product is written first; Standings.json only changes on a semantic difference, in which case
     Timestamps.json[Standings] is stamped (the writer owns its freshness timestamp, never an input).
     """
+    # App outputs are not a source for the active season. Validate the canonical
+    # identity and render before publishing either product or App files.
+    league_year = standings_sources.current_season(standings_sources.manifest(repo_root, league_id))
     documents = build_league_standings(repo_root, league_id)
+    if league_year not in documents:
+        raise ValueError(f"Current league season {league_year} missing from league-standings documents for {league_id}")
+    rendered = render_standings(documents, league_year)
     summary = materialize_league_standings(repo_root, repo_root / "data-derived", league_id, None, False)
     changed = [
         f"data-derived/league-standings/{league_id}/{item['Season']}.json"
         for item in summary["Seasons"] if item.get("Written")
     ]
     data = repo_root / "public" / "data"
-    league_year = int(_load(data / "League.json")["Season"])
-    rendered = render_standings(documents, league_year)
     path = data / "Standings.json"
     if path.is_file() and not difference(rendered, _load(path)):
         return changed
