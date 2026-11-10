@@ -239,13 +239,14 @@ export class DataService {
 
   /**
    * All completed transactions and drafts of the league history (current season plus every past
-   * season the index lists), for chaining one player's journey. Missing past files are skipped.
+   * season the index lists), for chaining one player's journey. Seasons without a past file are skipped; a failed load is an error.
    */
   getPlayerJourneySources(): Observable<PlayerJourneySources> {
     this.playerJourneySources$ ??= this.getLeagueWithPlayers().pipe(
       switchMap(({ league, drafts, teams }) =>
         this.getPastSeasonsIndex().pipe(
-          catchError(() => of({ GeneratedAt: null, Seasons: [] } as PastSeasonsIndex)),
+          // All-or-nothing (Issue #1425): a failed index or past file must surface as an error, never as a
+          // silently shorter journey. shareReplay resets on error, so the next request retries.
           switchMap(index => {
             const seasons = (index.Seasons ?? []).filter(entry => Number(entry.Season) < Number(league.Season));
             const transactionPaths = seasons
@@ -255,9 +256,7 @@ export class DataService {
               .map(entry => entry.Resources?.Drafts)
               .flatMap(resource => resource?.Exists === true && resource.Path ? [resource.Path] : []);
             const pastDrafts$ = draftPaths.length
-              ? forkJoin(draftPaths.map(path =>
-                this.getPastDraftsRaw(path).pipe(catchError(() => of([] as RawDraft[]))))
-              )
+              ? forkJoin(draftPaths.map(path => this.getPastDraftsRaw(path)))
               : of([] as RawDraft[][]);
             return forkJoin({
               transactions: this.getTransactionsForSources(true, transactionPaths),
