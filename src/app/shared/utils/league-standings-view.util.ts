@@ -29,8 +29,8 @@ export interface RegularSeasonAchievementSubject {
   teamName: string | null;
   ownerAvatar?: string | null;
   teamAvatar?: string | null;
-  record: string;
-  points: number;
+  record: string | null;
+  points: number | null;
 }
 
 export interface SeasonResultsViewModel {
@@ -109,9 +109,9 @@ export interface SeasonHistoryRegularSeasonRow {
   placeOrdinal: string;
   owner: string;
   teamName: string | null;
-  record: string;
-  points: number;
-  pointsAgainst: number;
+  record: string | null;
+  points: number | null;
+  pointsAgainst: number | null;
   winPercentageDisplay: string;
   ownerAvatar?: string | null;
   teamAvatar?: string | null;
@@ -326,9 +326,11 @@ export function buildSeasonHistory(league: League): SeasonHistoryViewModel {
             placeOrdinal: row.PlaceOrdinal,
             owner: row.Owner,
             teamName: row.TeamName,
-            record: formatRecord(row.Wins ?? 0, row.Losses ?? 0, row.Ties ?? 0),
-            points: row.Points ?? 0,
-            pointsAgainst: row.PointsAgainst ?? 0,
+            record: row.Wins != null && row.Losses != null && row.Ties != null
+              ? formatRecord(row.Wins, row.Losses, row.Ties)
+              : null,
+            points: row.Points ?? null,
+            pointsAgainst: row.PointsAgainst ?? null,
             winPercentageDisplay: row.WinPercentageDisplay ?? '',
             ownerAvatar: historicIdentity?.OwnerAvatar?.trim() || null,
             teamAvatar: historicIdentity?.TeamAvatar?.trim() || null
