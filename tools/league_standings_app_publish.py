@@ -81,6 +81,60 @@ def _playoff_row(row: dict[str, Any]) -> dict[str, Any]:
     return rendered
 
 
+def render_legacy_highlights(documents: dict[int, dict[str, Any]], league_year: int) -> list[dict[str, Any]]:
+    """League Legacy achievements from shared standing/award facts, without App JSON inputs.
+
+    The all-time display historically considers current league teams for ranked
+    achievements; the award collector also considers historical roster IDs.
+    Presentation labels, icons and owner avatars remain Angular concerns.
+    """
+    if league_year not in documents:
+        raise ValueError(f"Current league season {league_year} missing from league-standings documents")
+    current_teams = documents[league_year]["Teams"]
+    current_order = {str(team["TeamID"]): index for index, team in enumerate(current_teams)}
+    all_time = documents[max(documents)]["AllTime"]
+
+    def ranked(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return sorted(
+            (row for row in rows if str(row["TeamID"]) in current_order and row["Place"] < 999),
+            key=lambda row: (row["Place"], current_order[str(row["TeamID"])]),
+        )
+
+    overall = ranked(all_time["Playoffs"])
+    regular = ranked(all_time["RegularSeason"])
+    highlights: list[dict[str, Any]] = []
+    if overall:
+        highlights.append({"Key": "ChampOfChamps", "TeamID": overall[0]["TeamID"]})
+    if regular:
+        highlights.append({"Key": "RegularSeasonKing", "TeamID": regular[0]["TeamID"]})
+    if overall:
+        def podium_key(row: dict[str, Any]) -> tuple[int, int, int, int, int]:
+            champions, runners, thirds = (row[key] for key in ("Championships", "RunnerUps", "Thirds"))
+            return (-champions - runners - thirds, -champions, -runners, -thirds, row["Place"])
+
+        winner = sorted(overall, key=podium_key)[0]
+        count = sum(winner[key] for key in ("Championships", "RunnerUps", "Thirds"))
+        highlights.append({"Key": "PodiumMachine", "TeamID": winner["TeamID"], "Count": count})
+
+    award_counts: dict[str, dict[str, Any]] = {}
+    for season in sorted(documents, reverse=True):
+        for award in documents[season]["Awards"]:
+            if award["Name"] == "Regular Season King":  # old static placement award, not a dynamic season award
+                continue
+            team_id = str(award["TeamID"])
+            entry = award_counts.setdefault(team_id, {"TeamID": award["TeamID"], "Count": 0, "Types": set()})
+            entry["Count"] += 1
+            entry["Types"].add(award["Name"])
+    if award_counts:
+        overall_places = {str(row["TeamID"]): row["Place"] for row in overall}
+        winner = sorted(
+            award_counts.items(),
+            key=lambda item: (-item[1]["Count"], -len(item[1]["Types"]), overall_places.get(item[0], 999)),
+        )[0][1]
+        highlights.append({"Key": "AwardCollector", "TeamID": winner["TeamID"], "Count": winner["Count"]})
+    return highlights
+
+
 def render_standings(documents: dict[int, dict[str, Any]], league_year: int) -> list[dict[str, Any]]:
     """Content of Standings.json: AllTime, then the seasons newest first."""
     if not documents:
@@ -107,6 +161,7 @@ def render_standings(documents: dict[int, dict[str, Any]], league_year: int) -> 
         "Season": "AllTime",
         "Playoffs": [_playoff_row(r) for r in all_time["Playoffs"]],
         "RegularSeason": [_all_time_regular_row(r) for r in all_time["RegularSeason"]],
+        "LegacyHighlights": render_legacy_highlights(documents, league_year),
     }] + seasons
 
 
