@@ -382,13 +382,13 @@ function projectLegacyHighlight(
       return { key: fact.Key, icon: '👑', title: 'Regular Season King', owner,
         valueDisplay: '#1 Regular Season', reason: 'Best all-time regular-season table' };
     case 'PodiumMachine':
-      return Number.isInteger(fact.Count) && fact.Count! >= 0
+      return typeof fact.Count === 'number' && Number.isInteger(fact.Count) && fact.Count >= 0
         ? { key: fact.Key, icon: '🥇', title: 'Podium Machine', owner,
             valueDisplay: `${fact.Count} Podium${fact.Count === 1 ? '' : 's'}`,
             reason: 'Most top-3 playoff finishes' }
         : null;
     case 'AwardCollector':
-      return Number.isInteger(fact.Count) && fact.Count! >= 0
+      return typeof fact.Count === 'number' && Number.isInteger(fact.Count) && fact.Count >= 0
         ? { key: fact.Key, icon: '🎖️', title: 'Award Collector', owner,
             valueDisplay: `${fact.Count} Awards`, reason: 'Most historical season awards' }
         : null;
