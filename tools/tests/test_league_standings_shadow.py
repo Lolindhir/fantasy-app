@@ -142,6 +142,14 @@ class RenderTests(unittest.TestCase):
         self.assertEqual("1F525", legend[1]["IconUnicode"])
         self.assertEqual(2, legend[1]["Occurrences"])
 
+    def test_award_legend_is_deterministic_and_does_not_mutate_derived_documents(self):
+        import copy
+        before = copy.deepcopy(self.documents)
+        first = app.render_award_legend(self.documents)
+        second = app.render_award_legend(self.documents)
+        self.assertEqual(first, second)
+        self.assertEqual(before, self.documents)
+
     def test_award_legend_fails_closed_on_invalid_award_type(self):
         self.documents[2025]["Awards"][0]["Type"] = "not-an-award-type"
         with self.assertRaisesRegex(ValueError, "Invalid award Type"):
