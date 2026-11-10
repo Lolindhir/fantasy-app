@@ -1,4 +1,5 @@
 import type { FantasyTeam, League } from '../../core/models/league.models';
+import { RegularSeasonStandingsListComponent } from '../components/regular-season-standings-list/regular-season-standings-list';
 import {
   buildCurrentStandings,
   buildSeasonHistory,
@@ -28,8 +29,8 @@ function league(isFinished: boolean): League {
         { TeamID: 4, Place: 4, PlaceOrdinal: '4th', Owner: 'Owner 4', TeamName: 'Team 4', TeamAvatar: 'historic-team-4.png', OwnerAvatar: 'historic-owner-4.png' }
       ] : null,
       RegularSeason: [
-        { TeamID: 4, Place: 1, PlaceOrdinal: '1st', Owner: 'Owner 4', TeamName: 'Team 4', Wins: 10, Losses: 3, Points: 2472.16 },
-        { TeamID: 2, Place: 2, PlaceOrdinal: '2nd', Owner: 'Owner 2', TeamName: 'Team 2', Wins: 9, Losses: 4, Points: 2200 }
+        { TeamID: 4, Place: 1, PlaceOrdinal: '1st', Owner: 'Owner 4', TeamName: 'Team 4', Wins: 10, Losses: 3, Ties: 0, Points: 2472.16 },
+        { TeamID: 2, Place: 2, PlaceOrdinal: '2nd', Owner: 'Owner 2', TeamName: 'Team 2', Wins: 9, Losses: 4, Ties: 0, Points: 2200 }
       ],
       Awards: [award('Regular Season King', 4), award('Clutch Peaker', 2)]
     }]
@@ -91,5 +92,36 @@ describe('Regular Season Champion achievement', () => {
 
   it('filters only the legacy placement award, leaving other special/dynamic awards intact', () => {
     expect(getCurrentSeasonAwards(league(true)).map(row => row.Name)).toEqual(['Clutch Peaker']);
+  });
+});
+
+describe('Historical standings unavailable evidence', () => {
+  it('keeps missing record and point facts unknown instead of inventing zeros', () => {
+    const source = league(true);
+    const incomplete = source.Standings[0].RegularSeason[0];
+    delete incomplete.Ties;
+    delete incomplete.Points;
+    delete incomplete.PointsAgainst;
+
+    const row = buildSeasonHistory(source).seasons[0].regularSeasonStandings[0];
+    expect(row.owner).toBe('Owner 4');
+    expect(row.record).toBeNull();
+    expect(row.points).toBeNull();
+    expect(row.pointsAgainst).toBeNull();
+
+    const view = new RegularSeasonStandingsListComponent();
+    expect(view.recordWithQuote(row)).toBe('—');
+    expect(view.pointDifferential(row)).toBeNull();
+    expect(view.pointDifferentialEmoji(row)).toBe('—');
+    expect(view.pointDifferentialSign(row)).toBe('');
+  });
+
+  it('preserves legitimate zero point differential and zero ties', () => {
+    const view = new RegularSeasonStandingsListComponent();
+    const row = { place: 1, owner: 'A', record: '3-2', points: 100, pointsAgainst: 100, winPercentageDisplay: '.600' };
+    expect(view.recordWithQuote(row)).toBe('3-2 (.600)');
+    expect(view.pointDifferential(row)).toBe(0);
+    expect(view.pointDifferentialSign(row)).toBe('+');
+    expect(view.pointDifferentialEmoji(row)).toBe('🔺');
   });
 });
