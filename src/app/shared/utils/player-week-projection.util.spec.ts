@@ -5,7 +5,9 @@ import type {
 import {
   MISSING_PROJECTION_TEXT,
   buildPlayerWeekProjections,
-  weekProjectionText
+  resolveWeekResult,
+  weekProjectionText,
+  type PlayerWeekProjectionView
 } from './player-week-projection.util';
 
 function record(playerID: string | null, overrides: Partial<PlayerWeekFantasyRecord> = {}): PlayerWeekFantasyRecord {
@@ -94,5 +96,26 @@ describe('player week projection view', () => {
     expect(weekProjectionText(null, '1')).toBe('–');
     expect(weekProjectionText(buildPlayerWeekProjections(model([record('1')])), '999')).toBe('–');
     expect(weekProjectionText(buildPlayerWeekProjections(model([record('1')])), '1')).toBe('10.6');
+  });
+});
+
+describe('resolveWeekResult', () => {
+  const view = (week: number, result: PlayerWeekProjectionView['result'] = null) =>
+    ({ season: 2026, week, projection: null, projectedText: '–', rangeText: null, levelLabel: null, result }) as PlayerWeekProjectionView;
+  const log = [{ GameDetails: { Week: 9 }, FantasyPoints: 9.1 }, { GameDetails: { Week: 8 }, FantasyPoints: 12.9 }];
+
+  it('prefers the published Actual', () => {
+    const published = { state: 'final', pointsText: '9.5' } as const;
+    expect(resolveWeekResult(view(9, published), log)).toEqual(published);
+  });
+
+  it('falls back to the Game Log entry of the projected week', () => {
+    expect(resolveWeekResult(view(9), log)).toEqual({ state: 'game-log', pointsText: '9.1' });
+  });
+
+  it('shows nothing without a Game Log entry for that week', () => {
+    expect(resolveWeekResult(view(10), log)).toBeNull();
+    expect(resolveWeekResult(view(9), undefined)).toBeNull();
+    expect(resolveWeekResult(null, log)).toBeNull();
   });
 });

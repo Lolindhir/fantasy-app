@@ -14,7 +14,7 @@ import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { DataService } from '../../../core/services/data.service';
 import { formatPlayerPositionDepth } from '../../utils/player-sort.util';
 import { buildPlayerJourney, type PlayerJourney, type PlayerJourneyEvent } from '../../utils/player-journey.util';
-import type { PlayerWeekProjectionView } from '../../utils/player-week-projection.util';
+import { resolveWeekResult, type PlayerWeekProjectionView, type PlayerWeekResultView } from '../../utils/player-week-projection.util';
 import { PlayerProjectionComponent } from '../projection-range/player-projection';
 
 // Registrierung
@@ -58,6 +58,8 @@ export class PlayerDetailDialogComponent implements OnInit {
 
   /** Published projection of the current App week; null while loading or when the player has no record. */
   weekProjection: PlayerWeekProjectionView | null = null;
+  /** Real points of that week: the published Actual, else the Game Log entry of the same week. */
+  weekResult: PlayerWeekResultView | null = null;
   journey: PlayerJourney | null = null;
   journeyState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
 
@@ -70,6 +72,7 @@ export class PlayerDetailDialogComponent implements OnInit {
     this.prepareChart();
     this.dataService.getPlayerWeekProjections().subscribe(projections => {
       this.weekProjection = projections.get(String(this.player.ID)) ?? null;
+      this.weekResult = resolveWeekResult(this.weekProjection, this.player.GameHistory);
     });
   }
 

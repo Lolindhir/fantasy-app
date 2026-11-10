@@ -12,7 +12,8 @@ import {
 export const MISSING_PROJECTION_TEXT = '–';
 
 export interface PlayerWeekResultView {
-  state: Extract<PlayerWeekFantasyActualState, 'live' | 'final'>;
+  /** "game-log" = the published Actual is not available yet; points come from the player's Game Log entry. */
+  state: Extract<PlayerWeekFantasyActualState, 'live' | 'final'> | 'game-log';
   /** Real score of the week (not an estimate), e.g. "12.4". */
   pointsText: string;
 }
@@ -90,6 +91,23 @@ export function buildPlayerWeekProjections(
 
   for (const playerID of ambiguous) result.delete(playerID);
   return result;
+}
+
+/**
+ * Real points of the projected week. The published Actual stays unavailable until the NFL stats of
+ * the week are complete (ADR-071), so the already published Game Log entry of the same week is the
+ * fallback. Pure lookup of a published value; nothing is calculated.
+ */
+export function resolveWeekResult(
+  view: PlayerWeekProjectionView | null | undefined,
+  gameLog: ReadonlyArray<{ GameDetails: { Week: number }; FantasyPoints: number }> | null | undefined
+): PlayerWeekResultView | null {
+  if (!view) return null;
+  if (view.result) return view.result;
+  const entry = gameLog?.find(game => Number(game.GameDetails?.Week) === view.week);
+  const points = entry?.FantasyPoints;
+  if (points === null || points === undefined || !Number.isFinite(Number(points))) return null;
+  return { state: 'game-log', pointsText: formatScore(Number(points)) };
 }
 
 /** Cell text for lists: the projected points or "–". */

@@ -43,8 +43,8 @@
                 [view]="projection" [showValue]="false" [inline]="true"></app-player-projection>
               <span *ngIf="!weekProjection?.projection" class="week-card__note">No projection available</span>
             </div>
-            <div *ngIf="weekProjection?.result as result" class="week-card__block">
-              <span class="week-card__label">{{ result.state === 'live' ? 'Live' : 'Result' }}</span>
+            <div *ngIf="weekResult as result" class="week-card__block">
+              <span class="week-card__label">{{ result.state === 'live' ? 'Live' : (result.state === 'final' ? 'Result' : 'Actual') }}</span>
               <span class="week-card__value">{{ result.pointsText }}</span>
             </div>
           </div>
