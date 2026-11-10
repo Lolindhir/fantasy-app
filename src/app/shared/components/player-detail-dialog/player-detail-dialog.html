@@ -249,6 +249,25 @@
       </div>
     </mat-tab>
 
+    <!-- 💲 Salary Tab (salary per season, newest first) -->
+    <mat-tab label="Salary" *ngIf="player.SalaryHistory?.length">
+      <div class="dialog-salary">
+        <app-salary-history-chart [history]="player.SalaryHistory"></app-salary-history-chart>
+        <table class="salary-rows">
+          <thead><tr><th>Season</th><th>Salary</th><th>Change</th></tr></thead>
+          <tbody>
+            @for (row of salaryRows; track row.label) {
+              <tr [class.salary-rows__projected]="row.projected">
+                <td>{{ row.label }}</td>
+                <td>{{ formatSalaryAmount(row.salary) }}</td>
+                <td [ngClass]="salaryChangeClass(row.change)">{{ formatSalaryChange(row.change) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </mat-tab>
+
     <!-- 🧭 Moves Tab (player timeline) -->
     <ng-template #journeyTeam let-team>
       <span class="journey-team" [title]="team.Team">
