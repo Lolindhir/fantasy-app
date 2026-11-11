@@ -1,0 +1,89 @@
+<div class="schedule">
+  <div class="schedule-toolbar">
+    <div>
+      <span class="eyebrow">Season Schedule</span>
+      <h3>Opponent and result per week</h3>
+    </div>
+    @if (activeSeason(); as active) {
+      <mat-form-field appearance="outline" class="schedule-season-select" subscriptSizing="dynamic">
+        <mat-label>Season</mat-label>
+        <mat-select [value]="active.season" (selectionChange)="selectSeason($event.value)">
+          @for (option of seasonOptions(); track option.season) {
+            <mat-option [value]="option.season">{{ option.season }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="schedule-note">Loading schedule…</p>
+  } @else if (!schedule() || !data()?.matchups) {
+    <p class="schedule-note">The schedule is currently unavailable.</p>
+  } @else {
+    @let sched = schedule()!;
+    <ul class="schedule-list" aria-label="Schedule by week">
+      @for (row of sched.rows; track trackRow($index, row)) {
+        <li class="schedule-item" [class.schedule-item--current]="row.isCurrentWeek">
+          @if (canOpen(row)) {
+            <button type="button" class="schedule-row schedule-row--link" (click)="open(row)"
+              [attr.aria-label]="'Open matchup of week ' + row.week + ' against ' + opponentName(row)">
+              <ng-container *ngTemplateOutlet="rowBody; context: { $implicit: row }" />
+              <mat-icon class="schedule-chevron" aria-hidden="true">chevron_right</mat-icon>
+            </button>
+          } @else {
+            <div class="schedule-row">
+              <ng-container *ngTemplateOutlet="rowBody; context: { $implicit: row }" />
+            </div>
+          }
+        </li>
+      } @empty {
+        <li class="schedule-note">No games available for this season.</li>
+      }
+      @if (sched.upcomingPlayoffStartWeek; as startWeek) {
+        <li class="schedule-item schedule-item--playoffs">
+          <div class="schedule-row">
+            <span class="schedule-week">Playoffs</span>
+            <span class="schedule-opponent schedule-muted">Start in Week {{ startWeek }}</span>
+          </div>
+        </li>
+      }
+    </ul>
+
+    <p class="schedule-summary">
+      <span class="schedule-summary-label">Regular season record</span>
+      <strong>{{ seasonRecordLabel() }}</strong>
+    </p>
+    <p class="schedule-note">
+      Opponent records are final regular-season results of the selected season. Playoff games appear once they are scheduled.
+    </p>
+  }
+</div>
+
+<ng-template #rowBody let-row>
+  <span class="schedule-week">
+    W{{ row.week }}
+    @if (row.isPlayoff) { <span class="schedule-tag">Playoffs</span> }
+  </span>
+  <span class="schedule-opponent">
+    @if (row.opponentID !== null) {
+      <img class="schedule-avatar" [src]="opponentAvatar(row)" alt="" loading="lazy" decoding="async" />
+      <span class="schedule-opponent-text">
+        <strong class="schedule-opponent-name">{{ opponentName(row) }}</strong>
+        <span class="schedule-opponent-record">{{ recordLabel(row.opponentRecord) }}</span>
+      </span>
+    } @else {
+      <span class="schedule-muted">Bye</span>
+    }
+  </span>
+  <span class="schedule-result">
+    @if (row.outcome) {
+      <span class="schedule-outcome" [ngClass]="'schedule-outcome--' + row.outcome">{{ outcomeLetter(row) }}</span>
+      <span class="schedule-score" [ngClass]="'schedule-score--' + row.outcome">
+        <strong>{{ points(row.ownPoints) }}</strong><span aria-hidden="true">–</span><span>{{ points(row.opponentPoints) }}</span>
+      </span>
+    } @else if (row.opponentID !== null) {
+      <span class="schedule-muted">{{ kickoff(row) || stateLabel(row) }}</span>
+    }
+  </span>
+</ng-template>
