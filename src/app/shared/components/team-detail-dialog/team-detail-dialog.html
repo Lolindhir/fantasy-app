@@ -89,7 +89,11 @@
     <mat-tab label="Schedule">
       <ng-template matTabContent>
         <div class="tab-content schedule-tab">
-          <app-team-schedule-tab [team]="team" [league]="league" [players]="data.players" />
+          @defer {
+            <app-team-schedule-tab [team]="team" [league]="league" [players]="data.players" />
+          } @placeholder {
+            <p class="empty-state">Loading schedule…</p>
+          }
         </div>
       </ng-template>
     </mat-tab>
