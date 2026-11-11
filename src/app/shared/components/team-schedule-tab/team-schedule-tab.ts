@@ -16,6 +16,7 @@ import {
   type ScheduleRecord,
   type TeamScheduleRow
 } from '../../utils/team-schedule.util';
+import { createAdaptiveCountdownClock } from '../../utils/countdown-clock.util';
 import { buildWeeksSeasonOptions, resolveWeeksSeason } from '../../utils/weeks-view.util';
 import {
   FantasyGameContextDialogComponent,
@@ -42,6 +43,12 @@ export class TeamScheduleTabComponent {
   @Input({ required: true }) set team(value: FantasyTeam) { this.teamSignal.set(value); }
   @Input({ required: true }) set league(value: League) { this.leagueSignal.set(value); }
   @Input() players: Player[] = [];
+
+  /** Clock for the kickoff countdowns, ticking adaptively like the Overview timeline. */
+  private readonly now = toSignal(
+    createAdaptiveCountdownClock(() => this.schedule()?.rows.map(row => row.firstKickoffUtc) ?? []),
+    { initialValue: new Date() }
+  );
 
   private readonly pickedSeason = signal<string | null>(null);
 
@@ -155,7 +162,7 @@ export class TeamScheduleTabComponent {
   }
 
   kickoff(row: TeamScheduleRow): string {
-    return formatScheduleKickoff(row.firstKickoffUtc);
+    return formatScheduleKickoff(row.firstKickoffUtc, this.now());
   }
 
   stateLabel(row: TeamScheduleRow): string {
