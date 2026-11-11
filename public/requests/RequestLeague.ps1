@@ -83,6 +83,10 @@ function Get-Compare {
         if (Compare-RegularSeasonStandings -oldRegularSeason $oldLeague.Standings.RegularSeason -newRegularSeason $newLeague.Standings.RegularSeason) { return $true }
         if (Compare-Awards -oldAwards $oldLeague.Standings.Awards -newAwards $newLeague.Standings.Awards) { return $true }
 
+        # AllTime-only consumer extensions are not included in the legacy scalar
+        # standings comparison; they must independently invalidate League.json.
+        if (Compare-AllTimeStandingExtensions -OldLeague $oldLeague -NewLeague $newLeague) { return $true }
+
         # Scalar season standings comparison does not inspect canonical Weeks[].
         if (Compare-CurrentStandingWeeks -OldLeague $oldLeague -NewLeague $newLeague) { return $true }
 

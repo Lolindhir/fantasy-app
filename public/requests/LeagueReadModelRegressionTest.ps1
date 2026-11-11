@@ -103,6 +103,7 @@ Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "R
 Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType','Playoffs')") -Message "RequestLeague change detection does not track canonical Settings, ScoringType and Playoffs structurally."
 Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical structured comparison is not structural."
 Assert-True -Condition $requestLeague.Contains('Compare-CurrentStandingWeeks') -Message "League change detection must use the tested central Weeks comparator."
+Assert-True -Condition $requestLeague.Contains('Compare-AllTimeStandingExtensions') -Message "League change detection must compare centrally generated AllTime extensions."
 
 # Runtime coverage: a second identical publication must stay a no-op, while
 # the initial Weeks[] exposure, a revised streak and an additional completed
@@ -128,6 +129,36 @@ $unchangedStandings.Standings[0].Weeks = @($week1, [PSCustomObject]@{ Week = 2; 
 Assert-True -Condition (Compare-CurrentStandingWeeks -OldLeague $newStandings -NewLeague $unchangedStandings) -Message "New completed week must force publication."
 
 
+
+# AllTime-only generated consumer extensions must be compared separately: a
+# new AwardLegend alone must publish League.json; same inputs remain a no-op.
+$extensionOld = [PSCustomObject]@{
+    Season = "2026"
+    Standings = @([PSCustomObject]@{
+        Season = "AllTime"
+        LegacyHighlights = @([PSCustomObject]@{ Key = "PodiumMachine"; TeamID = 3; Count = 2 })
+    })
+}
+$extensionCopy = $extensionOld | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+Assert-True -Condition (-not (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy)) -Message "Identical AllTime extensions must be a semantic no-op."
+$extensionCopy.Standings[0] | Add-Member -NotePropertyName "AwardLegend" -NotePropertyValue @(
+    [PSCustomObject]@{ Key = "RegularSeason"; Occurrences = 14 }
+)
+Assert-True -Condition (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy) -Message "New AllTime AwardLegend must force League publication."
+$extensionOld = $extensionCopy | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+$extensionCopy = $extensionOld | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+Assert-True -Condition (-not (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy)) -Message "Unchanged AllTime AwardLegend must not republish League."
+$extensionCopy.Standings[0].AwardLegend[0].Occurrences = 15
+Assert-True -Condition (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy) -Message "Changed historical award occurrence must republish League."
+$extensionCopy = $extensionOld | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+$extensionCopy.Standings[0].LegacyHighlights[0].Count = 3
+Assert-True -Condition (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy) -Message "Changed podium count must republish League."
+$extensionCopy = $extensionOld | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+$extensionCopy.Standings[0].LegacyHighlights = @()
+Assert-True -Condition (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy) -Message "Removing AllTime highlight must republish League."
+$extensionCopy = $extensionOld | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+$extensionCopy.Standings[0].AwardLegend = @()
+Assert-True -Condition (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy) -Message "Removing AllTime award legend must republish League."
 
 function ConvertTo-StandingsComparableValue {
     param([AllowNull()]$Value)
