@@ -70,7 +70,7 @@
 </div>
 
 <ng-template #rowItem let-row>
-  <li class="schedule-item" [class.schedule-item--current]="row.isCurrentWeek">
+  <li class="schedule-item">
     @if (canOpen(row)) {
       <button type="button" class="schedule-row schedule-row--link" (click)="open(row)"
         [attr.aria-label]="'Open matchup of week ' + row.week + ' against ' + opponentName(row)">
