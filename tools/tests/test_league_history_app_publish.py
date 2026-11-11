@@ -67,14 +67,14 @@ class DraftFileTests(unittest.TestCase):
         self.assertEqual("2026 FA", current[1]["DisplayAbrDraftKey"])
         self.assertEqual("1.01", current[0]["Picks"][0]["DisplayPick"])
 
-    def test_past_file_holds_only_completed_drafts_without_start_times(self):
+    def test_past_file_holds_only_completed_drafts_with_start_times(self):
         past = publish.app_drafts(self.by_season, 2026)["past"]
         self.assertEqual([2026], list(past))
         self.assertIsInstance(past[2026], list)  # always a list, also for exactly one completed draft
         self.assertEqual(1, len(past[2026]))
         draft = past[2026][0]
-        self.assertNotIn("SleeperStartTime", draft)
-        self.assertNotIn("DraftStartTimeUtc", draft)
+        self.assertIn("SleeperStartTime", draft)  # Issue #1425: the Moves tab shows the concrete draft date
+        self.assertIn("DraftStartTimeUtc", draft)
         self.assertEqual("2026 Rookie", draft["DisplayDraftKey"])
 
     def test_two_completed_drafts_of_one_type_get_occurrence_suffixes_in_a_list(self):

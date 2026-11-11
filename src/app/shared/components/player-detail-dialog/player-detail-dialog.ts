@@ -80,7 +80,7 @@ export class PlayerDetailDialogComponent implements OnInit {
   }
 
   private loadJourney(): void {
-    if (this.journeyState !== 'idle') return;
+    if (this.journeyState !== 'idle' && this.journeyState !== 'error') return;
     this.journeyState = 'loading';
     this.dataService.getPlayerJourneySources().subscribe({
       next: ({ transactions, drafts, teams }) => {

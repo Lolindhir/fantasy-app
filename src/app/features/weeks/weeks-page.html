@@ -181,7 +181,7 @@
                       @let cell = row.cells[index];
                       <td
                         class="season-grid-cell"
-                        [class.season-grid-cell--high]="effectiveGridMode() === 'points' && cell.isWeekHigh"
+                        [class.season-grid-cell--high]="effectiveGridMode() === 'points' ? cell.isWeekHigh : isEfficiencyHigh(row.teamID, week.week)"
                         [class.season-grid-cell--win]="cell.outcome === 'win'"
                         [class.season-grid-cell--loss]="cell.outcome === 'loss'">
                         @if (effectiveGridMode() === 'efficiency') {
@@ -219,7 +219,7 @@
           </div>
           <p class="season-grid-legend">
             @if (effectiveGridMode() === 'efficiency') {
-              Lineup efficiency: the points a team started divided by the points of its best possible lineup. Hover a value to see the points left on the bench. The season row sums all weeks. Tap a week number to open it.
+              Lineup efficiency: the points a team started divided by the points of its best possible lineup. Hover a value to see the points left on the bench. The best value of a week is marked. The season row sums all weeks. Tap a week number to open it.
             } @else {
               Points per week with the result (W/L/T). The highest score of a week is marked. Tap a week number to open it. Regular season and playoffs are separated by a divider.
             }

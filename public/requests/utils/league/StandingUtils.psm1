@@ -218,6 +218,29 @@ function Compare-Awards{
     return $false
 }
 
+# The App's AllTime-only extension fields are generated from shared standings
+# and awards. A changed legend/count must publish League.json even when the
+# current regular standings and league scalar metadata remain unchanged.
+function Compare-AllTimeStandingExtensions {
+    param(
+        [Parameter(Mandatory = $true)]$OldLeague,
+        [Parameter(Mandatory = $true)]$NewLeague
+    )
+
+    $oldAllTime = @($OldLeague.Standings | Where-Object { [string]$_.Season -ceq "AllTime" } | Select-Object -First 1)[0]
+    $newAllTime = @($NewLeague.Standings | Where-Object { [string]$_.Season -ceq "AllTime" } | Select-Object -First 1)[0]
+
+    foreach ($field in @("LegacyHighlights", "AwardLegend")) {
+        $oldJson = ConvertTo-Json -InputObject $oldAllTime.$field -Depth 10 -Compress
+        $newJson = ConvertTo-Json -InputObject $newAllTime.$field -Depth 10 -Compress
+        if ($oldJson -cne $newJson) {
+            Write-Host "Canonical AllTime standings $field changed."
+            return $true
+        }
+    }
+    return $false
+}
+
 # Compare only centrally published current-season Weeks (not historical
 # seasons or all-time summaries). A missing old section must force publication
 # when the new shared weekly evidence becomes available.

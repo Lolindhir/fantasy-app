@@ -452,6 +452,14 @@ host {
   font-weight: 600;
 }
 
+.journey-team__abbr { display: none; }
+
+/* Mobile: team abbreviation instead of the full name so a trade does not wrap (Issue #1425). */
+@media (max-width: 600px) {
+  .journey-team__name:not(.journey-team__name--full) { display: none; }
+  .journey-team__abbr { display: inline; }
+}
+
 .journey-team img {
   border-radius: 25%;
   object-fit: cover;

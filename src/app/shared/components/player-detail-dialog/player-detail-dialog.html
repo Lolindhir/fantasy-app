@@ -272,14 +272,15 @@
     <ng-template #journeyTeam let-team>
       <span class="journey-team" [title]="team.Team">
         <img *ngIf="team.Avatar" [src]="team.Avatar" alt="" width="20" height="20" />
-        <span>{{ team.Team }}</span>
+        <span class="journey-team__name" [class.journey-team__name--full]="!team.TeamAbbr">{{ team.Team }}</span>
+        @if (team.TeamAbbr) { <span class="journey-team__abbr">{{ team.TeamAbbr }}</span> }
       </span>
     </ng-template>
     <mat-tab label="Moves">
       <div class="journey">
         @switch (journeyState) {
           @case ('error') {
-            <p class="journey-state">The league history could not be loaded.</p>
+            <p class="journey-state">The league history could not be loaded. Switch tabs and back to Moves to retry.</p>
           }
           @case ('ready') {
             @if (journey && journey.events.length) {
