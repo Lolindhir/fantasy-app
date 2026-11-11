@@ -111,6 +111,21 @@ export interface StandingWeek {
   Teams: StandingWeekTeam[];
 }
 
+export interface LegacyHighlightFact {
+  Key: 'ChampOfChamps' | 'RegularSeasonKing' | 'PodiumMachine' | 'AwardCollector';
+  TeamID: string | number;
+  /** Only for podium or award count. */
+  Count?: number;
+}
+
+export interface AwardLegendFact {
+  Key: string;
+  DisplayText: string;
+  IconUnicode: string;
+  Order: number;
+  Occurrences: number;
+}
+
 export interface Standing {
   Season: string;
   Playoffs?: PlayoffTeam[] | null;
@@ -118,6 +133,9 @@ export interface Standing {
   Awards?: AwardInStanding[];
   /** Shared Derived current season only; absent in older App publications. */
   Weeks?: StandingWeek[];
+  /** AllTime-only consumer projections; absent in older App publications. */
+  LegacyHighlights?: LegacyHighlightFact[];
+  AwardLegend?: AwardLegendFact[];
 }
 
 export interface RawLeague {

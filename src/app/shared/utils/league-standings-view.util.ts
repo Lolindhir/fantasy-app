@@ -1,4 +1,5 @@
 import type { AwardInStanding, FantasyTeam, League } from '../../core/models/fantasy.models';
+import type { LegacyHighlightFact } from '../../core/models/league.models';
 
 export interface CurrentStandingRow {
   team: FantasyTeam;
@@ -253,30 +254,18 @@ export function buildAllTimeRegularSeasonStandings(teams: FantasyTeam[]): AllTim
     .sort((a, b) => a.place - b.place);
 }
 
+/** UI-only projection of the generator-owned legend; no aggregation of season awards. */
 export function buildAwardLegend(league: League): AwardLegendItem[] {
-  const legend = new Map<string, AwardLegendItem>();
-
-  for (const standing of league.Standings ?? []) {
-    for (const award of (standing.Awards ?? []).filter(isDynamicSeasonAward)) {
-      const key = award.Type?.Name || award.Name;
-      const existing = legend.get(key);
-      const item = existing ?? {
-        key,
-        icon: award.Icon || unicodeToEmoji(award.IconUnicode),
-        name: award.Type?.DisplayText || award.Name,
-        displayText: award.Type?.DisplayText || award.Name,
-        tooltip: buildAwardTooltip(award.Type?.DisplayText || award.Name, 0),
-        order: award.Type?.Order ?? 999,
-        occurrences: 0
-      };
-
-      item.occurrences += 1;
-      item.tooltip = buildAwardTooltip(item.displayText, item.occurrences);
-      legend.set(key, item);
-    }
-  }
-
-  return [...legend.values()].sort((a, b) => a.order - b.order || a.displayText.localeCompare(b.displayText));
+  const facts = league.Standings?.find(standing => standing.Season === 'AllTime')?.AwardLegend ?? [];
+  return facts.map(fact => ({
+    key: fact.Key,
+    icon: unicodeToEmoji(fact.IconUnicode),
+    name: fact.DisplayText,
+    displayText: fact.DisplayText,
+    tooltip: buildAwardTooltip(fact.DisplayText, fact.Occurrences),
+    order: fact.Order,
+    occurrences: fact.Occurrences
+  }));
 }
 
 export function buildLeagueLegacy(league: League, teams: FantasyTeam[]): LeagueLegacyViewModel {
@@ -284,14 +273,12 @@ export function buildLeagueLegacy(league: League, teams: FantasyTeam[]): LeagueL
   const regularSeasonStandings = buildAllTimeRegularSeasonStandings(teams);
   const awardLegend = buildAwardLegend(league);
   const teamById = new Map(teams.map(team => [String(team.TeamID), team]));
+  const facts = league.Standings?.find(standing => standing.Season === 'AllTime')?.LegacyHighlights ?? [];
 
   return {
-    highlights: buildLegacyHighlights(
-      league,
-      overallStandings,
-      regularSeasonStandings,
-      teamById
-    ),
+    highlights: facts
+      .map(fact => projectLegacyHighlight(fact, teamById))
+      .filter((highlight): highlight is LeagueLegacyHighlight => highlight !== null),
     overallStandings,
     regularSeasonStandings,
     awardLegend
@@ -381,100 +368,33 @@ export function getCurrentSeasonAwards(league: League): AwardInStanding[] {
     : [];
 }
 
-function buildLegacyHighlights(
-  league: League,
-  overallStandings: AllTimeStandingRow[],
-  regularSeasonStandings: AllTimeRegularSeasonStandingRow[],
+/** The source publishes winner identity and counts; Angular owns labels and visual styling only. */
+function projectLegacyHighlight(
+  fact: LegacyHighlightFact,
   teamById: Map<string, FantasyTeam>
-): LeagueLegacyHighlight[] {
-  const champOfChamps = overallStandings[0];
-  const regularSeasonKing = regularSeasonStandings[0];
-  const podiumMachine = [...overallStandings].sort(comparePodiums)[0];
-  const awardCollector = buildAwardCollectorHighlight(league, teamById, overallStandings);
-  const highlights: LeagueLegacyHighlight[] = [];
-
-  if (champOfChamps) {
-    highlights.push({
-      key: 'ChampOfChamps',
-      icon: '🏆',
-      title: 'Champ of Champs',
-      owner: champOfChamps.owner,
-      valueDisplay: '#1 Overall',
-      reason: 'Best all-time overall placement'
-    });
+): LeagueLegacyHighlight | null {
+  const owner = teamById.get(String(fact.TeamID))?.Owner ?? `Team ${fact.TeamID}`;
+  switch (fact.Key) {
+    case 'ChampOfChamps':
+      return { key: fact.Key, icon: '🏆', title: 'Champ of Champs', owner,
+        valueDisplay: '#1 Overall', reason: 'Best all-time overall placement' };
+    case 'RegularSeasonKing':
+      return { key: fact.Key, icon: '👑', title: 'Regular Season King', owner,
+        valueDisplay: '#1 Regular Season', reason: 'Best all-time regular-season table' };
+    case 'PodiumMachine':
+      return typeof fact.Count === 'number' && Number.isInteger(fact.Count) && fact.Count >= 0
+        ? { key: fact.Key, icon: '🥇', title: 'Podium Machine', owner,
+            valueDisplay: `${fact.Count} Podium${fact.Count === 1 ? '' : 's'}`,
+            reason: 'Most top-3 playoff finishes' }
+        : null;
+    case 'AwardCollector':
+      return typeof fact.Count === 'number' && Number.isInteger(fact.Count) && fact.Count >= 0
+        ? { key: fact.Key, icon: '🎖️', title: 'Award Collector', owner,
+            valueDisplay: `${fact.Count} Awards`, reason: 'Most historical season awards' }
+        : null;
+    default:
+      return null;
   }
-
-  if (regularSeasonKing) {
-    highlights.push({
-      key: 'RegularSeasonKing',
-      icon: '👑',
-      title: 'Regular Season King',
-      owner: regularSeasonKing.owner,
-      valueDisplay: '#1 Regular Season',
-      reason: 'Best all-time regular-season table'
-    });
-  }
-
-  if (podiumMachine) {
-    const podiums = podiumMachine.championships + podiumMachine.runnerUps + podiumMachine.thirds;
-
-    highlights.push({
-      key: 'PodiumMachine',
-      icon: '🥇',
-      title: 'Podium Machine',
-      owner: podiumMachine.owner,
-      valueDisplay: `${podiums} Podium${podiums === 1 ? '' : 's'}`,
-      reason: 'Most top-3 playoff finishes'
-    });
-  }
-
-  if (awardCollector) highlights.push(awardCollector);
-
-  return highlights;
-}
-
-function buildAwardCollectorHighlight(
-  league: League,
-  teamById: Map<string, FantasyTeam>,
-  overallStandings: AllTimeStandingRow[]
-): LeagueLegacyHighlight | undefined {
-  const awardCounts = new Map<string, { count: number; types: Set<string> }>();
-
-  for (const standing of league.Standings ?? []) {
-    for (const award of (standing.Awards ?? []).filter(isDynamicSeasonAward)) {
-      const teamId = String(award.TeamID);
-      const count = awardCounts.get(teamId) ?? { count: 0, types: new Set<string>() };
-
-      count.count += 1;
-      count.types.add(award.Name);
-      awardCounts.set(teamId, count);
-    }
-  }
-
-  const winner = [...awardCounts.entries()]
-    .sort(([teamA, statsA], [teamB, statsB]) => {
-      const awardDiff = statsB.count - statsA.count;
-      if (awardDiff !== 0) return awardDiff;
-
-      const typeDiff = statsB.types.size - statsA.types.size;
-      if (typeDiff !== 0) return typeDiff;
-
-      return getOverallPlace(teamA, overallStandings) - getOverallPlace(teamB, overallStandings);
-    })[0];
-
-  if (!winner) return undefined;
-
-  const [teamId, stats] = winner;
-  const team = teamById.get(teamId);
-
-  return {
-    key: 'AwardCollector',
-    icon: '🎖️',
-    title: 'Award Collector',
-    owner: team?.Owner ?? `Team ${teamId}`,
-    valueDisplay: `${stats.count} Awards`,
-    reason: 'Most historical season awards'
-  };
 }
 
 function mapSeasonHistoryAward(
@@ -498,21 +418,6 @@ function mapSeasonHistoryAward(
     tooltip: tooltipParts.join(' • '),
     order: award.Type?.Order ?? 999
   };
-}
-
-function comparePodiums(a: AllTimeStandingRow, b: AllTimeStandingRow): number {
-  const podiumsA = a.championships + a.runnerUps + a.thirds;
-  const podiumsB = b.championships + b.runnerUps + b.thirds;
-
-  return podiumsB - podiumsA
-    || b.championships - a.championships
-    || b.runnerUps - a.runnerUps
-    || b.thirds - a.thirds
-    || a.place - b.place;
-}
-
-function getOverallPlace(teamId: string, standings: AllTimeStandingRow[]): number {
-  return standings.find(row => String(row.team.TeamID) === teamId)?.place ?? 999;
 }
 
 function normalizeStandingPlace(place: number | null | undefined): number {
