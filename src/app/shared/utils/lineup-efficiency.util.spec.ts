@@ -5,7 +5,8 @@ import {
   buildOptimalLineupView,
   formatEfficiency,
   hasLineupEfficiency,
-  slotLabel
+  slotLabel,
+  weeklyEfficiencyHighs
 } from './lineup-efficiency.util';
 
 const recaps: WeeklyRecapsReadModel = {
@@ -41,6 +42,21 @@ describe('lineup efficiency util', () => {
     expect(buildLineupEfficiencyLookup(recaps, '2029').season(7)).toBeNull();
     const old: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2030', Weeks: [{ Week: 1, KeyGames: [], KeyPlayers: [] }] };
     expect(hasLineupEfficiency(buildLineupEfficiencyLookup(old, '2030'), [7], [1])).toBeFalse();
+  });
+
+  it('marks the best weekly efficiency, ties included, and ignores unknown or single values', () => {
+    const team = (id: number, value: number | null) => ({
+      FantasyTeamID: id, ActualStarterPoints: 1, PotentialPoints: 1, MissedPoints: 0, EfficiencyPercent: value, OptimalLineup: []
+    });
+    const model: WeeklyRecapsReadModel = {
+      SchemaVersion: 1, Season: '2030',
+      Weeks: [
+        { Week: 1, KeyGames: [], KeyPlayers: [], TeamPerformance: [team(1, 80), team(2, 90), team(3, 90), team(4, null)] },
+        { Week: 2, KeyGames: [], KeyPlayers: [], TeamPerformance: [team(1, 70)] }
+      ]
+    };
+    const highs = weeklyEfficiencyHighs(buildLineupEfficiencyLookup(model, '2030'), [1, 2, 3, 4], [1, 2]);
+    expect([...highs].sort()).toEqual(['1:2', '1:3']);
   });
 
   it('formats unknown as an en dash, never as zero', () => {
