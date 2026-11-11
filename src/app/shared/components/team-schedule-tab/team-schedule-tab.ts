@@ -111,6 +111,15 @@ export class TeamScheduleTabComponent {
     return schedule ? formatScheduleRecord(schedule.record) : '';
   });
 
+  /** Playoff record from decided playoff games; empty until one is final. */
+  readonly playoffRecordLabel = computed(() => {
+    const rows = (this.schedule()?.rows ?? []).filter(row => row.isPlayoff && row.outcome);
+    if (!rows.length) return '';
+    const count = (outcome: string) => rows.filter(row => row.outcome === outcome).length;
+    const ties = count('tie');
+    return ties ? `${count('win')}-${count('loss')}-${ties}` : `${count('win')}-${count('loss')}`;
+  });
+
   selectSeason(season: string): void {
     this.pickedSeason.set(season);
   }

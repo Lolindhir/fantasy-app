@@ -1,9 +1,21 @@
 <div class="schedule">
   <div class="schedule-toolbar">
-    <div>
-      <span class="eyebrow">Season Schedule</span>
-      <h3>Opponent and result per week</h3>
-    </div>
+    @if (schedule(); as sum) {
+      <p class="schedule-summary">
+        <span class="schedule-summary-item">
+          <span class="schedule-summary-label">Regular season</span>
+          <strong>{{ seasonRecordLabel() }}</strong>
+        </span>
+        @if (playoffRecordLabel(); as playoffs) {
+          <span class="schedule-summary-item">
+            <span class="schedule-summary-label">Playoffs</span>
+            <strong>{{ playoffs }}</strong>
+          </span>
+        }
+      </p>
+    } @else {
+      <span></span>
+    }
     @if (activeSeason(); as active) {
       <mat-form-field appearance="outline" class="schedule-season-select" subscriptSizing="dynamic">
         <mat-label>Season</mat-label>
@@ -22,10 +34,6 @@
     <p class="schedule-note">The schedule is currently unavailable.</p>
   } @else {
     @let sched = schedule()!;
-    <p class="schedule-summary">
-      <span class="schedule-summary-label">Regular season record</span>
-      <strong>{{ seasonRecordLabel() }}</strong>
-    </p>
 
     @if (upcomingRows().length || sched.upcomingPlayoffStartWeek) {
       <h4 class="schedule-section">Upcoming</h4>
