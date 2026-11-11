@@ -88,6 +88,21 @@ export class TeamScheduleTabComponent {
     });
   });
 
+  private readonly lastPlayedWeek = computed(() =>
+    Math.max(0, ...(this.schedule()?.rows ?? []).filter(row => row.outcome).map(row => row.week)));
+
+  /** Games not played yet (nearest first); byes before the last played week count as played. */
+  readonly upcomingRows = computed(() =>
+    (this.schedule()?.rows ?? []).filter(row => !this.isPlayed(row)));
+
+  /** Played games, latest first. */
+  readonly playedRows = computed(() =>
+    (this.schedule()?.rows ?? []).filter(row => this.isPlayed(row)).reverse());
+
+  private isPlayed(row: TeamScheduleRow): boolean {
+    return row.outcome !== null || (row.opponentID === null && row.week < this.lastPlayedWeek());
+  }
+
   private readonly teamsById = computed(() =>
     new Map((this.leagueSignal()?.Teams ?? []).map(candidate => [Number(candidate.TeamID), candidate])));
 
@@ -108,6 +123,10 @@ export class TeamScheduleTabComponent {
     if (row.opponentID === null) return 'Bye';
     const opponent = this.opponent(row);
     return opponent?.Team?.trim() || opponent?.Owner?.trim() || `Team ${row.opponentID}`;
+  }
+
+  opponentShort(row: TeamScheduleRow): string {
+    return this.opponent(row)?.TeamAbbr?.trim() || this.opponentName(row);
   }
 
   opponentAvatar(row: TeamScheduleRow): string {
