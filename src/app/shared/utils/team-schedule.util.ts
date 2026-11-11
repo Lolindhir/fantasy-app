@@ -1,4 +1,3 @@
-import { formatCountdownDuration } from './countdown.util';
 import type {
   FantasyMatchupReadModel,
   MatchupCompletionState,
@@ -124,13 +123,4 @@ export function buildTeamSchedule(
 
 export function formatScheduleRecord(record: ScheduleRecord): string {
   return record.ties > 0 ? `${record.wins}-${record.losses}-${record.ties}` : `${record.wins}-${record.losses}`;
-}
-
-/** Countdown to a kickoff ("Kickoff in 2 days 5 h", same steps as the Overview timer); empty when invalid or already started. */
-export function formatScheduleKickoff(utc: string | null | undefined, now: Date): string {
-  if (!utc) return '';
-  const kickoff = new Date(utc);
-  if (Number.isNaN(kickoff.getTime())) return '';
-  const msLeft = kickoff.getTime() - now.getTime();
-  return msLeft > 0 ? `Kickoff in ${formatCountdownDuration(msLeft)}` : '';
 }

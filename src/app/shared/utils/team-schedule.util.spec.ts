@@ -2,7 +2,6 @@ import type { FantasyMatchupReadModel, MatchupWeekReadModel, MatchupsReadModel }
 import {
   buildTeamSchedule,
   countRegularSeasonRecords,
-  formatScheduleKickoff,
   formatScheduleRecord
 } from './team-schedule.util';
 
@@ -90,15 +89,5 @@ describe('team-schedule.util', () => {
     const schedule = buildTeamSchedule(null, 1, { isCurrentSeason: true });
     expect(schedule.rows).toEqual([]);
     expect(schedule.record).toEqual({ wins: 0, losses: 0, ties: 0 });
-  });
-
-  it('formats the kickoff countdown and tolerates invalid or past values', () => {
-    const now = new Date('2026-11-11T12:00:00Z');
-    expect(formatScheduleKickoff(null, now)).toBe('');
-    expect(formatScheduleKickoff('garbage', now)).toBe('');
-    expect(formatScheduleKickoff('2026-11-11T11:00:00Z', now)).toBe('');
-    expect(formatScheduleKickoff('2026-11-13T17:00:00Z', now)).toBe('Kickoff in 2 days 5 h');
-    expect(formatScheduleKickoff('2026-11-11T14:30:00Z', now)).toBe('Kickoff in 2 h 30 min');
-    expect(formatScheduleKickoff('2026-11-26T12:00:00Z', now)).toBe('Kickoff in 15 days');
   });
 });
