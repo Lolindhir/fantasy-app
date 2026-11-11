@@ -108,6 +108,8 @@
       <span class="schedule-score" [ngClass]="'schedule-score--' + row.outcome">
         <strong>{{ points(row.ownPoints) }}</strong><span aria-hidden="true">–</span><span>{{ points(row.opponentPoints) }}</span>
       </span>
+    } @else if (row.opponentID !== null && row.isCurrentWeek) {
+      <span class="schedule-current-label">Current</span>
     } @else if (row.opponentID !== null) {
       <span class="schedule-muted">{{ kickoff(row) || stateLabel(row) }}</span>
     }
