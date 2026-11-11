@@ -117,6 +117,10 @@ contract:
       while AwardCollector retains historical award holders. The array is additive consumer
       delivery; icons, labels and owner presentation remain Angular-owned. The shared product's
       SchemaVersion and derived facts are unchanged.
+      AllTime.AwardLegend is also an additive App-consumer delivery of {Key, DisplayText,
+      IconUnicode, Order, Occurrences} grouped across existing derived season Awards. The
+      static historical Regular Season King placement award is excluded. Angular renders
+      the legend and tooltips, but no longer owns the occurrence aggregation after cutover.
   determinism:
     - Compact JSON, fixed key order from the builder, no timestamps and no wall-clock input.
     - Floating-point semantics follow .NET (round half to even after scaling, sequential accumulation); sums never use Python's compensated sum.

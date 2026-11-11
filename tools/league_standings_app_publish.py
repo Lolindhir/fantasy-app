@@ -135,6 +135,29 @@ def render_legacy_highlights(documents: dict[int, dict[str, Any]], league_year: 
     return highlights
 
 
+def render_award_legend(documents: dict[int, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Aggregate award-type occurrences from the shared product, not from Angular."""
+    legend: dict[str, dict[str, Any]] = {}
+    for season in sorted(documents, reverse=True):
+        for award in documents[season]["Awards"]:
+            if award["Name"] == "Regular Season King":  # legacy placement-only award
+                continue
+            award_type = award.get("Type") or {}
+            if not isinstance(award_type, dict):
+                raise ValueError(f"Invalid award Type in shared standings season {season}")
+            key = award_type.get("Name") or award["Name"]
+            if key not in legend:
+                legend[key] = {
+                    "Key": key,
+                    "DisplayText": award_type.get("DisplayText") or award["Name"],
+                    "IconUnicode": award["IconUnicode"],
+                    "Order": award_type.get("Order", 999),
+                    "Occurrences": 0,
+                }
+            legend[key]["Occurrences"] += 1
+    return sorted(legend.values(), key=lambda entry: (entry["Order"], entry["DisplayText"].casefold()))
+
+
 def render_standings(documents: dict[int, dict[str, Any]], league_year: int) -> list[dict[str, Any]]:
     """Content of Standings.json: AllTime, then the seasons newest first."""
     if not documents:
@@ -162,6 +185,7 @@ def render_standings(documents: dict[int, dict[str, Any]], league_year: int) -> 
         "Playoffs": [_playoff_row(r) for r in all_time["Playoffs"]],
         "RegularSeason": [_all_time_regular_row(r) for r in all_time["RegularSeason"]],
         "LegacyHighlights": render_legacy_highlights(documents, league_year),
+        "AwardLegend": render_award_legend(documents),
     }] + seasons
 
 
