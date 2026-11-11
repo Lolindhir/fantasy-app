@@ -11,7 +11,6 @@ import { SharedMaterialImports } from '../../shared-material-imports';
 import { TeamScheduleDataService } from '../../services/team-schedule-data.service';
 import {
   buildTeamSchedule,
-  formatScheduleKickoff,
   formatScheduleRecord,
   type ScheduleRecord,
   type TeamScheduleRow
@@ -152,14 +151,6 @@ export class TeamScheduleTabComponent {
 
   points(value: number | null): string {
     return value === null || !Number.isFinite(value) ? '–' : value.toFixed(1);
-  }
-
-  kickoff(row: TeamScheduleRow): string {
-    return formatScheduleKickoff(row.firstKickoffUtc);
-  }
-
-  stateLabel(row: TeamScheduleRow): string {
-    return row.state === 'unknown' ? 'Unconfirmed' : 'Open';
   }
 
   canOpen(row: TeamScheduleRow): boolean {

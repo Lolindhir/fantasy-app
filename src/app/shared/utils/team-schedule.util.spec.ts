@@ -2,7 +2,6 @@ import type { FantasyMatchupReadModel, MatchupWeekReadModel, MatchupsReadModel }
 import {
   buildTeamSchedule,
   countRegularSeasonRecords,
-  formatScheduleKickoff,
   formatScheduleRecord
 } from './team-schedule.util';
 
@@ -90,11 +89,5 @@ describe('team-schedule.util', () => {
     const schedule = buildTeamSchedule(null, 1, { isCurrentSeason: true });
     expect(schedule.rows).toEqual([]);
     expect(schedule.record).toEqual({ wins: 0, losses: 0, ties: 0 });
-  });
-
-  it('formats kickoff dates and tolerates invalid values', () => {
-    expect(formatScheduleKickoff(null)).toBe('');
-    expect(formatScheduleKickoff('garbage')).toBe('');
-    expect(formatScheduleKickoff('2026-11-15T18:00:00Z')).toMatch(/Nov 1[45]/);
   });
 });
