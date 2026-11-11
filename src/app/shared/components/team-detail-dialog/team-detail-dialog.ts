@@ -54,6 +54,7 @@ import type { WeeklyRecapSeasonEfficiency } from '../../../core/models/weekly-re
 import { buildLineupEfficiencyLookup, formatEfficiency } from '../../utils/lineup-efficiency.util';
 import { TeamLineupTabComponent } from '../team-lineup-tab/team-lineup-tab';
 import { TeamRivalsTabComponent } from '../team-rivals-tab/team-rivals-tab';
+import { TeamScheduleTabComponent } from '../team-schedule-tab/team-schedule-tab';
 import { TrophyRoomComponent } from '../trophy-room/trophy-room';
 
 export interface TeamDetailDialogData {
@@ -111,6 +112,7 @@ interface TeamHistoryRow {
     TeamInjuryReportComponent,
     TeamLineupTabComponent,
     TeamRivalsTabComponent,
+    TeamScheduleTabComponent,
     TrophyRoomComponent
   ],
   templateUrl: './team-detail-dialog.html',
@@ -148,7 +150,7 @@ export class TeamDetailDialogComponent implements OnInit, OnDestroy {
   /** Season lineup efficiency of this team (generator value of WeeklyRecaps.json); null while unknown. */
   lineupEfficiency: WeeklyRecapSeasonEfficiency | null = null;
   weekProjections: ReadonlyMap<string, PlayerWeekProjectionView> | null = null;
-  selectedTabIndex = this.data.initialTab === 'lineup' && this.decisionWindowPhaseActive ? 1 : 0;
+  selectedTabIndex = this.data.initialTab === 'lineup' && this.decisionWindowPhaseActive ? 2 : 0;
   isMobile = window.innerWidth <= 600;
   historicalDraftGroups: HistoricalDraftGroup[] = [];
   draftHistoryLoading = false;
