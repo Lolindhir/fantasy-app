@@ -22,7 +22,8 @@ import { WeekRecapContentComponent } from '../../shared/components/week-recap-co
 import {
   buildLineupEfficiencyLookup,
   formatEfficiency,
-  hasLineupEfficiency
+  hasLineupEfficiency,
+  weeklyEfficiencyHighs
 } from '../../shared/utils/lineup-efficiency.util';
 import {
   buildSeasonGrid,
@@ -173,6 +174,17 @@ export class WeeksPageComponent {
     const grid = this.seasonGrid();
     return !!grid && hasLineupEfficiency(this.efficiency(), grid.rows.map(row => row.teamID), grid.weeks.map(week => week.week));
   });
+
+  private readonly efficiencyHighs = computed(() => {
+    const grid = this.seasonGrid();
+    return grid
+      ? weeklyEfficiencyHighs(this.efficiency(), grid.rows.map(row => row.teamID), grid.weeks.map(week => week.week))
+      : new Set<string>();
+  });
+
+  isEfficiencyHigh(teamID: number, week: number): boolean {
+    return this.efficiencyHighs().has(`${week}:${teamID}`);
+  }
 
   /** The efficiency view is only offered (and shown) when the season has generator values. */
   readonly effectiveGridMode = computed<SeasonGridMode>(() =>

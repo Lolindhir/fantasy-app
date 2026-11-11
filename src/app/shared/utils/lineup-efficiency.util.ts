@@ -39,6 +39,24 @@ export function hasLineupEfficiency(lookup: LineupEfficiencyLookup, teamIDs: Rea
   return teamIDs.some(teamID => lookup.season(teamID) !== null || weeks.some(week => lookup.week(teamID, week) !== null));
 }
 
+/** Teams holding the highest weekly efficiency (ties mark every holder), like the highest score in the points view; keys are "week:teamID". */
+export function weeklyEfficiencyHighs(
+  lookup: LineupEfficiencyLookup,
+  teamIDs: ReadonlyArray<string | number>,
+  weeks: readonly number[]
+): ReadonlySet<string> {
+  const highs = new Set<string>();
+  for (const week of weeks) {
+    const values = teamIDs
+      .map(teamID => ({ teamID, value: lookup.week(teamID, week)?.EfficiencyPercent ?? null }))
+      .filter((entry): entry is { teamID: string | number; value: number } => entry.value !== null);
+    if (values.length < 2) continue;
+    const high = Math.max(...values.map(entry => entry.value));
+    for (const entry of values) if (entry.value === high) highs.add(`${week}:${entry.teamID}`);
+  }
+  return highs;
+}
+
 /** "82.3%" for a present value, an en dash for unknown (never 0%). */
 export function formatEfficiency(value: number | null | undefined): string {
   return value === null || value === undefined || !Number.isFinite(value) ? '–' : `${value.toFixed(1)}%`;
