@@ -225,9 +225,9 @@ def app_current_draft(draft: dict[str, Any], league_year: int, player_refs: dict
 def app_history_draft(
     draft: dict[str, Any], occurrence: int, count: int, player_refs: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    """New-DraftHistoryOutputOrderAware: no start-time fields, occurrence-based display keys."""
+    """New-DraftHistoryOutputOrderAware: occurrence-based display keys; start times are kept (Issue #1425)."""
     suffix = f" #{occurrence}" if count > 1 else ""
-    entry = _app_draft_base(draft, ("SleeperStartTime", "DraftStartTimeUtc"))
+    entry = _app_draft_base(draft)
     entry["DisplayDraftKey"] = f"{draft['Season']} {display_type(draft['DraftType'])}{suffix}"
     entry["DisplayAbrDraftKey"] = f"{draft['Season']} {type_abbreviation(draft['DraftType'])}{suffix}"
     entry["DisplayDraftType"] = display_type(draft["DraftType"])
