@@ -360,6 +360,23 @@ class ContaminatedTokenTests(unittest.TestCase):
         self.assertEqual({"GSIS": "00-0041376", "Sleeper": "13603", "MFL": "17821"}, dup[0].ids)
         self.assertEqual((TARGET, (dup_id,), decision["Provenance"]), transfers[("Sleeper", "13603")])
 
+    def test_duplicate_with_a_changed_seed_id_is_found_through_the_shared_anchor(self) -> None:
+        dup = [candidate(contaminated_ff_ids(), source="nflverse.ff-player-ids")]
+        decision = loaded(contaminated_decision("NFLP-retired-seed"), {TARGET, PHANTOM})
+        cands = [self.target(), *dup]
+        uf = _build_components(cands)
+        transfers = _apply_duplicate_merges(uf, cands, [decision])
+        self.assertEqual(1, len(_component_members(uf, cands)))
+        self.assertEqual(TARGET, transfers[("Sleeper", "13603")][0])
+
+    def test_unrelated_component_without_the_shared_token_is_left_alone(self) -> None:
+        other = [candidate({"GSIS": "00-0099999", "Sleeper": "1"}, source="nflverse.ff-player-ids")]
+        decision = loaded(contaminated_decision("NFLP-retired-seed"), {TARGET, PHANTOM})
+        cands = [self.target(), *other]
+        uf = _build_components(cands)
+        self.assertEqual({}, _apply_duplicate_merges(uf, cands, [decision]))
+        self.assertEqual(2, len(_component_members(uf, cands)))
+
     def test_contamination_is_not_a_free_pass_for_other_contradictions(self) -> None:
         for label, ids in {
             "undeclared contradicting token": {**contaminated_ff_ids(), "ESPN": "9999"},
