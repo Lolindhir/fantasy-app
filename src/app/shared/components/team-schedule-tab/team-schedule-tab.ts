@@ -17,7 +17,6 @@ import {
 } from '../../utils/team-schedule.util';
 import { buildWeeksSeasonOptions, resolveWeeksSeason } from '../../utils/weeks-view.util';
 import {
-  FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
 } from '../fantasy-game-context-dialog/fantasy-game-context-dialog';
 
@@ -177,14 +176,16 @@ export class TeamScheduleTabComponent {
       players: this.players,
       lineupEfficiency: week?.TeamPerformance ?? null
     };
-    this.dialog.open(FantasyGameContextDialogComponent, {
-      data: dialogData,
-      width: 'calc(100vw - 16px)',
-      maxWidth: '760px',
-      maxHeight: 'calc(100dvh - 16px)',
-      autoFocus: false,
-      restoreFocus: true,
-      panelClass: 'fantasy-context-dialog-panel'
+    void import('../fantasy-game-context-dialog/fantasy-game-context-dialog').then(({ FantasyGameContextDialogComponent }) => {
+      this.dialog.open(FantasyGameContextDialogComponent, {
+        data: dialogData,
+        width: 'calc(100vw - 16px)',
+        maxWidth: '760px',
+        maxHeight: 'calc(100dvh - 16px)',
+        autoFocus: false,
+        restoreFocus: true,
+        panelClass: 'fantasy-context-dialog-panel'
+      });
     });
   }
 

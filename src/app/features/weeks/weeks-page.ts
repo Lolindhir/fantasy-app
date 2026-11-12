@@ -14,7 +14,6 @@ import type { NFLTeam } from '../../core/models/player.models';
 import type { WeeklyRecapsReadModel } from '../../core/models/weekly-recap.models';
 import { DataService } from '../../core/services/data.service';
 import {
-  FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
 } from '../../shared/components/fantasy-game-context-dialog/fantasy-game-context-dialog';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../../shared/components/team-identity/team-identity';
@@ -239,14 +238,16 @@ export class WeeksPageComponent {
       lineupEfficiency: this.selectedRecapWeek()?.TeamPerformance ?? null,
       pregameWinProbabilities: this.selectedRecapWeek()?.WinProbabilities ?? null
     };
-    this.dialog.open(FantasyGameContextDialogComponent, {
-      data,
-      width: 'calc(100vw - 16px)',
-      maxWidth: '760px',
-      maxHeight: 'calc(100dvh - 16px)',
-      autoFocus: false,
-      restoreFocus: true,
-      panelClass: 'fantasy-context-dialog-panel'
+    void import('../../shared/components/fantasy-game-context-dialog/fantasy-game-context-dialog').then(({ FantasyGameContextDialogComponent }) => {
+      this.dialog.open(FantasyGameContextDialogComponent, {
+        data,
+        width: 'calc(100vw - 16px)',
+        maxWidth: '760px',
+        maxHeight: 'calc(100dvh - 16px)',
+        autoFocus: false,
+        restoreFocus: true,
+        panelClass: 'fantasy-context-dialog-panel'
+      });
     });
   }
 
