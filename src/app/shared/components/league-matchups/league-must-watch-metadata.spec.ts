@@ -536,8 +536,9 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
     expect(openSpy).not.toHaveBeenCalled();
 
     gameTarget!.click();
-    await import('../fantasy-game-context-dialog/fantasy-game-context-dialog');
-    await Promise.resolve();
+    for (let attempt = 0; attempt < 100 && openSpy.calls.count() === 0; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
     expect(openSpy).toHaveBeenCalledTimes(1);
     expect(teamDialog.open).toHaveBeenCalledTimes(1);
   });
