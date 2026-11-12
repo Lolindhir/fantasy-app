@@ -66,6 +66,22 @@ export interface WeeklyRecapSeasonEfficiency {
   Weeks: number;
 }
 
+/** Pregame win chance (whole percent, generator values) of one matchup before the week; null when a projection was missing. */
+export interface WeeklyRecapWinProbability {
+  FantasyMatchupID: string;
+  Teams: Array<{ FantasyTeamID: string | number; PregameWinProbability: number | null }>;
+  /** True when the winner had less than 35 percent before the week; null when unknown or tied. */
+  Upset: boolean | null;
+  UpsetWinnerFantasyTeamID: string | number | null;
+}
+
+/** Upsets of one team over the weeks with a known pregame chance (generator values). */
+export interface WeeklyRecapUpsetCount {
+  FantasyTeamID: string | number;
+  Upsets: number;
+  Weeks: number;
+}
+
 export interface WeeklyRecapWeek {
   Week: number;
   KeyGames: WeeklyRecapKeyGame[];
@@ -74,6 +90,8 @@ export interface WeeklyRecapWeek {
   TeamAwards?: WeeklyRecapTeamAwards;
   /** Lineup efficiency per team; null when the week has no team-week-performance partition, absent in older files. */
   TeamPerformance?: WeeklyRecapTeamPerformance[] | null;
+  /** Pregame win chance and upset flag per matchup; absent in older files. */
+  WinProbabilities?: WeeklyRecapWinProbability[];
 }
 
 export interface WeeklyRecapsReadModel {
@@ -82,4 +100,6 @@ export interface WeeklyRecapsReadModel {
   Weeks: WeeklyRecapWeek[];
   /** Absent in files generated before lineup efficiency. */
   SeasonEfficiency?: WeeklyRecapSeasonEfficiency[];
+  /** Upset counts per team; absent in older files. */
+  UpsetCounts?: WeeklyRecapUpsetCount[];
 }

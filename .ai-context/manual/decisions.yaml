@@ -2790,3 +2790,31 @@ decisions:
         - A weekly consumer cannot use the witness without an independent fingerprint
           recheck and age/finality policy; the next full cycle may delay that review.
         - Additional bounded persisted metadata under the existing shared writer scope.
+
+  - id: ADR-081
+    title: Matchup win probability is a central versioned model on the team projections, raw and without calibration
+    status: accepted
+    amends: [ADR-075]
+    context: >-
+      The App shows team projections and ranges per matchup but no chance to win. A chance can be derived from the existing team-range projection.
+      A calibration factor would fit the chance to a small historical sample (about 100 matchups) and make it hard to explain; the measured raw model
+      is already clearly better than a coin flip (Brier 0.22 against 0.25, research/win-probability/2026).
+    decision: >-
+      Robert decided on 2026-11-12 (Issue #1443): the chance comes raw from the projection model without a calibration factor, and a better projection
+      model later improves it automatically. The chance is the central, league-independent, versioned model win-prob-v1
+      (tools/derived_data_lib/models/win_prob/v1.py), P(A) = Phi((meanA - meanB) / sqrt(sdA^2 + sdB^2)) over the team projections of team-range-v1,
+      published as whole percents that add up to 100, chosen per season in data-meta (Models.WinProb). It is computed and not persisted (pattern of
+      ADR-071 to ADR-076): MatchupProjections.json carries WinProbability per team (live, adjusted with every finished NFL game because team-range-v1
+      counts final games with their real points), and the Weekly Recaps carry the recomputed pregame chance, the Upset flag (winner below 35 percent
+      before the week) and UpsetCounts per team for final weeks. Fields are additive; no new writer, file, write prefix or permission. Angular only
+      displays the values. Unknown projections give null, never 50 percent.
+    rationale: >-
+      One implementation serves every consumer, the model stays explainable, and the chance improves with the projection model instead of being tuned to
+      a small sample. Recomputing the pregame chance from the PlayerWeekFantasy projections avoids a frozen file and a new writer.
+    consequences:
+      positive:
+        - Each matchup shows a chance without a new writer or dataset.
+        - A projection upgrade (new team-range version) or a new win-prob version is a per-season data-meta choice.
+      negative:
+        - Above 80 percent and in single bands the raw chance deviates from the observed rate on a small sample; the backtest is renewed when the projection model changes.
+        - The pregame chance of historical weeks follows the stored PlayerWeekFantasy partitions and changes when they are rebuilt.

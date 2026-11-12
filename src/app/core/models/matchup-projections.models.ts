@@ -27,6 +27,8 @@ export interface MatchupProjectionTeam {
   OutStarterPlayerIDs: string[];
   UncertainStarterPlayerIDs: string[];
   UnavailableStarterPlayerIDs: string[];
+  /** Whole-percent win chance of the matchup (win-prob-v1); the two teams add up to 100; null when a projection is missing. Absent in older files. */
+  WinProbability?: number | null;
 }
 
 export interface MatchupProjectionMatchup {
@@ -50,5 +52,6 @@ export interface MatchupProjectionsReadModel {
   Week: number;
   DisplayLevel: number;
   Method: MatchupProjectionMethod;
+  WinProbabilityModel?: string;
   Matchups: MatchupProjectionMatchup[];
 }

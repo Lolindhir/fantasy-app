@@ -196,6 +196,25 @@
         <span>All-time</span> <strong>{{ h2h }}</strong>
       </p>
 
+      <section *ngIf="winChance(selectedMatchup) as chance" class="fgc-win-chance">
+        <app-win-chance-bar
+          [left]="chance.left"
+          [right]="chance.right"
+          [live]="chance.live"
+          [leftName]="teamShortName(matchupTeamID(selectedMatchup, 'left'))"
+          [rightName]="teamShortName(matchupTeamID(selectedMatchup, 'right'))"
+        ></app-win-chance-bar>
+        <p class="fgc-win-chance-caption">
+          <mat-icon
+            class="fgc-win-chance-info"
+            aria-hidden="true"
+            title="The chance is calculated from the projected scores of both starting lineups and their uncertainty. It is not adjusted by past results."
+          >info</mat-icon>
+          <span>{{ chance.caption }}</span>
+          <strong *ngIf="chance.upsetTeam" class="fgc-win-chance-upset">Upset · {{ chance.upsetTeam }} won</strong>
+        </p>
+      </section>
+
       <app-matchup-range-chart *ngIf="matchupRange(selectedMatchup) as range" [view]="range"></app-matchup-range-chart>
 
       <section *ngIf="selectedMatchup.RemainingRelevance as remaining" class="fgc-signal-strip fgc-matchup-signal-strip">

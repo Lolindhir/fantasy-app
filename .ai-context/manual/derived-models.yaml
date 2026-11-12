@@ -29,6 +29,7 @@ architecture:
     - tools/derived_data_lib/league_lifecycle.py (computed lifecycle function, no product, #1199 step 2)
     - tools/derived_data_lib/decision_windows.py (computed Decision Windows function with the repairability model, no product, #1199 section 2)
     - tools/derived_data_lib/matchup_context.py (computed matchup context function with the team-range model, no product, #1199 section 3)
+    - tools/matchup_projection.py and tools/derived_data_lib/weekly_recaps.py (win-prob model on the team-range projections, no product, #1443)
     - later models through the same registry
   rules:
     - A model is a pure function of its explicit inputs plus its own PARAMS. It reads no files, no network, no clock, no environment and no league configuration.
@@ -49,6 +50,7 @@ identity:
       - lifecycle-v1
       - repairability-v1
       - team-range-v1
+      - win-prob-v1
     rules:
       - The model ID is the only way a league, a snapshot or a test refers to a model.
       - kind uses hyphens in the ID (salary-cap-v1) and underscores in the module path (salary_cap/v1.py).
@@ -111,7 +113,7 @@ registry:
     - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
   leagueSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
-    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange } -> model IDs
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut } -> model IDs
     rule: >
       The league metadata chooses model IDs per season. A new version applies from
       the season in which the metadata first names it; earlier seasons keep their
@@ -237,6 +239,18 @@ models:
     rules:
       - The model is a pure function of the starters' PlayerWeekFantasy projections and prediction ranges; it reads no file, no clock and no league configuration.
       - A better method (for example correlated players of one NFL game) is a new version chosen from a season on in data-meta (Models.TeamRange), never a silent change of the numbers.
+
+  win-prob-v1:
+    status: registered-1443
+    module: tools/derived_data_lib/models/win_prob/v1.py
+    behaviour: P(A) = Phi((meanA - meanB) / sqrt(sdA^2 + sdB^2)) from the team projections of team-range-v1, published as whole percents that add up to 100; no calibration factor (Robert, 2026-11-12)
+    contract: .ai-context/manual/matchup-context.yaml
+    parameters: Distribution normal-difference, Calibration none, Unit whole-percent, UpsetThreshold 0.35
+    rules:
+      - The model is a pure function of the two team projections (ProjectedFinalScore, StandardDeviation); it reads no file, no clock and no league configuration.
+      - A missing input gives null (unknown), never 50 percent. A matchup without variance (all starters final) is decided - 100 percent for the higher score, 50/50 for equal scores.
+      - Upset means the winner had less than 35 percent before the week (unrounded value); a tie has no upset.
+      - A better chance comes from a better projection model (a new team-range version chosen per season) or a new win-prob version chosen per season in data-meta (Models.WinProb), never from a silent change of the numbers.
 
 rankingFunctions:
   implementation: tools/derived_data_lib/ranking.py

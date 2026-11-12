@@ -18,6 +18,7 @@ import {
   type FantasyGameContextDialogData
 } from '../../shared/components/fantasy-game-context-dialog/fantasy-game-context-dialog';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../../shared/components/team-identity/team-identity';
+import { WinChanceBarComponent } from '../../shared/components/win-chance-bar/win-chance-bar';
 import { WeekRecapContentComponent } from '../../shared/components/week-recap-content/week-recap-content';
 import {
   buildLineupEfficiencyLookup,
@@ -50,7 +51,7 @@ interface SeasonData {
 @Component({
   selector: 'app-weeks-page',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatDialogModule, MatFormFieldModule, MatSelectModule, TeamIdentityComponent, WeekRecapContentComponent],
+  imports: [CommonModule, MatCardModule, MatDialogModule, MatFormFieldModule, MatSelectModule, TeamIdentityComponent, WeekRecapContentComponent, WinChanceBarComponent],
   templateUrl: './weeks-page.html',
   styleUrl: './weeks-page.scss'
 })
@@ -182,6 +183,27 @@ export class WeeksPageComponent {
       : new Set<string>();
   });
 
+  /** Generator pregame chance of a scoreboard matchup (left/right as displayed) and whether the result was an upset; null when unknown. */
+  pregameChance(matchup: { matchupID: string; state: string; participants: ReadonlyArray<{ teamID: number }> }):
+    { left: number; right: number; upset: boolean } | null {
+    if (matchup.state !== 'final' || matchup.participants.length !== 2) return null;
+    const item = this.selectedRecapWeek()?.WinProbabilities?.find(entry => entry.FantasyMatchupID === matchup.matchupID);
+    if (!item) return null;
+    const chanceOf = (teamID: number) =>
+      item.Teams.find(team => String(team.FantasyTeamID) === String(teamID))?.PregameWinProbability ?? null;
+    const left = chanceOf(matchup.participants[0].teamID);
+    const right = chanceOf(matchup.participants[1].teamID);
+    return left === null || right === null ? null : { left, right, upset: item.Upset === true };
+  }
+
+  /** Upsets of a team over the season (generator count); null when the season has no values. */
+  upsetCount(teamID: number): number | null {
+    const entry = this.data()?.recaps?.UpsetCounts?.find(item => String(item.FantasyTeamID) === String(teamID));
+    return entry ? entry.Upsets : null;
+  }
+
+  readonly upsetsAvailable = computed(() => !!this.data()?.recaps?.UpsetCounts?.length);
+
   isEfficiencyHigh(teamID: number, week: number): boolean {
     return this.efficiencyHighs().has(`${week}:${teamID}`);
   }
@@ -214,7 +236,8 @@ export class WeeksPageComponent {
       league,
       fantasyMatchupId: matchupID,
       players: this.base()?.leagueData.players ?? [],
-      lineupEfficiency: this.selectedRecapWeek()?.TeamPerformance ?? null
+      lineupEfficiency: this.selectedRecapWeek()?.TeamPerformance ?? null,
+      pregameWinProbabilities: this.selectedRecapWeek()?.WinProbabilities ?? null
     };
     this.dialog.open(FantasyGameContextDialogComponent, {
       data,

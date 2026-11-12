@@ -23,6 +23,7 @@ from derived_data_lib.league_lifecycle import LifecycleError
 from league_metadata import LeagueMetadataError, data_meta_root, load_league_metadata, model_for
 from derived_data_lib.models.registry import get_model
 from derived_data_lib.models.team_range import v1 as team_range_v1
+from derived_data_lib.models.win_prob import v1 as win_prob_v1
 from derived_data_lib.models.team_range.v1 import (  # noqa: F401  (re-exported, the method lives in the model)
     AVAILABILITY_OUT,
     AVAILABILITY_UNCERTAIN,
@@ -36,7 +37,7 @@ from derived_data_lib.models.team_range.v1 import (  # noqa: F401  (re-exported,
 )
 from player_week_fantasy import DISPLAY_INTERVAL_LEVEL, PUBLISHED_INTERVAL_LEVELS
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 AXIS_STEP = 20
 AXIS_PADDING = 10
 OUTPUT_PATH = Path("public/data/MatchupProjections.json")
@@ -118,6 +119,7 @@ def build_matchup_projections(
     display_level: float = DISPLAY_INTERVAL_LEVEL,
     availability: Mapping[str, str] | None = None,
     model: Any = team_range_v1,
+    win_model: Any = win_prob_v1,
 ) -> dict[str, Any]:
     """Pure builder. Raises ValueError when the two inputs do not describe the same week."""
 
@@ -146,6 +148,9 @@ def build_matchup_projections(
             )
             for team_id in matchup["TeamIDs"]
         ]
+        percentages = win_model.matchup_percentages(teams[0], teams[1]) if len(teams) == 2 else None
+        for index, team in enumerate(teams):
+            team["WinProbability"] = percentages[index] if percentages else None
         matchups.append(
             {
                 "FantasyMatchupID": matchup["FantasyMatchupID"],
@@ -161,6 +166,7 @@ def build_matchup_projections(
         "Week": player_model["Week"],
         "DisplayLevel": display_level,
         "Method": dict(model.METHOD),
+        "WinProbabilityModel": win_model.MODEL_ID,
         "Matchups": matchups,
     }
 
@@ -223,10 +229,12 @@ def publish_matchup_projections(
 
     root = repo_root.resolve()
     season = int(context["Season"])
-    model = get_model(model_for(load_league_metadata(league_id, data_meta_root(root)), season, "TeamRange"), "team-range")
+    metadata = load_league_metadata(league_id, data_meta_root(root))
+    model = get_model(model_for(metadata, season, "TeamRange"), "team-range")
+    win_model = get_model(model_for(metadata, season, "WinProb"), "win-prob")
     try:
         payload = build_matchup_projections(
-            context, player_model, availability=_availability_by_player(root, league_id, context, at_utc), model=model
+            context, player_model, availability=_availability_by_player(root, league_id, context, at_utc), model=model, win_model=win_model
         )
     except ValueError as exc:
         if "target different weeks" in str(exc):

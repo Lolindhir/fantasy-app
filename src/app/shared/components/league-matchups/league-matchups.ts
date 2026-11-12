@@ -53,6 +53,7 @@ import {
   type OverviewWeeklyPhase
 } from '../../utils/overview-weekly-dashboard.util';
 import { formatProjectionPoints } from '../../utils/projection-range.util';
+import { WinChanceBarComponent } from '../win-chance-bar/win-chance-bar';
 import {
   FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
@@ -110,7 +111,8 @@ interface FantasyContextState {
     MatIconModule,
     TeamIdentityComponent,
     WeekRecapContentComponent,
-    ChampionBadgeComponent
+    ChampionBadgeComponent,
+    WinChanceBarComponent
   ],
   templateUrl: './league-matchups.html',
   styleUrls: [
@@ -342,6 +344,25 @@ export class LeagueMatchupsComponent {
     if (left === null && right === null) return null;
 
     return { left: formatProjectionPoints(left), right: formatProjectionPoints(right) };
+  }
+
+  /** Generated win chance of an open matchup (whole percents, left/right); null without a value. Live once an NFL game of a starter is final. */
+  winChance(
+    matchup: LeagueMatchupView,
+    context: FantasyGameContextReadModel | null
+  ): { left: number; right: number; live: boolean } | null {
+    if (matchup.completionState === 'final') return null;
+    const teams = this.matchupContext(matchup, context)?.Projection?.Teams;
+    if (!teams) return null;
+    const find = (teamID: string | number) => teams.find(team => String(team.FantasyTeamID) === String(teamID));
+    const left = find(matchup.left.team.TeamID);
+    const right = find(matchup.right.team.TeamID);
+    if (left?.WinProbability == null || right?.WinProbability == null) return null;
+    return {
+      left: left.WinProbability,
+      right: right.WinProbability,
+      live: left.FinalStarterCount > 0 || right.FinalStarterCount > 0
+    };
   }
 
   scoreboardState(matchup: LeagueMatchupView): MatchupScoreboardState {

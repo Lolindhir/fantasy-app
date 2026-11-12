@@ -44,6 +44,10 @@ contract:
     applicable precomputed PotentialPoints/EfficiencyPercent/ActualStarterPoints/
     MissedPoints. This is a consumer projection, never an independent Best Ball
     or coaching-efficiency calculation. Older archives may omit TeamAwards.
+  winProbabilityFields: >
+    Week.WinProbabilities[] (FantasyMatchupID, Teams[].PregameWinProbability in whole percent, Upset, UpsetWinnerFantasyTeamID) and the season fields
+    WinProbabilityModel and UpsetCounts[] (FantasyTeamID, Upsets, Weeks). Pregame chance recomputed from the PlayerWeekFantasy projections with
+    win-prob-v1, null when a projection is missing; Upset = winner below 35 percent before the week (Issue #1443). Additive, SchemaVersion stays 1.
   keyPlayerFields:
     - PlayerID
     - FantasyTeamID

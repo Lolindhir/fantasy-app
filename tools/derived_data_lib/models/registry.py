@@ -16,11 +16,12 @@ from .salary import v1 as salary_v1
 from .salary_cap import v1 as salary_cap_v1
 from .standings import v1 as standings_v1
 from .team_range import v1 as team_range_v1
+from .win_prob import v1 as win_prob_v1
 
-_MODULES: tuple[ModuleType, ...] = (salary_v1, salary_cap_v1, roster_cap_v1, auto_cut_v1, grading_v1, standings_v1, awards_v1, lifecycle_v1, repairability_v1, team_range_v1)
+_MODULES: tuple[ModuleType, ...] = (salary_v1, salary_cap_v1, roster_cap_v1, auto_cut_v1, grading_v1, standings_v1, awards_v1, lifecycle_v1, repairability_v1, team_range_v1, win_prob_v1)
 _REGISTRY: dict[str, ModuleType] = {module.MODEL_ID: module for module in _MODULES}
 
-KINDS = ("auto-cut", "awards", "grading", "lifecycle", "repairability", "roster-cap", "salary", "salary-cap", "standings", "team-range")
+KINDS = ("auto-cut", "awards", "grading", "lifecycle", "repairability", "roster-cap", "salary", "salary-cap", "standings", "team-range", "win-prob")
 
 
 class UnknownModelError(ValueError):
