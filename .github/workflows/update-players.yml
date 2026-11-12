@@ -20,6 +20,9 @@ jobs:
           token: ${{ secrets.PAT_PUSH }}
           filter: blob:none
           sparse-checkout-cone-mode: false
+          # Season boundary: 2021 onwards covers the PlayerValuation history (league start 2024 minus 3 history
+          # seasons of salary-v1). If a salary model reads more history seasons or a league starts earlier, move the
+          # excluded year patterns below. The Verify step checks only 2025 and does not catch this.
           sparse-checkout: |
             /.github/
             /package.json
