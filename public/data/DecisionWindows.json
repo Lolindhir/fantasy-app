@@ -28,7 +28,7 @@
         {
           "FantasyTeamID": 1,
           "AffectedRosteredPlayerCount": 5,
-          "AffectedStarterCount": 2,
+          "AffectedStarterCount": 3,
           "Players": [
             {
               "PlayerID": "11566",
@@ -46,7 +46,7 @@
               "PlayerID": "12481",
               "NFLTeamID": "NYG",
               "GameID": "20261112_WSH@NYG",
-              "IsStarter": false
+              "IsStarter": true
             },
             {
               "PlayerID": "12508",
@@ -332,7 +332,7 @@
         {
           "FantasyTeamID": 1,
           "AffectedRosteredPlayerCount": 18,
-          "AffectedStarterCount": 5,
+          "AffectedStarterCount": 7,
           "Players": [
             {
               "PlayerID": "11559",
@@ -374,7 +374,7 @@
               "PlayerID": "12518",
               "NFLTeamID": "IND",
               "GameID": "20261115_MIA@IND",
-              "IsStarter": false
+              "IsStarter": true
             },
             {
               "PlayerID": "12526",
@@ -440,7 +440,7 @@
               "PlayerID": "8155",
               "NFLTeamID": "NYJ",
               "GameID": "20261115_BUF@NYJ",
-              "IsStarter": false
+              "IsStarter": true
             }
           ]
         },
@@ -1661,7 +1661,7 @@
       "GameID": "20261112_WSH@NYG",
       "DecisionWindowID": "2026-11-13T01:15:00Z",
       "StartsAtUtc": "2026-11-13T01:15:00Z",
-      "IsStarter": false
+      "IsStarter": true
     },
     {
       "FantasyTeamID": 1,
@@ -1691,7 +1691,7 @@
       "GameID": null,
       "DecisionWindowID": null,
       "StartsAtUtc": null,
-      "IsStarter": true
+      "IsStarter": false
     },
     {
       "FantasyTeamID": 1,
@@ -1701,7 +1701,7 @@
       "GameID": "20261115_MIA@IND",
       "DecisionWindowID": "2026-11-15T18:00:00Z",
       "StartsAtUtc": "2026-11-15T18:00:00Z",
-      "IsStarter": false
+      "IsStarter": true
     },
     {
       "FantasyTeamID": 1,
@@ -1841,7 +1841,7 @@
       "GameID": null,
       "DecisionWindowID": null,
       "StartsAtUtc": null,
-      "IsStarter": true
+      "IsStarter": false
     },
     {
       "FantasyTeamID": 1,
@@ -1861,7 +1861,7 @@
       "GameID": null,
       "DecisionWindowID": null,
       "StartsAtUtc": null,
-      "IsStarter": true
+      "IsStarter": false
     },
     {
       "FantasyTeamID": 1,
@@ -1921,7 +1921,7 @@
       "GameID": "20261115_BUF@NYJ",
       "DecisionWindowID": "2026-11-15T18:00:00Z",
       "StartsAtUtc": "2026-11-15T18:00:00Z",
-      "IsStarter": false
+      "IsStarter": true
     },
     {
       "FantasyTeamID": 1,
@@ -3627,30 +3627,11 @@
   "TeamLineupEvaluations": [
     {
       "FantasyTeamID": 1,
-      "State": "action-required",
+      "State": "ready",
       "ExpectedStarterCount": 13,
       "StarterCount": 13,
       "OpenStarterSlots": 0,
-      "Issues": [
-        {
-          "Code": "STARTER_ON_BYE",
-          "State": "action-required",
-          "PlayerID": "12517",
-          "Count": null
-        },
-        {
-          "Code": "STARTER_ON_BYE",
-          "State": "action-required",
-          "PlayerID": "4866",
-          "Count": null
-        },
-        {
-          "Code": "STARTER_ON_BYE",
-          "State": "action-required",
-          "PlayerID": "6790",
-          "Count": null
-        }
-      ]
+      "Issues": []
     },
     {
       "FantasyTeamID": 2,
@@ -3816,10 +3797,10 @@
         "BenchCount": 17,
         "IRCount": 5,
         "TaxiCount": 2,
-        "UnlockedStarterCount": 9,
+        "UnlockedStarterCount": 11,
         "LockedActiveStarterCount": 0,
         "CompletedStarterCount": 0,
-        "EligibleBenchCandidateCount": 15,
+        "EligibleBenchCandidateCount": 12,
         "HasRemainingScoringPath": true,
         "Slots": [
           {
@@ -3865,19 +3846,26 @@
             "SlotType": "RB",
             "SlotOrdinal": 1,
             "SlotIndex": 2,
-            "CurrentStarterID": "9224",
+            "CurrentStarterID": "12481",
             "State": "unlocked",
-            "GameID": "20261115_PIT@CIN",
-            "DecisionWindowID": "2026-11-16T01:20:00Z",
-            "StartsAtUtc": "2026-11-16T01:20:00Z",
+            "GameID": "20261112_WSH@NYG",
+            "DecisionWindowID": "2026-11-13T01:15:00Z",
+            "StartsAtUtc": "2026-11-13T01:15:00Z",
             "ScoringAvailability": {
-              "State": "available",
-              "ProviderStatus": "ACTIVE",
+              "State": "out",
+              "ProviderStatus": "OUT",
               "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
-              "ObservedAtUtc": "2026-10-06T21:33:37Z"
+              "FirstObservedAtUtc": "2026-11-10T21:51:33Z",
+              "ObservedAtUtc": "2026-11-10T21:51:33Z"
             },
-            "Repairability": null
+            "Repairability": {
+              "ProblemCode": "STARTER_UNAVAILABLE",
+              "State": "repairable",
+              "Path": "internal-roster",
+              "ReasonCode": "INTERNAL_ASSIGNMENT_AVAILABLE",
+              "InternalCandidateCount": 23,
+              "ExternalCandidateCount": 495
+            }
           },
           {
             "SlotID": "RB-2",
@@ -3920,7 +3908,7 @@
               "State": "repairable",
               "Path": "internal-roster",
               "ReasonCode": "INTERNAL_ASSIGNMENT_AVAILABLE",
-              "InternalCandidateCount": 24,
+              "InternalCandidateCount": 23,
               "ExternalCandidateCount": 495
             }
           },
@@ -3948,26 +3936,19 @@
             "SlotType": "TE",
             "SlotOrdinal": 1,
             "SlotIndex": 6,
-            "CurrentStarterID": "12517",
-            "State": "bye",
-            "GameID": null,
-            "DecisionWindowID": null,
-            "StartsAtUtc": null,
+            "CurrentStarterID": "12518",
+            "State": "unlocked",
+            "GameID": "20261115_MIA@IND",
+            "DecisionWindowID": "2026-11-15T18:00:00Z",
+            "StartsAtUtc": "2026-11-15T18:00:00Z",
             "ScoringAvailability": {
               "State": "available",
               "ProviderStatus": "ACTIVE",
               "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-10-31T19:02:59Z",
-              "ObservedAtUtc": "2026-10-31T19:02:59Z"
+              "FirstObservedAtUtc": "2026-10-30T16:53:13Z",
+              "ObservedAtUtc": "2026-10-30T16:53:13Z"
             },
-            "Repairability": {
-              "ProblemCode": "STARTER_ON_BYE",
-              "State": "repairable",
-              "Path": "internal-roster",
-              "ReasonCode": "INTERNAL_ASSIGNMENT_AVAILABLE",
-              "InternalCandidateCount": 24,
-              "ExternalCandidateCount": 495
-            }
+            "Repairability": null
           },
           {
             "SlotID": "TE-2",
@@ -3993,26 +3974,19 @@
             "SlotType": "FLEX",
             "SlotOrdinal": 1,
             "SlotIndex": 8,
-            "CurrentStarterID": "4866",
-            "State": "bye",
-            "GameID": null,
-            "DecisionWindowID": null,
-            "StartsAtUtc": null,
+            "CurrentStarterID": "9224",
+            "State": "unlocked",
+            "GameID": "20261115_PIT@CIN",
+            "DecisionWindowID": "2026-11-16T01:20:00Z",
+            "StartsAtUtc": "2026-11-16T01:20:00Z",
             "ScoringAvailability": {
               "State": "available",
               "ProviderStatus": "ACTIVE",
               "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-11-06T21:03:19Z",
-              "ObservedAtUtc": "2026-11-06T21:03:19Z"
+              "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
+              "ObservedAtUtc": "2026-10-06T21:33:37Z"
             },
-            "Repairability": {
-              "ProblemCode": "STARTER_ON_BYE",
-              "State": "repairable",
-              "Path": "internal-roster",
-              "ReasonCode": "INTERNAL_ASSIGNMENT_AVAILABLE",
-              "InternalCandidateCount": 24,
-              "ExternalCandidateCount": 495
-            }
+            "Repairability": null
           },
           {
             "SlotID": "FLEX-2",
@@ -4057,26 +4031,19 @@
             "SlotType": "FLEX",
             "SlotOrdinal": 4,
             "SlotIndex": 11,
-            "CurrentStarterID": "6790",
-            "State": "bye",
-            "GameID": null,
-            "DecisionWindowID": null,
-            "StartsAtUtc": null,
+            "CurrentStarterID": "8155",
+            "State": "unlocked",
+            "GameID": "20261115_BUF@NYJ",
+            "DecisionWindowID": "2026-11-15T18:00:00Z",
+            "StartsAtUtc": "2026-11-15T18:00:00Z",
             "ScoringAvailability": {
               "State": "available",
               "ProviderStatus": "ACTIVE",
               "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-10-09T19:16:49Z",
-              "ObservedAtUtc": "2026-10-09T19:16:49Z"
+              "FirstObservedAtUtc": "2026-11-05T22:33:08Z",
+              "ObservedAtUtc": "2026-11-05T22:33:08Z"
             },
-            "Repairability": {
-              "ProblemCode": "STARTER_ON_BYE",
-              "State": "repairable",
-              "Path": "internal-roster",
-              "ReasonCode": "INTERNAL_ASSIGNMENT_AVAILABLE",
-              "InternalCandidateCount": 24,
-              "ExternalCandidateCount": 495
-            }
+            "Repairability": null
           },
           {
             "SlotID": "K-1",
@@ -4137,8 +4104,10 @@
             "EligibleUnlockedSlotIDs": [
               "WR-1",
               "WR-2",
+              "FLEX-1",
               "FLEX-2",
-              "FLEX-3"
+              "FLEX-3",
+              "FLEX-4"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
@@ -4164,8 +4133,10 @@
             "EligibleUnlockedSlotIDs": [
               "WR-1",
               "WR-2",
+              "FLEX-1",
               "FLEX-2",
-              "FLEX-3"
+              "FLEX-3",
+              "FLEX-4"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
@@ -4191,8 +4162,10 @@
             "EligibleUnlockedSlotIDs": [
               "WR-1",
               "WR-2",
+              "FLEX-1",
               "FLEX-2",
-              "FLEX-3"
+              "FLEX-3",
+              "FLEX-4"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
@@ -4218,8 +4191,10 @@
             "EligibleUnlockedSlotIDs": [
               "RB-1",
               "RB-2",
+              "FLEX-1",
               "FLEX-2",
-              "FLEX-3"
+              "FLEX-3",
+              "FLEX-4"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
@@ -4233,50 +4208,19 @@
             }
           },
           {
-            "PlayerID": "12481",
-            "Placement": "bench",
-            "Position": "RB",
-            "GameState": "unlocked",
-            "GameID": "20261112_WSH@NYG",
-            "DecisionWindowID": "2026-11-13T01:15:00Z",
-            "StartsAtUtc": "2026-11-13T01:15:00Z",
-            "LineupSlotID": null,
-            "LineupSlotType": null,
-            "EligibleUnlockedSlotIDs": [
-              "RB-1",
-              "RB-2",
-              "FLEX-2",
-              "FLEX-3"
-            ],
-            "IsBenchCandidate": true,
-            "HasDirectScoringPath": false,
-            "HasAlternativePath": true,
-            "ScoringAvailability": {
-              "State": "unknown",
-              "ProviderStatus": null,
-              "Source": "ESPN",
-              "FirstObservedAtUtc": null,
-              "ObservedAtUtc": null
-            }
-          },
-          {
-            "PlayerID": "12518",
+            "PlayerID": "12517",
             "Placement": "bench",
             "Position": "TE",
-            "GameState": "unlocked",
-            "GameID": "20261115_MIA@IND",
-            "DecisionWindowID": "2026-11-15T18:00:00Z",
-            "StartsAtUtc": "2026-11-15T18:00:00Z",
+            "GameState": "bye",
+            "GameID": null,
+            "DecisionWindowID": null,
+            "StartsAtUtc": null,
             "LineupSlotID": null,
             "LineupSlotType": null,
-            "EligibleUnlockedSlotIDs": [
-              "TE-2",
-              "FLEX-2",
-              "FLEX-3"
-            ],
-            "IsBenchCandidate": true,
+            "EligibleUnlockedSlotIDs": [],
+            "IsBenchCandidate": false,
             "HasDirectScoringPath": false,
-            "HasAlternativePath": true,
+            "HasAlternativePath": false,
             "ScoringAvailability": {
               "State": "unknown",
               "ProviderStatus": null,
@@ -4298,8 +4242,10 @@
             "EligibleUnlockedSlotIDs": [
               "WR-1",
               "WR-2",
+              "FLEX-1",
               "FLEX-2",
-              "FLEX-3"
+              "FLEX-3",
+              "FLEX-4"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
@@ -4372,8 +4318,10 @@
             "EligibleUnlockedSlotIDs": [
               "WR-1",
               "WR-2",
+              "FLEX-1",
               "FLEX-2",
-              "FLEX-3"
+              "FLEX-3",
+              "FLEX-4"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
@@ -4399,8 +4347,10 @@
             "EligibleUnlockedSlotIDs": [
               "RB-1",
               "RB-2",
+              "FLEX-1",
               "FLEX-2",
-              "FLEX-3"
+              "FLEX-3",
+              "FLEX-4"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
@@ -4426,12 +4376,36 @@
             "EligibleUnlockedSlotIDs": [
               "RB-1",
               "RB-2",
+              "FLEX-1",
               "FLEX-2",
-              "FLEX-3"
+              "FLEX-3",
+              "FLEX-4"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
             "HasAlternativePath": true,
+            "ScoringAvailability": {
+              "State": "unknown",
+              "ProviderStatus": null,
+              "Source": "ESPN",
+              "FirstObservedAtUtc": null,
+              "ObservedAtUtc": null
+            }
+          },
+          {
+            "PlayerID": "4866",
+            "Placement": "bench",
+            "Position": "RB",
+            "GameState": "bye",
+            "GameID": null,
+            "DecisionWindowID": null,
+            "StartsAtUtc": null,
+            "LineupSlotID": null,
+            "LineupSlotType": null,
+            "EligibleUnlockedSlotIDs": [],
+            "IsBenchCandidate": false,
+            "HasDirectScoringPath": false,
+            "HasAlternativePath": false,
             "ScoringAvailability": {
               "State": "unknown",
               "ProviderStatus": null,
@@ -4453,12 +4427,36 @@
             "EligibleUnlockedSlotIDs": [
               "WR-1",
               "WR-2",
+              "FLEX-1",
               "FLEX-2",
-              "FLEX-3"
+              "FLEX-3",
+              "FLEX-4"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
             "HasAlternativePath": true,
+            "ScoringAvailability": {
+              "State": "unknown",
+              "ProviderStatus": null,
+              "Source": "ESPN",
+              "FirstObservedAtUtc": null,
+              "ObservedAtUtc": null
+            }
+          },
+          {
+            "PlayerID": "6790",
+            "Placement": "bench",
+            "Position": "RB",
+            "GameState": "bye",
+            "GameID": null,
+            "DecisionWindowID": null,
+            "StartsAtUtc": null,
+            "LineupSlotID": null,
+            "LineupSlotType": null,
+            "EligibleUnlockedSlotIDs": [],
+            "IsBenchCandidate": false,
+            "HasDirectScoringPath": false,
+            "HasAlternativePath": false,
             "ScoringAvailability": {
               "State": "unknown",
               "ProviderStatus": null,
@@ -4502,35 +4500,10 @@
             "EligibleUnlockedSlotIDs": [
               "WR-1",
               "WR-2",
+              "FLEX-1",
               "FLEX-2",
-              "FLEX-3"
-            ],
-            "IsBenchCandidate": true,
-            "HasDirectScoringPath": false,
-            "HasAlternativePath": true,
-            "ScoringAvailability": {
-              "State": "unknown",
-              "ProviderStatus": null,
-              "Source": "ESPN",
-              "FirstObservedAtUtc": null,
-              "ObservedAtUtc": null
-            }
-          },
-          {
-            "PlayerID": "8155",
-            "Placement": "bench",
-            "Position": "RB",
-            "GameState": "unlocked",
-            "GameID": "20261115_BUF@NYJ",
-            "DecisionWindowID": "2026-11-15T18:00:00Z",
-            "StartsAtUtc": "2026-11-15T18:00:00Z",
-            "LineupSlotID": null,
-            "LineupSlotType": null,
-            "EligibleUnlockedSlotIDs": [
-              "RB-1",
-              "RB-2",
-              "FLEX-2",
-              "FLEX-3"
+              "FLEX-3",
+              "FLEX-4"
             ],
             "IsBenchCandidate": true,
             "HasDirectScoringPath": false,
@@ -4698,6 +4671,28 @@
             }
           },
           {
+            "PlayerID": "12481",
+            "Placement": "starter",
+            "Position": "RB",
+            "GameState": "unlocked",
+            "GameID": "20261112_WSH@NYG",
+            "DecisionWindowID": "2026-11-13T01:15:00Z",
+            "StartsAtUtc": "2026-11-13T01:15:00Z",
+            "LineupSlotID": "RB-1",
+            "LineupSlotType": "RB",
+            "EligibleUnlockedSlotIDs": [],
+            "IsBenchCandidate": false,
+            "HasDirectScoringPath": false,
+            "HasAlternativePath": false,
+            "ScoringAvailability": {
+              "State": "out",
+              "ProviderStatus": "OUT",
+              "Source": "ESPN",
+              "FirstObservedAtUtc": "2026-11-10T21:51:33Z",
+              "ObservedAtUtc": "2026-11-10T21:51:33Z"
+            }
+          },
+          {
             "PlayerID": "12506",
             "Placement": "starter",
             "Position": "TE",
@@ -4720,25 +4715,25 @@
             }
           },
           {
-            "PlayerID": "12517",
+            "PlayerID": "12518",
             "Placement": "starter",
             "Position": "TE",
-            "GameState": "bye",
-            "GameID": null,
-            "DecisionWindowID": null,
-            "StartsAtUtc": null,
+            "GameState": "unlocked",
+            "GameID": "20261115_MIA@IND",
+            "DecisionWindowID": "2026-11-15T18:00:00Z",
+            "StartsAtUtc": "2026-11-15T18:00:00Z",
             "LineupSlotID": "TE-1",
             "LineupSlotType": "TE",
             "EligibleUnlockedSlotIDs": [],
             "IsBenchCandidate": false,
-            "HasDirectScoringPath": false,
+            "HasDirectScoringPath": true,
             "HasAlternativePath": false,
             "ScoringAvailability": {
               "State": "available",
               "ProviderStatus": "ACTIVE",
               "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-10-31T19:02:59Z",
-              "ObservedAtUtc": "2026-10-31T19:02:59Z"
+              "FirstObservedAtUtc": "2026-10-30T16:53:13Z",
+              "ObservedAtUtc": "2026-10-30T16:53:13Z"
             }
           },
           {
@@ -4808,50 +4803,6 @@
             }
           },
           {
-            "PlayerID": "4866",
-            "Placement": "starter",
-            "Position": "RB",
-            "GameState": "bye",
-            "GameID": null,
-            "DecisionWindowID": null,
-            "StartsAtUtc": null,
-            "LineupSlotID": "FLEX-1",
-            "LineupSlotType": "FLEX",
-            "EligibleUnlockedSlotIDs": [],
-            "IsBenchCandidate": false,
-            "HasDirectScoringPath": false,
-            "HasAlternativePath": false,
-            "ScoringAvailability": {
-              "State": "available",
-              "ProviderStatus": "ACTIVE",
-              "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-11-06T21:03:19Z",
-              "ObservedAtUtc": "2026-11-06T21:03:19Z"
-            }
-          },
-          {
-            "PlayerID": "6790",
-            "Placement": "starter",
-            "Position": "RB",
-            "GameState": "bye",
-            "GameID": null,
-            "DecisionWindowID": null,
-            "StartsAtUtc": null,
-            "LineupSlotID": "FLEX-4",
-            "LineupSlotType": "FLEX",
-            "EligibleUnlockedSlotIDs": [],
-            "IsBenchCandidate": false,
-            "HasDirectScoringPath": false,
-            "HasAlternativePath": false,
-            "ScoringAvailability": {
-              "State": "available",
-              "ProviderStatus": "ACTIVE",
-              "Source": "ESPN",
-              "FirstObservedAtUtc": "2026-10-09T19:16:49Z",
-              "ObservedAtUtc": "2026-10-09T19:16:49Z"
-            }
-          },
-          {
             "PlayerID": "8130",
             "Placement": "starter",
             "Position": "TE",
@@ -4896,6 +4847,28 @@
             }
           },
           {
+            "PlayerID": "8155",
+            "Placement": "starter",
+            "Position": "RB",
+            "GameState": "unlocked",
+            "GameID": "20261115_BUF@NYJ",
+            "DecisionWindowID": "2026-11-15T18:00:00Z",
+            "StartsAtUtc": "2026-11-15T18:00:00Z",
+            "LineupSlotID": "FLEX-4",
+            "LineupSlotType": "FLEX",
+            "EligibleUnlockedSlotIDs": [],
+            "IsBenchCandidate": false,
+            "HasDirectScoringPath": true,
+            "HasAlternativePath": false,
+            "ScoringAvailability": {
+              "State": "available",
+              "ProviderStatus": "ACTIVE",
+              "Source": "ESPN",
+              "FirstObservedAtUtc": "2026-11-05T22:33:08Z",
+              "ObservedAtUtc": "2026-11-05T22:33:08Z"
+            }
+          },
+          {
             "PlayerID": "9224",
             "Placement": "starter",
             "Position": "RB",
@@ -4903,8 +4876,8 @@
             "GameID": "20261115_PIT@CIN",
             "DecisionWindowID": "2026-11-16T01:20:00Z",
             "StartsAtUtc": "2026-11-16T01:20:00Z",
-            "LineupSlotID": "RB-1",
-            "LineupSlotType": "RB",
+            "LineupSlotID": "FLEX-1",
+            "LineupSlotType": "FLEX",
             "EligibleUnlockedSlotIDs": [],
             "IsBenchCandidate": false,
             "HasDirectScoringPath": true,
@@ -10559,15 +10532,6 @@
       "ObservedAtUtc": "2026-10-06T21:33:37Z"
     },
     {
-      "PlayerID": "4866",
-      "ESPNPlayerID": "3929630",
-      "State": "available",
-      "ProviderStatus": "ACTIVE",
-      "Source": "ESPN",
-      "FirstObservedAtUtc": "2026-11-06T21:03:19Z",
-      "ObservedAtUtc": "2026-11-06T21:03:19Z"
-    },
-    {
       "PlayerID": "7002",
       "ESPNPlayerID": "3929645",
       "State": "available",
@@ -10674,15 +10638,6 @@
       "Source": "ESPN",
       "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
       "ObservedAtUtc": "2026-10-06T21:33:37Z"
-    },
-    {
-      "PlayerID": "6790",
-      "ESPNPlayerID": "4259545",
-      "State": "available",
-      "ProviderStatus": "ACTIVE",
-      "Source": "ESPN",
-      "FirstObservedAtUtc": "2026-10-09T19:16:49Z",
-      "ObservedAtUtc": "2026-10-09T19:16:49Z"
     },
     {
       "PlayerID": "6794",
@@ -10874,6 +10829,15 @@
       "ObservedAtUtc": "2026-11-12T02:11:10Z"
     },
     {
+      "PlayerID": "8155",
+      "ESPNPlayerID": "4427366",
+      "State": "available",
+      "ProviderStatus": "ACTIVE",
+      "Source": "ESPN",
+      "FirstObservedAtUtc": "2026-11-05T22:33:08Z",
+      "ObservedAtUtc": "2026-11-05T22:33:08Z"
+    },
+    {
       "PlayerID": "10229",
       "ESPNPlayerID": "4428331",
       "State": "available",
@@ -10962,6 +10926,15 @@
       "Source": "ESPN",
       "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
       "ObservedAtUtc": "2026-10-06T21:33:37Z"
+    },
+    {
+      "PlayerID": "12518",
+      "ESPNPlayerID": "4431459",
+      "State": "available",
+      "ProviderStatus": "ACTIVE",
+      "Source": "ESPN",
+      "FirstObservedAtUtc": "2026-10-30T16:53:13Z",
+      "ObservedAtUtc": "2026-10-30T16:53:13Z"
     },
     {
       "PlayerID": "11604",
@@ -11063,6 +11036,15 @@
       "ObservedAtUtc": "2026-10-06T21:33:37Z"
     },
     {
+      "PlayerID": "12481",
+      "ESPNPlayerID": "4696981",
+      "State": "out",
+      "ProviderStatus": "OUT",
+      "Source": "ESPN",
+      "FirstObservedAtUtc": "2026-11-10T21:51:33Z",
+      "ObservedAtUtc": "2026-11-10T21:51:33Z"
+    },
+    {
       "PlayerID": "12501",
       "ESPNPlayerID": "4701936",
       "State": "available",
@@ -11088,15 +11070,6 @@
       "Source": "ESPN",
       "FirstObservedAtUtc": "2026-10-06T21:33:37Z",
       "ObservedAtUtc": "2026-10-06T21:33:37Z"
-    },
-    {
-      "PlayerID": "12517",
-      "ESPNPlayerID": "4723086",
-      "State": "available",
-      "ProviderStatus": "ACTIVE",
-      "Source": "ESPN",
-      "FirstObservedAtUtc": "2026-10-31T19:02:59Z",
-      "ObservedAtUtc": "2026-10-31T19:02:59Z"
     },
     {
       "PlayerID": "13346",
