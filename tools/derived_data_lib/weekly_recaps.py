@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
+from league_metadata import data_meta_root, load_league_metadata, model_for
 
 from .fantasy_game_context import canonical_matchup_facts
 from .matchup_context import (
@@ -26,6 +27,7 @@ from .matchup_context import (
     value_of,
 )
 from .week_finality import WeekFinalityError, resolve_week_finality
+from .models.registry import get_model
 
 TeamKey = Callable[[Any], "str | None"]
 DEFENSE_ID = re.compile(r"^[A-Z]{2,3}$")
@@ -445,6 +447,93 @@ def season_efficiency(weeks: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Pregame win probability and upsets (Issue #1443)
+
+
+def _pwf_projections(repo_root: Path, league_id: str, season: int, week: int) -> dict[str, Any]:
+    """Projection per CanonicalPlayerID of the PlayerWeekFantasy partition; empty when the partition is missing (unknown)."""
+    path = repo_root / DATA_DERIVED_ROOT / "player-week-fantasy" / league_id / str(season) / f"{week:02d}.json"
+    if not path.is_file():
+        return {}
+    document = _read(path, "PlayerWeekFantasy partition")
+    return {
+        _text(value_of(record, "CanonicalPlayerID")): value_of(record, "Projection")
+        for record in collection(value_of(document, "Records"))
+        if _text(value_of(record, "CanonicalPlayerID")) != ""
+    }
+
+
+def pregame_win_probabilities(
+    facts: list[dict[str, Any]],
+    team_values: dict[str, Any],
+    identity_map: dict[str, dict[str, dict[str, str]]],
+    projections_by_canonical: dict[str, Any],
+    team_range_model: Any,
+    win_prob_model: Any,
+) -> list[dict[str, Any]]:
+    """Pregame chance per team and the upset flag per matchup of one final week.
+
+    Every starter counts with his PlayerWeekFantasy projection of the week (nothing is final), so the chance is the one the matchup
+    had before the week from the team-range model; it is recomputed from the projections and not frozen. A starter without a usable
+    projection (or without a resolvable canonical identity) makes the team unavailable and the chance ``None`` (unknown, never 50).
+    """
+    result: list[dict[str, Any]] = []
+    for matchup in facts:
+        teams: list[dict[str, Any]] = []
+        for team in matchup["Teams"]:
+            starters: dict[str, dict[str, Any]] = {}
+            projections: dict[str, Any] = {}
+            for player in team["Players"]:
+                if not player["IsStarter"]:
+                    continue
+                player_id = _text(player["PlayerID"])
+                starters[player_id] = {"final": False, "points": None, "bye": False}
+                canonical_id = _text(player.get("CanonicalPlayerID")) or _text(identity_map["ByPlayer"].get(player_id, {}).get("CanonicalPlayerID"))
+                if canonical_id in projections_by_canonical:
+                    projections[player_id] = projections_by_canonical[canonical_id]
+            teams.append(team_range_model.build_team_projection(team["FantasyTeamID"], starters, projections))
+        if len(teams) != 2:
+            continue
+        percentages = win_prob_model.matchup_percentages(teams[0], teams[1])
+        first = win_prob_model.win_probability(
+            teams[0]["ProjectedFinalScore"], teams[0]["StandardDeviation"], teams[1]["ProjectedFinalScore"], teams[1]["StandardDeviation"]
+        ) if percentages else None
+        scores = [float(team["FinalScore"]) for team in matchup["Teams"]]
+        upset = None
+        if first is not None and scores[0] != scores[1]:
+            upset = win_prob_model.is_upset(first if scores[0] > scores[1] else 1.0 - first)
+        result.append(
+            {
+                "FantasyMatchupID": matchup["FantasyMatchupID"],
+                "Teams": [
+                    {
+                        "FantasyTeamID": team_values[_text(team["FantasyTeamID"])],
+                        "PregameWinProbability": percentages[index] if percentages else None,
+                    }
+                    for index, team in enumerate(matchup["Teams"])
+                ],
+                "Upset": upset,
+                "UpsetWinnerFantasyTeamID": team_values[_text(matchup["Teams"][0 if scores[0] > scores[1] else 1]["FantasyTeamID"])] if upset else None,
+            }
+        )
+    return result
+
+
+def upset_counts(weeks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Upsets (wins with a pregame chance below the model boundary) per team over the weeks with a known chance (the frontend only displays it)."""
+    totals: dict[Any, dict[str, int]] = {}
+    for week in weeks:
+        for matchup in week.get("WinProbabilities") or []:
+            if matchup["Upset"] is None:
+                continue
+            for team in matchup["Teams"]:
+                totals.setdefault(team["FantasyTeamID"], {"Upsets": 0, "Weeks": 0})["Weeks"] += 1
+            if matchup["Upset"]:
+                totals[matchup["UpsetWinnerFantasyTeamID"]]["Upsets"] += 1
+    return [{"FantasyTeamID": team_id, **totals[team_id]} for team_id in sorted(totals)]
+
+
+# ---------------------------------------------------------------------------------------------------------------------
 # Season model
 
 
@@ -485,7 +574,7 @@ def resolve_with_skips(repo_root: Path, league_id: str, season: int) -> tuple[di
         finality = resolve_week_finality(repo_root, league_id, season)
     except WeekFinalityError as exc:
         raise WeeklyRecapsError(str(exc)) from exc
-    empty = {"SchemaVersion": 1, "Season": str(season), "Weeks": [], "SeasonEfficiency": []}
+    empty = {"SchemaVersion": 1, "Season": str(season), "Weeks": [], "SeasonEfficiency": [], "UpsetCounts": []}
     scored = int(finality["LeagueScoredWeek"])
     if scored <= 0:
         return empty, []
@@ -517,6 +606,9 @@ def resolve_with_skips(repo_root: Path, league_id: str, season: int) -> tuple[di
     schedule_document = _read(repo_root / DATA_SOURCE_ROOT / "nfl" / "schedules" / f"{season}.json", "WeeklyRecaps canonical NFL schedule")
     canonical_schedule = collection(value_of(schedule_document, "Games"))
     team_key = make_team_key(NflTeamRegistry.load(repo_root))
+    metadata = load_league_metadata(league_id, data_meta_root(repo_root))
+    team_range_model = get_model(model_for(metadata, season, "TeamRange"), "team-range")
+    win_prob_model = get_model(model_for(metadata, season, "WinProb"), "win-prob")
 
     weeks: list[dict[str, Any]] = []
     skipped: list[tuple[int, str]] = []
@@ -546,5 +638,16 @@ def resolve_with_skips(repo_root: Path, league_id: str, season: int) -> tuple[di
         recap["TeamAwards"], recap["TeamPerformance"] = team_awards_and_performance(
             repo_root, league_id, season, week, rows, set(team_values), identity_map
         )
+        recap["WinProbabilities"] = pregame_win_probabilities(
+            facts, team_values, identity_map, _pwf_projections(repo_root, league_id, season, week), team_range_model, win_prob_model
+        )
         weeks.append(recap)
-    return {"SchemaVersion": 1, "Season": str(season), "Weeks": weeks, "SeasonEfficiency": season_efficiency(weeks)}, skipped
+    model = {
+        "SchemaVersion": 1,
+        "Season": str(season),
+        "WinProbabilityModel": win_prob_model.MODEL_ID,
+        "Weeks": weeks,
+        "SeasonEfficiency": season_efficiency(weeks),
+        "UpsetCounts": upset_counts(weeks),
+    }
+    return model, skipped

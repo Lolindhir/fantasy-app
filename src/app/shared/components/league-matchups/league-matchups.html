@@ -180,6 +180,19 @@
               <mat-icon class="matchup-primary-chevron" aria-hidden="true">chevron_right</mat-icon>
             </div>
 
+            <ng-container *ngIf="fantasyContextState$ | async as chanceState">
+              <app-win-chance-bar
+                *ngIf="winChance(matchup, chanceState.context) as chance"
+                class="matchup-win-chance"
+                [left]="chance.left"
+                [right]="chance.right"
+                [live]="chance.live"
+                [compact]="true"
+                [leftName]="teamShortName(matchup.left.team)"
+                [rightName]="teamShortName(matchup.right.team)"
+              ></app-win-chance-bar>
+            </ng-container>
+
             <ng-container *ngIf="fantasyContextState$ | async as contextState">
               <div
                 *ngIf="contextState.decisionWindows?.Season === league.Season && contextState.decisionWindows?.LineupWeek === week"

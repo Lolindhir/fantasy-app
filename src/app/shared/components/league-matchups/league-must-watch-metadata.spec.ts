@@ -521,7 +521,7 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
     }
   }
 
-  it('keeps the existing Team Detail interaction separate from the NFL game-detail target', () => {
+  it('keeps the existing Team Detail interaction separate from the NFL game-detail target', async () => {
     const host: HTMLElement = fixture.nativeElement;
     const firstAvatar = host.querySelector<HTMLButtonElement>('.fantasy-pulse-team-avatar');
     const gameTarget = host.querySelector<HTMLButtonElement>('.fantasy-pulse-card-main');
@@ -536,6 +536,9 @@ describe('LeagueMatchupsComponent #578/#581 Must Watch presentation', () => {
     expect(openSpy).not.toHaveBeenCalled();
 
     gameTarget!.click();
+    for (let attempt = 0; attempt < 100 && openSpy.calls.count() === 0; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
     expect(openSpy).toHaveBeenCalledTimes(1);
     expect(teamDialog.open).toHaveBeenCalledTimes(1);
   });
