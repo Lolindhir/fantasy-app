@@ -5,6 +5,8 @@ import type { FantasyTeam } from '../../../core/models/league.models';
 import { ChampionBadgeComponent } from '../champion-badge/champion-badge';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
 
+/** Minimal identity; a historic snapshot (season-specific name, owner, logo) is as valid as a current team. */
+export type TeamIdentitySubject = Pick<FantasyTeam, 'TeamID' | 'Team' | 'Owner' | 'Avatar'> & Partial<Pick<FantasyTeam, 'TeamAbbr' | 'IsDefendingChampion'>>;
 export type TeamIdentityElement = 'logo' | 'abbr' | 'name' | 'owner';
 export type TeamIdentitySize = 'small' | 'medium' | 'large';
 export type TeamIdentityAlign = 'start' | 'end';
@@ -17,7 +19,7 @@ export type TeamIdentityAlign = 'start' | 'end';
   styleUrl: './team-identity.scss'
 })
 export class TeamIdentityComponent {
-  @Input({ required: true }) team!: FantasyTeam;
+  @Input({ required: true }) team!: TeamIdentitySubject;
   @Input() elements: readonly TeamIdentityElement[] = ['logo', 'name'];
   @Input() size: TeamIdentitySize = 'medium';
   @Input() align: TeamIdentityAlign = 'start';
