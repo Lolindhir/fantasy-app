@@ -677,8 +677,10 @@ app-league-matchups {
 
 /* Issue #1446: underdog wins reuse the award card; a real upset (winner below 35 percent) gets the amber accent of the matchup dialog. */
 .weekly-recap-underdog {
-  display: grid;
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
   min-width: 0;
   padding: 8px 10px;
   border: 1px solid rgba(148, 163, 184, 0.24);
@@ -688,6 +690,7 @@ app-league-matchups {
 .weekly-recap-underdog--upset { border-color: rgba(180, 83, 9, 0.35); background: #fffbeb; }
 .weekly-recap-underdog-title {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 5px;
   margin: 0;
@@ -706,7 +709,7 @@ app-league-matchups {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.weekly-recap-underdog-body { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+.weekly-recap-underdog-body { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
 .weekly-recap-underdog-winner,
 .weekly-recap-underdog-loser {
   display: inline-flex;
@@ -881,4 +884,17 @@ app-league-matchups {
   .weekly-tail--with-recap .fantasy-pulse-shell,
   .weekly-tail--with-recap .weekly-recap-shell { margin: 0; }
   .weekly-tail--with-recap .weekly-recap-grid { grid-template-columns: 1fr; }
+}
+
+/* Issue #1446: on narrow screens the underdog row is title plus one line for winner and loser. */
+@media (max-width: 600px) {
+  .weekly-recap-underdog { gap: 4px 8px; }
+  .weekly-recap-underdog-body { flex-wrap: nowrap; gap: 6px; }
+  .weekly-recap-underdog-winner { flex: 0 1 auto; gap: 4px; }
+  .weekly-recap-underdog-winner strong { overflow: hidden; font-size: 0.74rem; text-overflow: ellipsis; white-space: nowrap; }
+  .weekly-recap-underdog-chance { font-size: 0.68rem; white-space: nowrap; }
+  .weekly-recap-underdog-logo { width: 22px; height: 22px; }
+  .weekly-recap-underdog-loser { flex: 0 1 auto; gap: 4px; font-size: 0.64rem; }
+  .weekly-recap-underdog-loser span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .weekly-recap-underdog-loser .weekly-recap-underdog-logo { width: 16px; height: 16px; }
 }
