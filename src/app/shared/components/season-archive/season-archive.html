@@ -29,32 +29,12 @@
       <app-season-awards [awards]="season.awards"></app-season-awards>
 
       <section class="season-block regular-season-block">
-        <h3>Regular Season Standings</h3>
-
-        <app-regular-season-standings-list
+        <app-season-standings-table
           [standings]="season.regularSeasonStandings"
-          [showTitle]="false"
-        ></app-regular-season-standings-list>
-      </section>
-
-      <section class="season-block luck-block" *ngIf="statisticsTeams(season) as luckRows">
-        <ng-container *ngIf="luckRows.length > 0">
-          <h3>Season Statistics</h3>
-          <div class="luck-row luck-header">
-            <span>Team</span><span>Record</span><span>Expected Record</span><span>Luck</span><span>All-Play Record</span>
-          </div>
-          <div class="luck-row" *ngFor="let row of luckRows">
-            <span class="luck-team" [title]="row.stats.TeamName">
-              <app-team-identity *ngIf="row.team; else ownerOnly" class="luck-identity luck-identity--mobile" [team]="row.team" [elements]="mobileIdentityElements" size="small"></app-team-identity>
-              <app-team-identity *ngIf="row.team" class="luck-identity luck-identity--desktop" [team]="row.team" [elements]="desktopIdentityElements" size="small"></app-team-identity>
-              <ng-template #ownerOnly>{{ row.stats.Owner }}</ng-template>
-            </span>
-            <span>{{ formatRecord(row.stats) }}</span>
-            <span>{{ formatExpectedRecord(row.stats) }}</span>
-            <strong [ngClass]="'luck-value--' + signClass(row.stats.Luck)">{{ formatSigned(row.stats.Luck) }}</strong>
-            <span>{{ formatAllPlay(row.stats) }}</span>
-          </div>
-        </ng-container>
+          [teams]="teams"
+          [statistics]="statisticsByTeam(season)"
+          [idPrefix]="'season-' + season.season"
+        ></app-season-standings-table>
       </section>
     </mat-expansion-panel>
   </mat-accordion>

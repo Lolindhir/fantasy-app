@@ -4,10 +4,9 @@ import { RouterLink } from '@angular/router';
 
 import type { FantasyTeam } from '../../../core/models/league.models';
 import type { SeasonStatisticsReadModel, SeasonStatisticsTeam } from '../../../core/models/season-statistics.models';
-import { formatAllPlay, formatDecimal, formatExpectedRecord, formatSigned, signClass } from '../../utils/season-statistics-view.util';
-import { RegularSeasonStandingsListComponent } from '../regular-season-standings-list/regular-season-standings-list';
+import { statisticsByTeam } from '../../utils/season-statistics-view.util';
+import { SeasonStandingsTableComponent } from '../season-standings-table/season-standings-table';
 import { SeasonAwardsComponent } from '../season-awards/season-awards';
-import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 import { SeasonResultsComponent } from '../season-results/season-results';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import type {
@@ -25,8 +24,7 @@ import type {
     SharedMaterialImports,
     SeasonResultsComponent,
     SeasonAwardsComponent,
-    RegularSeasonStandingsListComponent,
-    TeamIdentityComponent
+    SeasonStandingsTableComponent
   ],
   templateUrl: './season-archive.html',
   styleUrl: './season-archive.scss'
@@ -37,31 +35,21 @@ export class SeasonArchiveComponent {
   /** Current teams for logo and abbreviation, joined by TeamID. */
   @Input() teams: readonly FantasyTeam[] | null | undefined;
 
-  readonly mobileIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
-  readonly desktopIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
-
   /** Archived season statistics keyed by season (Issue #506). */
   @Input() statistics: ReadonlyMap<string, SeasonStatisticsReadModel> | null | undefined;
 
-  readonly formatSigned = formatSigned;
-  readonly formatDecimal = formatDecimal;
-  readonly signClass = signClass;
-  readonly formatExpectedRecord = formatExpectedRecord;
-  readonly formatAllPlay = formatAllPlay;
+  private statisticsCache = new Map<SeasonStatisticsReadModel, ReadonlyMap<string, SeasonStatisticsTeam>>();
 
-  /** Season statistics rows ordered by the season's regular-season placement (presentation sort only). */
-  statisticsTeams(season: SeasonHistorySeasonViewModel): { stats: SeasonStatisticsTeam; team: FantasyTeam | undefined }[] {
-    const stats = this.statistics?.get(season.season)?.Teams ?? [];
-    const placeById = new Map(season.regularSeasonStandings.map(row => [String(row.teamId), row.place]));
-    const teamById = new Map((this.teams ?? []).map(team => [String(team.TeamID), team]));
-    return stats
-      .filter(team => team.Games > 0)
-      .sort((a, b) => (placeById.get(String(a.TeamID)) ?? 99) - (placeById.get(String(b.TeamID)) ?? 99))
-      .map(row => ({ stats: row, team: teamById.get(String(row.TeamID)) }));
-  }
-
-  formatRecord(team: SeasonStatisticsTeam): string {
-    return team.Ties > 0 ? `${team.Wins}-${team.Losses}-${team.Ties}` : `${team.Wins}-${team.Losses}`;
+  /** Stable per-season index so the child input does not change on every check. */
+  statisticsByTeam(season: SeasonHistorySeasonViewModel): ReadonlyMap<string, SeasonStatisticsTeam> | null {
+    const doc = this.statistics?.get(season.season);
+    if (!doc) return null;
+    let index = this.statisticsCache.get(doc);
+    if (!index) {
+      index = statisticsByTeam(doc.Teams);
+      this.statisticsCache.set(doc, index);
+    }
+    return index;
   }
 
   playoffResultsViewModel(season: SeasonHistorySeasonViewModel): SeasonResultsViewModel {
