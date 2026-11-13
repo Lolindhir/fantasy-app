@@ -26,7 +26,7 @@ if (-not $deadline.CapDeadline -or $null -eq $deadline.CapDeadlineBufferDays) { 
 foreach ($s in $manifest.Seasons) {
     Assert-Equal 'salary-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Salary') "Salary model $($s.Season)."
     Assert-Equal 'standings-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Standings') "Standings model $($s.Season)."
-    Assert-Equal 'awards-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Awards') "Awards model $($s.Season)."
+    Assert-Equal 'awards-v2' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Awards') "Awards model $($s.Season)."
     Assert-Equal 'lifecycle-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Lifecycle') "Lifecycle model $($s.Season)."
     Assert-Equal 'repairability-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Repairability') "Repairability model $($s.Season)."
     Assert-Equal 'team-range-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'TeamRange') "TeamRange model $($s.Season)."
