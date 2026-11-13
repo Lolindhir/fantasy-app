@@ -48,6 +48,8 @@ contract:
     Week.WinProbabilities[] (FantasyMatchupID, Teams[].PregameWinProbability in whole percent, Upset, UpsetWinnerFantasyTeamID) and the season fields
     WinProbabilityModel and UpsetCounts[] (FantasyTeamID, Upsets, Weeks). Pregame chance recomputed from the PlayerWeekFantasy projections with
     win-prob-v1, null when a projection is missing; Upset = winner below 35 percent before the week (Issue #1443). Additive, SchemaVersion stays 1.
+    Issue #1446 adds UpsetLevel (upset | underdog | null; winner below 35 percent = upset, 35 to below 50 percent = underdog, else null, also null for unknown chance and ties)
+    and UnderdogWinnerFantasyTeamID (the winner when UpsetLevel is set) per WinProbabilities entry; the Weeks recap shows the biggest marked underdog win as one row, or "All Favorites Won" when no matchup is marked.
   keyPlayerFields:
     - PlayerID
     - FantasyTeamID

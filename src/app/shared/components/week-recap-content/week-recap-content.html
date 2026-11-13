@@ -91,6 +91,34 @@
         </article>
       </div>
     </div>
+    <div *ngIf="selection.underdog as upset" class="weekly-recap-group weekly-recap-group--awards weekly-recap-group--upsets">
+      <article class="weekly-recap-underdog" [class.weekly-recap-underdog--upset]="upset.level === 'upset'" [attr.aria-label]="upsetAriaLabel(upset)">
+        <h4 class="weekly-recap-underdog-title">
+          <mat-icon aria-hidden="true">{{ upset.level === 'upset' ? 'bolt' : 'trending_up' }}</mat-icon>Biggest Underdog Win
+          <span *ngIf="upset.level === 'upset'" class="weekly-recap-underdog-tag">Upset</span>
+        </h4>
+        <div class="weekly-recap-underdog-body">
+          <button type="button" class="weekly-recap-underdog-winner" [disabled]="!awardTeamExists(upset.winnerTeamID)"
+            [attr.aria-label]="'Open ' + teamLabel(upset.winnerTeamID) + ' team details'" (click)="openAwardTeamDetails(upset.winnerTeamID)">
+            <span class="weekly-recap-underdog-logo"><img *ngIf="teamLogo(upset.winnerTeamID) as logo" [src]="logo" alt="" loading="lazy" decoding="async" /></span>
+            <strong>{{ teamLabel(upset.winnerTeamID) }}</strong>
+            <span *ngIf="upset.winnerChance !== null" class="weekly-recap-underdog-chance">{{ upset.winnerChance }} %</span>
+          </button>
+          <span class="weekly-recap-underdog-beat">beat</span>
+          <button *ngIf="upset.loserTeamID !== null" type="button" class="weekly-recap-underdog-loser" [disabled]="!awardTeamExists(upset.loserTeamID)"
+            [attr.aria-label]="'Open ' + teamLabel(upset.loserTeamID) + ' team details'" (click)="openAwardTeamDetails(upset.loserTeamID)">
+            <span class="weekly-recap-underdog-logo"><img *ngIf="teamLogo(upset.loserTeamID) as logo" [src]="logo" alt="" loading="lazy" decoding="async" /></span>
+            <span>{{ teamLabel(upset.loserTeamID) }}</span>
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <div *ngIf="selection.allFavoritesWon" class="weekly-recap-group weekly-recap-group--awards weekly-recap-group--upsets">
+      <div class="weekly-recap-underdog weekly-recap-underdog--none">
+        <h4 class="weekly-recap-underdog-title"><mat-icon aria-hidden="true">check_circle</mat-icon>All Favorites Won</h4>
+      </div>
+    </div>
   </div>
 </ng-container>
 

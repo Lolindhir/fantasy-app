@@ -6,9 +6,9 @@ import type {
   MatchupWeekReadModel,
   MatchupsReadModel
 } from '../../core/models/matchup.models';
-import type { WeeklyRecapsReadModel } from '../../core/models/weekly-recap.models';
+import type { WeeklyRecapsReadModel, WeeklyRecapWinProbability } from '../../core/models/weekly-recap.models';
 import type { PastSeasonsIndex } from '../../core/services/data-api.service';
-import type { WeekRecapContent } from '../components/week-recap-content/week-recap-content';
+import type { WeekRecapContent, WeekRecapUpset } from '../components/week-recap-content/week-recap-content';
 import { buildNeutralFantasyTeamOrderIndex } from './fantasy-team-order.util';
 
 /**
@@ -190,6 +190,32 @@ export function buildWeekScoreboard(
   }));
 }
 
+/** Underdog winners of a week exactly as marked by the generator (no threshold or chance is derived here); upsets come first. */
+export function selectRecapUpsets(winProbabilities: readonly WeeklyRecapWinProbability[] | null | undefined): WeekRecapUpset[] {
+  const result: WeekRecapUpset[] = [];
+  for (const matchup of winProbabilities ?? []) {
+    const winnerTeamID = matchup.UnderdogWinnerFantasyTeamID;
+    if (!matchup.UpsetLevel || winnerTeamID === null || winnerTeamID === undefined) continue;
+    const winner = matchup.Teams.find(team => String(team.FantasyTeamID) === String(winnerTeamID));
+    const loser = matchup.Teams.find(team => String(team.FantasyTeamID) !== String(winnerTeamID));
+    result.push({
+      matchupID: matchup.FantasyMatchupID,
+      level: matchup.UpsetLevel,
+      winnerTeamID,
+      loserTeamID: loser?.FantasyTeamID ?? null,
+      winnerChance: winner?.PregameWinProbability ?? null
+    });
+  }
+  return result.sort((left, right) =>
+    (left.level === right.level ? 0 : left.level === 'upset' ? -1 : 1) || (left.winnerChance ?? 100) - (right.winnerChance ?? 100));
+}
+
+/** True when the generator knows the pregame chances of the week and marked no underdog win (never guessed from missing data). */
+export function allFavoritesWon(winProbabilities: readonly WeeklyRecapWinProbability[] | null | undefined): boolean {
+  const known = (winProbabilities ?? []).filter(matchup => matchup.Teams.every(team => team.PregameWinProbability !== null));
+  return known.length > 0 && known.every(matchup => !matchup.UpsetLevel);
+}
+
 /** Recap of one week; a missing recap is a visible state, never an error or an invented value. */
 export function selectWeekRecap(
   recaps: WeeklyRecapsReadModel | null | undefined,
@@ -208,7 +234,9 @@ export function selectWeekRecap(
       content: {
         games: recap.KeyGames,
         players: recap.KeyPlayers,
-        awards: recap.TeamAwards?.State === 'available' ? recap.TeamAwards : null
+        awards: recap.TeamAwards?.State === 'available' ? recap.TeamAwards : null,
+        underdog: selectRecapUpsets(recap.WinProbabilities)[0] ?? null,
+        allFavoritesWon: allFavoritesWon(recap.WinProbabilities)
       }
     };
   }

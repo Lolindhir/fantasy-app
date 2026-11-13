@@ -25,7 +25,9 @@ winProbability:
     before the week). Every starter counts with his PlayerWeekFantasy projection of that week (nothing final), recomputed from the product on every
     run and not frozen; the models are chosen per season in data-meta (Models.TeamRange, Models.WinProb). A starter without a usable projection or
     canonical identity makes the chance null (unknown, never 50) and the upset null. A tie has no upset. The season model also carries
-    WinProbabilityModel and UpsetCounts per team (Upsets, Weeks with a known chance); the frontend only displays them. The additive fields leave
+    WinProbabilityModel and UpsetCounts per team (Upsets, Weeks with a known chance); the frontend only displays them. Issue #1446 adds per matchup UpsetLevel (upset below 35 percent, underdog from 35 to below 50 percent, otherwise null; the thresholds belong to win-prob-v1) and
+    UnderdogWinnerFantasyTeamID (winner of a marked matchup); the Weeks page recap shows one wide row "Biggest Underdog Win" (the marked matchup with the lowest winner chance, team names, upset tag below 35 percent) below the team awards, or "All Favorites Won" when chances are known and no underdog won.
+    The season UpsetCounts keep counting only real upsets (below 35 percent). The additive fields leave
     SchemaVersion 1 unchanged. Historical seasons are written by the weekly update-transactions run, the current season by League Live.
   backtest: tools/historical_win_prob_backtest.py, research/win-probability/2026/
 

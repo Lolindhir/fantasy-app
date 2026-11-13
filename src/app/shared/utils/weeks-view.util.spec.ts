@@ -17,6 +17,7 @@ import {
   resolveDefaultWeek,
   resolveSelectedWeek,
   resolveWeeksSeason,
+  selectRecapUpsets,
   selectWeekRecap
 } from './weeks-view.util';
 
@@ -190,6 +191,35 @@ describe('weeks view util', () => {
       expect(selectWeekRecap(recaps, '2025', final(2)).content?.awards).toBeNull();
       expect(selectWeekRecap(recaps, '2025', final(3)).content?.awards).toBeNull();
       expect(selectWeekRecap(recaps, '2025', final(1)).status).toBe('available');
+    });
+
+    it('lists only generator-marked underdog winners, upsets first, and shows nothing when every favorite won', () => {
+      const mark = (id: string, winner: number, loserChance: number, winnerChance: number, level: 'upset' | 'underdog' | null) => ({
+        FantasyMatchupID: id,
+        Teams: [{ FantasyTeamID: winner, PregameWinProbability: winnerChance }, { FantasyTeamID: winner + 1, PregameWinProbability: loserChance }],
+        Upset: level === 'upset',
+        UpsetWinnerFantasyTeamID: level === 'upset' ? winner : null,
+        UpsetLevel: level,
+        UnderdogWinnerFantasyTeamID: level ? winner : null
+      });
+      const upsets = selectRecapUpsets([
+        mark('a', 1, 55, 45, 'underdog'),
+        mark('b', 3, 70, 30, 'upset'),
+        mark('c', 5, 20, 80, null)
+      ]);
+      expect(upsets.map(upset => [upset.matchupID, upset.level, upset.winnerChance, upset.loserTeamID])).toEqual([
+        ['b', 'upset', 30, 4],
+        ['a', 'underdog', 45, 2]
+      ]);
+      expect(selectRecapUpsets([mark('c', 5, 20, 80, null)])).toEqual([]);
+      expect(selectRecapUpsets(undefined)).toEqual([]);
+      const withUpsets: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [{ Week: 1, KeyGames: [], KeyPlayers: [], WinProbabilities: [mark('b', 3, 70, 30, 'upset')] }] };
+      expect(selectWeekRecap(withUpsets, '2025', final(1)).content?.underdog?.matchupID).toBe('b');
+      expect(selectWeekRecap(withUpsets, '2025', final(1)).content?.allFavoritesWon).toBeFalse();
+      const none: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [{ Week: 1, KeyGames: [], KeyPlayers: [], WinProbabilities: [mark('c', 5, 20, 80, null)] }, { Week: 2, KeyGames: [], KeyPlayers: [] }] };
+      expect(selectWeekRecap(none, '2025', final(1)).content?.allFavoritesWon).toBeTrue();
+      expect(selectWeekRecap(none, '2025', final(1)).content?.underdog).toBeNull();
+      expect(selectWeekRecap(none, '2025', final(2)).content?.allFavoritesWon).toBeFalse();
     });
 
     it('reports a missing recap for a settled week and a pending recap for an open week', () => {

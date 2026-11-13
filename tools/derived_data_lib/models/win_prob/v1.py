@@ -8,6 +8,9 @@ The published value is a whole percent per team and the two values of a matchup 
 own). A missing input gives ``None`` (unknown, never 50 percent). A matchup without any variance (every starter final) is decided: the
 higher score has 100 percent, equal scores 50/50. The upset boundary applies to the unrounded probability of the winner.
 
+Recap marks (Issue #1446, additive, no existing value changes): a winner below UPSET_THRESHOLD (35 percent) is an ``upset``, a winner from
+35 up to (excluding) UNDERDOG_THRESHOLD (50 percent) an ``underdog`` win, every other winner gets no mark. Both boundaries live here, never in the frontend.
+
 A model is a pure function of its explicit inputs: it reads no file, no clock and no league configuration. Immutable after its first
 productive use; any change is ``win-prob-v2``.
 """
@@ -23,12 +26,14 @@ MODEL_ID = "win-prob-v1"
 KIND = "win-prob"
 
 UPSET_THRESHOLD = 0.35
+UNDERDOG_THRESHOLD = 0.5
 
 PARAMS = MappingProxyType({
     "Distribution": "normal-difference",
     "Calibration": "none",
     "Unit": "whole-percent",
     "UpsetThreshold": UPSET_THRESHOLD,
+    "UnderdogThreshold": UNDERDOG_THRESHOLD,
 })
 
 _NORMAL = NormalDist()
@@ -82,3 +87,14 @@ def is_upset(winner_probability: float | None) -> bool | None:
     if winner_probability is None:
         return None
     return winner_probability < UPSET_THRESHOLD
+
+
+def upset_level(winner_probability: float | None) -> str | None:
+    """``upset`` below UPSET_THRESHOLD, ``underdog`` below UNDERDOG_THRESHOLD, else None (also None when the chance is unknown)."""
+    if winner_probability is None:
+        return None
+    if winner_probability < UPSET_THRESHOLD:
+        return "upset"
+    if winner_probability < UNDERDOG_THRESHOLD:
+        return "underdog"
+    return None

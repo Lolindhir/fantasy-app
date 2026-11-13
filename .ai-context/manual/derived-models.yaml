@@ -245,11 +245,12 @@ models:
     module: tools/derived_data_lib/models/win_prob/v1.py
     behaviour: P(A) = Phi((meanA - meanB) / sqrt(sdA^2 + sdB^2)) from the team projections of team-range-v1, published as whole percents that add up to 100; no calibration factor (Robert, 2026-11-12)
     contract: .ai-context/manual/matchup-context.yaml
-    parameters: Distribution normal-difference, Calibration none, Unit whole-percent, UpsetThreshold 0.35
+    parameters: Distribution normal-difference, Calibration none, Unit whole-percent, UpsetThreshold 0.35, UnderdogThreshold 0.5 (additive with #1446, no existing value changes)
     rules:
       - The model is a pure function of the two team projections (ProjectedFinalScore, StandardDeviation); it reads no file, no clock and no league configuration.
       - A missing input gives null (unknown), never 50 percent. A matchup without variance (all starters final) is decided - 100 percent for the higher score, 50/50 for equal scores.
       - Upset means the winner had less than 35 percent before the week (unrounded value); a tie has no upset.
+      - Recap mark (Issue #1446, upset_level): a winner below 35 percent is an upset, a winner from 35 up to (excluding) 50 percent is an underdog win, every other winner has no mark; unknown chance and ties give null. The thresholds live only in this model, never in the frontend.
       - A better chance comes from a better projection model (a new team-range version chosen per season) or a new win-prob version chosen per season in data-meta (Models.WinProb), never from a silent change of the numbers.
 
 rankingFunctions:

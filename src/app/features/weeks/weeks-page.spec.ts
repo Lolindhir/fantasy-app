@@ -240,6 +240,24 @@ describe('WeeksPageComponent', () => {
 
     expect(host.querySelector('.week-title')?.textContent).toContain('Week 2');
   });
+  it('shows the biggest underdog win in the recap when the generator marked an underdog win', async () => {
+    const marked = recaps('2026', [1, 2]);
+    marked.Weeks[1].WinProbabilities = [{
+      FantasyMatchupID: '2026-2',
+      Teams: [{ FantasyTeamID: 1, PregameWinProbability: 28 }, { FantasyTeamID: 2, PregameWinProbability: 72 }],
+      Upset: true,
+      UpsetWinnerFantasyTeamID: 1,
+      UpsetLevel: 'upset',
+      UnderdogWinnerFantasyTeamID: 1
+    }];
+    dataService.getWeeklyRecaps.and.returnValue(of(marked));
+    const host = await create();
+
+    expect(host.querySelector('.weekly-recap-underdog')?.textContent).toContain('Biggest Underdog Win');
+    expect(host.querySelector('.weekly-recap-underdog')?.textContent).toContain('Upset');
+    expect(host.querySelector('.weekly-recap-underdog')?.textContent).toContain('28');
+  });
+
   it('does not show pregame chances or upsets in the week list and the season grid', async () => {
     const withChance = recaps('2026', [1, 2]);
     withChance.Weeks[1].WinProbabilities = [{
