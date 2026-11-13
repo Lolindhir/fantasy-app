@@ -240,7 +240,7 @@ describe('WeeksPageComponent', () => {
 
     expect(host.querySelector('.week-title')?.textContent).toContain('Week 2');
   });
-  it('shows the generated pregame chance with the upset mark and the upset count of the season', async () => {
+  it('does not show pregame chances or upsets in the week list and the season grid', async () => {
     const withChance = recaps('2026', [1, 2]);
     withChance.Weeks[1].WinProbabilities = [{
       FantasyMatchupID: '2026-2',
@@ -252,20 +252,9 @@ describe('WeeksPageComponent', () => {
     dataService.getWeeklyRecaps.and.returnValue(of(withChance));
     const host = await create();
 
-    const chance = host.querySelector('.week-matchup-chance') as HTMLElement;
-    expect(chance.textContent).toContain('28%');
-    expect(chance.textContent).toContain('72%');
-    expect(host.querySelector('.week-matchup-upset')?.textContent?.trim()).toBe('Upset');
+    expect(host.querySelector('app-win-chance-bar')).toBeNull();
+    expect(host.textContent).not.toContain('Upset');
 
-    (Array.from(host.querySelectorAll('.activity-tab')).find(tab => tab.textContent?.trim() === 'Season') as HTMLElement).click();
-    fixture.detectChanges();
-    expect(host.querySelector('.season-grid tfoot')?.textContent).toContain('Upsets');
-  });
-
-  it('shows no chance when the generator has no value (unknown stays unknown)', async () => {
-    const host = await create();
-
-    expect(host.querySelector('.week-matchup-chance')).toBeNull();
     (Array.from(host.querySelectorAll('.activity-tab')).find(tab => tab.textContent?.trim() === 'Season') as HTMLElement).click();
     fixture.detectChanges();
     expect(host.querySelector('.season-grid tfoot')).toBeNull();

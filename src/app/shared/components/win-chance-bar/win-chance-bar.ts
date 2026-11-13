@@ -12,13 +12,10 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
     <div class="win-chance" [class.win-chance--compact]="compact" role="img" [attr.aria-label]="ariaLabel">
       <span class="win-chance-value win-chance-value--left" [class.win-chance-value--lead]="left > right">{{ left }}%</span>
       <span class="win-chance-bar" aria-hidden="true">
-        <span class="win-chance-fill win-chance-fill--left" [style.width.%]="left"></span>
-        <span class="win-chance-fill win-chance-fill--right" [style.width.%]="right"></span>
+        <span class="win-chance-fill win-chance-fill--left" [class.win-chance-fill--lead]="left > right" [style.width.%]="left"></span>
+        <span class="win-chance-fill win-chance-fill--right" [class.win-chance-fill--lead]="right > left" [style.width.%]="right"></span>
       </span>
       <span class="win-chance-value win-chance-value--right" [class.win-chance-value--lead]="right > left">{{ right }}%</span>
-      @if (live) {
-        <span class="win-chance-live" title="Updated after every finished NFL game">Live</span>
-      }
     </div>
   `,
   styles: [`
@@ -30,9 +27,9 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
     .win-chance-value--lead { color: #6d28d9; font-weight: 900; }
     .win-chance-bar { flex: 1 1 auto; display: flex; height: 0.5rem; border-radius: 999px; overflow: hidden; background: #e2e8f0; min-width: 3rem; }
     .win-chance-fill { display: block; height: 100%; }
-    .win-chance-fill--left { background: #7c3aed; }
+    .win-chance-fill--left { background: #cbd5e1; }
     .win-chance-fill--right { background: #cbd5e1; border-left: 2px solid #fff; box-sizing: border-box; }
-    .win-chance-live { flex: 0 0 auto; font-size: 0.55rem; font-weight: 950; letter-spacing: 0.04em; color: #15803d; text-transform: uppercase; }
+    .win-chance-fill--lead { background: #7c3aed; }
     .win-chance--compact .win-chance-value { font-size: 0.7rem; }
     .win-chance--compact .win-chance-bar { height: 0.4rem; }
   `]
@@ -41,8 +38,6 @@ export class WinChanceBarComponent {
   /** Whole percent of the left side; the two values add up to 100. */
   @Input({ required: true }) left = 0;
   @Input({ required: true }) right = 0;
-  /** Shows the "Live" hint: the chance has been adjusted after finished NFL games of this week. */
-  @Input() live = false;
   @Input() compact = false;
   @Input() leftName = '';
   @Input() rightName = '';
