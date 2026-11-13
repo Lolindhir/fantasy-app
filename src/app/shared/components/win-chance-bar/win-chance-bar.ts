@@ -17,9 +17,6 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
       </span>
       <span class="win-chance-value win-chance-value--right" [class.win-chance-value--lead]="right > left">{{ right }}%</span>
     </div>
-    @if (live) {
-      <span class="win-chance-live" title="Updated after every finished NFL game">Live</span>
-    }
   `,
   styles: [`
     :host { display: block; }
@@ -32,7 +29,6 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
     .win-chance-fill { display: block; height: 100%; }
     .win-chance-fill--left { background: #7c3aed; }
     .win-chance-fill--right { background: #cbd5e1; border-left: 2px solid #fff; box-sizing: border-box; }
-    .win-chance-live { display: block; margin-top: 0.15rem; text-align: center; font-size: 0.5rem; font-weight: 900; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; }
     .win-chance--compact .win-chance-value { font-size: 0.7rem; }
     .win-chance--compact .win-chance-bar { height: 0.4rem; }
   `]
@@ -41,8 +37,6 @@ export class WinChanceBarComponent {
   /** Whole percent of the left side; the two values add up to 100. */
   @Input({ required: true }) left = 0;
   @Input({ required: true }) right = 0;
-  /** Shows the "Live" hint: the chance has been adjusted after finished NFL games of this week. */
-  @Input() live = false;
   @Input() compact = false;
   @Input() leftName = '';
   @Input() rightName = '';
