@@ -35,6 +35,7 @@ import { buildLastWaiverPickByTeam } from '../../shared/utils/waiver-last-pick.u
 import {
   buildAllTimeStandings,
   buildCurrentStandings,
+  findBestRecordTeam,
   buildSeasonResults,
   getCurrentSeasonAwards,
   buildSeasonAwardItems,
@@ -286,12 +287,10 @@ export class OverviewComponent {
       return [];
     }
 
-    const bestRecord = [...teams].sort((left, right) =>
-      right.Wins - left.Wins
-      || left.Losses - right.Losses
-      || right.Ties - left.Ties
-      || right.Points - left.Points
-    )[0];
+    const bestRecord = findBestRecordTeam(league, teams);
+    if (!bestRecord) {
+      return [];
+    }
     const pointsLeader = [...teams].sort((left, right) => right.Points - left.Points)[0];
     const streakLeader = teams
       .map(team => ({ team, wins: this.getWinningStreakLength(team.Streak) }))
