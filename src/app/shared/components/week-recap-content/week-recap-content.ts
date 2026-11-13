@@ -19,6 +19,17 @@ export interface WeekRecapContent {
   games: readonly WeeklyRecapKeyGame[];
   players: readonly WeeklyRecapKeyPlayer[];
   awards: WeeklyRecapTeamAwards | null;
+  /** Underdog winners of the week (generator marks); empty or absent when every favorite won. */
+  upsets?: readonly WeekRecapUpset[];
+}
+
+/** One matchup the underdog won: the mark and the pregame chance of the winner come from the generator. */
+export interface WeekRecapUpset {
+  matchupID: string;
+  level: 'upset' | 'underdog';
+  winnerTeamID: string | number;
+  loserTeamID: string | number | null;
+  winnerChance: number | null;
 }
 
 /**
@@ -81,6 +92,17 @@ export class WeekRecapContentComponent {
   openAwardTeamDetails(teamID: string | number): void {
     const team = this.teamForID(teamID);
     if (team) this.teamDialog.open(team.TeamID);
+  }
+
+  upsetLabel(level: 'upset' | 'underdog'): string {
+    return level === 'upset' ? 'Upset' : 'Underdog win';
+  }
+
+  upsetAriaLabel(upset: WeekRecapUpset): string {
+    const winner = this.awardOwnerName(upset.winnerTeamID);
+    const loser = upset.loserTeamID === null ? 'the favorite' : this.awardOwnerName(upset.loserTeamID);
+    const chance = upset.winnerChance === null ? '' : ` with a ${upset.winnerChance} percent pregame chance`;
+    return `${this.upsetLabel(upset.level)}: ${winner} beat ${loser}${chance}`;
   }
 
   formatAwardEfficiency(value: number): string {

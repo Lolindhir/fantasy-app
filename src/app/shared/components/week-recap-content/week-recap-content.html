@@ -43,6 +43,37 @@
       </div>
     </div>
 
+    <div *ngIf="selection.upsets?.length" class="weekly-recap-group weekly-recap-group--awards weekly-recap-group--upsets">
+      <h3>Upsets</h3>
+      <div class="weekly-recap-awards">
+        <article *ngFor="let upset of selection.upsets" class="weekly-recap-award weekly-recap-upset"
+          [class.weekly-recap-upset--major]="upset.level === 'upset'" [attr.aria-label]="upsetAriaLabel(upset)">
+          <h4 class="weekly-recap-award-title">
+            <mat-icon aria-hidden="true">{{ upset.level === 'upset' ? 'bolt' : 'trending_up' }}</mat-icon>{{ upsetLabel(upset.level) }}
+          </h4>
+          <div class="weekly-recap-award-winner">
+            <button type="button" class="weekly-recap-award-owner"
+              [disabled]="!awardTeamExists(upset.winnerTeamID)"
+              [attr.aria-label]="'Open ' + awardOwnerName(upset.winnerTeamID) + ' team details'"
+              (click)="openAwardTeamDetails(upset.winnerTeamID)">
+              <span class="weekly-recap-award-avatar">
+                <img *ngIf="awardOwnerAvatar(upset.winnerTeamID) as avatar" [src]="avatar" alt="" loading="lazy" decoding="async" />
+                <span *ngIf="!awardOwnerAvatar(upset.winnerTeamID)">{{ awardOwnerName(upset.winnerTeamID).charAt(0) }}</span>
+              </span>
+              <span class="weekly-recap-award-identity">
+                <strong>{{ awardOwnerName(upset.winnerTeamID) }}</strong>
+                <span class="weekly-recap-award-team" *ngIf="awardTeamName(upset.winnerTeamID) as teamName">{{ teamName }}</span>
+              </span>
+            </button>
+            <strong *ngIf="upset.winnerChance !== null" class="weekly-recap-award-value">{{ upset.winnerChance }}<span class="weekly-recap-award-unit"> %</span></strong>
+            <span class="weekly-recap-award-extra">
+              Pregame chance<ng-container *ngIf="upset.loserTeamID !== null"> · beat {{ awardOwnerName(upset.loserTeamID) }}</ng-container>
+            </span>
+          </div>
+        </article>
+      </div>
+    </div>
+
     <div *ngIf="selection.awards as awards" class="weekly-recap-group weekly-recap-group--awards">
       <h3>Weekly Team Awards</h3>
       <div class="weekly-recap-awards">

@@ -73,6 +73,13 @@ export interface WeeklyRecapWinProbability {
   /** True when the winner had less than 35 percent before the week; null when unknown or tied. */
   Upset: boolean | null;
   UpsetWinnerFantasyTeamID: string | number | null;
+  /**
+   * Generator mark of the winner: `upset` below 35 percent, `underdog` from 35 up to 50 percent before the week, otherwise null
+   * (also unknown chance and ties). The thresholds belong to win-prob-v1; absent in older files.
+   */
+  UpsetLevel?: 'upset' | 'underdog' | null;
+  /** The winner of a matchup with an UpsetLevel; absent in older files. */
+  UnderdogWinnerFantasyTeamID?: string | number | null;
 }
 
 /** Upsets of one team over the weeks with a known pregame chance (generator values). */

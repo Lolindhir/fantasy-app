@@ -500,8 +500,12 @@ def pregame_win_probabilities(
         ) if percentages else None
         scores = [float(team["FinalScore"]) for team in matchup["Teams"]]
         upset = None
+        level = None
         if first is not None and scores[0] != scores[1]:
-            upset = win_prob_model.is_upset(first if scores[0] > scores[1] else 1.0 - first)
+            winner_probability = first if scores[0] > scores[1] else 1.0 - first
+            upset = win_prob_model.is_upset(winner_probability)
+            level = win_prob_model.upset_level(winner_probability)
+        winner_index = 0 if scores[0] > scores[1] else 1
         result.append(
             {
                 "FantasyMatchupID": matchup["FantasyMatchupID"],
@@ -513,7 +517,9 @@ def pregame_win_probabilities(
                     for index, team in enumerate(matchup["Teams"])
                 ],
                 "Upset": upset,
-                "UpsetWinnerFantasyTeamID": team_values[_text(matchup["Teams"][0 if scores[0] > scores[1] else 1]["FantasyTeamID"])] if upset else None,
+                "UpsetWinnerFantasyTeamID": team_values[_text(matchup["Teams"][winner_index]["FantasyTeamID"])] if upset else None,
+                "UpsetLevel": level,
+                "UnderdogWinnerFantasyTeamID": team_values[_text(matchup["Teams"][winner_index]["FantasyTeamID"])] if level else None,
             }
         )
     return result

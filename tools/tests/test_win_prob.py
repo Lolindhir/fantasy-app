@@ -60,9 +60,17 @@ class FormulaTests(unittest.TestCase):
         self.assertFalse(win_prob.is_upset(0.8))
         self.assertIsNone(win_prob.is_upset(None))
 
+    def test_upset_level_boundaries(self) -> None:
+        self.assertEqual("upset", win_prob.upset_level(0.3499))
+        self.assertEqual("underdog", win_prob.upset_level(0.35))
+        self.assertEqual("underdog", win_prob.upset_level(0.4999))
+        self.assertIsNone(win_prob.upset_level(0.5))
+        self.assertIsNone(win_prob.upset_level(0.9))
+        self.assertIsNone(win_prob.upset_level(None))
+
     def test_model_is_registered_pinned_and_pure(self) -> None:
         self.assertIs(win_prob, registry.get_model("win-prob-v1", "win-prob"))
-        self.assertEqual({"Distribution": "normal-difference", "Calibration": "none", "Unit": "whole-percent", "UpsetThreshold": 0.35}, dict(win_prob.PARAMS))
+        self.assertEqual({"Distribution": "normal-difference", "Calibration": "none", "Unit": "whole-percent", "UpsetThreshold": 0.35, "UnderdogThreshold": 0.5}, dict(win_prob.PARAMS))
         source = Path(win_prob.__file__).read_text(encoding="utf-8")
         for forbidden in ("open(", "read_text", "datetime", "time.", "environ"):
             self.assertNotIn(forbidden, source)
@@ -117,6 +125,8 @@ class PregameTests(unittest.TestCase):
         self.assertGreater(matchup["Teams"][0]["PregameWinProbability"], 65)
         self.assertEqual(100, sum(t["PregameWinProbability"] for t in matchup["Teams"]))
         self.assertTrue(matchup["Upset"])
+        self.assertEqual("upset", matchup["UpsetLevel"])
+        self.assertEqual(2, matchup["UnderdogWinnerFantasyTeamID"])
         self.assertEqual(2, matchup["UpsetWinnerFantasyTeamID"])
         counts = wr.upset_counts([{"WinProbabilities": result}])
         self.assertEqual([{"FantasyTeamID": 1, "Upsets": 0, "Weeks": 1}, {"FantasyTeamID": 2, "Upsets": 1, "Weeks": 1}], counts)
@@ -125,13 +135,28 @@ class PregameTests(unittest.TestCase):
         matchup = self._run(self._facts(110, 90), {"ca": projection(120, 20), "cb": projection(90, 20)})[0]
         self.assertFalse(matchup["Upset"])
         self.assertIsNone(matchup["UpsetWinnerFantasyTeamID"])
+        self.assertIsNone(matchup["UpsetLevel"])
+        self.assertIsNone(matchup["UnderdogWinnerFantasyTeamID"])
+
+    def test_underdog_win_between_35_and_50_percent_is_marked_but_no_upset(self) -> None:
+        # Team 1 is a slight favorite (about 60 percent) and loses: the winner had about 40 percent.
+        matchup = self._run(self._facts(80, 100), {"ca": projection(100, 20), "cb": projection(90, 20)})[0]
+        winner_chance = matchup["Teams"][1]["PregameWinProbability"]
+        self.assertTrue(35 <= winner_chance < 50)
+        self.assertFalse(matchup["Upset"])
+        self.assertEqual("underdog", matchup["UpsetLevel"])
+        self.assertEqual(2, matchup["UnderdogWinnerFantasyTeamID"])
+        self.assertEqual([{"FantasyTeamID": 1, "Upsets": 0, "Weeks": 1}, {"FantasyTeamID": 2, "Upsets": 0, "Weeks": 1}], wr.upset_counts([{"WinProbabilities": [matchup]}]))
 
     def test_missing_projection_or_tie_gives_unknown_or_no_upset(self) -> None:
         matchup = self._run(self._facts(110, 90), {"ca": projection(120, 20)})[0]
         self.assertTrue(all(t["PregameWinProbability"] is None for t in matchup["Teams"]))
         self.assertIsNone(matchup["Upset"])
+        self.assertIsNone(matchup["UpsetLevel"])
         tie = self._run(self._facts(100, 100), {"ca": projection(120, 20), "cb": projection(90, 20)})[0]
         self.assertFalse(tie["Upset"] is True)
+        self.assertIsNone(tie["UpsetLevel"])
+        self.assertIsNone(tie["UnderdogWinnerFantasyTeamID"])
         self.assertEqual([], wr.upset_counts([{"WinProbabilities": [matchup]}]))
 
 

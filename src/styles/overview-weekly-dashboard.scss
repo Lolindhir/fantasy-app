@@ -675,6 +675,10 @@ app-league-matchups {
 .weekly-recap-award-extra { color: var(--weekly-muted); font-size: 0.67rem; }
 .weekly-recap-award-empty { margin-top: 8px; color: var(--weekly-muted); font-size: 0.67rem; }
 
+/* Issue #1446: underdog wins reuse the award card; a real upset (winner below 35 percent) gets the amber accent of the matchup dialog. */
+.weekly-recap-upset--major { border-color: rgba(180, 83, 9, 0.35); background: #fffbeb; }
+.weekly-recap-upset--major .weekly-recap-award-title { color: #b45309; }
+
 /* Prominent awards share the same metric and identity scale as Key Fantasy Players.
    Scoped overrides deliberately leave the accepted Compact design untouched. */
 .weekly-recap-shell--prominent .weekly-recap-awards { gap: 6px; }
