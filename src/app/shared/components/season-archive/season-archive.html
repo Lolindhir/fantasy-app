@@ -44,11 +44,15 @@
             <span>Team</span><span>Record</span><span>Expected Record</span><span>Luck</span><span>All-Play Record</span>
           </div>
           <div class="luck-row" *ngFor="let row of luckRows">
-            <span class="luck-team" [title]="row.TeamName">{{ row.Owner }}</span>
-            <span>{{ formatRecord(row) }}</span>
-            <span>{{ formatExpectedRecord(row) }}</span>
-            <strong [ngClass]="'luck-value--' + signClass(row.Luck)">{{ formatSigned(row.Luck) }}</strong>
-            <span>{{ formatAllPlay(row) }}</span>
+            <span class="luck-team" [title]="row.stats.TeamName">
+              <app-team-identity *ngIf="row.team; else ownerOnly" class="luck-identity luck-identity--mobile" [team]="row.team" [elements]="mobileIdentityElements" size="small"></app-team-identity>
+              <app-team-identity *ngIf="row.team" class="luck-identity luck-identity--desktop" [team]="row.team" [elements]="desktopIdentityElements" size="small"></app-team-identity>
+              <ng-template #ownerOnly>{{ row.stats.Owner }}</ng-template>
+            </span>
+            <span>{{ formatRecord(row.stats) }}</span>
+            <span>{{ formatExpectedRecord(row.stats) }}</span>
+            <strong [ngClass]="'luck-value--' + signClass(row.stats.Luck)">{{ formatSigned(row.stats.Luck) }}</strong>
+            <span>{{ formatAllPlay(row.stats) }}</span>
           </div>
         </ng-container>
       </section>

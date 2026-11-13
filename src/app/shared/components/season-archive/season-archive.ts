@@ -2,10 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import type { FantasyTeam } from '../../../core/models/league.models';
 import type { SeasonStatisticsReadModel, SeasonStatisticsTeam } from '../../../core/models/season-statistics.models';
 import { formatAllPlay, formatDecimal, formatExpectedRecord, formatSigned, signClass } from '../../utils/season-statistics-view.util';
 import { RegularSeasonStandingsListComponent } from '../regular-season-standings-list/regular-season-standings-list';
 import { SeasonAwardsComponent } from '../season-awards/season-awards';
+import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 import { SeasonResultsComponent } from '../season-results/season-results';
 import { SharedMaterialImports } from '../../shared-material-imports';
 import type {
@@ -23,13 +25,20 @@ import type {
     SharedMaterialImports,
     SeasonResultsComponent,
     SeasonAwardsComponent,
-    RegularSeasonStandingsListComponent
+    RegularSeasonStandingsListComponent,
+    TeamIdentityComponent
   ],
   templateUrl: './season-archive.html',
   styleUrl: './season-archive.scss'
 })
 export class SeasonArchiveComponent {
   @Input({ required: true }) history: SeasonHistoryViewModel | null | undefined;
+
+  /** Current teams for logo and abbreviation, joined by TeamID. */
+  @Input() teams: readonly FantasyTeam[] | null | undefined;
+
+  readonly mobileIdentityElements: readonly TeamIdentityElement[] = ['logo', 'abbr'];
+  readonly desktopIdentityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
 
   /** Archived season statistics keyed by season (Issue #506). */
   @Input() statistics: ReadonlyMap<string, SeasonStatisticsReadModel> | null | undefined;
@@ -40,12 +49,15 @@ export class SeasonArchiveComponent {
   readonly formatExpectedRecord = formatExpectedRecord;
   readonly formatAllPlay = formatAllPlay;
 
-  /** Teams of the season statistics ordered by expected wins (presentation sort only). */
-  statisticsTeams(season: SeasonHistorySeasonViewModel): SeasonStatisticsTeam[] {
-    const teams = this.statistics?.get(season.season)?.Teams ?? [];
-    return teams
+  /** Season statistics rows ordered by the season's regular-season placement (presentation sort only). */
+  statisticsTeams(season: SeasonHistorySeasonViewModel): { stats: SeasonStatisticsTeam; team: FantasyTeam | undefined }[] {
+    const stats = this.statistics?.get(season.season)?.Teams ?? [];
+    const placeById = new Map(season.regularSeasonStandings.map(row => [String(row.teamId), row.place]));
+    const teamById = new Map((this.teams ?? []).map(team => [String(team.TeamID), team]));
+    return stats
       .filter(team => team.Games > 0)
-      .sort((a, b) => (b.ExpectedWins ?? Number.NEGATIVE_INFINITY) - (a.ExpectedWins ?? Number.NEGATIVE_INFINITY));
+      .sort((a, b) => (placeById.get(String(a.TeamID)) ?? 99) - (placeById.get(String(b.TeamID)) ?? 99))
+      .map(row => ({ stats: row, team: teamById.get(String(row.TeamID)) }));
   }
 
   formatRecord(team: SeasonStatisticsTeam): string {

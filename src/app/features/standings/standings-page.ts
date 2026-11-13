@@ -75,6 +75,7 @@ export class StandingsPageComponent {
         ],
         currentStatistics: stats.current && String(stats.current.Season) === String(league.Season) ? statisticsByTeam(stats.current.Teams) : null,
         seasonStatistics: stats.bySeason,
+        teams,
         currentStandings: buildCurrentStandings(league, teams),
         playoffTeams,
         seasonHistory: filterArchivedSeasons(buildSeasonHistory(league), String(league.Season))
