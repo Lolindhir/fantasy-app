@@ -30,7 +30,7 @@ KNOWN_MODEL_IDS: dict[str, frozenset[str]] = {
     "SalaryCap": frozenset({"salary-cap-v1"}),
     "Grading": frozenset({"grading-v1"}),
     "Standings": frozenset({"standings-v1"}),
-    "Awards": frozenset({"awards-v1", "awards-v2"}),
+    "Awards": frozenset({"awards-v1", "awards-v2", "awards-v3"}),
     "Lifecycle": frozenset({"lifecycle-v1"}),
     "Repairability": frozenset({"repairability-v1"}),
     "TeamRange": frozenset({"team-range-v1"}),

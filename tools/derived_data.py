@@ -22,7 +22,7 @@ persisted PlayerValuation snapshots (see Issue #1263 C8j).
 Third product: league-standings (league-standings.yaml, ADR-072, Issue #987), one file per league and season at
 <derived root>/league-standings/<CanonicalLeagueID>/<season>.json with the regular-season table, the weekly tables,
 playoffs, awards and the all-time standing through that season. The seasons are chained (Most Improved, all-time) and
-always rebuilt chronologically in one run; the models come from data-meta (standings-v1, awards-v1 or awards-v2).
+always rebuilt chronologically in one run; the models come from data-meta (standings-v1, awards-v1, awards-v2 or awards-v3).
 
 Usage:
   derived_data.py materialize --product player-valuation|league-transactions|league-drafts|league-standings|season-statistics [--league nfl-reise]
@@ -228,7 +228,7 @@ def materialize_league_history(
 
 
 def read_season_statistics(out_root: Path, league_id: str, season: int) -> dict[str, Any] | None:
-    """The persisted season-statistics product of one season (input of awards-v2), or None when it does not exist (unknown)."""
+    """The persisted season-statistics product of one season (input of awards-v2 and later), or None when it does not exist (unknown)."""
     path = league_history_path(out_root, SEASON_STATISTICS, league_id, season)
     if not path.is_file():
         return None
