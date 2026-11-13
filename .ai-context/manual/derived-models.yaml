@@ -49,6 +49,7 @@ identity:
       - standings-v1
       - awards-v1
       - awards-v2
+      - awards-v3
       - lifecycle-v1
       - repairability-v1
       - team-range-v1
@@ -188,6 +189,17 @@ models:
       - The place movement is PreviousWeekPlace - Place (positive means moved up) and is null whenever no validated comparison exists (ADR-040).
       - Playoff placements come from the placement matches of the winners bracket (start place 1) followed by the losers bracket; the PlaceType boundary is the number of winners-bracket placements.
       - All-time standings accumulate completed seasons newest first (the order fixes the Placements array), rounding points to two decimals at the end.
+  awards-v3:
+    status: introduced-in-1460
+    behaviour: >-
+      awards-v2 with a league-adjusted Overperformer and a richer display (Issue #1460). Overperformer is the highest mean ProjectionDelta minus the league
+      mean ProjectionDelta over every projected game of the season, so a projection bias that hits every team alike does not make the winner's value negative;
+      the team order equals awards-v2. Brick Wall keeps the awards-v2 ranking and adds the points the beaten above-average opponents scored above their own
+      average. Both StatDisplay texts have three English parts (value, count, Record W-L or W-L-T). Other awards, order and score annotations equal awards-v2.
+      Input: the persisted product data-derived/season-statistics (marker NEEDS_SEASON_STATISTICS, team summaries plus GameLog). Missing product or no
+      eligible team omits the award.
+    contract: .ai-context/manual/league-standings.yaml
+    approval: 'Robert 2026-11-13 (Issue #1460): all seasons of the league choose awards-v3 in data-meta. No workflow, writer or permission change. Rollback: set Awards back to awards-v2 in data-meta and regenerate.'
   awards-v2:
     status: introduced-in-506
     behaviour: >-

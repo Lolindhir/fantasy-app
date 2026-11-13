@@ -179,7 +179,7 @@ modelSelection:
   owner: data-meta/<CanonicalLeagueID>/metadata.json
   shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards }
   initialChoice: standings-v1 and awards-v1 for every season (set by hand in the step 1 pull request; no workflow writes data-meta)
-  awardsV2: awards-v2 (Issue #506) is chosen for every season since 2026-11-13; it reads the persisted season-statistics product for Overperformer and Brick Wall. Issue #964 (separating placement achievements from dynamic season awards) would follow as awards-v3.
+  awardsV2: awards-v2 (Issue #506) is chosen for every season since 2026-11-13; it reads the persisted season-statistics product for Overperformer and Brick Wall. Since 2026-11-13 every season chooses awards-v3 (Issue #1460): league-adjusted Overperformer and three-part English StatDisplay for Overperformer and Brick Wall; winners equal awards-v2. Issue #964 (separating placement achievements from dynamic season awards) would follow as a later awards version.
 
 failClosed:
   - unknown model ID or model of the wrong kind

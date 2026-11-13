@@ -379,7 +379,7 @@ class MaterializerTests(unittest.TestCase):
 
             with mock.patch.object(derived_data, "get_model", spy):
                 self.run_materializer(root, out)
-        self.assertEqual(["standings:standings-v1", "awards:awards-v2"] * 2, chosen)  # resolved per season from data-meta
+        self.assertEqual(["standings:standings-v1", "awards:awards-v3"] * 2, chosen)  # resolved per season from data-meta
 
 
 class RepositoryIntegrationTests(unittest.TestCase):

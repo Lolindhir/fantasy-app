@@ -73,7 +73,7 @@ def build_season(
 
     ``previous``: the document of the previous manifest season (Most Improved) or None. ``completed_before``:
     the documents of all earlier completed seasons, newest first (all-time chain). ``season_statistics``: the persisted
-    season-statistics document of this season, given only to award models with ``NEEDS_SEASON_STATISTICS`` (awards-v2) or None.
+    season-statistics document of this season, given only to award models with ``NEEDS_SEASON_STATISTICS`` (awards-v2, awards-v3) or None.
     """
     teams = sorted(inputs.teams, key=lambda t: t["TeamID"])
     completed_weeks = min(inputs.league_scored_week, inputs.regular_season_games)
