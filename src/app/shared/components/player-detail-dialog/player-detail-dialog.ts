@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { catchError, forkJoin, of } from 'rxjs';
 import { Component, Inject, OnInit, ViewEncapsulation, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +15,7 @@ import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { DataService } from '../../../core/services/data.service';
 import { formatPlayerPositionDepth } from '../../utils/player-sort.util';
 import { buildPlayerJourney, type PlayerJourney, type PlayerJourneyEvent } from '../../utils/player-journey.util';
-import type { PlayerWeekProjectionView } from '../../utils/player-week-projection.util';
+import { matchupPointsForPlayer, resolveWeekResult, type PlayerWeekProjectionView, type PlayerWeekResultView } from '../../utils/player-week-projection.util';
 import { PlayerProjectionComponent } from '../projection-range/player-projection';
 import { SalaryHistoryChartComponent } from '../salary-history-chart/salary-history-chart';
 
@@ -60,6 +61,8 @@ export class PlayerDetailDialogComponent implements OnInit {
 
   /** Published projection of the current App week; null while loading or when the player has no record. */
   weekProjection: PlayerWeekProjectionView | null = null;
+  /** Real points of that week: published Actual, else Game Log entry, else the matchup context points. */
+  weekResult: PlayerWeekResultView | null = null;
   journey: PlayerJourney | null = null;
   journeyState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
 
@@ -70,8 +73,15 @@ export class PlayerDetailDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.prepareChart();
-    this.dataService.getPlayerWeekProjections().subscribe(projections => {
+    forkJoin({
+      projections: this.dataService.getPlayerWeekProjections(),
+      context: this.dataService.getFantasyGameContext().pipe(catchError(() => of(null)))
+    }).subscribe(({ projections, context }) => {
       this.weekProjection = projections.get(String(this.player.ID)) ?? null;
+      const matchupPoints = this.weekProjection
+        ? matchupPointsForPlayer(context, this.weekProjection.season, this.weekProjection.week, this.player.ID)
+        : null;
+      this.weekResult = resolveWeekResult(this.weekProjection, this.player.GameHistory, matchupPoints);
     });
   }
 

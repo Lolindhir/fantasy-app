@@ -264,8 +264,70 @@ host {
 }
 
 /* ---------- This Week card (Overview) ---------- */
+.week-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 8px;
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Real points of the week: small card left of the projection, tinted like the Game Log. */
+.actual-card {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-width: 64px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+}
+
+.actual-card__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.actual-card__value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  color: #172033;
+}
+
+.actual-card--above {
+  background: rgba(46, 125, 50, 0.1);
+  border-color: rgba(46, 125, 50, 0.35);
+}
+
+.actual-card--above .actual-card__value,
+.actual-card--above .actual-card__label {
+  color: #2e7d32;
+}
+
+.actual-card--below {
+  background: rgba(198, 40, 40, 0.08);
+  border-color: rgba(198, 40, 40, 0.35);
+}
+
+.actual-card--below .actual-card__value,
+.actual-card--below .actual-card__label {
+  color: #c62828;
+}
+
 .week-card {
-  flex: 1 1 100%;
+  flex: 0 1 auto;
+  min-width: 0;
   box-sizing: border-box;
   padding: 8px 12px 10px;
   text-align: left;

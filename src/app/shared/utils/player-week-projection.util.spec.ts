@@ -5,7 +5,10 @@ import type {
 import {
   MISSING_PROJECTION_TEXT,
   buildPlayerWeekProjections,
-  weekProjectionText
+  matchupPointsForPlayer,
+  resolveWeekResult,
+  weekProjectionText,
+  type PlayerWeekProjectionView
 } from './player-week-projection.util';
 
 function record(playerID: string | null, overrides: Partial<PlayerWeekFantasyRecord> = {}): PlayerWeekFantasyRecord {
@@ -79,8 +82,8 @@ describe('player week projection view', () => {
     const pending = record('3', { Actual: { Points: 0, State: 'pending' } });
     const projections = buildPlayerWeekProjections(model([final, live, pending]));
 
-    expect(projections.get('1')!.result).toEqual({ state: 'final', pointsText: '12.4' });
-    expect(projections.get('2')!.result).toEqual({ state: 'live', pointsText: '3' });
+    expect(projections.get('1')!.result).toEqual({ state: 'final', pointsText: '12.4', tone: 'above' });
+    expect(projections.get('2')!.result).toEqual({ state: 'live', pointsText: '3', tone: 'below' });
     expect(projections.get('3')!.result).toBeNull();
   });
 
@@ -94,5 +97,79 @@ describe('player week projection view', () => {
     expect(weekProjectionText(null, '1')).toBe('–');
     expect(weekProjectionText(buildPlayerWeekProjections(model([record('1')])), '999')).toBe('–');
     expect(weekProjectionText(buildPlayerWeekProjections(model([record('1')])), '1')).toBe('10.6');
+  });
+});
+
+describe('resolveWeekResult', () => {
+  const view = (week: number, result: PlayerWeekProjectionView['result'] = null) =>
+    ({ season: 2026, week, projection: null, projectedValue: null, projectedText: '–', rangeText: null, levelLabel: null, result }) as PlayerWeekProjectionView;
+  const log = [{ GameDetails: { Week: 9 }, FantasyPoints: 9.1 }, { GameDetails: { Week: 8 }, FantasyPoints: 12.9 }];
+
+  it('prefers the published Actual', () => {
+    const published = { state: 'final', pointsText: '9.5', tone: null } as const;
+    expect(resolveWeekResult(view(9, published), log)).toEqual(published);
+  });
+
+  it('falls back to the Game Log entry of the projected week', () => {
+    expect(resolveWeekResult(view(9), log)).toEqual({ state: 'game-log', pointsText: '9.1', tone: null });
+  });
+
+  it('shows nothing without a Game Log entry for that week', () => {
+    expect(resolveWeekResult(view(10), log)).toBeNull();
+    expect(resolveWeekResult(view(9), undefined)).toBeNull();
+    expect(resolveWeekResult(null, log)).toBeNull();
+  });
+});
+
+describe('week result tone', () => {
+  const gameLog = (points: number) => [{ GameDetails: { Week: 9 }, FantasyPoints: points }];
+  const withProjection = (points: number) =>
+    buildPlayerWeekProjections(model([{ ...record('1'), Projection: { ...record('1').Projection, Points: points } }])).get('1')!;
+
+  it('compares the real points with the published projection', () => {
+    expect(resolveWeekResult(withProjection(10), gameLog(12))?.tone).toBe('above');
+    expect(resolveWeekResult(withProjection(10), gameLog(8))?.tone).toBe('below');
+    expect(resolveWeekResult(withProjection(10), gameLog(10))?.tone).toBe('even');
+  });
+
+  it('has no tone without an available projection', () => {
+    const rec = record('1');
+    rec.Projection = { ...rec.Projection, Status: 'no-game' as never };
+    const view = buildPlayerWeekProjections(model([rec])).get('1')!;
+    expect(resolveWeekResult(view, gameLog(12))?.tone).toBeNull();
+  });
+
+  it('classifies the published Actual too', () => {
+    const rec = record('1');
+    rec.Actual = { Points: 14, State: 'final' } as never;
+    expect(buildPlayerWeekProjections(model([rec])).get('1')!.result?.tone).toBe('above');
+  });
+});
+
+describe('matchup points fallback', () => {
+  const view = { season: 2026, week: 10, projection: null, projectedValue: 12, projectedText: '12', rangeText: null, levelLabel: null, result: null } as PlayerWeekProjectionView;
+  const context = (status: string | null, points: number | null) => ({
+    Season: '2026',
+    Week: 10,
+    Games: [{ Status: status, FantasyTeams: [{ Players: [{ PlayerID: '7', Points: points }] }] }]
+  });
+
+  it('reads the points of a started game', () => {
+    expect(matchupPointsForPlayer(context('Final', 27.2), 2026, 10, 7)).toBe(27.2);
+    expect(matchupPointsForPlayer(context('InProgress', 3), 2026, 10, '7')).toBe(3);
+  });
+
+  it('ignores scheduled placeholders, other weeks and unknown players', () => {
+    expect(matchupPointsForPlayer(context('Scheduled', 0), 2026, 10, 7)).toBeNull();
+    expect(matchupPointsForPlayer(context(null, 0), 2026, 10, 7)).toBeNull();
+    expect(matchupPointsForPlayer(context('Final', 5), 2026, 9, 7)).toBeNull();
+    expect(matchupPointsForPlayer(context('Final', 5), 2026, 10, 8)).toBeNull();
+    expect(matchupPointsForPlayer(null, 2026, 10, 7)).toBeNull();
+  });
+
+  it('is used only after the Game Log and the published Actual', () => {
+    expect(resolveWeekResult(view, undefined, 27.2)).toEqual({ state: 'matchup', pointsText: '27.2', tone: 'above' });
+    expect(resolveWeekResult(view, [{ GameDetails: { Week: 10 }, FantasyPoints: 9 }], 27.2)?.state).toBe('game-log');
+    expect(resolveWeekResult({ ...view, result: { state: 'final', pointsText: '1', tone: 'below' } }, undefined, 27.2)?.state).toBe('final');
   });
 });
