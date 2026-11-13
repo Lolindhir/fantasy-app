@@ -5,6 +5,7 @@ import {
   buildLeagueLegacy,
   buildSeasonHistory,
   buildSeasonResults,
+  findBestRecordTeam,
   getCurrentSeasonAwards
 } from './league-standings-view.util';
 
@@ -63,6 +64,40 @@ describe('Current standings competition placement', () => {
     ] as typeof source.Standings[0]['RegularSeason'];
     const rows = buildCurrentStandings(source, [team(2, 2), team(4, 4), team(6, 6)]);
     expect(rows.map(row => [row.team.TeamID, row.displayPlace])).toEqual([[2, 1], [4, 1], [6, 3]]);
+  });
+});
+
+describe('Best Record', () => {
+  const withRecord = (id: number, wins: number, losses: number, ties: number, points: number): FantasyTeam =>
+    Object.assign(team(id, id), { Wins: wins, Losses: losses, Ties: ties, Points: points });
+
+  it('follows the shared standings place instead of sorting wins, losses and points itself', () => {
+    const source = league(false);
+    // Team 2 has more wins and points (naive sort leader), team 4 has the better win percentage.
+    source.Standings[0].RegularSeason = [
+      { TeamID: 4, Place: 1 },
+      { TeamID: 2, Place: 2 }
+    ] as typeof source.Standings[0]['RegularSeason'];
+    const teams = [withRecord(2, 7, 3, 0, 1500), withRecord(4, 5, 1, 1, 900)];
+
+    expect(findBestRecordTeam(source, teams)?.TeamID).toBe(4);
+  });
+
+  it('does not depend on team array order and resolves shared ties by the standings order', () => {
+    const source = league(false);
+    source.Standings[0].RegularSeason = [
+      { TeamID: 6, Place: 1 },
+      { TeamID: 2, Place: 1 },
+      { TeamID: 4, Place: 3 }
+    ] as typeof source.Standings[0]['RegularSeason'];
+    const forward = [team(2, 2), team(4, 4), team(6, 6)];
+
+    expect(findBestRecordTeam(source, forward)?.TeamID).toBe(2);
+    expect(findBestRecordTeam(source, [...forward].reverse())?.TeamID).toBe(2);
+  });
+
+  it('returns undefined without teams', () => {
+    expect(findBestRecordTeam(league(false), [])).toBeUndefined();
   });
 });
 
