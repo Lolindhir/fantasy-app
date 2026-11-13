@@ -22,7 +22,7 @@ persisted PlayerValuation snapshots (see Issue #1263 C8j).
 Third product: league-standings (league-standings.yaml, ADR-072, Issue #987), one file per league and season at
 <derived root>/league-standings/<CanonicalLeagueID>/<season>.json with the regular-season table, the weekly tables,
 playoffs, awards and the all-time standing through that season. The seasons are chained (Most Improved, all-time) and
-always rebuilt chronologically in one run; the models come from data-meta (standings-v1, awards-v1).
+always rebuilt chronologically in one run; the models come from data-meta (standings-v1, awards-v1 or awards-v2).
 
 Usage:
   derived_data.py materialize --product player-valuation|league-transactions|league-drafts|league-standings|season-statistics [--league nfl-reise]
@@ -227,6 +227,15 @@ def materialize_league_history(
     return summary
 
 
+def read_season_statistics(out_root: Path, league_id: str, season: int) -> dict[str, Any] | None:
+    """The persisted season-statistics product of one season (input of awards-v2), or None when it does not exist (unknown)."""
+    path = league_history_path(out_root, SEASON_STATISTICS, league_id, season)
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8")
+    return json.loads(text) if text.strip() else None
+
+
 def build_league_standings(repo_root: Path, league_id: str) -> dict[int, dict[str, Any]]:
     """Product documents of every manifest season, built chronologically (Most Improved and all-time chain on earlier seasons)."""
     manifest = standings_sources.manifest(repo_root, league_id)
@@ -240,7 +249,11 @@ def build_league_standings(repo_root: Path, league_id: str) -> dict[int, dict[st
         inputs = standings_sources.load_season_inputs(repo_root, league_id, season, current)
         standings_model = get_model(model_for(metadata, season, "Standings"), "standings")
         awards_model = get_model(model_for(metadata, season, "Awards"), "awards")
-        document = build_season(inputs, standings_model, awards_model, previous, completed_newest_first)
+        statistics = (
+            read_season_statistics(data_derived_dir(repo_root), league_id, season)
+            if getattr(awards_model, "NEEDS_SEASON_STATISTICS", False) else None
+        )
+        document = build_season(inputs, standings_model, awards_model, previous, completed_newest_first, statistics)
         documents[season] = document
         previous = document
         if document["IsCompleted"]:

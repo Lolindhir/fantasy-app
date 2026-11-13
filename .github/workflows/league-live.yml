@@ -127,12 +127,13 @@ jobs:
             /public/data/Standings.json
             /public/data/Timestamps.json
             /data-derived/league-standings/
+            /data-derived/season-statistics/
 
       - name: Verify Standings sparse inputs
         shell: bash
         run: |
           set -euo pipefail
-          for path in tools/league_standings_app_publish.py tools/rebuild_and_publish.py .github/scripts/Invoke-GeneratedDataCommit.ps1 data-meta data-source/leagues data-source/nfl/schedules data-source/nfl/game-finality public/data/League.json public/data/Standings.json public/data/Timestamps.json data-derived/league-standings; do
+          for path in tools/league_standings_app_publish.py tools/rebuild_and_publish.py .github/scripts/Invoke-GeneratedDataCommit.ps1 data-meta data-source/leagues data-source/nfl/schedules data-source/nfl/game-finality public/data/League.json public/data/Standings.json public/data/Timestamps.json data-derived/league-standings data-derived/season-statistics; do
             [[ -e "$path" ]] || { echo "Missing Standings sparse input: $path" >&2; exit 1; }
           done
           echo "- Standings checkout: sparse/blobless profile verified" >> "$GITHUB_STEP_SUMMARY"

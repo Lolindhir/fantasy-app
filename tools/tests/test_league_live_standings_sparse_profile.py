@@ -92,7 +92,7 @@ class StandingsSparseProfileTest(unittest.TestCase):
             "/.github/scripts/", "/tools/", "/data-meta/", "/data-source/leagues/",
             "/data-source/nfl/schedules/", "/data-source/nfl/game-finality/",
             "/public/data/League.json", "/public/data/Standings.json", "/public/data/Timestamps.json",
-            "/data-derived/league-standings/",
+            "/data-derived/league-standings/", "/data-derived/season-statistics/",
         ):
             self.assertIn(required, profile)
         # historical player-stats feed NflStatsComplete only, never LeagueScoredWeek used by Standings
