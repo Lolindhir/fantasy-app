@@ -122,6 +122,8 @@ Checkpoint 6W removes the direct `public/data/Players.json` dependency from `ext
 
 This is **not** a wholesale Fantasy Management source cutover. `free-agent-signals.json` is already downstream of canonical-active `player-signals` and therefore inherits canonical fantasy ownership without its own direct League read. Draft metadata, Transactions, Salary/Grading and other unmigrated source domains retain their currently documented contracts until separately migrated.
 
+The salary simulation `fantasy-management/league-economy/salary/simulation/salary_simulation.py` is the one deliberate exception that still reads published read models (`League.json`, `Transactions.json`, `past_seasons/{Drafts,Transactions}`): it is a dated analysis snapshot (2026-10-05, output `league-economy/salary/analyses/2026-10-05-salary-simulation.json`, classified `analysis-snapshot-input`), not a pipeline consumer and not a source of truth. No workflow, generator, automation or frontend may call it; it moves to the Shared Derived products (league-transactions, league-drafts, player-valuation) only at the next necessary update of that analysis. Registry and guard: `.ai-context/manual/source-of-truth-matrix.yaml` (`analysisSnapshotPolicy`, Issue #1453).
+
 
 ## Metadata source rules
 
