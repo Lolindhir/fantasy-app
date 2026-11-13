@@ -28,7 +28,7 @@
       "nflverse.contracts"
     ]
   },
-  "canonicalIdentityCount": 30023,
+  "canonicalIdentityCount": 30025,
   "appPlayerCount": 957,
   "identityCoverage": {
     "matched": 957,
@@ -340,10 +340,14 @@
   "identityWeakProviderCollisionCount": 447,
   "identityWeakProviderCollisions": {
     "OTC": [
-      "13753"
+      "116",
+      "1222",
+      "13753",
+      "497"
     ],
     "NFL": [
       "35536",
+      "38676",
       "63568"
     ],
     "NFLCom": [
@@ -358,14 +362,16 @@
       "CUR232742",
       "DIX021070",
       "EKE080143",
+      "FRA164787",
       "HEL088990",
       "KPE415291",
+      "MEN827422",
+      "MOS527558",
       "PRY456541",
       "RIC070406",
       "SPE088890"
     ],
     "FantasyPros": [
-      "12772",
       "28429",
       "28635"
     ],
@@ -467,7 +473,6 @@
       "11925",
       "11943",
       "11991",
-      "11994",
       "12162",
       "12167",
       "12210",
@@ -753,15 +758,11 @@
     ],
     "Sportradar": [
       "10224f7f-31de-46d1-b344-ab728f3e901a",
-      "3add1dd8-32aa-44a5-b69a-b0ad2eace07b",
       "710f9110-42b7-11f1-b692-2b31663f2c81",
       "9587a2ef-a409-4b54-853a-7937a45d03de",
       "9a1b265f-d2ec-406e-991f-7131f573f4c8",
       "cae1de09-c079-4dae-abc3-fcf72fe42889",
       "cef62250-41b1-11f1-985b-cb31865e3411"
-    ],
-    "Yahoo": [
-      "26300"
     ],
     "Fleaflicker": [
       "6636",
@@ -773,7 +774,6 @@
       "1254446",
       "1264394",
       "1272309",
-      "1630792",
       "1724998",
       "1767990",
       "1888277",
@@ -800,7 +800,6 @@
       "19985",
       "6602",
       "6893",
-      "8151",
       "8336",
       "8478",
       "8610"
@@ -809,7 +808,6 @@
       "1570"
     ],
     "FantasyData": [
-      "15843",
       "28180",
       "28435",
       "3725"
@@ -826,11 +824,11 @@
     "Rotowire": 7,
     "Sportradar": 1
   },
-  "identitySourceMappingConflictCount": 470,
+  "identitySourceMappingConflictCount": 475,
   "identitySourceMappingConflictsByReason": {
-    "birthdate_conflict_with_nflverse_players": 467,
+    "birthdate_conflict_with_nflverse_players": 473,
     "upstream_claim_overridden_by_current_adjudication": 1,
-    "provider_id_maps_to_multiple_people": 2
+    "provider_id_maps_to_multiple_people": 1
   },
   "identitySourceMappingConflicts": [
     {
@@ -12378,6 +12376,53 @@
     {
       "Source": "nflverse.ff-player-ids",
       "Reason": "birthdate_conflict_with_nflverse_players",
+      "QuarantineScope": "mapping",
+      "MFLID": "11994",
+      "Name": "Jacquies Smith",
+      "BirthDate": "1990-03-18",
+      "Position": "DE",
+      "DraftYear": "2013",
+      "ConflictingAnchors": [
+        {
+          "Provider": "ESPN",
+          "ID": "15256",
+          "NFLVerseBirthDates": [
+            "1989-06-16"
+          ]
+        },
+        {
+          "Provider": "PFR",
+          "ID": "DaviBr01",
+          "NFLVerseBirthDates": [
+            "1989-06-16"
+          ]
+        },
+        {
+          "Provider": "PFF",
+          "ID": "7281",
+          "NFLVerseBirthDates": [
+            "1989-06-16"
+          ]
+        }
+      ],
+      "MatchingAnchors": [
+        {
+          "Provider": "GSIS",
+          "ID": "00-0029112",
+          "NFLVerseBirthDates": [
+            "1990-03-18"
+          ]
+        }
+      ],
+      "SuppressedIDs": {
+        "ESPN": "15256",
+        "PFR": "DaviBr01",
+        "PFF": "7281"
+      }
+    },
+    {
+      "Source": "nflverse.ff-player-ids",
+      "Reason": "birthdate_conflict_with_nflverse_players",
       "QuarantineScope": "birthdate-only",
       "Resolution": "strong_anchor_consensus",
       "ResolvedBirthDate": "1988-07-05",
@@ -12506,6 +12551,51 @@
       ],
       "MatchingAnchors": [],
       "SuppressedIDs": {}
+    },
+    {
+      "Source": "nflverse.ff-player-ids",
+      "Reason": "birthdate_conflict_with_nflverse_players",
+      "QuarantineScope": "mapping",
+      "MFLID": "10728",
+      "Name": "Jeff Fuller",
+      "BirthDate": "1990-04-20",
+      "Position": "WR",
+      "DraftYear": "2012",
+      "ConflictingAnchors": [
+        {
+          "Provider": "ESPN",
+          "ID": "15348",
+          "NFLVerseBirthDates": [
+            "1962-08-08"
+          ]
+        }
+      ],
+      "MatchingAnchors": [
+        {
+          "Provider": "GSIS",
+          "ID": "00-0029103",
+          "NFLVerseBirthDates": [
+            "1990-04-20"
+          ]
+        },
+        {
+          "Provider": "PFR",
+          "ID": "FullJe00",
+          "NFLVerseBirthDates": [
+            "1990-04-20"
+          ]
+        },
+        {
+          "Provider": "PFF",
+          "ID": "7392",
+          "NFLVerseBirthDates": [
+            "1990-04-20"
+          ]
+        }
+      ],
+      "SuppressedIDs": {
+        "ESPN": "15348"
+      }
     },
     {
       "Source": "nflverse.ff-player-ids",
@@ -12649,6 +12739,50 @@
       "Reason": "birthdate_conflict_with_nflverse_players",
       "QuarantineScope": "birthdate-only",
       "Resolution": "strong_anchor_consensus",
+      "ResolvedBirthDate": "1990-01-01",
+      "MFLID": "10853",
+      "Name": "DeQuan Menzie",
+      "BirthDate": "1990-01-11",
+      "Position": "S",
+      "DraftYear": "2012",
+      "ConflictingAnchors": [
+        {
+          "Provider": "GSIS",
+          "ID": "00-0029541",
+          "NFLVerseBirthDates": [
+            "1990-01-01"
+          ]
+        },
+        {
+          "Provider": "ESPN",
+          "ID": "15104",
+          "NFLVerseBirthDates": [
+            "1990-01-01"
+          ]
+        },
+        {
+          "Provider": "PFR",
+          "ID": "MenzDe00",
+          "NFLVerseBirthDates": [
+            "1990-01-01"
+          ]
+        },
+        {
+          "Provider": "PFF",
+          "ID": "7650",
+          "NFLVerseBirthDates": [
+            "1990-01-01"
+          ]
+        }
+      ],
+      "MatchingAnchors": [],
+      "SuppressedIDs": {}
+    },
+    {
+      "Source": "nflverse.ff-player-ids",
+      "Reason": "birthdate_conflict_with_nflverse_players",
+      "QuarantineScope": "birthdate-only",
+      "Resolution": "strong_anchor_consensus",
       "ResolvedBirthDate": "1989-03-05",
       "MFLID": "10878",
       "Name": "Josh Bush",
@@ -12687,6 +12821,139 @@
       ],
       "MatchingAnchors": [],
       "SuppressedIDs": {}
+    },
+    {
+      "Source": "nflverse.ff-player-ids",
+      "Reason": "birthdate_conflict_with_nflverse_players",
+      "QuarantineScope": "birthdate-only",
+      "Resolution": "strong_anchor_consensus",
+      "ResolvedBirthDate": "1988-09-24",
+      "MFLID": "10937",
+      "Name": "Dale Moss",
+      "BirthDate": "1988-09-27",
+      "Position": "WR",
+      "DraftYear": "2012",
+      "ConflictingAnchors": [
+        {
+          "Provider": "GSIS",
+          "ID": "00-0028992",
+          "NFLVerseBirthDates": [
+            "1988-09-24"
+          ]
+        },
+        {
+          "Provider": "ESPN",
+          "ID": "15255",
+          "NFLVerseBirthDates": [
+            "1988-09-24"
+          ]
+        },
+        {
+          "Provider": "PFR",
+          "ID": "MossDa00",
+          "NFLVerseBirthDates": [
+            "1988-09-24"
+          ]
+        },
+        {
+          "Provider": "PFF",
+          "ID": "7327",
+          "NFLVerseBirthDates": [
+            "1988-09-24"
+          ]
+        }
+      ],
+      "MatchingAnchors": [],
+      "SuppressedIDs": {}
+    },
+    {
+      "Source": "nflverse.ff-player-ids",
+      "Reason": "birthdate_conflict_with_nflverse_players",
+      "QuarantineScope": "birthdate-only",
+      "Resolution": "strong_anchor_consensus",
+      "ResolvedBirthDate": "1989-02-08",
+      "MFLID": "10952",
+      "Name": "Justin Francis",
+      "BirthDate": "1989-02-09",
+      "Position": "DE",
+      "DraftYear": "2012",
+      "ConflictingAnchors": [
+        {
+          "Provider": "GSIS",
+          "ID": "00-0029241",
+          "NFLVerseBirthDates": [
+            "1989-02-08"
+          ]
+        },
+        {
+          "Provider": "ESPN",
+          "ID": "15468",
+          "NFLVerseBirthDates": [
+            "1989-02-08"
+          ]
+        },
+        {
+          "Provider": "PFR",
+          "ID": "FranJu00",
+          "NFLVerseBirthDates": [
+            "1989-02-08"
+          ]
+        },
+        {
+          "Provider": "PFF",
+          "ID": "7710",
+          "NFLVerseBirthDates": [
+            "1989-02-08"
+          ]
+        }
+      ],
+      "MatchingAnchors": [],
+      "SuppressedIDs": {}
+    },
+    {
+      "Source": "nflverse.ff-player-ids",
+      "Reason": "birthdate_conflict_with_nflverse_players",
+      "QuarantineScope": "mapping",
+      "MFLID": "10977",
+      "Name": "David Douglas",
+      "BirthDate": "1989-06-27",
+      "Position": "WR",
+      "DraftYear": "2012",
+      "ConflictingAnchors": [
+        {
+          "Provider": "ESPN",
+          "ID": "15528",
+          "NFLVerseBirthDates": [
+            "1963-03-20"
+          ]
+        }
+      ],
+      "MatchingAnchors": [
+        {
+          "Provider": "GSIS",
+          "ID": "00-0029361",
+          "NFLVerseBirthDates": [
+            "1989-06-27"
+          ]
+        },
+        {
+          "Provider": "PFR",
+          "ID": "DougDa01",
+          "NFLVerseBirthDates": [
+            "1989-06-27"
+          ]
+        },
+        {
+          "Provider": "PFF",
+          "ID": "7498",
+          "NFLVerseBirthDates": [
+            "1989-06-27"
+          ]
+        }
+      ],
+      "SuppressedIDs": {
+        "ESPN": "15528"
+      }
     },
     {
       "Source": "nflverse.ff-player-ids",
@@ -19910,24 +20177,6 @@
     {
       "Source": "identity-resolution",
       "Reason": "provider_id_maps_to_multiple_people",
-      "Provider": "GSIS",
-      "ExternalID": "00-0029112",
-      "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-10f761166d419572f3e3"
-      ],
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
-          "nflverse.ff-player-ids"
-        ],
-        "NFLP-10f761166d419572f3e3": [
-          "nflverse.players"
-        ]
-      }
-    },
-    {
-      "Source": "identity-resolution",
-      "Reason": "provider_id_maps_to_multiple_people",
       "Provider": "Sleeper",
       "ExternalID": "133",
       "CanonicalPlayerIDs": [
@@ -19944,28 +20193,27 @@
       }
     }
   ],
-  "providerMappingConflictCount": 996,
+  "providerMappingConflictCount": 1021,
   "providerMappingConflictsByProvider": {
-    "CBS": 18,
-    "CFBRef": 3,
-    "ESB": 6,
-    "ESPN": 13,
-    "FantasyData": 5,
-    "FantasyPros": 3,
-    "Fleaflicker": 3,
-    "GSIS": 11,
+    "CBS": 20,
+    "CFBRef": 4,
+    "ESB": 9,
+    "ESPN": 18,
+    "FantasyData": 4,
+    "FantasyPros": 2,
+    "Fleaflicker": 4,
+    "GSIS": 13,
     "KTC": 1,
-    "MFL": 387,
-    "NFL": 2,
-    "NFLCom": 8,
-    "OTC": 1,
-    "PFF": 11,
-    "PFR": 8,
-    "Rotowire": 14,
-    "Sleeper": 200,
-    "Sportradar": 8,
-    "Tank01": 293,
-    "Yahoo": 1
+    "MFL": 389,
+    "NFL": 3,
+    "NFLCom": 9,
+    "OTC": 4,
+    "PFF": 13,
+    "PFR": 10,
+    "Rotowire": 16,
+    "Sleeper": 199,
+    "Sportradar": 10,
+    "Tank01": 293
   },
   "providerMappingConflicts": [
     {
@@ -20056,16 +20304,16 @@
     },
     {
       "Provider": "CBS",
-      "ExternalID": "1630792",
+      "ExternalID": "1272309",
       "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-10f761166d419572f3e3"
+        "NFLP-710e4b47a759b4579c4e",
+        "NFLP-9a551599adae1bce3c54"
       ],
       "FirstObservedSeason": 2026,
       "LastObservedSeason": 2026,
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
+        "NFLP-710e4b47a759b4579c4e": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -20085,6 +20333,22 @@
           "nflverse.ff-player-ids"
         ],
         "NFLP-ff4126b28d7973be391d": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "CBS",
+      "ExternalID": "1767990",
+      "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -20120,6 +20384,22 @@
           "nflverse.ff-player-ids"
         ],
         "NFLP-62566a1ac3039e59f7c5": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "CBS",
+      "ExternalID": "1975962",
+      "CanonicalPlayerIDs": [
+        "NFLP-10c5ec7a1f1bf2b49266",
+        "NFLP-c3ce43bf900358ade68c"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-10c5ec7a1f1bf2b49266": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -20293,6 +20573,22 @@
       "Provider": "CFBRef",
       "ExternalID": "dequan-menzie-1",
       "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "CFBRef",
+      "ExternalID": "dequan-menzie-1",
+      "CanonicalPlayerIDs": [
         "NFLP-4faacd1421f8d57453ca",
         "NFLP-55d3dc7a1a0cc7684b7b"
       ],
@@ -20371,6 +20667,22 @@
     },
     {
       "Provider": "ESB",
+      "ExternalID": "FRA164787",
+      "CanonicalPlayerIDs": [
+        "NFLP-710e4b47a759b4579c4e",
+        "NFLP-9a551599adae1bce3c54"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-710e4b47a759b4579c4e": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESB",
       "ExternalID": "HEL088990",
       "CanonicalPlayerIDs": [
         "NFLP-a391a47611574d2eb5bb",
@@ -20403,6 +20715,38 @@
     },
     {
       "Provider": "ESB",
+      "ExternalID": "MEN827422",
+      "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESB",
+      "ExternalID": "MOS527558",
+      "CanonicalPlayerIDs": [
+        "NFLP-10c5ec7a1f1bf2b49266",
+        "NFLP-c3ce43bf900358ade68c"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-10c5ec7a1f1bf2b49266": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESB",
       "ExternalID": "RIC070406",
       "CanonicalPlayerIDs": [
         "NFLP-9bcd4521373258e843af",
@@ -20429,6 +20773,22 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-9a7d09d723e368854149": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESPN",
+      "ExternalID": "11810",
+      "CanonicalPlayerIDs": [
+        "NFLP-975f43f09b0ce109c839",
+        "NFLP-d64e56ea4acf98f31bb8"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-d64e56ea4acf98f31bb8": [
           "nflverse.players"
         ]
       }
@@ -20470,6 +20830,23 @@
       "Provider": "ESPN",
       "ExternalID": "15104",
       "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESPN",
+      "ExternalID": "15104",
+      "CanonicalPlayerIDs": [
         "NFLP-4faacd1421f8d57453ca",
         "NFLP-55d3dc7a1a0cc7684b7b"
       ],
@@ -20479,6 +20856,23 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-4faacd1421f8d57453ca": [
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "ESPN",
+      "ExternalID": "15255",
+      "CanonicalPlayerIDs": [
+        "NFLP-10c5ec7a1f1bf2b49266",
+        "NFLP-c3ce43bf900358ade68c"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-10c5ec7a1f1bf2b49266": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
         ]
       }
     },
@@ -20500,17 +20894,17 @@
     },
     {
       "Provider": "ESPN",
-      "ExternalID": "15256",
+      "ExternalID": "15348",
       "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-63b55e435b64ec80c9b6"
+        "NFLP-9974c1b12fc8124527ac",
+        "NFLP-e6bf57dbafd54b46f727"
       ],
       "FirstObservedSeason": 2026,
       "LastObservedSeason": 2026,
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
-          "nflverse.ff-player-ids"
+        "NFLP-e6bf57dbafd54b46f727": [
+          "nflverse.players"
         ]
       }
     },
@@ -20527,6 +20921,39 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-14fda689c528238e43af": [
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "ESPN",
+      "ExternalID": "15468",
+      "CanonicalPlayerIDs": [
+        "NFLP-710e4b47a759b4579c4e",
+        "NFLP-9a551599adae1bce3c54"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-710e4b47a759b4579c4e": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "ESPN",
+      "ExternalID": "15528",
+      "CanonicalPlayerIDs": [
+        "NFLP-5bff4d1b9367e03c661a",
+        "NFLP-e18cb20bf70f91cdbbf6"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-5bff4d1b9367e03c661a": [
+          "nflverse.players"
         ]
       }
     },
@@ -20649,22 +21076,6 @@
     },
     {
       "Provider": "FantasyData",
-      "ExternalID": "15843",
-      "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-10f761166d419572f3e3"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
-          "nflverse.ff-player-ids"
-        ]
-      }
-    },
-    {
-      "Provider": "FantasyData",
       "ExternalID": "28180",
       "CanonicalPlayerIDs": [
         "NFLP-070451324fe39374b112",
@@ -20726,22 +21137,6 @@
           "nflverse.ff-player-ids"
         ],
         "NFLP-84896ddc8c105f43258b": [
-          "nflverse.ff-player-ids"
-        ]
-      }
-    },
-    {
-      "Provider": "FantasyPros",
-      "ExternalID": "12772",
-      "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-10f761166d419572f3e3"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -20833,6 +21228,22 @@
       }
     },
     {
+      "Provider": "Fleaflicker",
+      "ExternalID": "9115",
+      "CanonicalPlayerIDs": [
+        "NFLP-710e4b47a759b4579c4e",
+        "NFLP-9a551599adae1bce3c54"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-710e4b47a759b4579c4e": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
       "Provider": "GSIS",
       "ExternalID": "00-0027698",
       "CanonicalPlayerIDs": [
@@ -20869,6 +21280,23 @@
       "Provider": "GSIS",
       "ExternalID": "00-0028992",
       "CanonicalPlayerIDs": [
+        "NFLP-10c5ec7a1f1bf2b49266",
+        "NFLP-c3ce43bf900358ade68c"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-10c5ec7a1f1bf2b49266": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "GSIS",
+      "ExternalID": "00-0028992",
+      "CanonicalPlayerIDs": [
         "NFLP-67b3d1aea55c46b62fe2",
         "NFLP-c3ce43bf900358ade68c"
       ],
@@ -20878,25 +21306,6 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-67b3d1aea55c46b62fe2": [
           "nflverse.ff-player-ids"
-        ]
-      }
-    },
-    {
-      "Provider": "GSIS",
-      "ExternalID": "00-0029112",
-      "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-10f761166d419572f3e3"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
-          "nflverse.ff-player-ids"
-        ],
-        "NFLP-10f761166d419572f3e3": [
-          "nflverse.players"
         ]
       }
     },
@@ -20913,6 +21322,40 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-14fda689c528238e43af": [
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "GSIS",
+      "ExternalID": "00-0029241",
+      "CanonicalPlayerIDs": [
+        "NFLP-710e4b47a759b4579c4e",
+        "NFLP-9a551599adae1bce3c54"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-710e4b47a759b4579c4e": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "GSIS",
+      "ExternalID": "00-0029541",
+      "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
         ]
       }
     },
@@ -21532,6 +21975,22 @@
       "Provider": "MFL",
       "ExternalID": "10853",
       "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-eedb57758e1842305593"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "MFL",
+      "ExternalID": "10853",
+      "CanonicalPlayerIDs": [
         "NFLP-4faacd1421f8d57453ca",
         "NFLP-eedb57758e1842305593"
       ],
@@ -21572,6 +22031,22 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-8146eee22a645808bfce": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "MFL",
+      "ExternalID": "10937",
+      "CanonicalPlayerIDs": [
+        "NFLP-10c5ec7a1f1bf2b49266",
+        "NFLP-708dd81e26e257c2779d"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-10c5ec7a1f1bf2b49266": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -21636,6 +22111,22 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-14fda689c528238e43af": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "MFL",
+      "ExternalID": "10952",
+      "CanonicalPlayerIDs": [
+        "NFLP-4865f1ba39970008428a",
+        "NFLP-710e4b47a759b4579c4e"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-710e4b47a759b4579c4e": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -22628,22 +23119,6 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-b47d26328bb9bfa152f2": [
-          "nflverse.ff-player-ids"
-        ]
-      }
-    },
-    {
-      "Provider": "MFL",
-      "ExternalID": "11994",
-      "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-10f761166d419572f3e3"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -27242,6 +27717,22 @@
     },
     {
       "Provider": "NFL",
+      "ExternalID": "38676",
+      "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "NFL",
       "ExternalID": "63568",
       "CanonicalPlayerIDs": [
         "NFLP-a391a47611574d2eb5bb",
@@ -27253,6 +27744,22 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-a391a47611574d2eb5bb": [
           "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "NFLCom",
+      "ExternalID": "2532911",
+      "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
+          "nflverse.ff-player-ids"
         ]
       }
     },
@@ -27392,6 +27899,38 @@
     },
     {
       "Provider": "OTC",
+      "ExternalID": "116",
+      "CanonicalPlayerIDs": [
+        "NFLP-10c5ec7a1f1bf2b49266",
+        "NFLP-c3ce43bf900358ade68c"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-10c5ec7a1f1bf2b49266": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "OTC",
+      "ExternalID": "1222",
+      "CanonicalPlayerIDs": [
+        "NFLP-710e4b47a759b4579c4e",
+        "NFLP-9a551599adae1bce3c54"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-710e4b47a759b4579c4e": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "OTC",
       "ExternalID": "13753",
       "CanonicalPlayerIDs": [
         "NFLP-a391a47611574d2eb5bb",
@@ -27402,6 +27941,22 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-a391a47611574d2eb5bb": [
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "OTC",
+      "ExternalID": "497",
+      "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
           "nflverse.players"
         ]
       }
@@ -27522,17 +28077,18 @@
     },
     {
       "Provider": "PFF",
-      "ExternalID": "7281",
+      "ExternalID": "7327",
       "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-63b55e435b64ec80c9b6"
+        "NFLP-10c5ec7a1f1bf2b49266",
+        "NFLP-c3ce43bf900358ade68c"
       ],
       "FirstObservedSeason": 2026,
       "LastObservedSeason": 2026,
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
-          "nflverse.ff-player-ids"
+        "NFLP-10c5ec7a1f1bf2b49266": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
         ]
       }
     },
@@ -27549,6 +28105,23 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-67b3d1aea55c46b62fe2": [
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "PFF",
+      "ExternalID": "7650",
+      "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
         ]
       }
     },
@@ -27581,6 +28154,23 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-14fda689c528238e43af": [
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "PFF",
+      "ExternalID": "7710",
+      "CanonicalPlayerIDs": [
+        "NFLP-710e4b47a759b4579c4e",
+        "NFLP-9a551599adae1bce3c54"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-710e4b47a759b4579c4e": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
         ]
       }
     },
@@ -27619,22 +28209,6 @@
     },
     {
       "Provider": "PFR",
-      "ExternalID": "DaviBr01",
-      "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-63b55e435b64ec80c9b6"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
-          "nflverse.ff-player-ids"
-        ]
-      }
-    },
-    {
-      "Provider": "PFR",
       "ExternalID": "FranJu00",
       "CanonicalPlayerIDs": [
         "NFLP-14fda689c528238e43af",
@@ -27646,6 +28220,23 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-14fda689c528238e43af": [
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "PFR",
+      "ExternalID": "FranJu00",
+      "CanonicalPlayerIDs": [
+        "NFLP-710e4b47a759b4579c4e",
+        "NFLP-9a551599adae1bce3c54"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-710e4b47a759b4579c4e": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
         ]
       }
     },
@@ -27669,6 +28260,23 @@
       "Provider": "PFR",
       "ExternalID": "MenzDe00",
       "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
+        ]
+      }
+    },
+    {
+      "Provider": "PFR",
+      "ExternalID": "MenzDe00",
+      "CanonicalPlayerIDs": [
         "NFLP-4faacd1421f8d57453ca",
         "NFLP-55d3dc7a1a0cc7684b7b"
       ],
@@ -27678,6 +28286,23 @@
       "SourcesByCanonicalPlayerID": {
         "NFLP-4faacd1421f8d57453ca": [
           "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "PFR",
+      "ExternalID": "MossDa00",
+      "CanonicalPlayerIDs": [
+        "NFLP-10c5ec7a1f1bf2b49266",
+        "NFLP-c3ce43bf900358ade68c"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-10c5ec7a1f1bf2b49266": [
+          "nflverse.ff-player-ids",
+          "nflverse.players"
         ]
       }
     },
@@ -27875,16 +28500,16 @@
     },
     {
       "Provider": "Rotowire",
-      "ExternalID": "8151",
+      "ExternalID": "8336",
       "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-10f761166d419572f3e3"
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
       ],
       "FirstObservedSeason": 2026,
       "LastObservedSeason": 2026,
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
+        "NFLP-2152ea6294a8b633adae": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -27917,6 +28542,38 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-14fda689c528238e43af": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "Rotowire",
+      "ExternalID": "8478",
+      "CanonicalPlayerIDs": [
+        "NFLP-710e4b47a759b4579c4e",
+        "NFLP-9a551599adae1bce3c54"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-710e4b47a759b4579c4e": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "Rotowire",
+      "ExternalID": "8610",
+      "CanonicalPlayerIDs": [
+        "NFLP-10c5ec7a1f1bf2b49266",
+        "NFLP-c3ce43bf900358ade68c"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-10c5ec7a1f1bf2b49266": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -31187,22 +31844,6 @@
     },
     {
       "Provider": "Sleeper",
-      "ExternalID": "1773",
-      "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-10f761166d419572f3e3"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
-          "nflverse.ff-player-ids"
-        ]
-      }
-    },
-    {
-      "Provider": "Sleeper",
       "ExternalID": "7237",
       "CanonicalPlayerIDs": [
         "NFLP-0003daabc7cfc0987103",
@@ -31355,16 +31996,16 @@
     },
     {
       "Provider": "Sportradar",
-      "ExternalID": "3add1dd8-32aa-44a5-b69a-b0ad2eace07b",
+      "ExternalID": "10224f7f-31de-46d1-b344-ab728f3e901a",
       "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-10f761166d419572f3e3"
+        "NFLP-710e4b47a759b4579c4e",
+        "NFLP-9a551599adae1bce3c54"
       ],
       "FirstObservedSeason": 2026,
       "LastObservedSeason": 2026,
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
+        "NFLP-710e4b47a759b4579c4e": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -31381,6 +32022,22 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-11ea2439d902c7abf806": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "Sportradar",
+      "ExternalID": "9587a2ef-a409-4b54-853a-7937a45d03de",
+      "CanonicalPlayerIDs": [
+        "NFLP-10c5ec7a1f1bf2b49266",
+        "NFLP-c3ce43bf900358ade68c"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-10c5ec7a1f1bf2b49266": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -31413,6 +32070,22 @@
       "Status": "ambiguous",
       "SourcesByCanonicalPlayerID": {
         "NFLP-2023d3b03085758f0938": [
+          "nflverse.ff-player-ids"
+        ]
+      }
+    },
+    {
+      "Provider": "Sportradar",
+      "ExternalID": "cae1de09-c079-4dae-abc3-fcf72fe42889",
+      "CanonicalPlayerIDs": [
+        "NFLP-2152ea6294a8b633adae",
+        "NFLP-55d3dc7a1a0cc7684b7b"
+      ],
+      "FirstObservedSeason": 2026,
+      "LastObservedSeason": 2026,
+      "Status": "ambiguous",
+      "SourcesByCanonicalPlayerID": {
+        "NFLP-2152ea6294a8b633adae": [
           "nflverse.ff-player-ids"
         ]
       }
@@ -36261,22 +36934,6 @@
           "app.Players"
         ]
       }
-    },
-    {
-      "Provider": "Yahoo",
-      "ExternalID": "26300",
-      "CanonicalPlayerIDs": [
-        "NFLP-01a62335fd9fed94807e",
-        "NFLP-10f761166d419572f3e3"
-      ],
-      "FirstObservedSeason": 2026,
-      "LastObservedSeason": 2026,
-      "Status": "ambiguous",
-      "SourcesByCanonicalPlayerID": {
-        "NFLP-01a62335fd9fed94807e": [
-          "nflverse.ff-player-ids"
-        ]
-      }
     }
   ],
   "historicalAppMappingCoverage": {
@@ -36289,17 +36946,17 @@
     "externalSnapshotSeasonCount": 7,
     "externalSnapshotCount": 14,
     "externalSnapshotPlayerCount": 142934,
-    "externalResolvedPlayerCount": 60914,
+    "externalResolvedPlayerCount": 60911,
     "externalUnresolvedPlayerCount": 81863,
     "externalInsufficientCorroborationCount": 81863,
-    "externalConflictingPlayerCount": 157,
-    "externalHistoricalClaimCount": 144576,
-    "externalSleeperClaimCount": 31737,
-    "historicalClaimCount": 144576
+    "externalConflictingPlayerCount": 160,
+    "externalHistoricalClaimCount": 144566,
+    "externalSleeperClaimCount": 31735,
+    "historicalClaimCount": 144566
   },
-  "historicalResolutionConflictCount": 228,
+  "historicalResolutionConflictCount": 243,
   "historicalResolutionConflictsByReason": {
-    "historical_crosswalk_provider_disagreement": 228
+    "historical_crosswalk_provider_disagreement": 243
   },
   "historicalResolutionConflicts": [
     {
@@ -36516,6 +37173,22 @@
         "Sleeper": "1773"
       },
       "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.closing@897bb7d23d36"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
         "ESPN": "NFLP-63b55e435b64ec80c9b6",
         "GSIS": "NFLP-10f761166d419572f3e3",
         "PFF": "NFLP-10f761166d419572f3e3"
@@ -36534,6 +37207,22 @@
       },
       "ResolvedByProvider": {
         "ESPN": "NFLP-01a62335fd9fed94807e",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2021,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
         "PFF": "NFLP-10f761166d419572f3e3"
       },
       "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2021.opening@330768b0db60"
@@ -36926,6 +37615,22 @@
         "Sleeper": "1773"
       },
       "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.closing@12cb3ccf2abf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
         "ESPN": "NFLP-63b55e435b64ec80c9b6",
         "GSIS": "NFLP-10f761166d419572f3e3",
         "PFF": "NFLP-10f761166d419572f3e3"
@@ -36944,6 +37649,22 @@
       },
       "ResolvedByProvider": {
         "ESPN": "NFLP-01a62335fd9fed94807e",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2022,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
         "PFF": "NFLP-10f761166d419572f3e3"
       },
       "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2022.opening@516bd6fcdd6b"
@@ -37389,6 +38110,22 @@
         "Sleeper": "1773"
       },
       "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.closing@2e923bbc81d9"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
         "ESPN": "NFLP-63b55e435b64ec80c9b6",
         "GSIS": "NFLP-10f761166d419572f3e3",
         "PFF": "NFLP-10f761166d419572f3e3"
@@ -37407,6 +38144,22 @@
       },
       "ResolvedByProvider": {
         "ESPN": "NFLP-01a62335fd9fed94807e",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2023,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
         "PFF": "NFLP-10f761166d419572f3e3"
       },
       "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2023.opening@8cb87aada7fb"
@@ -37937,6 +38690,22 @@
         "Sleeper": "1773"
       },
       "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.closing@a21bd6473adf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
         "ESPN": "NFLP-63b55e435b64ec80c9b6",
         "GSIS": "NFLP-10f761166d419572f3e3",
         "PFF": "NFLP-10f761166d419572f3e3"
@@ -37955,6 +38724,22 @@
       },
       "ResolvedByProvider": {
         "ESPN": "NFLP-01a62335fd9fed94807e",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2024,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
         "PFF": "NFLP-10f761166d419572f3e3"
       },
       "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2024.opening@9ad73bbbe47b"
@@ -38556,6 +39341,41 @@
       "ProviderIDs": {
         "ESPN": "15256",
         "GSIS": "00-0029112",
+        "PFF": "7281",
+        "PFR": "DaviBr01",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
+        "PFF": "NFLP-63b55e435b64ec80c9b6",
+        "PFR": "NFLP-7cd3db639228876e620f"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7281",
+        "PFR": "DaviBr01",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-63b55e435b64ec80c9b6"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.closing@d77ab8ae83ad"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
         "PFF": "7401",
         "Sleeper": "1773"
       },
@@ -38578,6 +39398,22 @@
       },
       "ResolvedByProvider": {
         "ESPN": "NFLP-01a62335fd9fed94807e",
+        "PFF": "NFLP-10f761166d419572f3e3"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2025,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7401",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
         "PFF": "NFLP-10f761166d419572f3e3"
       },
       "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2025.opening@b7bfedd3b1cf"
@@ -39113,6 +39949,41 @@
         "Sleeper": "1773"
       },
       "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
+        "PFF": "NFLP-63b55e435b64ec80c9b6",
+        "PFR": "NFLP-7cd3db639228876e620f"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.closing@7b990ccf2668"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7281",
+        "PFR": "DaviBr01",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-63b55e435b64ec80c9b6"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.closing@7b990ccf2668"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7281",
+        "PFR": "DaviBr01",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
         "ESPN": "NFLP-63b55e435b64ec80c9b6",
         "GSIS": "NFLP-10f761166d419572f3e3",
         "PFF": "NFLP-63b55e435b64ec80c9b6",
@@ -39193,6 +40064,41 @@
         "GSIS": "NFLP-10f761166d419572f3e3",
         "PFF": "NFLP-63b55e435b64ec80c9b6",
         "PFR": "NFLP-63b55e435b64ec80c9b6"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7281",
+        "PFR": "DaviBr01",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "ESPN": "NFLP-7cd3db639228876e620f",
+        "PFF": "NFLP-63b55e435b64ec80c9b6",
+        "PFR": "NFLP-7cd3db639228876e620f"
+      },
+      "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
+    },
+    {
+      "Reason": "historical_crosswalk_provider_disagreement",
+      "Season": 2026,
+      "SleeperID": "1773",
+      "ProviderIDs": {
+        "ESPN": "15256",
+        "GSIS": "00-0029112",
+        "PFF": "7281",
+        "PFR": "DaviBr01",
+        "Sleeper": "1773"
+      },
+      "ResolvedByProvider": {
+        "GSIS": "NFLP-10f761166d419572f3e3",
+        "PFF": "NFLP-63b55e435b64ec80c9b6"
       },
       "EvidenceSource": "dynastyprocess.ff-player-ids-history.git.2026.opening@4c6a909b2f24"
     },
@@ -40946,7 +41852,7 @@
       "SleeperID": "13957",
       "Tank01ID": null,
       "CanonicalPlayerID": "NFLP-1c7d02b6534588dce6f1",
-      "Name": "Kenny Fletcher",
+      "Name": "Kenny Fletcher Jr.",
       "Position": "TE",
       "DraftYear": null
     },
@@ -41064,83 +41970,83 @@
     "scheduleOdds": {
       "seasonCount": 28,
       "gameCount": 7548,
-      "gamesWithAnyOdds": 7426,
-      "gamesWithCompleteLines": 7426,
-      "gamesWithoutCompleteLines": 122,
+      "gamesWithAnyOdds": 7437,
+      "gamesWithCompleteLines": 7437,
+      "gamesWithoutCompleteLines": 111,
       "earliestSeason": 1999,
       "latestSeason": 2026
     },
     "gameFinality": {
-      "releasedEvidenceCount": 7409,
+      "releasedEvidenceCount": 7410,
       "scheduleGameCount": 7548,
-      "finalGameCount": 7409,
-      "weekFinalCount": 578,
+      "finalGameCount": 7410,
+      "weekFinalCount": 579,
       "unknownReleasedGameIDs": []
     },
     "rosters": {
       "partitionCount": 28,
-      "recordCount": 69493,
-      "resolvedIdentityCount": 69487,
-      "unresolvedIdentityCount": 6,
+      "recordCount": 69495,
+      "resolvedIdentityCount": 69495,
+      "unresolvedIdentityCount": 0,
       "missingProviderIDRowCount": 25,
       "equivalentDuplicateRowCount": 31,
       "legacyWeeklyStatusSuppressedRowCount": 0
     },
     "weeklyRosters": {
-      "partitionCount": 518,
-      "recordCount": 911050,
-      "resolvedIdentityCount": 910968,
-      "unresolvedIdentityCount": 82,
-      "missingProviderIDRowCount": 157,
+      "partitionCount": 519,
+      "recordCount": 913313,
+      "resolvedIdentityCount": 913313,
+      "unresolvedIdentityCount": 0,
+      "missingProviderIDRowCount": 158,
       "equivalentDuplicateRowCount": 17456,
       "legacyWeeklyStatusSuppressedRowCount": 440082
     },
     "playerStats": {
       "partitionCount": 581,
-      "recordCount": 485013,
-      "resolvedIdentityCount": 484945,
-      "unresolvedIdentityCount": 68,
+      "recordCount": 485084,
+      "resolvedIdentityCount": 485042,
+      "unresolvedIdentityCount": 42,
       "missingProviderIDRowCount": 539
     },
     "specialTeamsFumbleEvents": {
       "partitionCount": 581,
       "emptyFinalizedPartitionCount": 43,
-      "eventCount": 4332,
+      "eventCount": 4334,
       "eventTypeCounts": {
-        "forced-fumble": 1319,
-        "fumble-recovery": 3013
+        "forced-fumble": 1320,
+        "fumble-recovery": 3014
       },
-      "resolvedIdentityCount": 4332,
+      "resolvedIdentityCount": 4334,
       "unresolvedIdentityCount": 0,
       "unresolvedGSISIDs": [],
       "equivalentDuplicateEventCount": 0
     },
     "playerGameLongGains": {
       "partitionCount": 1,
-      "coveredGameCount": 135,
-      "recordCount": 2981,
+      "coveredGameCount": 136,
+      "recordCount": 3005,
       "recordTypeCounts": {
-        "LongReception": 1905,
-        "LongRush": 1076
+        "LongReception": 1920,
+        "LongRush": 1085
       },
-      "resolvedIdentityCount": 2981,
+      "resolvedIdentityCount": 3005,
       "unresolvedIdentityCount": 0,
       "unresolvedGSISIDs": []
     },
     "snapCounts": {
       "partitionCount": 287,
-      "recordCount": 337208,
-      "resolvedIdentityCount": 337003,
+      "recordCount": 337304,
+      "resolvedIdentityCount": 337099,
       "unresolvedIdentityCount": 205,
       "missingProviderIDRowCount": 0
     },
     "qbrWeek": {
       "partitionCount": 1,
-      "recordCount": 270,
-      "resolvedIdentityCount": 270,
+      "recordCount": 272,
+      "resolvedIdentityCount": 272,
       "unresolvedIdentityCount": 0,
-      "publishedGameCount": 135,
-      "notYetAvailableGameCount": 137
+      "publishedGameCount": 136,
+      "notYetAvailableGameCount": 136
     },
     "sleeperPlayers": {
       "recordCount": 12229,
@@ -41148,9 +42054,9 @@
       "unresolvedIdentityCount": 5637
     },
     "playerProfiles": {
-      "sourceRowCount": 24737,
-      "recordCount": 24736,
-      "unresolvedIdentityCount": 1
+      "sourceRowCount": 24869,
+      "recordCount": 24869,
+      "unresolvedIdentityCount": 0
     },
     "teams": {
       "teamCount": 32,
@@ -41172,6 +42078,6 @@
       "nflverse.weekly-rosters",
       "sleeper.players"
     ],
-    "canonicalOutputFileCount": 2084
+    "canonicalOutputFileCount": 2085
   }
 }

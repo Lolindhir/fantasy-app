@@ -20,11 +20,39 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout main
+      # Issue #1263 G5 E6: the snapshot reads only the policy, the scheduler schedule, the workflow inventory and
+      # tools/, and writes only workflow-health.json on the isolated state branch. A sparse/blobless checkout skips
+      # the multi-gigabyte data trees (about 48 s of a 100 s run, 48 runs a day). /workflow-health.json keeps the
+      # state-branch switch of the publish step free of sparse-path conflicts. An incomplete profile falls back to a
+      # complete checkout (verify step below). Token, concurrency, permissions and the publish step are unchanged.
+      - name: Checkout main (sparse, blobless)
         uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 1
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/
+            /tools/
+            /.ai-context/manual/workflow-monitoring.yaml
+            /workflow-health.json
+
+      - name: Verify sparse inputs (fall back to a complete checkout)
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          [[ "$(git config --get core.sparseCheckout)" == "true" ]] || { echo "::warning::Sparse checkout disabled"; missing=1; }
+          for path in tools/build_workflow_health_snapshot.py tools/tests/test_build_workflow_health_snapshot.py .ai-context/manual/workflow-monitoring.yaml .github/workflow-schedules.json .github/workflows; do
+            [[ -e "$path" ]] || { echo "::warning::Missing sparse input: $path"; missing=1; }
+          done
+          if (( missing != 0 )); then
+            git sparse-checkout disable
+            echo "- Snapshot checkout: sparse profile incomplete, complete checkout used" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Snapshot checkout: sparse/blobless profile verified" >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v7

@@ -1,0 +1,30 @@
+<div class="movers">
+  @for (column of [{ title: 'Biggest raises', icon: '▲', list: movers.up, tone: 'up' }, { title: 'Biggest drops', icon: '▼', list: movers.down, tone: 'down' }]; track column.title) {
+    <section class="movers__column" [attr.aria-label]="column.title + ' from current to projected salary'">
+      <h3 class="movers__title movers__title--{{ column.tone }}">{{ column.icon }} {{ column.title }}</h3>
+      @for (mover of column.list; track mover.player.ID) {
+        <button type="button" class="mover" (click)="openPlayerDetail(mover.player)"
+                [attr.aria-label]="'Open ' + mover.player.Name + ' details'">
+          <span class="portrait-wrap">
+            @if (mover.player.Picture) {
+              <img loading="lazy" decoding="async" class="portrait" [src]="mover.player.Picture" [alt]="mover.player.Name" />
+            }
+          </span>
+          <span class="mover__identity">
+            <strong>{{ mover.player.NameShort || mover.player.Name }}</strong>
+            <span class="mover__meta">
+              <span class="position-chip" [ngStyle]="mover.player.Position | positionStyle">{{ mover.player.Position }}</span>
+              @if (mover.player.TeamFantasy) { <span class="mover__team">{{ mover.player.TeamFantasy.Team }}</span> }
+            </span>
+          </span>
+          <span class="mover__value">
+            <strong class="mover__change mover__change--{{ column.tone }}">{{ formatChange(mover) }}</strong>
+            <span class="mover__salary">{{ formatSalary(mover.player.Salary) }} → {{ formatSalary(mover.player.SalaryProjected) }}</span>
+          </span>
+        </button>
+      } @empty {
+        <p class="movers__empty">No changes.</p>
+      }
+    </section>
+  }
+</div>

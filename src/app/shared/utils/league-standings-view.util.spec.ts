@@ -1,6 +1,8 @@
 import type { FantasyTeam, League } from '../../core/models/league.models';
+import { RegularSeasonStandingsListComponent } from '../components/regular-season-standings-list/regular-season-standings-list';
 import {
   buildCurrentStandings,
+  buildLeagueLegacy,
   buildSeasonHistory,
   buildSeasonResults,
   getCurrentSeasonAwards
@@ -28,8 +30,8 @@ function league(isFinished: boolean): League {
         { TeamID: 4, Place: 4, PlaceOrdinal: '4th', Owner: 'Owner 4', TeamName: 'Team 4', TeamAvatar: 'historic-team-4.png', OwnerAvatar: 'historic-owner-4.png' }
       ] : null,
       RegularSeason: [
-        { TeamID: 4, Place: 1, PlaceOrdinal: '1st', Owner: 'Owner 4', TeamName: 'Team 4', Wins: 10, Losses: 3, Points: 2472.16 },
-        { TeamID: 2, Place: 2, PlaceOrdinal: '2nd', Owner: 'Owner 2', TeamName: 'Team 2', Wins: 9, Losses: 4, Points: 2200 }
+        { TeamID: 4, Place: 1, PlaceOrdinal: '1st', Owner: 'Owner 4', TeamName: 'Team 4', Wins: 10, Losses: 3, Ties: 0, Points: 2472.16 },
+        { TeamID: 2, Place: 2, PlaceOrdinal: '2nd', Owner: 'Owner 2', TeamName: 'Team 2', Wins: 9, Losses: 4, Ties: 0, Points: 2200 }
       ],
       Awards: [award('Regular Season King', 4), award('Clutch Peaker', 2)]
     }]
@@ -91,5 +93,105 @@ describe('Regular Season Champion achievement', () => {
 
   it('filters only the legacy placement award, leaving other special/dynamic awards intact', () => {
     expect(getCurrentSeasonAwards(league(true)).map(row => row.Name)).toEqual(['Clutch Peaker']);
+  });
+});
+
+describe('Historical standings unavailable evidence', () => {
+  it('keeps missing record and point facts unknown instead of inventing zeros', () => {
+    const source = league(true);
+    const incomplete = source.Standings[0].RegularSeason[0];
+    delete incomplete.Ties;
+    delete incomplete.Points;
+    delete incomplete.PointsAgainst;
+
+    const row = buildSeasonHistory(source).seasons[0].regularSeasonStandings[0];
+    expect(row.owner).toBe('Owner 4');
+    expect(row.record).toBeNull();
+    expect(row.points).toBeNull();
+    expect(row.pointsAgainst).toBeNull();
+
+    const view = new RegularSeasonStandingsListComponent();
+    expect(view.recordWithQuote(row)).toBe('—');
+    expect(view.pointDifferential(row)).toBeNull();
+    expect(view.pointDifferentialEmoji(row)).toBe('—');
+    expect(view.pointDifferentialSign(row)).toBe('');
+  });
+
+  it('preserves legitimate zero point differential and zero ties', () => {
+    const view = new RegularSeasonStandingsListComponent();
+    const row = { place: 1, owner: 'A', record: '3-2', points: 100, pointsAgainst: 100, winPercentageDisplay: '.600' };
+    expect(view.recordWithQuote(row)).toBe('3-2 (.600)');
+    expect(view.pointDifferential(row)).toBe(0);
+    expect(view.pointDifferentialSign(row)).toBe('+');
+    expect(view.pointDifferentialEmoji(row)).toBe('🔺');
+  });
+});
+
+function teamWithAllTime(id: number, place: number): FantasyTeam {
+  const result = team(id, place);
+  result.Placements.AllTime = {
+    Playoffs: {
+      Place: place, PlaceOrdinal: place + 'th',
+      Championships: place === 1 ? 1 : 0, RunnerUps: place === 2 ? 1 : 0,
+      Thirds: 0, PlaceCumulative: place, PlaceAverage: place, Placements: [place]
+    },
+    Regular: {
+      Place: place, PlaceOrdinal: place + 'th',
+      Wins: 10, Losses: 3, Ties: 0, Points: 1000, PointsAgainst: 900,
+      WinPercentage: 0.7692, WinPercentageDisplay: '.769', RegularSeasonWins: place === 1 ? 1 : 0
+    }
+  };
+  return result;
+}
+
+describe('Generator-owned League Legacy projections', () => {
+  it('uses canonical highlight facts and award counts without recalculating winners', () => {
+    const source = league(true);
+    source.Standings.push({
+      Season: 'AllTime', Playoffs: [], RegularSeason: [],
+      LegacyHighlights: [
+        { Key: 'ChampOfChamps', TeamID: 2 },
+        { Key: 'RegularSeasonKing', TeamID: 4 },
+        { Key: 'PodiumMachine', TeamID: 2, Count: 3 },
+        { Key: 'AwardCollector', TeamID: 4, Count: 9 }
+      ],
+      AwardLegend: [
+        { Key: 'RegularSeason', DisplayText: 'Regular Season', IconUnicode: '1F525', Order: 2, Occurrences: 9 }
+      ]
+    });
+    const teams = [teamWithAllTime(2, 1), teamWithAllTime(4, 2)];
+    const legacy = buildLeagueLegacy(source, teams);
+
+    expect(legacy.highlights.map(row => [row.key, row.owner, row.valueDisplay])).toEqual([
+      ['ChampOfChamps', 'Owner 2', '#1 Overall'],
+      ['RegularSeasonKing', 'Owner 4', '#1 Regular Season'],
+      ['PodiumMachine', 'Owner 2', '3 Podiums'],
+      ['AwardCollector', 'Owner 4', '9 Awards']
+    ]);
+    expect(legacy.awardLegend.map(row => [row.key, row.occurrences, row.tooltip])).toEqual([
+      ['RegularSeason', 9, 'Regular Season • Awarded 9x']
+    ]);
+    expect(legacy.awardLegend[0].icon).toBe('🔥');
+
+    // Deliberately contradict the season award source: the UI must not recompute.
+    source.Standings[0].Awards = [];
+    expect(buildLeagueLegacy(source, teams).highlights).toEqual(legacy.highlights);
+    expect(buildLeagueLegacy(source, teams).awardLegend).toEqual(legacy.awardLegend);
+  });
+
+  it('keeps unknown new delivery unavailable rather than rebuilding awards in the browser', () => {
+    const source = league(true);
+    const legacy = buildLeagueLegacy(source, [teamWithAllTime(2, 1), teamWithAllTime(4, 2)]);
+    expect(legacy.highlights).toEqual([]);
+    expect(legacy.awardLegend).toEqual([]);
+  });
+
+  it('omits malformed count facts rather than inventing a zero', () => {
+    const source = league(true);
+    source.Standings.push({
+      Season: 'AllTime', Playoffs: [], RegularSeason: [],
+      LegacyHighlights: [{ Key: 'PodiumMachine', TeamID: 2 }]
+    });
+    expect(buildLeagueLegacy(source, [teamWithAllTime(2, 1)]).highlights).toEqual([]);
   });
 });

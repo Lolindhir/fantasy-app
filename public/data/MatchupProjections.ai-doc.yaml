@@ -24,6 +24,7 @@ contract:
     - Week
     - DisplayLevel
     - Method
+    - WinProbabilityModel
     - Matchups
   displayLevel: >
     The range level UIs show. One of Method.Levels; set once in
@@ -53,6 +54,7 @@ contract:
     OutStarterPlayerIDs: starters in games that are not final whose scoring availability is out (counted zero, no variance)
     UncertainStarterPlayerIDs: starters in games that are not final whose scoring availability is uncertain (projection kept)
     UnavailableStarterPlayerIDs: starters that block the team value
+    WinProbability: whole-percent win chance of the matchup from win-prob-v1 (raw normal-difference of the two team projections, no calibration; both teams add up to 100); null unless both teams are available; adjusted with every finished NFL game because final games count real points (SchemaVersion 3, Issue #1443)
 
 semantics: .ai-context/manual/player-week-fantasy.yaml
 

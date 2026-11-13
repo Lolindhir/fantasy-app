@@ -122,6 +122,11 @@ class SourceRefreshFreshnessWorkflowTests(unittest.TestCase):
     def test_league_app_workflow_has_no_fantasy_management_dependency(self) -> None:
         # This is a cross-context invariant: FM may consume League app data, not own its producer.
         workflow = self._read(".github/workflows/league-live.yml")
+        # A sparse-checkout exclusion of the FM tree (G5 E2) keeps the producer free of FM
+        # files and is therefore the opposite of a dependency; only that line is exempt.
+        workflow = "\n".join(
+            line for line in workflow.splitlines() if line.strip() != "!/fantasy-management/"
+        )
         publication_wrapper = self._read("public/requests/RequestLeaguePublication.ps1")
         target = self._schedule_target("league-live")
 

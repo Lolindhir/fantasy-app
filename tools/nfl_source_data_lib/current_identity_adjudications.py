@@ -14,6 +14,8 @@ _UNOWNED_KIND = "confirmed-unowned-provider-token"
 MERGE_KIND = "confirmed-canonical-duplicate-merge"
 _MERGE_ANCHOR_CROSS = "cross-provider-id-equality"
 _MERGE_ANCHOR_ATTRIBUTES = "attribute-agreement"
+_MERGE_ANCHOR_SHARED = "shared-provider-token"
+_MERGE_SHARED_PROVIDERS = frozenset({"GSIS", "Sleeper", "ESPN", "PFR", "PFF", "Yahoo"})
 _MERGE_REQUIRED_ATTRIBUTES = frozenset({"BirthDate", "NormalizedName", "Position"})
 _CONFLICT_POLICY_BY_KIND = {
     _REASSIGNMENT_KIND: "reject-active-conflict",
@@ -240,6 +242,7 @@ def _validate_duplicate_merge(
             f"'{_MERGE_ANCHOR_ATTRIBUTES}' anchor"
         )
     cross: list[dict[str, str]] = []
+    shared: list[dict[str, str]] = []
     attribute_seen = False
     for index, anchor in enumerate(anchors):
         place = f"{context}.IndependentAnchors[{index}]"
@@ -263,6 +266,19 @@ def _validate_duplicate_merge(
                     "ExternalID": _required_text(anchor, "ExternalID", context=place),
                 }
             )
+        elif kind == _MERGE_ANCHOR_SHARED:
+            provider = _required_text(anchor, "Provider", context=place)
+            if provider not in _MERGE_SHARED_PROVIDERS:
+                raise ValueError(
+                    f"{place}.Provider must be one of {sorted(_MERGE_SHARED_PROVIDERS)}"
+                )
+            shared.append(
+                {
+                    "Kind": kind,
+                    "Provider": provider,
+                    "ExternalID": _required_text(anchor, "ExternalID", context=place),
+                }
+            )
         elif kind == _MERGE_ANCHOR_ATTRIBUTES:
             fields = anchor.get("Fields")
             if not isinstance(fields, list) or not _MERGE_REQUIRED_ATTRIBUTES <= {
@@ -274,18 +290,50 @@ def _validate_duplicate_merge(
             attribute_seen = True
         else:
             raise ValueError(
-                f"{place}.Kind must be '{_MERGE_ANCHOR_CROSS}' or '{_MERGE_ANCHOR_ATTRIBUTES}'"
+                f"{place}.Kind must be '{_MERGE_ANCHOR_CROSS}', '{_MERGE_ANCHOR_SHARED}' or "
+                f"'{_MERGE_ANCHOR_ATTRIBUTES}'"
             )
-    if not cross or not attribute_seen:
+    if not (cross or shared) or not attribute_seen:
         raise ValueError(
-            f"{context}.IndependentAnchors needs both a '{_MERGE_ANCHOR_CROSS}' and an "
-            f"'{_MERGE_ANCHOR_ATTRIBUTES}' anchor"
+            f"{context}.IndependentAnchors needs a '{_MERGE_ANCHOR_CROSS}' or "
+            f"'{_MERGE_ANCHOR_SHARED}' anchor and an '{_MERGE_ANCHOR_ATTRIBUTES}' anchor"
         )
+
+    contaminated: list[dict[str, str]] = []
+    declared = item.get("ContaminatedTokens")
+    if declared is not None:
+        if not isinstance(declared, list) or not declared:
+            raise ValueError(f"{context}.ContaminatedTokens must be a non-empty array when present")
+        seen_tokens: set[tuple[str, str]] = set()
+        for index, entry in enumerate(declared):
+            place = f"{context}.ContaminatedTokens[{index}]"
+            if not isinstance(entry, dict):
+                raise ValueError(f"{place} must be an object")
+            token = (
+                _required_text(entry, "Provider", context=place),
+                _required_text(entry, "ExternalID", context=place),
+            )
+            if token in seen_tokens:
+                raise ValueError(f"{place} duplicates a declared contaminated token")
+            seen_tokens.add(token)
+            _required_text(entry, "Summary", context=place)
+            contaminated.append(
+                {
+                    "Provider": token[0],
+                    "ExternalID": token[1],
+                    "Source": _required_text(entry, "Source", context=place),
+                }
+            )
     return {
         "DuplicateCanonicalPlayerIDs": sorted(normalized_duplicates),
         "IndependentAnchors": sorted(
-            cross, key=lambda a: (a["TargetProvider"], a["DuplicateProvider"], a["ExternalID"])
+            [*cross, *shared],
+            key=lambda a: (
+                a["Kind"], a.get("TargetProvider", a.get("Provider", "")),
+                a.get("DuplicateProvider", ""), a["ExternalID"],
+            ),
         ),
+        "ContaminatedTokens": sorted(contaminated, key=lambda t: (t["Provider"], t["ExternalID"])),
     }
 
 
@@ -320,17 +368,32 @@ def verify_duplicate_pair(
                 f"duplicate {sorted(duplicate_values)})"
             )
     target_ids = target_view.get("IDs") or {}
-    duplicate_ids = duplicate_view.get("IDs") or {}
+    contaminated = {
+        (str(t["Provider"]), str(t["ExternalID"]))
+        for t in adjudication.get("ContaminatedTokens") or []
+    }
+    # Tokens the review declared as upstream contamination of the duplicate do not
+    # count as evidence either way: not as an anchor and not as a contradiction.
+    duplicate_ids = {
+        provider: {v for v in values if (provider, v) not in contaminated}
+        for provider, values in (duplicate_view.get("IDs") or {}).items()
+    }
     for anchor in adjudication["IndependentAnchors"]:
-        if anchor.get("Kind") != _MERGE_ANCHOR_CROSS:
-            continue
-        external_id = str(anchor["ExternalID"])
-        if external_id in target_ids.get(str(anchor["TargetProvider"]), set()) and (
-            external_id in duplicate_ids.get(str(anchor["DuplicateProvider"]), set())
-        ):
-            break
+        kind = anchor.get("Kind")
+        external_id = str(anchor.get("ExternalID") or "")
+        if kind == _MERGE_ANCHOR_CROSS:
+            if external_id in target_ids.get(str(anchor["TargetProvider"]), set()) and (
+                external_id in duplicate_ids.get(str(anchor["DuplicateProvider"]), set())
+            ):
+                break
+        elif kind == _MERGE_ANCHOR_SHARED:
+            provider = str(anchor["Provider"])
+            if external_id in target_ids.get(provider, set()) and (
+                external_id in duplicate_ids.get(provider, set())
+            ):
+                break
     else:
-        reject("the declared cross-provider ID equality anchor is not carried by both records")
+        reject("no declared cross-provider or shared-token anchor is carried by both records")
     for provider in sorted(set(target_ids) & set(duplicate_ids)):
         if target_ids[provider] and duplicate_ids[provider] and target_ids[provider] != duplicate_ids[provider]:
             reject(
@@ -834,8 +897,14 @@ def _validate_merge_against_state(
             view_from_record(by_id[duplicate_id]),
             duplicate_id=duplicate_id,
         )
+    contaminated = {
+        (str(t["Provider"]), str(t["ExternalID"]))
+        for t in adjudication.get("ContaminatedTokens") or []
+    }
     for record_id in pair:
         for token in _record_tokens(by_id[record_id]):
+            if token in contaminated:
+                continue  # belongs to another person by review; never merged
             outsiders = token_owners.get(token, set()) - allowed
             if outsiders:
                 raise ValueError(

@@ -10,7 +10,7 @@ Rendering rules (identical to the current contract):
   * ``Standings.json`` is ``AllTime`` first, then every season newest first; the weekly movement fields
     (PreviousWeekPlace, PlaceDelta, WeeklyMovements) exist only on the rows of the current season.
   * Playoff rows carry ``OwnerAvatar`` as CDN URL (the product stores the provider avatar ID).
-  * Placements: ``Current`` (League.Season), ``Previous`` (Season - 1) and ``AllTime`` per team with the
+  * Placements: ``Current`` (canonical manifest season), ``Previous`` (Season - 1) and ``AllTime`` per team with the
     Playoffs and Regular row without TeamID/Owner/TeamName. Season awards stay in the Standings sections only;
     the placements carry no copy (Issue #1195).
 
@@ -38,6 +38,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import league_standings_sources as standings_sources  # noqa: E402
+from derived_data_lib.models.standings.v1 import format_win_percentage  # noqa: E402
 from derived_data import LEAGUE_STANDINGS, build_league_standings, league_history_path, materialize_league_standings  # noqa: E402
 from league_metadata import data_meta_root, default_league_id, list_league_ids  # noqa: E402
 
@@ -55,6 +56,19 @@ def _regular_row(row: dict[str, Any], is_current: bool) -> dict[str, Any]:
     return rendered
 
 
+def _all_time_regular_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Consumer-only display projection; the shared model owns WinPercentage."""
+    rendered = dict(row)
+    pct = row.get("WinPercentage")
+    if pct is None or pct == -1:  # no completed games: model's unavailable sentinel
+        rendered["WinPercentageDisplay"] = None
+    elif isinstance(pct, bool) or not isinstance(pct, (int, float)) or not 0 <= pct <= 1:
+        raise ValueError(f"Invalid all-time WinPercentage for {row.get('TeamID')}: {pct!r}")
+    else:
+        rendered["WinPercentageDisplay"] = format_win_percentage(pct)
+    return rendered
+
+
 def _playoff_row(row: dict[str, Any]) -> dict[str, Any]:
     if "OwnerAvatarID" not in row:  # all-time rows carry no avatars
         return dict(row)
@@ -65,6 +79,83 @@ def _playoff_row(row: dict[str, Any]) -> dict[str, Any]:
         else:
             rendered[key] = value
     return rendered
+
+
+def render_legacy_highlights(documents: dict[int, dict[str, Any]], league_year: int) -> list[dict[str, Any]]:
+    """League Legacy achievements from shared standing/award facts, without App JSON inputs.
+
+    The all-time display historically considers current league teams for ranked
+    achievements; the award collector also considers historical roster IDs.
+    Presentation labels, icons and owner avatars remain Angular concerns.
+    """
+    if league_year not in documents:
+        raise ValueError(f"Current league season {league_year} missing from league-standings documents")
+    current_teams = documents[league_year]["Teams"]
+    current_order = {str(team["TeamID"]): index for index, team in enumerate(current_teams)}
+    all_time = documents[max(documents)]["AllTime"]
+
+    def ranked(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return sorted(
+            (row for row in rows if str(row["TeamID"]) in current_order and row["Place"] < 999),
+            key=lambda row: (row["Place"], current_order[str(row["TeamID"])]),
+        )
+
+    overall = ranked(all_time["Playoffs"])
+    regular = ranked(all_time["RegularSeason"])
+    highlights: list[dict[str, Any]] = []
+    if overall:
+        highlights.append({"Key": "ChampOfChamps", "TeamID": overall[0]["TeamID"]})
+    if regular:
+        highlights.append({"Key": "RegularSeasonKing", "TeamID": regular[0]["TeamID"]})
+    if overall:
+        def podium_key(row: dict[str, Any]) -> tuple[int, int, int, int, int]:
+            champions, runners, thirds = (row[key] for key in ("Championships", "RunnerUps", "Thirds"))
+            return (-champions - runners - thirds, -champions, -runners, -thirds, row["Place"])
+
+        winner = sorted(overall, key=podium_key)[0]
+        count = sum(winner[key] for key in ("Championships", "RunnerUps", "Thirds"))
+        highlights.append({"Key": "PodiumMachine", "TeamID": winner["TeamID"], "Count": count})
+
+    award_counts: dict[str, dict[str, Any]] = {}
+    for season in sorted(documents, reverse=True):
+        for award in documents[season]["Awards"]:
+            if award["Name"] == "Regular Season King":  # old static placement award, not a dynamic season award
+                continue
+            team_id = str(award["TeamID"])
+            entry = award_counts.setdefault(team_id, {"TeamID": award["TeamID"], "Count": 0, "Types": set()})
+            entry["Count"] += 1
+            entry["Types"].add(award["Name"])
+    if award_counts:
+        overall_places = {str(row["TeamID"]): row["Place"] for row in overall}
+        winner = sorted(
+            award_counts.items(),
+            key=lambda item: (-item[1]["Count"], -len(item[1]["Types"]), overall_places.get(item[0], 999)),
+        )[0][1]
+        highlights.append({"Key": "AwardCollector", "TeamID": winner["TeamID"], "Count": winner["Count"]})
+    return highlights
+
+
+def render_award_legend(documents: dict[int, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Aggregate award-type occurrences from the shared product, not from Angular."""
+    legend: dict[str, dict[str, Any]] = {}
+    for season in sorted(documents, reverse=True):
+        for award in documents[season]["Awards"]:
+            if award["Name"] == "Regular Season King":  # legacy placement-only award
+                continue
+            award_type = award.get("Type") or {}
+            if not isinstance(award_type, dict):
+                raise ValueError(f"Invalid award Type in shared standings season {season}")
+            key = award_type.get("Name") or award["Name"]
+            if key not in legend:
+                legend[key] = {
+                    "Key": key,
+                    "DisplayText": award_type.get("DisplayText") or award["Name"],
+                    "IconUnicode": award["IconUnicode"],
+                    "Order": award_type.get("Order", 999),
+                    "Occurrences": 0,
+                }
+            legend[key]["Occurrences"] += 1
+    return sorted(legend.values(), key=lambda entry: (entry["Order"], entry["DisplayText"].casefold()))
 
 
 def render_standings(documents: dict[int, dict[str, Any]], league_year: int) -> list[dict[str, Any]]:
@@ -92,7 +183,9 @@ def render_standings(documents: dict[int, dict[str, Any]], league_year: int) -> 
     return [{
         "Season": "AllTime",
         "Playoffs": [_playoff_row(r) for r in all_time["Playoffs"]],
-        "RegularSeason": [dict(r) for r in all_time["RegularSeason"]],
+        "RegularSeason": [_all_time_regular_row(r) for r in all_time["RegularSeason"]],
+        "LegacyHighlights": render_legacy_highlights(documents, league_year),
+        "AwardLegend": render_award_legend(documents),
     }] + seasons
 
 
@@ -187,15 +280,19 @@ def write_standings(repo_root: Path, league_id: str, now: datetime | None = None
     The product is written first; Standings.json only changes on a semantic difference, in which case
     Timestamps.json[Standings] is stamped (the writer owns its freshness timestamp, never an input).
     """
+    # App outputs are not a source for the active season. Validate the canonical
+    # identity and render before publishing either product or App files.
+    league_year = standings_sources.current_season(standings_sources.manifest(repo_root, league_id))
     documents = build_league_standings(repo_root, league_id)
+    if league_year not in documents:
+        raise ValueError(f"Current league season {league_year} missing from league-standings documents for {league_id}")
+    rendered = render_standings(documents, league_year)
     summary = materialize_league_standings(repo_root, repo_root / "data-derived", league_id, None, False)
     changed = [
         f"data-derived/league-standings/{league_id}/{item['Season']}.json"
         for item in summary["Seasons"] if item.get("Written")
     ]
     data = repo_root / "public" / "data"
-    league_year = int(_load(data / "League.json")["Season"])
-    rendered = render_standings(documents, league_year)
     path = data / "Standings.json"
     if path.is_file() and not difference(rendered, _load(path)):
         return changed

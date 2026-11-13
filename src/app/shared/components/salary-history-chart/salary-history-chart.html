@@ -1,0 +1,25 @@
+@if (hasData) {
+  <svg class="salary-chart" [attr.viewBox]="'0 0 ' + width + ' ' + height" role="img"
+       aria-label="Salary per season and projected salary for the next season">
+    @for (tick of yTicks; track tick.y) {
+      <line class="grid" [attr.x1]="plotLeft" [attr.x2]="plotRight" [attr.y1]="tick.y" [attr.y2]="tick.y" />
+      <text class="axis" [attr.x]="plotLeft - 6" [attr.y]="tick.y + 3.5" text-anchor="end">{{ tick.label }}</text>
+    }
+    @for (tick of xTicks; track tick.x) {
+      <text class="axis" [attr.x]="tick.x" [attr.y]="plotBottom + 18" text-anchor="middle">{{ tick.label }}</text>
+    }
+    @if (projectionLine.length > 1) {
+      <path class="line line--projected" [attr.d]="path(projectionLine)" />
+    }
+    @for (segment of segments; track $index) {
+      <path class="line line--salary" [attr.d]="path(segment)" />
+    }
+    @for (point of points; track point.label) {
+      <circle class="dot" [class.dot--projected]="$last && projectionLine.length > 0" [attr.cx]="point.x" [attr.cy]="point.y" r="3.5">
+        <title>{{ point.label }}: {{ formatMoney(point.value) }}</title>
+      </circle>
+    }
+  </svg>
+} @else {
+  <p class="empty">No salary history for this player yet.</p>
+}

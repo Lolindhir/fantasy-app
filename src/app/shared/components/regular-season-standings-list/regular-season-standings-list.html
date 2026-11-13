@@ -11,7 +11,7 @@
     </div>
 
     <div class="regular-diff">
-      {{ pointDifferentialEmoji(row) }} {{ pointDifferential(row) >= 0 ? '+' : '' }}{{ pointDifferential(row) | number:'1.0-2' }}
+      {{ pointDifferentialEmoji(row) }}<ng-container *ngIf="pointDifferential(row) !== null"> {{ pointDifferentialSign(row) }}{{ pointDifferential(row) | number:'1.0-2' }}</ng-container>
     </div>
   </div>
 </section>

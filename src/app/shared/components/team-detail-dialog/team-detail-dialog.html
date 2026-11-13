@@ -86,6 +86,18 @@
       </div>
     </mat-tab>
 
+    <mat-tab label="Schedule">
+      <ng-template matTabContent>
+        <div class="tab-content schedule-tab">
+          @defer {
+            <app-team-schedule-tab [team]="team" [league]="league" [players]="data.players" />
+          } @placeholder {
+            <p class="empty-state">Loading schedule…</p>
+          }
+        </div>
+      </ng-template>
+    </mat-tab>
+
     @if (decisionWindowPhaseActive) {
       <mat-tab label="Lineup">
         <div class="tab-content lineup-tab">

@@ -240,4 +240,23 @@ describe('WeeksPageComponent', () => {
 
     expect(host.querySelector('.week-title')?.textContent).toContain('Week 2');
   });
+  it('does not show pregame chances or upsets in the week list and the season grid', async () => {
+    const withChance = recaps('2026', [1, 2]);
+    withChance.Weeks[1].WinProbabilities = [{
+      FantasyMatchupID: '2026-2',
+      Teams: [{ FantasyTeamID: 1, PregameWinProbability: 28 }, { FantasyTeamID: 2, PregameWinProbability: 72 }],
+      Upset: true,
+      UpsetWinnerFantasyTeamID: 1
+    }];
+    withChance.UpsetCounts = [{ FantasyTeamID: 1, Upsets: 1, Weeks: 1 }, { FantasyTeamID: 2, Upsets: 0, Weeks: 1 }];
+    dataService.getWeeklyRecaps.and.returnValue(of(withChance));
+    const host = await create();
+
+    expect(host.querySelector('app-win-chance-bar')).toBeNull();
+    expect(host.textContent).not.toContain('Upset');
+
+    (Array.from(host.querySelectorAll('.activity-tab')).find(tab => tab.textContent?.trim() === 'Season') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(host.querySelector('.season-grid tfoot')).toBeNull();
+  });
 });

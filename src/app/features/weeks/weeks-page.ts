@@ -14,7 +14,6 @@ import type { NFLTeam } from '../../core/models/player.models';
 import type { WeeklyRecapsReadModel } from '../../core/models/weekly-recap.models';
 import { DataService } from '../../core/services/data.service';
 import {
-  FantasyGameContextDialogComponent,
   type FantasyGameContextDialogData
 } from '../../shared/components/fantasy-game-context-dialog/fantasy-game-context-dialog';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../../shared/components/team-identity/team-identity';
@@ -22,7 +21,8 @@ import { WeekRecapContentComponent } from '../../shared/components/week-recap-co
 import {
   buildLineupEfficiencyLookup,
   formatEfficiency,
-  hasLineupEfficiency
+  hasLineupEfficiency,
+  weeklyEfficiencyHighs
 } from '../../shared/utils/lineup-efficiency.util';
 import {
   buildSeasonGrid,
@@ -174,6 +174,17 @@ export class WeeksPageComponent {
     return !!grid && hasLineupEfficiency(this.efficiency(), grid.rows.map(row => row.teamID), grid.weeks.map(week => week.week));
   });
 
+  private readonly efficiencyHighs = computed(() => {
+    const grid = this.seasonGrid();
+    return grid
+      ? weeklyEfficiencyHighs(this.efficiency(), grid.rows.map(row => row.teamID), grid.weeks.map(week => week.week))
+      : new Set<string>();
+  });
+
+  isEfficiencyHigh(teamID: number, week: number): boolean {
+    return this.efficiencyHighs().has(`${week}:${teamID}`);
+  }
+
   /** The efficiency view is only offered (and shown) when the season has generator values. */
   readonly effectiveGridMode = computed<SeasonGridMode>(() =>
     this.gridMode() === 'efficiency' && this.efficiencyAvailable() ? 'efficiency' : 'points');
@@ -202,16 +213,19 @@ export class WeeksPageComponent {
       league,
       fantasyMatchupId: matchupID,
       players: this.base()?.leagueData.players ?? [],
-      lineupEfficiency: this.selectedRecapWeek()?.TeamPerformance ?? null
+      lineupEfficiency: this.selectedRecapWeek()?.TeamPerformance ?? null,
+      pregameWinProbabilities: this.selectedRecapWeek()?.WinProbabilities ?? null
     };
-    this.dialog.open(FantasyGameContextDialogComponent, {
-      data,
-      width: 'calc(100vw - 16px)',
-      maxWidth: '760px',
-      maxHeight: 'calc(100dvh - 16px)',
-      autoFocus: false,
-      restoreFocus: true,
-      panelClass: 'fantasy-context-dialog-panel'
+    void import('../../shared/components/fantasy-game-context-dialog/fantasy-game-context-dialog').then(({ FantasyGameContextDialogComponent }) => {
+      this.dialog.open(FantasyGameContextDialogComponent, {
+        data,
+        width: 'calc(100vw - 16px)',
+        maxWidth: '760px',
+        maxHeight: 'calc(100dvh - 16px)',
+        autoFocus: false,
+        restoreFocus: true,
+        panelClass: 'fantasy-context-dialog-panel'
+      });
     });
   }
 

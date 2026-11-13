@@ -91,6 +91,16 @@ outputs:
   history: For a completed season the same Matchups and FantasyGameContext objects as the history files past_seasons/Matchups_<season>.json and past_seasons/FantasyGameContext_<season>.json (weekly rosters instead of Decision Windows).
   asOfUtc: Additive; the App delivery drops it so that unchanged inputs keep a semantic no-op.
 
+winProbability:
+  issue: 1443
+  model: win-prob-v1 (tools/derived_data_lib/models/win_prob/v1.py, chosen per season in data-meta Models.WinProb)
+  rule: >-
+    Each team of MatchupProjections.json carries WinProbability (whole percent, both teams add up to 100) computed raw from ProjectedFinalScore and
+    StandardDeviation of team-range-v1 without a calibration factor; null unless both teams are available. Because the projection counts final games with
+    their real points, the chance is adjusted after every finished NFL game of a starter (team-range-v1 behaviour, no separate live model). A matchup
+    whose starters are all final shows 100/0 (or 50/50 on equal scores); consumers hide the chance for final matchups. The pregame chance of final weeks is
+    delivered with the Weekly Recaps (weekly-recaps.yaml). Frontend only displays the values.
+
 projectionModel:
   kind: team-range
   id: team-range-v1

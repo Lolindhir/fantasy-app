@@ -1,0 +1,41 @@
+:host { display: block; }
+.movers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.movers__column { display: grid; align-content: start; min-width: 0; }
+.movers__title { margin: 0 0 4px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.movers__title--up { color: #c62828; }
+.movers__title--down { color: #2e7d32; }
+.mover {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 2px;
+  border: 0;
+  border-bottom: 1px solid #eef0f3;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.mover:last-of-type { border-bottom: 0; }
+.mover:hover { background: #fafbfc; }
+.mover:focus-visible { outline: 2px solid rgba(99, 102, 241, .45); outline-offset: 2px; border-radius: 8px; }
+.portrait-wrap { width: 40px; height: 40px; display: grid; align-items: end; justify-items: center; overflow: hidden; border-radius: 8px; background: #f8fafc; }
+.portrait { max-width: 40px; max-height: 40px; object-fit: contain; }
+.mover__identity { min-width: 0; display: grid; gap: 4px; }
+.mover__identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #111827; font-size: 14px; font-weight: 700; }
+.mover__meta { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.mover__team { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #64748b; font-size: 11px; }
+.position-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 27px; padding: 2px 6px; border-radius: 999px; font-size: 10px; font-weight: 700; }
+.mover__value { display: grid; justify-items: end; gap: 2px; font-variant-numeric: tabular-nums; }
+.mover__change { font-size: 14px; font-weight: 750; }
+.mover__change--up { color: #c62828; }
+.mover__change--down { color: #2e7d32; }
+.mover__salary { color: #64748b; font-size: 11px; }
+.movers__empty { margin: 8px 0; color: #64748b; font-size: 13px; }
+
+@media (max-width: 640px) {
+  .movers { grid-template-columns: 1fr; gap: 16px; }
+}

@@ -3,6 +3,7 @@ import { Component, Inject, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { WinChanceBarComponent } from '../win-chance-bar/win-chance-bar';
 
 import type {
   DecisionWindowsReadModel,
@@ -22,7 +23,7 @@ import type {
 import type { FantasyTeam, League } from '../../../core/models/league.models';
 import type { MatchupProjectionTeam } from '../../../core/models/matchup-projections.models';
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
-import type { WeeklyRecapTeamPerformance } from '../../../core/models/weekly-recap.models';
+import type { WeeklyRecapTeamPerformance, WeeklyRecapWinProbability } from '../../../core/models/weekly-recap.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
 import { MatchupRangeChartComponent } from '../projection-range/matchup-range-chart';
 import { PlayerProjectionComponent } from '../projection-range/player-projection';
@@ -184,6 +185,15 @@ export function orientMatchupScore(
   };
 }
 
+export interface WinChanceView {
+  left: number;
+  right: number;
+  live: boolean;
+  /** Short name of the team that won as an upset (pregame chance below 35 percent); null otherwise. */
+  upsetTeam: string | null;
+  caption: string;
+}
+
 export interface FantasyGameContextDialogData {
   mode: 'game' | 'matchup';
   context: FantasyGameContextReadModel;
@@ -201,6 +211,8 @@ export interface FantasyGameContextDialogData {
   players?: Player[];
   /** Generator lineup efficiency of this week (final weeks only); the optimal lineup section is hidden without it. */
   lineupEfficiency?: WeeklyRecapTeamPerformance[] | null;
+  /** Generator pregame win chances of this (final) week; shown with the upset mark when the live chance no longer applies. */
+  pregameWinProbabilities?: WeeklyRecapWinProbability[] | null;
 }
 
 @Component({
@@ -214,7 +226,8 @@ export interface FantasyGameContextDialogData {
     PositionStylePipe,
     MatchupRangeChartComponent,
     MatchupPlayerStatusComponent,
-    PlayerProjectionComponent
+    PlayerProjectionComponent,
+    WinChanceBarComponent
   ],
   templateUrl: './fantasy-game-context-dialog.html',
   styleUrls: ['./fantasy-game-context-dialog.scss', './fantasy-game-context-dialog-refinements.scss']
@@ -485,6 +498,37 @@ export class FantasyGameContextDialogComponent {
     const right = teamProjectedFinalScore(matchup, this.matchupTeamID(matchup, 'right'));
     if (left === null && right === null) return null;
     return { left: formatProjectionPoints(left), right: formatProjectionPoints(right) };
+  }
+
+  /** Win chance of the matchup as delivered: live for an open week, the pregame value (with the upset mark) for a final one. */
+  winChance(matchup: FantasyGameContextMatchup): WinChanceView | null {
+    const leftID = this.matchupTeamID(matchup, 'left');
+    const rightID = this.matchupTeamID(matchup, 'right');
+    if (matchup.CounterfactualState === 'unavailable-not-final') {
+      const left = matchupProjectionTeam(matchup, leftID);
+      const right = matchupProjectionTeam(matchup, rightID);
+      if (left?.WinProbability == null || right?.WinProbability == null) return null;
+      return {
+        left: left.WinProbability,
+        right: right.WinProbability,
+        live: left.FinalStarterCount > 0 || right.FinalStarterCount > 0,
+        upsetTeam: null,
+        caption: 'Chance to win this matchup, based on the projected scores. It is adjusted after every finished NFL game.'
+      };
+    }
+    const pregame = this.data.pregameWinProbabilities?.find(item => item.FantasyMatchupID === matchup.FantasyMatchupID);
+    const byTeam = (teamID: string | number) => pregame?.Teams.find(team => String(team.FantasyTeamID) === String(teamID))?.PregameWinProbability;
+    const left = byTeam(leftID);
+    const right = byTeam(rightID);
+    if (!pregame || left == null || right == null) return null;
+    const upsetID = pregame.Upset ? pregame.UpsetWinnerFantasyTeamID : null;
+    return {
+      left,
+      right,
+      live: false,
+      upsetTeam: upsetID === null ? null : this.teamShortName(upsetID),
+      caption: 'Chance to win before the week, based on the projected scores.'
+    };
   }
 
   matchupRange(matchup: FantasyGameContextMatchup): MatchupRangeView | null {

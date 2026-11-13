@@ -23,7 +23,7 @@ def playoff(team_id, place):
 
 
 def award(team_id):
-    return {"Name": "Best Performer", "Type": "x", "IconUnicode": "i", "StatDisplay": "1", "TeamID": team_id, "Owner": f"o{team_id}", "TeamName": f"t{team_id}"}
+    return {"Name": "Best Performer", "Type": {"Name": "RegularSeason", "DisplayText": "Regular Season", "Order": 2}, "IconUnicode": "1F525", "StatDisplay": "1", "TeamID": team_id, "Owner": f"o{team_id}", "TeamName": f"t{team_id}"}
 
 
 def document(season, with_movement):
@@ -31,8 +31,15 @@ def document(season, with_movement):
         "RegularSeason": [regular(1, 1, with_movement), regular(2, 2, with_movement)],
         "Playoffs": [playoff(1, 1), playoff(2, 2)],
         "Awards": [award(1)],
-        "AllTime": {"ThroughSeason": season, "Playoffs": [{"Place": 1, "TeamID": 1, "Owner": "o1", "TeamName": "t1"}],
-                    "RegularSeason": [regular(1, 1, False)]},
+        "Teams": [{"TeamID": 1}, {"TeamID": 2}],
+        "AllTime": {
+            "ThroughSeason": season,
+            "Playoffs": [
+                {"Place": 1, "TeamID": 1, "Owner": "o1", "TeamName": "t1", "Championships": 1, "RunnerUps": 0, "Thirds": 0},
+                {"Place": 2, "TeamID": 2, "Owner": "o2", "TeamName": "t2", "Championships": 0, "RunnerUps": 1, "Thirds": 0},
+            ],
+            "RegularSeason": [regular(1, 1, False), regular(2, 2, False)],
+        },
     }
 
 
@@ -73,6 +80,97 @@ class RenderTests(unittest.TestCase):
         self.documents[2025]["AllTime"]["ThroughSeason"] = 2025
         self.documents[2025]["AllTime"]["Playoffs"][0]["Place"] = 7
         self.assertEqual(7, app.render_standings(self.documents, 2025)[0]["Playoffs"][0]["Place"])
+
+    def test_legacy_highlights_use_shared_results_in_a_stable_order(self):
+        legacy = app.render_standings(self.documents, 2025)[0]["LegacyHighlights"]
+        self.assertEqual([
+            {"Key": "ChampOfChamps", "TeamID": 1},
+            {"Key": "RegularSeasonKing", "TeamID": 1},
+            {"Key": "PodiumMachine", "TeamID": 1, "Count": 1},
+            {"Key": "AwardCollector", "TeamID": 1, "Count": 2},
+        ], legacy)
+        self.assertNotIn("LegacyHighlights", self.documents[2025]["AllTime"])
+
+    def test_podium_and_award_tiebreakers_do_not_recompute_in_angular(self):
+        # Two podiums beat one regardless of all-time place.
+        second = self.documents[2025]["AllTime"]["Playoffs"][1]
+        second.update({"Championships": 1, "RunnerUps": 1, "Thirds": 0})
+        highlights = app.render_legacy_highlights(self.documents, 2025)
+        self.assertEqual({"Key": "PodiumMachine", "TeamID": 2, "Count": 2}, highlights[2])
+
+        # Award counts, then distinct names, then overall place, exactly as the former UI.
+        self.documents[2024]["Awards"] = [{"Name": "A", "TeamID": 1}, {"Name": "B", "TeamID": 1}]
+        self.documents[2025]["Awards"] = [{"Name": "A", "TeamID": 2}, {"Name": "B", "TeamID": 2},
+                                           {"Name": "Regular Season King", "TeamID": 2}]
+        winner = app.render_legacy_highlights(self.documents, 2025)[-1]
+        self.assertEqual({"Key": "AwardCollector", "TeamID": 1, "Count": 2}, winner)
+        self.documents[2025]["Awards"][1]["Name"] = "C"
+        self.documents[2025]["Awards"].append({"Name": "D", "TeamID": 2})
+        winner = app.render_legacy_highlights(self.documents, 2025)[-1]
+        self.assertEqual({"Key": "AwardCollector", "TeamID": 2, "Count": 3}, winner)
+
+    def test_legacy_restricts_placement_winners_to_current_rosters(self):
+        self.documents[2025]["Teams"] = [{"TeamID": 2}]
+        legacy = app.render_legacy_highlights(self.documents, 2025)
+        self.assertEqual([2, 2, 2], [row["TeamID"] for row in legacy[:3]])
+        # Historical award holders remain eligible even if no longer on a current roster.
+        self.assertEqual(1, legacy[-1]["TeamID"])
+
+    def test_legacy_missing_current_season_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, "2027"):
+            app.render_legacy_highlights(self.documents, 2027)
+
+    def test_award_legend_aggregates_existing_shared_award_types(self):
+        expected = [{"Key": "RegularSeason", "DisplayText": "Regular Season", "IconUnicode": "1F525",
+                     "Order": 2, "Occurrences": 2}]
+        self.assertEqual(expected, app.render_award_legend(self.documents))
+        self.assertEqual(expected, app.render_standings(self.documents, 2025)[0]["AwardLegend"])
+        self.assertNotIn("AwardLegend", self.documents[2025]["AllTime"])
+        self.documents[2025]["Awards"].append({
+            "Name": "Regular Season King", "Type": {"Name": "RegularSeason", "DisplayText": "Regular Season", "Order": 2},
+            "TeamID": 2, "IconUnicode": "1F451",
+        })
+        self.assertEqual(expected, app.render_award_legend(self.documents))
+
+    def test_award_legend_order_and_first_source_icon_are_stable(self):
+        self.documents[2025]["Awards"].append({
+            "Name": "Weekly Star", "Type": {"Name": "Playoffs", "DisplayText": "Playoffs", "Order": 1},
+            "TeamID": 2, "IconUnicode": "2605",
+        })
+        legend = app.render_award_legend(self.documents)
+        self.assertEqual(["Playoffs", "RegularSeason"], [entry["Key"] for entry in legend])
+        self.assertEqual("1F525", legend[1]["IconUnicode"])
+        self.assertEqual(2, legend[1]["Occurrences"])
+
+    def test_award_legend_is_deterministic_and_does_not_mutate_derived_documents(self):
+        import copy
+        before = copy.deepcopy(self.documents)
+        first = app.render_award_legend(self.documents)
+        second = app.render_award_legend(self.documents)
+        self.assertEqual(first, second)
+        self.assertEqual(before, self.documents)
+
+    def test_award_legend_fails_closed_on_invalid_award_type(self):
+        self.documents[2025]["Awards"][0]["Type"] = "not-an-award-type"
+        with self.assertRaisesRegex(ValueError, "Invalid award Type"):
+            app.render_award_legend(self.documents)
+
+    def test_all_time_percentage_display_uses_existing_model_format(self):
+        for pct, expected in ((0.7037, ".704"), (1.0, "1.000"), (0.0, ".000"), (-1, None), (None, None)):
+            with self.subTest(pct=pct):
+                self.documents[2025]["AllTime"]["RegularSeason"][0]["WinPercentage"] = pct
+                rendered = app.render_standings(self.documents, 2025)
+                self.assertEqual(expected, rendered[0]["RegularSeason"][0]["WinPercentageDisplay"])
+                placements = app.render_placements(rendered, [1, 2], 2025)
+                self.assertEqual(expected, placements[1]["AllTime"]["Regular"]["WinPercentageDisplay"])
+                self.assertNotIn("WinPercentageDisplay", self.documents[2025]["AllTime"]["RegularSeason"][0])
+
+    def test_all_time_percentage_display_rejects_invalid_values(self):
+        for pct in (float("nan"), float("inf"), True, "0.5", 1.2):
+            with self.subTest(pct=pct):
+                self.documents[2025]["AllTime"]["RegularSeason"][0]["WinPercentage"] = pct
+                with self.assertRaises(ValueError):
+                    app.render_standings(self.documents, 2025)
 
     def test_empty_documents_fail(self):
         with self.assertRaises(ValueError):
@@ -132,6 +230,46 @@ class WriteTests(unittest.TestCase):
         )
         patcher.start()
         self.addCleanup(patcher.stop)
+        manifest_patcher = patch.multiple(
+            app.standings_sources,
+            manifest=lambda root, league: {"CurrentCanonicalLeagueSeasonID": "league-a-2025"},
+            current_season=lambda manifest: 2025,
+        )
+        manifest_patcher.start()
+        self.addCleanup(manifest_patcher.stop)
+
+    def test_write_does_not_require_published_league(self):
+        import json
+        (self.root / "public/data/League.json").unlink()
+        app.write_standings(self.root, "league-a", self.now)
+        delivered = json.loads((self.root / "public/data/Standings.json").read_text())
+        self.assertIn("PreviousWeekPlace", delivered[1]["RegularSeason"][0])
+        self.assertNotIn("PreviousWeekPlace", delivered[2]["RegularSeason"][0])
+
+    def test_stale_published_league_season_does_not_change_output(self):
+        import json
+        (self.root / "public/data/League.json").write_text('{"Season": "2024"}')
+        app.write_standings(self.root, "league-a", self.now)
+        delivered = json.loads((self.root / "public/data/Standings.json").read_text())
+        self.assertEqual("2025", delivered[1]["Season"])
+        self.assertIn("PreviousWeekPlace", delivered[1]["RegularSeason"][0])
+        self.assertNotIn("PreviousWeekPlace", delivered[2]["RegularSeason"][0])
+
+    def test_missing_manifest_fails_before_any_publication(self):
+        from unittest.mock import patch
+        with patch.object(app.standings_sources, "manifest", side_effect=FileNotFoundError("manifest missing")):
+            with patch.object(app, "materialize_league_standings", side_effect=AssertionError("must not materialize")):
+                with self.assertRaises(FileNotFoundError):
+                    app.write_standings(self.root, "league-a", self.now)
+        self.assertFalse((self.root / "public/data/Standings.json").exists())
+
+    def test_inconsistent_current_season_fails_before_any_publication(self):
+        from unittest.mock import patch
+        with patch.object(app.standings_sources, "current_season", return_value=2026):
+            with patch.object(app, "materialize_league_standings", side_effect=AssertionError("must not materialize")):
+                with self.assertRaisesRegex(ValueError, "2026 missing"):
+                    app.write_standings(self.root, "league-a", self.now)
+        self.assertFalse((self.root / "public/data/Standings.json").exists())
 
     def test_first_write_creates_file_and_timestamp_second_is_noop(self):
         changed = app.write_standings(self.root, "league-a", self.now)

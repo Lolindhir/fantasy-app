@@ -342,7 +342,7 @@ class PublicationTests(unittest.TestCase):
 
     def _publish(self, root: Path, context: dict, model: dict, *, windows=None) -> dict:
         """Publish with a stand-in data-meta (team-range-v1 chosen for the season) and stand-in Decision Windows."""
-        metadata = {"CanonicalLeagueID": "league-a", "Seasons": {"2026": {"Models": {"TeamRange": "team-range-v1"}}}}
+        metadata = {"CanonicalLeagueID": "league-a", "Seasons": {"2026": {"Models": {"TeamRange": "team-range-v1", "WinProb": "win-prob-v1"}}}}
         with mock.patch("matchup_projection.load_league_metadata", return_value=metadata), mock.patch(
             "matchup_projection._decision_windows", return_value=windows
         ):

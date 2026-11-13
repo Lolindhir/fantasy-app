@@ -16,6 +16,7 @@ import { formatPlayerPositionDepth } from '../../utils/player-sort.util';
 import { buildPlayerJourney, type PlayerJourney, type PlayerJourneyEvent } from '../../utils/player-journey.util';
 import { resolveWeekResult, type PlayerWeekProjectionView, type PlayerWeekResultView } from '../../utils/player-week-projection.util';
 import { PlayerProjectionComponent } from '../projection-range/player-projection';
+import { SalaryHistoryChartComponent } from '../salary-history-chart/salary-history-chart';
 
 // Registrierung
 Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, CategoryScale, BarController, BarElement, Title, Tooltip, Legend);
@@ -33,7 +34,8 @@ Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, C
     MatChipsModule,
     MatIconModule,
     PositionStylePipe,
-    PlayerProjectionComponent
+    PlayerProjectionComponent,
+    SalaryHistoryChartComponent
   ],
   templateUrl: './player-detail-dialog.html',
   styleUrls: ['./player-detail-dialog.scss']
@@ -81,7 +83,7 @@ export class PlayerDetailDialogComponent implements OnInit {
   }
 
   private loadJourney(): void {
-    if (this.journeyState !== 'idle') return;
+    if (this.journeyState !== 'idle' && this.journeyState !== 'error') return;
     this.journeyState = 'loading';
     this.dataService.getPlayerJourneySources().subscribe({
       next: ({ transactions, drafts, teams }) => {
@@ -144,6 +146,42 @@ export class PlayerDetailDialogComponent implements OnInit {
         }
       ]
     };
+  }
+
+  /**
+   * Salary rows, newest first: the projection for the next season (delta to the current salary), then every season with
+   * its generator-owned change to the previous year. Only reordering and labelling happens here.
+   */
+  get salaryRows(): { label: string; salary: number | null; change: number | null; projected: boolean }[] {
+    const history = this.player.SalaryHistory ?? [];
+    const latest = history[history.length - 1];
+    const rows = [...history].reverse().map(h => ({ label: String(h.Season), salary: h.Salary, change: h.Change, projected: false }));
+    if (latest?.SalaryProjected != null) {
+      rows.unshift({
+        label: `${latest.Season + 1}`,
+        salary: latest.SalaryProjected,
+        change: this.player.SalaryProjectedDelta ?? null,
+        projected: true
+      });
+    }
+    return rows;
+  }
+
+  formatSalaryAmount(value: number | null): string {
+    if (value == null) return '–';
+    return value >= 1_000_000 ? `$${(value / 1_000_000).toFixed(1)}m` : `$${(value / 1_000).toFixed(0)}k`;
+  }
+
+  /** Generator-owned change; null when unknown (shown as a dash). */
+  formatSalaryChange(value: number | null | undefined): string {
+    if (value == null) return '–';
+    const absolute = Math.abs(value);
+    const text = absolute >= 1_000_000 ? `$${(absolute / 1_000_000).toFixed(1)}m` : `$${(absolute / 1_000).toFixed(0)}k`;
+    return value > 0 ? `+${text}` : value < 0 ? `-${text}` : text;
+  }
+
+  salaryChangeClass(value: number | null | undefined): string {
+    return value == null || value === 0 ? '' : value > 0 ? 'salary-change--up' : 'salary-change--down';
   }
 
   get rankingTotal(): number | undefined {

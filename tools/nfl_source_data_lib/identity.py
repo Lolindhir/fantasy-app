@@ -877,8 +877,28 @@ def _apply_duplicate_merges(
             return existing or {stable_internal_id(_seed_for_component(members))}
 
         target_roots = [r for r, idx in components.items() if target_id in provisional_ids(idx)]
+        # A duplicate whose persisted record was already retired is re-created by the
+        # builder from upstream rows under a fresh seed ID. It is therefore also found
+        # through the shared-provider-token anchors the review declared: any other
+        # component carrying such a token is verified as a duplicate (fail closed).
+        shared_tokens = {
+            (str(a["Provider"]), str(a["ExternalID"]))
+            for a in decision.get("IndependentAnchors") or []
+            if a.get("Kind") == "shared-provider-token"
+        }
+
+        def carries_shared_token(indexes: list[int]) -> bool:
+            return any(
+                (key, value) in shared_tokens
+                for idx in indexes
+                for key, value in candidates[idx].ids.items()
+            )
+
         duplicate_roots = [
-            r for r, idx in components.items() if provisional_ids(idx) & duplicate_ids
+            r
+            for r, idx in components.items()
+            if provisional_ids(idx) & duplicate_ids
+            or (r not in target_roots and carries_shared_token(idx))
         ]
         if not duplicate_roots:
             continue
@@ -891,7 +911,7 @@ def _apply_duplicate_merges(
         for root in duplicate_roots:
             indexes = components[root]
             members = [candidates[idx] for idx in indexes]
-            duplicate_id = sorted(provisional_ids(indexes) & duplicate_ids)[0]
+            duplicate_id = sorted(provisional_ids(indexes) & duplicate_ids or provisional_ids(indexes))[0]
             verify_duplicate_pair(
                 decision,
                 _view_from_candidates(target_members),
@@ -902,9 +922,17 @@ def _apply_duplicate_merges(
             sources = tuple(
                 sorted(duplicate_ids | {str(v) for v in decision["SourceCanonicalPlayerIDs"]})
             )
+            # Tokens the review declared as upstream contamination belong to another
+            # person: they are dropped from the duplicate's evidence and never move.
+            contaminated = {
+                (str(t["Provider"]), str(t["ExternalID"]))
+                for t in decision.get("ContaminatedTokens") or []
+            }
             for member in members:
-                if member.existing_internal_id in duplicate_ids:
+                if member.existing_internal_id and member.existing_internal_id != target_id:
                     member.existing_internal_id = target_id
+                for key in [k for k, v in member.ids.items() if (k, v) in contaminated]:
+                    del member.ids[key]
                 for key, value in member.ids.items():
                     if value:
                         transfers[(key, value)] = (target_id, sources, provenance)

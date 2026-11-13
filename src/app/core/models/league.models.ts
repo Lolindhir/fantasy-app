@@ -52,7 +52,7 @@ export interface RegularSeasonTeam {
   /** Current season only: PreviousWeekPlace - Place (positive = moved up); null if no comparison exists. */
   PlaceDelta?: number | null;
   WinPercentage?: number;
-  WinPercentageDisplay?: string;
+  WinPercentageDisplay?: string | null;
   WinPercentageDiffLeagueAvg?: number;
   WinPercentageHistory?: number[];
   PointDifference?: number;
@@ -111,6 +111,21 @@ export interface StandingWeek {
   Teams: StandingWeekTeam[];
 }
 
+export interface LegacyHighlightFact {
+  Key: 'ChampOfChamps' | 'RegularSeasonKing' | 'PodiumMachine' | 'AwardCollector';
+  TeamID: string | number;
+  /** Only for podium or award count. */
+  Count?: number;
+}
+
+export interface AwardLegendFact {
+  Key: string;
+  DisplayText: string;
+  IconUnicode: string;
+  Order: number;
+  Occurrences: number;
+}
+
 export interface Standing {
   Season: string;
   Playoffs?: PlayoffTeam[] | null;
@@ -118,6 +133,9 @@ export interface Standing {
   Awards?: AwardInStanding[];
   /** Shared Derived current season only; absent in older App publications. */
   Weeks?: StandingWeek[];
+  /** AllTime-only consumer projections; absent in older App publications. */
+  LegacyHighlights?: LegacyHighlightFact[];
+  AwardLegend?: AwardLegendFact[];
 }
 
 export interface RawLeague {
@@ -193,7 +211,9 @@ export interface PlacementRegularSeason extends Placement {
   }>;
 }
 
-export interface PlacementRegularSeasonAllTime extends Omit<PlacementRegularSeason, 'Record' | 'Streak'> {
+export interface PlacementRegularSeasonAllTime extends Omit<PlacementRegularSeason, 'Record' | 'Streak' | 'WinPercentageDisplay'> {
+  /** Additive All-Time display projection; null/absent when no completed games or on old publications. */
+  WinPercentageDisplay?: string | null;
   RegularSeasonWins: number;
 }
 

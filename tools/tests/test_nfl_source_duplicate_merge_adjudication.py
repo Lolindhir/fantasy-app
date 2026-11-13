@@ -29,6 +29,7 @@ from nfl_source_data_lib.identity import (  # noqa: E402
     _seed_for_component,
 )
 from nfl_source_data_lib.common import stable_internal_id  # noqa: E402
+from nfl_source_data_lib.provider_mappings import retire_merged_duplicate_mappings  # noqa: E402
 
 SEASON = 2026
 TARGET = "NFLP-target"
@@ -298,6 +299,160 @@ class BuilderTests(unittest.TestCase):
         transfers, overridden = _apply_current_adjudications([decision], cands, [])
         self.assertEqual(({}, []), (transfers, overridden))
         self.assertEqual({"Sleeper": "13603", "ESPN": "4691889", "MFL": "17821"}, cands[1].ids)
+
+
+SHARED_ANCHOR = {"Kind": "shared-provider-token", "Provider": "GSIS", "ExternalID": "00-0041376",
+                 "Summary": "Both records carry the GSIS."}
+ATTRIBUTE_ANCHOR = {"Kind": "attribute-agreement", "Fields": ["BirthDate", "NormalizedName", "Position"],
+                    "Summary": "Equal birth date, name and position."}
+CONTAMINATED = [
+    {"Provider": "ESPN", "ExternalID": "9001", "Source": "nflverse.ff-player-ids",
+     "Summary": "ESPN 9001 belongs to another person."},
+    {"Provider": "PFF", "ExternalID": "9002", "Source": "nflverse.ff-player-ids",
+     "Summary": "PFF 9002 belongs to another person."},
+]
+
+
+def contaminated_decision(duplicate: str, **overrides) -> dict[str, Any]:
+    base = {"IndependentAnchors": [SHARED_ANCHOR, ATTRIBUTE_ANCHOR],
+            "ContaminatedTokens": CONTAMINATED}
+    base.update(overrides)
+    return merge_decision(duplicate, **base)
+
+
+def contaminated_ff_ids() -> dict[str, str]:
+    return {"GSIS": "00-0041376", "Sleeper": "13603", "ESPN": "9001", "PFF": "9002", "MFL": "17821"}
+
+
+class ContaminatedTokenTests(unittest.TestCase):
+    def target(self):
+        return candidate({"GSIS": "00-0041376", "ESPN": "5001", "PFF": "5002"},
+                         source="nflverse.players", existing=TARGET)
+
+    def test_loader_accepts_shared_anchor_and_validates_contaminated_tokens(self) -> None:
+        decision = loaded(contaminated_decision("NFLP-dup"))
+        self.assertEqual(["ESPN", "PFF"], [t["Provider"] for t in decision["ContaminatedTokens"]])
+        self.assertEqual([], loaded(merge_decision("NFLP-dup"))["ContaminatedTokens"])
+        cases = {
+            "empty list": {"ContaminatedTokens": []},
+            "missing summary": {"ContaminatedTokens": [{**CONTAMINATED[0], "Summary": ""}]},
+            "missing source": {"ContaminatedTokens": [{k: v for k, v in CONTAMINATED[0].items()
+                                                       if k != "Source"}]},
+            "duplicate entry": {"ContaminatedTokens": [CONTAMINATED[0], CONTAMINATED[0]]},
+            "unsupported shared provider": {"IndependentAnchors": [
+                {**SHARED_ANCHOR, "Provider": "MFL"}, ATTRIBUTE_ANCHOR]},
+            "shared anchor alone": {"IndependentAnchors": [SHARED_ANCHOR]},
+        }
+        for label, overrides in cases.items():
+            with self.subTest(label), self.assertRaises(ValueError):
+                loaded(contaminated_decision("NFLP-dup", **overrides))
+
+    def test_builder_merges_and_drops_contaminated_tokens_without_transferring_them(self) -> None:
+        dup = [candidate(contaminated_ff_ids(), source="nflverse.ff-player-ids")]
+        dup_id = duplicate_id_of(dup)
+        decision = loaded(contaminated_decision(dup_id), {TARGET, PHANTOM})
+        cands = [self.target(), *dup]
+        uf = _build_components(cands)
+        transfers = _apply_duplicate_merges(uf, cands, [decision])
+        self.assertEqual(1, len(_component_members(uf, cands)))
+        self.assertNotIn(("ESPN", "9001"), transfers)
+        self.assertNotIn(("PFF", "9002"), transfers)
+        self.assertEqual({"GSIS": "00-0041376", "Sleeper": "13603", "MFL": "17821"}, dup[0].ids)
+        self.assertEqual((TARGET, (dup_id,), decision["Provenance"]), transfers[("Sleeper", "13603")])
+
+    def test_duplicate_with_a_changed_seed_id_is_found_through_the_shared_anchor(self) -> None:
+        dup = [candidate(contaminated_ff_ids(), source="nflverse.ff-player-ids")]
+        decision = loaded(contaminated_decision("NFLP-retired-seed"), {TARGET, PHANTOM})
+        cands = [self.target(), *dup]
+        uf = _build_components(cands)
+        transfers = _apply_duplicate_merges(uf, cands, [decision])
+        self.assertEqual(1, len(_component_members(uf, cands)))
+        self.assertEqual(TARGET, transfers[("Sleeper", "13603")][0])
+
+    def test_unrelated_component_without_the_shared_token_is_left_alone(self) -> None:
+        other = [candidate({"GSIS": "00-0099999", "Sleeper": "1"}, source="nflverse.ff-player-ids")]
+        decision = loaded(contaminated_decision("NFLP-retired-seed"), {TARGET, PHANTOM})
+        cands = [self.target(), *other]
+        uf = _build_components(cands)
+        self.assertEqual({}, _apply_duplicate_merges(uf, cands, [decision]))
+        self.assertEqual(2, len(_component_members(uf, cands)))
+
+    def test_contamination_is_not_a_free_pass_for_other_contradictions(self) -> None:
+        for label, ids in {
+            "undeclared contradicting token": {**contaminated_ff_ids(), "ESPN": "9999"},
+            "contradicting GSIS": {**contaminated_ff_ids(), "GSIS": "00-0000001"},
+        }.items():
+            with self.subTest(label):
+                dup = [candidate(ids, source="nflverse.ff-player-ids")]
+                decision = loaded(contaminated_decision(duplicate_id_of(dup)), {TARGET, PHANTOM})
+                with self.assertRaises(ValueError):
+                    run_merge([self.target(), *dup], decision)
+
+    def test_without_the_declaration_the_same_evidence_is_rejected(self) -> None:
+        dup = [candidate(contaminated_ff_ids(), source="nflverse.ff-player-ids")]
+        decision = loaded(
+            merge_decision(duplicate_id_of(dup), IndependentAnchors=[SHARED_ANCHOR, ATTRIBUTE_ANCHOR]),
+            {TARGET, PHANTOM},
+        )
+        with self.assertRaises(ValueError):
+            run_merge([self.target(), *dup], decision)
+
+    def test_state_validator_ignores_contaminated_tokens_owned_by_a_third_record(self) -> None:
+        players = [
+            {"CanonicalPlayerID": TARGET, "Name": "Gregory Desrosiers", "BirthDate": BIRTH,
+             "Position": "RB", "IDs": {"GSIS": "00-0041376", "ESPN": "5001"}},
+            {"CanonicalPlayerID": "NFLP-dup", "Name": "Gregory Desrosiers", "BirthDate": BIRTH,
+             "Position": "RB", "IDs": contaminated_ff_ids()},
+            {"CanonicalPlayerID": "NFLP-third", "Name": "Someone Else", "IDs": {"ESPN": "9001"}},
+        ]
+        decision = loaded(contaminated_decision("NFLP-dup"), {TARGET, PHANTOM})
+        statuses = validate_current_identity_adjudications_against_state(
+            [decision], players, [], SEASON)
+        self.assertEqual("active", statuses[0]["Status"])
+        players[2]["IDs"] = {"ESPN": "9001", "MFL": "17821"}  # owns an undeclared, real token
+        with self.assertRaises(ValueError):
+            validate_current_identity_adjudications_against_state([decision], players, [], SEASON)
+
+
+class RetireMergedMappingsTests(unittest.TestCase):
+    def mapping(self, provider, external, owner, first, last, source="s"):
+        return {"Provider": provider, "ExternalID": external, "CanonicalPlayerID": owner,
+                "FirstObservedSeason": first, "LastObservedSeason": last, "Sources": [source]}
+
+    def test_mappings_and_conflicts_of_a_retired_duplicate_move_to_the_target(self) -> None:
+        decision = loaded(contaminated_decision("NFLP-dup"), {TARGET, PHANTOM})
+        payload = {
+            "Mappings": [
+                self.mapping("Sleeper", "13603", "NFLP-dup", 2025, 2026, "a"),
+                self.mapping("Sleeper", "13603", TARGET, 2024, 2025, "b"),
+                self.mapping("ESPN", "9001", "NFLP-dup", 2025, 2025),
+                self.mapping("MFL", "1", "NFLP-other", 2025, 2025),
+            ],
+            "Conflicts": [
+                {"Provider": "Sleeper", "ExternalID": "13603", "CanonicalPlayerIDs": [TARGET, "NFLP-dup"]},
+                {"Provider": "ESPN", "ExternalID": "9001", "CanonicalPlayerIDs": ["NFLP-dup", "NFLP-other"]},
+                {"Provider": "MFL", "ExternalID": "5", "CanonicalPlayerIDs": ["NFLP-dup", "NFLP-other"],
+                 "SourcesByCanonicalPlayerID": {"NFLP-dup": ["x"]}},
+            ],
+            "HistoricalResolutionConflicts": [{"keep": "as evidence"}],
+        }
+        result = retire_merged_duplicate_mappings(copy.deepcopy(payload), [decision])
+        keys = {(m["Provider"], m["ExternalID"], m["CanonicalPlayerID"]): m for m in result["Mappings"]}
+        self.assertEqual({("Sleeper", "13603", TARGET), ("MFL", "1", "NFLP-other")}, set(keys))
+        merged = keys[("Sleeper", "13603", TARGET)]
+        self.assertEqual((2024, 2026, ["a", "b"]),
+                         (merged["FirstObservedSeason"], merged["LastObservedSeason"], merged["Sources"]))
+        self.assertEqual(
+            [{"Provider": "MFL", "ExternalID": "5", "CanonicalPlayerIDs": sorted([TARGET, "NFLP-other"]),
+              "SourcesByCanonicalPlayerID": {TARGET: ["x"]}}],
+            result["Conflicts"],
+        )
+        self.assertEqual(payload["HistoricalResolutionConflicts"], result["HistoricalResolutionConflicts"])
+        self.assertEqual(result, retire_merged_duplicate_mappings(copy.deepcopy(result), [decision]))
+
+    def test_payload_is_untouched_without_a_merge_decision(self) -> None:
+        payload = {"Mappings": [self.mapping("Sleeper", "1", "NFLP-dup", 2026, 2026)], "Conflicts": []}
+        self.assertIs(payload, retire_merged_duplicate_mappings(payload, []))
 
 
 if __name__ == "__main__":

@@ -57,6 +57,8 @@ export function mapRawPlayerToPlayer(raw: RawPlayer, context: PlayerMappingConte
     FreeAgentMarketInfoProjected: createInitialFreeAgentMarketInfo('Projected'),
     Salary: raw.Salary,
     SalaryProjected: raw.SalaryProjected,
+    SalaryHistory: raw.SalaryHistory ?? null,
+    SalaryProjectedDelta: raw.SalaryProjectedDelta ?? null,
     SalaryDisplay: formatSalaryDollars(raw.Salary),
     SalaryProjectedDisplay: formatSalaryDollars(raw.SalaryProjected),
     NameShort: raw.NameShort || `${raw.NameFirst[0]}. ${raw.NameLast}`,

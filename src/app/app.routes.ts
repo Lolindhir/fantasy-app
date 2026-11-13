@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { OverviewComponent } from './features/overview/overview';
-import { TeamsPageComponent } from './features/teams/teams-page/teams-page';
 import { TeamListComponent } from './features/teams/team-list/team-list';
 import { StandingsPageComponent } from './features/standings/standings-page';
 import { WeeksPageComponent } from './features/weeks/weeks-page';
@@ -13,7 +12,7 @@ import { AboutComponent } from './features/handbook/about';
 export const routes: Routes = [
   { path: '', component: OverviewComponent },
   { path: 'weeks', component: WeeksPageComponent },
-  { path: 'teams', component: TeamsPageComponent },
+  { path: 'teams', loadComponent: () => import('./features/teams/teams-page/teams-page').then(m => m.TeamsPageComponent) },
   { path: 'teams/legacy', component: TeamListComponent },
   { path: 'standings', component: StandingsPageComponent },
   { path: 'players', component: PlayersPageComponent },

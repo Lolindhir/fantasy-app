@@ -11,7 +11,7 @@ from .identity import build_identities, current_identity_adjudication_state
 from .lifecycle import effective_partition_payload
 from .mapping_history import build_historical_app_mapping_claims, extend_provider_mapping_payload
 from .phase1 import build_phase1_outputs
-from .provider_mappings import build_provider_mapping_payload
+from .provider_mappings import build_provider_mapping_payload, retire_merged_duplicate_mappings
 from .provisional_reconciliation import reconcile_provisional_app_mappings
 from data_roots import DATA_SOURCE_ROOT
 
@@ -138,6 +138,10 @@ def materialize(repo_root: Path, datasets: dict[str, Dataset], *, force: bool = 
     provider_mapping_payload = reconcile_provisional_app_mappings(
         provider_mapping_payload,
         historical_claims,
+    )
+    merge_decisions, _ = current_identity_adjudication_state(repo_root, observation_season)
+    provider_mapping_payload = retire_merged_duplicate_mappings(
+        provider_mapping_payload, merge_decisions
     )
 
     combine_payloads: dict[int, dict[str, Any]] = {}

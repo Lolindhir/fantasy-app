@@ -30,6 +30,7 @@ foreach ($s in $manifest.Seasons) {
     Assert-Equal 'lifecycle-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Lifecycle') "Lifecycle model $($s.Season)."
     Assert-Equal 'repairability-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'Repairability') "Repairability model $($s.Season)."
     Assert-Equal 'team-range-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'TeamRange') "TeamRange model $($s.Season)."
+    Assert-Equal 'win-prob-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'WinProb') "WinProb model $($s.Season)."
     Assert-Equal 'roster-cap-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'RosterCap') "RosterCap model $($s.Season)."
     Assert-Equal 'auto-cut-v1' (Get-LeagueSeasonModel -Metadata $meta -Season $s.Season -Kind 'AutoCut') "AutoCut model $($s.Season)."
 }

@@ -107,6 +107,20 @@ contract:
     AllTime: >
       Overall (playoff placement) and regular-season all-time standing through the last completed season at or before Season
       (ThroughSeason). A season in progress is not part of its own AllTime; ThroughSeason is null before the first completed season.
+      The App consumer generator adds WinPercentageDisplay to AllTime.RegularSeason and League.json
+      Placements.AllTime.Regular from the existing model WinPercentage using the v1 three-decimal formatter.
+      Without completed games (WinPercentage = -1), the display is null; the shared product stays unchanged.
+      The same existing App consumer generator adds an AllTime-only LegacyHighlights array of
+      {Key, TeamID, Count?} for ChampOfChamps, RegularSeasonKing, PodiumMachine and AwardCollector.
+      Winners and counts are computed from shared season/AllTime standings and model awards, never
+      from published League.json or Angular. Placements only consider the current roster set,
+      while AwardCollector retains historical award holders. The array is additive consumer
+      delivery; icons, labels and owner presentation remain Angular-owned. The shared product's
+      SchemaVersion and derived facts are unchanged.
+      AllTime.AwardLegend is also an additive App-consumer delivery of {Key, DisplayText,
+      IconUnicode, Order, Occurrences} grouped across existing derived season Awards. The
+      static historical Regular Season King placement award is excluded. Angular renders
+      the legend and tooltips, but no longer owns the occurrence aggregation after cutover.
   determinism:
     - Compact JSON, fixed key order from the builder, no timestamps and no wall-clock input.
     - Floating-point semantics follow .NET (round half to even after scaling, sequential accumulation); sums never use Python's compensated sum.

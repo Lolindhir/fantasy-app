@@ -17,6 +17,18 @@ purpose: >-
   computed, never persisted (pattern of week-finality.yaml, league-lifecycle.yaml, decision-windows.yaml and matchup-context.yaml).
   public/data/WeeklyRecaps.json and past_seasons/WeeklyRecaps/WeeklyRecaps_<season>.json stay App deliveries with unchanged contracts.
 
+winProbability:
+  issue: 1443
+  models: [team-range-v1, win-prob-v1]
+  rule: >-
+    Each final week carries WinProbabilities: per matchup the pregame win chance (whole percent) of both teams and the Upset flag (winner below 35 percent
+    before the week). Every starter counts with his PlayerWeekFantasy projection of that week (nothing final), recomputed from the product on every
+    run and not frozen; the models are chosen per season in data-meta (Models.TeamRange, Models.WinProb). A starter without a usable projection or
+    canonical identity makes the chance null (unknown, never 50) and the upset null. A tie has no upset. The season model also carries
+    WinProbabilityModel and UpsetCounts per team (Upsets, Weeks with a known chance); the frontend only displays them. The additive fields leave
+    SchemaVersion 1 unchanged. Historical seasons are written by the weekly update-transactions run, the current season by League Live.
+  backtest: tools/historical_win_prob_backtest.py, research/win-probability/2026/
+
 architecture:
   decisionBasis: [ADR-037, ADR-054, ADR-063, ADR-071, ADR-075]
   logicalLayer: Shared Derived Data (editorial product semantics, computed)

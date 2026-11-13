@@ -495,6 +495,77 @@
         {"Source": "nflverse.ff-player-ids raw-latest", "Summary": "Sleeper 13603 with ESPN 4691889, MFL 17821: Gregory Desrosiers, RB, LAC, born 2001-03-27."},
         {"Source": "2026-sleeper-13603-gregory-desrosiers", "Summary": "Existing reviewed adjudication already established Sleeper 13603 and Tank01 4691889 as this person."}
       ]
+    },
+    {
+      "AdjudicationID": "2026-yahoo-26300-jacquies-smith-merge",
+      "Season": 2026,
+      "Status": "confirmed",
+      "DecisionAuthority": "repository-owner-approved-review",
+      "DecisionDate": "2026-11-10",
+      "ResolutionKind": "confirmed-canonical-duplicate-merge",
+      "ConflictPolicy": "reject-conflict-outside-declared-pair",
+      "TargetCanonicalPlayerID": "NFLP-10f761166d419572f3e3",
+      "DuplicateCanonicalPlayerIDs": [
+        "NFLP-01a62335fd9fed94807e",
+        "NFLP-7cd3db639228876e620f"
+      ],
+      "SourceCanonicalPlayerIDs": [],
+      "ProviderAssignments": [],
+      "SubjectLabel": "Jacquies Smith (duplicate record)",
+      "Rationale": "The nflverse.ff-player-ids row of Jacquies Smith (GSIS 00-0029112, Sleeper 1773, Yahoo 26300) carries the ESPN, PFR and PFF IDs of Bryce Davis (LS, GSIS 00-0028913). Since nflverse.players no longer lists Bryce Davis, that row formed a second canonical record for Smith and left the Yahoo token with two owners. The merge moves the duplicate's remaining tokens onto the nflverse.players record; the three contaminated tokens stay with Bryce Davis and are not transferred.",
+      "IndependentAnchors": [
+        {
+          "Kind": "shared-provider-token",
+          "Provider": "GSIS",
+          "ExternalID": "00-0029112",
+          "Summary": "Both records carry GSIS 00-0029112."
+        },
+        {
+          "Kind": "shared-provider-token",
+          "Provider": "Yahoo",
+          "ExternalID": "26300",
+          "Summary": "Both persisted records carry Yahoo 26300 (the duplicated token that triggered the review)."
+        },
+        {
+          "Kind": "attribute-agreement",
+          "Fields": [
+            "BirthDate",
+            "NormalizedName",
+            "Position"
+          ],
+          "Summary": "Both records: Jacquies Smith, DE, born 1990-03-18."
+        }
+      ],
+      "ContaminatedTokens": [
+        {
+          "Provider": "ESPN",
+          "ExternalID": "15256",
+          "Source": "nflverse.ff-player-ids",
+          "Summary": "ESPN 15256 is Bryce Davis (nflverse.players GSIS 00-0028913); Smith is ESPN 15356."
+        },
+        {
+          "Provider": "PFR",
+          "ExternalID": "DaviBr01",
+          "Source": "nflverse.ff-player-ids",
+          "Summary": "PFR DaviBr01 is Bryce Davis; Smith is SmitJa01."
+        },
+        {
+          "Provider": "PFF",
+          "ExternalID": "7281",
+          "Source": "nflverse.ff-player-ids",
+          "Summary": "PFF 7281 is Bryce Davis; Smith is 7401."
+        }
+      ],
+      "Evidence": [
+        {
+          "Source": "nflverse.ff-player-ids raw-latest",
+          "Summary": "Row Jacquies Smith: GSIS 00-0029112, Sleeper 1773, Yahoo 26300 with ESPN 15256, PFR DaviBr01, PFF 7281."
+        },
+        {
+          "Source": "nflverse.players (before 2026-11-10 refresh)",
+          "Summary": "Bryce Davis GSIS 00-0028913 held ESPN 15256, PFR DaviBr01, PFF 7281; Jacquies Smith GSIS 00-0029112 holds ESPN 15356, PFR SmitJa01, PFF 7401."
+        }
+      ]
     }
   ]
 }
