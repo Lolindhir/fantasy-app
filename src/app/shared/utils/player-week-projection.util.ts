@@ -12,8 +12,11 @@ import {
 export const MISSING_PROJECTION_TEXT = '–';
 
 export interface PlayerWeekResultView {
-  /** "game-log" = the published Actual is not available yet; points come from the player's Game Log entry. */
-  state: Extract<PlayerWeekFantasyActualState, 'live' | 'final'> | 'game-log';
+  /**
+   * "game-log" / "matchup" = the published Actual is not available yet; points come from the player's
+   * Game Log entry or, before that exists, from the fantasy matchup context of the same week.
+   */
+  state: Extract<PlayerWeekFantasyActualState, 'live' | 'final'> | 'game-log' | 'matchup';
   /** Real score of the week (not an estimate), e.g. "12.4". */
   pointsText: string;
   /** Real points compared with the published projection; null without a projection. */
@@ -109,18 +112,59 @@ export function buildPlayerWeekProjections(
  */
 export function resolveWeekResult(
   view: PlayerWeekProjectionView | null | undefined,
-  gameLog: ReadonlyArray<{ GameDetails: { Week: number }; FantasyPoints: number }> | null | undefined
+  gameLog: ReadonlyArray<{ GameDetails: { Week: number }; FantasyPoints: number }> | null | undefined,
+  matchupPoints: number | null = null
 ): PlayerWeekResultView | null {
   if (!view) return null;
   if (view.result) return view.result;
   const entry = gameLog?.find(game => Number(game.GameDetails?.Week) === view.week);
-  const points = entry?.FantasyPoints;
-  if (points === null || points === undefined || !Number.isFinite(Number(points))) return null;
-  return {
-    state: 'game-log',
-    pointsText: formatScore(Number(points)),
-    tone: resultTone(Number(points), view.projectedValue)
-  };
+  const logPoints = entry?.FantasyPoints;
+  if (logPoints !== null && logPoints !== undefined && Number.isFinite(Number(logPoints))) {
+    return {
+      state: 'game-log',
+      pointsText: formatScore(Number(logPoints)),
+      tone: resultTone(Number(logPoints), view.projectedValue)
+    };
+  }
+  if (matchupPoints !== null && Number.isFinite(matchupPoints)) {
+    return {
+      state: 'matchup',
+      pointsText: formatScore(matchupPoints),
+      tone: resultTone(matchupPoints, view.projectedValue)
+    };
+  }
+  return null;
+}
+
+/**
+ * Points of one player in the fantasy matchup context of the given week. Only games that have started
+ * count: a scheduled game carries 0 points as a placeholder, never as a result.
+ */
+export function matchupPointsForPlayer(
+  context: {
+    Season: string | number;
+    Week: number;
+    Games: ReadonlyArray<{
+      Status: string | null;
+      FantasyTeams: ReadonlyArray<{ Players: ReadonlyArray<{ PlayerID: string; Points: number | null }> }>;
+    }>;
+  } | null | undefined,
+  season: number,
+  week: number,
+  playerID: string | number
+): number | null {
+  if (!context || Number(context.Season) !== Number(season) || Number(context.Week) !== week) return null;
+  const id = String(playerID);
+  for (const game of context.Games ?? []) {
+    if (!game.Status || game.Status.toLowerCase() === 'scheduled') continue;
+    for (const team of game.FantasyTeams ?? []) {
+      const entry = team.Players?.find(player => String(player.PlayerID) === id);
+      if (entry && entry.Points !== null && entry.Points !== undefined && Number.isFinite(Number(entry.Points))) {
+        return Number(entry.Points);
+      }
+    }
+  }
+  return null;
 }
 
 /** Plain comparison of two published numbers; no model rule involved. */

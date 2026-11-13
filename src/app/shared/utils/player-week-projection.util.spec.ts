@@ -5,6 +5,7 @@ import type {
 import {
   MISSING_PROJECTION_TEXT,
   buildPlayerWeekProjections,
+  matchupPointsForPlayer,
   resolveWeekResult,
   weekProjectionText,
   type PlayerWeekProjectionView
@@ -142,5 +143,33 @@ describe('week result tone', () => {
     const rec = record('1');
     rec.Actual = { Points: 14, State: 'final' } as never;
     expect(buildPlayerWeekProjections(model([rec])).get('1')!.result?.tone).toBe('above');
+  });
+});
+
+describe('matchup points fallback', () => {
+  const view = { season: 2026, week: 10, projection: null, projectedValue: 12, projectedText: '12', rangeText: null, levelLabel: null, result: null } as PlayerWeekProjectionView;
+  const context = (status: string | null, points: number | null) => ({
+    Season: '2026',
+    Week: 10,
+    Games: [{ Status: status, FantasyTeams: [{ Players: [{ PlayerID: '7', Points: points }] }] }]
+  });
+
+  it('reads the points of a started game', () => {
+    expect(matchupPointsForPlayer(context('Final', 27.2), 2026, 10, 7)).toBe(27.2);
+    expect(matchupPointsForPlayer(context('InProgress', 3), 2026, 10, '7')).toBe(3);
+  });
+
+  it('ignores scheduled placeholders, other weeks and unknown players', () => {
+    expect(matchupPointsForPlayer(context('Scheduled', 0), 2026, 10, 7)).toBeNull();
+    expect(matchupPointsForPlayer(context(null, 0), 2026, 10, 7)).toBeNull();
+    expect(matchupPointsForPlayer(context('Final', 5), 2026, 9, 7)).toBeNull();
+    expect(matchupPointsForPlayer(context('Final', 5), 2026, 10, 8)).toBeNull();
+    expect(matchupPointsForPlayer(null, 2026, 10, 7)).toBeNull();
+  });
+
+  it('is used only after the Game Log and the published Actual', () => {
+    expect(resolveWeekResult(view, undefined, 27.2)).toEqual({ state: 'matchup', pointsText: '27.2', tone: 'above' });
+    expect(resolveWeekResult(view, [{ GameDetails: { Week: 10 }, FantasyPoints: 9 }], 27.2)?.state).toBe('game-log');
+    expect(resolveWeekResult({ ...view, result: { state: 'final', pointsText: '1', tone: 'below' } }, undefined, 27.2)?.state).toBe('final');
   });
 });
