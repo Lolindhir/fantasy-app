@@ -2,7 +2,7 @@ schemaVersion: 1
 status: accepted-contract-v1
 trackingIssue: 506
 architectureDecision: ADR-082
-implementationState: 'PR 1 (Issue #506): model season-stats-v1, pure function tools/derived_data_lib/season_statistics.py, materializer tools/derived_data.py (product season-statistics), consumer generator tools/season_statistics_app_publish.py (SeasonStatistics.json and past_seasons files), Angular display. awards-v2 follows in PR 2 and reuses the formulas of this product.'
+implementationState: 'PR 1 (Issue #506): model season-stats-v1, pure function tools/derived_data_lib/season_statistics.py, materializer tools/derived_data.py (product season-statistics), consumer generator tools/season_statistics_app_publish.py (SeasonStatistics.json and past_seasons files), Angular display. PR 2 adds awards-v2 (tools/derived_data_lib/models/awards/v2.py), which reads this persisted product for Overperformer and Brick Wall; the Standings job of league-live.yml checks the product out read-only.'
 
 purpose: >
   Define the Shared Derived Data product SeasonStatistics: for one league and one season every figure about Expected Wins,

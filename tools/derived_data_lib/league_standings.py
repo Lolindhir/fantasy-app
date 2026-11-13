@@ -67,11 +67,13 @@ def build_season(
     awards_model: Any,
     previous: dict[str, Any] | None,
     completed_before: Sequence[dict[str, Any]],
+    season_statistics: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Product document of one season.
 
     ``previous``: the document of the previous manifest season (Most Improved) or None. ``completed_before``:
-    the documents of all earlier completed seasons, newest first (all-time chain).
+    the documents of all earlier completed seasons, newest first (all-time chain). ``season_statistics``: the persisted
+    season-statistics document of this season, given only to award models with ``NEEDS_SEASON_STATISTICS`` (awards-v2) or None.
     """
     teams = sorted(inputs.teams, key=lambda t: t["TeamID"])
     completed_weeks = min(inputs.league_scored_week, inputs.regular_season_games)
@@ -86,7 +88,10 @@ def build_season(
         standings_model.weekly_movements(tables, team_ids),
     )
     playoffs = standings_model.playoff_standings(inputs.winners_bracket, inputs.losers_bracket, teams)
-    awards, annotations = awards_model.compute(rows, playoffs, previous)
+    if getattr(awards_model, "NEEDS_SEASON_STATISTICS", False):
+        awards, annotations = awards_model.compute(rows, playoffs, previous, season_statistics)
+    else:
+        awards, annotations = awards_model.compute(rows, playoffs, previous)
     for row in rows:
         row.update(annotations.get(row["TeamID"], {}))
 
