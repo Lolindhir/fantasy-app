@@ -27,6 +27,7 @@ import type {
 } from '../models/player.models';
 import type { RawTransaction, Transaction } from '../models/transaction.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
+import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
 import { mergeCompletedRawTransactions } from '../utils/transaction-history.util';
 import { buildPlayerWeekProjections, type PlayerWeekProjectionView } from '../../shared/utils/player-week-projection.util';
 import { sortPlayers } from '../../shared/utils/player-sort.util';
@@ -326,6 +327,14 @@ export class DataService {
         );
       })
     );
+  }
+
+  getSeasonStatistics(): Observable<SeasonStatisticsReadModel> {
+    return this.dataApiService.getSeasonStatisticsRaw();
+  }
+
+  getPastSeasonStatisticsRaw(path: string): Observable<SeasonStatisticsReadModel> {
+    return this.dataApiService.getPastSeasonStatisticsRaw(path);
   }
 
   getPastSeasonsIndex(): Observable<PastSeasonsIndex> {

@@ -26,6 +26,7 @@ the read-only restore probe `tools/derived_clean_root_audit.py`.
 | `league-transactions` | `.ai-context/manual/league-history.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
 | `league-drafts` | `.ai-context/manual/league-history.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
 | `league-standings` | `.ai-context/manual/league-standings.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-standings.yml` |
+| `season-statistics` | `.ai-context/manual/season-statistics.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
 <!-- derived-products:end -->
 
 ## Global NFL Game

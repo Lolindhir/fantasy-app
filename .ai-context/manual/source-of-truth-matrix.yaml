@@ -1181,6 +1181,11 @@ consumerReadClassification:
         legacy:Timestamps: app-output-owner
         legacy:WeeklyRecaps: app-output-owner
       note: 'Consumer generator of the weekly recaps (ADR-063, Issue #1199 section 4 step 4). write renders WeeklyRecaps.json and the past_seasons WeeklyRecaps files from the computed recap function (data-source, products, data-meta) and publishes them only on a semantic difference. It reads the existing App files only to detect that difference and updates the WeeklyRecaps key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
+    tools/season_statistics_app_publish.py:
+      reads:
+        legacy:SeasonStatistics: app-output-owner
+        legacy:Timestamps: app-output-owner
+      note: 'Consumer generator of the season statistics (Issue #506). write materializes the Shared Derived product season-statistics (data-source, PlayerWeekFantasy, data-meta) and renders SeasonStatistics.json and the past_seasons SeasonStatistics files from it, only on a semantic difference. It reads the existing App file only to detect that difference and updates the SeasonStatistics key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/weekly_recaps.py:
       reads:
         legacy:WeeklyRecaps: validation-shadow

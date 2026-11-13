@@ -130,6 +130,32 @@
           <span>Points Against per Game</span>
           <strong>{{ pointsAgainstPerGame(row) | number:'1.2-2':'en-US' }}</strong>
         </div>
+        <ng-container *ngIf="teamStatistics(row) as stats">
+          <div class="standing-detailed-stat">
+            <span>Record vs Expected</span>
+            <strong>{{ formatRecord(row) }} vs {{ formatDecimal(stats.ExpectedWins) }} xW</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>Luck</span>
+            <strong class="standing-detailed-luck" [ngClass]="'standing-detailed-luck--' + signClass(stats.Luck)">{{ formatSigned(stats.Luck) }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>All-Play Record</span>
+            <strong>{{ formatAllPlay(stats) }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>Opponent Timing</span>
+            <strong>{{ formatSigned(stats.OpponentTiming) }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>Underdog Wins</span>
+            <strong>{{ stats.UnderdogWins }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>Upset Losses</span>
+            <strong>{{ stats.UpsetLosses }}</strong>
+          </div>
+        </ng-container>
         <ng-container *ngIf="placementTrend(row, rows.length) as trend; else placementTrendUnavailable">
           <div class="standing-detailed-trend">
             <div class="standing-detailed-trend-heading">

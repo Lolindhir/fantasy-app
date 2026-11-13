@@ -45,3 +45,52 @@
 .season-weeks-link:hover {
   text-decoration: underline;
 }
+
+.luck-block {
+  margin-top: 12px;
+}
+
+.luck-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) 1.3fr 0.7fr 0.8fr 0.8fr;
+  gap: 6px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.luck-header {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.luck-team {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.luck-value--pos {
+  color: #15803d;
+}
+
+.luck-value--neg {
+  color: #b91c1c;
+}
+
+@media (max-width: 560px) {
+  .luck-row {
+    grid-template-columns: minmax(0, 1.3fr) 1.2fr 0.7fr 0.6fr 0.6fr;
+    gap: 4px;
+    font-size: 0.72rem;
+  }
+
+  .luck-header {
+    font-size: 0.6rem;
+  }
+}
