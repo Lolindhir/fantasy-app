@@ -676,8 +676,71 @@ app-league-matchups {
 .weekly-recap-award-empty { margin-top: 8px; color: var(--weekly-muted); font-size: 0.67rem; }
 
 /* Issue #1446: underdog wins reuse the award card; a real upset (winner below 35 percent) gets the amber accent of the matchup dialog. */
-.weekly-recap-upset--major { border-color: rgba(180, 83, 9, 0.35); background: #fffbeb; }
-.weekly-recap-upset--major .weekly-recap-award-title { color: #b45309; }
+.weekly-recap-underdog {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.weekly-recap-underdog--upset { border-color: rgba(180, 83, 9, 0.35); background: #fffbeb; }
+.weekly-recap-underdog-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+.weekly-recap-underdog-title mat-icon { width: 16px; height: 16px; flex: 0 0 16px; font-size: 16px; }
+.weekly-recap-underdog--upset .weekly-recap-underdog-title { color: #b45309; }
+.weekly-recap-underdog-tag {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #b45309;
+  color: #fff;
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.weekly-recap-underdog-body { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-width: 0; }
+.weekly-recap-underdog-winner,
+.weekly-recap-underdog-loser {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.weekly-recap-underdog-winner:disabled,
+.weekly-recap-underdog-loser:disabled { cursor: default; }
+.weekly-recap-underdog-winner:not(:disabled):hover strong,
+.weekly-recap-underdog-loser:not(:disabled):hover span:last-child { text-decoration: underline; }
+.weekly-recap-underdog-logo {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #e2e8f0;
+}
+.weekly-recap-underdog-logo img { width: 100%; height: 100%; object-fit: cover; }
+.weekly-recap-underdog-winner strong { color: var(--weekly-text); font-size: 0.86rem; font-weight: 900; }
+.weekly-recap-underdog-chance { color: #b45309; font-size: 0.76rem; font-variant-numeric: tabular-nums; font-weight: 850; }
+.weekly-recap-underdog-beat { color: var(--weekly-muted); font-size: 0.68rem; }
+.weekly-recap-underdog-loser { color: var(--weekly-muted); font-size: 0.7rem; }
+.weekly-recap-underdog-loser .weekly-recap-underdog-logo { width: 20px; height: 20px; }
+.weekly-recap-underdog--none { padding: 7px 10px; }
 
 /* Prominent awards share the same metric and identity scale as Key Fantasy Players.
    Scoped overrides deliberately leave the accepted Compact design untouched. */

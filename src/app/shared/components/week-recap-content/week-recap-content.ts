@@ -19,8 +19,10 @@ export interface WeekRecapContent {
   games: readonly WeeklyRecapKeyGame[];
   players: readonly WeeklyRecapKeyPlayer[];
   awards: WeeklyRecapTeamAwards | null;
-  /** Underdog winners of the week (generator marks); empty or absent when every favorite won. */
-  upsets?: readonly WeekRecapUpset[];
+  /** The biggest underdog win of the week (lowest pregame chance of a winner, generator marks); null when none. */
+  underdog?: WeekRecapUpset | null;
+  /** True when pregame chances are known for the week and no underdog won. */
+  allFavoritesWon?: boolean;
 }
 
 /** One matchup the underdog won: the mark and the pregame chance of the winner come from the generator. */
@@ -81,6 +83,16 @@ export class WeekRecapContentComponent {
     return this.teamForID(teamID)?.OwnerAvatar?.trim() || null;
   }
 
+  /** Team name (not the manager) for the underdog row. */
+  teamLabel(teamID: string | number): string {
+    const team = this.teamForID(teamID);
+    return team?.Team?.trim() || team?.TeamAbbr?.trim() || `Team ${teamID}`;
+  }
+
+  teamLogo(teamID: string | number): string | null {
+    return this.teamForID(teamID)?.Avatar?.trim() || null;
+  }
+
   awardTeamName(teamID: string | number): string | null {
     return this.teamForID(teamID)?.Team?.trim() || null;
   }
@@ -94,15 +106,12 @@ export class WeekRecapContentComponent {
     if (team) this.teamDialog.open(team.TeamID);
   }
 
-  upsetLabel(level: 'upset' | 'underdog'): string {
-    return level === 'upset' ? 'Upset' : 'Underdog win';
-  }
 
   upsetAriaLabel(upset: WeekRecapUpset): string {
-    const winner = this.awardOwnerName(upset.winnerTeamID);
-    const loser = upset.loserTeamID === null ? 'the favorite' : this.awardOwnerName(upset.loserTeamID);
+    const winner = this.teamLabel(upset.winnerTeamID);
+    const loser = upset.loserTeamID === null ? 'the favorite' : this.teamLabel(upset.loserTeamID);
     const chance = upset.winnerChance === null ? '' : ` with a ${upset.winnerChance} percent pregame chance`;
-    return `${this.upsetLabel(upset.level)}: ${winner} beat ${loser}${chance}`;
+    return `Biggest underdog win${upset.level === 'upset' ? ' (upset)' : ''}: ${winner} beat ${loser}${chance}`;
   }
 
   formatAwardEfficiency(value: number): string {

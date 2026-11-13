@@ -214,7 +214,12 @@ describe('weeks view util', () => {
       expect(selectRecapUpsets([mark('c', 5, 20, 80, null)])).toEqual([]);
       expect(selectRecapUpsets(undefined)).toEqual([]);
       const withUpsets: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [{ Week: 1, KeyGames: [], KeyPlayers: [], WinProbabilities: [mark('b', 3, 70, 30, 'upset')] }] };
-      expect(selectWeekRecap(withUpsets, '2025', final(1)).content?.upsets?.length).toBe(1);
+      expect(selectWeekRecap(withUpsets, '2025', final(1)).content?.underdog?.matchupID).toBe('b');
+      expect(selectWeekRecap(withUpsets, '2025', final(1)).content?.allFavoritesWon).toBeFalse();
+      const none: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [{ Week: 1, KeyGames: [], KeyPlayers: [], WinProbabilities: [mark('c', 5, 20, 80, null)] }, { Week: 2, KeyGames: [], KeyPlayers: [] }] };
+      expect(selectWeekRecap(none, '2025', final(1)).content?.allFavoritesWon).toBeTrue();
+      expect(selectWeekRecap(none, '2025', final(1)).content?.underdog).toBeNull();
+      expect(selectWeekRecap(none, '2025', final(2)).content?.allFavoritesWon).toBeFalse();
     });
 
     it('reports a missing recap for a settled week and a pending recap for an open week', () => {

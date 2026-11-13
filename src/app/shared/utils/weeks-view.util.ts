@@ -210,6 +210,12 @@ export function selectRecapUpsets(winProbabilities: readonly WeeklyRecapWinProba
     (left.level === right.level ? 0 : left.level === 'upset' ? -1 : 1) || (left.winnerChance ?? 100) - (right.winnerChance ?? 100));
 }
 
+/** True when the generator knows the pregame chances of the week and marked no underdog win (never guessed from missing data). */
+export function allFavoritesWon(winProbabilities: readonly WeeklyRecapWinProbability[] | null | undefined): boolean {
+  const known = (winProbabilities ?? []).filter(matchup => matchup.Teams.every(team => team.PregameWinProbability !== null));
+  return known.length > 0 && known.every(matchup => !matchup.UpsetLevel);
+}
+
 /** Recap of one week; a missing recap is a visible state, never an error or an invented value. */
 export function selectWeekRecap(
   recaps: WeeklyRecapsReadModel | null | undefined,
@@ -229,7 +235,8 @@ export function selectWeekRecap(
         games: recap.KeyGames,
         players: recap.KeyPlayers,
         awards: recap.TeamAwards?.State === 'available' ? recap.TeamAwards : null,
-        upsets: selectRecapUpsets(recap.WinProbabilities)
+        underdog: selectRecapUpsets(recap.WinProbabilities)[0] ?? null,
+        allFavoritesWon: allFavoritesWon(recap.WinProbabilities)
       }
     };
   }
