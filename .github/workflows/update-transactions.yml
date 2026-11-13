@@ -43,6 +43,7 @@ jobs:
           --path public/data
           --path data-derived/league-transactions
           --path data-derived/league-drafts
+          --path data-derived/season-statistics
           --
           bash -euo pipefail -c
           'mkdir -p "$RUNNER_TEMP/derived-summary" &&
@@ -53,6 +54,7 @@ jobs:
            python3 tools/schedule_archive.py write &&
            python3 tools/matchup_context_app_publish.py write --scope history &&
            python3 tools/weekly_recaps_app_publish.py write --scope history &&
+           python3 tools/season_statistics_app_publish.py write --scope all &&
            pwsh ./public/requests/RequestPastSeasonsIndex.ps1'
 
       - name: Rebuild and publish Drafts-only data (manual)

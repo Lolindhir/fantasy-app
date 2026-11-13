@@ -2,6 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
+import type { SeasonStatisticsTeam } from '../../../core/models/season-statistics.models';
+import { formatAllPlay, formatDecimal, formatExpectedRecord, formatSigned, signClass } from '../../utils/season-statistics-view.util';
 import type { CurrentStandingRow } from '../../utils/league-standings-view.util';
 import {
   standingCanonicalDelta,
@@ -30,6 +32,8 @@ export class CurrentStandingsComponent {
   /** Keep the existing compact Overview presentation unchanged. */
   @Input() variant: 'compact' | 'detailed' = 'compact';
   @Input() playoffTeams: number | null = null;
+  /** Generated season statistics by TeamID (Issue #506); absent while loading or unavailable. */
+  @Input() statistics: ReadonlyMap<string, SeasonStatisticsTeam> | null = null;
 
   expandedTeamId: number | null = null;
 
@@ -86,4 +90,14 @@ export class CurrentStandingsComponent {
     return standingPerGame(row, row.team.PointsAgainst);
   }
 
+  teamStatistics(row: CurrentStandingRow): SeasonStatisticsTeam | null {
+    const stats = this.statistics?.get(String(row.team.TeamID)) ?? null;
+    return stats && stats.Games > 0 ? stats : null;
+  }
+
+  readonly formatSigned = formatSigned;
+  readonly formatDecimal = formatDecimal;
+  readonly formatExpectedRecord = formatExpectedRecord;
+  readonly formatAllPlay = formatAllPlay;
+  readonly signClass = signClass;
 }

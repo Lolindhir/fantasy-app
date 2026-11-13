@@ -1,0 +1,104 @@
+schemaVersion: 1
+status: accepted-contract-v1
+trackingIssue: 506
+architectureDecision: ADR-082
+implementationState: 'PR 1 (Issue #506): model season-stats-v1, pure function tools/derived_data_lib/season_statistics.py, materializer tools/derived_data.py (product season-statistics), consumer generator tools/season_statistics_app_publish.py (SeasonStatistics.json and past_seasons files), Angular display. awards-v2 follows in PR 2 and reuses the formulas of this product.'
+
+purpose: >
+  Define the Shared Derived Data product SeasonStatistics: for one league and one season every figure about Expected Wins,
+  Luck, All-Play, relative scoring strength, strength of schedule, opponent timing, projection versus result and upsets,
+  with the weekly progression and the values per game. The product is consumer-neutral so that App, Fantasy Management and
+  later analyses (for example awards-v2) read the same numbers. It replaces nothing; it is new.
+
+architecture:
+  decisionBasis:
+    - ADR-037
+    - ADR-038
+    - ADR-054
+    - ADR-055
+    - ADR-071
+    - ADR-075
+    - ADR-081
+    - ADR-082
+  logicalLayer: Shared Derived Data
+  physicalStorage: data-derived/season-statistics/<CanonicalLeagueID>/<season>.json
+  models: .ai-context/manual/derived-models.yaml (season-stats-v1)
+  rules:
+    - The product is consumer-neutral. The App files SeasonStatistics.json and past_seasons/SeasonStatistics/SeasonStatistics_<season>.json are rendered by tools/season_statistics_app_publish.py; consumer shapes never feed back.
+    - The formulas are central and league-independent (season-stats-v1). A league only selects the model ID per season in data-meta (Models.SeasonStats, ADR-054, ADR-055).
+    - Inputs are only data-source (league matchups, weekly rosters, league.json), the products player-week-fantasy (pregame projections) and team-week-performance (LineupEfficiencyActual), the functions week_finality and the models team-range and win-prob, and data-meta. No public/data file and no other season is an input; every season stands alone.
+    - Missing evidence is null, never a guess. A game without a pregame projection has no ProjectionDelta; a game whose team lacks a projection has no pregame win chance and counts in no upset figure.
+    - Fantasy-Management-specific interpretation (rivals, strategy) never enters the product.
+
+identity:
+  fileTuple:
+    - CanonicalLeagueID
+    - Season
+    - Models (SeasonStats, TeamRange, WinProb)
+    - week basis (AsOf.LeagueScoredWeek)
+  teamKey: TeamID is the provider roster ID (Sleeper roster_id) as in league-standings; CanonicalLeagueRosterID is the canonical key.
+  oneFilePerLeagueSeason: One file per league and season; the weekly progression is a section of the file.
+
+weekBasis:
+  rule: >
+    Regular-season weeks 1..min(LeagueScoredWeek, RegularSeasonGames) (week-finality.yaml, ADR-071) as an uninterrupted run
+    of weeks with two-team matchups that cover every team exactly once. The run ends at the first week without usable facts
+    (AsOf.CompletedWeeks). Playoff weeks are not part of the product.
+
+definitions:
+  AllPlayShare: per week (teams with fewer points + 0.5 * teams with equal points) / (N - 1)
+  ExpectedWins: sum of the AllPlayShare of the weeks
+  AllPlay: Wins, Losses, Ties against all other teams over all weeks
+  Luck: (Wins + 0.5 * Ties) - ExpectedWins
+  RelativeScoringStrength: team points per game / league points per team-game at the same cut-off
+  StrengthOfSchedule: mean RelativeScoringStrength of the opponents per game (repeated opponents count repeatedly), at the cut-off; stored but not shown in the App
+  PointsAgainstBurden: own points against per game / league points per team-game
+  OpponentTiming: per game opponent points - opponent season average at the cut-off; the season value is the mean
+  ProjectionDelta: per game points - pregame projection (team-range-v1 over the PlayerWeekFantasy projections of the starters); season value is the mean over the games with a projection (ProjectionGames)
+  AboveAverageOpponents: games in which the opponent scored above its own season average; AboveAverageOpponentWins are the wins among them (base of the Brick Wall award, PR 2)
+  PregameWinProbability: unrounded win-prob-v1 chance of the team before the week, null when unknown
+  UnderdogWins: wins with a pregame chance below 0.5 (UpsetWins are those below 0.35); FavoriteLosses are losses with a chance above 0.5 (UpsetLosses are losses against a winner with a chance below 0.35
+  KnownChanceGames: games with a known chance (denominator of the upset figures)
+  BiggestUpset: the win with the lowest pregame chance when it is below 0.35, else null; ties by earlier week, then lower TeamID text
+  ProjectedBestBallPoints: per game best possible lineup of the whole matchup player pool by PlayerWeekFantasy projection (slots from league.json RosterPositions, positions from the canonical weekly roster, shared optimizer tools/weekly_lineup_optimizer.py); players without a usable projection or position are excluded and counted (BestBallExcludedPlayers); a starter without a projection makes the value null; the pool includes Taxi/IR because the provider exposes no weekly placement; season value is the mean (BestBallGames)
+  LineupEfficiencyProjected: per game ProjectedStarterPoints (= PregameProjection) / ProjectedBestBallPoints in percent; season value is the mean
+  LineupEfficiencyActual: EfficiencyPercent taken over from the team-week-performance product (hindsight), not recomputed; season value is the mean
+  ProjectedBestBallStrength: season mean ProjectedBestBallPoints x season mean LineupEfficiencyProjected / 100 (lineup-independent roster strength); weekly progression carries it too; stored only, not shown in the App
+  thresholds: 0.5 and 0.35 belong to season-stats-v1 (Thresholds in the document)
+
+contract:
+  version: 1
+  rootShape: |
+    {
+      "SchemaVersion": 1, "Product": "season-statistics", "CanonicalLeagueID": "<id>", "Season": <int>,
+      "Models": { "SeasonStats": "season-stats-v1", "TeamRange": "team-range-v1", "WinProb": "win-prob-v1" },
+      "Thresholds": { "UnderdogWinProbability": 0.5, "UpsetWinProbability": 0.35 },
+      "IsCompleted": <bool>, "RegularSeasonGames": <int>,
+      "AsOf": { "LeagueScoredWeek": <int>, "CompletedWeeks": <int> },
+      "Teams": [ { "TeamID", "CanonicalLeagueRosterID", "Owner", "TeamName", "Games", "Wins", "Losses", "Ties", "Points", "PointsAgainst",
+                   "ExpectedWins", "AllPlay", "Luck", "RelativeScoringStrength", "StrengthOfSchedule", "PointsAgainstBurden",
+                   "OpponentTiming", "ProjectionDelta", "ProjectionGames", "AboveAverageOpponents", "AboveAverageOpponentWins",
+                   "KnownChanceGames", "UnderdogWins", "UpsetWins", "FavoriteLosses", "UpsetLosses",
+                   "GameLog": [ { "Week", "OpponentID", "Points", "OpponentPoints", "Result", "AllPlayShare", "OpponentTiming",
+                                  "PregameProjection", "ProjectionDelta", "PregameWinProbability", "ProjectedStarterPoints", "ProjectedBestBallPoints",
+                                  "LineupEfficiencyProjected", "LineupEfficiencyActual", "BestBallExcludedPlayers" } ],
+                   "BestBallGames", "ProjectedBestBallPoints", "LineupEfficiencyProjected", "LineupEfficiencyActual", "ProjectedBestBallStrength" } ],
+      "Weeks": [ { "Week", "Teams": [ { "TeamID", "ExpectedWins", "Luck", "RelativeScoringStrength", "StrengthOfSchedule", "ProjectedBestBallStrength" } ] } ],
+      "BiggestUpset": { "Week", "WinnerTeamID", "LoserTeamID", "WinnerPoints", "LoserPoints", "WinnerPregameWinProbability" } | null
+    }
+  rounding: four decimals, -0.0 normalized to 0.0
+  appDelivery:
+    current: public/data/SeasonStatistics.json is the product document of the current season plus BiggestUpsetAllTime ({ Season } + BiggestUpset fields), chosen by the generator from the persisted products of every season
+    history: public/data/past_seasons/SeasonStatistics/SeasonStatistics_<season>.json is the product document of a completed earlier season; indexed by PastSeasonsIndex.json (ConfigUtils PastSeasonResources key SeasonStatistics)
+    frontendRule: Angular displays the values and selects nothing and calculates nothing (Regel 4). Strength of schedule is not displayed.
+
+writers:
+  - workflow: .github/workflows/league-live.yml
+    scope: current season only, fail-soft, prefix data-derived/season-statistics added to the existing rebuild-and-retry publication
+  - workflow: .github/workflows/update-transactions.yml
+    scope: all seasons, prefix data-derived/season-statistics added to the existing rebuild-and-retry publication
+rollback: remove the prefix and the generator call from both workflows and delete data-derived/season-statistics and the App files
+
+validation:
+  tests: tools/tests/test_season_statistics.py
+  restoreProbe: tools/derived_clean_root_audit.py (product season-statistics)

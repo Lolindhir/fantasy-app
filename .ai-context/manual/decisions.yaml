@@ -2818,3 +2818,35 @@ decisions:
       negative:
         - Above 80 percent and in single bands the raw chance deviates from the observed rate on a small sample; the backtest is renewed when the projection model changes.
         - The pregame chance of historical weeks follows the stored PlayerWeekFantasy partitions and changes when they are rebuilt.
+
+  - id: ADR-082
+    title: Season statistics are a Shared Derived product with the central model season-stats-v1
+    status: accepted
+    amends: [ADR-055, ADR-081]
+    context: >-
+      Standings show records but not whether a record was earned or lucky. Expected Wins from all-play, strength of schedule, opponent timing,
+      the result against the own pregame projection and upsets exist nowhere as a reproducible figure, and the awards Overperformer and Brick Wall
+      use proxies (point difference, points against). Several consumers (App Standings and Season Archive, Hall of Fame, Fantasy Management,
+      awards-v2) need the same numbers (Issue #506, measured 2026-11-12).
+    decision: >-
+      Robert decided on 2026-11-13 (Issue #506): a stored Shared Derived product data-derived/season-statistics/<CanonicalLeagueID>/<season>.json
+      with every available figure (full content on purpose, so later analyses do not need a new product), including the weekly progression and
+      the values per game. The formulas are the central, league-independent, versioned model season-stats-v1 (tools/derived_data_lib/models/season_stats/v1.py),
+      chosen per season in data-meta (Models.SeasonStats). Inputs are only data-source, the player-week-fantasy product (pregame projections through
+      team-range and win-prob), week finality and data-meta; every season stands alone. The consumer generator tools/season_statistics_app_publish.py renders
+      SeasonStatistics.json and the past_seasons files and chooses the all-time biggest upset (a win with a pregame chance below 35 percent, lowest chance wins)
+      so the frontend only displays. Strength of schedule is stored but not displayed (six teams, spread 0.98 to 1.03). The elevated effect (new write prefix
+      data-derived/season-statistics for the existing writers league-live.yml, current season, and update-transactions.yml, all seasons) was approved by Robert
+      on 2026-11-13; no new workflow, credential or permission. awards-v2 (Overperformer, Brick Wall) follows in the same Issue as a separate model version
+      and reuses these formulas. Contract: .ai-context/manual/season-statistics.yaml.
+    rationale: >-
+      One implementation per figure serves every consumer; a stored product keeps the history reproducible and cheap to read; a model version per season keeps
+      old seasons stable when the formulas improve (for example with a better projection model).
+    consequences:
+      positive:
+        - Luck, Expected Wins, projection delta and upsets are available to App, Fantasy Management and awards-v2 from one file.
+        - The frontend does no calculation and no selection.
+      negative:
+        - The product depends on PlayerWeekFantasy partitions for the projection figures; weeks without a projection stay null.
+        - The ten-minute League Live run gains one fail-soft step (runtime to be measured after the G5 AP5 measurement).
+        - The pregame chance of historical weeks follows the stored PlayerWeekFantasy partitions and changes when they are rebuilt.

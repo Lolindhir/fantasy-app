@@ -14,6 +14,7 @@ import type { RawNFLTeam, RawPlayer } from '../models/player.models';
 import type { TeamCapOutlookReadModel } from '../models/team-cap-outlook.models';
 import type { RawTransaction } from '../models/transaction.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
+import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
 
 export interface LeagueDataLoadResult {
   leagueRaw: RawLeague;
@@ -48,6 +49,7 @@ export interface PastSeasonIndexEntry {
     Matchups?: PastSeasonResourceIndex;
     FantasyGameContext?: PastSeasonResourceIndex;
     WeeklyRecaps?: PastSeasonResourceIndex;
+    SeasonStatistics?: PastSeasonResourceIndex;
   };
 }
 
@@ -112,6 +114,14 @@ export class DataApiService {
 
   getWeeklyRecapsRaw(): Observable<WeeklyRecapsReadModel> {
     return this.http.get<WeeklyRecapsReadModel>('data/WeeklyRecaps.json');
+  }
+
+  getSeasonStatisticsRaw(): Observable<SeasonStatisticsReadModel> {
+    return this.http.get<SeasonStatisticsReadModel>('data/SeasonStatistics.json');
+  }
+
+  getPastSeasonStatisticsRaw(path: string): Observable<SeasonStatisticsReadModel> {
+    return this.http.get<SeasonStatisticsReadModel>(this.normalizeDataPath(path));
   }
 
   getPastSeasonsIndex(): Observable<PastSeasonsIndex> {

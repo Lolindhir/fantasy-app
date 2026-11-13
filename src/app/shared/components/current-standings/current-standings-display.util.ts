@@ -60,6 +60,7 @@ export interface StandingPlacementTrend {
   polyline: string;
   lastWeek: number;
   teamCount: number;
+  guides: { place: number; y: number }[];
   description: string;
 }
 
@@ -119,6 +120,10 @@ export function standingPlacementTrend(
     polyline: points.map(point => `${point.x},${point.y}`).join(' '),
     lastWeek: games,
     teamCount,
+    guides: Array.from({ length: teamCount }, (_, index) => ({
+      place: index + 1,
+      y: 20 + (55 * index) / (teamCount - 1)
+    })),
     description: `Season placements through week ${games}: ${points
       .map(point => `week ${point.week} place ${point.place}`).join(', ')}`
   };

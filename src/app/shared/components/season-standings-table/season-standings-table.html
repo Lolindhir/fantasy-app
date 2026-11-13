@@ -1,0 +1,89 @@
+<section class="current-standings current-standings--detailed" *ngIf="standings as rows">
+  <div class="standing-detailed-heading">
+    <h2>{{ title }}</h2>
+  </div>
+
+  <ng-container *ngFor="let row of rows">
+    <div class="standing-detailed-row">
+      <div class="standing-detailed-rank">
+        <strong>{{ row.place }}</strong>
+      </div>
+
+      <div class="standing-detailed-team">
+        <app-team-identity
+          *ngIf="team(row) as t; else ownerOnly"
+          class="standing-detailed-identity"
+          [team]="t"
+          [elements]="identityElements"
+          size="small"
+        ></app-team-identity>
+        <ng-template #ownerOnly><span class="standing-detailed-owner">{{ row.teamName || row.owner }}</span></ng-template>
+        <div class="standing-detailed-form-line">
+          <span class="standing-detailed-owner" [title]="row.owner">{{ row.owner }}</span>
+          <span class="standing-detailed-record">{{ row.record ?? '—' }}</span>
+        </div>
+      </div>
+
+      <div class="standing-detailed-scores">
+        <span class="standing-detailed-score">
+          <span class="standing-detailed-score-label">PF</span>
+          <strong class="standing-detailed-points standing-detailed-points--for">{{ row.points | number:'1.2-2':'en-US' }}</strong>
+        </span>
+        <span class="standing-detailed-score">
+          <span class="standing-detailed-score-label">PA</span>
+          <span class="standing-detailed-points standing-detailed-points--against">{{ row.pointsAgainst | number:'1.2-2':'en-US' }}</span>
+        </span>
+      </div>
+
+      <button
+        class="standing-detailed-expand"
+        type="button"
+        [attr.aria-label]="(isExpanded(row) ? 'Hide' : 'Show') + ' season statistics for ' + (row.teamName || row.owner)"
+        [attr.aria-expanded]="isExpanded(row)"
+        [attr.aria-controls]="idPrefix + '-details-' + row.teamId"
+        (click)="toggle(row)"
+      ><span class="standing-detailed-chevron" [class.standing-detailed-chevron--open]="isExpanded(row)" aria-hidden="true"></span></button>
+    </div>
+
+    <div *ngIf="isExpanded(row)" class="standing-detailed-details" [id]="idPrefix + '-details-' + row.teamId">
+      <div class="standing-detailed-stat" *ngIf="pointDifferential(row) !== null">
+        <span>Point Differential</span>
+        <strong>{{ pointDifferential(row) | number:'1.2-2':'en-US' }}</strong>
+      </div>
+      <div class="standing-detailed-stat" *ngIf="perGame(row, row.points) !== null">
+        <span>Points per Game</span>
+        <strong>{{ perGame(row, row.points) | number:'1.2-2':'en-US' }}</strong>
+      </div>
+      <div class="standing-detailed-stat" *ngIf="perGame(row, row.pointsAgainst) !== null">
+        <span>Points Against per Game</span>
+        <strong>{{ perGame(row, row.pointsAgainst) | number:'1.2-2':'en-US' }}</strong>
+      </div>
+      <ng-container *ngIf="stats(row) as s">
+        <div class="standing-detailed-stat">
+          <span>Expected Record</span>
+          <strong>{{ formatExpectedRecord(s) }}</strong>
+        </div>
+        <div class="standing-detailed-stat">
+          <span>Luck</span>
+          <strong class="standing-detailed-luck" [ngClass]="'standing-detailed-luck--' + signClass(s.Luck)">{{ formatSigned(s.Luck) }}</strong>
+        </div>
+        <div class="standing-detailed-stat">
+          <span>Opponent Timing</span>
+          <strong>{{ formatSigned(s.OpponentTiming) }}</strong>
+        </div>
+        <div class="standing-detailed-stat">
+          <span>Underdog Wins</span>
+          <strong>{{ s.UnderdogWins }}</strong>
+        </div>
+        <div class="standing-detailed-stat">
+          <span>Upset Losses</span>
+          <strong>{{ s.UpsetLosses }}</strong>
+        </div>
+        <div class="standing-detailed-stat">
+          <span>All-Play Record</span>
+          <strong>{{ formatAllPlay(s) }}</strong>
+        </div>
+      </ng-container>
+    </div>
+  </ng-container>
+</section>

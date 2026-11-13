@@ -29,12 +29,12 @@
       <app-season-awards [awards]="season.awards"></app-season-awards>
 
       <section class="season-block regular-season-block">
-        <h3>Regular Season Standings</h3>
-
-        <app-regular-season-standings-list
+        <app-season-standings-table
           [standings]="season.regularSeasonStandings"
-          [showTitle]="false"
-        ></app-regular-season-standings-list>
+          [teams]="teams"
+          [statistics]="statisticsByTeam(season)"
+          [idPrefix]="'season-' + season.season"
+        ></app-season-standings-table>
       </section>
     </mat-expansion-panel>
   </mat-accordion>

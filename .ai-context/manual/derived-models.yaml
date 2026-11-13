@@ -30,6 +30,7 @@ architecture:
     - tools/derived_data_lib/decision_windows.py (computed Decision Windows function with the repairability model, no product, #1199 section 2)
     - tools/derived_data_lib/matchup_context.py (computed matchup context function with the team-range model, no product, #1199 section 3)
     - tools/matchup_projection.py and tools/derived_data_lib/weekly_recaps.py (win-prob model on the team-range projections, no product, #1443)
+    - tools/derived_data_lib/season_statistics.py and the season-statistics product (season-stats-v1, #506)
     - later models through the same registry
   rules:
     - A model is a pure function of its explicit inputs plus its own PARAMS. It reads no files, no network, no clock, no environment and no league configuration.
@@ -51,6 +52,7 @@ identity:
       - repairability-v1
       - team-range-v1
       - win-prob-v1
+      - season-stats-v1
     rules:
       - The model ID is the only way a league, a snapshot or a test refers to a model.
       - kind uses hyphens in the ID (salary-cap-v1) and underscores in the module path (salary_cap/v1.py).
@@ -113,7 +115,7 @@ registry:
     - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
   leagueSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
-    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut } -> model IDs
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut, SeasonStats } -> model IDs
     rule: >
       The league metadata chooses model IDs per season. A new version applies from
       the season in which the metadata first names it; earlier seasons keep their
@@ -252,6 +254,17 @@ models:
       - Upset means the winner had less than 35 percent before the week (unrounded value); a tie has no upset.
       - Recap mark (Issue #1446, upset_level): a winner below 35 percent is an upset, a winner from 35 up to (excluding) 50 percent is an underdog win, every other winner has no mark; unknown chance and ties give null. The thresholds live only in this model, never in the frontend.
       - A better chance comes from a better projection model (a new team-range version chosen per season) or a new win-prob version chosen per season in data-meta (Models.WinProb), never from a silent change of the numbers.
+
+  season-stats-v1:
+    status: registered-506
+    module: tools/derived_data_lib/models/season_stats/v1.py
+    behaviour: All-Play and Expected Wins, Luck, relative scoring strength, strength of schedule, points against burden, opponent timing, projection delta, Brick-Wall base and upset counts from the weekly regular-season games of one season; full definitions in season-statistics.yaml
+    contract: .ai-context/manual/season-statistics.yaml
+    parameters: AllPlay less-plus-half-equal-over-others, UnderdogThreshold 0.5, UpsetThreshold 0.35, Digits 4
+    rules:
+      - The model is a pure function of the prepared weekly games (points, pregame projection, unrounded pregame chance); it reads no file, no clock and no league configuration.
+      - Missing evidence is null (unknown), never zero or 50 percent. A game without a chance counts in no upset figure.
+      - Selected per season in data-meta (Models.SeasonStats). A better formula is season-stats-v2, never a silent change of the numbers.
 
 rankingFunctions:
   implementation: tools/derived_data_lib/ranking.py

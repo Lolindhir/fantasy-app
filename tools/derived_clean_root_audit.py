@@ -33,8 +33,8 @@ from typing import Any
 
 from data_roots import DATA_DERIVED_ROOT, DATA_META_ROOT, DATA_SOURCE_ROOT
 from derived_data import (
-    LEAGUE_DRAFTS, LEAGUE_STANDINGS, LEAGUE_TRANSACTIONS,
-    materialize_league_history, materialize_league_standings, materialize_player_valuation,
+    LEAGUE_DRAFTS, LEAGUE_STANDINGS, LEAGUE_TRANSACTIONS, SEASON_STATISTICS,
+    materialize_league_history, materialize_league_standings, materialize_player_valuation, materialize_season_statistics,
 )
 from historical_pwf_batch import materialize_historical
 from league_metadata import list_league_ids
@@ -49,7 +49,7 @@ NFL_GAMES = "nfl-games"
 # Stable report order; official TeamWeekPerformance is independent of PWF score parity.
 PRODUCTS = (
     PLAYER_VALUATION, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS,
-    PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES,
+    PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, SEASON_STATISTICS,
 )
 GLOBAL_PRODUCTS = frozenset({NFL_GAMES})
 
@@ -107,6 +107,8 @@ def _build(unit: Unit, root: Path) -> tuple[int, int]:
         return _written(materialize_league_history(root, output, league, product, None, False)), 0
     if product == LEAGUE_STANDINGS:
         return _written(materialize_league_standings(root, output, league, None, False)), 0
+    if product == SEASON_STATISTICS:
+        return _written(materialize_season_statistics(root, output, league, None, False)), 0
     if product == PLAYER_WEEK_FANTASY:
         report = materialize_historical(root, league_id=league, write=True)
         if report["BlockedCount"]:

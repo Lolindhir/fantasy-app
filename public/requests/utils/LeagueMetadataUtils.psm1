@@ -17,6 +17,7 @@ $script:KnownModelIds = @{
     WinProb = @('win-prob-v1')
     RosterCap = @('roster-cap-v1')
     AutoCut = @('auto-cut-v1')
+    SeasonStats = @('season-stats-v1')
 }
 $script:TopLevelKeys = @('SchemaVersion', 'CanonicalLeagueID', 'Provider', 'CurrentProviderLeagueID', 'LeagueTimeZone', 'Owners', 'Drafts', 'Seasons')
 $script:SeasonKeys = @('CapDeadline', 'CapDeadlineBufferDays', 'Models')
