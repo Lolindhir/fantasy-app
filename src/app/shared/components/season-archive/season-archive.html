@@ -39,16 +39,16 @@
 
       <section class="season-block luck-block" *ngIf="statisticsTeams(season) as luckRows">
         <ng-container *ngIf="luckRows.length > 0">
-          <h3>Luck &amp; Upsets</h3>
+          <h3>Season Statistics</h3>
           <div class="luck-row luck-header">
-            <span>Team</span><span>Record / xW</span><span>Luck</span><span>Underdog Wins</span><span>Upset Losses</span>
+            <span>Team</span><span>Record</span><span>Expected Record</span><span>Luck</span><span>All-Play Record</span>
           </div>
           <div class="luck-row" *ngFor="let row of luckRows">
             <span class="luck-team" [title]="row.TeamName">{{ row.Owner }}</span>
-            <span>{{ formatRecord(row) }} / {{ formatDecimal(row.ExpectedWins) }}</span>
+            <span>{{ formatRecord(row) }}</span>
+            <span>{{ formatExpectedRecord(row) }}</span>
             <strong [ngClass]="'luck-value--' + signClass(row.Luck)">{{ formatSigned(row.Luck) }}</strong>
-            <span>{{ row.UnderdogWins }}</span>
-            <span>{{ row.UpsetLosses }}</span>
+            <span>{{ formatAllPlay(row) }}</span>
           </div>
         </ng-container>
       </section>

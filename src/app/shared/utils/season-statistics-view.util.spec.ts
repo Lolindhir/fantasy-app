@@ -1,5 +1,5 @@
 import type { SeasonStatisticsReadModel, SeasonStatisticsTeam } from '../../core/models/season-statistics.models';
-import { buildBiggestUpsetHighlight, formatSigned, statisticsByTeam } from './season-statistics-view.util';
+import { buildBiggestUpsetHighlight, formatExpectedRecord, formatSigned, statisticsByTeam } from './season-statistics-view.util';
 
 function team(id: number, owner: string): SeasonStatisticsTeam {
   return {
@@ -18,6 +18,11 @@ describe('season statistics view util', () => {
     expect(formatSigned(-0.6)).toBe('-0.6');
     expect(formatSigned(0)).toBe('0.0');
     expect(formatSigned(null)).toBe('–');
+  });
+
+  it('shows the expected record as expected wins and remaining games', () => {
+    expect(formatExpectedRecord(team(1, 'Ann'))).toBe('1.5-1.5');
+    expect(formatExpectedRecord({ ...team(1, 'Ann'), ExpectedWins: null } as unknown as SeasonStatisticsTeam)).toBe('–');
   });
 
   it('indexes teams by TeamID text', () => {

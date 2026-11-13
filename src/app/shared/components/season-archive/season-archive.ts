@@ -3,7 +3,7 @@ import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import type { SeasonStatisticsReadModel, SeasonStatisticsTeam } from '../../../core/models/season-statistics.models';
-import { formatDecimal, formatSigned, signClass } from '../../utils/season-statistics-view.util';
+import { formatAllPlay, formatDecimal, formatExpectedRecord, formatSigned, signClass } from '../../utils/season-statistics-view.util';
 import { RegularSeasonStandingsListComponent } from '../regular-season-standings-list/regular-season-standings-list';
 import { SeasonAwardsComponent } from '../season-awards/season-awards';
 import { SeasonResultsComponent } from '../season-results/season-results';
@@ -37,13 +37,15 @@ export class SeasonArchiveComponent {
   readonly formatSigned = formatSigned;
   readonly formatDecimal = formatDecimal;
   readonly signClass = signClass;
+  readonly formatExpectedRecord = formatExpectedRecord;
+  readonly formatAllPlay = formatAllPlay;
 
-  /** Teams of the season statistics ordered by luck (presentation sort only). */
+  /** Teams of the season statistics ordered by expected wins (presentation sort only). */
   statisticsTeams(season: SeasonHistorySeasonViewModel): SeasonStatisticsTeam[] {
     const teams = this.statistics?.get(season.season)?.Teams ?? [];
     return teams
       .filter(team => team.Games > 0)
-      .sort((a, b) => (b.Luck ?? Number.NEGATIVE_INFINITY) - (a.Luck ?? Number.NEGATIVE_INFINITY));
+      .sort((a, b) => (b.ExpectedWins ?? Number.NEGATIVE_INFINITY) - (a.ExpectedWins ?? Number.NEGATIVE_INFINITY));
   }
 
   formatRecord(team: SeasonStatisticsTeam): string {

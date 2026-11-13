@@ -24,6 +24,13 @@ export function formatAllPlay(team: SeasonStatisticsTeam): string {
   return ties > 0 ? `${wins}-${losses}-${ties}` : `${wins}-${losses}`;
 }
 
+/** Expected record as expected wins and the remaining games as expected losses, for example 7.2-4.8. */
+export function formatExpectedRecord(team: SeasonStatisticsTeam): string {
+  if (team.ExpectedWins === null || team.ExpectedWins === undefined || !Number.isFinite(team.ExpectedWins)) return '–';
+  const games = team.Wins + team.Losses + team.Ties;
+  return `${formatDecimal(team.ExpectedWins)}-${formatDecimal(games - team.ExpectedWins)}`;
+}
+
 /** Sign class for luck-like values: positive, negative or neutral. */
 export function signClass(value: number | null | undefined): 'pos' | 'neg' | 'zero' {
   if (value === null || value === undefined || value === 0) return 'zero';

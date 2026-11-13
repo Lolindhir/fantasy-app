@@ -3,7 +3,7 @@ import { Component, Input } from '@angular/core';
 
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 import type { SeasonStatisticsTeam } from '../../../core/models/season-statistics.models';
-import { formatAllPlay, formatDecimal, formatSigned, signClass } from '../../utils/season-statistics-view.util';
+import { formatAllPlay, formatDecimal, formatExpectedRecord, formatSigned, signClass } from '../../utils/season-statistics-view.util';
 import type { CurrentStandingRow } from '../../utils/league-standings-view.util';
 import {
   standingCanonicalDelta,
@@ -97,6 +97,7 @@ export class CurrentStandingsComponent {
 
   readonly formatSigned = formatSigned;
   readonly formatDecimal = formatDecimal;
+  readonly formatExpectedRecord = formatExpectedRecord;
   readonly formatAllPlay = formatAllPlay;
   readonly signClass = signClass;
 }
