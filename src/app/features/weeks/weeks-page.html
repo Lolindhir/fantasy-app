@@ -114,15 +114,6 @@
                   <span class="week-matchup-chevron" aria-hidden="true">›</span>
                 }
               </span>
-              @if (pregameChance(matchup); as chance) {
-                <span class="week-matchup-chance" [attr.aria-label]="'Pregame win chance ' + chance.left + ' percent to ' + chance.right + ' percent'">
-                  <span class="week-matchup-chance-label">Pregame</span>
-                  <app-win-chance-bar [left]="chance.left" [right]="chance.right" [compact]="true"></app-win-chance-bar>
-                  @if (chance.upset) {
-                    <span class="week-matchup-upset" title="The winner had less than a 35% chance before the week">Upset</span>
-                  }
-                </span>
-              }
               @if (matchup.isTie || matchup.state !== 'final') {
                 <span class="week-matchup-state" [ngClass]="'week-matchup-state--' + matchup.state">
                   {{ matchup.isTie ? 'Final · Tie' : stateLabel(matchup.state) }}
@@ -211,16 +202,6 @@
                   </tr>
                 }
               </tbody>
-              @if (effectiveGridMode() === 'points' && upsetsAvailable()) {
-                <tfoot>
-                  <tr class="season-grid-total">
-                    <th scope="row" class="season-grid-week-col" title="Wins with a pregame chance below 35%">Upsets</th>
-                    @for (row of grid.rows; track row.teamID) {
-                      <td class="season-grid-cell"><span class="season-grid-points">{{ upsetCount(row.teamID) ?? '–' }}</span></td>
-                    }
-                  </tr>
-                </tfoot>
-              }
               @if (effectiveGridMode() === 'efficiency') {
                 <tfoot>
                   <tr class="season-grid-total">
@@ -240,7 +221,7 @@
             @if (effectiveGridMode() === 'efficiency') {
               Lineup efficiency: the points a team started divided by the points of its best possible lineup. Hover a value to see the points left on the bench. The best value of a week is marked. The season row sums all weeks. Tap a week number to open it.
             } @else {
-              Points per week with the result (W/L/T). The highest score of a week is marked. Upsets are wins with a pregame chance below 35%. Tap a week number to open it. Regular season and playoffs are separated by a divider.
+              Points per week with the result (W/L/T). The highest score of a week is marked. Tap a week number to open it. Regular season and playoffs are separated by a divider.
             }
           </p>
         </section>
