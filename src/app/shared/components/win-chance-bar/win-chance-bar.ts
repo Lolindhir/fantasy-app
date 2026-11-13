@@ -16,10 +16,10 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
         <span class="win-chance-fill win-chance-fill--right" [style.width.%]="right"></span>
       </span>
       <span class="win-chance-value win-chance-value--right" [class.win-chance-value--lead]="right > left">{{ right }}%</span>
-      @if (live) {
-        <span class="win-chance-live" title="Updated after every finished NFL game">Live</span>
-      }
     </div>
+    @if (live) {
+      <span class="win-chance-live" title="Updated after every finished NFL game">Live</span>
+    }
   `,
   styles: [`
     :host { display: block; }
@@ -32,7 +32,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
     .win-chance-fill { display: block; height: 100%; }
     .win-chance-fill--left { background: #7c3aed; }
     .win-chance-fill--right { background: #cbd5e1; border-left: 2px solid #fff; box-sizing: border-box; }
-    .win-chance-live { flex: 0 0 auto; font-size: 0.55rem; font-weight: 950; letter-spacing: 0.04em; color: #15803d; text-transform: uppercase; }
+    .win-chance-live { display: block; margin-top: 0.15rem; text-align: center; font-size: 0.5rem; font-weight: 900; letter-spacing: 0.08em; color: #94a3b8; text-transform: uppercase; }
     .win-chance--compact .win-chance-value { font-size: 0.7rem; }
     .win-chance--compact .win-chance-bar { height: 0.4rem; }
   `]
