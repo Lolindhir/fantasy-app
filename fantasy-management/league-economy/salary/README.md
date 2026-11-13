@@ -23,6 +23,8 @@ Die Simulation vom **05.10.2026** bleibt als **historischer Vergleich** bestehen
 
 
 
+> **Hinweis Simulation (Issue #1453):** `simulation/salary_simulation.py` ist ein datierter Analyse-Snapshot (05.10.2026, Ergebnis `analyses/2026-10-05-salary-simulation.json`) und liest bewusst veröffentlichte Read Models. Er ist kein Pipeline-Consumer und darf von keinem Workflow, Generator oder Frontend aufgerufen werden; die Umstellung auf Shared Derived erfolgt erst beim nächsten notwendigen Update der Analyse. Der Scanner-Test schützt das (`analysisSnapshotPolicy` in `.ai-context/manual/source-of-truth-matrix.yaml`).
+
 ## Lesereihenfolge
 
 | # | Papier | Inhalt | Status (laut Dateikopf) |

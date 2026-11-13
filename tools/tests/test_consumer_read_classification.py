@@ -35,6 +35,12 @@ NETWORK_RE = re.compile(
     r"\brequests\.(?:get|post)\(|http\.client|aiohttp|httpx"
 )
 PY_DATA_DIR_RE = re.compile(r"public[\"']?\s*[,/]\s*[\"']?data|DATA_DIR|PUBLIC_DATA|public/data")
+# G6 (#1453): the archives under public/data/past_seasons/** are published read models too. They are
+# not top-level *.json files, so read_model_names() never saw them, and consumers build their paths
+# dynamically (DATA / "past_seasons" / "Drafts" / f"Drafts_{season}.json"). Any executable mention of the
+# archive tree or of its configured directories is therefore one legacy:past_seasons token per file.
+PAST_SEASONS_TOKEN = "legacy:past_seasons"
+PAST_SEASONS_RE = re.compile(r"past_seasons|\bPast[A-Za-z]*SeasonsDir\b|\$config\.\w+ArchiveDir\b|\bConfig\.\w+ArchiveDir\b")
 CONFIG_REF_RE = re.compile(r"(?:\$[Cc]onfig|\(Get-Config\))\.([A-Za-z]+)File\b")
 
 SCAN_GLOBS = (
@@ -93,6 +99,8 @@ def scan_text(
     elif path.endswith(".json"):
         for match in path_re.finditer(text):
             tokens.add(f"legacy:{match.group(1)}")
+    if path.endswith((".py", ".ps1", ".psm1", ".json")) and PAST_SEASONS_RE.search(text):
+        tokens.add(PAST_SEASONS_TOKEN)
     return tokens
 
 
@@ -140,6 +148,102 @@ def compare(found: dict[str, set[str]], registry: dict) -> list[str]:
         problems.append(f"stale consumer entry {path}: no read found")
     return problems
 
+
+
+# --- G6 (#1453): narrow Angular guards and the analysis-snapshot protection -----------------------------
+# Text rules over src/app, deliberately without an AST: a loader, an archive path, a canonical model ID or a
+# cap-limit input. They do not forbid aggregation or display logic in Angular; the documented exceptions live in
+# source-of-truth-matrix.yaml under angularDomainGuard / analysisSnapshotPolicy.
+BLOCK_COMMENT_RE = re.compile(r"/\*.*?\*/", re.DOTALL)
+LINE_COMMENT_RE = re.compile(r"(?<![:\"'])//[^\n]*")
+HTTP_LOADER_RE = re.compile(r"\bHttpClient\b|\bhttp\.(?:get|post|put|delete)\b")
+ARCHIVE_PATH_RE = re.compile(r"past_seasons")
+DATA_URL_RE = re.compile(r"[\"'`]data/[^\"'`]*[\"'`]")
+CAP_LIMIT_INPUT_RE = re.compile(r"SalaryRelevantTeamSize", re.IGNORECASE)
+CENTRAL_MODEL_ID_RE = re.compile(
+    r"\b(?:salary|salary-cap|roster-cap|auto-cut|grading|standings|awards|win-prob|season-stats|team-range"
+    r"|lifecycle|repairability)-v\d+\b"
+)
+
+
+def load_guard_registry() -> dict:
+    data = yaml.safe_load(MATRIX.read_text(encoding="utf-8"))
+    return data["angularDomainGuard"]
+
+
+def strip_ts_comments(text: str) -> str:
+    return LINE_COMMENT_RE.sub("", BLOCK_COMMENT_RE.sub("", text))
+
+
+def angular_sources(repo_root: Path) -> dict[str, str]:
+    found: dict[str, str] = {}
+    for file in (repo_root / "src/app").rglob("*.ts"):
+        if file.name.endswith((".spec.ts", ".d.ts")):
+            continue
+        found[file.relative_to(repo_root).as_posix()] = strip_ts_comments(file.read_text(encoding="utf-8"))
+    return found
+
+
+def check_angular_guards(sources: dict[str, str], guard: dict) -> list[str]:
+    loaders = set(guard["httpLoaderFiles"])
+    archives = set(guard["archivePathFiles"])
+    cap_inputs = {row["path"] for row in guard["capLimitInputFiles"]}
+    problems: list[str] = []
+    for path, code in sorted(sources.items()):
+        if HTTP_LOADER_RE.search(code) and path not in loaders:
+            problems.append(f"new HTTP loader outside DataApiService: {path}")
+        if ARCHIVE_PATH_RE.search(code) and path not in archives:
+            problems.append(f"past_seasons archive path outside DataApiService: {path}")
+        if DATA_URL_RE.search(code) and path not in loaders:
+            problems.append(f"generated-data URL literal outside DataApiService: {path}")
+        if CAP_LIMIT_INPUT_RE.search(code) and path not in cap_inputs:
+            problems.append(f"cap limit input (SalaryRelevantTeamSize) outside documented exceptions: {path}")
+        if CENTRAL_MODEL_ID_RE.search(code):
+            problems.append(f"central model ID in executable frontend code: {path}")
+    for path in sorted((loaders | archives | cap_inputs) - set(sources)):
+        problems.append(f"stale angularDomainGuard entry: {path}")
+    return problems
+
+
+def check_overview_cap_reads_central_outlook(sources: dict[str, str], files: list[str]) -> list[str]:
+    problems: list[str] = []
+    for path in files:
+        code = sources.get(path)
+        if code is None:
+            problems.append(f"missing overview cap file: {path}")
+            continue
+        if CAP_LIMIT_INPUT_RE.search(code):
+            problems.append(f"{path}: local cap recomputation from SalaryRelevantTeamSize")
+    util = sources.get("src/app/shared/utils/overview-cap.util.ts", "")
+    if "CapOutlook" not in util:
+        problems.append("overview-cap.util.ts no longer reads the central CapOutlook")
+    return problems
+
+
+def check_analysis_snapshot_policy(registry: dict, policy: dict, root: Path) -> list[str]:
+    problems: list[str] = []
+    declared = {row["path"]: row for row in policy["files"]}
+    classified = {
+        path for path, entry in registry["consumers"].items()
+        if "analysis-snapshot-input" in (entry.get("reads") or {}).values()
+    }
+    for path in sorted(classified - set(declared)):
+        problems.append(f"analysis-snapshot-input without snapshot policy: {path}")
+    for path in sorted(set(declared) - classified):
+        problems.append(f"stale snapshot policy: {path}")
+    for path, row in declared.items():
+        for key in ("path", "output"):
+            if not (root / row[key]).is_file():
+                problems.append(f"snapshot policy file missing: {row[key]}")
+        stem = Path(path).stem
+        for pattern in policy["productiveScanGlobs"]:
+            for file in root.glob(pattern):
+                rel = file.relative_to(root)
+                if "tests" in rel.parts or file.name.startswith("test_") or rel.as_posix() == path or not file.is_file():
+                    continue
+                if stem in file.read_text(encoding="utf-8", errors="ignore"):
+                    problems.append(f"productive use of analysis snapshot {stem}: {rel.as_posix()}")
+    return problems
 
 
 # #1263 C2: only pre-existing, explicitly classified transitional reads are
@@ -868,6 +972,99 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         definition = scan_text("public/requests/New.ps1", f"function {helper} {{ }}\n", names, fns, helpers)
         self.assertEqual({f"legacy:{model}"}, call)
         self.assertEqual(set(), definition)
+
+    # --- G6 (#1453) ---------------------------------------------------------------------------------
+    def test_g6_past_seasons_reads_and_dynamic_paths_are_detected(self) -> None:
+        names = read_model_names(REPO_ROOT)
+        fns = sleeper_functions(REPO_ROOT)
+        cases = {
+            "tools/new_a.py": 'x = load(DATA / "past_seasons" / "Drafts" / f"Drafts_{season}.json")\n',
+            "tools/new_b.py": 'root = Path("public/data/past_seasons")\nfor f in root.glob("*_*.json"): pass\n',
+            "tools/new_c.py": 'p = repo / "public" / "data" / "past_seasons" / folder / name\n',
+            "public/requests/New.ps1": '$f = Join-Path $config.DraftsArchiveDir "Drafts_$season.json"\n',
+            "public/requests/New.psm1": '$d = Join-Path $Config.PastSeasonsDir "Matchups"\n',
+            "fantasy-management/automation/x/new.json": '{"input": "public/data/past_seasons/Drafts/Drafts_2025.json"}',
+        }
+        for path, text in cases.items():
+            self.assertIn(PAST_SEASONS_TOKEN, scan_text(path, text, names, fns), path)
+        # Negative control: a file without any archive reference yields no archive token.
+        self.assertNotIn(PAST_SEASONS_TOKEN, scan_text("tools/ok.py", 'x = load(DATA / "League.json")\n', names, fns))
+
+    def test_g6_unclassified_past_seasons_read_fails_the_registry_check(self) -> None:
+        registry = load_registry()
+        found = {"tools/new_a.py": {PAST_SEASONS_TOKEN}}
+        problems = compare(found, registry)
+        self.assertTrue(any("unclassified consumer tools/new_a.py" in p for p in problems), problems)
+        path = "tools/league_history_app_publish.py"
+        entry = registry["consumers"][path]
+        stale = {**registry, "consumers": {**registry["consumers"], path: {
+            **entry, "reads": {k: v for k, v in entry["reads"].items() if k != PAST_SEASONS_TOKEN}}}}
+        problems = compare(scan_repository(REPO_ROOT), stale)
+        self.assertTrue(any(f"unclassified read {PAST_SEASONS_TOKEN} in {path}" in p for p in problems), problems)
+
+    def test_g6_angular_guards_hold_on_the_repository(self) -> None:
+        problems = check_angular_guards(angular_sources(REPO_ROOT), load_guard_registry())
+        self.assertEqual([], problems, "\n".join(problems))
+
+    def test_g6_angular_guard_negative_fixtures_fail_closed(self) -> None:
+        guard = load_guard_registry()
+        base = {p: "" for p in (set(guard["httpLoaderFiles"]) | set(guard["archivePathFiles"])
+                                | {r["path"] for r in guard["capLimitInputFiles"]})}
+        self.assertEqual([], check_angular_guards(base, guard))
+        fixtures = {
+            "HTTP loader": 'constructor(private http: HttpClient) {} load() { return this.http.get("data/X.json"); }',
+            "archive path": "const url = `data/past_seasons/Drafts/Drafts_${season}.json`;",
+            "data URL": "const url = 'data/Extra.json';",
+            "cap limit": "const n = Math.min(league.SalaryRelevantTeamSize, roster.length);",
+            "model ID": "const MODEL = 'roster-cap-v1';",
+        }
+        for label, code in fixtures.items():
+            problems = check_angular_guards({**base, "src/app/features/new/new.ts": code}, guard)
+            self.assertTrue(problems, label)
+        # Comments and documentation strings do not trip the guard.
+        commented = "// loads past_seasons via HttpClient, win-prob-v1\n/* SalaryRelevantTeamSize */\nconst a = 1;"
+        self.assertEqual([], check_angular_guards({**base, "src/app/features/new/new.ts": strip_ts_comments(commented)}, guard))
+        # A stale exception entry is reported.
+        self.assertTrue(any("stale angularDomainGuard entry" in p for p in check_angular_guards({}, guard)))
+
+    def test_g6_overview_cap_comes_from_central_outlook(self) -> None:
+        guard = load_guard_registry()
+        sources = angular_sources(REPO_ROOT)
+        self.assertEqual([], check_overview_cap_reads_central_outlook(sources, guard["overviewCapFiles"]))
+        # Red fixture: the pre-#1456 local recomputation in the overview (top-N salary sum).
+        regressed = dict(sources)
+        regressed["src/app/features/overview/overview.ts"] = (
+            "const playerCount = Math.min(league.SalaryRelevantTeamSize, t.Roster.length);\n"
+            "const topPlayers = sortedSalary.slice(0, playerCount);\n"
+            "const total = topPlayers.reduce((sum, p) => sum + p.Salary, 0);\n"
+        )
+        self.assertTrue(check_overview_cap_reads_central_outlook(regressed, guard["overviewCapFiles"]))
+        regressed = dict(sources)
+        regressed["src/app/shared/utils/overview-cap.util.ts"] = "export const total = 0;"
+        self.assertTrue(check_overview_cap_reads_central_outlook(regressed, guard["overviewCapFiles"]))
+
+    def test_g6_salary_simulation_is_a_protected_analysis_snapshot(self) -> None:
+        registry = load_registry()
+        policy = (yaml.safe_load(MATRIX.read_text(encoding="utf-8")))["analysisSnapshotPolicy"]
+        problems = check_analysis_snapshot_policy(registry, policy, REPO_ROOT)
+        self.assertEqual([], problems, "\n".join(problems))
+        # Negative: a new analysis-snapshot-input without policy, and a productive reference, are reported.
+        extra = {**registry, "consumers": {**registry["consumers"],
+                 "fantasy-management/new_analysis.py": {"reads": {"legacy:League": "analysis-snapshot-input"}}}}
+        self.assertTrue(any("without snapshot policy" in p for p in check_analysis_snapshot_policy(extra, policy, REPO_ROOT)))
+        self.assertTrue(any("stale snapshot policy" in p for p in check_analysis_snapshot_policy(
+            {**registry, "consumers": {}}, policy, REPO_ROOT)))
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            sim = "fantasy-management/league-economy/salary/simulation/salary_simulation.py"
+            out = "fantasy-management/league-economy/salary/analyses/2026-10-05-salary-simulation.json"
+            for rel, text in ((sim, ""), (out, "{}"), ("tools/rogue.py", "import salary_simulation\n")):
+                (root / rel).parent.mkdir(parents=True, exist_ok=True)
+                (root / rel).write_text(text, encoding="utf-8")
+            only = {"consumers": {sim: {"reads": {"legacy:League": "analysis-snapshot-input"}}}}
+            found = check_analysis_snapshot_policy(only, policy, root)
+            self.assertTrue(any("productive use of analysis snapshot" in p for p in found), found)
 
     def test_unknown_category_is_detected(self) -> None:
         registry = load_registry()

@@ -960,13 +960,14 @@ consumerReadClassification:
       - fantasy-management/** (Python, without tests)
       - fantasy-management/automation/**/*.json and fantasy-management/_ai/*.json (declared inputs)
     notScanned:
-      - src/app/** (Angular is the delivery consumer of public/data by design, ADR-004; all JSON loads go through DataApiService)
+      - src/app/** for read classification (Angular is the delivery consumer of public/data by design, ADR-004; all JSON loads go through DataApiService). Since G6 (Issue #1453) it is covered by the narrow angularDomainGuard rules below instead of per-file classification.
       - .github/workflows/** (workflow trigger paths are governed by workflow-monitoring.yaml and workflow-publication.yaml)
       - data-source/** (canonical store; a read there is a canonical read, not a classified legacy or provider read)
   tokens:
     provider:<host>: a URL naming a known provider host (sleeper, nflverse, fantasypros, fantasycalc, fftoday, cbssports, fantasyfootballcalculator, espn, tank01, rapidapi)
     sleeper-api:<Function>: a call to a Sleeper client function (the client SleeperUtils.psm1 was retired; its function names stay reserved in the test so a reintroduced call is reported)
     network: an HTTP client call (Invoke-RestMethod, urllib, requests, ...)
+    legacy:past_seasons: any executable mention of the public/data/past_seasons/** archive tree or its configured directories (the literal past_seasons, PastSeasonsDir, $config.*ArchiveDir), including paths built dynamically (DATA / "past_seasons" / folder / f"{prefix}_{season}.json"). One token per file; writers are app-output-owner, comparisons validation-shadow. Dynamic top-level paths built from a variable (data / name) are not detected; that limit is accepted and covered by review.
     legacy:<Name>: a reference to public/data/<Name>.json, the matching $config.<Name>File or (Get-Config).<Name>File, or a call of a reader helper declared under helperReads
   helperReads: {}
   helperReadsRule: >
@@ -1083,6 +1084,7 @@ consumerReadClassification:
       note: 'Decides whether a push touching these paths triggers Operations materialization; it reads no content. The league metadata data-meta/<CanonicalLeagueID>/metadata.json (DraftType binding, J2; ADR-054) is also a trigger path and is not a legacy read.'
     fantasy-management/league-economy/salary/simulation/salary_simulation.py:
       reads:
+        legacy:past_seasons: analysis-snapshot-input
         legacy:League: analysis-snapshot-input
         legacy:Transactions: analysis-snapshot-input
       note: 'Point-in-time salary analysis; population and season inputs come from tools/players_population.py and the PlayerValuation product (Issue #1226 step 1), League/Transactions remain published read models; not a recurring pipeline consumer.'
@@ -1115,8 +1117,13 @@ consumerReadClassification:
         legacy:Transactions: app-config-path-owner
         legacy:WeeklyRecaps: app-config-path-owner
       note: 'Resolves the generated-file paths from ConfigUtils for all generators.'
+    public/requests/utils/ConfigUtils.psm1:
+      reads:
+        legacy:past_seasons: app-config-path-owner
+      note: 'Resolves the past_seasons archive directories and file prefixes (G6, Issue #1453); it reads no content.'
     public/requests/utils/league/PastSeasonsIndexUtils.psm1:
       reads:
+        legacy:past_seasons: app-config-path-owner
         legacy:PastSeasonsIndex: app-output-owner
       note: 'Writes PastSeasonsIndex.json.'
     # TeamDraftPickUtils.psm1 now reads shared data-derived/league-drafts directly
@@ -1144,6 +1151,7 @@ consumerReadClassification:
       note: 'GitHub API access for repository operations; no fantasy base fact.'
     tools/league_history_app_publish.py:
       reads:
+        legacy:past_seasons: app-output-owner
         legacy:Drafts: validation-shadow
         legacy:Timestamps: app-output-owner
         legacy:Transactions: validation-shadow
@@ -1165,6 +1173,7 @@ consumerReadClassification:
       note: 'CLI of the Decision Windows (ADR-074, Issue #1199 section 2). resolve reads only canonical data-source, the lifecycle function and data-meta. compare computes the Decision Windows at the DecisionWindows timestamp and compares them exactly with the published DecisionWindows.json (validation-shadow, never an input; only FirstObservedAtUtc, ObservedAtUtc and AsOfUtc are excluded, D2); Timestamps.json DecisionWindows only supplies the comparison instant.'
     tools/matchup_context_app_publish.py:
       reads:
+        legacy:past_seasons: app-output-owner
         legacy:FantasyGameContext: app-output-owner
         legacy:FantasyGameContextHistory: app-output-owner
         legacy:Matchups: app-output-owner
@@ -1172,22 +1181,26 @@ consumerReadClassification:
       note: 'Consumer generator of the matchup context (ADR-075, Issue #1199 section 3 step 7). write renders Matchups.json, FantasyGameContext.json and the past_seasons Matchups and FantasyGameContext files from the computed matchup context (data-source, products, lifecycle and Decision Windows functions, data-meta) and publishes them only on a semantic difference. It reads the existing App files only to detect that difference and to list the FantasyGameContext history seasons, and updates the Matchups and FantasyGameContext keys of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/matchup_context.py:
       reads:
+        legacy:past_seasons: validation-shadow
         legacy:FantasyGameContext: validation-shadow
         legacy:Matchups: validation-shadow
         legacy:Timestamps: validation-shadow
       note: 'CLI of the matchup context (ADR-075, Issue #1199 section 3). matchups, context and history read only canonical data-source, the league-standings and nfl-games products, the lifecycle and Decision Windows functions and data-meta. compare computes the Matchups and FantasyGameContext (current at the Timestamps instants, completed seasons at the current time) and compares them exactly with the published public/data files (validation-shadow, never an input); Timestamps.json only supplies the comparison instants. The only intended value difference is decision M2 (counterfactual week-final rule).'
     tools/weekly_recaps_app_publish.py:
       reads:
+        legacy:past_seasons: app-output-owner
         legacy:Timestamps: app-output-owner
         legacy:WeeklyRecaps: app-output-owner
       note: 'Consumer generator of the weekly recaps (ADR-063, Issue #1199 section 4 step 4). write renders WeeklyRecaps.json and the past_seasons WeeklyRecaps files from the computed recap function (data-source, products, data-meta) and publishes them only on a semantic difference. It reads the existing App files only to detect that difference and updates the WeeklyRecaps key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/season_statistics_app_publish.py:
       reads:
+        legacy:past_seasons: app-output-owner
         legacy:SeasonStatistics: app-output-owner
         legacy:Timestamps: app-output-owner
       note: 'Consumer generator of the season statistics (Issue #506). write materializes the Shared Derived product season-statistics (data-source, PlayerWeekFantasy, data-meta) and renders SeasonStatistics.json and the past_seasons SeasonStatistics files from it, only on a semantic difference. It reads the existing App file only to detect that difference and updates the SeasonStatistics key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/weekly_recaps.py:
       reads:
+        legacy:past_seasons: validation-shadow
         legacy:WeeklyRecaps: validation-shadow
       note: 'CLI of the Weekly Recaps (ADR-063, Issue #1199 section 4). resolve reads only canonical data-source, the league-standings and team-week-performance products and data-meta. compare computes the season models and compares every published week exactly with public/data/WeeklyRecaps.json and the past_seasons WeeklyRecaps files (validation-shadow, never an input); weeks only the computed model has are decision R2.'
     tools/league_lifecycle.py:
@@ -1204,6 +1217,7 @@ consumerReadClassification:
       note: 'Consumer generator of the league-standings product (ADR-072, Issue #987). Since step 4 write renders Standings.json from the product and stamps the Standings key of Timestamps.json (app-output-owner: the writer owns its own freshness timestamp, never an input). compare renders the App-shaped Standings.json and League.json placements in memory and compares them with the committed public/data files (validation-shadow, never an input). write gets the current season from the canonical league manifest (never League.json); only compare reads League.json as a validation shadow. The avatar CDN URL is built from the provider avatar ID of the product; no fetch.'
     tools/schedule_archive.py:
       reads:
+        legacy:past_seasons: app-output-owner
         legacy:Schedule: validation-shadow
         provider:cbssports: display-link-construction
         provider:espn: display-link-construction
@@ -1222,6 +1236,14 @@ consumerReadClassification:
       reads:
         legacy:MatchupProjections: app-output-owner
       note: 'Matchup projection takes the computed FantasyGameContext (matchup-context function, ADR-075), the in-memory App adaptation of the PlayerWeekFantasy product and the shared Decision Windows function (scoring availability, ADR-074); it reads nothing from public/data and writes MatchupProjections.json with the team-range model chosen in data-meta.'
+    tools/nfl_source_data_lib/mapping_history.py:
+      reads:
+        legacy:past_seasons: historical-static-reference
+      note: 'Scans the frozen Players_<year> archives under public/data/past_seasons for historical identity claims (G6, Issue #1453); the Tank01 archives were removed, so the glob matches nothing today and the claim stays history, never a live input.'
+    tools/players_league_scoring.py:
+      reads:
+        legacy:past_seasons: mention-only
+      note: 'The module docstring names the retired past_seasons/Players_<year>.json archives; no executed read (G6, Issue #1453).'
     tools/nfl_source_data_lib/audit.py:
       reads:
         legacy:Players: validation-shadow
@@ -2490,3 +2512,69 @@ sourceFamilyCoverageAudit: {
     }
   ]
 }
+
+angularDomainGuard:
+  issue: 1453
+  test: tools/tests/test_consumer_read_classification.py (test_g6_angular_*, test_g6_overview_cap_comes_from_central_outlook)
+  purpose: >
+    Narrow text rules over src/app (comments stripped, no AST) that keep the delivery consumer a delivery
+    consumer: a loader, a generated-data URL or an archive path outside DataApiService, a central model ID in
+    executable code and a cap-limit input (SalaryRelevantTeamSize) outside the documented what-if files fail the
+    test. They do not forbid aggregation, sorting or display logic in Angular (ADR-005); the frontend may still
+    compute explicitly hypothetical values. Real team cap usage and predicted cap cuts come only from the central
+    TeamCapOutlook (ADR-079). A new exception needs an entry here with a reason in the same change.
+  httpLoaderFiles:
+    - src/app/core/services/data-api.service.ts
+    - src/app/features/handbook/about.ts
+    - src/app/core/interceptors/json-data-cache-busting.interceptor.ts
+  httpLoaderNote: >
+    DataApiService is the one loader of generated JSON (ADR-004). about.ts loads the static handbook markdown
+    under docs/, not generated data. The cache-busting interceptor (ADR-022) names the data/ and
+    data/past_seasons/ prefixes to exempt the archives from build-version query parameters; it loads nothing.
+  archivePathFiles:
+    - src/app/core/services/data-api.service.ts
+    - src/app/core/interceptors/json-data-cache-busting.interceptor.ts
+  capLimitInputFiles:
+    - path: src/app/core/models/league.models.ts
+      kind: contract
+      reason: Typed League.json field.
+    - path: src/app/core/models/team-cap-outlook.models.ts
+      kind: validation
+      reason: Compares the read model with the League setting to reject a stale outlook.
+    - path: src/app/features/teams/team-list/team-list.ts
+      kind: what-if
+      reason: Legacy Teams page with manual Exclude scenarios (ADR-027, ADR-079); hypothetical rosters only.
+    - path: src/app/features/trade/trade-simulator/trade-simulator.ts
+      kind: what-if
+      reason: Trade Simulator with explicitly hypothetical rosters (ADR-079).
+  overviewCapFiles:
+    - src/app/features/overview/overview.ts
+    - src/app/shared/utils/overview-cap.util.ts
+  overviewCapRule: >
+    The Overview cap rows and Cap Check read Current.Usage and Projected.Usage of the central TeamCapOutlook;
+    they never recompute a top-N salary sum from the roster (regression of Issue #1452, PR #1456).
+
+analysisSnapshotPolicy:
+  issue: 1453
+  test: tools/tests/test_consumer_read_classification.py::test_g6_salary_simulation_is_a_protected_analysis_snapshot
+  purpose: >
+    A file whose reads are classified analysis-snapshot-input is a dated analysis snapshot: it may read published
+    read models once to produce a stored analysis, but it is neither a pipeline consumer nor a source of truth. It
+    must be declared here, must not be referenced by any workflow, generator, automation or frontend code, and moves
+    to Shared Derived inputs only at the next necessary update of that analysis (no rebuild of it for its own sake).
+  files:
+    - path: fantasy-management/league-economy/salary/simulation/salary_simulation.py
+      snapshot: '2026-10-05'
+      output: fantasy-management/league-economy/salary/analyses/2026-10-05-salary-simulation.json
+      reads: League.json, Transactions.json and past_seasons Drafts/Transactions (published read models, point-in-time)
+      replacement: Shared Derived league-transactions, league-drafts and PlayerValuation at the next necessary update
+  productiveScanGlobs:
+    - .github/workflows/*.yml
+    - tools/**/*.py
+    - tools/**/*.cjs
+    - public/requests/**/*.ps1
+    - public/requests/**/*.psm1
+    - fantasy-management/automation/**/*.json
+    - fantasy-management/_ai/**/*.py
+    - fantasy-management/_ai/**/*.sh
+    - src/**/*.ts
