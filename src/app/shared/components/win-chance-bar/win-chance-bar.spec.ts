@@ -19,4 +19,14 @@ describe('WinChanceBarComponent', () => {
     expect(host.querySelector('.win-chance-value--right')?.classList).not.toContain('win-chance-value--lead');
     expect(host.querySelector('.win-chance')?.getAttribute('aria-label')).toContain('64 percent');
   });
+
+  it('colors the side with the higher chance and keeps the sides fixed', () => {
+    const left = create({ left: 30, right: 70 });
+    expect(left.querySelector('.win-chance-fill--left')?.classList).not.toContain('win-chance-fill--lead');
+    expect(left.querySelector('.win-chance-fill--right')?.classList).toContain('win-chance-fill--lead');
+    const right = create({ left: 62, right: 38 });
+    expect(right.querySelector('.win-chance-fill--left')?.classList).toContain('win-chance-fill--lead');
+    const even = create({ left: 50, right: 50 });
+    expect(even.querySelectorAll('.win-chance-fill--lead').length).toBe(0);
+  });
 });
