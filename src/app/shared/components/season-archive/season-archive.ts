@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import type { FantasyTeam } from '../../../core/models/league.models';
 import type { SeasonStatisticsReadModel, SeasonStatisticsTeam } from '../../../core/models/season-statistics.models';
 import { statisticsByTeam } from '../../utils/season-statistics-view.util';
 import { SeasonStandingsTableComponent } from '../season-standings-table/season-standings-table';
@@ -32,8 +31,6 @@ import type {
 export class SeasonArchiveComponent {
   @Input({ required: true }) history: SeasonHistoryViewModel | null | undefined;
 
-  /** Current teams for logo and abbreviation, joined by TeamID. */
-  @Input() teams: readonly FantasyTeam[] | null | undefined;
 
   /** Archived season statistics keyed by season (Issue #506). */
   @Input() statistics: ReadonlyMap<string, SeasonStatisticsReadModel> | null | undefined;

@@ -11,13 +11,12 @@
 
       <div class="standing-detailed-team">
         <app-team-identity
-          *ngIf="team(row) as t; else ownerOnly"
           class="standing-detailed-identity"
-          [team]="t"
+          [team]="identity(row)"
           [elements]="identityElements"
+          [interactive]="false"
           size="small"
         ></app-team-identity>
-        <ng-template #ownerOnly><span class="standing-detailed-owner">{{ row.teamName || row.owner }}</span></ng-template>
         <div class="standing-detailed-form-line">
           <span class="standing-detailed-owner" [title]="row.owner">{{ row.owner }}</span>
           <span class="standing-detailed-record">{{ row.record ?? '—' }}</span>

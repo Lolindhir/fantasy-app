@@ -1,11 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-import type { FantasyTeam } from '../../../core/models/league.models';
 import type { SeasonStatisticsTeam } from '../../../core/models/season-statistics.models';
 import { formatAllPlay, formatDecimal, formatExpectedRecord, formatSigned, signClass } from '../../utils/season-statistics-view.util';
 import type { SeasonHistoryRegularSeasonRow } from '../../utils/league-standings-view.util';
-import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
+import { TeamIdentityComponent, type TeamIdentityElement, type TeamIdentitySubject } from '../team-identity/team-identity';
 
 /** Expandable regular-season table of an archived season; reuses the Current Standings look (Issue #506). */
 @Component({
@@ -18,8 +17,6 @@ import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identit
 export class SeasonStandingsTableComponent {
   @Input({ required: true }) standings: readonly SeasonHistoryRegularSeasonRow[] | null | undefined;
   @Input() title = 'Regular Season Standings';
-  /** Current teams for logo and name, joined by TeamID. */
-  @Input() teams: readonly FantasyTeam[] | null | undefined;
   /** Season statistics by TeamID; absent when the season has none. */
   @Input() statistics: ReadonlyMap<string, SeasonStatisticsTeam> | null | undefined;
   @Input() idPrefix = 'season';
@@ -33,8 +30,14 @@ export class SeasonStandingsTableComponent {
   readonly formatAllPlay = formatAllPlay;
   readonly signClass = signClass;
 
-  team(row: SeasonHistoryRegularSeasonRow): FantasyTeam | undefined {
-    return this.teams?.find(team => String(team.TeamID) === String(row.teamId));
+  /** Season-specific identity (name, owner, logo of that season), never the current team. */
+  identity(row: SeasonHistoryRegularSeasonRow): TeamIdentitySubject {
+    return {
+      TeamID: Number(row.teamId),
+      Team: row.teamName ?? '',
+      Owner: row.owner,
+      Avatar: row.teamAvatar || 'assets/default-team-avatar.png'
+    };
   }
 
   stats(row: SeasonHistoryRegularSeasonRow): SeasonStatisticsTeam | null {
