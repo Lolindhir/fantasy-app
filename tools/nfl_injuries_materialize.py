@@ -82,7 +82,7 @@ def stage_injury_season(
     if not repo_root.is_dir():
         raise ValueError("Repository root must be an existing directory")
     if (not isinstance(season, int) or isinstance(season, bool)
-            or not 2012 <= season <= 2026):
+            or not 2012 <= season <= 2099):
         raise ValueError("Unsupported NFL injury report season")
     release_asset = None
     decision = None
