@@ -548,6 +548,28 @@ dataSources:
       gets its files with the next weekly run. The neutral team order of the Matchups history still reads
       Standings.json until Issue #987 moves that consumer to the league-standings product.
 
+  weeklyRecaps:
+    path: public/data/WeeklyRecaps.json and public/data/past_seasons/WeeklyRecaps/WeeklyRecaps_<season>.json
+    generator: tools/weekly_recaps_app_publish.py (computed function tools/derived_data_lib/weekly_recaps.py, ADR-063)
+    localDocumentation: public/data/WeeklyRecaps.ai-doc.yaml
+    contract: .ai-context/manual/weekly-recaps.yaml
+    category: generated-output
+    role: Weekly recap read model (KeyPlayers, KeyGames, TeamAwards, lineup efficiency, win probability marks and, with weekly-recap-v2, PlayerAwards)
+    description: >
+      Consumer delivery of the computed recap function; additive PlayerAwards per recap week since Issue #499 (ADR-086). Written only on a semantic difference by League Live (current
+      season) and the weekly update-transactions run (completed seasons).
+
+  playerAwardHistory:
+    path: public/data/PlayerAwardHistory.json
+    generator: tools/weekly_recaps_app_publish.py
+    localDocumentation: public/data/PlayerAwardHistory.ai-doc.yaml
+    contract: .ai-context/manual/weekly-recaps.yaml (playerAwards.historyFile)
+    category: generated-output
+    role: Weekly player award counts and week lists per player across all seasons
+    description: >
+      Rendered from the season recap models (Issue #499, ADR-086): Players[] with Counts, Total and Entries per award, Seasons[] with the weeks that have awards. Name, Position and
+      Picture come from the league-history PlayerRefs resolver. Timestamps.json key PlayerAwardHistory; written only on a semantic difference.
+
   externalMarketSources:
     path: data-source/external-registry.json
     category: source-evidence

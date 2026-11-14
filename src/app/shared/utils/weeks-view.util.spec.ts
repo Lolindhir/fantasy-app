@@ -222,6 +222,19 @@ describe('weeks view util', () => {
       expect(selectWeekRecap(none, '2025', final(2)).content?.allFavoritesWon).toBeFalse();
     });
 
+    it('passes weekly player awards through only when available', () => {
+      const entry = { PlayerID: 'p1', CanonicalPlayerID: null, FantasyTeamID: 1, FantasyMatchupID: 'x', Position: 'RB', Points: 30 };
+      const awards = { State: 'available' as const, MVP: [entry], MatchupHero: [], Heartbreaker: [], UnsungHero: [] };
+      const withAwards: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [
+        { Week: 1, KeyGames: [], KeyPlayers: [], PlayerAwards: awards },
+        { Week: 2, KeyGames: [], KeyPlayers: [], PlayerAwards: { ...awards, State: 'unavailable' } },
+        { Week: 3, KeyGames: [], KeyPlayers: [] }
+      ] };
+      expect(selectWeekRecap(withAwards, '2025', final(1)).content?.playerAwards?.MVP.length).toBe(1);
+      expect(selectWeekRecap(withAwards, '2025', final(2)).content?.playerAwards).toBeNull();
+      expect(selectWeekRecap(withAwards, '2025', final(3)).content?.playerAwards).toBeNull();
+    });
+
     it('reports a missing recap for a settled week and a pending recap for an open week', () => {
       expect(selectWeekRecap(recaps, '2025', final(10))).toEqual({ status: 'missing', content: null });
       expect(selectWeekRecap(null, '2025', final(1))).toEqual({ status: 'missing', content: null });

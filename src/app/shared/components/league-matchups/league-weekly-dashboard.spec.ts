@@ -695,7 +695,9 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
 
     expect(rows.length).toBe(3);
     expect(rows.map(row => row.querySelector('.weekly-recap-player-copy strong')?.textContent?.trim())).toEqual(['P2', 'P1', 'P3']);
-    expect(rows.map(row => row.querySelector('.weekly-recap-player-copy span')?.textContent?.trim())).toEqual(['WR · N2', 'WR · N1', 'WR · N3']);
+    // Common player identity line: NFL logo (alt = abbreviation; text fallback without a logo) plus the position chip.
+    expect(rows.map(row => row.querySelector('.weekly-recap-position-chip')?.textContent?.trim())).toEqual(['WR', 'WR', 'WR']);
+    expect(rows.map(row => row.querySelector('.weekly-recap-player-nfl')?.getAttribute('alt'))).toEqual(['N2', 'N1', 'N3']);
     expect(rows.map(row => row.querySelector('.weekly-recap-player-points')?.textContent?.trim())).toEqual(['15', '30', '10']);
     expect(rows.every(row => row.querySelector('.weekly-recap-player-nfl-logo') === null)).toBeTrue();
 

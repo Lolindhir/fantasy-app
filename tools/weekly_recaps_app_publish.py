@@ -6,11 +6,14 @@ nothing is read from public/data:
 
   public/data/WeeklyRecaps.json                                        current season
   public/data/past_seasons/WeeklyRecaps/WeeklyRecaps_<season>.json     completed earlier seasons
+  public/data/PlayerAwardHistory.json                                  weekly player award counts and week lists across seasons (Issue #499)
 
 Usage:
   weekly_recaps_app_publish.py write [--league ID] [--scope current|history|all] [--fail-on-error]
 
-`write` writes a file only on a semantic difference and updates Timestamps.json[WeeklyRecaps] for the current file only.
+PlayerAwardHistory.json is rendered from the season models: the current scope recomputes the current season and takes completed seasons from their
+published archive files (immutable once the season is complete; the weekly history scope recomputes them), so a League Live run never recomputes
+history. `write` writes a file only on a semantic difference and updates Timestamps.json[WeeklyRecaps] for the current file only.
 Without --league every league of data-meta is processed; the App files carry no league dimension, so more than one
 league fails closed until the App delivery gains one. A season whose canonical evidence contradicts itself keeps its last
 file and raises a GitHub warning annotation; the current season fails the run with --fail-on-error.
@@ -18,6 +21,7 @@ file and raises a GitHub warning annotation; the current season fails the run wi
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,7 +29,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from derived_data_lib.league_lifecycle import LifecycleError  # noqa: E402
-from derived_data_lib.weekly_recaps import WeeklyRecapsError, resolve_weekly_recaps  # noqa: E402
+from derived_data_lib.weekly_recaps import WeeklyRecapsError, player_award_history, resolve_weekly_recaps  # noqa: E402
 from league_metadata import list_league_ids  # noqa: E402
 from league_standings_sources import StandingsSourceError, current_season, manifest  # noqa: E402
 from matchup_context_app_publish import Writer, _warn, history_matchup_seasons  # noqa: E402
@@ -33,13 +37,16 @@ from matchup_context_app_publish import Writer, _warn, history_matchup_seasons  
 EXPECTED_ERRORS = (WeeklyRecapsError, LifecycleError, StandingsSourceError)
 
 
-def write_current(repo_root: Path, league_id: str, writer: Writer) -> None:
+def write_current(repo_root: Path, league_id: str, writer: Writer) -> dict[int, dict]:
     season = current_season(manifest(repo_root, league_id))
-    writer.put("WeeklyRecaps.json", resolve_weekly_recaps(repo_root, league_id, season), "WeeklyRecaps")
+    model = resolve_weekly_recaps(repo_root, league_id, season)
+    writer.put("WeeklyRecaps.json", model, "WeeklyRecaps")
+    return {season: model}
 
 
-def write_history(repo_root: Path, league_id: str, writer: Writer) -> None:
+def write_history(repo_root: Path, league_id: str, writer: Writer) -> dict[int, dict]:
     current = current_season(manifest(repo_root, league_id))
+    models: dict[int, dict] = {}
     for season in history_matchup_seasons(repo_root, league_id, current):
         try:
             model = resolve_weekly_recaps(repo_root, league_id, season)
@@ -47,6 +54,31 @@ def write_history(repo_root: Path, league_id: str, writer: Writer) -> None:
             _warn(f"Historical WeeklyRecaps {season} not published", f"{type(error).__name__}: {error}")
             continue
         writer.put(f"past_seasons/WeeklyRecaps/WeeklyRecaps_{season}.json", model)
+        models[season] = model
+    return models
+
+
+def archived_models(repo_root: Path, league_id: str, exclude: set[int]) -> dict[int, dict]:
+    """Published archive models of completed seasons that were not recomputed in this run."""
+    current = current_season(manifest(repo_root, league_id))
+    models: dict[int, dict] = {}
+    for season in history_matchup_seasons(repo_root, league_id, current):
+        path = repo_root / "public" / "data" / "past_seasons" / "WeeklyRecaps" / f"WeeklyRecaps_{season}.json"
+        if season not in exclude and path.is_file():
+            models[season] = json.loads(path.read_text(encoding="utf-8-sig"))
+    return models
+
+
+def write_award_history(repo_root: Path, league_id: str, writer: Writer, models: dict[int, dict]) -> None:
+    """PlayerAwardHistory.json from the season models; nothing is written while no season carries player awards."""
+    from derived_data_lib.league_player_refs import LeaguePlayerReferenceResolver
+
+    models = {**archived_models(repo_root, league_id, set(models)), **models}
+    if not any("PlayerAwards" in week for model in models.values() for week in model.get("Weeks", [])):
+        return
+    resolver = LeaguePlayerReferenceResolver.from_repo(repo_root)
+    document = player_award_history(models, lambda player_id, season: resolver.resolve(player_id, season))
+    writer.put("PlayerAwardHistory.json", document, "PlayerAwardHistory")
 
 
 def leagues(repo_root: Path, requested: str | None) -> list[str]:
@@ -73,10 +105,12 @@ def run_write(args: argparse.Namespace) -> int:
     writer = Writer(args.repo_root, datetime.now(timezone.utc))
     try:
         for league_id in leagues(args.repo_root, args.league):
+            models: dict[int, dict] = {}
             if args.scope in ("current", "all"):
-                write_current(args.repo_root, league_id, writer)
+                models.update(write_current(args.repo_root, league_id, writer))
             if args.scope in ("history", "all"):
-                write_history(args.repo_root, league_id, writer)
+                models.update(write_history(args.repo_root, league_id, writer))
+            write_award_history(args.repo_root, league_id, writer, models)
     except EXPECTED_ERRORS as error:
         _warn("WeeklyRecaps not published", f"{type(error).__name__}: {error}")
         writer.finish()
