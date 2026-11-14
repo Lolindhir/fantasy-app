@@ -190,6 +190,11 @@ class PersistedProductTests(unittest.TestCase):
         # until the existing productive rivalry writer publishes the regenerated snapshot.
         selected = {m["Rivalry"] for m in self.doc["Models"].values()}
         self.assertIn(selected, ({"rivalry-v1"}, {"rivalry-v2"}))
+        timestamps = json.loads((REPO / "public" / "data" / "Timestamps.json").read_text(encoding="utf-8"))
+        # Once the real v2 writer has made its first semantic publication it also
+        # initializes Timestamps.Rivalry. From then on a stale v1 product must fail CI.
+        if "Rivalry" in timestamps:
+            self.assertEqual({"rivalry-v2"}, selected)
 
     def test_records_are_symmetric(self):
         for (team, opponent, flt), record in self.records.items():
