@@ -1017,6 +1017,37 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertEqual(2027, product["Season"])
             self.assertEqual("nfl-injuries-v1", product["ProductVersion"])
 
+    def test_imported_historical_injuries_are_frozen_without_approved_repair(self):
+        from nfl_injuries_refresh import refresh_injury_raw
+        import tempfile
+        import hashlib
+        from pathlib import Path
+        raw = asset(2025, [report(2025)])
+        release = {"assets": [{
+            "name": "injuries_2025.csv", "id": 32,
+            "updated_at": "2026-11-14T07:10:00Z", "size": len(raw),
+            "digest": "sha256:" + hashlib.sha256(raw).hexdigest(),
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = dict(repo_root=root, season=2025, current_season=2026,
+                        write=True)
+            fresh = refresh_injury_raw(**args, fetch_release=lambda: release,
+                                      fetch_asset=lambda url: raw)
+            self.assertTrue(fresh["Written"])
+            later = copy.deepcopy(release)
+            later["assets"][0]["id"] = 33
+            later["assets"][0]["digest"] = "sha256:" + ("f" * 64)
+            before = {str(p.relative_to(root)):p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            with self.assertRaisesRegex(ValueError, "Historical Injury Source revision is frozen"):
+                refresh_injury_raw(**args, fetch_release=lambda: later,
+                                   fetch_asset=lambda url: (_ for _ in ()).throw(
+                                       AssertionError("Must never download frozen revisions")))
+            self.assertEqual(before, {str(p.relative_to(root)):p.read_bytes()
+                                     for p in root.rglob("*") if p.is_file()})
+
 
 if __name__ == "__main__":
     unittest.main()
