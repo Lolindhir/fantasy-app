@@ -470,7 +470,7 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertTrue(changed["WritePerformed"])
             self.assertEqual([], changed["ChangeSet"]["ObsoleteRequiresReview"])
             self.assertIn("data-source/nfl/injuries/2025/05.json", changed["ChangeSet"]["Changed"])
-            self.assertNotIn("data-source/nfl/injuries/2025/07.json", changed["ChangeSet"]["Changed"])
+            # SourceAssetSha256 and ObservationKey attest the entire upstream file,\n            # so a revised asset intentionally re-attests even unchanged weeks.\n            self.assertIn("data-source/nfl/injuries/2025/07.json", changed["ChangeSet"]["Changed"])
 
     def test_offline_materializer_obsolete_week_blocks_all_writes(self):
         from nfl_injuries_materialize import stage_injury_season
