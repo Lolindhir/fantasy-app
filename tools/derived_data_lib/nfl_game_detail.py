@@ -436,4 +436,126 @@ def _build_original_pbp(
         "CompletenessVerified": False,
         "PlayCount": len(plays),
         "Plays": plays,
+        "Analytics": _pbp_game_analytics(plays, game),
+    }
+
+
+# CP4: all metrics are derived exclusively from original PBP SourceRows.
+# The nflverse 'epa', 'success' and 'third_down_converted' fields are reused;
+# none is reconstituted from player stats, outcomes or schedule scores.
+def _pbp_game_analytics(
+    plays: list[Mapping[str, Any]], game: Mapping[str, Any],
+) -> dict[str, Any]:
+    def _rate(numerator: int, denominator: int) -> float | None:
+        return round(numerator / denominator, 4) if denominator else None
+
+    eligible: list[Mapping[str, Any]] = []
+    excluded_two_point = 0
+    excluded_unknown_two_point = 0
+    excluded_other = 0
+    unassigned = 0
+    for play in plays:
+        if play["PlayType"] not in ("pass", "run"):
+            excluded_other += 1
+            continue
+        raw = play["SourceRow"]
+        flag = _pbp_number(raw.get("two_point_attempt"), "two_point_attempt", integer=True)
+        if flag is None:
+            # Unknown membership is never treated as a confirmed normal play.
+            excluded_unknown_two_point += 1
+            continue
+        if flag not in (0, 1):
+            raise ValueError(f"Original PBP invalid two_point_attempt at PlayID {play['PlayID']}")
+        if flag == 1:
+            excluded_two_point += 1
+            continue
+        if play["PossessionTeam"] is None or play["DefenseTeam"] is None:
+            unassigned += 1
+            continue
+        # Validate every used provider input, including nullable fields. A missing
+        # field reduces a metric's denominator rather than becoming 0/False.
+        yards = _pbp_number(raw.get("yards_gained"), "yards_gained")
+        third = _pbp_number(raw.get("third_down_converted"), "third_down_converted",
+                            integer=True)
+        if third is not None and third not in (0, 1):
+            raise ValueError(f"Original PBP invalid third_down_converted at PlayID {play['PlayID']}")
+        eligible.append({**play, "_YardsGained": yards, "_ThirdConverted": third})
+
+    def _metrics(subset: list[Mapping[str, Any]], *, third_down: bool = False) -> dict[str, Any]:
+        # Return explicit denominators. No rows means 'unknown/no evidence',
+        # not a measured zero EPA, success rate, or conversion rate.
+        epa = [p["EPA"] for p in subset if p["EPA"] is not None]
+        success = [p["Success"] for p in subset if p["Success"] is not None]
+        yards = [p for p in subset if p["_YardsGained"] is not None]
+        positive = sum(p is True for p in success)
+        explosives = sum(
+            p["_YardsGained"] >= (20 if p["PlayType"] == "pass" else 10)
+            for p in yards
+        )
+        result = {
+            "PlayCount": len(subset),
+            "EPA": {
+                "Observed": len(epa), "Missing": len(subset) - len(epa),
+                "Sum": round(math.fsum(epa), 3) if epa else None,
+                "PerPlay": round(math.fsum(epa) / len(epa), 4) if epa else None,
+            },
+            "Success": {
+                "Observed": len(success), "Missing": len(subset) - len(success),
+                "Successful": positive, "Rate": _rate(positive, len(success)),
+            },
+            "Explosive": {
+                "Observed": len(yards), "Missing": len(subset) - len(yards),
+                "Count": explosives, "Rate": _rate(explosives, len(yards)),
+            },
+        }
+        if third_down:
+            observed = [p["_ThirdConverted"] for p in subset if p["_ThirdConverted"] is not None]
+            converted = sum(v == 1 for v in observed)
+            result["Conversions"] = {
+                "Observed": len(observed), "Missing": len(subset) - len(observed),
+                "Converted": converted, "Rate": _rate(converted, len(observed)),
+            }
+        return result
+
+    teams = (game["AwayTeam"], game["HomeTeam"])
+    offense = []
+    defense = []
+    for team in teams:
+        by_offense = [p for p in eligible if p["PossessionTeam"] == team]
+        by_defense = [p for p in eligible if p["DefenseTeam"] == team]
+        offense.append({
+            "Team": team, "All": _metrics(by_offense),
+            "Pass": _metrics([p for p in by_offense if p["PlayType"] == "pass"]),
+            "Run": _metrics([p for p in by_offense if p["PlayType"] == "run"]),
+            "ThirdDown": _metrics(
+                [p for p in by_offense if p["Down"] == 3], third_down=True,
+            ),
+        })
+        # Defensive values reflect the OPPOSING offense's PBP EPA and success.
+        # Lower allowed offense EPA/success is better for the defense.
+        defense.append({
+            "Team": team, "OffenseAllowed": _metrics(by_defense),
+            "ThirdDownAllowed": _metrics(
+                [p for p in by_defense if p["Down"] == 3], third_down=True,
+            ),
+        })
+    return {
+        "DefinitionVersion": 1,
+        "Status": "provisional-unverified-game-completeness",
+        "Definitions": {
+            "Eligibility": "play_type pass/run with two_point_attempt=0 and both teams identified",
+            "EPA": "source epa from offense perspective; mean over non-null observed epa only",
+            "Success": "source success=1 rate, non-null observed flags only",
+            "Explosive": "yards_gained >=20 on pass or >=10 on run; non-null yards only",
+            "ThirdDownConversion": "source third_down_converted=1 on down=3 pass/run only",
+            "Rounding": "EPA sum 3 decimals, per-play and rates 4 decimals",
+        },
+        "SourcePlayCount": len(plays),
+        "EligiblePlayCount": len(eligible),
+        "ExcludedNonScrimmageCount": excluded_other,
+        "ExcludedTwoPointAttemptCount": excluded_two_point,
+        "ExcludedUnknownTwoPointFlagCount": excluded_unknown_two_point,
+        "ExcludedUnassignedTeamCount": unassigned,
+        "ByOffenseTeam": offense,
+        "ByDefenseTeam": defense,
     }
