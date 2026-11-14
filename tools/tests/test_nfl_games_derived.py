@@ -832,6 +832,11 @@ class NflPbpMetricSourceFieldAuditTests(unittest.TestCase):
             self.assertTrue(metric["rb_targets"]["PositionJoinRequired"])
             self.assertEqual(result["ProviderPlayerIDCoverage"]
                              ["passer_player_id"]["NonGSISFormatOccurrences"], 1)
+            checks = result["DictionarySemanticCrosschecks"]
+            self.assertEqual(checks["PassAttemptAndSackRows"], 1)
+            self.assertEqual(checks["QBDropbackAndScrambleRows"], 1)
+            self.assertEqual(checks["SuccessEPAComparableRows"], 2)
+            self.assertEqual(checks["SuccessPositiveEPAMismatches"], 0)
             self.assertTrue(result["ArchivedProjectionComparison"]["ArchivedSHA256Matches"])
             self.assertTrue(result["ArchivedProjectionComparison"]["ArchivedRowCountMatches"])
             self.assertTrue(result["GzipStreamReadToEOF"])
