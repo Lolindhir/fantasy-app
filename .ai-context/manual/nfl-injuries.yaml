@@ -132,6 +132,7 @@ materializationPlan:
   implementation: tools/nfl_source_data_lib/injury_product_plan.py
   inspectionCli: tools/nfl_injuries_preview.py --mode plan
   localStagingCli: tools/nfl_injuries_materialize.py --write
+  separatedStageCli: tools/nfl_injuries_phase.py --phase raw|canonical|derived
   releaseRefreshCli: tools/nfl_injuries_refresh.py --season <year>
   localStagingDefault: dry-run
   stagingNotPublication: >
@@ -161,6 +162,48 @@ materializationPlan:
     - A missing release asset is a retryable state, never an empty product.
     - Changes to old source weeks trigger review instead of silent deletion.
     - Reject path traversal and symlinked ancestor directories before local staging.
+
+phaseSeparation:
+  implementation: tools/nfl_injuries_phase.py
+  status: tested-local-only-not-published
+  upstreamOrder:
+    - raw: provider original CSV and metadata only
+    - canonical: confirmed persisted raw plus identity graph and optional schedule
+    - derived: confirmed persisted canonical season manifest and week partitions only
+  raw:
+    requires:
+      - source original bytes and expected SHA-256 or official release digest
+      - no player identity, league input, schedule or Derived consumer
+    allowedPaths:
+      - data-source/providers/nflverse/injuries/raw-<season>.csv
+      - data-source/providers/nflverse/injuries/metadata-<season>.json
+  canonical:
+    requires:
+      - raw CSV/metadata hash and size match, same season, dataset, schema
+      - current canonical player identities
+      - optional season schedule for game linkage
+    allowedPath: data-source/nfl/injuries/<season>/
+    retiredPartitionPolicy: flag-only-no-automatic-deletion
+  derived:
+    requires:
+      - canonical season manifest, complete expected observed week inventory
+      - matching source and identity fingerprints in all canonical week partitions
+      - manifest source-row count matches exact report rows
+    forbiddenDependencies:
+      - raw provider CSV and metadata
+      - canonical player graph and schedule (already represented by source Canonical)
+      - ESPN current-status snapshots, league scoring and App read models
+    allowedPath: data-derived/nfl-injuries/<season>.json
+  validation:
+    - All phases are dry-run by default and --write affects only a local worktree.
+    - No phase invokes Git push/commit or registers a new automated workflow.
+    - Source/Canonical/Derived are separate transaction boundaries.
+    - Stale canonical week files are never automatically deleted.
+    - Future productive publication must use existing two-phase Source writer,
+      then a separate rebuild-and-retry Derived publisher on the latest main.
+    - Any failure/missing input leaves the existing successful output in place.
+    - Same inputs and version produce byte-identical outputs and no writes.
+    - The full C3 plan must match the three-phase output file-for-file.
 
 freshness:
   historicalInjuryReport:
