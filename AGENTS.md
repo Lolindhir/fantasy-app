@@ -46,6 +46,7 @@ Before making architecture, data model, generation or frontend changes, these fi
 8. @.ai-context/manual/domain.yaml
 9. @.ai-context/manual/data-sources.yaml
 10. @.ai-context/manual/decisions.yaml
+11. @.ai-context/manual/handbook.yaml
 
 For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/frontend-design/index.yaml` and follow its internal reading order before analysis or mutation.
 
@@ -64,6 +65,7 @@ For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/
 - `AGENTS.md` is the first file agents must read before making repository changes.
 - `.ai-context` is the canonical root for application AI context documentation.
 - `.ai-context/manual/frontend-design/index.yaml` is the canonical entry point for app-wide frontend design governance and routes design principles, architecture, standards and decisions.
+- `.ai-context/manual/handbook.yaml` owns Handbook content, overview synchronization, public copy and reviewer checks; read it for every Handbook or Handbook-link change.
 - `fantasy-management/AGENTS.md` is the canonical root for isolated Fantasy Management agent documentation.
 - Human-maintained application AI context belongs in `.ai-context/manual`.
 - Generated application AI context belongs in `.ai-context/generated` and must not be edited manually.

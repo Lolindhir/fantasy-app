@@ -1,0 +1,80 @@
+schemaVersion: 1
+status: active
+domain: public-league-handbook
+
+purpose: >
+  The Handbook explains current league-specific mechanics and app predictions
+  in plain language for the managers. It is not a research report, implementation
+  log, governance record or alternative canonical rule source.
+
+ownership:
+  canonicalContract: .ai-context/manual/handbook.yaml
+  overview: public/docs/Overview.md
+  topicPages: public/docs/*.md
+  navigationAndDisplay: src/app/features/handbook/
+  philosophyCanonical: fantasy-management/league-context/league-philosophy.md
+  philosophyBuildAsset: docs/league-philosophy.md
+  philosophyRule: >
+    Keep the single protected canonical philosophy file and its existing
+    exact build-asset parity. Render only the manager-facing heading, north star,
+    six goals and explanatory interpretation from that file; never show its
+    version, approval/ratification, usage instructions or change history.
+    A short non-normative Overview summary is allowed if faithfully aligned.
+
+presentation:
+  - Explain what managers see, why the mechanism exists, how to interpret its
+    numbers, and its most important limits, using concise German and examples.
+  - Do not display internal version IDs, model names or numbers, GitHub issues,
+    file paths, implementation details, research/calibration reports, author/
+    approval/status metadata, timestamps or governance history.
+  - Distinguish current active behavior from potential future changes. Never
+    imply a model experiment or planned rule is productively enabled.
+  - Describe intervals as uncertainty, not guaranteed floors/ceilings; describe
+    participation-conditional projections without implying an injury probability.
+  - Only document league rules as active when canonical league facts/approved
+    policies and productive behavior support them; Markdown does not legislate.
+
+navigation:
+  entryPage: Overview
+  secondPage: league-philosophy
+  orderedTabs:
+    - Overview
+    - league-philosophy
+    - Salary_Explanation
+    - Projections_Explanation
+    - Offseason_Flow
+    - Offseason_Schedule
+    - Draft_Waiver_Order
+  deepLink: /handbook?section=<tab-id>
+  unknownSection: Fall back to Overview; do not turn arbitrary query values into asset paths.
+  links: >
+    Link unobtrusively from relevant detail surfaces with accessible wording.
+    Avoid clickable anchors nested inside other clickable player/matchup cards.
+
+overviewMaintenance:
+  - The Overview is always first/default and briefly lists active special
+    mechanics and their intent, not just abstract philosophy.
+  - MUST review and update Overview.md in the same PR whenever a Handbook
+    topic is added, removed, renamed or meaningfully redefined.
+  - MUST review both the corresponding topic page and Overview when an active
+    league rule, displayed calculation or prediction meaning changes; document
+    an explicit no-change rationale in the Issue/PR if unaffected.
+  - Keep the compact philosophy summary semantically consistent with the
+    canonical six goals, without treating their pending ratification as a newly
+    enacted active league rule.
+
+reviewChecklist:
+  - Overview is first and default, philosophy second, valid deep links work.
+  - Every page has a corresponding concise Overview mention, and vice versa.
+  - Visible Markdown and tooltips contain no internal metadata or model IDs.
+  - The public philosophy hides administrative material but preserves the six
+    goals unchanged; canonical file/build parity stays intact.
+  - Statements match current source contracts and productive code; missing
+    forecasts and uncertainty are explained without invention.
+  - Mobile, keyboard, focus states, in-app links and Angular/CI validation pass.
+  - Test impact and changed documentation are reviewed per repository rules.
+
+safety:
+  - No new league rule, scoring model, generator, writer, scheduler or data
+    ownership follows from a Handbook content update.
+  - Internal norms and implementation history remain in their existing owners.

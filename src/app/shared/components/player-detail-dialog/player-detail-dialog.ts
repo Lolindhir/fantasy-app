@@ -12,6 +12,7 @@ import type { ChartConfiguration, ChartOptions } from 'chart.js';
 
 import type { Player, PointHistorySeason, PlayerStats } from '../../../core/models/fantasy.models';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
+import { RouterLink } from '@angular/router';
 import { DataService } from '../../../core/services/data.service';
 import { formatPlayerPositionDepth } from '../../utils/player-sort.util';
 import { buildPlayerJourney, type PlayerJourney, type PlayerJourneyEvent } from '../../utils/player-journey.util';
@@ -36,6 +37,7 @@ Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, C
     MatIconModule,
     PositionStylePipe,
     PlayerProjectionComponent,
+    RouterLink,
     SalaryHistoryChartComponent
   ],
   templateUrl: './player-detail-dialog.html',
