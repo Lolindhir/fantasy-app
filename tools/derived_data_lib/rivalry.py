@@ -1,7 +1,7 @@
 """Pure assembly of the league-rivalry product (Issue #1455, .ai-context/manual/league-rivalry.yaml).
 
 Reads only the computed matchup context of every season (canonical matchups with the bracket label, ADR-075), the canonical season status and
-data-meta; no App file. The counting rules are the model ``rivalry-v1``; this module collects the final matchups per season, applies the model of
+data-meta; no App file. The counting rules are the chosen immutable ``rivalry-v1`` or ``rivalry-v2``; this module collects the final matchups per season, applies the model of
 the season and builds the per-team, per-opponent records for the filters ``all``, ``regular`` and ``playoffs``.
 """
 from __future__ import annotations
@@ -93,7 +93,7 @@ def resolve(repo_root: Path, league_id: str, at_utc: datetime) -> dict[str, Any]
     seasons = sources.manifest_seasons(manifest)
     chosen = {season: model_for(metadata, season, MODEL_KIND) for season in seasons}
     if len(set(chosen.values())) != 1:
-        raise RivalryError(f"rivalry-v1 aggregates all seasons with one model; the league chooses {sorted(set(chosen.values()))}")
+        raise RivalryError(f"league-rivalry aggregates all seasons with one model; the league chooses {sorted(set(chosen.values()))}")
     model = get_model(next(iter(chosen.values())), "rivalry")
 
     rows: list[dict[str, Any]] = []
