@@ -384,7 +384,7 @@ matrix:
     freshness: persist Sleeper player map and refresh sparingly, approximately daily
     migrationState: canonical-active-runtime-migrated
     guards:
-      - nflverse injury source is not a valid current replacement after its source ended following 2024
+      - nflverse injury report CSVs continue after 2024 (Issue #1421); the historical report data product is not yet active and is not an automatic replacement or fallback for current Sleeper injury status
       - ReturnDate is an honest null (unknown) and is not synthesized; InjuryStartDate is currently empty in Sleeper data and publishes as an empty string
       - Description is published only while an injury status exists; stale Sleeper body part/notes after recovery must not become a false Fantasy Management injury signal
       - conflicting provider injury claims are not silently resolved by fallback priority
