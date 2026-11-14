@@ -7,6 +7,7 @@ prove full play-by-play coverage.
 from __future__ import annotations
 
 import math
+from decimal import Decimal, InvalidOperation
 
 from typing import Any, Mapping
 
@@ -43,6 +44,8 @@ def _valid_type(source_type: Any, game_type: Any) -> bool:
 def build_nfl_game_detail(
     index: Mapping[str, Any], game_id: str, long_gains: Mapping[str, Any] | None = None,
     player_stats: Mapping[str, Any] | None = None, snap_counts: Mapping[str, Any] | None = None,
+    pbp_rows: list[Mapping[str, str]] | None = None,
+    pbp_asset_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Build one game detail without writes or invented full-PBP statistics.
 
@@ -123,20 +126,29 @@ def build_nfl_game_detail(
             if known_team is not None and known_team != row["Team"]:
                 raise ValueError(f"Player changed team across source partitions: {game_id}")
 
+    pbp = {
+        "Coverage": "partial" if records is not None else "unavailable",
+        "FullPlayByPlayAvailable": False,
+        "LongGains": {
+            "SourceDataset": _LONG_GAINS_SOURCE,
+            "Status": "available" if records is not None else "unavailable",
+            "Records": records,
+        },
+    }
+    if pbp_rows is not None:
+        pbp["OriginalPlays"] = _build_original_pbp(game, season, pbp_rows, pbp_asset_sha256)
+        pbp["Coverage"] = "source-rows-unverified"
+        # Even a matching season-asset hash does not establish game completeness.
+        pbp["FullPlayByPlayAvailable"] = False
+    elif pbp_asset_sha256 is not None:
+        raise ValueError("PBP asset digest supplied without PBP rows")
+
     return {
-        "SchemaVersion": _DETAIL_SCHEMA,
+        "SchemaVersion": 3 if pbp_rows is not None else _DETAIL_SCHEMA,
         "Season": season,
         "GameID": game_id,
         "Game": dict(game),
-        "PlayByPlay": {
-            "Coverage": "partial" if records is not None else "unavailable",
-            "FullPlayByPlayAvailable": False,
-            "LongGains": {
-                "SourceDataset": _LONG_GAINS_SOURCE,
-                "Status": "available" if records is not None else "unavailable",
-                "Records": records,
-            },
-        },
+        "PlayByPlay": pbp,
         "PlayerStats": {
             "SourceDataset": _STATS_SOURCE,
             "Status": _group_status(stats_rows, game),
@@ -310,3 +322,118 @@ def _team_totals(
         teams.append({"Team": team, "Status": "available",
                       "PlayerRecordCount": len(group), "Stats": total})
     return teams
+
+
+# Full original play evidence is deliberately separate from the sparse LongGains
+# projection and from the optional player-stats / snap-counts inputs.
+_PBP_SOURCE = "nflverse.play-by-play"
+_PBP_NULLS = {"", "NA", "N/A", "NaN", "nan", "NULL", "null"}
+
+
+def _pbp_number(value: Any, name: str, *, integer: bool = False,
+                required: bool = False) -> int | float | None:
+    text = str(value if value is not None else "").strip()
+    if text in _PBP_NULLS:
+        if required:
+            raise ValueError(f"Original PBP missing required {name}")
+        return None
+    try:
+        n = Decimal(text)
+    except InvalidOperation as exc:
+        raise ValueError(f"Original PBP invalid {name}: {text}") from exc
+    if not n.is_finite():
+        raise ValueError(f"Original PBP nonfinite {name}")
+    if integer:
+        if n != n.to_integral_value():
+            raise ValueError(f"Original PBP nonintegral {name}")
+        return int(n)
+    value = float(n)
+    if not math.isfinite(value):
+        raise ValueError(f"Original PBP nonfinite {name}")
+    return value
+
+
+def _build_original_pbp(
+    game: Mapping[str, Any],
+    season: int,
+    rows: list[Mapping[str, str]],
+    asset_sha256: str | None,
+) -> dict[str, Any]:
+    """Pure per-GameID original-play projection, never a completeness certificate.
+
+    All original CSV columns of each input row survive verbatim under SourceRow.
+    Only the requested game's records may be passed; call-site streams the gzip.
+    No player-stats, snap counts, inferred fantasy scoring or rights assumptions.
+    """
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("Original PBP has no rows for requested GameID")
+    if asset_sha256 is not None and (
+        len(asset_sha256) != 64 or any(c not in "0123456789abcdef" for c in asset_sha256)
+    ):
+        raise ValueError("Invalid original PBP SHA256 digest")
+    plays: list[dict[str, Any]] = []
+    seen: set[int] = set()
+    for row in rows:
+        if not isinstance(row, dict) or any(not isinstance(k, str) for k in row):
+            raise ValueError("Invalid original PBP CSV row")
+        if (row.get("game_id") != game.get("GameID")
+                or _pbp_number(row.get("season"), "season", integer=True, required=True) != season
+                or _pbp_number(row.get("week"), "week", integer=True, required=True) != game.get("Week")
+                or not _valid_type(row.get("season_type"), game.get("GameType"))
+                or row.get("home_team") != game.get("HomeTeam")
+                or row.get("away_team") != game.get("AwayTeam")):
+            raise ValueError(f"Original PBP game/season/week/type/team mismatch: {game.get('GameID')}")
+        play_id = _pbp_number(row.get("play_id"), "play_id", integer=True, required=True)
+        if play_id < 1 or play_id in seen:
+            raise ValueError(f"Original PBP invalid or duplicate PlayID: {play_id}")
+        seen.add(play_id)
+        qtr = _pbp_number(row.get("qtr"), "qtr", integer=True)
+        down = _pbp_number(row.get("down"), "down", integer=True)
+        ydstogo = _pbp_number(row.get("ydstogo"), "ydstogo", integer=True)
+        drive = _pbp_number(row.get("drive"), "drive", integer=True)
+        yardline = _pbp_number(row.get("yardline_100"), "yardline_100")
+        epa = _pbp_number(row.get("epa"), "epa")
+        success = _pbp_number(row.get("success"), "success", integer=True)
+        game_clock = _pbp_number(row.get("game_seconds_remaining"), "game_seconds_remaining")
+        if (qtr is not None and not 1 <= qtr <= 7
+                or down is not None and not 1 <= down <= 4
+                or ydstogo is not None and not 0 <= ydstogo <= 100
+                or drive is not None and drive < 0
+                or yardline is not None and not 0 <= yardline <= 100
+                or success is not None and success not in (0, 1)
+                or game_clock is not None and game_clock < 0):
+            raise ValueError(f"Original PBP impossible situation at PlayID {play_id}")
+        posteam = (row.get("posteam") or "").strip()
+        defteam = (row.get("defteam") or "").strip()
+        if posteam not in ("", game["AwayTeam"], game["HomeTeam"]) or defteam not in (
+            "", game["AwayTeam"], game["HomeTeam"]
+        ):
+            raise ValueError(f"Original PBP invalid possession/defense team: {play_id}")
+        if posteam and defteam and posteam == defteam:
+            raise ValueError(f"Original PBP same possession/defense team: {play_id}")
+        plays.append({
+            "PlayID": play_id,
+            "Quarter": qtr,
+            "Drive": drive,
+            "GameSecondsRemaining": game_clock,
+            "Down": down,
+            "YardsToGo": ydstogo,
+            "Yardline100": yardline,
+            "PossessionTeam": posteam or None,
+            "DefenseTeam": defteam or None,
+            "PlayType": (row.get("play_type") or "").strip() or None,
+            "Description": row.get("desc") or None,
+            "EPA": epa,
+            "Success": bool(success) if success is not None else None,
+            "SourceRow": dict(row),
+        })
+    plays.sort(key=lambda p: p["PlayID"])
+    return {
+        "SourceDataset": _PBP_SOURCE,
+        "SourceFormat": "csv.gz",
+        "SourceAssetSHA256": asset_sha256,
+        "Status": "present-unverified-completeness",
+        "CompletenessVerified": False,
+        "PlayCount": len(plays),
+        "Plays": plays,
+    }

@@ -6,6 +6,9 @@ No persistent or published data. Long gains are NOT full play-by-play.
 from __future__ import annotations
 
 import argparse
+import csv
+import gzip
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -14,7 +17,10 @@ from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from derived_data_lib.nfl_game_detail import build_nfl_game_detail
 
 
-def preview(repo_root: Path, season: int, game_id: str) -> dict:
+def preview(
+    repo_root: Path, season: int, game_id: str,
+    pbp_csv_gz: Path | None = None, expected_sha256: str | None = None,
+) -> dict:
     index_path = repo_root / DATA_DERIVED_ROOT / "nfl-games" / f"{season}.json"
     if not index_path.is_file():
         raise ValueError(f"Canonical nfl-games season unavailable: {season}")
@@ -25,6 +31,20 @@ def preview(repo_root: Path, season: int, game_id: str) -> dict:
     week = matches[0].get("Week")
     if type(week) is not int or not 1 <= week <= 25:
         raise ValueError(f"Invalid game week for {game_id}")
+    if pbp_csv_gz is not None:
+        # PBP-first mode: deliberately no player-stats or snap-count dependencies.
+        if not pbp_csv_gz.is_file():
+            raise ValueError(f"Original PBP gzip unavailable: {pbp_csv_gz}")
+        with pbp_csv_gz.open("rb") as source:
+            digest = hashlib.file_digest(source, "sha256").hexdigest()
+        if expected_sha256 is not None and expected_sha256.lower() != digest:
+            raise ValueError("Original PBP asset SHA256 does not match requested digest")
+        rows = _load_original_game_rows(pbp_csv_gz, game_id)
+        return build_nfl_game_detail(
+            index, game_id, pbp_rows=rows, pbp_asset_sha256=digest,
+        )
+    if expected_sha256 is not None:
+        raise ValueError("--expected-sha256 requires --pbp-csv-gz")
     nfl_source = repo_root / DATA_SOURCE_ROOT / "nfl"
 
     def optional_json(path: Path) -> dict | None:
@@ -38,15 +58,59 @@ def preview(repo_root: Path, season: int, game_id: str) -> dict:
     return build_nfl_game_detail(index, game_id, gains, stats, snaps)
 
 
+_PBP_REQUIRED_COLUMNS = {
+    "game_id", "play_id", "season", "season_type", "week",
+    "home_team", "away_team", "qtr", "down", "ydstogo", "yardline_100",
+    "posteam", "defteam", "play_type", "desc", "epa", "success",
+}
+
+
+def _load_original_game_rows(path: Path, game_id: str) -> list[dict[str, str]]:
+    """Read the original season csv.gz as a stream; hold only one GameID.
+
+    Like the canonical nflverse Source projections, this uses gzip + DictReader,
+    but never writes a derived or Source dataset.
+    """
+    result: list[dict[str, str]] = []
+    with gzip.open(path, "rt", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        fields = reader.fieldnames or []
+        if len(fields) != len(set(fields)) or not fields or any(not f for f in fields):
+            raise ValueError("Malformed/duplicate original PBP CSV headers")
+        missing = sorted(_PBP_REQUIRED_COLUMNS - set(fields))
+        if missing:
+            raise ValueError("Missing original PBP columns: " + ", ".join(missing))
+        for row in reader:
+            if None in row or any(value is None for value in row.values()):
+                raise ValueError("Malformed original PBP CSV row width")
+            if (row.get("game_id") or "").strip() == game_id:
+                result.append(row)
+    if not result:
+        raise ValueError(f"Original PBP GameID not found: {game_id}")
+    return result
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--season", type=int, required=True)
     parser.add_argument("--game-id", required=True)
+    parser.add_argument(
+        "--pbp-csv-gz", type=Path, default=None,
+        help="Local original nflverse play_by_play_<season>.csv.gz; no network/download/write",
+    )
+    parser.add_argument(
+        "--expected-sha256", default=None,
+        help="Optional expected SHA256 of the original compressed season asset",
+    )
     args = parser.parse_args()
     try:
-        document = preview(args.repo_root.resolve(), args.season, args.game_id)
-    except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError) as error:
+        document = preview(
+            args.repo_root.resolve(), args.season, args.game_id,
+            args.pbp_csv_gz, args.expected_sha256,
+        )
+    except (OSError, ValueError, TypeError, KeyError, EOFError, csv.Error,
+            json.JSONDecodeError) as error:
         print(f"nfl_game_detail_preview failed: {error}", file=sys.stderr)
         return 1
     print(json.dumps(document, indent=2, ensure_ascii=False))
