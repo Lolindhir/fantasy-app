@@ -127,7 +127,7 @@ def plan_injury_phase(
     schedule: dict | None = None,
 ) -> dict[str, bytes]:
     """Source→Canonical→Derived, each restricted to its own upstream owner."""
-    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2026:
+    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2099:
         raise ValueError("Unsupported Injury season")
     if phase not in _PHASES:
         raise ValueError("Unknown Injury publication phase")
