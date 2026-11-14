@@ -261,5 +261,65 @@ class NflInjuriesProductTests(unittest.TestCase):
             }, {}, season=2025)
 
 
+    def test_read_only_plan_preview_detects_prior_output_without_writer(self):
+        from nfl_injuries_preview import plan_preview
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts
+        import tempfile
+        source = asset(2025, [report(2025)])
+        with tempfile.TemporaryDirectory() as location:
+            root = Path(location)
+            planned = plan_preview(
+                csv_bytes=source, season=2025, identities=identities(), compare_root=root
+            )
+            self.assertTrue(planned["PreviewOnly"])
+            self.assertFalse(planned["PublicationEnabled"])
+            self.assertTrue(planned["ChangeSet"]["RequiresWrites"])
+            self.assertEqual("empty-preview-baseline", plan_preview(
+                csv_bytes=source, season=2025, identities=identities()
+            )["ComparisonBasis"])
+            self.assertEqual([], list(root.rglob("*")))
+            expected = build_injury_artifacts(
+                season=2025, source_csv=source, players=identities()
+            )
+            for path, value in expected.items():
+                target = root / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(value)
+            delta = plan_preview(
+                csv_bytes=source, season=2025, identities=identities(), compare_root=root
+            )
+            self.assertFalse(delta["ChangeSet"]["RequiresWrites"])
+            self.assertEqual([], delta["ChangeSet"]["New"])
+            self.assertEqual(len(expected), len(delta["ChangeSet"]["Unchanged"]))
+
+    def test_schedule_provenance_in_plan_changes_without_source_change(self):
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts, classify_injury_artifacts
+        import json
+        raw = asset(2025, [report(2025)])
+        a = {"Season": 2025, "Games": [
+            {"GameID": "2025_05_X_HOU", "GameType": "REG", "Week": 5,
+             "HomeTeam": "HOU", "AwayTeam": "NYG"}
+        ]}
+        b = {"Season": 2025, "Games": [
+            {"GameID": "2025_05_NYG_HOU_CORRECTED", "GameType": "REG", "Week": 5,
+             "HomeTeam": "HOU", "AwayTeam": "NYG"}
+        ]}
+        first = build_injury_artifacts(
+            season=2025, source_csv=raw, players=identities(), schedule=a
+        )
+        second = build_injury_artifacts(
+            season=2025, source_csv=raw, players=identities(), schedule=b
+        )
+        manifest_path = "data-source/nfl/injuries/2025/manifest.json"
+        self.assertNotEqual(
+            json.loads(first[manifest_path])["ScheduleGraphFingerprint"],
+            json.loads(second[manifest_path])["ScheduleGraphFingerprint"],
+        )
+        delta = classify_injury_artifacts(second, first, season=2025)
+        self.assertIn(manifest_path, delta["Changed"])
+        self.assertIn("data-source/nfl/injuries/2025/05.json", delta["Changed"])
+        self.assertIn("data-derived/nfl-injuries/2025.json", delta["Changed"])
+
+
 if __name__ == "__main__":
     unittest.main()
