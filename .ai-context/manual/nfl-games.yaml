@@ -124,6 +124,21 @@ futureGameDetailDirection:
     - situational-and-drive-context
     - advanced-play-derived-metrics
     - data-coverage-and-provenance
+  pbpDerivedMetricCatalog:
+    path: .ai-context/manual/nfl-games-pbp-metrics.yaml
+    catalogVersion: 1
+    status: approved-research-candidate-definitions-not-implemented-or-published
+    issue: 1077
+    producer: future-versioned-derived-nfl-games-not-a-new-product
+    sourceEvidence: original-nflverse-pbp-in-Source-layer-only-after-separate-gates
+    productRule: >-
+      Future detailed nfl-games views publish only compact team, situation,
+      usage and optional position-specific aggregates with coverage and versioned
+      denominators, NOT all raw source plays. The PBP-only reader/analytics
+      currently remain experimental read-only checkpoints. Fantasy player
+      predictions, the externally discussed Stone Luck Score and ROS rankings are
+      independent downstream research until separately validated.
+    requiredBeforeActivation: original-source-and-field-audit;identity-and-coverage;metric-eligibility-tests;versioned-output-and-risk-approved-publication
   inputPrinciple: >
     Use canonical NFL facts including retained full play-by-play evidence, player
     stats, snap counts, schedules, game finality and market odds as applicable.
@@ -134,9 +149,183 @@ futureGameDetailDirection:
     Retain a lean season index and load detailed games on demand; per-game
     partition layout, schemas, compatibility, invalidation, and publishing
     require a separate approved implementation decision.
+
+  fullPbpReadOnlyVerticalSlice:
+    checkpoint: CP3
+    status: code-implemented-original-game-asset-replay-not-yet-verified
+    intent: >-
+      Work directly from a local original nflverse play_by_play_<season>.csv.gz,
+      never from the sparse long-gains projection or from aggregated player stats.
+      The pure original-play builder stays inside the existing nfl-games
+      game-detail owner; no separate derived product or new Source ownership.
+    cli: >-
+      python3 tools/nfl_game_detail_preview.py --season 2026
+      --game-id 2026_10_WAS_NYG --pbp-csv-gz /local/play_by_play_2026.csv.gz
+    optionalIntegrityCheck: --expected-sha256 <trusted-compressed-asset-digest>
+    reader: >-
+      Stream the full compressed seasonal CSV using gzip and csv.DictReader
+      (same approach as existing Source projections), retain only exact target
+      GameID rows in memory. Fail closed on missing/duplicate CSV headers,
+      missing game, invalid play ID, duplicate game/play identity, inconsistent
+      season/week/type/teams or invalid typed situational values.
+    result: >-
+      Returns read-only GameDetail SchemaVersion 3. Existing canonical
+      Game and optional legacy detail groups stay structurally separate.
+      PlayByPlay.OriginalPlays carries all matched source play rows ordered
+      by PlayID, selected typed situation and EPA/success fields, and each
+      complete original column map verbatim under SourceRow. The original
+      GSIS player IDs are retained as provider evidence, not falsely converted
+      to CanonicalPlayerID. PlayerStats and SnapCounts are not prerequisites
+      in --pbp-csv-gz mode. No per-play metric aggregation is guessed.
+    provenance: >-
+      Original compressed asset SHA256 is calculated locally, and can be
+      pinned to an explicitly supplied expected SHA256. The digest proves
+      byte identity only against the supplied digest, not that all game plays
+      are in the upstream source or that the asset may be redistributed.
+    completeness: >-
+      PlayCount is the count of selected source rows, not a verified complete
+      game count. Coverage remains source-rows-unverified,
+      OriginalPlays.Status=present-unverified-completeness,
+      CompletenessVerified=false and FullPlayByPlayAvailable=false until
+      independent full-game evidence can establish completeness. Never
+      elevate partial upstream games or a Final flag to proven full PBP.
+    validation: >-
+      Synthetic nflverse-shaped gzip exercises streamed multi-game filtering,
+      270 source rows, stable sorting, verbatim extra columns, missing values,
+      SHA256, read-only contract, non-PBP independence and fail-closed joins.
+      A real complete original game could not be replayed in this environment:
+      original compressed season asset download is unavailable here; passing
+      synthetic tests must not be reported as real source acceptance.
+    sourceReadAndAnalyticsCheckpoint:
+      checkpoint: CP4
+      status: implemented-read-only-not-real-original-game-certified
+      summaryCli: >-
+        python3 tools/nfl_game_detail_preview.py --season 2026
+        --game-id 2026_10_WAS_NYG
+        --pbp-csv-gz /local/play_by_play_2026.csv.gz --summary
+      sourceReadAudit: >-
+        The entire gzip CSV is streamed to EOF and decompressed, preserving
+        the gzip integrity verification and recording season rows scanned,
+        distinct GameIDs in the asset, matched GameID rows, column count,
+        asset byte size, selected unique PlayIDs and min/max PlayID. The
+        compressed SHA256 is checked both before and after the scan to detect
+        a changing source file. A matching optional --expected-sha256 pins
+        the asset to a specified trusted hash. Nonconsecutive PlayIDs do not
+        constitute missing rows without independent upstream evidence.
+      scope: >-
+        Analytics are computed solely from original matched PBP SourceRows
+        after canonical GameID and unique PlayID validation; no player-stats,
+        snap-counts, team boxscores or inferred drive/score joins are used.
+        The PBP source snapshot's play completeness remains unverified.
+      definitionVersion: 1
+      eligibility: >-
+        Include play_type=pass or run only, explicitly two_point_attempt=0,
+        and a valid possession and defense team. Missing two_point_attempt
+        means eligibility unknown and is counted as excluded, not treated as
+        zero. Non-scrimmage, two-point and unknown-team plays are counted
+        separately so no denominator is silently inflated.
+      firstMetrics:
+        - per-team offense and opposing-defense perspective
+        - per-team pass/run splits and third-down splits
+        - EPA sum and average from nullable original epa field
+        - success rate from nullable original success=1 field
+        - explosive rate based on yards_gained at pass >=20 or run >=10
+        - third-down conversion from nullable original third_down_converted=1
+      missingSemantics: >-
+        Every metric reports observed and missing counts. Average/rate/sum
+        are null when no relevant source observations exist; verified 0/0
+        outcomes remain numeric zero for observed denominators. Third-down
+        conversion is source-flag-based, not inferred from gained yards.
+        Defense Allowed preserves the offense-positive EPA perspective;
+        smaller allowed EPA/success is better.
+      rounding: >-
+        EPA sum to 3 decimals; per-play EPA and rates to 4 decimals.
+      availability: provisional-unverified-game-completeness
+      verification: >-
+        The original full-season gzip asset was not retrievable in the current
+        sandbox (DNS restriction; GitHub connector disallows binary assets).
+        Only synthetic gzip source-scan/metric tests and separately available
+        canonical projection evidence can be exercised here. Do NOT report
+        successful real original game replay or complete-game coverage.
+      preservation: >-
+        The full detail JSON still contains every SourceRow. Optional --summary
+        emits only in-memory provenance and provisional aggregates on stdout.
+        No Source/Derived writer, new output path, automatic download, public
+        publication, or nfl-games index schema change.
+    sourceInput: operator-provided-local-original-season-csv-gz
+    noNewWritePaths: true
+    publicPublication: none
+    sourceRegistryOrWriterActivation: none
+    existingNflGamesSeasonIndexVersion: 1
+    rollback: revert-additive-GameDetail-builder-and-CLI-flags-and-tests-docs
   sourcePrerequisite: >
     Complete play-by-play evidence must become durably and reproducibly
     accessible through the Source layer; the current transient upstream download
     and reduced projections do not yet meet this target.
   preservesExistingV1Contract: true
   enablesNewWritersOrConsumerChanges: false
+  readOnlyPreviewCheckpoint:
+    status: implementation-preview-only-not-published
+    pureBuilder: tools/derived_data_lib/nfl_game_detail.py
+    cli: python3 tools/nfl_game_detail_preview.py --season 2026 --game-id 2026_01_ARI_LAC
+    inputs:
+      - data-derived/nfl-games/<season>.json
+      - data-source/nfl/player-game-long-gains/<season>.json
+    sourceSemantics: >-
+      Canonical LongGains is a sparse PBP-derived per-player game maximum for
+      rushes and receptions, not all plays and not comprehensive team/player stats.
+      Only records with a CanonicalPlayerID, source PlayID, game/week/type and
+      known teams are selected. The game index is not changed.
+    availability: >-
+      An absent season or GameID in the canonical LongGains coverage is
+      unavailable (Records null), not zero. A covered game with no LongGains
+      has an empty list for that narrow projection only. Full PBP remains false,
+      and Coverage remains partial even when the projection is present.
+    expandedPreviewCheckpoint:
+      status: implemented-read-only-not-published
+      detailSchemaVersion: 2
+      readInputs:
+        - data-source/nfl/player-stats/<season>/<week>.json
+        - data-source/nfl/snap-counts/<season>/<week>.json
+      gameWeekSelection: >-
+        The canonical nfl-games season index supplies the Week for the requested
+        GameID. Only that single weekly player-stats and snap-counts partition
+        is read, with no broad history replay.
+      playerStats: >-
+        Selected player counting-stat fields preserve their canonical stat keys
+        and CanonicalPlayerID. Unknown fields are null, never inferred as zero.
+        Duplicate player/game identities, invalid team/opponent/season/week/type
+        or impossible counting values fail closed.
+      teamStats: >-
+        TeamStats sums only selected additive player count fields and explicitly
+        identifies itself as a sum of available player rows, not an official NFL
+        team boxscore or complete team/game-play metric. A team with no player
+        rows is unavailable, never zero. Pass, rushing and receiving yard
+        categories remain separate to avoid double-counting.
+      snapCounts: >-
+        Per-player offense, defense and special-teams snap counts and fractions
+        come from canonical snap-counts with the same CanonicalPlayerID. Cross-
+        source player/team conflicts fail closed.
+      completeness: >-
+        A missing week partition or absent game rows is unavailable (null
+        player/teams). Coverage for one-sided rows is partial, not zero or a
+        complete-game claim. SourceFinalized is source snapshot metadata and
+        never substitutes for full NFL play-by-play coverage. Full PBP stays false.
+      compatibility: >-
+        SchemaVersion 2 is an additive read-only preview format; existing
+        nfl-games SchemaVersion 1 season index and publisher remain unchanged.
+      historicalAvailability: >-
+        player-stats are available from 1999 in canonical weekly partitions;
+        snap-counts from 2013. Game joins can fail closed on unverified
+        historical abbreviations; no guessed team aliases are introduced.
+      output: stdout-json-only
+      writePaths: []
+      publishers: []
+    output: stdout-json-only
+    writePaths: []
+    publishers: []
+    activation: none
+    note: >-
+      This checkpoint deliberately does not satisfy the full-play-by-play Source
+      prerequisite, create per-GameID persistent files, alter nfl-games-v1 or
+      authorize raw asset archival/public display.

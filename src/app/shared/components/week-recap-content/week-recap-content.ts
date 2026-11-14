@@ -7,11 +7,15 @@ import type { FantasyTeam } from '../../../core/models/league.models';
 import type { NFLTeam, Player } from '../../../core/models/player.models';
 import type {
   WeeklyRecapKeyGame,
+  WeeklyPlayerAwardKey,
   WeeklyRecapKeyPlayer,
+  WeeklyRecapPlayerAwardEntry,
+  WeeklyRecapPlayerAwards,
   WeeklyRecapTeamAwards
 } from '../../../core/models/weekly-recap.models';
 import { findNflTeam } from '../../utils/nfl-team-key.util';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
+import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
 /** The recap content of one week: games, players and awards (the data of OverviewRecapSelection). */
@@ -19,6 +23,8 @@ export interface WeekRecapContent {
   games: readonly WeeklyRecapKeyGame[];
   players: readonly WeeklyRecapKeyPlayer[];
   awards: WeeklyRecapTeamAwards | null;
+  /** Weekly player awards (generator values); null when unavailable or absent. */
+  playerAwards?: WeeklyRecapPlayerAwards | null;
   /** The biggest underdog win of the week (lowest pregame chance of a winner, generator marks); null when none. */
   underdog?: WeekRecapUpset | null;
   /** True when pregame chances are known for the week and no underdog won. */
@@ -41,7 +47,7 @@ export interface WeekRecapUpset {
 @Component({
   selector: 'app-week-recap-content',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, PositionStylePipe],
   templateUrl: './week-recap-content.html'
 })
 export class WeekRecapContentComponent {
@@ -66,6 +72,56 @@ export class WeekRecapContentComponent {
     maximumFractionDigits: 0
   });
 
+  readonly playerAwardDefs: ReadonlyArray<{ key: WeeklyPlayerAwardKey; label: string; icon: string; hint: string }> = [
+    { key: 'MVP', label: 'Week MVP', icon: 'emoji_events', hint: 'Highest-scoring player of the week' },
+    { key: 'MatchupHero', label: 'Matchup Hero', icon: 'bolt', hint: 'Decided a win that would otherwise have been lost' },
+    { key: 'Heartbreaker', label: 'Heartbreaker', icon: 'heart_broken', hint: 'Big week, but the team still lost' },
+    { key: 'UnsungHero', label: 'Unsung Hero', icon: 'chair', hint: 'Bench player who would have flipped a lost matchup' }
+  ];
+
+  /** Award chips with at least one winner, in fixed award order; awards without a winner are not shown. */
+  playerAwardChips(): Array<{ key: WeeklyPlayerAwardKey; label: string; icon: string; hint: string; entries: readonly WeeklyRecapPlayerAwardEntry[] }> {
+    const awards = this.recap?.playerAwards;
+    if (!awards) return [];
+    return this.playerAwardDefs
+      .map(def => ({ ...def, entries: awards[def.key] ?? [] }))
+      .filter(chip => chip.entries.length > 0);
+  }
+
+  awardPlayer(entry: WeeklyRecapPlayerAwardEntry): Player | null {
+    if (entry.PlayerID === null) return null;
+    for (const team of this.teams) {
+      const resolved = team.Roster.find(candidate => String(candidate.ID) === String(entry.PlayerID));
+      if (resolved) return resolved;
+    }
+    return null;
+  }
+
+  awardPlayerName(entry: WeeklyRecapPlayerAwardEntry): string {
+    const resolved = this.awardPlayer(entry);
+    return resolved?.NameShort || resolved?.Name || `Player ${entry.PlayerID ?? ''}`.trim();
+  }
+
+  /** NFL team logo of the resolved award player (same source as the common player rows); null when unresolved. */
+  awardPlayerNflLogo(entry: WeeklyRecapPlayerAwardEntry): string | null {
+    return (this.awardPlayer(entry)?.TeamNFL as NFLTeam | undefined)?.Logo || null;
+  }
+
+  awardPlayerPicture(entry: WeeklyRecapPlayerAwardEntry): string | null {
+    return this.awardPlayer(entry)?.Picture || null;
+  }
+
+  openAwardPlayerDetail(entry: WeeklyRecapPlayerAwardEntry): void {
+    const resolved = this.awardPlayer(entry);
+    if (!resolved) return;
+    this.dialog.open(PlayerDetailDialogComponent, { data: resolved, width: '800px', maxHeight: '90vh', panelClass: 'player-dialog' });
+  }
+
+  /** The Week MVP is also the number one of the key players; the badge only marks that player. */
+  isWeekMvp(player: WeeklyRecapKeyPlayer): boolean {
+    return (this.recap?.playerAwards?.MVP ?? []).some(entry => entry.PlayerID !== null && String(entry.PlayerID) === String(player.PlayerID));
+  }
+
   nflLogo(teamID: string | number): string | null {
     return findNflTeam(this.nflTeams, teamID)?.Logo || null;
   }
@@ -87,6 +143,12 @@ export class WeekRecapContentComponent {
   teamLabel(teamID: string | number): string {
     const team = this.teamForID(teamID);
     return team?.Team?.trim() || team?.TeamAbbr?.trim() || `Team ${teamID}`;
+  }
+
+  /** Short fantasy team label for compact player rows (TeamAbbr, then the team name). */
+  teamAbbr(teamID: string | number): string {
+    const team = this.teamForID(teamID);
+    return team?.TeamAbbr?.trim() || team?.Team?.trim() || `T${teamID}`;
   }
 
   teamLogo(teamID: string | number): string | null {

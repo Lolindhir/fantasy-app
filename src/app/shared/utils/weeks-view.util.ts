@@ -235,6 +235,7 @@ export function selectWeekRecap(
         games: recap.KeyGames,
         players: recap.KeyPlayers,
         awards: recap.TeamAwards?.State === 'available' ? recap.TeamAwards : null,
+        playerAwards: recap.PlayerAwards?.State === 'available' ? recap.PlayerAwards : null,
         underdog: selectRecapUpsets(recap.WinProbabilities)[0] ?? null,
         allFavoritesWon: allFavoritesWon(recap.WinProbabilities)
       }
