@@ -665,5 +665,139 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertEqual([], list(Path(other).rglob("*")))
 
 
+    def test_independent_raw_canonical_derived_phases_match_full_plan(self):
+        from nfl_injuries_phase import run_injury_phase
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts
+        import hashlib
+        import tempfile
+        raw = asset(2025, [report(2025, week="5"), report(2025, week="7")])
+        source_digest = hashlib.sha256(raw).hexdigest()
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            before = run_injury_phase(root, 2025, "raw",
+                source_csv=raw, expected_source_sha256=source_digest)
+            self.assertFalse(before["Written"])
+            self.assertEqual([], list(root.rglob("*")))
+            for phase, params in (
+                ("raw", dict(source_csv=raw, expected_source_sha256=source_digest)),
+                ("canonical", dict(players=identities())),
+                ("derived", {}),
+            ):
+                result = run_injury_phase(root, 2025, phase, write=True, **params)
+                self.assertTrue(result["Written"], phase)
+                self.assertEqual("staged-local-worktree", result["Status"])
+                replay = run_injury_phase(root, 2025, phase, write=True, **params)
+                self.assertEqual("no-op", replay["Status"])
+                self.assertFalse(replay["Written"])
+            all_files = {str(p.relative_to(root)): p.read_bytes()
+                         for p in root.rglob("*") if p.is_file()}
+            full = build_injury_artifacts(
+                season=2025, source_csv=raw, players=identities(),
+                expected_source_sha256=source_digest,
+            )
+            self.assertEqual(full, all_files)
+
+    def test_derived_phase_refuses_partial_or_corrupt_canonical_snapshot(self):
+        from nfl_injuries_phase import run_injury_phase
+        import hashlib
+        import tempfile
+        raw = asset(2025, [report(2025, week="5"), report(2025, week="7")])
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            run_injury_phase(root, 2025, "raw", write=True,
+                source_csv=raw, expected_source_sha256=hashlib.sha256(raw).hexdigest())
+            run_injury_phase(root, 2025, "canonical", write=True, players=identities())
+            damaged = root / "data-source/nfl/injuries/2025/07.json"
+            damaged.unlink()
+            with self.assertRaisesRegex(ValueError, "week inventory differs"):
+                run_injury_phase(root, 2025, "derived", write=True)
+            self.assertFalse((root / "data-derived/nfl-injuries/2025.json").exists())
+
+    def test_canonical_stage_fails_closed_if_raw_metadata_has_drifted(self):
+        from nfl_injuries_phase import run_injury_phase
+        import hashlib
+        import json
+        import tempfile
+        raw = asset(2025, [report(2025)])
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            with self.assertRaisesRegex(ValueError, "Required injury input is missing"):
+                run_injury_phase(root, 2025, "canonical", players=identities())
+            run_injury_phase(root, 2025, "raw", write=True,
+                source_csv=raw, expected_source_sha256=hashlib.sha256(raw).hexdigest())
+            meta_path = root / "data-source/providers/nflverse/injuries/metadata-2025.json"
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            meta["AssetSha256"] = "f" * 64
+            meta_path.write_text(json.dumps(meta), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "not coherent"):
+                run_injury_phase(root, 2025, "canonical", players=identities(), write=True)
+            self.assertFalse((root / "data-source/nfl/injuries/2025").exists())
+
+    def test_phase_recalculation_after_identity_change_preserves_raw(self):
+        from nfl_injuries_phase import run_injury_phase
+        import hashlib
+        import tempfile
+        raw = asset(2025, [report(2025)])
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            run_injury_phase(root, 2025, "raw", write=True, source_csv=raw,
+                expected_source_sha256=hashlib.sha256(raw).hexdigest())
+            original_path = root / "data-source/providers/nflverse/injuries/raw-2025.csv"
+            original_bytes = original_path.read_bytes()
+            run_injury_phase(root, 2025, "canonical", write=True, players=identities())
+            run_injury_phase(root, 2025, "derived", write=True)
+            changed_ids = identities()
+            changed_ids["Players"][0]["CanonicalPlayerID"] = "NFLP-CHANGED"
+            rewritten = run_injury_phase(root, 2025, "canonical", write=True,
+                                         players=changed_ids)
+            self.assertIn("data-source/nfl/injuries/2025/05.json", rewritten["Changed"])
+            new_derived = run_injury_phase(root, 2025, "derived", write=True)
+            self.assertIn("data-derived/nfl-injuries/2025.json", new_derived["Changed"])
+            self.assertEqual(original_bytes, original_path.read_bytes())
+
+    def test_raw_canonical_derived_do_not_cross_write_scope(self):
+        from nfl_injuries_phase import run_injury_phase
+        import hashlib
+        import tempfile
+        raw = asset(2025, [report(2025)])
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            with self.assertRaisesRegex(ValueError, "requires an expected verified digest"):
+                run_injury_phase(root, 2025, "raw", source_csv=raw, write=True)
+            with self.assertRaisesRegex(ValueError, "must not depend on"):
+                run_injury_phase(root, 2025, "raw", source_csv=raw,
+                                 players=identities())
+            with self.assertRaisesRegex(ValueError, "must read their persisted Source inputs"):
+                run_injury_phase(root, 2025, "canonical", source_csv=raw,
+                                 players=identities())
+            with self.assertRaisesRegex(ValueError, "only canonical Injury product"):
+                run_injury_phase(root, 2025, "derived", players=identities())
+            self.assertEqual([], list(root.rglob("*")))
+
+    def test_canonical_phase_obsolete_week_requires_manual_review(self):
+        from nfl_injuries_phase import run_injury_phase
+        import hashlib
+        import tempfile
+        older = asset(2025, [report(2025, week="5"), report(2025, week="7")])
+        newer = asset(2025, [report(2025, week="5")])
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            run_injury_phase(root, 2025, "raw", write=True,
+                source_csv=older, expected_source_sha256=hashlib.sha256(older).hexdigest())
+            run_injury_phase(root, 2025, "canonical", write=True, players=identities())
+            canonical_path = root / "data-source/nfl/injuries/2025/"
+            old_canonical = {p.name: p.read_bytes()
+                             for p in canonical_path.iterdir() if p.is_file()}
+            run_injury_phase(root, 2025, "raw", write=True,
+                source_csv=newer, expected_source_sha256=hashlib.sha256(newer).hexdigest())
+            delta = run_injury_phase(root, 2025, "canonical", players=identities())
+            self.assertEqual(["data-source/nfl/injuries/2025/07.json"],
+                             delta["ObsoleteRequiresReview"])
+            with self.assertRaisesRegex(ValueError, "manual review required"):
+                run_injury_phase(root, 2025, "canonical", players=identities(), write=True)
+            self.assertEqual(old_canonical, {p.name: p.read_bytes()
+                           for p in canonical_path.iterdir() if p.is_file()})
+
+
 if __name__ == "__main__":
     unittest.main()
