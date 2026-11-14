@@ -1009,14 +1009,16 @@ class NflPbpMetricSourceFieldAuditTests(unittest.TestCase):
                      "Week": 18, "AwayTeam": "WAS", "HomeTeam": "PHI", "Final": True},
                     {"GameID": "2025_18_JAX_TEN", "GameType": "REG",
                      "Week": 18, "AwayTeam": "JAX", "HomeTeam": "TEN", "Final": False},
+                    {"GameID": "2025_18_ATL_DAL", "GameType": "REG",
+                     "Week": 18, "AwayTeam": "ATL", "HomeTeam": "DAL", "Final": True},
                 ],
             }), encoding="utf-8")
             rows = [
                 _audit_row(play_id="1"),
                 _audit_row(play_id="2", game_id="2025_18_JAX_TEN",
                            away_team="JAX", home_team="TEN"),
-                _audit_row(play_id="3", game_id="2025_18_WAS_PHI",
-                           away_team="DAL"),
+                _audit_row(play_id="3", game_id="2025_18_ATL_DAL",
+                           away_team="ATL", home_team="SEA"),
                 _audit_row(play_id="4", game_id="2025_18_UNKNOWN",
                            away_team="ATL"),
             ]
