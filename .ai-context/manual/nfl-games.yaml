@@ -124,6 +124,21 @@ futureGameDetailDirection:
     - situational-and-drive-context
     - advanced-play-derived-metrics
     - data-coverage-and-provenance
+  pbpDerivedMetricCatalog:
+    path: .ai-context/manual/nfl-games-pbp-metrics.yaml
+    catalogVersion: 1
+    status: approved-research-candidate-definitions-not-implemented-or-published
+    issue: 1077
+    producer: future-versioned-derived-nfl-games-not-a-new-product
+    sourceEvidence: original-nflverse-pbp-in-Source-layer-only-after-separate-gates
+    productRule: >-
+      Future detailed nfl-games views publish only compact team, situation,
+      usage and optional position-specific aggregates with coverage and versioned
+      denominators, NOT all raw source plays. The PBP-only reader/analytics
+      currently remain experimental read-only checkpoints. Fantasy player
+      predictions, the proprietary Stone Luck Score and ROS rankings are
+      independent downstream research until separately validated.
+    requiredBeforeActivation: original-source-and-field-audit;identity-and-coverage;metric-eligibility-tests;versioned-output-and-risk-approved-publication
   inputPrinciple: >
     Use canonical NFL facts including retained full play-by-play evidence, player
     stats, snap counts, schedules, game finality and market odds as applicable.
