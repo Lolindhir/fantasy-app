@@ -1,4 +1,4 @@
-"""rivalry-v1, the playoff bracket label and the league-rivalry product (Issue #1455). Synthetic cases for the rules; invariants on persisted state."""
+"""Rivalry v1/v2, bracket provenance and the league-rivalry product (Issues #1455/#1470)."""
 from __future__ import annotations
 
 import json
@@ -12,7 +12,7 @@ sys.path.insert(0, str(TOOLS))
 from derived_data_lib import playoff_brackets as pb  # noqa: E402
 from derived_data_lib import rivalry  # noqa: E402
 from derived_data_lib.models import registry  # noqa: E402
-from derived_data_lib.models.rivalry import v1  # noqa: E402
+from derived_data_lib.models.rivalry import v1, v2  # noqa: E402
 
 REPO = TOOLS.parent
 PRODUCT = REPO / "data-derived" / "league-rivalry" / "nfl-reise.json"
@@ -73,6 +73,8 @@ class ModelTests(unittest.TestCase):
     def test_registered_and_kind(self):
         self.assertIs(v1, registry.get_model("rivalry-v1", "rivalry"))
         self.assertIn("rivalry-v1", registry.model_ids())
+        self.assertIs(v2, registry.get_model("rivalry-v2", "rivalry"))
+        self.assertIn("rivalry-v2", registry.model_ids())
 
     def test_counting_rules(self):
         self.assertTrue(v1.counts("regular-season", None, False))
@@ -83,6 +85,19 @@ class ModelTests(unittest.TestCase):
         self.assertFalse(v1.counts("playoffs", "consolation", True))
         self.assertFalse(v1.counts("playoffs", "unclassified", True))
         self.assertFalse(v1.counts("playoffs", None, True))
+
+    def test_v2_counts_every_final_matchup_independent_of_bracket_and_season(self):
+        self.assertTrue(v2.counts("regular-season", None, False))
+        self.assertTrue(v2.counts("regular-season", None, True))
+        for complete in (False, True):
+            for bracket in ("championship", "placement", "consolation", "unclassified", None):
+                self.assertTrue(v2.counts("playoffs", bracket, complete), (bracket, complete))
+        self.assertFalse(v2.counts("pre-season", None, True))
+        # The v1 model is immutable: no broadening of its counting rules.
+        self.assertFalse(v1.counts("playoffs", "consolation", True))
+        self.assertFalse(v1.counts("playoffs", "championship", False))
+        self.assertIs(v2.summarize, v1.summarize)
+        self.assertIs(v2.game_record, v1.game_record)
 
     def game(self, week, outcome, own, other, season="2024"):
         return v1.game_record(season, week, f"m{week}", "regular-season", None, outcome, own, other)
@@ -135,6 +150,19 @@ class SeasonGamesTests(unittest.TestCase):
         _, stats = rivalry.season_games(self.season(), v1, False)
         self.assertEqual((1, 0, 4), (stats["CountedRegular"], stats["CountedPlayoffs"], stats["ExcludedSeasonIncomplete"]))
 
+    def test_v2_counts_consolation_unclassified_and_in_progress_playoffs(self):
+        rows, stats = rivalry.season_games(self.season(), v2, False)
+        self.assertEqual({
+            "CountedRegular": 1, "CountedPlayoffs": 4,
+            "ExcludedConsolation": 0, "ExcludedUnclassified": 0, "ExcludedSeasonIncomplete": 0,
+        }, stats)
+        self.assertEqual(10, len(rows))  # five final games in two directions; open game omitted
+        records = rivalry.build_records(rows, v2)
+        by_pair = {(r["TeamID"], r["OpponentID"], r["Filter"]): r for r in records}
+        self.assertEqual(1, by_pair[(3, 4, "playoffs")]["Wins"] + by_pair[(3, 4, "playoffs")]["Losses"])
+        self.assertEqual(1, by_pair[(5, 6, "playoffs")]["Wins"] + by_pair[(5, 6, "playoffs")]["Losses"])
+        self.assertEqual(2, len(by_pair[(1, 2, "all")]["Games"]))
+
     def test_records_are_mirrored(self):
         rows, _ = rivalry.season_games(self.season(), v1, True)
         records = {(r["TeamID"], r["OpponentID"], r["Filter"]): r for r in rivalry.build_records(rows, v1)}
@@ -158,7 +186,10 @@ class PersistedProductTests(unittest.TestCase):
     def test_shape(self):
         self.assertEqual("league-rivalry", self.doc["Product"])
         self.assertEqual("nfl-reise", self.doc["CanonicalLeagueID"])
-        self.assertTrue(all(m["Rivalry"] == "rivalry-v1" for m in self.doc["Models"].values()))
+        # A committed v1 baseline may coexist temporarily with the v2 model selection
+        # until the existing productive rivalry writer publishes the regenerated snapshot.
+        selected = {m["Rivalry"] for m in self.doc["Models"].values()}
+        self.assertIn(selected, ({"rivalry-v1"}, {"rivalry-v2"}))
 
     def test_records_are_symmetric(self):
         for (team, opponent, flt), record in self.records.items():
@@ -174,11 +205,21 @@ class PersistedProductTests(unittest.TestCase):
             parts = [len(self.records[(team, opponent, f)]["Games"]) for f in ("regular", "playoffs") if (team, opponent, f) in self.records]
             self.assertEqual(len(record["Games"]), sum(parts))
 
-    def test_no_consolation_or_unclassified_playoff_games(self):
-        for record in self.records.values():
-            for game in record["Games"]:
-                if game["Stage"] == "playoffs":
-                    self.assertIn(game["Bracket"], ("championship", "placement"))
+    def test_playoff_brackets_match_the_persisted_model_version(self):
+        selected = {m["Rivalry"] for m in self.doc["Models"].values()}
+        if selected == {"rivalry-v1"}:
+            for record in self.records.values():
+                for game in record["Games"]:
+                    if game["Stage"] == "playoffs":
+                        self.assertIn(game["Bracket"], ("championship", "placement"))
+        else:
+            for season in self.doc["Seasons"]:
+                self.assertEqual(0, season["ExcludedConsolation"])
+                self.assertEqual(0, season["ExcludedUnclassified"])
+                self.assertEqual(0, season["ExcludedSeasonIncomplete"])
+            self.assertTrue(any(game["Bracket"] == "consolation"
+                                for record in self.records.values() for game in record["Games"]),
+                            "The v2 historical snapshot should include the known 2025 losers-bracket game")
 
     def test_references_exist(self):
         for record in self.records.values():
