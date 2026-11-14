@@ -287,6 +287,49 @@ requiredGatesBeforeAnyMetricActivation:
   - Phase-2 shrinkage/opponent-adjusted walk-forward vs FPA and V4-C as independent research, not automatic integration
   - Versioned output schema, code owner, validation, storage/publication scope, rights and rollback separately authorized
 
+readOnlySourceFieldAudit:
+  checkpoint: P0a
+  status: implemented-local-cli-synthetic-tests-real-original-assets-not-yet-observed
+  tool: tools/nfl_pbp_metric_field_audit.py
+  requiredDependency: PyYAML
+  scope: >-
+    Scan one locally provided original nflverse seasonal csv.gz completely to
+    EOF and compare all 23 catalog candidate sourceFields with real CSV
+    headers, non-null counts by play_type pass/run, qb_dropback and down=3,
+    GameID+PlayID uniqueness, game-context consistency and reported GSIS
+    provider ID patterns. Optional SHA256 pin and archived provider-projection
+    upstream metadata allow reproducible version/drift checks. No download.
+  cli: >-
+    python3 tools/nfl_pbp_metric_field_audit.py --season 2025
+    --pbp-csv-gz /local/play_by_play_2025.csv.gz
+    --expected-sha256 2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978
+  sourceReference: >-
+    data-source/providers/nflverse/special-teams-fumble-events/metadata-2025.json
+    records 48771 original source rows, compressed size 19105296 bytes and
+    the above SHA256 for the previously retrieved 2025 asset. These are
+    archived upstream-projection metadata expectations, not a real GZIP
+    replay performed by this checkpoint.
+  providerCrosschecks: >-
+    Count observed overlap pass_attempt=1 and sack=1, overlap
+    qb_dropback=1 and qb_scramble=1, and compare source success=1 with
+    source EPA>0 when both values are valid. This tests real provider-row
+    consistency without equating pass_attempt with NFL official pass throws.
+  machineOutput: >-
+    Stdout JSON only: full gzip-EOF read flag, source SHA256, row/game
+    counts, per-game row counts, each field's present/nullable counts by
+    overlapping cohort, missing/empty fields per candidate, provider GSIS
+    ID-shape evidence, archived metadata agreement or drift.
+  limits: >-
+    No known executable original 2024/2025/2026 PBP bytes in this runtime
+    because direct binary release download is inaccessible. Passing
+    synthetic gzip tests is not real field coverage proof, NFL Game
+    completeness, a historical canonical player-position join, or
+    permission to publish any metric.
+  writePaths: []
+  newPublishers: []
+  validation: synthetic-csv-gzip-only-plus-existing-fast-suite
+  rollback: revert-audit-tool-tests-and-catalog-contract
+
 recommendedSequence:
   - P0 inventory real per-season PBP headers, player/position mapping, game-coverage and stable original asset
   - P1 implement and validate compact unadjusted team-game opportunity/efficiency/situation groups as read-only proofs
