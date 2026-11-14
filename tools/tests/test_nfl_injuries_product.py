@@ -880,5 +880,118 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertFalse((root / "data-derived/nfl-injuries/2025.json").exists())
 
 
+    def test_production_raw_fetch_is_digest_gated_and_reuses_cached_csv(self):
+        from nfl_injuries_refresh import refresh_injury_raw
+        import hashlib
+        import tempfile
+        from pathlib import Path
+        source = asset(2025, [report(2025)])
+        digest = hashlib.sha256(source).hexdigest()
+        release = {"assets": [{
+            "name": "injuries_2025.csv", "id": 172,
+            "updated_at": "2026-11-14T07:10:00Z", "size": len(source),
+            "digest": "sha256:" + digest,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        downloaded = []
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            params = dict(repo_root=root, season=2025, write=True,
+                          fetch_release=lambda: release)
+            first = refresh_injury_raw(**params, fetch_asset=lambda url: (downloaded.append(url), source)[1])
+            self.assertTrue(first["Written"])
+            self.assertTrue(first["Downloaded"])
+            self.assertEqual(2, len(first["New"]))
+            second = refresh_injury_raw(**params, fetch_asset=lambda url: (
+                _ for _ in ()).throw(AssertionError("unchanged source cannot redownload")))
+            self.assertEqual("no-op", second["Status"])
+            self.assertFalse(second["Downloaded"])
+            self.assertFalse(second["Written"])
+            self.assertEqual(1, len(downloaded))
+
+    def test_production_raw_fetch_preserves_previous_good_on_corrupt_release(self):
+        from nfl_injuries_refresh import refresh_injury_raw
+        import tempfile
+        import hashlib
+        from pathlib import Path
+        source = asset(2025, [report(2025)])
+        release = {"assets": [{
+            "name": "injuries_2025.csv", "id": 17,
+            "updated_at": "2026-11-14T07:10:00Z", "size": len(source),
+            "digest": "sha256:" + hashlib.sha256(source).hexdigest(),
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            options = dict(repo_root=root, season=2025, write=True)
+            refresh_injury_raw(**options, fetch_release=lambda: release,
+                               fetch_asset=lambda url: source)
+            previous = {str(p.relative_to(root)):p.read_bytes()
+                        for p in root.rglob("*") if p.is_file()}
+            changed = copy.deepcopy(release)
+            changed["assets"][0]["digest"] = "sha256:" + "f"*64
+            with self.assertRaisesRegex(ValueError, "SHA-256 and size verification"):
+                refresh_injury_raw(**options, fetch_release=lambda: changed,
+                                   fetch_asset=lambda url: source)
+            self.assertEqual(previous, {str(p.relative_to(root)):p.read_bytes()
+                             for p in root.rglob("*") if p.is_file()})
+
+    def test_production_raw_fetch_rejects_missing_digest_and_unavailable_release(self):
+        from nfl_injuries_refresh import refresh_injury_raw
+        import tempfile
+        from pathlib import Path
+        raw = asset(2025, [report(2025)])
+        release = {"assets": [{
+            "name": "injuries_2025.csv", "id": 17,
+            "updated_at": "2026-11-14T07:10:00Z", "size": len(raw),
+            "digest": None,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            with self.assertRaisesRegex(ValueError, "lacks verified SHA-256"):
+                refresh_injury_raw(repo_root=root, season=2025, write=True,
+                                   fetch_release=lambda: release)
+            with self.assertRaisesRegex(ValueError, "retry later"):
+                refresh_injury_raw(repo_root=root, season=2025, write=True,
+                                   fetch_release=lambda: {"assets": []})
+            self.assertEqual([], list(root.rglob("*")))
+
+    def test_injury_source_registry_is_explicit_and_excluded_from_full_sync(self):
+        import json
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[2]
+        registry = json.loads((root / "data-source/registry.json").read_text(encoding="utf-8"))
+        matches = [x for x in registry["datasets"] if x.get("id") == "nflverse.injuries"]
+        self.assertEqual(1, len(matches))
+        self.assertFalse(matches[0]["materialize"])
+        self.assertEqual("season-partitioned", matches[0]["sourceMode"])
+        source_cli = (root / "tools/nfl_source_data.py").read_text(encoding="utf-8")
+        self.assertIn("if dataset.id != INJURIES_DATASET_ID", source_cli)
+        self.assertIn("requested != {INJURIES_DATASET_ID}", source_cli)
+
+    def test_injury_scheduler_isolated_delegation_and_publication_contract(self):
+        import json
+        import yaml
+        root = Path(__file__).resolve().parents[2]
+        config = json.loads((root / ".github/workflow-schedules.json").read_text(encoding="utf-8"))
+        target, = [x for x in config["targets"] if x["id"] == "nfl-injuries"]
+        self.assertEqual("30 9 * 9-12,1-2 *", target["cron"][0])
+        self.assertEqual("sync-nfl-injuries.yml", target["workflow"])
+        wrapper = yaml.safe_load((root / target["path"]).read_text(encoding="utf-8"))
+        workflow = wrapper["jobs"]["source_and_derived"]
+        self.assertEqual("./.github/workflows/sync-nfl-source-data.yml", workflow["uses"])
+        self.assertEqual("injuries", workflow["with"]["materialization_scope"])
+        self.assertEqual("nflverse.injuries", workflow["with"]["dataset"])
+        source = (root / ".github/workflows/sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        self.assertIn("nfl_injuries_derived:", source)
+        self.assertIn("--path data-derived/nfl-injuries", source)
+        self.assertIn("elif scope == \"injuries\"", source)
+        self.assertIn("data-source/nfl/injuries/*", source)
+
+
 if __name__ == "__main__":
     unittest.main()
