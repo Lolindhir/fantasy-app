@@ -133,6 +133,8 @@ def audit(
     cohorts = Counter({key: 0 for key in COHORTS})
     nonnull = {field: Counter({key: 0 for key in COHORTS}) for field in monitored}
     binary_invalid = Counter()
+    dictionary_checks = Counter()
+    invalid_numeric_epa = 0
     ids = {field: set() for field in GSIS_COLUMNS}
     non_gsis = Counter()
     game_counts = Counter()
@@ -203,6 +205,22 @@ def audit(
                         valid = False
                     if not valid:
                         binary_invalid[field] += 1
+            if _is_one(row.get("pass_attempt")) and _is_one(row.get("sack")):
+                dictionary_checks["PassAttemptAndSackRows"] += 1
+            if _is_one(row.get("qb_dropback")) and _is_one(row.get("qb_scramble")):
+                dictionary_checks["QBDropbackAndScrambleRows"] += 1
+            if _nonnull(row.get("success")) and _nonnull(row.get("epa")):
+                try:
+                    value = Decimal(row["epa"].strip())
+                    success = Decimal(row["success"].strip())
+                    if value.is_finite() and success in (0, 1):
+                        dictionary_checks["SuccessEPAComparableRows"] += 1
+                        if (value > 0) != (success == 1):
+                            dictionary_checks["SuccessPositiveEPAMismatches"] += 1
+                    elif not value.is_finite():
+                        invalid_numeric_epa += 1
+                except InvalidOperation:
+                    invalid_numeric_epa += 1
             for field in GSIS_COLUMNS:
                 if field in row and _nonnull(row[field]):
                     ident = row[field].strip()
@@ -291,6 +309,14 @@ def audit(
         "MonitoredFieldsAbsent": absent,
         "FieldCoverage": field_coverage,
         "BinaryFieldInvalidCounts": dict(sorted(binary_invalid.items())),
+        "DictionarySemanticCrosschecks": {
+            "PassAttemptAndSackRows": dictionary_checks["PassAttemptAndSackRows"],
+            "QBDropbackAndScrambleRows": dictionary_checks["QBDropbackAndScrambleRows"],
+            "SuccessEPAComparableRows": dictionary_checks["SuccessEPAComparableRows"],
+            "SuccessPositiveEPAMismatches": dictionary_checks["SuccessPositiveEPAMismatches"],
+            "InvalidNumericEPARowsInComparison": invalid_numeric_epa,
+            "ObservedCrosschecksAreNotEvidenceOfProviderWideCompleteness": True,
+        },
         "ProviderPlayerIDCoverage": {
             field: {
                 "HeaderPresent": field in header,
