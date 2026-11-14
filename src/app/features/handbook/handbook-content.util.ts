@@ -2,7 +2,7 @@
 export function publicPhilosophyMarkdown(source: string): string {
   const title = source.match(/^# .+$/m)?.[0];
   const start = source.indexOf('\n## Unser Nordstern\n');
-  const end = source.indexOf('\n## Verwendung als Bewertungsgrundlage\n');
+  const end = source.indexOf('\n## Auslegung: Einseitige Trades und unterschiedliche Managerkenntnisse\n');
   // An unexpected source format must not expose administrative metadata.
   if (!title || start < 0 || end <= start) {
     return '# Liga-Philosophie\n\nDie Erklärung ist derzeit nicht verfügbar.';
