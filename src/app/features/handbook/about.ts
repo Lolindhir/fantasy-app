@@ -21,11 +21,7 @@ export class AboutComponent implements OnInit {
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
-    this.selectedTab = 'Overview';
-    this.http.get('docs/Overview.md', { responseType: 'text' })
-      .subscribe(data => {
-        this.markdownText = data;
-      });
+    this.selectTab('league-philosophy');
   }
 
   selectTab(tab: string) {

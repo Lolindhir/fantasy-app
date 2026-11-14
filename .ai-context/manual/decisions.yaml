@@ -2885,3 +2885,41 @@ decisions:
         - Team identity across seasons stays the provider roster ID (owner changes of a roster are not represented), like All-Time Standings.
         - Matchups.json gains the field Bracket (additive); the product needs the matchup context of every season and adds a few seconds to the ten-minute League Live run (measured in Issue #1455).
         - The product file is directional and repeats games per filter (about 120 KB).
+
+  - id: ADR-084
+    title: Publish the league philosophy as a single human-maintained Markdown source in the Handbook
+    status: accepted
+    context: >-
+      Robert established a protected six-goal league-design north star on 2026-11-14; the six goals must
+      govern Fantasy Management and league-specific app design without creating a competing content copy.
+      The existing Angular Handbook serves Markdown from public/docs, while Fantasy Management design
+      and decision documentation is canonically owned under fantasy-management. Generic
+      fantasy-management/** changes intentionally do not trigger Pages deployment.
+    decision: >-
+      Issue #1464: the single normative league philosophy resides in
+      fantasy-management/league-context/league-philosophy.md (version, goal meanings,
+      consensus/ratification state, amendment procedure). Root and Fantasy agent entrypoints
+      route league-level choices to this file. Angular copies the same Markdown directly
+      as a static build asset to docs/league-philosophy.md and the Handbook displays it as
+      the default tab. The existing APP Deploy main-push positive path filter gains only this
+      exact Markdown file; the deploy build verifies byte-identical output by SHA256.
+      This is the user-authorized narrow exception for rendering an FM-owned human
+      documentation input in the App. No runtime FM pipeline or generated-app data
+      becomes a producer dependency, no new writer, permission or workflow is introduced,
+      and no league Salary/Cap/Trade mechanism is activated.
+    rationale: >-
+      A single editable source with an automated read-only publication path prevents
+      drift between users, agents and the Handbook while preserving the Fantasy
+      Management/App responsibility boundary. A narrow trigger and content-hash check
+      prevent stale or divergent Handbook copies without redeploying on unrelated
+      Fantasy Management operations.
+    consequences:
+      positive:
+        - League-design agents and human Handbook readers consult the same six goals and amendments.
+        - Later semantic changes are visible, versioned and subject to documented all-manager consultation
+          and an explicit league approval; the current document does not falsely claim full ratification.
+        - A documentation-only edit of the canonical philosophy can reach Pages through existing deployment.
+      negative:
+        - The app build now depends on presence of one FM-owned Markdown file; missing or mismatched
+          content fails the build instead of publishing stale philosophy.
+        - Handbook publication remains tied to successful main deployment; no runtime auto-sync outside that process.

@@ -45,6 +45,10 @@ This responsibility split does not imply a physical folder migration. `fantasy-m
 
 **Cross-consumer research boundary:** Consumer-neutral empirical studies of shared models and data products (e.g. PlayerWeekFantasy V4-C / PI1 / Vegas / Defense) are archived at root `research/<data-product>/<year>/` and follow root `AGENTS.md`. Fantasy Management strategic, roster and player/team analyses remain under this workspace's `analyses/`. Legacy links can be left as short forwarding pointers instead of duplicating shared research.
 
+## League north star (mandatory for league-level decisions)
+
+Before evaluating, changing, recommending or operationalizing league-wide rules, economic incentives, Salary/Cap, Draft/Trade mechanisms, franchise strategy or format, read `fantasy-management/league-context/league-philosophy.md` **in full**. Apply all six protected goals, including operational enforceability. This normative philosophy is not an active Sleeper setting or adopted game rule; check its documented ratification status. Never silently amend or reinterpret it. Ordinary weekly player analysis still needs current evidence and task-specific rules.
+
 ## Required reading order
 
 For Fantasy workspace tasks, read these files as needed:
