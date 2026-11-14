@@ -9,6 +9,7 @@ import type {
 } from '../../../core/models/decision-window.models';
 import type { FantasyGameContextReadModel } from '../../../core/models/fantasy-game-context.models';
 import type { League } from '../../../core/models/league.models';
+import type { RivalryReadModel } from '../../../core/models/rivalry.models';
 import type { MatchupsReadModel } from '../../../core/models/matchup.models';
 import type { NFLTeam } from '../../../core/models/player.models';
 import { DataService } from '../../../core/services/data.service';
@@ -155,28 +156,19 @@ describe('LeagueMatchupsComponent scoring overview', () => {
 
   beforeEach(async () => {
     const dataService = jasmine.createSpyObj<DataService>('DataService', [
-      'getFantasyGameContext', 'getDecisionWindows', 'getMatchups', 'getNflTeams', 'getPastSeasonsIndex', 'getPastMatchupsRaw'
+      'getFantasyGameContext', 'getDecisionWindows', 'getMatchups', 'getNflTeams', 'getRivalry'
     ]);
     dataService.getFantasyGameContext.and.returnValue(of(context));
     dataService.getDecisionWindows.and.returnValue(of(decisionWindows));
     dataService.getMatchups.and.returnValue(of(matchups));
-    dataService.getPastSeasonsIndex.and.returnValue(of({
-      Seasons: [{ Season: '2025', Resources: { Matchups: { Path: 'data/past_seasons/Matchups/Matchups_2025.json', Exists: true } } }]
-    } as unknown as Parameters<typeof of>[0]) as unknown as ReturnType<DataService['getPastSeasonsIndex']>);
-    dataService.getPastMatchupsRaw.and.returnValue(of({
-      SchemaVersion: 1, Season: '2025', Summary: { LastCompletedWeek: 1, ActiveOrNextWeek: null },
-      Weeks: [{
-        Week: 1, Stage: 'regular-season', FirstKickoffUtc: null, CompletionState: 'final',
-        Matchups: [{
-          FantasyMatchupID: 'p1', CompletionState: 'final',
-          Participants: [
-            { TeamID: 1, Points: 100, ScoreKind: 'standard' },
-            { TeamID: 2, Points: 90, ScoreKind: 'standard' }
-          ],
-          Result: { Type: 'win', WinnerTeamID: 1 }
-        }]
+    dataService.getRivalry.and.returnValue(of({
+      SchemaVersion: 1, Product: 'league-rivalry', CanonicalLeagueID: 'test', Seasons: [{ Season: '2025' }],
+      Records: [{
+        TeamID: 1, OpponentID: 2, Filter: 'all', Wins: 1, Losses: 0, Ties: 0, PointsFor: 100, PointsAgainst: 90,
+        BiggestWinMatchupID: 'p1', ClosestLossMatchupID: null,
+        Games: [{ Season: '2025', Week: 1, FantasyMatchupID: 'p1', Stage: 'regular-season', Bracket: null, Outcome: 'win', TeamPoints: 100, OpponentPoints: 90, Margin: 10 }]
       }]
-    } as MatchupsReadModel));
+    } as RivalryReadModel));
     dataService.getNflTeams.and.returnValue(of([
       { ID: 'A', Name: 'Away', Abv: 'AAA', Logo: 'away-logo' },
       { ID: 'H', Name: 'Home', Abv: 'HHH', Logo: 'home-logo' }

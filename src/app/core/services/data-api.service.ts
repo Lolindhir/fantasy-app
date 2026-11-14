@@ -13,6 +13,7 @@ import type { PlayerWeekFantasyReadModel } from '../models/player-week-fantasy.m
 import type { RawNFLTeam, RawPlayer } from '../models/player.models';
 import type { TeamCapOutlookReadModel } from '../models/team-cap-outlook.models';
 import type { RawTransaction } from '../models/transaction.models';
+import type { RivalryReadModel } from '../models/rivalry.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
 
@@ -110,6 +111,10 @@ export class DataApiService {
 
   getMatchupProjectionsRaw(): Observable<MatchupProjectionsReadModel> {
     return this.http.get<MatchupProjectionsReadModel>('data/MatchupProjections.json');
+  }
+
+  getRivalryRaw(): Observable<RivalryReadModel> {
+    return this.http.get<RivalryReadModel>('data/Rivalry.json');
   }
 
   getWeeklyRecapsRaw(): Observable<WeeklyRecapsReadModel> {

@@ -26,6 +26,7 @@ import type {
   TopPlayersSalaryResult
 } from '../models/player.models';
 import type { RawTransaction, Transaction } from '../models/transaction.models';
+import type { RivalryReadModel } from '../models/rivalry.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
 import { mergeCompletedRawTransactions } from '../utils/transaction-history.util';
@@ -290,6 +291,10 @@ export class DataService {
       map(({ context, playerWeekFantasy, matchupProjections }) =>
         enrichFantasyGameContextWithProjections(context, playerWeekFantasy, matchupProjections))
     );
+  }
+
+  getRivalry(): Observable<RivalryReadModel> {
+    return this.dataApiService.getRivalryRaw();
   }
 
   getWeeklyRecaps(): Observable<WeeklyRecapsReadModel> {
