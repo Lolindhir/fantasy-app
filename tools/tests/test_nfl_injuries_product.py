@@ -72,6 +72,9 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertEqual("Not injury related - resting player",
                          derived["ObservedPlayerWeeks"][0]["Observations"][0]["Reasons"]["practice_primary_injury"])
         self.assertEqual("unknown-not-healthy-or-available", derived["MissingReportMeaning"])
+        self.assertEqual([{"Week": 5, "GameType": "REG", "SourceTeam": "HOU", "ReportCount": 1}],
+                         derived["ObservedTeamWeeks"])
+        self.assertEqual(1, derived["Quality"]["ObservedTeamWeekCount"])
         self.assertEqual("retrospective-source-snapshot-not-point-in-time", derived["TemporalEvidence"])
 
     def test_same_week_status_revision_kept_not_deduplicated_or_ordered(self):
