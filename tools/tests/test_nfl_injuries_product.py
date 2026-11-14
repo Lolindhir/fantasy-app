@@ -321,5 +321,72 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertIn("data-derived/nfl-injuries/2025.json", delta["Changed"])
 
 
+    def test_official_release_digest_drives_daily_noop_or_refresh(self):
+        from nfl_source_data_lib.injury_product_plan import plan_release_refresh
+        import hashlib
+        source = asset(2025, [report(2025)])
+        digest = hashlib.sha256(source).hexdigest()
+        upstream = {"assets": [{
+            "name": "injuries_2025.csv", "id": 1234,
+            "updated_at": "2026-11-14T07:11:00Z", "size": len(source),
+            "digest": "sha256:" + digest,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        metadata = {
+            "SourceDataset": "nflverse.injuries", "Season": 2025,
+            "AssetSha256": digest, "AssetByteSize": len(source),
+        }
+        decision = plan_release_refresh(upstream, season=2025, stored_metadata=metadata)
+        self.assertEqual("no-op", decision["Action"])
+        self.assertTrue(decision["FullSourceDigestAvailable"])
+        changed = copy.deepcopy(upstream)
+        changed["assets"][0]["digest"] = "sha256:" + ("f" * 64)
+        self.assertEqual("download-and-validate", plan_release_refresh(
+            changed, season=2025, stored_metadata=metadata,
+        )["Action"])
+
+    def test_release_missing_asset_is_retry_not_empty_product(self):
+        from nfl_source_data_lib.injury_product_plan import plan_release_refresh
+        decision = plan_release_refresh({"assets": []}, season=2026)
+        self.assertEqual("retry-later", decision["Action"])
+        self.assertIsNone(decision["SourceAsset"])
+
+    def test_release_missing_digest_reuses_only_same_observed_revision(self):
+        from nfl_source_data_lib.injury_product_plan import plan_release_refresh
+        release = {"assets": [{
+            "name": "injuries_2024.csv", "id": 993,
+            "updated_at": "2025-02-11T07:08:00Z", "size": 62000,
+            "digest": None,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2024.csv",
+        }]}
+        known = {
+            "SourceDataset": "nflverse.injuries", "Season": 2024,
+            "AssetByteSize": 62000, "ReleaseAssetId": 993,
+            "ReleaseAssetUpdatedAt": "2025-02-11T07:08:00Z",
+        }
+        self.assertEqual("no-op", plan_release_refresh(
+            release, season=2024, stored_metadata=known,
+        )["Action"])
+        modified = copy.deepcopy(release)
+        modified["assets"][0]["updated_at"] = "2025-02-12T07:08:00Z"
+        self.assertEqual("download-and-validate", plan_release_refresh(
+            modified, season=2024, stored_metadata=known,
+        )["Action"])
+
+    def test_release_duplicate_assets_or_wrong_source_url_fails_closed(self):
+        from nfl_source_data_lib.injury_product_plan import plan_release_refresh
+        row = {
+            "name": "injuries_2026.csv", "id": 123, "size": 100,
+            "updated_at": "2026-11-14T07:10:00Z", "digest": None,
+            "browser_download_url": "https://example.com/untrusted.csv",
+        }
+        with self.assertRaisesRegex(ValueError, "official URL"):
+            plan_release_refresh({"assets": [row]}, season=2026)
+        with self.assertRaisesRegex(ValueError, "Multiple"):
+            plan_release_refresh({"assets": [row, dict(row)]}, season=2026)
+
+
 if __name__ == "__main__":
     unittest.main()
