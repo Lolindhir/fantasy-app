@@ -42,7 +42,7 @@ def plan_release_refresh(
     A missing asset is retryable, never evidence of healthy players or
     permission to overwrite the last good product with empty results.
     """
-    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2026:
+    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2099:
         raise ValueError("Unsupported injury release season")
     if not isinstance(release, dict) or not isinstance(release.get("assets"), list):
         raise ValueError("Injury release metadata requires an assets list")
@@ -238,7 +238,7 @@ def classify_injury_artifacts(
     We do not authorize removal: an obsolete partition is a blocking review
     finding, never an instruction to delete automatically.
     """
-    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2026:
+    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2099:
         raise ValueError("Unsupported injury partition season")
     raw_prefix = "data-source/providers/nflverse/injuries/"
     canonical_prefix = f"data-source/nfl/injuries/{season}/"
