@@ -204,11 +204,10 @@
           [rightName]="teamShortName(matchupTeamID(selectedMatchup, 'right'))"
         ></app-win-chance-bar>
         <p class="fgc-win-chance-caption">
-          <mat-icon
-            class="fgc-win-chance-info"
-            aria-hidden="true"
-            title="The chance is calculated from the projected scores of both starting lineups and their uncertainty. It is not adjusted by past results."
-          >info</mat-icon>
+          <a routerLink="/handbook" [queryParams]="{ section: 'Projections_Explanation' }"
+             class="fgc-win-chance-help" aria-label="How win chances are calculated" title="How win chances are calculated">
+            <mat-icon class="fgc-win-chance-info" aria-hidden="true">help_outline</mat-icon>
+          </a>
           <span>{{ chance.caption }}</span>
           <strong *ngIf="chance.upsetTeam" class="fgc-win-chance-upset">Upset · {{ chance.upsetTeam }} won</strong>
         </p>

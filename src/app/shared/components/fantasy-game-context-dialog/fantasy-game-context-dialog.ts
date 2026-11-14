@@ -3,6 +3,7 @@ import { Component, Inject, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterLink } from '@angular/router';
 import { WinChanceBarComponent } from '../win-chance-bar/win-chance-bar';
 
 import type {
@@ -220,6 +221,7 @@ export interface FantasyGameContextDialogData {
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     MatDialogModule,
     MatButtonModule,
     MatIconModule,

@@ -39,7 +39,13 @@
           <section class="week-card" aria-label="This week">
             <header class="week-card__header">
               <h3>This Week</h3>
-              <span *ngIf="weekProjection" class="week-card__week">Week {{ weekProjection.week }}</span>
+              <span class="week-card__heading-actions">
+                <span *ngIf="weekProjection" class="week-card__week">Week {{ weekProjection.week }}</span>
+                <a routerLink="/handbook" [queryParams]="{ section: 'Projections_Explanation' }" class="week-card__help"
+                  aria-label="How player projections are calculated" title="How player projections are calculated">
+                  <mat-icon aria-hidden="true">help_outline</mat-icon>
+                </a>
+              </span>
             </header>
             <div class="week-card__body">
               <div class="week-card__block">

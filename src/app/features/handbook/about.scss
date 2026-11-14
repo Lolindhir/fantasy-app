@@ -1,23 +1,26 @@
-.markdown {
-  display: block;
-  padding-bottom: 40px;
-}
-
+.markdown { display: block; padding-bottom: 40px; }
 .tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
 }
-
 .tabs button {
-  padding: 8px 16px;
-  border: none;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   background: #2c2c2c;
   color: white;
   cursor: pointer;
-  border-radius: 6px;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.25;
 }
-
-.tabs button:hover {
-  background: #444;
+.tabs button:hover { background: #444; }
+.tabs button:focus-visible { outline: 3px solid #7c3aed; outline-offset: 2px; }
+.tabs button.tabs__active { background: #1976d2; }
+@media (max-width: 600px) {
+  .tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .tabs button { padding: 9px 7px; font-size: 0.8rem; }
 }
