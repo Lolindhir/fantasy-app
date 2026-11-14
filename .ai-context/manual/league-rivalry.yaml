@@ -4,7 +4,7 @@ trackingIssue: 1455
 architectureDecision: ADR-083
 amendment: ADR-085 (rivalry-v2, Issue #1470)
 amends: [ADR-075]
-implementationState: 'Issue #1455: bracket label in the matchup context (tools/derived_data_lib/playoff_brackets.py), model rivalry-v1, pure function tools/derived_data_lib/rivalry.py, materializer tools/derived_data.py (product league-rivalry), consumer generator tools/rivalry_app_publish.py (Rivalry.json), restore probe. The Angular cutover (Rivalry.json instead of the Matchups history) and the G6 guard against the return of the frontend rule follow in the same Issue.'
+implementationState: 'Issue #1455: central rivalry-v1 product and bracket label, productive publisher, Angular Rivalry.json cutover and G6 guard all merged. Issue #1470 / ADR-085: immutable rivalry-v2 counts every finalized matchup including Losers Bracket and final playoff games before season end; v2 selected for all seasons in data-meta. Generated product and App file will be refreshed by the existing writer after this model change (no manual JSON edits).'
 
 purpose: >
   Define the Shared Derived Data product LeagueRivalry: for one league the head-to-head record of every team against every other team (wins, losses,
