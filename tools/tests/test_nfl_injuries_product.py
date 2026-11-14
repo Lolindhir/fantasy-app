@@ -388,5 +388,40 @@ class NflInjuriesProductTests(unittest.TestCase):
             plan_release_refresh({"assets": [row, dict(row)]}, season=2026)
 
 
+    def test_release_asset_metadata_is_attested_by_actual_downloaded_bytes(self):
+        from nfl_source_data_lib.injury_product_plan import (
+            build_injury_artifacts, plan_release_refresh,
+        )
+        import hashlib
+        import json
+        source = asset(2025, [report(2025)])
+        digest = hashlib.sha256(source).hexdigest()
+        upstream = {"assets": [{
+            "name": "injuries_2025.csv", "id": 1234,
+            "updated_at": "2026-11-14T07:11:00Z", "size": len(source),
+            "digest": "sha256:" + digest,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        release_asset = plan_release_refresh(upstream, season=2025)["SourceAsset"]
+        artifacts = build_injury_artifacts(
+            season=2025, source_csv=source, players=identities(),
+            release_asset=release_asset,
+        )
+        metadata = json.loads(artifacts[
+            "data-source/providers/nflverse/injuries/metadata-2025.json"
+        ])
+        self.assertEqual("matched-provided-release-digest", metadata["AssetDigestVerification"])
+        self.assertEqual(1234, metadata["ReleaseAssetId"])
+        self.assertEqual("2026-11-14T07:11:00Z", metadata["ReleaseAssetUpdatedAt"])
+        changed = dict(release_asset)
+        changed["ByteSize"] += 1
+        with self.assertRaisesRegex(ValueError, "mismatch"):
+            build_injury_artifacts(
+                season=2025, source_csv=source, players=identities(),
+                release_asset=changed,
+            )
+
+
 if __name__ == "__main__":
     unittest.main()
