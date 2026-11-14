@@ -15,6 +15,7 @@ import type {
 } from '../../../core/models/weekly-recap.models';
 import { findNflTeam } from '../../utils/nfl-team-key.util';
 import { TeamDetailDialogService } from '../../services/team-detail-dialog.service';
+import { PositionStylePipe } from '../../pipes/position-style.pipe';
 import { PlayerDetailDialogComponent } from '../player-detail-dialog/player-detail-dialog';
 
 /** The recap content of one week: games, players and awards (the data of OverviewRecapSelection). */
@@ -46,7 +47,7 @@ export interface WeekRecapUpset {
 @Component({
   selector: 'app-week-recap-content',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, PositionStylePipe],
   templateUrl: './week-recap-content.html'
 })
 export class WeekRecapContentComponent {
@@ -99,6 +100,11 @@ export class WeekRecapContentComponent {
   awardPlayerName(entry: WeeklyRecapPlayerAwardEntry): string {
     const resolved = this.awardPlayer(entry);
     return resolved?.NameShort || resolved?.Name || `Player ${entry.PlayerID ?? ''}`.trim();
+  }
+
+  /** NFL team logo of the resolved award player (same source as the common player rows); null when unresolved. */
+  awardPlayerNflLogo(entry: WeeklyRecapPlayerAwardEntry): string | null {
+    return (this.awardPlayer(entry)?.TeamNFL as NFLTeam | undefined)?.Logo || null;
   }
 
   awardPlayerPicture(entry: WeeklyRecapPlayerAwardEntry): string | null {

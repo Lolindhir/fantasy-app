@@ -36,7 +36,11 @@
           </span>
           <span class="weekly-recap-player-copy">
             <strong>{{ recapPlayerName(player) }}<mat-icon *ngIf="isWeekMvp(player)" class="weekly-recap-mvp-badge" aria-label="Week MVP" title="Week MVP">emoji_events</mat-icon></strong>
-            <span>{{ player.Position }} · {{ nflAbbr(player.NFLTeamID) }}</span>
+            <span class="weekly-recap-player-meta">
+              <img *ngIf="nflLogo(player.NFLTeamID) as logo" class="weekly-recap-player-nfl" [src]="logo" [alt]="nflAbbr(player.NFLTeamID)" loading="lazy" decoding="async" />
+              <span *ngIf="!nflLogo(player.NFLTeamID)" class="weekly-recap-player-fteam">{{ nflAbbr(player.NFLTeamID) }}</span>
+              <span class="weekly-recap-position-chip" [ngStyle]="player.Position | positionStyle">{{ player.Position }}</span>
+            </span>
           </span>
           <strong class="weekly-recap-player-points">{{ formatFantasyPoints(player.Points) }}</strong>
         </button>
@@ -58,7 +62,11 @@
             </span>
             <span class="weekly-recap-player-copy">
               <strong>{{ awardPlayerName(entry) }}</strong>
-              <span>{{ entry.Position }} · {{ awardOwnerName(entry.FantasyTeamID) }}</span>
+              <span class="weekly-recap-player-meta">
+                <img *ngIf="awardPlayerNflLogo(entry) as logo" class="weekly-recap-player-nfl" [src]="logo" alt="" loading="lazy" decoding="async" />
+                <span class="weekly-recap-position-chip" [ngStyle]="entry.Position | positionStyle">{{ entry.Position }}</span>
+                <span class="weekly-recap-player-fteam">{{ teamLabel(entry.FantasyTeamID) }}</span>
+              </span>
             </span>
             <strong class="weekly-recap-player-points">{{ formatFantasyPoints(entry.Points) }}</strong>
           </button>
