@@ -80,10 +80,23 @@ def _read_canonical(repo_root: Path, season: int) -> dict:
         if any(p.is_symlink() or (p.is_file() and p.name != "manifest.json"
                 and not _WEEK_FILE.fullmatch(p.name)) for p in folder.iterdir()):
             raise ValueError("Unrecognized canonical injury partition in season")
+    artifacts = manifest.get("ObservedWeekArtifacts")
+    if (not isinstance(artifacts, list) or len(artifacts) != len(weeks)
+            or [a.get("Week") for a in artifacts if isinstance(a, dict)] != weeks):
+        raise ValueError("Canonical injury manifest is missing precise week artifact proofs")
     parts = []
     count = 0
-    for week in weeks:
-        part = _read_json(repo_root, f"{root}{week:02d}.json")
+    for week, artifact in zip(weeks, artifacts):
+        name = f"{root}{week:02d}.json"
+        path = _assert_bounded_path(repo_root, name)
+        byte_string = path.read_bytes()
+        if (artifact.get("Path") != name or
+                artifact.get("ByteSize") != len(byte_string) or
+                artifact.get("Sha256") != hashlib.sha256(byte_string).hexdigest()):
+            raise ValueError(f"Canonical injury week {week} bytes differ from published manifest")
+        part = json.loads(byte_string.decode("utf-8"))
+        if not isinstance(part, dict):
+            raise ValueError(f"Canonical injury week {week} is not an object")
         if (part.get("SchemaVersion") != 1 or part.get("Season") != season
                 or part.get("Week") != week or part.get("SourceDataset") != _SOURCE
                 or part.get("SourceAssetSha256") != manifest.get("SourceAssetSha256")
