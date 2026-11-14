@@ -109,3 +109,34 @@ guards:
   - no-op-on-identical-content
   - clean-root-restorable-from-three-canonical-inputs
   - no-UI-or-fantasy-projection-consumer-in-this-issue
+futureGameDetailDirection:
+  confirmedAt: 2026-11-14
+  status: approved-target-architecture-not-implemented
+  ownership: extend-existing-nfl-games-product-not-a-second-game-product
+  summary: >
+    Keep the existing compact season/game index and evolve the same consumer-neutral
+    NFL Game domain into detailed, independently addressable per-GameID statistics.
+    The detailed game contract is for App NFL game pages, Fantasy Operations,
+    Fantasy Management, AI chat data access, and future model research.
+  plannedDetailGroups:
+    - team-and-player-statistics
+    - usage-and-snap-counts
+    - situational-and-drive-context
+    - advanced-play-derived-metrics
+    - data-coverage-and-provenance
+  inputPrinciple: >
+    Use canonical NFL facts including retained full play-by-play evidence, player
+    stats, snap counts, schedules, game finality and market odds as applicable.
+    Play-level raw rows are source evidence, not a mandatory payload of every
+    game-detail derived view. Derived metrics require explicit ownership and
+    versioned definitions. Missing or incomplete is not zero.
+  storagePrinciple: >
+    Retain a lean season index and load detailed games on demand; per-game
+    partition layout, schemas, compatibility, invalidation, and publishing
+    require a separate approved implementation decision.
+  sourcePrerequisite: >
+    Complete play-by-play evidence must become durably and reproducibly
+    accessible through the Source layer; the current transient upstream download
+    and reduced projections do not yet meet this target.
+  preservesExistingV1Contract: true
+  enablesNewWritersOrConsumerChanges: false

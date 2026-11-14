@@ -466,6 +466,29 @@ teamRegistryContract:
     abbreviation (LA, WAS), Name/City/Conference/Division/Logo come from the registry (ESPN logos)
     and LegacyIDs carries the former numeric app ID. Producer switches (F3d) follow in the #347 plan.
 
+fullPlayByPlayTarget:
+  confirmedAt: 2026-11-14
+  status: approved-source-retention-goal-not-active
+  upstream: nflverse play-by-play season release csv.gz
+  responsibility: >
+    Full original play-level records must be persistently and reproducibly
+    accessible as canonical Source Evidence for future game-detail derivations,
+    historic new metrics, replay and audit. Today's reduced special-teams fumble
+    and long-gains projections, with transient full upstream download, do not
+    satisfy the long-term full-play retention requirement.
+  identity: Season + GameID + PlayID + upstream-version
+  designPending:
+    - rights-license-and-attribution-verification
+    - durable-storage-format-and-location-outside-large-git-payloads-if-needed
+    - seasonal-and-per-game-coverage-with-known-unavailable-exceptions
+    - schema-field-preservation-and-player-identity-mapping
+    - upstream-corrections-versioning-and-ex-ante-time-semantics
+    - source-health-hashes-provenance-and-clean-root-replay
+    - incremental-refresh-publisher-and-race-safety
+  downstreamOwner: data-derived/nfl-games
+  currentSourceRegistryAndProjectionsUnchanged: true
+  productiveAcquisitionOrNewWriterAuthorized: false
+
 specialTeamsFumbleEventContract:
   issue: 709
   providerDataset: nflverse.special-teams-fumble-events
