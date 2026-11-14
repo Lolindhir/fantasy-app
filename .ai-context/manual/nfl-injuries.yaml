@@ -127,11 +127,58 @@ derived:
     - Snapshot-derived history does not establish what was known pre-kickoff.
     - Latest NFL injury status remains exclusively owned by existing Sleeper state.
 
+materializationPlan:
+  status: implemented-side-effect-free-not-published
+  implementation: tools/nfl_source_data_lib/injury_product_plan.py
+  inspectionCli: tools/nfl_injuries_preview.py --mode plan
+  plannedFiles:
+    - data-source/providers/nflverse/injuries/raw-<season>.csv
+    - data-source/providers/nflverse/injuries/metadata-<season>.json
+    - data-source/nfl/injuries/<season>/<week:02d>.json
+    - data-source/nfl/injuries/<season>/manifest.json
+    - data-derived/nfl-injuries/<season>.json
+  guarantee:
+    - Exact deterministic bytes for a fixed source, schedule and player identity graph.
+    - Same inputs yield byte-identical output files and no publication delta.
+    - Source byte digest, canonical identity fingerprint and schedule fingerprint
+      are retained in materialization metadata; unverified hashes are labelled.
+    - Removed source weeks are blocking review candidates, not automatic deletes.
+    - Every candidate path is checked against a narrow selected-season write scope.
+    - Computation of a plan does not enable any writer, registry or workflow.
+
+freshness:
+  historicalInjuryReport:
+    source: nflverse injuries season CSV
+    cadenceProposal: daily-post-upstream-with-release-digest-check
+    proposedLocalTime: "09:30 Europe/Berlin"
+    upstreamObservedSchedule: "07:07 UTC daily in September-February"
+    normalAcquisition: current NFL season, after source asset revision is verified
+    backfill: explicit historical seasons with schema gates
+    noOp: do not reprocess when source digest and applicable identity/schedule inputs are unchanged
+    retry: missed or delayed upstream refresh requires bounded catch-up check
+    status: not-activated
+  currentEspnInjuryStatus:
+    source: espn.player-availability
+    existingPath: data-source/nfl/player-availability/espn.json
+    existingWorkflow: .github/workflows/sync-nfl-player-availability.yml
+    existingScheduler: .github/workflow-schedules.json
+    existingCadence: "every ten minutes at :09/:19/:29/:39/:49/:59, Sep-Jan"
+    existingSemantics: ESPN player ID, current provider status and change-since timestamp
+    productionState: active-existing-source-writer
+    rule: >
+      Do not convert current ESPN status snapshots into historical nflverse injury
+      reports, and do not replace Sleeper as the existing current player status
+      source of truth for the app.
+  leagueLive:
+    existingCadence: every-ten-minutes-at-minute-00
+    rule: Reads only already-published accepted products; new nfl-injuries output
+      is not consumed until the separate consumer integration is reviewed.
+
 activation:
   allowedNow:
     - pure source parser and canonical/derived builders
     - synthetic deterministic unit tests
-    - documentation and no-persistence offline previews
+    - documentation, deterministic no-write output plans and offline previews
   requiresDatasetSpecificRights:
     - persistent original season CSV retention
     - canonical and shared-derived publication
@@ -143,7 +190,7 @@ activation:
   requiredChecks:
     - verify original assets, year-specific schema and 2026 revision freshness
     - audit historical mapping claim validity and team aliases
-    - source licensing and upstream redistribution preflight under Issue 190
+    - dataset-specific attribution and storage/redistribution conditions before actual publication; #190 remains closed
     - fail-closed parser, duplicate, unknown, late correction and canceled-game cases
     - exact no-op, clean-root replay, metadata provenance and writer race-safety
     - independent architecture review before activation
