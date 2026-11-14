@@ -31,6 +31,7 @@ def derive_nfl_injuries(canonical: dict[str, Any]) -> dict[str, Any]:
 
     by_player_week: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
     by_reason: dict[tuple[str, str, str], set[int]] = defaultdict(set)
+    observed_team_weeks: dict[tuple[int, str, str], int] = defaultdict(int)
     all_observations: set[str] = set()
     seen_weeks: set[int] = set()
     unreported = 0
@@ -65,6 +66,7 @@ def derive_nfl_injuries(canonical: dict[str, Any]) -> dict[str, Any]:
             if not any(source.get(field) for field in _REASON_FIELDS + _STATUS_FIELDS):
                 unreported += 1
             count += 1
+            observed_team_weeks[(week, str(row["GameType"]), str(row["SourceTeam"]))] += 1
             view = {
                 "ObservationKey": key,
                 "RowOrdinal": row["RowOrdinal"],
@@ -136,10 +138,15 @@ def derive_nfl_injuries(canonical: dict[str, Any]) -> dict[str, Any]:
         "TemporalEvidence": "retrospective-source-snapshot-not-point-in-time",
         "MissingReportMeaning": "unknown-not-healthy-or-available",
         "ObservedPlayerWeeks": player_weeks,
+        "ObservedTeamWeeks": [
+            {"Week": week, "GameType": game_type, "SourceTeam": team, "ReportCount": count}
+            for (week, game_type, team), count in sorted(observed_team_weeks.items())
+        ],
         "ObservedReasonTrajectories": trajectories,
         "Quality": {
             "SourceObservationCount": count,
             "ObservedPlayerWeekCount": len(player_weeks),
+            "ObservedTeamWeekCount": len(observed_team_weeks),
             "ObservedTrajectoryCount": len(trajectories),
             "MultipleObservationPlayerWeeks": multiple_observation_weeks,
             "RowsWithoutReasonsOrStatuses": unreported,
