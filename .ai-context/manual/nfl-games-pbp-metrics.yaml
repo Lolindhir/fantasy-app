@@ -75,11 +75,21 @@ globalPopulationAndMissingRules:
 fieldFamilies:
   gameIdentity: [game_id, play_id, season, week, season_type, home_team, away_team]
   teamsAndSituations: [posteam, defteam, qtr, down, ydstogo, yardline_100, drive, goal_to_go]
-  eligibility: [play_type, rush_attempt, pass_attempt, qb_dropback, qb_scramble, two_point_attempt]
+  eligibility: [play_type, rush_attempt, pass_attempt, sack, qb_spike, qb_dropback, qb_scramble, two_point_attempt]
   outcomes: [yards_gained, rushing_yards, passing_yards, first_down, success, third_down_converted]
   efficiency: [epa, air_yards, yards_after_catch, cp, cpoe]
   players: [rusher_player_id, receiver_player_id, passer_player_id]
   actualFieldStatus: upstream-documented-except-repository-preview-subset;real-season-header-audit-pending
+  upstreamFieldDictionary:
+    url: https://cran.r-project.org/web/packages/nflreadr/vignettes/dictionary_pbp.html
+    auditAsOf: 2026-11-14
+    verifiedDictionaryRules:
+      - nflverse pass_attempt flag includes sacks; never equate it with NFL official throws without excluding sack=1
+      - nflverse play_type pass includes sacks and play_type run includes scrambles
+      - nflverse qb_dropback includes pass attempts, sacks and scrambles
+      - nflverse success=1 means positive EPA, not a first-down-or-yardage-based success threshold
+      - NFL PBP yards_after_catch is passing catch YAC, not rushing yards after contact
+    caveat: Dictionary definitions do not establish real original-season header or non-null coverage.
   contactAndTrackingNotImplied: [yards_before_contact, yards_after_contact, rush_yards_over_expected, coverage_assignment, pressure_assignment]
 
 metricFamilies:
@@ -96,9 +106,9 @@ metricFamilies:
       - id: pass_attempts_faced
         class: opportunity
         level: defense-team-game
-        sourceFields: [pass_attempt, posteam, defteam, two_point_attempt]
-        definition: Count eligible opposing pass attempts; exclude sacks without attempts
-        caveat: Different population from QB dropbacks
+        sourceFields: [pass_attempt, sack, qb_spike, posteam, defteam, two_point_attempt]
+        definition: Count pass_attempt=1 with confirmed sack=0 and qb_spike=0, excluding two-point plays; does not include scrambles
+        caveat: Provider pass_attempt itself includes sacks; always report the excluded sack population and unknown sack flags; distinct from QB dropbacks
       - id: rush_attempts_faced
         class: opportunity
         level: defense-team-game
@@ -108,9 +118,9 @@ metricFamilies:
       - id: rb_target_share_allowed
         class: opportunity-and-position
         level: defense-team-game-vs-RB
-        sourceFields: [receiver_player_id, pass_attempt, posteam, defteam, two_point_attempt]
+        sourceFields: [receiver_player_id, pass_attempt, sack, qb_spike, posteam, defteam, two_point_attempt]
         requiredJoin: historical-game-valid-player-position-RB-and-provider-to-canonical-ID
-        definition: Eligible opponent RB targets divided by all eligible opponent pass attempts
+        definition: Eligible opponent RB targets divided by all eligible opponent pass attempts after removing sacks and spikes
         caveat: QB target-identification gaps and unknown positions must remain explicit; phase-one player-stats baseline available
 
   - family: rushing-defense
@@ -127,7 +137,7 @@ metricFamilies:
         class: pbp-distinct-efficiency
         level: defense-team-game
         sourceFields: [success, rush_attempt, posteam, defteam, two_point_attempt]
-        definition: Count observed source success=1 divided by rush plays with observed success flag
+        definition: Count observed source success=1 (positive EPA) divided by rush plays with observed success flag
         caveat: This is the nflfastR success indicator, not an invented yardage threshold
       - id: rush_explosive_10_rate_allowed
         class: event-rate-reconcilable
@@ -156,9 +166,9 @@ metricFamilies:
       - id: pass_epa_per_attempt_allowed
         class: pbp-distinct-efficiency
         level: defense-team-game
-        sourceFields: [epa, pass_attempt, posteam, defteam, two_point_attempt]
-        definition: Sum observed offense EPA on eligible pass attempts divided by attempts with non-null EPA
-        caveat: Excludes nonattempt sacks; compare separately with per-dropback EPA
+        sourceFields: [epa, pass_attempt, sack, qb_spike, posteam, defteam, two_point_attempt]
+        definition: Sum observed offense EPA where pass_attempt=1 and sack=0 and qb_spike=0 divided by the eligible throws with non-null EPA
+        caveat: Provider pass_attempt=1 also marks sacks; exclude them explicitly and compare with inclusive per-dropback EPA
       - id: dropback_epa_per_play_allowed
         class: pbp-distinct-efficiency
         level: defense-team-game
@@ -169,13 +179,13 @@ metricFamilies:
         class: pbp-distinct-efficiency
         level: defense-team-game
         sourceFields: [success, qb_dropback, posteam, defteam]
-        definition: Source success=1 divided by eligible dropbacks with known success
-        caveat: Do not relabel it QB accuracy or receiver skill
+        definition: Source success=1 (positive EPA) divided by eligible dropbacks with known success
+        caveat: Not a conventional first-down or distance-based success rate; do not relabel it QB accuracy or receiver skill
       - id: pass_explosive_20_rate_allowed
         class: pbp-event-rate
         level: defense-team-game
-        sourceFields: [pass_attempt, complete_pass, passing_yards, posteam, defteam]
-        definition: Count completions with at least 20 passing yards over all eligible pass attempts with a known outcome; confirmed incompletions contribute no explosive gain
+        sourceFields: [pass_attempt, sack, qb_spike, complete_pass, passing_yards, posteam, defteam]
+        definition: Count completions with at least 20 passing yards over all pass_attempt=1 throws with confirmed sack=0 and qb_spike=0 and known outcome; incompletions contribute zero explosive gains
         caveat: Missing yardage on a confirmed completion or unknown completion flags require explicit missing counts; check penalty rules
       - id: pass_yac_per_completion_allowed
         class: pbp-reconcilable-context
@@ -186,8 +196,8 @@ metricFamilies:
       - id: air_yards_per_attempt_allowed
         class: pbp-context
         level: defense-team-game
-        sourceFields: [pass_attempt, air_yards, posteam, defteam]
-        definition: Sum observed air yards divided by eligible pass attempts with observed air_yards
+        sourceFields: [pass_attempt, sack, qb_spike, air_yards, posteam, defteam]
+        definition: Sum observed air yards divided by eligible pass_attempt=1 throws with confirmed sack=0 and qb_spike=0 and observed air_yards
         caveat: Missing target depth is unknown; raw air-yard depth is not pass success
 
   - family: situations-and-opponent-context
@@ -270,12 +280,55 @@ researchOnlyNotNflGamesFacts:
 requiredGatesBeforeAnyMetricActivation:
   - Original asset header and nullability audit for target seasons plus source digest and correction handling
   - Source/derived identity and provider-player-position joins verified with historical and postseason edge cases
-  - Precise play eligibility, subpopulation boundaries, contact/playoff/penalty edge cases and scoring direction
+  - Verify nflreadr dictionary pass_attempt-includes-sacks and success-equals-positive-EPA semantics against actual season rows; precise eligibility, contact/playoff/penalty edge cases and scoring direction
   - Reconciliation against available player-stats baselines without making player stats the PBP source
   - Minimum observed denominator and coverage status, unknown-vs-zero, source finality and as-of timestamp
   - Stable rollup math by sums of numerators and denominators with historical zero-leakage safeguards
   - Phase-2 shrinkage/opponent-adjusted walk-forward vs FPA and V4-C as independent research, not automatic integration
   - Versioned output schema, code owner, validation, storage/publication scope, rights and rollback separately authorized
+
+readOnlySourceFieldAudit:
+  checkpoint: P0a
+  status: implemented-local-cli-synthetic-tests-real-original-assets-not-yet-observed
+  tool: tools/nfl_pbp_metric_field_audit.py
+  requiredDependency: PyYAML
+  scope: >-
+    Scan one locally provided original nflverse seasonal csv.gz completely to
+    EOF and compare all 23 catalog candidate sourceFields with real CSV
+    headers, non-null counts by play_type pass/run, qb_dropback and down=3,
+    GameID+PlayID uniqueness, game-context consistency and reported GSIS
+    provider ID patterns. Optional SHA256 pin and archived provider-projection
+    upstream metadata allow reproducible version/drift checks. No download.
+  cli: >-
+    python3 tools/nfl_pbp_metric_field_audit.py --season 2025
+    --pbp-csv-gz /local/play_by_play_2025.csv.gz
+    --expected-sha256 2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978
+  sourceReference: >-
+    data-source/providers/nflverse/special-teams-fumble-events/metadata-2025.json
+    records 48771 original source rows, compressed size 19105296 bytes and
+    the above SHA256 for the previously retrieved 2025 asset. These are
+    archived upstream-projection metadata expectations, not a real GZIP
+    replay performed by this checkpoint.
+  providerCrosschecks: >-
+    Count observed overlap pass_attempt=1 and sack=1, overlap
+    qb_dropback=1 and qb_scramble=1, and compare source success=1 with
+    source EPA>0 when both values are valid. This tests real provider-row
+    consistency without equating pass_attempt with NFL official pass throws.
+  machineOutput: >-
+    Stdout JSON only: full gzip-EOF read flag, source SHA256, row/game
+    counts, per-game row counts, each field's present/nullable counts by
+    overlapping cohort, missing/empty fields per candidate, provider GSIS
+    ID-shape evidence, archived metadata agreement or drift.
+  limits: >-
+    No known executable original 2024/2025/2026 PBP bytes in this runtime
+    because direct binary release download is inaccessible. Passing
+    synthetic gzip tests is not real field coverage proof, NFL Game
+    completeness, a historical canonical player-position join, or
+    permission to publish any metric.
+  writePaths: []
+  newPublishers: []
+  validation: synthetic-csv-gzip-only-plus-existing-fast-suite
+  rollback: revert-audit-tool-tests-and-catalog-contract
 
 recommendedSequence:
   - P0 inventory real per-season PBP headers, player/position mapping, game-coverage and stable original asset
