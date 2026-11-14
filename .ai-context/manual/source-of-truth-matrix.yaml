@@ -1258,6 +1258,11 @@ consumerReadClassification:
         network: source-layer-acquisition
         provider:espn: source-layer-acquisition
       note: 'ESPN kona_player_info injury status snapshot into data-source/nfl/player-availability (#347); consumed by RequestLeague as canonical input.'
+    tools/nfl_injuries_refresh.py:
+      reads:
+        network: source-layer-acquisition
+        provider:nflverse: source-layer-acquisition
+      note: 'Issue #1421 C4: official nflverse injury release API and validated exact asset URL; caller-gated local staging only, no Git publication, League/App/ESPN owner untouched.'
     tools/nfl_source_data_lib/injury_product_plan.py:
       reads:
         provider:nflverse: source-layer-acquisition
