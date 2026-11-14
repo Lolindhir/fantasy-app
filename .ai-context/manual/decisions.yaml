@@ -2850,3 +2850,38 @@ decisions:
         - The product depends on PlayerWeekFantasy partitions for the projection figures; weeks without a projection stay null.
         - The ten-minute League Live run gains one fail-soft step (runtime to be measured after the G5 AP5 measurement).
         - The pregame chance of historical weeks follows the stored PlayerWeekFantasy partitions and changes when they are rebuilt.
+
+  - id: ADR-083
+    title: The rivalry statistic is a Shared Derived product with the central model rivalry-v1 and a bracket label in the matchup context
+    status: accepted
+    amends: [ADR-075]
+    context: >-
+      Head-to-head records (wins, losses, ties, points, biggest win, closest loss) were counted in Angular (team-rivalry.util.ts) from the published
+      Matchups of every season. The Matchups carry only the stage of a week, so the util guessed the consolation tournament from the teams of the last
+      playoff week and needed its own season-complete rule. That is a domain rule in the frontend (Issue #1455, central audit 2026-11-13, finding D).
+    decision: >-
+      Robert decided on 2026-11-13 (Issue #1455): a persisted Shared Derived product data-derived/league-rivalry/<CanonicalLeagueID>.json, one file per
+      league over all seasons with the records per team, opponent and filter (all, regular, playoffs) and the single games, so that chat and agent consumers
+      read it as a file without Python. The bracket becomes a fact of the matchup context: Matchups carries an additive field Bracket (championship, placement,
+      consolation, unclassified, null for the regular season) derived from the canonical winners-bracket.json and losers-bracket.json plus league.json
+      WeekStructure; a matchup that cannot be assigned to exactly one bracket game is unclassified and never counted (amendment of ADR-075, fixed provider-neutral
+      semantics without a model ID). The counting rules are the central, league-independent, versioned model rivalry-v1 (tools/derived_data_lib/models/rivalry/v1.py),
+      chosen per season in data-meta (Models.Rivalry). E1: winners-bracket placement games count as playoff duels, only the losers bracket is the consolation
+      tournament; E2: playoff games of a running season count only after the season is complete (a later model version may count them at once). The pure
+      function tools/derived_data_lib/rivalry.py, the materializer in tools/derived_data.py and the consumer generator tools/rivalry_app_publish.py (public/data/Rivalry.json,
+      the product document unchanged) follow the pattern of ADR-082. The elevated effect (new write prefix data-derived/league-rivalry for the existing writers
+      league-live.yml, fail-soft, and update-transactions.yml) was approved by Robert on 2026-11-13; no new workflow, credential or permission. Angular displays the
+      values and counts and classifies nothing. Exactness was proven against a golden dump of the former util: all records equal except the one E1 game
+      (2024 week 16, placement game of Team 4 against Team 5). Contract: .ai-context/manual/league-rivalry.yaml.
+    rationale: >-
+      The bracket is a fact of the canonical source, not something to guess from participants; one implementation serves every consumer, a stored file is
+      readable without Python, and a model version per season keeps the numbers stable when a rule changes.
+    consequences:
+      positive:
+        - Angular contains no head-to-head or consolation logic; the Matchups history is no longer loaded for the rivalry views.
+        - Rivalry numbers are available to App, Fantasy Management and chat consumers from one file.
+        - Placement games of the championship bracket are no longer lost.
+      negative:
+        - Team identity across seasons stays the provider roster ID (owner changes of a roster are not represented), like All-Time Standings.
+        - Matchups.json gains the field Bracket (additive); the product needs the matchup context of every season and adds a few seconds to the ten-minute League Live run (measured in Issue #1455).
+        - The product file is directional and repeats games per filter (about 120 KB).

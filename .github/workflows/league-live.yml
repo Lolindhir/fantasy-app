@@ -243,6 +243,7 @@ jobs:
       # (Issue #1199 section 3 step 7) before RequestLeaguePublication. WeeklyRecaps.json is rendered from the computed recap function by
       # tools/weekly_recaps_app_publish.py (Issue #1199 section 4); it reads the fresh TeamWeekPerformance product, not an App file.
       # season-statistics (Issue #506): current season only, fail-soft (a failure keeps the last product and App file and warns).
+      # league-rivalry (Issue #1455): one product over all seasons, fail-soft (no --fail-on-error), after the matchup context of the same run.
       - name: Rebuild and publish League, PlayerWeekFantasy, MatchupProjections and current-season Derived
         run: >-
           python3 tools/rebuild_and_publish.py
@@ -253,6 +254,7 @@ jobs:
           --path data-derived/league-transactions
           --path data-derived/league-drafts
           --path data-derived/season-statistics
+          --path data-derived/league-rivalry
           --
           bash -euo pipefail -c
           'python3 tools/league_live_derived_refresh.py &&
@@ -261,5 +263,6 @@ jobs:
           python3 tools/league_history_app_publish.py write --fail-on-error &&
           python3 tools/weekly_recaps_app_publish.py write --fail-on-error &&
           python3 tools/season_statistics_app_publish.py write --scope current &&
+          python3 tools/rivalry_app_publish.py write &&
           pwsh ./public/requests/RequestLeaguePublication.ps1 &&
           python3 tools/team_cap_outlook_app_publish.py write'
