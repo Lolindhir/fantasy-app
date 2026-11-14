@@ -2053,6 +2053,33 @@ decisions:
         - A new derived output and future scheduler adapter require explicit safety validation.
         - Historical latest-line market values must not be reused as ex-ante pregame evidence.
 
+    futureDirection20261114:
+      authorization: architecture-target-and-documentation-only
+      context: >
+        Robert confirmed that full play-by-play data must be durably available
+        in the canonical NFL Source layer, while the long-term consumer-facing
+        domain is one extensible NFL Game product rather than a second mandatory
+        raw play-by-play product.
+      decision: >
+        Extend the existing #1077 global NFL Games ownership over time from a
+        compact season game index to individually addressable, detailed game
+        statistics with team, player, usage, situational, game-flow and advanced
+        metrics, including explicit quality and source provenance. App NFL game
+        pages, Fantasy Operations, Fantasy Management, AI chats and research
+        consume the same shared domain product. Full original play-level NFL
+        evidence must be durably retained and reproducible in Source; individual
+        play records are not required as a payload in the Derived game-detail
+        product. Derived may combine that PBP evidence with other canonical
+        NFL stats and schedule sources and must version its computed metrics.
+      compatibilityAndScope: >
+        This is a forward-looking architectural decision, not a change to the
+        current V1 three-source NFL Games schema, Raw PBP acquisition, existing
+        source projections or production workflows. Choose full-PBP retention
+        format, rights, versioning, historical gaps, timestamps, per-game detail
+        partitions, invalidation and write scopes in separately reviewed,
+        authorized implementation steps. Do not add a new scheduler or writer
+        by implication. Related shared-platform guardrails remain with #1263.
+
   - id: ADR-063
     title: Weekly team awards reuse the existing App WeeklyRecaps publisher
     status: accepted
