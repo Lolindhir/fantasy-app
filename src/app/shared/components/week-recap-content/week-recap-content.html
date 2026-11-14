@@ -40,6 +40,10 @@
               <img *ngIf="nflLogo(player.NFLTeamID) as logo" class="weekly-recap-player-nfl" [src]="logo" [alt]="nflAbbr(player.NFLTeamID)" loading="lazy" decoding="async" />
               <span *ngIf="!nflLogo(player.NFLTeamID)" class="weekly-recap-player-fteam">{{ nflAbbr(player.NFLTeamID) }}</span>
               <span class="weekly-recap-position-chip" [ngStyle]="player.Position | positionStyle">{{ player.Position }}</span>
+              <span class="weekly-recap-player-owner" [attr.title]="teamLabel(player.FantasyTeamID)">
+                <img *ngIf="teamLogo(player.FantasyTeamID) as ownerLogo" class="weekly-recap-player-owner-logo" [src]="ownerLogo" alt="" loading="lazy" decoding="async" />
+                <span>{{ teamAbbr(player.FantasyTeamID) }}</span>
+              </span>
             </span>
           </span>
           <strong class="weekly-recap-player-points">{{ formatFantasyPoints(player.Points) }}</strong>
@@ -65,7 +69,10 @@
               <span class="weekly-recap-player-meta">
                 <img *ngIf="awardPlayerNflLogo(entry) as logo" class="weekly-recap-player-nfl" [src]="logo" alt="" loading="lazy" decoding="async" />
                 <span class="weekly-recap-position-chip" [ngStyle]="entry.Position | positionStyle">{{ entry.Position }}</span>
-                <span class="weekly-recap-player-fteam">{{ teamLabel(entry.FantasyTeamID) }}</span>
+                <span class="weekly-recap-player-owner" [attr.title]="teamLabel(entry.FantasyTeamID)">
+                <img *ngIf="teamLogo(entry.FantasyTeamID) as ownerLogo" class="weekly-recap-player-owner-logo" [src]="ownerLogo" alt="" loading="lazy" decoding="async" />
+                <span>{{ teamAbbr(entry.FantasyTeamID) }}</span>
+              </span>
               </span>
             </span>
             <strong class="weekly-recap-player-points">{{ formatFantasyPoints(entry.Points) }}</strong>

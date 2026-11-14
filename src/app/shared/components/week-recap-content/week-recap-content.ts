@@ -145,6 +145,12 @@ export class WeekRecapContentComponent {
     return team?.Team?.trim() || team?.TeamAbbr?.trim() || `Team ${teamID}`;
   }
 
+  /** Short fantasy team label for compact player rows (TeamAbbr, then the team name). */
+  teamAbbr(teamID: string | number): string {
+    const team = this.teamForID(teamID);
+    return team?.TeamAbbr?.trim() || team?.Team?.trim() || `T${teamID}`;
+  }
+
   teamLogo(teamID: string | number): string | null {
     return this.teamForID(teamID)?.Avatar?.trim() || null;
   }
