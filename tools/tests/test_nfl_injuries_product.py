@@ -853,5 +853,32 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertEqual([], list(root.rglob("*")))
 
 
+    def test_canonical_manifest_detects_same_row_count_changed_week_bytes(self):
+        from nfl_injuries_phase import run_injury_phase
+        import hashlib
+        import json
+        import tempfile
+        raw = asset(2025, [report(2025)])
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            run_injury_phase(root, 2025, "raw", write=True,
+                source_csv=raw, expected_source_sha256=hashlib.sha256(raw).hexdigest())
+            run_injury_phase(root, 2025, "canonical", write=True,
+                players=identities())
+            manifest = json.loads((root / "data-source/nfl/injuries/2025/manifest.json"
+                ).read_text(encoding="utf-8"))
+            proof = manifest["ObservedWeekArtifacts"][0]
+            week_file = root / proof["Path"]
+            self.assertEqual(proof["Sha256"],
+                hashlib.sha256(week_file.read_bytes()).hexdigest())
+            partition = json.loads(week_file.read_text(encoding="utf-8"))
+            partition["Observations"][0]["GameLinkState"] = "linked"
+            week_file.write_text(json.dumps(partition, sort_keys=True, indent=2) + "\n",
+                                 encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "bytes differ from published manifest"):
+                run_injury_phase(root, 2025, "derived", write=True)
+            self.assertFalse((root / "data-derived/nfl-injuries/2025.json").exists())
+
+
 if __name__ == "__main__":
     unittest.main()
