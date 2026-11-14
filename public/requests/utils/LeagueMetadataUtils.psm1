@@ -18,7 +18,7 @@ $script:KnownModelIds = @{
     RosterCap = @('roster-cap-v1')
     AutoCut = @('auto-cut-v1')
     SeasonStats = @('season-stats-v1')
-    Rivalry = @('rivalry-v1')
+    Rivalry = @('rivalry-v1', 'rivalry-v2')
 }
 $script:TopLevelKeys = @('SchemaVersion', 'CanonicalLeagueID', 'Provider', 'CurrentProviderLeagueID', 'LeagueTimeZone', 'Owners', 'Drafts', 'Seasons')
 $script:SeasonKeys = @('CapDeadline', 'CapDeadlineBufferDays', 'Models')
