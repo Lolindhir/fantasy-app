@@ -112,6 +112,7 @@ def build_injury_artifacts(
     players: dict[str, Any],
     schedule: dict[str, Any] | None = None,
     expected_source_sha256: str | None = None,
+    release_asset: Mapping[str, Any] | None = None,
 ) -> dict[str, bytes]:
     """Generate intended bytes, never write them to disk.
 
@@ -125,6 +126,25 @@ def build_injury_artifacts(
             raise ValueError("Expected injury source digest must be SHA-256 hex")
         if actual_digest != expected:
             raise ValueError("Injury source digest does not match expected asset")
+    release_id = None
+    release_updated = None
+    if release_asset is not None:
+        release_id = release_asset.get("Id")
+        release_updated = release_asset.get("UpdatedAt")
+        upstream_size = release_asset.get("ByteSize")
+        upstream_digest = release_asset.get("Sha256")
+        expected_url = (
+            "https://github.com/nflverse/nflverse-data/releases/download/"
+            f"injuries/injuries_{season}.csv"
+        )
+        if (release_asset.get("Name") != f"injuries_{season}.csv"
+                or release_asset.get("DownloadUrl") != expected_url
+                or not isinstance(release_id, int) or isinstance(release_id, bool)
+                or release_id < 1 or not isinstance(release_updated, str)
+                or not release_updated or upstream_size != len(source_csv)):
+            raise ValueError("Injury source bytes mismatch provided release asset metadata")
+        if upstream_digest is not None and upstream_digest != actual_digest:
+            raise ValueError("Downloaded injury source digest differs from release asset")
     parsed = parse_injury_report_csv(source_csv, season=season)
     if not parsed["Rows"]:
         raise ValueError("Empty injury report is not evidence of a healthy or complete season")
@@ -142,8 +162,13 @@ def build_injury_artifacts(
         "AssetSha256": actual_digest,
         "AssetByteSize": len(source_csv),
         "AssetDigestVerification": (
-            "matched-expected-digest" if expected_source_sha256 else "self-hash-only-not-officially-verified"
+            "matched-expected-digest" if expected_source_sha256 else
+            "matched-provided-release-digest" if release_asset is not None
+            and release_asset.get("Sha256") is not None else
+            "self-hash-only-not-officially-verified"
         ),
+        "ReleaseAssetId": release_id,
+        "ReleaseAssetUpdatedAt": release_updated,
         "ReportRowCount": parsed["RowCount"],
         "SourceSchema": parsed["SourceSchema"],
         "OriginalAssetBytesRetained": True,
