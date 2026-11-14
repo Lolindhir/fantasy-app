@@ -196,11 +196,17 @@ def build_injury_artifacts(
     derived = derive_nfl_injuries(canonical)
     actual_digest = parsed["AssetSha256"]
     weeks: list[int] = []
+    week_artifacts: list[dict[str, Any]] = []
     for partition in canonical["Partitions"]:
         week = partition["Week"]
         weeks.append(week)
         path = f"data-source/nfl/injuries/{season}/{week:02d}.json"
-        target[path] = _render(partition)
+        encoded = _render(partition)
+        target[path] = encoded
+        week_artifacts.append({
+            "Week": week, "Path": path,
+            "ByteSize": len(encoded), "Sha256": _sha256(encoded),
+        })
     target[f"data-source/nfl/injuries/{season}/manifest.json"] = _render({
         "SchemaVersion": 1,
         "SourceDataset": _DATASET,
@@ -209,6 +215,7 @@ def build_injury_artifacts(
         "IdentityGraphFingerprint": canonical["IdentityGraphFingerprint"],
         "IdentityTimeBasis": "current-graph-not-historical-point-in-time",
         "ObservedWeeks": weeks,
+        "ObservedWeekArtifacts": week_artifacts,
         "ObservedWeekCount": len(weeks),
         "SourceRowCount": parsed["RowCount"],
         "CanonicalQuality": canonical["Quality"],
