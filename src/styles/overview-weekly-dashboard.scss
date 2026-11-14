@@ -915,55 +915,38 @@ app-league-matchups {
   border-radius: 10px;
   background: #f8fafc;
 }
+/* Common compact player card (key players and weekly awards): picture, name with position chip,
+   and a foot line with the NFL team left, the points centered and the fantasy team right. */
+.weekly-recap-player,
 .weekly-recap-player-award-winner {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: "picture copy points";
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: 'picture copy' 'foot foot';
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin-top: 8px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
+  column-gap: 6px;
+  row-gap: 3px;
 }
+.weekly-recap-player-award-winner { width: 100%; margin-top: 6px; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .weekly-recap-player-award-winner:disabled { cursor: default; }
-.weekly-recap-player-award-winner .weekly-recap-player-picture { grid-area: picture; }
-.weekly-recap-player-award-winner .weekly-recap-player-copy { grid-area: copy; }
-.weekly-recap-player-award-winner .weekly-recap-player-points { grid-area: points; }
-.weekly-recap-mvp-badge {
-  width: 12px;
-  height: 12px;
-  margin-left: 3px;
-  vertical-align: middle;
-  color: #b45309;
-  font-size: 12px;
-  line-height: 12px;
+.weekly-recap-player-award-winner:not(:disabled):hover .weekly-recap-player-copy strong { text-decoration: underline; }
+.weekly-recap-player-picture { grid-area: picture; }
+.weekly-recap-player-copy { grid-area: copy; display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; align-content: center; align-items: center; gap: 2px 5px; min-width: 0; text-align: left; }
+.weekly-recap-player-copy strong { max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.weekly-recap-player-foot {
+  grid-area: foot;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
 }
-/* Mobile: keep two columns and stack picture, name and points compactly so four awards need two rows. */
-@media (max-width: 640px) {
-  .weekly-recap-player-awards { gap: 6px; }
-  .weekly-recap-player-award { padding: 8px; }
-  .weekly-recap-player-award-winner {
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas: "picture copy" "picture points";
-    column-gap: 6px;
-    row-gap: 0;
-    margin-top: 6px;
-  }
-  .weekly-recap-player-award-winner .weekly-recap-player-picture { width: 28px; height: 28px; align-self: center; }
-  .weekly-recap-player-award-winner .weekly-recap-player-points { text-align: left; }
-  .weekly-recap-player-award .weekly-recap-award-title { font-size: 0.68rem; }
-}
-
-/* Common player identity line: NFL logo, position chip in the position color, optional fantasy team. */
-.weekly-recap-player-copy .weekly-recap-player-meta { display: flex; align-items: center; gap: 4px; min-width: 0; margin-top: 2px; }
+.weekly-recap-player-foot .weekly-recap-player-points { grid-area: auto; }
+.weekly-recap-player-nflteam { display: inline-flex; align-items: center; justify-content: flex-start; min-width: 0; }
 .weekly-recap-player-nfl { width: 16px; height: 16px; flex: 0 0 16px; object-fit: contain; }
-.weekly-recap-player-copy .weekly-recap-position-chip {
+.weekly-recap-player-owner { display: inline-flex; align-items: center; justify-content: flex-end; gap: 3px; min-width: 0; color: #64748b; font-size: 0.56rem; font-weight: 700; white-space: nowrap; }
+.weekly-recap-player-owner-logo { width: 14px; height: 14px; flex: 0 0 14px; border-radius: 50%; object-fit: cover; }
+.weekly-recap-player-fteam { color: #8792a4; font-size: 0.56rem; }
+.weekly-recap-position-chip {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -975,10 +958,9 @@ app-league-matchups {
   font-weight: 700;
   line-height: 1.3;
 }
-.weekly-recap-player-copy .weekly-recap-player-fteam { min-width: 0; overflow: hidden; color: #8792a4; font-size: 0.56rem; text-overflow: ellipsis; white-space: nowrap; }
-.weekly-recap-player-award-winner:not(:disabled):hover .weekly-recap-player-copy strong { text-decoration: underline; }
-.weekly-recap-player-copy .weekly-recap-player-owner { display: inline-flex; align-items: center; gap: 3px; min-width: 0; margin-top: 0; color: #64748b; font-size: 0.56rem; font-weight: 700; }
-.weekly-recap-player-copy .weekly-recap-player-owner span { margin-top: 0; font-size: inherit; color: inherit; }
-.weekly-recap-player-owner-logo { width: 14px; height: 14px; flex: 0 0 14px; border-radius: 50%; object-fit: cover; }
-.weekly-recap-player-copy .weekly-recap-player-meta { flex-wrap: wrap; gap: 2px 4px; }
-.weekly-recap-player-nfl { width: 14px; height: 14px; flex-basis: 14px; }
+.weekly-recap-mvp-badge { width: 12px; height: 12px; margin-left: 3px; vertical-align: middle; color: #b45309; font-size: 12px; line-height: 12px; }
+@media (max-width: 640px) {
+  .weekly-recap-player-awards { gap: 6px; }
+  .weekly-recap-player-award { padding: 8px; }
+  .weekly-recap-list--players .weekly-recap-player-owner-logo { display: none; }
+}
