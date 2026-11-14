@@ -110,15 +110,17 @@ derived:
     - Quality
   observedPlayerWeek:
     key: Season + Week + GSIS
-    - Preserve all independent report observations for this key.
-    - Keep game/practice statuses and primary/secondary reason values separate.
-    - Duplicate player-week observations are not automatically ordered if the
-      source has no trustworthy player-level timestamp.
+    rules:
+      - Preserve all independent report observations for this key.
+      - Keep game/practice statuses and primary/secondary reason values separate.
+      - Duplicate player-week observations are not automatically ordered if the
+        source has no trustworthy player-level timestamp.
   observedReasonTrajectory:
     key: GSIS + exact reason text, with source field provenance
-    - Count distinct observed weeks and expose earliest/latest observed week.
-    - Represent gaps explicitly; a gap is not recovery or injury resolution.
-    - A trajectory is not a medically confirmed episode.
+    rules:
+      - Count distinct observed weeks and expose earliest/latest observed week.
+      - Represent gaps explicitly; a gap is not recovery or injury resolution.
+      - A trajectory is not a medically confirmed episode.
   temporal:
     - Do not compute injury onset, return date, recovery, games missed or start probability.
     - Snapshot-derived history does not establish what was known pre-kickoff.
