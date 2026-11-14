@@ -17,7 +17,7 @@ import sys
 import urllib.request
 from typing import Any, Callable
 
-from nfl_injuries_materialize import stage_injury_season
+from nfl_injuries_materialize import _assert_bounded_path, stage_injury_season
 from nfl_source_data_lib.injury_product_plan import plan_release_refresh
 
 _RELEASE_API = "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/injuries"
@@ -71,8 +71,12 @@ def refresh_injury_season(
     or schedule input changes, so no-op is decided by the final artifact delta.
     """
     release = fetch_release()
-    metadata_path = repo_root / f"data-source/providers/nflverse/injuries/metadata-{season}.json"
-    raw_path = repo_root / f"data-source/providers/nflverse/injuries/raw-{season}.csv"
+    metadata_path = _assert_bounded_path(
+        repo_root, f"data-source/providers/nflverse/injuries/metadata-{season}.json"
+    )
+    raw_path = _assert_bounded_path(
+        repo_root, f"data-source/providers/nflverse/injuries/raw-{season}.csv"
+    )
     stored_metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.is_file() else None
     decision = plan_release_refresh(release, season=season, stored_metadata=stored_metadata)
     if decision["Action"] == "retry-later":
