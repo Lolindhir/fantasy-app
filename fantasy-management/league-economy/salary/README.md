@@ -46,6 +46,8 @@ Die Simulation vom **05.10.2026** bleibt als **historischer Vergleich** bestehen
 
 - [CP5b – Legaler Start, kontrafaktische Manager-Optionen und Settlement-Fenster (14.11.2026)](analyses/2026-11-14-salary-cap-cp5b-legal-start-settlement.md) – 2026er Sep-Settlement aus vollständig legalem Ausgangspunkt, 54 transaktionsbezogene Pfad-Gegenproben (F2/F3/B), drei unabhängige 2025er Check-Snapshots sowie verifizierte Sleeper-/App-Vollzugsgrenzen; [CP5b-Kennzahlen](analyses/2026-11-14-salary-cap-cp5b-metrics.json). **Kein Verhalten-/Titel-Backtest, CP5/CP6 weiter offen, keine neue Regel** ([Issue #1344](https://github.com/Lolindhir/fantasy-app/issues/1344)).
 
+- [CP5c – Cap-Zeitfenster und mehrjähriger Dead-Cap-Crosscheck (14.11.2026)](analyses/2026-11-14-salary-cap-cp5c-windows-deadcap-carryover.md) – zusätzliche 01./15.10.-Settlement-Gegenprobe, Team-Überhang-Tage, F2/F3/B-Operationsgrenzen und **separat unbeschlossene** Mehrjahres-DeadCap-Varianten D0/D1/D2/D3 aus acht archivierten Flo-Cuts; [CP5c-Kennzahlen](analyses/2026-11-14-salary-cap-cp5c-metrics.json). Bestätigtes Ein-Zyklus-Konzept bleibt unangetastet; CP5/CP6 offen ([Issue #1344](https://github.com/Lolindhir/fantasy-app/issues/1344)).
+
 
 Datierte Salary-Berechnungen liegen unter derselben Root (jeweils `.md` und `.json`):
 
