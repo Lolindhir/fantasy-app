@@ -107,7 +107,7 @@ Das ist **ex-post-Nachfrage im FA-Draft** für 7/8 Spieler, aber kein ex-ante-An
 
 2024 war ein initialer 162-Pick-Liga-/Free-Agent-Draft, kein gleichartiger Rookie-Draft. 2026 ist hier eine **unvollständige** Saison. Die Verteilungen sind daher weder eine zeitbereinigte Trendanalyse noch Beweis, dass ein permanenter Cap Cuts in Trades verwandelt. Sie demonstrieren lediglich die tatsächlich genutzten **verschiedenen** Transaktionskanäle.
 
-**Praktische Beispiele 2026 für Re-Acquisition beim selben Team:** Josh Downs (Kader-ID 1, 29.10. Cut → 02.11. Add), daneben drei weitere erste erfolgreiche Wiederaufnahmen nach vorangegangenem Cut. Ein wiederaufgenommener Spieler ist nicht zwingend wieder langfristig gehalten. Entsprechende Mehrfach-Cut- und Floor-Behandlung würde erst mit dem **nicht aktiven** Retained-Salary-Konzept greifen.
+**Praktische Beispiele 2026 für Re-Acquisition beim selben Team:** Ka'imi Fairbairn (Kader-ID 1, 29.10. Cut → 02.11. Add), daneben drei weitere erste erfolgreiche Wiederaufnahmen nach vorangegangenem Cut. Ein wiederaufgenommener Spieler ist nicht zwingend wieder langfristig gehalten. Entsprechende Mehrfach-Cut- und Floor-Behandlung würde erst mit dem **nicht aktiven** Retained-Salary-Konzept greifen.
 
 ### 4.3 Retained Salary / Dead Cap als **separater** späterer Mechaniktest
 
@@ -165,7 +165,7 @@ Year 4 = reguläres Performance-Salary (noch nicht beobachtet)
 | Pick und Spieler | Y1-Pct | Y2-Pct | Y3-Pct | Beleg zur Entwicklung, nicht Forecast |
 |---|---:|---:|---:|---|
 | 2025 Pick 1.01 Ashton Jeanty | 3,410 % | 4,263 % | 5,116 % | 2025 14,54 PPG; bis 05.11.2026 16,54 PPG (8 Spiele) |
-| 2025 Pick 2.02 Bhayshul Tuten (Overall 14) | 0,774 % | 0,967 % | 1,161 % | 2025 5,74 PPG; bis 05.11.2026 16,90 PPG (7 Spiele) |
+| 2025 Pick 3.02 Bhayshul Tuten (Overall 14) | 0,774 % | 0,967 % | 1,161 % | 2025 5,74 PPG; bis 05.11.2026 16,90 PPG (7 Spiele) |
 | 2026 Pick 1.01 Carnell Tate | 3,404 % | 4,255 % | 5,106 % | bis 05.11.2026 11,04 PPG (7 Spiele) |
 | 2026 Pick 1.02 Jeremiyah Love | 3,211 % | 4,013 % | 4,816 % | bis 05.11.2026 8,90 PPG (6 Spiele) |
 
