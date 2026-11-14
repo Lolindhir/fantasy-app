@@ -47,10 +47,15 @@ def preview(
         result = build_nfl_game_detail(
             index, game_id, pbp_rows=rows, pbp_asset_sha256=digest,
         )
+        validated_plays = result["PlayByPlay"]["OriginalPlays"]["Plays"]
         result["PlayByPlay"]["OriginalPlays"]["SourceReadAudit"] = {
-            **scan, "GzipStreamReadToEOF": True, "ExpectedSHA256Matched": (
-                True if expected_sha256 is not None else None
-            ),
+            **scan,
+            "GzipStreamReadToEOF": True,
+            "ExpectedSHA256Matched": True if expected_sha256 is not None else None,
+            "UniqueValidatedPlayIDs": len(validated_plays),
+            "FirstPlayID": validated_plays[0]["PlayID"],
+            "LastPlayID": validated_plays[-1]["PlayID"],
+            "PlayIDsAreNotRequiredToBeConsecutive": True,
         }
         return result
     if expected_sha256 is not None:
