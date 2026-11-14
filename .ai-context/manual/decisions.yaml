@@ -2923,3 +2923,34 @@ decisions:
         - The app build now depends on presence of one FM-owned Markdown file; missing or mismatched
           content fails the build instead of publishing stale philosophy.
         - Handbook publication remains tied to successful main deployment; no runtime auto-sync outside that process.
+
+  - id: ADR-085
+    title: Rivalry-v2 includes every final fantasy matchup regardless of playoff bracket, and counts final games immediately
+    status: accepted
+    amends: [ADR-083]
+    context: >-
+      The original rivalry-v1 consciously excluded the Losers Bracket as consolation and delayed all playoff results
+      until the season finished. Robert clarified on 2026-11-14 (Issue #1470) that even the Lucky Loser bracket
+      determines consequential draft outcomes, so every completed duel belongs in head-to-head rivalry history.
+    decision: >-
+      Keep rivalry-v1 immutable. Register rivalry-v2 and explicitly select it for every season in data-meta.
+      For a matchup with CompletionState final, a valid Result and exactly two participants, count both
+      regular season and playoffs regardless of Bracket (championship, placement, consolation, unclassified or null);
+      playoff games of the running season count as soon as final. Bracket is retained as descriptive canonical
+      evidence, never reclassified or invented for counting. App and other consumers read the same shared
+      league-rivalry product; published files and Timestamps.Rivalry are updated by the existing generator
+      on a semantic difference, not edited by hand. The old v1 initial publication lacked the timestamp because
+      its first workflow run was a no-op. The v2 migration creates a genuine semantic change and initializes the key.
+      This is a rivalry statistic rule, not a change to Sleeper or the league's draft order.
+    rationale: >-
+      Every completed head-to-head matchup has a meaningful winner, including the bracket whose result shapes
+      future draft order. A single versioned derived rule avoids deleting valid historical duels and
+      restores the expected all-games semantics without changing original v1 historical reproducibility.
+    consequences:
+      positive:
+        - Final Losers-Bracket and unclassified playoff games appear in the all and playoffs rivalry filters.
+        - Already-final playoff duels count before the season ends.
+        - All consumers receive identical versioned results from one central owner, no Angular counting.
+      negative:
+        - Rivalry-v2 historical records intentionally differ from v1; generated Derived/App snapshots must refresh together.
+        - Input data completeness and provider corrections still govern what can truthfully be considered final.
