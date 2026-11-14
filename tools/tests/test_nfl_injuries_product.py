@@ -1010,9 +1010,12 @@ class NflInjuriesProductTests(unittest.TestCase):
                 players=identities())
             derived = run_injury_phase(root, 2027, "derived", write=True)
             self.assertTrue(derived["Written"])
-            self.assertEqual(2027, build_injury_artifacts(
-                season=2027, source_csv=source, players=identities(),
-            ) and parsed["Season"])
+            import json
+            product = json.loads(
+                (root / "data-derived/nfl-injuries/2027.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(2027, product["Season"])
+            self.assertEqual("nfl-injuries-v1", product["ProductVersion"])
 
 
 if __name__ == "__main__":
