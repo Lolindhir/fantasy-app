@@ -140,3 +140,28 @@ futureGameDetailDirection:
     and reduced projections do not yet meet this target.
   preservesExistingV1Contract: true
   enablesNewWritersOrConsumerChanges: false
+  readOnlyPreviewCheckpoint:
+    status: implementation-preview-only-not-published
+    pureBuilder: tools/derived_data_lib/nfl_game_detail.py
+    cli: python3 tools/nfl_game_detail_preview.py --season 2026 --game-id 2026_01_ARI_LAC
+    inputs:
+      - data-derived/nfl-games/<season>.json
+      - data-source/nfl/player-game-long-gains/<season>.json
+    sourceSemantics: >-
+      Canonical LongGains is a sparse PBP-derived per-player game maximum for
+      rushes and receptions, not all plays and not comprehensive team/player stats.
+      Only records with a CanonicalPlayerID, source PlayID, game/week/type and
+      known teams are selected. The game index is not changed.
+    availability: >-
+      An absent season or GameID in the canonical LongGains coverage is
+      unavailable (Records null), not zero. A covered game with no LongGains
+      has an empty list for that narrow projection only. Full PBP remains false,
+      and Coverage remains partial even when the projection is present.
+    output: stdout-json-only
+    writePaths: []
+    publishers: []
+    activation: none
+    note: >-
+      This checkpoint deliberately does not satisfy the full-play-by-play Source
+      prerequisite, create per-GameID persistent files, alter nfl-games-v1 or
+      authorize raw asset archival/public display.
