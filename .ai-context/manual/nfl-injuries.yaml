@@ -1,5 +1,5 @@
 schemaVersion: 1
-status: implementation-foundation-not-published
+status: production-publisher-configured-awaiting-merge-and-live-evidence
 trackingIssue: 1421
 purpose: >
   Define historical NFL injury report evidence as a global, league-independent
@@ -18,12 +18,12 @@ ownership:
     prospectiveMetadataPath: data-source/providers/nflverse/injuries/metadata-<season>.json
     prospectiveCanonicalPath: data-source/nfl/injuries/<season>/<week>.json
     plannedSourceRegistry: data-source/registry.json
-    registryActivated: false
+    registryActivated: pending-pr-merge
   observedTrajectory:
     productId: nfl-injuries-v1
     prospectivePath: data-derived/nfl-injuries/<season>.json
     consumerNeutral: true
-    publicationActivated: false
+    publicationActivated: pending-pr-merge
 
 source:
   annualRelease: https://github.com/nflverse/nflverse-data/releases/tag/injuries
@@ -239,15 +239,31 @@ activation:
   allowedNow:
     - pure source parser and canonical/derived builders
     - synthetic deterministic unit tests
-    - documentation, deterministic no-write output plans and offline previews\n    - explicitly gated local working-tree staging and read-only official release observation
+    - documentation, deterministic no-write output plans and offline previews
+    - explicitly gated local working-tree staging and read-only official release observation
   requiresDatasetSpecificRights:
     - persistent original season CSV retention
     - canonical and shared-derived publication
     - public GitHub and web/app redistribution
   requiresSeparateElevatedReview:
-    - Source Registry activation and new durable paths
-    - Source Sync materialization and scoped GitHub publication
-    - historical 2009-to-current backfill and any automated schedule
+    - Historical 2009–2011 schema/asset backfill and consumer integrations
+    - Expanding beyond the approved injury-only Source/Derived write paths
+    - Any extra producer schedules beyond the existing daily injury workflow
+  approvedElevatedEffect:
+    requestedByUser: "dann mach das; productive Injury Source/Derived integration after C5"
+    scope: nflverse.injuries isolated raw/canonical, nfl-injuries Derived season product
+    productionWorkflow: .github/workflows/sync-nfl-injuries.yml
+    delegatedWriter: .github/workflows/sync-nfl-source-data.yml
+    scheduledCadence: "09:30 Europe/Berlin daily September-February"
+    sourcePublication: "Raw and Canonical in separate existing NFL Source push/retry phases"
+    derivedPublication: "separate rebuild-and-retry commit, data-derived/nfl-injuries only"
+    disabledConsumers: "Salary, App, League Live and ESPN ten-minute availability unchanged"
+    rollback: "disable injury schedule/entry and delegate wrapper; leave validated historical raw evidence intact"
+  sourceTerms:
+    license: CC BY 4.0
+    licenseEvidence: https://github.com/nflverse/nflverse-data/blob/main/LICENSE.md
+    sourceCredit: https://github.com/nflverse/nflverse-data
+    note: "Dataset-specific attribution retained in the Source Registry; closed #190 is not re-opened"
   requiredChecks:
     - verify original assets, year-specific schema and 2026 revision freshness
     - audit historical mapping claim validity and team aliases
@@ -255,4 +271,4 @@ activation:
     - fail-closed parser, duplicate, unknown, late correction and canceled-game cases
     - exact no-op, clean-root replay, metadata provenance and writer race-safety
     - independent architecture review before activation
-  currentStatus: no-productive-writer-or-app-consumer
+  currentStatus: registry-and-scheduler-configured-on-pr-no-live-dataset-yet
