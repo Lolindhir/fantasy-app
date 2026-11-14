@@ -1,4 +1,11 @@
 <div class="tabs" style="display: flex; flex-wrap: wrap; gap: 8px;">
+  <button
+    style="flex: 1 1 auto;"
+    (click)="selectTab('league-philosophy')"
+    [style.background]="selectedTab === 'league-philosophy' ? '#1976d2' : null"
+    [style.color]="selectedTab === 'league-philosophy' ? 'white' : null">
+    Liga-Philosophie
+  </button>
   <button 
     style="flex: 1 1 auto;"
     (click)="selectTab('Overview')"

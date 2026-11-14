@@ -7,10 +7,12 @@ on:
     branches:
       - main
     # Positivliste: nur Dateien, die der Build (deploy_action.ps1 / ng build) liest oder ausliefert.
-    # Neue Datenwurzeln (data-source, data-derived, fantasy-management, ...) loesen bewusst keinen Deploy aus.
+    # Datenwurzeln loesen keinen Deploy aus; Ausnahme: die eine kanonische
+    # Liga-Philosophie-Markdown-Datei wird direkt als Handbook-Build-Asset ausgeliefert.
     paths:
       - "src/**"
       - "public/**"
+      - "fantasy-management/league-context/league-philosophy.md"
       - "angular.json"
       - "package.json"
       - "package-lock.json"

@@ -22,6 +22,8 @@ This repository contains two separated agent working contexts:
 
 For application, frontend, data generation, generated JSON contract, routing or app architecture work, use the existing `.ai-context` reading order below.
 
+**League-design north star (normative design goals, not active mechanics):** Before any league-wide rule, format, Salary/Cap, strategy or league-specific product decision, read `fantasy-management/league-context/league-philosophy.md` in full. Its six goals are the protected evaluation baseline. Semantic changes require documented consultation with all six managers and explicit league approval; verify its ratification status. Do not duplicate the principles in agent instructions.
+
 For any NFL Dynasty, Fantasy Football, Mighty Giants, roster, trade, draft, player evaluation, podcast, StonedLack, Relevant Players, free-agent analysis or source-processing task, agents must use:
 
 `fantasy-management/AGENTS.md`

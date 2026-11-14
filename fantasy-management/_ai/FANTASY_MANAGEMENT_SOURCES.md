@@ -2,6 +2,10 @@
 
 Purpose: this file defines the source map for Fantasy Management work. It replaces external chat-level source notes for this repository area.
 
+## Canonical league-design philosophy
+
+`fantasy-management/league-context/league-philosophy.md` is the **sole normative source** for the protected six-goal league-design north star: long-term competitive opportunity, reward for management, prevention of permanent structural advantages, economic opportunity costs, strategic freedom and operational enforceability. Read it for league-level research and proposals. The same file is delivered in the Handbook as a static build asset. It is **not** a source of active Sleeper settings or enacted Salary/Trade rules; the document records its ratification status. Never create a second editable copy.
+
 ## Canonical technical app sources
 
 The repository `Lolindhir/fantasy-app` remains the canonical source for current league and app data.

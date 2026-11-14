@@ -103,6 +103,18 @@ if (!(Test-Path "$OutputDir/index.html")) {
     exit 1
 }
 
+# Fail closed if the Handbook's single-source philosophy asset is missing or diverges.
+$PhilosophySource = "fantasy-management/league-context/league-philosophy.md"
+$PhilosophyPublished = "$OutputDir/docs/league-philosophy.md"
+if (!(Test-Path $PhilosophySource) -or !(Test-Path $PhilosophyPublished)) {
+    Write-Error "League-Philosophy Handbook-Asset fehlt: Quelle oder Build-Ausgabe nicht vorhanden."
+    exit 1
+}
+if ((Get-FileHash -Path $PhilosophySource -Algorithm SHA256).Hash -ne (Get-FileHash -Path $PhilosophyPublished -Algorithm SHA256).Hash) {
+    Write-Error "League-Philosophy Handbook-Asset stimmt nicht mit kanonischer Quelle ueberein."
+    exit 1
+}
+
 # JSONs aus public/data kopieren
 $SourceData = "public/data/*"
 $DestData = "$OutputDir/data"

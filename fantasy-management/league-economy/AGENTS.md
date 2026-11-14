@@ -12,7 +12,9 @@ The eventual league-facing synthesis must connect these layers without turning o
 
 ## Required reading
 
-For any task about league-economy redesign, long-term roster economics, franchise windows, Rebuild/Reload design, salary-system interaction or the shared Offseason paper, read:
+For any task about league-economy redesign, long-term roster economics, franchise windows, Rebuild/Reload design, salary-system interaction or the shared Offseason paper, first read the **protected six-goal north star** `fantasy-management/league-context/league-philosophy.md` in full, then the following topic sources. Do not change or silently reinterpret the north-star goals; they are evaluation criteria, not active game mechanics.
+
+Read:
 
 1. `fantasy-management/AGENTS.md`
 2. this file
