@@ -301,6 +301,17 @@ models:
       - Regular-season games always count; playoff games count only for a complete season and the bracket labels championship and placement (E1, E2 of Issue #1455); consolation and unclassified never count.
       - Selected per season in data-meta (Models.Rivalry). Counting a final playoff game at once or any other rule change is rivalry-v2, never a silent change of the numbers.
 
+  rivalry-v2:
+    status: registered-1470
+    module: tools/derived_data_lib/models/rivalry/v2.py
+    behaviour: All finalized two-team fantasy matchups with a result count in Head-to-Head history, including Losers-Bracket / Lucky Loser, bracket-unclassified playoff games and finished games during an ongoing playoff season.
+    contract: .ai-context/manual/league-rivalry.yaml
+    parameters: Filters all/regular/playoffs, playoff brackets all incl. missing or unclassified, count when final (not at season end), points rounded half up to two decimals, no ranking
+    rules:
+      - Immutable successor to rivalry-v1, which is kept byte-unchanged; the v1 summary/formatting functions are shared.
+      - The source Matchups finality and valid result/participants establish the actual duel, bracket labels are descriptive evidence only (not a filter).
+      - Selected for all league seasons in data-meta (Models.Rivalry, #1470); never silently changes rivalry-v1.
+
 rankingFunctions:
   implementation: tools/derived_data_lib/ranking.py
   versioning: >
