@@ -156,6 +156,17 @@ class NflInjuriesProductTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate"):
             derive_nfl_injuries(corrupted)
 
+    def test_offline_preview_digest_gate_and_no_publisher(self):
+        from nfl_injuries_preview import preview
+        csv_data = asset(2025, [report(2025)])
+        sample = preview(csv_bytes=csv_data, season=2025, identities=identities())
+        self.assertTrue(sample["PreviewOnly"])
+        self.assertFalse(sample["Provenance"]["PublicationEnabled"])
+        self.assertEqual("not-independently-verified", sample["Provenance"]["InputVerification"])
+        self.assertEqual(1, sample["DerivedQuality"]["SourceObservationCount"])
+        with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+            preview(csv_bytes=csv_data, season=2025, identities=identities(), expected_sha256="f" * 64)
+
     def test_header_digest_and_no_later_provider_status_leakage(self):
         canonical, derived = product(2025)
         self.assertEqual(canonical["SourceAssetSha256"], derived["SourceAssetSha256"])
