@@ -257,5 +257,161 @@ class NflGameDetailReadOnlyPreviewTests(unittest.TestCase):
 
 
 
+def _week_stats():
+    def player(cid, team, opp, yards, targets):
+        return {
+            "CanonicalPlayerID": cid, "Team": team, "OpponentTeam": opp,
+            "PlayerName": cid, "Position": "RB", "SeasonType": "REG",
+            "Week": 6, "Stats": {
+                "game_id": "2026_06_HOU_JAX",
+                "carries": 4, "rushing_yards": yards,
+                "targets": targets, "receptions": targets,
+                "receiving_yards": 10, "passing_yards": 0,
+            },
+        }
+    return {
+        "SchemaVersion": 2, "Season": 2026, "Week": 6,
+        "SourceDataset": "nflverse.player-stats", "Finalized": False,
+        "Records": [player("NFLP-a", "HOU", "JAX", 21, 2),
+                    player("NFLP-b", "JAX", "HOU", -2, 1)],
+    }
+
+
+def _week_snaps():
+    def player(cid, team, opp, offense):
+        return {
+            "CanonicalPlayerID": cid, "Team": team, "OpponentTeam": opp,
+            "PlayerName": cid, "Position": "RB", "GameType": "REG", "Week": 6,
+            "GameID": "2026_06_HOU_JAX", "OffenseSnaps": offense,
+            "OffensePct": .5, "DefenseSnaps": 0, "DefensePct": 0.0,
+            "SpecialTeamsSnaps": 3, "SpecialTeamsPct": .1,
+        }
+    return {
+        "SchemaVersion": 2, "Season": 2026, "Week": 6,
+        "SourceDataset": "nflverse.snap-counts", "Finalized": False,
+        "Records": [player("NFLP-a", "HOU", "JAX", 35),
+                    player("NFLP-b", "JAX", "HOU", 42)],
+    }
+
+
+class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
+    def test_player_stats_team_totals_and_snaps_use_canonical_player_identity(self):
+        detail = build_nfl_game_detail(
+            build_nfl_games(*inputs()), "2026_06_HOU_JAX",
+            _preview_gains(), _week_stats(), _week_snaps(),
+        )
+        self.assertEqual(detail["SchemaVersion"], 2)
+        self.assertEqual(detail["PlayerStats"]["Status"], "available")
+        self.assertEqual(detail["SnapCounts"]["Status"], "available")
+        self.assertIs(detail["PlayerStats"]["SourceFinalized"], False)
+        self.assertEqual(
+            [t["Team"] for t in detail["TeamStats"]["Teams"]], ["HOU", "JAX"],
+        )
+        self.assertEqual(
+            [t["Stats"]["rushing_yards"] for t in detail["TeamStats"]["Teams"]],
+            [21, -2],
+        )
+        self.assertEqual(detail["TeamStats"]["Teams"][0]["Stats"]["carries"], 4)
+        self.assertIsNone(detail["TeamStats"]["Teams"][0]["Stats"]["fg_att"])
+        self.assertEqual(detail["SnapCounts"]["Players"][0]["CanonicalPlayerID"], "NFLP-a")
+        self.assertEqual(detail["SnapCounts"]["Players"][0]["Snaps"]["OffenseSnaps"], 35)
+        self.assertFalse(detail["PlayByPlay"]["FullPlayByPlayAvailable"])
+
+    def test_absent_week_sources_remain_unavailable_not_zero(self):
+        detail = build_nfl_game_detail(build_nfl_games(*inputs()), "2026_06_HOU_JAX")
+        for key in ("PlayerStats", "TeamStats", "SnapCounts"):
+            self.assertEqual(detail[key]["Status"], "unavailable")
+        self.assertIsNone(detail["PlayerStats"]["Players"])
+        self.assertIsNone(detail["TeamStats"]["Teams"])
+        self.assertIsNone(detail["SnapCounts"]["Players"])
+        empty = _week_stats()
+        empty["Records"] = []
+        detail = build_nfl_game_detail(
+            build_nfl_games(*inputs()), "2026_06_HOU_JAX",
+            player_stats=empty,
+        )
+        self.assertEqual(detail["PlayerStats"]["Status"], "unavailable")
+        self.assertIsNone(detail["PlayerStats"]["Players"])
+
+    def test_one_team_in_source_is_partial_without_fabricating_other_team(self):
+        stats = _week_stats()
+        stats["Records"] = stats["Records"][:1]
+        detail = build_nfl_game_detail(
+            build_nfl_games(*inputs()), "2026_06_HOU_JAX",
+            player_stats=stats,
+        )
+        self.assertEqual(detail["PlayerStats"]["Status"], "partial")
+        self.assertEqual(detail["TeamStats"]["Status"], "partial")
+        self.assertEqual(detail["TeamStats"]["Teams"][0]["Stats"]["rushing_yards"], 21)
+        self.assertEqual(detail["TeamStats"]["Teams"][1]["Status"], "unavailable")
+        self.assertIsNone(detail["TeamStats"]["Teams"][1]["Stats"])
+
+    def test_stats_and_snap_week_identity_and_metrics_fail_closed(self):
+        for mutation in ("stats-week", "stats-team", "stats-duplicate",
+                         "stats-negative", "stats-bad-type", "snap-week",
+                         "snap-pct", "snap-duplicate", "snap-team", "cross-team"):
+            with self.subTest(mutation=mutation):
+                stats, snaps = _week_stats(), _week_snaps()
+                if mutation == "stats-week":
+                    stats["Week"] = 7
+                elif mutation == "stats-team":
+                    stats["Records"][0]["Team"] = "NYG"
+                elif mutation == "stats-duplicate":
+                    stats["Records"].append(copy.deepcopy(stats["Records"][0]))
+                elif mutation == "stats-negative":
+                    stats["Records"][0]["Stats"]["targets"] = -1
+                elif mutation == "stats-bad-type":
+                    stats["Records"][0]["Stats"]["carries"] = 1.5
+                elif mutation == "snap-week":
+                    snaps["Records"][0]["Week"] = 7
+                elif mutation == "snap-pct":
+                    snaps["Records"][0]["OffensePct"] = float("nan")
+                elif mutation == "snap-duplicate":
+                    snaps["Records"].append(copy.deepcopy(snaps["Records"][0]))
+                elif mutation == "snap-team":
+                    snaps["Records"][0]["Team"] = "NYG"
+                elif mutation == "cross-team":
+                    snaps["Records"][0]["Team"] = "JAX"
+                    snaps["Records"][0]["OpponentTeam"] = "HOU"
+                with self.assertRaises(ValueError):
+                    build_nfl_game_detail(
+                        build_nfl_games(*inputs()), "2026_06_HOU_JAX",
+                        player_stats=stats, snap_counts=snaps,
+                    )
+
+    def test_readonly_cli_uses_only_matching_week_and_does_not_write(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            docs = {
+                root / "data-derived" / "nfl-games" / "2026.json": build_nfl_games(*inputs()),
+                root / DATA_SOURCE_ROOT / "nfl" / "player-stats" / "2026" / "06.json": _week_stats(),
+                root / DATA_SOURCE_ROOT / "nfl" / "snap-counts" / "2026" / "06.json": _week_snaps(),
+            }
+            for path, doc in docs.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(doc), encoding="utf-8")
+            files_before = {p.relative_to(root): p.read_bytes() for p in root.rglob("*.json")}
+            result = preview(root, 2026, "2026_06_HOU_JAX")
+            self.assertEqual(result["PlayerStats"]["Status"], "available")
+            self.assertEqual(result["SnapCounts"]["Status"], "available")
+            files_after = {p.relative_to(root): p.read_bytes() for p in root.rglob("*.json")}
+            self.assertEqual(files_before, files_after)
+
+    def test_real_canonical_2026_week_10_complete_game_join(self):
+        root = TOOLS.parent
+        stats = root / DATA_SOURCE_ROOT / "nfl" / "player-stats" / "2026" / "10.json"
+        snaps = root / DATA_SOURCE_ROOT / "nfl" / "snap-counts" / "2026" / "10.json"
+        if not stats.is_file() or not snaps.is_file():
+            self.skipTest("2026 week 10 canonical source partitions not available")
+        detail = preview(root, 2026, "2026_10_WAS_NYG")
+        self.assertEqual(detail["PlayerStats"]["Status"], "available")
+        self.assertEqual(detail["SnapCounts"]["Status"], "available")
+        self.assertEqual([x["Team"] for x in detail["TeamStats"]["Teams"]], ["WAS", "NYG"])
+        self.assertTrue(all(x["CanonicalPlayerID"] for x in detail["PlayerStats"]["Players"]))
+        self.assertTrue(all(x["CanonicalPlayerID"] for x in detail["SnapCounts"]["Players"]))
+        self.assertFalse(detail["PlayByPlay"]["FullPlayByPlayAvailable"])
+
+
+
 if __name__ == "__main__":
     unittest.main()

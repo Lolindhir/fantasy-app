@@ -19,9 +19,23 @@ def preview(repo_root: Path, season: int, game_id: str) -> dict:
     if not index_path.is_file():
         raise ValueError(f"Canonical nfl-games season unavailable: {season}")
     index = json.loads(index_path.read_text(encoding="utf-8"))
-    source_path = repo_root / DATA_SOURCE_ROOT / "nfl" / "player-game-long-gains" / f"{season}.json"
-    source = json.loads(source_path.read_text(encoding="utf-8")) if source_path.is_file() else None
-    return build_nfl_game_detail(index, game_id, source)
+    matches = [row for row in index.get("Games", []) if row.get("GameID") == game_id]
+    if len(matches) != 1:
+        raise ValueError(f"Unknown or duplicated canonical GameID: {game_id}")
+    week = matches[0].get("Week")
+    if type(week) is not int or not 1 <= week <= 25:
+        raise ValueError(f"Invalid game week for {game_id}")
+    nfl_source = repo_root / DATA_SOURCE_ROOT / "nfl"
+
+    def optional_json(path: Path) -> dict | None:
+        if not path.is_file():
+            return None
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    gains = optional_json(nfl_source / "player-game-long-gains" / f"{season}.json")
+    stats = optional_json(nfl_source / "player-stats" / f"{season}" / f"{week:02d}.json")
+    snaps = optional_json(nfl_source / "snap-counts" / f"{season}" / f"{week:02d}.json")
+    return build_nfl_game_detail(index, game_id, gains, stats, snaps)
 
 
 def main() -> int:

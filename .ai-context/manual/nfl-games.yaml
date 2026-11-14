@@ -157,6 +157,46 @@ futureGameDetailDirection:
       unavailable (Records null), not zero. A covered game with no LongGains
       has an empty list for that narrow projection only. Full PBP remains false,
       and Coverage remains partial even when the projection is present.
+    expandedPreviewCheckpoint:
+      status: implemented-read-only-not-published
+      detailSchemaVersion: 2
+      readInputs:
+        - data-source/nfl/player-stats/<season>/<week>.json
+        - data-source/nfl/snap-counts/<season>/<week>.json
+      gameWeekSelection: >-
+        The canonical nfl-games season index supplies the Week for the requested
+        GameID. Only that single weekly player-stats and snap-counts partition
+        is read, with no broad history replay.
+      playerStats: >-
+        Selected player counting-stat fields preserve their canonical stat keys
+        and CanonicalPlayerID. Unknown fields are null, never inferred as zero.
+        Duplicate player/game identities, invalid team/opponent/season/week/type
+        or impossible counting values fail closed.
+      teamStats: >-
+        TeamStats sums only selected additive player count fields and explicitly
+        identifies itself as a sum of available player rows, not an official NFL
+        team boxscore or complete team/game-play metric. A team with no player
+        rows is unavailable, never zero. Pass, rushing and receiving yard
+        categories remain separate to avoid double-counting.
+      snapCounts: >-
+        Per-player offense, defense and special-teams snap counts and fractions
+        come from canonical snap-counts with the same CanonicalPlayerID. Cross-
+        source player/team conflicts fail closed.
+      completeness: >-
+        A missing week partition or absent game rows is unavailable (null
+        player/teams). Coverage for one-sided rows is partial, not zero or a
+        complete-game claim. SourceFinalized is source snapshot metadata and
+        never substitutes for full NFL play-by-play coverage. Full PBP stays false.
+      compatibility: >-
+        SchemaVersion 2 is an additive read-only preview format; existing
+        nfl-games SchemaVersion 1 season index and publisher remain unchanged.
+      historicalAvailability: >-
+        player-stats are available from 1999 in canonical weekly partitions;
+        snap-counts from 2013. Game joins can fail closed on unverified
+        historical abbreviations; no guessed team aliases are introduced.
+      output: stdout-json-only
+      writePaths: []
+      publishers: []
     output: stdout-json-only
     writePaths: []
     publishers: []
