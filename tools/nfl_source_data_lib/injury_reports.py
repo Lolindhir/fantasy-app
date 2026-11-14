@@ -38,7 +38,7 @@ def parse_injury_report_csv(asset: bytes, *, season: int) -> dict[str, Any]:
     if not isinstance(asset, bytes):
         raise TypeError("Injury CSV asset must be bytes")
     if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2099:
-        raise ValueError("Injury CSV season must be an supported schema families (2012–2024 or 2025+; future headers verified strictly)")
+        raise ValueError("Injury CSV season must be in audited schema range 2012+ (2012–2024 legacy, 2025+ current schema; future headers checked strictly)")
 
     digest = hashlib.sha256(asset).hexdigest()
     try:
