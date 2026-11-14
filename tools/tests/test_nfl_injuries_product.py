@@ -509,5 +509,23 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertEqual([], list(root.rglob("*")))
 
 
+    def test_offline_materializer_rejects_symlinked_source_parent(self):
+        from nfl_injuries_materialize import stage_injury_season
+        import hashlib
+        import tempfile
+        with tempfile.TemporaryDirectory() as root_folder, tempfile.TemporaryDirectory() as outside:
+            root = Path(root_folder)
+            (root / "data-source").symlink_to(Path(outside), target_is_directory=True)
+            original = asset(2025, [report(2025)])
+            with self.assertRaisesRegex(ValueError, "Symlink"):
+                stage_injury_season(
+                    repo_root=root, season=2025, csv_bytes=original,
+                    players=identities(),
+                    expected_source_sha256=hashlib.sha256(original).hexdigest(),
+                    write=True,
+                )
+            self.assertEqual([], list(Path(outside).rglob("*")))
+
+
 if __name__ == "__main__":
     unittest.main()
