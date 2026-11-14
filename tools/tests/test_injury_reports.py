@@ -108,10 +108,16 @@ class InjuryReportSourceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid GSIS"):
             parse_injury_report_csv(make_csv(2025, [report(2025, gsis_id="")]), season=2025)
 
-    def test_unaudited_old_year_invalid_utf8_and_empty_are_rejected(self):
+    def test_unaudited_old_year_future_schema_and_invalid_assets(self):
         with self.assertRaisesRegex(ValueError, "audited schema range"):
             parse_injury_report_csv(b"", season=2010)
-        with self.assertRaisesRegex(ValueError, "audited schema range"):
+        # The 2025+ CSV schema can be reused for future seasons, but neither
+        # a missing asset nor a legacy header becomes valid report evidence.
+        future = parse_injury_report_csv(make_csv(2027, [report(2027)]), season=2027)
+        self.assertEqual(1, future["RowCount"])
+        with self.assertRaisesRegex(ValueError, "unexpected header"):
+            parse_injury_report_csv(make_csv(2027, [report(2027)], variant="legacy"), season=2027)
+        with self.assertRaisesRegex(ValueError, "empty"):
             parse_injury_report_csv(b"", season=2027)
         with self.assertRaisesRegex(ValueError, "UTF-8"):
             parse_injury_report_csv(b"\xff", season=2025)
