@@ -23,6 +23,7 @@ from nfl_injuries_materialize import _assert_bounded_path
 from nfl_source_data_lib.injury_product_plan import (
     build_injury_artifacts,
     build_injury_raw_artifacts,
+    plan_release_refresh,
 )
 
 _PHASES = ("raw", "canonical", "derived")
@@ -108,6 +109,7 @@ def plan_injury_phase(
     repo_root: Path, season: int, phase: str, *,
     source_csv: bytes | None = None,
     expected_source_sha256: str | None = None,
+    release_json: dict | None = None,
     players: dict | None = None,
     schedule: dict | None = None,
 ) -> dict[str, bytes]:
@@ -121,11 +123,18 @@ def plan_injury_phase(
             raise ValueError("Raw phase requires explicit source season CSV")
         if players is not None or schedule is not None:
             raise ValueError("Raw phase must not depend on identities or schedule")
+        release_asset = None
+        if release_json is not None:
+            decision = plan_release_refresh(release_json, season=season)
+            if decision["Action"] == "retry-later":
+                raise ValueError("Upstream injury season asset not yet published")
+            release_asset = decision["SourceAsset"]
         return build_injury_raw_artifacts(
             season=season, source_csv=source_csv,
             expected_source_sha256=expected_source_sha256,
+            release_asset=release_asset,
         )
-    if source_csv is not None or expected_source_sha256 is not None:
+    if source_csv is not None or expected_source_sha256 is not None or release_json is not None:
         raise ValueError("Downstream Injury phases must read their persisted Source inputs")
     if phase == "canonical":
         if players is None:
@@ -161,15 +170,21 @@ def _allowed_phase_path(phase: str, season: int, path: str) -> bool:
 def run_injury_phase(
     repo_root: Path, season: int, phase: str, *, write: bool = False,
     source_csv: bytes | None = None, expected_source_sha256: str | None = None,
+    release_json: dict | None = None,
     players: dict | None = None, schedule: dict | None = None,
 ) -> dict[str, Any]:
     if not repo_root.is_dir():
         raise ValueError("Repository root must be an existing directory")
     if write and phase == "raw" and not expected_source_sha256:
-        raise ValueError("Raw source staging requires an expected verified digest")
+        if release_json is None:
+            raise ValueError("Raw source staging requires an expected verified digest")
+        decision = plan_release_refresh(release_json, season=season)
+        if (decision["Action"] == "retry-later" or
+                not decision["SourceAsset"]["Sha256"]):
+            raise ValueError("Raw source staging requires an official or independently verified digest")
     proposed = plan_injury_phase(
         repo_root, season, phase, source_csv=source_csv,
-        expected_source_sha256=expected_source_sha256,
+        expected_source_sha256=expected_source_sha256, release_json=release_json,
         players=players, schedule=schedule,
     )
     if not proposed or any(not _allowed_phase_path(phase, season, p) for p in proposed):
@@ -249,6 +264,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--season", type=int, required=True)
     parser.add_argument("--csv", type=Path, help="Source season CSV (raw phase only)")
     parser.add_argument("--expected-sha256", help="Expected verified origin digest (raw phase only)")
+    parser.add_argument("--release-json", type=Path, help="Optional official release metadata snapshot (raw only)")
     parser.add_argument("--identities", type=Path, help="Canonical players.json (canonical phase only)")
     parser.add_argument("--schedule", type=Path, help="Optional canonical NFL season schedule")
     parser.add_argument("--write", action="store_true", help="Stage only phase's local files; never commit/push")
@@ -258,6 +274,7 @@ def main(argv: list[str] | None = None) -> int:
             repo_root=args.repo_root, season=args.season, phase=args.phase, write=args.write,
             source_csv=args.csv.read_bytes() if args.csv else None,
             expected_source_sha256=args.expected_sha256,
+            release_json=json.loads(args.release_json.read_text(encoding="utf-8")) if args.release_json else None,
             players=json.loads(args.identities.read_text(encoding="utf-8")) if args.identities else None,
             schedule=json.loads(args.schedule.read_text(encoding="utf-8")) if args.schedule else None,
         )
