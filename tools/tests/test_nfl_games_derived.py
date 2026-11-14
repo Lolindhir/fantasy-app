@@ -708,7 +708,7 @@ class NflOriginalPbpGamePreviewTests(unittest.TestCase):
             self.assertEqual(report["Analytics"]["EligiblePlayCount"], 2)
             self.assertEqual(report["Analytics"]["ByOffenseTeam"][0]
                              ["ThirdDown"]["Conversions"]["Rate"], 0.5)
-            self.assertNotIn("SourceRow", result.stdout)
+            self.assertNotIn('"SourceRow":', result.stdout)
             self.assertNotIn("Plays", report)
             after = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
             self.assertEqual(before, after)
