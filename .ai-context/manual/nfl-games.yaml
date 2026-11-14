@@ -181,6 +181,62 @@ futureGameDetailDirection:
       A real complete original game could not be replayed in this environment:
       original compressed season asset download is unavailable here; passing
       synthetic tests must not be reported as real source acceptance.
+    sourceReadAndAnalyticsCheckpoint:
+      checkpoint: CP4
+      status: implemented-read-only-not-real-original-game-certified
+      summaryCli: >-
+        python3 tools/nfl_game_detail_preview.py --season 2026
+        --game-id 2026_10_WAS_NYG
+        --pbp-csv-gz /local/play_by_play_2026.csv.gz --summary
+      sourceReadAudit: >-
+        The entire gzip CSV is streamed to EOF and decompressed, preserving
+        the gzip integrity verification and recording season rows scanned,
+        distinct GameIDs in the asset, matched GameID rows, column count,
+        asset byte size, selected unique PlayIDs and min/max PlayID. The
+        compressed SHA256 is checked both before and after the scan to detect
+        a changing source file. A matching optional --expected-sha256 pins
+        the asset to a specified trusted hash. Nonconsecutive PlayIDs do not
+        constitute missing rows without independent upstream evidence.
+      scope: >-
+        Analytics are computed solely from original matched PBP SourceRows
+        after canonical GameID and unique PlayID validation; no player-stats,
+        snap-counts, team boxscores or inferred drive/score joins are used.
+        The PBP source snapshot's play completeness remains unverified.
+      definitionVersion: 1
+      eligibility: >-
+        Include play_type=pass or run only, explicitly two_point_attempt=0,
+        and a valid possession and defense team. Missing two_point_attempt
+        means eligibility unknown and is counted as excluded, not treated as
+        zero. Non-scrimmage, two-point and unknown-team plays are counted
+        separately so no denominator is silently inflated.
+      firstMetrics:
+        - per-team offense and opposing-defense perspective
+        - per-team pass/run splits and third-down splits
+        - EPA sum and average from nullable original epa field
+        - success rate from nullable original success=1 field
+        - explosive rate based on yards_gained at pass >=20 or run >=10
+        - third-down conversion from nullable original third_down_converted=1
+      missingSemantics: >-
+        Every metric reports observed and missing counts. Average/rate/sum
+        are null when no relevant source observations exist; verified 0/0
+        outcomes remain numeric zero for observed denominators. Third-down
+        conversion is source-flag-based, not inferred from gained yards.
+        Defense Allowed preserves the offense-positive EPA perspective;
+        smaller allowed EPA/success is better.
+      rounding: >-
+        EPA sum to 3 decimals; per-play EPA and rates to 4 decimals.
+      availability: provisional-unverified-game-completeness
+      verification: >-
+        The original full-season gzip asset was not retrievable in the current
+        sandbox (DNS restriction; GitHub connector disallows binary assets).
+        Only synthetic gzip source-scan/metric tests and separately available
+        canonical projection evidence can be exercised here. Do NOT report
+        successful real original game replay or complete-game coverage.
+      preservation: >-
+        The full detail JSON still contains every SourceRow. Optional --summary
+        emits only in-memory provenance and provisional aggregates on stdout.
+        No Source/Derived writer, new output path, automatic download, public
+        publication, or nfl-games index schema change.
     sourceInput: operator-provided-local-original-season-csv-gz
     noNewWritePaths: true
     publicPublication: none

@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import json
 import sys
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -424,6 +425,7 @@ _PBP_CSV_FIELDS = [
     "ydstogo", "yardline_100", "game_seconds_remaining",
     "posteam", "defteam", "play_type", "desc", "epa", "success",
     "qb_dropback", "pass_attempt", "passer_player_id", "future_provider_field",
+    "two_point_attempt", "third_down_converted", "yards_gained",
 ]
 
 
@@ -437,6 +439,8 @@ def _pbp_row(**overrides):
         "desc": "Pass complete for first down", "epa": "1.257",
         "success": "1", "qb_dropback": "1", "pass_attempt": "1",
         "passer_player_id": "00-0031234", "future_provider_field": "preserved",
+        "two_point_attempt": "0", "third_down_converted": "0",
+        "yards_gained": "12",
     }
     row.update(overrides)
     return row
@@ -486,6 +490,17 @@ class NflOriginalPbpGamePreviewTests(unittest.TestCase):
             self.assertFalse(result["PlayByPlay"]["FullPlayByPlayAvailable"])
             self.assertFalse(block["CompletenessVerified"])
             self.assertEqual(block["Status"], "present-unverified-completeness")
+            scan = block["SourceReadAudit"]
+            self.assertEqual(scan["SeasonSourceRowsScanned"], 4)
+            self.assertEqual(scan["DistinctGameIDsInAsset"], 2)
+            self.assertEqual(scan["MatchedGameRowCount"], 3)
+            self.assertEqual(scan["UniqueValidatedPlayIDs"], 3)
+            self.assertEqual([scan["FirstPlayID"], scan["LastPlayID"]], [33, 90])
+            self.assertTrue(scan["GzipStreamReadToEOF"])
+            self.assertTrue(scan["ExpectedSHA256Matched"])
+            self.assertFalse(scan["OriginalAssetCompletenessVerified"])
+            self.assertFalse(scan["GamePlayCompletenessVerified"])
+            self.assertEqual(block["Analytics"]["SourcePlayCount"], 3)
             after = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
             self.assertEqual(before, after)
 
@@ -571,6 +586,144 @@ class NflOriginalPbpGamePreviewTests(unittest.TestCase):
         self.assertEqual(plays[-1]["PlayID"], 270)
         self.assertEqual(len({p["PlayID"] for p in plays}), 270)
         self.assertFalse(detail["PlayByPlay"]["FullPlayByPlayAvailable"])
+
+
+
+    def test_provisional_pbp_metrics_use_only_source_plays_and_observed_denominators(self):
+        rows = [
+            _pbp_row(play_id="1", down="3", play_type="pass", posteam="HOU", defteam="JAX",
+                     epa="1.5", success="1", yards_gained="25", third_down_converted="1"),
+            _pbp_row(play_id="2", down="1", play_type="run", posteam="HOU", defteam="JAX",
+                     epa="-0.5", success="0", yards_gained="12"),
+            _pbp_row(play_id="3", down="3", play_type="pass", posteam="JAX", defteam="HOU",
+                     epa="-2", success="0", yards_gained="0", third_down_converted="0"),
+            _pbp_row(play_id="4", down="3", play_type="run", posteam="JAX", defteam="HOU",
+                     epa="", success="", yards_gained="", third_down_converted=""),
+            _pbp_row(play_id="5", down="3", play_type="pass", two_point_attempt="1",
+                     epa="0.5", third_down_converted="1"),
+            _pbp_row(play_id="6", down="", play_type="kickoff", posteam="", defteam="",
+                     epa="", success=""),
+            _pbp_row(play_id="7", play_type="pass", two_point_attempt="", epa="9.5"),
+            _pbp_row(play_id="8", play_type="pass", posteam="", defteam="", epa="1"),
+        ]
+        detail = build_nfl_game_detail(
+            build_nfl_games(*inputs()), "2026_06_HOU_JAX", pbp_rows=rows,
+        )
+        analytics = detail["PlayByPlay"]["OriginalPlays"]["Analytics"]
+        self.assertEqual(analytics["DefinitionVersion"], 1)
+        self.assertEqual(analytics["Status"], "provisional-unverified-game-completeness")
+        self.assertEqual(analytics["SourcePlayCount"], 8)
+        self.assertEqual(analytics["EligiblePlayCount"], 4)
+        self.assertEqual(analytics["ExcludedNonScrimmageCount"], 1)
+        self.assertEqual(analytics["ExcludedTwoPointAttemptCount"], 1)
+        self.assertEqual(analytics["ExcludedUnknownTwoPointFlagCount"], 1)
+        self.assertEqual(analytics["ExcludedUnassignedTeamCount"], 1)
+        hou, jax = analytics["ByOffenseTeam"]
+        self.assertEqual(hou["Team"], "HOU")
+        self.assertEqual(hou["All"]["PlayCount"], 2)
+        self.assertEqual(hou["All"]["EPA"], {
+            "Observed": 2, "Missing": 0, "Sum": 1.0, "PerPlay": 0.5,
+        })
+        self.assertEqual(hou["All"]["Success"]["Rate"], 0.5)
+        self.assertEqual(hou["All"]["Explosive"]["Rate"], 1.0)
+        self.assertEqual(hou["ThirdDown"]["Conversions"]["Rate"], 1.0)
+        self.assertEqual(jax["All"]["EPA"]["Observed"], 1)
+        self.assertEqual(jax["All"]["EPA"]["Missing"], 1)
+        self.assertEqual(jax["All"]["EPA"]["PerPlay"], -2.0)
+        self.assertEqual(jax["All"]["Success"]["Observed"], 1)
+        self.assertEqual(jax["All"]["Success"]["Rate"], 0.0)
+        self.assertEqual(jax["All"]["Explosive"]["Missing"], 1)
+        self.assertEqual(jax["ThirdDown"]["Conversions"]["Rate"], 0.0)
+        self.assertEqual(analytics["ByDefenseTeam"][1]["Team"], "JAX")
+        self.assertEqual(
+            analytics["ByDefenseTeam"][1]["OffenseAllowed"], hou["All"],
+        )
+        self.assertFalse(detail["PlayByPlay"]["FullPlayByPlayAvailable"])
+        self.assertIsNone(detail["PlayerStats"]["Players"])
+        self.assertIsNone(detail["SnapCounts"]["Players"])
+
+    def test_no_observed_metrics_never_become_fake_zero(self):
+        row = _pbp_row(play_id="1", epa="", success="", yards_gained="",
+                       down="3", third_down_converted="")
+        doc = build_nfl_game_detail(
+            build_nfl_games(*inputs()), "2026_06_HOU_JAX", pbp_rows=[row],
+        )
+        offense = doc["PlayByPlay"]["OriginalPlays"]["Analytics"]["ByOffenseTeam"][0]
+        self.assertEqual(offense["All"]["PlayCount"], 1)
+        self.assertIsNone(offense["All"]["EPA"]["PerPlay"])
+        self.assertIsNone(offense["All"]["EPA"]["Sum"])
+        self.assertIsNone(offense["All"]["Success"]["Rate"])
+        self.assertIsNone(offense["All"]["Explosive"]["Rate"])
+        self.assertIsNone(offense["ThirdDown"]["Conversions"]["Rate"])
+        self.assertEqual(offense["All"]["EPA"]["Observed"], 0)
+
+    def test_bad_analysis_flags_fail_closed_and_do_not_change_original_fields(self):
+        for field, bad in (
+            ("two_point_attempt", "2"), ("two_point_attempt", "invalid"),
+            ("third_down_converted", "2"), ("yards_gained", "Infinity"),
+        ):
+            with self.subTest(field=field, bad=bad):
+                row = _pbp_row(play_id="1", **{field: bad})
+                with self.assertRaises(ValueError):
+                    build_nfl_game_detail(
+                        build_nfl_games(*inputs()), "2026_06_HOU_JAX", pbp_rows=[row],
+                    )
+        row = _pbp_row(play_id="1", yards_gained="-2")
+        doc = build_nfl_game_detail(
+            build_nfl_games(*inputs()), "2026_06_HOU_JAX", pbp_rows=[row],
+        )
+        self.assertEqual(doc["PlayByPlay"]["OriginalPlays"]["Plays"][0]["SourceRow"], row)
+        self.assertEqual(
+            doc["PlayByPlay"]["OriginalPlays"]["Analytics"]["ByOffenseTeam"][0]
+            ["All"]["Explosive"]["Count"], 0,
+        )
+
+    def test_cli_summary_reports_provenance_without_full_source_rows_or_writes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            index_file = root / "data-derived" / "nfl-games" / "2026.json"
+            index_file.parent.mkdir(parents=True)
+            index_file.write_text(json.dumps(build_nfl_games(*inputs())), encoding="utf-8")
+            gz = root / "play_by_play_2026.csv.gz"
+            _write_original_pbp_gzip(gz, [
+                _pbp_row(play_id="20", down="3", third_down_converted="1"),
+                _pbp_row(play_id="30", down="3", third_down_converted="0"),
+                _pbp_row(play_id="40", game_id="2026_06_OTHER_MATCH"),
+            ])
+            digest = hashlib.sha256(gz.read_bytes()).hexdigest()
+            before = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            result = subprocess.run(
+                [
+                    sys.executable, str(TOOLS / "nfl_game_detail_preview.py"),
+                    "--repo-root", str(root), "--season", "2026",
+                    "--game-id", "2026_06_HOU_JAX", "--pbp-csv-gz", str(gz),
+                    "--expected-sha256", digest, "--summary",
+                ], check=True, text=True, capture_output=True,
+            )
+            report = json.loads(result.stdout)
+            self.assertEqual(report["PlayCount"], 2)
+            self.assertTrue(report["SourceReadAudit"]["GzipStreamReadToEOF"])
+            self.assertEqual(report["SourceReadAudit"]["SeasonSourceRowsScanned"], 3)
+            self.assertEqual(report["SourceReadAudit"]["DistinctGameIDsInAsset"], 2)
+            self.assertEqual(report["Analytics"]["EligiblePlayCount"], 2)
+            self.assertEqual(report["Analytics"]["ByOffenseTeam"][0]
+                             ["ThirdDown"]["Conversions"]["Rate"], 0.5)
+            self.assertNotIn('"SourceRow":', result.stdout)
+            self.assertNotIn("Plays", report)
+            after = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            self.assertEqual(before, after)
+
+    def test_truncated_gzip_fails_before_producing_false_scan_success(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            index_file = root / "data-derived" / "nfl-games" / "2026.json"
+            index_file.parent.mkdir(parents=True)
+            index_file.write_text(json.dumps(build_nfl_games(*inputs())), encoding="utf-8")
+            gz = root / "play_by_play_2026.csv.gz"
+            _write_original_pbp_gzip(gz, [_pbp_row()])
+            gz.write_bytes(gz.read_bytes()[:-7])
+            with self.assertRaises((OSError, EOFError)):
+                preview(root, 2026, "2026_06_HOU_JAX", gz)
 
 
 

@@ -39,10 +39,25 @@ def preview(
             digest = hashlib.file_digest(source, "sha256").hexdigest()
         if expected_sha256 is not None and expected_sha256.lower() != digest:
             raise ValueError("Original PBP asset SHA256 does not match requested digest")
-        rows = _load_original_game_rows(pbp_csv_gz, game_id)
-        return build_nfl_game_detail(
+        rows, scan = _load_original_game_rows(pbp_csv_gz, game_id)
+        # Detect an asset changing between digest verification and stream replay.
+        with pbp_csv_gz.open("rb") as source:
+            if hashlib.file_digest(source, "sha256").hexdigest() != digest:
+                raise ValueError("Original PBP compressed asset changed during replay")
+        result = build_nfl_game_detail(
             index, game_id, pbp_rows=rows, pbp_asset_sha256=digest,
         )
+        validated_plays = result["PlayByPlay"]["OriginalPlays"]["Plays"]
+        result["PlayByPlay"]["OriginalPlays"]["SourceReadAudit"] = {
+            **scan,
+            "GzipStreamReadToEOF": True,
+            "ExpectedSHA256Matched": True if expected_sha256 is not None else None,
+            "UniqueValidatedPlayIDs": len(validated_plays),
+            "FirstPlayID": validated_plays[0]["PlayID"],
+            "LastPlayID": validated_plays[-1]["PlayID"],
+            "PlayIDsAreNotRequiredToBeConsecutive": True,
+        }
+        return result
     if expected_sha256 is not None:
         raise ValueError("--expected-sha256 requires --pbp-csv-gz")
     nfl_source = repo_root / DATA_SOURCE_ROOT / "nfl"
@@ -65,13 +80,17 @@ _PBP_REQUIRED_COLUMNS = {
 }
 
 
-def _load_original_game_rows(path: Path, game_id: str) -> list[dict[str, str]]:
-    """Read the original season csv.gz as a stream; hold only one GameID.
+def _load_original_game_rows(
+    path: Path, game_id: str,
+) -> tuple[list[dict[str, str]], dict]:
+    """Fully scan the original gzip CSV, retaining only the requested GameID.
 
-    Like the canonical nflverse Source projections, this uses gzip + DictReader,
-    but never writes a derived or Source dataset.
+    A successful EOF establishes gzip/CSV stream consumption, NOT that nflverse
+    has complete play evidence for this game or season.
     """
     result: list[dict[str, str]] = []
+    game_ids: set[str] = set()
+    season_row_count = 0
     with gzip.open(path, "rt", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         fields = reader.fieldnames or []
@@ -83,12 +102,23 @@ def _load_original_game_rows(path: Path, game_id: str) -> list[dict[str, str]]:
         for row in reader:
             if None in row or any(value is None for value in row.values()):
                 raise ValueError("Malformed original PBP CSV row width")
-            if (row.get("game_id") or "").strip() == game_id:
+            season_row_count += 1
+            key = (row.get("game_id") or "").strip()
+            if key:
+                game_ids.add(key)
+            if key == game_id:
                 result.append(row)
     if not result:
         raise ValueError(f"Original PBP GameID not found: {game_id}")
-    return result
-
+    return result, {
+        "SeasonSourceRowsScanned": season_row_count,
+        "DistinctGameIDsInAsset": len(game_ids),
+        "CsvColumnCount": len(fields),
+        "MatchedGameRowCount": len(result),
+        "CompressedAssetBytes": path.stat().st_size,
+        "OriginalAssetCompletenessVerified": False,
+        "GamePlayCompletenessVerified": False,
+    }
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -103,8 +133,14 @@ def main() -> int:
         "--expected-sha256", default=None,
         help="Optional expected SHA256 of the original compressed season asset",
     )
+    parser.add_argument(
+        "--summary", action="store_true",
+        help="PBP-only compact stdout summary: source read audit and provisional metrics",
+    )
     args = parser.parse_args()
     try:
+        if args.summary and args.pbp_csv_gz is None:
+            raise ValueError("--summary requires --pbp-csv-gz")
         document = preview(
             args.repo_root.resolve(), args.season, args.game_id,
             args.pbp_csv_gz, args.expected_sha256,
@@ -113,6 +149,21 @@ def main() -> int:
             json.JSONDecodeError) as error:
         print(f"nfl_game_detail_preview failed: {error}", file=sys.stderr)
         return 1
+    if args.summary:
+        original = document["PlayByPlay"]["OriginalPlays"]
+        document = {
+            "SchemaVersion": document["SchemaVersion"],
+            "Season": document["Season"],
+            "GameID": document["GameID"],
+            "GameFinal": document["Game"].get("Final"),
+            "FullPlayByPlayAvailable": document["PlayByPlay"]["FullPlayByPlayAvailable"],
+            "SourceStatus": original["Status"],
+            "CompletenessVerified": original["CompletenessVerified"],
+            "PlayCount": original["PlayCount"],
+            "SourceAssetSHA256": original["SourceAssetSHA256"],
+            "SourceReadAudit": original["SourceReadAudit"],
+            "Analytics": original["Analytics"],
+        }
     print(json.dumps(document, indent=2, ensure_ascii=False))
     return 0
 
