@@ -330,6 +330,52 @@ readOnlySourceFieldAudit:
   validation: synthetic-csv-gzip-only-plus-existing-fast-suite
   rollback: revert-audit-tool-tests-and-catalog-contract
 
+historicalGameContextReconciliation:
+  checkpoint: P0b-partial
+  status: real-persisted-PBP-subset-reconciled-original-full-season-asset-blocked
+  tool: tools/nfl_pbp_metric_field_audit.py
+  optionalFlag: --game-index-json /checkout/data-derived/nfl-games/2000.json
+  coreRule: >-
+    Original per-GameID play rows must join exactly one canonical NFL Games
+    season-index game with matching Week, REG/POST game type, and home/away
+    franchise identity. POST source type legitimately maps to canonical
+    WC/DIV/CON/SB. Historical nflverse home/away may use modern franchise
+    tokens while historical GameID and season index retain period tokens.
+  historicalSeasonBoundAliases:
+    - SD / LAC in seasons 1999-2016 only
+    - OAK / LV in seasons 1999-2019 only
+    - STL / LA in seasons 1999-2015 only
+  explicitUnknownSemantics: >-
+    Report unknown games, mismatched team/type/week context, matched non-final
+    games and limited examples. No invalid GameID is silently dropped or
+    treated as zero plays. Every successful observed-row join remains a subset
+    proof, never a whole-season completeness certificate.
+  actualPersistedSubsetAudit:
+    scope: >-
+      Existing nflverse special-teams-fumble-events raw projection
+      (not the original entire PBP asset); four seasons 2000/2024/2025/2026.
+    rows: [148, 81, 71, 46]
+    totalRows: 346
+    directContextMatches: 316
+    historicalNormalizedMatches: 30
+    unknownGameIDs: 0
+    mismatchedGameContext: 0
+    duplicateGamePlayIDs: 0
+    nonFinalMatchingGames: 0
+    caveat: >-
+      346 projected special-teams rows are only a strict subset of the
+      original seasonal PBP. They do not demonstrate field/metric coverage,
+      all-game PBP availability, or a player-identity/position join.
+  acceptanceStillOpen:
+    - Actually acquire and SHA256-verify season-level original PBP compressed bytes
+    - Run all candidate field/header/nullability scans on the real original asset
+    - Compare original full-game coverage, including unavailable historical games
+    - Resolve all GSIS provider player IDs against season-correct canonical mappings
+    - Establish source rights/storage and separately authorize productive writer
+  writePaths: []
+  newPublishers: []
+  rollback: revert-read-only-context-validation-tests-and-catalog-note
+
 recommendedSequence:
   - P0 inventory real per-season PBP headers, player/position mapping, game-coverage and stable original asset
   - P1 implement and validate compact unadjusted team-game opportunity/efficiency/situation groups as read-only proofs

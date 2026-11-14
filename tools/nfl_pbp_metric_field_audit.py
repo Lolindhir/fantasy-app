@@ -109,6 +109,82 @@ def _metadata(path: Path | None, season: int) -> dict | None:
     return value
 
 
+
+# nflverse original PBP uses present-day franchise abbreviations in historical
+# home_team/away_team while game_id and canonical schedule retain era tokens.
+# Do not apply these aliases outside their documented historical windows.
+_HISTORICAL_FRANCHISE_NAMES = (
+    (1999, 2016, frozenset(("SD", "LAC"))),
+    (1999, 2019, frozenset(("OAK", "LV"))),
+    (1999, 2015, frozenset(("STL", "LA"))),
+)
+
+
+def _game_index(path: Path | None, season: int) -> dict[str, dict] | None:
+    if path is None:
+        return None
+    source = json.loads(path.read_text(encoding="utf-8"))
+    if (source.get("SchemaVersion") != 1 or source.get("Season") != season
+            or not isinstance(source.get("Games"), list)):
+        raise ValueError("Incompatible canonical nfl-games season index")
+    indexed: dict[str, dict] = {}
+    for game in source["Games"]:
+        if (not isinstance(game, dict)
+                or not isinstance(game.get("GameID"), str)
+                or type(game.get("Week")) is not int
+                or game.get("GameType") not in ("REG", "WC", "DIV", "CON", "SB")
+                or not isinstance(game.get("AwayTeam"), str)
+                or not isinstance(game.get("HomeTeam"), str)
+                or type(game.get("Final")) is not bool):
+            raise ValueError("Invalid canonical nfl-games index game row")
+        if game["GameID"] in indexed:
+            raise ValueError("Duplicate canonical nfl-games GameID")
+        indexed[game["GameID"]] = game
+    return indexed
+
+
+def _franchise_equal(provider_team: str, canonical_team: str, season: int) -> bool:
+    if provider_team == canonical_team:
+        return True
+    return any(
+        first <= season <= last and {provider_team, canonical_team} == pair
+        for first, last, pair in _HISTORICAL_FRANCHISE_NAMES
+    )
+
+
+def reconcile_original_game_row(
+    row: dict, indexed: dict[str, dict], season: int,
+) -> tuple[str, bool | None]:
+    """Classify source→canonical game context; never assert completeness.
+
+    Also applicable to *actual persisted PBP subset projection* rows; any
+    such evidence remains limited to the projected rows, not full upstream.
+    """
+    game = indexed.get(row.get("game_id"))
+    if game is None:
+        return "unknown-game-id", None
+    try:
+        week = _number(row.get("week"), field="week")
+    except ValueError:
+        return "mismatched-context", game["Final"]
+    source_type = row.get("season_type")
+    expected_type = (
+        source_type == "REG" if game["GameType"] == "REG" else
+        source_type == "POST"
+    )
+    if not expected_type or week != game["Week"]:
+        return "mismatched-context", game["Final"]
+    away = row.get("away_team")
+    home = row.get("home_team")
+    if away == game["AwayTeam"] and home == game["HomeTeam"]:
+        return "exact-context", game["Final"]
+    if (isinstance(away, str) and isinstance(home, str)
+            and _franchise_equal(away, game["AwayTeam"], season)
+            and _franchise_equal(home, game["HomeTeam"], season)):
+        return "historical-franchise-alias", game["Final"]
+    return "mismatched-context", game["Final"]
+
+
 def audit(
     *,
     path: Path,
@@ -116,6 +192,7 @@ def audit(
     catalog_path: Path,
     metadata_path: Path | None = None,
     expected_sha256: str | None = None,
+    game_index_path: Path | None = None,
 ) -> dict:
     """Scan ALL original compressed source rows and report catalog field evidence."""
     if not path.is_file():
@@ -124,6 +201,9 @@ def audit(
         raise ValueError("Invalid requested season")
     metrics, monitored = _catalog(catalog_path)
     metadata = _metadata(metadata_path, season)
+    indexed = _game_index(game_index_path, season)
+    context_counts = Counter()
+    context_examples: list[dict] = []
     observed_digest = _digest(path)
     if expected_sha256 is not None:
         pin = expected_sha256.lower()
@@ -178,6 +258,21 @@ def audit(
                 raise ValueError(f"Duplicate original PBP GameID/PlayID: {game_id}/{play_id}")
             play_keys.add(key)
             game_counts[game_id] += 1
+            if indexed is not None:
+                status, final = reconcile_original_game_row(row, indexed, season)
+                context_counts[status] += 1
+                if status in ("exact-context", "historical-franchise-alias") and not final:
+                    context_counts["matched-non-final-game"] += 1
+                if status != "exact-context" and len(context_examples) < 20:
+                    context_examples.append({
+                        "GameID": game_id,
+                        "PlayID": play_id,
+                        "Status": status,
+                        "SourceWeek": week,
+                        "SourceGameType": row["season_type"],
+                        "SourceAway": row["away_team"],
+                        "SourceHome": row["home_team"],
+                    })
 
             active = ["AllRows"]
             if row.get("play_type") == "pass":
@@ -291,6 +386,27 @@ def audit(
         "RawSeasonRowCount": rows,
         "DistinctGameIDs": len(game_counts),
         "DistinctGamePlayKeys": len(play_keys),
+        "CanonicalGameContextReconciliation": (
+            {
+                "IndexProvided": True,
+                "CanonicalGameCount": len(indexed),
+                "SourceRowsCompared": rows,
+                "ExactContextRows": context_counts["exact-context"],
+                "HistoricalAliasContextRows": context_counts["historical-franchise-alias"],
+                "UnknownGameIDRows": context_counts["unknown-game-id"],
+                "MismatchedContextRows": context_counts["mismatched-context"],
+                "MatchedNonFinalGameRows": context_counts["matched-non-final-game"],
+                "AllObservedSourceRowsJoinCanonicalGames": (
+                    context_counts["unknown-game-id"] == 0
+                    and context_counts["mismatched-context"] == 0
+                ),
+                "Examples": context_examples,
+                "OriginalSeasonPlayCoverageVerified": False,
+            } if indexed is not None else {
+                "IndexProvided": False,
+                "OriginalSeasonPlayCoverageVerified": False,
+            }
+        ),
         "GameRowCounts": [
             {"GameID": game_id, "RowCount": game_counts[game_id], "Week": game_contexts[game_id][0],
              "SeasonType": game_contexts[game_id][1]}
@@ -342,6 +458,10 @@ def main() -> int:
     parser.add_argument("--pbp-csv-gz", type=Path, required=True)
     parser.add_argument("--catalog", type=Path, default=None)
     parser.add_argument("--metadata-json", type=Path, default=None)
+    parser.add_argument(
+        "--game-index-json", type=Path, default=None,
+        help="Optional canonical data-derived/nfl-games/<season>.json schedule/finality join",
+    )
     parser.add_argument("--expected-sha256", default=None)
     args = parser.parse_args()
     repo = args.repo_root.resolve()
@@ -357,6 +477,7 @@ def main() -> int:
             catalog_path=catalog,
             metadata_path=archived,
             expected_sha256=args.expected_sha256,
+            game_index_path=args.game_index_json,
         )
     except (OSError, ValueError, TypeError, KeyError, EOFError, csv.Error, yaml.YAMLError) as error:
         print(f"nfl_pbp_metric_field_audit failed: {error}", file=sys.stderr)

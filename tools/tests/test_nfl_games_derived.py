@@ -18,7 +18,7 @@ if str(TOOLS) not in sys.path:
 from data_roots import DATA_SOURCE_ROOT
 from derived_data_lib.nfl_games import build_nfl_games
 from nfl_games_materialize import materialize, discover_seasons
-from nfl_pbp_metric_field_audit import audit as audit_pbp_catalog_fields
+from nfl_pbp_metric_field_audit import audit as audit_pbp_catalog_fields, reconcile_original_game_row
 
 
 def inputs():
@@ -929,6 +929,113 @@ class NflPbpMetricSourceFieldAuditTests(unittest.TestCase):
             self.assertNotIn('"Plays"', result.stdout)
             after = {p.name: p.read_bytes() for p in root.iterdir() if p.is_file()}
             self.assertEqual(before, after)
+
+
+    def test_original_pbp_game_index_reconciliation_context_alias_and_postseason(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / "2000.json"
+            index.write_text(json.dumps({
+                "SchemaVersion": 1, "Season": 2000, "Games": [
+                    {"GameID": "2000_01_SD_OAK", "GameType": "REG",
+                     "Week": 1, "AwayTeam": "SD", "HomeTeam": "OAK", "Final": True},
+                    {"GameID": "2000_19_NYG_PHI", "GameType": "WC",
+                     "Week": 19, "AwayTeam": "NYG", "HomeTeam": "PHI", "Final": True},
+                ],
+            }), encoding="utf-8")
+            rows = [
+                _audit_row(season="2000", game_id="2000_01_SD_OAK", week="1",
+                           away_team="LAC", home_team="LV"),
+                _audit_row(season="2000", game_id="2000_19_NYG_PHI",
+                           season_type="POST", week="19", away_team="NYG",
+                           home_team="PHI", play_id="43"),
+            ]
+            source, catalog = _write_audit_fixture(root, rows)
+            result = audit_pbp_catalog_fields(
+                path=source, season=2000, catalog_path=catalog,
+                game_index_path=index,
+            )
+            context = result["CanonicalGameContextReconciliation"]
+            self.assertEqual(context["SourceRowsCompared"], 2)
+            self.assertEqual(context["HistoricalAliasContextRows"], 1)
+            self.assertEqual(context["ExactContextRows"], 1)
+            self.assertEqual(context["UnknownGameIDRows"], 0)
+            self.assertEqual(context["MismatchedContextRows"], 0)
+            self.assertTrue(context["AllObservedSourceRowsJoinCanonicalGames"])
+            self.assertFalse(context["OriginalSeasonPlayCoverageVerified"])
+
+            broken = _audit_row(season="2000", game_id="2000_01_SD_OAK",
+                                week="1", away_team="DAL", home_team="LV")
+            self.assertEqual(reconcile_original_game_row(
+                broken, {g["GameID"]: g for g in json.loads(index.read_text())
+                         ["Games"]}, 2000,
+            )[0], "mismatched-context")
+            unknown = _audit_row(game_id="2000_01_UNKNOWN")
+            self.assertEqual(reconcile_original_game_row(
+                unknown, {g["GameID"]: g for g in json.loads(index.read_text())
+                          ["Games"]}, 2000,
+            )[0], "unknown-game-id")
+
+    def test_observed_canonical_game_context_from_real_persisted_pbp_subset(self):
+        """Genuine repo PBP subset evidence, NOT upstream full-PBP verification."""
+        from collections import Counter
+        total = Counter()
+        for season, expected_rows in ((2000, 148), (2024, 81),
+                                      (2025, 71), (2026, 46)):
+            with self.subTest(season=season):
+                index_path = TOOLS.parent / "data-derived" / "nfl-games" / f"{season}.json"
+                source_path = (TOOLS.parent / "data-source" / "providers" /
+                               "nflverse" / "special-teams-fumble-events" /
+                               f"raw-{season}.json")
+                index = json.loads(index_path.read_text(encoding="utf-8"))
+                source = json.loads(source_path.read_text(encoding="utf-8"))
+                self.assertEqual(len(source["Records"]), expected_rows)
+                known = {row["GameID"]: row for row in index["Games"]}
+                for row in source["Records"]:
+                    label, finalized = reconcile_original_game_row(row, known, season)
+                    self.assertIn(label, ("exact-context", "historical-franchise-alias"))
+                    self.assertTrue(finalized)
+                    total[label] += 1
+        self.assertEqual(total["exact-context"], 316)
+        self.assertEqual(total["historical-franchise-alias"], 30)
+
+    def test_original_game_context_reconciliation_never_hides_unresolved_rows(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            idx = root / "game-index.json"
+            idx.write_text(json.dumps({
+                "SchemaVersion": 1, "Season": 2025, "Games": [
+                    {"GameID": "2025_18_WAS_PHI", "GameType": "REG",
+                     "Week": 18, "AwayTeam": "WAS", "HomeTeam": "PHI", "Final": True},
+                    {"GameID": "2025_18_JAX_TEN", "GameType": "REG",
+                     "Week": 18, "AwayTeam": "JAX", "HomeTeam": "TEN", "Final": False},
+                    {"GameID": "2025_18_ATL_DAL", "GameType": "REG",
+                     "Week": 18, "AwayTeam": "ATL", "HomeTeam": "DAL", "Final": True},
+                ],
+            }), encoding="utf-8")
+            rows = [
+                _audit_row(play_id="1"),
+                _audit_row(play_id="2", game_id="2025_18_JAX_TEN",
+                           away_team="JAX", home_team="TEN"),
+                _audit_row(play_id="3", game_id="2025_18_ATL_DAL",
+                           away_team="ATL", home_team="SEA"),
+                _audit_row(play_id="4", game_id="2025_18_UNKNOWN",
+                           away_team="ATL"),
+            ]
+            source, catalog = _write_audit_fixture(root, rows)
+            doc = audit_pbp_catalog_fields(
+                path=source, season=2025, catalog_path=catalog,
+                game_index_path=idx,
+            )
+            audit = doc["CanonicalGameContextReconciliation"]
+            self.assertEqual(audit["ExactContextRows"], 2)
+            self.assertEqual(audit["MatchedNonFinalGameRows"], 1)
+            self.assertEqual(audit["MismatchedContextRows"], 1)
+            self.assertEqual(audit["UnknownGameIDRows"], 1)
+            self.assertFalse(audit["AllObservedSourceRowsJoinCanonicalGames"])
+            self.assertEqual(len(audit["Examples"]), 2)
+            self.assertFalse(audit["OriginalSeasonPlayCoverageVerified"])
+
 
 
 if __name__ == "__main__":
