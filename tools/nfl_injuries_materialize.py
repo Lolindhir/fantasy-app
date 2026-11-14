@@ -27,6 +27,21 @@ from nfl_source_data_lib.injury_product_plan import (
 _WEEK = re.compile(r"(?:0[1-9]|1[0-9]|2[0-2])\.json")
 
 
+def _assert_bounded_path(root: Path, relative: str) -> Path:
+    """Reject traversal or symlinked parent paths before any read or write."""
+    path = Path(relative)
+    if path.is_absolute() or ".." in path.parts or "." in path.parts:
+        raise ValueError(f"Invalid injury artifact path: {relative}")
+    cursor = root
+    for component in path.parts:
+        cursor = cursor / component
+        if cursor.is_symlink():
+            raise ValueError(f"Symlink within injury artifact path: {relative}")
+    if not cursor.resolve().is_relative_to(root.resolve()):
+        raise ValueError(f"Injury artifact escaped repository root: {relative}")
+    return cursor
+
+
 def read_existing_product(root: Path, proposed: dict[str, bytes], season: int) -> dict[str, bytes]:
     """Include stale canonical weeks so no previous evidence vanishes silently."""
     paths = set(proposed)
@@ -35,9 +50,7 @@ def read_existing_product(root: Path, proposed: dict[str, bytes], season: int) -
         paths.add(f"data-source/nfl/injuries/{season}/{week:02d}.json")
     existing: dict[str, bytes] = {}
     for name in sorted(paths):
-        target = root / name
-        if target.is_symlink():
-            raise ValueError(f"Injury product path must not be a symlink: {name}")
+        target = _assert_bounded_path(root, name)
         if target.is_file():
             existing[name] = target.read_bytes()
     # Distinguish old unknown files from safe canonical-week files.
@@ -119,9 +132,7 @@ def stage_injury_season(
             target.write_bytes(proposed[relative])
         # Recheck destinations for an external concurrent edit since the read.
         for relative in changes:
-            destination = repo_root / relative
-            if destination.is_symlink():
-                raise ValueError(f"Injury output path became a symlink: {relative}")
+            destination = _assert_bounded_path(repo_root, relative)
             old = existing.get(relative)
             if old is None:
                 if destination.exists():
@@ -129,8 +140,9 @@ def stage_injury_season(
             elif not destination.is_file() or destination.read_bytes() != old:
                 raise ValueError(f"Injury output changed during staging: {relative}")
         for relative in changes:
-            destination = repo_root / relative
+            destination = _assert_bounded_path(repo_root, relative)
             destination.parent.mkdir(parents=True, exist_ok=True)
+            _assert_bounded_path(repo_root, relative)
             with tempfile.NamedTemporaryFile(
                 mode="wb", prefix=".injury-", dir=destination.parent, delete=False
             ) as temp:
