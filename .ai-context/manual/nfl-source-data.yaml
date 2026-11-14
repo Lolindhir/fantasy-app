@@ -276,6 +276,16 @@ activeDatasets:
     lifecycle: seasonal-finalizable
     sourceMode: fixed
     materialize: true
+  - id: nflverse.injuries
+    lifecycle: seasonal-finalizable
+    sourceMode: season-partitioned
+    materialize: false
+    note: >
+      Independent NFL injury-report Source is registered but acquired only by
+      the dataset-exclusive post-upstream injuries scope. Raw release metadata
+      requires official SHA-256 proof; Canonical is built in a separate Source
+      publication phase and Derived in a subsequent rebuild-and-retry job.
+      Generic 04:00 full NFL source materialization must never import this dataset.
   - id: nflverse.rosters
     lifecycle: seasonal-finalizable
     sourceMode: season-partitioned
