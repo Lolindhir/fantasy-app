@@ -14,7 +14,7 @@ from typing import Any, Mapping
 
 from .injury_reports import parse_injury_report_csv
 from .injury_canonical import canonicalize_injury_reports
-from tools.derived_data_lib.nfl_injuries import derive_nfl_injuries
+from derived_data_lib.nfl_injuries import derive_nfl_injuries
 
 _DATASET = "nflverse.injuries"
 _RELEASE = "https://github.com/nflverse/nflverse-data/releases/tag/injuries"
