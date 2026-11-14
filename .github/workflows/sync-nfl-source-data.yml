@@ -654,6 +654,13 @@ jobs:
                   f"final={diagnostics.get('finalGameCount')}, "
                   f"weekFinal={diagnostics.get('weekFinalCount')}"
               )
+          elif scope == "injuries":
+              print(f"- Injury canonical season: {result.get('injurySeason')}")
+              print(f"- Injury canonical files changed: {result.get('injuryCanonicalFilesChanged')}")
+              print("- Injury canonical changed paths: " +
+                    (", ".join(result.get("injuryCanonicalChangedPaths") or []) or "none"))
+              print("- Obsolete injury weeks requiring review: " +
+                    (", ".join(result.get("injuryObsoleteRequiresReview") or []) or "none"))
           elif scope == "schedule-odds":
               print(f"- Scoped canonical files evaluated: {result.get('oddsCanonicalFileCount')}")
               print(f"- Scoped canonical files changed: {result.get('oddsFilesChanged')}")
@@ -701,6 +708,12 @@ jobs:
               expected = {
                   "oddsFilesChanged": 0,
                   "oddsChangedPaths": [],
+              }
+          elif scope == "injuries":
+              expected = {
+                  "injuryCanonicalFilesChanged": 0,
+                  "injuryCanonicalChangedPaths": [],
+                  "injuryObsoleteRequiresReview": [],
               }
           else:
               expected = {
@@ -803,7 +816,7 @@ jobs:
     needs: sync
     # After full daily Source or scoped nflverse.schedule-odds refresh only.
     # NFL Live game-finality and all other targeted datasets remain excluded.
-    if: ${{ needs.sync.result == 'success' && inputs.materialization_scope != 'game-finality' && (!inputs.dataset || inputs.dataset == 'nflverse.schedule-odds') }}
+    if: ${{ needs.sync.result == 'success' && inputs.materialization_scope != 'game-finality' && inputs.materialization_scope != 'injuries' && (!inputs.dataset || inputs.dataset == 'nflverse.schedule-odds') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
