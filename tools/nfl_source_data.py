@@ -77,7 +77,8 @@ def parse_args() -> argparse.Namespace:
         default="full",
         help=(
             "Materialization scope. 'full' preserves the complete NFL materializer; "
-            "'game-finality' writes schedules/finality; 'schedule-odds' writes only canonical odds;\n            'injuries' writes only canonical historical Injury reports."
+            "'game-finality' writes schedules/finality; 'schedule-odds' writes only canonical odds; "
+            "'injuries' writes only canonical historical Injury reports."
         ),
     )
     return parser.parse_args()
