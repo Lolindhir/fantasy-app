@@ -179,5 +179,87 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertEqual(1, derived["Quality"]["ObservedWeekCount"])
 
 
+    def test_release_plan_contains_exact_scoped_raw_canonical_derived_outputs(self):
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts
+        import json
+        original = asset(2025, [report(2025)])
+        plan = build_injury_artifacts(
+            season=2025, source_csv=original, players=identities(),
+        )
+        self.assertEqual({
+            "data-source/providers/nflverse/injuries/raw-2025.csv",
+            "data-source/providers/nflverse/injuries/metadata-2025.json",
+            "data-source/nfl/injuries/2025/05.json",
+            "data-source/nfl/injuries/2025/manifest.json",
+            "data-derived/nfl-injuries/2025.json",
+        }, set(plan))
+        self.assertEqual(original, plan["data-source/providers/nflverse/injuries/raw-2025.csv"])
+        product_payload = json.loads(plan["data-derived/nfl-injuries/2025.json"])
+        self.assertEqual(1, product_payload["Quality"]["SourceObservationCount"])
+        self.assertFalse(any("player-availability" in p or "public/data/" in p for p in plan))
+        self.assertEqual("nfl-injuries-v1", product_payload["ProductVersion"])
+
+    def test_release_noop_and_changed_asset_are_distinguished(self):
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts, classify_injury_artifacts
+        original = build_injury_artifacts(
+            season=2025, source_csv=asset(2025, [report(2025)]), players=identities(),
+        )
+        fresh = classify_injury_artifacts(original, {}, season=2025)
+        self.assertEqual(len(original), len(fresh["New"]))
+        self.assertFalse(fresh["PublicationPerformed"])
+        replay = classify_injury_artifacts(original, dict(original), season=2025)
+        self.assertFalse(replay["RequiresWrites"])
+        self.assertEqual(len(original), len(replay["Unchanged"]))
+        correction = build_injury_artifacts(
+            season=2025,
+            source_csv=asset(2025, [report(2025, report_status="Out")]),
+            players=identities(),
+        )
+        diff = classify_injury_artifacts(correction, dict(original), season=2025)
+        self.assertTrue(diff["RequiresWrites"])
+        self.assertEqual([], diff["ObsoleteRequiresReview"])
+        self.assertIn("data-derived/nfl-injuries/2025.json", diff["Changed"])
+
+    def test_missing_previous_week_must_be_reviewed_not_deleted(self):
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts, classify_injury_artifacts
+        original = build_injury_artifacts(
+            season=2025, source_csv=asset(2025, [
+                report(2025, week="5"), report(2025, week="7")
+            ]), players=identities(),
+        )
+        revised = build_injury_artifacts(
+            season=2025, source_csv=asset(2025, [report(2025, week="5")]),
+            players=identities(),
+        )
+        planned = classify_injury_artifacts(revised, dict(original), season=2025)
+        self.assertEqual(["data-source/nfl/injuries/2025/07.json"], planned["ObsoleteRequiresReview"])
+        self.assertFalse(planned["CanAutoApply"])
+
+    def test_bad_expected_digest_or_empty_report_fails_before_plan(self):
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts
+        source = asset(2025, [report(2025)])
+        with self.assertRaisesRegex(ValueError, "does not match"):
+            build_injury_artifacts(season=2025, source_csv=source,
+                                   players=identities(), expected_source_sha256="f" * 64)
+        with self.assertRaisesRegex(ValueError, "Empty injury report"):
+            build_injury_artifacts(season=2025, source_csv=asset(2025, []), players=identities())
+
+    def test_plan_path_is_exact_and_cannot_escape_scope(self):
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts, classify_injury_artifacts
+        plan = build_injury_artifacts(
+            season=2025, source_csv=asset(2025, [report(2025)]), players=identities(),
+        )
+        with self.assertRaisesRegex(ValueError, "Outside"):
+            classify_injury_artifacts({
+                **plan,
+                "data-source/nfl/injuries/2025/../../data-meta/secret.json": b"bad",
+            }, {}, season=2025)
+        with self.assertRaisesRegex(ValueError, "Incomplete"):
+            classify_injury_artifacts({
+                p: v for p, v in plan.items()
+                if not p.endswith("manifest.json")
+            }, {}, season=2025)
+
+
 if __name__ == "__main__":
     unittest.main()
