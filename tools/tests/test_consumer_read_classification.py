@@ -162,7 +162,15 @@ DATA_URL_RE = re.compile(r"[\"'`]data/[^\"'`]*[\"'`]")
 CAP_LIMIT_INPUT_RE = re.compile(r"SalaryRelevantTeamSize", re.IGNORECASE)
 CENTRAL_MODEL_ID_RE = re.compile(
     r"\b(?:salary|salary-cap|roster-cap|auto-cut|grading|standings|awards|win-prob|season-stats|team-range"
-    r"|lifecycle|repairability)-v\d+\b"
+    r"|lifecycle|repairability|rivalry)-v\d+\b"
+)
+# ADR-083 (#1455): head-to-head counting and consolation classification are generator-owned (Rivalry.json).
+RIVALRY_LOGIC_RE = re.compile(
+    r"\bisConsolationMatchup\b|\bbuildHeadToHead\b|\bbuildRivalryRecords\b|\bcollectRivalryGames\b|\bisPlayoffsComplete\b"
+)
+RIVALRY_VIEW_FILES = (
+    "src/app/shared/components/team-rivals-tab/team-rivals-tab.ts",
+    "src/app/shared/components/league-matchups/league-matchups.ts",
 )
 
 
@@ -202,6 +210,22 @@ def check_angular_guards(sources: dict[str, str], guard: dict) -> list[str]:
             problems.append(f"central model ID in executable frontend code: {path}")
     for path in sorted((loaders | archives | cap_inputs) - set(sources)):
         problems.append(f"stale angularDomainGuard entry: {path}")
+    return problems
+
+
+def check_rivalry_comes_from_product(sources: dict[str, str]) -> list[str]:
+    problems: list[str] = []
+    for path, code in sorted(sources.items()):
+        if RIVALRY_LOGIC_RE.search(code):
+            problems.append(f"{path}: head-to-head counting or consolation classification in Angular (ADR-083)")
+    for path in RIVALRY_VIEW_FILES:
+        code = sources.get(path)
+        if code is None:
+            problems.append(f"missing rivalry view file: {path}")
+        elif "TeamRivalryService" not in code:
+            problems.append(f"{path} no longer reads the rivalry product through TeamRivalryService")
+        elif "getPastMatchupsRaw" in code:
+            problems.append(f"{path} loads the Matchups history for rivalry instead of Rivalry.json")
     return problems
 
 
@@ -1026,6 +1050,20 @@ class ConsumerReadClassificationTest(unittest.TestCase):
         self.assertEqual([], check_angular_guards({**base, "src/app/features/new/new.ts": strip_ts_comments(commented)}, guard))
         # A stale exception entry is reported.
         self.assertTrue(any("stale angularDomainGuard entry" in p for p in check_angular_guards({}, guard)))
+
+    def test_g6_rivalry_comes_from_the_product(self) -> None:
+        sources = angular_sources(REPO_ROOT)
+        self.assertEqual([], check_rivalry_comes_from_product(sources))
+        # Red fixtures: the pre-#1455 counting and the heuristic return in a view or util.
+        for code in (
+            "export function isConsolationMatchup(season: unknown) { return false; }",
+            "const record = buildHeadToHead(a, b, seasons, options);",
+            "const done = isPlayoffsComplete(season, current, status);",
+        ):
+            self.assertTrue(check_rivalry_comes_from_product({**sources, "src/app/shared/utils/new.util.ts": code}), code)
+        regressed = dict(sources)
+        regressed[RIVALRY_VIEW_FILES[0]] = "export class X { load() { return this.dataService.getPastMatchupsRaw('p'); } }"
+        self.assertTrue(check_rivalry_comes_from_product(regressed))
 
     def test_g6_overview_cap_comes_from_central_outlook(self) -> None:
         guard = load_guard_registry()

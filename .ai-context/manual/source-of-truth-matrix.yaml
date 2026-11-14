@@ -2520,7 +2520,7 @@ sourceFamilyCoverageAudit: {
 
 angularDomainGuard:
   issue: 1453
-  test: tools/tests/test_consumer_read_classification.py (test_g6_angular_*, test_g6_overview_cap_comes_from_central_outlook)
+  test: tools/tests/test_consumer_read_classification.py (test_g6_angular_*, test_g6_overview_cap_comes_from_central_outlook, test_g6_rivalry_comes_from_the_product)
   purpose: >
     Narrow text rules over src/app (comments stripped, no AST) that keep the delivery consumer a delivery
     consumer: a loader, a generated-data URL or an archive path outside DataApiService, a central model ID in
@@ -2552,6 +2552,11 @@ angularDomainGuard:
     - path: src/app/features/trade/trade-simulator/trade-simulator.ts
       kind: what-if
       reason: Trade Simulator with explicitly hypothetical rosters (ADR-079).
+  rivalryRule: >
+    Head-to-head records, point sums, biggest win, closest loss and the consolation classification come only from the
+    generated Rivalry.json product (ADR-083, Issue #1455). Angular selects and displays; the identifiers
+    isConsolationMatchup, buildHeadToHead, buildRivalryRecords, collectRivalryGames and isPlayoffsComplete must not
+    return, and the two rivalry views read through TeamRivalryService without loading the Matchups history.
   overviewCapFiles:
     - src/app/features/overview/overview.ts
     - src/app/shared/utils/overview-cap.util.ts
