@@ -18,6 +18,7 @@ import urllib.request
 from typing import Any, Callable
 
 from nfl_injuries_materialize import _assert_bounded_path, stage_injury_season
+from nfl_injuries_phase import run_injury_phase
 from nfl_source_data_lib.injury_product_plan import plan_release_refresh
 
 _RELEASE_API = "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/injuries"
@@ -53,6 +54,58 @@ def source_asset(url: str) -> bytes:
     if not url.startswith("https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_"):
         raise ValueError("Unexpected injury download URL")
     return _read_https(url, _MAX_SEASON_BYTES, accept="text/csv")
+
+
+def refresh_injury_raw(
+    *,
+    repo_root: Path,
+    season: int,
+    write: bool = False,
+    fetch_release: Callable[[], dict[str, Any]] = release_api,
+    fetch_asset: Callable[[str], bytes] = source_asset,
+) -> dict[str, Any]:
+    """Only the nflverse Injury Raw/metadata owner; no identity/Derived writes.
+
+    Missing or corrupt official release evidence is a retriable failure, never
+    an empty replacement. Source bytes must match the official SHA-256 digest.
+    """
+    if not repo_root.is_dir():
+        raise ValueError("Repository root does not exist")
+    metadata_path = _assert_bounded_path(
+        repo_root, f"data-source/providers/nflverse/injuries/metadata-{season}.json",
+    )
+    raw_path = _assert_bounded_path(
+        repo_root, f"data-source/providers/nflverse/injuries/raw-{season}.csv",
+    )
+    known = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.is_file() else None
+    release = fetch_release()
+    decision = plan_release_refresh(release, season=season, stored_metadata=known)
+    if decision["Action"] == "retry-later":
+        raise ValueError("Official injury release season asset not yet available; retry later")
+    asset = decision["SourceAsset"]
+    digest = asset["Sha256"]
+    if digest is None:
+        raise ValueError("Official injury asset lacks verified SHA-256; do not publish unverified raw")
+    reuse = decision["Action"] == "no-op" and raw_path.is_file()
+    if reuse:
+        candidate = raw_path.read_bytes()
+        if (known is None or
+                hashlib.sha256(candidate).hexdigest() != known.get("AssetSha256") or
+                len(candidate) != known.get("AssetByteSize")):
+            raise ValueError("Cached injury raw conflicts with stored provenance")
+    else:
+        candidate = fetch_asset(asset["DownloadUrl"])
+    if (not isinstance(candidate, bytes) or len(candidate) != asset["ByteSize"]
+            or hashlib.sha256(candidate).hexdigest() != digest):
+        raise ValueError("Official injury release bytes failed SHA-256 and size verification")
+    result = run_injury_phase(
+        repo_root, season, "raw", source_csv=candidate,
+        release_json=release, write=write,
+    )
+    result["Downloaded"] = not reuse
+    result["SourceAssetSha256"] = digest
+    result["ReleaseDecision"] = decision["Action"]
+    return result
 
 
 def refresh_injury_season(
@@ -117,17 +170,27 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--season", type=int, required=True)
-    parser.add_argument("--identities", type=Path, required=True)
+    parser.add_argument("--identities", type=Path)
     parser.add_argument("--schedule", type=Path, help="Optional canonical NFL schedule")
     parser.add_argument("--write", action="store_true", help="Stage candidate files in local checkout only")
+    parser.add_argument("--raw-only", action="store_true", help="Stage only provider injury source and metadata; no player identities needed")
     args = parser.parse_args(argv)
     try:
-        output = refresh_injury_season(
-            repo_root=args.repo_root, season=args.season,
-            players=json.loads(args.identities.read_text(encoding="utf-8")),
-            schedule=json.loads(args.schedule.read_text(encoding="utf-8")) if args.schedule else None,
-            write=args.write,
-        )
+        if args.raw_only:
+            if args.identities or args.schedule:
+                parser.error("--raw-only does not accept identity or schedule inputs")
+            output = refresh_injury_raw(
+                repo_root=args.repo_root, season=args.season, write=args.write,
+            )
+        else:
+            if args.identities is None:
+                parser.error("--identities is required without --raw-only")
+            output = refresh_injury_season(
+                repo_root=args.repo_root, season=args.season,
+                players=json.loads(args.identities.read_text(encoding="utf-8")),
+                schedule=json.loads(args.schedule.read_text(encoding="utf-8")) if args.schedule else None,
+                write=args.write,
+            )
     except (ValueError, OSError, KeyError, urllib.error.URLError, json.JSONDecodeError) as error:
         print(f"Injury release refresh failed closed: {error}", file=sys.stderr)
         return 2
