@@ -1198,6 +1198,11 @@ consumerReadClassification:
         legacy:SeasonStatistics: app-output-owner
         legacy:Timestamps: app-output-owner
       note: 'Consumer generator of the season statistics (Issue #506). write materializes the Shared Derived product season-statistics (data-source, PlayerWeekFantasy, data-meta) and renders SeasonStatistics.json and the past_seasons SeasonStatistics files from it, only on a semantic difference. It reads the existing App file only to detect that difference and updates the SeasonStatistics key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
+    tools/rivalry_app_publish.py:
+      reads:
+        legacy:Rivalry: app-output-owner
+        legacy:Timestamps: app-output-owner
+      note: 'Consumer generator of the rivalry statistic (Issue #1455). write materializes the Shared Derived product league-rivalry (computed matchup context, data-meta) and renders Rivalry.json from it, only on a semantic difference. It reads the existing App file only to detect that difference and updates the Rivalry key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/weekly_recaps.py:
       reads:
         legacy:past_seasons: validation-shadow

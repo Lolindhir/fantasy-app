@@ -33,8 +33,8 @@ from typing import Any
 
 from data_roots import DATA_DERIVED_ROOT, DATA_META_ROOT, DATA_SOURCE_ROOT
 from derived_data import (
-    LEAGUE_DRAFTS, LEAGUE_STANDINGS, LEAGUE_TRANSACTIONS, SEASON_STATISTICS,
-    materialize_league_history, materialize_league_standings, materialize_player_valuation, materialize_season_statistics,
+    LEAGUE_DRAFTS, LEAGUE_RIVALRY, LEAGUE_STANDINGS, LEAGUE_TRANSACTIONS, SEASON_STATISTICS,
+    materialize_league_history, materialize_league_rivalry, materialize_league_standings, materialize_player_valuation, materialize_season_statistics,
 )
 from historical_pwf_batch import materialize_historical
 from league_metadata import list_league_ids
@@ -49,7 +49,7 @@ NFL_GAMES = "nfl-games"
 # Stable report order; official TeamWeekPerformance is independent of PWF score parity.
 PRODUCTS = (
     PLAYER_VALUATION, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS,
-    PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, SEASON_STATISTICS,
+    PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, SEASON_STATISTICS, LEAGUE_RIVALRY,
 )
 GLOBAL_PRODUCTS = frozenset({NFL_GAMES})
 
@@ -74,6 +74,9 @@ def _files(root: Path, unit: Unit) -> dict[str, str]:
     product, league = unit
     directory = root / DATA_DERIVED_ROOT / product
     if league is not None:
+        single = directory / f"{league}.json"
+        if single.is_file():  # one file per league (league-rivalry), no league directory
+            return {single.name: hashlib.sha256(single.read_bytes()).hexdigest()}
         directory = directory / league
     if not directory.is_dir():
         return {}
@@ -107,6 +110,8 @@ def _build(unit: Unit, root: Path) -> tuple[int, int]:
         return _written(materialize_league_history(root, output, league, product, None, False)), 0
     if product == LEAGUE_STANDINGS:
         return _written(materialize_league_standings(root, output, league, None, False)), 0
+    if product == LEAGUE_RIVALRY:
+        return _written(materialize_league_rivalry(root, output, league, None, False)), 0
     if product == SEASON_STATISTICS:
         return _written(materialize_season_statistics(root, output, league, None, False)), 0
     if product == PLAYER_WEEK_FANTASY:

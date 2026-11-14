@@ -1,0 +1,82 @@
+schemaVersion: 1
+status: accepted-contract-v1
+trackingIssue: 1455
+architectureDecision: ADR-083
+amends: [ADR-075]
+implementationState: 'Issue #1455: bracket label in the matchup context (tools/derived_data_lib/playoff_brackets.py), model rivalry-v1, pure function tools/derived_data_lib/rivalry.py, materializer tools/derived_data.py (product league-rivalry), consumer generator tools/rivalry_app_publish.py (Rivalry.json), restore probe. The Angular cutover (Rivalry.json instead of the Matchups history) and the G6 guard against the return of the frontend rule follow in the same Issue.'
+
+purpose: >
+  Define the Shared Derived Data product LeagueRivalry: for one league the head-to-head record of every team against every other team (wins, losses,
+  ties, points for and against, biggest win, closest loss and the single games) for the filters all, regular and playoffs, over every season of the league.
+  The former Angular util team-rivalry.util.ts counted this from published Matchups and guessed the consolation tournament from the teams of the last
+  playoff week; that is a domain rule and moves to a central owner that also chat and agent consumers can read as a file without Python.
+
+architecture:
+  decisionBasis: [ADR-037, ADR-038, ADR-054, ADR-055, ADR-071, ADR-075, ADR-083]
+  logicalLayer: Shared Derived Data
+  physicalStorage: data-derived/league-rivalry/<CanonicalLeagueID>.json
+  models: .ai-context/manual/derived-models.yaml (rivalry-v1)
+  owner:
+    bracketLabel: tools/derived_data_lib/playoff_brackets.py (called by tools/derived_data_lib/matchup_context.py)
+    function: tools/derived_data_lib/rivalry.py resolve(repo_root, CanonicalLeagueID, AtUtc)
+    model: tools/derived_data_lib/models/rivalry/v1.py
+    materializer: tools/derived_data.py materialize --product league-rivalry
+    consumerGenerator: tools/rivalry_app_publish.py write
+    tests: tools/tests/test_rivalry.py
+  rules:
+    - The product is consumer-neutral. public/data/Rivalry.json is rendered by tools/rivalry_app_publish.py as the unchanged product document; consumer shapes never feed back.
+    - The counting rules are central and league-independent (rivalry-v1). A league only selects the model ID per season in data-meta (Models.Rivalry, ADR-054, ADR-055). v1 aggregates all seasons with one model; a league that chooses different models for its seasons fails closed until a version defines the combination.
+    - Inputs are only the computed matchup context of every season (canonical matchups with the bracket label), the canonical season status and data-meta. No public/data file is an input.
+    - Missing or unclear evidence is excluded and counted, never guessed. A playoff matchup that cannot be assigned to exactly one bracket game is `unclassified` and never counted.
+    - Fantasy-Management-specific interpretation (rivals, trade context) never enters the product.
+
+bracketLabel:
+  field: Matchups.Weeks[].Matchups[].Bracket (additive, amendment of ADR-075; no model ID, fixed provider-neutral semantics like Decision Window slots)
+  values:
+    championship: winners-bracket game that is not a placement game (title path including the final, Placement empty or 1)
+    placement: winners-bracket game with Placement greater than 1 (third place game, fifth place game, ...)
+    consolation: losers-bracket game
+    unclassified: playoff-stage matchup that cannot be assigned to exactly one bracket game (no game in the round window for the roster pair, more than one, unknown round format, week outside the rounds, unresolved roster IDs)
+    null: regular-season matchup
+  sources: data-source/leagues/<CanonicalLeagueID>/seasons/<season>/winners-bracket.json and losers-bracket.json (Round, Match, Placement, Team1/Team2CanonicalLeagueRosterID) plus league.json WeekStructure (PlayoffStartWeek, PlayoffRoundType, PlayoffRoundCount)
+  rule: >-
+    A round maps to its weeks through PlayoffRoundType (Sleeper playoff_round_type): 0 one week per round, 1 one week per round except a two-week final round,
+    2 two weeks per round. A matchup belongs to a bracket game when the round window of its week contains the game and the canonical roster pair is the pair of the game.
+
+identity:
+  fileTuple: [CanonicalLeagueID, Models.Rivalry per season]
+  teamKey: TeamID is the provider roster ID (Sleeper roster_id) as in All-Time Standings; owner changes of a roster are not represented (known limit, unchanged from the former frontend rule).
+  gameKey: Season + Week + FantasyMatchupID
+  oneFilePerLeague: One file per league with all seasons; the single games are part of the file so that a consumer needs no other file.
+
+weekBasis:
+  rule: A matchup counts only with CompletionState final (ADR-075, own concept next to ADR-071) and a result.
+  E1: Winners-bracket placement games count as playoff duels; only the losers bracket is the consolation tournament. The former heuristic dropped a placement game that was not played in the last playoff week.
+  E2: Playoff games of a running season count only after the season is complete (League Status complete, or an earlier season). Counting a final classified playoff game at once is a later model version.
+
+contract:
+  version: 1
+  rootShape: |
+    {
+      "SchemaVersion": 1, "Product": "league-rivalry", "CanonicalLeagueID": "<id>",
+      "Models": { "<season>": { "Rivalry": "rivalry-v1" } },
+      "Seasons": [ { "Season": "<season>", "PlayoffsComplete": <bool>, "CountedRegular", "CountedPlayoffs", "ExcludedConsolation", "ExcludedUnclassified", "ExcludedSeasonIncomplete" } ],
+      "Records": [ { "TeamID", "OpponentID", "Filter": "all"|"regular"|"playoffs", "Wins", "Losses", "Ties", "PointsFor", "PointsAgainst",
+                     "BiggestWinMatchupID", "ClosestLossMatchupID",
+                     "Games": [ { "Season", "Week", "FantasyMatchupID", "Stage", "Bracket", "Outcome": "win"|"loss"|"tie", "TeamPoints", "OpponentPoints", "Margin" } ] } ]
+    }
+  records: Directional (every pair appears from both teams); only pairs with at least one counted game in the filter. Games are chronological, oldest first. PointsFor and PointsAgainst are the chronological sums rounded half up to two decimals; points and margins are the effective matchup points as published (nullable, Margin null when a score is missing).
+  order: Display order only, no ranking - TeamID, then filter (all, regular, playoffs), then number of games descending, then OpponentID.
+  appDelivery: public/data/Rivalry.json is the product document unchanged. Angular displays the values (last game, biggest win, closest loss, labels) and counts and classifies nothing (Regel 4).
+
+writers:
+  - workflow: .github/workflows/league-live.yml
+    scope: fail-soft (no --fail-on-error), prefix data-derived/league-rivalry added to the existing rebuild-and-retry publication; runs after the matchup context of the same run
+  - workflow: .github/workflows/update-transactions.yml
+    scope: weekly, prefix data-derived/league-rivalry added to the existing rebuild-and-retry publication, before the Past Seasons index
+rollback: remove the prefix and the generator call from both workflows, delete data-derived/league-rivalry and public/data/Rivalry.json, revert the Angular cutover commit
+
+validation:
+  tests: tools/tests/test_rivalry.py
+  restoreProbe: tools/derived_clean_root_audit.py (product league-rivalry)
+  parity: research/league-rivalry/2026/ (golden dump of the former Angular util and the per-game report; one allowed difference, the E1 placement game 2024 week 16, Team 4 against Team 5)

@@ -25,13 +25,14 @@ playoffs, awards and the all-time standing through that season. The seasons are 
 always rebuilt chronologically in one run; the models come from data-meta (standings-v1, awards-v1, awards-v2 or awards-v3).
 
 Usage:
-  derived_data.py materialize --product player-valuation|league-transactions|league-drafts|league-standings|season-statistics [--league nfl-reise]
+  derived_data.py materialize --product player-valuation|league-transactions|league-drafts|league-standings|season-statistics|league-rivalry [--league nfl-reise]
                               [--season 2026 ...] [--out-root DIR] [--check]
 """
 from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime, timezone
 import sys
 from pathlib import Path
 from typing import Any
@@ -53,6 +54,7 @@ from derived_data_lib.league_history import build_history, drafts_document, tran
 from league_history_sources import LeagueHistorySourceError, load_inputs  # noqa: E402
 from derived_data_lib.league_standings import build_season  # noqa: E402
 from derived_data_lib.season_statistics import resolve as resolve_season_statistics  # noqa: E402
+from derived_data_lib.rivalry import resolve as resolve_league_rivalry  # noqa: E402
 from derived_data_lib.models.registry import get_model  # noqa: E402
 import league_standings_sources as standings_sources  # noqa: E402
 from derived_data_lib.league_player_refs import LeaguePlayerReferenceResolver, provider_draft_names  # noqa: E402
@@ -61,7 +63,8 @@ LEAGUE_TRANSACTIONS = "league-transactions"
 LEAGUE_DRAFTS = "league-drafts"
 LEAGUE_STANDINGS = "league-standings"
 SEASON_STATISTICS = "season-statistics"
-PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS, SEASON_STATISTICS)
+LEAGUE_RIVALRY = "league-rivalry"
+PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS, SEASON_STATISTICS, LEAGUE_RIVALRY)
 EXIT_CHANGED = 3  # --check found a snapshot that differs from disk
 
 
@@ -333,6 +336,37 @@ def materialize_season_statistics(
     return summary
 
 
+def league_rivalry_path(out_root: Path, league_id: str) -> Path:
+    """One file per league (all seasons): data-derived/league-rivalry/<CanonicalLeagueID>.json."""
+    return out_root / LEAGUE_RIVALRY / f"{league_id}.json"
+
+
+def materialize_league_rivalry(
+    repo_root: Path, out_root: Path, league_id: str, seasons: list[int] | None, check_only: bool, at_utc: datetime | None = None,
+) -> dict[str, Any]:
+    """The league-rivalry document covers every season of the league at once; ``seasons`` is not supported (one file per league)."""
+    if seasons:
+        raise ValueError("league-rivalry has one file per league covering all seasons; --season is not supported")
+    document = resolve_league_rivalry(repo_root, league_id, at_utc or datetime.now(timezone.utc))
+    text = serialize(document)
+    path = league_rivalry_path(out_root, league_id)
+    unchanged = path.is_file() and path.read_text(encoding="utf-8") == text
+    if not unchanged and not check_only:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return {
+        "Product": LEAGUE_RIVALRY,
+        "CanonicalLeagueID": league_id,
+        "Seasons": [{
+            "Models": document["Models"],
+            "Records": len(document["Records"]),
+            "Bytes": len(text.encode("utf-8")),
+            "Unchanged": 1 if unchanged else 0,
+            "Written" if not check_only else "WouldWrite": 0 if unchanged else 1,
+        }],
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -359,6 +393,11 @@ def main() -> int:
         elif args.product == SEASON_STATISTICS:
             results = [
                 materialize_season_statistics(args.repo_root, out_root, league, args.season, args.check)
+                for league in leagues
+            ]
+        elif args.product == LEAGUE_RIVALRY:
+            results = [
+                materialize_league_rivalry(args.repo_root, out_root, league, args.season, args.check)
                 for league in leagues
             ]
         elif args.product in (LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS):

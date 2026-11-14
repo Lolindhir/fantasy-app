@@ -67,7 +67,7 @@ class LeagueSparseProfileTest(unittest.TestCase):
             "--path data-derived/league-drafts",
         ):
             self.assertIn(fragment, block)
-        self.assertEqual(6, block.count("--path "))
+        self.assertEqual(7, block.count("--path "))
         verify = next(s for s in job()["steps"] if "Verify League sparse inputs" in str(s.get("name", "")))
         self.assertIn("git sparse-checkout disable", verify["run"])
         self.assertIn("player-stats/2025", verify["run"])

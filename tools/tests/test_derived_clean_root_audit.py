@@ -88,6 +88,14 @@ class CleanRootProbeTests(unittest.TestCase):
         written = emit(target, self.body("season-statistics", root, existing))
         return {"Seasons": [{"Written": written}]}
 
+    def fake_league_rivalry(self, root, out_root, league, seasons, check_only):
+        self.check_isolation(root)
+        self.calls.append(("league-rivalry", league))
+        target = out_root / "league-rivalry" / f"{league}.json"
+        existing = target.read_text() if target.is_file() else None
+        written = emit(target, self.body("league-rivalry", root, existing))
+        return {"Seasons": [{"Written": written}]}
+
     def fake_pwf(self, root, *, league_id, write):
         self.calls.append(("player-week-fantasy", league_id))
         target = root / "data-derived/player-week-fantasy" / league_id / "2024/01.json"
@@ -118,6 +126,7 @@ class CleanRootProbeTests(unittest.TestCase):
                 ("materialize_league_history", self.fake_history),
                 ("materialize_league_standings", self.fake_standings),
                 ("materialize_season_statistics", self.fake_season_statistics),
+                ("materialize_league_rivalry", self.fake_league_rivalry),
                 ("materialize_historical", self.fake_pwf),
                 ("materialize_all_finalized", self.fake_twp),
                 ("materialize_nfl_games", self.fake_nfl_games),
@@ -129,7 +138,7 @@ class CleanRootProbeTests(unittest.TestCase):
     def publish_all_stable(self):
         for relative in (
             f"player-valuation/{LEAGUE}/2024/week-00.json", f"league-transactions/{LEAGUE}/2024.json",
-            f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"season-statistics/{LEAGUE}/2024.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
+            f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"season-statistics/{LEAGUE}/2024.json", f"league-rivalry/{LEAGUE}.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
             f"team-week-performance/{LEAGUE}/2024/01.json", "nfl-games/2024.json",
         ):
             self.publish(relative, "stable")

@@ -31,6 +31,7 @@ architecture:
     - tools/derived_data_lib/matchup_context.py (computed matchup context function with the team-range model, no product, #1199 section 3)
     - tools/matchup_projection.py and tools/derived_data_lib/weekly_recaps.py (win-prob model on the team-range projections, no product, #1443)
     - tools/derived_data_lib/season_statistics.py and the season-statistics product (season-stats-v1, #506)
+    - tools/derived_data_lib/rivalry.py and the league-rivalry product (rivalry-v1, #1455)
     - later models through the same registry
   rules:
     - A model is a pure function of its explicit inputs plus its own PARAMS. It reads no files, no network, no clock, no environment and no league configuration.
@@ -55,6 +56,7 @@ identity:
       - team-range-v1
       - win-prob-v1
       - season-stats-v1
+      - rivalry-v1
     rules:
       - The model ID is the only way a league, a snapshot or a test refers to a model.
       - kind uses hyphens in the ID (salary-cap-v1) and underscores in the module path (salary_cap/v1.py).
@@ -117,7 +119,7 @@ registry:
     - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
   leagueSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
-    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut, SeasonStats } -> model IDs
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut, SeasonStats, Rivalry } -> model IDs
     rule: >
       The league metadata chooses model IDs per season. A new version applies from
       the season in which the metadata first names it; earlier seasons keep their
@@ -287,6 +289,17 @@ models:
       - The model is a pure function of the prepared weekly games (points, pregame projection, unrounded pregame chance); it reads no file, no clock and no league configuration.
       - Missing evidence is null (unknown), never zero or 50 percent. A game without a chance counts in no upset figure.
       - Selected per season in data-meta (Models.SeasonStats). A better formula is season-stats-v2, never a silent change of the numbers.
+
+  rivalry-v1:
+    status: registered-1455
+    module: tools/derived_data_lib/models/rivalry/v1.py
+    behaviour: Head-to-head counting of finalized fantasy matchups per team and opponent (wins, losses, ties, points for and against, biggest win, closest loss) for the filters all, regular and playoffs; full rules in league-rivalry.yaml
+    contract: .ai-context/manual/league-rivalry.yaml
+    parameters: Filters all/regular/playoffs, counted playoff brackets championship and placement, playoff games count after the season is complete, points rounded half up to two decimals, no ranking
+    rules:
+      - The model is a pure function of its explicit inputs; it reads no file, no clock and no league configuration.
+      - Regular-season games always count; playoff games count only for a complete season and the bracket labels championship and placement (E1, E2 of Issue #1455); consolation and unclassified never count.
+      - Selected per season in data-meta (Models.Rivalry). Counting a final playoff game at once or any other rule change is rivalry-v2, never a silent change of the numbers.
 
 rankingFunctions:
   implementation: tools/derived_data_lib/ranking.py
