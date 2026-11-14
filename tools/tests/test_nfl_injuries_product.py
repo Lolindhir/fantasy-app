@@ -799,5 +799,59 @@ class NflInjuriesProductTests(unittest.TestCase):
                            for p in canonical_path.iterdir() if p.is_file()})
 
 
+    def test_raw_phase_verifies_official_release_and_preserves_asset_provenance(self):
+        from nfl_injuries_phase import run_injury_phase
+        import hashlib
+        import json
+        import tempfile
+        raw = asset(2025, [report(2025)])
+        sha = hashlib.sha256(raw).hexdigest()
+        release = {"assets": [{
+            "name": "injuries_2025.csv", "id": 8877,
+            "updated_at": "2026-11-14T07:07:00Z",
+            "size": len(raw), "digest": "sha256:" + sha,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv"
+        }]}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            result = run_injury_phase(root, 2025, "raw", source_csv=raw,
+                                      release_json=release, write=True)
+            self.assertTrue(result["Written"])
+            meta = json.loads((root /
+                "data-source/providers/nflverse/injuries/metadata-2025.json"
+            ).read_text(encoding="utf-8"))
+            self.assertEqual("matched-provided-release-digest", meta["AssetDigestVerification"])
+            self.assertEqual(8877, meta["ReleaseAssetId"])
+            failed = copy.deepcopy(release)
+            failed["assets"][0]["digest"] = "sha256:" + ("f" * 64)
+            before = {str(p.relative_to(root)): p.read_bytes()
+                for p in root.rglob("*") if p.is_file()}
+            with self.assertRaisesRegex(ValueError, "differs from release asset"):
+                run_injury_phase(root, 2025, "raw", source_csv=raw,
+                                 release_json=failed, write=True)
+            after = {str(p.relative_to(root)): p.read_bytes()
+                for p in root.rglob("*") if p.is_file()}
+            self.assertEqual(before, after)
+
+    def test_raw_phase_requires_digest_for_live_release_without_hash(self):
+        from nfl_injuries_phase import run_injury_phase
+        import tempfile
+        raw = asset(2024, [report(2024)])
+        release = {"assets": [{
+            "name": "injuries_2024.csv", "id": 8877,
+            "updated_at": "2025-02-14T07:07:00Z",
+            "size": len(raw), "digest": None,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2024.csv"
+        }]}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            with self.assertRaisesRegex(ValueError, "official or independently verified digest"):
+                run_injury_phase(root, 2024, "raw", source_csv=raw,
+                                 release_json=release, write=True)
+            self.assertEqual([], list(root.rglob("*")))
+
+
 if __name__ == "__main__":
     unittest.main()
