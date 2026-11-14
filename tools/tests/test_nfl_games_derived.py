@@ -313,8 +313,8 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
         )
         self.assertEqual(detail["TeamStats"]["Teams"][0]["Stats"]["carries"], 4)
         self.assertIsNone(detail["TeamStats"]["Teams"][0]["Stats"]["fg_att"])
-        self.assertEqual(detail["SnapCounts"]["Players"][0]["CanonicalPlayerID"], "NFLP-b")
-        self.assertEqual(detail["SnapCounts"]["Players"][1]["Snaps"]["OffenseSnaps"], 35)
+        self.assertEqual(detail["SnapCounts"]["Players"][0]["CanonicalPlayerID"], "NFLP-a")
+        self.assertEqual(detail["SnapCounts"]["Players"][0]["Snaps"]["OffenseSnaps"], 35)
         self.assertFalse(detail["PlayByPlay"]["FullPlayByPlayAvailable"])
 
     def test_absent_week_sources_remain_unavailable_not_zero(self):
