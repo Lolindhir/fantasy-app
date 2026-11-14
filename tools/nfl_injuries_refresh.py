@@ -61,6 +61,7 @@ def refresh_injury_raw(
     repo_root: Path,
     season: int,
     write: bool = False,
+    current_season: int | None = None,
     fetch_release: Callable[[], dict[str, Any]] = release_api,
     fetch_asset: Callable[[str], bytes] = source_asset,
 ) -> dict[str, Any]:
@@ -82,6 +83,10 @@ def refresh_injury_raw(
     decision = plan_release_refresh(release, season=season, stored_metadata=known)
     if decision["Action"] == "retry-later":
         raise ValueError("Official injury release season asset not yet available; retry later")
+    if (current_season is not None and season < current_season
+            and (metadata_path.exists() or raw_path.exists())
+            and decision["Action"] != "no-op"):
+        raise ValueError("Historical Injury Source revision is frozen; manual repair approval required")
     asset = decision["SourceAsset"]
     digest = asset["Sha256"]
     if digest is None:
