@@ -384,7 +384,8 @@ matrix:
     freshness: persist Sleeper player map and refresh sparingly, approximately daily
     migrationState: canonical-active-runtime-migrated
     guards:
-      - nflverse injury report CSVs continue after 2024 (Issue #1421); the historical report data product is not yet active and is not an automatic replacement or fallback for current Sleeper injury status
+      - nflverse injury source is not a valid current replacement after its source ended following 2024
+      - nflverse injury report CSVs are a separately scheduled historical Source/Derived product (Issue #1421); they do not replace or fall back for the authoritative current Sleeper injury status
       - ReturnDate is an honest null (unknown) and is not synthesized; InjuryStartDate is currently empty in Sleeper data and publishes as an empty string
       - Description is published only while an injury status exists; stale Sleeper body part/notes after recovery must not become a false Fantasy Management injury signal
       - conflicting provider injury claims are not silently resolved by fallback priority
@@ -1191,7 +1192,8 @@ consumerReadClassification:
         legacy:past_seasons: app-output-owner
         legacy:Timestamps: app-output-owner
         legacy:WeeklyRecaps: app-output-owner
-      note: 'Consumer generator of the weekly recaps (ADR-063, Issue #1199 section 4 step 4). write renders WeeklyRecaps.json and the past_seasons WeeklyRecaps files from the computed recap function (data-source, products, data-meta) and publishes them only on a semantic difference. It reads the existing App files only to detect that difference and updates the WeeklyRecaps key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
+        legacy:PlayerAwardHistory: app-output-owner
+      note: 'Consumer generator of the weekly recaps (ADR-063, Issue #1199 section 4 step 4). Since Issue #499 it also renders PlayerAwardHistory.json from the season models; completed seasons that were not recomputed in the run come from their own published past_seasons WeeklyRecaps archive (app-output-owner, immutable once the season is complete, refreshed by the weekly history scope). write renders WeeklyRecaps.json and the past_seasons WeeklyRecaps files from the computed recap function (data-source, products, data-meta) and publishes them only on a semantic difference. It reads the existing App files only to detect that difference and updates the WeeklyRecaps key of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
     tools/season_statistics_app_publish.py:
       reads:
         legacy:past_seasons: app-output-owner
@@ -1262,7 +1264,7 @@ consumerReadClassification:
       reads:
         network: source-layer-acquisition
         provider:nflverse: source-layer-acquisition
-      note: 'Issue #1421 C4: official nflverse injury release API and validated exact asset URL; caller-gated local staging only, no Git publication, League/App/ESPN owner untouched.'
+      note: 'Issue #1421 C4: official nflverse injury release API and validated exact asset URL; production Source-only release verification under the declared isolated Injury scope; no League/App/ESPN owner changed.'
     tools/nfl_source_data_lib/injury_product_plan.py:
       reads:
         provider:nflverse: source-layer-acquisition
