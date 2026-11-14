@@ -1,4 +1,4 @@
-import { NgFor } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -8,27 +8,44 @@ import { catchError, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import { publicPhilosophyMarkdown } from './handbook-content.util';
 
-const HANDBOOK_TABS = [
-  { id: 'Overview', label: 'Übersicht' },
-  { id: 'league-philosophy', label: 'Liga-Philosophie' },
-  { id: 'Salary_Explanation', label: 'Salary & Salary Cap' },
-  { id: 'Projections_Explanation', label: 'Prognosen & Siegchancen' },
-  { id: 'Offseason_Flow', label: 'Offseason Infografik' },
-  { id: 'Offseason_Schedule', label: 'Offseason Regeln' },
-  { id: 'Draft_Waiver_Order', label: 'Draft & Waiver Regeln' }
+const HANDBOOK_GROUPS = [
+  {
+    title: 'Einstieg',
+    pages: [
+      { id: 'Overview', label: 'Übersicht' },
+      { id: 'league-philosophy', label: 'Liga-Philosophie' }
+    ]
+  },
+  {
+    title: 'Liga-Regeln',
+    pages: [
+      { id: 'Salary_Explanation', label: 'Salary & Salary Cap' },
+      { id: 'Offseason_Flow', label: 'Offseason Infografik' },
+      { id: 'Offseason_Schedule', label: 'Offseason Regeln' },
+      { id: 'Draft_Waiver_Order', label: 'Draft & Waiver Regeln' }
+    ]
+  },
+  {
+    title: 'Daten & Analysen',
+    pages: [
+      { id: 'Projections_Explanation', label: 'Prognosen & Siegchancen' }
+    ]
+  }
 ] as const;
 
 @Component({
   selector: 'app-about',
-  imports: [NgFor, MarkdownModule, SharedMaterialImports],
+  imports: [NgFor, NgIf, MarkdownModule, SharedMaterialImports],
   standalone: true,
   templateUrl: './about.html',
   styleUrl: './about.scss'
 })
 export class AboutComponent implements OnInit {
-  readonly tabs = HANDBOOK_TABS;
+  readonly groups = HANDBOOK_GROUPS;
+  readonly tabs = HANDBOOK_GROUPS.flatMap(group => group.pages);
   markdownText = '';
   selectedTab = 'Overview';
+  menuOpen = false;
   private readonly destroyRef = inject(DestroyRef);
 
   constructor(
@@ -37,6 +54,11 @@ export class AboutComponent implements OnInit {
     private readonly router: Router
   ) {}
 
+  get mobileSelectionLabel(): string {
+    if (this.selectedTab === 'Overview') return 'Themen wählen';
+    return this.tabs.find(tab => tab.id === this.selectedTab)?.label ?? 'Themen wählen';
+  }
+
   ngOnInit(): void {
     this.route.queryParamMap.pipe(
       map(params => params.get('section') ?? 'Overview'),
@@ -44,6 +66,7 @@ export class AboutComponent implements OnInit {
       distinctUntilChanged(),
       switchMap(section => {
         this.selectedTab = section;
+        this.menuOpen = false;
         this.markdownText = '';
         return this.http.get(`docs/${section}.md`, { responseType: 'text' }).pipe(
           map(content => section === 'league-philosophy' ? publicPhilosophyMarkdown(content) : content),
@@ -54,8 +77,17 @@ export class AboutComponent implements OnInit {
     ).subscribe(content => this.markdownText = content);
   }
 
+  toggleMenu(): void {
+    this.menuOpen = !this.menuOpen;
+  }
+
+  closeMenu(): void {
+    this.menuOpen = false;
+  }
+
   selectTab(section: string): void {
     if (!this.tabs.some(tab => tab.id === section)) return;
+    this.closeMenu();
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { section: section === 'Overview' ? null : section },

@@ -1,9 +1,66 @@
-<nav class="tabs" aria-label="Handbook-Themen">
-  <button *ngFor="let tab of tabs" type="button" (click)="selectTab(tab.id)"
-    [class.tabs__active]="selectedTab === tab.id"
-    [attr.aria-current]="selectedTab === tab.id ? 'page' : null">
-    {{ tab.label }}
-  </button>
-</nav>
+<div class="handbook-layout">
+  <div class="handbook-mobile-nav" (keydown.escape)="closeMenu()">
+    <button
+      type="button"
+      class="handbook-home"
+      [class.is-current]="selectedTab === 'Overview'"
+      [attr.aria-current]="selectedTab === 'Overview' ? 'page' : null"
+      (click)="selectTab('Overview')">
+      <mat-icon aria-hidden="true">home</mat-icon>
+      <span>Übersicht</span>
+    </button>
 
-<markdown class="markdown" [data]="markdownText"></markdown>
+    <div class="handbook-picker">
+      <button
+        type="button"
+        class="handbook-picker-button"
+        aria-controls="handbook-mobile-menu"
+        [attr.aria-expanded]="menuOpen"
+        [title]="mobileSelectionLabel"
+        (click)="toggleMenu()">
+        <span class="handbook-picker-label">{{ mobileSelectionLabel }}</span>
+        <mat-icon aria-hidden="true">{{ menuOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+      </button>
+
+      <nav *ngIf="menuOpen" id="handbook-mobile-menu" class="handbook-mobile-menu" aria-label="Handbook-Inhaltsverzeichnis">
+        <section *ngFor="let group of groups" class="handbook-menu-group">
+          <h2>{{ group.title }}</h2>
+          <button
+            *ngFor="let page of group.pages"
+            type="button"
+            class="handbook-nav-item"
+            [class.is-current]="selectedTab === page.id"
+            [attr.aria-current]="selectedTab === page.id ? 'page' : null"
+            (click)="selectTab(page.id)">
+            {{ page.label }}
+            <mat-icon *ngIf="selectedTab === page.id" aria-hidden="true">check</mat-icon>
+          </button>
+        </section>
+      </nav>
+    </div>
+    <button *ngIf="menuOpen" type="button" class="handbook-menu-dismiss"
+      aria-label="Handbook-Menü schließen" (click)="closeMenu()"></button>
+  </div>
+
+  <aside class="handbook-sidebar" aria-label="Handbook-Inhaltsverzeichnis">
+    <h2 class="handbook-sidebar-heading">Inhalt</h2>
+    <nav>
+      <section *ngFor="let group of groups" class="handbook-menu-group">
+        <h3>{{ group.title }}</h3>
+        <button
+          *ngFor="let page of group.pages"
+          type="button"
+          class="handbook-nav-item"
+          [class.is-current]="selectedTab === page.id"
+          [attr.aria-current]="selectedTab === page.id ? 'page' : null"
+          (click)="selectTab(page.id)">
+          {{ page.label }}
+        </button>
+      </section>
+    </nav>
+  </aside>
+
+  <main class="handbook-content">
+    <markdown class="markdown" [data]="markdownText"></markdown>
+  </main>
+</div>
