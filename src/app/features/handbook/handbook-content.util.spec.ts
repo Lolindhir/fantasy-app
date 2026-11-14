@@ -35,12 +35,12 @@ Internal governance.
 ### Versionshistorie
 `;
 
-  it('keeps the six goals and interpretation but hides internal metadata', () => {
+  it('keeps the six goals but excludes the interpretation and internal metadata', () => {
     const publicText = publicPhilosophyMarkdown(source);
     expect(publicText).toContain('## Unser Nordstern');
     expect(publicText).toContain('### 1. Langfristige Chancengleichheit');
     expect(publicText).toContain('### 6. Operative Umsetzbarkeit');
-    expect(publicText).toContain('## Auslegung: Einseitige Trades');
+    expect(publicText).not.toContain('## Auslegung: Einseitige Trades');
     for (const privateText of ['**Version:**', '**Status:**', '**Abstimmung:**',
       '## Verwendung als Bewertungsgrundlage', '## Schutz, Geltung', 'Versionshistorie']) {
       expect(publicText).not.toContain(privateText);
