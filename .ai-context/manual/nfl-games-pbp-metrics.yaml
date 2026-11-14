@@ -13,7 +13,7 @@ intent: >-
   NFL-Games per-GameID derived views, not the original full play list. The current
   read-only game detail and original PBP replay are technical previews only.
 notInScope:
-  - Reproducing the proprietary Stone Luck Score or asserting its unknown formula
+  - Reproducing the external Stone Luck Score or asserting its unpublished formula
   - Publishing raw PBP rows in the derived game detail
   - Creating a new Source producer, publisher, workflow, scheduler or output path
   - Publishing metrics into the current nfl-games season-index SchemaVersion 1
@@ -174,9 +174,9 @@ metricFamilies:
       - id: pass_explosive_20_rate_allowed
         class: pbp-event-rate
         level: defense-team-game
-        sourceFields: [pass_attempt, passing_yards, posteam, defteam]
-        definition: Completed passing plays gaining at least 20 passing yards over pass attempts with known yardage
-        caveat: Completion and penalty rules must be checked; do not substitute an air-yards-only threshold
+        sourceFields: [pass_attempt, complete_pass, passing_yards, posteam, defteam]
+        definition: Count completions with at least 20 passing yards over all eligible pass attempts with a known outcome; confirmed incompletions contribute no explosive gain
+        caveat: Missing yardage on a confirmed completion or unknown completion flags require explicit missing counts; check penalty rules
       - id: pass_yac_per_completion_allowed
         class: pbp-reconcilable-context
         level: defense-team-game
@@ -227,20 +227,20 @@ metricFamilies:
       - id: rb_target_yards_and_epa_allowed
         class: target-efficiency-and-volume
         level: defense-team-game-vs-RB
-        sourceFields: [receiver_player_id, pass_attempt, receiving_yards, epa, defteam]
-        definition: Distinct RB targets, receiving yards per observed target and source offensive EPA on RB-targeted passes
-        caveat: Source play EPA is not isolated receiver contribution; RB rushing kept separate
+        sourceFields: [receiver_player_id, pass_attempt, complete_pass, receiving_yards, epa, defteam]
+        definition: Distinct RB targets, receiving yards per valid target and source offensive EPA on RB-targeted pass plays
+        caveat: Confirmed incompletions contribute zero receiving yards; unknown target/completion values stay missing; source EPA is not isolated receiver contribution; RB rushing stays separate
       - id: wr_target_coverage_proxy
         class: pass-target-proxy
         level: defense-team-game-vs-WR
-        sourceFields: [receiver_player_id, pass_attempt, receiving_yards, epa, defteam]
-        definition: WR-target count and receiving yards or pass-play EPA per known WR target
+        sourceFields: [receiver_player_id, pass_attempt, complete_pass, receiving_yards, epa, defteam]
+        definition: WR-target count, observed yards per valid target and pass-play EPA per known WR target
         caveat: Not evidence of individual cornerback coverage assignment or receiver quality
       - id: te_target_coverage_proxy
         class: pass-target-proxy
         level: defense-team-game-vs-TE
-        sourceFields: [receiver_player_id, pass_attempt, receiving_yards, epa, defteam]
-        definition: TE-target count and receiving yards or pass-play EPA per known TE target
+        sourceFields: [receiver_player_id, pass_attempt, complete_pass, receiving_yards, epa, defteam]
+        definition: TE-target count, observed yards per valid target and pass-play EPA per known TE target
         caveat: Require sufficient TE-specific samples; generic team pass-defense cannot masquerade as TE defense
       - id: qb_passing_vs_scramble_context
         class: qb-situation
