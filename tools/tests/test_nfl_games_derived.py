@@ -18,6 +18,7 @@ if str(TOOLS) not in sys.path:
 from data_roots import DATA_SOURCE_ROOT
 from derived_data_lib.nfl_games import build_nfl_games
 from nfl_games_materialize import materialize, discover_seasons
+from nfl_pbp_metric_field_audit import audit as audit_pbp_catalog_fields
 
 
 def inputs():
@@ -725,6 +726,204 @@ class NflOriginalPbpGamePreviewTests(unittest.TestCase):
             with self.assertRaises((OSError, EOFError)):
                 preview(root, 2026, "2026_06_HOU_JAX", gz)
 
+
+
+# P0 original PBP catalog coverage tests. These synthesize provider-shaped
+# CSV.GZ rows; they NEVER claim a real nflverse season was downloaded.
+_AUDIT_CSV_FIELDS = [
+    "game_id", "play_id", "season", "season_type", "week", "home_team",
+    "away_team", "posteam", "defteam", "play_type", "down",
+    "qb_dropback", "qb_scramble", "pass_attempt", "rush_attempt", "sack",
+    "qb_spike", "two_point_attempt", "epa", "success", "third_down_converted",
+    "passer_player_id", "receiver_player_id", "rusher_player_id",
+]
+
+
+def _audit_row(**overrides):
+    row = {
+        "game_id": "2025_18_WAS_PHI", "play_id": "42", "season": "2025",
+        "season_type": "REG", "week": "18", "home_team": "PHI",
+        "away_team": "WAS", "posteam": "WAS", "defteam": "PHI",
+        "play_type": "pass", "down": "3",
+        "qb_dropback": "1", "qb_scramble": "0", "pass_attempt": "1",
+        "rush_attempt": "0", "sack": "0", "qb_spike": "0",
+        "two_point_attempt": "0", "epa": "1.2", "success": "1",
+        "third_down_converted": "1", "passer_player_id": "00-0030001",
+        "receiver_player_id": "00-0030002", "rusher_player_id": "",
+    }
+    row.update(overrides)
+    return row
+
+
+def _write_audit_fixture(root, rows, columns=None, catalog=None):
+    from textwrap import dedent
+    source = root / "play_by_play_2025.csv.gz"
+    with gzip.open(source, "wt", encoding="utf-8", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=columns or _AUDIT_CSV_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+    catalog_path = root / "nfl-games-pbp-metrics.yaml"
+    catalog_path.write_text(catalog or dedent("""\
+        schemaVersion: 1
+        catalogVersion: 1
+        metricFamilies:
+          - family: passing-defense
+            priority: P1
+            candidates:
+              - id: pass_epa
+                sourceFields: [pass_attempt, sack, epa]
+              - id: air_yards
+                sourceFields: [air_yards, pass_attempt]
+              - id: rb_targets
+                sourceFields: [receiver_player_id, defteam]
+                requiredJoin: historical-position
+        """), encoding="utf-8")
+    return source, catalog_path
+
+
+class NflPbpMetricSourceFieldAuditTests(unittest.TestCase):
+    def test_gzip_stream_provenance_field_nulls_and_catalog_missingness(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source, catalog = _write_audit_fixture(root, [
+                _audit_row(),
+                _audit_row(play_id="43.0", play_type="run", down="1",
+                           qb_dropback="1", qb_scramble="1",
+                           pass_attempt="0", rush_attempt="1", sack="0",
+                           epa="", success="", receiver_player_id="",
+                           rusher_player_id="00-0030003"),
+                _audit_row(game_id="2025_18_JAX_TEN", play_id="1", week="18",
+                           home_team="TEN", away_team="JAX", posteam="JAX",
+                           defteam="TEN", play_type="pass", down="2",
+                           sack="1", epa="-0.7", success="0",
+                           passer_player_id="legacy-not-gsis"),
+            ])
+            expected = hashlib.sha256(source.read_bytes()).hexdigest()
+            metadata = root / "metadata.json"
+            metadata.write_text(json.dumps({
+                "provider": "nflverse", "partition": {"season": 2025},
+                "upstreamContentHashSha256": expected,
+                "upstreamByteSize": source.stat().st_size,
+                "projectionStats": {"sourceRowCount": 3},
+            }), encoding="utf-8")
+            before = {p.name: p.read_bytes() for p in root.iterdir() if p.is_file()}
+            result = audit_pbp_catalog_fields(
+                path=source, season=2025, catalog_path=catalog,
+                metadata_path=metadata, expected_sha256=expected,
+            )
+            self.assertEqual(result["Status"], "observed-source-asset-not-certified-full-pbp")
+            self.assertEqual(result["RawSeasonRowCount"], 3)
+            self.assertEqual(result["DistinctGameIDs"], 2)
+            self.assertEqual(result["DistinctGamePlayKeys"], 3)
+            self.assertEqual(result["CohortRowCounts"]["PassPlayType"], 2)
+            self.assertEqual(result["CohortRowCounts"]["RunPlayType"], 1)
+            self.assertEqual(result["CohortRowCounts"]["QBDropback"], 3)
+            self.assertEqual(result["CohortRowCounts"]["ThirdDown"], 1)
+            self.assertEqual(result["FieldCoverage"]["epa"]["Cohorts"]["AllRows"], {
+                "Rows": 3, "NonNull": 2, "Missing": 1,
+            })
+            self.assertFalse(result["FieldCoverage"]["air_yards"]["HeaderPresent"])
+            metric = {m["MetricID"]: m for m in result["MetricFieldCoverage"]}
+            self.assertEqual(len(metric), 3)
+            self.assertEqual(metric["air_yards"]["MissingSourceColumns"], ["air_yards"])
+            self.assertEqual(metric["air_yards"]["Status"], "source-fields-missing")
+            self.assertEqual(metric["pass_epa"]["MissingSourceColumns"], [])
+            self.assertFalse(metric["pass_epa"]["ReadyToPublish"])
+            self.assertTrue(metric["rb_targets"]["PositionJoinRequired"])
+            self.assertEqual(result["ProviderPlayerIDCoverage"]
+                             ["passer_player_id"]["NonGSISFormatOccurrences"], 1)
+            self.assertTrue(result["ArchivedProjectionComparison"]["ArchivedSHA256Matches"])
+            self.assertTrue(result["ArchivedProjectionComparison"]["ArchivedRowCountMatches"])
+            self.assertTrue(result["GzipStreamReadToEOF"])
+            self.assertFalse(result["UpstreamFullGameCompletenessVerified"])
+            self.assertFalse(result["PlayerPositionHistoricalJoinVerified"])
+            after = {p.name: p.read_bytes() for p in root.iterdir() if p.is_file()}
+            self.assertEqual(before, after)
+
+    def test_original_play_identity_and_integrity_fail_closed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source, catalog = _write_audit_fixture(root, [_audit_row()])
+            with self.assertRaisesRegex(ValueError, "expected SHA256"):
+                audit_pbp_catalog_fields(path=source, season=2025, catalog_path=catalog,
+                                         expected_sha256="f" * 64)
+            cases = (
+                ([_audit_row(), _audit_row()], "Duplicate"),
+                ([_audit_row(season="2024")], "wrong season"),
+                ([_audit_row(play_id="1.5")], "Invalid play_id"),
+                ([_audit_row(), _audit_row(play_id="50", home_team="NYG")], "conflicting"),
+                ([_audit_row(season_type="PRE")], "invalid game context"),
+            )
+            for rows, error in cases:
+                with self.subTest(error=error):
+                    _write_audit_fixture(root, rows)
+                    with self.assertRaisesRegex(ValueError, error):
+                        audit_pbp_catalog_fields(path=source, season=2025, catalog_path=catalog)
+            _write_audit_fixture(root, [_audit_row()])
+            source.write_bytes(source.read_bytes()[:-6])
+            with self.assertRaises((EOFError, OSError)):
+                audit_pbp_catalog_fields(path=source, season=2025, catalog_path=catalog)
+
+    def test_missing_core_fields_bad_csv_width_and_duplicate_catalog_fail_closed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            columns = [f for f in _AUDIT_CSV_FIELDS if f != "play_id"]
+            source, catalog = _write_audit_fixture(root, [{x: "" for x in columns}], columns)
+            with self.assertRaisesRegex(ValueError, "Missing original PBP identity"):
+                audit_pbp_catalog_fields(path=source, season=2025, catalog_path=catalog)
+            with gzip.open(source, "wt", encoding="utf-8", newline="") as out:
+                out.write(",".join(_AUDIT_CSV_FIELDS) + "\n")
+                out.write("1,2,3,4\n")
+            with self.assertRaisesRegex(ValueError, "row width"):
+                audit_pbp_catalog_fields(path=source, season=2025, catalog_path=catalog)
+            catalog.write_text(
+                "catalogVersion: 1\nmetricFamilies:\n  - family: foo\n    candidates:\n"
+                "      - id: duplicate\n        sourceFields: [game_id]\n"
+                "      - id: duplicate\n        sourceFields: [play_id]\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "Duplicate or malformed"):
+                audit_pbp_catalog_fields(path=source, season=2025, catalog_path=catalog)
+
+    def test_snapshot_drift_and_invalid_flags_report_without_claiming_publication_ready(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source, catalog = _write_audit_fixture(root, [
+                _audit_row(play_id="1", pass_attempt="5"),
+            ])
+            metadata = root / "metadata.json"
+            metadata.write_text(json.dumps({
+                "provider": "nflverse", "partition": {"season": 2025},
+                "upstreamContentHashSha256": "0" * 64,
+                "upstreamByteSize": 99,
+                "projectionStats": {"sourceRowCount": 99},
+            }), encoding="utf-8")
+            result = audit_pbp_catalog_fields(
+                path=source, season=2025, catalog_path=catalog, metadata_path=metadata,
+            )
+            self.assertEqual(result["BinaryFieldInvalidCounts"]["pass_attempt"], 1)
+            self.assertFalse(result["ArchivedProjectionComparison"]["ArchivedSHA256Matches"])
+            self.assertFalse(result["ArchivedProjectionComparison"]["ArchivedByteCountMatches"])
+            self.assertFalse(result["ArchivedProjectionComparison"]["ArchivedRowCountMatches"])
+            self.assertFalse(result["MetricFieldCoverage"][0]["ReadyToPublish"])
+
+    def test_cli_emits_only_aggregate_audit_json_and_no_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source, catalog = _write_audit_fixture(root, [_audit_row()])
+            before = {p.name: p.read_bytes() for p in root.iterdir() if p.is_file()}
+            result = subprocess.run([
+                sys.executable, str(TOOLS / "nfl_pbp_metric_field_audit.py"),
+                "--repo-root", str(root), "--season", "2025",
+                "--pbp-csv-gz", str(source), "--catalog", str(catalog),
+            ], check=True, capture_output=True, text=True)
+            payload = json.loads(result.stdout)
+            self.assertEqual(payload["RawSeasonRowCount"], 1)
+            self.assertEqual(payload["MetricCandidateCount"], 3)
+            self.assertNotIn('"SourceRow"', result.stdout)
+            self.assertNotIn('"Plays"', result.stdout)
+            after = {p.name: p.read_bytes() for p in root.iterdir() if p.is_file()}
+            self.assertEqual(before, after)
 
 
 if __name__ == "__main__":
