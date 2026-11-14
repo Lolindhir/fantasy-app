@@ -980,6 +980,7 @@ class NflInjuriesProductTests(unittest.TestCase):
         config = json.loads((root / ".github/workflow-schedules.json").read_text(encoding="utf-8"))
         target, = [x for x in config["targets"] if x["id"] == "nfl-injuries"]
         self.assertEqual("30 9 * 9-12,1-2 *", target["cron"][0])
+        self.assertEqual(["repository_dispatch"], target["satisfyingEvents"])
         self.assertEqual("sync-nfl-injuries.yml", target["workflow"])
         wrapper = yaml.safe_load((root / target["path"]).read_text(encoding="utf-8"))
         workflow = wrapper["jobs"]["source_and_derived"]
@@ -990,7 +991,9 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertIn("nfl_injuries_derived:", source)
         self.assertIn("--path data-derived/nfl-injuries", source)
         self.assertIn("elif scope == \"injuries\"", source)
-        self.assertIn("data-source/nfl/injuries/*", source)
+        self.assertIn('data-source/nfl/injuries/"$injury_year"/*', source)
+        self.assertIn("assert_scoped_raw_write_set", source)
+        self.assertIn('materialize_args+=(--scope injuries --season "$injury_year")', source)
 
 
     def test_future_season_can_use_2025_plus_header_without_silent_format_fallback(self):
