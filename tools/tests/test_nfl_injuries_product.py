@@ -641,5 +641,29 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertEqual([], list(root.rglob("*")))
 
 
+    def test_source_refresh_rejects_cached_source_path_symlink(self):
+        from nfl_injuries_refresh import refresh_injury_season
+        import hashlib
+        import tempfile
+        source = asset(2025, [report(2025)])
+        release = {"assets": [{
+            "name": "injuries_2025.csv", "id": 12,
+            "updated_at": "2026-11-14T07:10:00Z", "size": len(source),
+            "digest": "sha256:" + hashlib.sha256(source).hexdigest(),
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        with tempfile.TemporaryDirectory() as folder, tempfile.TemporaryDirectory() as other:
+            root = Path(folder)
+            (root / "data-source").symlink_to(Path(other), target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, "Symlink"):
+                refresh_injury_season(
+                    repo_root=root, season=2025, players=identities(),
+                    fetch_release=lambda: release,
+                    fetch_asset=lambda url: source,
+                )
+            self.assertEqual([], list(Path(other).rglob("*")))
+
+
 if __name__ == "__main__":
     unittest.main()
