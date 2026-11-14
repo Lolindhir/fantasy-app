@@ -89,6 +89,31 @@ export interface WeeklyRecapUpsetCount {
   Weeks: number;
 }
 
+/** One winner of a weekly player award (generator values; Swing/Margin/Gain only on the awards that define them). */
+export interface WeeklyRecapPlayerAwardEntry {
+  PlayerID: string | null;
+  CanonicalPlayerID: string | null;
+  FantasyTeamID: string | number;
+  FantasyMatchupID: string;
+  Position: string;
+  Points: number;
+  Swing?: number;
+  Margin?: number;
+  Gain?: number;
+  ReplacedPlayerID?: string | null;
+}
+
+export type WeeklyPlayerAwardKey = 'MVP' | 'MatchupHero' | 'Heartbreaker' | 'UnsungHero';
+
+/** Weekly player awards of weekly-recap-v2; an award without a winner is an empty list. */
+export interface WeeklyRecapPlayerAwards {
+  State: 'available' | 'unavailable';
+  MVP: WeeklyRecapPlayerAwardEntry[];
+  MatchupHero: WeeklyRecapPlayerAwardEntry[];
+  Heartbreaker: WeeklyRecapPlayerAwardEntry[];
+  UnsungHero: WeeklyRecapPlayerAwardEntry[];
+}
+
 export interface WeeklyRecapWeek {
   Week: number;
   KeyGames: WeeklyRecapKeyGame[];
@@ -99,6 +124,8 @@ export interface WeeklyRecapWeek {
   TeamPerformance?: WeeklyRecapTeamPerformance[] | null;
   /** Pregame win chance and upset flag per matchup; absent in older files. */
   WinProbabilities?: WeeklyRecapWinProbability[];
+  /** Weekly player awards (weekly-recap-v2); absent in older files. */
+  PlayerAwards?: WeeklyRecapPlayerAwards;
 }
 
 export interface WeeklyRecapsReadModel {

@@ -35,11 +35,34 @@
             <span *ngIf="!recapPlayerPicture(player)">{{ player.Position }}</span>
           </span>
           <span class="weekly-recap-player-copy">
-            <strong>{{ recapPlayerName(player) }}</strong>
+            <strong>{{ recapPlayerName(player) }}<mat-icon *ngIf="isWeekMvp(player)" class="weekly-recap-mvp-badge" aria-label="Week MVP" title="Week MVP">emoji_events</mat-icon></strong>
             <span>{{ player.Position }} · {{ nflAbbr(player.NFLTeamID) }}</span>
           </span>
           <strong class="weekly-recap-player-points">{{ formatFantasyPoints(player.Points) }}</strong>
         </button>
+      </div>
+    </div>
+
+    <div *ngIf="playerAwardChips().length > 0" class="weekly-recap-group weekly-recap-group--awards">
+      <h3>Weekly Player Awards</h3>
+      <div class="weekly-recap-player-awards">
+        <article *ngFor="let chip of playerAwardChips()" class="weekly-recap-player-award" [attr.aria-label]="chip.label + ' award'" [title]="chip.hint">
+          <h4 class="weekly-recap-award-title"><mat-icon aria-hidden="true">{{ chip.icon }}</mat-icon>{{ chip.label }}</h4>
+          <button *ngFor="let entry of chip.entries" type="button" class="weekly-recap-player-award-winner"
+            [disabled]="awardPlayer(entry) === null"
+            [attr.aria-label]="'Open ' + awardPlayerName(entry) + ' player details'"
+            (click)="openAwardPlayerDetail(entry)">
+            <span class="weekly-recap-player-picture">
+              <img loading="lazy" decoding="async" *ngIf="awardPlayerPicture(entry) as picture" class="weekly-recap-player-portrait" [src]="picture" alt="" />
+              <span *ngIf="!awardPlayerPicture(entry)">{{ entry.Position }}</span>
+            </span>
+            <span class="weekly-recap-player-copy">
+              <strong>{{ awardPlayerName(entry) }}</strong>
+              <span>{{ entry.Position }} · {{ awardOwnerName(entry.FantasyTeamID) }}</span>
+            </span>
+            <strong class="weekly-recap-player-points">{{ formatFantasyPoints(entry.Points) }}</strong>
+          </button>
+        </article>
       </div>
     </div>
 

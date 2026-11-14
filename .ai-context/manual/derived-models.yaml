@@ -32,6 +32,7 @@ architecture:
     - tools/matchup_projection.py and tools/derived_data_lib/weekly_recaps.py (win-prob model on the team-range projections, no product, #1443)
     - tools/derived_data_lib/season_statistics.py and the season-statistics product (season-stats-v1, #506)
     - tools/derived_data_lib/rivalry.py and the league-rivalry product (rivalry-v1, #1455)
+    - tools/derived_data_lib/weekly_recaps.py (weekly-recap-v1 baseline and weekly-recap-v2 player awards, no product, #499)
     - later models through the same registry
   rules:
     - A model is a pure function of its explicit inputs plus its own PARAMS. It reads no files, no network, no clock, no environment and no league configuration.
@@ -57,6 +58,8 @@ identity:
       - win-prob-v1
       - season-stats-v1
       - rivalry-v1
+      - weekly-recap-v1
+      - weekly-recap-v2
     rules:
       - The model ID is the only way a league, a snapshot or a test refers to a model.
       - kind uses hyphens in the ID (salary-cap-v1) and underscores in the module path (salary_cap/v1.py).
@@ -119,7 +122,7 @@ registry:
     - The registry exposes PARAMS and the module docstring so a snapshot can record which models produced it.
   leagueSelection:
     owner: data-meta/<CanonicalLeagueID>/metadata.json (#986)
-    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut, SeasonStats, Rivalry } -> model IDs
+    shape: Seasons.<season>.Models = { Salary, SalaryCap, Grading, Standings, Awards, Lifecycle, Repairability, TeamRange, WinProb, RosterCap, AutoCut, SeasonStats, Rivalry, WeeklyRecap } -> model IDs
     rule: >
       The league metadata chooses model IDs per season. A new version applies from
       the season in which the metadata first names it; earlier seasons keep their
@@ -311,6 +314,26 @@ models:
       - Immutable successor to rivalry-v1, which is kept byte-unchanged; the v1 summary/formatting functions are shared.
       - The source Matchups finality and valid result/participants establish the actual duel, bracket labels are descriptive evidence only (not a filter).
       - Selected for all league seasons in data-meta (Models.Rivalry, #1470); never silently changes rivalry-v1.
+
+  weekly-recap-v1:
+    status: registered-499
+    module: tools/derived_data_lib/models/weekly_recap/v1.py
+    behaviour: Baseline of the Weekly Recaps before the player awards; computes nothing, the recap carries no PlayerAwards field
+    contract: .ai-context/manual/weekly-recaps.yaml
+    parameters: PlayerAwards false
+    rules:
+      - Immutable baseline; selecting it for a season gives exactly the recap without PlayerAwards.
+
+  weekly-recap-v2:
+    status: registered-499
+    module: tools/derived_data_lib/models/weekly_recap/v2.py
+    behaviour: The four weekly player awards MVP, Matchup Hero, Heartbreaker and Unsung Hero per league-scored week, ties shared; formulas in weekly-recaps.yaml (playerAwards)
+    contract: .ai-context/manual/weekly-recaps.yaml
+    parameters: Awards MVP/MatchupHero/Heartbreaker/UnsungHero, Ties shared, HeroReplacement best bench player of the same position else zero, UnsungHeroEligibility slot-eligible with a legal full lineup, PointsDigits 4
+    rules:
+      - The model is a pure function of the paired matchup facts (points, starters, positions) and the starting slots; it reads no file, no clock and no league configuration.
+      - Missing evidence raises, and the recap marks the week unavailable; it never guesses an award.
+      - Selected per season in data-meta (Models.WeeklyRecap, all seasons v2). A different award rule is weekly-recap-v3, never a silent change of the numbers.
 
 rankingFunctions:
   implementation: tools/derived_data_lib/ranking.py

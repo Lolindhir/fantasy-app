@@ -898,3 +898,52 @@ app-league-matchups {
   .weekly-recap-underdog-loser span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .weekly-recap-underdog-loser .weekly-recap-underdog-logo { width: 16px; height: 16px; }
 }
+
+
+/* Issue #499: weekly player awards (up to four chips) and the Week MVP badge on the key players. */
+.weekly-recap-player-awards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+.weekly-recap-player-award {
+  min-width: 0;
+  overflow: hidden;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.weekly-recap-player-award-winner {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "picture copy points";
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.weekly-recap-player-award-winner:disabled { cursor: default; }
+.weekly-recap-player-award-winner .weekly-recap-player-picture { grid-area: picture; }
+.weekly-recap-player-award-winner .weekly-recap-player-copy { grid-area: copy; }
+.weekly-recap-player-award-winner .weekly-recap-player-points { grid-area: points; }
+.weekly-recap-mvp-badge {
+  width: 12px;
+  height: 12px;
+  margin-left: 3px;
+  vertical-align: middle;
+  color: #b45309;
+  font-size: 12px;
+  line-height: 12px;
+}
+@media (max-width: 640px) {
+  .weekly-recap-player-awards { grid-template-columns: minmax(0, 1fr); }
+}

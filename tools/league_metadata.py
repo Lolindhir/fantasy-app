@@ -39,6 +39,7 @@ KNOWN_MODEL_IDS: dict[str, frozenset[str]] = {
     "AutoCut": frozenset({"auto-cut-v1"}),
     "SeasonStats": frozenset({"season-stats-v1"}),
     "Rivalry": frozenset({"rivalry-v1", "rivalry-v2"}),
+    "WeeklyRecap": frozenset({"weekly-recap-v1", "weekly-recap-v2"}),
 }
 
 TOP_LEVEL_KEYS = {
