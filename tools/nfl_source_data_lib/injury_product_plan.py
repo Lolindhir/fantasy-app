@@ -115,14 +115,28 @@ def classify_injury_artifacts(
     canonical_prefix = f"data-source/nfl/injuries/{season}/"
     derived_path = f"data-derived/nfl-injuries/{season}.json"
     expected_raw = {f"{raw_prefix}raw-{season}.csv", f"{raw_prefix}metadata-{season}.json"}
-    allowed = lambda p: p in expected_raw or p.startswith(canonical_prefix) or p == derived_path
+    manifest_path = f"{canonical_prefix}manifest.json"
+
+    def allowed(path: str) -> bool:
+        if path in expected_raw or path in (manifest_path, derived_path):
+            return True
+        if not path.startswith(canonical_prefix):
+            return False
+        partition_name = path.removeprefix(canonical_prefix)
+        if not re.fullmatch(r"(?:0[1-9]|1[0-9]|2[0-2])\\.json", partition_name):
+            return False
+        return True
     for path, content in [*proposed.items(), *existing.items()]:
         if not isinstance(path, str) or not allowed(path):
             raise ValueError(f"Outside the selected injury product write scope: {path}")
         if not isinstance(content, bytes):
             raise TypeError(f"Artifact content must be bytes: {path}")
-    if not proposed:
-        raise ValueError("Cannot publish a product without any output artifacts")
+    required = expected_raw | {manifest_path, derived_path}
+    missing = sorted(required - set(proposed))
+    week_paths = [path for path in proposed
+                  if path.startswith(canonical_prefix) and path != manifest_path]
+    if missing or not week_paths:
+        raise ValueError(f"Incomplete injury product plan: missing={missing}, weekPartitions={len(week_paths)}")
     changed = sorted(path for path, data in proposed.items()
                      if path in existing and existing[path] != data)
     new = sorted(set(proposed) - set(existing))
