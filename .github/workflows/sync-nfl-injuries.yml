@@ -3,6 +3,13 @@ name: Data • NFL Injuries Daily
 # Permanent, scheduler-owned wrapper. Delegates all writes and concurrency
 # safety to the pre-existing NFL Source Sync reusable workflow (#1421).
 on:
+  # When approved configuration first lands on main, perform one real current
+  # season import instead of waiting for the following daily due slot.
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/sync-nfl-injuries.yml"
   repository_dispatch:
     types:
       - scheduler-sync-nfl-injuries
