@@ -423,5 +423,91 @@ class NflInjuriesProductTests(unittest.TestCase):
             )
 
 
+    def test_offline_materializer_explicit_write_noop_and_plan(self):
+        from nfl_injuries_materialize import stage_injury_season
+        import hashlib
+        import tempfile
+        import json
+        original = asset(2025, [report(2025)])
+        digest = hashlib.sha256(original).hexdigest()
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            kwargs = dict(repo_root=root, season=2025, csv_bytes=original,
+                          players=identities(), expected_source_sha256=digest)
+            planned = stage_injury_season(**kwargs)
+            self.assertEqual("changes-planned", planned["Status"])
+            self.assertFalse(planned["WritePerformed"])
+            self.assertEqual([], list(root.rglob("*")))
+            written = stage_injury_season(**kwargs, write=True)
+            self.assertTrue(written["WritePerformed"])
+            self.assertEqual("staged-local-worktree", written["Status"])
+            self.assertEqual(5, len(written["ChangeSet"]["New"]))
+            outputs = [p for p in root.rglob("*") if p.is_file()]
+            self.assertEqual(5, len(outputs))
+            self.assertEqual(original,
+                (root / "data-source/providers/nflverse/injuries/raw-2025.csv").read_bytes())
+            product = json.loads(
+                (root / "data-derived/nfl-injuries/2025.json").read_text(encoding="utf-8"))
+            self.assertEqual("nfl-injuries-v1", product["ProductVersion"])
+            again = stage_injury_season(**kwargs, write=True)
+            self.assertEqual("no-op", again["Status"])
+            self.assertFalse(again["WritePerformed"])
+
+    def test_offline_materializer_correction_without_removing_weeks(self):
+        from nfl_injuries_materialize import stage_injury_season
+        import hashlib
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            before = asset(2025, [report(2025, week="5"), report(2025, week="7")])
+            after = asset(2025, [report(2025, week="5", report_status="Out"),
+                                  report(2025, week="7")])
+            basic = dict(repo_root=root, season=2025, players=identities())
+            stage_injury_season(**basic, csv_bytes=before,
+                expected_source_sha256=hashlib.sha256(before).hexdigest(), write=True)
+            changed = stage_injury_season(**basic, csv_bytes=after,
+                expected_source_sha256=hashlib.sha256(after).hexdigest(), write=True)
+            self.assertTrue(changed["WritePerformed"])
+            self.assertEqual([], changed["ChangeSet"]["ObsoleteRequiresReview"])
+            self.assertIn("data-source/nfl/injuries/2025/05.json", changed["ChangeSet"]["Changed"])
+            self.assertNotIn("data-source/nfl/injuries/2025/07.json", changed["ChangeSet"]["Changed"])
+
+    def test_offline_materializer_obsolete_week_blocks_all_writes(self):
+        from nfl_injuries_materialize import stage_injury_season
+        import hashlib
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            before = asset(2025, [report(2025, week="5"), report(2025, week="7")])
+            after = asset(2025, [report(2025, week="5", report_status="Out")])
+            args = dict(repo_root=root, season=2025, players=identities(), write=True)
+            stage_injury_season(**args, csv_bytes=before,
+                expected_source_sha256=hashlib.sha256(before).hexdigest())
+            original = {str(path.relative_to(root)): path.read_bytes()
+                for path in root.rglob("*") if path.is_file()}
+            with self.assertRaisesRegex(ValueError, "removed observed injury weeks"):
+                stage_injury_season(**args, csv_bytes=after,
+                    expected_source_sha256=hashlib.sha256(after).hexdigest())
+            same = {str(path.relative_to(root)): path.read_bytes()
+                for path in root.rglob("*") if path.is_file()}
+            self.assertEqual(original, same)
+
+    def test_offline_materializer_rejects_unverified_or_missing_asset(self):
+        from nfl_injuries_materialize import stage_injury_season
+        import tempfile
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            source = asset(2025, [report(2025)])
+            with self.assertRaisesRegex(ValueError, "requires an explicit expected digest"):
+                stage_injury_season(repo_root=root, season=2025,
+                    csv_bytes=source, players=identities(), write=True)
+            decision = stage_injury_season(repo_root=root, season=2025,
+                csv_bytes=source, players=identities(), write=True,
+                release_json={"assets": []})
+            self.assertEqual("upstream-not-ready", decision["Status"])
+            self.assertFalse(decision["WritePerformed"])
+            self.assertEqual([], list(root.rglob("*")))
+
+
 if __name__ == "__main__":
     unittest.main()
