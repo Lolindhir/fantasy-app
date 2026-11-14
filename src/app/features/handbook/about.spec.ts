@@ -6,7 +6,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { AboutComponent } from './about';
 
 describe('Handbook navigation', () => {
-  it('keeps one grouped page registry for mobile and desktop', () => {
+  it('keeps one ordered page registry for mobile and desktop', () => {
     TestBed.configureTestingModule({});
     const component = TestBed.runInInjectionContext(() => new AboutComponent(
       { get: () => of('# Test') } as unknown as HttpClient,
@@ -14,15 +14,16 @@ describe('Handbook navigation', () => {
       { navigate: () => Promise.resolve(true) } as unknown as Router
     ));
 
-    expect(component.groups.map(group => group.title)).toEqual([
-      'Einstieg', 'Liga-Regeln', 'Daten & Analysen'
+    expect(component.tabs.map(tab => tab.id)).toEqual([
+      'Overview',
+      'league-philosophy',
+      'Salary_Explanation',
+      'Offseason_Flow',
+      'Offseason_Schedule',
+      'Draft_Waiver_Order',
+      'Projections_Explanation'
     ]);
-    expect(component.tabs.map(tab => tab.id)).toEqual(component.groups.flatMap(group =>
-      group.pages.map(page => page.id)
-    ));
     expect(new Set(component.tabs.map(tab => tab.id)).size).toBe(component.tabs.length);
-    expect(component.tabs[0].id).toBe('Overview');
-    expect(component.tabs[1].id).toBe('league-philosophy');
     expect(component.mobileSelectionLabel).toBe('Themen wählen');
     expect(component.menuOpen).toBeFalse();
   });

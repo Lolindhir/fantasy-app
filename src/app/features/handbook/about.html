@@ -23,19 +23,16 @@
       </button>
 
       <nav *ngIf="menuOpen" id="handbook-mobile-menu" class="handbook-mobile-menu" aria-label="Handbook-Inhaltsverzeichnis">
-        <section *ngFor="let group of groups" class="handbook-menu-group">
-          <h2>{{ group.title }}</h2>
-          <button
-            *ngFor="let page of group.pages"
-            type="button"
-            class="handbook-nav-item"
-            [class.is-current]="selectedTab === page.id"
-            [attr.aria-current]="selectedTab === page.id ? 'page' : null"
-            (click)="selectTab(page.id)">
-            {{ page.label }}
-            <mat-icon *ngIf="selectedTab === page.id" aria-hidden="true">check</mat-icon>
-          </button>
-        </section>
+        <button
+          *ngFor="let page of tabs"
+          type="button"
+          class="handbook-nav-item"
+          [class.is-current]="selectedTab === page.id"
+          [attr.aria-current]="selectedTab === page.id ? 'page' : null"
+          (click)="selectTab(page.id)">
+          {{ page.label }}
+          <mat-icon *ngIf="selectedTab === page.id" aria-hidden="true">check</mat-icon>
+        </button>
       </nav>
     </div>
     <button *ngIf="menuOpen" type="button" class="handbook-menu-dismiss"
@@ -45,18 +42,15 @@
   <aside class="handbook-sidebar" aria-label="Handbook-Inhaltsverzeichnis">
     <h2 class="handbook-sidebar-heading">Inhalt</h2>
     <nav>
-      <section *ngFor="let group of groups" class="handbook-menu-group">
-        <h3>{{ group.title }}</h3>
-        <button
-          *ngFor="let page of group.pages"
-          type="button"
-          class="handbook-nav-item"
-          [class.is-current]="selectedTab === page.id"
-          [attr.aria-current]="selectedTab === page.id ? 'page' : null"
-          (click)="selectTab(page.id)">
-          {{ page.label }}
-        </button>
-      </section>
+      <button
+        *ngFor="let page of tabs"
+        type="button"
+        class="handbook-nav-item"
+        [class.is-current]="selectedTab === page.id"
+        [attr.aria-current]="selectedTab === page.id ? 'page' : null"
+        (click)="selectTab(page.id)">
+        {{ page.label }}
+      </button>
     </nav>
   </aside>
 

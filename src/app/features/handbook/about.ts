@@ -13,34 +13,14 @@ interface HandbookPage {
   label: string;
 }
 
-interface HandbookGroup {
-  title: string;
-  pages: readonly HandbookPage[];
-}
-
-const HANDBOOK_GROUPS: readonly HandbookGroup[] = [
-  {
-    title: 'Einstieg',
-    pages: [
-      { id: 'Overview', label: 'Übersicht' },
-      { id: 'league-philosophy', label: 'Liga-Philosophie' }
-    ]
-  },
-  {
-    title: 'Liga-Regeln',
-    pages: [
-      { id: 'Salary_Explanation', label: 'Salary & Salary Cap' },
-      { id: 'Offseason_Flow', label: 'Offseason Infografik' },
-      { id: 'Offseason_Schedule', label: 'Offseason Regeln' },
-      { id: 'Draft_Waiver_Order', label: 'Draft & Waiver Regeln' }
-    ]
-  },
-  {
-    title: 'Daten & Analysen',
-    pages: [
-      { id: 'Projections_Explanation', label: 'Prognosen & Siegchancen' }
-    ]
-  }
+const HANDBOOK_PAGES: readonly HandbookPage[] = [
+  { id: 'Overview', label: 'Übersicht' },
+  { id: 'league-philosophy', label: 'Liga-Philosophie' },
+  { id: 'Salary_Explanation', label: 'Salary & Salary Cap' },
+  { id: 'Offseason_Flow', label: 'Offseason Infografik' },
+  { id: 'Offseason_Schedule', label: 'Offseason Regeln' },
+  { id: 'Draft_Waiver_Order', label: 'Draft & Waiver Regeln' },
+  { id: 'Projections_Explanation', label: 'Prognosen & Siegchancen' }
 ];
 
 @Component({
@@ -51,8 +31,7 @@ const HANDBOOK_GROUPS: readonly HandbookGroup[] = [
   styleUrl: './about.scss'
 })
 export class AboutComponent implements OnInit {
-  readonly groups = HANDBOOK_GROUPS;
-  readonly tabs = HANDBOOK_GROUPS.flatMap(group => group.pages);
+  readonly tabs = HANDBOOK_PAGES;
   markdownText = '';
   selectedTab = 'Overview';
   menuOpen = false;
