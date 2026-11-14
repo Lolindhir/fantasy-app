@@ -944,6 +944,18 @@ app-league-matchups {
   font-size: 12px;
   line-height: 12px;
 }
+/* Mobile: keep two columns and stack picture, name and points compactly so four awards need two rows. */
 @media (max-width: 640px) {
-  .weekly-recap-player-awards { grid-template-columns: minmax(0, 1fr); }
+  .weekly-recap-player-awards { gap: 6px; }
+  .weekly-recap-player-award { padding: 8px; }
+  .weekly-recap-player-award-winner {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "picture copy" "picture points";
+    column-gap: 6px;
+    row-gap: 0;
+    margin-top: 6px;
+  }
+  .weekly-recap-player-award-winner .weekly-recap-player-picture { width: 28px; height: 28px; align-self: center; }
+  .weekly-recap-player-award-winner .weekly-recap-player-points { text-align: left; }
+  .weekly-recap-player-award .weekly-recap-award-title { font-size: 0.68rem; }
 }
