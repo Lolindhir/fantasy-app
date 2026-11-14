@@ -1,0 +1,147 @@
+schemaVersion: 1
+status: implementation-foundation-not-published
+trackingIssue: 1421
+purpose: >
+  Define historical NFL injury report evidence as a global, league-independent
+  source and a separate consumer-neutral observed-report trajectory product.
+  The contract does not define actual game availability, injury onset, diagnosis,
+  games missed, medical episode duration, or point-in-time pre-kickoff evidence.
+
+ownership:
+  currentInjuryStatus:
+    owner: data-source/nfl/platform/sleeper/players.json
+    unaffected: true
+  historicalReports:
+    upstream: nflverse injuries season CSV
+    datasetId: nflverse.injuries
+    prospectiveRawPath: data-source/providers/nflverse/injuries/raw-<season>.csv
+    prospectiveMetadataPath: data-source/providers/nflverse/injuries/metadata-<season>.json
+    prospectiveCanonicalPath: data-source/nfl/injuries/<season>/<week>.json
+    plannedSourceRegistry: data-source/registry.json
+    registryActivated: false
+  observedTrajectory:
+    productId: nfl-injuries-v1
+    prospectivePath: data-derived/nfl-injuries/<season>.json
+    consumerNeutral: true
+    publicationActivated: false
+
+source:
+  annualRelease: https://github.com/nflverse/nflverse-data/releases/tag/injuries
+  acquisitionMode: season-partitioned
+  sourceFormat: csv
+  attribution: nflverse and verified upstream owners
+  evidence:
+    - Store every original CSV field with exact original value, including empty strings.
+    - Preserve every logical RFC4180 row with source asset SHA-256 and row ordinal.
+    - Do not deduplicate player-week or player-team-week observations.
+    - Distinguish upstream asset-revision metadata from report event time.
+    - Asset digest plus row ordinal identifies an observation within one snapshot,
+      not a permanent event ID across provider revisions.
+    - Do not synthesize old pre-kickoff snapshots from current annual CSV releases.
+  schemaVariants:
+    legacy2012To2024:
+      extraField: date_modified
+      missingField: season_type
+      actualStartDate: unknown
+      sourceModifiedTimestampIsMedicalOnset: false
+    current2025Plus:
+      extraField: season_type
+      missingField: date_modified
+      playerLevelUpdateOrderKnown: false
+    years2009To2011:
+      status: pending-original-asset-schema-audit
+  rawValuesToPreserve:
+    - Probable
+    - Note
+    - Out (Definitely Will Not Play)
+    - Not injury related
+    - blank report_status
+    - blank practice_status
+    - multiple primary and secondary injury reasons
+  interpretation:
+    - Game report status and practice status are independent evidence dimensions.
+    - Blank fields do not imply healthy, cleared, available, out or zero missed games.
+    - An observed injury reason is not a medical diagnosis or clinical episode.
+    - Date-modified, when present, is provider observation metadata, not injury onset.
+    - A 2025-plus report row has no reliable player-level change timestamp.
+
+canonical:
+  scope: one season-week partition with all raw report observations from that week
+  key: Season + Week + SourceAssetDigest + RowOrdinal
+  fields:
+    - Season
+    - Week
+    - GameType
+    - SeasonType
+    - SourceTeam
+    - SourceIDs.GSIS
+    - CanonicalPlayerID (nullable)
+    - IdentityResolution (resolved-current-graph, unresolved, ambiguous)
+    - OriginalFields
+    - ObservationKey
+    - RowOrdinal
+    - SourceModifiedRaw (nullable)
+    - GameID (nullable)
+    - GameLinkState (linked, not-found, ambiguous, not-evaluated)
+  identity:
+    - Resolve GSIS using persisted current canonical players and aliases; no name fallback.
+    - Distinguish a current-graph resolution from historically proven claim validity.
+    - Report absence in a weekly roster is not missing player identity.
+    - Keep the source team unchanged across transfers and historical team aliases.
+    - Unknown or ambiguous identity never drops an original report.
+  schedule:
+    - Match known season/week/game-type and source team only with explicit evidence.
+    - Reports for a cancelled or unmatched game remain valid source observations.
+    - A team-week not observed in CSV is not a healthy team-week.
+  provenance:
+    - Include source asset SHA-256 and deterministic identity-graph fingerprint.
+    - No acquisition timestamp masquerading as a player observation time.
+    - Partition regeneration is deterministic from the same versioned inputs.
+
+derived:
+  productVersion: nfl-injuries-v1
+  input: canonical NFL injury report partitions only
+  output:
+    - Season
+    - SourceAssetSha256
+    - IdentityGraphFingerprint
+    - ObservedPlayerWeeks
+    - ObservedReasonTrajectories
+    - Quality
+  observedPlayerWeek:
+    key: Season + Week + GSIS
+    - Preserve all independent report observations for this key.
+    - Keep game/practice statuses and primary/secondary reason values separate.
+    - Duplicate player-week observations are not automatically ordered if the
+      source has no trustworthy player-level timestamp.
+  observedReasonTrajectory:
+    key: GSIS + exact reason text, with source field provenance
+    - Count distinct observed weeks and expose earliest/latest observed week.
+    - Represent gaps explicitly; a gap is not recovery or injury resolution.
+    - A trajectory is not a medically confirmed episode.
+  temporal:
+    - Do not compute injury onset, return date, recovery, games missed or start probability.
+    - Snapshot-derived history does not establish what was known pre-kickoff.
+    - Latest NFL injury status remains exclusively owned by existing Sleeper state.
+
+activation:
+  allowedNow:
+    - pure source parser and canonical/derived builders
+    - synthetic deterministic unit tests
+    - documentation and no-persistence offline previews
+  requiresDatasetSpecificRights:
+    - persistent original season CSV retention
+    - canonical and shared-derived publication
+    - public GitHub and web/app redistribution
+  requiresSeparateElevatedReview:
+    - Source Registry activation and new durable paths
+    - Source Sync materialization and scoped GitHub publication
+    - historical 2009-to-current backfill and any automated schedule
+  requiredChecks:
+    - verify original assets, year-specific schema and 2026 revision freshness
+    - audit historical mapping claim validity and team aliases
+    - source licensing and upstream redistribution preflight under Issue 190
+    - fail-closed parser, duplicate, unknown, late correction and canceled-game cases
+    - exact no-op, clean-root replay, metadata provenance and writer race-safety
+    - independent architecture review before activation
+  currentStatus: no-productive-writer-or-app-consumer
