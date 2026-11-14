@@ -105,19 +105,17 @@ def plan_release_refresh(
     }
 
 
-def build_injury_artifacts(
+def build_injury_raw_artifacts(
     *,
     season: int,
     source_csv: bytes,
-    players: dict[str, Any],
-    schedule: dict[str, Any] | None = None,
     expected_source_sha256: str | None = None,
     release_asset: Mapping[str, Any] | None = None,
 ) -> dict[str, bytes]:
-    """Generate intended bytes, never write them to disk.
+    """Validate a source season and produce ONLY provider raw + provenance.
 
-    The returned paths are prospective and do not imply producer activation.
-    Source original-asset verification is distinct from merely hashing bytes.
+    This source owner deliberately requires no canonical player identity, NFL
+    schedule, Derived builder, or App/league input.
     """
     actual_digest = _sha256(source_csv)
     if expected_source_sha256 is not None:
@@ -148,8 +146,6 @@ def build_injury_artifacts(
     parsed = parse_injury_report_csv(source_csv, season=season)
     if not parsed["Rows"]:
         raise ValueError("Empty injury report is not evidence of a healthy or complete season")
-    canonical = canonicalize_injury_reports(parsed, players, schedule=schedule)
-    derived = derive_nfl_injuries(canonical)
     raw_path = f"data-source/providers/nflverse/injuries/raw-{season}.csv"
     metadata_path = f"data-source/providers/nflverse/injuries/metadata-{season}.json"
     target: dict[str, bytes] = {raw_path: source_csv}
@@ -174,6 +170,31 @@ def build_injury_artifacts(
         "OriginalAssetBytesRetained": True,
         "SnapshotSemantics": "retrospective-asset-revision-not-prekickoff",
     })
+    return dict(sorted(target.items()))
+
+
+def build_injury_artifacts(
+    *,
+    season: int,
+    source_csv: bytes,
+    players: dict[str, Any],
+    schedule: dict[str, Any] | None = None,
+    expected_source_sha256: str | None = None,
+    release_asset: Mapping[str, Any] | None = None,
+) -> dict[str, bytes]:
+    """Generate intended bytes, never write them to disk.
+
+    The returned paths are prospective and do not imply producer activation.
+    Source original-asset verification is distinct from merely hashing bytes.
+    """
+    target = build_injury_raw_artifacts(
+        season=season, source_csv=source_csv,
+        expected_source_sha256=expected_source_sha256, release_asset=release_asset,
+    )
+    parsed = parse_injury_report_csv(source_csv, season=season)
+    canonical = canonicalize_injury_reports(parsed, players, schedule=schedule)
+    derived = derive_nfl_injuries(canonical)
+    actual_digest = parsed["AssetSha256"]
     weeks: list[int] = []
     for partition in canonical["Partitions"]:
         week = partition["Week"]
