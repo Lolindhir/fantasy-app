@@ -527,5 +527,119 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertEqual([], list(Path(outside).rglob("*")))
 
 
+    def test_source_refresh_download_once_then_cached_noop(self):
+        from nfl_injuries_refresh import refresh_injury_season
+        import hashlib
+        import tempfile
+        source = asset(2025, [report(2025)])
+        release = {"assets": [{
+            "name": "injuries_2025.csv", "id": 321,
+            "updated_at": "2026-11-14T07:10:00Z", "size": len(source),
+            "digest": "sha256:" + hashlib.sha256(source).hexdigest(),
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        fetched = []
+        def download(url):
+            fetched.append(url)
+            return source
+        with tempfile.TemporaryDirectory() as folder:
+            args = dict(repo_root=Path(folder), season=2025, players=identities(),
+                fetch_release=lambda: release, fetch_asset=download, write=True)
+            first = refresh_injury_season(**args)
+            self.assertTrue(first["Downloaded"])
+            self.assertTrue(first["WritePerformed"])
+            second = refresh_injury_season(**args)
+            self.assertFalse(second["Downloaded"])
+            self.assertFalse(second["WritePerformed"])
+            self.assertEqual("no-op", second["Status"])
+            self.assertEqual(1, len(fetched))
+
+    def test_source_refresh_rederives_from_cache_after_identity_change(self):
+        from nfl_injuries_refresh import refresh_injury_season
+        import hashlib
+        import tempfile
+        source = asset(2025, [report(2025)])
+        release = {"assets": [{
+            "name": "injuries_2025.csv", "id": 321,
+            "updated_at": "2026-11-14T07:10:00Z", "size": len(source),
+            "digest": "sha256:" + hashlib.sha256(source).hexdigest(),
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            opts = dict(repo_root=root, season=2025, write=True,
+                fetch_release=lambda: release,
+                fetch_asset=lambda url: source)
+            refresh_injury_season(**opts, players=identities())
+            updated = identities()
+            updated["Players"][0]["CanonicalPlayerID"] = "NFLP-REVISED"
+            def should_not_download(url):
+                raise AssertionError("Unchanged release must reuse saved raw CSV")
+            changed = refresh_injury_season(**{**opts, "fetch_asset": should_not_download},
+                players=updated)
+            self.assertFalse(changed["Downloaded"])
+            self.assertTrue(changed["WritePerformed"])
+            self.assertIn("data-derived/nfl-injuries/2025.json",
+                          changed["ChangeSet"]["Changed"])
+
+    def test_source_refresh_digest_failure_keeps_previous_revision(self):
+        from nfl_injuries_refresh import refresh_injury_season
+        import hashlib
+        import tempfile
+        source = asset(2025, [report(2025)])
+        digest = hashlib.sha256(source).hexdigest()
+        release = {"assets": [{
+            "name": "injuries_2025.csv", "id": 321,
+            "updated_at": "2026-11-14T07:10:00Z", "size": len(source),
+            "digest": "sha256:" + digest,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = dict(repo_root=root, season=2025, players=identities(), write=True)
+            refresh_injury_season(**args, fetch_release=lambda: release,
+                                  fetch_asset=lambda url: source)
+            before = {str(p.relative_to(root)): p.read_bytes()
+                for p in root.rglob("*") if p.is_file()}
+            later = copy.deepcopy(release)
+            later["assets"][0]["id"] = 322
+            later["assets"][0]["digest"] = "sha256:" + "f" * 64
+            with self.assertRaisesRegex(ValueError, "SHA-256 differs"):
+                refresh_injury_season(**args, fetch_release=lambda: later,
+                                      fetch_asset=lambda url: source)
+            after = {str(p.relative_to(root)): p.read_bytes()
+                for p in root.rglob("*") if p.is_file()}
+            self.assertEqual(before, after)
+
+    def test_source_refresh_read_only_and_missing_release_never_write(self):
+        from nfl_injuries_refresh import refresh_injury_season
+        import hashlib
+        import tempfile
+        source = asset(2025, [report(2025)])
+        release = {"assets": [{
+            "name": "injuries_2025.csv", "id": 321,
+            "updated_at": "2026-11-14T07:10:00Z", "size": len(source),
+            "digest": "sha256:" + hashlib.sha256(source).hexdigest(),
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            args = dict(repo_root=root, season=2025, players=identities())
+            dry = refresh_injury_season(**args, fetch_release=lambda: release,
+                fetch_asset=lambda url: source)
+            self.assertTrue(dry["Downloaded"])
+            self.assertFalse(dry["WritePerformed"])
+            missing = refresh_injury_season(**args, write=True,
+                fetch_release=lambda: {"assets": []},
+                fetch_asset=lambda url: (_ for _ in ()).throw(
+                    AssertionError("Missing asset must never download")))
+            self.assertEqual("upstream-not-ready", missing["Status"])
+            self.assertEqual([], list(root.rglob("*")))
+
+
 if __name__ == "__main__":
     unittest.main()
