@@ -188,6 +188,8 @@ phaseSeparation:
     requires:
       - canonical season manifest, complete expected observed week inventory
       - matching source and identity fingerprints in all canonical week partitions
+      - manifest byte-level SHA-256 and size for every exact week file, preventing
+        a mixed-revision Derived read even when total row counts remain equal
       - manifest source-row count matches exact report rows
     forbiddenDependencies:
       - raw provider CSV and metadata
