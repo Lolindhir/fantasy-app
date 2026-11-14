@@ -1,57 +1,57 @@
 # Mighty Giants – Vollkader-Recheck / Role & Security
 
-**Fachlicher Stand:** 2026-11-14 (Samstag vor NFL Week 10); **TeamID:** 1; **Saison:** 2026; **Status:** manueller datierter Bewertungs-Checkpoint, keine Sleeper-Transaktion.
+**Fachlicher Stand:** 2026-11-14; **Bewertungshorizont:** mehrjährige Dynasty-/Roster-Perspektive (insbesondere 2027 und Folgejahre); **TeamID:** 1; **Saison:** 2026; **Status:** manueller datierter Bewertungs-Checkpoint, keine Sleeper-Transaktion.
 
 ## Daten und Trennung von Fakten/Interpretation
 
 - Aktueller Kader aus `public/data/League.json` und kanonisch abgeleiteten `managed-roster-signals.json`: **37 Spieler**; aktive Belegung **30/30**, Reserve **5/5**, Taxi **2/2** (locked). Identische TeamID-1-Membership wie beim letzten November-Recheck.
 - Ligastarter: 1 K, 2 QB, 2 RB, 2 TE, 2 WR, vier FLEX; zusätzlich 17 Benchplätze. Sechs Teams, Full PPR.
-- Publiziertes Operations-Input-Snapshot: `2026-11-14T04:21:50.640409Z`; aktuelle externe Injury-Recherche 2026-11-13/14. Der Input-Snapshot kann eine 2026-11-14-Abendmeldung noch nicht enthalten; diese steht dann nur in der fachlichen Begründung.
-- Der aktuelle automatische Startable-Skill-Pool von **18/10** ist **Rollen-/Talent-Coverage, keine gesunde Week-10-Startaufstellung**: etwa Puka (IR), Jeremiyah Love (IR), Waddle (Out), Marvin Harrison Jr. (Out) zählen nominell als Starterrolle.
+- Operations-Datenstand: `2026-11-14T04:21:50.640409Z`. Für die Langfristwertung zählen Talent, Alter, Draftkapital, nachhaltige NFL-Rolle, mehrwöchige Usage-Trends, künftige Situation und Dynasty-Marktwert; Injury-News nur bei dauerhaften Karriere-/Rollenfolgen.
+- Der automatische Startable-Skill-Pool von **18/10** ist **nominelle Rollen-/Talent-Coverage**, nicht eine wöchentlich verletzungsbereinigte Startaufstellung.
 - Projected Salary aller kontrollierten Spieler als reiner Rohwert: 597.1 Mio. $; tatsächliches Salary-Cap-Modell und mögliche Reserve-Ausnahmen separat prüfen. Liga-Cap: 427.7 Mio. $. Salary ist kein Talent-Ranking.
-- Menschliche Interpretation/Role/Security, Injury-/Usage-Prognose, externe Experteneinschätzung und Cap-Bewertung bleiben explizit getrennt. Kein User-Override verändert.
+- Role und Security bilden langfristigen Dynasty-Wert und künftige Kaderfunktion ab. Availability für einen bestimmten Spieltag ist eine getrennte Analyse. Kein User-Override verändert.
 
 ## Neue vollständige Klassifikation
 
 | Pos | Spieler | Bereich | Rolle | Security | Vorher | Grenzpriorität | Grund |
 |---|---|---|---|---|---|---:|---|
 | K | Ka'imi Fairbairn | active | `specialist` | `churn` | **unclassified** | – | Verlässlicher aktueller Kicker; Spezialplatz, kein allgemeiner Churn-Slot. |
-| QB | Jaxson Dart | reserve | `backup` | `strong_hold` | backup/strong_hold | – | Langfristiges 2QB-Asset, aktuell Reserve/IR; zählt nicht als spielbare QB-Coverage. |
+| QB | Jaxson Dart | reserve | `backup` | `strong_hold` | backup/strong_hold | – | Junger QB mit glaubhafter mehrjähriger NFL-Starter- und Tradeoption. Im Zwei-QB-Format ist der zukünftige Asset-Wert entscheidend, nicht die gegenwärtige Reserve-Belegung. |
 | QB | Jayden Daniels | active | `core_starter` | `locked` | core_starter/locked | – | Hochwertiger langfristiger QB-Kern. |
-| QB | Michael Penix Jr. | active | `backup` | `conditional` | **unclassified** | 30 | Kurzfristige QB4-Versicherung bei Dart auf IR; realen Free-Agent-Replacement-Level und Bye-/Verletzungsfälle vor Cut prüfen. |
+| QB | Michael Penix Jr. | active | `backup` | `conditional` | **unclassified** | 30 | Atlanta-QB mit potenziell künftigem Starter-/Trade-Wert, aber ungesicherter langfristiger NFL-Rolle. Dynasty-Markt etwa QB25 (FantasyCalc) / QB29 (FantasyPros); als fünfter eigener QB im tiefen Zwei-QB-Format nur bedingt gegen Premium-Alternativen geschützt. Dart-IR ist kein Dauergrund. |
 | QB | Patrick Mahomes | active | `core_starter` | `locked` | core_starter/locked | – | Elite-2QB-Starter, Cap-Last unabhängig von Spielerqualität beurteilen. |
-| QB | Tyler Shough | active | `starter_rotation` | `strong_hold` | backup/strong_hold | – | New-Orleans-Starter: Week 9 265 Pass-Yards plus 50 Rush-Yards; echte dritte QB-Rotation, nicht nur Coverage. |
+| QB | Tyler Shough | active | `starter_rotation` | `strong_hold` | backup/strong_hold | – | New-Orleans-QB mit eigenständigem mehrjährigem NFL-Starterpfad. Dynasty-Markt etwa QB13 (FantasyCalc) / QB18 (FantasyPros); künftige Startwahrscheinlichkeit und Entwicklung statt einzelner Passing-/Rushing-Spiele bewerten. |
 | RB | Breece Hall | active | `core_starter` | `locked` | core_starter/locked | – | Dynasty-Kern und Starter; jüngste Ausfallhistorie separat bei Availability berücksichtigen. |
-| RB | Cam Skattebo | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Junger startbarer RB; Hamstring-Status für Week 10 erneut prüfen. |
+| RB | Cam Skattebo | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Junger RB mit nachgewiesener Starter-/Flex-Qualität und weiterem Entwicklungspotenzial. Strong Hold wegen Talent, künftiger Backfield-Rolle und Dynasty-Wert statt kurzfristiger Verletzungsmeldung. |
 | RB | Chase Brown | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Startbarer RB mit verlässlichem Flex-Einsatzpfad. |
-| RB | D'Andre Swift | active | `starter_rotation` | `strong_hold` | **unclassified** | – | Bears-Lead-Back mit startbarer 2026-Rolle; in Week 10 Bye und damit keine Weekly-Option. |
+| RB | D'Andre Swift | active | `starter_rotation` | `strong_hold` | **unclassified** | – | Etablierter Bears-Lead-Back mit verbleibender Starterproduktion und mittelfristigem Trade-Wert. Nachhaltige NFL-Rolle und Alters-/Konkurrenzrisiko begründen Strong Hold unabhängig von Bye Weeks. |
 | RB | Dylan Sampson | active | `backup` | `hold` | prospect/conditional | – | Aktuelle Receiving-/Change-of-Pace-Nutzung der Browns, eigenständiger Weekly- und zusätzlicher Contingency-Pfad; nicht länger bloß theoretischer Prospect. |
-| RB | Jeremiyah Love | active | `core_starter` | `locked` | core_starter/locked | – | NFL-IR wegen Sprunggelenk; kein sofortiger Startable RB, bleibt geschützter langfristiger Dynasty-Kern. |
-| RB | Jonathon Brooks | reserve | `prospect` | `conditional` | prospect/hold | – | IR/Recovery-Stash ohne aktuelle Spielbarkeit. Sein nächster aktiver Retention-Slot erfordert einen neuen Vergleich. |
-| RB | Kenneth Walker III | active | `core_starter` | `locked` | starter_rotation/strong_hold | – | Elite-2026-Produktion in Kansas City, aber am 2026-11-13 wegen Groin tightness im Friday Practice fehlend/Week 10 questionable; hohe Security ist keine Start-Freigabe. |
-| RB | Kyle Monangai | active | `backup` | `hold` | backup/strong_hold | – | Wert als Contingency-RB hinter eigenem D'Andre Swift, aber aktuelle Out-Bezeichnung und Chicagos Week-10-Bye separat behandeln. |
+| RB | Jeremiyah Love | active | `core_starter` | `locked` | core_starter/locked | – | Hochwertiges junges RB-Talent mit langfristigem Dynasty-Core-Potenzial. Kurzfristige Ausfälle betreffen nur Availability; erst dauerhaft beeinträchtigte Karriere-/Workload-Chancen würden Locked neu infrage stellen. |
+| RB | Jonathon Brooks | reserve | `prospect` | `conditional` | prospect/hold | – | Junger RB mit verbliebenem Talentpotenzial, aber ernsthafter mehrjähriger Recovery-/Verletzungs- und Rollenunsicherheit. Conditional wegen nachhaltiger Karriereprognose und späterer Roster-Opportunity-Cost, nicht wegen einer einzelnen IR-Woche. |
+| RB | Kenneth Walker III | active | `core_starter` | `locked` | starter_rotation/strong_hold | – | 26-jähriger Kansas-City-Premium-RB, Dynasty-Markt FantasyPros RB4 und FantasyCalc RB3. Locked aufgrund von mehrjähriger Starterrolle, Leistungspotenzial und Trade-Wert, nicht wegen eines Einzelspiels oder vorübergehender Groin-Problematik. |
+| RB | Kyle Monangai | active | `backup` | `hold` | backup/strong_hold | – | 24-jähriger RB mit eigenem Dynasty-/Contingent-Potenzial (FantasyCalc ungefähr RB32) hinter dem ebenfalls gehaltenen Swift. Hold wegen des begrenzten langfristigen Zusatznutzens eines eigenen Handcuffs und offenem Starterpfad, nicht wegen eines aktuellen Out-Status. |
 | RB | Saquon Barkley | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Win-now-Produktion mit zunehmendem Alters-, Verletzungs- und Cap-Risiko; kein unantastbarer Dynasty-Core. |
 | RB | Seth McGowan | active | `backup` | `hold` | **unclassified** | – | Produktive Colts-RB2-Rolle hinter Jonathan Taylor, stärkeres Usage-/Contingency-Profil als hypothetischer reiner Stash. |
 | TE | Colston Loveland | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Young-TE mit substanziellem Volumen und Premium-Marktwert; in Liga mit 2 Pflicht-TEs klarer Starter. |
 | TE | Harold Fannin Jr. | active | `starter_rotation` | `strong_hold` | backup/strong_hold | – | Browns-TE mit substantieller Regular-Season-Usage; bei zwei festen TE-Spots relevante Starterrotation. |
 | TE | Trey McBride | active | `core_starter` | `locked` | core_starter/locked | – | Hochwertiger TE-Kern bei zwei festen TE-Spots. |
 | TE | Tyler Warren | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Junger hochrangiger Starter/Flex-TE; vierte TE-Option ist in diesem Ligaformat wertvoll. |
-| WR | Alec Pierce | reserve | `backup` | `hold` | backup/hold | – | Reserve/IR: Recovery-/Return-Option; Recheck bei Aktivierung und knapper IR-Kapazität. |
+| WR | Alec Pierce | reserve | `backup` | `hold` | backup/hold | – | Receiver mit künftiger NFL-Return-/Trade-Option, aber begrenztem langfristigem Elite-Starterpfad im tiefen sechs-Team-Markt. Hold folgt aus Perspektive und Slot-Opportunity-Cost, nicht der heutigen Reserve-Belegung. |
 | WR | Antonio Williams | taxi | `prospect` | `hold` | prospect/hold | – | Taxi locked; Receiving-Upside nach Ausfall vor ihm, aber noch kein gesicherter weekly Starter. |
-| WR | Brian Thomas Jr. | active | `prospect` | `hold` | **unclassified** | 50 | Week 9 ohne Target, etwa 19 Offense-Snaps; drastischer Rollenverlust. Langfristige Talent- und Trade-Option rechtfertigt Hold statt kurzfristigem Cut. |
+| WR | Brian Thomas Jr. | active | `prospect` | `hold` | **unclassified** | 50 | 24-jähriger WR mit hohem Talent- und Draftkapitalprofil; 2026 über die Saison unsichere Jaguars-Receiving-Rolle belastet die mehrjährige Entwicklungserwartung. Dynasty-Markt FantasyPros WR34 / FantasyCalc WR43. Prospect/Hold mit Rebound- und Trade-Upside statt Einspiel-Rückschluss. |
 | WR | Chris Bell | taxi | `prospect` | `hold` | prospect/hold | – | Taxi locked; geringe aktuelle Dolphins-Produktion, Entwicklungshorizont und nächste Offseason entscheidend. |
-| WR | Davante Adams | reserve | `starter_rotation` | `hold` | starter_rotation/hold | – | Veteran mit Win-now-Upside, aber Reserve/IR und Alters-/Salary-Retention-Risiko. |
-| WR | De'Zhaun Stribling | reserve | `prospect` | `strong_hold` | prospect/strong_hold | – | Junges IR-/Reserve-Asset mit Draftkapital; ohne aktuellen aktiven Slotpreis. |
-| WR | George Pickens | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Dallas-WR mit startbarer Rolle; nach Hamstring-Problematik laut aktuellem Week-10-Bericht Rückkehrwahrscheinlichkeit verbessert, aktive Teilnahme final prüfen. |
+| WR | Davante Adams | reserve | `starter_rotation` | `hold` | starter_rotation/hold | – | Veteran mit relevantem Win-now-/Trade-Wert, aber begrenztem langfristigem Karrierehorizont. Alter, nachhaltige NFL-Rolle und künftige Salary-/Retention-Kosten zählen mehr als die gegenwärtige Reserve-Belegung. |
+| WR | De'Zhaun Stribling | reserve | `prospect` | `strong_hold` | prospect/strong_hold | – | Junger WR mit Entwicklungspotenzial und NFL-Investment; geschützte längerfristige Rollen-/Dynasty-Option. Ein temporärer Reserve-Platz mindert nicht automatisch seinen Asset-Wert. |
+| WR | George Pickens | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Dallas-WR mit mehrjähriger Starter-, Receiving- und Dynasty-Trade-Perspektive. Strong Hold folgt aus nachhaltiger NFL-Rolle und Upside statt kurzfristigem Injury- oder Game-Status. |
 | WR | Germie Bernard | active | `prospect` | `conditional` | **unclassified** | 40 | Pittsburgh-Rookie mit realer Rolle; im tiefen sechs-Team-Format weiterhin unter der Premium-Lineup-Schwelle. |
-| WR | Jakobi Meyers | active | `backup` | `conditional` | backup/hold | 10 | Aktuell nutzbare WR-Reserve, aber geringe Elite-Upside gegenüber Dynasty-Kern; erster Vergleichskandidat, kein automatischer Drop. |
-| WR | Jaylen Waddle | active | `starter_rotation` | `hold` | starter_rotation/strong_hold | – | Denver-WR mit schwankender aktueller Usage, für Week 10 nach Concussion als Out gemeldet; langfristiger WR-Asset-Wert bleibt, kurzfristige Week-10-Availability fehlt. |
-| WR | Ladd McConkey | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Junger Chargers-WR mit langfristiger Upside; für Week 10 questionable, kurzfristige Einsatzfähigkeit gesondert prüfen. |
+| WR | Jakobi Meyers | active | `backup` | `conditional` | backup/hold | 10 | 30-jähriger Receiver mit brauchbarem Floor, aber geringerem mehrjährigem Elite-Upside und Trade-Wert als unsere Kernassets. Im sechs-Team-Format erster Opportunity-Cost-Vergleich, keine automatische Cut-Empfehlung. |
+| WR | Jaylen Waddle | active | `starter_rotation` | `hold` | starter_rotation/strong_hold | – | 28-jähriger Denver-WR mit noch relevantem Dynasty-/Trade-Wert, aber unsicherer mehrjähriger Receiving-Rolle und rückläufigem Markt (FantasyPros WR31, FantasyCalc WR38). Hold wegen nachhaltiger Rollen-/Marktunsicherheit, ausdrücklich nicht wegen einer kurzfristigen Concussion. |
+| WR | Ladd McConkey | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Junger Chargers-WR mit plausibler mehrjähriger Receiving-/Starter-Upside und Trade-Wert. Strong Hold ist unabhängig von kurzfristigem Questionable-Status. |
 | WR | Malik Nabers | active | `core_starter` | `locked` | core_starter/locked | – | Hochrangiger WR-Core mit nachhaltiger Ziel-/Dynasty-Rolle. |
-| WR | Marvin Harrison Jr. | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Houston-WR mit jungem Talentprofil und Upside, Week 10 wegen Hamstring als Out; Security von 1-Wochen-Ausfall getrennt. |
-| WR | Puka Nacua | active | `core_starter` | `locked` | core_starter/locked | – | NFL-IR seit 2026-11-12 (Rams offiziell 2026-11-13); mindestens bis Week 15 nicht einsetzbar. Hoher langfristiger Dynasty-Wert rechtfertigt Locked, Fantasy-Reserve aktuell voll. |
+| WR | Marvin Harrison Jr. | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Junger Texans-WR mit hohem Draftkapital, Talentprofil und mehrjährigem Receiving-/Dynasty-Potenzial. Strong Hold wird nicht durch eine einzelne Verletzungswoche relativiert. |
+| WR | Puka Nacua | active | `core_starter` | `locked` | core_starter/locked | – | Premium-Dynasty-WR mit langfristiger Top-Starter- und Trade-Perspektive. Locked bleibt auch bei temporärem IR bestehen; erst belegte dauerhafte Karriere-/Rollenrisiken könnten die mehrjährige Einstufung ändern. |
 | WR | Tetairoa McMillan | active | `starter_rotation` | `strong_hold` | starter_rotation/strong_hold | – | Young-Premium-Dynasty-WR mit klarem Starterpotenzial. |
-| WR | Travis Hunter | active | `prospect` | `hold` | **unclassified** | 20 | Jaguars-Einsatz weiterhin vornehmlich CB; Week 9 nur sechs Offense-Snaps und ein Target. Premium-Dynasty-Prospect, aber keine verlässliche WR-Weekly-Utility. |
+| WR | Travis Hunter | active | `prospect` | `hold` | **unclassified** | 20 | 23-jähriger Top-Draft-Prospect mit außergewöhnlichem Ceiling; die über viele Wochen dominante CB-Nutzung reduziert aber den nachhaltig erwartbaren WR-Target-Pfad. Prospect/Hold ist eine mehrjährige Upside-Wette, keine Reaktion auf ein schwaches Einzelspiel. |
 
 ## Vergleichsgrenze und Churn
 
@@ -60,13 +60,12 @@
 - Penix bleibt wegen 2QB, Dart-IR und aktueller NFL-Starteroption eine echte Coverage-Prüfung. Hunter und Brian Thomas Jr. haben negative Current-Usage, aber eigenständige Dynasty-/Trade-Optionen. Bei einem konkreten Add muss die gesamte Grenzgruppe gegen tatsächlichen ligaeigenen Free-Agent-Ersatz geprüft werden.
 - RB-Contingency getrennt: Monangai → eigener Swift, McGowan → fremder Jonathan Taylor, Sampson → Receiving-Role plus Verletzungs-Upside. Kein pauschales Own-Handcuff-Primat.
 
-## Availability und Abhängigkeiten – wichtige neue Befunde
+## Abgrenzung zur aktuellen Availability
 
-- Puka Nacua: **NFL-IR bestätigt am 12. November**, Rückkehr frühestens Week 15; Rams-Bestätigung vom 13. November. Im Fantasy-Roster bisher **aktiv**, weil alle fünf Reserve-Slots belegt sind: keine imaginäre freie IR-Capacity.
-- Kenneth Walker III: Freitagtraining 13. November wegen Groin tightness verpasst, Week 10 **Questionable**. Kein automatischer Start trotz `locked`.
-- Jaylen Waddle und Marvin Harrison Jr.: Week 10 **Out**. Chicagos Week-10-Bye verhindert zusätzlich einen Swift-Start, ohne dass dies die Dynasty-Security verändert.
-- George Pickens / Ladd McConkey: Rückkehr bzw. Game-Status vor Kickoff verifizieren; Signal-Dataset und jüngster Pressebericht unterscheiden möglicherweise Zeitpunkte.
-- Fünf Reserve-Slots sind ausgelastet (Dart, Brooks, Pierce, Adams, Stribling). Jegliche Puka-IR-Umlagerung braucht einen vollständigen Eligibility- und Roster-Cost-Vergleich.
+- **Nicht Role-/Security-entscheidend:** einzelne Bye Weeks, kurzfristige Questionable-/Out-/IR-Reports, einzelne schwache oder starke Snap-/Target-Wochen und gegenwärtig belegte Reserve-Slots.
+- **Langfristig entscheidend:** nachhaltige NFL-Starterwahrscheinlichkeit, über mehrere Spiele bestätigte Rollenverschiebungen, Draftkapital, Alter, Vertrags-/Teamkontext, Markt-/Trade-Liquidität, langfristige Gesundheitsrisiken und Opportunity-Cost gegenüber unserer Sechserliga.
+- Beispiele: Nacua bleibt Locked trotz temporärer IR. Walker ist wegen des längerfristigen Elite-RB-Profils Locked, nicht wegen eines Einzelspiels. Hunters anhaltende CB-Nutzung ist nur insofern relevant, als sie seinen künftigen WR-Einsatzpfad begrenzt. Waddles Hold basiert nicht auf seiner kurzfristigen Concussion.
+- Weekly Injury, aktuelle tatsächlich spielbare Starter-Coverage und Start/Sit werden getrennt im Weekly-Lineup-Prozess bearbeitet.
 
 ## Verifizierte externe Quellen
 
@@ -79,4 +78,4 @@
 
 ## Nächster fachlicher Recheck
 
-Week-10-Game-Day-Inactives/Walker, Puka-Injury-/Fantasy-IR-Eligibility, Rückkehr von Adams/Dart/Pierce, tatsächliche Jaguars-WR-Offense-Snaps, McGowan-/Sampson-Usage, nächste Add-/Drop-Chance. Die bestehende Klassifikationsautomatisierung bleibt **manuell/hybrid** und ist weiterhin Gegenstand von Issue #203.
+Nachhaltige NFL-Rollenwechsel, über mehrere Spiele belegte Routen-/Targets-/Touches-Trends, 2027-Vertrags-/Teamlage, langfristige Verletzungsfolgen, Dynasty-Marktbewegungen und künftige Opportunity-Cost. Die automatische Klassifikation bleibt **manuell/hybrid** und ist weiterhin Thema von Issue #203.
