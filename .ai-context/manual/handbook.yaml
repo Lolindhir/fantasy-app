@@ -42,10 +42,21 @@ navigation:
     - Overview
     - league-philosophy
     - Salary_Explanation
-    - Projections_Explanation
     - Offseason_Flow
     - Offseason_Schedule
     - Draft_Waiver_Order
+    - Projections_Explanation
+  groupedNavigation:
+    - "Einstieg: Übersicht und Liga-Philosophie"
+    - "Liga-Regeln: Salary & Salary Cap, Offseason Infografik, Offseason Regeln, Draft & Waiver Regeln"
+    - "Daten & Analysen: Prognosen & Siegchancen"
+  presentation: >
+    Mobile uses a compact one-row Overview shortcut and a collapsed grouped
+    topic picker. Desktop uses a persistent grouped sidebar beside the content.
+    Both viewports consume the same page registry and preserve selection/links.
+    The mobile topic picker closes after a page choice or route transition;
+    the selected page remains discernible. New pages must be added to the
+    single grouped registry and categorized in this contract.
   deepLink: /handbook?section=<tab-id>
   unknownSection: Fall back to Overview; do not turn arbitrary query values into asset paths.
   links: >
@@ -66,6 +77,9 @@ overviewMaintenance:
 
 reviewChecklist:
   - Overview is first and default, philosophy second, valid deep links work.
+  - Verify mobile topic menu is collapsed by default, scrollable when long,
+    closes on selection or outside dismissal, and keeps Overview one tap away.
+  - Verify desktop grouped sidebar and mobile picker list the exact same pages.
   - Every page has a corresponding concise Overview mention, and vice versa.
   - Visible Markdown and tooltips contain no internal metadata or model IDs.
   - The public philosophy ends after the six goals, excluding the trade
