@@ -144,6 +144,37 @@
       "attribution": "nflverse released-games evidence"
     },
     {
+      "id": "nflverse.injuries",
+      "provider": "nflverse",
+      "upstream": "nflverse/nflverse-data",
+      "sourceMode": "season-partitioned",
+      "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_{season}.csv",
+      "sourceFormat": "csv",
+      "rawPath": "providers/nflverse/injuries/raw-{season}.csv",
+      "metadataPath": "providers/nflverse/injuries/metadata-{season}.json",
+      "requiredColumns": [
+        "season",
+        "game_type",
+        "team",
+        "week",
+        "gsis_id"
+      ],
+      "minimumRows": 1,
+      "availabilityPolicy": "current-season-may-be-unavailable",
+      "materialize": false,
+      "kind": "seasonal-injury-report",
+      "refreshPolicy": "current-season",
+      "retentionPolicy": "permanent-by-season",
+      "lifecycle": {
+        "class": "seasonal-finalizable",
+        "partitionKey": "season",
+        "finalization": "freeze-prior-seasons",
+        "repairPolicy": "explicit-force"
+      },
+      "license": "CC BY 4.0",
+      "attribution": "nflverse/nflverse-data injury reports (nflverse; original NFL report data; retained raw + transformed products), https://github.com/nflverse/nflverse-data"
+    },
+    {
       "id": "nflverse.rosters",
       "provider": "nflverse",
       "upstream": "nflverse/nflverse-data",
