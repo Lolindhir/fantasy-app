@@ -164,5 +164,98 @@ class GlobalNflGamesTests(unittest.TestCase):
                 materialize(Path(tmp), 2026)
 
 
+from derived_data_lib.nfl_game_detail import build_nfl_game_detail
+from nfl_game_detail_preview import preview
+
+
+def _preview_gains(game_id="2026_06_HOU_JAX"):
+    return {
+        "SchemaVersion": 2,
+        "Season": 2026,
+        "SourceDataset": "nflverse.player-game-long-gains",
+        "Games": [{"GameID": game_id, "SeasonType": "REG", "Week": 6}],
+        "Records": [{
+            "GameID": game_id,
+            "SeasonType": "REG",
+            "Week": 6,
+            "CanonicalPlayerID": "NFLP-test",
+            "GainType": "LongRush",
+            "Yards": 21,
+            "PlayID": 120,
+            "Team": "HOU",
+        }],
+    }
+
+
+class NflGameDetailReadOnlyPreviewTests(unittest.TestCase):
+    def test_existing_long_gain_evidence_is_partial_not_full_pbp(self):
+        index = build_nfl_games(*inputs())
+        result = build_nfl_game_detail(index, "2026_06_HOU_JAX", _preview_gains())
+        self.assertEqual(result["GameID"], "2026_06_HOU_JAX")
+        self.assertEqual(result["PlayByPlay"]["Coverage"], "partial")
+        self.assertFalse(result["PlayByPlay"]["FullPlayByPlayAvailable"])
+        self.assertEqual(result["PlayByPlay"]["LongGains"]["Records"][0]["PlayID"], 120)
+
+    def test_missing_source_and_missing_game_evidence_are_unavailable_not_zero(self):
+        index = build_nfl_games(*inputs())
+        missing = build_nfl_game_detail(index, "2026_06_HOU_JAX")
+        self.assertEqual(missing["PlayByPlay"]["Coverage"], "unavailable")
+        self.assertIsNone(missing["PlayByPlay"]["LongGains"]["Records"])
+        source = _preview_gains()
+        source["Games"] = []
+        source["Records"] = []
+        absent = build_nfl_game_detail(index, "2026_06_HOU_JAX", source)
+        self.assertEqual(absent["PlayByPlay"]["Coverage"], "unavailable")
+        self.assertIsNone(absent["PlayByPlay"]["LongGains"]["Records"])
+        source["Games"] = _preview_gains()["Games"]
+        covered_but_empty = build_nfl_game_detail(index, "2026_06_HOU_JAX", source)
+        self.assertEqual(covered_but_empty["PlayByPlay"]["LongGains"]["Records"], [])
+        self.assertFalse(covered_but_empty["PlayByPlay"]["FullPlayByPlayAvailable"])
+
+    def test_join_and_duplicate_regressions_fail_closed(self):
+        index = build_nfl_games(*inputs())
+        for mutation in ("duplicate", "week", "team", "play_id", "unknown"):
+            with self.subTest(mutation=mutation):
+                source = _preview_gains()
+                if mutation == "duplicate":
+                    source["Records"].append(copy.deepcopy(source["Records"][0]))
+                elif mutation == "week":
+                    source["Games"][0]["Week"] = 5
+                elif mutation == "team":
+                    source["Records"][0]["Team"] = "SEA"
+                elif mutation == "play_id":
+                    source["Records"][0]["PlayID"] = None
+                else:
+                    source["Records"][0]["GameID"] = "2026_06_FAKE_FAKE"
+                with self.assertRaises(ValueError):
+                    build_nfl_game_detail(index, "2026_06_HOU_JAX", source)
+
+    def test_readonly_preview_from_existing_roots(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            index_path = root / "data-derived" / "nfl-games" / "2026.json"
+            source_path = root / DATA_SOURCE_ROOT / "nfl" / "player-game-long-gains" / "2026.json"
+            index_path.parent.mkdir(parents=True)
+            source_path.parent.mkdir(parents=True)
+            index_path.write_text(json.dumps(build_nfl_games(*inputs())), encoding="utf-8")
+            source_path.write_text(json.dumps(_preview_gains()), encoding="utf-8")
+            before = sorted(p.relative_to(root) for p in root.rglob("*"))
+            result = preview(root, 2026, "2026_06_HOU_JAX")
+            self.assertEqual(result["PlayByPlay"]["Coverage"], "partial")
+            self.assertEqual(sorted(p.relative_to(root) for p in root.rglob("*")), before)
+
+    def test_canonical_2026_existing_source_preview(self):
+        root = TOOLS.parent
+        source = root / DATA_SOURCE_ROOT / "nfl" / "player-game-long-gains" / "2026.json"
+        if not source.exists():
+            self.skipTest("Canonical 2026 long-gains not in this checkout")
+        game_id = json.loads(source.read_text(encoding="utf-8"))["Games"][0]["GameID"]
+        detail = preview(root, 2026, game_id)
+        self.assertEqual(detail["PlayByPlay"]["Coverage"], "partial")
+        self.assertFalse(detail["PlayByPlay"]["FullPlayByPlayAvailable"])
+        self.assertTrue(all(row["CanonicalPlayerID"] for row in detail["PlayByPlay"]["LongGains"]["Records"]))
+
+
+
 if __name__ == "__main__":
     unittest.main()
