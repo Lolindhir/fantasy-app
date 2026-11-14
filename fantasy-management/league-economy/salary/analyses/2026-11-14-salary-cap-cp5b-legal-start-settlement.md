@@ -1,7 +1,7 @@
 # CP5b – Legaler Cap-Start, Gegenmaßnahmen und Settlement-Fenster
 
 > **Datum:** 14.11.2026 · **Issue:** [#1344](https://github.com/Lolindhir/fantasy-app/issues/1344) · **Status:** abgegrenzte kontrafaktische Mechanikprüfung, **keine** Regelentscheidung oder Einführung.  
-> **Nordstern:** [sechs geschützte Designziele](../../league-context/league-philosophy.md); von Robert als Arbeitsgrundlage fixiert, ligaweite Ratifizierung noch offen.  
+> **Nordstern:** [sechs geschützte Designziele](../../../league-context/league-philosophy.md); von Robert als Arbeitsgrundlage fixiert, ligaweite Ratifizierung noch offen.  
 > **Vorläufer:** [CP2b](2026-11-06-salary-cap-cp2b-historical-compliance.md), [CP3](2026-11-14-salary-cap-cp3-market-retention.md), [CP4](2026-11-14-salary-cap-cp4-contract-deadcap-sensitivities.md), [CP5a](2026-11-14-salary-cap-cp5a-system-windows.md).  
 > **Metrik-Anhang:** [CP5b JSON](2026-11-14-salary-cap-cp5b-metrics.json).
 
