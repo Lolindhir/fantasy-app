@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import copy
+import csv
+import gzip
+import hashlib
 import json
 import sys
 import tempfile
@@ -409,6 +412,164 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
         self.assertEqual([x["Team"] for x in detail["TeamStats"]["Teams"]], ["WAS", "NYG"])
         self.assertTrue(all(x["CanonicalPlayerID"] for x in detail["PlayerStats"]["Players"]))
         self.assertTrue(all(x["CanonicalPlayerID"] for x in detail["SnapCounts"]["Players"]))
+        self.assertFalse(detail["PlayByPlay"]["FullPlayByPlayAvailable"])
+
+
+
+# PBP CP3 tests use a synthetic nflverse-shaped gzip, NOT a claim that a
+# real season release was downloaded or that a game's completeness was proven.
+_PBP_CSV_FIELDS = [
+    "game_id", "play_id", "season", "season_type", "week",
+    "home_team", "away_team", "qtr", "drive", "down",
+    "ydstogo", "yardline_100", "game_seconds_remaining",
+    "posteam", "defteam", "play_type", "desc", "epa", "success",
+    "qb_dropback", "pass_attempt", "passer_player_id", "future_provider_field",
+]
+
+
+def _pbp_row(**overrides):
+    row = {
+        "game_id": "2026_06_HOU_JAX", "play_id": "33", "season": "2026",
+        "season_type": "REG", "week": "6", "home_team": "JAX",
+        "away_team": "HOU", "qtr": "1", "drive": "1", "down": "1",
+        "ydstogo": "10", "yardline_100": "78", "game_seconds_remaining": "3450",
+        "posteam": "HOU", "defteam": "JAX", "play_type": "pass",
+        "desc": "Pass complete for first down", "epa": "1.257",
+        "success": "1", "qb_dropback": "1", "pass_attempt": "1",
+        "passer_player_id": "00-0031234", "future_provider_field": "preserved",
+    }
+    row.update(overrides)
+    return row
+
+
+def _write_original_pbp_gzip(path: Path, rows: list[dict], fields=None) -> None:
+    with gzip.open(path, "wt", encoding="utf-8", newline="") as output:
+        writer = csv.DictWriter(output, fieldnames=fields or _PBP_CSV_FIELDS)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+class NflOriginalPbpGamePreviewTests(unittest.TestCase):
+    def test_original_game_plays_selected_sorted_and_all_source_columns_retained(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            index_file = root / "data-derived" / "nfl-games" / "2026.json"
+            index_file.parent.mkdir(parents=True)
+            index_file.write_text(json.dumps(build_nfl_games(*inputs())), encoding="utf-8")
+            pbp = root / "play_by_play_2026.csv.gz"
+            rows = [
+                _pbp_row(play_id="90", qtr="2", down="", ydstogo="", epa="",
+                         success="", play_type="kickoff", posteam="", defteam="",
+                         future_provider_field="special,quoted"),
+                _pbp_row(play_id="33.0", future_provider_field="äöü"),
+                _pbp_row(play_id="50", play_type="run", epa="-0.25", success="0"),
+                _pbp_row(game_id="2026_06_OTHER_MATCH", play_id="7"),
+            ]
+            _write_original_pbp_gzip(pbp, rows)
+            before = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            expected = hashlib.sha256(pbp.read_bytes()).hexdigest()
+            result = preview(root, 2026, "2026_06_HOU_JAX", pbp, expected)
+            self.assertEqual(result["SchemaVersion"], 3)
+            self.assertEqual(result["PlayerStats"]["Status"], "unavailable")
+            self.assertEqual(result["SnapCounts"]["Status"], "unavailable")
+            block = result["PlayByPlay"]["OriginalPlays"]
+            self.assertEqual(block["SourceAssetSHA256"], expected)
+            self.assertEqual([p["PlayID"] for p in block["Plays"]], [33, 50, 90])
+            self.assertEqual(block["PlayCount"], 3)
+            self.assertEqual(block["Plays"][0]["SourceRow"]["future_provider_field"], "äöü")
+            self.assertEqual(block["Plays"][2]["SourceRow"]["future_provider_field"], "special,quoted")
+            self.assertIsNone(block["Plays"][2]["Down"])
+            self.assertIsNone(block["Plays"][2]["EPA"])
+            self.assertIs(block["Plays"][0]["Success"], True)
+            self.assertIs(block["Plays"][1]["Success"], False)
+            self.assertEqual(block["Plays"][0]["EPA"], 1.257)
+            self.assertFalse(result["PlayByPlay"]["FullPlayByPlayAvailable"])
+            self.assertFalse(block["CompletenessVerified"])
+            self.assertEqual(block["Status"], "present-unverified-completeness")
+            after = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            self.assertEqual(before, after)
+
+    def test_gameid_unknown_digest_and_missing_csv_columns_fail_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            index_file = root / "data-derived" / "nfl-games" / "2026.json"
+            index_file.parent.mkdir(parents=True)
+            index_file.write_text(json.dumps(build_nfl_games(*inputs())), encoding="utf-8")
+            pbp = root / "season.csv.gz"
+            _write_original_pbp_gzip(pbp, [_pbp_row(game_id="2026_06_SF_LA")])
+            with self.assertRaisesRegex(ValueError, "not found"):
+                preview(root, 2026, "2026_06_HOU_JAX", pbp)
+            _write_original_pbp_gzip(pbp, [_pbp_row()])
+            with self.assertRaisesRegex(ValueError, "SHA256"):
+                preview(root, 2026, "2026_06_HOU_JAX", pbp, "f" * 64)
+            with self.assertRaisesRegex(ValueError, "requires"):
+                preview(root, 2026, "2026_06_HOU_JAX", expected_sha256="f" * 64)
+            fields = [f for f in _PBP_CSV_FIELDS if f != "play_id"]
+            with gzip.open(pbp, "wt", encoding="utf-8", newline="") as output:
+                writer = csv.DictWriter(output, fieldnames=fields)
+                writer.writeheader()
+                writer.writerow({name: "" for name in fields})
+            with self.assertRaisesRegex(ValueError, "Missing original PBP columns"):
+                preview(root, 2026, "2026_06_HOU_JAX", pbp)
+
+    def test_invalid_original_pbp_game_and_play_rows_are_rejected(self):
+        idx = build_nfl_games(*inputs())
+        for mutation in (
+            "duplicate-play", "missing-id", "fractional-id", "wrong-week",
+            "wrong-season", "wrong-type", "wrong-home", "wrong-defense",
+            "same-teams", "invalid-down", "invalid-ydstogo", "invalid-epa",
+            "invalid-success", "invalid-quarter", "missing-source-row",
+        ):
+            with self.subTest(mutation=mutation):
+                rows = [_pbp_row(), _pbp_row(play_id="37")]
+                a = rows[0]
+                if mutation == "duplicate-play":
+                    rows[1]["play_id"] = "33.0"
+                elif mutation == "missing-id":
+                    a["play_id"] = ""
+                elif mutation == "fractional-id":
+                    a["play_id"] = "33.5"
+                elif mutation == "wrong-week":
+                    a["week"] = "7"
+                elif mutation == "wrong-season":
+                    a["season"] = "2025"
+                elif mutation == "wrong-type":
+                    a["season_type"] = "POST"
+                elif mutation == "wrong-home":
+                    a["home_team"] = "NYG"
+                elif mutation == "wrong-defense":
+                    a["defteam"] = "DAL"
+                elif mutation == "same-teams":
+                    a["defteam"] = "HOU"
+                elif mutation == "invalid-down":
+                    a["down"] = "5"
+                elif mutation == "invalid-ydstogo":
+                    a["ydstogo"] = "-8"
+                elif mutation == "invalid-epa":
+                    a["epa"] = "Infinity"
+                elif mutation == "invalid-success":
+                    a["success"] = "2"
+                elif mutation == "invalid-quarter":
+                    a["qtr"] = "0"
+                elif mutation == "missing-source-row":
+                    rows[0] = None
+                with self.assertRaises(ValueError):
+                    build_nfl_game_detail(idx, "2026_06_HOU_JAX", pbp_rows=rows)
+
+    def test_large_complete_game_shape_does_not_truncate_at_longgain_rows(self):
+        idx = build_nfl_games(*inputs())
+        rows = [
+            _pbp_row(play_id=str(n), qtr=str(1 + n // 70),
+                     play_type="pass" if n % 2 else "run", 
+                     epa=str((n % 7 - 3) / 10))
+            for n in range(1, 271)
+        ]
+        detail = build_nfl_game_detail(idx, "2026_06_HOU_JAX", pbp_rows=rows)
+        plays = detail["PlayByPlay"]["OriginalPlays"]["Plays"]
+        self.assertEqual(len(plays), 270)
+        self.assertEqual(plays[0]["PlayID"], 1)
+        self.assertEqual(plays[-1]["PlayID"], 270)
+        self.assertEqual(len({p["PlayID"] for p in plays}), 270)
         self.assertFalse(detail["PlayByPlay"]["FullPlayByPlayAvailable"])
 
 
