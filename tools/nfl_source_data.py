@@ -146,7 +146,10 @@ def main() -> int:
                     or args.historical_backfill_limit):
                 raise ValueError("Injury raw Source requires its isolated dataset, --raw-only and at most one season")
             season = args.seasons[0] if args.seasons else current_source_season(repo_root)
-            result = refresh_injury_raw(repo_root=repo_root, season=season, write=True)
+            result = refresh_injury_raw(
+                repo_root=repo_root, season=season, write=True,
+                current_season=current_source_season(repo_root),
+            )
             print(f"{INJURIES_DATASET_ID} season={season}: {result['Status']} (downloaded={result['Downloaded']})")
             return 0
         # The Injury provider has a distinct post-upstream cadence and must never
