@@ -993,5 +993,27 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertIn("data-source/nfl/injuries/*", source)
 
 
+    def test_future_season_can_use_2025_plus_header_without_silent_format_fallback(self):
+        from nfl_source_data_lib.injury_reports import parse_injury_report_csv
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts
+        from nfl_injuries_phase import run_injury_phase
+        import tempfile
+        import hashlib
+        source = asset(2027, [report(2027)])
+        parsed = parse_injury_report_csv(source, season=2027)
+        self.assertEqual(2027, parsed["Season"])
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            run_injury_phase(root, 2027, "raw", write=True, source_csv=source,
+                expected_source_sha256=hashlib.sha256(source).hexdigest())
+            run_injury_phase(root, 2027, "canonical", write=True,
+                players=identities())
+            derived = run_injury_phase(root, 2027, "derived", write=True)
+            self.assertTrue(derived["Written"])
+            self.assertEqual(2027, build_injury_artifacts(
+                season=2027, source_csv=source, players=identities(),
+            ) and parsed["Season"])
+
+
 if __name__ == "__main__":
     unittest.main()
