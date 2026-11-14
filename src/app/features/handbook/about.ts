@@ -8,7 +8,17 @@ import { catchError, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import { SharedMaterialImports } from '../../shared/shared-material-imports';
 import { publicPhilosophyMarkdown } from './handbook-content.util';
 
-const HANDBOOK_GROUPS = [
+interface HandbookPage {
+  id: string;
+  label: string;
+}
+
+interface HandbookGroup {
+  title: string;
+  pages: readonly HandbookPage[];
+}
+
+const HANDBOOK_GROUPS: readonly HandbookGroup[] = [
   {
     title: 'Einstieg',
     pages: [
@@ -31,7 +41,7 @@ const HANDBOOK_GROUPS = [
       { id: 'Projections_Explanation', label: 'Prognosen & Siegchancen' }
     ]
   }
-] as const;
+];
 
 @Component({
   selector: 'app-about',
