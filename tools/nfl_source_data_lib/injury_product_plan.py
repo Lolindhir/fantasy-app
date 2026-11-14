@@ -123,7 +123,7 @@ def classify_injury_artifacts(
         if not path.startswith(canonical_prefix):
             return False
         partition_name = path.removeprefix(canonical_prefix)
-        if not re.fullmatch(r"(?:0[1-9]|1[0-9]|2[0-2])\\.json", partition_name):
+        if not re.fullmatch(r"(?:0[1-9]|1[0-9]|2[0-2])\.json", partition_name):
             return False
         return True
     for path, content in [*proposed.items(), *existing.items()]:
