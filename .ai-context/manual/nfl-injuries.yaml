@@ -131,6 +131,14 @@ materializationPlan:
   status: implemented-side-effect-free-not-published
   implementation: tools/nfl_source_data_lib/injury_product_plan.py
   inspectionCli: tools/nfl_injuries_preview.py --mode plan
+  localStagingCli: tools/nfl_injuries_materialize.py --write
+  releaseRefreshCli: tools/nfl_injuries_refresh.py --season <year>
+  localStagingDefault: dry-run
+  stagingNotPublication: >
+    Explicit --write only stages the selected season in the local working tree.
+    There is no Git commit, push, registry activation, schedule or productive writer.
+    A subsequent approved pipeline must use the existing protected publication
+    helpers, exact write scopes and race-triggered rebuilds.
   plannedFiles:
     - data-source/providers/nflverse/injuries/raw-<season>.csv
     - data-source/providers/nflverse/injuries/metadata-<season>.json
@@ -145,6 +153,14 @@ materializationPlan:
     - Removed source weeks are blocking review candidates, not automatic deletes.
     - Every candidate path is checked against a narrow selected-season write scope.
     - Computation of a plan does not enable any writer, registry or workflow.
+    - The source refresh fetches official release metadata, verifies exact allowed
+      URL, downloaded size and official SHA-256 where provided.
+    - When the release is unchanged, use persisted raw CSV after verifying its
+      digest against metadata; always rerun derivation if identity or schedule
+      fingerprints changed.
+    - A missing release asset is a retryable state, never an empty product.
+    - Changes to old source weeks trigger review instead of silent deletion.
+    - Reject path traversal and symlinked ancestor directories before local staging.
 
 freshness:
   historicalInjuryReport:
@@ -156,7 +172,7 @@ freshness:
     backfill: explicit historical seasons with schema gates
     noOp: do not reprocess when source digest and applicable identity/schedule inputs are unchanged
     retry: missed or delayed upstream refresh requires bounded catch-up check
-    status: not-activated
+    status: source-refresh-cli-implemented-unscheduled
   currentEspnInjuryStatus:
     source: espn.player-availability
     existingPath: data-source/nfl/player-availability/espn.json
@@ -178,7 +194,7 @@ activation:
   allowedNow:
     - pure source parser and canonical/derived builders
     - synthetic deterministic unit tests
-    - documentation, deterministic no-write output plans and offline previews
+    - documentation, deterministic no-write output plans and offline previews\n    - explicitly gated local working-tree staging and read-only official release observation
   requiresDatasetSpecificRights:
     - persistent original season CSV retention
     - canonical and shared-derived publication
