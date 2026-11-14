@@ -30,6 +30,81 @@ def _sha256(value: bytes) -> str:
     return hashlib.sha256(value).hexdigest()
 
 
+def plan_release_refresh(
+    release: dict[str, Any],
+    *,
+    season: int,
+    stored_metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Decide if an upstream season asset needs a new download.
+
+    Pure release-metadata observer: no network, no clock and no storage.
+    A missing asset is retryable, never evidence of healthy players or
+    permission to overwrite the last good product with empty results.
+    """
+    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2026:
+        raise ValueError("Unsupported injury release season")
+    if not isinstance(release, dict) or not isinstance(release.get("assets"), list):
+        raise ValueError("Injury release metadata requires an assets list")
+    expected_name = f"injuries_{season}.csv"
+    matching = [a for a in release["assets"]
+                if isinstance(a, dict) and a.get("name") == expected_name]
+    if not matching:
+        return {
+            "Season": season, "Action": "retry-later",
+            "Reason": "upstream-season-asset-not-listed",
+            "SourceAsset": None,
+        }
+    if len(matching) != 1:
+        raise ValueError(f"Multiple upstream injury release assets named {expected_name}")
+    asset = matching[0]
+    expected_url = (
+        "https://github.com/nflverse/nflverse-data/releases/download/"
+        f"injuries/{expected_name}"
+    )
+    if asset.get("browser_download_url") != expected_url:
+        raise ValueError("Injury release asset download URL is not the expected official URL")
+    ident, updated, size = asset.get("id"), asset.get("updated_at"), asset.get("size")
+    if (not isinstance(ident, int) or isinstance(ident, bool) or ident < 1
+            or not isinstance(updated, str) or not updated
+            or not isinstance(size, int) or isinstance(size, bool) or size <= 0):
+        raise ValueError("Incomplete injury release asset identity, timestamp or size")
+    digest_raw = asset.get("digest")
+    digest = None
+    if digest_raw is not None:
+        if not isinstance(digest_raw, str) or not digest_raw.startswith("sha256:"):
+            raise ValueError("Unsupported injury asset digest format")
+        digest = digest_raw.removeprefix("sha256:").lower()
+        if not _SHA256.fullmatch(digest):
+            raise ValueError("Invalid upstream injury asset SHA-256 digest")
+    known = stored_metadata or {}
+    if known and (known.get("SourceDataset") != _DATASET
+                  or known.get("Season") != season):
+        raise ValueError("Stored injury source metadata has the wrong dataset or season")
+    same_size = known.get("AssetByteSize") == size
+    same_digest = digest is not None and known.get("AssetSha256") == digest
+    same_revision = (known.get("ReleaseAssetId") == ident
+                     and known.get("ReleaseAssetUpdatedAt") == updated
+                     and same_size)
+    skip = same_size and (same_digest or (digest is None and same_revision))
+    return {
+        "Season": season,
+        "Action": "no-op" if skip else "download-and-validate",
+        "Reason": ("official-sha256-and-size-unchanged" if same_digest and same_size
+                   else "same-provider-revision-no-official-digest" if skip
+                   else "new-or-unverified-release-revision"),
+        "SourceAsset": {
+            "Name": expected_name,
+            "Id": ident,
+            "UpdatedAt": updated,
+            "ByteSize": size,
+            "Sha256": digest,
+            "DownloadUrl": expected_url,
+        },
+        "FullSourceDigestAvailable": digest is not None,
+    }
+
+
 def build_injury_artifacts(
     *,
     season: int,
