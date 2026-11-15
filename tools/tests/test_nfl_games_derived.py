@@ -1053,6 +1053,18 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
         doc = self._metrics([_pbp_row(play_id="1")])
         self.assertEqual(len(doc["CandidateIDs"]), 17)
         self.assertEqual(len(doc["DeferredPositionDependentIDs"]), 6)
+        import yaml
+        catalog = yaml.safe_load(
+            (TOOLS.parent / ".ai-context/manual/nfl-games-pbp-metrics.yaml").read_text(encoding="utf-8")
+        )
+        expected = {
+            item["id"]
+            for family in catalog["metricFamilies"]
+            if family["family"] != "position-conditional"
+            for item in family["candidates"]
+            if not item.get("requiredJoin") and not family.get("sharedJoin")
+        }
+        self.assertEqual(set(doc["CandidateIDs"]), expected)
         self.assertFalse(doc["RequiredCanonicalPlayerID"])
         self.assertFalse(doc["CoverageVerified"])
         self.assertIn("not-publishable", doc["Status"])
@@ -1128,8 +1140,6 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
         self.assertEqual(m["dropback_epa_per_play_allowed"]["Missing"], 1)
         self.assertIsNone(m["rush_attempts_faced"]["Value"])
         self.assertIsNone(m["third_down_conversion_rate_allowed"]["Value"])
-        self.assertIsNone(m["drive_start_context"]["FieldPosition"]["Value"]
-                          if m["drive_start_context"]["FieldPosition"]["Observed"] == 0 else None)
 
     def test_used_invalid_provider_flag_fails_closed(self):
         for field in ("pass_attempt", "qb_dropback", "rush_attempt",
