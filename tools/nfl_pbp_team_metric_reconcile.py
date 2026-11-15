@@ -172,6 +172,46 @@ def _source_yards(rows: list[dict[str, str]], offense: str) -> dict[str, Any]:
 
 
 
+def _unknown_comparison_eligibility(
+    rows: list[dict[str, str]], offense: str,
+) -> dict[str, int]:
+    """Count raw source rows that could affect a team comparison but lack flags.
+
+    A missing two-point, attempt, sack or spike flag must not let a partial
+    known-play total appear identical to the canonical PlayerStats total.
+    Known sacks/spikes and confirmed two-point plays cannot contribute to
+    official throw totals; unrelated non-attempt plays are not made unknown.
+    """
+    uncertain = {name: 0 for name in BASE_FIELDS}
+    for row in rows:
+        if row.get("posteam") != offense:
+            continue
+        two_point = _number(row, "two_point_attempt")
+        if two_point == 1:
+            continue
+        attempt = _number(row, "pass_attempt")
+        rush = _number(row, "rush_attempt")
+        sack = _number(row, "sack")
+        spike = _number(row, "qb_spike")
+        possible_throw = (
+            (attempt == 1 and sack != 1 and spike != 1)
+            or (attempt is None and row.get("play_type") == "pass")
+        )
+        possible_rush = (
+            rush == 1 or (rush is None and row.get("play_type") == "run")
+        )
+        if possible_throw and (
+            two_point is None or attempt is None
+            or sack is None or spike is None
+        ):
+            uncertain["attempts"] += 1
+            uncertain["passing_yards"] += 1
+        if possible_rush and (two_point is None or rush is None):
+            uncertain["carries"] += 1
+            uncertain["rushing_yards"] += 1
+    return uncertain
+
+
 def _metric_coverage_add(storage: dict, metric_id: str, metric: dict) -> None:
     """Accumulate research-only observations with observed denominators.
 
@@ -287,6 +327,8 @@ def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict
 
     counts = {name: {"Compared": 0, "Equal": 0, "Different": 0,
                      "MissingPBP": 0, "MissingPlayerStats": 0,
+                     "UnknownSourceEligibilityRows": 0,
+                     "UnknownSourceEligibilityTeamGames": 0,
                      "Examples": []} for name in BASE_FIELDS}
     deltas: dict[str, list[int]] = {name: [] for name in BASE_FIELDS}
     mismatches: dict[str, list[dict]] = {name: [] for name in BASE_FIELDS}
@@ -327,17 +369,26 @@ def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict
                 elif metric_id == "drive_start_context":
                     _metric_coverage_add(metric_evidence, metric_id + ".FieldPosition", evidence["FieldPosition"])
             yards = _source_yards(rows, offense)
+            uncertain = _unknown_comparison_eligibility(rows, offense)
             observations = {
-                "attempts": metrics["pass_attempts_faced"]["Value"],
-                "carries": metrics["rush_attempts_faced"]["Value"],
+                "attempts": metrics["pass_attempts_faced"]["Value"]
+                    if not uncertain["attempts"]
+                    and not metrics["pass_attempts_faced"]["UnknownFlagCount"] else None,
+                "carries": metrics["rush_attempts_faced"]["Value"]
+                    if not uncertain["carries"]
+                    and not metrics["rush_attempts_faced"]["UnknownFlagCount"] else None,
                 "passing_yards": yards["passing_yards"]["Value"]
-                    if yards["passing_yards"]["Missing"] == 0 else None,
+                    if not uncertain["passing_yards"]
+                    and yards["passing_yards"]["Missing"] == 0 else None,
                 "rushing_yards": yards["rushing_yards"]["Value"]
-                    if yards["rushing_yards"]["Missing"] == 0 else None,
+                    if not uncertain["rushing_yards"]
+                    and yards["rushing_yards"]["Missing"] == 0 else None,
             }
             game_team_rows += 1
             for name, value in observations.items():
                 c = counts[name]
+                c["UnknownSourceEligibilityRows"] += uncertain[name]
+                c["UnknownSourceEligibilityTeamGames"] += bool(uncertain[name])
                 if truth is None:
                     c["MissingPlayerStats"] += 1
                     continue
@@ -395,6 +446,8 @@ def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict
         "ComparisonRule": (
             "Diagnostic only: PBP excludes certain flags (spikes, two-point plays) "
             "and differs from official PlayerStats on sacks, kneels and penalties. "
+            "Unknown two-point/attempt/throw-eligibility flags suppress affected "
+            "team comparisons rather than silently counting partial totals. "
             "Delta = PBP minus PlayerStats; missing comparisons are excluded, "
             "absolute percentiles use nearest rank, examples show the 12 largest "
             "absolute deviations. Equal does not prove completeness; unequal "
