@@ -9,6 +9,7 @@ import { AllTimeOverviewComponent } from '../../shared/components/all-time-overv
 import { CurrentStandingsComponent } from '../../shared/components/current-standings/current-standings';
 import { LeagueLegacySummaryComponent } from '../../shared/components/league-legacy-summary/league-legacy-summary';
 import { SeasonArchiveComponent } from '../../shared/components/season-archive/season-archive';
+import { buildPlayerAwardHighlights } from '../../shared/utils/player-award-view.util';
 import { buildBiggestUpsetHighlight, statisticsByTeam } from '../../shared/utils/season-statistics-view.util';
 import {
   buildCurrentStandings,
@@ -55,8 +56,8 @@ export class StandingsPageComponent {
     })
   );
 
-  vm$ = forkJoin({ data: this.dataService.getLeagueWithPlayers(), stats: this.statistics$ }).pipe(
-    map(({ data: { league, teams }, stats }) => {
+  vm$ = forkJoin({ data: this.dataService.getLeagueWithPlayers(), stats: this.statistics$, awards: this.dataService.getPlayerAwardHistory() }).pipe(
+    map(({ data: { league, teams }, stats, awards }) => {
       const legacy = buildLeagueLegacy(league, teams);
       const configuredPlayoffTeams = league.Settings?.['playoff_teams'];
       const playoffTeams = typeof configuredPlayoffTeams === 'number'
@@ -71,7 +72,8 @@ export class StandingsPageComponent {
         legacy,
         highlights: [
           ...legacy.highlights,
-          ...(buildBiggestUpsetHighlight(stats.current, stats.bySeason) ? [buildBiggestUpsetHighlight(stats.current, stats.bySeason)!] : [])
+          ...(buildBiggestUpsetHighlight(stats.current, stats.bySeason) ? [buildBiggestUpsetHighlight(stats.current, stats.bySeason)!] : []),
+          ...buildPlayerAwardHighlights(awards)
         ],
         currentStatistics: stats.current && String(stats.current.Season) === String(league.Season) ? statisticsByTeam(stats.current.Teams) : null,
         seasonStatistics: stats.bySeason,
