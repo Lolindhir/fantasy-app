@@ -73,6 +73,12 @@ class RoutingTests(unittest.TestCase):
         selected = set(self.choose("tools/league_source_refresh_witness.py")["selected"])
         self.assertEqual({"nfl-identity-replay", "league-pwf-twp", "consumer-restore"}, selected)
 
+    def test_readonly_pbp_team_reconciliation_routes_to_derived_not_identity_or_market(self):
+        result = self.choose("tools/nfl_pbp_team_metric_reconcile.py")
+        self.assertEqual({"league-pwf-twp", "consumer-restore"}, set(result["selected"]))
+        self.assertFalse(result["uncertain"])
+        self.assertNotIn("nfl-identity-replay", result["selected"])
+
     def test_league_history_change_selects_derived_families_not_identity_or_market(self):
         selected = set(self.choose("tools/league_history_app_publish.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
