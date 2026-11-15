@@ -1208,17 +1208,18 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
             (TOOLS.parent / ".ai-context/manual/nfl-games-pbp-metrics.yaml").read_bytes()
         )
         def row(play_id, posteam, defteam, play_type, **kwargs):
-            data = _pbp_row(
-                game_id=game, season="2025", week="1",
-                away_team="ARI", home_team="NO", play_id=str(play_id),
-                posteam=posteam, defteam=defteam, play_type=play_type,
-                two_point_attempt="0", sack="0", qb_spike="0",
-                rush_attempt="0", qb_scramble="0",
-                first_down="0", complete_pass="0", 
-                passing_yards="0", rushing_yards="0",
-                yards_after_catch="0", air_yards="0", **kwargs,
-            )
-            return data
+            values = {
+                "game_id": game, "season": "2025", "week": "1",
+                "away_team": "ARI", "home_team": "NO", "play_id": str(play_id),
+                "posteam": posteam, "defteam": defteam, "play_type": play_type,
+                "two_point_attempt": "0", "sack": "0", "qb_spike": "0",
+                "rush_attempt": "0", "qb_scramble": "0",
+                "first_down": "0", "complete_pass": "0",
+                "passing_yards": "0", "rushing_yards": "0",
+                "yards_after_catch": "0", "air_yards": "0",
+            }
+            values.update(kwargs)
+            return _pbp_row(**values)
         pbp_rows = [
             row(1, "ARI", "NO", "pass", epa="1.5", success="1",
                 pass_attempt="1", qb_dropback="1", complete_pass="1",
