@@ -116,8 +116,8 @@ Ein F2-System ohne **frühzeitig bekannten und fair durchsetzbaren** Hard-Failur
 | Mechanik | Getesteter September-Effekt, keine Vermischung von Vertragswelten | Grenzen |
 |---|---|---|
 | **A** jährlicher Cap, keine September-Kontrolle | Historische 4/6 über Cap, 122,57 Mio. $; unter geltender Liga-Logik kein Verstoß | Keine sofortige wirtschaftliche Korrektur |
-| **F2** ohne Dead Cap (CP5b) | Seven **hypothetische** Nichtstarter-Cuts genügen für September-Cap | Keine Cut-Haftung; ein einziger Nutzerstart-Pfad |
-| **F2 + C-add** (CP5g) | Uniform 5/15/30/50-%-Varianten verlangen 7/8/11/22 Cut-only-Maßnahmen für strikte September-Legalität | Nicht tatsächliche Tenure, mögliche Trade-/Salary-Discount-Welt ungetestst |
+| **F2** ohne Dead Cap (CP5b) | **Sieben** hypothetische Nichtstarter-Cuts genügen für September-Cap | Keine Cut-Haftung; ein einziger Nutzerstart-Pfad |
+| **F2 + C-add** (CP5g) | Uniform 5/15/30/50-%-Varianten verlangen 7/8/11/22 Cut-only-Maßnahmen für strikte September-Legalität | Nicht tatsächliche Tenure, mögliche Trade-/Salary-Discount-Welt ungetestet |
 | **F3** zusätzliche In-Season-Abnahme | CP5b konnte am 05.11. entlang eines F2-legalisierten Pfads 3 weitere Schnitte zeigen | Nur **ohne** C-add im F2-Ausgangspunkt; nicht „F3+C-add=3“ |
 | **B** permanentes Cap-Gate | CP5b-Audit aus ehemals legalem F2-Start: 43 Events angenommen, 8 historische Fortsetzungen inkompatibel, 3 cap-seitig abgelehnt | C-add würde die gesamte Transaktionshistorie ändern, nicht gleichbedeutende Zahlen |
 
