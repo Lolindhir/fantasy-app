@@ -17,6 +17,7 @@ if str(TOOLS) not in sys.path:
 
 from data_roots import DATA_SOURCE_ROOT
 from derived_data_lib.nfl_games import build_nfl_games
+from derived_data_lib.nfl_team_snap_usage import infer_team_snap_volumes
 from nfl_games_materialize import materialize, discover_seasons
 from nfl_pbp_metric_field_audit import audit as audit_pbp_catalog_fields, reconcile_original_game_row
 from nfl_pbp_team_metric_reconcile import (
@@ -325,6 +326,9 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
         self.assertIsNone(detail["TeamStats"]["Teams"][0]["Stats"]["fg_att"])
         self.assertEqual(detail["SnapCounts"]["Players"][0]["CanonicalPlayerID"], "NFLP-a")
         self.assertEqual(detail["SnapCounts"]["Players"][0]["Snaps"]["OffenseSnaps"], 35)
+        self.assertIsNone(detail["SnapCounts"]["Teams"][0]["Offense"]["TotalSnaps"])
+        self.assertEqual(detail["SnapCounts"]["Teams"][0]["Offense"]["Status"],
+                         "insufficient-participants")
         self.assertFalse(detail["PlayByPlay"]["FullPlayByPlayAvailable"])
 
     def test_absent_week_sources_remain_unavailable_not_zero(self):
@@ -334,6 +338,7 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
         self.assertIsNone(detail["PlayerStats"]["Players"])
         self.assertIsNone(detail["TeamStats"]["Teams"])
         self.assertIsNone(detail["SnapCounts"]["Players"])
+        self.assertIsNone(detail["SnapCounts"]["Teams"])
         empty = _week_stats()
         empty["Records"] = []
         detail = build_nfl_game_detail(
@@ -388,6 +393,81 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
                         build_nfl_games(*inputs()), "2026_06_HOU_JAX",
                         player_stats=stats, snap_counts=snaps,
                     )
+
+
+    def test_team_snap_totals_only_when_shares_identify_one_denominator(self):
+        def row(team, offense, defense, special):
+            return {
+                "Team": team,
+                "Snaps": {
+                    "OffenseSnaps": offense[0], "OffensePct": offense[1],
+                    "DefenseSnaps": defense[0], "DefensePct": defense[1],
+                    "SpecialTeamsSnaps": special[0], "SpecialTeamsPct": special[1],
+                },
+            }
+        players = [
+            row("HOU", (35, .5), (40, .5), (9, .3)),
+            row("HOU", (70, 1.), (80, 1.), (15, .5)),
+            row("JAX", (40, .5), (35, .5), (6, .2)),
+            row("JAX", (80, 1.), (70, 1.), (21, .7)),
+        ]
+        result = infer_team_snap_volumes(players, "HOU", "JAX")
+        self.assertEqual([[r[u]["TotalSnaps"] for u in
+                           ("Offense", "Defense", "SpecialTeams")] for r in result],
+                         [[70, 80, 30], [80, 70, 30]])
+        self.assertNotEqual(result[0]["Offense"]["ObservedPlayerSnapSum"], 70)
+        self.assertIsNone(infer_team_snap_volumes(None, "HOU", "JAX"))
+        altered = copy.deepcopy(players)
+        altered[0]["Snaps"]["OffensePct"] = None
+        unavailable = infer_team_snap_volumes(altered, "HOU", "JAX")
+        self.assertEqual(unavailable[0]["Offense"]["Status"], "missing-player-fields")
+        self.assertIsNone(unavailable[0]["Offense"]["TotalSnaps"])
+        altered = copy.deepcopy(players)
+        altered[0]["Snaps"]["OffenseSnaps"] = 1
+        altered[0]["Snaps"]["OffensePct"] = .01
+        altered[1]["Snaps"]["OffenseSnaps"] = 1
+        altered[1]["Snaps"]["OffensePct"] = .01
+        unavailable = infer_team_snap_volumes(altered, "HOU", "JAX")
+        self.assertEqual(unavailable[0]["Offense"]["Status"], "ambiguous-rounded-shares")
+        altered = copy.deepcopy(players)
+        altered[2]["Snaps"]["DefenseSnaps"] = 71
+        altered[2]["Snaps"]["DefensePct"] = 1.
+        altered[3]["Snaps"]["DefenseSnaps"] = 71
+        altered[3]["Snaps"]["DefensePct"] = 1.
+        unavailable = infer_team_snap_volumes(altered, "HOU", "JAX")
+        self.assertEqual(unavailable[0]["Offense"]["Status"],
+                         "opponent-offense-defense-mismatch")
+        self.assertIsNone(unavailable[1]["Defense"]["TotalSnaps"])
+
+    def test_real_2025_week_one_team_snap_totals_are_unique(self):
+        root = TOOLS.parent
+        index_file = root / DATA_DERIVED_ROOT / "nfl-games" / "2025.json"
+        snaps_file = root / DATA_SOURCE_ROOT / "nfl" / "snap-counts" / "2025" / "01.json"
+        if not index_file.is_file() or not snaps_file.is_file():
+            self.skipTest("2025 Week 1 canonical game index / snap source unavailable")
+        index = json.loads(index_file.read_text(encoding="utf-8"))
+        source = json.loads(snaps_file.read_text(encoding="utf-8"))
+        self.assertEqual(source["SourceDataset"], "nflverse.snap-counts")
+        game_ids = sorted({r["GameID"] for r in source["Records"]})
+        self.assertEqual(len(game_ids), 16)
+        observed = 0
+        for gid in game_ids:
+            detail = build_nfl_game_detail(index, gid, snap_counts=source)
+            self.assertFalse(detail["SnapCounts"]["TeamTotalsAreOfficiallyVerified"])
+            team_rows = detail["SnapCounts"]["Teams"]
+            for team in team_rows:
+                for unit in ("Offense", "Defense", "SpecialTeams"):
+                    self.assertEqual(team[unit]["Status"],
+                                     "unique-rounded-share-denominator")
+                    self.assertIsInstance(team[unit]["TotalSnaps"], int)
+                    observed += 1
+            if gid == "2025_01_ARI_NO":
+                self.assertEqual(
+                    [[t[k]["TotalSnaps"] for k in ("Offense", "Defense", "SpecialTeams")]
+                     for t in team_rows],
+                    [[66, 75, 27], [75, 66, 27]],
+                )
+        self.assertEqual(observed, 96)
 
     def test_readonly_cli_uses_only_matching_week_and_does_not_write(self):
         with tempfile.TemporaryDirectory() as temp:
