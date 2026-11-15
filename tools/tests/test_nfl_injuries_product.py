@@ -995,6 +995,44 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertIn("assert_scoped_raw_write_set", source)
         self.assertIn('materialize_args+=(--scope injuries --season "$injury_year")', source)
 
+    def test_injury_workflow_resolves_season_with_importable_package(self):
+        import os
+        import subprocess
+        import yaml
+        from nfl_source_data_lib.common import current_source_season
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = yaml.safe_load(
+            (root / ".github/workflows/sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        )
+        sync_step = next(
+            step for step in workflow["jobs"]["sync"]["steps"]
+            if step.get("name") == "Sync, validate and publish NFL source data"
+        )
+        derived_step = next(
+            step for step in workflow["jobs"]["nfl_injuries_derived"]["steps"]
+            if step.get("name") == "Rebuild and publish isolated Injury Derived product"
+        )
+        season_command = (
+            "PYTHONPATH=tools python3 -c "
+            "'from nfl_source_data_lib.common import current_source_season; "
+            "from pathlib import Path; print(current_source_season(Path.cwd()))'"
+        )
+        self.assertIn('injury_year="$(' + season_command + ')"', sync_step["run"])
+        self.assertIn('season="$(' + season_command + ')"', derived_step["run"])
+
+        # Run the actual inline shell command with no inherited PYTHONPATH:
+        # CI must not pass only because the unittest runner adds tools/ to sys.path.
+        result = subprocess.run(
+            ["bash", "-c", season_command],
+            cwd=root,
+            env={**os.environ, "PYTHONPATH": ""},
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertEqual(str(current_source_season(root)), result.stdout.strip())
+
 
     def test_future_season_can_use_2025_plus_header_without_silent_format_fallback(self):
         from nfl_source_data_lib.injury_reports import parse_injury_report_csv
