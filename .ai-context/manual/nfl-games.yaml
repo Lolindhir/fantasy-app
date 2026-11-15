@@ -252,6 +252,43 @@ futureGameDetailDirection:
         emits only in-memory provenance and provisional aggregates on stdout.
         No Source/Derived writer, new output path, automatic download, public
         publication, or nfl-games index schema change.
+    teamOnlyResearchCheckpoint:
+      checkpoint: P1-team-2026-11-15
+      status: implemented-read-only-candidate-math-original-asset-not-validated
+      owner: tools/derived_data_lib/nfl_pbp_team_metrics.py
+      integration: existing-nfl-game-detail-analytics-CatalogTeamMetricCandidates
+      candidateCatalog: .ai-context/manual/nfl-games-pbp-metrics.yaml
+      candidates: 17-team-and-defense-only-excluding-the-six-position-dependent-IDs
+      requiresCanonicalPlayerID: false
+      requiresHistoricalProviderMappings: false
+      inputs: original-PBP-per-GameID-validated-plays-and-existing-canonical-game-context
+      exclusions: non-scrimmage;two-point;missing-two-point-flag;unknown-teams
+      output: stdout-only-under-existing-GameDetail-preview
+      eligibility: >-
+        All candidates report observed/missing data rather than guessing zero.
+        True pass throws exclude sacks and QB spikes, while QB dropbacks
+        retain sacks and scrambles when nflverse flags them. Rushes include
+        flagged scrambles with no RB-specific claim.
+      provisionalSituations: >-
+        Red-zone metrics use observed eligible pass/run plays at yardline_100 <= 20.
+        Down-distance research bins are 0-3, 4-6, 7-10 and 11+ yards-to-go.
+        Drive starts are the first *observed scrimmage row* per team/drive,
+        not certified full-drive opening plays. These are not a production
+        definition approval; penalties, game coverage and full-season replay
+        require real PBP evidence before any publication.
+      historicalIdentityScope: >-
+        None for these 17 team-only candidates. Historical season-valid
+        canonical player/position mappings are a separate follow-up for
+        six position-conditional metric candidates, not a blocking prerequisite.
+      validation: >-
+        Synthetic edge-case Fast tests and canonical catalog parity only;
+        official seasonal gzip binary could not be retrieved in the current
+        environment. No real 2025 PBP metric or PlayerStats reconciliation
+        is asserted.
+      publication: none
+      sourceStorage: none
+      workflowChanges: none
+      v4cChanges: none
     sourceInput: operator-provided-local-original-season-csv-gz
     noNewWritePaths: true
     publicPublication: none
