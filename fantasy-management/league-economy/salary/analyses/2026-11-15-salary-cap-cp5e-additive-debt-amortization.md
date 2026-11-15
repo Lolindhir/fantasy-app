@@ -2,6 +2,8 @@
 
 > **Forschung 15.11.2026 · [Issue #1344](https://github.com/Lolindhir/fantasy-app/issues/1344). Kein Ligaentscheid, keine aktive Regel.** Nutzerpräferenz: Voll additive Cut-Dead-Cap-Anrechnung (**C-add**) ist die bevorzugte harte *Forschungshypothese*; C-virt bleibt Vergleich. Der [geschützte Sechs-Ziele-Nordstern](../../../league-context/league-philosophy.md) bleibt unverändert. Quellen: [CP5d](2026-11-15-salary-cap-cp5d-debt-backtest.md) / [CP5d-Originalmetriken](2026-11-15-salary-cap-cp5d-metrics.json), Juni-2026-Roster-Commit `85e22feb064fdaf2257d6c3149c8d1655ada0908`, Zeitgenossen-Spieler-BLOB `21001d6c0819dbbcb3deff084d63fe377714541c`.
 
+**Reproduzierbare Einzelprüfung:** [CP5e-JSON-Metriken](2026-11-15-salary-cap-cp5e-metrics.json) mit 14 Cut-Schritten, sechs Teams, Tilgungsfällen und 60 Quell-/Rechenprüfungen.
+
 ## 1. Ergebnis
 
 **C-add macht historisch beobachtete Cap-Cuts wirklich teuer:** Die 14 seit dem 07.06.2026 mittags archivierten Cut-only-Ereignisse ergeben nominal **54.996.380 $** Retention. Gegenüber einer reinen Top-20-Rechnung reduzieren 13 der 14 Cuts die Cap-Belegung noch positiv, **einer erhöht sie**. Insgesamt verringern die Cuts den ursprünglichen Top-20-Payroll um **187.743.938 $**, durch additive Retention bleibt eine Nettoentlastung von **132.747.558 $**.
