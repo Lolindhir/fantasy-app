@@ -376,6 +376,36 @@ historicalGameContextReconciliation:
   newPublishers: []
   rollback: revert-read-only-context-validation-tests-and-catalog-note
 
+teamOnlyReadOnlyResearchCheckpoint:
+  checkpoint: P1-team-2026-11-15
+  status: code-candidate-implemented-no-real-asset-replay-or-publication
+  code: tools/derived_data_lib/nfl_pbp_team_metrics.py
+  integration: tools/derived_data_lib/nfl_game_detail.py::Analytics.CatalogTeamMetricCandidates
+  catalogCandidateCount: 17
+  playerPositionCandidateCountDeferred: 6
+  requiresHistoricalPlayerIdentity: false
+  rationale: >-
+    The baseline, rushing-defense, passing-defense and game situation
+    candidate metrics are team/game calculations and require no GSIS to
+    CanonicalPlayerID mapping or historical positions. Only the explicitly
+    position-dependent candidates are deferred.
+  semantics: >-
+    Research-only per-defense allowed-offense perspective, explicit source
+    eligibility, observed/missing numerators and denominators; unmatched
+    source rows and unavailable evidence are not published as zero. Sacks
+    count for dropbacks but not true pass attempts. Incompletions with known
+    outcomes count as zero explosive plays, unknown target outcomes do not.
+  caveats: >-
+    Source EPA is offense-perspective. Red-zone and down-distance segmentation
+    and first-observed-scrimmage-drive-start are provisional research
+    definitions, not approved product contract boundaries. There is no
+    complete-game proof from a final flag or gzip EOF. Real 2025 original
+    PBP and player-stats baseline reconciliation remain open because the
+    original release bytes are unavailable, not because of player identity.
+  publicationAndSourceStorage: none
+  currentNflGamesIndexSchemaChange: none
+  v4cOrFantasyProjectionChange: none
+
 recommendedSequence:
   - P0 inventory real per-season PBP headers, player/position mapping, game-coverage and stable original asset
   - P1 implement and validate compact unadjusted team-game opportunity/efficiency/situation groups as read-only proofs
