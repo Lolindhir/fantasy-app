@@ -1148,7 +1148,9 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
                 row = _pbp_row(play_id="1", **{field: "2"})
                 if field == "first_down":
                     row["rush_attempt"] = "1"
-                with self.assertRaisesRegex(ValueError, "PBP metric flag"):
+                # two_point_attempt is already rejected by the legacy CP4 guard;
+                # the others are rejected by the additive team-only candidate guard.
+                with self.assertRaises(ValueError):
                     self._metrics([row])
 
 
