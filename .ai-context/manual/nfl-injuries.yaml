@@ -215,6 +215,21 @@ freshness:
     upstreamObservedSchedule: "07:07 UTC daily in September-February"
     normalAcquisition: current NFL season, after source asset revision is verified
     backfill: explicit historical seasons with schema gates
+    historicalReconciliation:
+      standard: .ai-context/manual/data-sources.yaml::historicalReconciliationStandard
+      target: >-
+        After validated initial backfill, compare accepted historical source
+        revisions weekly and rederive every supported historical Canonical and
+        Derived injury season from verified persisted data when dependencies or
+        producer logic change. Reuse existing classified publishers.
+      frozenRevision: >-
+        Detect and flag revised original assets for an explicit historical
+        repair decision; never silently overwrite frozen past-season evidence.
+      currentImplementationGap: >-
+        The daily injury workflow targets one selected season (current by
+        default), with historical_backfill_limit=0. No automatic weekly
+        historical reconciliation or bulk backfill is active; Issue #1421
+        owns the missing implementation and live acceptance.
     noOp: do not reprocess when source digest and applicable identity/schedule inputs are unchanged
     retry: missed or delayed upstream refresh requires bounded catch-up check
     status: source-refresh-cli-implemented-unscheduled
