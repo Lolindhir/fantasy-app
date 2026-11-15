@@ -126,6 +126,14 @@ def _team_candidates(plays: list[Mapping[str, Any]]) -> dict[str, Any]:
     dropbacks, metrics["offensive_dropbacks_faced"] = _count(plays, _dropback)
     throws, metrics["pass_attempts_faced"] = _count(plays, _throw)
     rushes, metrics["rush_attempts_faced"] = _count(plays, _rush)
+    _, scramble_audit = _count(
+        rushes, lambda p: (
+            _flag(p["SourceRow"], "qb_scramble") == 1
+            if _flag(p["SourceRow"], "qb_scramble") is not None else None
+        ),
+    )
+    metrics["rush_attempts_faced"]["ConfirmedQBScrambleCount"] = scramble_audit["Value"]
+    metrics["rush_attempts_faced"]["UnknownScrambleFlagCount"] = scramble_audit["UnknownFlagCount"]
 
     metrics["rush_epa_per_play_allowed"] = _ratio(rushes, lambda p: p["EPA"], kind="epa")
     metrics["rush_success_rate_allowed"] = _ratio(rushes, _success)
