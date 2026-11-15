@@ -205,6 +205,47 @@ def _metric_coverage_finalize(storage: dict) -> dict:
     return dict(sorted(storage.items()))
 
 
+def _delta_distribution(deltas: list[int]) -> dict[str, Any]:
+    """Diagnostic PBP-minus-PlayerStats differences for compared team-games.
+
+    Absolute percentiles use the nearest-rank method. Missing comparisons
+    are excluded, not represented as zero-valued differences.
+    """
+    n = len(deltas)
+    result: dict[str, Any] = {
+        "Compared": n,
+        "Positive": sum(delta > 0 for delta in deltas),
+        "Negative": sum(delta < 0 for delta in deltas),
+        "Zero": sum(delta == 0 for delta in deltas),
+        "Sum": None, "Mean": None, "MeanAbsolute": None,
+        "Median": None, "Min": None, "Max": None,
+        "AbsoluteP50": None, "AbsoluteP90": None, "AbsoluteP99": None,
+        "PercentileMethod": "nearest-rank-absolute-delta",
+    }
+    if not n:
+        return result
+    ordered = sorted(deltas)
+    absolute = sorted(abs(delta) for delta in deltas)
+
+    def percentile(percent: float) -> int:
+        return absolute[math.ceil(percent * n) - 1]
+
+    middle = n // 2
+    result.update({
+        "Sum": sum(deltas),
+        "Mean": round(math.fsum(deltas) / n, 3),
+        "MeanAbsolute": round(math.fsum(absolute) / n, 3),
+        "Median": ordered[middle] if n % 2
+                  else (ordered[middle - 1] + ordered[middle]) / 2,
+        "Min": ordered[0],
+        "Max": ordered[-1],
+        "AbsoluteP50": percentile(0.50),
+        "AbsoluteP90": percentile(0.90),
+        "AbsoluteP99": percentile(0.99),
+    })
+    return result
+
+
 def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict:
     """Replay every observed original game once; return bounded aggregate JSON.
 
@@ -246,7 +287,9 @@ def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict
 
     counts = {name: {"Compared": 0, "Equal": 0, "Different": 0,
                      "MissingPBP": 0, "MissingPlayerStats": 0,
-                     "Examples": []} for name in (*BASE_FIELDS,)}
+                     "Examples": []} for name in BASE_FIELDS}
+    deltas: dict[str, list[int]] = {name: [] for name in BASE_FIELDS}
+    mismatches: dict[str, list[dict]] = {name: [] for name in BASE_FIELDS}
     missing_games = []
     game_team_rows = 0
     eligible_plays = 0
@@ -302,15 +345,25 @@ def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict
                     c["MissingPBP"] += 1
                     continue
                 expected = truth[name]
+                delta = value - expected
+                deltas[name].append(delta)
                 c["Compared"] += 1
-                c["Equal" if value == expected else "Different"] += 1
-                if value != expected and len(c["Examples"]) < 12:
-                    c["Examples"].append({
+                c["Equal" if delta == 0 else "Different"] += 1
+                if delta:
+                    mismatches[name].append({
                         "GameID": gid, "OffenseTeam": offense,
                         "DefenseTeam": defense_team,
                         "PBP": value, "PlayerStats": expected,
-                        "DeltaPBPMinusPlayerStats": value - expected,
+                        "DeltaPBPMinusPlayerStats": delta,
                     })
+    for name in BASE_FIELDS:
+        counts[name]["DeltaDistribution"] = _delta_distribution(deltas[name])
+        # Show largest discrepancies rather than the first 12 alphabetic games.
+        counts[name]["Examples"] = sorted(
+            mismatches[name],
+            key=lambda row: (-abs(row["DeltaPBPMinusPlayerStats"]),
+                             row["GameID"], row["OffenseTeam"]),
+        )[:12]
     team_fields = [m for m in field_audit["MetricFieldCoverage"]
                    if m["MetricID"] in (candidate_ids or [])]
     return {
@@ -342,7 +395,10 @@ def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict
         "ComparisonRule": (
             "Diagnostic only: PBP excludes certain flags (spikes, two-point plays) "
             "and differs from official PlayerStats on sacks, kneels and penalties. "
-            "Equal does not prove completeness; unequal does not prove a defect."
+            "Delta = PBP minus PlayerStats; missing comparisons are excluded, "
+            "absolute percentiles use nearest rank, examples show the 12 largest "
+            "absolute deviations. Equal does not prove completeness; unequal "
+            "does not prove a defect."
         ),
         "ProductionReady": False,
         "FullUpstreamPlayCompletenessVerified": False,
