@@ -1038,5 +1038,109 @@ class NflPbpMetricSourceFieldAuditTests(unittest.TestCase):
 
 
 
+
+class NflPbpTeamMetricCandidateTests(unittest.TestCase):
+    """No GSIS mapping is needed for the team-only research candidates."""
+
+    @staticmethod
+    def _metrics(rows):
+        detail = build_nfl_game_detail(
+            build_nfl_games(*inputs()), "2026_06_HOU_JAX", pbp_rows=rows,
+        )
+        return detail["PlayByPlay"]["OriginalPlays"]["Analytics"]["CatalogTeamMetricCandidates"]
+
+    def test_all_17_team_only_candidates_are_separated_from_six_position_metrics(self):
+        doc = self._metrics([_pbp_row(play_id="1")])
+        self.assertEqual(len(doc["CandidateIDs"]), 17)
+        self.assertEqual(len(doc["DeferredPositionDependentIDs"]), 6)
+        self.assertFalse(doc["RequiredCanonicalPlayerID"])
+        self.assertFalse(doc["CoverageVerified"])
+        self.assertIn("not-publishable", doc["Status"])
+        self.assertEqual(doc["ByDefenseTeam"][0]["Team"], "HOU")
+        self.assertEqual(doc["ByDefenseTeam"][1]["Team"], "JAX")
+        self.assertEqual(
+            set(doc["CandidateIDs"]),
+            set(doc["ByDefenseTeam"][1]["Metrics"]),
+        )
+        # This phase must not access canonical player IDs or position mappings.
+        self.assertNotIn("CanonicalPlayerID", json.dumps(doc))
+
+    def test_sacks_are_dropbacks_but_not_true_pass_attempts_and_incompletions_are_zero_explosives(self):
+        plays = [
+            _pbp_row(
+                play_id="1", down="3", yardline_100="15", drive="1",
+                epa="1.5", success="1", qb_dropback="1", pass_attempt="1",
+                sack="0", qb_spike="0", rush_attempt="0", complete_pass="1",
+                passing_yards="25", yards_after_catch="5", air_yards="20",
+                third_down_converted="1", first_down="1",
+            ),
+            _pbp_row(
+                play_id="2", down="2", yardline_100="60", drive="2",
+                epa="-1.0", success="0", qb_dropback="1", pass_attempt="1",
+                sack="1", qb_spike="0", rush_attempt="0", complete_pass="0",
+                third_down_converted="0",
+            ),
+            _pbp_row(
+                play_id="3", play_type="run", down="1", yardline_100="70",
+                drive="3", epa="-0.5", success="0", qb_dropback="0",
+                pass_attempt="0", rush_attempt="1", qb_scramble="0",
+                rushing_yards="12", first_down="1",
+            ),
+            _pbp_row(
+                play_id="4", down="1", yardline_100="40", drive="4",
+                epa="-0.2", success="0", qb_dropback="1", pass_attempt="1",
+                sack="0", qb_spike="0", rush_attempt="0", complete_pass="0",
+                passing_yards="", air_yards="10",
+            ),
+        ]
+        doc = self._metrics(plays)
+        m = doc["ByDefenseTeam"][1]["Metrics"]
+        self.assertEqual(doc["EligibleScrimmagePlayCount"], 4)
+        self.assertEqual(m["offensive_dropbacks_faced"]["Value"], 3)
+        self.assertEqual(m["pass_attempts_faced"]["Value"], 2)
+        self.assertEqual(m["rush_attempts_faced"]["Value"], 1)
+        self.assertEqual(m["rush_epa_per_play_allowed"]["Value"], -0.5)
+        self.assertEqual(m["rush_success_rate_allowed"]["Value"], 0.0)
+        self.assertEqual(m["rush_explosive_10_rate_allowed"]["Value"], 1.0)
+        self.assertEqual(m["rush_first_down_rate_allowed"]["Value"], 1.0)
+        self.assertEqual(m["pass_epa_per_attempt_allowed"]["Value"], 0.65)
+        self.assertEqual(m["dropback_epa_per_play_allowed"]["Value"], 0.1)
+        self.assertEqual(m["dropback_success_rate_allowed"]["Value"], 0.3333)
+        self.assertEqual(m["pass_explosive_20_rate_allowed"]["Value"], 0.5)
+        self.assertEqual(m["pass_yac_per_completion_allowed"]["Value"], 5.0)
+        self.assertEqual(m["air_yards_per_attempt_allowed"]["Value"], 15.0)
+        self.assertEqual(m["third_down_conversion_rate_allowed"]["Value"], 1.0)
+        self.assertEqual(m["red_zone_epa_and_success_allowed"]["EPA"]["Value"], 1.5)
+        self.assertEqual(m["down_distance_efficiency_allowed"]["Bins"]["D3:7-10"]["EPA"]["Observed"], 1)
+        self.assertEqual(m["drive_start_context"]["DistinctObservedDrives"], 4)
+        self.assertFalse(doc["CoverageVerified"])
+
+    def test_missing_flags_remain_unknown_not_zero_or_false(self):
+        doc = self._metrics([_pbp_row(
+            play_id="1", pass_attempt="1", sack="", qb_spike="0",
+            complete_pass="", qb_dropback="1", rush_attempt="",
+            epa="", success="", yards_after_catch="",
+        )])
+        m = doc["ByDefenseTeam"][1]["Metrics"]
+        self.assertIsNone(m["pass_attempts_faced"]["Value"])
+        self.assertEqual(m["pass_attempts_faced"]["UnknownFlagCount"], 1)
+        self.assertIsNone(m["pass_epa_per_attempt_allowed"]["Value"])
+        self.assertEqual(m["dropback_epa_per_play_allowed"]["Missing"], 1)
+        self.assertIsNone(m["rush_attempts_faced"]["Value"])
+        self.assertIsNone(m["third_down_conversion_rate_allowed"]["Value"])
+        self.assertIsNone(m["drive_start_context"]["FieldPosition"]["Value"]
+                          if m["drive_start_context"]["FieldPosition"]["Observed"] == 0 else None)
+
+    def test_used_invalid_provider_flag_fails_closed(self):
+        for field in ("pass_attempt", "qb_dropback", "rush_attempt",
+                      "first_down", "two_point_attempt"):
+            with self.subTest(field=field):
+                row = _pbp_row(play_id="1", **{field: "2"})
+                if field == "first_down":
+                    row["rush_attempt"] = "1"
+                with self.assertRaisesRegex(ValueError, "PBP metric flag"):
+                    self._metrics([row])
+
+
 if __name__ == "__main__":
     unittest.main()
