@@ -452,9 +452,20 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
         self.assertEqual(len(game_ids), 16)
         observed = 0
         for gid in game_ids:
-            detail = build_nfl_game_detail(index, gid, snap_counts=source)
-            self.assertFalse(detail["SnapCounts"]["TeamTotalsAreOfficiallyVerified"])
-            team_rows = detail["SnapCounts"]["Teams"]
+            game = next(g for g in index["Games"] if g["GameID"] == gid)
+            # Team units do not depend on canonical player identity. Some
+            # genuine 2025 SnapCounts rows (e.g. BAL/BUF) have unresolved IDs;
+            # the player-level GameDetail preview must keep its identity gate.
+            field_names = ("OffenseSnaps", "OffensePct", "DefenseSnaps",
+                           "DefensePct", "SpecialTeamsSnaps", "SpecialTeamsPct")
+            source_rows = [
+                {"Team": r["Team"],
+                 "Snaps": {name: r[name] for name in field_names}}
+                for r in source["Records"] if r["GameID"] == gid
+            ]
+            team_rows = infer_team_snap_volumes(
+                source_rows, game["AwayTeam"], game["HomeTeam"],
+            )
             for team in team_rows:
                 for unit in ("Offense", "Defense", "SpecialTeams"):
                     self.assertEqual(team[unit]["Status"],
@@ -462,6 +473,9 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
                     self.assertIsInstance(team[unit]["TotalSnaps"], int)
                     observed += 1
             if gid == "2025_01_ARI_NO":
+                detail = build_nfl_game_detail(index, gid, snap_counts=source)
+                self.assertFalse(detail["SnapCounts"]["TeamTotalsAreOfficiallyVerified"])
+                self.assertEqual(detail["SnapCounts"]["Teams"], team_rows)
                 self.assertEqual(
                     [[t[k]["TotalSnaps"] for k in ("Offense", "Defense", "SpecialTeams")]
                      for t in team_rows],
