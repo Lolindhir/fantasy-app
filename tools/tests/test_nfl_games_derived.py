@@ -22,6 +22,7 @@ from nfl_pbp_metric_field_audit import audit as audit_pbp_catalog_fields, reconc
 from nfl_pbp_team_metric_reconcile import (
     reconcile as reconcile_pbp_team_season,
     _delta_distribution,
+    _unknown_comparison_eligibility,
 )
 
 
@@ -1195,6 +1196,30 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
         self.assertEqual(value["AbsoluteP90"], 7)
         self.assertEqual(value["AbsoluteP99"], 7)
 
+    def test_unknown_source_eligibility_is_metric_specific(self):
+        base = {"posteam": "ARI", "two_point_attempt": "0",
+                "play_type": "pass", "pass_attempt": "1",
+                "rush_attempt": "0", "sack": "0", "qb_spike": "0"}
+        def status(**changes):
+            return _unknown_comparison_eligibility([{**base, **changes}], "ARI")
+        self.assertEqual(status()["attempts"], 0)
+        self.assertEqual(status()["passing_yards"], 0)
+        self.assertEqual(status(two_point_attempt="")["attempts"], 1)
+        self.assertEqual(status(two_point_attempt="")["carries"], 0)
+        self.assertEqual(status(pass_attempt="")["passing_yards"], 1)
+        self.assertEqual(status(sack="")["attempts"], 1)
+        self.assertEqual(status(qb_spike="")["attempts"], 1)
+        self.assertEqual(status(two_point_attempt="", sack="1")["attempts"], 0)
+        self.assertEqual(status(two_point_attempt="", qb_spike="1")["attempts"], 0)
+        self.assertEqual(status(two_point_attempt="1", pass_attempt="")["attempts"], 0)
+        self.assertEqual(status(play_type="pass", pass_attempt="0",
+                                two_point_attempt="")["attempts"], 0)
+        self.assertEqual(status(play_type="run", pass_attempt="0",
+                                rush_attempt="1", two_point_attempt="")["carries"], 1)
+        self.assertEqual(status(play_type="run", pass_attempt="0",
+                                rush_attempt="", two_point_attempt="0")["carries"], 1)
+        self.assertEqual(_unknown_comparison_eligibility([base], "NO")["attempts"], 0)
+
     def fixture(self, root):
         game = "2025_01_ARI_NO"
         index = root / "data-derived/nfl-games/2025.json"
@@ -1313,6 +1338,30 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
             self.assertEqual([row["DeltaPBPMinusPlayerStats"] for row in comp["Examples"]],
                              [-3, 1])
             self.assertEqual(report["Reconciliation"]["carries"]["DeltaDistribution"]["Zero"], 2)
+            self.assertFalse(report["ProductionReady"])
+
+    def test_unknown_two_point_eligibility_does_not_fake_equal_baselines(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, digest, _ = self.fixture(root)
+            with gzip.open(source, "rt", encoding="utf-8", newline="") as stream:
+                reader = csv.DictReader(stream)
+                fields = reader.fieldnames
+                rows = list(reader)
+            rows[0]["two_point_attempt"] = ""
+            _write_original_pbp_gzip(source, rows, fields=fields)
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            report = reconcile_pbp_team_season(root, source, 2025, digest)
+            attempts = report["Reconciliation"]["attempts"]
+            passing = report["Reconciliation"]["passing_yards"]
+            self.assertEqual(attempts["MissingPBP"], 1)
+            self.assertEqual(attempts["UnknownSourceEligibilityTeamGames"], 1)
+            self.assertEqual(attempts["UnknownSourceEligibilityRows"], 1)
+            self.assertEqual(attempts["Equal"], 1)
+            self.assertEqual(attempts["DeltaDistribution"]["Compared"], 1)
+            self.assertEqual(passing["MissingPBP"], 1)
+            self.assertEqual(passing["UnknownSourceEligibilityRows"], 1)
+            self.assertEqual(report["Reconciliation"]["carries"]["Equal"], 2)
             self.assertFalse(report["ProductionReady"])
 
     def test_original_source_pin_and_playerstats_unknown_fail_closed(self):
