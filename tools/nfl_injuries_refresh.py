@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 import urllib.request
@@ -26,14 +27,21 @@ _MAX_RELEASE_BYTES = 2_000_000
 _MAX_SEASON_BYTES = 12_000_000
 
 
-def _read_https(url: str, limit: int, *, accept: str) -> bytes:
-    request = urllib.request.Request(
-        url,
-        headers={
-            "Accept": accept,
-            "User-Agent": "Lolindhir-fantasy-app-injuries/1.0",
-        },
-    )
+def _read_https(
+    url: str, limit: int, *, accept: str, token: str | None = None,
+) -> bytes:
+    # The Actions token may authenticate only the fixed GitHub release-metadata
+    # API endpoint. Never attach it to an asset URL, mirror or arbitrary redirect.
+    if token and url != _RELEASE_API:
+        raise ValueError("Authenticated injury release request must target the official GitHub API")
+    headers = {
+        "Accept": accept,
+        "User-Agent": "Lolindhir-fantasy-app-injuries/1.0",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+        headers["X-GitHub-Api-Version"] = "2022-11-28"
+    request = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(request, timeout=40) as response:
         payload = response.read(limit + 1)
     if len(payload) > limit:
@@ -42,8 +50,12 @@ def _read_https(url: str, limit: int, *, accept: str) -> bytes:
 
 
 def release_api() -> dict[str, Any]:
+    # GitHub-hosted runners share a low unauthenticated API rate limit. Use the
+    # existing scoped Actions token when provided; no new secret is required.
+    token = os.environ.get("NFLVERSE_RELEASE_API_TOKEN") or None
     payload = json.loads(_read_https(
-        _RELEASE_API, _MAX_RELEASE_BYTES, accept="application/vnd.github+json"
+        _RELEASE_API, _MAX_RELEASE_BYTES, accept="application/vnd.github+json",
+        token=token,
     ))
     if not isinstance(payload, dict):
         raise ValueError("Upstream release metadata is not a JSON object")
