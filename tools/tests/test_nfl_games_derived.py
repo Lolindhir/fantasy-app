@@ -1111,6 +1111,8 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
         self.assertEqual(m["offensive_dropbacks_faced"]["Value"], 3)
         self.assertEqual(m["pass_attempts_faced"]["Value"], 2)
         self.assertEqual(m["rush_attempts_faced"]["Value"], 1)
+        self.assertEqual(m["rush_attempts_faced"]["ConfirmedQBScrambleCount"], 0)
+        self.assertEqual(m["rush_attempts_faced"]["UnknownScrambleFlagCount"], 0)
         self.assertEqual(m["rush_epa_per_play_allowed"]["Value"], -0.5)
         self.assertEqual(m["rush_success_rate_allowed"]["Value"], 0.0)
         self.assertEqual(m["rush_explosive_10_rate_allowed"]["Value"], 1.0)
@@ -1126,6 +1128,21 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
         self.assertEqual(m["down_distance_efficiency_allowed"]["Bins"]["D3:7-10"]["EPA"]["Observed"], 1)
         self.assertEqual(m["drive_start_context"]["DistinctObservedDrives"], 4)
         self.assertFalse(doc["CoverageVerified"])
+
+    def test_scramble_is_in_rush_and_dropback_and_unknown_scramble_is_not_zero(self):
+        doc = self._metrics([
+            _pbp_row(play_id="1", play_type="run", pass_attempt="0",
+                     rush_attempt="1", qb_scramble="1", qb_dropback="1",
+                     rushing_yards="8", epa="0.5"),
+            _pbp_row(play_id="2", play_type="run", pass_attempt="0",
+                     rush_attempt="1", qb_scramble="", qb_dropback="0",
+                     rushing_yards="3", epa="-0.2"),
+        ])
+        metrics = doc["ByDefenseTeam"][1]["Metrics"]
+        self.assertEqual(metrics["rush_attempts_faced"]["Value"], 2)
+        self.assertEqual(metrics["rush_attempts_faced"]["ConfirmedQBScrambleCount"], 1)
+        self.assertEqual(metrics["rush_attempts_faced"]["UnknownScrambleFlagCount"], 1)
+        self.assertEqual(metrics["offensive_dropbacks_faced"]["Value"], 1)
 
     def test_missing_flags_remain_unknown_not_zero_or_false(self):
         doc = self._metrics([_pbp_row(
