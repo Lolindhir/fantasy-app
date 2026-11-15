@@ -57,6 +57,27 @@ there is no new Scheduler target and no odds-only cadence change.
 The 10-minute polling/Spread+Total delta gate activation remains owned by
 #471. Source snapshots do not provide historically proven pregame timestamps.
 
+## NFL GameDetail v1 (read-only contract, not yet a writer)
+
+Issue #1077 specifies the future *same-product* GameDetail per canonical GameID at
+`data-derived/nfl-games/details/<season>/<GameID>.json`, without changing the
+existing `data-derived/nfl-games/<season>.json` index or adding a second product
+to this inventory. **No detail files are currently published.** The initial
+contract has canonical game facts, player-stats team aggregates when identities
+validate, and separately inferred Offense/Defense/Special Teams snap totals
+with explicit missingness. Player-level identity holds affect only identity-
+dependent groups; the team snap inference works on canonical count/share facts
+without guessing unresolved player IDs.
+
+Pure rules live under `tools/derived_data_lib/`, and the read-only core-v1
+preview is owned by `tools/nfl_game_detail_preview.py --core-v1`. The
+17 experimental PBP metrics are **not** automatically published. A future
+detail writer must reuse the existing `sync-nfl-source-data.yml::nfl_games_derived`
+publisher and obtain separate targeted authorization before widening the write
+scope or wake-up dependencies. The weekly historical Source/Derived
+reconciliation requirement, per-GameID fingerprints, source-finality semantics,
+no-op and rollback are specified in `.ai-context/manual/nfl-games.yaml`.
+
 ## PlayerWeekFantasy
 
 The first product is:
