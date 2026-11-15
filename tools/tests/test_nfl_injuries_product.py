@@ -1034,6 +1034,78 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertEqual(str(current_source_season(root)), result.stdout.strip())
 
 
+    def test_release_api_uses_actions_token_for_metadata_only(self):
+        import os
+        from unittest.mock import patch
+        import urllib.request
+        from nfl_injuries_refresh import release_api, source_asset, _read_https
+
+        requests = []
+
+        class StubOpener:
+            def open(self, request, timeout):
+                requests.append(request)
+                return io.BytesIO(b'{"assets": []}')
+
+        with patch.dict(os.environ, {"NFLVERSE_RELEASE_API_TOKEN": "test-actions-token"}):
+            with patch("urllib.request.build_opener", return_value=StubOpener()) as factory:
+                self.assertEqual({"assets": []}, release_api())
+                factory.assert_called_once()
+        metadata_headers = {k.lower(): v for k, v in requests[0].header_items()}
+        self.assertEqual("Bearer test-actions-token", metadata_headers["authorization"])
+        self.assertEqual("2022-11-28", metadata_headers["x-github-api-version"])
+        self.assertEqual(
+            "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/injuries",
+            requests[0].full_url,
+        )
+
+        asset_url = (
+            "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2026.csv"
+        )
+        with patch.dict(os.environ, {"NFLVERSE_RELEASE_API_TOKEN": "test-actions-token"}):
+            with patch("urllib.request.urlopen", return_value=io.BytesIO(b"original-csv")) as opened:
+                self.assertEqual(b"original-csv", source_asset(asset_url))
+                requested_asset = opened.call_args.args[0]
+        self.assertNotIn(
+            "authorization", {key.lower() for key, value in requested_asset.header_items()}
+        )
+        with self.assertRaisesRegex(ValueError, "official GitHub API"):
+            _read_https(asset_url, 100, accept="text/csv", token="test-actions-token")
+
+    def test_release_api_unauthenticated_fallback_and_redirect_guard(self):
+        import os
+        from unittest.mock import patch
+        from nfl_injuries_refresh import release_api, _RejectAuthenticatedRedirects
+
+        with patch.dict(os.environ, {"NFLVERSE_RELEASE_API_TOKEN": ""}):
+            with patch("urllib.request.urlopen", return_value=io.BytesIO(b'{"assets": []}')) as opened:
+                self.assertEqual({"assets": []}, release_api())
+                self.assertNotIn(
+                    "authorization",
+                    {key.lower() for key, value in opened.call_args.args[0].header_items()},
+                )
+        with self.assertRaisesRegex(ValueError, "may not redirect"):
+            _RejectAuthenticatedRedirects().redirect_request(
+                None, None, 302, "redirect", {}, "https://untrusted.example/"
+            )
+
+    def test_injury_release_workflow_uses_existing_scoped_github_token(self):
+        import yaml
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = yaml.safe_load(
+            (root / ".github/workflows/sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        )
+        step, = [
+            s for s in workflow["jobs"]["sync"]["steps"]
+            if s.get("name") == "Sync, validate and publish NFL source data"
+        ]
+        self.assertEqual(
+            "${{ inputs.materialization_scope == 'injuries' && github.token || '' }}",
+            step["env"]["NFLVERSE_RELEASE_API_TOKEN"],
+        )
+        self.assertNotIn("NFLVERSE_RELEASE_API_TOKEN", workflow["jobs"]["sync"].get("env", {}))
+
     def test_future_season_can_use_2025_plus_header_without_silent_format_fallback(self):
         from nfl_source_data_lib.injury_reports import parse_injury_report_csv
         from nfl_source_data_lib.injury_product_plan import build_injury_artifacts
