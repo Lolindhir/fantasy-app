@@ -1210,6 +1210,8 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
         self.assertEqual(status(sack="")["attempts"], 1)
         self.assertEqual(status(qb_spike="")["attempts"], 1)
         self.assertEqual(status(two_point_attempt="", sack="1")["attempts"], 0)
+        self.assertEqual(status(two_point_attempt="", sack="1",
+                                pass_attempt="")["attempts"], 0)
         self.assertEqual(status(two_point_attempt="", qb_spike="1")["attempts"], 0)
         self.assertEqual(status(two_point_attempt="1", pass_attempt="")["attempts"], 0)
         self.assertEqual(status(play_type="pass", pass_attempt="0",
