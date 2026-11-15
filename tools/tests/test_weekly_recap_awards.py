@@ -192,6 +192,26 @@ class HistoryTests(unittest.TestCase):
         self.assertEqual(5, by_id["c"]["Entries"][0]["Gain"])
         self.assertNotIn("PlayerID", by_id["c"]["Entries"][0])
 
+    def test_leaders_share_ties_and_skip_unwon_awards(self) -> None:
+        def entry(pid):
+            return {"PlayerID": pid, "CanonicalPlayerID": f"c-{pid}", "Position": "QB", "FantasyTeamID": 1, "FantasyMatchupID": "m", "Points": 10}
+
+        def awards(**kwargs):
+            return {"State": "available", "MVP": [], "MatchupHero": [], "Heartbreaker": [], "UnsungHero": [], **kwargs}
+
+        models = {2024: {"Weeks": [
+            {"Week": 1, "PlayerAwards": awards(MVP=[entry("a")], Heartbreaker=[entry("b")])},
+            {"Week": 2, "PlayerAwards": awards(MVP=[entry("a")], Heartbreaker=[entry("c")])},
+            {"Week": 3, "PlayerAwards": awards(MVP=[entry("b")], Heartbreaker=[entry("b")])},
+        ]}}
+        leaders = wr.player_award_history(models, self.refs)["Leaders"]
+        self.assertEqual([("a", 2)], [(p["PlayerID"], p["Count"]) for p in leaders["MVP"]])
+        self.assertEqual([("b", 2)], [(p["PlayerID"], p["Count"]) for p in leaders["Heartbreaker"]])
+        self.assertEqual([], leaders["MatchupHero"])
+        self.assertEqual([], leaders["UnsungHero"])
+        tie = wr.player_award_history({2024: {"Weeks": [{"Week": 1, "PlayerAwards": awards(MVP=[entry("a"), entry("b")])}]}}, self.refs)["Leaders"]
+        self.assertEqual(["a", "b"], [p["PlayerID"] for p in tie["MVP"]])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -15,6 +15,7 @@ import type { TeamCapOutlookReadModel } from '../models/team-cap-outlook.models'
 import type { RawTransaction } from '../models/transaction.models';
 import type { RivalryReadModel } from '../models/rivalry.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
+import type { PlayerAwardHistoryReadModel } from '../models/player-award-history.models';
 import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
 
 export interface LeagueDataLoadResult {
@@ -119,6 +120,10 @@ export class DataApiService {
 
   getWeeklyRecapsRaw(): Observable<WeeklyRecapsReadModel> {
     return this.http.get<WeeklyRecapsReadModel>('data/WeeklyRecaps.json');
+  }
+
+  getPlayerAwardHistoryRaw(): Observable<PlayerAwardHistoryReadModel> {
+    return this.http.get<PlayerAwardHistoryReadModel>('data/PlayerAwardHistory.json');
   }
 
   getSeasonStatisticsRaw(): Observable<SeasonStatisticsReadModel> {

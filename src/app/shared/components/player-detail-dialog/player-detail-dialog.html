@@ -287,6 +287,34 @@
         @if (team.TeamAbbr) { <span class="journey-team__abbr">{{ team.TeamAbbr }}</span> }
       </span>
     </ng-template>
+    <mat-tab label="Weekly Awards" *ngIf="weeklyAwards">
+      <div class="weekly-awards">
+        <div class="weekly-awards__counts">
+          @for (def of awardDisplay; track def.key) {
+            <div class="weekly-awards__count" [class.weekly-awards__count--zero]="!weeklyAwards.Counts[def.key]" [title]="def.hint">
+              <span class="weekly-awards__icon" aria-hidden="true">{{ def.icon }}</span>
+              <strong>{{ weeklyAwards.Counts[def.key] }}</strong>
+              <span class="weekly-awards__label">{{ def.label }}</span>
+            </div>
+          }
+        </div>
+        @for (group of weeklyAwardGroups; track group.season) {
+          <details class="weekly-awards__season" [open]="$first">
+            <summary>{{ group.season }} <span class="weekly-awards__total">{{ group.entries.length }}</span></summary>
+            <ul>
+              @for (entry of group.entries; track entry.week + entry.award) {
+                <li>
+                  <span class="weekly-awards__icon" aria-hidden="true">{{ entry.icon }}</span>
+                  <span>Week {{ entry.week }} · {{ entry.label }}</span>
+                  @if (entry.points !== null) { <span class="weekly-awards__points">{{ entry.points | number:'1.1-2' }} pts</span> }
+                </li>
+              }
+            </ul>
+          </details>
+        }
+      </div>
+    </mat-tab>
+
     <mat-tab label="Moves">
       <div class="journey">
         @switch (journeyState) {

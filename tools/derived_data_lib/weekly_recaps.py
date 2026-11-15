@@ -628,7 +628,18 @@ def player_award_history(models: dict[int, dict[str, Any]], refs: Callable[[str,
             }
         )
     result.sort(key=lambda p: (-p["Total"], p["PlayerID"]))
-    return {"SchemaVersion": 1, "Awards": list(PLAYER_AWARD_KEYS), "Seasons": seasons, "Players": result}
+    # All-time leaders per award (Hall of Fame): every player holding the highest count, ties shared; an award nobody won has no leaders.
+    leaders: dict[str, list[dict[str, Any]]] = {}
+    for award in PLAYER_AWARD_KEYS:
+        top = max((p["Counts"][award] for p in result), default=0)
+        leaders[award] = (
+            [
+                {"PlayerID": p["PlayerID"], "Name": p["Name"], "Position": p["Position"], "Count": top}
+                for p in result
+                if top > 0 and p["Counts"][award] == top
+            ]
+        )
+    return {"SchemaVersion": 1, "Awards": list(PLAYER_AWARD_KEYS), "Seasons": seasons, "Leaders": leaders, "Players": result}
 
 
 def upset_counts(weeks: list[dict[str, Any]]) -> list[dict[str, Any]]:
