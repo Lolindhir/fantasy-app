@@ -3009,3 +3009,57 @@ decisions:
       negative:
         - Historical matchups carry no Taxi or IR marker, so those players cannot be separated from the bench for the Unsung Hero.
         - The current scope of PlayerAwardHistory.json takes completed seasons from their published archive, so history refreshes with the weekly update-transactions run.
+
+
+  - id: ADR-087
+    title: Historical NFL injury reports are an isolated versioned Source and Shared Derived product
+    status: accepted
+    context: >-
+      Issue #1421: A current ESPN status snapshot and Sleeper App injury fields
+      cannot reconstruct historical player-level NFL injury reports. The
+      nflverse injuries annual CSV has a different cadence and evolving
+      retrospective evidence. Existing NFL Source already publishes Raw then
+      Canonical with protected retry semantics, and Shared Derived uses a
+      separate rebuild-and-retry publisher.
+    decision: >-
+      Use nflverse.injuries as a league-independent season-partitioned Source
+      dataset, excluded from the 04:00 full NFL Source sync. The permanently
+      registered scheduler wrapper sync-nfl-injuries.yml delegates one daily
+      09:30 Europe/Berlin Sep-Feb run to the existing sync-nfl-source-data.yml
+      publication loop under its original concurrency group. Raw and
+      provenance (official release SHA and original bytes) publish first.
+      Canonical stores every observed report without medical availability
+      inference, joins a current canonical GSIS identity and optional NFL game,
+      and records an integrity hash for every week partition in a manifest.
+      A separate dependent rebuild-and-retry job publishes nfl-injuries-v1
+      under data-derived/nfl-injuries/<season>.json only after successful
+      Canonical publication. Manual historical single-season imports use
+      the same writer; prior imported seasons are frozen without explicitly
+      reviewed repair. Future seasons are accepted only while their exact
+      CSV header matches the audited 2025+ family. Scheduler target and
+      Source/Derived write scopes are bounded, versioned and reversible.
+      ESPN player availability remains on its existing ten-minute cadence,
+      and no Salary, League, App or Fantasy Management consumer is activated.
+      Data publication begins only after PR validation and independent
+      architecture review; no evidence is invented for a missing upstream
+      season asset. Source, implementation, review and rollback contract:
+      .ai-context/manual/nfl-injuries.yaml (Issue #1421).
+    rationale: >-
+      Reusing the existing Source publisher and a separate Derived generator
+      preserves provenance, prevents competing writers, and allows consumers
+      to distinguish observed historical reports from current availability
+      and pregame knowledge.
+    consequences:
+      positive:
+        - Durable reproducible report evidence is shared without coupling
+          the ten-minute current-status pipeline to retrospective imports.
+        - SHA-verified Raw, full Canonical week manifests and downstream
+          rebuilds expose incomplete or mixed-revision data as failures.
+        - Existing publication race handling and source attribution are reused.
+      negative:
+        - Annual provider corrections change full-asset observation keys
+          and can re-attest unchanged week partitions.
+        - Historic pregame availability and games missed cannot be inferred
+          reliably from observed reports alone.
+        - New bounded Source and Derived files and one daily workflow require
+          monitoring and a reviewed rollback path.

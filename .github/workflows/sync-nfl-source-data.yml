@@ -236,7 +236,7 @@ jobs:
 
           materialization_scope="${MATERIALIZATION_SCOPE:-full}"
           case "$materialization_scope" in
-            full|game-finality|schedule-odds) ;;
+            full|game-finality|schedule-odds|injuries) ;;
             *)
               echo "Unsupported materialization scope: $materialization_scope" >&2
               exit 2
@@ -271,6 +271,33 @@ jobs:
             fi
           fi
 
+          if [[ "$materialization_scope" == "injuries" ]]; then
+            if [[ "${DATASET:-}" != "nflverse.injuries" ]]; then
+              echo "injuries scope requires dataset=nflverse.injuries" >&2
+              exit 2
+            fi
+            if [[ "${FORCE:-false}" == "true" ]]; then
+              echo "injuries scope rejects forced replacement of historical injury evidence" >&2
+              exit 2
+            fi
+            if [[ -n "${SEASON:-}" && ! "${SEASON}" =~ ^[0-9]{4}$ ]]; then
+              echo "injuries scope accepts only one explicitly selected four-digit season" >&2
+              exit 2
+            fi
+          fi
+
+          injury_year=""
+          if [[ "$materialization_scope" == "injuries" ]]; then
+            injury_year="${SEASON:-}"
+            if [[ -z "$injury_year" ]]; then
+              injury_year="$(python3 -c 'from nfl_source_data_lib.common import current_source_season; from pathlib import Path; print(current_source_season(Path.cwd()))')"
+            fi
+            if [[ ! "$injury_year" =~ ^20[0-9]{2}$ ]] || (( 10#$injury_year < 2012 )); then
+              echo "Unsupported Injury season: $injury_year" >&2
+              exit 2
+            fi
+          fi
+
           raw_sync_args=(sync --raw-only)
           if [[ -n "${DATASET:-}" ]]; then
             raw_sync_args+=(--dataset "$DATASET")
@@ -286,6 +313,8 @@ jobs:
                 raw_sync_args+=(--season "$season")
               fi
             done
+          elif [[ "$materialization_scope" == "injuries" ]]; then
+            raw_sync_args+=(--season "$injury_year")
           fi
           effective_backfill_limit="${HISTORICAL_BACKFILL_LIMIT:-12}"
           if [[ -z "${DATASET:-}" && -z "${SEASON:-}" ]]; then
@@ -300,6 +329,8 @@ jobs:
             materialize_args+=(--scope game-finality)
           elif [[ "$materialization_scope" == "schedule-odds" ]]; then
             materialize_args+=(--scope schedule-odds)
+          elif [[ "$materialization_scope" == "injuries" ]]; then
+            materialize_args+=(--scope injuries --season "$injury_year")
           fi
 
           {
@@ -314,6 +345,12 @@ jobs:
               echo "- Scoped read dependencies: schedule raw + published canonical schedule"
               echo "- Canonical write-set: data-source/nfl/schedule-odds/** only"
               echo "- Full NFL audit: read/write disabled for scoped materialization"
+            elif [[ "$materialization_scope" == "injuries" ]]; then
+              echo "- Scoped raw: data-source/providers/nflverse/injuries/raw-<season>.csv and metadata-<season>.json"
+              echo "- Scoped canonical: data-source/nfl/injuries/<season>/**"
+              echo "- Derived: separate rebuild-and-retry in data-derived/nfl-injuries/<season>.json"
+              echo "- Original nflverse release SHA verified before Raw publication"
+              echo "- Full NFL audit: disabled; seasonal Injury canonical integrity check only"
             else
               echo "- Canonical write-set: full NFL source materialization"
             fi
@@ -372,6 +409,20 @@ jobs:
             )
           fi
 
+          if [[ "$materialization_scope" == "injuries" ]]; then
+            materialize_input_pathspecs=(
+              data-source/registry.json
+              data-source/providers/nflverse/injuries
+              data-source/nfl/injuries
+              data-source/nfl/identities/players.json
+              data-source/nfl/schedules
+              'data-source/leagues/*/manifest.json'
+              tools
+              .github/workflows/sync-nfl-source-data.yml
+              .github/workflows/sync-nfl-injuries.yml
+            )
+          fi
+
           # Returns 0 after a successful push. Returns 1 when a materialization input
           # changed on main (caller must rebuild). Fails closed on rebase conflicts.
           publish_canonical_commit() {
@@ -427,11 +478,32 @@ jobs:
             fi
           }
 
+          assert_scoped_raw_write_set() {
+            if [[ "$materialization_scope" != "injuries" ]]; then
+              return 0
+            fi
+            mapfile -t changed < <(git status --porcelain=v1 --untracked-files=all | sed -E 's/^.. //')
+            unexpected=()
+            for path in "${changed[@]}"; do
+              if [[ "$path" == "data-source/providers/nflverse/injuries/raw-${injury_year}.csv" ||
+                    "$path" == "data-source/providers/nflverse/injuries/metadata-${injury_year}.json" ||
+                    "$path" == "$failure_diagnostic_file" ]]; then
+                continue
+              fi
+              unexpected+=("$path")
+            done
+            if (( ${#unexpected[@]} > 0 )); then
+              printf 'Scoped injury Raw sync touched unexpected paths:\\n' >&2
+              printf ' - %s\\n' "${unexpected[@]}" >&2
+              return 1
+            fi
+          }
+
           assert_scoped_canonical_write_set() {
             if [[ "$materialization_scope" == "full" ]]; then
               return 0
             fi
-            mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
+            mapfile -t changed < <(git status --porcelain=v1 --untracked-files=all | sed -E 's/^.. //')
             unexpected=()
             for path in "${changed[@]}"; do
               if [[ "$materialization_scope" == "game-finality" ]]; then
@@ -440,6 +512,10 @@ jobs:
                 fi
               elif [[ "$materialization_scope" == "schedule-odds" ]]; then
                 if [[ "$path" == data-source/nfl/schedule-odds/* ]]; then
+                  continue
+                fi
+              elif [[ "$materialization_scope" == "injuries" ]]; then
+                if [[ "$path" == data-source/nfl/injuries/"$injury_year"/* ]]; then
                   continue
                 fi
               fi
@@ -546,6 +622,7 @@ jobs:
             fi
 
             assert_source_data_only
+            assert_scoped_raw_write_set
             git add -- data-source/providers
             if ! git diff --cached --quiet; then
               timestamp="$(TZ=Europe/Berlin date '+%Y-%m-%d %H:%M %Z')"
@@ -612,6 +689,13 @@ jobs:
                   f"final={diagnostics.get('finalGameCount')}, "
                   f"weekFinal={diagnostics.get('weekFinalCount')}"
               )
+          elif scope == "injuries":
+              print(f"- Injury canonical season: {result.get('injurySeason')}")
+              print(f"- Injury canonical files changed: {result.get('injuryCanonicalFilesChanged')}")
+              print("- Injury canonical changed paths: " +
+                    (", ".join(result.get("injuryCanonicalChangedPaths") or []) or "none"))
+              print("- Obsolete injury weeks requiring review: " +
+                    (", ".join(result.get("injuryObsoleteRequiresReview") or []) or "none"))
           elif scope == "schedule-odds":
               print(f"- Scoped canonical files evaluated: {result.get('oddsCanonicalFileCount')}")
               print(f"- Scoped canonical files changed: {result.get('oddsFilesChanged')}")
@@ -659,6 +743,12 @@ jobs:
               expected = {
                   "oddsFilesChanged": 0,
                   "oddsChangedPaths": [],
+              }
+          elif scope == "injuries":
+              expected = {
+                  "injuryCanonicalFilesChanged": 0,
+                  "injuryCanonicalChangedPaths": [],
+                  "injuryObsoleteRequiresReview": [],
               }
           else:
               expected = {
@@ -761,7 +851,7 @@ jobs:
     needs: sync
     # After full daily Source or scoped nflverse.schedule-odds refresh only.
     # NFL Live game-finality and all other targeted datasets remain excluded.
-    if: ${{ needs.sync.result == 'success' && inputs.materialization_scope != 'game-finality' && (!inputs.dataset || inputs.dataset == 'nflverse.schedule-odds') }}
+    if: ${{ needs.sync.result == 'success' && inputs.materialization_scope != 'game-finality' && inputs.materialization_scope != 'injuries' && (!inputs.dataset || inputs.dataset == 'nflverse.schedule-odds') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -797,3 +887,53 @@ jobs:
           echo "- Generated write-set: data-derived/nfl-games/** only" >> "$GITHUB_STEP_SUMMARY"
           echo "- Publisher: rebuild-and-retry from latest main, no-op on unchanged content" >> "$GITHUB_STEP_SUMMARY"
 
+  nfl_injuries_derived:
+    name: Publish isolated NFL Injury Shared Derived
+    needs: sync
+    # Run only after the two-phase Injury Source publisher completed successfully.
+    # Derived reads the now-published Canonical manifest and partitions on latest main.
+    if: ${{ needs.sync.result == 'success' && inputs.materialization_scope == 'injuries' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout current main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+          token: ${{ secrets.PAT_PUSH }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild and publish isolated Injury Derived product
+        shell: bash
+        env:
+          INJURY_SEASON_INPUT: ${{ inputs.season }}
+        run: |
+          set -euo pipefail
+          season="${INJURY_SEASON_INPUT:-}"
+          if [[ -z "$season" ]]; then
+            season="$(python3 -c 'from nfl_source_data_lib.common import current_source_season; from pathlib import Path; print(current_source_season(Path.cwd()))')"
+          fi
+          if [[ ! "$season" =~ ^[0-9]{4}$ ]]; then
+            echo "Injury Derived requires exactly one season" >&2
+            exit 2
+          fi
+          python3 tools/rebuild_and_publish.py \
+            --scope nfl-injuries \
+            --path data-derived/nfl-injuries \
+            -- \
+            python3 tools/nfl_injuries_phase.py --phase derived --season "$season" --write
+
+      - name: Summarize Injury Derived publication
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          echo "## NFL Injury Shared Derived" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source: published canonical season manifest and verified week partitions" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Output: data-derived/nfl-injuries/<season>.json only" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Git publisher: rebuild-and-retry from latest main with semantic no-op" >> "$GITHUB_STEP_SUMMARY"
+          echo "- ESPN current injury status is unaffected" >> "$GITHUB_STEP_SUMMARY"

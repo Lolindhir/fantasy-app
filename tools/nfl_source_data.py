@@ -30,6 +30,11 @@ from nfl_source_data_lib.schedule_odds_materialize import (
     materialize_schedule_odds,
 )
 from data_roots import DATA_SOURCE_ROOT
+from nfl_injuries_phase import run_injury_phase
+from nfl_injuries_refresh import refresh_injury_raw
+
+INJURIES_SCOPE = "injuries"
+INJURIES_DATASET_ID = "nflverse.injuries"
 
 # Keep this entry point side-effect free until main() is invoked; CI imports the
 # supporting modules independently during data-source validation.
@@ -68,11 +73,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--raw-only", action="store_true", help="For sync, stop after validated provider raw data is persisted")
     parser.add_argument(
         "--scope",
-        choices=("full", GAME_FINALITY_SCOPE, SCHEDULE_ODDS_SCOPE),
+        choices=("full", GAME_FINALITY_SCOPE, SCHEDULE_ODDS_SCOPE, INJURIES_SCOPE),
         default="full",
         help=(
             "Materialization scope. 'full' preserves the complete NFL materializer; "
-            "'game-finality' writes schedules/finality; 'schedule-odds' writes only canonical odds."
+            "'game-finality' writes schedules/finality; 'schedule-odds' writes only canonical odds; "
+            "'injuries' writes only canonical historical Injury reports."
         ),
     )
     return parser.parse_args()
@@ -99,19 +105,58 @@ def main() -> int:
 
     if args.raw_only and args.command != "sync":
         raise ValueError("--raw-only is only valid with the sync command")
-    if args.seasons and args.command != "sync":
+    if args.seasons and args.command != "sync" and args.scope != INJURIES_SCOPE:
         raise ValueError("--season is only valid with the sync command")
     if args.historical_backfill_limit < 0:
         raise ValueError("--historical-backfill-limit must be >= 0")
     if args.historical_backfill_limit and args.command != "sync":
         raise ValueError("--historical-backfill-limit is only valid with the sync command")
 
+    if args.command == "materialize" and args.scope == INJURIES_SCOPE:
+        if args.datasets or len(args.seasons or []) > 1 or args.force or args.offline:
+            raise ValueError("Injury canonical scope accepts only an optional single season")
+        season = args.seasons[0] if args.seasons else current_source_season(repo_root)
+        identity = load_json(repo_root / DATA_SOURCE_ROOT / "nfl/identities/players.json")
+        if not isinstance(identity, dict):
+            raise ValueError("Canonical player identity graph is missing for Injury materialization")
+        schedule = load_json(repo_root / DATA_SOURCE_ROOT / "nfl/schedules" / f"{season}.json")
+        if not isinstance(schedule, dict):
+            raise ValueError(f"Canonical NFL season schedule is unavailable for Injury season {season}")
+        result = run_injury_phase(
+            repo_root, season, "canonical", write=True,
+            players=identity, schedule=schedule,
+        )
+        print(json.dumps({
+            "injuryCanonicalFilesChanged": len(result["Changed"]) + len(result["New"]),
+            "injuryCanonicalChangedPaths": result["Changed"] + result["New"],
+            "injuryObsoleteRequiresReview": result["ObsoleteRequiresReview"],
+            "injurySeason": season,
+            "injuryStatus": result["Status"],
+        }, indent=2))
+        return 0
+
     if args.command == "sync":
         requested = set(args.datasets or [])
         unknown = requested - set(datasets)
         if unknown:
             raise ValueError(f"Unknown dataset id(s): {', '.join(sorted(unknown))}")
-        selected = [dataset for dataset in registry if not requested or dataset.id in requested]
+        if INJURIES_DATASET_ID in requested:
+            if (requested != {INJURIES_DATASET_ID} or not args.raw_only
+                    or args.offline or args.force or len(args.seasons or []) > 1
+                    or args.historical_backfill_limit):
+                raise ValueError("Injury raw Source requires its isolated dataset, --raw-only and at most one season")
+            season = args.seasons[0] if args.seasons else current_source_season(repo_root)
+            result = refresh_injury_raw(
+                repo_root=repo_root, season=season, write=True,
+                current_season=current_source_season(repo_root),
+            )
+            print(f"{INJURIES_DATASET_ID} season={season}: {result['Status']} (downloaded={result['Downloaded']})")
+            return 0
+        # The Injury provider has a distinct post-upstream cadence and must never
+        # leak into the 04:00 full NFL Source sync or its ordinary raw materializer.
+        selected = [dataset for dataset in registry
+                    if dataset.id != INJURIES_DATASET_ID and
+                    (not requested or dataset.id in requested)]
         if args.seasons and not any(dataset.is_season_partitioned for dataset in selected):
             raise ValueError("--season requires at least one selected season-partitioned dataset")
         if args.historical_backfill_limit and (requested or args.seasons):

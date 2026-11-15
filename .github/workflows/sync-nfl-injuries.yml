@@ -1,0 +1,39 @@
+name: Data • NFL Injuries Daily
+
+# Permanent, scheduler-owned wrapper. Delegates all writes and concurrency
+# safety to the pre-existing NFL Source Sync reusable workflow (#1421).
+on:
+  # When approved configuration first lands on main, perform one real current
+  # season import instead of waiting for the following daily due slot.
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/sync-nfl-injuries.yml"
+  repository_dispatch:
+    types:
+      - scheduler-sync-nfl-injuries
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Optional single historical season; blank uses current canonical NFL season"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  source_and_derived:
+    name: NFL injury source and derived via existing publisher
+    uses: ./.github/workflows/sync-nfl-source-data.yml
+    with:
+      dataset: nflverse.injuries
+      materialization_scope: injuries
+      season: ${{ inputs.season || '' }}
+      historical_backfill_limit: 0
+      force: false
+    secrets:
+      PAT_PUSH: ${{ secrets.PAT_PUSH }}

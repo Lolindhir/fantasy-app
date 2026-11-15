@@ -315,6 +315,13 @@ workflows:
     - repository_dispatch
     staleAfterMinutes: 20
     rationale: Central five-minute scheduling layer woken automatically by the external Cloudflare cron for all migrated time-driven targets, including workflow health. It owns profile-driven bounded retries, fail-safe dispatch observation with fallback reads, isolated runtime coordination, Health observation-barrier decisions and debounced Project-field change detection; a scheduler failure or roughly 20 minutes without a successful external tick can prevent downstream refreshes and Project mirroring and is immediately actionable.
+  .github/workflows/sync-nfl-injuries.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    - push
+    consecutiveFailures: 1
+    rationale: Scheduler-owned daily Sep-Feb Injury Report producer runs after nflverse release update; delegates to the existing protected two-phase NFL Source publisher and its isolated Derived job. One failed run leaves last good data but may miss a report correction; manual repair invocations are non-paging. No 10-minute polling and no staleness timer outside the seasonal window.
   .github/workflows/sync-nfl-source-data.yml:
     category: important
     relevantEvents:

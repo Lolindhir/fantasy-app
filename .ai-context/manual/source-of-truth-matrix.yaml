@@ -385,6 +385,7 @@ matrix:
     migrationState: canonical-active-runtime-migrated
     guards:
       - nflverse injury source is not a valid current replacement after its source ended following 2024
+      - nflverse injury report CSVs are a separately scheduled historical Source/Derived product (Issue #1421); they do not replace or fall back for the authoritative current Sleeper injury status
       - ReturnDate is an honest null (unknown) and is not synthesized; InjuryStartDate is currently empty in Sleeper data and publishes as an empty string
       - Description is published only while an injury status exists; stale Sleeper body part/notes after recovery must not become a false Fantasy Management injury signal
       - conflicting provider injury claims are not silently resolved by fallback priority
@@ -1259,6 +1260,15 @@ consumerReadClassification:
         network: source-layer-acquisition
         provider:espn: source-layer-acquisition
       note: 'ESPN kona_player_info injury status snapshot into data-source/nfl/player-availability (#347); consumed by RequestLeague as canonical input.'
+    tools/nfl_injuries_refresh.py:
+      reads:
+        network: source-layer-acquisition
+        provider:nflverse: source-layer-acquisition
+      note: 'Issue #1421 C4: official nflverse injury release API and validated exact asset URL; production Source-only release verification under the declared isolated Injury scope; no League/App/ESPN owner changed.'
+    tools/nfl_source_data_lib/injury_product_plan.py:
+      reads:
+        provider:nflverse: source-layer-acquisition
+      note: 'Issue #1421: no-write injury release metadata and artifact planning; nflverse URL is a source-origin reference, not an HTTP call or active publisher.'
     tools/nfl_source_data_lib/common.py:
       reads:
         network: source-layer-acquisition

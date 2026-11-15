@@ -32,6 +32,7 @@ WORKFLOW_LOCAL_REBUILD_WRITERS = {
 }
 
 DELEGATED_REBUILD_WRITERS = {
+    "sync-nfl-injuries.yml": "sync-nfl-source-data.yml",
     "nfl-live.yml": "sync-nfl-source-data.yml",
     "league-live.yml": "sync-league-source-data.yml",
 }
