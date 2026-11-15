@@ -194,8 +194,8 @@ def _unknown_comparison_eligibility(
         sack = _number(row, "sack")
         spike = _number(row, "qb_spike")
         possible_throw = (
-            (attempt == 1 and sack != 1 and spike != 1)
-            or (attempt is None and row.get("play_type") == "pass")
+            sack != 1 and spike != 1
+            and (attempt == 1 or (attempt is None and row.get("play_type") == "pass"))
         )
         possible_rush = (
             rush == 1 or (rush is None and row.get("play_type") == "run")
