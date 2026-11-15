@@ -19,6 +19,7 @@ from data_roots import DATA_SOURCE_ROOT
 from derived_data_lib.nfl_games import build_nfl_games
 from nfl_games_materialize import materialize, discover_seasons
 from nfl_pbp_metric_field_audit import audit as audit_pbp_catalog_fields, reconcile_original_game_row
+from nfl_pbp_team_metric_reconcile import reconcile as reconcile_pbp_team_season
 
 
 def inputs():
@@ -1170,6 +1171,128 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self._metrics([row])
 
+
+
+class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
+    """The synthetic fixture never proves that the real 2025 release was read."""
+
+    def fixture(self, root):
+        game = "2025_01_ARI_NO"
+        index = root / "data-derived/nfl-games/2025.json"
+        index.parent.mkdir(parents=True)
+        index.write_text(json.dumps({
+            "SchemaVersion": 1, "Season": 2025,
+            "Games": [{
+                "GameID": game, "GameType": "REG", "Week": 1,
+                "AwayTeam": "ARI", "HomeTeam": "NO", "Final": True,
+            }],
+        }), encoding="utf-8")
+        stats = root / "data-source/nfl/player-stats/2025/01.json"
+        stats.parent.mkdir(parents=True)
+        stats.write_text(json.dumps({
+            "SchemaVersion": 2, "Season": 2025, "Week": 1,
+            "SourceDataset": "nflverse.player-stats",
+            "Records": [{
+                "Team": "ARI", "SeasonType": "REG",
+                "Stats": {"game_id": game, "attempts": 1, "carries": 1,
+                          "passing_yards": 25, "rushing_yards": 10},
+            }, {
+                "Team": "NO", "SeasonType": "REG",
+                "Stats": {"game_id": game, "attempts": 1, "carries": 0,
+                          "passing_yards": 0, "rushing_yards": 0},
+            }],
+        }), encoding="utf-8")
+        catalog = root / ".ai-context/manual/nfl-games-pbp-metrics.yaml"
+        catalog.parent.mkdir(parents=True)
+        catalog.write_bytes(
+            (TOOLS.parent / ".ai-context/manual/nfl-games-pbp-metrics.yaml").read_bytes()
+        )
+        def row(play_id, posteam, defteam, play_type, **kwargs):
+            data = _pbp_row(
+                game_id=game, season="2025", week="1",
+                away_team="ARI", home_team="NO", play_id=str(play_id),
+                posteam=posteam, defteam=defteam, play_type=play_type,
+                two_point_attempt="0", sack="0", qb_spike="0",
+                rush_attempt="0", qb_scramble="0",
+                first_down="0", complete_pass="0", 
+                passing_yards="0", rushing_yards="0",
+                yards_after_catch="0", air_yards="0", **kwargs,
+            )
+            return data
+        pbp_rows = [
+            row(1, "ARI", "NO", "pass", epa="1.5", success="1",
+                pass_attempt="1", qb_dropback="1", complete_pass="1",
+                passing_yards="25", yards_gained="25", air_yards="20",
+                yards_after_catch="5", first_down="1"),
+            row(2, "ARI", "NO", "run", epa="0.5", success="1",
+                pass_attempt="0", qb_dropback="0", rush_attempt="1",
+                rushing_yards="10", yards_gained="10", first_down="1"),
+            row(3, "NO", "ARI", "pass", epa="-0.5", success="0",
+                pass_attempt="1", qb_dropback="1", complete_pass="0",
+                passing_yards="0", yards_gained="0"),
+        ]
+        fields = sorted(set(_PBP_CSV_FIELDS) | {
+            "sack", "qb_spike", "rush_attempt", "qb_scramble", "first_down",
+            "complete_pass", "passing_yards", "rushing_yards",
+            "yards_after_catch", "air_yards",
+        })
+        source = root / "play_by_play_2025.csv.gz"
+        _write_original_pbp_gzip(source, pbp_rows, fields=fields)
+        return source, hashlib.sha256(source.read_bytes()).hexdigest(), stats
+
+    def test_synthetic_season_reconciles_game_and_offense_baselines_without_player_id(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, digest, _ = self.fixture(root)
+            before = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            report = reconcile_pbp_team_season(root, source, 2025, digest)
+            self.assertTrue(report["ReadOnly"])
+            self.assertFalse(report["IdentityOrPositionJoinPerformed"])
+            self.assertEqual(report["PBPSourceRowsScanned"], 3)
+            self.assertEqual(report["OriginalGamesObserved"], 1)
+            self.assertEqual(report["CanonicalGames"], 1)
+            self.assertEqual(report["GameTeamCandidateRows"], 2)
+            self.assertEqual(len(report["TeamOnlyMetricCandidateIDs"]), 17)
+            self.assertEqual(report["PlayerStatsBaseline"]["GameTeamBaselines"], 2)
+            self.assertEqual(report["Reconciliation"]["attempts"]["Equal"], 2)
+            self.assertEqual(report["Reconciliation"]["carries"]["Equal"], 2)
+            self.assertEqual(report["Reconciliation"]["passing_yards"]["Equal"], 2)
+            self.assertEqual(report["Reconciliation"]["rushing_yards"]["Equal"], 1)
+            self.assertEqual(report["Reconciliation"]["rushing_yards"]["MissingPBP"], 1)
+            self.assertFalse(report["ProductionReady"])
+            self.assertFalse(report["FullUpstreamPlayCompletenessVerified"])
+            after = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+            self.assertEqual(before, after)
+
+    def test_original_source_pin_and_playerstats_unknown_fail_closed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, digest, stats = self.fixture(root)
+            with self.assertRaisesRegex(ValueError, "pinned SHA256"):
+                reconcile_pbp_team_season(root, source, 2025, "f" * 64)
+            body = json.loads(stats.read_text(encoding="utf-8"))
+            del body["Records"][0]["Stats"]["attempts"]
+            stats.write_text(json.dumps(body), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "unknown required baseline"):
+                reconcile_pbp_team_season(root, source, 2025, digest)
+
+    def test_unknown_source_game_or_missing_stat_partition_fails(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, digest, stats = self.fixture(root)
+            stats.unlink()
+            with self.assertRaisesRegex(ValueError, "Missing canonical PlayerStats"):
+                reconcile_pbp_team_season(root, source, 2025, digest)
+            source, digest, stats = self.fixture(root)
+            with gzip.open(source, "rt", encoding="utf-8", newline="") as stream:
+                reader = csv.DictReader(stream)
+                fields = reader.fieldnames
+                rows = list(reader)
+            rows[0]["game_id"] = "2025_01_UNKNOWN_GAME"
+            _write_original_pbp_gzip(source, rows, fields=fields)
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            with self.assertRaisesRegex(ValueError, "does not reconcile"):
+                reconcile_pbp_team_season(root, source, 2025, digest)
 
 if __name__ == "__main__":
     unittest.main()
