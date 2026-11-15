@@ -1254,6 +1254,12 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
             self.assertEqual(report["CanonicalGames"], 1)
             self.assertEqual(report["GameTeamCandidateRows"], 2)
             self.assertEqual(len(report["TeamOnlyMetricCandidateIDs"]), 17)
+            coverage = report["TeamMetricResearchCoverage"]
+            self.assertEqual(coverage["pass_epa_per_attempt_allowed"]["ObservedTeamGames"], 2)
+            self.assertEqual(coverage["pass_epa_per_attempt_allowed"]["ObservedDenominator"], 2)
+            self.assertEqual(coverage["pass_epa_per_attempt_allowed"]["ObservedWeightedMeanApprox"], 0.5)
+            self.assertEqual(coverage["rush_epa_per_play_allowed"]["ObservedTeamGames"], 1)
+            self.assertEqual(coverage["red_zone_epa_and_success_allowed.EPA"]["MissingTeamGames"], 2)
             self.assertEqual(report["PlayerStatsBaseline"]["GameTeamBaselines"], 2)
             self.assertEqual(report["Reconciliation"]["attempts"]["Equal"], 2)
             self.assertEqual(report["Reconciliation"]["carries"]["Equal"], 2)
