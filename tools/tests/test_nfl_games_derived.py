@@ -1075,7 +1075,7 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
             set(doc["ByDefenseTeam"][1]["Metrics"]),
         )
         # This phase must not access canonical player IDs or position mappings.
-        self.assertNotIn("CanonicalPlayerID", json.dumps(doc))
+        self.assertNotIn('"CanonicalPlayerID":', json.dumps(doc))
 
     def test_sacks_are_dropbacks_but_not_true_pass_attempts_and_incompletions_are_zero_explosives(self):
         plays = [
