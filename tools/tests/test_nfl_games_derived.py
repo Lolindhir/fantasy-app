@@ -1179,7 +1179,7 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
     def fixture(self, root):
         game = "2025_01_ARI_NO"
         index = root / "data-derived/nfl-games/2025.json"
-        index.parent.mkdir(parents=True)
+        index.parent.mkdir(parents=True, exist_ok=True)
         index.write_text(json.dumps({
             "SchemaVersion": 1, "Season": 2025,
             "Games": [{
@@ -1188,7 +1188,7 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
             }],
         }), encoding="utf-8")
         stats = root / "data-source/nfl/player-stats/2025/01.json"
-        stats.parent.mkdir(parents=True)
+        stats.parent.mkdir(parents=True, exist_ok=True)
         stats.write_text(json.dumps({
             "SchemaVersion": 2, "Season": 2025, "Week": 1,
             "SourceDataset": "nflverse.player-stats",
@@ -1203,7 +1203,7 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
             }],
         }), encoding="utf-8")
         catalog = root / ".ai-context/manual/nfl-games-pbp-metrics.yaml"
-        catalog.parent.mkdir(parents=True)
+        catalog.parent.mkdir(parents=True, exist_ok=True)
         catalog.write_bytes(
             (TOOLS.parent / ".ai-context/manual/nfl-games-pbp-metrics.yaml").read_bytes()
         )
