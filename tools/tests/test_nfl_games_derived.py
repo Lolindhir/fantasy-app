@@ -19,7 +19,10 @@ from data_roots import DATA_SOURCE_ROOT
 from derived_data_lib.nfl_games import build_nfl_games
 from nfl_games_materialize import materialize, discover_seasons
 from nfl_pbp_metric_field_audit import audit as audit_pbp_catalog_fields, reconcile_original_game_row
-from nfl_pbp_team_metric_reconcile import reconcile as reconcile_pbp_team_season
+from nfl_pbp_team_metric_reconcile import (
+    reconcile as reconcile_pbp_team_season,
+    _delta_distribution,
+)
 
 
 def inputs():
@@ -1176,6 +1179,22 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
 class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
     """The synthetic fixture never proves that the real 2025 release was read."""
 
+    def test_delta_distribution_is_signed_and_never_imputes_missing(self):
+        self.assertEqual(_delta_distribution([])["Compared"], 0)
+        self.assertIsNone(_delta_distribution([])["Sum"])
+        self.assertIsNone(_delta_distribution([])["Mean"])
+        self.assertIsNone(_delta_distribution([])["AbsoluteP90"])
+        value = _delta_distribution([-3, 0, 1, 7])
+        self.assertEqual((value["Positive"], value["Negative"], value["Zero"]),
+                         (2, 1, 1))
+        self.assertEqual(value["Sum"], 5)
+        self.assertEqual(value["Median"], 0.5)
+        self.assertEqual(value["Mean"], 1.25)
+        self.assertEqual(value["MeanAbsolute"], 2.75)
+        self.assertEqual(value["AbsoluteP50"], 1)
+        self.assertEqual(value["AbsoluteP90"], 7)
+        self.assertEqual(value["AbsoluteP99"], 7)
+
     def fixture(self, root):
         game = "2025_01_ARI_NO"
         index = root / "data-derived/nfl-games/2025.json"
@@ -1262,6 +1281,8 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
             self.assertEqual(coverage["red_zone_epa_and_success_allowed.EPA"]["MissingTeamGames"], 2)
             self.assertEqual(report["PlayerStatsBaseline"]["GameTeamBaselines"], 2)
             self.assertEqual(report["Reconciliation"]["attempts"]["Equal"], 2)
+            self.assertEqual(report["Reconciliation"]["attempts"]["DeltaDistribution"]["Zero"], 2)
+            self.assertEqual(report["Reconciliation"]["attempts"]["DeltaDistribution"]["Sum"], 0)
             self.assertEqual(report["Reconciliation"]["carries"]["Equal"], 2)
             self.assertEqual(report["Reconciliation"]["passing_yards"]["Equal"], 2)
             self.assertEqual(report["Reconciliation"]["rushing_yards"]["Equal"], 1)
@@ -1270,6 +1291,29 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
             self.assertFalse(report["FullUpstreamPlayCompletenessVerified"])
             after = {p.relative_to(root): p.read_bytes() for p in root.rglob("*") if p.is_file()}
             self.assertEqual(before, after)
+
+    def test_reconciliation_reports_signed_deltas_and_largest_outliers(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, digest, stats = self.fixture(root)
+            body = json.loads(stats.read_text(encoding="utf-8"))
+            body["Records"][0]["Stats"]["attempts"] = 4
+            body["Records"][1]["Stats"]["attempts"] = 0
+            stats.write_text(json.dumps(body), encoding="utf-8")
+            report = reconcile_pbp_team_season(root, source, 2025, digest)
+            comp = report["Reconciliation"]["attempts"]
+            self.assertEqual((comp["Compared"], comp["Equal"], comp["Different"]), (2, 0, 2))
+            summary = comp["DeltaDistribution"]
+            self.assertEqual((summary["Positive"], summary["Negative"], summary["Zero"]),
+                             (1, 1, 0))
+            self.assertEqual((summary["Sum"], summary["Mean"], summary["Median"]),
+                             (-2, -1, -1))
+            self.assertEqual((summary["Min"], summary["Max"], summary["AbsoluteP90"]),
+                             (-3, 1, 3))
+            self.assertEqual([row["DeltaPBPMinusPlayerStats"] for row in comp["Examples"]],
+                             [-3, 1])
+            self.assertEqual(report["Reconciliation"]["carries"]["DeltaDistribution"]["Zero"], 2)
+            self.assertFalse(report["ProductionReady"])
 
     def test_original_source_pin_and_playerstats_unknown_fail_closed(self):
         with tempfile.TemporaryDirectory() as temp:
