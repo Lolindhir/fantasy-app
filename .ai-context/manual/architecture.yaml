@@ -579,6 +579,48 @@ playerWeekFantasySharedDerived:
     - Physical materialization and scheduling require a later approved checkpoint; this contract foundation introduces neither.
 
 
+
+nflGamesSharedDerivation:
+  trackingIssue: 1077
+  domainContract: .ai-context/manual/nfl-games.yaml
+  pbpCatalog: .ai-context/manual/nfl-games-pbp-metrics.yaml
+  architectureDecisions: [ADR-037, ADR-038]
+  ownership: extend-existing-global-nfl-games-product-not-a-second-product
+  layers:
+    source:
+      root: data-source/nfl/**
+      responsibility: canonical schedule, finality, market, player-stats and snap-count facts;
+        original PBP remains a separate rights-and-source-coverage gate
+    rules:
+      root: tools/derived_data_lib/
+      responsibility: pure, versioned and independently reusable team/game derivations
+      examples:
+        - nfl_games.py (published index)
+        - nfl_game_detail.py (read-only detail preview)
+        - nfl_pbp_team_metrics.py (experimental 17 team-only candidates)
+        - nfl_team_snap_usage.py (read-only player-share team-total inference)
+    materialization:
+      runner: tools/nfl_games_materialize.py
+      publishedIndex: data-derived/nfl-games/<season>.json
+      detail: future-per-GameID-derived-partition-not-yet-approved-or-published
+      responsibility: read canonical inputs, invoke pure rules, validate contract,
+        persist only approved versioned shared outputs; no raw PBP play-list publication
+    orchestration:
+      existingWorkflow: .github/workflows/sync-nfl-source-data.yml
+      existingJob: nfl_games_derived
+      activeScope: season index from schedules, game finality and schedule odds
+      futureDetailRule: add relevant Source revision dependencies and targeted GameID
+        invalidation inside the existing classified pipeline; no metric-specific
+        schedulers, unconditional complete PBP replays or duplicate writers
+  boundaries:
+    - NBA/NFL provider row field names and raw play evidence are Source, not output rules
+    - Team snap totals must not equal sum of player snaps or arbitrary sum divided by 11
+    - Missing or ambiguous shares and unverified PBP play coverage must remain explicit
+    - Angular and Fantasy Management consume shared metrics; they must not own their formulas
+    - No new production writer, GameDetail output path, schema cutover or PBP rights grant
+      is implied by this architecture section or the current read-only prototype
+
+
 sharedDerivedPhysicalLayer:
   architectureDecision: ADR-038
   root: data-derived/**
