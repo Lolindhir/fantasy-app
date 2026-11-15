@@ -176,6 +176,7 @@ class GlobalNflGamesTests(unittest.TestCase):
 
 
 from derived_data_lib.nfl_game_detail import build_nfl_game_detail
+from derived_data_lib.nfl_game_detail_core import build_nfl_game_detail_core
 from nfl_game_detail_preview import preview
 
 
@@ -482,6 +483,118 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
                     [[66, 75, 27], [75, 66, 27]],
                 )
         self.assertEqual(observed, 96)
+
+
+    def test_core_v1_reuses_source_groups_with_game_scoped_fingerprint(self):
+        index = build_nfl_games(*inputs())
+        stats, snaps = _week_stats(), _week_snaps()
+        first = build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, snaps)
+        self.assertEqual(first["SchemaVersion"], 1)
+        self.assertEqual(first["Product"], "nfl-games")
+        self.assertEqual(first["Coverage"]["PlayByPlay"], "not-in-core-v1")
+        self.assertFalse(first["Coverage"]["FullPlayByPlayAvailable"])
+        self.assertEqual(first["TeamStats"]["Teams"][0]["Stats"]["carries"], 4)
+        self.assertEqual(first["SnapCounts"]["Teams"][0]["Offense"]["Status"],
+                         "insufficient-participants")
+        fingerprint = first["Derivation"]["InputFingerprintSHA256"]
+        self.assertEqual(len(fingerprint), 64)
+        extra_stats = copy.deepcopy(stats)
+        extra_stats["Records"].append({
+            **copy.deepcopy(stats["Records"][0]),
+            "Stats": {**stats["Records"][0]["Stats"], "game_id": "2026_07_HOU_JAX"},
+        })
+        extra_snaps = copy.deepcopy(snaps)
+        extra_snaps["Records"].append({**copy.deepcopy(snaps["Records"][0]),
+                                       "GameID": "2026_07_HOU_JAX"})
+        self.assertEqual(
+            build_nfl_game_detail_core(
+                index, "2026_06_HOU_JAX", extra_stats, extra_snaps,
+            )["Derivation"]["InputFingerprintSHA256"], fingerprint,
+        )
+        changed = copy.deepcopy(stats)
+        changed["Records"][0]["Stats"]["carries"] += 1
+        self.assertNotEqual(
+            build_nfl_game_detail_core(
+                index, "2026_06_HOU_JAX", changed, snaps,
+            )["Derivation"]["InputFingerprintSHA256"], fingerprint,
+        )
+        finalized = copy.deepcopy(snaps)
+        finalized["Finalized"] = True
+        self.assertNotEqual(
+            build_nfl_game_detail_core(
+                index, "2026_06_HOU_JAX", stats, finalized,
+            )["Derivation"]["InputFingerprintSHA256"], fingerprint,
+        )
+        unavailable = build_nfl_game_detail_core(index, "2026_06_HOU_JAX")
+        self.assertEqual(unavailable["TeamStats"]["Status"], "unavailable")
+        self.assertIsNone(unavailable["SnapCounts"]["Teams"])
+
+    def test_core_v1_identity_hold_only_blocks_affected_player_group(self):
+        index = build_nfl_games(*inputs())
+        stats, snaps = _week_stats(), _week_snaps()
+        # Complete participation evidence is still useful without an ID.
+        extra = copy.deepcopy(snaps["Records"][0])
+        extra["CanonicalPlayerID"] = "NFLP-other"
+        extra["OffenseSnaps"] = 70
+        extra["OffensePct"] = 1.0
+        extra["SpecialTeamsSnaps"] = 6
+        extra["SpecialTeamsPct"] = .2
+        snaps["Records"].append(extra)
+        snaps["Records"][0]["CanonicalPlayerID"] = None
+        stats["Records"][0]["CanonicalPlayerID"] = None
+        result = build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, snaps)
+        self.assertEqual(result["TeamStats"]["Status"], "blocked-unresolved-player-identity")
+        self.assertEqual(result["TeamStats"]["UnresolvedPlayerIdentityRows"], 1)
+        self.assertIsNone(result["TeamStats"]["Teams"])
+        self.assertEqual(result["SnapCounts"]["UnresolvedPlayerIdentityRows"], 1)
+        self.assertEqual(result["SnapCounts"]["Teams"][0]["Offense"]["TotalSnaps"], 70)
+        self.assertFalse(result["SnapCounts"]["TeamTotalsOfficiallyVerified"])
+        invalid = copy.deepcopy(snaps)
+        invalid["Records"][0]["OffensePct"] = 4
+        with self.assertRaises(ValueError):
+            build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, invalid)
+
+    def test_core_v1_readonly_cli_real_2025_unresolved_identity(self):
+        root = TOOLS.parent
+        index_path = root / DATA_DERIVED_ROOT / "nfl-games" / "2025.json"
+        snap_path = root / DATA_SOURCE_ROOT / "nfl" / "snap-counts" / "2025" / "01.json"
+        if not index_path.is_file() or not snap_path.is_file():
+            self.skipTest("Canonical 2025 week-one NFL Games and snap source unavailable")
+        game_id = "2025_01_BAL_BUF"
+        result = preview(root, 2025, game_id, core_v1=True)
+        self.assertEqual(result["GameID"], game_id)
+        self.assertEqual(result["SnapCounts"]["UnresolvedPlayerIdentityRows"], 1)
+        self.assertEqual(
+            [[team[u]["TotalSnaps"] for u in ("Offense", "Defense", "SpecialTeams")]
+             for team in result["SnapCounts"]["Teams"]],
+            [[51, 85, 35], [85, 51, 35]],
+        )
+        self.assertFalse(result["Coverage"]["FullPlayByPlayAvailable"])
+
+    def test_core_v1_preview_does_not_persist_or_change_index(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docs = {
+                root / DATA_DERIVED_ROOT / "nfl-games" / "2026.json": build_nfl_games(*inputs()),
+                root / DATA_SOURCE_ROOT / "nfl" / "player-stats" / "2026" / "06.json": _week_stats(),
+                root / DATA_SOURCE_ROOT / "nfl" / "snap-counts" / "2026" / "06.json": _week_snaps(),
+            }
+            for path, doc in docs.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(doc), encoding="utf-8")
+            before = {p.relative_to(root): p.read_bytes() for p in root.rglob("*.json")}
+            result = preview(root, 2026, "2026_06_HOU_JAX", core_v1=True)
+            self.assertEqual(result["SchemaVersion"], 1)
+            self.assertEqual(before, {p.relative_to(root): p.read_bytes()
+                                     for p in root.rglob("*.json")})
+            output = subprocess.run(
+                [sys.executable, str(TOOLS / "nfl_game_detail_preview.py"),
+                 "--repo-root", str(root), "--season", "2026",
+                 "--game-id", "2026_06_HOU_JAX", "--core-v1"],
+                check=True, capture_output=True, text=True,
+            )
+            self.assertEqual(json.loads(output.stdout), result)
+            self.assertFalse((root / DATA_DERIVED_ROOT / "nfl-games" / "details").exists())
 
     def test_readonly_cli_uses_only_matching_week_and_does_not_write(self):
         with tempfile.TemporaryDirectory() as temp:

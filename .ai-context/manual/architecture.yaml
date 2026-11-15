@@ -602,7 +602,10 @@ nflGamesSharedDerivation:
     materialization:
       runner: tools/nfl_games_materialize.py
       publishedIndex: data-derived/nfl-games/<season>.json
-      detail: future-per-GameID-derived-partition-not-yet-approved-or-published
+      detail: data-derived/nfl-games/details/<season>/<GameID>.json
+      detailStatus: core-v1-contract-agreed-read-only-not-published
+      previewCli: tools/nfl_game_detail_preview.py --core-v1
+      detailBuilder: tools/derived_data_lib/nfl_game_detail_core.py
       responsibility: read canonical inputs, invoke pure rules, validate contract,
         persist only approved versioned shared outputs; no raw PBP play-list publication
     orchestration:

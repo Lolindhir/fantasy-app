@@ -15,11 +15,13 @@ from pathlib import Path
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from derived_data_lib.nfl_game_detail import build_nfl_game_detail
+from derived_data_lib.nfl_game_detail_core import build_nfl_game_detail_core
 
 
 def preview(
     repo_root: Path, season: int, game_id: str,
     pbp_csv_gz: Path | None = None, expected_sha256: str | None = None,
+    *, core_v1: bool = False,
 ) -> dict:
     index_path = repo_root / DATA_DERIVED_ROOT / "nfl-games" / f"{season}.json"
     if not index_path.is_file():
@@ -31,6 +33,17 @@ def preview(
     week = matches[0].get("Week")
     if type(week) is not int or not 1 <= week <= 25:
         raise ValueError(f"Invalid game week for {game_id}")
+    if core_v1:
+        if pbp_csv_gz is not None or expected_sha256 is not None:
+            raise ValueError("--core-v1 cannot be combined with original PBP flags")
+        nfl_source = repo_root / DATA_SOURCE_ROOT / "nfl"
+        def optional_partition(name: str) -> dict | None:
+            path = nfl_source / name / f"{season}" / f"{week:02d}.json"
+            return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+        return build_nfl_game_detail_core(
+            index, game_id, optional_partition("player-stats"),
+            optional_partition("snap-counts"),
+        )
     if pbp_csv_gz is not None:
         # PBP-first mode: deliberately no player-stats or snap-count dependencies.
         if not pbp_csv_gz.is_file():
@@ -134,16 +147,20 @@ def main() -> int:
         help="Optional expected SHA256 of the original compressed season asset",
     )
     parser.add_argument(
+        "--core-v1", action="store_true",
+        help="Read-only versioned Shared Derived GameDetail core candidate; no writes",
+    )
+    parser.add_argument(
         "--summary", action="store_true",
         help="PBP-only compact stdout summary: source read audit and provisional metrics",
     )
     args = parser.parse_args()
     try:
-        if args.summary and args.pbp_csv_gz is None:
-            raise ValueError("--summary requires --pbp-csv-gz")
+        if args.summary and (args.pbp_csv_gz is None or args.core_v1):
+            raise ValueError("--summary requires --pbp-csv-gz without --core-v1")
         document = preview(
             args.repo_root.resolve(), args.season, args.game_id,
-            args.pbp_csv_gz, args.expected_sha256,
+            args.pbp_csv_gz, args.expected_sha256, core_v1=args.core_v1,
         )
     except (OSError, ValueError, TypeError, KeyError, EOFError, csv.Error,
             json.JSONDecodeError) as error:
