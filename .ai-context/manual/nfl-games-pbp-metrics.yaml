@@ -279,7 +279,7 @@ researchOnlyNotNflGamesFacts:
 
 requiredGatesBeforeAnyMetricActivation:
   - Original asset header and nullability audit for target seasons plus source digest and correction handling
-  - Source/derived identity and provider-player-position joins verified with historical and postseason edge cases
+  - Canonical GameID, season, week, team and play identity verified for every metric; season-valid provider-player-position joins verified only before position-conditional metrics are activated
   - Verify nflreadr dictionary pass_attempt-includes-sacks and success-equals-positive-EPA semantics against actual season rows; precise eligibility, contact/playoff/penalty edge cases and scoring direction
   - Reconciliation against available player-stats baselines without making player stats the PBP source
   - Minimum observed denominator and coverage status, unknown-vs-zero, source finality and as-of timestamp
@@ -370,14 +370,44 @@ historicalGameContextReconciliation:
     - Actually acquire and SHA256-verify season-level original PBP compressed bytes
     - Run all candidate field/header/nullability scans on the real original asset
     - Compare original full-game coverage, including unavailable historical games
-    - Resolve all GSIS provider player IDs against season-correct canonical mappings
+    - Resolve GSIS provider-player IDs against season-correct canonical mappings separately before activating position-conditional metrics; this is not a gate for the 17 team-only candidate calculations
     - Establish source rights/storage and separately authorize productive writer
   writePaths: []
   newPublishers: []
   rollback: revert-read-only-context-validation-tests-and-catalog-note
 
+teamOnlyReadOnlyResearchCheckpoint:
+  checkpoint: P1-team-2026-11-15
+  status: code-candidate-implemented-no-real-asset-replay-or-publication
+  code: tools/derived_data_lib/nfl_pbp_team_metrics.py
+  integration: tools/derived_data_lib/nfl_game_detail.py::Analytics.CatalogTeamMetricCandidates
+  catalogCandidateCount: 17
+  playerPositionCandidateCountDeferred: 6
+  requiresHistoricalPlayerIdentity: false
+  rationale: >-
+    The baseline, rushing-defense, passing-defense and game situation
+    candidate metrics are team/game calculations and require no GSIS to
+    CanonicalPlayerID mapping or historical positions. Only the explicitly
+    position-dependent candidates are deferred.
+  semantics: >-
+    Research-only per-defense allowed-offense perspective, explicit source
+    eligibility, observed/missing numerators and denominators; unmatched
+    source rows and unavailable evidence are not published as zero. Sacks
+    count for dropbacks but not true pass attempts. Incompletions with known
+    outcomes count as zero explosive plays, unknown target outcomes do not.
+  caveats: >-
+    Source EPA is offense-perspective. Red-zone and down-distance segmentation
+    and first-observed-scrimmage-drive-start are provisional research
+    definitions, not approved product contract boundaries. There is no
+    complete-game proof from a final flag or gzip EOF. Real 2025 original
+    PBP and player-stats baseline reconciliation remain open because the
+    original release bytes are unavailable, not because of player identity.
+  publicationAndSourceStorage: none
+  currentNflGamesIndexSchemaChange: none
+  v4cOrFantasyProjectionChange: none
+
 recommendedSequence:
-  - P0 inventory real per-season PBP headers, player/position mapping, game-coverage and stable original asset
+  - P0 inventory original PBP per-season headers, game/team/play coverage and stable asset; audit player-position mapping independently for later P2
   - P1 implement and validate compact unadjusted team-game opportunity/efficiency/situation groups as read-only proofs
   - P2 add RB rushing vs receiving and QB/WR/TE target/dropback subgroups after identity and denominator audit
   - P3 run ex-ante research for shrinkage/opponent-adjusted and ROS scheduling with explicit bye and cutoff semantics
