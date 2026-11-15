@@ -11,6 +11,8 @@ from decimal import Decimal, InvalidOperation
 
 from typing import Any, Mapping
 
+from .nfl_pbp_team_metrics import evaluate_team_pbp_metric_candidates
+
 _DETAIL_SCHEMA = 2
 _LONG_GAINS_SOURCE = "nflverse.player-game-long-gains"
 _GAIN_TYPES = {"LongReception", "LongRush"}
@@ -558,4 +560,5 @@ def _pbp_game_analytics(
         "ExcludedUnassignedTeamCount": unassigned,
         "ByOffenseTeam": offense,
         "ByDefenseTeam": defense,
+        "CatalogTeamMetricCandidates": evaluate_team_pbp_metric_candidates(plays, game),
     }
