@@ -279,7 +279,7 @@ researchOnlyNotNflGamesFacts:
 
 requiredGatesBeforeAnyMetricActivation:
   - Original asset header and nullability audit for target seasons plus source digest and correction handling
-  - Source/derived identity and provider-player-position joins verified with historical and postseason edge cases
+  - Canonical GameID, season, week, team and play identity verified for every metric; season-valid provider-player-position joins verified only before position-conditional metrics are activated
   - Verify nflreadr dictionary pass_attempt-includes-sacks and success-equals-positive-EPA semantics against actual season rows; precise eligibility, contact/playoff/penalty edge cases and scoring direction
   - Reconciliation against available player-stats baselines without making player stats the PBP source
   - Minimum observed denominator and coverage status, unknown-vs-zero, source finality and as-of timestamp
@@ -370,7 +370,7 @@ historicalGameContextReconciliation:
     - Actually acquire and SHA256-verify season-level original PBP compressed bytes
     - Run all candidate field/header/nullability scans on the real original asset
     - Compare original full-game coverage, including unavailable historical games
-    - Resolve all GSIS provider player IDs against season-correct canonical mappings
+    - Resolve GSIS provider-player IDs against season-correct canonical mappings separately before activating position-conditional metrics; this is not a gate for the 17 team-only candidate calculations
     - Establish source rights/storage and separately authorize productive writer
   writePaths: []
   newPublishers: []
@@ -407,7 +407,7 @@ teamOnlyReadOnlyResearchCheckpoint:
   v4cOrFantasyProjectionChange: none
 
 recommendedSequence:
-  - P0 inventory real per-season PBP headers, player/position mapping, game-coverage and stable original asset
+  - P0 inventory original PBP per-season headers, game/team/play coverage and stable asset; audit player-position mapping independently for later P2
   - P1 implement and validate compact unadjusted team-game opportunity/efficiency/situation groups as read-only proofs
   - P2 add RB rushing vs receiving and QB/WR/TE target/dropback subgroups after identity and denominator audit
   - P3 run ex-ante research for shrinkage/opponent-adjusted and ROS scheduling with explicit bye and cutoff semantics
