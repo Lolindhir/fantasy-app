@@ -231,6 +231,8 @@ jobs:
           HISTORICAL_BACKFILL_LIMIT: ${{ inputs.historical_backfill_limit }}
           FORCE: ${{ inputs.force }}
           PAT_PUSH: ${{ secrets.PAT_PUSH }}
+          # The built-in token is only used to read official nflverse release metadata.
+          NFLVERSE_RELEASE_API_TOKEN: ${{ inputs.materialization_scope == 'injuries' && github.token || '' }}
         run: |
           set -euo pipefail
 
