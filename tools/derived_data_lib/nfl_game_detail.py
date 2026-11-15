@@ -12,6 +12,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any, Mapping
 
 from .nfl_pbp_team_metrics import evaluate_team_pbp_metric_candidates
+from .nfl_team_snap_usage import infer_team_snap_volumes
 
 _DETAIL_SCHEMA = 2
 _LONG_GAINS_SOURCE = "nflverse.player-game-long-gains"
@@ -168,6 +169,11 @@ def build_nfl_game_detail(
             "Status": _group_status(snap_rows, game),
             "SourceFinalized": snaps_finalized,
             "Players": snap_rows,
+            "Teams": infer_team_snap_volumes(
+                snap_rows, game["AwayTeam"], game["HomeTeam"],
+            ),
+            "TeamTotalMethod": "unique-integer-denominator-from-rounded-player-percentages",
+            "TeamTotalsAreOfficiallyVerified": False,
         },
     }
 

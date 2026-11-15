@@ -124,6 +124,57 @@ futureGameDetailDirection:
     - situational-and-drive-context
     - advanced-play-derived-metrics
     - data-coverage-and-provenance
+  metricDerivationOwnership:
+    status: index-published-detail-read-only
+    source: >-
+      Raw/provider evidence and canonical NFL facts live under data-source/nfl.
+      Original full PBP acquisition and persistence still require source, rights,
+      identity and coverage approval; existing snap-counts and player-stats are
+      already canonical and can support detail preview independently of PBP.
+    implementation: >-
+      Consumer-neutral, versioned formulas belong under tools/derived_data_lib,
+      not Angular, Fantasy Management, a workflow expression or generated JSON.
+      nfl_games.py owns the published season index; nfl_game_detail.py composes
+      only read-only detail groups, nfl_pbp_team_metrics.py computes experimental
+      PBP candidate metrics and nfl_team_snap_usage.py infers provisional team
+      snap totals from canonical player counts and rounded player percentages.
+    materialization: >-
+      The existing tools/nfl_games_materialize.py writes only approved SchemaVersion
+      1 season-index fields to data-derived/nfl-games/<season>.json. A separate
+      detail materialization mode within the same NFL-Games owner will require a
+      versioned output schema, per-GameID path, coverage/provenance, input-hash
+      invalidation and explicit writer approval before activation.
+    orchestration: >-
+      Reuse the classified sync-nfl-source-data.yml dependent nfl_games_derived
+      workflow and the rebuild-and-retry scoped publisher, not one workflow per
+      metric. Existing index runs only after successful full Source sync or
+      schedule-odds refresh. Future details should run only when their relevant
+      canonical Source dependencies change; use targeted affected-GameID
+      rederivation, meaningful no-op and bounded historical reconciliation.
+      No new workflow, scheduling path or writer is activated by this design.
+    consumerBoundary: >-
+      Derived metric definitions, denominators, quality and provenance belong to
+      Shared Derived; Angular, Operations, Management and V4-C may consume or
+      interpret but must not independently reimplement the shared formula.
+  teamSnapUsagePreview:
+    status: read-only-candidate-not-published
+    input: data-source/nfl/snap-counts/<season>/<week>.json
+    identity: GameID + Team + Offense/Defense/SpecialTeams
+    calculation: >-
+      Infer an integer team play count for each of the three units only if
+      multiple observed player counts and their rounded two-decimal PFR
+      participation shares agree on exactly one plausible integer denominator.
+      These values are source-derived estimates, NOT independently verified
+      official team-play counts. A sum of player-participation snaps is NOT a
+      team-snap count; no division by eleven.
+    quality: >-
+      Preserve missing, sparse, ambiguous, inconsistent and opponent
+      offense-vs-defense mismatches as unavailable per metric, never zero.
+      Preserve player SnapCounts and source finality unchanged. Special Teams
+      remain an independent unit rather than a PBP pass/run proxy.
+    activation: >-
+      Preview only until representative historical/ongoing source checks,
+      output contract, restorable publishing and workflow/write-scope approval.
   pbpDerivedMetricCatalog:
     path: .ai-context/manual/nfl-games-pbp-metrics.yaml
     catalogVersion: 1
