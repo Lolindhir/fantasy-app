@@ -1,0 +1,2003 @@
+{
+  "schema_version": 1,
+  "status": "research_only_no_active_rule",
+  "date": "2026-11-15",
+  "issue": 1344,
+  "cap": 434255984,
+  "base_roster_slots": 29,
+  "sources": {
+    "june07": "5b4ed63172deae79759e7150f8511bd2ea3edb4e",
+    "june29": "85e22feb064fdaf2257d6c3149c8d1655ada0908",
+    "player_blob": "21001d6c0819dbbcb3deff084d63fe377714541c",
+    "transactions_blob": "0aa85766a962a9d499fe5610a269771dd3b02ce1",
+    "cp5d": "2026-11-15-salary-cap-cp5d-metrics.json"
+  },
+  "limitations": [
+    "Frozen 29-Jun salary vector used for 7-Jun to 30-Jun replay; not exact live prices per June transaction",
+    "No buyer consent, value of assets, draft picks or accepted trades",
+    "Strict regular roster capacity: no extra cuts, taxi/reserve reassignment or other supporting move",
+    "A traded player costs full original salary to buyer, avoids retained cut slice at seller",
+    "No true 2027 cap or roster; future H2/H3 arithmetic uses frozen June prices",
+    "The number of individually affordable pairs is not simultaneous clearing; DP accounts for shared buyer capacity/payroll",
+    "Preexisting buyer Cadd debt may persist in no-new-debt cases but cannot grow",
+    "No commissioner minutes measured, no hard-deadline sanctions implemented"
+  ],
+  "buyer_roster_capacity": [
+    {
+      "id": 1,
+      "name": "Mighty Giants",
+      "free_regular_slots": 0,
+      "roster_count": 31,
+      "retained": 0,
+      "baseline_debt": 0
+    },
+    {
+      "id": 2,
+      "name": "Ruhr Valley Packers",
+      "free_regular_slots": 4,
+      "roster_count": 25,
+      "retained": 10256124,
+      "baseline_debt": 4068909
+    },
+    {
+      "id": 3,
+      "name": "Just Bill",
+      "free_regular_slots": 8,
+      "roster_count": 23,
+      "retained": 37551933,
+      "baseline_debt": 31025528
+    },
+    {
+      "id": 4,
+      "name": "Mammoth Marauders",
+      "free_regular_slots": 0,
+      "roster_count": 29,
+      "retained": 7188323,
+      "baseline_debt": 0
+    },
+    {
+      "id": 5,
+      "name": "Team DennisLACards",
+      "free_regular_slots": 2,
+      "roster_count": 27,
+      "retained": 0,
+      "baseline_debt": 0
+    },
+    {
+      "id": 6,
+      "name": "Team TimpaBay",
+      "free_regular_slots": 3,
+      "roster_count": 26,
+      "retained": 0,
+      "baseline_debt": 0
+    }
+  ],
+  "historical_completed_events": [
+    {
+      "id": "1370129974777880576",
+      "date": "2026-06-09T17:42:31.073Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1370130002347053056",
+      "date": "2026-06-09T17:42:37.645Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1370130025235378176",
+      "date": "2026-06-09T17:42:43.102Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1370130057451827200",
+      "date": "2026-06-09T17:42:50.783Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1370130086715478016",
+      "date": "2026-06-09T17:42:57.760Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1370130129509941248",
+      "date": "2026-06-09T17:43:07.964Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1370130165908140032",
+      "date": "2026-06-09T17:43:16.641Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1370130244865900544",
+      "date": "2026-06-09T17:43:35.467Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1371113018548580352",
+      "date": "2026-06-12T16:38:38.885Z",
+      "type": "trade",
+      "cut": false
+    },
+    {
+      "id": "1374481448332980224",
+      "date": "2026-06-21T17:53:43.214Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1374481543627554816",
+      "date": "2026-06-21T17:54:05.935Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1374735850633445376",
+      "date": "2026-06-22T10:44:37.449Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1374736138207518720",
+      "date": "2026-06-22T10:45:46.012Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1374736175406776320",
+      "date": "2026-06-22T10:45:54.881Z",
+      "type": "free_agent",
+      "cut": true
+    },
+    {
+      "id": "1374736210588631040",
+      "date": "2026-06-22T10:46:03.269Z",
+      "type": "free_agent",
+      "cut": true
+    }
+  ],
+  "temporal_pairs": [
+    {
+      "event_id": "1370129974777880576",
+      "player": "Brock Purdy",
+      "seller": 3,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 27979988,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 33990500
+        },
+        {
+          "buyer": 2,
+          "old_debt": 24215262,
+          "new_debt": 57141165,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 32925903
+        },
+        {
+          "buyer": 4,
+          "old_debt": 20658454,
+          "new_debt": 54089489,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 33431035
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 8328471,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 31886157
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 32883061,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 34417346
+        }
+      ]
+    },
+    {
+      "event_id": "1370130002347053056",
+      "player": "Alvin Kamara",
+      "seller": 3,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 10834770,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 16845282
+        },
+        {
+          "buyer": 2,
+          "old_debt": 24215262,
+          "new_debt": 39995947,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 15780685
+        },
+        {
+          "buyer": 4,
+          "old_debt": 20658454,
+          "new_debt": 36944271,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 16285817
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 14740939
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 15737843,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 17272128
+        }
+      ]
+    },
+    {
+      "event_id": "1370130025235378176",
+      "player": "Travis Etienne",
+      "seller": 3,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 9300656,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 15311168
+        },
+        {
+          "buyer": 2,
+          "old_debt": 24215262,
+          "new_debt": 38461833,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 14246571
+        },
+        {
+          "buyer": 4,
+          "old_debt": 20658454,
+          "new_debt": 35410157,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 14751703
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 13206825
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 14203729,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 15738014
+        }
+      ]
+    },
+    {
+      "event_id": "1370130057451827200",
+      "player": "Sam Darnold",
+      "seller": 3,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 10624752,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 16635264
+        },
+        {
+          "buyer": 2,
+          "old_debt": 24215262,
+          "new_debt": 39785929,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 15570667
+        },
+        {
+          "buyer": 4,
+          "old_debt": 20658454,
+          "new_debt": 36734253,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 16075799
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 14530921
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 15527825,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 17062110
+        }
+      ]
+    },
+    {
+      "event_id": "1370130086715478016",
+      "player": "Javonte Williams",
+      "seller": 3,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 3419506,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 9430018
+        },
+        {
+          "buyer": 2,
+          "old_debt": 24215262,
+          "new_debt": 32580683,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 8365421
+        },
+        {
+          "buyer": 4,
+          "old_debt": 20658454,
+          "new_debt": 29529007,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 8870553
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 7325675
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 8322579,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 9856864
+        }
+      ]
+    },
+    {
+      "event_id": "1370130129509941248",
+      "player": "George Kittle",
+      "seller": 3,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 9481212,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 15491724
+        },
+        {
+          "buyer": 2,
+          "old_debt": 24215262,
+          "new_debt": 38642389,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 14427127
+        },
+        {
+          "buyer": 4,
+          "old_debt": 20658454,
+          "new_debt": 35590713,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 14932259
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 13387381
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 14384285,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 15918570
+        }
+      ]
+    },
+    {
+      "event_id": "1370130165908140032",
+      "player": "Romeo Doubs",
+      "seller": 3,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 5357078
+        },
+        {
+          "buyer": 2,
+          "old_debt": 24215262,
+          "new_debt": 28507743,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 4292481
+        },
+        {
+          "buyer": 4,
+          "old_debt": 20658454,
+          "new_debt": 25456067,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 4797613
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 3252735
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 4249639,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 5783924
+        }
+      ]
+    },
+    {
+      "event_id": "1370130244865900544",
+      "player": "Terry McLaurin",
+      "seller": 3,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 5441553,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 11452065
+        },
+        {
+          "buyer": 2,
+          "old_debt": 24215262,
+          "new_debt": 34602730,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 10387468
+        },
+        {
+          "buyer": 4,
+          "old_debt": 20658454,
+          "new_debt": 31551054,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 10892600
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 9347722
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 10344626,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 11878911
+        }
+      ]
+    },
+    {
+      "event_id": "1374481448332980224",
+      "player": "Jared Goff",
+      "seller": 4,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 30742803,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 36656044
+        },
+        {
+          "buyer": 2,
+          "old_debt": 24215262,
+          "new_debt": 59903980,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 35688718
+        },
+        {
+          "buyer": 3,
+          "old_debt": 31025528,
+          "new_debt": 71282218,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 40256690
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 11091286,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 34648972
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 35121759,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 38968397
+        }
+      ]
+    },
+    {
+      "event_id": "1374481543627554816",
+      "player": "Devin Neal",
+      "seller": 4,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 0
+        },
+        {
+          "buyer": 2,
+          "old_debt": 24215262,
+          "new_debt": 24215262,
+          "strict_no_debt": false,
+          "no_increase": true,
+          "marginal_full_salary": 0
+        },
+        {
+          "buyer": 3,
+          "old_debt": 31025528,
+          "new_debt": 31025528,
+          "strict_no_debt": false,
+          "no_increase": true,
+          "marginal_full_salary": 0
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 0
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 0
+        }
+      ]
+    },
+    {
+      "event_id": "1374735850633445376",
+      "player": "James Conner",
+      "seller": 2,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 3468062,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 9381303
+        },
+        {
+          "buyer": 3,
+          "old_debt": 31025528,
+          "new_debt": 44007477,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 12981949
+        },
+        {
+          "buyer": 4,
+          "old_debt": 0,
+          "new_debt": 572036,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 10228109
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 7374231
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 7847018,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 11693656
+        }
+      ]
+    },
+    {
+      "event_id": "1374736138207518720",
+      "player": "Deebo Samuel",
+      "seller": 2,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 4948750
+        },
+        {
+          "buyer": 3,
+          "old_debt": 31025528,
+          "new_debt": 39574924,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 8549396
+        },
+        {
+          "buyer": 4,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 5795556
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 2941678
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 3414465,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 7261103
+        }
+      ]
+    },
+    {
+      "event_id": "1374736175406776320",
+      "player": "Jacoby Brissett",
+      "seller": 2,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 5660416
+        },
+        {
+          "buyer": 3,
+          "old_debt": 31025528,
+          "new_debt": 40286590,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 9261062
+        },
+        {
+          "buyer": 4,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 6507222
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 3653344
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 4126131,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 7972769
+        }
+      ]
+    },
+    {
+      "event_id": "1374736210588631040",
+      "player": "Jerry Jeudy",
+      "seller": 2,
+      "options": [
+        {
+          "buyer": 1,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 4633244
+        },
+        {
+          "buyer": 3,
+          "old_debt": 31025528,
+          "new_debt": 39259418,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 8233890
+        },
+        {
+          "buyer": 4,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 5480050
+        },
+        {
+          "buyer": 5,
+          "old_debt": 0,
+          "new_debt": 0,
+          "strict_no_debt": true,
+          "no_increase": true,
+          "marginal_full_salary": 2626172
+        },
+        {
+          "buyer": 6,
+          "old_debt": 0,
+          "new_debt": 3098959,
+          "strict_no_debt": false,
+          "no_increase": false,
+          "marginal_full_salary": 6945597
+        }
+      ]
+    }
+  ],
+  "final_independent_pairs": [
+    {
+      "seller": 2,
+      "player": "James Conner",
+      "retained": 2549896,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 9381303,
+          "loan_after": 3468062,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 3,
+          "marginal": 12981949,
+          "loan_after": 44007477,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 4,
+          "marginal": 10228109,
+          "loan_after": 572036,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 7374231,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 11693656,
+          "loan_after": 7847018,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 2,
+      "player": "Deebo Samuel",
+      "retained": 1885013,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 4948750,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 3,
+          "marginal": 8549396,
+          "loan_after": 39574924,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 4,
+          "marginal": 5795556,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 2941678,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 7261103,
+          "loan_after": 3414465,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 2,
+      "player": "Jacoby Brissett",
+      "retained": 3983527,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 5660416,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 3,
+          "marginal": 9261062,
+          "loan_after": 40286590,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 4,
+          "marginal": 6507222,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 3653344,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 7972769,
+          "loan_after": 4126131,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 2,
+      "player": "Jerry Jeudy",
+      "retained": 1837688,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 4633244,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 3,
+          "marginal": 8233890,
+          "loan_after": 39259418,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 4,
+          "marginal": 5480050,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 2626172,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 6945597,
+          "loan_after": 3098959,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 3,
+      "player": "Brock Purdy",
+      "retained": 12453371,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 33893229,
+          "loan_after": 27979988,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 2,
+          "marginal": 37626157,
+          "loan_after": 41695066,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 4,
+          "marginal": 34740035,
+          "loan_after": 25083962,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 31886157,
+          "loan_after": 8328471,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 36205582,
+          "loan_after": 32358944,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        }
+      ]
+    },
+    {
+      "seller": 3,
+      "player": "Alvin Kamara",
+      "retained": 3654903,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 16748011,
+          "loan_after": 10834770,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 2,
+          "marginal": 20480939,
+          "loan_after": 24549848,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 4,
+          "marginal": 17594817,
+          "loan_after": 7938744,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 14740939,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 19060364,
+          "loan_after": 15213726,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 3,
+      "player": "Travis Etienne",
+      "retained": 3424785,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 15213897,
+          "loan_after": 9300656,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 2,
+          "marginal": 18946825,
+          "loan_after": 23015734,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 4,
+          "marginal": 16060703,
+          "loan_after": 6404630,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 13206825,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 17526250,
+          "loan_after": 13679612,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 3,
+      "player": "Sam Darnold",
+      "retained": 7246800,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 16537993,
+          "loan_after": 10624752,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 2,
+          "marginal": 20270921,
+          "loan_after": 24339830,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 4,
+          "marginal": 17384799,
+          "loan_after": 7728726,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 14530921,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 18850346,
+          "loan_after": 15003708,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 3,
+      "player": "Javonte Williams",
+      "retained": 2542613,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 9332747,
+          "loan_after": 3419506,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 2,
+          "marginal": 13065675,
+          "loan_after": 17134584,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 4,
+          "marginal": 10179553,
+          "loan_after": 523480,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 7325675,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 11645100,
+          "loan_after": 7798462,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 3,
+      "player": "George Kittle",
+      "retained": 3451869,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 15394453,
+          "loan_after": 9481212,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 2,
+          "marginal": 19127381,
+          "loan_after": 23196290,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 4,
+          "marginal": 16241259,
+          "loan_after": 6585186,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 13387381,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 17706806,
+          "loan_after": 13860168,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 3,
+      "player": "Romeo Doubs",
+      "retained": 1931672,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 5259807,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 2,
+          "marginal": 8992735,
+          "loan_after": 13061644,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 4,
+          "marginal": 6106613,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 3252735,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 7572160,
+          "loan_after": 3725522,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 3,
+      "player": "Terry McLaurin",
+      "retained": 2845920,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 11354794,
+          "loan_after": 5441553,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 2,
+          "marginal": 15087722,
+          "loan_after": 19156631,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 4,
+          "marginal": 12201600,
+          "loan_after": 2545527,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 9347722,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 13667147,
+          "loan_after": 9820509,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    },
+    {
+      "seller": 4,
+      "player": "Jared Goff",
+      "retained": 6641108,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 36656044,
+          "loan_after": 30742803,
+          "no_loan_increase": false,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 2,
+          "marginal": 40388972,
+          "loan_after": 44457881,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 3,
+          "marginal": 40256690,
+          "loan_after": 71282218,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 34648972,
+          "loan_after": 11091286,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 38968397,
+          "loan_after": 35121759,
+          "no_loan_increase": false,
+          "open_regular_slot": true,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        }
+      ]
+    },
+    {
+      "seller": 4,
+      "player": "Devin Neal",
+      "retained": 547215,
+      "offers": [
+        {
+          "buyer": 1,
+          "marginal": 0,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": false,
+          "no_loan_and_slot": false,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 2,
+          "marginal": 0,
+          "loan_after": 4068909,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 3,
+          "marginal": 0,
+          "loan_after": 31025528,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": false
+        },
+        {
+          "buyer": 5,
+          "marginal": 0,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        },
+        {
+          "buyer": 6,
+          "marginal": 0,
+          "loan_after": 0,
+          "no_loan_increase": true,
+          "open_regular_slot": true,
+          "no_loan_and_slot": true,
+          "upto_5pct_and_slot": true
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "pairs": 70,
+    "no_increase_no_capacity": 24,
+    "no_increase_open_slot": 15,
+    "upto_5pct_open_slot": 30,
+    "temporal_no_increase": 23,
+    "temporal_zero_debt": 21
+  },
+  "flo_disjoint_optimization": [
+    {
+      "pct": 0,
+      "masks": 22,
+      "legal_masks_by_buyer": [
+        {
+          "id": 1,
+          "count": 1
+        },
+        {
+          "id": 2,
+          "count": 1
+        },
+        {
+          "id": 4,
+          "count": 1
+        },
+        {
+          "id": 5,
+          "count": 22
+        },
+        {
+          "id": 6,
+          "count": 1
+        }
+      ],
+      "min_flo_debt": {
+        "flo_debt": 20932808,
+        "buyer_new_debt": 0,
+        "league_debt": 25001717,
+        "trade_count": 2,
+        "assignments": [
+          {
+            "buyer": 5,
+            "players": [
+              "Sam Darnold",
+              "Terry McLaurin"
+            ],
+            "payroll": 434170552,
+            "debt": 0,
+            "h2_future_gap": 0,
+            "h3_future_gap": 0
+          }
+        ]
+      },
+      "seller_5pct": {
+        "flo_debt": 20932808,
+        "buyer_new_debt": 0,
+        "league_debt": 25001717,
+        "trade_count": 2,
+        "assignments": [
+          {
+            "buyer": 5,
+            "players": [
+              "Sam Darnold",
+              "Terry McLaurin"
+            ],
+            "payroll": 434170552,
+            "debt": 0,
+            "h2_future_gap": 0,
+            "h3_future_gap": 0
+          }
+        ]
+      },
+      "seller_h2_frozen": null,
+      "seller_h3_frozen": null,
+      "seller_zero": null
+    },
+    {
+      "pct": 5,
+      "masks": 182,
+      "legal_masks_by_buyer": [
+        {
+          "id": 1,
+          "count": 1
+        },
+        {
+          "id": 2,
+          "count": 4
+        },
+        {
+          "id": 4,
+          "count": 1
+        },
+        {
+          "id": 5,
+          "count": 35
+        },
+        {
+          "id": 6,
+          "count": 15
+        }
+      ],
+      "min_flo_debt": {
+        "flo_debt": 3095896,
+        "buyer_new_debt": 57184817,
+        "league_debt": 64349622,
+        "trade_count": 5,
+        "assignments": [
+          {
+            "buyer": 2,
+            "players": [
+              "Terry McLaurin"
+            ],
+            "payroll": 443156491,
+            "debt": 19156631,
+            "h2_future_gap": 18478823,
+            "h3_future_gap": 15286051
+          },
+          {
+            "buyer": 5,
+            "players": [
+              "Brock Purdy",
+              "George Kittle"
+            ],
+            "payroll": 455565447,
+            "debt": 21309463,
+            "h2_future_gap": 31964195,
+            "h3_future_gap": 28412618
+          },
+          {
+            "buyer": 6,
+            "players": [
+              "Sam Darnold",
+              "Romeo Doubs"
+            ],
+            "payroll": 455043616,
+            "debt": 20787632,
+            "h2_future_gap": 31181448,
+            "h3_future_gap": 27716843
+          }
+        ]
+      },
+      "seller_5pct": {
+        "flo_debt": 20932808,
+        "buyer_new_debt": 0,
+        "league_debt": 25001717,
+        "trade_count": 2,
+        "assignments": [
+          {
+            "buyer": 5,
+            "players": [
+              "Sam Darnold",
+              "Terry McLaurin"
+            ],
+            "payroll": 434170552,
+            "debt": 0,
+            "h2_future_gap": 0,
+            "h3_future_gap": 0
+          }
+        ]
+      },
+      "seller_h2_frozen": {
+        "flo_debt": 11325357,
+        "buyer_new_debt": 23332179,
+        "league_debt": 38726445,
+        "trade_count": 2,
+        "assignments": [
+          {
+            "buyer": 5,
+            "players": [
+              "Brock Purdy"
+            ],
+            "payroll": 442584455,
+            "debt": 8328471,
+            "h2_future_gap": 12492707,
+            "h3_future_gap": 11104628
+          },
+          {
+            "buyer": 6,
+            "players": [
+              "Sam Darnold"
+            ],
+            "payroll": 449259692,
+            "debt": 15003708,
+            "h2_future_gap": 22505562,
+            "h3_future_gap": 20004944
+          }
+        ]
+      },
+      "seller_h3_frozen": {
+        "flo_debt": 19001136,
+        "buyer_new_debt": 3725522,
+        "league_debt": 26795567,
+        "trade_count": 3,
+        "assignments": [
+          {
+            "buyer": 5,
+            "players": [
+              "Sam Darnold",
+              "Terry McLaurin"
+            ],
+            "payroll": 434170552,
+            "debt": 0,
+            "h2_future_gap": 0,
+            "h3_future_gap": 0
+          },
+          {
+            "buyer": 6,
+            "players": [
+              "Romeo Doubs"
+            ],
+            "payroll": 437981506,
+            "debt": 3725522,
+            "h2_future_gap": 5588283,
+            "h3_future_gap": 4967363
+          }
+        ]
+      },
+      "seller_zero": null
+    },
+    {
+      "pct": 10,
+      "masks": 256,
+      "legal_masks_by_buyer": [
+        {
+          "id": 1,
+          "count": 1
+        },
+        {
+          "id": 2,
+          "count": 38
+        },
+        {
+          "id": 4,
+          "count": 1
+        },
+        {
+          "id": 5,
+          "count": 37
+        },
+        {
+          "id": 6,
+          "count": 62
+        }
+      ],
+      "min_flo_debt": {
+        "flo_debt": 0,
+        "buyer_new_debt": 70676173,
+        "league_debt": 74745082,
+        "trade_count": 6,
+        "assignments": [
+          {
+            "buyer": 2,
+            "players": [
+              "Brock Purdy"
+            ],
+            "payroll": 465694926,
+            "debt": 41695066,
+            "h2_future_gap": 52286475,
+            "h3_future_gap": 45337298
+          },
+          {
+            "buyer": 5,
+            "players": [
+              "Sam Darnold",
+              "George Kittle"
+            ],
+            "payroll": 438210211,
+            "debt": 3954227,
+            "h2_future_gap": 5931341,
+            "h3_future_gap": 5272303
+          },
+          {
+            "buyer": 6,
+            "players": [
+              "Travis Etienne",
+              "Javonte Williams",
+              "Romeo Doubs"
+            ],
+            "payroll": 463351773,
+            "debt": 29095789,
+            "h2_future_gap": 43643684,
+            "h3_future_gap": 38794386
+          }
+        ]
+      },
+      "seller_5pct": {
+        "flo_debt": 20932808,
+        "buyer_new_debt": 0,
+        "league_debt": 25001717,
+        "trade_count": 2,
+        "assignments": [
+          {
+            "buyer": 5,
+            "players": [
+              "Sam Darnold",
+              "Terry McLaurin"
+            ],
+            "payroll": 434170552,
+            "debt": 0,
+            "h2_future_gap": 0,
+            "h3_future_gap": 0
+          }
+        ]
+      },
+      "seller_h2_frozen": {
+        "flo_debt": 11325357,
+        "buyer_new_debt": 22453003,
+        "league_debt": 37847269,
+        "trade_count": 2,
+        "assignments": [
+          {
+            "buyer": 5,
+            "players": [
+              "Brock Purdy",
+              "Sam Darnold"
+            ],
+            "payroll": 456708987,
+            "debt": 22453003,
+            "h2_future_gap": 33679505,
+            "h3_future_gap": 29937338
+          }
+        ]
+      },
+      "seller_h3_frozen": {
+        "flo_debt": 19001136,
+        "buyer_new_debt": 3725522,
+        "league_debt": 26795567,
+        "trade_count": 3,
+        "assignments": [
+          {
+            "buyer": 5,
+            "players": [
+              "Sam Darnold",
+              "Terry McLaurin"
+            ],
+            "payroll": 434170552,
+            "debt": 0,
+            "h2_future_gap": 0,
+            "h3_future_gap": 0
+          },
+          {
+            "buyer": 6,
+            "players": [
+              "Romeo Doubs"
+            ],
+            "payroll": 437981506,
+            "debt": 3725522,
+            "h2_future_gap": 5588283,
+            "h3_future_gap": 4967363
+          }
+        ]
+      },
+      "seller_zero": {
+        "flo_debt": 0,
+        "buyer_new_debt": 70676173,
+        "league_debt": 74745082,
+        "trade_count": 6,
+        "assignments": [
+          {
+            "buyer": 2,
+            "players": [
+              "Brock Purdy"
+            ],
+            "payroll": 465694926,
+            "debt": 41695066,
+            "h2_future_gap": 52286475,
+            "h3_future_gap": 45337298
+          },
+          {
+            "buyer": 5,
+            "players": [
+              "Sam Darnold",
+              "George Kittle"
+            ],
+            "payroll": 438210211,
+            "debt": 3954227,
+            "h2_future_gap": 5931341,
+            "h3_future_gap": 5272303
+          },
+          {
+            "buyer": 6,
+            "players": [
+              "Travis Etienne",
+              "Javonte Williams",
+              "Romeo Doubs"
+            ],
+            "payroll": 463351773,
+            "debt": 29095789,
+            "h2_future_gap": 43643684,
+            "h3_future_gap": 38794386
+          }
+        ]
+      }
+    }
+  ],
+  "deadline_failure": {
+    "flo_new_debt": 31025528,
+    "limit5": 21712799,
+    "limit5_excess": 9312729,
+    "original_H2_gap": 8986359,
+    "original_H3_gap": 3815438
+  },
+  "qa_checks": [
+    "june cap consistent",
+    "15 completed 14 cuts 1 trade",
+    "drop belongs 1370129974777880576 8183",
+    "drop belongs 1370130002347053056 4035",
+    "drop belongs 1370130025235378176 7543",
+    "drop belongs 1370130057451827200 4943",
+    "drop belongs 1370130086715478016 7588",
+    "drop belongs 1370130129509941248 4217",
+    "drop belongs 1370130165908140032 8121",
+    "drop belongs 1370130244865900544 5927",
+    "drop belongs 1371113018548580352 12474",
+    "drop belongs 1371113018548580352 12506",
+    "not owned 1371113018548580352 12474",
+    "not owned 1371113018548580352 12506",
+    "drop belongs 1374481448332980224 3163",
+    "drop belongs 1374481543627554816 12476",
+    "drop belongs 1374735850633445376 4137",
+    "drop belongs 1374736138207518720 5872",
+    "drop belongs 1374736175406776320 3257",
+    "drop belongs 1374736210588631040 6783",
+    "end roster 1",
+    "end roster 2",
+    "end roster 3",
+    "end roster 4",
+    "end roster 5",
+    "end roster 6",
+    "end retentions",
+    "29 regular slots",
+    "two full teams",
+    "70 pairs",
+    "24 no loan increase",
+    "15 no loan and slot",
+    "30 within 5pct and slot",
+    "23 temporal no-increase and 21 zero",
+    "nonborrowing flo debt 20.932808",
+    "nonborrowing fails H2/H3",
+    "no borrow at 5pct limit two transfers",
+    "5pct credit H2 amounts",
+    "5pct credit H3 amounts",
+    "5pct cannot clear Flo",
+    "10pct clears Flo but shifts 70.676173",
+    "10pct clears with total 74.745082"
+  ]
+}
