@@ -102,7 +102,9 @@ def _stats_baseline(repo: Path, index: dict[str, Any]) -> tuple[dict, dict]:
                 raise ValueError(f"PlayerStats mismatched season type {gid}")
             values = baseline[(gid, team)]
             for field in BASE_FIELDS:
-                values[field] += _intstat(stats.get(field), field=field)
+                if field not in stats or stats[field] is None:
+                    raise ValueError(f"PlayerStats unknown required baseline field {field}/{gid}")
+                values[field] += _intstat(stats[field], field=field)
     return dict(baseline), {
         "PartitionCount": len(weeks),
         "PartitionSHA256": partition_digests,
@@ -144,7 +146,7 @@ def _source_yards(rows: list[dict[str, str]], offense: str) -> dict[str, Any]:
     }
     sums = {name: 0 for name in result}
     for row in rows:
-        if row.get("posteam") != offense or row.get("two_point_attempt") != "0":
+        if row.get("posteam") != offense or _number(row, "two_point_attempt") != 0:
             continue
         if _number(row, "rush_attempt") == 1:
             yards = _number(row, "rushing_yards")
