@@ -15,7 +15,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
-from data_roots import DATA_SOURCE_ROOT
+from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from derived_data_lib.nfl_games import build_nfl_games
 from derived_data_lib.nfl_team_snap_usage import infer_team_snap_volumes
 from nfl_games_materialize import materialize, discover_seasons
