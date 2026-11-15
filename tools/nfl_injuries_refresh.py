@@ -27,6 +27,13 @@ _MAX_RELEASE_BYTES = 2_000_000
 _MAX_SEASON_BYTES = 12_000_000
 
 
+class _RejectAuthenticatedRedirects(urllib.request.HTTPRedirectHandler):
+    """Never forward an Actions token through a release API redirect."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ValueError("Authenticated injury release metadata API may not redirect")
+
+
 def _read_https(
     url: str, limit: int, *, accept: str, token: str | None = None,
 ) -> bytes:
@@ -42,7 +49,11 @@ def _read_https(
         headers["Authorization"] = f"Bearer {token}"
         headers["X-GitHub-Api-Version"] = "2022-11-28"
     request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request, timeout=40) as response:
+    # For authenticated metadata, reject HTTP redirects so the bearer token
+    # cannot be forwarded to another host. CSV assets remain unauthenticated.
+    opener = urllib.request.build_opener(_RejectAuthenticatedRedirects()) if token else None
+    response = opener.open(request, timeout=40) if opener else urllib.request.urlopen(request, timeout=40)
+    with response:
         payload = response.read(limit + 1)
     if len(payload) > limit:
         raise ValueError("Upstream Injury source is implausibly large")
