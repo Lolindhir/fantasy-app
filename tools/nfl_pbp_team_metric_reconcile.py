@@ -171,6 +171,40 @@ def _source_yards(rows: list[dict[str, str]], offense: str) -> dict[str, Any]:
     return result
 
 
+
+def _metric_coverage_add(storage: dict, metric_id: str, metric: dict) -> None:
+    """Accumulate research-only observations with observed denominators.
+
+    Sum rounded per-game numerators as an audit diagnostic; not a finalized
+    season model or a substitute for summing raw source plays.
+    """
+    item = storage.setdefault(metric_id, {
+        "ObservedTeamGames": 0, "MissingTeamGames": 0, "ValueSum": 0.0,
+        "NumeratorFromRoundedGameSummaries": 0.0, "ObservedDenominator": 0,
+        "MinGameValue": None, "MaxGameValue": None,
+    })
+    value = metric.get("Value")
+    if value is None:
+        item["MissingTeamGames"] += 1
+        return
+    item["ObservedTeamGames"] += 1
+    item["ValueSum"] += float(value)
+    item["MinGameValue"] = value if item["MinGameValue"] is None else min(item["MinGameValue"], value)
+    item["MaxGameValue"] = value if item["MaxGameValue"] is None else max(item["MaxGameValue"], value)
+    if metric.get("Numerator") is not None and metric.get("Denominator"):
+        item["NumeratorFromRoundedGameSummaries"] += float(metric["Numerator"])
+        item["ObservedDenominator"] += int(metric["Denominator"])
+
+
+def _metric_coverage_finalize(storage: dict) -> dict:
+    for item in storage.values():
+        n, denom = item["NumeratorFromRoundedGameSummaries"], item["ObservedDenominator"]
+        item["ValueSum"] = round(item["ValueSum"], 3)
+        item["NumeratorFromRoundedGameSummaries"] = round(n, 3)
+        item["ObservedWeightedMeanApprox"] = round(n / denom, 4) if denom else None
+    return dict(sorted(storage.items()))
+
+
 def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict:
     """Replay every observed original game once; return bounded aggregate JSON.
 
@@ -217,6 +251,7 @@ def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict
     game_team_rows = 0
     eligible_plays = 0
     candidate_ids = None
+    metric_evidence = {}
     for gid, game in sorted(games.items()):
         rows = by_game.get(gid)
         if not rows:
@@ -236,6 +271,18 @@ def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict
                        else game["HomeTeam"])
             truth = baselines.get((gid, offense))
             metrics = defense["Metrics"]
+            for metric_id, evidence in metrics.items():
+                if "Value" in evidence:
+                    _metric_coverage_add(metric_evidence, metric_id, evidence)
+                elif metric_id == "red_zone_epa_and_success_allowed":
+                    _metric_coverage_add(metric_evidence, metric_id + ".EPA", evidence["EPA"])
+                    _metric_coverage_add(metric_evidence, metric_id + ".Success", evidence["Success"])
+                elif metric_id == "down_distance_efficiency_allowed":
+                    for bin_id, group in evidence["Bins"].items():
+                        _metric_coverage_add(metric_evidence, metric_id + "." + bin_id + ".EPA", group["EPA"])
+                        _metric_coverage_add(metric_evidence, metric_id + "." + bin_id + ".Success", group["Success"])
+                elif metric_id == "drive_start_context":
+                    _metric_coverage_add(metric_evidence, metric_id + ".FieldPosition", evidence["FieldPosition"])
             yards = _source_yards(rows, offense)
             observations = {
                 "attempts": metrics["pass_attempts_faced"]["Value"],
@@ -282,6 +329,7 @@ def reconcile(repo: Path, path: Path, season: int, expected_sha256: str) -> dict
         "GameTeamCandidateRows": game_team_rows,
         "EligibleScrimmagePlays": eligible_plays,
         "TeamOnlyMetricCandidateIDs": candidate_ids or [],
+        "TeamMetricResearchCoverage": _metric_coverage_finalize(metric_evidence),
         "PBPFieldAudit": {
             "OriginalColumnCount": field_audit["CsvColumnCount"],
             "MetricFieldStatuses": {
