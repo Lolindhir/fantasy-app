@@ -20,6 +20,8 @@ import sys
 
 import yaml
 
+from derived_data_lib.nfl_franchise_aliases import franchise_equal as _franchise_equal
+
 
 NULL_VALUES = frozenset(("", "NA", "N/A", "NaN", "nan", "NULL", "null"))
 CORE_COLUMNS = frozenset((
@@ -110,15 +112,7 @@ def _metadata(path: Path | None, season: int) -> dict | None:
 
 
 
-# nflverse original PBP uses present-day franchise abbreviations in historical
-# home_team/away_team while game_id and canonical schedule retain era tokens.
-# Do not apply these aliases outside their documented historical windows.
-_HISTORICAL_FRANCHISE_NAMES = (
-    (1999, 2016, frozenset(("SD", "LAC"))),
-    (1999, 2019, frozenset(("OAK", "LV"))),
-    (1999, 2015, frozenset(("STL", "LA"))),
-)
-
+# Era-restricted franchise context matching is shared with NFL GameDetail.
 
 def _game_index(path: Path | None, season: int) -> dict[str, dict] | None:
     if path is None:
@@ -142,14 +136,6 @@ def _game_index(path: Path | None, season: int) -> dict[str, dict] | None:
         indexed[game["GameID"]] = game
     return indexed
 
-
-def _franchise_equal(provider_team: str, canonical_team: str, season: int) -> bool:
-    if provider_team == canonical_team:
-        return True
-    return any(
-        first <= season <= last and {provider_team, canonical_team} == pair
-        for first, last, pair in _HISTORICAL_FRANCHISE_NAMES
-    )
 
 
 def reconcile_original_game_row(

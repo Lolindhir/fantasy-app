@@ -18,7 +18,9 @@ if str(TOOLS) not in sys.path:
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from derived_data_lib.nfl_games import build_nfl_games
 from derived_data_lib.nfl_team_snap_usage import infer_team_snap_volumes
+from derived_data_lib.nfl_franchise_aliases import reconcile_game_team
 from nfl_games_materialize import materialize, discover_seasons
+from nfl_game_details_materialize import plan_season as plan_game_details
 from nfl_pbp_metric_field_audit import audit as audit_pbp_catalog_fields, reconcile_original_game_row
 from nfl_pbp_team_metric_reconcile import (
     reconcile as reconcile_pbp_team_season,
@@ -595,6 +597,108 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
             )
             self.assertEqual(json.loads(output.stdout), result)
             self.assertFalse((root / DATA_DERIVED_ROOT / "nfl-games" / "details").exists())
+
+    def test_game_detail_publisher_preflights_noops_and_invalidates_on_inputs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            docs = {
+                root / DATA_DERIVED_ROOT / "nfl-games" / "2026.json": build_nfl_games(*inputs()),
+                root / DATA_SOURCE_ROOT / "nfl" / "player-stats" / "2026" / "06.json": _week_stats(),
+                root / DATA_SOURCE_ROOT / "nfl" / "snap-counts" / "2026" / "06.json": _week_snaps(),
+            }
+            for path, doc in docs.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(doc), encoding="utf-8")
+            target = root / DATA_DERIVED_ROOT / "nfl-games" / "details" / "2026" / "2026_06_HOU_JAX.json"
+            preview_result = plan_game_details(root, 2026)
+            self.assertEqual(preview_result["EligibleGames"], 1)
+            self.assertEqual(preview_result["ChangedOrNew"], 1)
+            self.assertEqual(preview_result["Written"], 0)
+            self.assertFalse(target.exists())
+            first = plan_game_details(root, 2026, write=True)
+            self.assertEqual(first["Written"], 1)
+            output = json.loads(target.read_text(encoding="utf-8"))
+            self.assertEqual(output["GameID"], "2026_06_HOU_JAX")
+            self.assertEqual(output["SchemaVersion"], 1)
+            self.assertEqual(plan_game_details(root, 2026, write=True)["ChangedOrNew"], 0)
+            first_bytes = target.read_bytes()
+            # Source partition metadata outside the actual game evidence is irrelevant.
+            stats_path = root / DATA_SOURCE_ROOT / "nfl" / "player-stats" / "2026" / "06.json"
+            stats = json.loads(stats_path.read_text(encoding="utf-8"))
+            stats["UnrelatedSourceMetadata"] = "no-change"
+            stats_path.write_text(json.dumps(stats), encoding="utf-8")
+            self.assertEqual(plan_game_details(root, 2026)["ChangedOrNew"], 0)
+            self.assertEqual(target.read_bytes(), first_bytes)
+            # Historical providers can carry nonfinite ancillary EPA fields.
+            # Such values are not v1 team counting-stat dependencies.
+            stats["Records"][0]["Stats"]["passing_epa"] = float("-inf")
+            stats_path.write_text(json.dumps(stats), encoding="utf-8")
+            self.assertEqual(plan_game_details(root, 2026)["ChangedOrNew"], 0)
+            self.assertEqual(target.read_bytes(), first_bytes)
+            stats["Records"][0]["Stats"]["carries"] += 1
+            stats_path.write_text(json.dumps(stats), encoding="utf-8")
+            self.assertEqual(plan_game_details(root, 2026)["ChangedOrNew"], 1)
+            self.assertEqual(plan_game_details(root, 2026, write=True)["Written"], 1)
+            self.assertNotEqual(target.read_bytes(), first_bytes)
+            # No data means unknown and must not overwrite a prior accepted output.
+            stats_path.unlink()
+            snap_path = root / DATA_SOURCE_ROOT / "nfl" / "snap-counts" / "2026" / "06.json"
+            snap_path.unlink()
+            with self.assertRaisesRegex(ValueError, "not supported"):
+                plan_game_details(root, 2026, write=True)
+            self.assertTrue(target.exists())
+
+    def test_real_2025_detail_materialization_plan_is_readonly(self):
+        root = TOOLS.parent
+        if not (root / DATA_DERIVED_ROOT / "nfl-games" / "2025.json").exists():
+            self.skipTest("Canonical historical NFL Games index unavailable")
+        with tempfile.TemporaryDirectory() as tmp:
+            result = plan_game_details(root, 2025, out_root=Path(tmp))
+            self.assertGreater(result["EligibleGames"], 200)
+            self.assertGreater(result["WithIdentityHolds"], 0)
+            self.assertEqual(result["ChangedOrNew"], result["EligibleGames"])
+            self.assertEqual(result["Written"], 0)
+            self.assertFalse(list(Path(tmp).rglob("*.json")))
+
+    def test_old_and_current_canonical_season_detail_plans_are_source_only(self):
+        root = TOOLS.parent
+        for season in (1999, 2013, 2026):
+            with self.subTest(season=season), tempfile.TemporaryDirectory() as tmp:
+                if not (root / DATA_DERIVED_ROOT / "nfl-games" / f"{season}.json").exists():
+                    self.skipTest("Canonical NFL Games index unavailable")
+                result = plan_game_details(root, season, out_root=Path(tmp))
+                self.assertGreater(result["EligibleGames"], 5)
+                self.assertEqual(result["ChangedOrNew"], result["EligibleGames"])
+                self.assertEqual(result["Written"], 0)
+                self.assertFalse(list(Path(tmp).rglob("*.json")))
+                if season == 1999:
+                    self.assertGreater(result["WithMissingTeamSnaps"], 0)
+
+    def test_missing_historical_stat_team_does_not_invent_team_totals(self):
+        index = build_nfl_games(*inputs())
+        stats, snaps = _week_stats(), _week_snaps()
+        stats["Records"][0]["Team"] = None
+        stats["Records"][0]["OpponentTeam"] = None
+        result = build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, snaps)
+        self.assertEqual(result["TeamStats"]["Status"], "blocked-missing-team-context")
+        self.assertEqual(result["TeamStats"]["MissingTeamContextRows"], 1)
+        self.assertIsNone(result["TeamStats"]["Teams"])
+        self.assertEqual(result["SnapCounts"]["Status"], "available")
+        self.assertEqual(result["SnapCounts"]["UnresolvedPlayerIdentityRows"], 0)
+        bad = copy.deepcopy(stats)
+        bad["Records"][0]["Team"] = "XYZ"
+        bad["Records"][0]["OpponentTeam"] = "HOU"
+        with self.assertRaises(ValueError):
+            build_nfl_game_detail_core(index, "2026_06_HOU_JAX", bad, snaps)
+
+    def test_historical_franchise_alias_is_season_scoped_and_never_guessed(self):
+        self.assertEqual(reconcile_game_team("GB", "LV", "OAK", "GB", 1999), "GB")
+        self.assertEqual(reconcile_game_team("ARI", "LA", "ARI", "STL", 2013), "ARI")
+        self.assertEqual(reconcile_game_team("LAC", "LV", "SD", "OAK", 2015), "SD")
+        self.assertIsNone(reconcile_game_team("GB", "LV", "OAK", "GB", 2020))
+        self.assertIsNone(reconcile_game_team("ARI", "LA", "ARI", "STL", 2016))
+        self.assertIsNone(reconcile_game_team("GB", "LV", "OAK", "GB", 1998))
+        self.assertIsNone(reconcile_game_team("GB", "XYZ", "OAK", "GB", 1999))
 
     def test_readonly_cli_uses_only_matching_week_and_does_not_write(self):
         with tempfile.TemporaryDirectory() as temp:

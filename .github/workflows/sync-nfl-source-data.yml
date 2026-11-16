@@ -880,6 +880,36 @@ jobs:
           --
           python3 tools/nfl_games_materialize.py --all-seasons --write
 
+      - name: Rebuild and publish current-season NFL GameDetails
+        # Same classified publisher and product root as the existing NFL Games index.
+        # Validated source-backed GameIDs only; per-GameID semantic no-op.
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope nfl-games
+          --path data-derived/nfl-games/details
+          --
+          python3 tools/nfl_game_details_materialize.py --current-season --write
+
+      - name: Reconcile and publish historical NFL GameDetails weekly
+        # The centrally scheduled *full* NFL Source sync runs daily at 04:00
+        # Europe/Berlin. Only Monday's full sync rederives accepted history.
+        # Do not replay all history on odds-only 10-minute refreshes or push
+        # events outside Monday. Existing rebuild-and-retry handles branch races.
+        if: ${{ !inputs.dataset && (inputs.materialization_scope == 'full' || !inputs.materialization_scope) }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$(TZ=Europe/Berlin date +%u)" != "1" ]]; then
+            echo "Historical NFL GameDetail reconciliation: not Monday; no run" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python3 tools/rebuild_and_publish.py \
+            --scope nfl-games \
+            --path data-derived/nfl-games/details \
+            -- \
+            python3 tools/nfl_game_details_materialize.py --historical-seasons --write
+          echo "Historical NFL GameDetail reconciliation: all accepted indexed seasons before current" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Summarize isolated Derived publication
         if: ${{ always() }}
         shell: bash

@@ -176,7 +176,7 @@ futureGameDetailDirection:
       Preview only until representative historical/ongoing source checks,
       output contract, restorable publishing and workflow/write-scope approval.
   coreDetailV1:
-    status: agreed-contract-read-only-candidate-not-yet-published
+    status: activated-source-dependent-producer-pending-first-successful-run
     productOwner: existing-nfl-games
     version: 1
     identity: Season + canonical GameID + DetailSchemaVersion
@@ -202,6 +202,15 @@ futureGameDetailDirection:
         player-dependent TeamStats group, with explicit unresolved row count.
         Other invalid or duplicate player rows fail closed; never discard them
         silently to generate a misleading team sum.
+      missingHistoricalTeamContext: >-
+        Legacy PlayerStats can contain rows with a valid canonical GameID and
+        Week/SeasonType but no Team and/or OpponentTeam. They must remain
+        included as input evidence and block TeamStats for that entire GameID
+        with Status=blocked-missing-team-context and MissingTeamContextRows;
+        do not infer a team from player name, player ID or the opposing roster.
+        Independently validated team SnapCounts can still be derived. Unknown
+        non-null team/opponent combinations fail closed rather than using
+        arbitrary aliases.
       teamSnapCounts: >-
         Validate GameID, team, opponent, game type/week, typed nonnegative
         count and bounded rounded percentage for every source row. Infer team
@@ -209,6 +218,16 @@ futureGameDetailDirection:
         counts without publishing those rows as named players. Inconsistent,
         ambiguous or sparse eligibility remains nullable per unit; opposite
         offense and defense totals must reconcile when both known.
+      historicalFranchiseAliases: >-
+        Exact canonical GameID and week/type still required. PlayerStats and
+        SnapCounts opponent/team fields may be mapped to the canonical historical
+        schedule tokens only through tools/derived_data_lib/nfl_franchise_aliases.py:
+        SD/LAC in 1999-2016, OAK/LV in 1999-2019, STL/LA in 1999-2015.
+        Resolve both player-team and opponent against the same game, never
+        a global modern-team substitution or a guessed canonical player ID.
+        Preserve raw Source rows for the fingerprint, normalize only the
+        temporary Derived grouping, and expose HistoricalFranchiseAliasRows
+        per source group. Unknown/out-of-window conflicts fail closed.
       sourceFinality: Finalized flags do not certify source field/coverage completeness
     computation:
       pureBuilder: tools/derived_data_lib/nfl_game_detail_core.py
@@ -223,11 +242,16 @@ futureGameDetailDirection:
     invalidation:
       scope: canonical-GameID
       key: >-
-        Hash the selected canonical game index record, selected original
-        player-stats and snap-count rows for this GameID, source Finalized
-        values, model version and detail schema version. A changed input row,
-        group availability, finality or model rule invalidates that GameID;
-        changes to unrelated games in the same week do not.
+        Hash the selected canonical game index record, only the validated
+        PlayerStats counting-stat fields/row team and identity and SnapCounts
+        count/share fields/row team and identity actually consumed by this
+        versioned model for this GameID, source Finalized values, model version
+        and detail schema version. A relevant changed input field, group
+        availability, finality or model rule invalidates the GameID; unrelated
+        game rows and unused provider attributes (including nonfinite historical
+        EPA fields not modeled in v1) do not. Do not silently coerce invalid
+        model-used fields to zero or use a new metric without bumping the model
+        definition version.
       semantics: >-
         Stable canonical ordering and serialized JSON; unchanged result
         yields no write or commit. Never treat raw Source snapshots or a
@@ -236,6 +260,22 @@ futureGameDetailDirection:
         1999+ existing game index and PlayerStats; SnapCounts when actual
         canonically available (normally 2013+, 2012 known-unavailable).
         No zero-filled older years or automatic repairs of frozen Source.
+    publication:
+      writer: tools/nfl_game_details_materialize.py
+      modes:
+        current: --current-season --write
+        weeklyHistory: --historical-seasons --write
+        readOnlyAllHistory: --historical-seasons
+        check: --historical-seasons --check
+      writeScope: data-derived/nfl-games/details/**
+      eligibility: at-least-one-actual-canonical-player-stats-or-snap-record-for-exact-GameID
+      historicalMissingSource: unavailable-not-empty-and-not-deleted
+      historyPreflight: all-selected-seasons-before-any-write
+      historicalAuditTimezone: Europe/Berlin
+      historicalAuditDay: Monday
+      noOp: exact-serialized-detail-equality
+      noSeparateScheduler: true
+      noNewPermissions: true
     workflowTarget:
       owner: .github/workflows/sync-nfl-source-data.yml::nfl_games_derived
       publicationClass: existing-rebuild-and-retry-scoped-branch-writer
@@ -243,15 +283,23 @@ futureGameDetailDirection:
         Recompute affected current GameIDs only after accepted canonical
         schedule/finality/odds/player-stats/snap-count revisions.
       historical: >-
-        Add a bounded weekly verification across supported accepted historical
-        seasons and deterministic re-derivation on changed model/source inputs
-        in the existing classified scheduled owner; no competing writer.
+        Reconcile all indexed accepted historical seasons every Monday (Europe/Berlin)
+        after the existing full daily NFL Source sync. Derive details from accepted
+        canonical historical PlayerStats/SnapCounts at the currently deployed
+        version and write only changed GameIDs. Only data-backed games are
+        eligible. The same existing classified Publisher/Scope handles every write.
+        Historical upstream source revision discovery/repair remains bounded by
+        the separate NFL Source contract and cannot silently overwrite frozen raw
+        historical inputs. The daily full sync's bounded missing-history healing
+        is not an unrestricted rewrite authorization.
       activationGate: >-
-        Current checkpoint is read-only. Expanded output/write scope under
-        data-derived/nfl-games/details/**, new triggers, fast/history repair
-        semantics, race-safety, independent official data-quality acceptance
-        and rollback require separate specific elevated-effect approval before
-        production activation.
+        Specifically authorized 2026-11-16 for the existing nfl_games_derived
+        publisher to write details across current and all supported historical
+        indexed seasons. Scoped, deterministic GameDetails only; rights/coverage
+        for full original PBP and metric-candidate activation remain separately
+        gated. First real productive publication and historical CI audit must
+        confirm live output health, no-op and race handling before claiming a
+        completed cutover.
       rollbackPlan: >-
         Revert new detail generator invocation and new scoped write allowance,
         preserve existing season index and historical detail files pending
