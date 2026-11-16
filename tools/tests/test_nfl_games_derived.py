@@ -653,6 +653,20 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
             self.assertEqual(result["Written"], 0)
             self.assertFalse(list(Path(tmp).rglob("*.json")))
 
+    def test_old_and_current_canonical_season_detail_plans_are_source_only(self):
+        root = TOOLS.parent
+        for season in (1999, 2013, 2026):
+            with self.subTest(season=season), tempfile.TemporaryDirectory() as tmp:
+                if not (root / DATA_DERIVED_ROOT / "nfl-games" / f"{season}.json").exists():
+                    self.skipTest("Canonical NFL Games index unavailable")
+                result = plan_game_details(root, season, out_root=Path(tmp))
+                self.assertGreater(result["EligibleGames"], 5)
+                self.assertEqual(result["ChangedOrNew"], result["EligibleGames"])
+                self.assertEqual(result["Written"], 0)
+                self.assertFalse(list(Path(tmp).rglob("*.json")))
+                if season == 1999:
+                    self.assertGreater(result["WithMissingTeamSnaps"], 0)
+
     def test_readonly_cli_uses_only_matching_week_and_does_not_write(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
