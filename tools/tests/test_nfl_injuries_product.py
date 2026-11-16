@@ -392,7 +392,12 @@ class NflInjuriesProductTests(unittest.TestCase):
             schedule_seasons=[2010, 2024, 2025, 2026, 2027],
         )
         self.assertEqual([2010, 2024, 2025, 2026, 2027], result["DiscoveredSeasons"])
+        self.assertEqual([], result["PersistedMissingUpstream"])
         self.assertEqual([2025], result["CandidateSeasons"])
+        orphan = plan_injury_history_inventory(
+            release, current_season=2026, persisted_seasons=[2026, 2015],
+        )
+        self.assertEqual([2015], orphan["PersistedMissingUpstream"])
         self.assertEqual([2010, 2024], result["BlockedSeasons"])
         self.assertEqual([
             "blocked-unverified-original-revision",

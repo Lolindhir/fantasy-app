@@ -30,7 +30,7 @@ _NEW_COLUMNS = _COMMON_COLUMNS | {"season_type"}
 def valid_injury_season(season: Any) -> bool:
     """Validate a four-digit NFL season identifier, not a hard-coded year range."""
     return (isinstance(season, int) and not isinstance(season, bool)
-            and len(str(season)) == 4)
+            and season > 0 and len(str(season)) == 4)
 
 
 def parse_injury_report_csv(asset: bytes, *, season: int) -> dict[str, Any]:

@@ -128,7 +128,7 @@ class InjuryReportSourceTests(unittest.TestCase):
 
     def test_invalid_assets_and_season_identifiers(self):
         from nfl_source_data_lib.injury_reports import valid_injury_season
-        for invalid in (0, 999, 10000, True, "2025"):
+        for invalid in (-123, 0, 999, 10000, True, "2025"):
             self.assertFalse(valid_injury_season(invalid))
             with self.assertRaisesRegex(ValueError, "four-digit"):
                 parse_injury_report_csv(b"", season=invalid)

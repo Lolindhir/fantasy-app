@@ -178,6 +178,7 @@ def plan_injury_history_inventory(
         "SourceDataset": _DATASET,
         "CurrentSeason": current_season,
         "DiscoveredSeasons": sorted(seasons),
+        "PersistedMissingUpstream": sorted(stored - seasons),
         "CandidateSeasons": [x["Season"] for x in entries if x["State"].startswith("candidate-")],
         "BlockedSeasons": [x["Season"] for x in entries if x["State"].startswith("blocked-")],
         "SeasonStates": entries,
