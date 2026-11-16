@@ -3,7 +3,7 @@
 > **Status:** reproduzierbare, **synthetische Forschungssimulation**, weder Prognose für die NFL-Saisons 2027–2031 noch beschlossene Ligaregel.  
 > **Auftrag:** Zuerst die eingeschwungene Ökonomie einer auf sechs Teams begrenzten Dynasty-Liga untersuchen, die von Anfang an unter dem neuen Criticality-/Rookie-/Cap-Regelentwurf wirtschaftet. **Keine Rückrechnung der heutigen 2026er Kader, kein historischer Dead-Cap-Überhang.** Dann aus dem verbliebenen freien **Veteranenmarkt** vier weitere konkurrenzfähige Teams ohne Expansion Draft bauen. Erst danach separate Umstellung von den echten 2026er Kadern.  
 > **Issue:** [#1344](https://github.com/Lolindhir/fantasy-app/issues/1344) – CP6f.  
-> **Reproduktionscode:** [cp6f_equilibrium.mjs](../simulation/cp6f_equilibrium.mjs).
+> **Reproduktionscode:** [cp6f_equilibrium.mjs](../simulation/cp6f_equilibrium.mjs). **Strukturierte Ergebnisübersicht:** [cp6f-5y-summary.json](2026-11-16-cp6f-5y-summary.json).
 
 ## 1. Die drei getrennten Entscheidungswelten
 
@@ -45,62 +45,71 @@ Für **jeden** Faktor und jede Seed-Variante prüfen:
 
 ## 4. Ergebnisse: drei feste Seeds, fünf vollständige Salary-Zyklen
 
-**Seeds 11, 29, 47.** In allen **15** kombinierten Läufen war die Initialisierung erfolgreich, jeder der fünf Pre-FA-/Post-FA-Checks der sechs echten Teams legal und jeder Vier-Team-Shadow-Draft mit **vier vollen cap-konformen 30er-Kadern** möglich. Kein Dead Cap und keine Übergangscuts wurden dazu benötigt.
+**Seeds 11, 29, 47**, alle Cap-Faktoren mit denselben **externen synthetischen Spielerentwicklungs- und Rookie-Zufallsströmen** je Seed; Manager-Akquisitionen reagieren auf ihren Faktor und den jeweiligen Markt, die Shadow-Expansion verwendet **separaten** Zufall und beeinflusst nicht die künftigen Ligaereignisse. Vollständige reproduzierbare numerische Übersicht: [CP6f-5y-summary.json](2026-11-16-cp6f-5y-summary.json).
+
+In allen **15** kombinierten Läufen war die Initialisierung erfolgreich, jeder der fünf Pre-FA-/Post-FA-Checks der sechs echten Teams legal und jeder Vier-Team-Shadow-Draft mit **vier vollen cap-konformen 30er-Kadern** möglich. Kein Dead Cap und keine Übergangscuts wurden dazu benötigt.
 
 | Cap-Faktor | Relative Expansionsteam-Stärke nach Jahr 5, Seed 11 | Seed 29 | Seed 47 | Median | Range |
 |---|---:|---:|---:|---:|---|
-| 0,90 | 83,6 % | 90,2 % | 85,2 % | **85,2 %** | 83,6–90,2 % |
-| 0,85 | 85,2 % | 90,9 % | 84,5 % | **85,2 %** | 84,5–90,9 % |
-| 0,80 | 88,6 % | 89,8 % | 95,5 % | **89,8 %** | 88,6–95,5 % |
-| **0,75** | **91,8 %** | **91,5 %** | **90,5 %** | **91,5 %** | **90,5–91,8 %** |
-| 0,70 | 94,0 % | 94,0 % | 96,5 % | **94,0 %** | 94,0–96,5 % |
+| 0,90 | 90,4 % | 89,2 % | 85,1 % | **89,2 %** | 85,1–90,4 % |
+| 0,85 | 90,7 % | 86,1 % | 86,7 % | **86,7 %** | 86,1–90,7 % |
+| **0,80** | **92,6 %** | **91,2 %** | **87,4 %** | **91,2 %** | **87,4–92,6 %** |
+| **0,75** | **93,3 %** | **90,0 %** | **90,5 %** | **90,5 %** | **90,0–93,3 %** |
+| 0,70 | 94,5 % | 91,8 % | 91,5 % | **91,8 %** | 91,5–94,5 % |
 
-**Interpretation:** 0,75 und 0,70 können das vom Nutzer angedachte, schärfere **10-Team-Veteranenmarkt-Ziel** in diesem vereinfachten Fünfjahresmodell erreichen. 0,80 ist ein sinnvoller weniger aggressiver Referenzpunkt. Der 0,90er Mittelwert ist schwächer, einzelne Seeds können auch hier gut laufen. Niedrigerer Faktor = nicht *in jedem* individuellen Lauf monoton bessere Expansion, da Managerentscheidungen und Rookieentwicklung mitvariieren.
+**Interpretation:** Die ambitionierte, nur als Indikator vorgeschlagene 90-%-Hürde schaffen die drei aggressiveren Varianten in vielen, nicht allen Läufen. **0,75** erreicht in diesen drei Seeds mindestens 90,0 %, **0,70** mindestens 91,5 %. **0,80** erreicht zwar den höheren Median als 0,75, im dritten Seed aber nur 87,4 %. 0,85 und 0,90 können einzelne gute Expansionsergebnisse zeigen, haben aber schwächere/instabilere Verläufe. Das ist **keine** statistisch abgesicherte Wahrscheinlichkeit, da **n=3** und die Zukunftsmodelle künstlich sind.
 
-### Absolute Teamstärke nicht übersehen
+### Absolute Teamstärke und schwächstes Team nicht übersehen
 
-Der Vergleich darf die vier neuen Teams **nicht künstlich stark erscheinen lassen**, indem die sechs etablierten Teams ausgehöhlt werden. Im fünften Jahr liegen die **Medians** etablierter Teams (13er-Index) in den drei Seeds grob bei:
+Die vier neuen Teams dürfen **nicht künstlich stark erscheinen**, weil die sechs etablierten Teams vernichtet wurden. Die **Medians** etablierter Teams (13er-Performance-Index, identische Scoring-Slots) im fünften Jahr:
 
 | Faktor | Seed 11 | Seed 29 | Seed 47 |
 |---|---:|---:|---:|
-| 0,90 | 162,3 | 156,7 | 158,8 |
-| 0,85 | 163,1 | 152,7 | 159,0 |
-| 0,80 | 160,0 | 154,2 | 155,1 |
-| 0,75 | 154,9 | 155,8 | 160,8 |
-| 0,70 | 152,6 | 153,8 | 151,3 |
+| 0,90 | 154,5 | 154,7 | 165,4 |
+| 0,85 | 152,2 | 159,5 | 165,4 |
+| 0,80 | 151,5 | 157,7 | 164,8 |
+| 0,75 | 153,5 | 156,6 | 163,8 |
+| 0,70 | 153,0 | 156,3 | 159,6 |
 
-Das sind ausschließlich **modellierte Leistungspunkte**, keine Week-Projektion oder exakte Real-PPG-Vorhersage. Ein Teil des relativen Expansion-Erfolges entsteht tatsächlich durch geringere Star-Konzentration in den alten Teams; deren **absolute** Qualität fällt bei niedrigeren Faktoren hier aber nicht auf Null oder unter das Startbarkeit-Niveau.
+Auch die **schwächsten Expansionsteams** sind im Jahr 5 bei 0,75 im Vergleich zum **schwächsten etablierten Team** je Seed bei rund **94,7 / 95,3 / 96,7 %**; bei 0,70 **97,5 / 99,4 / 101,8 %**. Das bedeutet **nicht**, dass alle vier neuen Teams jedes der sechs Etablierten erreichen – die Vergleichspaare und Medianlagen sind bewusst ausgewiesen.
+
+Die Werte sind **synthetische Drei-Jahres-/Forecast-Leistungsindizes**, nicht Week-Projektionen oder reale Fantasy-Punkte der Jahre 2027–2031. Die Umverteilung ist **teilweise** eine Verringerung der Star-Konzentration der bisherigen sechs Teams; unter allen getesteten Faktoren bleiben diese hier aber mit validen Startaufstellungen aktiv.
 
 ### Shadow-Kader nicht nur sportlich, auch wirtschaftlich
 
-- Alle vier disjunkten virtuellen 30er-Kader pro Seed/Faktor sind **Top20-cap-konform**, nicht nur einzelne Startergruppen.
-- In der Expansion-Phase werden **keine** ursprünglichen Teamspieler beschlagnahmt. Die Angebotsbasis ist die Free-Agent-Menge **nach** den simulierten FA-Runden.
-- Der Prozess ist ein *fairer Gegenentwurf* mit gleicher Balanced-Strategie für die vier Neueinsteiger. Er beweist **weder** die tatsächliche Verpflichtungsbereitschaft dieser hypothetischen Manager **noch**, dass eine echte Liga mit 10/12 Teams automatisch dieselbe Salary-/Criticality-Kurve verwenden dürfte.
+- Alle vier **disjunkten** virtuellen 30er-Kader pro Seed/Faktor sind Top20-cap-konform, nicht nur einzelne Startergruppen.
+- Kein bestehender Teambesitz wird für den Shadow-Expansion-Draft beschlagnahmt. Grundlage ist der Free-Agent-Pool **nach** den simulierten FA-Runden.
+- Der virtuelle faire Gegenentwurf verwendet dieselbe Balanced-Strategie für alle vier Neueinsteiger. Er beweist **weder** tatsächliche Managerentscheidungen **noch**, dass eine echte Zehn-/Zwölf-Team-Liga dieselbe Criticality- und Salary-Kurve behalten dürfte.
 
-## 5. In-Season-FA-Markt: exemplarischer Seed 11 nach Jahr 5
+## 5. Free-Agent-Markt nach dem FA-Draft: drei Seeds nach Jahr 5
 
-Definition: Tier 1/Tier 2 über **relative Positional Ranks der aktuellen synthetischen Forecasts**; nur **ungebundene aktive Veteranen Year 4+** zählen. Als *hochpreisig* gilt hier mindestens **5 % des aktuellen Team-Caps**. Die Quote ist eine **Messschwelle**, keine neue Salary-Regel.
+**Definition:** Tier 1/2 über positionsabhängige Ränge der **synthetischen** aktuellen Leistungs-Forecasts. Nur **freie, aktive Veteranen ab Year 4**. Als *hochpreisig* gilt ≥ **5 % des Team-Caps**; diese Grenze ist lediglich ein Auswertungsindikator, keine neue Salary-Regel. Ein finanziell legaler Kaufpfad ist ein Ersatz eines eigenen Spielers in einem vollständigen 30er-Kader unter Cap, bei weiter gültigen 13 Startpositionen.
 
-| Faktor | Freie Tier 1 / Tier 2 | Davon mit Salary ≥ 5 % des Caps | Mindestens ein finanzierbarer Ein-zu-eins-Add/Drop-Pfad |
+| Faktor | Median freie Tier-1-/Tier-2-Veteranen | Median davon hochpreisig | Median mit wenigstens einem finanzierbaren Add/Drop-Pfad |
 |---|---:|---:|---:|
-| 0,90 | 6 / 8 | 11 | 14 |
-| 0,80 | 9 / 9 | 15 | 18 |
-| 0,75 | 10 / 9 | 16 | 19 |
-| 0,70 | 12 / 11 | 21 | 23 |
+| 0,90 | 15 | 11 | 15 |
+| 0,85 | 16 | 13 | 16 |
+| **0,80** | **18** | **17** | **18** |
+| **0,75** | **19** | **18** | **19** |
+| 0,70 | 20 | 19 | 20 |
 
-Für den jeweils ausgewiesenen Seed 11 besaßen in diesem vereinfachten One-for-One-Test **alle sechs Manager** zumindest eine rechnerische Aufnahmeoption; bei den betrachteten Zielspielern waren viele auch mit einem höheren unmittelbaren Starterwert verbunden. **Nicht nachgewiesen:** tatsächliche Annahme, realer Offseason-/In-Season-Tradeoff, zukünftige Rookie-Vertragsfolgen oder Aufnahme mit größerem Dead-Cap-Paket. Ein einzelner finanziell erlaubter Drop kann strategisch völlig unattraktiv sein.
+Exemplarischer Seed 11 im fünften Jahr: 0,90 = 6 Tier1 / 9 Tier2, 11 hochpreisig und 15 finanzierbar; 0,80 = 9/9, 17 hochpreisig und 18 finanzierbar; 0,75 = 11/7, 16 hochpreisig und 18 finanzierbar; 0,70 = 12/7, 17 hochpreisig und 19 finanzierbar. Die übrigen zwei Seeds sind im JSON-Befund gesondert dokumentiert.
 
-**Schluss:** Das Ziel eines *teuren, produktiven Free-Agent-Marktes* scheint im Modell nicht nur mit der bloßen Cut-Anzahl vereinbar; auch nach den FA-Drafts existieren finanzielle Zugangspfade. Dieser Befund ist **hochgradig abhängig von den synthetischen Rookies, den Managerheuristiken und der Vereinfachung ohne Dead Cap**.
+Die **sechs** Manager besaßen in diesen Szenarien jeweils mindestens einen theoretischen legalen Aufnahmepfad. **Nicht nachgewiesen:** Bereitschaft zur Verpflichtung, Injury-/Week-Startbarkeit, Auswirkungen auf die Zukunft der dann gedroppten eigenen Spieler, mehrjährige Cap-/Dead-Cap-Konsequenzen, echte Trades oder ein atomarer Sleeper-Operationsvollzug. Eine nominell bessere Startelf kann ökonomisch schlechter sein.
 
-## 6. Stabilität über Jahr fünf hinaus (Seed 11, 9-Zyklen-Stress)
+**Befund:** Auch nach dem FA-Draft scheint unter den angenommenen Strategien nicht nur billige Resttiefe, sondern eine **echte teure und produktive Veteranenschicht** im Markt verbleiben zu können. Ihre tatsächliche Dauerverfügbarkeit während aller 17 NFL-Wochen ist noch nicht simuliert. Der Befund hängt stark von den 30 gedrafteten plus 50 undrafted synthetischen Rookies, der 2023–2025-Criticality-Kurve und den Managerheuristiken ab.
 
-| Faktor | Median-Ratio Jahr 5 | Jahr 7 | Jahr 9 | Dynamischer Cap Jahr 5 / Jahr 9 |
+## 6. Stabilität über Jahr fünf hinaus (Seed 11, neun Salary-Zyklen)
+
+Alle drei zusätzlichen 9-Jahres-Kontrollen verwendeten dieselbe bereinigte Exogen-Zufallslogik; sechs bestehende sowie vier virtuelle Teams blieben cap-/slot-konform.
+
+| Faktor | Median-Ratio Jahr 5 | Jahr 7 | Jahr 9 | Modell-Cap Jahr 5 / Jahr 9 |
 |---|---:|---:|---:|---|
-| 0,80 | 88,6 % | 84,9 % | 86,3 % | ca. 323,8 / 324,0 Mio. $ |
-| 0,75 | 91,8 % | 87,6 % | 90,1 % | ca. 300,5 / 296,7 Mio. $ |
-| 0,70 | 94,0 % | 88,9 % | 91,6 % | ca. 276,7 / 289,7 Mio. $ |
+| 0,80 | 92,6 % | 86,1 % | 89,6 % | ca. 315,8 / 309,0 Mio. $ |
+| 0,75 | 93,3 % | 90,3 % | 91,0 % | ca. 294,7 / 289,0 Mio. $ |
+| 0,70 | 94,5 % | 92,5 % | 94,8 % | ca. 273,9 / 269,3 Mio. $ |
 
-Alle sechs etablierten und vier virtuellen Teams blieben in diesen drei 9-Zyklen-Kontrollen legal. **Der Cap-Anker nähert sich nach sechs bis neun Modelljahren eher einer stabilen Größenordnung an; die Marktstärke schwankt weiterhin.** Jahr fünf ist deshalb ein begrenzter Beobachtungszeitpunkt, **kein Beweis für Stationarität** oder einen universell optimalen Faktor.
+**Die Dauerergebnisse bleiben aussagekräftig, aber nicht statisch.** In diesem einen Exogen-Szenario liegen 0,75/0,70 auch in Jahr 9 um/über 90 %, während 0,80 zeitweise unter 90 % fällt. Der dynamische Cap sinkt zunächst, nähert sich später einem stabileren Bereich an und kann wieder steigen. **Ein Jahr-5-Ergebnis ist keine Stationaritätsgarantie; n=1 für die 9-Jahres-Probe.**
 
 ## 7. Fünf-Achsen-Cap-Governance
 
@@ -121,13 +130,13 @@ Alle sechs etablierten und vier virtuellen Teams blieben in diesen drei 9-Zyklen
 
 ## 9. Schlussfolgerung und nächste Arbeitshypothese
 
-**Die zentrale Nutzerkorrektur ist bestätigt:** Die alten CP6d/e-Migrationsstresse mit 2026er Dead Caps waren **kein** geeignetes Ausschlusskriterium für einen niedrigeren langfristig etablierten Cap-Faktor. Hier können 0,75 und 0,70 bei Neubeginn der Regeln alle sechs bestehenden Mannschaften legal halten und nach Jahr fünf sogar vier finanzierbare, annähernd gleichwertige Veteranenteams ermöglichen.
+**Die zentrale Nutzerkorrektur bleibt bestätigt:** Die alten CP6d/e-Migrationsstresse mit 2026er Dead-Cap-Lasten dürfen kein Ausschlusskriterium für das **langfristig etablierte** Cap sein. Bei einem ökonomisch neutralen Neustart können sowohl 0,80 als auch 0,75 und 0,70 über fünf Zyklen vollständige, legale sechs bestehende Teams und **vier finanzierbare Shadow-Veteranenteams** ermöglichen.
 
-**Leading Research-Kandidaten nun 0,80 / 0,75 / 0,70** (0,90 als vertraute Kontrolle), nicht mehr reflexhaft 0,90/0,875 als sicherster Zielzustand. **0,75 als Testzentrum**, **0,70 als aggressiver Grenzfall**, **0,80 als moderater Gegenpol**. Kein endgültiger Beschluss.
+**Derzeitige führende Zielkorridor-Hypothese: 0,80 / 0,75 / 0,70**, mit **0,75 als neutralem nächsten Prüfpunkt**, 0,80 als moderater und 0,70 als aggressiver Seite. 0,70 hat hier den höchsten 3-Seed-Median der Expansion-Stärke (91,8 %), aber alle Werte liegen nahe genug, dass künftige Rookieentwicklung und reguläre Cut-Retention die Entscheidung umwerfen können. **Kein Faktor ist beschlossen oder als echter Langzeitmarkt bewiesen.**
 
-Der nächste wichtige Fachtest ist **nicht** eine Transition-Cut-Simulation, sondern die Robustheit des Zielsystems gegen (a) andere Rookie-Entwicklung/Anzahl/Star-Dichte, (b) echte zukünftige Performance-/Injury-Szenarien, (c) zusätzliche in-season Waivers/Trades und (d) **regulär in jedem Zieljahr entstehende** Ein-Zyklus-C-add-Retention (nicht historische Altlasten). Erst nach Validierung und Ligaentscheid separat Migration und eventuell befristete kostenlose Cuts prüfen.
+Der nächste Fachtest muss **in der eingeschwungenen Zielwelt** stattfinden: (a) alternative Rookie-Pool-Größe und Talent-Verteilung; (b) mehr Seeds und 7–10+ Jahre; (c) tatsächliche wöchentliche Injury-/FA-/Trade-/Waiver-Reaktionspfade; (d) **jährlich regulär neu entstehende** Ein-Zyklus-C-add-Retention **getrennt** von historischen Altlasten; (e) Performance-/Criticality-Kurve im neuen dynamischen 10-Team-Veteranenvergleich, aber keine echte Erweiterung vorgeben. Erst nach diesem Zielbildtest wird die reale **Migration** aus 2026er Beständen entworfen.
 
-**Kein aktiver Liga-/App-/Generator-/Sleeper-Wechsel** und keine Änderung am geschützten sechs-Ziele-Nordstern.
+**Kein aktiver Liga-/App-/Generator-/Sleeper-Wechsel**, keine Veränderung der sechs geschützten Nordstern-Ziele.
 
 ## 10. Reproduzieren / technische Abnahme
 
