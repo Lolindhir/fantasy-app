@@ -35,6 +35,7 @@ jobs:
       contents: read
     outputs:
       season: ${{ steps.candidate.outputs.season }}
+      source_sha256: ${{ steps.candidate.outputs.source_sha256 }}
     steps:
       - name: Checkout latest accepted main
         uses: actions/checkout@v4
@@ -62,6 +63,10 @@ jobs:
           if season is not None and (not isinstance(season, int) or len(str(season)) != 4):
               raise SystemExit("Invalid historical pilot season")
           print(f"season={season or ''}")
+          digest = result.get("SourceAssetSha256") or ""
+          if season is not None and (len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest)):
+              raise SystemExit("Historical pilot is missing a verified SHA-256")
+          print(f"source_sha256={digest}")
           PY
           echo "Read-only Injury historical pilot discovery completed" >> "$GITHUB_STEP_SUMMARY"
 
@@ -74,6 +79,7 @@ jobs:
       dataset: nflverse.injuries
       materialization_scope: injuries
       season: ${{ needs.historical_pilot_preflight.outputs.season }}
+      expected_injury_sha256: ${{ needs.historical_pilot_preflight.outputs.source_sha256 }}
       historical_backfill_limit: 0
       force: false
     secrets:

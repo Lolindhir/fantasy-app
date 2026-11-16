@@ -368,6 +368,19 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertEqual("ambiguous", observation["GameLinkState"])
         self.assertIsNone(observation["GameID"])
 
+    def test_historical_pilot_binds_preflight_digest_before_raw_commit(self):
+        import yaml
+        root = Path(__file__).resolve().parents[2]
+        wrapper = yaml.safe_load((root / ".github/workflows/sync-nfl-injuries.yml").read_text(encoding="utf-8"))
+        publisher = yaml.safe_load((root / ".github/workflows/sync-nfl-source-data.yml").read_text(encoding="utf-8"))
+        self.assertIn("source_sha256", wrapper["jobs"]["historical_pilot_preflight"]["outputs"])
+        self.assertIn("expected_injury_sha256", wrapper["jobs"]["historical_pilot_publish"]["with"])
+        self.assertIn("expected_injury_sha256", publisher.get("on", publisher.get(True))["workflow_call"]["inputs"])
+        script = next(s["run"] for s in publisher["jobs"]["sync"]["steps"] if s.get("name") == "Sync, validate and publish NFL source data")
+        self.assertIn('actual_injury_sha="$(sha256sum', script)
+        self.assertIn("no Raw commit", script)
+        self.assertLess(script.index('actual_injury_sha="$(sha256sum'), script.index("git add -- data-source/providers"))
+
     def test_readonly_historical_pilot_selects_latest_verified_missing_season(self):
         from nfl_injuries_refresh import preflight_next_injury_history
         import tempfile
