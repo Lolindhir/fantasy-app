@@ -21,7 +21,9 @@ from typing import Any, Callable
 
 from nfl_injuries_materialize import _assert_bounded_path, stage_injury_season
 from nfl_injuries_phase import run_injury_phase
-from nfl_source_data_lib.injury_product_plan import plan_release_refresh, plan_injury_history_inventory
+from nfl_source_data_lib.injury_product_plan import (
+    plan_release_refresh, plan_injury_history_inventory, build_injury_artifacts,
+)
 from nfl_source_data_lib.common import current_source_season
 from nfl_source_data_lib.injury_reports import valid_injury_season
 
@@ -127,6 +129,89 @@ def discover_injury_history(
         fetch_release(), current_season=current,
         persisted_seasons=persisted, schedule_seasons=schedules,
     )
+
+
+
+def preflight_next_injury_history(
+    *,
+    repo_root: Path,
+    fetch_release: Callable[[], dict[str, Any]] = release_api,
+    fetch_asset: Callable[[str], bytes] = source_asset,
+) -> dict[str, Any]:
+    """Read-only full original-byte audit before selecting ONE historical pilot.
+
+    The candidate season comes solely from official release discovery. A
+    previously published Raw without corresponding Derived is also eligible for
+    recovery. This function has no Git, output file or publisher side effects.
+    """
+    release = fetch_release()
+    inventory = discover_injury_history(repo_root=repo_root, fetch_release=lambda: release)
+    current = inventory["CurrentSeason"]
+    candidates = []
+    for row in inventory["SeasonStates"]:
+        season = row["Season"]
+        if (season >= current or not row["OfficialSha256Available"]
+                or not row["CanonicalScheduleAvailable"]):
+            continue
+        derived_file = _assert_bounded_path(
+            repo_root, f"data-derived/nfl-injuries/{season}.json")
+        if not derived_file.is_file():
+            candidates.append(season)
+    if not candidates:
+        return {
+            "Status": "no-verified-history-missing",
+            "Season": None, "PublicationPerformed": False,
+            "BlockedSeasons": inventory["BlockedSeasons"],
+            "PersistedMissingUpstream": inventory["PersistedMissingUpstream"],
+        }
+
+    # At most one candidate in the bootstrap run. Never construct or persist a
+    # static historical season list; a later invocation may resume the next one.
+    season = max(candidates)
+    decision = plan_release_refresh(release, season=season)
+    asset = decision["SourceAsset"]
+    expected_digest = asset["Sha256"]
+    if not expected_digest:
+        raise ValueError("Historical pilot requires the official full-asset SHA-256")
+    source = fetch_asset(asset["DownloadUrl"])
+    if (not isinstance(source, bytes)
+            or len(source) != asset["ByteSize"]
+            or hashlib.sha256(source).hexdigest() != expected_digest):
+        raise ValueError("Historical pilot original bytes disagree with official SHA-256/size")
+    identity_file = _assert_bounded_path(
+        repo_root, "data-source/nfl/identities/players.json")
+    schedule_file = _assert_bounded_path(
+        repo_root, f"data-source/nfl/schedules/{season}.json")
+    if not identity_file.is_file() or not schedule_file.is_file():
+        raise ValueError("Historical pilot lacks persisted canonical identity or schedule")
+    players = json.loads(identity_file.read_text(encoding="utf-8"))
+    schedule = json.loads(schedule_file.read_text(encoding="utf-8"))
+    proposed = build_injury_artifacts(
+        season=season, source_csv=source, players=players,
+        schedule=schedule, expected_source_sha256=expected_digest,
+        release_asset=asset,
+    )
+    manifest = json.loads(proposed[f"data-source/nfl/injuries/{season}/manifest.json"])
+    quality = manifest["CanonicalQuality"]
+    identities = quality["IdentityResolutionCounts"]
+    links = quality["GameLinkCounts"]
+    # Preserve uncertain observations, but never silently claim this first
+    # historical season passed complete cross-source linkage acceptance.
+    if (identities["unresolved"] or identities["ambiguous"]
+            or links["ambiguous"] or links["not-found"] or links["not-evaluated"]):
+        raise ValueError(
+            "Historical Injury pilot needs identity/game-link review: "
+            + json.dumps(quality, sort_keys=True))
+    return {
+        "Status": "verified-single-season-pilot",
+        "Season": season,
+        "SourceAssetSha256": expected_digest,
+        "SourceRowCount": manifest["SourceRowCount"],
+        "ObservedWeekCount": manifest["ObservedWeekCount"],
+        "Quality": quality,
+        "PublicationPerformed": False,
+        "BlockedSeasons": inventory["BlockedSeasons"],
+    }
 
 
 def refresh_injury_raw(
@@ -250,16 +335,22 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--season", type=int)
     parser.add_argument("--discover-history", action="store_true",
                         help="Read-only inventory from official release; no year range or data changes")
+    parser.add_argument("--pilot-preflight", action="store_true",
+                        help="Read-only full source/schema/identity/game-link check for one missing historical season")
     parser.add_argument("--identities", type=Path)
     parser.add_argument("--schedule", type=Path, help="Optional canonical NFL schedule")
     parser.add_argument("--write", action="store_true", help="Stage candidate files in local checkout only")
     parser.add_argument("--raw-only", action="store_true", help="Stage only provider injury source and metadata; no player identities needed")
     args = parser.parse_args(argv)
     try:
-        if args.discover_history:
+        if args.discover_history or args.pilot_preflight:
+            if args.discover_history and args.pilot_preflight:
+                parser.error("Select exactly one read-only history mode")
             if args.season is not None or args.identities or args.schedule or args.raw_only or args.write:
-                parser.error("--discover-history is read-only and accepts no season or publication inputs")
-            output = discover_injury_history(repo_root=args.repo_root)
+                parser.error("History discovery/preflight is read-only and accepts no season or publication inputs")
+            output = (discover_injury_history(repo_root=args.repo_root)
+                      if args.discover_history else
+                      preflight_next_injury_history(repo_root=args.repo_root))
         elif args.season is None:
             parser.error("--season is required unless --discover-history")
         elif args.raw_only:

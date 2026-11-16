@@ -321,7 +321,7 @@ workflows:
     - repository_dispatch
     - push
     consecutiveFailures: 1
-    rationale: Scheduler-owned daily Sep-Feb Injury Report producer runs after nflverse release update; delegates to the existing protected two-phase NFL Source publisher and its isolated Derived job. One failed run leaves last good data but may miss a report correction; manual repair invocations are non-paging. No 10-minute polling and no staleness timer outside the seasonal window.
+    rationale: Scheduler-owned daily Sep-Feb Injury Report producer runs after nflverse release update; delegates to the existing protected two-phase NFL Source publisher and its isolated Derived job. A main-push change of the permanent wrapper also performs a read-only full-asset identity/game-link preflight and at most one historical missing verified pilot through the same existing writer; any blocked pilot fails closed with no data commits. One failed run leaves last good data but may miss a report correction; manual repair invocations are non-paging. No 10-minute polling and no staleness timer outside the seasonal window.
   .github/workflows/sync-nfl-source-data.yml:
     category: important
     relevantEvents:

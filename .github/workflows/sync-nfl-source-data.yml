@@ -29,6 +29,11 @@ on:
         required: false
         type: number
         default: 12
+      expected_injury_sha256:
+        description: "Optional exact SHA-256 binding to preflighted original Injury source bytes"
+        required: false
+        type: string
+        default: ""
       force:
         description: "Force replacement even when the downloaded content hash is unchanged"
         required: false
@@ -56,6 +61,11 @@ on:
         required: false
         type: number
         default: 12
+      expected_injury_sha256:
+        description: "Optional exact SHA-256 binding to preflighted original Injury source bytes"
+        required: false
+        type: string
+        default: ""
       force:
         description: "Force replacement even when the downloaded content hash is unchanged"
         required: false
@@ -230,6 +240,7 @@ jobs:
           SEASON: ${{ inputs.season }}
           HISTORICAL_BACKFILL_LIMIT: ${{ inputs.historical_backfill_limit }}
           FORCE: ${{ inputs.force }}
+          EXPECTED_INJURY_SHA256: ${{ inputs.expected_injury_sha256 || '' }}
           PAT_PUSH: ${{ secrets.PAT_PUSH }}
           # The built-in token is only used to read official nflverse release metadata.
           NFLVERSE_RELEASE_API_TOKEN: ${{ inputs.materialization_scope == 'injuries' && github.token || '' }}
@@ -273,6 +284,12 @@ jobs:
             fi
           fi
 
+          if [[ -n "${EXPECTED_INJURY_SHA256:-}" ]]; then
+            if [[ "$materialization_scope" != "injuries" || ! "$EXPECTED_INJURY_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+              echo "Expected Injury digest is malformed or outside Injury scope." >&2
+              exit 2
+            fi
+          fi
           if [[ "$materialization_scope" == "injuries" ]]; then
             if [[ "${DATASET:-}" != "nflverse.injuries" ]]; then
               echo "injuries scope requires dataset=nflverse.injuries" >&2
@@ -621,6 +638,16 @@ jobs:
               echo "NFL provider raw sync failed." >&2
               write_failure_diagnostic "raw-sync" "$raw_status" "$raw_log"
               exit "$raw_status"
+            fi
+
+            # Bind the historical preflight to exactly the Raw file revision
+            # about to be published. An upstream race is not preflighted.
+            if [[ "$materialization_scope" == "injuries" && -n "${EXPECTED_INJURY_SHA256:-}" ]]; then
+              actual_injury_sha="$(sha256sum "data-source/providers/nflverse/injuries/raw-${injury_year}.csv" | cut -d' ' -f1)"
+              if [[ "$actual_injury_sha" != "$EXPECTED_INJURY_SHA256" ]]; then
+                echo "Injury source changed since historical preflight; no Raw commit." >&2
+                exit 2
+              fi
             fi
 
             assert_source_data_only

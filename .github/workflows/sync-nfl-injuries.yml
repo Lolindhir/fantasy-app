@@ -3,8 +3,9 @@ name: Data • NFL Injuries Daily
 # Permanent, scheduler-owned wrapper. Delegates all writes and concurrency
 # safety to the pre-existing NFL Source Sync reusable workflow (#1421).
 on:
-  # When approved configuration first lands on main, perform one real current
-  # season import instead of waiting for the following daily due slot.
+  # The initial current-season import is accepted. On an approved workflow
+  # change, preflight and delegate one missing verified historical pilot only;
+  # routine scheduler events still refresh exclusively the current season.
   push:
     branches:
       - main
@@ -26,7 +27,66 @@ permissions:
   actions: read
 
 jobs:
+  historical_pilot_preflight:
+    name: Verify one discovered historical Injury season before first publication
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      season: ${{ steps.candidate.outputs.season }}
+      source_sha256: ${{ steps.candidate.outputs.source_sha256 }}
+    steps:
+      - name: Checkout latest accepted main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify official original, identity and schedule without publishing
+        id: candidate
+        shell: bash
+        env:
+          NFLVERSE_RELEASE_API_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 tools/nfl_injuries_refresh.py --pilot-preflight > pilot.json
+          cat pilot.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          result = json.loads(Path("pilot.json").read_text(encoding="utf-8"))
+          season = result.get("Season")
+          if season is not None and (not isinstance(season, int) or len(str(season)) != 4):
+              raise SystemExit("Invalid historical pilot season")
+          print(f"season={season or ''}")
+          digest = result.get("SourceAssetSha256") or ""
+          if season is not None and (len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest)):
+              raise SystemExit("Historical pilot is missing a verified SHA-256")
+          print(f"source_sha256={digest}")
+          PY
+          echo "Read-only Injury historical pilot discovery completed" >> "$GITHUB_STEP_SUMMARY"
+
+  historical_pilot_publish:
+    name: Publish the verified historical Injury pilot via existing writer
+    needs: historical_pilot_preflight
+    if: ${{ needs.historical_pilot_preflight.outputs.season != '' }}
+    uses: ./.github/workflows/sync-nfl-source-data.yml
+    with:
+      dataset: nflverse.injuries
+      materialization_scope: injuries
+      season: ${{ needs.historical_pilot_preflight.outputs.season }}
+      expected_injury_sha256: ${{ needs.historical_pilot_preflight.outputs.source_sha256 }}
+      historical_backfill_limit: 0
+      force: false
+    secrets:
+      PAT_PUSH: ${{ secrets.PAT_PUSH }}
+
   source_and_derived:
+    if: ${{ github.event_name != 'push' }}
     name: NFL injury source and derived via existing publisher
     uses: ./.github/workflows/sync-nfl-source-data.yml
     with:
