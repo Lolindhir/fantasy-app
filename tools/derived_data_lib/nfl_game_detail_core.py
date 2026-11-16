@@ -52,7 +52,7 @@ def _selected_stats(
                 )
                 or row.get("Week") != game["Week"]
                 or not _valid_type(row.get("SeasonType"), game["GameType"])):
-            raise ValueError("player-stats: invalid game/team/week/type")
+            raise ValueError(\n                f"player-stats: invalid game/team/week/type for {game[\'GameID\']}: "\n                f"team={team!r}, opp={row.get(\'OpponentTeam\')!r}, "\n                f"week={row.get(\'Week\')!r}, type={row.get(\'SeasonType\')!r}, "\n                f"expected {game[\'AwayTeam\']}/{game[\'HomeTeam\']} {game[\'Week\']} {game[\'GameType\']}"\n            )
         cid = row.get("CanonicalPlayerID")
         if not isinstance(cid, str) or not cid:
             unresolved += 1
