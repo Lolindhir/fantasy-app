@@ -19,6 +19,7 @@ from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from derived_data_lib.nfl_games import build_nfl_games
 from derived_data_lib.nfl_team_snap_usage import infer_team_snap_volumes
 from nfl_games_materialize import materialize, discover_seasons
+from nfl_game_details_materialize import plan_season as plan_game_details
 from nfl_pbp_metric_field_audit import audit as audit_pbp_catalog_fields, reconcile_original_game_row
 from nfl_pbp_team_metric_reconcile import (
     reconcile as reconcile_pbp_team_season,
@@ -595,6 +596,64 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
             )
             self.assertEqual(json.loads(output.stdout), result)
             self.assertFalse((root / DATA_DERIVED_ROOT / "nfl-games" / "details").exists())
+
+    def test_game_detail_publisher_preflights_noops_and_invalidates_on_inputs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            docs = {
+                root / DATA_DERIVED_ROOT / "nfl-games" / "2026.json": build_nfl_games(*inputs()),
+                root / DATA_SOURCE_ROOT / "nfl" / "player-stats" / "2026" / "06.json": _week_stats(),
+                root / DATA_SOURCE_ROOT / "nfl" / "snap-counts" / "2026" / "06.json": _week_snaps(),
+            }
+            for path, doc in docs.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(doc), encoding="utf-8")
+            target = root / DATA_DERIVED_ROOT / "nfl-games" / "details" / "2026" / "2026_06_HOU_JAX.json"
+            preview_result = plan_game_details(root, 2026)
+            self.assertEqual(preview_result["EligibleGames"], 1)
+            self.assertEqual(preview_result["ChangedOrNew"], 1)
+            self.assertEqual(preview_result["Written"], 0)
+            self.assertFalse(target.exists())
+            first = plan_game_details(root, 2026, write=True)
+            self.assertEqual(first["Written"], 1)
+            output = json.loads(target.read_text(encoding="utf-8"))
+            self.assertEqual(output["GameID"], "2026_06_HOU_JAX")
+            self.assertEqual(output["SchemaVersion"], 1)
+            self.assertEqual(plan_game_details(root, 2026, write=True)["ChangedOrNew"], 0)
+            first_bytes = target.read_bytes()
+            # Other game/week metadata is not an invalidation input.
+            stats_path = root / DATA_SOURCE_ROOT / "nfl" / "player-stats" / "2026" / "06.json"
+            stats = json.loads(stats_path.read_text(encoding="utf-8"))
+            other = copy.deepcopy(stats["Records"][0])
+            other["Stats"]["game_id"] = "2026_07_HOU_JAX"
+            stats["Records"].append(other)
+            stats_path.write_text(json.dumps(stats), encoding="utf-8")
+            self.assertEqual(plan_game_details(root, 2026)["ChangedOrNew"], 0)
+            self.assertEqual(target.read_bytes(), first_bytes)
+            stats["Records"][0]["Stats"]["carries"] += 1
+            stats_path.write_text(json.dumps(stats), encoding="utf-8")
+            self.assertEqual(plan_game_details(root, 2026)["ChangedOrNew"], 1)
+            self.assertEqual(plan_game_details(root, 2026, write=True)["Written"], 1)
+            self.assertNotEqual(target.read_bytes(), first_bytes)
+            # No data means unknown and must not overwrite a prior accepted output.
+            stats_path.unlink()
+            snap_path = root / DATA_SOURCE_ROOT / "nfl" / "snap-counts" / "2026" / "06.json"
+            snap_path.unlink()
+            with self.assertRaisesRegex(ValueError, "not supported"):
+                plan_game_details(root, 2026, write=True)
+            self.assertTrue(target.exists())
+
+    def test_real_2025_detail_materialization_plan_is_readonly(self):
+        root = TOOLS.parent
+        if not (root / DATA_DERIVED_ROOT / "nfl-games" / "2025.json").exists():
+            self.skipTest("Canonical historical NFL Games index unavailable")
+        with tempfile.TemporaryDirectory() as tmp:
+            result = plan_game_details(root, 2025, out_root=Path(tmp))
+            self.assertGreater(result["EligibleGames"], 200)
+            self.assertGreater(result["WithIdentityHolds"], 0)
+            self.assertEqual(result["ChangedOrNew"], result["EligibleGames"])
+            self.assertEqual(result["Written"], 0)
+            self.assertFalse(list(Path(tmp).rglob("*.json")))
 
     def test_readonly_cli_uses_only_matching_week_and_does_not_write(self):
         with tempfile.TemporaryDirectory() as temp:
