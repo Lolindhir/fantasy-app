@@ -85,8 +85,17 @@ def _selected_stats(
                 (value < 0 and not field.endswith("_yards"))
             ):
                 raise ValueError(f"player-stats: invalid counting field {field}")
-        # Keep raw canonical Source untouched; normalize only the Derived copy.
-        selected.append(row)
+        # The versioned fingerprint only depends on fields actually consumed by
+        # the v1 team-stats model. Raw provider records may contain unrelated
+        # nonfinite floats (e.g. historical EPA) and must not force a rebuild.
+        selected.append({
+            "CanonicalPlayerID": cid,
+            "Team": team,
+            "OpponentTeam": opponent,
+            "Week": row.get("Week"),
+            "SeasonType": row.get("SeasonType"),
+            "Stats": {field: stats.get(field) for field in _PLAYER_COUNT_FIELDS},
+        })
         normalized.append({**row, "Team": canonical, "OpponentTeam": other})
     if missing_context:
         return (None, finalized, selected, unresolved,
@@ -148,7 +157,14 @@ def _selected_snap_counts(
             elif value is not None and (type(value) is not int or value < 0):
                 raise ValueError(f"snap-counts: invalid count {field}")
             snaps[field] = value
-        selected.append(row)
+        selected.append({
+            "CanonicalPlayerID": cid,
+            "Team": team,
+            "OpponentTeam": opponent,
+            "Week": row.get("Week"),
+            "GameType": row.get("GameType"),
+            "Snaps": snaps,
+        })
         team_rows.append({"Team": canonical, "Snaps": snaps})
     if not selected:
         return None, finalized, selected, 0, "unavailable", 0
