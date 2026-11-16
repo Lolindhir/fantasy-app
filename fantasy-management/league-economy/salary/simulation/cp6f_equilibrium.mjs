@@ -217,8 +217,8 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
       for(const i of (round%2?ids.slice().reverse():ids)){
         const team=teams[i],base=objective(team.players,team.style);
         const topAvailable=[...pool.values()].filter(x=>x.active&&x.forecast>0)
-          .sort((a,b)=>selectScore(b,team.style,rng,"starter")-selectScore(a,team.style,rng,"starter")).slice(0,32);
-        const bargain=[...pool.values()].filter(x=>x.active).sort((a,b)=>a.price-b.price).slice(0,8);
+          .sort((a,b)=>selectScore(b,team.style,rng,"starter")-selectScore(a,team.style,rng,"starter")).slice(0,15);
+        const bargain=[...pool.values()].filter(x=>x.active).sort((a,b)=>a.price-b.price).slice(0,5);
         const candidates=[...new Map([...topAvailable,...bargain].map(x=>[x.id,x])).values()];
         let best=null,bestGain=.10;
         for(const remove of team.players){
@@ -256,6 +256,7 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
     const shift=seed%6,styles=Array.from({length:6},(_,i)=>strategies[(i+shift)%6]);
     const initial=initTeams(initialFree,C,styles,rng,6);
     const teams=initial.teams,free=initial.pool;
+    let priorSeasonScores=teams.map(t=>lineup(t.players).value);
     const initialValidation={missing:teams.filter(t=>!teamValid(t.players,C)).length,
       rosterSizes:teams.map(t=>t.players.length),errors:initial.errors.length};
     const yearly=[];
@@ -295,9 +296,9 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
           team.players=chosen.rem;released.push(chosen.p);free.set(chosen.p.id,chosen.p);
         }
       }
-      // Five rookie rounds, one pick per incumbent; ordering is a seed-derived 5th/6th/4th/3rd/2nd/1st proxy.
+      // Five rookie rounds, one pick per incumbent; order uses previous-season performance, 5th/6th/4th/3rd/2nd/1st.
       // The team standings below are synthetic; no real rookie-pick trade allocations inferred.
-      const order=teams.map((t,i)=>({i,score:lineup(t.players).value})).sort((a,b)=>a.score-b.score).map(x=>x.i);
+      const order=teams.map((t,i)=>({i,score:priorSeasonScores[i]})).sort((a,b)=>a.score-b.score).map(x=>x.i);
       const pickorder=order.length===6?[order[1],order[0],order[2],order[3],order[4],order[5]]:order;
       const unsigned=entrants.slice();
       for(let roundN=0;roundN<5;roundN++)for(const i of pickorder){
@@ -315,6 +316,7 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
       const postLegal=teams.filter(t=>!teamValid(t.players,C)).length;
       const postExp=expansion(free,C,rng);
       const scores=teams.map(t=>lineup(t.players).value);
+      priorSeasonScores=scores.slice();
       const capUses=teams.map(t=>charged(t.players));
       const heldRookie=teams.map(t=>t.players.filter(p=>p.year<=3).length);
       const expansionMedian=median(postExp.scores),incumbentMedian=median(scores);
