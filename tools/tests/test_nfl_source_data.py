@@ -296,6 +296,40 @@ class NflPbpArchiveSourcePilotTests(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text()), original)
             download.assert_not_called()
 
+    def test_downloaded_bytes_must_match_pinned_sha_even_with_matching_size(self):
+        import hashlib
+        expected = b"authentic-asset"
+        corrupted = b"corrupted-asset"
+        self.assertEqual(len(expected), len(corrupted))
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(pbp_archive, "EXPECTED_SIZE", len(expected)), \
+             patch.object(pbp_archive, "EXPECTED_SHA256", hashlib.sha256(expected).hexdigest()), \
+             patch.object(pbp_archive, "upstream_evidence", return_value={
+                 "digest": "sha256:" + hashlib.sha256(expected).hexdigest(),
+                 "size": len(expected),
+             }), \
+             patch.object(pbp_archive, "download",
+                          side_effect=lambda _url, path: path.write_bytes(corrupted)), \
+             patch.object(pbp_archive, "read_only_audits") as audit, \
+             patch.object(pbp_archive, "create_release") as release:
+            with self.assertRaisesRegex(ValueError, "does not match official SHA256"):
+                pbp_archive.run(Path(tmp), "Lolindhir/fantasy-app", "test-token")
+            audit.assert_not_called()
+            release.assert_not_called()
+
+    def test_source_workflow_restricts_pilot_to_unfiltered_full_and_isolates_failure(self):
+        workflow = (TOOLS.parent / ".github/workflows/sync-nfl-source-data.yml").read_text()
+        self.assertIn(
+            'if [[ "$materialization_scope" == "full" && -z "${DATASET:-}" && -z "${SEASON:-}" ]]; then',
+            workflow,
+        )
+        self.assertIn("PBP_ARCHIVE_TOKEN: ${{ github.token }}", workflow)
+        self.assertIn(
+            "2025 original PBP pilot blocked; no source archive accepted",
+            workflow,
+        )
+        self.assertIn("git add -- data-source/providers", workflow)
+
     def test_archive_asset_hash_mismatch_is_never_an_accepted_noop(self):
         with tempfile.TemporaryDirectory() as tmp, \
              patch.object(pbp_archive, "get_release", return_value={
