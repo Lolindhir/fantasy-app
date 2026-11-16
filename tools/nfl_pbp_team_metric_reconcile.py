@@ -222,7 +222,22 @@ def _metric_coverage_add(storage: dict, metric_id: str, metric: dict) -> None:
         "ObservedTeamGames": 0, "MissingTeamGames": 0, "ValueSum": 0.0,
         "NumeratorFromRoundedGameSummaries": 0.0, "ObservedDenominator": 0,
         "MinGameValue": None, "MaxGameValue": None,
+        # Research-only diagnostics; do not replace the per-game candidate
+        # denominator or mistake partially missing source evidence for a zero.
+        "UnknownFlagRows": 0, "UnknownFlagTeamGames": 0,
+        "EligibleOutcomeRows": 0, "ObservedOutcomeRows": 0,
+        "MissingOutcomeRows": 0, "ZeroOutcomeDenominatorTeamGames": 0,
     })
+    unknown = int(metric.get("UnknownFlagCount") or 0)
+    item["UnknownFlagRows"] += unknown
+    item["UnknownFlagTeamGames"] += int(unknown > 0)
+    item["EligibleOutcomeRows"] += int(metric.get("Eligible") or 0)
+    item["ObservedOutcomeRows"] += int(metric.get("Observed") or 0)
+    item["MissingOutcomeRows"] += int(metric.get("Missing") or 0)
+    if "Eligible" in metric:
+        item["ZeroOutcomeDenominatorTeamGames"] += int(
+            int(metric.get("Denominator") or 0) == 0
+        )
     value = metric.get("Value")
     if value is None:
         item["MissingTeamGames"] += 1

@@ -963,6 +963,27 @@ jobs:
             echo "- Publication (attempt $attempt): ${publication_seconds}s; canonical push raced with main, rebuilding" >> "$GITHUB_STEP_SUMMARY"
           done
 
+
+      # Issue #1077: reproducible empirical report on a change to this read-only
+      # researcher, using the accepted Release asset. Not a new scheduler or
+      # publisher; no data-source, derived, app or research files are written.
+      # Never run on routine scheduled Source refreshes or unrelated code pushes.
+      - name: Read-only original PBP 2025 quality evidence (researcher changes only)
+        if: github.event_name == 'push'
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          if ! git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" | grep -qx 'tools/nfl_pbp_2025_quality_report.py'; then
+            echo "- PBP 2025 research replay: skipped (researcher unchanged)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if ! python3 -c 'import yaml' 2>/dev/null; then
+            python3 -m pip install --disable-pip-version-check 'PyYAML==6.0.2'
+          fi
+          python3 tools/nfl_pbp_2025_quality_report.py
+          echo "- PBP 2025 research replay: completed; detailed JSON receipt in this step log (research-only, not publication-certified)" >> "$GITHUB_STEP_SUMMARY"
+
   nfl_games_derived:
     name: Publish global NFL Game Shared Derived
     needs: sync
