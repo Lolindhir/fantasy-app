@@ -27,6 +27,7 @@ from nfl_source_data_lib.injury_reports import valid_injury_season
 
 _METADATA_NAME = re.compile(r"^metadata-([0-9]{4})\.json$")
 _RAW_NAME = re.compile(r"^raw-([0-9]{4})\.csv$")
+_CANONICAL_SEASON_NAME = re.compile(r"^[0-9]{4}$")
 
 
 def _json(root: Path, relative: str) -> dict[str, Any]:
@@ -84,18 +85,58 @@ def accepted_historical_injury_seasons(repo_root: Path) -> tuple[list[int], int]
     return historical, current
 
 
+
+def accepted_canonical_injury_seasons(repo_root: Path) -> list[int]:
+    """Discover Derived partitions only from published Canonical manifests.
+
+    No Raw, release metadata, identity graph, schedule or League manifest
+    participates even in season discovery for this Derived owner.
+    """
+    root = _assert_bounded_path(repo_root, "data-source/nfl/injuries")
+    if not root.exists():
+        return []
+    if not root.is_dir() or root.is_symlink():
+        raise ValueError("Canonical Injury season root must be a real directory")
+    seasons: list[int] = []
+    for child in sorted(root.iterdir()):
+        if child.is_symlink():
+            raise ValueError("Symlinked Canonical Injury season directory")
+        if not child.is_dir():
+            raise ValueError("Unexpected file in Canonical Injury season root")
+        if not _CANONICAL_SEASON_NAME.fullmatch(child.name):
+            raise ValueError("Invalid Canonical Injury season directory")
+        season = int(child.name)
+        if not valid_injury_season(season):
+            raise ValueError("Invalid Canonical Injury season identifier")
+        manifest = _json(repo_root, f"data-source/nfl/injuries/{season}/manifest.json")
+        if (manifest.get("Season") != season
+                or manifest.get("SchemaVersion") != 1
+                or manifest.get("SourceDataset") != "nflverse.injuries"):
+            raise ValueError("Canonical Injury manifest season identity mismatch")
+        seasons.append(season)
+    return seasons
+
 def reconcile_accepted_injury_history(
     repo_root: Path, *, phase: str, write: bool = False,
     require_noop: bool = False,
 ) -> dict[str, Any]:
-    """Preflight every accepted historical season before any local mutation."""
+    """Preflight all phase-owned accepted seasons before local mutation.
+
+    Canonical selects verified historical Raw. Derived selects published
+    Canonical seasons only, including current-season Canonical if present.
+    """
     if phase not in {"canonical", "derived"}:
         raise ValueError("History reconcile phase must be canonical or derived")
     if write and require_noop:
         raise ValueError("Cannot require no-op while writing")
-    seasons, current = accepted_historical_injury_seasons(repo_root)
-    players = (_json(repo_root, "data-source/nfl/identities/players.json")
-               if phase == "canonical" and seasons else None)
+    if phase == "canonical":
+        seasons, current = accepted_historical_injury_seasons(repo_root)
+        players = (_json(repo_root, "data-source/nfl/identities/players.json")
+                   if seasons else None)
+    else:
+        seasons = accepted_canonical_injury_seasons(repo_root)
+        current = None
+        players = None
     planned: dict[int, dict[str, Any]] = {}
     for season in seasons:
         schedule = (_json(repo_root, f"data-source/nfl/schedules/{season}.json")

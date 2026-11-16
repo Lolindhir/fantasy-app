@@ -486,6 +486,44 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertEqual(original, (root /
                 "data-source/providers/nflverse/injuries/raw-2025.csv").read_bytes())
 
+    def test_historical_derived_discovery_from_canonical_without_raw_or_league(self):
+        from nfl_injuries_history_reconcile import reconcile_accepted_injury_history
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            # No provider originals, league manifests, player graph or schedule
+            # exist in this checkout. Only the published Canonical inputs exist.
+            for season in (2025, 2026):
+                generated = build_injury_artifacts(
+                    season=season,
+                    source_csv=asset(season, [report(season)]),
+                    players=identities())
+                for name, contents in generated.items():
+                    if not name.startswith(f"data-source/nfl/injuries/{season}/"):
+                        continue
+                    dest = root / name
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    dest.write_bytes(contents)
+            result = reconcile_accepted_injury_history(
+                root, phase="derived", write=True)
+            self.assertEqual([2025, 2026], result["AcceptedHistoricalSeasons"])
+            self.assertEqual([2025, 2026], result["ChangedSeasons"])
+            self.assertIsNone(result["CurrentSeason"])
+            self.assertTrue(result["Written"])
+            same = reconcile_accepted_injury_history(
+                root, phase="derived", require_noop=True)
+            self.assertEqual([], same["ChangedSeasons"])
+            for season in (2025, 2026):
+                derived = root / f"data-derived/nfl-injuries/{season}.json"
+                self.assertEqual(season, json.loads(
+                    derived.read_text(encoding="utf-8"))["Season"])
+            self.assertFalse((root / "data-source/providers").exists())
+            self.assertFalse((root / "data-source/leagues").exists())
+            self.assertFalse((root / "data-source/nfl/identities").exists())
+            self.assertFalse((root / "data-source/nfl/schedules").exists())
+
     def test_weekly_injury_reconcile_uses_existing_publisher_contract(self):
         import yaml
         root = Path(__file__).resolve().parents[2]

@@ -268,7 +268,10 @@ freshness:
         in the existing full Source writer, with exact no-op second replay.
       derivedRecomputation: >-
         Reuse the existing nfl_injuries_derived rebuild-and-retry publisher to
-        regenerate every accepted Derived historical season after Source succeeds.
+        regenerate every published Canonical Injury season (historical and current)
+        after Source succeeds. Derived discovers seasons only from Canonical
+        manifests and reads only Canonical week partitions; never Raw original
+        CSV/metadata, identity graph, schedule or league manifests.
       sourceRevisionObservation: >-
         Weekly official release metadata comparison of frozen accepted history;
         changed or unverifiable revisions fail for manual review and never
