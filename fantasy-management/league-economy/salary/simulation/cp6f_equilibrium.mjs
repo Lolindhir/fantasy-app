@@ -73,10 +73,26 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
     const rookiePct=.65*rookPct(fantasyRank,30)+.35*rookPct(rawNflRank,80);
     const rookieFirst=round(previousCap*rookiePct);
     const draftTrend=(30-i)/30;
-    const talent=Math.max(3,Math.min(21,5+draftTrend*5 + sample*.27+gauss(rng)*1.1));
+    const talent=Math.max(3,Math.min(24,4.5+draftTrend*9 + sample*.45+gauss(rng)*2.0));
     return {id:"S"+seed+"Y"+t+"R"+fantasyRank,name:"Sim-Rookie-"+t+"-"+fantasyRank,pos,year:1,
       history:[0,0,0],current:0,forecast:Math.max(2,talent*.72),talent,price:rookieFirst,
       rookieFirst,active:true,initialRookie:false,rookieSeason:t};
+  };
+  const undraftedClass=(t,seed,rng,previousCap)=>{
+    const picks=[];
+    const pattern=["WR","RB","WR","TE","WR","RB","QB","WR","TE","RB"];
+    for(let i=0;i<50;i++){
+      const pos=pattern[i%pattern.length],historic=playersByRookiePos[pos]||[6];
+      const sample=historic.length?historic[Math.floor(rng()*historic.length)]:6;
+      const nflRank=rng()<.3?null:31+Math.floor(rng()*50);
+      const year1=round(previousCap*(.65*.0025+.35*rookPct(nflRank,80)));
+      const gem=rng()<.035?7:0;
+      const talent=Math.max(1,Math.min(22,3.3+sample*.38+gauss(rng)*2.3+gem));
+      picks.push({id:"S"+seed+"Y"+t+"U"+i,name:"Sim-Undrafted-"+t+"-"+i,pos,year:1,
+        history:[0,0,0],current:0,forecast:Math.max(1,talent*.63),talent,price:year1,
+        rookieFirst:year1,active:true,initialRookie:false,rookieSeason:t,undrafted:true});
+    }
+    return picks;
   };
   const salaryPerformance=(p,mod)=>{
     const signal=Math.max(0,p*mod);
@@ -132,9 +148,12 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
     return true;
   };
   const fillSlot=(team,free,slot,C,style,rng)=>{
+    // Protect budget for all remaining mandatory starters, rather than spending the entire cap in the first few positions.
+    const starterStage=slot!=="DEPTH"&&slot!=="CHEAP"&&team.length>=17&&team.length<30;
+    const capGate=starterStage?Math.min(C,C*(.18+.81*(team.length-17+1)/13)):C;
     const candidates=[...free.values()].filter(p=>p.active&&
       (slot==="DEPTH"||slot==="CHEAP"||(slot==="FLEX"?flexPositions.has(p.pos):p.pos===slot)) &&
-      (slot==="DEPTH"||slot==="CHEAP"||p.forecast>0)&&charged([...team,p])<=C);
+      (slot==="DEPTH"||slot==="CHEAP"||p.forecast>0)&&charged([...team,p])<=capGate);
     if(!candidates.length)return null;
     const stage=slot==="DEPTH"?"depth":slot==="CHEAP"?"cheap":"starter";
     candidates.sort((a,b)=>selectScore(b,style,rng,stage)-selectScore(a,style,rng,stage)||
@@ -258,7 +277,8 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
       C=capFor(players,factor);
       // Rookie picks are preassigned NFL rank proxies and evaluated at own fantasy pick.
       const entrants=templates.map((_,i)=>newDraftRookie(season,i,seed,rng,prevCap));
-      for(const rookie of entrants){players.push(rookie);all.set(rookie.id,rookie);}
+      const extraRookies=undraftedClass(season,seed,rng,prevCap);
+      for(const rookie of [...entrants,...extraRookies]){players.push(rookie);all.set(rookie.id,rookie);}
       // Rebuild live free pool from ownership: the 30 newcomers were not previously owned.
       free.clear();
       const owned=new Set(teams.flatMap(t=>t.players.map(x=>x.id)));
@@ -325,11 +345,11 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
       incompleteCycles:scenarios.flatMap(x=>x.yearly.filter(y=>y.preLegal>0||y.postLegal>0).map(y=>({seed:x.seed,year:y.season,pre:y.preLegal,post:y.postLegal}))).slice(0,30)};
   });
   return {schemaVersion:1,status:"research-only-synthetic-5-cycle-experiment-not-forecast",
-    basis:{inputRows:totalRaw,usablePlayers:basePlayers.length,rookieClassTemplate:templates.length,seasonCount:seasons,
+    basis:{inputRows:totalRaw,usablePlayers:basePlayers.length,rookieClassTemplate:templates.length,extraUndraftedRookiesPerYear:50,seasonCount:seasons,
       factors,seeds,starterSlots:"2QB 2RB 2WR 2TE 4FLEX 1K",roster:30,capRelevant:20,
       salary:"Criticality rank DMLI 2023-25 fixed rank curves; normalized k1.5; 3-year floor; dynamic Top120/6*factor; glide min; 3Y rookies",
       deadCap:"DISABLED for target-state isolation",trades:"NOT SIMULATED",rookieNFLRank:"sampled from 2026 fantasy pick order with Gaussian noise; not actual future NFL draft results",
-      rookiePerformance:"synthetic conditional distribution from archived 2026 cohort and historical year2/3 rookie performance",
+      rookiePerformance:"synthetic conditional distribution from archived 2026 cohort and historical year2/3 rookie performance; 50 free undrafted rookies/year",
       startup:"neutral startup from 2026 player population, then 5 simulated seasons; no 2026 ownership rights",
       limitation:"synthetic stochastic trajectories not actual NFL 2027-2031; no dynamic future Criticality rank-curve recalculation by NFL seasons, no injuries/week-scoped decisions"},
     results:grouped,runs:summary};
