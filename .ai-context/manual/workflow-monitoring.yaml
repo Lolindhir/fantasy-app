@@ -330,7 +330,7 @@ workflows:
     - workflow_call
     consecutiveFailures: 1
     staleAfterMinutes: 1800
-    rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes, while failures or a missed daily cycle should surface promptly. Manual repair runs remain non-paging.
+    rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes. Its Monday 04:00 Europe/Berlin unfiltered full sync additionally replays all accepted historical Injury Canonical and the existing Injury Derived publisher, then audits frozen original revisions without replacing them. Failures keep last good history but require review. Other weekdays and scoped calls skip historical replay; manual repair runs remain non-paging.
   .github/workflows/odds-refresh.yml:
     category: important
     relevantEvents:
