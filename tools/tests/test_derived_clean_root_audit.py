@@ -119,6 +119,17 @@ class CleanRootProbeTests(unittest.TestCase):
         existing = target.read_text() if target.is_file() else None
         return {"Written": bool(emit(target, self.body("nfl-games", root, existing)))}
 
+    def fake_injuries(self, source_root, season, phase):
+        # The canonical producer is called against the real Source root, not
+        # against a shadow symlink or a previously published Derived product.
+        self.assertEqual("derived", phase)
+        self.assertEqual(self.root.resolve(), source_root.resolve())
+        self.calls.append(("nfl-injuries", None))
+        if self.hooks.get("nfl-injuries") == "blocked":
+            raise ValueError("canonical Injury manifest is missing or invalid")
+        content = self.body("nfl-injuries", source_root, None)
+        return {f"data-derived/nfl-injuries/{season}.json": content.encode("utf-8")}
+
     def run_audit(self, **kwargs):
         with ExitStack() as stack:
             for name, fake in (
@@ -130,16 +141,18 @@ class CleanRootProbeTests(unittest.TestCase):
                 ("materialize_historical", self.fake_pwf),
                 ("materialize_all_finalized", self.fake_twp),
                 ("materialize_nfl_games", self.fake_nfl_games),
+                ("plan_injury_phase", self.fake_injuries),
             ):
                 stack.enter_context(patch.object(probe, name, side_effect=fake))
             stack.enter_context(patch.object(probe, "discover_seasons", return_value=[2024]))
+            stack.enter_context(patch.object(probe, "discover_injury_seasons", return_value=[2024]))
             return probe.audit(self.root, **kwargs)
 
     def publish_all_stable(self):
         for relative in (
             f"player-valuation/{LEAGUE}/2024/week-00.json", f"league-transactions/{LEAGUE}/2024.json",
             f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"season-statistics/{LEAGUE}/2024.json", f"league-rivalry/{LEAGUE}.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
-            f"team-week-performance/{LEAGUE}/2024/01.json", "nfl-games/2024.json",
+            f"team-week-performance/{LEAGUE}/2024/01.json", "nfl-games/2024.json", "nfl-injuries/2024.json",
         ):
             self.publish(relative, "stable")
 
@@ -153,7 +166,7 @@ class CleanRootProbeTests(unittest.TestCase):
         self.assertEqual([], result["FailedProducts"])
         self.assertEqual({}, result["HintProducts"])
         self.assertEqual(
-            {f"{p}/{LEAGUE}" for p in probe.PRODUCTS if p not in probe.GLOBAL_PRODUCTS} | {"nfl-games"},
+            {f"{p}/{LEAGUE}" for p in probe.PRODUCTS if p not in probe.GLOBAL_PRODUCTS} | {"nfl-games", "nfl-injuries"},
             set(result["Products"]),
         )
         for entry in result["Products"].values():
@@ -221,6 +234,37 @@ class CleanRootProbeTests(unittest.TestCase):
         self.assertEqual("nondeterministic", entry["Status"])
         self.assertEqual(["nfl-games"], result["FailedProducts"])
 
+    def test_injury_restore_detects_stale_published_and_does_not_overwrite(self):
+        self.publish_all_stable()
+        self.publish("nfl-injuries/2024.json", "stale")
+        result = self.run_audit()
+        self.assertTrue(result["ReadyForFullRestore"])
+        self.assertEqual("stale-published", result["Products"]["nfl-injuries"]["Status"])
+        self.assertEqual(1, result["Products"]["nfl-injuries"]["ChangedVsPublishedCount"])
+        self.assertEqual("stale", (self.root / "data-derived/nfl-injuries/2024.json").read_text())
+        self.assertEqual(3, self.calls.count(("nfl-injuries", None)))
+
+    def test_missing_injury_canonical_input_fails_closed(self):
+        self.publish_all_stable()
+        self.hooks["nfl-injuries"] = "blocked"
+        result = self.run_audit()
+        self.assertEqual("blocked", result["Products"]["nfl-injuries"]["Status"])
+        self.assertIn("canonical Injury manifest", result["Products"]["nfl-injuries"]["Reason"])
+        self.assertIn("nfl-injuries", result["FailedProducts"])
+
+    def test_nondeterministic_injury_restore_is_not_green(self):
+        self.publish_all_stable()
+        counter = {"n": 0}
+
+        def drift(root, existing, extra):
+            counter["n"] += 1
+            return f"revision-{counter['n']}"
+
+        self.hooks["nfl-injuries"] = drift
+        result = self.run_audit()
+        self.assertEqual("nondeterministic", result["Products"]["nfl-injuries"]["Status"])
+        self.assertIn("nfl-injuries", result["FailedProducts"])
+
     def test_failed_pwf_build_does_not_block_official_sleeper_award_restore(self):
         self.publish_all_stable()
         self.hooks["player-week-fantasy"] = "blocked"
@@ -269,6 +313,7 @@ class CleanRootProbeTests(unittest.TestCase):
             ):
                 self.publish(relative, "stable")
         self.publish("nfl-games/2024.json", "stable")
+        self.publish("nfl-injuries/2024.json", "stable")
         result = self.run_audit()
         self.assertEqual([LEAGUE, "league-b"], result["Leagues"])
         self.assertTrue(result["ReadyForFullRestore"])
@@ -276,6 +321,7 @@ class CleanRootProbeTests(unittest.TestCase):
                         "player-week-fantasy", "team-week-performance"):
             self.assertIn(f"{product}/league-b", result["Products"])
         self.assertEqual(3, self.calls.count(("nfl-games", None)))  # global product: once per pass, not per league
+        self.assertEqual(3, self.calls.count(("nfl-injuries", None)))
 
     def test_explicit_league_selection(self):
         self.add_league("league-b")
