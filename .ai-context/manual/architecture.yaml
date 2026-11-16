@@ -603,7 +603,7 @@ nflGamesSharedDerivation:
       runner: tools/nfl_games_materialize.py
       publishedIndex: data-derived/nfl-games/<season>.json
       detail: data-derived/nfl-games/details/<season>/<GameID>.json
-      detailStatus: core-v1-contract-agreed-read-only-not-published
+      detailStatus: core-v1-production-writer-activated-pending-first-successful-source-run
       previewCli: tools/nfl_game_detail_preview.py --core-v1
       detailBuilder: tools/derived_data_lib/nfl_game_detail_core.py
       responsibility: read canonical inputs, invoke pure rules, validate contract,
@@ -612,16 +612,19 @@ nflGamesSharedDerivation:
       existingWorkflow: .github/workflows/sync-nfl-source-data.yml
       existingJob: nfl_games_derived
       activeScope: season index from schedules, game finality and schedule odds
-      futureDetailRule: add relevant Source revision dependencies and targeted GameID
-        invalidation inside the existing classified pipeline; no metric-specific
-        schedulers, unconditional complete PBP replays or duplicate writers
+      detailRefresh: current-season after full Source or scoped schedule-odds
+      historicalRefresh: Monday full-Source run (Europe/Berlin), all accepted
+        indexed historical seasons recomputed with semantic per-GameID no-op
+      rule: existing classified rebuild-and-retry publisher; no per-metric
+        schedulers, unconditional PBP replays, extra permissions or parallel writers
   boundaries:
     - NBA/NFL provider row field names and raw play evidence are Source, not output rules
     - Team snap totals must not equal sum of player snaps or arbitrary sum divided by 11
     - Missing or ambiguous shares and unverified PBP play coverage must remain explicit
     - Angular and Fantasy Management consume shared metrics; they must not own their formulas
-    - No new production writer, GameDetail output path, schema cutover or PBP rights grant
-      is implied by this architecture section or the current read-only prototype
+    - Approved GameDetail v1 writes are limited to data-derived/nfl-games/details/**
+      through the existing NFL Games publisher; no extra Source, App, model, PBP
+      or player-identity repair authority is implied
 
 
 sharedDerivedPhysicalLayer:
