@@ -100,10 +100,51 @@ class MatchupProjectionsTests(unittest.TestCase):
         self.assertEqual(win_prob.percent_pair(expected), (teams[0]["WinProbability"], teams[1]["WinProbability"]))
         self.assertEqual(100, teams[0]["WinProbability"] + teams[1]["WinProbability"])
         self.assertEqual("win-prob-v1", payload["WinProbabilityModel"])
+        self.assertAlmostEqual(expected, teams[0]["WinProbabilityRaw"], places=12)
+        self.assertAlmostEqual(1.0 - expected, teams[1]["WinProbabilityRaw"], places=12)
+        self.assertFalse(teams[0]["WinProbabilityIsDeterministic"])
+        self.assertFalse(teams[1]["WinProbabilityIsDeterministic"])
 
         del model["Records"][2]  # a starter without a projection: the team is not available
         payload = mp.build_matchup_projections(context, model)
         self.assertTrue(all(team["WinProbability"] is None for team in payload["Matchups"][0]["Teams"]))
+        self.assertTrue(all(team["WinProbabilityRaw"] is None for team in payload["Matchups"][0]["Teams"]))
+        self.assertTrue(all(team["WinProbabilityIsDeterministic"] is None for team in payload["Matchups"][0]["Teams"]))
+
+    def test_open_matchup_keeps_subpercent_tail_and_all_final_matchup_is_deterministic(self) -> None:
+        import matchup_projection as mp
+
+        context = {
+            "Season": 2026, "Week": 10,
+            "FantasyMatchups": [{"FantasyMatchupID": "m1", "TeamIDs": ["jan", "giants"]}],
+            "Games": [
+                {"Status": "Final", "FantasyTeams": [
+                    {"FantasyMatchupID": "m1", "FantasyTeamID": "jan", "Players": [{"PlayerID": "jan-final", "IsStarter": True, "Points": 191.42}]},
+                    {"FantasyMatchupID": "m1", "FantasyTeamID": "giants", "Players": [{"PlayerID": "giants-final", "IsStarter": True, "Points": 221.08}]},
+                ]},
+                {"Status": "Scheduled", "FantasyTeams": [
+                    {"FantasyMatchupID": "m1", "FantasyTeamID": "jan", "Players": [{"PlayerID": "kicker", "IsStarter": True, "Points": None}]},
+                ]},
+            ],
+            "NonGameAssociations": [],
+        }
+        model = {
+            "Season": 2026, "Week": 10, "CanonicalLeagueID": "x",
+            "Records": [{"PlayerID": "kicker", "Projection": projection(8.4864, 3.7481)}],
+        }
+        teams = mp.build_matchup_projections(context, model)["Matchups"][0]["Teams"]
+        self.assertEqual((0, 100), tuple(team["WinProbability"] for team in teams))
+        self.assertTrue(all(team["WinProbabilityIsDeterministic"] is False for team in teams))
+        self.assertGreater(teams[0]["WinProbabilityRaw"], 0)
+        self.assertLess(teams[0]["WinProbabilityRaw"], 0.01)
+        self.assertGreater(teams[1]["WinProbabilityRaw"], 0.99)
+        self.assertLess(teams[1]["WinProbabilityRaw"], 1)
+
+        context["Games"].pop()  # No remaining scoring uncertainty on either side.
+        teams = mp.build_matchup_projections(context, model)["Matchups"][0]["Teams"]
+        self.assertEqual((0, 100), tuple(team["WinProbability"] for team in teams))
+        self.assertEqual((0.0, 1.0), tuple(team["WinProbabilityRaw"] for team in teams))
+        self.assertTrue(all(team["WinProbabilityIsDeterministic"] is True for team in teams))
 
 
 class PregameTests(unittest.TestCase):

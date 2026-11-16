@@ -29,6 +29,10 @@ export interface MatchupProjectionTeam {
   UnavailableStarterPlayerIDs: string[];
   /** Whole-percent win chance of the matchup (win-prob-v1); the two teams add up to 100; null when a projection is missing. Absent in older files. */
   WinProbability?: number | null;
+  /** Additive unrounded probability as a fraction from 0 to 1, computed for each side independently. */
+  WinProbabilityRaw?: number | null;
+  /** True only when neither team has modeled scoring variance; null when a chance is unavailable. */
+  WinProbabilityIsDeterministic?: boolean | null;
 }
 
 export interface MatchupProjectionMatchup {

@@ -325,11 +325,11 @@ export class LeagueMatchupsComponent {
     return { left: formatProjectionPoints(left), right: formatProjectionPoints(right) };
   }
 
-  /** Generated win chance of an open matchup (whole percents, left/right); null without a value. Live once an NFL game of a starter is final. */
+  /** Generated chance of an open matchup; raw fractions avoid mistaken 0/100 from rounded values. */
   winChance(
     matchup: LeagueMatchupView,
     context: FantasyGameContextReadModel | null
-  ): { left: number; right: number; live: boolean } | null {
+  ): { left: number; right: number; leftRaw: number | null; rightRaw: number | null; deterministic: boolean; live: boolean } | null {
     if (matchup.completionState === 'final') return null;
     const teams = this.matchupContext(matchup, context)?.Projection?.Teams;
     if (!teams) return null;
@@ -340,6 +340,9 @@ export class LeagueMatchupsComponent {
     return {
       left: left.WinProbability,
       right: right.WinProbability,
+      leftRaw: left.WinProbabilityRaw ?? null,
+      rightRaw: right.WinProbabilityRaw ?? null,
+      deterministic: left.WinProbabilityIsDeterministic === true && right.WinProbabilityIsDeterministic === true,
       live: left.FinalStarterCount > 0 || right.FinalStarterCount > 0
     };
   }
