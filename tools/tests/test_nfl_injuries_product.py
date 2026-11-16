@@ -691,6 +691,66 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertTrue(any(s["name"].startswith("Audit frozen original Injury")
             for s in jobs["nfl_injuries_derived"]["steps"]))
 
+    def test_manual_historical_injury_dispatch_opt_in_and_scope_guards(self):
+        import os
+        import subprocess
+        import tempfile
+        import yaml
+        root = Path(__file__).resolve().parents[2]
+        wf = yaml.safe_load((root / ".github/workflows/sync-nfl-source-data.yml").read_text(encoding="utf-8"))
+        triggers = wf.get("on", wf.get(True))
+        manual = triggers["workflow_dispatch"]["inputs"]
+        self.assertEqual("boolean", manual["reconcile_injury_history"]["type"])
+        self.assertFalse(manual["reconcile_injury_history"]["default"])
+        self.assertEqual(["scheduler-sync-nfl-source-data"],
+                         triggers["repository_dispatch"]["types"])
+        jobs = wf["jobs"]
+        history = next(step for step in jobs["sync"]["steps"]
+                       if step.get("id") == "injury_history_due")
+        self.assertIn("inputs.reconcile_injury_history", history["env"]["MANUAL_INJURY_HISTORY"])
+        script = history["run"]
+        self.assertIn('GITHUB_EVENT_NAME" == "repository_dispatch"', script)
+        self.assertIn("TZ=Europe/Berlin date +%u", script)
+        self.assertIn('GITHUB_EVENT_NAME" == "workflow_dispatch"', script)
+
+        def select(event="workflow_dispatch", *, enabled=True,
+                   scope="full", dataset="", season="", force=False):
+            with tempfile.TemporaryDirectory() as tmp:
+                output = Path(tmp) / "output"
+                summary = Path(tmp) / "summary"
+                env = {
+                    **os.environ,
+                    "GITHUB_EVENT_NAME": event,
+                    "GITHUB_OUTPUT": str(output),
+                    "GITHUB_STEP_SUMMARY": str(summary),
+                    "MANUAL_INJURY_HISTORY": "true" if enabled else "false",
+                    "MATERIALIZATION_SCOPE": scope,
+                    "DATASET": dataset, "SEASON": season,
+                    "FORCE": "true" if force else "false",
+                }
+                result = subprocess.run(["bash", "-e", "-c", script], env=env,
+                                        capture_output=True, text=True)
+                return result, output.read_text() if output.exists() else ""
+
+        enabled, values = select()
+        self.assertEqual(0, enabled.returncode, enabled.stderr)
+        self.assertIn("due=true", values)
+        default, values = select(enabled=False)
+        self.assertEqual(0, default.returncode, default.stderr)
+        self.assertIn("due=false", values)
+        # A push or workflow_call must not inherit the explicit manual flag.
+        for event in ("push", "workflow_call"):
+            result, values = select(event=event)
+            self.assertEqual(0, result.returncode, result.stderr)
+            self.assertIn("due=false", values)
+        # Manual opt-in rejects filtered and forceful runs before any Raw sync.
+        for filters in ({"dataset": "nflverse.injuries"}, {"season": "2025"},
+                        {"scope": "injuries"}, {"force": True}):
+            result, values = select(**filters)
+            self.assertEqual(2, result.returncode, filters)
+            self.assertIn("requires full scope", result.stderr)
+            self.assertEqual("", values)
+
     def test_readonly_historical_pilot_selects_latest_verified_missing_season(self):
         from nfl_injuries_refresh import preflight_next_injury_history
         import tempfile
