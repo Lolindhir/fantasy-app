@@ -239,7 +239,8 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
   };
   const expansion=(free,C,rng)=>{
     const veteranPool=new Map([...free.values()].filter(x=>x.active&&x.year>=4&&x.current>0).map(x=>[x.id,x]));
-    const expStyles=[strategies[0],strategies[1],strategies[3],strategies[5]];
+    // Equal opportunity test: all shadow entrants use the same balanced style. Different incumbent styles remain in the six-team dynamics.
+    const expStyles=Array.from({length:4},()=>strategies[1]);
     const e=initTeams(veteranPool,C,expStyles,rng,4,true);
     return {scores:e.teams.map(t=>lineup(t.players).value),rosters:e.teams.map(t=>t.players.length),
       compliant:e.teams.map(t=>teamValid(t.players,C)),capUses:e.teams.map(t=>charged(t.players)),
@@ -324,6 +325,7 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
         incumbentScores:scores,incumbentCapUses:capUses,incumbentRookies:heldRookie,
         preExpansion:preExp,postExpansion:postExp,
         expansionRatio:postExp.possible&&postLegal===0?expansionMedian/incumbentMedian:null,
+        weakestExpansionRatio:postExp.possible&&postLegal===0?Math.min(...postExp.scores)/Math.min(...scores):null,
         freePoolSize:free.size,freeVeterans:[...free.values()].filter(x=>x.active&&x.year>=4&&x.current>0).length});
       prevCap=C;
     }
@@ -339,6 +341,7 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
         capM:round(x.yearly.at(-1).cap/1e5)/10,incumbentMedian:+median(x.yearly.at(-1).incumbentScores).toFixed(2),
         expMedian:+median(x.yearly.at(-1).postExpansion.scores).toFixed(2),
         expMedianRatio:x.yearly.at(-1).expansionRatio===null?null:+x.yearly.at(-1).expansionRatio.toFixed(3),
+        weakestRelativeToWeakest:x.yearly.at(-1).weakestExpansionRatio===null?null:+x.yearly.at(-1).weakestExpansionRatio.toFixed(3),
         postExpansionValid:x.yearly.at(-1).postExpansion.possible,
         rosterSizes:x.yearly.at(-1).postExpansion.rosters,faMoves:x.yearly.reduce((s,y)=>s+y.faMoves,0)})),
       validFifthYearSeeds:valid.length,medianExpansionRatio:ratios.length?+median(ratios).toFixed(3):null,
