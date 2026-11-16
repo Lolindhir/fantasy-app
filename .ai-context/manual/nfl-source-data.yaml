@@ -498,6 +498,50 @@ fullPlayByPlayTarget:
   downstreamOwner: data-derived/nfl-games
   currentSourceRegistryAndProjectionsUnchanged: true
   productiveAcquisitionOrNewWriterAuthorized: false
+  original2025Pilot:
+    issue: 1077
+    authorizationDate: 2026-11-16
+    status: approved-pilot-implementation-pending-first-successful-real-run
+    providerAsset: nflverse/nflverse-data release pbp, play_by_play_2025.csv.gz
+    sourceDigestSha256: 2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978
+    compressedBytes: 19105296
+    archivedProjectedSourceRows: 48771
+    ownership: existing-sync-nfl-source-data-raw-publisher
+    activationBoundary: unfiltered-full-source-sync-only, 2025 only; no targeted or scoped acquisition
+    storage: >-
+      Store unmodified original gzip bytes in an immutable content-addressed GitHub Release
+      asset on Lolindhir/fantasy-app, outside git history. The existing Source raw writer
+      publishes only a compact provenance/audit manifest in
+      data-source/providers/nflverse/play-by-play-original/metadata-2025.json.
+      A release asset may be orphaned after a failed git publication; a retry must verify
+      its exact digest/size and reuse it, never clobber.
+    licensing: >-
+      Upstream nflverse/nflverse-data LICENSE.md states CC BY 4.0; release notes and
+      Source manifest give source URL and attribution. No derived consumer-publication
+      approval follows from this license.
+    audit: >-
+      Downloaded exact original bytes require SHA256 and compressed-size checks, complete
+      gzip/CSV field and canonical game/play identity audit, and read-only 2025 metric
+      reconciliation before the release asset or manifest may be committed. These audits
+      do not certify upstream game-play completeness or release the ten experimental
+      metrics for derived publication.
+    failureIsolation: >-
+      Any failed original-2025 SHA, audit, release or dependency gate blocks only
+      PBP archive acceptance and emits a GitHub step warning; the already-existing
+      routine NFL Source sync continues for unrelated data. No invalid original
+      asset or manifest is accepted on a blocked pilot.
+    historicalRefresh: >-
+      After first accepted archive, unchanged 2025 content is reused without redownloading;
+      the existing weekly Monday full Source run checks official upstream release
+      revision metadata. Changed revisions are reported for explicit frozen-history
+      repair review and never silently replace archived bytes.
+    noScopeExpansion: >-
+      No additional seasons, dataset-registry entries, canonical GameDetails, 2026 writer,
+      scheduler, permissions, or new branch writers are activated by this pilot.
+    rollback: >-
+      Revert the scoped Source code/workflow/contract PR to stop future pilot execution.
+      Preserve immutable accepted Source release assets and manifests pending an explicit
+      cleanup or migration decision; never delete trusted original evidence silently.
 
 specialTeamsFumbleEventContract:
   issue: 709
