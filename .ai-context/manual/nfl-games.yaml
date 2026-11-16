@@ -202,6 +202,15 @@ futureGameDetailDirection:
         player-dependent TeamStats group, with explicit unresolved row count.
         Other invalid or duplicate player rows fail closed; never discard them
         silently to generate a misleading team sum.
+      missingHistoricalTeamContext: >-
+        Legacy PlayerStats can contain rows with a valid canonical GameID and
+        Week/SeasonType but no Team and/or OpponentTeam. They must remain
+        included as input evidence and block TeamStats for that entire GameID
+        with Status=blocked-missing-team-context and MissingTeamContextRows;
+        do not infer a team from player name, player ID or the opposing roster.
+        Independently validated team SnapCounts can still be derived. Unknown
+        non-null team/opponent combinations fail closed rather than using
+        arbitrary aliases.
       teamSnapCounts: >-
         Validate GameID, team, opponent, game type/week, typed nonnegative
         count and bounded rounded percentage for every source row. Infer team
