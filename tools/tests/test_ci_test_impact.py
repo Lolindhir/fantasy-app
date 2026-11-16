@@ -79,6 +79,15 @@ class RoutingTests(unittest.TestCase):
         self.assertFalse(result["uncertain"])
         self.assertNotIn("nfl-identity-replay", result["selected"])
 
+    def test_nfl_game_detail_materializer_routes_to_derived_families(self):
+        for path in ("tools/nfl_game_details_materialize.py",
+                     "tools/nfl_game_detail_preview.py"):
+            with self.subTest(path=path):
+                result = self.choose(path)
+                self.assertEqual({"league-pwf-twp", "consumer-restore"},
+                                 set(result["selected"]))
+                self.assertFalse(result["uncertain"])
+
     def test_league_history_change_selects_derived_families_not_identity_or_market(self):
         selected = set(self.choose("tools/league_history_app_publish.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
