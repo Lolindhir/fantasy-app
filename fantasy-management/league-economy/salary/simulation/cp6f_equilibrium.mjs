@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {fileURLToPath} from "node:url";
 
-export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=[0.90,0.85,0.80,0.75,0.70], seasons=5}={}) {
+export function simulate(csvText, draftsText, {seeds=[11,29,47], factors=[0.90,0.85,0.80,0.75,0.70], seasons=5}={}) {
   const round=x=>Math.floor(x+0.5);
   const median=values=>{const v=[...values].sort((a,b)=>a-b); return v.length%2?v[(v.length-1)/2]:(v[v.length/2-1]+v[v.length/2])/2;};
   const avg=values=>values.reduce((s,v)=>s+v,0)/Math.max(1,values.length);
@@ -247,6 +247,33 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
       errors:e.errors.length,freeVeterans:veteranPool.size,
       possible:e.errors.length===0&&e.teams.every(t=>teamValid(t.players,C))};
   };
+  const marketStats=(players,teams,free,C)=>{
+    const tierRank=new Map(),limits={QB:[6,12],RB:[12,22],WR:[12,30],TE:[6,12]};
+    for(const [pos,[a,b]]of Object.entries(limits)){
+      players.filter(x=>x.active&&x.pos===pos&&x.forecast>0).sort((x,y)=>y.forecast-x.forecast)
+        .forEach((p,i)=>tierRank.set(p.id,i<a?1:i<b?2:3));
+    }
+    const candidates=[...free.values()].filter(x=>x.active&&x.year>=4&&(tierRank.get(x.id)===1||tierRank.get(x.id)===2));
+    const expensive=candidates.filter(x=>x.price>=C*.05);
+    const reachable=new Set(),gainful=new Set(),buyerTeams=new Set();
+    for(const p of candidates){
+      for(let ti=0;ti<teams.length;ti++){
+        const t=teams[ti],oldScore=lineup(t.players).value;
+        for(let i=0;i<t.players.length;i++){
+          const next=t.players.slice();next[i]=p;
+          if(charged(next)>C||!lineup(next).valid)continue;
+          reachable.add(p.id);buyerTeams.add(ti);
+          if(lineup(next).value>oldScore+.5)gainful.add(p.id);
+          break;
+        }
+      }
+    }
+    return {freeTier1:candidates.filter(x=>tierRank.get(x.id)===1).length,
+      freeTier2:candidates.filter(x=>tierRank.get(x.id)===2).length,
+      expensiveT12:expensive.length,financiallyReachable:reachable.size,improvingSwap:gainful.size,
+      buyersWithOnePath:buyerTeams.size,
+      namedExamples:expensive.slice().sort((a,b)=>b.forecast-a.forecast).slice(0,6).map(x=>x.name)};
+  };
   const summary=[];
   for(const factor of factors)for(const seed of seeds){
     const rng=rand(seed+Math.round(factor*10000)*391);
@@ -316,6 +343,7 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
       const faMoves=optimizeFA(teams,free,C,rng,5);
       const postLegal=teams.filter(t=>!teamValid(t.players,C)).length;
       const postExp=expansion(free,C,rng);
+      const market=marketStats(players,teams,free,C);
       const scores=teams.map(t=>lineup(t.players).value);
       priorSeasonScores=scores.slice();
       const capUses=teams.map(t=>charged(t.players));
@@ -323,7 +351,7 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
       const expansionMedian=median(postExp.scores),incumbentMedian=median(scores);
       yearly.push({season,cap:C,preLegal,postLegal,repairMoves,faMoves,
         incumbentScores:scores,incumbentCapUses:capUses,incumbentRookies:heldRookie,
-        preExpansion:preExp,postExpansion:postExp,
+        preExpansion:preExp,postExpansion:postExp,market,
         expansionRatio:postExp.possible&&postLegal===0?expansionMedian/incumbentMedian:null,
         weakestExpansionRatio:postExp.possible&&postLegal===0?Math.min(...postExp.scores)/Math.min(...scores):null,
         freePoolSize:free.size,freeVeterans:[...free.values()].filter(x=>x.active&&x.year>=4&&x.current>0).length});
