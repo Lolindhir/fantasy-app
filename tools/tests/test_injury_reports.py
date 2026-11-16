@@ -99,8 +99,12 @@ class InjuryReportSourceTests(unittest.TestCase):
         self.assertNotEqual(a["Rows"][0]["ObservationKey"], b["Rows"][0]["ObservationKey"])
 
     def test_wrong_header_width_and_year_are_rejected(self):
+        # Profiles are validated against the header, not the year. A mixed
+        # profile or unknown column is rejected even in an otherwise valid CSV.
+        mixed = make_csv(2024, [report(2024)]).replace(
+            b"date_modified\\n", b"date_modified,season_type\\n", 1)
         with self.assertRaisesRegex(ValueError, "unexpected header"):
-            parse_injury_report_csv(make_csv(2024, [report(2024)], variant="new"), season=2024)
+            parse_injury_report_csv(mixed, season=2024)
         with self.assertRaisesRegex(ValueError, "wrong season"):
             parse_injury_report_csv(make_csv(2025, [report(2024)]), season=2025)
         with self.assertRaisesRegex(ValueError, "logical data row"):
@@ -108,15 +112,28 @@ class InjuryReportSourceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "invalid GSIS"):
             parse_injury_report_csv(make_csv(2025, [report(2025, gsis_id="")]), season=2025)
 
-    def test_unaudited_old_year_future_schema_and_invalid_assets(self):
-        with self.assertRaisesRegex(ValueError, "audited schema range"):
-            parse_injury_report_csv(b"", season=2010)
-        # The 2025+ CSV schema can be reused for future seasons, but neither
-        # a missing asset nor a legacy header becomes valid report evidence.
-        future = parse_injury_report_csv(make_csv(2027, [report(2027)]), season=2027)
-        self.assertEqual(1, future["RowCount"])
+    def test_header_schema_is_detected_independently_of_season(self):
+        # Header recognition is NOT approval to import unaudited old assets.
+        # Publication still requires verified original bytes and source review.
+        for year in (2010, 2024, 2027):
+            for variant, expected in (("legacy", "date-modified"),
+                                      ("new", "season-type")):
+                result = parse_injury_report_csv(
+                    make_csv(year, [report(year)], variant=variant), season=year)
+                self.assertEqual(expected, result["SourceSchema"])
+        bad_profile = make_csv(2027, [report(2027)], variant="new").replace(
+            b"season_type", b"not_an_accepted_column", 1)
         with self.assertRaisesRegex(ValueError, "unexpected header"):
-            parse_injury_report_csv(make_csv(2027, [report(2027)], variant="legacy"), season=2027)
+            parse_injury_report_csv(bad_profile, season=2027)
+
+    def test_invalid_assets_and_season_identifiers(self):
+        from nfl_source_data_lib.injury_reports import valid_injury_season
+        for invalid in (0, 999, 10000, True, "2025"):
+            self.assertFalse(valid_injury_season(invalid))
+            with self.assertRaisesRegex(ValueError, "four-digit"):
+                parse_injury_report_csv(b"", season=invalid)
+        self.assertTrue(valid_injury_season(2010))
+        self.assertTrue(valid_injury_season(2027))
         with self.assertRaisesRegex(ValueError, "empty"):
             parse_injury_report_csv(b"", season=2027)
         with self.assertRaisesRegex(ValueError, "UTF-8"):

@@ -294,7 +294,7 @@ jobs:
             if [[ -z "$injury_year" ]]; then
               injury_year="$(PYTHONPATH=tools python3 -c 'from nfl_source_data_lib.common import current_source_season; from pathlib import Path; print(current_source_season(Path.cwd()))')"
             fi
-            if [[ ! "$injury_year" =~ ^20[0-9]{2}$ ]] || (( 10#$injury_year < 2012 )); then
+            if [[ ! "$injury_year" =~ ^[0-9]{4}$ ]] || [[ "$injury_year" == "0000" ]]; then
               echo "Unsupported Injury season: $injury_year" >&2
               exit 2
             fi
