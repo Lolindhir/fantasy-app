@@ -657,7 +657,7 @@ jobs:
             # manifest in git; gzip bytes reside in a versioned SHA-addressed
             # GitHub Release asset. No new branch writer or scheduler.
             # Scoped and targeted syncs cannot acquire or publish original PBP.
-            if [[ "$materialization_scope" == "full" && -z "\${DATASET:-}" && -z "\${SEASON:-}" ]]; then
+            if [[ "$materialization_scope" == "full" && -z "${DATASET:-}" && -z "${SEASON:-}" ]]; then
               if [[ ! -f data-source/providers/nflverse/play-by-play-original/metadata-2025.json ]]; then
                 python3 -m pip install --disable-pip-version-check 'PyYAML==6.0.2'
               fi
@@ -665,7 +665,7 @@ jobs:
               set +e
               python tools/nfl_pbp_source_archive.py \
                 --repo-root . --repository "$GITHUB_REPOSITORY" 2>&1 | tee "$pbp_archive_log"
-              pbp_archive_status=\${PIPESTATUS[0]}
+              pbp_archive_status=${PIPESTATUS[0]}
               set -e
               if (( pbp_archive_status != 0 )); then
                 echo "Pinned 2025 original PBP archive/verification failed; no Raw publication." >&2
