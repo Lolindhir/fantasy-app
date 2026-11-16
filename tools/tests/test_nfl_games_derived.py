@@ -621,12 +621,10 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
             self.assertEqual(output["SchemaVersion"], 1)
             self.assertEqual(plan_game_details(root, 2026, write=True)["ChangedOrNew"], 0)
             first_bytes = target.read_bytes()
-            # Other game/week metadata is not an invalidation input.
+            # Source partition metadata outside the actual game evidence is irrelevant.
             stats_path = root / DATA_SOURCE_ROOT / "nfl" / "player-stats" / "2026" / "06.json"
             stats = json.loads(stats_path.read_text(encoding="utf-8"))
-            other = copy.deepcopy(stats["Records"][0])
-            other["Stats"]["game_id"] = "2026_07_HOU_JAX"
-            stats["Records"].append(other)
+            stats["UnrelatedSourceMetadata"] = "no-change"
             stats_path.write_text(json.dumps(stats), encoding="utf-8")
             self.assertEqual(plan_game_details(root, 2026)["ChangedOrNew"], 0)
             self.assertEqual(target.read_bytes(), first_bytes)
