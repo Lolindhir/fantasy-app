@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2017,
+  "GameID": "2017_05_GB_DAL",
+  "Game": {
+    "GameID": "2017_05_GB_DAL",
+    "GameType": "REG",
+    "Week": 5,
+    "GameDay": "2017-10-08",
+    "GameTime": "16:25",
+    "AwayTeam": "GB",
+    "HomeTeam": "DAL",
+    "AwayScore": 35,
+    "HomeScore": 31,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 2.5,
+      "TotalLine": 52.0,
+      "ImpliedAwayPoints": 24.75,
+      "ImpliedHomePoints": 27.25
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "GB",
+        "Status": "available",
+        "PlayerRecordCount": 32,
+        "Stats": {
+          "attempts": 29,
+          "completions": 19,
+          "passing_yards": 221,
+          "passing_tds": 3,
+          "passing_interceptions": 0,
+          "carries": 25,
+          "rushing_yards": 160,
+          "rushing_tds": 1,
+          "targets": 28,
+          "receptions": 19,
+          "receiving_yards": 221,
+          "receiving_tds": 3,
+          "def_tackles_solo": 46,
+          "def_interceptions": 1,
+          "fg_att": 1,
+          "fg_made": 1,
+          "pat_att": 4,
+          "pat_made": 2
+        }
+      },
+      {
+        "Team": "DAL",
+        "Status": "available",
+        "PlayerRecordCount": 34,
+        "Stats": {
+          "attempts": 36,
+          "completions": 25,
+          "passing_yards": 251,
+          "passing_tds": 3,
+          "passing_interceptions": 1,
+          "carries": 35,
+          "rushing_yards": 163,
+          "rushing_tds": 1,
+          "targets": 36,
+          "receptions": 25,
+          "receiving_yards": 251,
+          "receiving_tds": 3,
+          "def_tackles_solo": 34,
+          "def_interceptions": 0,
+          "fg_att": 1,
+          "fg_made": 1,
+          "pat_att": 4,
+          "pat_made": 4
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "GB",
+        "PlayerRows": 44,
+        "Offense": {
+          "TotalSnaps": 60,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 16,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 660,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 74,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 21,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 813,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 26,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 34,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 286,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "DAL",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 74,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 814,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 60,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 659,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 26,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 34,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 286,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "6b415960737327bded24634b555f9d9535f8e79a7202cbae94e78b739321cdc5"
+  }
+}

@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2019,
+  "GameID": "2019_21_SF_KC",
+  "Game": {
+    "GameID": "2019_21_SF_KC",
+    "GameType": "SB",
+    "Week": 21,
+    "GameDay": "2020-02-02",
+    "GameTime": "18:30",
+    "AwayTeam": "SF",
+    "HomeTeam": "KC",
+    "AwayScore": 20,
+    "HomeScore": 31,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 1.5,
+      "TotalLine": 52.5,
+      "ImpliedAwayPoints": 25.5,
+      "ImpliedHomePoints": 27.0
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "SF",
+        "Status": "available",
+        "PlayerRecordCount": 32,
+        "Stats": {
+          "attempts": 31,
+          "completions": 20,
+          "passing_yards": 219,
+          "passing_tds": 1,
+          "passing_interceptions": 2,
+          "carries": 22,
+          "rushing_yards": 141,
+          "rushing_tds": 1,
+          "targets": 31,
+          "receptions": 20,
+          "receiving_yards": 219,
+          "receiving_tds": 1,
+          "def_tackles_solo": 45,
+          "def_interceptions": 2,
+          "fg_att": 2,
+          "fg_made": 2,
+          "pat_att": 2,
+          "pat_made": 2
+        }
+      },
+      {
+        "Team": "KC",
+        "Status": "available",
+        "PlayerRecordCount": 30,
+        "Stats": {
+          "attempts": 42,
+          "completions": 26,
+          "passing_yards": 286,
+          "passing_tds": 2,
+          "passing_interceptions": 2,
+          "carries": 29,
+          "rushing_yards": 129,
+          "rushing_tds": 2,
+          "targets": 39,
+          "receptions": 26,
+          "receiving_yards": 286,
+          "receiving_tds": 2,
+          "def_tackles_solo": 36,
+          "def_interceptions": 2,
+          "fg_att": 1,
+          "fg_made": 1,
+          "pat_att": 4,
+          "pat_made": 4
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "SF",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 58,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 638,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 79,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 869,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 24,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 31,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 264,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "KC",
+        "PlayerRows": 43,
+        "Offense": {
+          "TotalSnaps": 79,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 869,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 58,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 638,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 24,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 30,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 264,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "2ed506fd82d870e24422d66ebb41d6fb8380a674d84dbdfc1e327b4f88e6b7d9"
+  }
+}

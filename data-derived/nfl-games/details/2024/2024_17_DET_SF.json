@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2024,
+  "GameID": "2024_17_DET_SF",
+  "Game": {
+    "GameID": "2024_17_DET_SF",
+    "GameType": "REG",
+    "Week": 17,
+    "GameDay": "2024-12-30",
+    "GameTime": "20:15",
+    "AwayTeam": "DET",
+    "HomeTeam": "SF",
+    "AwayScore": 40,
+    "HomeScore": 34,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": -4.0,
+      "TotalLine": 50.5,
+      "ImpliedAwayPoints": 27.25,
+      "ImpliedHomePoints": 23.25
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "DET",
+        "Status": "available",
+        "PlayerRecordCount": 32,
+        "Stats": {
+          "attempts": 34,
+          "completions": 26,
+          "passing_yards": 303,
+          "passing_tds": 3,
+          "passing_interceptions": 0,
+          "carries": 33,
+          "rushing_yards": 152,
+          "rushing_tds": 2,
+          "targets": 33,
+          "receptions": 26,
+          "receiving_yards": 303,
+          "receiving_tds": 3,
+          "def_tackles_solo": 36,
+          "def_interceptions": 2,
+          "fg_att": 2,
+          "fg_made": 2,
+          "pat_att": 4,
+          "pat_made": 2
+        }
+      },
+      {
+        "Team": "SF",
+        "Status": "available",
+        "PlayerRecordCount": 32,
+        "Stats": {
+          "attempts": 40,
+          "completions": 30,
+          "passing_yards": 412,
+          "passing_tds": 3,
+          "passing_interceptions": 2,
+          "carries": 18,
+          "rushing_yards": 75,
+          "rushing_tds": 2,
+          "targets": 36,
+          "receptions": 30,
+          "receiving_yards": 412,
+          "receiving_tds": 3,
+          "def_tackles_solo": 45,
+          "def_interceptions": 0,
+          "fg_att": 2,
+          "fg_made": 0,
+          "pat_att": 5,
+          "pat_made": 4
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "DET",
+        "PlayerRows": 46,
+        "Offense": {
+          "TotalSnaps": 71,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 781,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 64,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 704,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 27,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 31,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 297,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "SF",
+        "PlayerRows": 47,
+        "Offense": {
+          "TotalSnaps": 64,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 704,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 71,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 781,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 27,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 33,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 297,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "7e7c90836e9cab075469145c210317da73983da720ce6d1ccb2703db1ffd1347"
+  }
+}

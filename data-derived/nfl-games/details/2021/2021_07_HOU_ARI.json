@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2021,
+  "GameID": "2021_07_HOU_ARI",
+  "Game": {
+    "GameID": "2021_07_HOU_ARI",
+    "GameType": "REG",
+    "Week": 7,
+    "GameDay": "2021-10-24",
+    "GameTime": "16:25",
+    "AwayTeam": "HOU",
+    "HomeTeam": "ARI",
+    "AwayScore": 5,
+    "HomeScore": 31,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 20.5,
+      "TotalLine": 47.0,
+      "ImpliedAwayPoints": 13.25,
+      "ImpliedHomePoints": 33.75
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "HOU",
+        "Status": "available",
+        "PlayerRecordCount": 35,
+        "Stats": {
+          "attempts": 32,
+          "completions": 23,
+          "passing_yards": 135,
+          "passing_tds": 0,
+          "passing_interceptions": 0,
+          "carries": 15,
+          "rushing_yards": 42,
+          "rushing_tds": 0,
+          "targets": 31,
+          "receptions": 23,
+          "receiving_yards": 135,
+          "receiving_tds": 0,
+          "def_tackles_solo": 44,
+          "def_interceptions": 1,
+          "fg_att": 1,
+          "fg_made": 1,
+          "pat_att": 0,
+          "pat_made": 0
+        }
+      },
+      {
+        "Team": "ARI",
+        "Status": "available",
+        "PlayerRecordCount": 37,
+        "Stats": {
+          "attempts": 28,
+          "completions": 20,
+          "passing_yards": 261,
+          "passing_tds": 3,
+          "passing_interceptions": 1,
+          "carries": 37,
+          "rushing_yards": 172,
+          "rushing_tds": 1,
+          "targets": 28,
+          "receptions": 20,
+          "receiving_yards": 261,
+          "receiving_tds": 3,
+          "def_tackles_solo": 33,
+          "def_interceptions": 0,
+          "fg_att": 1,
+          "fg_made": 1,
+          "pat_att": 4,
+          "pat_made": 4
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "HOU",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 56,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 616,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 71,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 781,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 26,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 36,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 286,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "ARI",
+        "PlayerRows": 48,
+        "Offense": {
+          "TotalSnaps": 71,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 22,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 781,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 56,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 22,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 616,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 26,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 35,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 286,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "8b5384ebd40b9d134604aad1fe62df33ef512608f67d2aed9997e799a72019ba"
+  }
+}

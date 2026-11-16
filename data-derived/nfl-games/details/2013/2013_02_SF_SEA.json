@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2013,
+  "GameID": "2013_02_SF_SEA",
+  "Game": {
+    "GameID": "2013_02_SF_SEA",
+    "GameType": "REG",
+    "Week": 2,
+    "GameDay": "2013-09-15",
+    "GameTime": "20:30",
+    "AwayTeam": "SF",
+    "HomeTeam": "SEA",
+    "AwayScore": 3,
+    "HomeScore": 29,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 3.0,
+      "TotalLine": 43.5,
+      "ImpliedAwayPoints": 20.25,
+      "ImpliedHomePoints": 23.25
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "SF",
+        "Status": "available",
+        "PlayerRecordCount": 35,
+        "Stats": {
+          "attempts": 28,
+          "completions": 13,
+          "passing_yards": 127,
+          "passing_tds": 0,
+          "passing_interceptions": 3,
+          "carries": 20,
+          "rushing_yards": 100,
+          "rushing_tds": 0,
+          "targets": 26,
+          "receptions": 13,
+          "receiving_yards": 127,
+          "receiving_tds": 0,
+          "def_tackles_solo": 35,
+          "def_interceptions": 1,
+          "fg_att": 1,
+          "fg_made": 1,
+          "pat_att": 0,
+          "pat_made": 0
+        }
+      },
+      {
+        "Team": "SEA",
+        "Status": "available",
+        "PlayerRecordCount": 34,
+        "Stats": {
+          "attempts": 19,
+          "completions": 8,
+          "passing_yards": 142,
+          "passing_tds": 1,
+          "passing_interceptions": 1,
+          "carries": 47,
+          "rushing_yards": 172,
+          "rushing_tds": 2,
+          "targets": 17,
+          "receptions": 8,
+          "receiving_yards": 142,
+          "receiving_tds": 1,
+          "def_tackles_solo": 23,
+          "def_interceptions": 3,
+          "fg_att": 2,
+          "fg_made": 2,
+          "pat_att": 3,
+          "pat_made": 3
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "SF",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 53,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 583,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 76,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 836,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 24,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 35,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 264,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "SEA",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 76,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 836,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 53,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 583,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 24,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 33,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 264,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "3a8c643fcacb974f7b139729743778d076e1d6241ecbab2a567dd39f2406ff8f"
+  }
+}

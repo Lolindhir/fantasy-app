@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2016,
+  "GameID": "2016_12_LA_NO",
+  "Game": {
+    "GameID": "2016_12_LA_NO",
+    "GameType": "REG",
+    "Week": 12,
+    "GameDay": "2016-11-27",
+    "GameTime": "13:00",
+    "AwayTeam": "LA",
+    "HomeTeam": "NO",
+    "AwayScore": 21,
+    "HomeScore": 49,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 7.5,
+      "TotalLine": 46.0,
+      "ImpliedAwayPoints": 19.25,
+      "ImpliedHomePoints": 26.75
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "LA",
+        "Status": "available",
+        "PlayerRecordCount": 28,
+        "Stats": {
+          "attempts": 32,
+          "completions": 20,
+          "passing_yards": 214,
+          "passing_tds": 3,
+          "passing_interceptions": 1,
+          "carries": 17,
+          "rushing_yards": 69,
+          "rushing_tds": 0,
+          "targets": 31,
+          "receptions": 20,
+          "receiving_yards": 214,
+          "receiving_tds": 3,
+          "def_tackles_solo": 51,
+          "def_interceptions": 0,
+          "fg_att": 0,
+          "fg_made": 0,
+          "pat_att": 3,
+          "pat_made": 3
+        }
+      },
+      {
+        "Team": "NO",
+        "Status": "available",
+        "PlayerRecordCount": 33,
+        "Stats": {
+          "attempts": 37,
+          "completions": 29,
+          "passing_yards": 360,
+          "passing_tds": 5,
+          "passing_interceptions": 0,
+          "carries": 32,
+          "rushing_yards": 209,
+          "rushing_tds": 2,
+          "targets": 35,
+          "receptions": 29,
+          "receiving_yards": 360,
+          "receiving_tds": 5,
+          "def_tackles_solo": 38,
+          "def_interceptions": 1,
+          "fg_att": 0,
+          "fg_made": 0,
+          "pat_att": 7,
+          "pat_made": 7
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "LA",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 53,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 583,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 74,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 814,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 32,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 35,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 352,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "NO",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 74,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 814,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 53,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 17,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 583,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 32,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 30,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 352,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "89644666ba4fe3b909a5acaf9e68432c9831051d9abadb5b8e23ef1d1d66e94b"
+  }
+}

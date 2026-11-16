@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2022,
+  "GameID": "2022_06_NE_CLE",
+  "Game": {
+    "GameID": "2022_06_NE_CLE",
+    "GameType": "REG",
+    "Week": 6,
+    "GameDay": "2022-10-16",
+    "GameTime": "13:00",
+    "AwayTeam": "NE",
+    "HomeTeam": "CLE",
+    "AwayScore": 38,
+    "HomeScore": 15,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 2.5,
+      "TotalLine": 43.0,
+      "ImpliedAwayPoints": 20.25,
+      "ImpliedHomePoints": 22.75
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "NE",
+        "Status": "available",
+        "PlayerRecordCount": 36,
+        "Stats": {
+          "attempts": 34,
+          "completions": 24,
+          "passing_yards": 309,
+          "passing_tds": 2,
+          "passing_interceptions": 0,
+          "carries": 29,
+          "rushing_yards": 98,
+          "rushing_tds": 3,
+          "targets": 31,
+          "receptions": 24,
+          "receiving_yards": 309,
+          "receiving_tds": 2,
+          "def_tackles_solo": 33,
+          "def_interceptions": 2,
+          "fg_att": 2,
+          "fg_made": 1,
+          "pat_att": 5,
+          "pat_made": 5
+        }
+      },
+      {
+        "Team": "CLE",
+        "Status": "available",
+        "PlayerRecordCount": 35,
+        "Stats": {
+          "attempts": 45,
+          "completions": 21,
+          "passing_yards": 266,
+          "passing_tds": 1,
+          "passing_interceptions": 2,
+          "carries": 18,
+          "rushing_yards": 70,
+          "rushing_tds": 0,
+          "targets": 42,
+          "receptions": 21,
+          "receiving_yards": 266,
+          "receiving_tds": 1,
+          "def_tackles_solo": 40,
+          "def_interceptions": 0,
+          "fg_att": 3,
+          "fg_made": 3,
+          "pat_att": 0,
+          "pat_made": 0
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "NE",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 70,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 17,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 770,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 70,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 22,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 770,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 29,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 31,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 319,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "CLE",
+        "PlayerRows": 47,
+        "Offense": {
+          "TotalSnaps": 70,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 770,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 70,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 770,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 29,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 38,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 319,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "fcf001bbf2c1729c9b89a57c71bf6983330fee309e675b78b576f8a215172fdf"
+  }
+}

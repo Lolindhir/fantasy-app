@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2023,
+  "GameID": "2023_05_NYG_MIA",
+  "Game": {
+    "GameID": "2023_05_NYG_MIA",
+    "GameType": "REG",
+    "Week": 5,
+    "GameDay": "2023-10-08",
+    "GameTime": "13:00",
+    "AwayTeam": "NYG",
+    "HomeTeam": "MIA",
+    "AwayScore": 16,
+    "HomeScore": 31,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 12.5,
+      "TotalLine": 47.5,
+      "ImpliedAwayPoints": 17.5,
+      "ImpliedHomePoints": 30.0
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "NYG",
+        "Status": "available",
+        "PlayerRecordCount": 31,
+        "Stats": {
+          "attempts": 32,
+          "completions": 23,
+          "passing_yards": 205,
+          "passing_tds": 0,
+          "passing_interceptions": 0,
+          "carries": 29,
+          "rushing_yards": 85,
+          "rushing_tds": 0,
+          "targets": 30,
+          "receptions": 23,
+          "receiving_yards": 205,
+          "receiving_tds": 0,
+          "def_tackles_solo": 33,
+          "def_interceptions": 2,
+          "fg_att": 4,
+          "fg_made": 3,
+          "pat_att": 1,
+          "pat_made": 1
+        }
+      },
+      {
+        "Team": "MIA",
+        "Status": "available",
+        "PlayerRecordCount": 27,
+        "Stats": {
+          "attempts": 30,
+          "completions": 22,
+          "passing_yards": 308,
+          "passing_tds": 2,
+          "passing_interceptions": 2,
+          "carries": 23,
+          "rushing_yards": 222,
+          "rushing_tds": 2,
+          "targets": 28,
+          "receptions": 22,
+          "receiving_yards": 308,
+          "receiving_tds": 2,
+          "def_tackles_solo": 46,
+          "def_interceptions": 0,
+          "fg_att": 1,
+          "fg_made": 1,
+          "pat_att": 4,
+          "pat_made": 4
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "NYG",
+        "PlayerRows": 48,
+        "Offense": {
+          "TotalSnaps": 72,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 792,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": null,
+          "Status": "inconsistent-rounded-shares",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 595,
+          "PossibleTeamTotals": 0
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 26,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 31,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 286,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "MIA",
+        "PlayerRows": 46,
+        "Offense": {
+          "TotalSnaps": 54,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 594,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 72,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 16,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 792,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 26,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 32,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 286,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "c537b8bc019e2a49567ed8ac37b53b2ac1462025b26a6fdc51556fef09faaf6c"
+  }
+}

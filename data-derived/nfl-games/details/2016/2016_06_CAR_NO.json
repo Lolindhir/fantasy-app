@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2016,
+  "GameID": "2016_06_CAR_NO",
+  "Game": {
+    "GameID": "2016_06_CAR_NO",
+    "GameType": "REG",
+    "Week": 6,
+    "GameDay": "2016-10-16",
+    "GameTime": "13:00",
+    "AwayTeam": "CAR",
+    "HomeTeam": "NO",
+    "AwayScore": 38,
+    "HomeScore": 41,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": -2.5,
+      "TotalLine": 53.5,
+      "ImpliedAwayPoints": 28.0,
+      "ImpliedHomePoints": 25.5
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "CAR",
+        "Status": "available",
+        "PlayerRecordCount": 28,
+        "Stats": {
+          "attempts": 47,
+          "completions": 27,
+          "passing_yards": 322,
+          "passing_tds": 2,
+          "passing_interceptions": 1,
+          "carries": 27,
+          "rushing_yards": 103,
+          "rushing_tds": 3,
+          "targets": 46,
+          "receptions": 27,
+          "receiving_yards": 322,
+          "receiving_tds": 2,
+          "def_tackles_solo": 45,
+          "def_interceptions": 1,
+          "fg_att": 1,
+          "fg_made": 1,
+          "pat_att": 4,
+          "pat_made": 3
+        }
+      },
+      {
+        "Team": "NO",
+        "Status": "available",
+        "PlayerRecordCount": 35,
+        "Stats": {
+          "attempts": 49,
+          "completions": 34,
+          "passing_yards": 465,
+          "passing_tds": 4,
+          "passing_interceptions": 1,
+          "carries": 21,
+          "rushing_yards": 63,
+          "rushing_tds": 1,
+          "targets": 48,
+          "receptions": 34,
+          "receiving_yards": 465,
+          "receiving_tds": 4,
+          "def_tackles_solo": 41,
+          "def_interceptions": 1,
+          "fg_att": 3,
+          "fg_made": 2,
+          "pat_att": 5,
+          "pat_made": 5
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "CAR",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 81,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 891,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 73,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 803,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 37,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 34,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 407,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "NO",
+        "PlayerRows": 44,
+        "Offense": {
+          "TotalSnaps": 73,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 803,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 81,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 891,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 37,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 33,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 407,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "8f393c1956ec7996e9bf4a5993167c179614fcebe988234d07ff34a1fd64634b"
+  }
+}

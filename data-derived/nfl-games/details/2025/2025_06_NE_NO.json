@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2025,
+  "GameID": "2025_06_NE_NO",
+  "Game": {
+    "GameID": "2025_06_NE_NO",
+    "GameType": "REG",
+    "Week": 6,
+    "GameDay": "2025-10-12",
+    "GameTime": "13:00",
+    "AwayTeam": "NE",
+    "HomeTeam": "NO",
+    "AwayScore": 25,
+    "HomeScore": 19,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": -3.5,
+      "TotalLine": 46.5,
+      "ImpliedAwayPoints": 25.0,
+      "ImpliedHomePoints": 21.5
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "NE",
+        "Status": "available",
+        "PlayerRecordCount": 37,
+        "Stats": {
+          "attempts": 26,
+          "completions": 18,
+          "passing_yards": 261,
+          "passing_tds": 3,
+          "passing_interceptions": 0,
+          "carries": 31,
+          "rushing_yards": 73,
+          "rushing_tds": 0,
+          "targets": 24,
+          "receptions": 18,
+          "receiving_yards": 261,
+          "receiving_tds": 3,
+          "def_tackles_solo": 29,
+          "def_interceptions": 0,
+          "fg_att": 1,
+          "fg_made": 1,
+          "pat_att": 2,
+          "pat_made": 2
+        }
+      },
+      {
+        "Team": "NO",
+        "Status": "available",
+        "PlayerRecordCount": 34,
+        "Stats": {
+          "attempts": 26,
+          "completions": 20,
+          "passing_yards": 227,
+          "passing_tds": 0,
+          "passing_interceptions": 0,
+          "carries": 23,
+          "rushing_yards": 73,
+          "rushing_tds": 1,
+          "targets": 26,
+          "receptions": 20,
+          "receiving_yards": 227,
+          "receiving_tds": 0,
+          "def_tackles_solo": 39,
+          "def_interceptions": 0,
+          "fg_att": 4,
+          "fg_made": 4,
+          "pat_att": 1,
+          "pat_made": 1
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "NE",
+        "PlayerRows": 47,
+        "Offense": {
+          "TotalSnaps": 64,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 704,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 56,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 616,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 24,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 29,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 264,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "NO",
+        "PlayerRows": 47,
+        "Offense": {
+          "TotalSnaps": 56,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 616,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 64,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 704,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 24,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 34,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 264,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "2bf3f627d8b003ec581d654a4a9d1e83fd0d44d6ce48aadd0a558afec63bb089"
+  }
+}

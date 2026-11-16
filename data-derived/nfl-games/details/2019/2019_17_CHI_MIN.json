@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2019,
+  "GameID": "2019_17_CHI_MIN",
+  "Game": {
+    "GameID": "2019_17_CHI_MIN",
+    "GameType": "REG",
+    "Week": 17,
+    "GameDay": "2019-12-29",
+    "GameTime": "13:00",
+    "AwayTeam": "CHI",
+    "HomeTeam": "MIN",
+    "AwayScore": 21,
+    "HomeScore": 19,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": -5.5,
+      "TotalLine": 36.5,
+      "ImpliedAwayPoints": 21.0,
+      "ImpliedHomePoints": 15.5
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "CHI",
+        "Status": "available",
+        "PlayerRecordCount": 29,
+        "Stats": {
+          "attempts": 37,
+          "completions": 26,
+          "passing_yards": 207,
+          "passing_tds": 0,
+          "passing_interceptions": 0,
+          "carries": 34,
+          "rushing_yards": 158,
+          "rushing_tds": 1,
+          "targets": 35,
+          "receptions": 26,
+          "receiving_yards": 207,
+          "receiving_tds": 0,
+          "def_tackles_solo": 27,
+          "def_interceptions": 2,
+          "fg_att": 4,
+          "fg_made": 4,
+          "pat_att": 1,
+          "pat_made": 1
+        }
+      },
+      {
+        "Team": "MIN",
+        "Status": "available",
+        "PlayerRecordCount": 27,
+        "Stats": {
+          "attempts": 21,
+          "completions": 12,
+          "passing_yards": 126,
+          "passing_tds": 0,
+          "passing_interceptions": 2,
+          "carries": 26,
+          "rushing_yards": 174,
+          "rushing_tds": 1,
+          "targets": 20,
+          "receptions": 12,
+          "receiving_yards": 126,
+          "receiving_tds": 0,
+          "def_tackles_solo": 53,
+          "def_interceptions": 0,
+          "fg_att": 4,
+          "fg_made": 4,
+          "pat_att": 1,
+          "pat_made": 1
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "CHI",
+        "PlayerRows": 44,
+        "Offense": {
+          "TotalSnaps": 75,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 825,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 49,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 539,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 25,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 34,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 275,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "MIN",
+        "PlayerRows": 37,
+        "Offense": {
+          "TotalSnaps": 49,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 18,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 539,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 75,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 16,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 825,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 25,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 32,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 275,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "4fcdc6c88a46c5e235bccba5f19c26f47f1e9389144a9ca0cf34eb5049d19116"
+  }
+}

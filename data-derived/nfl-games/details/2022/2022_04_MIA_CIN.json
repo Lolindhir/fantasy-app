@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2022,
+  "GameID": "2022_04_MIA_CIN",
+  "Game": {
+    "GameID": "2022_04_MIA_CIN",
+    "GameType": "REG",
+    "Week": 4,
+    "GameDay": "2022-09-29",
+    "GameTime": "20:15",
+    "AwayTeam": "MIA",
+    "HomeTeam": "CIN",
+    "AwayScore": 15,
+    "HomeScore": 27,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 4.0,
+      "TotalLine": 48.5,
+      "ImpliedAwayPoints": 22.25,
+      "ImpliedHomePoints": 26.25
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "MIA",
+        "Status": "available",
+        "PlayerRecordCount": 32,
+        "Stats": {
+          "attempts": 37,
+          "completions": 22,
+          "passing_yards": 303,
+          "passing_tds": 1,
+          "passing_interceptions": 2,
+          "carries": 22,
+          "rushing_yards": 85,
+          "rushing_tds": 0,
+          "targets": 36,
+          "receptions": 22,
+          "receiving_yards": 303,
+          "receiving_tds": 1,
+          "def_tackles_solo": 33,
+          "def_interceptions": 0,
+          "fg_att": 4,
+          "fg_made": 3,
+          "pat_att": 1,
+          "pat_made": 0
+        }
+      },
+      {
+        "Team": "CIN",
+        "Status": "available",
+        "PlayerRecordCount": 33,
+        "Stats": {
+          "attempts": 32,
+          "completions": 21,
+          "passing_yards": 310,
+          "passing_tds": 2,
+          "passing_interceptions": 0,
+          "carries": 30,
+          "rushing_yards": 67,
+          "rushing_tds": 1,
+          "targets": 32,
+          "receptions": 21,
+          "receiving_yards": 310,
+          "receiving_tds": 2,
+          "def_tackles_solo": 38,
+          "def_interceptions": 2,
+          "fg_att": 2,
+          "fg_made": 2,
+          "pat_att": 3,
+          "pat_made": 3
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "MIA",
+        "PlayerRows": 46,
+        "Offense": {
+          "TotalSnaps": 64,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 17,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 704,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 64,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 21,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 704,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 28,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 31,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 308,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "CIN",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 64,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 704,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 64,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 17,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 704,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 28,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 33,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 307,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "3f97b4eb326c9cbbb5f89472fe2d34a7f02597d8c6afb17bee20104659b20d3a"
+  }
+}

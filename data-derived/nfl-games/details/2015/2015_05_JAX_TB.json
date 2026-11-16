@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2015,
+  "GameID": "2015_05_JAX_TB",
+  "Game": {
+    "GameID": "2015_05_JAX_TB",
+    "GameType": "REG",
+    "Week": 5,
+    "GameDay": "2015-10-11",
+    "GameTime": "13:00",
+    "AwayTeam": "JAX",
+    "HomeTeam": "TB",
+    "AwayScore": 31,
+    "HomeScore": 38,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 1.0,
+      "TotalLine": 41.0,
+      "ImpliedAwayPoints": 20.0,
+      "ImpliedHomePoints": 21.0
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "JAX",
+        "Status": "available",
+        "PlayerRecordCount": 30,
+        "Stats": {
+          "attempts": 33,
+          "completions": 23,
+          "passing_yards": 303,
+          "passing_tds": 4,
+          "passing_interceptions": 1,
+          "carries": 17,
+          "rushing_yards": 55,
+          "rushing_tds": 0,
+          "targets": 32,
+          "receptions": 23,
+          "receiving_yards": 303,
+          "receiving_tds": 4,
+          "def_tackles_solo": 39,
+          "def_interceptions": 0,
+          "fg_att": 1,
+          "fg_made": 1,
+          "pat_att": 4,
+          "pat_made": 4
+        }
+      },
+      {
+        "Team": "TB",
+        "Status": "available",
+        "PlayerRecordCount": 32,
+        "Stats": {
+          "attempts": 19,
+          "completions": 13,
+          "passing_yards": 209,
+          "passing_tds": 1,
+          "passing_interceptions": 0,
+          "carries": 40,
+          "rushing_yards": 183,
+          "rushing_tds": 2,
+          "targets": 18,
+          "receptions": 13,
+          "receiving_yards": 209,
+          "receiving_tds": 1,
+          "def_tackles_solo": 36,
+          "def_interceptions": 1,
+          "fg_att": 3,
+          "fg_made": 3,
+          "pat_att": 3,
+          "pat_made": 3
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "JAX",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 59,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 649,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 67,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 19,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 738,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 32,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 37,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 351,
+          "PossibleTeamTotals": 1
+        }
+      },
+      {
+        "Team": "TB",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 67,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 17,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 737,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 59,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 22,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 649,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 32,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 39,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 351,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "c1a7d14348b935918ed52d546febd3c916bfd0914a6c576cec612184c0a728e7"
+  }
+}
