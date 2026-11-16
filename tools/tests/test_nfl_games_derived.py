@@ -629,6 +629,12 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
             stats_path.write_text(json.dumps(stats), encoding="utf-8")
             self.assertEqual(plan_game_details(root, 2026)["ChangedOrNew"], 0)
             self.assertEqual(target.read_bytes(), first_bytes)
+            # Historical providers can carry nonfinite ancillary EPA fields.
+            # Such values are not v1 team counting-stat dependencies.
+            stats["Records"][0]["Stats"]["passing_epa"] = float("-inf")
+            stats_path.write_text(json.dumps(stats), encoding="utf-8")
+            self.assertEqual(plan_game_details(root, 2026)["ChangedOrNew"], 0)
+            self.assertEqual(target.read_bytes(), first_bytes)
             stats["Records"][0]["Stats"]["carries"] += 1
             stats_path.write_text(json.dumps(stats), encoding="utf-8")
             self.assertEqual(plan_game_details(root, 2026)["ChangedOrNew"], 1)
