@@ -553,8 +553,73 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
         self.assertFalse(result["SnapCounts"]["TeamTotalsOfficiallyVerified"])
         invalid = copy.deepcopy(snaps)
         invalid["Records"][0]["OffensePct"] = 4
-        with self.assertRaises(ValueError):
+        blocked = build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, invalid)
+        self.assertEqual(blocked["SnapCounts"]["InvalidShareRows"], 1)
+        self.assertEqual(blocked["SnapCounts"]["Teams"][0]["Offense"]["Status"],
+                         "blocked-invalid-share")
+        self.assertIsNone(blocked["SnapCounts"]["Teams"][0]["Offense"]["TotalSnaps"])
+        self.assertEqual(blocked["SnapCounts"]["Teams"][0]["Offense"]["InvalidShareRows"], 1)
+        self.assertEqual(blocked["SnapCounts"]["Teams"][0]["SpecialTeams"]["Status"],
+                         "unique-rounded-share-denominator")
+        invalid["Records"][0]["OffenseSnaps"] = -1
+        with self.assertRaisesRegex(ValueError, "invalid count OffenseSnaps"):
             build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, invalid)
+
+    def test_core_v1_invalid_share_only_blocks_affected_team_unit(self):
+        index = build_nfl_games(*inputs())
+        stats = _week_stats()
+        healthy = build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, _week_snaps())
+        for value in (1.01, -0.1, 4, "not-a-number", True,
+                      float("nan"), float("inf"), float("-inf")):
+            with self.subTest(value=repr(value)):
+                snaps = _week_snaps()
+                snaps["Records"][0]["SpecialTeamsPct"] = value
+                detail = build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, snaps)
+                self.assertEqual(detail["TeamStats"]["Status"], "available")
+                self.assertEqual(detail["SnapCounts"]["Status"], "available")
+                self.assertEqual(detail["SnapCounts"]["InvalidShareRows"], 1)
+                hou, jax = detail["SnapCounts"]["Teams"]
+                self.assertEqual(hou["SpecialTeams"]["Status"], "blocked-invalid-share")
+                self.assertEqual(hou["SpecialTeams"]["InvalidShareRows"], 1)
+                self.assertIsNone(hou["SpecialTeams"]["TotalSnaps"])
+                self.assertEqual(hou["Offense"], healthy["SnapCounts"]["Teams"][0]["Offense"])
+                self.assertEqual(hou["Defense"], healthy["SnapCounts"]["Teams"][0]["Defense"])
+                self.assertEqual(jax, healthy["SnapCounts"]["Teams"][1])
+                self.assertNotEqual(detail["Derivation"]["InputFingerprintSHA256"],
+                                    healthy["Derivation"]["InputFingerprintSHA256"])
+                json.dumps(detail, allow_nan=False)
+        missing = _week_snaps()
+        missing["Records"][0]["SpecialTeamsPct"] = None
+        unknown = build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, missing)
+        self.assertNotIn("InvalidShareRows", unknown["SnapCounts"])
+        self.assertEqual(unknown["SnapCounts"]["Teams"][0]["SpecialTeams"]["Status"],
+                         "missing-player-fields")
+
+    def test_real_2021_share_anomalies_are_isolated_without_source_edits(self):
+        root = TOOLS.parent
+        index_file = root / DATA_DERIVED_ROOT / "nfl-games" / "2021.json"
+        if not index_file.is_file():
+            self.skipTest("Canonical 2021 NFL Games index unavailable")
+        index = json.loads(index_file.read_text(encoding="utf-8"))
+        for week, game_id, team, count in (
+            (13, "2021_13_IND_HOU", "HOU", 2),
+            (15, "2021_15_SEA_LA", "LA", 1),
+        ):
+            with self.subTest(game_id=game_id):
+                source_file = (root / DATA_SOURCE_ROOT / "nfl" / "snap-counts"
+                               / "2021" / f"{week:02d}.json")
+                self.assertTrue(source_file.is_file())
+                raw = source_file.read_bytes()
+                snaps = json.loads(raw)
+                detail = build_nfl_game_detail_core(index, game_id, snap_counts=snaps)
+                self.assertEqual(detail["SnapCounts"]["InvalidShareRows"], count)
+                affected = next(r for r in detail["SnapCounts"]["Teams"] if r["Team"] == team)
+                self.assertEqual(affected["SpecialTeams"]["Status"], "blocked-invalid-share")
+                self.assertEqual(affected["SpecialTeams"]["InvalidShareRows"], count)
+                self.assertIsNone(affected["SpecialTeams"]["TotalSnaps"])
+                self.assertNotEqual(affected["Offense"]["Status"], "blocked-invalid-share")
+                self.assertNotEqual(affected["Defense"]["Status"], "blocked-invalid-share")
+                self.assertEqual(source_file.read_bytes(), raw)
 
     def test_core_v1_readonly_cli_real_2025_unresolved_identity(self):
         root = TOOLS.parent
@@ -662,7 +727,7 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
 
     def test_old_and_current_canonical_season_detail_plans_are_source_only(self):
         root = TOOLS.parent
-        for season in (1999, 2013, 2026):
+        for season in (1999, 2013, 2021, 2026):
             with self.subTest(season=season), tempfile.TemporaryDirectory() as tmp:
                 if not (root / DATA_DERIVED_ROOT / "nfl-games" / f"{season}.json").exists():
                     self.skipTest("Canonical NFL Games index unavailable")

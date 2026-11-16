@@ -112,12 +112,16 @@ def _selected_stats(
 
 def _selected_snap_counts(
     payload: Mapping[str, Any] | None, season: int, game: Mapping[str, Any],
-) -> tuple[list[dict[str, Any]] | None, bool | None, list[Mapping[str, Any]], int, str, int]:
+) -> tuple[
+    list[dict[str, Any]] | None, bool | None, list[Mapping[str, Any]],
+    int, str, int, dict[str, dict[str, int]],
+]:
     rows, finalized = _week_source(payload, season, game, _SNAPS_SOURCE)
     if rows is None:
-        return None, None, [], 0, "unavailable", 0
+        return None, None, [], 0, "unavailable", 0, {}
     selected: list[Mapping[str, Any]] = []
     team_rows: list[dict[str, Any]] = []
+    invalid_shares: dict[str, dict[str, int]] = {}
     seen: set[str] = set()
     unresolved = 0
     aliases = 0
@@ -146,32 +150,51 @@ def _selected_snap_counts(
         else:
             seen.add(cid)
         snaps: dict[str, int | float | None] = {}
+        digest_snaps: dict[str, Any] = {}
         for field in _SNAP_FIELDS:
             value = row.get(field)
-            if field.endswith("Pct"):
-                if (value is not None
-                        and (type(value) not in (int, float)
-                             or not math.isfinite(value)
-                             or not 0 <= value <= 1)):
-                    raise ValueError(f"snap-counts: invalid percentage {field}")
-            elif value is not None and (type(value) is not int or value < 0):
-                raise ValueError(f"snap-counts: invalid count {field}")
-            snaps[field] = value
+            if field.endswith("Pct") and value is not None and (
+                type(value) not in (int, float)
+                or not math.isfinite(value)
+                or not 0 <= value <= 1
+            ):
+                # A faulty source share blocks only this team's affected unit;
+                # it must never be clipped or used in denominator inference.
+                unit = field[:-3]
+                counts = invalid_shares.setdefault(canonical, {})
+                counts[unit] = counts.get(unit, 0) + 1
+                snaps[field] = None
+                # Preserve typed invalid input evidence in the fingerprint.
+                # repr() is JSON-safe even for NaN and Infinity.
+                digest_snaps[field] = {
+                    "InvalidShareType": type(value).__name__,
+                    "InvalidShareValue": repr(value),
+                }
+            else:
+                if not field.endswith("Pct") and value is not None and (
+                    type(value) is not int or value < 0
+                ):
+                    raise ValueError(
+                        f"snap-counts: invalid count {field} for "
+                        f"{game['GameID']} player={cid!r}"
+                    )
+                snaps[field] = value
+                digest_snaps[field] = value
         selected.append({
             "CanonicalPlayerID": cid,
             "Team": team,
             "OpponentTeam": opponent,
             "Week": row.get("Week"),
             "GameType": row.get("GameType"),
-            "Snaps": snaps,
+            "Snaps": digest_snaps,
         })
         team_rows.append({"Team": canonical, "Snaps": snaps})
     if not selected:
-        return None, finalized, selected, 0, "unavailable", 0
+        return None, finalized, selected, 0, "unavailable", 0, {}
     all_teams = {row["Team"] for row in team_rows}
     status = ("available" if all_teams == {game["AwayTeam"], game["HomeTeam"]}
               else "partial")
-    return team_rows, finalized, selected, unresolved, status, aliases
+    return team_rows, finalized, selected, unresolved, status, aliases, invalid_shares
 
 
 def _digest(selected: dict[str, Any]) -> str:
@@ -208,12 +231,19 @@ def build_nfl_game_detail_core(
     stat_players, stats_finalized, stat_raw, stat_holds, stats_status, stat_aliases, stat_missing_context = _selected_stats(
         player_stats, season, game,
     )
-    team_snap_rows, snaps_finalized, snap_raw, snap_holds, snap_status, snap_aliases = _selected_snap_counts(
+    team_snap_rows, snaps_finalized, snap_raw, snap_holds, snap_status, snap_aliases, invalid_shares = _selected_snap_counts(
         snap_counts, season, game,
     )
     team_snap_totals = infer_team_snap_volumes(
         team_snap_rows, game["AwayTeam"], game["HomeTeam"],
     )
+    invalid_share_rows = sum(sum(counts.values()) for counts in invalid_shares.values())
+    if team_snap_totals is not None:
+        for team in team_snap_totals:
+            for unit, count in invalid_shares.get(team["Team"], {}).items():
+                team[unit]["TotalSnaps"] = None
+                team[unit]["Status"] = "blocked-invalid-share"
+                team[unit]["InvalidShareRows"] = count
     input_digest = _digest({
         "SchemaVersion": 1,
         "DefinitionVersion": _DEFINITION_VERSION,
@@ -223,7 +253,7 @@ def build_nfl_game_detail_core(
         "SnapCountsFinalized": snaps_finalized,
         "SnapCountsRows": snap_raw,
     })
-    return {
+    result = {
         "SchemaVersion": 1,
         "Product": "nfl-games",
         "DetailDefinitionVersion": _DEFINITION_VERSION,
@@ -262,3 +292,6 @@ def build_nfl_game_detail_core(
             "InputFingerprintSHA256": input_digest,
         },
     }
+    if invalid_share_rows:
+        result["SnapCounts"]["InvalidShareRows"] = invalid_share_rows
+    return result
