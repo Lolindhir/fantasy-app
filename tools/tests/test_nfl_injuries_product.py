@@ -910,6 +910,60 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertFalse(second["Written"])
             self.assertEqual(1, len(downloaded))
 
+    def test_reuploaded_identical_release_is_true_raw_noop_with_original_provenance(self):
+        from nfl_injuries_refresh import refresh_injury_raw
+        from nfl_injuries_phase import run_injury_phase
+        import hashlib
+        import json
+        import tempfile
+        original = asset(2025, [report(2025)])
+        sha = hashlib.sha256(original).hexdigest()
+        official = {"assets": [{
+            "name": "injuries_2025.csv", "id": 101,
+            "updated_at": "2026-11-15T07:00:00Z", "size": len(original),
+            "digest": "sha256:" + sha,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            first = refresh_injury_raw(
+                repo_root=root, season=2025, write=True,
+                fetch_release=lambda: official, fetch_asset=lambda _: original,
+            )
+            self.assertEqual("changes-planned", first["Status"])
+            before = {str(p.relative_to(root)): p.read_bytes()
+                      for p in root.rglob("*") if p.is_file()}
+            revised = copy.deepcopy(official)
+            revised["assets"][0]["id"] = 202
+            revised["assets"][0]["updated_at"] = "2026-11-16T07:00:00Z"
+            def cannot_download(_):
+                raise AssertionError("Identical official digest must reuse persisted CSV")
+            second = refresh_injury_raw(
+                repo_root=root, season=2025, write=True,
+                fetch_release=lambda: revised, fetch_asset=cannot_download,
+            )
+            self.assertEqual("no-op", second["Status"])
+            self.assertEqual("no-op", second["ReleaseDecision"])
+            self.assertFalse(second["Downloaded"])
+            self.assertFalse(second["Written"])
+            self.assertEqual([], second["Changed"])
+            self.assertEqual([], second["New"])
+            # The explicit raw phase must make the same decision as the producer.
+            direct = run_injury_phase(
+                root, 2025, "raw", source_csv=original, release_json=revised, write=True,
+            )
+            self.assertEqual("no-op", direct["Status"])
+            self.assertFalse(direct["Written"])
+            self.assertEqual(before, {str(p.relative_to(root)): p.read_bytes()
+                                      for p in root.rglob("*") if p.is_file()})
+            metadata = json.loads((root /
+                "data-source/providers/nflverse/injuries/metadata-2025.json"
+            ).read_text(encoding="utf-8"))
+            self.assertEqual(101, metadata["ReleaseAssetId"])
+            self.assertEqual("2026-11-15T07:00:00Z", metadata["ReleaseAssetUpdatedAt"])
+            self.assertEqual(sha, metadata["AssetSha256"])
+
     def test_production_raw_fetch_preserves_previous_good_on_corrupt_release(self):
         from nfl_injuries_refresh import refresh_injury_raw
         import tempfile
