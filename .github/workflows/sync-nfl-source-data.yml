@@ -662,6 +662,24 @@ jobs:
               exit "$raw_status"
             fi
 
+            # The same Monday full Source owner also admits at most one entirely
+            # missing historical original verified against the OFFICIAL SHA.
+            # Full CSV, identity and GameID preflight must pass BEFORE git add.
+            # Already accepted historical originals remain immutable.
+            if [[ "${INJURY_HISTORY_DUE:-false}" == "true" ]]; then
+              intake_log="$(mktemp)"
+              set +e
+              python3 tools/nfl_injuries_history_reconcile.py --phase intake --write 2>&1 | tee "$intake_log"
+              intake_status=${PIPESTATUS[0]}
+              set -e
+              if (( intake_status != 0 )); then
+                echo "Historical NFL Injury source admission blocked; no new Raw commit." >&2
+                write_failure_diagnostic "historical-injury-source-intake" "$intake_status" "$intake_log"
+                exit "$intake_status"
+              fi
+              echo "- Weekly Injury Source: all release years inspected; at most one new SHA-verified missing season staged" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
             # Bind the historical preflight to exactly the Raw file revision
             # about to be published. An upstream race is not preflighted.
             if [[ "$materialization_scope" == "injuries" && -n "${EXPECTED_INJURY_SHA256:-}" ]]; then

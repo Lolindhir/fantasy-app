@@ -152,7 +152,8 @@ materializationPlan:
   releaseRefreshCli: tools/nfl_injuries_refresh.py --season <year>
   readOnlyDynamicHistoryInventory: tools/nfl_injuries_refresh.py --discover-history
   readOnlyHistoricalPilotPreflight: tools/nfl_injuries_refresh.py --pilot-preflight
-  historicalReconcileCli: tools/nfl_injuries_history_reconcile.py --phase canonical|derived --write
+  historicalReconcileCli: tools/nfl_injuries_history_reconcile.py --phase intake|canonical|derived --write
+  recurringMissingSourceAdmission: tools/nfl_injuries_history_reconcile.py --phase intake --write
   frozenOriginalRevisionAuditCli: tools/nfl_injuries_history_reconcile.py --phase revisions --fail-on-review
   historicalBootstrap:
     trigger: existing Injury wrapper push after approved workflow change
@@ -249,18 +250,28 @@ freshness:
     proposedLocalTime: "09:30 Europe/Berlin"
     upstreamObservedSchedule: "07:07 UTC daily in September-February"
     normalAcquisition: current NFL season, after source asset revision is verified
-    backfill: explicit historical seasons with schema gates
+    historicalBootstrap: initially absent original seasons enter via recurring bounded admission, never a one-time fixed-year backfill
     historicalReconciliation:
       standard: .ai-context/manual/data-sources.yaml::historicalReconciliationStandard
       target: >-
-        After validated initial backfill, compare accepted historical source
-        revisions weekly and rederive every supported historical Canonical and
-        Derived injury season from verified persisted data when dependencies or
-        producer logic change. Reuse existing classified publishers.
+        Permanently discover all official season assets every Monday, admit at most
+        one entirely missing, officially SHA-256-verified historical season after
+        full original-byte/schema/identity/game-link preflight, compare accepted
+        historical source revisions, and rederive every accepted Canonical and
+        Derived season from verified persisted data. No fixed calendar year list.
       frozenRevision: >-
         Detect and flag revised original assets for an explicit historical
         repair decision; never silently overwrite frozen past-season evidence.
       weeklyOwner: .github/workflows/sync-nfl-source-data.yml
+      weeklyOriginalAdmission: >-
+        The same existing unfiltered Monday full Source Raw transaction may stage
+        ONE new historical season Raw CSV + metadata pair only when the upstream
+        asset has official SHA-256 and matching byte size, an accepted canonical
+        schedule exists, all original reports parse, and every GSIS and GameID
+        resolves uniquely. The publication stays in the existing protected
+        data-source/providers writer; all accepted historical originals are
+        immutable. SHA-less assets, missing schedules and unmatched players/games
+        are explicitly blocked, not silently treated as current, healthy or complete.
       cadence: "Monday 04:00 Europe/Berlin via existing central scheduler full NFL Source repository_dispatch only; push/targeted/manual reruns do not own the weekly replay"
       canonicalRecomputation: >-
         Accepted historical original Raw and metadata only; recompute every
@@ -275,15 +286,18 @@ freshness:
       sourceRevisionObservation: >-
         Weekly official release metadata comparison of frozen accepted history;
         changed or unverifiable revisions fail for manual review and never
-        replace original Raw bytes automatically.
+        replace original Raw bytes automatically. A future versioned revision
+        retention and repair/cutover policy requires separate critical review.
       pendingAcceptance: >-
-        Weekly historical schedule path is implemented but requires exact-head
-        CI, merge, and productive Monday proof. Initial bulk acquisition of
-        digest-less historical originals remains blocked by original-byte
-        attestation and independent audit; Issue #1421 owns those gates.
+        Weekly accepted-history reconciliation is merged; the bounded recurring
+        first-time original admission remains a branch change until exact-head
+        CI, merge and productive Monday readback. Original 2009-2024 historical
+        assets without official SHA-256 remain blocked pending independent original-
+        byte attestation and review. Automatically overwriting accepted frozen
+        historical original revisions is not approved.
     noOp: do not reprocess when source digest and applicable identity/schedule inputs are unchanged
     retry: missed or delayed upstream refresh requires bounded catch-up check
-    status: source-refresh-cli-implemented-unscheduled
+    status: production-current-daily-weekly-reconciliation-merged-recurring-history-intake-pending-acceptance
   currentEspnInjuryStatus:
     source: espn.player-availability
     existingPath: data-source/nfl/player-availability/espn.json

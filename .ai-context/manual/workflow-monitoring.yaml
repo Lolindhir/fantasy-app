@@ -330,7 +330,7 @@ workflows:
     - workflow_call
     consecutiveFailures: 1
     staleAfterMinutes: 1800
-    rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes. Its Monday 04:00 Europe/Berlin unfiltered full sync additionally replays all accepted historical Injury Canonical and the existing Injury Derived publisher, then audits frozen original revisions without replacing them. Failures keep last good history but require review. Other weekdays and scoped calls skip historical replay; manual repair runs remain non-paging.
+    rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes. Its Monday 04:00 Europe/Berlin unfiltered full sync first discovers all official historical Injury seasons, may admit at most one entirely missing SHA-verified season after full original/identity/game-link preflight through the same protected Source writer, then replays all accepted historical Injury Canonical and the existing Injury Derived publisher and audits frozen original revisions without replacing them. Digest-less historical assets stay blocked. Failures keep last good history but require review. Other weekdays and scoped calls skip historical replay; manual repair runs remain non-paging.
   .github/workflows/odds-refresh.yml:
     category: important
     relevantEvents:
