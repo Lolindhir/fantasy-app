@@ -151,6 +151,14 @@ materializationPlan:
   separatedStageCli: tools/nfl_injuries_phase.py --phase raw|canonical|derived
   releaseRefreshCli: tools/nfl_injuries_refresh.py --season <year>
   readOnlyDynamicHistoryInventory: tools/nfl_injuries_refresh.py --discover-history
+  readOnlyHistoricalPilotPreflight: tools/nfl_injuries_refresh.py --pilot-preflight
+  historicalBootstrap:
+    trigger: existing Injury wrapper push after approved workflow change
+    selection: one newest missing Derived season with official SHA-256 and canonical schedule
+    safety: preflight exact original SHA/size, parser, current identity and GameID joins, then delegate unchanged isolated Source/Derived publisher
+    noYearLists: true
+    unknownOrAmbiguousObservations: block first pilot and require review; never discard
+    note: This first verified pilot is separate from the future batched full-history reconciliation.
   historicalSelection: >-
     Discover season CSV assets from the official release; never infer a contiguous
     year range or hard-code start, cutoff or end seasons. Only existing canonical
