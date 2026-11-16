@@ -3,12 +3,14 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 
 from nfl_source_data_lib import common as common_mod
+import nfl_pbp_source_archive as pbp_archive
 from nfl_source_data_lib.draft import classify_draft_status
 from nfl_source_data_lib.materialize import materialize
 
@@ -172,6 +174,142 @@ class NflSourceDataTests(unittest.TestCase):
             path = Path(tmp) / "x.json"
             self.assertTrue(common_mod.write_json_if_changed(path, {"a": 1}))
             self.assertFalse(common_mod.write_json_if_changed(path, {"a": 1}))
+
+
+class NflPbpArchiveSourcePilotTests(unittest.TestCase):
+    """Existing registered NFL Source Fast test module; never touches network."""
+
+    def _asset(self, *, digest=None):
+        return {
+            "id": 987,
+            "name": pbp_archive.ARCHIVE_NAME,
+            "size": pbp_archive.EXPECTED_SIZE,
+            "digest": digest or "sha256:" + pbp_archive.EXPECTED_SHA256,
+            "state": "uploaded",
+            "browser_download_url": "https://github.com/Lolindhir/fantasy-app/releases/download/test/pbp.gz",
+        }
+
+    def _upstream(self, *, digest=None):
+        return {
+            "id": pbp_archive.UPSTREAM_ASSET_ID,
+            "name": pbp_archive.ARCHIVE_NAME,
+            "digest": digest or "sha256:" + pbp_archive.EXPECTED_SHA256,
+            "size": pbp_archive.EXPECTED_SIZE,
+            "browser_download_url": pbp_archive.SOURCE_URL,
+        }
+
+    def test_2025_initial_archive_then_noop_without_downloading_or_git_gzip(self):
+        import hashlib
+        original = b"pinned-2025-original-bytes-test"
+        expected = hashlib.sha256(original).hexdigest()
+        release = {"upload_url": (
+            "https://uploads.github.com/repos/Lolindhir/fantasy-app/"
+            "releases/123/assets{?name,label}"
+        ), "assets": []}
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(pbp_archive, "EXPECTED_SHA256", expected), \
+             patch.object(pbp_archive, "EXPECTED_SIZE", len(original)), \
+             patch.object(pbp_archive, "upstream_evidence", return_value={
+                 "digest": "sha256:" + expected,
+                 "size": len(original),
+             }), \
+             patch.object(pbp_archive, "read_only_audits", return_value={
+                 "SourceRowCount": 100,
+                 "PBPMetricValidationStatus": "research-only-not-certified-full-source",
+             }) as audit, \
+             patch.object(pbp_archive, "download") as download, \
+             patch.object(pbp_archive, "get_release", side_effect=[
+                 None, {"assets": [dict(self._asset(), size=len(original),
+                                         digest="sha256:" + expected)]}
+             ]) as get_release, \
+             patch.object(pbp_archive, "create_release", return_value=release), \
+             patch.object(pbp_archive, "upload_asset", return_value=dict(
+                 self._asset(), size=len(original), digest="sha256:" + expected,
+             )) as upload:
+            download.side_effect = lambda url, path: path.write_bytes(original)
+            root = Path(tmp)
+            first = pbp_archive.run(root, "Lolindhir/fantasy-app", "test-token", weekday=1)
+            self.assertEqual(first["Status"], "original-archived-audited")
+            self.assertTrue(first["Changed"])
+            manifest = json.loads((root / pbp_archive.MANIFEST_PATH).read_text())
+            self.assertEqual(manifest["UpstreamSHA256"], expected)
+            self.assertFalse(manifest["SourceCompletenessCertified"])
+            self.assertFalse(manifest["GameDetailV2Published"])
+            self.assertFalse(list(root.rglob("*.gz")))
+            second = pbp_archive.run(root, "Lolindhir/fantasy-app", "test-token", weekday=1)
+            self.assertEqual(second, {"Status": "already-archived-verified-noop",
+                                      "Changed": False})
+            self.assertEqual(download.call_count, 1)
+            self.assertEqual(get_release.call_count, 2)
+            audit.assert_called_once()
+            upload.assert_called_once()
+
+    def test_wrong_upstream_digest_fails_before_download_or_publication(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(pbp_archive, "upstream_evidence",
+                          return_value=self._upstream(digest="sha256:" + "0" * 64)), \
+             patch.object(pbp_archive, "download") as download, \
+             patch.object(pbp_archive, "create_release") as release:
+            with self.assertRaisesRegex(ValueError, "separate repair review"):
+                pbp_archive.run(Path(tmp), "Lolindhir/fantasy-app", "test-token")
+            download.assert_not_called()
+            release.assert_not_called()
+            self.assertFalse((Path(tmp) / pbp_archive.MANIFEST_PATH).exists())
+
+    def test_missing_archived_asset_fails_closed_without_source_replacement(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(pbp_archive, "get_release", return_value=None), \
+             patch.object(pbp_archive, "download") as download:
+            path = Path(tmp) / pbp_archive.MANIFEST_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps({
+                "Status": "accepted-original-byte-identity",
+                "UpstreamSHA256": pbp_archive.EXPECTED_SHA256,
+                "ReleaseTag": pbp_archive.ARCHIVE_TAG,
+            }))
+            with self.assertRaisesRegex(ValueError, "missing release asset"):
+                pbp_archive.run(Path(tmp), "Lolindhir/fantasy-app", "test-token", weekday=1)
+            download.assert_not_called()
+
+    def test_weekly_upstream_drift_reports_review_without_rewriting_frozen_source(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(pbp_archive, "get_release", return_value={
+                 "assets": [self._asset()]
+             }), \
+             patch.object(pbp_archive, "upstream_evidence", return_value=self._upstream(
+                 digest="sha256:" + "0" * 64,
+             )), \
+             patch.object(pbp_archive, "download") as download:
+            path = Path(tmp) / pbp_archive.MANIFEST_PATH
+            path.parent.mkdir(parents=True)
+            original = {
+                "Status": "accepted-original-byte-identity",
+                "UpstreamSHA256": pbp_archive.EXPECTED_SHA256,
+                "ReleaseTag": pbp_archive.ARCHIVE_TAG,
+            }
+            path.write_text(json.dumps(original))
+            result = pbp_archive.run(
+                Path(tmp), "Lolindhir/fantasy-app", "test-token", weekday=0,
+            )
+            self.assertEqual(result, {"Status": "upstream-revision-review-required",
+                                      "Changed": False})
+            self.assertEqual(json.loads(path.read_text()), original)
+            download.assert_not_called()
+
+    def test_archive_asset_hash_mismatch_is_never_an_accepted_noop(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+             patch.object(pbp_archive, "get_release", return_value={
+                 "assets": [self._asset(digest="sha256:" + "0" * 64)]
+             }):
+            path = Path(tmp) / pbp_archive.MANIFEST_PATH
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps({
+                "Status": "accepted-original-byte-identity",
+                "UpstreamSHA256": pbp_archive.EXPECTED_SHA256,
+                "ReleaseTag": pbp_archive.ARCHIVE_TAG,
+            }))
+            with self.assertRaisesRegex(ValueError, "digest/size/status mismatch"):
+                pbp_archive.run(Path(tmp), "Lolindhir/fantasy-app", "test-token", weekday=1)
 
 
 if __name__ == "__main__":
