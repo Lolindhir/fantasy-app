@@ -44,6 +44,11 @@ on:
         required: false
         type: string
         default: "full"
+      reconcile_injury_history:
+        description: "Run the historical Injury Source/Canonical/Derived reconciliation now (requires full scope, no dataset/season filters, force off)"
+        required: false
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       dataset:
@@ -225,22 +230,45 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Select Monday accepted Injury history reconciliation
+      - name: Select scheduled or explicitly requested Injury history reconciliation
         id: injury_history_due
         shell: bash
         env:
           DATASET: ${{ inputs.dataset }}
           SEASON: ${{ inputs.season }}
+          MANUAL_INJURY_HISTORY: ${{ inputs.reconcile_injury_history || 'false' }}
+          FORCE: ${{ inputs.force }}
         run: |
           set -euo pipefail
           due=false
-          # A workflow-code push on Monday is not the 04:00 scheduled slot.
-          # Only the centrally scheduled, unfiltered Source refresh owns history.
-          if [[ "$GITHUB_EVENT_NAME" == "repository_dispatch" && "${MATERIALIZATION_SCOPE:-full}" == "full" && -z "${DATASET:-}" && -z "${SEASON:-}" && "$(TZ=Europe/Berlin date +%u)" == "1" ]]; then
+          # Pushes/called/scoped runs never activate the historical pipeline.
+          # The recurring scheduler owns Mondays; a manual checkbox explicitly
+          # opts into the SAME bounded Source -> Canonical -> Derived writers.
+          scheduled_monday=false
+          if [[ "$GITHUB_EVENT_NAME" == "repository_dispatch" && "$(TZ=Europe/Berlin date +%u)" == "1" ]]; then
+            scheduled_monday=true
+          fi
+          manual_requested=false
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "${MANUAL_INJURY_HISTORY:-false}" == "true" ]]; then
+            manual_requested=true
+          fi
+          # An explicit manual request must fail, not silently skip the history
+          # that the operator believes is being refreshed.
+          if [[ "$manual_requested" == "true" ]] && {
+            [[ "${MATERIALIZATION_SCOPE:-full}" != "full" ]] ||
+            [[ -n "${DATASET:-}" ]] ||
+            [[ -n "${SEASON:-}" ]] ||
+            [[ "${FORCE:-false}" == "true" ]]
+          }; then
+            echo "::error::Historical Injury manual replay requires full scope, blank dataset/season and force=false." >&2
+            exit 2
+          fi
+          if [[ "${MATERIALIZATION_SCOPE:-full}" == "full" && -z "${DATASET:-}" && -z "${SEASON:-}" ]] &&
+             [[ "$scheduled_monday" == "true" || "$manual_requested" == "true" ]]; then
             due=true
           fi
           echo "due=$due" >> "$GITHUB_OUTPUT"
-          echo "- Accepted historical Injury reconciliation due: $due" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Historical Injury reconciliation due: $due (scheduledMonday=$scheduled_monday; manualRequested=$manual_requested)" >> "$GITHUB_STEP_SUMMARY"
 
       # Regression tests run in PR CI and the periodic full audit.
       # Keep real-data and canonical-state validation in the publisher.

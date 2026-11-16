@@ -254,8 +254,9 @@ freshness:
     historicalReconciliation:
       standard: .ai-context/manual/data-sources.yaml::historicalReconciliationStandard
       target: >-
-        Permanently discover all official season assets every Monday, admit at most
-        one entirely missing, officially SHA-256-verified historical season after
+        Permanently discover all official season assets every Monday or upon an
+        explicit manual history-reconciliation request, admit at most one entirely
+        missing, officially SHA-256-verified historical season after
         full original-byte/schema/identity/game-link preflight, compare accepted
         historical source revisions, and rederive every accepted Canonical and
         Derived season from verified persisted data. No fixed calendar year list.
@@ -264,15 +265,16 @@ freshness:
         repair decision; never silently overwrite frozen past-season evidence.
       weeklyOwner: .github/workflows/sync-nfl-source-data.yml
       weeklyOriginalAdmission: >-
-        The same existing unfiltered Monday full Source Raw transaction may stage
-        ONE new historical season Raw CSV + metadata pair only when the upstream
+        The same existing unfiltered full Source Raw transaction on scheduled Monday
+        or explicit workflow_dispatch history opt-in may stage ONE new historical
+        season Raw CSV + metadata pair only when the upstream
         asset has official SHA-256 and matching byte size, an accepted canonical
         schedule exists, all original reports parse, and every GSIS and GameID
         resolves uniquely. The publication stays in the existing protected
         data-source/providers writer; all accepted historical originals are
         immutable. SHA-less assets, missing schedules and unmatched players/games
         are explicitly blocked, not silently treated as current, healthy or complete.
-      cadence: "Monday 04:00 Europe/Berlin via existing central scheduler full NFL Source repository_dispatch only; push/targeted/manual reruns do not own the weekly replay"
+      cadence: "Monday 04:00 Europe/Berlin via existing central scheduler full NFL Source repository_dispatch; additionally explicit workflow_dispatch reconcile_injury_history=true with unfiltered full scope/force=false on any day; push/targeted/unselected manual runs skip historical replay"
       canonicalRecomputation: >-
         Accepted historical original Raw and metadata only; recompute every
         accepted Canonical season from current player identities and NFL schedule
