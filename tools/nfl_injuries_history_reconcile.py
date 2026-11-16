@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Weekly accepted-history NFL Injury Source/Derived reconciler (Issue #1421).
+"""Recurring NFL Injury source admission and historical reconciliation (#1421).
 
-No year lists, provider downloads, Git commits, pushes, permissions or schedules.
-Canonical reads only accepted Raw, identity and schedule; Derived reads only
-persisted Canonical. Only the existing classified publishers may call --write.
-Frozen upstream revisions are independently observed, never auto-replaced.
+No year lists, Git commits, pushes, permissions or schedules. Bounded initial
+Raw admission downloads ONLY official SHA-verified missing originals; accepted
+historical originals remain frozen. Canonical consumes persisted Raw; Derived
+consumes persisted Canonical. --write only stages files in the existing writer.
 """
 from __future__ import annotations
 
@@ -18,10 +18,10 @@ from typing import Any, Callable
 
 from nfl_injuries_materialize import _assert_bounded_path
 from nfl_injuries_phase import run_injury_phase
-from nfl_injuries_refresh import release_api
+from nfl_injuries_refresh import discover_injury_history, release_api, source_asset
 from nfl_source_data_lib.common import current_source_season
 from nfl_source_data_lib.injury_product_plan import (
-    plan_injury_history_inventory, plan_release_refresh,
+    build_injury_artifacts, plan_injury_history_inventory, plan_release_refresh,
 )
 from nfl_source_data_lib.injury_reports import valid_injury_season
 
@@ -84,6 +84,103 @@ def accepted_historical_injury_seasons(repo_root: Path) -> tuple[list[int], int]
             historical.append(season)
     return historical, current
 
+
+
+
+def stage_next_verified_missing_injury_source(
+    repo_root: Path, *, write: bool = False,
+    fetch_release: Callable[[], dict[str, Any]] = release_api,
+    fetch_asset: Callable[[str], bytes] = source_asset,
+) -> dict[str, Any]:
+    """Admit at most one *missing* verified original in the weekly Source writer.
+
+    Full official-byte, identity and game-link preflight completes BEFORE any
+    file is staged. Existing originals (including unfinished Derived recovery)
+    are never candidates; no frozen historical revision is overwritten.
+    Digest-less or unsupported seasons remain visible but ineligible.
+    """
+    accepted, current = accepted_historical_injury_seasons(repo_root)
+    release = fetch_release()
+    inventory = discover_injury_history(
+        repo_root=repo_root, fetch_release=lambda: release)
+    if inventory["CurrentSeason"] != current:
+        raise ValueError("Historical Injury current season changed during discovery")
+    candidates = inventory["CandidateSeasons"]
+    if not candidates:
+        return {
+            "Phase": "intake", "Status": "no-verified-missing-original",
+            "Season": None, "CurrentSeason": current,
+            "AcceptedHistoricalSeasons": accepted,
+            "BlockedSeasons": inventory["BlockedSeasons"],
+            "PersistedMissingUpstream": inventory["PersistedMissingUpstream"],
+            "Staged": False, "PublicationPerformed": False,
+        }
+    # Latest eligible season first. Next Monday can admit the next one:
+    # discovery excludes the already persisted exact Raw/metadata pair.
+    season = max(candidates)
+    if season >= current or season in accepted:
+        raise ValueError("Historical Injury admission selected an accepted/current season")
+    raw_name = f"data-source/providers/nflverse/injuries/raw-{season}.csv"
+    meta_name = f"data-source/providers/nflverse/injuries/metadata-{season}.json"
+    if (_assert_bounded_path(repo_root, raw_name).exists()
+            or _assert_bounded_path(repo_root, meta_name).exists()):
+        raise ValueError("Historical Injury original already exists; no source replacement")
+    decision = plan_release_refresh(release, season=season)
+    upstream = decision["SourceAsset"]
+    digest = upstream["Sha256"]
+    if not decision["FullSourceDigestAvailable"] or not digest:
+        raise ValueError("Historical Injury admission requires official SHA-256")
+    original = fetch_asset(upstream["DownloadUrl"])
+    if (not isinstance(original, bytes)
+            or len(original) != upstream["ByteSize"]
+            or hashlib.sha256(original).hexdigest() != digest):
+        raise ValueError("Historical Injury original disagrees with official SHA-256/size")
+    players = _json(repo_root, "data-source/nfl/identities/players.json")
+    schedule = _json(repo_root, f"data-source/nfl/schedules/{season}.json")
+    # Validate all rows, exact season CSV header and full cross-source linkage.
+    plan = build_injury_artifacts(
+        season=season, source_csv=original, players=players,
+        schedule=schedule, expected_source_sha256=digest,
+        release_asset=upstream,
+    )
+    manifest = json.loads(plan[f"data-source/nfl/injuries/{season}/manifest.json"])
+    quality = manifest["CanonicalQuality"]
+    count = manifest["SourceRowCount"]
+    identities = quality["IdentityResolutionCounts"]
+    links = quality["GameLinkCounts"]
+    if (count < 1 or identities.get("resolved-current-graph") != count
+            or links.get("linked") != count
+            or any(identities.get(state) for state in ("unresolved", "ambiguous"))
+            or any(links.get(state) for state in
+                   ("ambiguous", "not-found", "not-evaluated"))):
+        raise ValueError(
+            "Historical Injury source admission needs identity/game-link review: "
+            + json.dumps(quality, sort_keys=True))
+    planned = run_injury_phase(
+        repo_root, season, "raw", source_csv=original,
+        expected_source_sha256=digest, release_json=release, write=False,
+    )
+    if (planned["Changed"] or planned["ObsoleteRequiresReview"]
+            or set(planned["New"]) != {raw_name, meta_name}):
+        raise ValueError("Historical Injury first admission is not an exact new Raw pair")
+    staged = run_injury_phase(
+        repo_root, season, "raw", source_csv=original,
+        expected_source_sha256=digest, release_json=release, write=True,
+    ) if write else planned
+    return {
+        "Phase": "intake", "Status": (
+            "staged-missing-verified-source" if write else
+            "verified-missing-source-dry-run"
+        ),
+        "Season": season, "CurrentSeason": current,
+        "SourceAssetSha256": digest,
+        "SourceRowCount": count, "ObservedWeekCount": manifest["ObservedWeekCount"],
+        "Quality": quality, "NewRawPaths": [raw_name, meta_name],
+        "BlockedSeasons": inventory["BlockedSeasons"],
+        "AcceptedHistoricalSeasons": accepted,
+        "Staged": bool(write and staged["Written"]),
+        "PublicationPerformed": False,
+    }
 
 
 def accepted_canonical_injury_seasons(repo_root: Path) -> list[int]:
@@ -241,9 +338,9 @@ def audit_frozen_injury_revisions(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--phase", choices=("canonical", "derived", "revisions"), required=True)
+    parser.add_argument("--phase", choices=("intake", "canonical", "derived", "revisions"), required=True)
     parser.add_argument("--write", action="store_true",
-                        help="Stage accepted canonical/derived output locally only")
+                        help="Stage eligible missing Raw or accepted canonical/derived locally only")
     parser.add_argument("--require-noop", action="store_true",
                         help="Fail if any historical result would change; never write")
     parser.add_argument("--fail-on-review", action="store_true",
@@ -254,6 +351,11 @@ def main(argv: list[str] | None = None) -> int:
             if args.write or args.require_noop:
                 parser.error("Revision observation is read-only")
             result = audit_frozen_injury_revisions(args.repo_root)
+        elif args.phase == "intake":
+            if args.fail_on_review or args.require_noop:
+                parser.error("Intake has no revision-failure or replay-no-op mode")
+            result = stage_next_verified_missing_injury_source(
+                args.repo_root, write=args.write)
         else:
             if args.fail_on_review:
                 parser.error("--fail-on-review requires --phase revisions")
