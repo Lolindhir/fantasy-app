@@ -234,7 +234,9 @@ jobs:
         run: |
           set -euo pipefail
           due=false
-          if [[ "${MATERIALIZATION_SCOPE:-full}" == "full" && -z "${DATASET:-}" && -z "${SEASON:-}" && "$(TZ=Europe/Berlin date +%u)" == "1" ]]; then
+          # A workflow-code push on Monday is not the 04:00 scheduled slot.
+          # Only the centrally scheduled, unfiltered Source refresh owns history.
+          if [[ "$GITHUB_EVENT_NAME" == "repository_dispatch" && "${MATERIALIZATION_SCOPE:-full}" == "full" && -z "${DATASET:-}" && -z "${SEASON:-}" && "$(TZ=Europe/Berlin date +%u)" == "1" ]]; then
             due=true
           fi
           echo "due=$due" >> "$GITHUB_OUTPUT"

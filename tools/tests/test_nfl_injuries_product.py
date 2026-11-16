@@ -532,6 +532,7 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertIn("injury_history_due", jobs["sync"]["outputs"])
         step = next(s["run"] for s in jobs["sync"]["steps"] if s.get("id") == "injury_history_due")
         self.assertIn("TZ=Europe/Berlin date +%u", step)
+        self.assertIn('GITHUB_EVENT_NAME" == "repository_dispatch"', step)
         script = next(s["run"] for s in jobs["sync"]["steps"] if s.get("name") == "Sync, validate and publish NFL source data")
         self.assertIn("--phase canonical --write", script)
         self.assertIn("--phase canonical --require-noop", script)
