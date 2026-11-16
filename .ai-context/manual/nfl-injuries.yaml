@@ -37,6 +37,11 @@ source:
     - Distinguish upstream asset-revision metadata from report event time.
     - Asset digest plus row ordinal identifies an observation within one snapshot,
       not a permanent event ID across provider revisions.
+    - ReleaseAssetId and ReleaseAssetUpdatedAt record the first accepted official
+      release attestation for those exact raw bytes. If a later official asset
+      has the same verified SHA-256 and size, retain the accepted provenance
+      instead of committing an ID- or clock-only metadata update. A different
+      source digest or another metadata change still requires validation.
     - Do not synthesize old pre-kickoff snapshots from current annual CSV releases.
   schemaVariants:
     legacy2012To2024:
@@ -93,6 +98,14 @@ canonical:
     - Match known season/week/game-type and source team only with explicit evidence.
     - Reports for a cancelled or unmatched game remain valid source observations.
     - A team-week not observed in CSV is not a healthy team-week.
+    - ScheduleGraphFingerprint is a versioned injury-game-link-v1 digest over
+      the sorted GameID candidate sets for each observed report
+      (Week, GameType, SourceTeam) key, including empty/ambiguous sets. It is
+      not a hash of the full schedule; unrelated game results, timestamps,
+      kickoff updates and unobserved games must not dirty Injury Canonical.
+      A real change in the game-link candidate set must update this provenance
+      and the affected report partition; switching from full-schedule hashing
+      to this scoped contract requires one deterministic manifest reattestation.
   provenance:
     - Include source asset SHA-256 and deterministic identity-graph fingerprint.
     - No acquisition timestamp masquerading as a player observation time.

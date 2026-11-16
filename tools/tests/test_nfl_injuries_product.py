@@ -321,6 +321,53 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertIn("data-derived/nfl-injuries/2025.json", delta["Changed"])
 
 
+    def test_schedule_fingerprint_tracks_only_observed_report_game_links(self):
+        from nfl_source_data_lib.injury_product_plan import (
+            build_injury_artifacts, classify_injury_artifacts,
+        )
+        import json
+        raw = asset(2025, [report(2025)])
+        observed = {"GameID": "2025_05_NYG_HOU", "GameType": "REG", "Week": 5,
+                    "HomeTeam": "HOU", "AwayTeam": "NYG", "KickoffUtc": "earlier",
+                    "HomeScore": 0}
+        unrelated = {"GameID": "2025_07_NYJ_BUF", "GameType": "REG", "Week": 7,
+                     "HomeTeam": "NYJ", "AwayTeam": "BUF"}
+        base = {"Season": 2025, "Games": [observed, unrelated]}
+        first = build_injury_artifacts(
+            season=2025, source_csv=raw, players=identities(), schedule=base,
+        )
+        irrelevant = copy.deepcopy(base)
+        irrelevant["GeneratedAtUtc"] = "new-fetched-time"
+        irrelevant["Games"][0]["KickoffUtc"] = "later"
+        irrelevant["Games"][0]["HomeScore"] = 42
+        irrelevant["Games"][1]["GameID"] = "2025_07_NYJ_BUF_CORRECTED"
+        irrelevant["Games"].reverse()
+        same = build_injury_artifacts(
+            season=2025, source_csv=raw, players=identities(), schedule=irrelevant,
+        )
+        self.assertEqual(first, same)
+        self.assertFalse(classify_injury_artifacts(same, first, season=2025)["RequiresWrites"])
+        manifest = json.loads(first["data-source/nfl/injuries/2025/manifest.json"])
+        self.assertIsInstance(manifest["ScheduleGraphFingerprint"], str)
+        # Adding an extra candidate for a reported team-week is not harmless:
+        # the previously linked GameID becomes ambiguous and must be reattested.
+        conflicting = copy.deepcopy(base)
+        conflicting["Games"].append({
+            "GameID": "2025_05_NYG_HOU_DUP", "GameType": "REG", "Week": 5,
+            "HomeTeam": "HOU", "AwayTeam": "NYG",
+        })
+        changed = build_injury_artifacts(
+            season=2025, source_csv=raw, players=identities(), schedule=conflicting,
+        )
+        delta = classify_injury_artifacts(changed, first, season=2025)
+        self.assertIn("data-source/nfl/injuries/2025/manifest.json", delta["Changed"])
+        self.assertIn("data-source/nfl/injuries/2025/05.json", delta["Changed"])
+        self.assertIn("data-derived/nfl-injuries/2025.json", delta["Changed"])
+        observation = json.loads(changed["data-source/nfl/injuries/2025/05.json"])[
+            "Observations"][0]
+        self.assertEqual("ambiguous", observation["GameLinkState"])
+        self.assertIsNone(observation["GameID"])
+
     def test_official_release_digest_drives_daily_noop_or_refresh(self):
         from nfl_source_data_lib.injury_product_plan import plan_release_refresh
         import hashlib
