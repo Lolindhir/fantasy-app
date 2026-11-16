@@ -525,6 +525,11 @@ fullPlayByPlayTarget:
       reconciliation before the release asset or manifest may be committed. These audits
       do not certify upstream game-play completeness or release the ten experimental
       metrics for derived publication.
+    failureIsolation: >-
+      Any failed original-2025 SHA, audit, release or dependency gate blocks only
+      PBP archive acceptance and emits a GitHub step warning; the already-existing
+      routine NFL Source sync continues for unrelated data. No invalid original
+      asset or manifest is accepted on a blocked pilot.
     historicalRefresh: >-
       After first accepted archive, unchanged 2025 content is reused without redownloading;
       the existing weekly Monday full Source run checks official upstream release
