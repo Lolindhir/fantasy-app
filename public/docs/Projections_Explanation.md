@@ -41,6 +41,8 @@ Unsere App vergleicht die **erwarteten Endpunkte beider Teams** und die Unsicher
 
 Nach jedem abgeschlossenen NFL-Spiel eines Starters kann sich die Siegchance ändern, weil dessen echte Punkte in den Vergleich einfließen. Eine fehlende Prognose wird nicht automatisch als 50:50 ausgegeben.
 
+Wir zeigen normalerweise ganze Prozent. Bei einer **noch unsicheren** Begegnung steht für sehr kleine Chancen **<1 %** beziehungsweise **>99 %** statt einer scheinbar endgültigen 0-%- oder 100-%-Anzeige. **0 % / 100 %** ist möglich, wenn laut Modell keine Punkteunsicherheit mehr besteht. Solange noch Spieler ausstehen, können theoretisch auch negative Fantasy-Punkte hinzukommen; ein Vorsprung allein bedeutet deshalb nicht automatisch einen sicheren Sieg.
+
 ## ⚠️ Was unsere Vorhersagen nicht berücksichtigen
 
 - **Verletzungs- und Ausfallrisiko:** Eine individuelle Spielerprognose gilt grundsätzlich **unter der Annahme, dass der Spieler teilnimmt**. Das Modell schätzt nicht automatisch die Wahrscheinlichkeit, dass er ausfällt. Die Teamprognose kann einen bekannten OUT-Status berücksichtigen.

@@ -99,7 +99,12 @@ winProbability:
     StandardDeviation of team-range-v1 without a calibration factor; null unless both teams are available. Because the projection counts final games with
     their real points, the chance is adjusted after every finished NFL game of a starter (team-range-v1 behaviour, no separate live model). A matchup
     whose starters are all final shows 100/0 (or 50/50 on equal scores); consumers hide the chance for final matchups. The pregame chance of final weeks is
-    delivered with the Weekly Recaps (weekly-recaps.yaml). Frontend only displays the values.
+    delivered with the Weekly Recaps (weekly-recaps.yaml). Additive App-delivery fields WinProbabilityRaw (unrounded 0..1 per team,
+    calculated independently to preserve small tails) and WinProbabilityIsDeterministic (both team sigmas exactly zero, null when
+    unavailable) let the shared frontend display <1%/>99% instead of rounded 0/100 for a still-uncertain matchup.
+    Existing whole-percent WinProbability, historical pregame chances, upset thresholds and win-prob-v1 remain unchanged.
+    A leading team with outstanding starters is not automatically deterministic because fantasy points can decrease; this
+    metadata does not assert a mathematical lock beyond the projection model. Frontend only formats published values.
 
 projectionModel:
   kind: team-range

@@ -149,8 +149,28 @@ def build_matchup_projections(
             for team_id in matchup["TeamIDs"]
         ]
         percentages = win_model.matchup_percentages(teams[0], teams[1]) if len(teams) == 2 else None
+        raw_probabilities = None
+        deterministic = None
+        if percentages is not None:
+            # Keep the versioned whole-percent value unchanged for existing consumers.
+            # Compute both tails separately: 1 - a nearly-one float can lose a tiny but
+            # nonzero underdog chance due to floating-point cancellation.
+            a, b = teams
+            raw_probabilities = (
+                win_model.win_probability(
+                    a["ProjectedFinalScore"], a["StandardDeviation"],
+                    b["ProjectedFinalScore"], b["StandardDeviation"],
+                ),
+                win_model.win_probability(
+                    b["ProjectedFinalScore"], b["StandardDeviation"],
+                    a["ProjectedFinalScore"], a["StandardDeviation"],
+                ),
+            )
+            deterministic = a["StandardDeviation"] == 0 and b["StandardDeviation"] == 0
         for index, team in enumerate(teams):
-            team["WinProbability"] = percentages[index] if percentages else None
+            team["WinProbability"] = percentages[index] if percentages is not None else None
+            team["WinProbabilityRaw"] = raw_probabilities[index] if raw_probabilities is not None else None
+            team["WinProbabilityIsDeterministic"] = deterministic
         matchups.append(
             {
                 "FantasyMatchupID": matchup["FantasyMatchupID"],

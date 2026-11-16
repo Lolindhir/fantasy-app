@@ -189,6 +189,10 @@ export function orientMatchupScore(
 export interface WinChanceView {
   left: number;
   right: number;
+  /** Additive raw chance fractions for current matchups; absent from historical pregame records. */
+  leftRaw?: number | null;
+  rightRaw?: number | null;
+  deterministic?: boolean;
   live: boolean;
   /** Short name of the team that won as an upset (pregame chance below 35 percent); null otherwise. */
   upsetTeam: string | null;
@@ -513,6 +517,9 @@ export class FantasyGameContextDialogComponent {
       return {
         left: left.WinProbability,
         right: right.WinProbability,
+        leftRaw: left.WinProbabilityRaw ?? null,
+        rightRaw: right.WinProbabilityRaw ?? null,
+        deterministic: left.WinProbabilityIsDeterministic === true && right.WinProbabilityIsDeterministic === true,
         live: left.FinalStarterCount > 0 || right.FinalStarterCount > 0,
         upsetTeam: null,
         caption: 'Chance to win this matchup, based on the projected scores. It is adjusted after every finished NFL game.'
