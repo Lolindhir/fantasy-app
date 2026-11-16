@@ -11,6 +11,7 @@ sys.path.insert(0, str(TOOLS))
 
 from nfl_source_data_lib import common as common_mod
 import nfl_pbp_source_archive as pbp_archive
+import nfl_pbp_2025_quality_report as pbp_quality
 from nfl_source_data_lib.draft import classify_draft_status
 from nfl_source_data_lib.materialize import materialize
 
@@ -344,6 +345,78 @@ class NflPbpArchiveSourcePilotTests(unittest.TestCase):
             }))
             with self.assertRaisesRegex(ValueError, "digest/size/status mismatch"):
                 pbp_archive.run(Path(tmp), "Lolindhir/fantasy-app", "test-token", weekday=1)
+
+
+class NflPbpOriginalResearchReportTests(unittest.TestCase):
+    def test_research_report_retains_exact_ten_metrics_and_missing_denominators(self):
+        ids = pbp_quality.MVP_METRICS
+        fields = {
+            "play_type": {
+                "HeaderPresent": True,
+                "Cohorts": {name: {"Rows": 10, "NonNull": 7, "Missing": 3}
+                            for name in ("AllRows", "PassPlayType",
+                                         "RunPlayType", "QBDropback")},
+            }
+        }
+        field = {
+            "SourceAssetSHA256": "a" * 64,
+            "SourceAssetCompressedBytes": 19,
+            "RawSeasonRowCount": 10,
+            "CsvColumnCount": 372,
+            "DistinctGameIDs": 1,
+            "GameRowCounts": [{"GameID": "2025_01_XXX_YYY", "RowCount": 10}],
+            "CanonicalGameContextReconciliation": {
+                "ExactContextRows": 10, "HistoricalAliasContextRows": 0,
+                "UnknownGameIDRows": 0, "MismatchedContextRows": 0,
+                "MatchedNonFinalGameRows": 0,
+            },
+            "MetricFieldCoverage": [{"MetricID": metric,
+                                     "Status": "fields-observed-in-gzip-unverified-eligibility-and-completeness"}
+                                    for metric in ids],
+            "FieldCoverage": fields,
+            "CohortRowCounts": {"AllRows": 10},
+            "MonitoredFieldsAbsent": [],
+            "BinaryFieldInvalidCounts": {},
+            "DictionarySemanticCrosschecks": {},
+            "ArchivedProjectionComparison": None,
+        }
+        evidence = {
+            "ObservedTeamGames": 2, "MissingTeamGames": 0,
+            "UnknownFlagRows": 3, "UnknownFlagTeamGames": 1,
+            "EligibleOutcomeRows": 5, "ObservedOutcomeRows": 4,
+            "MissingOutcomeRows": 1, "ZeroOutcomeDenominatorTeamGames": 0,
+            "ObservedDenominator": 4, "ObservedWeightedMeanApprox": 0.375,
+            "MinGameValue": 0.25, "MaxGameValue": 0.5,
+        }
+        metrics = {
+            "PBPAssetSHA256": "a" * 64,
+            "CanonicalGames": 1,
+            "MissingOriginalGameIDs": [],
+            "GameTeamCandidateRows": 2,
+            "EligibleScrimmagePlays": 5,
+            "TeamMetricResearchCoverage": {metric: evidence for metric in ids},
+            "PlayerStatsBaseline": {"Rows": 2},
+            "Reconciliation": {},
+        }
+        with patch.object(pbp_quality, "_catalog", return_value=(
+            [{"MetricID": metric, "Fields": ["play_type"]} for metric in ids], set()
+        )):
+            result = pbp_quality.summarize(field, metrics)
+        self.assertEqual(len(result["MVPMetricEvidence"]), 10)
+        self.assertFalse(result["ProductionReady"])
+        self.assertEqual(result["GameTeamCandidates"], 2)
+        self.assertEqual(result["MVPMetricEvidence"][0]["UnknownEligibilityFlagRows"], 3)
+        self.assertEqual(result["MVPMetricEvidence"][0]["MissingOutcomeRows"], 1)
+        self.assertEqual(result["MVPMetricEvidence"][0]["Fields"][0]["NonNullRate"], 0.7)
+
+    def test_missing_mvp_metric_fails_closed(self):
+        with patch.object(pbp_quality, "_catalog", return_value=([], set())):
+            with self.assertRaisesRegex(ValueError, "ten approved MVP metrics"):
+                pbp_quality.summarize(
+                    {"MetricFieldCoverage": [], "SourceAssetSHA256": "a"}, {
+                        "TeamMetricResearchCoverage": {}, "PBPAssetSHA256": "a"
+                    }
+                )
 
 
 if __name__ == "__main__":
