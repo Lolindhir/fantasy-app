@@ -381,6 +381,169 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertIn("no Raw commit", script)
         self.assertLess(script.index('actual_injury_sha="$(sha256sum'), script.index("git add -- data-source/providers"))
 
+    def test_accepted_historical_replay_and_noop_across_discovered_seasons(self):
+        from nfl_injuries_history_reconcile import reconcile_accepted_injury_history
+        from nfl_source_data_lib.injury_product_plan import build_injury_raw_artifacts
+        import hashlib
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            league = root / "data-source/leagues/x/manifest.json"
+            league.parent.mkdir(parents=True)
+            league.write_text(json.dumps({
+                "CurrentCanonicalLeagueSeasonID": "now",
+                "Seasons": [{"CanonicalLeagueSeasonID": "now", "Season": 2026}]
+            }), encoding="utf-8")
+            ident = root / "data-source/nfl/identities/players.json"
+            ident.parent.mkdir(parents=True)
+            ident.write_text(json.dumps(identities()), encoding="utf-8")
+            originals = {}
+            for season in (2024, 2025):
+                raw = asset(season, [report(season)])
+                originals[season] = raw
+                planned = build_injury_raw_artifacts(
+                    season=season, source_csv=raw,
+                    expected_source_sha256=hashlib.sha256(raw).hexdigest())
+                for name, data in planned.items():
+                    dest = root / name
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    dest.write_bytes(data)
+                game = root / f"data-source/nfl/schedules/{season}.json"
+                game.parent.mkdir(parents=True, exist_ok=True)
+                game.write_text(json.dumps({"Season": season, "Games": [{
+                    "Week": 5, "GameType": "REG",
+                    "GameID": f"{season}_05_X_HOU",
+                    "HomeTeam": "HOU", "AwayTeam": "X",
+                }]}), encoding="utf-8")
+            self.assertEqual([2024, 2025],
+                reconcile_accepted_injury_history(root, phase="canonical")["ChangedSeasons"])
+            self.assertTrue(reconcile_accepted_injury_history(
+                root, phase="canonical", write=True)["Written"])
+            self.assertEqual([], reconcile_accepted_injury_history(
+                root, phase="canonical", require_noop=True)["ChangedSeasons"])
+            self.assertEqual([2024, 2025], reconcile_accepted_injury_history(
+                root, phase="derived", write=True)["ChangedSeasons"])
+            self.assertEqual([], reconcile_accepted_injury_history(
+                root, phase="derived", require_noop=True)["ChangedSeasons"])
+            changed_ids = identities()
+            changed_ids["Players"][0]["IDAliases"]["GSIS"].append("00-0000002")
+            ident.write_text(json.dumps(changed_ids), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "not a semantic no-op"):
+                reconcile_accepted_injury_history(
+                    root, phase="canonical", require_noop=True)
+            self.assertEqual([2024, 2025], reconcile_accepted_injury_history(
+                root, phase="canonical", write=True)["ChangedSeasons"])
+            self.assertEqual([2024, 2025], reconcile_accepted_injury_history(
+                root, phase="derived", write=True)["ChangedSeasons"])
+            for season, original in originals.items():
+                self.assertEqual(original, (root /
+                    f"data-source/providers/nflverse/injuries/raw-{season}.csv").read_bytes())
+
+    def test_frozen_historical_revision_detected_without_overwriting_original(self):
+        from nfl_injuries_history_reconcile import audit_frozen_injury_revisions
+        from nfl_source_data_lib.injury_product_plan import build_injury_raw_artifacts
+        import hashlib
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            league = root / "data-source/leagues/x/manifest.json"
+            league.parent.mkdir(parents=True)
+            league.write_text(json.dumps({
+                "CurrentCanonicalLeagueSeasonID": "now",
+                "Seasons": [{"CanonicalLeagueSeasonID": "now", "Season": 2026}]
+            }), encoding="utf-8")
+            original = asset(2025, [report(2025)])
+            for name, data in build_injury_raw_artifacts(
+                season=2025, source_csv=original,
+                expected_source_sha256=hashlib.sha256(original).hexdigest()).items():
+                dest = root / name
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_bytes(data)
+            schedule = root / "data-source/nfl/schedules/2025.json"
+            schedule.parent.mkdir(parents=True)
+            schedule.write_text("{}", encoding="utf-8")
+            def release(contents):
+                return {"assets": [{
+                    "name": "injuries_2025.csv",
+                    "id": 17, "updated_at": "2026-11-16T08:00:00Z",
+                    "size": len(contents),
+                    "digest": "sha256:" + hashlib.sha256(contents).hexdigest(),
+                    "browser_download_url":
+                        "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+                }]}
+            good = audit_frozen_injury_revisions(
+                root, fetch_release=lambda: release(original))
+            self.assertEqual([], good["RequiresReview"])
+            changed = asset(2025, [report(2025, report_status="Out")])
+            bad = audit_frozen_injury_revisions(
+                root, fetch_release=lambda: release(changed))
+            self.assertEqual([2025], bad["RequiresReview"])
+            self.assertEqual("review-upstream-digest-changed",
+                             bad["AcceptedRevisionStates"][0]["State"])
+            self.assertFalse(bad["OriginalsReplaced"])
+            self.assertEqual(original, (root /
+                "data-source/providers/nflverse/injuries/raw-2025.csv").read_bytes())
+
+    def test_historical_derived_discovery_from_canonical_without_raw_or_league(self):
+        from nfl_injuries_history_reconcile import reconcile_accepted_injury_history
+        from nfl_source_data_lib.injury_product_plan import build_injury_artifacts
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            # No provider originals, league manifests, player graph or schedule
+            # exist in this checkout. Only the published Canonical inputs exist.
+            for season in (2025, 2026):
+                generated = build_injury_artifacts(
+                    season=season,
+                    source_csv=asset(season, [report(season)]),
+                    players=identities())
+                for name, contents in generated.items():
+                    if not name.startswith(f"data-source/nfl/injuries/{season}/"):
+                        continue
+                    dest = root / name
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    dest.write_bytes(contents)
+            result = reconcile_accepted_injury_history(
+                root, phase="derived", write=True)
+            self.assertEqual([2025, 2026], result["AcceptedHistoricalSeasons"])
+            self.assertEqual([2025, 2026], result["ChangedSeasons"])
+            self.assertIsNone(result["CurrentSeason"])
+            self.assertTrue(result["Written"])
+            same = reconcile_accepted_injury_history(
+                root, phase="derived", require_noop=True)
+            self.assertEqual([], same["ChangedSeasons"])
+            for season in (2025, 2026):
+                derived = root / f"data-derived/nfl-injuries/{season}.json"
+                self.assertEqual(season, json.loads(
+                    derived.read_text(encoding="utf-8"))["Season"])
+            self.assertFalse((root / "data-source/providers").exists())
+            self.assertFalse((root / "data-source/leagues").exists())
+            self.assertFalse((root / "data-source/nfl/identities").exists())
+            self.assertFalse((root / "data-source/nfl/schedules").exists())
+
+    def test_weekly_injury_reconcile_uses_existing_publisher_contract(self):
+        import yaml
+        root = Path(__file__).resolve().parents[2]
+        source = yaml.safe_load((root / ".github/workflows/sync-nfl-source-data.yml").read_text(encoding="utf-8"))
+        jobs = source["jobs"]
+        self.assertIn("injury_history_due", jobs["sync"]["outputs"])
+        step = next(s["run"] for s in jobs["sync"]["steps"] if s.get("id") == "injury_history_due")
+        self.assertIn("TZ=Europe/Berlin date +%u", step)
+        self.assertIn('GITHUB_EVENT_NAME" == "repository_dispatch"', step)
+        script = next(s["run"] for s in jobs["sync"]["steps"] if s.get("name") == "Sync, validate and publish NFL source data")
+        self.assertIn("--phase canonical --write", script)
+        self.assertIn("--phase canonical --require-noop", script)
+        self.assertNotIn("--phase raw --write", script)
+        historical = next(s["run"] for s in jobs["nfl_injuries_derived"]["steps"]
+                          if s["name"] == "Rebuild and publish all accepted historical Injury Derived")
+        self.assertIn("--path data-derived/nfl-injuries", historical)
+        self.assertIn("--phase derived --write", historical)
+        self.assertTrue(any(s["name"].startswith("Audit frozen original Injury")
+            for s in jobs["nfl_injuries_derived"]["steps"]))
+
     def test_readonly_historical_pilot_selects_latest_verified_missing_season(self):
         from nfl_injuries_refresh import preflight_next_injury_history
         import tempfile
