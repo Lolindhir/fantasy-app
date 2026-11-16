@@ -978,7 +978,7 @@ class NflInjuriesProductTests(unittest.TestCase):
                 repo_root=root, season=2025, write=True,
                 fetch_release=lambda: official, fetch_asset=lambda _: original,
             )
-            self.assertEqual("changes-planned", first["Status"])
+            self.assertEqual("staged-local-worktree", first["Status"])
             before = {str(p.relative_to(root)): p.read_bytes()
                       for p in root.rglob("*") if p.is_file()}
             revised = copy.deepcopy(official)
