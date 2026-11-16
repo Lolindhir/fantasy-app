@@ -10,9 +10,9 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from typing import Any, Mapping
+from typing import Any, Iterable, Mapping
 
-from .injury_reports import parse_injury_report_csv
+from .injury_reports import parse_injury_report_csv, valid_injury_season
 from .injury_canonical import canonicalize_injury_reports
 from derived_data_lib.nfl_injuries import derive_nfl_injuries
 
@@ -42,8 +42,8 @@ def plan_release_refresh(
     A missing asset is retryable, never evidence of healthy players or
     permission to overwrite the last good product with empty results.
     """
-    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2099:
-        raise ValueError("Unsupported injury release season")
+    if not valid_injury_season(season):
+        raise ValueError("Injury release season must be a four-digit year")
     if not isinstance(release, dict) or not isinstance(release.get("assets"), list):
         raise ValueError("Injury release metadata requires an assets list")
     expected_name = f"injuries_{season}.csv"
@@ -102,6 +102,88 @@ def plan_release_refresh(
             "DownloadUrl": expected_url,
         },
         "FullSourceDigestAvailable": digest is not None,
+    }
+
+
+
+_ASSET_NAME = re.compile(r"^injuries_([0-9]{4})\.csv$")
+
+
+def plan_injury_history_inventory(
+    release: dict[str, Any],
+    *,
+    current_season: int,
+    persisted_seasons: Iterable[int] = (),
+    schedule_seasons: Iterable[int] = (),
+) -> dict[str, Any]:
+    """Read-only, release-driven historical inventory; never approve an import.
+
+    Do not guess missing years or presume that a header profile is accepted
+    historical evidence. Only a verified official SHA or a separately attested
+    original revision can permit an import. This inventory reports official
+    SHA candidates; attested originals without an official hash need a separate
+    provenance review, not an automatic relaxation.
+    """
+    if not valid_injury_season(current_season):
+        raise ValueError("Current Injury season must be a four-digit year")
+    if not isinstance(release, dict) or not isinstance(release.get("assets"), list):
+        raise ValueError("Injury release inventory requires an assets list")
+    stored = set(persisted_seasons)
+    schedules = set(schedule_seasons)
+    if any(not valid_injury_season(year) for year in stored | schedules):
+        raise ValueError("Historical Injury inventory contains invalid season identifiers")
+
+    seasons: set[int] = set()
+    for asset in release["assets"]:
+        if not isinstance(asset, dict):
+            raise ValueError("Injury release contains invalid asset metadata")
+        name = asset.get("name")
+        if not isinstance(name, str):
+            raise ValueError("Injury release asset lacks a name")
+        match = _ASSET_NAME.fullmatch(name)
+        if match:
+            season = int(match.group(1))
+            if not valid_injury_season(season):
+                raise ValueError("Injury release has an invalid four-digit season asset")
+            seasons.add(season)
+
+    entries: list[dict[str, Any]] = []
+    for season in sorted(seasons):
+        decision = plan_release_refresh(release, season=season)
+        asset = decision["SourceAsset"]
+        if season > current_season:
+            state = "future-not-imported"
+        elif season == current_season:
+            state = "current-season"
+        elif season not in schedules:
+            state = "blocked-missing-canonical-schedule"
+        elif season in stored:
+            state = "persisted-historical-reconciliation-required"
+        elif not decision["FullSourceDigestAvailable"]:
+            state = "blocked-unverified-original-revision"
+        else:
+            state = "candidate-requires-schema-and-identity-audit"
+        entries.append({
+            "Season": season,
+            "State": state,
+            "OfficialSha256Available": decision["FullSourceDigestAvailable"],
+            "AssetByteSize": asset["ByteSize"],
+            "SourceAssetId": asset["Id"],
+            "Persisted": season in stored,
+            "CanonicalScheduleAvailable": season in schedules,
+        })
+
+    return {
+        "SchemaVersion": 1,
+        "SourceDataset": _DATASET,
+        "CurrentSeason": current_season,
+        "DiscoveredSeasons": sorted(seasons),
+        "PersistedMissingUpstream": sorted(stored - seasons),
+        "CandidateSeasons": [x["Season"] for x in entries if x["State"].startswith("candidate-")],
+        "BlockedSeasons": [x["Season"] for x in entries if x["State"].startswith("blocked-")],
+        "SeasonStates": entries,
+        "PublicationPerformed": False,
+        "HistoricalImportAuthorized": False,
     }
 
 
@@ -238,8 +320,8 @@ def classify_injury_artifacts(
     We do not authorize removal: an obsolete partition is a blocking review
     finding, never an instruction to delete automatically.
     """
-    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2099:
-        raise ValueError("Unsupported injury partition season")
+    if not valid_injury_season(season):
+        raise ValueError("Injury partition season must be a four-digit year")
     raw_prefix = "data-source/providers/nflverse/injuries/"
     canonical_prefix = f"data-source/nfl/injuries/{season}/"
     derived_path = f"data-derived/nfl-injuries/{season}.json"

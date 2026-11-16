@@ -27,18 +27,25 @@ _LEGACY_COLUMNS = _COMMON_COLUMNS | {"date_modified"}
 _NEW_COLUMNS = _COMMON_COLUMNS | {"season_type"}
 
 
+def valid_injury_season(season: Any) -> bool:
+    """Validate a four-digit NFL season identifier, not a hard-coded year range."""
+    return (isinstance(season, int) and not isinstance(season, bool)
+            and season > 0 and len(str(season)) == 4)
+
+
 def parse_injury_report_csv(asset: bytes, *, season: int) -> dict[str, Any]:
     """Parse one official-style season asset without changing any provider field.
 
-    Only the audited 2012–2024 and 2025+ header variants are supported. Years
-    2009–2011 remain gated until their actual source schemas can be verified.
+    The accepted header profiles are selected from the actual asset columns,
+    never inferred from a season threshold. This parser's recognition of a
+    profile does not approve a historical original or authorize publication.
     A source observation is identified by the full asset hash and logical row
     ordinal; this is not a stable event identifier across upstream revisions.
     """
     if not isinstance(asset, bytes):
         raise TypeError("Injury CSV asset must be bytes")
-    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2099:
-        raise ValueError("Injury CSV season must be in audited schema range 2012+ (2012–2024 legacy, 2025+ current schema; future headers checked strictly)")
+    if not valid_injury_season(season):
+        raise ValueError("Injury CSV season must be a four-digit year")
 
     digest = hashlib.sha256(asset).hexdigest()
     try:
@@ -51,15 +58,20 @@ def parse_injury_report_csv(asset: bytes, *, season: int) -> dict[str, Any]:
         header = next(reader)
     except StopIteration as exc:
         raise ValueError("Injury CSV is empty") from exc
-    expected = _LEGACY_COLUMNS if season <= 2024 else _NEW_COLUMNS
-    if len(header) != len(expected) or set(header) != expected:
-        raise ValueError(
-            f"Injury CSV {season}: unexpected header; "
-            f"missing={sorted(expected - set(header))}, "
-            f"unexpected={sorted(set(header) - expected)}"
-        )
     if len(set(header)) != len(header):
         raise ValueError("Injury CSV contains duplicate header names")
+    columns = set(header)
+    if columns == _LEGACY_COLUMNS and len(header) == len(_LEGACY_COLUMNS):
+        source_schema = "date-modified"
+    elif columns == _NEW_COLUMNS and len(header) == len(_NEW_COLUMNS):
+        source_schema = "season-type"
+    else:
+        raise ValueError(
+            f"Injury CSV {season}: unexpected header; "
+            f"missingCommon={sorted(_COMMON_COLUMNS - columns)}, "
+            f"unknownColumns={sorted(columns - (_LEGACY_COLUMNS | _NEW_COLUMNS))}, "
+            f"knownProfiles=[date-modified, season-type]"
+        )
 
     rows: list[dict[str, Any]] = []
     for ordinal, values in enumerate(reader, start=1):
@@ -94,7 +106,7 @@ def parse_injury_report_csv(asset: bytes, *, season: int) -> dict[str, Any]:
         "Source": _SOURCE,
         "ParserSchemaVersion": 1,
         "Season": season,
-        "SourceSchema": "date-modified" if season <= 2024 else "season-type",
+        "SourceSchema": source_schema,
         "AssetSha256": digest,
         "AssetByteSize": len(asset),
         "Header": header,

@@ -20,6 +20,7 @@ from typing import Any
 
 from derived_data_lib.nfl_injuries import derive_nfl_injuries
 from nfl_injuries_materialize import _assert_bounded_path
+from nfl_source_data_lib.injury_reports import valid_injury_season
 from nfl_source_data_lib.injury_product_plan import (
     build_injury_artifacts,
     build_injury_raw_artifacts,
@@ -127,8 +128,8 @@ def plan_injury_phase(
     schedule: dict | None = None,
 ) -> dict[str, bytes]:
     """Source→Canonical→Derived, each restricted to its own upstream owner."""
-    if not isinstance(season, int) or isinstance(season, bool) or not 2012 <= season <= 2099:
-        raise ValueError("Unsupported Injury season")
+    if not valid_injury_season(season):
+        raise ValueError("Injury season must be a four-digit year")
     if phase not in _PHASES:
         raise ValueError("Unknown Injury publication phase")
     if phase == "raw":

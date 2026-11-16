@@ -18,6 +18,7 @@ import sys
 import tempfile
 from typing import Any
 
+from nfl_source_data_lib.injury_reports import valid_injury_season
 from nfl_source_data_lib.injury_product_plan import (
     build_injury_artifacts,
     classify_injury_artifacts,
@@ -81,9 +82,8 @@ def stage_injury_season(
     """
     if not repo_root.is_dir():
         raise ValueError("Repository root must be an existing directory")
-    if (not isinstance(season, int) or isinstance(season, bool)
-            or not 2012 <= season <= 2099):
-        raise ValueError("Unsupported NFL injury report season")
+    if not valid_injury_season(season):
+        raise ValueError("NFL injury report season must be a four-digit year")
     release_asset = None
     decision = None
     if release_json is not None:
