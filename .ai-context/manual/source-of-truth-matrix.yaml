@@ -1269,6 +1269,11 @@ consumerReadClassification:
       reads:
         provider:nflverse: source-layer-acquisition
       note: 'Issue #1421: no-write injury release metadata and artifact planning; nflverse URL is a source-origin reference, not an HTTP call or active publisher.'
+    tools/nfl_pbp_source_archive.py:
+      reads:
+        network: source-layer-acquisition
+        provider:nflverse: source-layer-acquisition
+      note: 'Issue #1077: 2025-only original nflverse play-by-play acquisition and immutable GitHub Release Source-evidence archive through the existing NFL Source workflow; no Fantasy/App/Derived model direct read, no new scheduler or independent branch writer.'
     tools/nfl_source_data_lib/common.py:
       reads:
         network: source-layer-acquisition
