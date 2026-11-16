@@ -658,8 +658,8 @@ jobs:
             # GitHub Release asset. No new branch writer or scheduler.
             # Scoped and targeted syncs cannot acquire or publish original PBP.
             if [[ "$materialization_scope" == "full" && -z "${DATASET:-}" && -z "${SEASON:-}" ]]; then
-              if [[ ! -f data-source/providers/nflverse/play-by-play-original/metadata-2025.json ]]; then
-                python3 -m pip install --disable-pip-version-check 'PyYAML==6.0.2'
+              if [[ ! -f data-source/providers/nflverse/play-by-play-original/metadata-2025.json ]] && ! python3 -c 'import yaml' 2>/dev/null; then
+                python3 -m pip install --disable-pip-version-check 'PyYAML==6.0.2' || echo "::warning::2025 PBP audit dependency unavailable; pilot will report blocked."
               fi
               pbp_archive_log="$(mktemp)"
               set +e
