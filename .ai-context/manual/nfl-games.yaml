@@ -242,11 +242,16 @@ futureGameDetailDirection:
     invalidation:
       scope: canonical-GameID
       key: >-
-        Hash the selected canonical game index record, selected original
-        player-stats and snap-count rows for this GameID, source Finalized
-        values, model version and detail schema version. A changed input row,
-        group availability, finality or model rule invalidates that GameID;
-        changes to unrelated games in the same week do not.
+        Hash the selected canonical game index record, only the validated
+        PlayerStats counting-stat fields/row team and identity and SnapCounts
+        count/share fields/row team and identity actually consumed by this
+        versioned model for this GameID, source Finalized values, model version
+        and detail schema version. A relevant changed input field, group
+        availability, finality or model rule invalidates the GameID; unrelated
+        game rows and unused provider attributes (including nonfinite historical
+        EPA fields not modeled in v1) do not. Do not silently coerce invalid
+        model-used fields to zero or use a new metric without bumping the model
+        definition version.
       semantics: >-
         Stable canonical ordering and serialized JSON; unchanged result
         yields no write or commit. Never treat raw Source snapshots or a
