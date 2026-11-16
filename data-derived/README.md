@@ -20,6 +20,7 @@ the read-only restore probe `tools/derived_clean_root_audit.py`.
 | Product directory | Contract | Materializer | Writer workflows |
 |---|---|---|---|
 | `nfl-games` | `.ai-context/manual/nfl-games.yaml` | `tools/nfl_games_materialize.py` | `sync-nfl-source-data.yml` |
+| `nfl-injuries` | `.ai-context/manual/nfl-injuries.yaml` | `tools/nfl_injuries_phase.py` | `sync-nfl-source-data.yml` |
 | `player-week-fantasy` | `.ai-context/manual/player-week-fantasy.yaml` | `tools/player_week_fantasy_materialize.py` | `league-live.yml`, `update-standings.yml` |
 | `team-week-performance` | `.ai-context/manual/team-week-performance.yaml` | `tools/team_week_performance_materialize.py` | `league-live.yml`, `update-standings.yml` |
 | `player-valuation` | `.ai-context/manual/player-valuation.yaml` | `tools/derived_data.py` | `update-players.yml` |
@@ -29,6 +30,19 @@ the read-only restore probe `tools/derived_clean_root_audit.py`.
 | `season-statistics` | `.ai-context/manual/season-statistics.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
 | `league-rivalry` | `.ai-context/manual/league-rivalry.yaml` | `tools/derived_data.py` | `league-live.yml`, `update-transactions.yml` |
 <!-- derived-products:end -->
+
+## NFL Injury report trajectories
+
+`data-derived/nfl-injuries/<season>.json` is the global, league-independent
+`nfl-injuries-v1` product (Issue #1421). It is rebuilt solely from the verified
+`data-source/nfl/injuries/<season>/` canonical week partitions and manifest by
+`tools/nfl_injuries_phase.py --phase derived`; it does not infer player availability,
+clinical episodes, missed games or historical pre-kickoff knowledge. The isolated
+Injury Source workflow delegates to the existing Source writer and publishes the
+Derived result through the independent scoped rebuild-and-retry job. The daily
+current-season importer is active; supported historical backfill and weekly
+reconciliation remain tracked in #1421. The read-only clean-root audit restores
+this product from accepted canonical input and verifies semantic no-op behavior.
 
 ## Global NFL Game
 
