@@ -152,6 +152,8 @@ materializationPlan:
   releaseRefreshCli: tools/nfl_injuries_refresh.py --season <year>
   readOnlyDynamicHistoryInventory: tools/nfl_injuries_refresh.py --discover-history
   readOnlyHistoricalPilotPreflight: tools/nfl_injuries_refresh.py --pilot-preflight
+  historicalReconcileCli: tools/nfl_injuries_history_reconcile.py --phase canonical|derived --write
+  frozenOriginalRevisionAuditCli: tools/nfl_injuries_history_reconcile.py --phase revisions --fail-on-review
   historicalBootstrap:
     trigger: existing Injury wrapper push after approved workflow change
     selection: one newest missing Derived season with official SHA-256 and canonical schedule
@@ -258,11 +260,27 @@ freshness:
       frozenRevision: >-
         Detect and flag revised original assets for an explicit historical
         repair decision; never silently overwrite frozen past-season evidence.
-      currentImplementationGap: >-
-        The daily injury workflow targets one selected season (current by
-        default), with historical_backfill_limit=0. No automatic weekly
-        historical reconciliation or bulk backfill is active; Issue #1421
-        owns the missing implementation and live acceptance.
+      weeklyOwner: .github/workflows/sync-nfl-source-data.yml
+      cadence: "Monday 04:00 Europe/Berlin via existing central scheduler full NFL Source repository_dispatch only; push/targeted/manual reruns do not own the weekly replay"
+      canonicalRecomputation: >-
+        Accepted historical original Raw and metadata only; recompute every
+        accepted Canonical season from current player identities and NFL schedule
+        in the existing full Source writer, with exact no-op second replay.
+      derivedRecomputation: >-
+        Reuse the existing nfl_injuries_derived rebuild-and-retry publisher to
+        regenerate every published Canonical Injury season (historical and current)
+        after Source succeeds. Derived discovers seasons only from Canonical
+        manifests and reads only Canonical week partitions; never Raw original
+        CSV/metadata, identity graph, schedule or league manifests.
+      sourceRevisionObservation: >-
+        Weekly official release metadata comparison of frozen accepted history;
+        changed or unverifiable revisions fail for manual review and never
+        replace original Raw bytes automatically.
+      pendingAcceptance: >-
+        Weekly historical schedule path is implemented but requires exact-head
+        CI, merge, and productive Monday proof. Initial bulk acquisition of
+        digest-less historical originals remains blocked by original-byte
+        attestation and independent audit; Issue #1421 owns those gates.
     noOp: do not reprocess when source digest and applicable identity/schedule inputs are unchanged
     retry: missed or delayed upstream refresh requires bounded catch-up check
     status: source-refresh-cli-implemented-unscheduled

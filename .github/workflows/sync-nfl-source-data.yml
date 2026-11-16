@@ -100,6 +100,7 @@ jobs:
       MATERIALIZATION_SCOPE: ${{ inputs.materialization_scope || 'full' }}
     outputs:
       main_before_sync: ${{ steps.base.outputs.main_before_sync }}
+      injury_history_due: ${{ steps.injury_history_due.outputs.due }}
 
     steps:
       - name: Record queue timing
@@ -224,6 +225,23 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Select Monday accepted Injury history reconciliation
+        id: injury_history_due
+        shell: bash
+        env:
+          DATASET: ${{ inputs.dataset }}
+          SEASON: ${{ inputs.season }}
+        run: |
+          set -euo pipefail
+          due=false
+          # A workflow-code push on Monday is not the 04:00 scheduled slot.
+          # Only the centrally scheduled, unfiltered Source refresh owns history.
+          if [[ "$GITHUB_EVENT_NAME" == "repository_dispatch" && "${MATERIALIZATION_SCOPE:-full}" == "full" && -z "${DATASET:-}" && -z "${SEASON:-}" && "$(TZ=Europe/Berlin date +%u)" == "1" ]]; then
+            due=true
+          fi
+          echo "due=$due" >> "$GITHUB_OUTPUT"
+          echo "- Accepted historical Injury reconciliation due: $due" >> "$GITHUB_STEP_SUMMARY"
+
       # Regression tests run in PR CI and the periodic full audit.
       # Keep real-data and canonical-state validation in the publisher.
       - name: Report production validation boundary
@@ -241,10 +259,12 @@ jobs:
           HISTORICAL_BACKFILL_LIMIT: ${{ inputs.historical_backfill_limit }}
           FORCE: ${{ inputs.force }}
           EXPECTED_INJURY_SHA256: ${{ inputs.expected_injury_sha256 || '' }}
+          INJURY_HISTORY_DUE: ${{ steps.injury_history_due.outputs.due }}
           PAT_PUSH: ${{ secrets.PAT_PUSH }}
           # Existing contents:write token, restricted to the 2025 Source-evidence pilot.
           PBP_ARCHIVE_TOKEN: ${{ github.token }}
           # The built-in token also reads official nflverse release metadata.
+          # The built-in token is only used to read official nflverse release metadata.
           NFLVERSE_RELEASE_API_TOKEN: ${{ inputs.materialization_scope == 'injuries' && github.token || '' }}
         run: |
           set -euo pipefail
@@ -720,6 +740,22 @@ jobs:
               exit "$materialize_status"
             fi
 
+            # Reconcile accepted historical Canonical only in Monday's existing
+            # full Source writer. No provider Raw download or frozen original repair.
+            if [[ "${INJURY_HISTORY_DUE:-false}" == "true" ]]; then
+              history_log="$(mktemp)"
+              set +e
+              python3 tools/nfl_injuries_history_reconcile.py --phase canonical --write 2>&1 | tee "$history_log"
+              history_status=${PIPESTATUS[0]}
+              set -e
+              if (( history_status != 0 )); then
+                echo "Historical NFL Injury canonical reconciliation failed; no Canonical commit." >&2
+                write_failure_diagnostic "historical-injury-canonical" "$history_status" "$history_log"
+                exit "$history_status"
+              fi
+              echo "- Weekly Injury Canonical: checked all accepted historical originals" >> "$GITHUB_STEP_SUMMARY"
+            fi
+
             assert_source_data_only
             assert_scoped_canonical_write_set
 
@@ -823,6 +859,11 @@ jobs:
               )
           PY
               noop_status=$?
+            fi
+            if (( noop_status == 0 )) && [[ "${INJURY_HISTORY_DUE:-false}" == "true" ]]; then
+              # The historical Canonical replay must itself be byte-identical
+              # on the second pass of the exact same Source transaction.
+              python3 tools/nfl_injuries_history_reconcile.py --phase canonical --require-noop || noop_status=$?
             fi
             set -e
             noop_seconds=$(( $(date +%s) - noop_start ))
@@ -978,9 +1019,9 @@ jobs:
   nfl_injuries_derived:
     name: Publish isolated NFL Injury Shared Derived
     needs: sync
-    # Run only after the two-phase Injury Source publisher completed successfully.
-    # Derived reads the now-published Canonical manifest and partitions on latest main.
-    if: ${{ needs.sync.result == 'success' && inputs.materialization_scope == 'injuries' }}
+    # Reuse the same Derived writer for an Injury Source update or a successful
+    # Monday full-Source historical Canonical reconciliation, never a new writer.
+    if: ${{ needs.sync.result == 'success' && (inputs.materialization_scope == 'injuries' || needs.sync.outputs.injury_history_due == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -997,6 +1038,7 @@ jobs:
           python-version: "3.12"
 
       - name: Rebuild and publish isolated Injury Derived product
+        if: ${{ inputs.materialization_scope == 'injuries' }}
         shell: bash
         env:
           INJURY_SEASON_INPUT: ${{ inputs.season }}
@@ -1015,6 +1057,21 @@ jobs:
             --path data-derived/nfl-injuries \
             -- \
             python3 tools/nfl_injuries_phase.py --phase derived --season "$season" --write
+
+      - name: Rebuild and publish all accepted historical Injury Derived
+        if: ${{ needs.sync.outputs.injury_history_due == 'true' }}
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope nfl-injuries
+          --path data-derived/nfl-injuries
+          --
+          python3 tools/nfl_injuries_history_reconcile.py --phase derived --write
+
+      - name: Audit frozen original Injury release revisions without repair
+        if: ${{ needs.sync.outputs.injury_history_due == 'true' }}
+        env:
+          NFLVERSE_RELEASE_API_TOKEN: ${{ github.token }}
+        run: python3 tools/nfl_injuries_history_reconcile.py --phase revisions --fail-on-review
 
       - name: Summarize Injury Derived publication
         if: ${{ always() }}
