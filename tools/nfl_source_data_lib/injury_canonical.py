@@ -79,6 +79,7 @@ def canonicalize_injury_reports(
         raise ValueError("Parsed injury source row count does not match observations")
     claims, identity_fingerprint = _claims(canonical_players)
     games = _schedule_index(schedule, season)
+    observed_game_keys: set[tuple[int, str, str]] = set()
     weeks: dict[int, list[dict[str, Any]]] = defaultdict(list)
     seen: set[int] = set()
     identity_counts = {"resolved-current-graph": 0, "unresolved": 0, "ambiguous": 0}
@@ -106,6 +107,7 @@ def canonicalize_injury_reports(
         identity_counts[identity_state] += 1
         canonical_player_id = next(iter(owners)) if len(owners) == 1 else None
         game_key = (week, str(source["game_type"]), str(source["team"]))
+        observed_game_keys.add(game_key)
         game_candidates = games.get(game_key, set()) if games is not None else set()
         game_state = ("not-evaluated" if games is None else
                       "not-found" if len(game_candidates) == 0 else
@@ -128,6 +130,19 @@ def canonicalize_injury_reports(
             "SourceModifiedAtUtc": None,
             "OriginalFields": dict(source),
         })
+    # The published schedule attestation covers only facts capable of changing
+    # a reported player's GameID or link state. A complete schedule digest would
+    # churn whenever unrelated NFL results, kickoffs or game metadata refresh.
+    # Include unmatched report team-weeks so later game corrections invalidate.
+    link_fingerprint = (_digest({
+        "Version": "injury-game-link-v1",
+        "Season": season,
+        "ObservedTeamGameCandidates": [
+            {"Week": week, "GameType": game_type, "SourceTeam": team,
+             "GameIDs": sorted(games.get((week, game_type, team), set()))}
+            for week, game_type, team in sorted(observed_game_keys)
+        ],
+    }) if games is not None else None)
     partitions = []
     for week, observations in sorted(weeks.items()):
         observations.sort(key=lambda row: row["RowOrdinal"])
@@ -148,6 +163,7 @@ def canonicalize_injury_reports(
         "SourceDataset": "nflverse.injuries",
         "SourceAssetSha256": digest,
         "IdentityGraphFingerprint": identity_fingerprint,
+        "ScheduleGraphFingerprint": link_fingerprint,
         "Partitions": partitions,
         "Quality": {
             "SourceRowCount": len(rows),

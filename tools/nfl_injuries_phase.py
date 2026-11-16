@@ -219,6 +219,22 @@ def run_injury_phase(
         target = _assert_bounded_path(repo_root, path)
         if target.is_file():
             existing[path] = target.read_bytes()
+    # An official release can be re-uploaded under a new GitHub asset ID while
+    # its SHA-256 and bytes remain unchanged. Preserve the *accepted* asset's
+    # original attestation instead of creating a provenance-only data commit.
+    # Every current release and the full CSV have already been validated by
+    # plan_injury_phase; only release-specific identity/time may be ignored.
+    if phase == "raw":
+        raw_name = f"data-source/providers/nflverse/injuries/raw-{season}.csv"
+        metadata_name = f"data-source/providers/nflverse/injuries/metadata-{season}.json"
+        if existing.get(raw_name) == proposed[raw_name] and metadata_name in existing:
+            accepted = json.loads(existing[metadata_name].decode("utf-8"))
+            current = json.loads(proposed[metadata_name].decode("utf-8"))
+            revision_fields = {"ReleaseAssetId", "ReleaseAssetUpdatedAt"}
+            if (isinstance(accepted, dict) and
+                    {k: v for k, v in accepted.items() if k not in revision_fields} ==
+                    {k: v for k, v in current.items() if k not in revision_fields}):
+                proposed[metadata_name] = existing[metadata_name]
     stale = sorted(set(existing) - set(proposed))
     changed = sorted(p for p, v in proposed.items() if p in existing and existing[p] != v)
     new = sorted(set(proposed) - set(existing))

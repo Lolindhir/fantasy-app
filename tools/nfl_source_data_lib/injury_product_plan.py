@@ -220,7 +220,7 @@ def build_injury_artifacts(
         "SourceRowCount": parsed["RowCount"],
         "CanonicalQuality": canonical["Quality"],
         "ScheduleWasEvaluated": schedule is not None,
-        "ScheduleGraphFingerprint": _sha256(_render(schedule)) if schedule is not None else None,
+        "ScheduleGraphFingerprint": canonical["ScheduleGraphFingerprint"],
         "Completeness": "observed-report-partitions-only",
     })
     target[f"data-derived/nfl-injuries/{season}.json"] = _render(derived)

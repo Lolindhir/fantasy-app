@@ -321,6 +321,53 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertIn("data-derived/nfl-injuries/2025.json", delta["Changed"])
 
 
+    def test_schedule_fingerprint_tracks_only_observed_report_game_links(self):
+        from nfl_source_data_lib.injury_product_plan import (
+            build_injury_artifacts, classify_injury_artifacts,
+        )
+        import json
+        raw = asset(2025, [report(2025)])
+        observed = {"GameID": "2025_05_NYG_HOU", "GameType": "REG", "Week": 5,
+                    "HomeTeam": "HOU", "AwayTeam": "NYG", "KickoffUtc": "earlier",
+                    "HomeScore": 0}
+        unrelated = {"GameID": "2025_07_NYJ_BUF", "GameType": "REG", "Week": 7,
+                     "HomeTeam": "NYJ", "AwayTeam": "BUF"}
+        base = {"Season": 2025, "Games": [observed, unrelated]}
+        first = build_injury_artifacts(
+            season=2025, source_csv=raw, players=identities(), schedule=base,
+        )
+        irrelevant = copy.deepcopy(base)
+        irrelevant["GeneratedAtUtc"] = "new-fetched-time"
+        irrelevant["Games"][0]["KickoffUtc"] = "later"
+        irrelevant["Games"][0]["HomeScore"] = 42
+        irrelevant["Games"][1]["GameID"] = "2025_07_NYJ_BUF_CORRECTED"
+        irrelevant["Games"].reverse()
+        same = build_injury_artifacts(
+            season=2025, source_csv=raw, players=identities(), schedule=irrelevant,
+        )
+        self.assertEqual(first, same)
+        self.assertFalse(classify_injury_artifacts(same, first, season=2025)["RequiresWrites"])
+        manifest = json.loads(first["data-source/nfl/injuries/2025/manifest.json"])
+        self.assertIsInstance(manifest["ScheduleGraphFingerprint"], str)
+        # Adding an extra candidate for a reported team-week is not harmless:
+        # the previously linked GameID becomes ambiguous and must be reattested.
+        conflicting = copy.deepcopy(base)
+        conflicting["Games"].append({
+            "GameID": "2025_05_NYG_HOU_DUP", "GameType": "REG", "Week": 5,
+            "HomeTeam": "HOU", "AwayTeam": "NYG",
+        })
+        changed = build_injury_artifacts(
+            season=2025, source_csv=raw, players=identities(), schedule=conflicting,
+        )
+        delta = classify_injury_artifacts(changed, first, season=2025)
+        self.assertIn("data-source/nfl/injuries/2025/manifest.json", delta["Changed"])
+        self.assertIn("data-source/nfl/injuries/2025/05.json", delta["Changed"])
+        self.assertIn("data-derived/nfl-injuries/2025.json", delta["Changed"])
+        observation = json.loads(changed["data-source/nfl/injuries/2025/05.json"])[
+            "Observations"][0]
+        self.assertEqual("ambiguous", observation["GameLinkState"])
+        self.assertIsNone(observation["GameID"])
+
     def test_official_release_digest_drives_daily_noop_or_refresh(self):
         from nfl_source_data_lib.injury_product_plan import plan_release_refresh
         import hashlib
@@ -909,6 +956,60 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertFalse(second["Downloaded"])
             self.assertFalse(second["Written"])
             self.assertEqual(1, len(downloaded))
+
+    def test_reuploaded_identical_release_is_true_raw_noop_with_original_provenance(self):
+        from nfl_injuries_refresh import refresh_injury_raw
+        from nfl_injuries_phase import run_injury_phase
+        import hashlib
+        import json
+        import tempfile
+        original = asset(2025, [report(2025)])
+        sha = hashlib.sha256(original).hexdigest()
+        official = {"assets": [{
+            "name": "injuries_2025.csv", "id": 101,
+            "updated_at": "2026-11-15T07:00:00Z", "size": len(original),
+            "digest": "sha256:" + sha,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+        }]}
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            first = refresh_injury_raw(
+                repo_root=root, season=2025, write=True,
+                fetch_release=lambda: official, fetch_asset=lambda _: original,
+            )
+            self.assertEqual("staged-local-worktree", first["Status"])
+            before = {str(p.relative_to(root)): p.read_bytes()
+                      for p in root.rglob("*") if p.is_file()}
+            revised = copy.deepcopy(official)
+            revised["assets"][0]["id"] = 202
+            revised["assets"][0]["updated_at"] = "2026-11-16T07:00:00Z"
+            def cannot_download(_):
+                raise AssertionError("Identical official digest must reuse persisted CSV")
+            second = refresh_injury_raw(
+                repo_root=root, season=2025, write=True,
+                fetch_release=lambda: revised, fetch_asset=cannot_download,
+            )
+            self.assertEqual("no-op", second["Status"])
+            self.assertEqual("no-op", second["ReleaseDecision"])
+            self.assertFalse(second["Downloaded"])
+            self.assertFalse(second["Written"])
+            self.assertEqual([], second["Changed"])
+            self.assertEqual([], second["New"])
+            # The explicit raw phase must make the same decision as the producer.
+            direct = run_injury_phase(
+                root, 2025, "raw", source_csv=original, release_json=revised, write=True,
+            )
+            self.assertEqual("no-op", direct["Status"])
+            self.assertFalse(direct["Written"])
+            self.assertEqual(before, {str(p.relative_to(root)): p.read_bytes()
+                                      for p in root.rglob("*") if p.is_file()})
+            metadata = json.loads((root /
+                "data-source/providers/nflverse/injuries/metadata-2025.json"
+            ).read_text(encoding="utf-8"))
+            self.assertEqual(101, metadata["ReleaseAssetId"])
+            self.assertEqual("2026-11-15T07:00:00Z", metadata["ReleaseAssetUpdatedAt"])
+            self.assertEqual(sha, metadata["AssetSha256"])
 
     def test_production_raw_fetch_preserves_previous_good_on_corrupt_release(self):
         from nfl_injuries_refresh import refresh_injury_raw
