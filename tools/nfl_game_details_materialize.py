@@ -106,6 +106,7 @@ def plan_season(
     stats_missing = 0
     snaps_missing = 0
     identity_holds = 0
+    invalid_snap_share_rows = 0
     skipped = 0
     for week in sorted(by_week):
         stats = _week_partition(src, "player-stats", season, week, cache)
@@ -127,6 +128,7 @@ def plan_season(
             if (detail["TeamStats"]["UnresolvedPlayerIdentityRows"]
                     or detail["SnapCounts"]["UnresolvedPlayerIdentityRows"]):
                 identity_holds += 1
+            invalid_snap_share_rows += detail["SnapCounts"].get("InvalidShareRows", 0)
             serialized = json.dumps(detail, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
             filename = target / (game_id + ".json")
             if filename.is_file():
@@ -154,6 +156,7 @@ def plan_season(
         "WithMissingTeamStats": stats_missing,
         "WithMissingTeamSnaps": snaps_missing,
         "WithIdentityHolds": identity_holds,
+        "WithInvalidSnapShareRows": invalid_snap_share_rows,
         "ExistingUnchanged": len(eligible_ids) - len(preflight),
         "ChangedOrNew": len(preflight),
         "Written": len(preflight) if write else 0,

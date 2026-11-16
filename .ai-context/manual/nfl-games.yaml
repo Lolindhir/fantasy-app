@@ -212,12 +212,21 @@ futureGameDetailDirection:
         non-null team/opponent combinations fail closed rather than using
         arbitrary aliases.
       teamSnapCounts: >-
-        Validate GameID, team, opponent, game type/week, typed nonnegative
-        count and bounded rounded percentage for every source row. Infer team
-        total independently of player identity, retaining unresolved-ID
-        counts without publishing those rows as named players. Inconsistent,
-        ambiguous or sparse eligibility remains nullable per unit; opposite
-        offense and defense totals must reconcile when both known.
+        Validate GameID, team, opponent, game type/week and typed nonnegative
+        counts strictly. Invalid source percentage shares (out of 0..1,
+        nonnumeric or nonfinite) must not be clipped/coerced or block other
+        valid metrics: only the source team's affected Offense, Defense or
+        SpecialTeams unit gets Status=blocked-invalid-share, TotalSnaps=null
+        and InvalidShareRows; the game exposes SnapCounts.InvalidShareRows
+        when nonzero. Other teams/units and TeamStats remain independent.
+        Raw canonical Source stays untouched; the per-GameID fingerprint
+        distinguishes invalid raw shares using typed finite diagnostic
+        evidence. Infer valid team totals independently of player identity,
+        retaining unresolved-ID counts without publishing those rows as named
+        players. Inconsistent, ambiguous or sparse eligibility remains
+        nullable per unit; opposite offense and defense totals must reconcile
+        when both known. Valid-source outputs and definition version remain
+        unchanged.
       historicalFranchiseAliases: >-
         Exact canonical GameID and week/type still required. PlayerStats and
         SnapCounts opponent/team fields may be mapped to the canonical historical
