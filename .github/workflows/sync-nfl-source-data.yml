@@ -242,7 +242,9 @@ jobs:
           FORCE: ${{ inputs.force }}
           EXPECTED_INJURY_SHA256: ${{ inputs.expected_injury_sha256 || '' }}
           PAT_PUSH: ${{ secrets.PAT_PUSH }}
-          # The built-in token is only used to read official nflverse release metadata.
+          # Existing contents:write token, restricted to the 2025 Source-evidence pilot.
+          PBP_ARCHIVE_TOKEN: ${{ github.token }}
+          # The built-in token also reads official nflverse release metadata.
           NFLVERSE_RELEASE_API_TOKEN: ${{ inputs.materialization_scope == 'injuries' && github.token || '' }}
         run: |
           set -euo pipefail
@@ -648,6 +650,30 @@ jobs:
                 echo "Injury source changed since historical preflight; no Raw commit." >&2
                 exit 2
               fi
+            fi
+
+            # Issue #1077: one bounded 2025 original-PBP Source pilot.
+            # This reuses the existing Source writer and records only a small
+            # manifest in git; gzip bytes reside in a versioned SHA-addressed
+            # GitHub Release asset. No new branch writer or scheduler.
+            # Scoped and targeted syncs cannot acquire or publish original PBP.
+            if [[ "$materialization_scope" == "full" && -z "\${DATASET:-}" && -z "\${SEASON:-}" ]]; then
+              if [[ ! -f data-source/providers/nflverse/play-by-play-original/metadata-2025.json ]]; then
+                python3 -m pip install --disable-pip-version-check 'PyYAML==6.0.2'
+              fi
+              pbp_archive_log="$(mktemp)"
+              set +e
+              python tools/nfl_pbp_source_archive.py \
+                --repo-root . --repository "$GITHUB_REPOSITORY" 2>&1 | tee "$pbp_archive_log"
+              pbp_archive_status=\${PIPESTATUS[0]}
+              set -e
+              if (( pbp_archive_status != 0 )); then
+                echo "Pinned 2025 original PBP archive/verification failed; no Raw publication." >&2
+                write_failure_diagnostic "pbp-original-archive" "$pbp_archive_status" "$pbp_archive_log"
+                exit "$pbp_archive_status"
+              fi
+              pbp_archive_result="$(tail -n 1 "$pbp_archive_log")"
+              echo "- Original PBP 2025 archive: $pbp_archive_result" >> "$GITHUB_STEP_SUMMARY"
             fi
 
             assert_source_data_only
