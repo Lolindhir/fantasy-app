@@ -138,6 +138,16 @@ Der nächste Fachtest muss **in der eingeschwungenen Zielwelt** stattfinden: (a)
 
 **Kein aktiver Liga-/App-/Generator-/Sleeper-Wechsel**, keine Veränderung der sechs geschützten Nordstern-Ziele.
 
+### Cross-Check: unabhängiger CP6g-Explorationsprototyp im zentralen Issue
+
+**Während dieser Forschungsarbeit wurde im selben [Issue #1344](https://github.com/Lolindhir/fantasy-app/issues/1344) ein weiterer CP6g-Lauf dokumentiert:** Dort wurden **30 synthetische Fünfjahrespfade** mit **nur 30** neuen Rookies/Jahr, anderen Leistungs-/Manager-Heuristiken und einem weniger stark slotvorausschauenden Expansion-Draft exploriert. Auch dort waren die sechs bestehenden Teams cap-konform; die **vier vollständigen und cap-konformen Expansionsteams** gelangen bei **f=0,80 in 2/6**, bei **f=0,75 in 0/6** und bei **f=0,70 in 0/6** der dortigen sechs Läufe. Hier dagegen gelingen sie in 15/15 Läufen über die Faktoren hinweg.
+
+**Die Diskrepanz ist fachlich entscheidend und darf nicht weginterpretiert werden.** Dieses CP6f-Skript stellt bei der neutralen Initialisierung **17 sehr günstige Depth-Plätze pro Team vor den 13 Pflichtstarter-Akquisitionen** bereit, fügt **30 gedraftete + 50 undrafted synthetische Rookies/Jahr** hinzu und erlaubt im Vergleich zu CP6g eine andere Qualität/Preisallokation. CP6g nutzt weniger Spielerzufluss und einen anderen Greedy-/Startup-Pfad. Zudem ist weder die echte zukünftige NFL-Active-/Retirement-Rate, noch der Anteil wirksamer undrafted Talente oder der langfristige Manager-Optimierungsgrad empirisch kalibriert.
+
+Die **4×30-Shadow-Cap-Legalität** im vorliegenden Skript ist eine gültige interne Arithmetikprüfung unter **diesen Annahmen**, **kein** belegter Nachweis, dass der reale 2027er Veteranenmarkt vier Teams tragen würde. Die beiden Piloten sind **nicht** unabhängig kalibrierte Welten mit direkt vergleichbaren Erfolgshäufigkeiten; ihre Quoten dürfen daher nicht gemittelt werden.
+
+**Forschungs-Hard-Gate vor einer konkreten Cap-Empfehlung:** einen gemeinsamen, empirisch begründeten Spielerzufluss/-abfluss (NFL-Active, Retirement, undrafted-Rookies), gleiches Manager-/Optimierungsbudget, dieselbe Criticality-Rang-/Dollarformel und robuste 30er-Slot-Optimierung verwenden und **beide** Prototypen auf denselben Eingaben gegeneinander prüfen. Erst wenn die Ergebnisse dann zusammenlaufen, sollte eine konkrete Cap-Stufe bewertet werden.
+
 ## 10. Reproduzieren / technische Abnahme
 
 Am Repository-Root:
