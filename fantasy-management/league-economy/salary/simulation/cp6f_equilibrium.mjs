@@ -261,10 +261,11 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47], factors=[0.90,0
         const t=teams[ti],oldScore=lineup(t.players).value;
         for(let i=0;i<t.players.length;i++){
           const next=t.players.slice();next[i]=p;
-          if(charged(next)>C||!lineup(next).valid)continue;
+          if(charged(next)>C)continue;
+          const newLineup=lineup(next);
+          if(!newLineup.valid)continue;
           reachable.add(p.id);buyerTeams.add(ti);
-          if(lineup(next).value>oldScore+.5)gainful.add(p.id);
-          break;
+          if(newLineup.value>oldScore+.5){gainful.add(p.id);break;}
         }
       }
     }
