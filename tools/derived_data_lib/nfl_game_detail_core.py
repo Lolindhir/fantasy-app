@@ -33,15 +33,16 @@ _DEFINITION_VERSION = 1
 
 def _selected_stats(
     payload: Mapping[str, Any] | None, season: int, game: Mapping[str, Any],
-) -> tuple[list[dict[str, Any]] | None, bool | None, list[Mapping[str, Any]], int, str, int]:
+) -> tuple[list[dict[str, Any]] | None, bool | None, list[Mapping[str, Any]], int, str, int, int]:
     rows, finalized = _week_source(payload, season, game, _STATS_SOURCE)
     if rows is None:
-        return None, None, [], 0, "unavailable", 0
+        return None, None, [], 0, "unavailable", 0, 0
     selected: list[Mapping[str, Any]] = []
     normalized: list[dict[str, Any]] = []
     seen: set[str] = set()
     unresolved = 0
     aliases = 0
+    missing_context = 0
     for row in rows:
         stats = row.get("Stats")
         if not isinstance(stats, dict) or not isinstance(stats.get("game_id"), str):
@@ -52,18 +53,24 @@ def _selected_stats(
         canonical = reconcile_game_team(
             team, opponent, game["AwayTeam"], game["HomeTeam"], season,
         )
-        if (canonical is None
-                or row.get("Week") != game["Week"]
-                or not _valid_type(row.get("SeasonType"), game["GameType"])):
+        if (row.get("Week") != game["Week"]
+                or not _valid_type(row.get("SeasonType"), game["GameType"])
+                or (canonical is None and team is not None and opponent is not None)):
             raise ValueError(
                 f"player-stats: invalid game/team/week/type for {game['GameID']}: "
                 f"team={team!r}, opp={opponent!r}, "
                 f"week={row.get('Week')!r}, type={row.get('SeasonType')!r}, "
                 f"expected {game['AwayTeam']}/{game['HomeTeam']} {game['Week']} {game['GameType']}"
             )
-        other = game["HomeTeam"] if canonical == game["AwayTeam"] else game["AwayTeam"]
-        if team != canonical or opponent != other:
-            aliases += 1
+        # A genuinely missing team/opponent context blocks the entire
+        # player-sum group, but must not suppress independent team snaps.
+        if canonical is None:
+            missing_context += 1
+            other = None
+        else:
+            other = game["HomeTeam"] if canonical == game["AwayTeam"] else game["AwayTeam"]
+            if team != canonical or opponent != other:
+                aliases += 1
         cid = row.get("CanonicalPlayerID")
         if not isinstance(cid, str) or not cid:
             unresolved += 1
@@ -81,14 +88,17 @@ def _selected_stats(
         # Keep raw canonical Source untouched; normalize only the Derived copy.
         selected.append(row)
         normalized.append({**row, "Team": canonical, "OpponentTeam": other})
+    if missing_context:
+        return (None, finalized, selected, unresolved,
+                "blocked-missing-team-context", aliases, missing_context)
     if unresolved:
         return (None, finalized, selected, unresolved,
-                "blocked-unresolved-player-identity", aliases)
+                "blocked-unresolved-player-identity", aliases, 0)
     # Reuse the canonical player validator and additive team totals, now with
     # narrowly validated era-specific franchise spelling in a temporary copy.
     sanitized = {**payload, "Records": normalized}
     validated, _ = _player_stat_rows(sanitized, season, game)
-    return validated, finalized, selected, 0, _group_status(validated, game), aliases
+    return validated, finalized, selected, 0, _group_status(validated, game), aliases, 0
 
 
 def _selected_snap_counts(
@@ -179,7 +189,7 @@ def build_nfl_game_detail_core(
     game = games.get(game_id)
     if game is None:
         raise ValueError(f"GameID not found in canonical nfl-games index: {game_id}")
-    stat_players, stats_finalized, stat_raw, stat_holds, stats_status, stat_aliases = _selected_stats(
+    stat_players, stats_finalized, stat_raw, stat_holds, stats_status, stat_aliases, stat_missing_context = _selected_stats(
         player_stats, season, game,
     )
     team_snap_rows, snaps_finalized, snap_raw, snap_holds, snap_status, snap_aliases = _selected_snap_counts(
@@ -210,6 +220,7 @@ def build_nfl_game_detail_core(
             "SourceFinalized": stats_finalized,
             "UnresolvedPlayerIdentityRows": stat_holds,
             "HistoricalFranchiseAliasRows": stat_aliases,
+            "MissingTeamContextRows": stat_missing_context,
             "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
             "Teams": _team_totals(stat_players, game),
         },
