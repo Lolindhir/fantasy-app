@@ -209,6 +209,16 @@ futureGameDetailDirection:
         counts without publishing those rows as named players. Inconsistent,
         ambiguous or sparse eligibility remains nullable per unit; opposite
         offense and defense totals must reconcile when both known.
+      historicalFranchiseAliases: >-
+        Exact canonical GameID and week/type still required. PlayerStats and
+        SnapCounts opponent/team fields may be mapped to the canonical historical
+        schedule tokens only through tools/derived_data_lib/nfl_franchise_aliases.py:
+        SD/LAC in 1999-2016, OAK/LV in 1999-2019, STL/LA in 1999-2015.
+        Resolve both player-team and opponent against the same game, never
+        a global modern-team substitution or a guessed canonical player ID.
+        Preserve raw Source rows for the fingerprint, normalize only the
+        temporary Derived grouping, and expose HistoricalFranchiseAliasRows
+        per source group. Unknown/out-of-window conflicts fail closed.
       sourceFinality: Finalized flags do not certify source field/coverage completeness
     computation:
       pureBuilder: tools/derived_data_lib/nfl_game_detail_core.py
