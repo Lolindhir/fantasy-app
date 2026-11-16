@@ -560,7 +560,7 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
         self.assertIsNone(blocked["SnapCounts"]["Teams"][0]["Offense"]["TotalSnaps"])
         self.assertEqual(blocked["SnapCounts"]["Teams"][0]["Offense"]["InvalidShareRows"], 1)
         self.assertEqual(blocked["SnapCounts"]["Teams"][0]["SpecialTeams"]["Status"],
-                         "insufficient-participants")
+                         "unique-rounded-share-denominator")
         invalid["Records"][0]["OffenseSnaps"] = -1
         with self.assertRaisesRegex(ValueError, "invalid count OffenseSnaps"):
             build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, invalid)
@@ -727,7 +727,7 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
 
     def test_old_and_current_canonical_season_detail_plans_are_source_only(self):
         root = TOOLS.parent
-        for season in (1999, 2013, 2026):
+        for season in (1999, 2013, 2021, 2026):
             with self.subTest(season=season), tempfile.TemporaryDirectory() as tmp:
                 if not (root / DATA_DERIVED_ROOT / "nfl-games" / f"{season}.json").exists():
                     self.skipTest("Canonical NFL Games index unavailable")
