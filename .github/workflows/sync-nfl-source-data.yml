@@ -668,12 +668,15 @@ jobs:
               pbp_archive_status=${PIPESTATUS[0]}
               set -e
               if (( pbp_archive_status != 0 )); then
-                echo "Pinned 2025 original PBP archive/verification failed; no Raw publication." >&2
-                write_failure_diagnostic "pbp-original-archive" "$pbp_archive_status" "$pbp_archive_log"
-                exit "$pbp_archive_status"
+                # Fail closed for original PBP acceptance only. Existing current
+                # NFL Source publication remains independent of this one-time
+                # optional historical archive pilot.
+                echo "::warning::Pinned 2025 original PBP pilot blocked; no source archive accepted (see step log)."
+                echo "- Original PBP 2025 archive: BLOCKED (exit $pbp_archive_status; no manifest accepted)" >> "$GITHUB_STEP_SUMMARY"
+              else
+                pbp_archive_result="$(tail -n 1 "$pbp_archive_log")"
+                echo "- Original PBP 2025 archive: $pbp_archive_result" >> "$GITHUB_STEP_SUMMARY"
               fi
-              pbp_archive_result="$(tail -n 1 "$pbp_archive_log")"
-              echo "- Original PBP 2025 archive: $pbp_archive_result" >> "$GITHUB_STEP_SUMMARY"
             fi
 
             assert_source_data_only
