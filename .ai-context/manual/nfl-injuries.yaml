@@ -44,17 +44,20 @@ source:
       source digest or another metadata change still requires validation.
     - Do not synthesize old pre-kickoff snapshots from current annual CSV releases.
   schemaVariants:
-    legacy2012To2024:
+    dateModifiedProfile:
+      selectedBy: exact official CSV header, independent of year
       extraField: date_modified
       missingField: season_type
-      actualStartDate: unknown
       sourceModifiedTimestampIsMedicalOnset: false
-    current2025Plus:
+    seasonTypeProfile:
+      selectedBy: exact official CSV header, independent of year
       extraField: season_type
       missingField: date_modified
       playerLevelUpdateOrderKnown: false
-    years2009To2011:
-      status: pending-original-asset-schema-audit
+    historicalOriginalAssetAudit:
+      status: mandatory-per-revision-before-publication
+      knownGap: original asset/header audit for 2009-2011 and official digest/byte attestation for 2012-2024
+      rule: A recognized schema profile does not itself authorize historical Source publication
   rawValuesToPreserve:
     - Probable
     - Note
@@ -147,6 +150,14 @@ materializationPlan:
   localStagingCli: tools/nfl_injuries_materialize.py --write
   separatedStageCli: tools/nfl_injuries_phase.py --phase raw|canonical|derived
   releaseRefreshCli: tools/nfl_injuries_refresh.py --season <year>
+  readOnlyDynamicHistoryInventory: tools/nfl_injuries_refresh.py --discover-history
+  historicalSelection: >-
+    Discover season CSV assets from the official release; never infer a contiguous
+    year range or hard-code start, cutoff or end seasons. Only existing canonical
+    schedules, observed supported CSV headers and accepted original-byte digests
+    may advance a candidate to a separately authorized import. Official CSVs
+    without SHA-256 remain blocked pending an independent full-asset attestation.
+    New seasons can appear in the discovery inventory without code changes.
   localStagingDefault: dry-run
   stagingNotPublication: >
     Explicit --write only stages the selected season in the local working tree.

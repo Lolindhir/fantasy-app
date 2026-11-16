@@ -14,13 +14,16 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import sys
 import urllib.request
 from typing import Any, Callable
 
 from nfl_injuries_materialize import _assert_bounded_path, stage_injury_season
 from nfl_injuries_phase import run_injury_phase
-from nfl_source_data_lib.injury_product_plan import plan_release_refresh
+from nfl_source_data_lib.injury_product_plan import plan_release_refresh, plan_injury_history_inventory
+from nfl_source_data_lib.common import current_source_season
+from nfl_source_data_lib.injury_reports import valid_injury_season
 
 _RELEASE_API = "https://api.github.com/repos/nflverse/nflverse-data/releases/tags/injuries"
 _MAX_RELEASE_BYTES = 2_000_000
@@ -77,6 +80,53 @@ def source_asset(url: str) -> bytes:
     if not url.startswith("https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_"):
         raise ValueError("Unexpected injury download URL")
     return _read_https(url, _MAX_SEASON_BYTES, accept="text/csv")
+
+
+
+def discover_injury_history(
+    *,
+    repo_root: Path,
+    fetch_release: Callable[[], dict[str, Any]] = release_api,
+) -> dict[str, Any]:
+    """Inspect official season inventory plus accepted local originals, no writes."""
+    if not repo_root.is_dir():
+        raise ValueError("Repository root does not exist")
+    current = current_source_season(repo_root)
+    raw_root = repo_root / "data-source/providers/nflverse/injuries"
+    schedules_root = repo_root / "data-source/nfl/schedules"
+    persisted: set[int] = set()
+    if raw_root.is_dir():
+        for metadata_path in sorted(raw_root.glob("metadata-*.json")):
+            match = re.fullmatch(r"metadata-([0-9]{4})\.json", metadata_path.name)
+            if not match or not valid_injury_season(int(match.group(1))):
+                raise ValueError("Unrecognized Injury source metadata filename")
+            season = int(match.group(1))
+            metadata_path = _assert_bounded_path(
+                repo_root, f"data-source/providers/nflverse/injuries/metadata-{season}.json",
+            )
+            raw_path = _assert_bounded_path(
+                repo_root, f"data-source/providers/nflverse/injuries/raw-{season}.csv",
+            )
+            if not raw_path.is_file() or metadata_path.is_symlink() or raw_path.is_symlink():
+                raise ValueError(f"Incomplete or symlinked stored Injury source season {season}")
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            source = raw_path.read_bytes()
+            if (not isinstance(metadata, dict)
+                    or metadata.get("SourceDataset") != "nflverse.injuries"
+                    or metadata.get("Season") != season
+                    or metadata.get("AssetByteSize") != len(source)
+                    or metadata.get("AssetSha256") != hashlib.sha256(source).hexdigest()):
+                raise ValueError(f"Stored Injury provenance failed validation for season {season}")
+            persisted.add(season)
+    schedules: set[int] = set()
+    if schedules_root.is_dir():
+        for path in schedules_root.glob("*.json"):
+            if re.fullmatch(r"[0-9]{4}\.json", path.name) and path.is_file() and not path.is_symlink():
+                schedules.add(int(path.stem))
+    return plan_injury_history_inventory(
+        fetch_release(), current_season=current,
+        persisted_seasons=persisted, schedule_seasons=schedules,
+    )
 
 
 def refresh_injury_raw(
@@ -197,14 +247,22 @@ def refresh_injury_season(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--season", type=int, required=True)
+    parser.add_argument("--season", type=int)
+    parser.add_argument("--discover-history", action="store_true",
+                        help="Read-only inventory from official release; no year range or data changes")
     parser.add_argument("--identities", type=Path)
     parser.add_argument("--schedule", type=Path, help="Optional canonical NFL schedule")
     parser.add_argument("--write", action="store_true", help="Stage candidate files in local checkout only")
     parser.add_argument("--raw-only", action="store_true", help="Stage only provider injury source and metadata; no player identities needed")
     args = parser.parse_args(argv)
     try:
-        if args.raw_only:
+        if args.discover_history:
+            if args.season is not None or args.identities or args.schedule or args.raw_only or args.write:
+                parser.error("--discover-history is read-only and accepts no season or publication inputs")
+            output = discover_injury_history(repo_root=args.repo_root)
+        elif args.season is None:
+            parser.error("--season is required unless --discover-history")
+        elif args.raw_only:
             if args.identities or args.schedule:
                 parser.error("--raw-only does not accept identity or schedule inputs")
             output = refresh_injury_raw(

@@ -368,6 +368,93 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertEqual("ambiguous", observation["GameLinkState"])
         self.assertIsNone(observation["GameID"])
 
+    def test_release_inventory_discovers_years_without_cutoffs_and_gates_missing_digests(self):
+        from nfl_source_data_lib.injury_product_plan import plan_injury_history_inventory
+        import hashlib
+        seed = asset(2025, [report(2025)])
+        digest = hashlib.sha256(seed).hexdigest()
+        def entry(year, asset_id, digest_or_none):
+            return {"name": f"injuries_{year}.csv", "id": asset_id,
+                "updated_at": "2026-11-16T08:00:00Z", "size": len(seed),
+                "digest": "sha256:" + digest_or_none if digest_or_none else None,
+                "browser_download_url":
+                    f"https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_{year}.csv"}
+        release = {"assets": [
+            entry(2026, 60, digest),
+            entry(2010, 10, None),
+            entry(2024, 40, None),
+            entry(2025, 50, digest),
+            entry(2027, 70, digest),
+            {"name": "injuries_2025.parquet", "id": 1},
+        ]}
+        result = plan_injury_history_inventory(
+            release, current_season=2026, persisted_seasons=[2026],
+            schedule_seasons=[2010, 2024, 2025, 2026, 2027],
+        )
+        self.assertEqual([2010, 2024, 2025, 2026, 2027], result["DiscoveredSeasons"])
+        self.assertEqual([2025], result["CandidateSeasons"])
+        self.assertEqual([2010, 2024], result["BlockedSeasons"])
+        self.assertEqual([
+            "blocked-unverified-original-revision",
+            "blocked-unverified-original-revision",
+            "candidate-requires-schema-and-identity-audit",
+            "current-season",
+            "future-not-imported",
+        ], [row["State"] for row in result["SeasonStates"]])
+        self.assertFalse(result["PublicationPerformed"])
+        self.assertFalse(result["HistoricalImportAuthorized"])
+        with self.assertRaisesRegex(ValueError, "Multiple upstream injury release assets"):
+            plan_injury_history_inventory(
+                {"assets": release["assets"] + [entry(2025, 999, digest)]},
+                current_season=2026,
+            )
+        with self.assertRaisesRegex(ValueError, "official URL"):
+            forged = copy.deepcopy(release)
+            forged["assets"][3]["browser_download_url"] = "https://other.example.com/x"
+            plan_injury_history_inventory(forged, current_season=2026)
+
+    def test_discovery_validates_existing_raw_and_uses_canonical_current_season(self):
+        from nfl_injuries_refresh import discover_injury_history
+        import hashlib
+        import json
+        import tempfile
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            league = root / "data-source/leagues/sample/manifest.json"
+            league.parent.mkdir(parents=True)
+            league.write_text(json.dumps({
+                "CurrentCanonicalLeagueSeasonID": "sample-current",
+                "Seasons": [{"CanonicalLeagueSeasonID": "sample-current",
+                             "Season": 2026}],
+            }), encoding="utf-8")
+            sched = root / "data-source/nfl/schedules/2025.json"
+            sched.parent.mkdir(parents=True)
+            sched.write_text("{}", encoding="utf-8")
+            source = asset(2025, [report(2025)])
+            release = {"assets": [{
+                "name": "injuries_2025.csv", "id": 7,
+                "updated_at": "2026-11-16T08:00:00Z",
+                "size": len(source), "digest": "sha256:" + hashlib.sha256(source).hexdigest(),
+                "browser_download_url":
+                    "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2025.csv",
+            }]}
+            first = discover_injury_history(repo_root=root, fetch_release=lambda: release)
+            self.assertEqual([2025], first["CandidateSeasons"])
+            data_root = root / "data-source/providers/nflverse/injuries"
+            data_root.mkdir(parents=True)
+            (data_root / "raw-2025.csv").write_bytes(source)
+            (data_root / "metadata-2025.json").write_text(json.dumps({
+                "SourceDataset": "nflverse.injuries", "Season": 2025,
+                "AssetByteSize": len(source), "AssetSha256": hashlib.sha256(source).hexdigest(),
+            }), encoding="utf-8")
+            existing = discover_injury_history(repo_root=root, fetch_release=lambda: release)
+            self.assertEqual([], existing["CandidateSeasons"])
+            self.assertEqual("persisted-historical-reconciliation-required",
+                             existing["SeasonStates"][0]["State"])
+            (data_root / "raw-2025.csv").write_bytes(b"corrupt")
+            with self.assertRaisesRegex(ValueError, "provenance failed"):
+                discover_injury_history(repo_root=root, fetch_release=lambda: release)
+
     def test_official_release_digest_drives_daily_noop_or_refresh(self):
         from nfl_source_data_lib.injury_product_plan import plan_release_refresh
         import hashlib

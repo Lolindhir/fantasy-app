@@ -102,7 +102,7 @@ class InjuryReportSourceTests(unittest.TestCase):
         # Profiles are validated against the header, not the year. A mixed
         # profile or unknown column is rejected even in an otherwise valid CSV.
         mixed = make_csv(2024, [report(2024)]).replace(
-            b"date_modified\\n", b"date_modified,season_type\\n", 1)
+            b"date_modified\n", b"date_modified,season_type\n", 1)
         with self.assertRaisesRegex(ValueError, "unexpected header"):
             parse_injury_report_csv(mixed, season=2024)
         with self.assertRaisesRegex(ValueError, "wrong season"):
