@@ -148,18 +148,14 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
     const pool=new Map([...free.values()].filter(x=>!veteransOnly||x.year>=4).map(x=>[x.id,x]));
     const teams=Array.from({length:N},(_,i)=>({name:"Team-"+(i+1),style:styles[i%styles.length],players:[]}));
     const errors=[];
-    // Ten low-price reserves first avoid the false 'legal 13 starters but no 30 roster' failure.
-    for(let k=0;k<10;k++)for(let ti=0;ti<N;ti++){
+    // Reserve all 17 depth slots up front: never accept an expensive partial 13-player roster as a valid 30-player team.
+    for(let k=0;k<17;k++)for(let ti=0;ti<N;ti++){
       if(!fillSlot(teams[ti].players,pool,"CHEAP",C,teams[ti].style,rng))errors.push("cheap-"+ti);
     }
     const starterSlots=["QB","RB","WR","TE","QB","RB","WR","TE","K","FLEX","FLEX","FLEX","FLEX"];
     for(let r=0;r<starterSlots.length;r++){
       const order=Array.from({length:N},(_,i)=>r%2?N-1-i:i);
       for(const ti of order)if(!fillSlot(teams[ti].players,pool,starterSlots[r],C,teams[ti].style,rng))errors.push(starterSlots[r]+"-"+ti);
-    }
-    for(let r=0;r<7;r++){
-      const order=Array.from({length:N},(_,i)=>r%2?N-1-i:i);
-      for(const ti of order)if(!fillSlot(teams[ti].players,pool,"DEPTH",C,teams[ti].style,rng))errors.push("depth-"+ti);
     }
     return {teams,pool,errors};
   };
@@ -176,7 +172,7 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
     let n=0;
     while(charged(team.players)>C&&n++<maxMoves){
       const current=charged(team.players);
-      const freeCheap=[...pool.values()].filter(x=>x.active).sort((a,b)=>a.price-b.price).slice(0,80);
+      const freeCheap=[...pool.values()].filter(x=>x.active).sort((a,b)=>a.price-b.price).slice(0,48);
       const base=objective(team.players,team.style);
       let best=null,metric=-Infinity;
       for(const remove of team.players){
@@ -202,8 +198,8 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47,83,131], factors=
       for(const i of (round%2?ids.slice().reverse():ids)){
         const team=teams[i],base=objective(team.players,team.style);
         const topAvailable=[...pool.values()].filter(x=>x.active&&x.forecast>0)
-          .sort((a,b)=>selectScore(b,team.style,rng,"starter")-selectScore(a,team.style,rng,"starter")).slice(0,75);
-        const bargain=[...pool.values()].filter(x=>x.active).sort((a,b)=>a.price-b.price).slice(0,12);
+          .sort((a,b)=>selectScore(b,team.style,rng,"starter")-selectScore(a,team.style,rng,"starter")).slice(0,32);
+        const bargain=[...pool.values()].filter(x=>x.active).sort((a,b)=>a.price-b.price).slice(0,8);
         const candidates=[...new Map([...topAvailable,...bargain].map(x=>[x.id,x])).values()];
         let best=null,bestGain=.10;
         for(const remove of team.players){
