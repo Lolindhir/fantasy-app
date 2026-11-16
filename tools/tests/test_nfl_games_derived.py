@@ -668,6 +668,23 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
                 if season == 1999:
                     self.assertGreater(result["WithMissingTeamSnaps"], 0)
 
+    def test_missing_historical_stat_team_does_not_invent_team_totals(self):
+        index = build_nfl_games(*inputs())
+        stats, snaps = _week_stats(), _week_snaps()
+        stats["Records"][0]["Team"] = None
+        stats["Records"][0]["OpponentTeam"] = None
+        result = build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, snaps)
+        self.assertEqual(result["TeamStats"]["Status"], "blocked-missing-team-context")
+        self.assertEqual(result["TeamStats"]["MissingTeamContextRows"], 1)
+        self.assertIsNone(result["TeamStats"]["Teams"])
+        self.assertEqual(result["SnapCounts"]["Status"], "available")
+        self.assertEqual(result["SnapCounts"]["UnresolvedPlayerIdentityRows"], 0)
+        bad = copy.deepcopy(stats)
+        bad["Records"][0]["Team"] = "XYZ"
+        bad["Records"][0]["OpponentTeam"] = "HOU"
+        with self.assertRaises(ValueError):
+            build_nfl_game_detail_core(index, "2026_06_HOU_JAX", bad, snaps)
+
     def test_historical_franchise_alias_is_season_scoped_and_never_guessed(self):
         self.assertEqual(reconcile_game_team("GB", "LV", "OAK", "GB", 1999), "GB")
         self.assertEqual(reconcile_game_team("ARI", "LA", "ARI", "STL", 2013), "ARI")
