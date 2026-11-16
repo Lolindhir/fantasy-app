@@ -277,7 +277,8 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47], factors=[0.90,0
   };
   const summary=[];
   for(const factor of factors)for(const seed of seeds){
-    const rng=rand(seed+Math.round(factor*10000)*391);
+    // Common seed for managers across cap scenarios; future NFL-performance shocks are in separate exogenous streams.
+    const rng=rand(seed*391+123);
     const players=basePlayers.map(x=>({...x,history:[...x.history]}));
     const all=new Map(players.map(x=>[x.id,x]));
     let prevCap=capFor(players,factor),C=prevCap;
@@ -290,12 +291,15 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47], factors=[0.90,0
       rosterSizes:teams.map(t=>t.players.length),errors:initial.errors.length};
     const yearly=[];
     for(let season=1;season<=seasons;season++){
+      // Synthetic future outcomes are common for all cap factors with the same seed.
+      const performanceRng=rand(seed*100009+season*1987+17);
+      const rookieRng=rand(seed*739+season*1987+171);
       // Synthetic outcomes: aging, development and idiosyncratic performance variance.
       for(const p of players){
         const currentAge=p.year;
         const aging=currentAge<=3?1.035:currentAge<=6?1.007:currentAge<=8?.982:currentAge<=10?.948:currentAge<=12?.895:.79;
         const target=p.talent*(currentAge<=3?1.10:currentAge<=6?1:currentAge<=9?.93:currentAge<=12?.78:.44);
-        const shock=gauss(rng)*(p.current>0?1.0:.25);
+        const shock=gauss(performanceRng)*(p.current>0?1.0:.25);
         const next=Math.max(0,Math.min(29,.64*p.current*aging+.36*target+shock));
         p.history=[next,p.history[0],p.history[1]];
         p.current=next;p.year++;
@@ -306,8 +310,8 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47], factors=[0.90,0
       reprice(players,prevCap);
       C=capFor(players,factor);
       // Rookie picks are preassigned NFL rank proxies and evaluated at own fantasy pick.
-      const entrants=templates.map((_,i)=>newDraftRookie(season,i,seed,rng,prevCap));
-      const extraRookies=undraftedClass(season,seed,rng,prevCap);
+      const entrants=templates.map((_,i)=>newDraftRookie(season,i,seed,rookieRng,prevCap));
+      const extraRookies=undraftedClass(season,seed,rookieRng,prevCap);
       for(const rookie of [...entrants,...extraRookies]){players.push(rookie);all.set(rookie.id,rookie);}
       // Rebuild live free pool from ownership: the 30 newcomers were not previously owned.
       free.clear();
@@ -339,11 +343,11 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47], factors=[0.90,0
       let repairMoves=0;
       for(const team of teams)repairMoves+=repair(team,free,C,rng);
       const preLegal=teams.filter(t=>!teamValid(t.players,C)).length;
-      const preExp=expansion(free,C,rng);
+      const preExp=expansion(free,C,rand(seed*173+season*941+23));
       // FA market: five rounds of voluntary full-roster one-for-one add/drop decisions.
       const faMoves=optimizeFA(teams,free,C,rng,5);
       const postLegal=teams.filter(t=>!teamValid(t.players,C)).length;
-      const postExp=expansion(free,C,rng);
+      const postExp=expansion(free,C,rand(seed*173+season*941+43));
       const market=marketStats(players,teams,free,C);
       const scores=teams.map(t=>lineup(t.players).value);
       priorSeasonScores=scores.slice();
@@ -385,7 +389,7 @@ export function simulate(csvText, draftsText, {seeds=[11,29,47], factors=[0.90,0
       deadCap:"DISABLED for target-state isolation",trades:"NOT SIMULATED",rookieNFLRank:"sampled from 2026 fantasy pick order with Gaussian noise; not actual future NFL draft results",
       rookiePerformance:"synthetic conditional distribution from archived 2026 cohort and historical year2/3 rookie performance; 50 free undrafted rookies/year",
       startup:"neutral startup from 2026 player population, then 5 simulated seasons; no 2026 ownership rights",
-      limitation:"synthetic stochastic trajectories not actual NFL 2027-2031; no dynamic future Criticality rank-curve recalculation by NFL seasons, no injuries/week-scoped decisions"},
+      limitation:"synthetic stochastic trajectories not actual NFL 2027-2031; common external performance/rookie randomness across factors; independent shadow-expansion RNG; no dynamic future Criticality rank-curve recalculation by NFL seasons, no injuries/week-scoped decisions"},
     results:grouped,runs:summary};
 }
 
