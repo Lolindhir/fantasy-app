@@ -1189,11 +1189,15 @@ class NflPbpMetricSourceFieldAuditTests(unittest.TestCase):
             )[0], "unknown-game-id")
 
     def test_observed_canonical_game_context_from_real_persisted_pbp_subset(self):
-        """Genuine repo PBP subset evidence, NOT upstream full-PBP verification."""
+        """Genuine repo PBP subset evidence, NOT upstream full-PBP verification.
+
+        Historical completed projections retain exact row-count regressions.
+        The current 2026 season keeps growing; every new row is still checked
+        against canonical game/team/week/finality, but row count is not frozen.
+        """
         from collections import Counter
-        total = Counter()
-        for season, expected_rows in ((2000, 148), (2024, 81),
-                                      (2025, 71), (2026, 46)):
+        historic = Counter()
+        for season, expected_rows in ((2000, 148), (2024, 81), (2025, 71)):
             with self.subTest(season=season):
                 index_path = TOOLS.parent / "data-derived" / "nfl-games" / f"{season}.json"
                 source_path = (TOOLS.parent / "data-source" / "providers" /
@@ -1207,9 +1211,23 @@ class NflPbpMetricSourceFieldAuditTests(unittest.TestCase):
                     label, finalized = reconcile_original_game_row(row, known, season)
                     self.assertIn(label, ("exact-context", "historical-franchise-alias"))
                     self.assertTrue(finalized)
-                    total[label] += 1
-        self.assertEqual(total["exact-context"], 316)
-        self.assertEqual(total["historical-franchise-alias"], 30)
+                    historic[label] += 1
+        self.assertEqual(historic["exact-context"], 270)
+        self.assertEqual(historic["historical-franchise-alias"], 30)
+
+        season = 2026
+        index_path = TOOLS.parent / "data-derived" / "nfl-games" / f"{season}.json"
+        source_path = (TOOLS.parent / "data-source" / "providers" /
+                       "nflverse" / "special-teams-fumble-events" /
+                       f"raw-{season}.json")
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        source = json.loads(source_path.read_text(encoding="utf-8"))
+        self.assertGreaterEqual(len(source["Records"]), 46)
+        known = {row["GameID"]: row for row in index["Games"]}
+        for row in source["Records"]:
+            label, finalized = reconcile_original_game_row(row, known, season)
+            self.assertEqual(label, "exact-context")
+            self.assertTrue(finalized)
 
     def test_original_game_context_reconciliation_never_hides_unresolved_rows(self):
         with tempfile.TemporaryDirectory() as tmp:
