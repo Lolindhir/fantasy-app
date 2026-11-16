@@ -3,8 +3,9 @@ name: Data • NFL Injuries Daily
 # Permanent, scheduler-owned wrapper. Delegates all writes and concurrency
 # safety to the pre-existing NFL Source Sync reusable workflow (#1421).
 on:
-  # When approved configuration first lands on main, perform one real current
-  # season import instead of waiting for the following daily due slot.
+  # The initial current-season import is accepted. On an approved workflow
+  # change, preflight and delegate one missing verified historical pilot only;
+  # routine scheduler events still refresh exclusively the current season.
   push:
     branches:
       - main
