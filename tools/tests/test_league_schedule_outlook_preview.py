@@ -71,6 +71,12 @@ class PreviewAdapterTests(unittest.TestCase):
         self.assertTrue(all(t["KnownRelativeScoringStrengthGames"] == 7 for t in result["RegularSeason"]["Teams"]))
         self.assertEqual("season-stats-v1", result["Models"]["SeasonStats"])
 
+    def test_repository_2024_after_week_6_uses_14_regular_weeks(self):
+        result = preview.preview(TOOLS.parent, "nfl-reise", 2024, 6)
+        self.assertEqual(24, len(result["RegularSeason"]["UpcomingMatchups"]))
+        self.assertTrue(all(t["RemainingGames"] == 8 for t in result["RegularSeason"]["Teams"]))
+        self.assertEqual(6, result["AsOf"]["RatingWeek"])
+
     def test_repository_2026_after_week_10_has_three_future_games_per_team(self):
         result = preview.preview(TOOLS.parent, "nfl-reise", 2026, 10)
         self.assertEqual(9, len(result["RegularSeason"]["UpcomingMatchups"]))
