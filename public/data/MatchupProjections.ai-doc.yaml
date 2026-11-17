@@ -12,6 +12,7 @@ source:
   inputs:
     - computed FantasyGameContext (tools/derived_data_lib/fantasy_game_context.py, ADR-075)
     - App adaptation of the data-derived/player-week-fantasy product (in memory, no public/data read)
+    - optional data-derived/season-statistics/<league>/<season>.json (season-to-date Best Ball and historical actual manager efficiency; source week strictly before target week)
   model: team-range-v1 (tools/derived_data_lib/models/team_range/v1.py, chosen per season in data-meta Models.TeamRange)
   scheduling: tools/player_week_fantasy_refresh.py inside the APP Data League workflow (about every 10 minutes)
   backtest: tools/historical_team_range_backtest.py
