@@ -1559,10 +1559,10 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
             _pbp_row(play_id="4", play_type="run", rush_attempt="1",
                      qb_kneel="1", qb_spike="0", qb_dropback="0", epa="99"),
             _pbp_row(play_id="5", play_type="run", rush_attempt="1",
-                     qb_scramble="1", qb_dropback="1", qb_spike="0",
+                     pass_attempt="0", qb_scramble="1", qb_dropback="1", qb_spike="0",
                      rushing_yards="8", epa="0.5"),
             _pbp_row(play_id="6", play_type="run", rush_attempt="1",
-                     qb_scramble="0", qb_dropback="0", qb_spike="0",
+                     pass_attempt="0", qb_scramble="0", qb_dropback="0", qb_spike="0",
                      rushing_yards="4", epa="-0.5"),
             _pbp_row(play_id="7", play_type="no_play", qb_spike="0", epa="99"),
         ])
@@ -1573,6 +1573,7 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
         m = doc["ByDefenseTeam"][1]["Metrics"]
         self.assertEqual(m["offensive_dropbacks_faced"]["Value"], 2)
         self.assertEqual(m["pass_attempts_faced"]["Value"], 1)
+        self.assertEqual(m["pass_attempts_faced"]["UnknownFlagCount"], 0)
         self.assertEqual(m["rush_attempts_faced"]["Value"], 2)
         self.assertEqual(m["rush_attempts_faced"]["ConfirmedQBScrambleCount"], 1)
         self.assertEqual(m["dropback_epa_per_play_allowed"]["Denominator"], 2)
