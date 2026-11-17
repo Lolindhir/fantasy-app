@@ -436,6 +436,25 @@ class MatchupProjectionTests(unittest.TestCase):
         self.assertIsNone(partial["DisplayWinProbability"])
         self.assertIsNone(partial["DisplayWinProbabilityBasis"])
 
+    def test_other_team_final_disables_baseline_chance_even_if_fallback_team_has_not_started(self) -> None:
+        context, player, stats = self.display_win_test_fixture()
+        context["Games"][0]["FantasyTeams"][1]["Players"] = []
+        context["Games"].append({
+            "GameID": "g3", "Status": "Final",
+            "FantasyTeams": [{
+                "FantasyTeamID": 2, "FantasyMatchupID": "m1",
+                "Players": [{"PlayerID": "p3", "IsStarter": True, "Points": 190.0}],
+            }],
+        })
+        result = build_matchup_projections(context, player, season_statistics=stats)
+        fallback, finished = team_of(result, 1), team_of(result, 2)
+        self.assertEqual(fallback["DisplayProjectedScore"], 187.0)
+        self.assertEqual(fallback["FinalStarterCount"], 0)
+        self.assertEqual(finished["FinalStarterCount"], 1)
+        self.assertIsNone(fallback["WinProbability"])
+        self.assertIsNone(fallback["DisplayWinProbability"])
+        self.assertIsNone(finished["DisplayWinProbability"])
+
     def test_axis_covers_both_display_ranges_on_a_snapped_scale(self) -> None:
         result = build_matchup_projections(default_context(), default_model())
         axis = result["Matchups"][0]["Axis"]
