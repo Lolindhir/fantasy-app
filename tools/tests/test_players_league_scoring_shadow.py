@@ -179,7 +179,22 @@ class RepositoryDataTests(unittest.TestCase):
         # Show the offending canonical/player-week evidence when this permanent gate fails.
         # Never relax the gate: the assertion still requires report["passed"].
         unresolved = [row for row in report["residuals"] if row["Class"] == "unclassified"]
-        self.assertTrue(report["passed"], {"failures": report["failures"], "unclassified": unresolved})
+        details = []
+        for row in unresolved:
+            season, week, cid = row["Season"], row["Week"], row["CanonicalPlayerID"]
+            source = shadow.read_json(ROOT / shadow.DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json")
+            record = next((r for r in source["Records"] if r.get("CanonicalPlayerID") == cid), None)
+            scoring = shadow.league_scoring_settings(ROOT, "nfl-reise", season)
+            event_path = ROOT / shadow.DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
+            events = ([ev for ev in shadow.read_json(event_path)["Records"] if ev.get("CanonicalPlayerID") == cid]
+                      if event_path.exists() else [])
+            scored = shadow.score_record(record, scoring, special_teams_fumble_events=events) if record else None
+            details.append({
+                **row, "ScorerPosition": record.get("Position") if record else None,
+                "Stats": record.get("Stats") if record else None,
+                "NonzeroContributions": [item for item in scored["Contributions"] if item["Points"] != 0] if scored else None,
+            })
+        self.assertTrue(report["passed"], {"failures": report["failures"], "unclassified": details})
 
     def test_shadow_keeps_row_set_and_identity_hold_rows(self) -> None:
         legacy, new = self.result["legacy"], self.result["shadow"]
