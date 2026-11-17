@@ -21,7 +21,7 @@ Hier findest du unsere **Sonderregeln und eigenen Berechnungen** auf einen Blick
 ## 📈 Eigene Spielerprognosen & Siegchancen
 - Wir berechnen erwartete Spielerpunkte nach **unseren Fantasy-Punkteregeln** aus bisheriger Leistung und Veränderungen von Einsatzzeit und Rolle.
 - Eine **Punktespanne** zeigt die Unsicherheit; sie ist kein garantiertes Minimum oder Maximum.
-- Aus den aufgestellten Spielern entstehen Teamprognosen und **Siegchancen** unter Berücksichtigung ihrer Unsicherheit.
+- Aus den aufgestellten Spielern entstehen Teamprognosen und **Siegchancen** unter Berücksichtigung ihrer Unsicherheit. Ist die Starterprognose unvollständig, kann vor den NFL-Spielen ein gekennzeichneter Saison-Best-Ball-Wert mit historischer Manager-Effizienz als grober Ersatz erscheinen – **ohne** daraus eine Siegchance zu erfinden.
 - Abgeschlossene NFL-Spiele zählen im Verlauf mit echten Punkten. Die persönliche Ausfallwahrscheinlichkeit ist in Spielerprognosen nicht automatisch eingerechnet.
 
 ## 📊 Rankings & Auswertungen
