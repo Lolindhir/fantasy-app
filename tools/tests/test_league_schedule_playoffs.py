@@ -102,6 +102,17 @@ class PlayoffCutoffTests(unittest.TestCase):
         self.assertIsNone(find(v, 3)["WinnerCanonicalLeagueRosterID"])
         self.assertEqual("a", find(compute(17), 3)["WinnerCanonicalLeagueRosterID"])
 
+    def test_mixed_round_type_one_has_two_leg_final_only(self):
+        spec = structure(round_type=1, rounds=2)
+        early = compute(14, spec=spec)
+        self.assertEqual([[14], [15, 16]], early["Format"]["RoundWeeks"])
+        self.assertEqual("final", find(early, 1)["RoundState"])
+        self.assertEqual("not-started", find(early, 3)["RoundState"])
+        partial_final = compute(15, spec=spec)
+        self.assertEqual("in-progress", find(partial_final, 3)["RoundState"])
+        self.assertIsNone(find(partial_final, 3)["WinnerCanonicalLeagueRosterID"])
+        self.assertEqual("a", find(compute(16, spec=spec), 3)["WinnerCanonicalLeagueRosterID"])
+
     def test_invalid_routing_and_impossible_winners_fail_closed(self):
         broken = synthetic_bracket()
         broken[2]["Team1Source"] = {"Match": 3, "Outcome": "Winner"}
