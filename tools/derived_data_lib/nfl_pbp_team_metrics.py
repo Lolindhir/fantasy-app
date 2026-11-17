@@ -103,8 +103,16 @@ def _rush(play: Mapping[str, Any]) -> bool | None:
 
 
 def _dropback(play: Mapping[str, Any]) -> bool | None:
-    value = _flag(play["SourceRow"], "qb_dropback")
-    return value == 1 if value is not None else None
+    row = play["SourceRow"]
+    value = _flag(row, "qb_dropback")
+    if value is None:
+        return None
+    if value == 0:
+        return False
+    # Even an upstream qb_dropback=1 cannot make a clock-stopping spike
+    # a competitive dropback. Unknown spike eligibility stays unknown.
+    spike = _flag(row, "qb_spike")
+    return spike == 0 if spike is not None else None
 
 
 def _success(play: Mapping[str, Any]) -> float | None:
@@ -220,13 +228,27 @@ def evaluate_team_pbp_metric_candidates(
     treatment, and predictive validity must be evaluated separately.
     """
     eligible = []
-    counts = {"NonScrimmage": 0, "TwoPoint": 0, "UnknownTwoPoint": 0,
+    counts = {"NonScrimmage": 0, "QBKneel": 0, "QBSpike": 0,
+              "UnknownQBSpike": 0, "TwoPoint": 0, "UnknownTwoPoint": 0,
               "UnassignedTeams": 0}
     for play in plays:
+        # The provider may encode kneels in their own play_type or mark a
+        # seemingly ordinary run with qb_kneel=1. Neither is a competitive rush.
+        if play["PlayType"] == "qb_kneel":
+            counts["QBKneel"] += 1
+            continue
         if play["PlayType"] not in ("pass", "run"):
             counts["NonScrimmage"] += 1
             continue
-        two_point = _flag(play["SourceRow"], "two_point_attempt")
+        row = play["SourceRow"]
+        if _flag(row, "qb_kneel") == 1:
+            counts["QBKneel"] += 1
+            continue
+        spike = _flag(row, "qb_spike")
+        if spike == 1:
+            counts["QBSpike"] += 1
+            continue
+        two_point = _flag(row, "two_point_attempt")
         if two_point is None:
             counts["UnknownTwoPoint"] += 1
         elif two_point == 1:
@@ -234,6 +256,8 @@ def evaluate_team_pbp_metric_candidates(
         elif not play["PossessionTeam"] or not play["DefenseTeam"]:
             counts["UnassignedTeams"] += 1
         else:
+            if spike is None:
+                counts["UnknownQBSpike"] += 1
             eligible.append(play)
     teams = (game["AwayTeam"], game["HomeTeam"])
     return {
