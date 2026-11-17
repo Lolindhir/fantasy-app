@@ -32,6 +32,7 @@ architecture:
     - tools/matchup_projection.py and tools/derived_data_lib/weekly_recaps.py (win-prob model on the team-range projections, no product, #1443)
     - tools/derived_data_lib/season_statistics.py and the season-statistics product (season-stats-v1, #506)
     - tools/derived_data_lib/rivalry.py and the league-rivalry product (rivalry-v1, #1455)
+    - tools/derived_data_lib/models/schedule_outlook/v1.py: pure upcoming Regular Season / SoS model (Issue #1519 I1, not yet published)
     - tools/derived_data_lib/weekly_recaps.py (weekly-recap-v1 baseline and weekly-recap-v2 player awards, no product, #499)
     - later models through the same registry
   rules:
@@ -57,6 +58,7 @@ identity:
       - team-range-v1
       - win-prob-v1
       - season-stats-v1
+      - schedule-outlook-v1
       - rivalry-v1
       - weekly-recap-v1
       - weekly-recap-v2
@@ -86,6 +88,10 @@ identity:
     repairability:
       module: tools/derived_data_lib/models/repairability/v1.py
       produces: Lineup repairability (State, Path, ReasonCode, candidate counts) per problem slot, including the acquisition policy (computed, not persisted, ADR-074)
+    schedule-outlook:
+      module: tools/derived_data_lib/models/schedule_outlook/v1.py
+      produces: Future regular-season matchups and separate historical relative-scoring/best-ball SoS figures, with strict as-of cutoff and null coverage
+      status: staged-I1-read-only-not-yet-a-published-derived-product
     team-range:
       module: tools/derived_data_lib/models/team_range/v1.py
       produces: Team projection (ProjectedFinalScore, StandardDeviation, 50/80/90 percent Ranges) from the starters' PlayerWeekFantasy projections (computed, not persisted, ADR-075)
