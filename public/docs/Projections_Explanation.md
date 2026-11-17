@@ -42,6 +42,8 @@ Unsere App vergleicht die **erwarteten Endpunkte beider Teams** und die Unsicher
 
 Nach jedem abgeschlossenen NFL-Spiel eines Starters kann sich die Siegchance ändern, weil dessen echte Punkte in den Vergleich einfließen. Eine fehlende Prognose wird nicht automatisch als 50:50 ausgegeben.
 
+**Geschätzte Siegchance („EST.“):** Wenn für eine Seite nur der gekennzeichnete Saison-Best-Ball-Ersatzwert vorliegt, können wir die Siegchance dennoch grob schätzen. Dazu verwenden wir neben den angezeigten Punktwerten die Schwankung der tatsächlich erzielten Teampunkte in den bisherigen abgeschlossenen Wochen. Das ist eine **vereinfachte, nicht kalibrierte Schätzung**, keine ebenso belastbare Prognose wie die vollständige Starterberechnung. Gibt es noch zu wenig verlässliche Vorwochen, bleibt die Siegchance unbekannt.
+
 Wir zeigen normalerweise ganze Prozent. Bei einer **noch unsicheren** Begegnung steht für sehr kleine Chancen **<1 %** beziehungsweise **>99 %** statt einer scheinbar endgültigen 0-%- oder 100-%-Anzeige. **0 % / 100 %** ist möglich, wenn laut Modell keine Punkteunsicherheit mehr besteht. Solange noch Spieler ausstehen, können theoretisch auch negative Fantasy-Punkte hinzukommen; ein Vorsprung allein bedeutet deshalb nicht automatisch einen sicheren Sieg.
 
 ## ⚠️ Was unsere Vorhersagen nicht berücksichtigen
@@ -51,4 +53,4 @@ Wir zeigen normalerweise ganze Prozent. Bei einer **noch unsicheren** Begegnung 
 - **Noch unfertige Aufstellungen:** Offene Plätze, Bye- oder OUT-Starter können ein Team vorübergehend schwächer aussehen lassen, als es nach einer Aufstellungsänderung wäre.
 - **Spielverlauf:** Touchdowns, kurzfristige Rollenwechsel und andere Überraschungen bleiben unsicher.
 
-**Merksatz:** Die Punktzahl ist unsere beste Schätzung, die Spanne zeigt die Unsicherheit und die Siegchance vergleicht beide Teams. Keiner dieser Werte ist ein Versprechen.
+**Merksatz:** Die Punktzahl ist unsere beste Schätzung, die Spanne zeigt die Unsicherheit und die Siegchance vergleicht beide Teams. Ein mit „EST.“ gekennzeichneter Prozentwert ist nur eine grobe Schätzung aus Saisonwerten. Keiner dieser Werte ist ein Versprechen.
