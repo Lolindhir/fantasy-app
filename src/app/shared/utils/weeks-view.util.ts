@@ -235,12 +235,14 @@ export function buildPlayoffDisplayLabels(model: MatchupsReadModel | null | unde
       const label = playoffMatchupLabel(matchup);
       if (!label) continue;
 
-      const group = `${matchup.Bracket}:${matchup.PlayoffRound ?? 'unknown'}:${matchup.PlayoffPlacement ?? 'none'}`;
+      const baseLabel = label.split(' · ')[0];
+      const group = `${matchup.Bracket}:${matchup.PlayoffRound ?? 'unknown'}:${matchup.PlayoffRoundCount ?? 'unknown'}:${matchup.PlayoffPlacement ?? 'none'}:${baseLabel}`;
       const ids = matchup.Participants.map(participant => Number(participant.TeamID));
       const pair = ids.length === 2 && ids.every(id => Number.isSafeInteger(id) && id > 0) && ids[0] !== ids[1]
         ? [...ids].sort((a, b) => a - b).join(':')
         : null;
-      if (pair !== null) {
+      // No ordinal without an authoritative round; unknowns still keep their base label.
+      if (pair !== null && Number.isSafeInteger(matchup.PlayoffRound) && (matchup.PlayoffRound ?? 0) > 0) {
         const known = groups.get(group) ?? new Map<string, number>();
         if (!known.has(pair)) known.set(pair, known.size + 1);
         groups.set(group, known);
