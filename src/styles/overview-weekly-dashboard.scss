@@ -907,6 +907,13 @@ app-league-matchups {
   gap: 8px;
   min-width: 0;
 }
+/* Center the unpaired final award without stretching it across both columns. */
+.weekly-recap-player-award:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: calc((100% - 8px) / 2);
+  box-sizing: border-box;
+}
 .weekly-recap-player-award {
   min-width: 0;
   overflow: hidden;
@@ -961,6 +968,7 @@ app-league-matchups {
 .weekly-recap-mvp-badge { width: 12px; height: 12px; margin-left: 3px; vertical-align: middle; color: #b45309; font-size: 12px; line-height: 12px; }
 @media (max-width: 640px) {
   .weekly-recap-player-awards { gap: 6px; }
+  .weekly-recap-player-award:last-child:nth-child(odd) { width: calc((100% - 6px) / 2); }
   .weekly-recap-player-award { padding: 8px; }
   .weekly-recap-list--players .weekly-recap-player-owner-logo { display: none; }
 }
