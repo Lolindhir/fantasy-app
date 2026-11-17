@@ -76,6 +76,9 @@ def _ratio(rows: list[Mapping[str, Any]], value_fn, *, kind: str = "rate") -> di
         "Eligible": len(rows), "Observed": len(observed),
         "Missing": len(rows) - len(observed),
         "Numerator": round(numerator, 3) if observed else None,
+        # Full-precision numerator for versioned GameDetail-v2 rollups.
+        # A sum of game-level rounded EPA numerators is not lossless.
+        "UnroundedNumerator": numerator if observed else None,
         "Denominator": len(observed),
         "Value": round(numerator / len(observed), 4) if observed else None,
         "Status": "candidate-observed" if observed else "no-observed-source-evidence",
