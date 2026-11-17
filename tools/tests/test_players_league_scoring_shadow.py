@@ -92,6 +92,39 @@ class PureFunctionTests(unittest.TestCase):
         self.assertIsNone(shadow.classify_residual(0.07, weights))
         self.assertIsNone(shadow.classify_residual(0.5, [1.0, 6.0]))
 
+    def test_travis_hunter_interception_stays_canonical_and_is_only_exactly_audited(self) -> None:
+        record = {
+            "CanonicalPlayerID": "NFLP-4a0f4e702e4782af409d",
+            "Position": "CB",
+            "Stats": {
+                "def_interceptions": 1, "receptions": 2,
+                "receiving_yards": 16, "rushing_yards": 3,
+            },
+        }
+        scoring = {"int": 2.0, "rec": 1.0, "rec_yd": 0.1, "rush_yd": 0.1}
+        result = shadow.score_record(record, scoring, special_teams_fumble_events=[])
+        self.assertAlmostEqual(result["FantasyPoints"], 5.9)
+        classify = shadow.classify_audited_provider_residual
+        key = ("nfl-reise", 2026, 10, record["CanonicalPlayerID"])
+        self.assertEqual(
+            classify(*key, record, scoring, result, 3.9, 5.9, 2.0),
+            "provider-defensive-interception-disagreement",
+        )
+        # A missing or changed source fact, player, week, position, rule, or
+        # provider score must never silently match the audited exception.
+        for args in [
+            ("elsewhere", 2026, 10, record["CanonicalPlayerID"], record, scoring, result, 3.9, 5.9, 2.0),
+            ("nfl-reise", 2026, 9, record["CanonicalPlayerID"], record, scoring, result, 3.9, 5.9, 2.0),
+            ("nfl-reise", 2026, 10, "NFLP-other", record, scoring, result, 3.9, 5.9, 2.0),
+            (*key, {**record, "Position": "WR"}, scoring, result, 3.9, 5.9, 2.0),
+            (*key, {**record, "Stats": {**record["Stats"], "def_interceptions": 0}}, scoring, result, 3.9, 5.9, 2.0),
+            (*key, record, {**scoring, "int": 3.0}, result, 3.9, 5.9, 2.0),
+            (*key, record, scoring, result, 3.9, 6.9, 3.0),
+            (*key, record, scoring, result, 4.9, 5.9, 1.0),
+        ]:
+            with self.subTest(args=args):
+                self.assertIsNone(classify(*args))
+
     def test_gate_thresholds(self) -> None:
         ok = {"Diff": 0.5, "Class": "yardage-correction"}
         self.assertTrue(shadow.evaluate_gate(1000, 999, [ok], {}, {})["passed"])
@@ -179,22 +212,7 @@ class RepositoryDataTests(unittest.TestCase):
         # Show the offending canonical/player-week evidence when this permanent gate fails.
         # Never relax the gate: the assertion still requires report["passed"].
         unresolved = [row for row in report["residuals"] if row["Class"] == "unclassified"]
-        details = []
-        for row in unresolved:
-            season, week, cid = row["Season"], row["Week"], row["CanonicalPlayerID"]
-            source = shadow.read_json(ROOT / shadow.DATA_SOURCE_ROOT / "nfl/player-stats" / str(season) / f"{week:02d}.json")
-            record = next((r for r in source["Records"] if r.get("CanonicalPlayerID") == cid), None)
-            scoring = shadow.league_scoring_settings(ROOT, "nfl-reise", season)
-            event_path = ROOT / shadow.DATA_SOURCE_ROOT / "nfl/special-teams-fumble-events" / str(season) / f"{week:02d}.json"
-            events = ([ev for ev in shadow.read_json(event_path)["Records"] if ev.get("CanonicalPlayerID") == cid]
-                      if event_path.exists() else [])
-            scored = shadow.score_record(record, scoring, special_teams_fumble_events=events) if record else None
-            details.append({
-                **row, "ScorerPosition": record.get("Position") if record else None,
-                "Stats": record.get("Stats") if record else None,
-                "NonzeroContributions": [item for item in scored["Contributions"] if item["Points"] != 0] if scored else None,
-            })
-        self.assertTrue(report["passed"], {"failures": report["failures"], "unclassified": details})
+        self.assertTrue(report["passed"], {"failures": report["failures"], "unclassified": unresolved})
 
     def test_shadow_keeps_row_set_and_identity_hold_rows(self) -> None:
         legacy, new = self.result["legacy"], self.result["shadow"]
