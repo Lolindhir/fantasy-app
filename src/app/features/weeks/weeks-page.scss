@@ -136,6 +136,20 @@
   background: #f8fafc;
 }
 
+/* Playoff context belongs above the matchup, never over the score or between cards. */
+.week-matchup-playoff-label {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(124, 58, 237, 0.08);
+  color: var(--weekly-accent);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
 /* A tappable row is one target: hover and press feedback plus a "Details" hint. */
 .week-matchup:not(:disabled):hover {
   border-color: rgba(59, 130, 246, 0.55);
@@ -526,7 +540,7 @@
   .schedule-current-label { font-size: 0.62rem; }
 }
 
-/* Dense Schedule Overview: weeks are the containers, fixtures are rows. */
+/* The Overview reuses the Week matchup card; only the containing density changes. */
 .schedule-week-list { gap: 18px; }
 .schedule-week {
   padding: 10px 12px 12px;
@@ -539,111 +553,18 @@
 .schedule-week-link { font-size: 1.12rem; }
 .schedule-week--current { border-left-width: 4px; }
 .schedule-scoreboards {
-  display: block;
-  overflow: hidden;
-  border: 1px solid var(--weekly-card-border);
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: var(--weekly-card-shadow);
-}
-.schedule-matchup {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) 12px;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: 57px;
-  padding: 5px 10px;
-  border: 0;
-  background: transparent;
-  color: var(--weekly-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-/* Keep playoff context below the score line, without squeezing team logos or scores horizontally. */
-.schedule-matchup--playoff-labeled { min-height: 65px; padding-bottom: 12px; }
-.schedule-playoff-matchup-label {
-  position: absolute;
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 65%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: rgba(124, 58, 237, 0.075);
-  color: #6d28d9;
-  font-size: 0.61rem;
-  font-weight: 750;
-  line-height: 1.2;
-  pointer-events: none;
-}
-.schedule-matchup + .schedule-matchup {
-  border-top: 1px solid var(--weekly-card-border);
-}
-.schedule-matchup:disabled {
-  cursor: default;
-  color: var(--weekly-text);
-}
-.schedule-matchup:not(:disabled):hover {
-  background: rgba(59, 130, 246, 0.055);
-}
-.schedule-matchup:not(:disabled):focus-visible {
-  outline: 2px solid var(--lifecycle-active-fg, #2563eb);
-  outline-offset: -2px;
-}
-.schedule-side {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
   min-width: 0;
-  min-height: 48px;
-  padding: 3px 4px;
-  border-radius: 8px;
 }
-.schedule-side--winner {
-  /* Match the Week tab's winner tint, not the lifecycle/finality colors. */
-  background: rgba(59, 130, 246, 0.09);
+.week-matchup--schedule {
+  padding: 6px 9px;
+  min-width: 0;
 }
-.schedule-team { min-width: 0; }
-.schedule-team--right { text-align: right; }
-.schedule-side-score {
-  flex: 0 0 auto;
-  color: var(--weekly-text);
-  font-size: 0.89rem;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  white-space: nowrap;
-}
-.schedule-team app-team-identity {
-  --team-identity-avatar-size: 42px;
-  --team-identity-gap: 7px;
-  --team-identity-title-font-size: 0.85rem;
-}
-.schedule-result {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 12px;
-  font-size: 0.82rem;
-  white-space: nowrap;
-}
-.schedule-result--final { font-weight: 850; }
-.schedule-result-versus { color: var(--weekly-muted); font-size: 0.75rem; }
-.schedule-result-unknown { color: var(--lifecycle-review-fg, #92400e); }
-.schedule-result-separator { color: var(--weekly-muted); }
-.schedule-row-chevron { color: var(--lifecycle-active-fg, #2563eb); font-size: 1.1rem; }
 @media (max-width: 640px) {
   .schedule-week { padding: 9px 7px 10px; }
   .schedule-week-header { padding: 0 5px; }
-  .schedule-matchup { gap: 4px; padding: 5px 6px; min-height: 56px; }
-  .schedule-side { gap: 3px; padding: 3px 2px; }
-  .schedule-side-score { font-size: 0.82rem; }
-  .schedule-team app-team-identity { --team-identity-avatar-size: 40px; --team-identity-gap: 5px; }
+  .week-matchup--schedule { padding: 6px 7px; }
 }
