@@ -228,13 +228,30 @@ def run_injury_phase(
     if phase == "raw":
         raw_name = f"data-source/providers/nflverse/injuries/raw-{season}.csv"
         metadata_name = f"data-source/providers/nflverse/injuries/metadata-{season}.json"
-        if existing.get(raw_name) == proposed[raw_name] and metadata_name in existing:
+        if metadata_name in existing:
             accepted = json.loads(existing[metadata_name].decode("utf-8"))
             current = json.loads(proposed[metadata_name].decode("utf-8"))
             revision_fields = {"ReleaseAssetId", "ReleaseAssetUpdatedAt"}
-            if (isinstance(accepted, dict) and
-                    {k: v for k, v in accepted.items() if k not in revision_fields} ==
-                    {k: v for k, v in current.items() if k not in revision_fields}):
+            if existing.get(raw_name) == proposed[raw_name]:
+                # A re-upload with identical bytes must not replace attestation.
+                if (isinstance(accepted, dict) and
+                        {k: v for k, v in accepted.items() if k not in revision_fields} ==
+                        {k: v for k, v in current.items() if k not in revision_fields}):
+                    proposed[metadata_name] = existing[metadata_name]
+            elif raw_name not in existing:
+                # A vanished CSV may be restored ONLY as the exact original
+                # authenticated by the persisted metadata. Preserve that metadata
+                # unchanged; do not substitute a newer release revision.
+                if (not isinstance(accepted, dict)
+                        or accepted.get("SchemaVersion") != 1
+                        or accepted.get("SourceDataset") != _SOURCE
+                        or accepted.get("Season") != season
+                        or accepted.get("AssetSha256") != hashlib.sha256(proposed[raw_name]).hexdigest()
+                        or accepted.get("AssetByteSize") != len(proposed[raw_name])
+                        or accepted.get("SourceUrl") != current.get("SourceUrl")
+                        or accepted.get("SourceSchema") != current.get("SourceSchema")
+                        or accepted.get("ReportRowCount") != current.get("ReportRowCount")):
+                    raise ValueError("Missing historical Injury CSV differs from frozen Source metadata")
                 proposed[metadata_name] = existing[metadata_name]
     stale = sorted(set(existing) - set(proposed))
     changed = sorted(p for p, v in proposed.items() if p in existing and existing[p] != v)

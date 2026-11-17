@@ -1,5 +1,5 @@
 schemaVersion: 1
-status: production-publisher-configured-awaiting-merge-and-live-evidence
+status: production-current-and-weekly-historical-lifecycle-active
 trackingIssue: 1421
 purpose: >
   Define historical NFL injury report evidence as a global, league-independent
@@ -18,12 +18,12 @@ ownership:
     prospectiveMetadataPath: data-source/providers/nflverse/injuries/metadata-<season>.json
     prospectiveCanonicalPath: data-source/nfl/injuries/<season>/<week>.json
     plannedSourceRegistry: data-source/registry.json
-    registryActivated: pending-pr-merge
+    registryActivated: active
   observedTrajectory:
     productId: nfl-injuries-v1
     prospectivePath: data-derived/nfl-injuries/<season>.json
     consumerNeutral: true
-    publicationActivated: pending-pr-merge
+    publicationActivated: active
 
 source:
   annualRelease: https://github.com/nflverse/nflverse-data/releases/tag/injuries
@@ -56,7 +56,7 @@ source:
       playerLevelUpdateOrderKnown: false
     historicalOriginalAssetAudit:
       status: mandatory-per-revision-before-publication
-      knownGap: original asset/header audit for 2009-2011 and official digest/byte attestation for 2012-2024
+      knownGap: full original/header and identity/game-link proof for historical unimported seasons; missing provider SHA-256 alone does not block attested original import
       rule: A recognized schema profile does not itself authorize historical Source publication
   rawValuesToPreserve:
     - Probable
@@ -144,7 +144,7 @@ derived:
     - Latest NFL injury status remains exclusively owned by existing Sleeper state.
 
 materializationPlan:
-  status: implemented-side-effect-free-not-published
+  status: active-source-canonical-derived-producers
   implementation: tools/nfl_source_data_lib/injury_product_plan.py
   inspectionCli: tools/nfl_injuries_preview.py --mode plan
   localStagingCli: tools/nfl_injuries_materialize.py --write
@@ -166,10 +166,14 @@ materializationPlan:
   historicalSelection: >-
     Discover season CSV assets from the official release; never infer a contiguous
     year range or hard-code start, cutoff or end seasons. Only existing canonical
-    schedules, observed supported CSV headers and accepted original-byte digests
-    may advance a candidate to a separately authorized import. Official CSVs
-    without SHA-256 remain blocked pending an independent full-asset attestation.
-    New seasons can appear in the discovery inventory without code changes.
+    schedules, observed supported CSV headers, verified official download URL,
+    release asset ID, updated time and byte size permit a bounded admission
+    candidate. The complete downloaded original is self-hashed and all rows
+    must resolve to canonical player identities and GameIDs. When supplied,
+    the upstream SHA-256 MUST match. When absent, label the persisted provenance
+    as official-release/self-hash, NOT provider-digest-verified. Discovery never
+    replaces accepted original bytes or skips validation. New or lost seasons
+    can reappear in the weekly inventory without code changes.
   localStagingDefault: dry-run
   stagingNotPublication: >
     Explicit --write only stages the selected season in the local working tree.
@@ -201,7 +205,7 @@ materializationPlan:
 
 phaseSeparation:
   implementation: tools/nfl_injuries_phase.py
-  status: tested-local-only-not-published
+  status: active-separated-source-canonical-derived
   upstreamOrder:
     - raw: provider original CSV and metadata only
     - canonical: confirmed persisted raw plus identity graph and optional schedule
@@ -256,8 +260,9 @@ freshness:
       target: >-
         Permanently discover all official season assets every Monday or upon an
         explicit manual history-reconciliation request, admit at most one entirely
-        missing, officially SHA-256-verified historical season after
-        full original-byte/schema/identity/game-link preflight, compare accepted
+        missing historical Source season (complete pair or missing half) after
+        official asset/byte-size and available SHA-256 checks plus full original
+        self-hash/schema/identity/game-link preflight, compare accepted
         historical source revisions, and rederive every accepted Canonical and
         Derived season from verified persisted data. No fixed calendar year list.
       frozenRevision: >-
@@ -265,15 +270,22 @@ freshness:
         repair decision; never silently overwrite frozen past-season evidence.
       weeklyOwner: .github/workflows/sync-nfl-source-data.yml
       weeklyOriginalAdmission: >-
-        The same existing unfiltered full Source Raw transaction on scheduled Monday
-        or explicit workflow_dispatch history opt-in may stage ONE new historical
-        season Raw CSV + metadata pair only when the upstream
-        asset has official SHA-256 and matching byte size, an accepted canonical
-        schedule exists, all original reports parse, and every GSIS and GameID
-        resolves uniquely. The publication stays in the existing protected
-        data-source/providers writer; all accepted historical originals are
-        immutable. SHA-less assets, missing schedules and unmatched players/games
-        are explicitly blocked, not silently treated as current, healthy or complete.
+        Every scheduled Monday or explicit full unfiltered manual history pass
+        re-discovers missing official historical seasons from the complete upstream
+        inventory, not a one-time backfill list. The existing Source Raw transaction
+        may admit at most ONE eligible season per run: a fully absent Raw/metadata
+        pair or the missing file in an incomplete pair. Require official release
+        URL/asset ID/updated time/byte-size, available upstream SHA-256 equality,
+        always compute and persist SHA-256 of exact downloaded bytes, and require
+        all rows to parse and resolve their GSIS and GameIDs uniquely against
+        accepted canonical identities/schedules. Missing upstream SHA-256 is
+        explicitly recorded, not represented as independently verified.
+        If a prior Raw, metadata or Canonical manifest survives, downloaded
+        bytes must agree with its frozen Source digest; recover ONLY missing
+        paths, preserving existing metadata and original bytes verbatim.
+        Never overwrite an accepted historical Source revision, guess missing
+        schedules, import an invalid/unmatched report or treat a blocked season
+        as complete. All writes reuse the existing protected Source owner.
       cadence: "Monday 04:00 Europe/Berlin via existing central scheduler full NFL Source repository_dispatch; additionally explicit workflow_dispatch reconcile_injury_history=true with unfiltered full scope/force=false on any day; push/targeted/unselected manual runs skip historical replay"
       canonicalRecomputation: >-
         Accepted historical original Raw and metadata only; recompute every
@@ -291,15 +303,15 @@ freshness:
         replace original Raw bytes automatically. A future versioned revision
         retention and repair/cutover policy requires separate critical review.
       pendingAcceptance: >-
-        Weekly accepted-history reconciliation is merged; the bounded recurring
-        first-time original admission remains a branch change until exact-head
-        CI, merge and productive Monday readback. Original 2009-2024 historical
-        assets without official SHA-256 remain blocked pending independent original-
-        byte attestation and review. Automatically overwriting accepted frozen
-        historical original revisions is not approved.
+        The weekly and manually dispatched historical replay was validated in
+        production on 2026-11-17. This scope extension allows official digestless
+        first admission and missing-Source recovery only after full preflight;
+        productive proof of those new branches still requires post-merge readback.
+        Unknown old schemas/identity/GameID matches may still block specific
+        seasons. Frozen original revision overwrites remain unapproved.
     noOp: do not reprocess when source digest and applicable identity/schedule inputs are unchanged
     retry: missed or delayed upstream refresh requires bounded catch-up check
-    status: production-current-daily-weekly-reconciliation-merged-recurring-history-intake-pending-acceptance
+    status: production-current-and-weekly-reconciliation-active-digestless-recovery-pending-verification
   currentEspnInjuryStatus:
     source: espn.player-availability
     existingPath: data-source/nfl/player-availability/espn.json
@@ -353,4 +365,4 @@ activation:
     - fail-closed parser, duplicate, unknown, late correction and canceled-game cases
     - exact no-op, clean-root replay, metadata provenance and writer race-safety
     - independent architecture review before activation
-  currentStatus: registry-and-scheduler-configured-on-pr-no-live-dataset-yet
+  currentStatus: current-season-and-historical-2025-live-weekly-replay-proven-new-digestless-history-pending-real-admission

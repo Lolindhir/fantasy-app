@@ -89,8 +89,13 @@ def discover_injury_history(
     *,
     repo_root: Path,
     fetch_release: Callable[[], dict[str, Any]] = release_api,
+    allow_incomplete: bool = False,
 ) -> dict[str, Any]:
-    """Inspect official season inventory plus accepted local originals, no writes."""
+    """Inspect official inventory plus accepted local originals, read-only.
+
+    Only the weekly intake may enumerate incomplete Raw/metadata pairs for
+    repair. Other users still fail closed on incomplete stored provenance.
+    """
     if not repo_root.is_dir():
         raise ValueError("Repository root does not exist")
     current = current_source_season(repo_root)
@@ -109,8 +114,12 @@ def discover_injury_history(
             raw_path = _assert_bounded_path(
                 repo_root, f"data-source/providers/nflverse/injuries/raw-{season}.csv",
             )
-            if not raw_path.is_file() or metadata_path.is_symlink() or raw_path.is_symlink():
+            if metadata_path.is_symlink() or raw_path.is_symlink():
                 raise ValueError(f"Incomplete or symlinked stored Injury source season {season}")
+            if not raw_path.is_file():
+                if allow_incomplete and not raw_path.exists():
+                    continue
+                raise ValueError(f"Incomplete stored Injury source season {season}")
             metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
             source = raw_path.read_bytes()
             if (not isinstance(metadata, dict)
