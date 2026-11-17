@@ -520,7 +520,7 @@ class NflInjuriesProductTests(unittest.TestCase):
             def intake(**kwargs):
                 return stage_next_verified_missing_injury_source(
                     root, write=True, fetch_release=lambda: release, **kwargs)
-            with self.assertRaisesRegex(ValueError, "SHA-256/size"):
+            with self.assertRaisesRegex(ValueError, "byte-size proof"):
                 intake(fetch_asset=lambda _: original + b"unexpected")
             with self.assertRaisesRegex(ValueError, "identity/game-link review"):
                 intake(fetch_asset=lambda _: original)
@@ -918,7 +918,9 @@ class NflInjuriesProductTests(unittest.TestCase):
                 fetch_asset=lambda _: (_ for _ in ()).throw(AssertionError("Unexpected download")))
             self.assertIsNone(noop["Season"])
             self.assertEqual("no-verified-history-missing", noop["Status"])
-            self.assertEqual([2010], noop["BlockedSeasons"])
+            # The legacy single-pilot still requires a provider digest. The
+            # recurring weekly intake now audits digestless 2010 separately.
+            self.assertEqual([], noop["BlockedSeasons"])
 
     def test_historical_pilot_blocks_bad_source_and_unresolved_identity(self):
         from nfl_injuries_refresh import preflight_next_injury_history
