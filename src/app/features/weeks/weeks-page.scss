@@ -391,3 +391,137 @@
   }
 }
 
+
+/* League-wide Schedule Overview shares the compact matchup rows with the Week tab. */
+.schedule-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 5px;
+}
+
+.schedule-overview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+}
+
+.schedule-overview-heading h2,
+.schedule-played-heading {
+  margin: 0;
+  color: var(--weekly-text);
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.schedule-overview-heading > span {
+  color: var(--weekly-muted);
+  font-size: 0.75rem;
+}
+
+.schedule-week-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.schedule-week {
+  min-width: 0;
+  padding: 9px 10px 11px;
+  border: 1px solid var(--weekly-card-border);
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.schedule-week--current {
+  border-left: 3px solid var(--lifecycle-active-fg, #2563eb);
+}
+
+.schedule-week-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.schedule-week-link {
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: var(--weekly-text);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.schedule-week-link:hover,
+.schedule-week-action:hover {
+  text-decoration: underline;
+}
+
+.schedule-week-action {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.schedule-current-label {
+  color: var(--lifecycle-active-fg, #2563eb);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.schedule-scoreboards {
+  margin: 0;
+}
+
+.schedule-week-empty,
+.schedule-playoff-note {
+  margin: 4px 2px;
+  color: var(--weekly-muted);
+  font-size: 0.75rem;
+}
+
+.schedule-playoff-note {
+  border-left: 3px solid var(--weekly-accent);
+  padding: 6px 10px;
+  background: rgba(124, 58, 237, 0.06);
+}
+
+.schedule-played-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--weekly-card-border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--weekly-text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+}
+
+.schedule-played-toggle:hover {
+  border-color: #94a3b8;
+}
+
+.schedule-played-heading {
+  padding-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .schedule-week { padding: 8px 6px 10px; }
+  .schedule-week-header { padding: 0 4px; }
+  .schedule-current-label { font-size: 0.62rem; }
+}

@@ -25,6 +25,7 @@ import {
   weeklyEfficiencyHighs
 } from '../../shared/utils/lineup-efficiency.util';
 import {
+  buildScheduleOverview,
   buildSeasonGrid,
   buildWeekScoreboard,
   buildWeekTabs,
@@ -36,7 +37,7 @@ import {
   type WeeksSeasonOption
 } from '../../shared/utils/weeks-view.util';
 
-type WeeksTab = 'week' | 'season';
+type WeeksTab = 'overview' | 'week' | 'season';
 type SeasonGridMode = 'points' | 'efficiency';
 
 interface SeasonData {
@@ -58,7 +59,8 @@ export class WeeksPageComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
 
-  readonly activeTab = signal<WeeksTab>('week');
+  readonly activeTab = signal<WeeksTab>(parseWeekParam(this.route.snapshot.queryParamMap.get('week')) !== null ? 'week' : 'overview');
+  readonly playedExpanded = signal(false);
   readonly gridMode = signal<SeasonGridMode>('points');
   readonly identityElements: readonly TeamIdentityElement[] = ['logo', 'name'];
   readonly logoOnlyElements: readonly TeamIdentityElement[] = ['logo'];
@@ -135,6 +137,22 @@ export class WeeksPageComponent {
 
   readonly weekTabs = computed(() => buildWeekTabs(this.data()?.matchups));
 
+  readonly scheduleOverview = computed(() =>
+    buildScheduleOverview(this.data()?.matchups, this.teams(), this.activeSeason()?.isCurrent ?? false));
+
+  readonly activeOrNextWeek = computed(() => this.data()?.matchups?.Summary?.ActiveOrNextWeek ?? null);
+
+  /** A marker, not a prediction: future playoff opponents are never synthesized. */
+  readonly upcomingPlayoffStartWeek = computed(() => {
+    const data = this.data()?.matchups;
+    const start = Number(this.base()?.leagueData.league.PlayoffStartWeek);
+    if (!this.activeSeason()?.isCurrent || !data || !this.scheduleOverview().upcoming.length
+        || !Number.isSafeInteger(start) || start <= 0 || data.Weeks.some(week => week.Stage === 'playoffs')) {
+      return null;
+    }
+    return start;
+  });
+
   readonly selectedWeek = computed(() =>
     resolveSelectedWeek(this.data()?.matchups, this.pickedWeek(), this.requestedWeek()));
 
@@ -144,20 +162,6 @@ export class WeeksPageComponent {
   readonly selectedWeekIsPlayoff = computed(() => this.selectedWeekModel()?.Stage === 'playoffs');
 
   readonly scoreboard = computed(() => buildWeekScoreboard(this.selectedWeekModel(), this.teams()));
-
-  /** FantasyMatchupIDs whose detail can be opened (the context of the selected week contains them). */
-  private readonly selectedWeekContext = computed(() => {
-    const season = this.activeSeason()?.season;
-    const week = this.selectedWeek();
-    return this.data()?.contexts.find(context => String(context.Season) === season && context.Week === week) ?? null;
-  });
-
-  private readonly selectedRecapWeek = computed(() => {
-    const recaps = this.data()?.recaps;
-    return recaps && recaps.Season === this.activeSeason()?.season
-      ? recaps.Weeks.find(week => week.Week === this.selectedWeek()) ?? null
-      : null;
-  });
 
   readonly recap = computed(() => {
     const season = this.activeSeason()?.season ?? '';
@@ -196,14 +200,22 @@ export class WeeksPageComponent {
     maximumFractionDigits: 2
   });
 
-  canOpenMatchup(matchupID: string): boolean {
-    return !!this.selectedWeekContext()?.FantasyMatchups.some(matchup => matchup.FantasyMatchupID === matchupID);
+  /** One detail path for the Week tab and every week on the league schedule. */
+  private contextForWeek(week: number | null): FantasyGameContextReadModel | null {
+    if (week === null) return null;
+    const season = this.activeSeason()?.season;
+    return this.data()?.contexts.find(context => String(context.Season) === season && context.Week === week) ?? null;
   }
 
-  openMatchup(matchupID: string): void {
-    const context = this.selectedWeekContext();
+  canOpenWeekMatchup(week: number | null, matchupID: string): boolean {
+    return !!this.contextForWeek(week)?.FantasyMatchups.some(matchup => matchup.FantasyMatchupID === matchupID);
+  }
+
+  openWeekMatchup(week: number | null, matchupID: string): void {
+    const context = this.contextForWeek(week);
     const league = this.base()?.leagueData.league;
-    if (!context || !league || !this.canOpenMatchup(matchupID)) return;
+    if (!context || !league || !this.canOpenWeekMatchup(week, matchupID)) return;
+    const recapWeek = this.data()?.recaps?.Weeks.find(candidate => candidate.Week === week) ?? null;
     const data: FantasyGameContextDialogData = {
       mode: 'matchup',
       context,
@@ -213,8 +225,8 @@ export class WeeksPageComponent {
       league,
       fantasyMatchupId: matchupID,
       players: this.base()?.leagueData.players ?? [],
-      lineupEfficiency: this.selectedRecapWeek()?.TeamPerformance ?? null,
-      pregameWinProbabilities: this.selectedRecapWeek()?.WinProbabilities ?? null
+      lineupEfficiency: recapWeek?.TeamPerformance ?? null,
+      pregameWinProbabilities: recapWeek?.WinProbabilities ?? null
     };
     void import('../../shared/components/fantasy-game-context-dialog/fantasy-game-context-dialog').then(({ FantasyGameContextDialogComponent }) => {
       this.dialog.open(FantasyGameContextDialogComponent, {
@@ -245,13 +257,15 @@ export class WeeksPageComponent {
     this.pickedSeason.set(season);
     this.pickedWeek.set(null);
     this.requestedWeek.set(null);
+    this.playedExpanded.set(false);
+    this.activeTab.set('overview');
   }
 
   selectWeek(week: number): void {
     this.pickedWeek.set(week);
   }
 
-  /** Switches to the Week tab for a week picked in the season grid. */
+  /** Opens the existing Week details from either the schedule overview or season grid. */
   openWeek(week: number): void {
     this.selectWeek(week);
     this.selectTab('week');

@@ -74,7 +74,7 @@ describe('WeeksPageComponent', () => {
   let fixture: ComponentFixture<WeeksPageComponent>;
   let dataService: jasmine.SpyObj<DataService>;
 
-  async function create(query: Record<string, string> = {}): Promise<HTMLElement> {
+  async function create(query: Record<string, string> = {}, view: 'week' | 'overview' = 'week'): Promise<HTMLElement> {
     await TestBed.configureTestingModule({
       imports: [WeeksPageComponent],
       providers: [
@@ -90,7 +90,14 @@ describe('WeeksPageComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    return fixture.nativeElement as HTMLElement;
+    const host = fixture.nativeElement as HTMLElement;
+    if (view === 'week') {
+      const weekTab = Array.from(host.querySelectorAll('.activity-tab'))
+        .find(tab => tab.textContent?.trim() === 'Week') as HTMLElement | undefined;
+      weekTab?.click();
+      fixture.detectChanges();
+    }
+    return host;
   }
 
   beforeEach(() => {
@@ -126,6 +133,68 @@ describe('WeeksPageComponent', () => {
     dataService.getFantasyGameContext.and.returnValue(throwError(() => new Error('missing')));
     dataService.getFantasyGameContextHistory.and.returnValue(throwError(() => new Error('missing')));
     dataService.getPastFantasyGameContextRaw.and.returnValue(throwError(() => new Error('missing')));
+  });
+
+
+  it('starts on the league schedule overview and shows every future week in order', async () => {
+    dataService.getMatchups.and.returnValue(of(matchups('2026', [
+      { week: 1, stage: 'regular-season', state: 'final' },
+      { week: 2, stage: 'regular-season', state: 'final' },
+      { week: 3, stage: 'regular-season', state: 'open' },
+      { week: 4, stage: 'regular-season', state: 'open' }
+    ])));
+    const host = await create({}, 'overview');
+
+    expect(host.querySelectorAll('.schedule-upcoming .schedule-week').length).toBe(2);
+    expect(Array.from(host.querySelectorAll('.schedule-upcoming .schedule-week-link'))
+      .map(node => node.textContent?.trim())).toEqual(['Week 3', 'Week 4']);
+    expect(host.querySelectorAll('.schedule-upcoming .week-matchup').length).toBe(2);
+    expect(host.querySelector('.week-title')).toBeNull();
+    expect(host.querySelector('.schedule-played')).toBeNull();
+
+    (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('.schedule-played .schedule-week').length).toBe(2);
+    expect(Array.from(host.querySelectorAll('.schedule-played .schedule-week-link'))
+      .map(node => node.textContent?.trim())).toEqual(['Week 2', 'Week 1']);
+    expect(host.querySelector('.schedule-played .week-matchup-score')?.textContent).toContain('102');
+  });
+
+  it('opens the original Week detail from a schedule group header', async () => {
+    const host = await create({}, 'overview');
+    (host.querySelector('.schedule-upcoming .schedule-week-link') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.week-title')?.textContent).toContain('Week 3');
+    expect(host.querySelector('.week-recap .weekly-recap-empty')).not.toBeNull();
+  });
+
+  it('shows all known archived weeks without hiding playoffs or inventing unavailable results', async () => {
+    const host = await create({ season: '2025' }, 'overview');
+    expect(host.querySelector('.schedule-upcoming')).toBeNull();
+    expect(host.querySelector('.schedule-played-toggle')).toBeNull();
+    expect(host.querySelectorAll('.schedule-played .schedule-week').length).toBe(2);
+    expect(host.querySelector('.schedule-played .week-stage')?.textContent).toContain('Playoffs');
+  });
+
+  it('uses the old ?week= deep link to open the detailed Week tab', async () => {
+    const host = await create({ week: '3' }, 'overview');
+    expect(host.querySelector('.week-title')?.textContent).toContain('Week 3');
+    expect(host.querySelector('.schedule-upcoming')).toBeNull();
+  });
+
+  it('opens schedule matchups only when that particular week has context', async () => {
+    const context = (week: number) => ({
+      Season: '2026', Week: week, FantasyMatchups: [{ FantasyMatchupID: `2026-${week}` }]
+    }) as unknown as FantasyGameContextReadModel;
+    dataService.getFantasyGameContext.and.returnValue(of(context(3)));
+    dataService.getFantasyGameContextHistory.and.returnValue(of({ Weeks: [context(2)] } as unknown as HistoricalFantasyGameContextSeason));
+    const host = await create({}, 'overview');
+
+    expect((host.querySelector('.schedule-upcoming .week-matchup') as HTMLButtonElement).disabled).toBeFalse();
+    (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect((host.querySelector('.schedule-played .week-matchup') as HTMLButtonElement).disabled).toBeFalse();
   });
 
   it('opens the last completed week of the current season with scores and a recap', async () => {

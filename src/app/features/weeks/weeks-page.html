@@ -1,15 +1,22 @@
 <div class="weeks-page">
   @if (ready() === undefined) {
     <mat-card class="weeks-empty-card">
-      <mat-card-content>Loading weeks…</mat-card-content>
+      <mat-card-content>Loading schedule…</mat-card-content>
     </mat-card>
   } @else if (ready() === null || !activeSeason()) {
     <mat-card class="weeks-empty-card">
-      <mat-card-content>Weeks could not be loaded.</mat-card-content>
+      <mat-card-content>Schedule could not be loaded.</mat-card-content>
     </mat-card>
   } @else {
     <div class="weeks-toolbar">
-      <div class="activity-tabs" aria-label="Weeks sections">
+      <div class="activity-tabs" aria-label="Schedule sections">
+        <button
+          class="activity-tab"
+          type="button"
+          [class.active]="activeTab() === 'overview'"
+          (click)="selectTab('overview')">
+          Overview
+        </button>
         <button
           class="activity-tab"
           type="button"
@@ -44,6 +51,67 @@
       <mat-card class="weeks-empty-card">
         <mat-card-content>No matchup data is available for {{ activeSeason()!.season }}.</mat-card-content>
       </mat-card>
+    } @else if (activeTab() === 'overview') {
+      <section class="schedule-overview" aria-label="League schedule">
+        @if (scheduleOverview().upcoming.length) {
+          <div class="schedule-overview-heading">
+            <h2>Upcoming Matchups</h2>
+            <span>{{ scheduleOverview().upcoming.length }} remaining {{ scheduleOverview().upcoming.length === 1 ? 'week' : 'weeks' }}</span>
+          </div>
+          <div class="schedule-week-list schedule-upcoming">
+            @for (group of scheduleOverview().upcoming; track group.week) {
+              <section class="schedule-week" [class.schedule-week--current]="group.week === activeOrNextWeek()">
+                <header class="schedule-week-header">
+                  <button type="button" class="schedule-week-link" (click)="openWeek(group.week)">Week {{ group.week }}</button>
+                  @if (group.isPlayoff) { <span class="week-stage">Playoffs</span> }
+                  @if (group.week === activeOrNextWeek()) { <span class="schedule-current-label">Current / next</span> }
+                  <button type="button" class="schedule-week-action" (click)="openWeek(group.week)" [attr.aria-label]="'Open week ' + group.week">View week ›</button>
+                </header>
+                @if (group.matchups.length) {
+                  <div class="week-scoreboards schedule-scoreboards">
+                    <ng-container *ngTemplateOutlet="matchupRows; context: { $implicit: group.matchups, week: group.week }"></ng-container>
+                  </div>
+                } @else {
+                  <p class="schedule-week-empty">Matchups are not confirmed yet.</p>
+                }
+              </section>
+            }
+          </div>
+        }
+        @if (upcomingPlayoffStartWeek() !== null) {
+          <p class="schedule-playoff-note">Playoffs begin in Week {{ upcomingPlayoffStartWeek() }}. Pairings will appear once confirmed.</p>
+        }
+        @if (scheduleOverview().played.length) {
+          @if (scheduleOverview().upcoming.length) {
+            <button type="button" class="schedule-played-toggle" [attr.aria-expanded]="playedExpanded()" (click)="playedExpanded.set(!playedExpanded())">
+              <span>Played · {{ scheduleOverview().played.length }} {{ scheduleOverview().played.length === 1 ? 'week' : 'weeks' }}</span>
+              <span aria-hidden="true">{{ playedExpanded() ? '▴' : '▾' }}</span>
+            </button>
+          } @else {
+            <h2 class="schedule-overview-heading schedule-played-heading">Season Matchups</h2>
+          }
+          @if (playedExpanded() || !scheduleOverview().upcoming.length) {
+            <div class="schedule-week-list schedule-played">
+              @for (group of scheduleOverview().played; track group.week) {
+                <section class="schedule-week">
+                  <header class="schedule-week-header">
+                    <button type="button" class="schedule-week-link" (click)="openWeek(group.week)">Week {{ group.week }}</button>
+                    @if (group.isPlayoff) { <span class="week-stage">Playoffs</span> }
+                    <button type="button" class="schedule-week-action" (click)="openWeek(group.week)" [attr.aria-label]="'Open week ' + group.week">View week ›</button>
+                  </header>
+                  @if (group.matchups.length) {
+                    <div class="week-scoreboards schedule-scoreboards">
+                      <ng-container *ngTemplateOutlet="matchupRows; context: { $implicit: group.matchups, week: group.week }"></ng-container>
+                    </div>
+                  } @else {
+                    <p class="schedule-week-empty">No confirmed matchups for this week.</p>
+                  }
+                </section>
+              }
+            </div>
+          }
+        }
+      </section>
     } @else if (activeTab() === 'week') {
       <nav class="week-bar" aria-label="Weeks">
         @for (tab of weekTabs(); track tab.week) {
@@ -74,53 +142,7 @@
         </h2>
 
         <div class="week-scoreboards">
-          @for (matchup of scoreboard(); track matchup.matchupID) {
-            <button
-              type="button"
-              class="week-matchup"
-              [class.week-matchup--open]="matchup.state === 'open'"
-              [class.week-matchup--static]="!canOpenMatchup(matchup.matchupID)"
-              [disabled]="!canOpenMatchup(matchup.matchupID)"
-              [attr.aria-label]="canOpenMatchup(matchup.matchupID) ? 'Open matchup details' : null"
-              (click)="openMatchup(matchup.matchupID)">
-              <span class="week-matchup-main" [class.week-matchup-main--openable]="canOpenMatchup(matchup.matchupID)">
-                @for (participant of matchup.participants; track participant.teamID; let last = $last) {
-                  <span
-                    class="week-matchup-side"
-                    [class.week-matchup-side--right]="last"
-                    [class.week-matchup-side--winner]="participant.isWinner">
-                    <span class="week-matchup-team">
-                      @if (participant.team) {
-                        <app-team-identity
-                          class="week-identity week-identity--desktop"
-                          [team]="participant.team"
-                          [elements]="identityElements"
-                          [interactive]="!canOpenMatchup(matchup.matchupID)"
-                          size="small"></app-team-identity>
-                        <app-team-identity
-                          class="week-identity week-identity--mobile"
-                          [team]="participant.team"
-                          [elements]="compactIdentityElements"
-                          [interactive]="!canOpenMatchup(matchup.matchupID)"
-                          size="small"></app-team-identity>
-                      } @else {
-                        <span class="week-team-fallback">{{ teamLabel(participant.teamID, null) }}</span>
-                      }
-                    </span>
-                    <strong class="week-matchup-score">{{ formatPoints(participant.points) }}</strong>
-                  </span>
-                }
-                @if (canOpenMatchup(matchup.matchupID)) {
-                  <span class="week-matchup-chevron" aria-hidden="true">›</span>
-                }
-              </span>
-              @if (matchup.isTie || matchup.state !== 'final') {
-                <span class="week-matchup-state" [ngClass]="'week-matchup-state--' + matchup.state">
-                  {{ matchup.isTie ? 'Final · Tie' : stateLabel(matchup.state) }}
-                </span>
-              }
-            </button>
-          }
+          <ng-container *ngTemplateOutlet="matchupRows; context: { $implicit: scoreboard(), week: selectedWeek() }"></ng-container>
         </div>
 
         <section class="weekly-recap-shell weekly-recap-shell--prominent week-recap" id="week-recap">
@@ -229,3 +251,54 @@
     }
   }
 </div>
+
+<!-- One compact fantasy matchup row reused by Week and Schedule Overview. -->
+<ng-template #matchupRows let-items let-week="week">
+          @for (matchup of items; track matchup.matchupID) {
+            <button
+              type="button"
+              class="week-matchup"
+              [class.week-matchup--open]="matchup.state === 'open'"
+              [class.week-matchup--static]="!canOpenWeekMatchup(week, matchup.matchupID)"
+              [disabled]="!canOpenWeekMatchup(week, matchup.matchupID)"
+              [attr.aria-label]="canOpenWeekMatchup(week, matchup.matchupID) ? 'Open matchup details' : null"
+              (click)="openWeekMatchup(week, matchup.matchupID)">
+              <span class="week-matchup-main" [class.week-matchup-main--openable]="canOpenWeekMatchup(week, matchup.matchupID)">
+                @for (participant of matchup.participants; track participant.teamID; let last = $last) {
+                  <span
+                    class="week-matchup-side"
+                    [class.week-matchup-side--right]="last"
+                    [class.week-matchup-side--winner]="participant.isWinner">
+                    <span class="week-matchup-team">
+                      @if (participant.team) {
+                        <app-team-identity
+                          class="week-identity week-identity--desktop"
+                          [team]="participant.team"
+                          [elements]="identityElements"
+                          [interactive]="!canOpenWeekMatchup(week, matchup.matchupID)"
+                          size="small"></app-team-identity>
+                        <app-team-identity
+                          class="week-identity week-identity--mobile"
+                          [team]="participant.team"
+                          [elements]="compactIdentityElements"
+                          [interactive]="!canOpenWeekMatchup(week, matchup.matchupID)"
+                          size="small"></app-team-identity>
+                      } @else {
+                        <span class="week-team-fallback">{{ teamLabel(participant.teamID, null) }}</span>
+                      }
+                    </span>
+                    <strong class="week-matchup-score">{{ formatPoints(participant.points) }}</strong>
+                  </span>
+                }
+                @if (canOpenWeekMatchup(week, matchup.matchupID)) {
+                  <span class="week-matchup-chevron" aria-hidden="true">›</span>
+                }
+              </span>
+              @if (matchup.isTie || matchup.state !== 'final') {
+                <span class="week-matchup-state" [ngClass]="'week-matchup-state--' + matchup.state">
+                  {{ matchup.isTie ? 'Final · Tie' : stateLabel(matchup.state) }}
+                </span>
+              }
+            </button>
+          }
+</ng-template>
