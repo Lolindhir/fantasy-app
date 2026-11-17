@@ -337,6 +337,105 @@ class MatchupProjectionTests(unittest.TestCase):
         self.assertIsNone(team["DisplayProjectedScore"])
         self.assertIsNotNone(team["BestBallEfficiencyFallback"])
 
+    @staticmethod
+    def display_win_test_fixture() -> tuple[dict, dict, dict]:
+        context = default_context()
+        context["Week"] = 4
+        player = default_model()
+        player["Week"] = 4
+        # Team 1 lacks a starter projection; team 2 still has a complete lineup.
+        player["Records"][3]["Projection"] = projection(0, status="insufficient-history")
+        player["Records"][2]["Projection"] = projection(180.0, sigma=10.0)
+        stats = {
+            "CanonicalLeagueID": "league-a", "Season": 2026,
+            "AsOf": {"CompletedWeeks": 3},
+            "Teams": [
+                {"TeamID": 1, "ProjectedBestBallPoints": 220, "LineupEfficiencyActual": 85,
+                 "GameLog": [{"Week": 1, "Points": 100}, {"Week": 2, "Points": 130}, {"Week": 3, "Points": 160}]},
+                {"TeamID": 2, "ProjectedBestBallPoints": 190, "LineupEfficiencyActual": 90,
+                 "GameLog": [{"Week": 1, "Points": 180}, {"Week": 2, "Points": 200}, {"Week": 3, "Points": 170}]},
+            ],
+        }
+        return context, player, stats
+
+    def test_partial_team_gets_estimated_chance_without_modifying_original_v1_values(self) -> None:
+        context, player, stats = self.display_win_test_fixture()
+        result = build_matchup_projections(context, player, season_statistics=stats)
+        partial, complete = team_of(result, 1), team_of(result, 2)
+        self.assertIsNone(partial["WinProbability"])
+        self.assertIsNone(complete["WinProbability"])
+        self.assertIsNone(partial["WinProbabilityRaw"])
+        self.assertIsNone(partial["StandardDeviation"])
+        self.assertEqual(partial["DisplayProjectedScore"], 187.0)
+        self.assertEqual(partial["BestBallEfficiencyFallback"]["ScoreStandardDeviation"], 30.0)
+        self.assertEqual(partial["BestBallEfficiencyFallback"]["ScoreVolatilityGames"], 3)
+        self.assertEqual(partial["BestBallEfficiencyFallback"]["ScoreVolatilityMethod"], matchup_projection.FALLBACK_VOLATILITY_METHOD)
+        self.assertEqual(complete["DisplayProjectedScore"], 180.0)
+        raw = matchup_projection.win_prob_v1.win_probability(187.0, 30.0, 180.0, 10.0)
+        self.assertEqual(
+            (partial["DisplayWinProbability"], complete["DisplayWinProbability"]),
+            matchup_projection.win_prob_v1.percent_pair(raw),
+        )
+        self.assertAlmostEqual(partial["DisplayWinProbabilityRaw"], raw)
+        self.assertAlmostEqual(
+            complete["DisplayWinProbabilityRaw"],
+            matchup_projection.win_prob_v1.win_probability(180.0, 10.0, 187.0, 30.0),
+        )
+        self.assertFalse(partial["DisplayWinProbabilityIsDeterministic"])
+        self.assertEqual(partial["DisplayWinProbabilityBasis"], matchup_projection.DISPLAY_CHANCE_ESTIMATE)
+        self.assertEqual(complete["DisplayWinProbabilityBasis"], matchup_projection.DISPLAY_CHANCE_ESTIMATE)
+
+    def test_complete_matchup_retains_original_win_probabilities_even_with_season_stats(self) -> None:
+        context, player, stats = self.display_win_test_fixture()
+        player["Records"][3]["Projection"] = projection(5.0, sigma=5.0)
+        result = build_matchup_projections(context, player, season_statistics=stats)
+        for team in result["Matchups"][0]["Teams"]:
+            self.assertEqual(team["DisplayWinProbability"], team["WinProbability"])
+            self.assertEqual(team["DisplayWinProbabilityRaw"], team["WinProbabilityRaw"])
+            self.assertEqual(team["DisplayWinProbabilityIsDeterministic"], team["WinProbabilityIsDeterministic"])
+            self.assertEqual(team["DisplayWinProbabilityBasis"], "lineup")
+
+    def test_both_teams_can_use_estimated_chance_from_the_same_history_cutoff(self) -> None:
+        context, player, stats = self.display_win_test_fixture()
+        player["Records"][2]["Projection"] = projection(0, status="insufficient-history")
+        result = build_matchup_projections(context, player, season_statistics=stats)
+        left, right = team_of(result, 1), team_of(result, 2)
+        self.assertIsNone(left["WinProbability"])
+        self.assertIsNone(right["WinProbability"])
+        self.assertEqual(left["DisplayWinProbability"] + right["DisplayWinProbability"], 100)
+        self.assertEqual(left["DisplayWinProbabilityBasis"], matchup_projection.DISPLAY_CHANCE_ESTIMATE)
+        self.assertEqual(right["DisplayWinProbabilityBasis"], matchup_projection.DISPLAY_CHANCE_ESTIMATE)
+
+    def test_bad_or_inadequate_history_keeps_points_but_no_estimated_chance(self) -> None:
+        context, player, stats = self.display_win_test_fixture()
+        histories = [
+            [], [{"Week": 1, "Points": 100}, {"Week": 2, "Points": 200}],
+            [{"Week": 1, "Points": 100}, {"Week": 2, "Points": 100}, {"Week": 3, "Points": 100}],
+            [{"Week": 1, "Points": 100}, {"Week": 1, "Points": 110}, {"Week": 3, "Points": 120}],
+            [{"Week": 1, "Points": 100}, {"Week": 2, "Points": 110}, {"Week": 4, "Points": 120}],
+            [{"Week": 1, "Points": 100}, {"Week": 2, "Points": float("nan")}, {"Week": 3, "Points": 120}],
+            [{"Week": 1, "Points": 100}, {"Week": 2, "Points": None}, {"Week": 3, "Points": 120}],
+            [{"Week": 1, "Points": 100}, {"Week": 2, "Points": 150}, {"Week": 3, "Points": 120}, {"Week": 3, "Points": 130}],
+        ]
+        for games in histories:
+            with self.subTest(games=games):
+                case = copy.deepcopy(stats)
+                case["Teams"][0]["GameLog"] = games
+                partial = team_of(build_matchup_projections(context, player, season_statistics=case), 1)
+                self.assertEqual(partial["DisplayProjectedScore"], 187.0)
+                self.assertIsNone(partial["BestBallEfficiencyFallback"]["ScoreStandardDeviation"])
+                self.assertIsNone(partial["DisplayWinProbability"])
+                self.assertIsNone(partial["DisplayWinProbabilityBasis"])
+
+    def test_started_matchup_does_not_mix_partial_live_with_season_fallback_probability(self) -> None:
+        context, player, stats = self.display_win_test_fixture()
+        context["Games"][0]["Status"] = "Final"
+        context["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 18.0
+        partial = team_of(build_matchup_projections(context, player, season_statistics=stats), 1)
+        self.assertIsNone(partial["DisplayProjectedScore"])
+        self.assertIsNone(partial["DisplayWinProbability"])
+        self.assertIsNone(partial["DisplayWinProbabilityBasis"])
+
     def test_axis_covers_both_display_ranges_on_a_snapped_scale(self) -> None:
         result = build_matchup_projections(default_context(), default_model())
         axis = result["Matchups"][0]["Axis"]
