@@ -40,8 +40,14 @@ def _json(root: Path, relative: str) -> dict[str, Any]:
     return obj
 
 
-def accepted_historical_injury_seasons(repo_root: Path) -> tuple[list[int], int]:
-    """Discover exact persisted Raw/metadata pairs, fail on orphaned provenance."""
+def accepted_historical_injury_seasons(
+    repo_root: Path, *, allow_incomplete: bool = False,
+) -> tuple[list[int], int]:
+    """Discover authenticated Raw/metadata pairs.
+
+    Normal consumers reject orphaned originals. The missing-source intake alone
+    may inspect them for recovery without weakening Canonical/Derived readers.
+    """
     if not repo_root.is_dir():
         raise ValueError("Injury repository root does not exist")
     current = current_source_season(repo_root)
@@ -64,12 +70,12 @@ def accepted_historical_injury_seasons(repo_root: Path) -> tuple[list[int], int]
             if not match or not valid_injury_season(int(match.group(1))):
                 raise ValueError("Invalid Injury Source CSV name")
             raw_years.add(int(match.group(1)))
-    if meta_years != raw_years:
+    if meta_years != raw_years and not allow_incomplete:
         raise ValueError(f"Incomplete Injury Source original/metadata pairs: "
                          f"metadataOnly={sorted(meta_years - raw_years)}, "
                          f"rawOnly={sorted(raw_years - meta_years)}")
     historical = []
-    for season in sorted(meta_years):
+    for season in sorted(meta_years & raw_years):
         prefix = "data-source/providers/nflverse/injuries/"
         metadata = _json(repo_root, f"{prefix}metadata-{season}.json")
         csv_path = _assert_bounded_path(repo_root, f"{prefix}raw-{season}.csv")
