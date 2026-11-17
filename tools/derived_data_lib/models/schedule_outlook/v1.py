@@ -75,7 +75,7 @@ def compute_regular_season(
     team_ids: set[Any] = set()
     for team in teams:
         rid, tid = team.get("CanonicalLeagueRosterID"), team.get("TeamID")
-        if not _text(rid) or tid is None or isinstance(tid, bool) or not isinstance(tid, (int, str)) or tid in team_ids or rid in team_map:
+        if not _text(rid) or type(tid) is not int or tid <= 0 or tid in team_ids or rid in team_map:
             raise ScheduleOutlookError("Duplicate or invalid canonical team identity")
         team_map[rid] = tid
         team_ids.add(tid)
@@ -119,7 +119,7 @@ def compute_regular_season(
                 by_team[own].append(game)
 
     result_teams: list[dict[str, Any]] = []
-    for rid, team_id in sorted(team_map.items(), key=lambda x: str(x[1])):
+    for rid, team_id in sorted(team_map.items(), key=lambda x: x[1]):
         games = by_team[rid]
         record: dict[str, Any] = {
             "TeamID": team_id, "CanonicalLeagueRosterID": rid, "RemainingGames": len(games),
