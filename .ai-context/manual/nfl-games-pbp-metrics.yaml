@@ -66,11 +66,14 @@ competitiveOpportunitiesDecision:
     them. Rates aggregate observed numerators and denominators with explicit missing
     and unknown eligibility, never official-attempt substitutions.
   implementationAndVerification: >-
-    Current read-only candidate logic starts with play_type pass/run and explicitly
-    excludes spikes from the pass-throw selector. GameDetail v2 must also verify
-    that spike-flagged rows cannot enter dropback or other competitive metric
-    denominators, and cover kneels, spikes, penalties, scrambles, sacks and unknown
-    flags with targeted regression tests before publication. Do not imply that
+    Read-only candidate logic starts with play_type pass/run and excludes
+    qb_spike=1 (even when source qb_dropback=1) plus play_type=qb_kneel or
+    explicit qb_kneel=1, before deriving competitive metric denominators.
+    The field qb_kneel is optional when upstream does not supply it; unknown
+    qb_spike on a potential dropback remains unknown, never assumed false.
+    Targeted synthetic regression coverage does not certify exact 2025 upstream
+    completeness, penalty semantics or all official attempts reconciliation.
+    GameDetail v2 must preserve those provenance and eligibility limits. Do not imply that
     every edge case is already implemented or empirically reconciled.
   reconciliationBoundary: >-
     The observed 2025 PBP-minus-PlayerStats differences (-82 pass attempts,
@@ -114,7 +117,7 @@ globalPopulationAndMissingRules:
 fieldFamilies:
   gameIdentity: [game_id, play_id, season, week, season_type, home_team, away_team]
   teamsAndSituations: [posteam, defteam, qtr, down, ydstogo, yardline_100, drive, goal_to_go]
-  eligibility: [play_type, rush_attempt, pass_attempt, sack, qb_spike, qb_dropback, qb_scramble, two_point_attempt]
+  eligibility: [play_type, rush_attempt, pass_attempt, sack, qb_spike, qb_kneel, qb_dropback, qb_scramble, two_point_attempt]
   outcomes: [yards_gained, rushing_yards, passing_yards, first_down, success, third_down_converted]
   efficiency: [epa, air_yards, yards_after_catch, cp, cpoe]
   players: [rusher_player_id, receiver_player_id, passer_player_id]
