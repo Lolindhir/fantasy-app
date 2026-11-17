@@ -176,7 +176,10 @@ class RepositoryDataTests(unittest.TestCase):
     def test_sleeper_gate_passes(self) -> None:
         report = shadow.sleeper_gate(ROOT)
         self.assertGreater(report["compared"], 0)
-        self.assertTrue(report["passed"], report["failures"])
+        # Show the offending canonical/player-week evidence when this permanent gate fails.
+        # Never relax the gate: the assertion still requires report["passed"].
+        unresolved = [row for row in report["residuals"] if row["Class"] == "unclassified"]
+        self.assertTrue(report["passed"], {"failures": report["failures"], "unclassified": unresolved})
 
     def test_shadow_keeps_row_set_and_identity_hold_rows(self) -> None:
         legacy, new = self.result["legacy"], self.result["shadow"]
