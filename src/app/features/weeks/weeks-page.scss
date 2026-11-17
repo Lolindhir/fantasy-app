@@ -547,6 +547,7 @@
   box-shadow: var(--weekly-card-shadow);
 }
 .schedule-matchup {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) 12px;
   align-items: center;
@@ -560,6 +561,26 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+/* Keep playoff context below the score line, without squeezing team logos or scores horizontally. */
+.schedule-matchup--playoff-labeled { min-height: 65px; padding-bottom: 12px; }
+.schedule-playoff-matchup-label {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 65%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(124, 58, 237, 0.075);
+  color: #6d28d9;
+  font-size: 0.61rem;
+  font-weight: 750;
+  line-height: 1.2;
+  pointer-events: none;
 }
 .schedule-matchup + .schedule-matchup {
   border-top: 1px solid var(--weekly-card-border);
