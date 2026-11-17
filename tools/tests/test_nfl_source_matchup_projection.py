@@ -272,6 +272,71 @@ class MatchupProjectionTests(unittest.TestCase):
         self.assertEqual(empty["State"], "unavailable")
         self.assertEqual(empty["StarterCount"], 0)
 
+    def test_season_bestball_efficiency_fallback_keeps_original_forecast_unknown(self) -> None:
+        model = default_model()
+        model["Records"][3]["Projection"] = projection(0, status="insufficient-history")
+        stats = {
+            "CanonicalLeagueID": "league-a", "Season": 2026,
+            "AsOf": {"CompletedWeeks": 2},
+            "Teams": [
+                {"TeamID": 1, "ProjectedBestBallPoints": 220.0, "LineupEfficiencyActual": 85.0},
+                {"TeamID": 2, "ProjectedBestBallPoints": 180.0, "LineupEfficiencyActual": 80.0},
+            ],
+        }
+
+        result = build_matchup_projections(default_context(), model, season_statistics=stats)
+        partial, complete = team_of(result, 1), team_of(result, 2)
+        self.assertEqual(partial["State"], "partial")
+        self.assertIsNone(partial["ProjectedFinalScore"])
+        self.assertIsNone(partial["StandardDeviation"])
+        self.assertEqual(partial["Ranges"], [])
+        self.assertEqual(partial["DisplayProjectedScore"], 187.0)
+        self.assertEqual(partial["DisplayProjectionMethod"], matchup_projection.FALLBACK_METHOD)
+        self.assertEqual(partial["BestBallEfficiencyFallback"]["SourceThroughWeek"], 2)
+        self.assertIsNone(partial["WinProbability"])
+        self.assertEqual(complete["ProjectedFinalScore"], 20.0)
+        self.assertEqual(complete["DisplayProjectedScore"], 20.0)
+        self.assertEqual(complete["DisplayProjectionMethod"], METHOD_ID)
+        self.assertEqual(complete["BestBallEfficiencyFallback"]["Points"], 144.0)
+
+    def test_fallback_rejects_missing_future_wrong_league_or_invalid_data(self) -> None:
+        model = default_model()
+        model["Records"][3]["Projection"] = projection(0, status="insufficient-history")
+        valid = {
+            "CanonicalLeagueID": "league-a", "Season": 2026,
+            "AsOf": {"CompletedWeeks": 2},
+            "Teams": [{"TeamID": 1, "ProjectedBestBallPoints": 220.0, "LineupEfficiencyActual": 85.0}],
+        }
+        bad = [
+            None, {}, {**valid, "CanonicalLeagueID": "other"},
+            {**valid, "Season": 2025},
+            {**valid, "AsOf": {"CompletedWeeks": 3}},
+            {**valid, "AsOf": {"CompletedWeeks": 0}},
+            {**valid, "Teams": [*valid["Teams"], valid["Teams"][0]]},
+            {**valid, "Teams": [{"TeamID": 1, "ProjectedBestBallPoints": float("nan"), "LineupEfficiencyActual": 85.0}]},
+            {**valid, "Teams": [{"TeamID": 1, "ProjectedBestBallPoints": 220.0, "LineupEfficiencyActual": 101.0}]},
+        ]
+        for stats in bad:
+            with self.subTest(stats=stats):
+                partial = team_of(build_matchup_projections(default_context(), model, season_statistics=stats), 1)
+                self.assertIsNone(partial["DisplayProjectedScore"])
+                self.assertIsNone(partial["BestBallEfficiencyFallback"])
+
+    def test_bestball_fallback_does_not_replace_partial_live_score(self) -> None:
+        model = default_model()
+        model["Records"][3]["Projection"] = projection(0, status="insufficient-history")
+        ctx = default_context()
+        ctx["Games"][0]["Status"] = "Final"
+        ctx["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 18.0
+        stats = {
+            "CanonicalLeagueID": "league-a", "Season": 2026,
+            "AsOf": {"CompletedWeeks": 2},
+            "Teams": [{"TeamID": 1, "ProjectedBestBallPoints": 220.0, "LineupEfficiencyActual": 85.0}],
+        }
+        team = team_of(build_matchup_projections(ctx, model, season_statistics=stats), 1)
+        self.assertIsNone(team["DisplayProjectedScore"])
+        self.assertIsNotNone(team["BestBallEfficiencyFallback"])
+
     def test_axis_covers_both_display_ranges_on_a_snapped_scale(self) -> None:
         result = build_matchup_projections(default_context(), default_model())
         axis = result["Matchups"][0]["Axis"]
@@ -353,6 +418,25 @@ class PublicationTests(unittest.TestCase):
 
     def _payload(self, root: Path) -> dict:
         return json.loads((root / "public/data/MatchupProjections.json").read_text(encoding="utf-8"))
+
+    def test_publication_uses_existing_shared_derived_season_statistics(self) -> None:
+        root = Path(tempfile.mkdtemp())
+        stats_path = root / "data-derived/season-statistics/league-a/2026.json"
+        stats_path.parent.mkdir(parents=True, exist_ok=True)
+        stats_path.write_text(json.dumps({
+            "CanonicalLeagueID": "league-a", "Season": 2026,
+            "AsOf": {"CompletedWeeks": 2},
+            "Teams": [{"TeamID": 1, "ProjectedBestBallPoints": 220.0, "LineupEfficiencyActual": 85.0}],
+        }), encoding="utf-8")
+        model = default_model()
+        model["Records"][3]["Projection"] = projection(0, status="insufficient-history")
+        first = self._publish(root, default_context(), model)
+        second = self._publish(root, default_context(), model)
+        self.assertTrue(first["Changed"])
+        self.assertFalse(second["Changed"])
+        team = self._payload(root)["Matchups"][0]["Teams"][0]
+        self.assertIsNone(team["ProjectedFinalScore"])
+        self.assertEqual(team["DisplayProjectedScore"], 187.0)
 
     def test_publication_writes_once_and_is_a_semantic_no_op_afterwards(self) -> None:
         root = Path(tempfile.mkdtemp())
