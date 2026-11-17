@@ -1533,10 +1533,10 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
         doc = self._metrics([
             _pbp_row(play_id="1", play_type="run", pass_attempt="0",
                      rush_attempt="1", qb_scramble="1", qb_dropback="1",
-                     rushing_yards="8", epa="0.5"),
+                     qb_spike="0", rushing_yards="8", epa="0.5"),
             _pbp_row(play_id="2", play_type="run", pass_attempt="0",
                      rush_attempt="1", qb_scramble="", qb_dropback="0",
-                     rushing_yards="3", epa="-0.2"),
+                     qb_spike="0", rushing_yards="3", epa="-0.2"),
         ])
         metrics = doc["ByDefenseTeam"][1]["Metrics"]
         self.assertEqual(metrics["rush_attempts_faced"]["Value"], 2)
