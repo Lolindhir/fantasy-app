@@ -75,25 +75,52 @@ class SeasonBrackets:
 
     def __init__(self, structure: Any, winners: Any, losers: Any) -> None:
         self.windows = round_windows(structure)
-        self.games: list[tuple[str, int, frozenset[str] | None]] = []
+        self.games: list[tuple[str, int, frozenset[str] | None, int | None]] = []
         for game in _games(winners, "winners-bracket"):
             placement = game.get("Placement")
             label = PLACEMENT if isinstance(placement, int) and not isinstance(placement, bool) and placement > 1 else CHAMPIONSHIP
-            self.games.append((label, _int(game.get("Round")), _pair(game)))
+            value = placement if type(placement) is int and placement >= 1 else None
+            self.games.append((label, _int(game.get("Round")), _pair(game), value))
         for game in _games(losers, "losers-bracket"):
-            self.games.append((CONSOLATION, _int(game.get("Round")), _pair(game)))
+            placement = game.get("Placement")
+            value = placement if type(placement) is int and placement >= 1 else None
+            self.games.append((CONSOLATION, _int(game.get("Round")), _pair(game), value))
 
-    def classify(self, week: int, roster_ids: tuple[Any, Any]) -> str:
+    def describe(self, week: int, roster_ids: tuple[Any, Any]) -> dict[str, Any]:
+        """Bracket provenance for one confirmed pairing, including exact round and leg.
+
+        Unknown/ambiguous evidence keeps the original `unclassified` label and null metadata.
+        The placement of a losers-bracket match is its consolation-tree placement, not
+        the overall league finish; consumers must keep the Bracket distinction.
+        """
+        unknown = {
+            "Bracket": UNCLASSIFIED, "PlayoffRound": None, "PlayoffRoundCount": None,
+            "PlayoffPlacement": None, "PlayoffRoundWeek": None, "PlayoffRoundWeeks": None,
+        }
         if self.windows is None:
-            return UNCLASSIFIED
+            return unknown
         rounds = [index + 1 for index, window in enumerate(self.windows) if week in window]
         if len(rounds) != 1 or not all(isinstance(r, str) and r for r in roster_ids):
-            return UNCLASSIFIED
+            return unknown
         pair = frozenset(roster_ids)
         if len(pair) != 2:
-            return UNCLASSIFIED
-        labels = [label for label, rnd, game_pair in self.games if rnd == rounds[0] and game_pair == pair]
-        return labels[0] if len(labels) == 1 else UNCLASSIFIED
+            return unknown
+        round_number = rounds[0]
+        matches = [(label, placement) for label, rnd, game_pair, placement in self.games
+                   if rnd == round_number and game_pair == pair]
+        if len(matches) != 1:
+            return unknown
+        label, placement = matches[0]
+        window = self.windows[round_number - 1]
+        return {
+            "Bracket": label, "PlayoffRound": round_number, "PlayoffRoundCount": len(self.windows),
+            "PlayoffPlacement": placement, "PlayoffRoundWeek": window.index(week) + 1,
+            "PlayoffRoundWeeks": len(window),
+        }
+
+    def classify(self, week: int, roster_ids: tuple[Any, Any]) -> str:
+        """Compatibility API for existing Bracket consumers (e.g. LeagueRivalry)."""
+        return self.describe(week, roster_ids)["Bracket"]
 
 
 def load_season_brackets(season_dir: Path, league_source: Any) -> SeasonBrackets:

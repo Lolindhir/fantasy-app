@@ -84,12 +84,29 @@ inputs:
   leagueMetadata: data-meta/<CanonicalLeagueID>/metadata.json (Seasons.<season>.Models.TeamRange)
 
 outputs:
-  matchups: The season Matchups object exactly as in public/data/Matchups.json (all weeks with pairings, nullable effective scores, FantasyMatchupID, CompletionState, results, Bracket label of playoff matchups (Issue #1455, additive, league-rivalry.yaml), stage, first kickoff, Summary).
+  matchups: The season Matchups object as in public/data/Matchups.json (all weeks with pairings, nullable effective scores, FantasyMatchupID, CompletionState, results, Bracket and additive exact playoff round/placement/leg metadata, stage, first kickoff, Summary).
   fantasyGameContext: The FantasyGameContext of the matchup week exactly as in public/data/FantasyGameContext.json (schema 6; games with relevance and impact per team, matchup view with counterfactual, preview, MustWatch ranking, final scores, market).
   projections: The team projections exactly as in public/data/MatchupProjections.json (ProjectedFinalScore and 50/80/90 percent ranges per FantasyMatchupID and team; method Id and version from the model).
   currentSeasonHistory: 'Finished weeks of the running season (weeks up to LeagueScoredWeek) are published as public/data/FantasyGameContextHistory.json (same document shape as the history of a completed season, ScoringState partial, weekly rosters instead of Decision Windows). It is deliberately not under past_seasons, which is cached long-term and excluded from build cache busting. Written by tools/matchup_context_app_publish.py write --scope current in League Live, only on a semantic difference; an incomplete week keeps the last file.'
   history: For a completed season the same Matchups and FantasyGameContext objects as the history files past_seasons/Matchups_<season>.json and past_seasons/FantasyGameContext_<season>.json (weekly rosters instead of Decision Windows).
   asOfUtc: Additive; the App delivery drops it so that unchanged inputs keep a semantic no-op.
+
+playoffMatchupMetadata:
+  issue: 1537
+  source: 'Canonical winners-bracket.json / losers-bracket.json and league.json.WeekStructure; owned by tools/derived_data_lib/playoff_brackets.py::SeasonBrackets.describe.'
+  scope: 'Additive optional fields on Matchups.Weeks[].Matchups[] for playoff-stage games only; regular-season shape and existing Bracket labels are unchanged.'
+  fields:
+    PlayoffRound: '1-based matched bracket round; null if the pairing is unclassified.'
+    PlayoffRoundCount: 'Number of configured playoff rounds (from WeekStructure), emitted only when a specific bracket pairing is matched.'
+    PlayoffPlacement: 'Nullable source Placement, e.g. 1 championship final, 3 third-place game, 5 fifth-place game; losers-bracket placement belongs to the consolation tree, never an overall finish.'
+    PlayoffRoundWeek: '1-based week/leg index within the matched round window.'
+    PlayoffRoundWeeks: 'Number of weeks in the matched round window, 1 or 2 per configured PlayoffRoundType.'
+  rules:
+    - 'No inferred future pairings, score-based placement, standings-based winner or bracket guesses. An ambiguous or absent roster-pair match keeps Bracket=unclassified and every new field null.'
+    - 'Match identity remains CanonicalLeagueID + Season + Week + FantasyMatchupID; Round/Placement are provenance, not a replacement key.'
+    - 'Changes to accepted canonical bracket facts or WeekStructure rederive current/historical Matchups through the existing computed function and semantic-no-op App publisher; no new writer or storage prefix.'
+    - 'Angular may format labels from these published facts but cannot classify bracket games from scores or standings.'
+  compatibility: 'Existing Bracket, Result, Score and CompletionState semantics are preserved; legacy consumers may ignore new optional fields.'
 
 winProbability:
   issue: 1443
