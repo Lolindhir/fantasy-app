@@ -237,6 +237,8 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
         return ALL.copy(), "CI-or-policy:fail-closed"
     if path.startswith((".ai-context/manual/", ".ai-context/ai-context.yaml")):
         return ALL.copy(), "canonical-contract:fail-closed"
+    if path.startswith("tools/derived_data_lib/models/schedule_outlook/"):
+        return {"league-pwf-twp", "consumer-restore"}, "Schedule-outlook-derivation"
     if path.startswith(("data-meta/", "tools/data_roots.py", "tools/derived_data_lib/")):
         return ALL.copy(), "shared-state-or-model"
     if path.startswith(("data-source/nfl/identities/", "data-source/nfl/providers/",
