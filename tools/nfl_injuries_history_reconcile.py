@@ -98,57 +98,112 @@ def stage_next_verified_missing_injury_source(
     fetch_release: Callable[[], dict[str, Any]] = release_api,
     fetch_asset: Callable[[str], bytes] = source_asset,
 ) -> dict[str, Any]:
-    """Admit at most one *missing* verified original in the weekly Source writer.
+    """Recurring, bounded admission/recovery of ONE missing historical source.
 
-    Full official-byte, identity and game-link preflight completes BEFORE any
-    file is staged. Existing originals (including unfinished Derived recovery)
-    are never candidates; no frozen historical revision is overwritten.
-    Digest-less or unsupported seasons remain visible but ineligible.
+    Always rediscover official release seasons. A fully absent Source pair, a
+    missing CSV, or a missing metadata file remains eligible on every weekly
+    or explicitly requested run. Existing original bytes are never replaced.
+    Upstream SHA is checked when present; otherwise a pinned official asset
+    URL/ID/size, self-hash and full semantic preflight attest the first import.
     """
-    accepted, current = accepted_historical_injury_seasons(repo_root)
+    accepted, current = accepted_historical_injury_seasons(
+        repo_root, allow_incomplete=True)
+    source_dir = _assert_bounded_path(
+        repo_root, "data-source/providers/nflverse/injuries")
+    incomplete: set[int] = set()
+    if source_dir.exists():
+        if not source_dir.is_dir() or source_dir.is_symlink():
+            raise ValueError("Historical Injury Source directory is not a real directory")
+        raw_years = set()
+        meta_years = set()
+        for entry in source_dir.iterdir():
+            if entry.name.startswith("raw-") and entry.name.endswith(".csv"):
+                match = _RAW_NAME.fullmatch(entry.name)
+                if not match or entry.is_symlink() or not entry.is_file():
+                    raise ValueError("Invalid persisted historical Injury original")
+                raw_years.add(int(match.group(1)))
+            elif entry.name.startswith("metadata-") and entry.name.endswith(".json"):
+                match = _METADATA_NAME.fullmatch(entry.name)
+                if not match or entry.is_symlink() or not entry.is_file():
+                    raise ValueError("Invalid persisted historical Injury metadata")
+                meta_years.add(int(match.group(1)))
+        incomplete = {year for year in raw_years ^ meta_years if year < current}
+
     release = fetch_release()
     inventory = discover_injury_history(
-        repo_root=repo_root, fetch_release=lambda: release)
+        repo_root=repo_root, fetch_release=lambda: release,
+        allow_incomplete=True)
     if inventory["CurrentSeason"] != current:
         raise ValueError("Historical Injury current season changed during discovery")
     candidates = inventory["CandidateSeasons"]
+    missing_orphan = sorted(incomplete - set(candidates))
+    if missing_orphan:
+        raise ValueError(
+            f"Incomplete frozen Injury Source cannot be recovered from official "
+            f"release and accepted schedule: {missing_orphan}")
     if not candidates:
         return {
-            "Phase": "intake", "Status": "no-verified-missing-original",
+            "Phase": "intake", "Status": "no-eligible-missing-original",
             "Season": None, "CurrentSeason": current,
             "AcceptedHistoricalSeasons": accepted,
             "BlockedSeasons": inventory["BlockedSeasons"],
             "PersistedMissingUpstream": inventory["PersistedMissingUpstream"],
             "Staged": False, "PublicationPerformed": False,
         }
-    # Latest eligible season first. Next Monday can admit the next one:
-    # discovery excludes the already persisted exact Raw/metadata pair.
-    season = max(candidates)
+
+    # Prioritize recovery of a vanished half-pair over first-time history.
+    # Exactly one season per invocation keeps the existing Source writer bounded.
+    season = max(incomplete) if incomplete else max(candidates)
     if season >= current or season in accepted:
-        raise ValueError("Historical Injury admission selected an accepted/current season")
+        raise ValueError("Historical Injury admission selected accepted/current Source")
     raw_name = f"data-source/providers/nflverse/injuries/raw-{season}.csv"
     meta_name = f"data-source/providers/nflverse/injuries/metadata-{season}.json"
-    if (_assert_bounded_path(repo_root, raw_name).exists()
-            or _assert_bounded_path(repo_root, meta_name).exists()):
-        raise ValueError("Historical Injury original already exists; no source replacement")
+    raw_path = _assert_bounded_path(repo_root, raw_name)
+    meta_path = _assert_bounded_path(repo_root, meta_name)
+    if raw_path.is_symlink() or meta_path.is_symlink():
+        raise ValueError("Symlinked missing historical Injury Source is not recoverable")
+    if raw_path.is_file() and meta_path.is_file():
+        raise ValueError("Historical Injury original exists; no frozen replacement")
+
     decision = plan_release_refresh(release, season=season)
+    if decision["Action"] == "retry-later":
+        raise ValueError("Selected historical Injury asset disappeared upstream")
     upstream = decision["SourceAsset"]
-    digest = upstream["Sha256"]
-    if not decision["FullSourceDigestAvailable"] or not digest:
-        raise ValueError("Historical Injury admission requires official SHA-256")
     original = fetch_asset(upstream["DownloadUrl"])
-    if (not isinstance(original, bytes)
-            or len(original) != upstream["ByteSize"]
-            or hashlib.sha256(original).hexdigest() != digest):
+    if not isinstance(original, bytes) or len(original) != upstream["ByteSize"]:
+        raise ValueError("Historical Injury original fails official asset byte-size proof")
+    computed_digest = hashlib.sha256(original).hexdigest()
+    official_digest = upstream["Sha256"]
+    if official_digest is not None and computed_digest != official_digest:
         raise ValueError("Historical Injury original disagrees with official SHA-256/size")
+    # If any part of an accepted original survives, it must bind exactly to
+    # these downloaded bytes. No new revision is introduced through recovery.
+    if raw_path.is_file() and raw_path.read_bytes() != original:
+        raise ValueError("Missing historical metadata cannot replace frozen CSV bytes")
+    if meta_path.is_file():
+        prior = _json(repo_root, meta_name)
+        if (prior.get("SchemaVersion") != 1
+                or prior.get("SourceDataset") != "nflverse.injuries"
+                or prior.get("Season") != season
+                or prior.get("AssetSha256") != computed_digest
+                or prior.get("AssetByteSize") != len(original)):
+            raise ValueError("Missing historical CSV does not match frozen metadata")
+    canonical_path = _assert_bounded_path(
+        repo_root, f"data-source/nfl/injuries/{season}/manifest.json")
+    if canonical_path.is_file():
+        manifest = _json(
+            repo_root, f"data-source/nfl/injuries/{season}/manifest.json")
+        if (manifest.get("Season") != season
+                or manifest.get("SourceDataset") != "nflverse.injuries"
+                or manifest.get("SourceAssetSha256") != computed_digest):
+            raise ValueError("Historical source recovery conflicts with frozen Canonical provenance")
+
     players = _json(repo_root, "data-source/nfl/identities/players.json")
     schedule = _json(repo_root, f"data-source/nfl/schedules/{season}.json")
-    # Validate all rows, exact season CSV header and full cross-source linkage.
     plan = build_injury_artifacts(
         season=season, source_csv=original, players=players,
-        schedule=schedule, expected_source_sha256=digest,
-        release_asset=upstream,
-    )
+        schedule=schedule, expected_source_sha256=computed_digest,
+        release_asset=upstream)
     manifest = json.loads(plan[f"data-source/nfl/injuries/{season}/manifest.json"])
     quality = manifest["CanonicalQuality"]
     count = manifest["SourceRowCount"]
@@ -162,31 +217,37 @@ def stage_next_verified_missing_injury_source(
         raise ValueError(
             "Historical Injury source admission needs identity/game-link review: "
             + json.dumps(quality, sort_keys=True))
+
+    expected_new = {p for p, present in
+                    ((raw_name, raw_path.is_file()), (meta_name, meta_path.is_file()))
+                    if not present}
     planned = run_injury_phase(
         repo_root, season, "raw", source_csv=original,
-        expected_source_sha256=digest, release_json=release, write=False,
-    )
+        expected_source_sha256=computed_digest, release_json=release, write=False)
     if (planned["Changed"] or planned["ObsoleteRequiresReview"]
-            or set(planned["New"]) != {raw_name, meta_name}):
-        raise ValueError("Historical Injury first admission is not an exact new Raw pair")
+            or set(planned["New"]) != expected_new):
+        raise ValueError(
+            "Historical Injury admission would change frozen originals or exceed missing Raw paths")
     staged = run_injury_phase(
         repo_root, season, "raw", source_csv=original,
-        expected_source_sha256=digest, release_json=release, write=True,
+        expected_source_sha256=computed_digest, release_json=release, write=True,
     ) if write else planned
     return {
-        "Phase": "intake", "Status": (
-            "staged-missing-verified-source" if write else
-            "verified-missing-source-dry-run"
-        ),
+        "Phase": "intake",
+        "Status": ("staged-missing-validated-source" if write
+                   else "validated-missing-source-dry-run"),
+        "SourceAttestation": ("matched-official-sha256" if official_digest
+                             else "official-release-asset-and-self-sha256"),
         "Season": season, "CurrentSeason": current,
-        "SourceAssetSha256": digest,
+        "SourceAssetSha256": computed_digest,
         "SourceRowCount": count, "ObservedWeekCount": manifest["ObservedWeekCount"],
-        "Quality": quality, "NewRawPaths": [raw_name, meta_name],
+        "Quality": quality, "NewRawPaths": sorted(expected_new),
         "BlockedSeasons": inventory["BlockedSeasons"],
         "AcceptedHistoricalSeasons": accepted,
         "Staged": bool(write and staged["Written"]),
         "PublicationPerformed": False,
     }
+
 
 
 def accepted_canonical_injury_seasons(repo_root: Path) -> list[int]:
