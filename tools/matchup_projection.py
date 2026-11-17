@@ -296,7 +296,9 @@ def build_matchup_projections(
         display_raw_probabilities = raw_probabilities
         display_deterministic = deterministic
         display_basis = "lineup" if percentages is not None else None
-        if percentages is None and len(teams) == 2:
+        if (percentages is None and len(teams) == 2
+                and any(team["DisplayProjectionMethod"] == FALLBACK_METHOD for team in teams)
+                and not any(team["FinalStarterCount"] > 0 for team in teams)):
             a, b = teams
             ma, mb = a.get("DisplayProjectedScore"), b.get("DisplayProjectedScore")
             sa, sb = _display_score_sigma(a), _display_score_sigma(b)
