@@ -223,6 +223,52 @@ describe('LeagueMatchupsComponent scoring overview', () => {
     expect(component.headToHead(matchup)).toBe('1-0');
   });
 
+  it('uses published estimated chances when original lineup win chances are unavailable', () => {
+    const chanceTeam = (id: number, percent: number) => ({
+      FantasyTeamID: id,
+      State: 'partial' as const,
+      StarterCount: 1,
+      ResolvedStarterCount: 0,
+      FinalStarterCount: 0,
+      ScoredPoints: 0,
+      PregameProjectedScore: null,
+      ProjectedFinalScore: null,
+      DisplayProjectedScore: id === 1 ? 188.2 : 173.3,
+      StandardDeviation: null,
+      Ranges: [],
+      ByeStarterPlayerIDs: [],
+      OutStarterPlayerIDs: [],
+      UncertainStarterPlayerIDs: [],
+      UnavailableStarterPlayerIDs: [],
+      WinProbability: null,
+      WinProbabilityRaw: null,
+      WinProbabilityIsDeterministic: null,
+      DisplayWinProbability: percent,
+      DisplayWinProbabilityRaw: percent / 100,
+      DisplayWinProbabilityIsDeterministic: false,
+      DisplayWinProbabilityBasis: 'season-bestball-efficiency-estimate' as const
+    });
+    const withEstimatedChances: FantasyGameContextReadModel = {
+      ...context,
+      FantasyMatchups: [{
+        ...context.FantasyMatchups[0],
+        Projection: {
+          FantasyMatchupID: 'm1',
+          Teams: [chanceTeam(1, 64), chanceTeam(2, 36)],
+          Axis: null
+        }
+      }]
+    };
+
+    const chance = component.winChance(component.matchups[0], withEstimatedChances);
+    expect(chance).toEqual({
+      left: 64, right: 36,
+      leftRaw: 0.64, rightRaw: 0.36,
+      deterministic: false, live: false, estimated: true
+    });
+    expect(component.winChance(component.matchups[0], context)).toBeNull();
+  });
+
   it('renders non-zero scores in one neutral shared score plate without inferring Final', () => {
     const element: HTMLElement = fixture.nativeElement;
     const plate = element.querySelector<HTMLElement>('.matchup-score-plate');

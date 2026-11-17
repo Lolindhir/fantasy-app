@@ -336,21 +336,26 @@ export class LeagueMatchupsComponent {
   winChance(
     matchup: LeagueMatchupView,
     context: FantasyGameContextReadModel | null
-  ): { left: number; right: number; leftRaw: number | null; rightRaw: number | null; deterministic: boolean; live: boolean } | null {
+  ): { left: number; right: number; leftRaw: number | null; rightRaw: number | null; deterministic: boolean; live: boolean; estimated: boolean } | null {
     if (matchup.completionState === 'final') return null;
     const teams = this.matchupContext(matchup, context)?.Projection?.Teams;
     if (!teams) return null;
     const find = (teamID: string | number) => teams.find(team => String(team.FantasyTeamID) === String(teamID));
     const left = find(matchup.left.team.TeamID);
     const right = find(matchup.right.team.TeamID);
-    if (left?.WinProbability == null || right?.WinProbability == null) return null;
+    const leftChance = left?.DisplayWinProbability ?? left?.WinProbability;
+    const rightChance = right?.DisplayWinProbability ?? right?.WinProbability;
+    if (leftChance == null || rightChance == null || !left || !right) return null;
     return {
-      left: left.WinProbability,
-      right: right.WinProbability,
-      leftRaw: left.WinProbabilityRaw ?? null,
-      rightRaw: right.WinProbabilityRaw ?? null,
-      deterministic: left.WinProbabilityIsDeterministic === true && right.WinProbabilityIsDeterministic === true,
-      live: left.FinalStarterCount > 0 || right.FinalStarterCount > 0
+      left: leftChance,
+      right: rightChance,
+      leftRaw: left.DisplayWinProbabilityRaw ?? left.WinProbabilityRaw ?? null,
+      rightRaw: right.DisplayWinProbabilityRaw ?? right.WinProbabilityRaw ?? null,
+      deterministic: (left.DisplayWinProbabilityIsDeterministic ?? left.WinProbabilityIsDeterministic) === true
+        && (right.DisplayWinProbabilityIsDeterministic ?? right.WinProbabilityIsDeterministic) === true,
+      live: left.FinalStarterCount > 0 || right.FinalStarterCount > 0,
+      estimated: left.DisplayWinProbabilityBasis === 'season-bestball-efficiency-estimate'
+        || right.DisplayWinProbabilityBasis === 'season-bestball-efficiency-estimate'
     };
   }
 

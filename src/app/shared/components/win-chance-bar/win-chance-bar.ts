@@ -11,6 +11,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="win-chance" [class.win-chance--compact]="compact" role="img" [attr.aria-label]="ariaLabel">
+      @if (estimated) { <span class="win-chance-estimate" title="Estimated win chance">EST.</span> }
       <span class="win-chance-value win-chance-value--left" [class.win-chance-value--lead]="left > right">{{ leftLabel }}</span>
       <span class="win-chance-bar" aria-hidden="true">
         <span class="win-chance-fill win-chance-fill--left" [class.win-chance-fill--lead]="left > right" [style.width.%]="left"></span>
@@ -22,6 +23,7 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
   styles: [`
     :host { display: block; }
     .win-chance { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+    .win-chance-estimate { flex: 0 0 auto; font-size: 0.6rem; color: #94a3b8; font-weight: 700; letter-spacing: 0.015em; }
     .win-chance-value { flex: 0 0 auto; min-width: 2.6ch; font-size: 0.8rem; font-weight: 700; color: #64748b; font-variant-numeric: tabular-nums; }
     .win-chance-value--left { text-align: right; }
     .win-chance-value--right { text-align: left; }
@@ -44,6 +46,8 @@ export class WinChanceBarComponent {
   @Input() rightRaw: number | null | undefined = null;
   /** A rounded 0/100 is only certain when the generator reports zero remaining model variance. */
   @Input() deterministic = false;
+  /** The publisher flags a season-baseline probability rather than a complete lineup chance. */
+  @Input() estimated = false;
   @Input() compact = false;
   @Input() leftName = '';
   @Input() rightName = '';
@@ -71,6 +75,6 @@ export class WinChanceBarComponent {
   get ariaLabel(): string {
     const left = this.leftName ? `${this.leftName} ` : '';
     const right = this.rightName ? `${this.rightName} ` : '';
-    return `Win chance: ${left}${this.spokenChance(this.leftLabel)}, ${right}${this.spokenChance(this.rightLabel)}`;
+    return `${this.estimated ? 'Estimated win chance' : 'Win chance'}: ${left}${this.spokenChance(this.leftLabel)}, ${right}${this.spokenChance(this.rightLabel)}`;
   }
 }

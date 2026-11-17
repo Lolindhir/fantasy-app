@@ -3,7 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { WinChanceBarComponent } from './win-chance-bar';
 
 describe('WinChanceBarComponent', () => {
-  function create(inputs: Partial<Pick<WinChanceBarComponent, 'left' | 'right' | 'leftRaw' | 'rightRaw' | 'deterministic'>>): HTMLElement {
+  function create(inputs: Partial<Pick<WinChanceBarComponent, 'left' | 'right' | 'leftRaw' | 'rightRaw' | 'deterministic' | 'estimated'>>): HTMLElement {
     const fixture = TestBed.createComponent(WinChanceBarComponent);
     Object.assign(fixture.componentInstance, { left: 0, right: 0, ...inputs });
     fixture.detectChanges();
@@ -48,6 +48,18 @@ describe('WinChanceBarComponent', () => {
     const host = create({ left: 64, right: 36, leftRaw: 0.643, rightRaw: 0.357 });
     expect(host.querySelector('.win-chance-value--left')?.textContent?.trim()).toBe('64%');
     expect(host.querySelector('.win-chance-value--right')?.textContent?.trim()).toBe('36%');
+  });
+
+  it('labels a fallback chance as estimated without altering delivered percentages', () => {
+    const estimate = create({ left: 59, right: 41, estimated: true });
+    expect(estimate.querySelector('.win-chance-estimate')?.textContent?.trim()).toBe('EST.');
+    expect(estimate.querySelector('.win-chance-value--left')?.textContent?.trim()).toBe('59%');
+    expect(estimate.querySelector('.win-chance-value--right')?.textContent?.trim()).toBe('41%');
+    expect(estimate.querySelector('.win-chance')?.getAttribute('aria-label')).toContain('Estimated win chance');
+
+    const lineup = create({ left: 59, right: 41 });
+    expect(lineup.querySelector('.win-chance-estimate')).toBeNull();
+    expect(lineup.querySelector('.win-chance')?.getAttribute('aria-label')).toContain('Win chance:');
   });
 
   it('colors the side with the higher chance and keeps the sides fixed', () => {

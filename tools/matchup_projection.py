@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import math
 import re
+import statistics
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -43,6 +44,8 @@ AXIS_STEP = 20
 AXIS_PADDING = 10
 OUTPUT_PATH = Path("public/data/MatchupProjections.json")
 FALLBACK_METHOD = "season-bestball-actual-efficiency-v1"
+FALLBACK_VOLATILITY_METHOD = "season-final-score-sample-sd-v1"
+DISPLAY_CHANCE_ESTIMATE = "season-bestball-efficiency-estimate"
 
 
 def _is_final(status: Any) -> bool:
@@ -114,6 +117,35 @@ def _axis(teams: list[dict[str, Any]], level: float) -> dict[str, int] | None:
     }
 
 
+def _historical_score_volatility(games: Any, completed: int) -> tuple[float, int] | None:
+    """Unbiased sample SD of this manager's completed, distinct past weekly *actual* scores.
+
+    This is an explicitly empirical approximation for the season Best Ball baseline,
+    not the player-range/team-range uncertainty. With fewer than three games, malformed
+    or future-scoped evidence, or zero observed variation, no estimated chance is issued.
+    """
+    if not isinstance(games, list):
+        return None
+    points: list[float] = []
+    seen: set[int] = set()
+    for row in games:
+        if not isinstance(row, Mapping):
+            return None
+        source_week = row.get("Week")
+        score = _finite(row.get("Points"))
+        if (type(source_week) is not int or not 0 < source_week <= completed
+                or source_week in seen or score is None):
+            return None
+        seen.add(source_week)
+        points.append(score)
+    if len(points) < 3:
+        return None
+    sd = statistics.stdev(points)
+    if not math.isfinite(sd) or sd <= 0:
+        return None
+    return round(sd, 4), len(points)
+
+
 def _season_fallbacks(
     season_stats: Mapping[str, Any] | None, league_id: Any, season: Any, week: Any,
 ) -> dict[str, dict[str, Any]]:
@@ -148,12 +180,16 @@ def _season_fallbacks(
         efficiency = _finite(team.get("LineupEfficiencyActual"))
         if best_ball is None or best_ball <= 0 or efficiency is None or not 0 <= efficiency <= 100:
             continue
+        volatility = _historical_score_volatility(team.get("GameLog"), completed)
         fallback[team_id] = {
             "Points": round(best_ball * efficiency / 100, 4),
             "Method": FALLBACK_METHOD,
             "SourceThroughWeek": completed,
             "ProjectedBestBallPoints": best_ball,
             "ManagerEfficiencyPercent": efficiency,
+            "ScoreStandardDeviation": volatility[0] if volatility else None,
+            "ScoreVolatilityGames": volatility[1] if volatility else 0,
+            "ScoreVolatilityMethod": FALLBACK_VOLATILITY_METHOD,
         }
     return fallback
 
@@ -166,6 +202,18 @@ def _read_season_statistics(root: Path, league_id: str, season: int) -> Mapping[
     except (OSError, ValueError):
         return None
     return payload if isinstance(payload, Mapping) else None
+
+
+def _display_score_sigma(team: Mapping[str, Any]) -> float | None:
+    """Selected display input only; never rewrite the team-range-v1 output."""
+    method = team.get("DisplayProjectionMethod")
+    if method == METHOD_ID:
+        return _finite(team.get("StandardDeviation"))
+    if method == FALLBACK_METHOD:
+        fallback = team.get("BestBallEfficiencyFallback")
+        if isinstance(fallback, Mapping):
+            return _finite(fallback.get("ScoreStandardDeviation"))
+    return None
 
 
 def build_matchup_projections(
@@ -241,10 +289,42 @@ def build_matchup_projections(
                 ),
             )
             deterministic = a["StandardDeviation"] == 0 and b["StandardDeviation"] == 0
+        # Existing win-prob-v1 / actual-lineup fields remain untouched. Only the
+        # displayed estimate uses season-level score volatility when a fallback is
+        # actually selected and the matchup has not begun.
+        display_percentages = percentages
+        display_raw_probabilities = raw_probabilities
+        display_deterministic = deterministic
+        display_basis = "lineup" if percentages is not None else None
+        if (percentages is None and len(teams) == 2
+                and any(team["DisplayProjectionMethod"] == FALLBACK_METHOD for team in teams)
+                and not any(team["FinalStarterCount"] > 0 for team in teams)):
+            a, b = teams
+            ma, mb = a.get("DisplayProjectedScore"), b.get("DisplayProjectedScore")
+            sa, sb = _display_score_sigma(a), _display_score_sigma(b)
+            if (all(_finite(value) is not None for value in (ma, mb, sa, sb))
+                    and sa is not None and sb is not None and sa >= 0 and sb >= 0):
+                first_raw = win_model.win_probability(ma, sa, mb, sb)
+                display_percentages = win_model.percent_pair(first_raw)
+                if display_percentages is not None:
+                    display_raw_probabilities = (
+                        first_raw,
+                        win_model.win_probability(mb, sb, ma, sa),
+                    )
+                    display_deterministic = sa == 0 and sb == 0
+                    display_basis = DISPLAY_CHANCE_ESTIMATE
         for index, team in enumerate(teams):
             team["WinProbability"] = percentages[index] if percentages is not None else None
             team["WinProbabilityRaw"] = raw_probabilities[index] if raw_probabilities is not None else None
             team["WinProbabilityIsDeterministic"] = deterministic
+            team["DisplayWinProbability"] = (
+                display_percentages[index] if display_percentages is not None else None
+            )
+            team["DisplayWinProbabilityRaw"] = (
+                display_raw_probabilities[index] if display_raw_probabilities is not None else None
+            )
+            team["DisplayWinProbabilityIsDeterministic"] = display_deterministic
+            team["DisplayWinProbabilityBasis"] = display_basis
         matchups.append(
             {
                 "FantasyMatchupID": matchup["FantasyMatchupID"],
@@ -262,6 +342,7 @@ def build_matchup_projections(
         "Method": dict(model.METHOD),
         "WinProbabilityModel": win_model.MODEL_ID,
         "BestBallFallbackMethod": FALLBACK_METHOD,
+        "BestBallFallbackVolatilityMethod": FALLBACK_VOLATILITY_METHOD,
         "Matchups": matchups,
     }
 
