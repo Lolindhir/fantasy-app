@@ -780,6 +780,13 @@ describe('Overview weekly dashboard presentation', () => {
       BestCoach: [{ CanonicalLeagueRosterID: 'coach', FantasyTeamID: 2, EfficiencyPercent: 89.49, ActualStarterPoints: 179, PotentialPoints: 200, MissedPoints: 21 }],
       BestManager: [{ CanonicalLeagueRosterID: 'manager', FantasyTeamID: 1, PotentialPoints: 229.16 }]
     };
+    source.Weeks[0].PlayerAwards = {
+      State: 'available',
+      MVP: [{ PlayerID: 'p1', CanonicalPlayerID: 'cp1', FantasyTeamID: 1, FantasyMatchupID: 'm1', Position: 'RB', Points: 46.3 }],
+      MatchupHero: [{ PlayerID: 'p2', CanonicalPlayerID: 'cp2', FantasyTeamID: 2, FantasyMatchupID: 'm2', Position: 'WR', Points: 43.5 }],
+      Heartbreaker: [{ PlayerID: 'p3', CanonicalPlayerID: 'cp3', FantasyTeamID: 3, FantasyMatchupID: 'm3', Position: 'RB', Points: 44.2 }],
+      UnsungHero: []
+    };
     const prominent = selectOverviewRecap(source, '2026', 1, 'recap');
     const prep = selectOverviewRecap(source, '2026', 1, 'prep');
     const live = selectOverviewRecap(source, '2026', 1, 'live');
@@ -789,6 +796,8 @@ describe('Overview weekly dashboard presentation', () => {
       expect(selection?.players.map(player => player.PlayerID)).toEqual(['p1', 'p2', 'p3']);
       expect(selection?.awards?.BestCoach.map(winner => winner.FantasyTeamID)).toEqual([2]);
       expect(selection?.awards?.BestManager.map(winner => winner.FantasyTeamID)).toEqual([1]);
+      expect(selection?.playerAwards).toEqual(source.Weeks[0].PlayerAwards);
+      expect(selection?.playerAwards?.UnsungHero).toEqual([]);
     }
     expect(prominent?.prominent).toBeTrue();
     expect(prep?.prominent).toBeFalse();
@@ -798,6 +807,10 @@ describe('Overview weekly dashboard presentation', () => {
   it('does not invent winners for unavailable or legacy weekly awards', () => {
     const source = recaps();
     source.Weeks[0].TeamAwards = { State: 'unavailable', BestCoach: [], BestManager: [] };
+    source.Weeks[0].PlayerAwards = { State: 'unavailable', MVP: [], MatchupHero: [], Heartbreaker: [], UnsungHero: [] };
+    expect(selectOverviewRecap(source, '2026', 1, 'recap')?.playerAwards).toBeNull();
+    delete source.Weeks[0].PlayerAwards;
+    expect(selectOverviewRecap(source, '2026', 1, 'recap')?.playerAwards).toBeNull();
     expect(selectOverviewRecap(source, '2026', 1, 'recap')?.awards).toBeNull();
     delete source.Weeks[0].TeamAwards;
     expect(selectOverviewRecap(source, '2026', 1, 'recap')?.awards).toBeNull();
