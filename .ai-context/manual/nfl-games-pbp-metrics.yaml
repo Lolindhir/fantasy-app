@@ -44,6 +44,45 @@ grain:
     aggregate observed numerators/denominators with a declared pregame cutoff,
     not average game rates or accidentally include the target game.
 
+competitiveOpportunitiesDecision:
+  decidedAt: 2026-11-17
+  decision: competitive-opportunities-not-official-attempts
+  scope: NFL Games PBP-derived defensive and offensive opportunity and efficiency metrics
+  normativeRule: >-
+    Measure meaningful competitive scrimmage opportunities, not official box-score
+    pass attempts or carries. Official attempts/carries are diagnostic comparison
+    baselines only; equality is neither the denominator definition nor an acceptance
+    criterion. Preserve the original source flags and report differences explicitly.
+  commonBase:
+    - Require canonical game/team context and a matched offense/defense perspective.
+    - Use eligible play_type=pass or run, excluding two-point attempts and unknown two-point eligibility.
+    - Exclude non-scrimmage, penalty-only/no-play and conversion-only rows from this population.
+    - Exclude QB kneeldowns and clock-stopping QB spikes from competitive opportunity and efficiency denominators, including when official statistics count them as attempts.
+  metricSpecificDenominators: >-
+    Competitive opportunities are a shared semantic principle, NOT one identical
+    denominator for every metric. Pass throws exclude sacks and spikes; QB dropbacks
+    include eligible sacks and scrambles, but not spikes; eligible rushes may include
+    flagged QB scrambles while designed-run or position-specific views must separate
+    them. Rates aggregate observed numerators and denominators with explicit missing
+    and unknown eligibility, never official-attempt substitutions.
+  implementationAndVerification: >-
+    Current read-only candidate logic starts with play_type pass/run and explicitly
+    excludes spikes from the pass-throw selector. GameDetail v2 must also verify
+    that spike-flagged rows cannot enter dropback or other competitive metric
+    denominators, and cover kneels, spikes, penalties, scrambles, sacks and unknown
+    flags with targeted regression tests before publication. Do not imply that
+    every edge case is already implemented or empirically reconciled.
+  reconciliationBoundary: >-
+    The observed 2025 PBP-minus-PlayerStats differences (-82 pass attempts,
+    -452 carries) are consistent with a definition mismatch, but the exact
+    row-by-row causes are not yet established; do not attribute every difference
+    conclusively to spikes or kneeldowns. Preserve separate official-compatible
+    counts if needed, with distinct names and definitions.
+  versioningRule: >-
+    Record the eligible population and per-metric numerator/denominator in the
+    versioned derived schema. A later eligibility change is a model/schema
+    semantic change, not a silent recalculation.
+
 evidenceLevel:
   canonicalAlreadyPresent: >-
     nfl-games season index and existing player-stats, schedule and game-finality;
