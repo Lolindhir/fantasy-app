@@ -90,7 +90,7 @@ identity:
       produces: Lineup repairability (State, Path, ReasonCode, candidate counts) per problem slot, including the acquisition policy (computed, not persisted, ADR-074)
     schedule-outlook:
       module: tools/derived_data_lib/models/schedule_outlook/v1.py
-      produces: Future regular-season matchups and separate historical relative-scoring/best-ball SoS figures, with strict as-of cutoff and null coverage
+      produces: Future regular-season matchups, separate historical relative-scoring/best-ball SoS figures and cutoff-safe playoff paths using canonical round windows/advancement routing
       status: staged-I1-read-only-not-yet-a-published-derived-product
     team-range:
       module: tools/derived_data_lib/models/team_range/v1.py
