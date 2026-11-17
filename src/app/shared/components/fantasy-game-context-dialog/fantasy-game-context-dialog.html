@@ -181,8 +181,10 @@
           </ng-container>
           <ng-template #matchupVsOnly><span>VS</span></ng-template>
           <strong>{{ matchupStateLabel(selectedMatchup) }}</strong>
-          <small *ngIf="matchupProjection(selectedMatchup) as projection" class="fgc-matchup-projection" aria-label="Projected final score">
-            Proj. {{ projection.left }} – {{ projection.right }}
+          <small *ngIf="matchupProjection(selectedMatchup) as projection" class="fgc-matchup-projection"
+                 [attr.aria-label]="projection.usesFallback ? 'Projected score with season Best Ball efficiency fallback' : 'Projected final score'"
+                 [attr.title]="projection.usesFallback ? 'Fallback: season-to-date Best Ball × historical manager efficiency' : null">
+            Proj. {{ projection.left }} – {{ projection.right }}<span *ngIf="projection.usesFallback"> · BB fallback</span>
           </small>
         </div>
 
