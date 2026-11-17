@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -60,6 +61,38 @@ class PreviewAdapterTests(unittest.TestCase):
         stats["Weeks"][0]["Teams"].pop()
         with self.assertRaisesRegex(preview.ScheduleOutlookSourceError, "coverage mismatch"):
             preview.ratings_for_week(stats, teams, rating_week=1)
+
+    def test_historical_preview_masks_future_bracket_results(self):
+        for season, asof in ((2024, 6), (2025, 6), (2026, 10)):
+            with self.subTest(season=season):
+                result = preview.preview(TOOLS.parent, "nfl-reise", season, asof)
+                self.assertTrue(result["Playoffs"]["Paths"])
+                self.assertTrue(all(p["WinnerCanonicalLeagueRosterID"] is None
+                                    for p in result["Playoffs"]["Paths"]))
+                self.assertTrue(all(p["ParticipantCertainty"] != "confirmed"
+                                    for p in result["Playoffs"]["Paths"]))
+
+    def test_historical_playoff_leg_one_then_round_final(self):
+        first_leg = preview.preview(TOOLS.parent, "nfl-reise", 2025, 14)
+        self.assertEqual([], first_leg["RegularSeason"]["UpcomingMatchups"])
+        self.assertEqual("in-progress", next(p for p in first_leg["Playoffs"]["Paths"]
+                                          if p["Bracket"] == "winners" and p["Match"] == 1)["RoundState"])
+        self.assertTrue(all(p["WinnerCanonicalLeagueRosterID"] is None
+                            for p in first_leg["Playoffs"]["Paths"]))
+        finished_first_round = preview.preview(TOOLS.parent, "nfl-reise", 2025, 15)
+        final = next(p for p in finished_first_round["Playoffs"]["Paths"]
+                     if p["Category"] == "championship" and p["Round"] == 2)
+        self.assertEqual("confirmed", final["ParticipantCertainty"])
+        self.assertEqual("not-started", final["RoundState"])
+        self.assertIsNone(final["WinnerCanonicalLeagueRosterID"])
+
+    def test_historical_preview_output_is_byte_deterministic(self):
+        left = preview.preview(TOOLS.parent, "nfl-reise", 2025, 6)
+        right = preview.preview(TOOLS.parent, "nfl-reise", 2025, 6)
+        encoded = lambda value: json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        self.assertEqual(encoded(left), encoded(right))
+        self.assertNotIn("GeneratedAt", left)
+        self.assertNotIn("ObservedAt", left)
 
     def test_repository_2025_after_week_6_has_seven_future_games_per_team(self):
         result = preview.preview(TOOLS.parent, "nfl-reise", 2025, 6)
