@@ -138,8 +138,9 @@ def _number(row: dict[str, str], field: str) -> int | None:
 
 
 def _source_yards(rows: list[dict[str, str]], offense: str) -> dict[str, Any]:
-    # PBP pass yards on confirmed throws and rush yards on flagged rushes;
-    # report missing rows. These are diagnostic totals, not official team stats.
+    # Diagnostic PBP totals, not official team stats. A confirmed incomplete
+    # pass has zero passing yards even when nflverse leaves passing_yards blank;
+    # unknown completion and completed passes with unknown yards stay missing.
     result = {
         "passing_yards": {"Observed": 0, "Missing": 0, "Value": None},
         "rushing_yards": {"Observed": 0, "Missing": 0, "Value": None},
@@ -160,12 +161,18 @@ def _source_yards(rows: list[dict[str, str]], offense: str) -> dict[str, Any]:
             if sack is None or spike is None:
                 result["passing_yards"]["Missing"] += 1
             elif sack == 0 and spike == 0:
+                completion = _number(row, "complete_pass")
                 yards = _number(row, "passing_yards")
-                if yards is None:
-                    result["passing_yards"]["Missing"] += 1
-                else:
+                if completion == 0 and yards in (None, 0):
+                    # Incompletions are known zero, not missing PBP evidence.
+                    result["passing_yards"]["Observed"] += 1
+                elif completion == 1 and yards is not None:
                     sums["passing_yards"] += yards
                     result["passing_yards"]["Observed"] += 1
+                else:
+                    # Missing/contradictory completion or yards cannot be
+                    # silently interpreted as a completed throw or zero.
+                    result["passing_yards"]["Missing"] += 1
     for name, evidence in result.items():
         evidence["Value"] = sums[name] if evidence["Observed"] else None
     return result
