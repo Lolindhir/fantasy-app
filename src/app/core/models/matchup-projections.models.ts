@@ -28,6 +28,10 @@ export interface MatchupProjectionTeam {
     SourceThroughWeek: number;
     ProjectedBestBallPoints: number;
     ManagerEfficiencyPercent: number;
+    /** Sample SD of completed weekly actual fantasy team scores, not a calibrated projection interval. */
+    ScoreStandardDeviation?: number | null;
+    ScoreVolatilityGames?: number;
+    ScoreVolatilityMethod?: string;
   } | null;
   /** Published display choice; unchanged legacy snapshots omit this additive field. */
   DisplayProjectedScore?: number | null;
@@ -44,6 +48,11 @@ export interface MatchupProjectionTeam {
   WinProbabilityRaw?: number | null;
   /** True only when neither team has modeled scoring variance; null when a chance is unavailable. */
   WinProbabilityIsDeterministic?: boolean | null;
+  /** Display-only chance, preserving the original complete-lineup WinProbability contract. */
+  DisplayWinProbability?: number | null;
+  DisplayWinProbabilityRaw?: number | null;
+  DisplayWinProbabilityIsDeterministic?: boolean | null;
+  DisplayWinProbabilityBasis?: 'lineup' | 'season-bestball-efficiency-estimate' | null;
 }
 
 export interface MatchupProjectionMatchup {
@@ -69,5 +78,6 @@ export interface MatchupProjectionsReadModel {
   Method: MatchupProjectionMethod;
   WinProbabilityModel?: string;
   BestBallFallbackMethod?: string;
+  BestBallFallbackVolatilityMethod?: string;
   Matchups: MatchupProjectionMatchup[];
 }
