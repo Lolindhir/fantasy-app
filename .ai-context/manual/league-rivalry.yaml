@@ -43,6 +43,7 @@ bracketLabel:
   rule: >-
     A round maps to its weeks through PlayoffRoundType (Sleeper playoff_round_type): 0 one week per round, 1 one week per round except a two-week final round,
     2 two weeks per round. A matchup belongs to a bracket game when the round window of its week contains the game and the canonical roster pair is the pair of the game.
+  exactMetadata: 'Issue #1537: the same SeasonBrackets.describe match also emits optional PlayoffRound, PlayoffRoundCount, PlayoffPlacement, PlayoffRoundWeek and PlayoffRoundWeeks into Matchups. Existing Bracket classification and rivalry-v1/v2 eligibility remain unchanged; placement=1 in losers bracket is NOT the overall league final.'
 
 identity:
   fileTuple: [CanonicalLeagueID, Models.Rivalry per season]

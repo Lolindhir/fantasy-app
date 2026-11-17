@@ -65,6 +65,38 @@ class ClassifyTests(unittest.TestCase):
         self.assertEqual([pb.CHAMPIONSHIP] * 2, [b.classify(w, ("c", "a")) for w in (16, 17)])
         self.assertEqual(pb.UNCLASSIFIED, b.classify(16, ("a", "b")))
 
+    def test_describe_preserves_bracket_and_exact_round_leg_metadata(self):
+        b = pb.SeasonBrackets({"PlayoffStartWeek": 14, "PlayoffRoundCount": 2, "PlayoffRoundType": 2},
+                              [bracket_game(1, 1, "a", "b"), bracket_game(2, 3, "a", "c", placement=1),
+                               bracket_game(2, 4, "d", "e", placement=3)],
+                              [bracket_game(1, 1, "f", "g", placement=1)])
+        self.assertEqual({"Bracket": pb.CHAMPIONSHIP, "PlayoffRound": 2, "PlayoffRoundCount": 2,
+                          "PlayoffPlacement": 1, "PlayoffRoundWeek": 1, "PlayoffRoundWeeks": 2},
+                         b.describe(16, ("c", "a")))
+        self.assertEqual(2, b.describe(17, ("a", "c"))["PlayoffRoundWeek"])
+        self.assertEqual(3, b.describe(16, ("d", "e"))["PlayoffPlacement"])
+        self.assertEqual(pb.PLACEMENT, b.describe(17, ("e", "d"))["Bracket"])
+        self.assertEqual(pb.CONSOLATION, b.describe(14, ("f", "g"))["Bracket"])
+        self.assertEqual(1, b.describe(14, ("f", "g"))["PlayoffPlacement"])
+        self.assertIsNone(b.describe(14, ("a", "b"))["PlayoffPlacement"])
+        self.assertEqual(1, b.describe(15, ("a", "b"))["PlayoffRound"])
+        self.assertEqual(2, b.describe(15, ("a", "b"))["PlayoffRoundWeek"])
+
+    def test_describe_fails_closed_for_unknown_or_ambiguous_brackets(self):
+        b = self.brackets([bracket_game(1, 1, "a", "b"), bracket_game(1, 2, "a", "b")])
+        for week, pair in ((15, ("a", "b")), (15, ("a", "z")), (16, ("a", "b")), (15, ("", "b"))):
+            details = b.describe(week, pair)
+            self.assertEqual(pb.UNCLASSIFIED, details["Bracket"])
+            self.assertTrue(all(value is None for key, value in details.items() if key != "Bracket"))
+        self.assertIsNone(pb.SeasonBrackets(None, [], []).describe(15, ("a", "b"))["PlayoffRound"])
+
+    def test_mixed_one_and_two_week_rounds(self):
+        b = pb.SeasonBrackets({"PlayoffStartWeek": 14, "PlayoffRoundCount": 3, "PlayoffRoundType": 1},
+                              [bracket_game(3, 1, "a", "b", placement=1)], [])
+        self.assertEqual([1, 2], [b.describe(w, ("a", "b"))["PlayoffRoundWeek"] for w in (16, 17)])
+        self.assertEqual(2, b.describe(16, ("a", "b"))["PlayoffRoundWeeks"])
+        self.assertEqual(pb.UNCLASSIFIED, b.classify(15, ("a", "b")))
+
     def test_missing_bracket_files_classify_nothing(self):
         self.assertEqual(pb.UNCLASSIFIED, pb.SeasonBrackets({"PlayoffStartWeek": 15, "PlayoffRoundCount": 3, "PlayoffRoundType": 0}, None, None).classify(15, ("a", "b")))
 

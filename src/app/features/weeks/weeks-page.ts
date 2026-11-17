@@ -291,7 +291,7 @@ export class WeeksPageComponent {
     const outcome = winnerIndex >= 0
       ? `, winner ${names[winnerIndex]}`
       : matchup.state === 'final' && matchup.isTie ? ', tie' : '';
-    return `${names[0] ?? 'Team'} ${result} ${names[1] ?? 'Team'}${outcome}`;
+    return `${names[0] ?? 'Team'} ${result} ${names[1] ?? 'Team'}${outcome}${matchup.playoffLabel ? `, ${matchup.playoffLabel}` : ''}`;
   }
 
   formatPoints(value: number | null | undefined): string {

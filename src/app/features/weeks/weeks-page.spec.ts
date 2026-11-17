@@ -253,6 +253,45 @@ describe('WeeksPageComponent', () => {
     expect(host.querySelector('.week-recap .weekly-recap-empty')).not.toBeNull();
   });
 
+  it('shows a verified playoff fixture label in the compact row and its accessible name', async () => {
+    const season = matchups('2025', [
+      { week: 14, stage: 'playoffs', state: 'final' },
+      { week: 15, stage: 'playoffs', state: 'final' },
+      { week: 16, stage: 'playoffs', state: 'final' },
+      { week: 17, stage: 'playoffs', state: 'final' }
+    ]);
+    for (const week of season.Weeks) {
+      const fixture = week.Matchups[0];
+      fixture.Bracket = 'championship';
+      fixture.PlayoffRound = week.Week <= 15 ? 1 : 2;
+      fixture.PlayoffRoundCount = 2;
+      fixture.PlayoffPlacement = week.Week <= 15 ? null : 1;
+      fixture.PlayoffRoundWeek = week.Week % 2 === 0 ? 1 : 2;
+      fixture.PlayoffRoundWeeks = 2;
+    }
+    dataService.getPastMatchupsRaw.and.returnValue(of(season));
+    const host = await create({ season: '2025' }, 'overview');
+    const labels = Array.from(host.querySelectorAll('.schedule-played .schedule-playoff-matchup-label'))
+      .map(node => node.textContent?.trim());
+    expect(labels).toEqual(['Final · 2/2', 'Final · 1/2', 'Semifinal · 2/2', 'Semifinal · 1/2']);
+    expect((host.querySelector('.schedule-played .schedule-matchup') as HTMLButtonElement).getAttribute('aria-label'))
+      .toContain('Final · 2/2');
+    expect(host.querySelectorAll('.schedule-played .schedule-side--winner').length).toBe(4);
+  });
+
+  it('does not display an exact playoff label for legacy or unclassified evidence', async () => {
+    const season = matchups('2025', [
+      { week: 14, stage: 'playoffs', state: 'final' },
+      { week: 15, stage: 'playoffs', state: 'final' }
+    ]);
+    season.Weeks[0].Matchups[0].Bracket = 'unclassified';
+    season.Weeks[1].Matchups[0].Bracket = 'championship'; // legacy label without exact round facts
+    dataService.getPastMatchupsRaw.and.returnValue(of(season));
+    const host = await create({ season: '2025' }, 'overview');
+    expect(host.querySelectorAll('.schedule-playoff-matchup-label').length).toBe(0);
+    expect(host.querySelectorAll('.schedule-played .schedule-matchup').length).toBe(2);
+  });
+
   it('shows all known archived weeks without hiding playoffs or inventing unavailable results', async () => {
     const host = await create({ season: '2025' }, 'overview');
     expect(host.querySelector('.schedule-upcoming')).toBeNull();

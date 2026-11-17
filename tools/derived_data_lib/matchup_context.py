@@ -736,17 +736,19 @@ def build_matchups_model(
             if completion == "final" and any(p["Points"] is None for p in pairing["Participants"]):
                 completion = "unknown"
             participants = [{"TeamID": p["TeamID"], "Points": p["Points"], "ScoreKind": p["ScoreKind"]} for p in pairing["Participants"]]
+            playoff_details = (
+                brackets.describe(week, tuple(_text(value_of(p["SourceRow"], "CanonicalLeagueRosterID")) for p in pairing["Participants"]))
+                if playoff_start > 0 and week >= playoff_start else None
+            )
             view: dict[str, Any] = {
                 "FantasyMatchupID": pairing["FantasyMatchupID"],
                 "Participants": participants,
                 "CompletionState": completion,
                 "Result": None,
-                "Bracket": (
-                    brackets.classify(week, tuple(_text(value_of(p["SourceRow"], "CanonicalLeagueRosterID")) for p in pairing["Participants"]))
-                    if playoff_start > 0 and week >= playoff_start
-                    else None
-                ),
+                "Bracket": playoff_details["Bracket"] if playoff_details is not None else None,
             }
+            if playoff_details is not None:
+                view.update({key: value for key, value in playoff_details.items() if key != "Bracket"})
             if completion == "final":
                 left, right = participants
                 if float(left["Points"]) == float(right["Points"]):

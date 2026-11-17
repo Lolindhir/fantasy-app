@@ -258,6 +258,7 @@
     <button
       type="button"
       class="schedule-matchup"
+      [class.schedule-matchup--playoff-labeled]="!!matchup.playoffLabel"
       [class.schedule-matchup--static]="!canOpenWeekMatchup(week, matchup.matchupID)"
       [disabled]="!canOpenWeekMatchup(week, matchup.matchupID)"
       [attr.aria-label]="scheduleMatchupLabel(matchup)"
@@ -305,6 +306,9 @@
       }
       @if (canOpenWeekMatchup(week, matchup.matchupID)) {
         <span class="schedule-row-chevron" aria-hidden="true">›</span>
+      }
+      @if (matchup.playoffLabel) {
+        <span class="schedule-playoff-matchup-label" aria-hidden="true">{{ matchup.playoffLabel }}</span>
       }
     </button>
   }

@@ -15,6 +15,7 @@ import {
   buildWeekTabs,
   buildWeeksSeasonOptions,
   parseWeekParam,
+  playoffMatchupLabel,
   resolveDefaultWeek,
   resolveSelectedWeek,
   resolveWeeksSeason,
@@ -187,6 +188,34 @@ describe('weeks view util', () => {
 
     it('handles a missing season without synthesizing fixtures', () => {
       expect(buildScheduleOverview(null, [], true)).toEqual({ upcoming: [], played: [] });
+    });
+  });
+
+  describe('playoff matchup labels', () => {
+    const playoff = (bracket: string | null, round: number | null, total: number | null, placement: number | null,
+                     leg = 1, legs = 1): FantasyMatchupReadModel => ({
+      ...matchup('p', [1, 100], [2, 90]),
+      Bracket: bracket, PlayoffRound: round, PlayoffRoundCount: total, PlayoffPlacement: placement,
+      PlayoffRoundWeek: leg, PlayoffRoundWeeks: legs
+    });
+
+    it('distinguishes finals, placement, semifinal and quarterfinal across configured round counts', () => {
+      expect(playoffMatchupLabel(playoff('championship', 2, 2, 1, 1, 2))).toBe('Final · 1/2');
+      expect(playoffMatchupLabel(playoff('championship', 2, 2, 1, 2, 2))).toBe('Final · 2/2');
+      expect(playoffMatchupLabel(playoff('placement', 2, 2, 3, 2, 2))).toBe('3rd place · 2/2');
+      expect(playoffMatchupLabel(playoff('placement', 2, 3, 5))).toBe('5th place');
+      expect(playoffMatchupLabel(playoff('championship', 1, 2, null))).toBe('Semifinal');
+      expect(playoffMatchupLabel(playoff('championship', 1, 3, null))).toBe('Quarterfinal');
+      expect(playoffMatchupLabel(playoff('championship', 2, 3, null))).toBe('Semifinal');
+      expect(playoffMatchupLabel(playoff('consolation', 1, 2, 1))).toBe('Consolation');
+    });
+
+    it('never guesses a label from absent or inconsistent playoff provenance', () => {
+      expect(playoffMatchupLabel(matchup('legacy', [1, 100], [2, 90]))).toBeNull();
+      expect(playoffMatchupLabel(playoff('unclassified', null, null, null))).toBeNull();
+      expect(playoffMatchupLabel(playoff('placement', 2, 2, null))).toBeNull();
+      expect(playoffMatchupLabel(playoff('championship', 1, null, null))).toBeNull();
+      expect(playoffMatchupLabel(playoff('championship', 3, 2, null))).toBeNull();
     });
   });
 

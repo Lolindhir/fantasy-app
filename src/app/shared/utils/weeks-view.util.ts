@@ -44,6 +44,8 @@ export interface WeekScoreboardMatchup {
   matchupID: string;
   state: MatchupCompletionState;
   isTie: boolean;
+  /** Presentation-only text from authoritative playoff bracket metadata; null for legacy/unknown data. */
+  playoffLabel: string | null;
   participants: WeekScoreboardParticipant[];
 }
 
@@ -183,6 +185,42 @@ function isWinner(matchup: FantasyMatchupReadModel, teamID: number): boolean {
   return matchup.Result?.Type === 'win' && Number(matchup.Result.WinnerTeamID) === teamID;
 }
 
+/** Labels use published bracket provenance only; never infer playoff position from points or standings. */
+export function playoffMatchupLabel(matchup: FantasyMatchupReadModel): string | null {
+  const round = matchup.PlayoffRound;
+  const total = matchup.PlayoffRoundCount;
+  const place = matchup.PlayoffPlacement;
+  let label: string | null = null;
+
+  if (matchup.Bracket === 'consolation') {
+    label = 'Consolation';
+  } else if (matchup.Bracket === 'placement') {
+    if (place != null && Number.isInteger(place) && place > 1) {
+      const suffix = place % 100 >= 11 && place % 100 <= 13 ? 'th'
+        : place % 10 === 1 ? 'st' : place % 10 === 2 ? 'nd' : place % 10 === 3 ? 'rd' : 'th';
+      label = `${place}${suffix} place`;
+    }
+  } else if (matchup.Bracket === 'championship') {
+    if (round != null && total != null && Number.isInteger(round) && Number.isInteger(total)
+        && round >= 1 && total >= round) {
+      const remaining = total - round;
+      label = remaining === 0 ? 'Final'
+        : remaining === 1 ? 'Semifinal'
+        : remaining === 2 ? 'Quarterfinal'
+        : `Playoff round ${round}`;
+    }
+  }
+
+  // A round's leg is shown only when the canonical format proves it spans multiple weeks.
+  const leg = matchup.PlayoffRoundWeek;
+  const legs = matchup.PlayoffRoundWeeks;
+  if (label && leg != null && legs != null && Number.isInteger(leg) && Number.isInteger(legs)
+      && legs > 1 && leg >= 1 && leg <= legs) {
+    return `${label} · ${leg}/${legs}`;
+  }
+  return label;
+}
+
 export function buildWeekScoreboard(
   week: MatchupWeekReadModel | null | undefined,
   teams: readonly FantasyTeam[]
@@ -194,6 +232,7 @@ export function buildWeekScoreboard(
     matchupID: matchup.FantasyMatchupID,
     state: matchup.CompletionState,
     isTie: matchup.Result?.Type === 'tie',
+    playoffLabel: playoffMatchupLabel(matchup),
     participants: matchup.Participants.map(participant => ({
       teamID: Number(participant.TeamID),
       team: teamByID.get(Number(participant.TeamID)) ?? null,
