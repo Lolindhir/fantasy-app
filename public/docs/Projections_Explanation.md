@@ -29,7 +29,8 @@ Sie basiert auf den **aufgestellten Startern**:
 - Starter mit einer Bye-Week und ausdrücklich als OUT eingeordnete noch nicht gestartete Spieler zählen für die aktuelle Teamprognose mit null.
 - Sobald das NFL-Spiel eines Starters **abgeschlossen** ist, zählen seine echten Fantasy-Punkte.
 - Für noch ausstehende und laufende Spiele nutzen wir weiter die Vorhersage; eine eigene Live-Restpunkte-Prognose gibt es nicht.
-- Wenn wesentliche Daten fehlen, zeigen wir keine scheinbar vollständige Zahl.
+- Wenn einzelne Starterprognosen fehlen, bleibt die eigentliche Aufstellungsprognose unvollständig. Solange noch kein Starterspiel abgeschlossen ist, können wir stattdessen einen **gekennzeichneten Best-Ball-Ersatzwert** anzeigen: durchschnittliches projiziertes Best-Ball-Potenzial der bisherigen Saison, multipliziert mit der bisherigen tatsächlichen Aufstellungseffizienz des Managers. Das ist ein grober Saisonvergleich, **keine neue optimale Aufstellung für die kommende Woche**.
+- Fehlen auch diese Daten, zeigen wir weiterhin keine Zahl.
 
 Die Teamspanne wird aus den Unsicherheiten der Starter berechnet. Wir addieren **nicht einfach** alle unteren oder oberen Spielergrenzen.
 
