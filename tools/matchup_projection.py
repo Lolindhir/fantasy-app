@@ -36,11 +36,13 @@ from derived_data_lib.models.team_range.v1 import (  # noqa: F401  (re-exported,
     z_for_level,
 )
 from player_week_fantasy import DISPLAY_INTERVAL_LEVEL, PUBLISHED_INTERVAL_LEVELS
+from data_roots import DATA_DERIVED_ROOT
 
 SCHEMA_VERSION = 3
 AXIS_STEP = 20
 AXIS_PADDING = 10
 OUTPUT_PATH = Path("public/data/MatchupProjections.json")
+FALLBACK_METHOD = "season-bestball-actual-efficiency-v1"
 
 
 def _is_final(status: Any) -> bool:
@@ -112,12 +114,67 @@ def _axis(teams: list[dict[str, Any]], level: float) -> dict[str, int] | None:
     }
 
 
+def _season_fallbacks(
+    season_stats: Mapping[str, Any] | None, league_id: Any, season: Any, week: Any,
+) -> dict[str, dict[str, Any]]:
+    """Season-to-date average Best Ball × actual manager efficiency, never a weekly lineup guess.
+
+    Missing, stale, future or mismatched evidence cannot become a displayed number.
+    The original starter-based team-range-v1 remains unchanged.
+    """
+    if not isinstance(season_stats, Mapping):
+        return {}
+    if (str(season_stats.get("CanonicalLeagueID")) != str(league_id)
+            or str(season_stats.get("Season")) != str(season)):
+        return {}
+    as_of = season_stats.get("AsOf")
+    completed = as_of.get("CompletedWeeks") if isinstance(as_of, Mapping) else None
+    if type(completed) is not int or not 0 < completed < int(week):
+        return {}
+    teams = season_stats.get("Teams")
+    if not isinstance(teams, list):
+        return {}
+    fallback: dict[str, dict[str, Any]] = {}
+    seen: set[str] = set()
+    for team in teams:
+        if not isinstance(team, Mapping) or team.get("TeamID") is None:
+            continue
+        team_id = str(team["TeamID"])
+        if team_id in seen:
+            # Ambiguous team identities invalidate the entire optional input.
+            return {}
+        seen.add(team_id)
+        best_ball = _finite(team.get("ProjectedBestBallPoints"))
+        efficiency = _finite(team.get("LineupEfficiencyActual"))
+        if best_ball is None or best_ball <= 0 or efficiency is None or not 0 <= efficiency <= 100:
+            continue
+        fallback[team_id] = {
+            "Points": round(best_ball * efficiency / 100, 4),
+            "Method": FALLBACK_METHOD,
+            "SourceThroughWeek": completed,
+            "ProjectedBestBallPoints": best_ball,
+            "ManagerEfficiencyPercent": efficiency,
+        }
+    return fallback
+
+
+def _read_season_statistics(root: Path, league_id: str, season: int) -> Mapping[str, Any] | None:
+    """Read only the existing Shared Derived season-statistics product, not an App read model."""
+    path = root / DATA_DERIVED_ROOT / "season-statistics" / league_id / f"{season}.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return payload if isinstance(payload, Mapping) else None
+
+
 def build_matchup_projections(
     context: Mapping[str, Any],
     player_model: Mapping[str, Any],
     *,
     display_level: float = DISPLAY_INTERVAL_LEVEL,
     availability: Mapping[str, str] | None = None,
+    season_statistics: Mapping[str, Any] | None = None,
     model: Any = team_range_v1,
     win_model: Any = win_prob_v1,
 ) -> dict[str, Any]:
@@ -136,6 +193,9 @@ def build_matchup_projections(
 
     projections = _player_index(player_model)
     starters_by_team = _collect_starters(context)
+    fallback_by_team = _season_fallbacks(
+        season_statistics, player_model.get("CanonicalLeagueID"), player_model["Season"], player_model["Week"]
+    )
 
     matchups: list[dict[str, Any]] = []
     for matchup in context.get("FantasyMatchups", []):
@@ -148,6 +208,20 @@ def build_matchup_projections(
             )
             for team_id in matchup["TeamIDs"]
         ]
+        for team in teams:
+            fallback = fallback_by_team.get(str(team["FantasyTeamID"]))
+            team["BestBallEfficiencyFallback"] = fallback
+            # Never replace ProjectedFinalScore: its complete-lineup semantics and
+            # calibrated variance/win-probability inputs remain unchanged.
+            use_fallback = team["ProjectedFinalScore"] is None and team["FinalStarterCount"] == 0 and fallback is not None
+            team["DisplayProjectedScore"] = (
+                fallback["Points"] if use_fallback else team["ProjectedFinalScore"]
+            )
+            team["DisplayProjectionMethod"] = (
+                FALLBACK_METHOD if use_fallback
+                else METHOD_ID if team["ProjectedFinalScore"] is not None
+                else None
+            )
         percentages = win_model.matchup_percentages(teams[0], teams[1]) if len(teams) == 2 else None
         raw_probabilities = None
         deterministic = None
@@ -187,6 +261,7 @@ def build_matchup_projections(
         "DisplayLevel": display_level,
         "Method": dict(model.METHOD),
         "WinProbabilityModel": win_model.MODEL_ID,
+        "BestBallFallbackMethod": FALLBACK_METHOD,
         "Matchups": matchups,
     }
 
@@ -254,7 +329,8 @@ def publish_matchup_projections(
     win_model = get_model(model_for(metadata, season, "WinProb"), "win-prob")
     try:
         payload = build_matchup_projections(
-            context, player_model, availability=_availability_by_player(root, league_id, context, at_utc), model=model, win_model=win_model
+            context, player_model, availability=_availability_by_player(root, league_id, context, at_utc),
+            season_statistics=_read_season_statistics(root, league_id, season), model=model, win_model=win_model
         )
     except ValueError as exc:
         if "target different weeks" in str(exc):
