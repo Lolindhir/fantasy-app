@@ -58,6 +58,11 @@ contract:
     WinProbability: whole-percent win chance of the matchup from win-prob-v1 (raw normal-difference of the two team projections, no calibration; both teams add up to 100); null unless both teams are available; adjusted with every finished NFL game because final games count real points (SchemaVersion 3, Issue #1443)
     WinProbabilityRaw: unrounded chance fraction (0..1) for this team, computed independently from the other side to preserve very small tails; null when the chance is unavailable (additive, Issue #1507)
     WinProbabilityIsDeterministic: true when both modeled standard deviations are zero, false when there is remaining modeled scoring variance, null when the chance is unavailable; frontend does not infer certainty from rounded 0/100
+    BestBallEfficiencyFallback: nullable separate estimate (Points = season-to-date mean ProjectedBestBallPoints multiplied by mean actual LineupEfficiencyActual / 100; Method season-bestball-actual-efficiency-v1, SourceThroughWeek and both inputs retained); no recalculation of the target week's Best Ball
+    DisplayProjectedScore: chosen published display number; existing ProjectedFinalScore when complete, otherwise the season baseline before any starter game is final if valid; null when neither is available
+    DisplayProjectionMethod: normal-independent-v1 when using complete starter projection, season-bestball-actual-efficiency-v1 for fallback, otherwise null
+  rootAdditions:
+    BestBallFallbackMethod: season-bestball-actual-efficiency-v1
 
 semantics: .ai-context/manual/player-week-fantasy.yaml
 
