@@ -264,20 +264,23 @@
       (click)="openWeekMatchup(week, matchup.matchupID)">
       @for (participant of matchup.participants; track participant.teamID; let last = $last) {
         @if (!last) {
-          <span class="schedule-team schedule-team--left" [class.schedule-team--winner]="participant.isWinner">
+          <span class="schedule-side schedule-side--left" [class.schedule-side--winner]="matchup.state === 'final' && participant.isWinner">
+          <span class="schedule-team schedule-team--left">
             @if (participant.team) {
               <app-team-identity [team]="participant.team" [elements]="compactIdentityElements" [interactive]="false" size="small"></app-team-identity>
             } @else {
               <span class="week-team-fallback">{{ teamLabel(participant.teamID, null) }}</span>
             }
           </span>
+          @if (showScheduleScores(matchup)) {
+            <strong class="schedule-side-score">{{ formatPoints(participant.points) }}</strong>
+          }
+          </span>
         }
       }
       <span class="schedule-result" [class.schedule-result--final]="matchup.state === 'final'">
         @if (showScheduleScores(matchup)) {
-          <strong>{{ formatPoints(matchup.participants[0]?.points) }}</strong>
-          <span class="schedule-result-separator">:</span>
-          <strong>{{ formatPoints(matchup.participants[1]?.points) }}</strong>
+          <span class="schedule-result-separator" aria-hidden="true">:</span>
         } @else if (matchup.state === 'unknown') {
           <span class="schedule-result-unknown">?</span>
         } @else {
@@ -286,12 +289,17 @@
       </span>
       @for (participant of matchup.participants; track participant.teamID; let first = $first) {
         @if (!first) {
-          <span class="schedule-team schedule-team--right" [class.schedule-team--winner]="participant.isWinner">
+          <span class="schedule-side schedule-side--right" [class.schedule-side--winner]="matchup.state === 'final' && participant.isWinner">
+          @if (showScheduleScores(matchup)) {
+            <strong class="schedule-side-score">{{ formatPoints(participant.points) }}</strong>
+          }
+          <span class="schedule-team schedule-team--right">
             @if (participant.team) {
               <app-team-identity [team]="participant.team" [elements]="compactIdentityElements" [interactive]="false" [align]="'end'" size="small"></app-team-identity>
             } @else {
               <span class="week-team-fallback">{{ teamLabel(participant.teamID, null) }}</span>
             }
+          </span>
           </span>
         }
       }
