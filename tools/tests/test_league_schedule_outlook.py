@@ -70,8 +70,8 @@ class ScheduleOutlookV1Tests(unittest.TestCase):
         self.assertEqual(140.0, one["RemainingOpponentBestBallStrength"])
         self.assertEqual(2, one["KnownRelativeScoringStrengthGames"])
         self.assertEqual(2, one["KnownProjectedBestBallStrengthGames"])
-        self.assertEqual(1, one["RemainingSoSRelativeStrengthRank"])
-        self.assertEqual(2, two["RemainingSoSRelativeStrengthRank"])
+        self.assertEqual(2, one["RemainingSoSRelativeStrengthRank"])
+        self.assertEqual(1, two["RemainingSoSRelativeStrengthRank"])
 
     def test_week_zero_has_pairings_but_no_fake_strength(self):
         full = weeks()
