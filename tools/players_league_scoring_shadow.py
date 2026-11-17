@@ -50,6 +50,27 @@ CURRENT_BLEND = {1: 0.25, 2: 0.35, 3: 0.5, 4: 0.75}
 GATE_MIN_EXACT_RATE = 0.995
 GATE_MAX_ABS_DIFF = 2.0
 
+# Explicitly audited provider-vs-source disagreement. Do not generalize this into
+# a tolerance for defensive events, or mutate historical NFL facts/Sleeper scores.
+# 2026 W10, Travis Hunter: canonical CB NFL stat has one defensive interception
+# (2026_10_JAX_TEN, int * 2 = 2); Sleeper league PlayerPoints stores 3.9 instead
+# of the canonical 5.9. Sleeper's published Hunter FAQ permits IDP scoring keys
+# even without IDP lineup positions: this is not evidence to subtract valid
+# canonical interceptions for all hybrid WR/DBs.
+# https://support.sleeper.com/en/articles/11166252-travis-hunter-s-dual-position-eligibility-what-you-need-to-know
+AUDITED_PROVIDER_STAT_DIVERGENCES = {
+    ("nfl-reise", 2026, 10, "NFLP-4a0f4e702e4782af409d"): {
+        "Class": "provider-defensive-interception-disagreement",
+        "Position": "CB",
+        "ScoringKey": "int",
+        "SourceStat": "def_interceptions",
+        "SourceStatValue": 1.0,
+        "SourceContributionPoints": 2.0,
+        "SleeperPoints": 3.9,
+        "CanonicalPoints": 5.9,
+    },
+}
+
 # Scalar Players.json fields the shadow recomputes.
 SCALAR_FIELDS = (
     "Salary",
@@ -647,6 +668,38 @@ def classify_residual(diff: float, applicable_weights: list[float]) -> str | Non
     return None
 
 
+def classify_audited_provider_residual(
+    league_id: str, season: int, week: int, cid: str,
+    record: dict[str, Any] | None, scoring: dict[str, Any],
+    result: dict[str, Any] | None, sleeper_points: float, ours: float, diff: float,
+) -> str | None:
+    """Allow exactly documented source/provider differences, not an error tolerance.
+
+    All observed scoring evidence must continue matching the original review. Any
+    changed source stat, settings, identity, score, or week fails the normal gate.
+    """
+    evidence = AUDITED_PROVIDER_STAT_DIVERGENCES.get((league_id, season, week, cid))
+    if not evidence or record is None or result is None or result["UnsupportedNonZeroSettings"]:
+        return None
+    if record.get("Position") != evidence["Position"]:
+        return None
+    if number((record.get("Stats") or {}).get(evidence["SourceStat"])) != evidence["SourceStatValue"]:
+        return None
+    if number(scoring.get(evidence["ScoringKey"])) * evidence["SourceStatValue"] != evidence["SourceContributionPoints"]:
+        return None
+    contributions = [
+        item for item in result["Contributions"]
+        if item["ScoringKey"] == evidence["ScoringKey"] and item["Points"] == evidence["SourceContributionPoints"]
+    ]
+    if len(contributions) != 1:
+        return None
+    if (round(sleeper_points, 4), round(ours, 4), round(diff, 4)) != (
+        evidence["SleeperPoints"], evidence["CanonicalPoints"], evidence["SourceContributionPoints"]
+    ):
+        return None
+    return evidence["Class"]
+
+
 def sleeper_gate(repo_root: Path, league_id: str | None = None) -> dict[str, Any]:
     if league_id is None:
         league_id = default_league_id(data_meta_root(repo_root))
@@ -693,6 +746,7 @@ def sleeper_gate(repo_root: Path, league_id: str | None = None) -> dict[str, Any
                         continue
                     record = records.get(cid)
                     position = record.get("Position") if record else None
+                    result = None
                     if record:
                         result = score_record(record, scoring, special_teams_fumble_events=events[cid])
                         ours = result["FantasyPoints"]
@@ -711,7 +765,12 @@ def sleeper_gate(repo_root: Path, league_id: str | None = None) -> dict[str, Any
                         "Season": season, "Week": week, "CanonicalPlayerID": cid,
                         "Name": record["PlayerName"] if record else "", "Position": position or "?",
                         "Sleeper": float(sleeper_points), "Ours": round(ours, 2), "Diff": diff,
-                        "Class": classify_residual(diff, weights) or "unclassified",
+                        "Class": (classify_residual(diff, weights)
+                                  or classify_audited_provider_residual(
+                                      league_id, season, week, cid, record, scoring, result,
+                                      float(sleeper_points), ours, diff,
+                                  )
+                                  or "unclassified"),
                     })
     return evaluate_gate(compared, exact, residuals, skipped, unsupported)
 
