@@ -118,11 +118,10 @@ def plan_injury_history_inventory(
 ) -> dict[str, Any]:
     """Read-only, release-driven historical inventory; never approve an import.
 
-    Do not guess missing years or presume that a header profile is accepted
-    historical evidence. Only a verified official SHA or a separately attested
-    original revision can permit an import. This inventory reports official
-    SHA candidates; attested originals without an official hash need a separate
-    provenance review, not an automatic relaxation.
+    A missing official SHA-256 is not a missing original. Exact upstream asset
+    identity, URL and size are checked here; the publisher must download,
+    self-hash, parse and fully link the original before admitting it. No
+    contiguous year list or pre-approval of historical revision replacement.
     """
     if not valid_injury_season(current_season):
         raise ValueError("Current Injury season must be a four-digit year")
@@ -160,7 +159,7 @@ def plan_injury_history_inventory(
         elif season in stored:
             state = "persisted-historical-reconciliation-required"
         elif not decision["FullSourceDigestAvailable"]:
-            state = "blocked-unverified-original-revision"
+            state = "candidate-requires-official-asset-and-full-content-audit"
         else:
             state = "candidate-requires-schema-and-identity-audit"
         entries.append({
@@ -240,6 +239,8 @@ def build_injury_raw_artifacts(
         "AssetSha256": actual_digest,
         "AssetByteSize": len(source_csv),
         "AssetDigestVerification": (
+            "official-release-self-hash-no-upstream-digest"
+            if release_asset is not None and release_asset.get("Sha256") is None else
             "matched-expected-digest" if expected_source_sha256 else
             "matched-provided-release-digest" if release_asset is not None
             and release_asset.get("Sha256") is not None else
