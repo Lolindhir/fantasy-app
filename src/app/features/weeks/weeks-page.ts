@@ -34,6 +34,7 @@ import {
   resolveSelectedWeek,
   resolveWeeksSeason,
   selectWeekRecap,
+  type WeekScoreboardMatchup,
   type WeeksSeasonOption
 } from '../../shared/utils/weeks-view.util';
 
@@ -269,6 +270,22 @@ export class WeeksPageComponent {
   openWeek(week: number): void {
     this.selectWeek(week);
     this.selectTab('week');
+  }
+
+  /** Future 0:0 placeholders are not scores; real live and final scores remain visible. */
+  showScheduleScores(matchup: WeekScoreboardMatchup): boolean {
+    if (matchup.state === 'final') return true;
+    return matchup.participants.some(participant =>
+      participant.points !== null && Number.isFinite(participant.points) && participant.points !== 0);
+  }
+
+  scheduleMatchupLabel(matchup: WeekScoreboardMatchup): string {
+    const names = matchup.participants.map(participant =>
+      participant.team?.TeamAbbr || participant.team?.Team || `Team ${participant.teamID}`);
+    const result = this.showScheduleScores(matchup)
+      ? matchup.participants.map(participant => this.formatPoints(participant.points)).join(' to ')
+      : matchup.state === 'unknown' ? 'unconfirmed' : 'versus';
+    return `${names[0] ?? 'Team'} ${result} ${names[1] ?? 'Team'}`;
   }
 
   formatPoints(value: number | null | undefined): string {

@@ -69,7 +69,7 @@
                 </header>
                 @if (group.matchups.length) {
                   <div class="week-scoreboards schedule-scoreboards">
-                    <ng-container *ngTemplateOutlet="matchupRows; context: { $implicit: group.matchups, week: group.week }"></ng-container>
+                    <ng-container *ngTemplateOutlet="scheduleRows; context: { $implicit: group.matchups, week: group.week }"></ng-container>
                   </div>
                 } @else {
                   <p class="schedule-week-empty">Matchups are not confirmed yet.</p>
@@ -101,7 +101,7 @@
                   </header>
                   @if (group.matchups.length) {
                     <div class="week-scoreboards schedule-scoreboards">
-                      <ng-container *ngTemplateOutlet="matchupRows; context: { $implicit: group.matchups, week: group.week }"></ng-container>
+                      <ng-container *ngTemplateOutlet="scheduleRows; context: { $implicit: group.matchups, week: group.week }"></ng-container>
                     </div>
                   } @else {
                     <p class="schedule-week-empty">No confirmed matchups for this week.</p>
@@ -252,7 +252,57 @@
   }
 </div>
 
-<!-- One compact fantasy matchup row reused by Week and Schedule Overview. -->
+<!-- Overview-only dense rows. Week keeps the original detailed matchup presentation. -->
+<ng-template #scheduleRows let-items let-week="week">
+  @for (matchup of items; track matchup.matchupID) {
+    <button
+      type="button"
+      class="schedule-matchup"
+      [class.schedule-matchup--static]="!canOpenWeekMatchup(week, matchup.matchupID)"
+      [disabled]="!canOpenWeekMatchup(week, matchup.matchupID)"
+      [attr.aria-label]="scheduleMatchupLabel(matchup)"
+      (click)="openWeekMatchup(week, matchup.matchupID)">
+      @for (participant of matchup.participants; track participant.teamID; let last = $last) {
+        @if (!last) {
+          <span class="schedule-team schedule-team--left" [class.schedule-team--winner]="participant.isWinner">
+            @if (participant.team) {
+              <app-team-identity [team]="participant.team" [elements]="compactIdentityElements" [interactive]="false" size="small"></app-team-identity>
+            } @else {
+              <span class="week-team-fallback">{{ teamLabel(participant.teamID, null) }}</span>
+            }
+          </span>
+        }
+      }
+      <span class="schedule-result" [class.schedule-result--final]="matchup.state === 'final'">
+        @if (showScheduleScores(matchup)) {
+          <strong>{{ formatPoints(matchup.participants[0]?.points) }}</strong>
+          <span class="schedule-result-separator">:</span>
+          <strong>{{ formatPoints(matchup.participants[1]?.points) }}</strong>
+        } @else if (matchup.state === 'unknown') {
+          <span class="schedule-result-unknown">?</span>
+        } @else {
+          <span class="schedule-result-versus">vs</span>
+        }
+      </span>
+      @for (participant of matchup.participants; track participant.teamID; let first = $first) {
+        @if (!first) {
+          <span class="schedule-team schedule-team--right" [class.schedule-team--winner]="participant.isWinner">
+            @if (participant.team) {
+              <app-team-identity [team]="participant.team" [elements]="compactIdentityElements" [interactive]="false" [align]="'end'" size="small"></app-team-identity>
+            } @else {
+              <span class="week-team-fallback">{{ teamLabel(participant.teamID, null) }}</span>
+            }
+          </span>
+        }
+      }
+      @if (canOpenWeekMatchup(week, matchup.matchupID)) {
+        <span class="schedule-row-chevron" aria-hidden="true">›</span>
+      }
+    </button>
+  }
+</ng-template>
+
+<!-- Detailed matchup rows are reserved for the Week tab. -->
 <ng-template #matchupRows let-items let-week="week">
           @for (matchup of items; track matchup.matchupID) {
             <button

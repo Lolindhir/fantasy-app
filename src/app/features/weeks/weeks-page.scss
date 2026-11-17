@@ -525,3 +525,82 @@
   .schedule-week-header { padding: 0 4px; }
   .schedule-current-label { font-size: 0.62rem; }
 }
+
+/* Dense Schedule Overview: weeks are the containers, fixtures are rows. */
+.schedule-week-list { gap: 18px; }
+.schedule-week {
+  padding: 10px 12px 12px;
+  background: #f8fafc;
+}
+.schedule-week-header {
+  margin-bottom: 9px;
+  padding: 0 2px;
+}
+.schedule-week-link { font-size: 1.12rem; }
+.schedule-week--current { border-left-width: 4px; }
+.schedule-scoreboards {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--weekly-card-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--weekly-card-shadow);
+}
+.schedule-matchup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 12px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 57px;
+  padding: 5px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--weekly-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.schedule-matchup + .schedule-matchup {
+  border-top: 1px solid var(--weekly-card-border);
+}
+.schedule-matchup:disabled {
+  cursor: default;
+  color: var(--weekly-text);
+}
+.schedule-matchup:not(:disabled):hover {
+  background: rgba(59, 130, 246, 0.055);
+}
+.schedule-matchup:not(:disabled):focus-visible {
+  outline: 2px solid var(--lifecycle-active-fg, #2563eb);
+  outline-offset: -2px;
+}
+.schedule-team { min-width: 0; }
+.schedule-team--right { text-align: right; }
+.schedule-team--winner { font-weight: 850; }
+.schedule-team app-team-identity {
+  --team-identity-avatar-size: 42px;
+  --team-identity-gap: 7px;
+  --team-identity-title-font-size: 0.85rem;
+}
+.schedule-result {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 36px;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.schedule-result--final { font-weight: 850; }
+.schedule-result-versus { color: var(--weekly-muted); font-size: 0.75rem; }
+.schedule-result-unknown { color: var(--lifecycle-review-fg, #92400e); }
+.schedule-result-separator { color: var(--weekly-muted); }
+.schedule-row-chevron { color: var(--lifecycle-active-fg, #2563eb); font-size: 1.1rem; }
+@media (max-width: 640px) {
+  .schedule-week { padding: 9px 7px 10px; }
+  .schedule-week-header { padding: 0 5px; }
+  .schedule-matchup { gap: 5px; padding: 5px 7px; min-height: 56px; }
+  .schedule-team app-team-identity { --team-identity-avatar-size: 40px; --team-identity-gap: 5px; }
+}

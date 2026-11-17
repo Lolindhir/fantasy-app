@@ -148,7 +148,7 @@ describe('WeeksPageComponent', () => {
     expect(host.querySelectorAll('.schedule-upcoming .schedule-week').length).toBe(2);
     expect(Array.from(host.querySelectorAll('.schedule-upcoming .schedule-week-link'))
       .map(node => node.textContent?.trim())).toEqual(['Week 3', 'Week 4']);
-    expect(host.querySelectorAll('.schedule-upcoming .week-matchup').length).toBe(2);
+    expect(host.querySelectorAll('.schedule-upcoming .schedule-matchup').length).toBe(2);
     expect(host.querySelector('.week-title')).toBeNull();
     expect(host.querySelector('.schedule-played')).toBeNull();
 
@@ -157,7 +157,32 @@ describe('WeeksPageComponent', () => {
     expect(host.querySelectorAll('.schedule-played .schedule-week').length).toBe(2);
     expect(Array.from(host.querySelectorAll('.schedule-played .schedule-week-link'))
       .map(node => node.textContent?.trim())).toEqual(['Week 2', 'Week 1']);
-    expect(host.querySelector('.schedule-played .week-matchup-score')?.textContent).toContain('102');
+    expect(host.querySelector('.schedule-played .schedule-result')?.textContent).toContain('102');
+  });
+
+  it('uses dense schedule rows with a single group border, larger team identities and no open chips', async () => {
+    const host = await create({}, 'overview');
+    const row = host.querySelector('.schedule-upcoming .schedule-matchup') as HTMLButtonElement;
+    expect(row).not.toBeNull();
+    expect(row.querySelectorAll('app-team-identity').length).toBe(2);
+    expect(row.querySelector('.schedule-result-versus')?.textContent).toBe('vs');
+    expect(row.querySelector('.week-matchup-state')).toBeNull();
+    expect(row.querySelector('.week-matchup-score')).toBeNull();
+    expect(host.querySelector('.schedule-upcoming .week-matchup')).toBeNull();
+    expect(host.querySelector('.schedule-upcoming .schedule-scoreboards')).not.toBeNull();
+  });
+
+  it('preserves final scores in played rows and detailed Week cards', async () => {
+    const host = await create({}, 'overview');
+    (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(host.querySelector('.schedule-played .schedule-result--final')?.textContent).toContain('102');
+    expect(host.querySelector('.schedule-played .schedule-result--final')?.textContent).toContain('90');
+
+    (Array.from(host.querySelectorAll('.activity-tab')).find(tab => tab.textContent?.trim() === 'Week') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(host.querySelector('.week-matchup')).not.toBeNull();
+    expect(host.querySelector('.week-matchup-score')?.textContent).toContain('102');
   });
 
   it('opens the original Week detail from a schedule group header', async () => {
@@ -191,10 +216,10 @@ describe('WeeksPageComponent', () => {
     dataService.getFantasyGameContextHistory.and.returnValue(of({ Weeks: [context(2)] } as unknown as HistoricalFantasyGameContextSeason));
     const host = await create({}, 'overview');
 
-    expect((host.querySelector('.schedule-upcoming .week-matchup') as HTMLButtonElement).disabled).toBeFalse();
+    expect((host.querySelector('.schedule-upcoming .schedule-matchup') as HTMLButtonElement).disabled).toBeFalse();
     (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect((host.querySelector('.schedule-played .week-matchup') as HTMLButtonElement).disabled).toBeFalse();
+    expect((host.querySelector('.schedule-played .schedule-matchup') as HTMLButtonElement).disabled).toBeFalse();
   });
 
   it('opens the last completed week of the current season with scores and a recap', async () => {
