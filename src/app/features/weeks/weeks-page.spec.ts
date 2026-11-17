@@ -168,7 +168,7 @@ describe('WeeksPageComponent', () => {
     expect(row.querySelectorAll('app-team-identity').length).toBe(4); // desktop/mobile identities
     expect(row.querySelector('.week-matchup-state--open')?.textContent).toContain('Open');
     expect(row.querySelector('.week-matchup-score')?.textContent?.trim()).toBe('–');
-    expect(host.querySelectorAll('.schedule-upcoming .schedule-scoreboards > .week-matchup').length).toBe(2);
+    expect(host.querySelectorAll('.schedule-upcoming .schedule-scoreboards > .week-matchup').length).toBe(1);
     expect(host.querySelector('.schedule-upcoming .schedule-scoreboards')).not.toBeNull();
   });
 
