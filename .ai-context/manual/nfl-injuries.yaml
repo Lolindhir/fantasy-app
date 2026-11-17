@@ -18,12 +18,12 @@ ownership:
     prospectiveMetadataPath: data-source/providers/nflverse/injuries/metadata-<season>.json
     prospectiveCanonicalPath: data-source/nfl/injuries/<season>/<week>.json
     plannedSourceRegistry: data-source/registry.json
-    registryActivated: pending-pr-merge
+    registryActivated: active
   observedTrajectory:
     productId: nfl-injuries-v1
     prospectivePath: data-derived/nfl-injuries/<season>.json
     consumerNeutral: true
-    publicationActivated: pending-pr-merge
+    publicationActivated: active
 
 source:
   annualRelease: https://github.com/nflverse/nflverse-data/releases/tag/injuries
@@ -144,7 +144,7 @@ derived:
     - Latest NFL injury status remains exclusively owned by existing Sleeper state.
 
 materializationPlan:
-  status: implemented-side-effect-free-not-published
+  status: active-source-canonical-derived-producers
   implementation: tools/nfl_source_data_lib/injury_product_plan.py
   inspectionCli: tools/nfl_injuries_preview.py --mode plan
   localStagingCli: tools/nfl_injuries_materialize.py --write
@@ -205,7 +205,7 @@ materializationPlan:
 
 phaseSeparation:
   implementation: tools/nfl_injuries_phase.py
-  status: tested-local-only-not-published
+  status: active-separated-source-canonical-derived
   upstreamOrder:
     - raw: provider original CSV and metadata only
     - canonical: confirmed persisted raw plus identity graph and optional schedule
@@ -365,4 +365,4 @@ activation:
     - fail-closed parser, duplicate, unknown, late correction and canceled-game cases
     - exact no-op, clean-root replay, metadata provenance and writer race-safety
     - independent architecture review before activation
-  currentStatus: registry-and-scheduler-configured-on-pr-no-live-dataset-yet
+  currentStatus: current-season-and-historical-2025-live-weekly-replay-proven-new-digestless-history-pending-real-admission
