@@ -329,6 +329,57 @@ futureGameDetailDirection:
       publish PBP-derived GameDetail v2, expand a writer scope, change
       an existing index contract or certify upstream play completeness.
       The future v2 pilot must test all relevant special-play exclusions.
+  gameDetailV2PbpReadOnlyPilot:
+    issue: 1077
+    seasonScope: [2025]
+    status: implemented-read-only-candidate-not-published
+    owner: existing-nfl-games
+    pureBuilder: tools/derived_data_lib/nfl_game_detail_core.py::build_nfl_game_detail_v2_pilot
+    previewCli: >-
+      python3 tools/nfl_game_detail_preview.py --season 2025
+      --game-id 2025_01_ARI_NO --v2-pilot
+      --pbp-csv-gz /local/play_by_play_2025.csv.gz
+      --expected-sha256 2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978
+    sourcePin: data-source/providers/nflverse/play-by-play-original/metadata-2025.json
+    originalSourceHandling: >-
+      CLI requires locally available original 2025 gzip and accepted Source manifest
+      with matching source SHA256 and compressed size; it scans the gzip to EOF.
+      Original PBP rows are validated in-memory with existing GameDetail preview
+      logic and never persisted or returned in the v2 candidate.
+    outputContract: >-
+      Pure SchemaVersion=2, DetailDefinitionVersion=2, one GameID, complete
+      existing v1 Game, TeamStats and SnapCounts groups unmodified. Append only
+      PlayByPlayMetrics with two offense perspectives (and the mapped opponent
+      defense) over the ten approved opportunity/EPA/success/explosive candidates.
+      Offensive observations are the same plays a defensive Allowed view would
+      consume; do not separately compute or store another defensive score.
+    metricEvidence: >-
+      Each metric preserves candidate status, unit, Value, Eligible, Observed,
+      Missing, unknown eligibility, numerator and denominator. Counts have no
+      applicable denominator and become null when eligibility is unknown.
+      Rate/EPA numerators retain full-precision observed sums to support future
+      ratio-of-sums rollups; rates remain observed-only and explicitly partial
+      when outcomes or eligibility are missing. Official PlayerStats attempts
+      and carries remain independent diagnostic reference counts.
+    provenanceAndNoOp: >-
+      Preserve accepted original asset SHA, excluded play categories,
+      per-GameID source-play counts, model/catalog versions, and a deterministic
+      input fingerprint derived from existing core-v1 fingerprint and only this
+      game's formula-consumed original PBP evidence. Absence of input is
+      unavailable/null, not zero. No raw plays, no fantasy interpretation, no
+      artificial publication timestamp or upstream-complete claim.
+    readiness: >-
+      2025 field/game-level research has real successful observations, but
+      the v2 pilot's own 2025 original gzip still needs an end-to-end
+      replay/acceptance against the current candidate version. Do not label
+      observed-source evidence as independent full-game completeness proof.
+    activationBoundary: >-
+      This candidate is stdout/read-only only. Existing SchemaVersion=1
+      season index, GameDetail-v1 publisher and generated data remain untouched.
+      Publishing SchemaVersion=2 to data-derived/nfl-games/details/** or enabling
+      any PBP-origin writer/consumer requires separately assessed elevated
+      schema/writer scope, recovery, rollback and live verification. No new
+      workflow, scheduler, permission or materialization by this pilot.
   pbpDerivedMetricCatalog:
     path: .ai-context/manual/nfl-games-pbp-metrics.yaml
     catalogVersion: 1
