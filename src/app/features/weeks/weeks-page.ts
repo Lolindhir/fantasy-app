@@ -25,6 +25,7 @@ import {
   weeklyEfficiencyHighs
 } from '../../shared/utils/lineup-efficiency.util';
 import {
+  buildPlayoffDisplayLabels,
   buildScheduleOverview,
   buildSeasonGrid,
   buildWeekScoreboard,
@@ -137,9 +138,10 @@ export class WeeksPageComponent {
   });
 
   readonly weekTabs = computed(() => buildWeekTabs(this.data()?.matchups));
+  readonly playoffDisplayLabels = computed(() => buildPlayoffDisplayLabels(this.data()?.matchups));
 
   readonly scheduleOverview = computed(() =>
-    buildScheduleOverview(this.data()?.matchups, this.teams(), this.activeSeason()?.isCurrent ?? false));
+    buildScheduleOverview(this.data()?.matchups, this.teams(), this.activeSeason()?.isCurrent ?? false, this.playoffDisplayLabels()));
 
   readonly activeOrNextWeek = computed(() => this.data()?.matchups?.Summary?.ActiveOrNextWeek ?? null);
 
@@ -162,7 +164,7 @@ export class WeeksPageComponent {
 
   readonly selectedWeekIsPlayoff = computed(() => this.selectedWeekModel()?.Stage === 'playoffs');
 
-  readonly scoreboard = computed(() => buildWeekScoreboard(this.selectedWeekModel(), this.teams()));
+  readonly scoreboard = computed(() => buildWeekScoreboard(this.selectedWeekModel(), this.teams(), this.playoffDisplayLabels()));
 
   readonly recap = computed(() => {
     const season = this.activeSeason()?.season ?? '';

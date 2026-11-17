@@ -9,6 +9,7 @@ import type {
 import type { WeeklyRecapsReadModel } from '../../core/models/weekly-recap.models';
 import type { PastSeasonsIndex } from '../../core/services/data-api.service';
 import {
+  buildPlayoffDisplayLabels,
   buildScheduleOverview,
   buildSeasonGrid,
   buildWeekScoreboard,
@@ -216,6 +217,62 @@ describe('weeks view util', () => {
       expect(playoffMatchupLabel(playoff('placement', 2, 2, null))).toBeNull();
       expect(playoffMatchupLabel(playoff('championship', 1, null, null))).toBeNull();
       expect(playoffMatchupLabel(playoff('championship', 3, 2, null))).toBeNull();
+    });
+  });
+
+  describe('stable playoff fixture ordinals', () => {
+    const semifinal = (id: string, a: number, b: number, leg: number): FantasyMatchupReadModel => ({
+      ...matchup(id, [a, 100], [b, 90], 'final', a),
+      Bracket: 'championship', PlayoffRound: 1, PlayoffRoundCount: 2,
+      PlayoffPlacement: null, PlayoffRoundWeek: leg, PlayoffRoundWeeks: 2
+    });
+
+    it('numbers distinct semifinals by first known fixture order and preserves their identity in leg two', () => {
+      const season = model([
+        week(14, 'playoffs', 'final', [
+          semifinal('first-leg-a', 2, 4, 1),
+          semifinal('first-leg-b', 3, 1, 1)
+        ]),
+        week(15, 'playoffs', 'final', [
+          semifinal('second-leg-b', 1, 3, 2),
+          semifinal('second-leg-a', 4, 2, 2)
+        ])
+      ]);
+      const labels = buildPlayoffDisplayLabels(season);
+      expect(labels.get('14:first-leg-a')).toBe('Semifinal I · 1/2');
+      expect(labels.get('14:first-leg-b')).toBe('Semifinal II · 1/2');
+      expect(labels.get('15:second-leg-b')).toBe('Semifinal II · 2/2');
+      expect(labels.get('15:second-leg-a')).toBe('Semifinal I · 2/2');
+      const overview = buildScheduleOverview(season, [], false);
+      expect(overview.played[0].matchups.map(m => m.playoffLabel)).toEqual([
+        'Semifinal II · 2/2', 'Semifinal I · 2/2'
+      ]);
+      expect(buildWeekScoreboard(season.Weeks[1], [], labels).map(m => m.playoffLabel))
+        .toEqual(overview.played[0].matchups.map(m => m.playoffLabel));
+    });
+
+    it('does not number a single two-week fixture or invent labels for unknown pairings', () => {
+      const known = semifinal('one', 1, 2, 1);
+      const secondLeg = semifinal('two', 2, 1, 2);
+      const unknown = { ...semifinal('unknown', 0, 0, 1), Bracket: 'unclassified' };
+      const missingPair = semifinal('missing-pair', 3, 0, 1);
+      const season = model([
+        week(14, 'playoffs', 'final', [known, unknown, missingPair]),
+        week(15, 'playoffs', 'final', [secondLeg])
+      ]);
+      const labels = buildPlayoffDisplayLabels(season);
+      expect(labels.get('14:one')).toBe('Semifinal · 1/2');
+      expect(labels.get('15:two')).toBe('Semifinal · 2/2');
+      expect(labels.get('14:unknown')).toBeUndefined();
+      expect(labels.get('14:missing-pair')).toBe('Semifinal · 1/2');
+    });
+
+    it('does not conflate distinct bracket types or playoff rounds', () => {
+      const final = { ...semifinal('final', 1, 2, 1), PlayoffRound: 2, PlayoffPlacement: 1 };
+      const third = { ...semifinal('third', 3, 4, 1), Bracket: 'placement', PlayoffRound: 2, PlayoffPlacement: 3 };
+      const labels = buildPlayoffDisplayLabels(model([week(16, 'playoffs', 'final', [final, third])]));
+      expect(labels.get('16:final')).toBe('Final · 1/2');
+      expect(labels.get('16:third')).toBe('3rd place · 1/2');
     });
   });
 
