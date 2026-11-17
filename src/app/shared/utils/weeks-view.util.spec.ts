@@ -9,6 +9,7 @@ import type {
 import type { WeeklyRecapsReadModel } from '../../core/models/weekly-recap.models';
 import type { PastSeasonsIndex } from '../../core/services/data-api.service';
 import {
+  buildScheduleOverview,
   buildSeasonGrid,
   buildWeekScoreboard,
   buildWeekTabs,
@@ -151,6 +152,41 @@ describe('weeks view util', () => {
       ]));
 
       expect(tabs.map(tab => [tab.week, tab.isPlayoff])).toEqual([[1, false], [2, true]]);
+    });
+  });
+
+
+  describe('league schedule overview', () => {
+    const weeks = model([
+      week(13, 'regular-season', 'open', [matchup('future', [1, null], [2, null], 'open')]),
+      week(10, 'regular-season', 'final', [matchup('done', [1, 112], [2, 105], 'final', 1)]),
+      week(12, 'regular-season', 'unknown', [matchup('unconfirmed', [1, null], [2, null], 'unknown')]),
+      week(11, 'regular-season', 'unknown', [matchup('recovered', [1, 99], [2, 90], 'final', 1)]),
+      week(14, 'playoffs', 'open', [])
+    ]);
+
+    it('groups all upcoming known pairings by week without inventing playoff opponents', () => {
+      const schedule = buildScheduleOverview(weeks, [team(1), team(2)], true);
+      expect(schedule.upcoming.map(w => w.week)).toEqual([12, 13, 14]);
+      expect(schedule.played.map(w => w.week)).toEqual([11, 10]);
+      expect(schedule.upcoming[0].state).toBe('unknown');
+      expect(schedule.upcoming[1].matchups[0].participants.map(p => [p.teamID, p.points]))
+        .toEqual([[1, null], [2, null]]);
+      expect(schedule.upcoming[2].isPlayoff).toBeTrue();
+      expect(schedule.upcoming[2].matchups).toEqual([]);
+      expect(schedule.played[1].matchups[0].participants[0].isWinner).toBeTrue();
+    });
+
+    it('shows all archived weeks retrospectively without presenting unknown scores as final', () => {
+      const schedule = buildScheduleOverview(weeks, [team(1), team(2)], false);
+      expect(schedule.upcoming).toEqual([]);
+      expect(schedule.played.map(w => w.week)).toEqual([14, 13, 12, 11, 10]);
+      expect(schedule.played[2].matchups[0].state).toBe('unknown');
+      expect(schedule.played[2].matchups[0].participants[0].points).toBeNull();
+    });
+
+    it('handles a missing season without synthesizing fixtures', () => {
+      expect(buildScheduleOverview(null, [], true)).toEqual({ upcoming: [], played: [] });
     });
   });
 

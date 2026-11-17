@@ -47,6 +47,19 @@ export interface WeekScoreboardMatchup {
   participants: WeekScoreboardParticipant[];
 }
 
+/** One known fantasy week and its actual pairings, without inferred future opponents. */
+export interface ScheduleOverviewWeek {
+  week: number;
+  isPlayoff: boolean;
+  state: MatchupCompletionState;
+  matchups: WeekScoreboardMatchup[];
+}
+
+export interface ScheduleOverview {
+  upcoming: ScheduleOverviewWeek[];
+  played: ScheduleOverviewWeek[];
+}
+
 export type SeasonGridOutcome = 'win' | 'loss' | 'tie';
 
 export interface SeasonGridCell {
@@ -188,6 +201,31 @@ export function buildWeekScoreboard(
       isWinner: isWinner(matchup, Number(participant.TeamID))
     }))
   }));
+}
+
+/**
+ * Full-league schedule: upcoming weeks nearest first, finished weeks newest first.
+ * Historical seasons are entirely retrospective, even when some old finality evidence
+ * is unknown. We keep the underlying unknown states visible instead of inventing results.
+ */
+export function buildScheduleOverview(
+  model: MatchupsReadModel | null | undefined,
+  teams: readonly FantasyTeam[],
+  isCurrentSeason: boolean
+): ScheduleOverview {
+  const upcoming: ScheduleOverviewWeek[] = [];
+  const played: ScheduleOverviewWeek[] = [];
+
+  for (const week of [...(model?.Weeks ?? [])].sort((a, b) => a.Week - b.Week)) {
+    const row: ScheduleOverviewWeek = {
+      week: week.Week,
+      isPlayoff: week.Stage === 'playoffs',
+      state: week.CompletionState,
+      matchups: buildWeekScoreboard(week, teams)
+    };
+    (isCurrentSeason && !weekIsSettled(week) ? upcoming : played).push(row);
+  }
+  return { upcoming, played: played.reverse() };
 }
 
 /** Underdog winners of a week exactly as marked by the generator (no threshold or chance is derived here); upsets come first. */
