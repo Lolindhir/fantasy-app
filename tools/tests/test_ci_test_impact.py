@@ -92,6 +92,10 @@ class RoutingTests(unittest.TestCase):
         selected = set(self.choose("tools/league_history_app_publish.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
 
+    def test_historical_schedule_outlook_preview_selects_derived_families(self):
+        selected = set(self.choose("tools/league_schedule_outlook_preview.py")["selected"])
+        self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
+
     def test_new_schedule_outlook_model_selects_derived_fast_families(self):
         selected = set(self.choose("tools/derived_data_lib/models/schedule_outlook/v1.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
