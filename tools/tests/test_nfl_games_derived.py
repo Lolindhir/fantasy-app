@@ -26,6 +26,7 @@ from nfl_pbp_team_metric_reconcile import (
     reconcile as reconcile_pbp_team_season,
     _delta_distribution,
     _unknown_comparison_eligibility,
+    _source_yards,
 )
 
 
@@ -1543,6 +1544,55 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
         self.assertEqual(metrics["rush_attempts_faced"]["UnknownScrambleFlagCount"], 1)
         self.assertEqual(metrics["offensive_dropbacks_faced"]["Value"], 1)
 
+    def test_competitive_opportunities_exclude_spikes_and_kneels(self):
+        doc = self._metrics([
+            _pbp_row(play_id="1", pass_attempt="1", qb_dropback="1",
+                     qb_spike="0", sack="0", complete_pass="1",
+                     rush_attempt="0", passing_yards="8", epa="1.0"),
+            # A provider dropback flag must not turn a spike into a
+            # competitive opportunity or an EPA/success-rate denominator.
+            _pbp_row(play_id="2", play_type="pass", pass_attempt="1",
+                     qb_dropback="1", qb_spike="1", sack="0",
+                     complete_pass="0", epa="99"),
+            _pbp_row(play_id="3", play_type="qb_kneel", rush_attempt="1",
+                     qb_spike="0", qb_dropback="0", epa="99"),
+            _pbp_row(play_id="4", play_type="run", rush_attempt="1",
+                     qb_kneel="1", qb_spike="0", qb_dropback="0", epa="99"),
+            _pbp_row(play_id="5", play_type="run", rush_attempt="1",
+                     qb_scramble="1", qb_dropback="1", qb_spike="0",
+                     rushing_yards="8", epa="0.5"),
+            _pbp_row(play_id="6", play_type="run", rush_attempt="1",
+                     qb_scramble="0", qb_dropback="0", qb_spike="0",
+                     rushing_yards="4", epa="-0.5"),
+            _pbp_row(play_id="7", play_type="no_play", qb_spike="0", epa="99"),
+        ])
+        self.assertEqual(doc["EligibleScrimmagePlayCount"], 3)
+        self.assertEqual(doc["Excluded"]["QBSpike"], 1)
+        self.assertEqual(doc["Excluded"]["QBKneel"], 2)
+        self.assertEqual(doc["Excluded"]["NonScrimmage"], 1)
+        m = doc["ByDefenseTeam"][1]["Metrics"]
+        self.assertEqual(m["offensive_dropbacks_faced"]["Value"], 2)
+        self.assertEqual(m["pass_attempts_faced"]["Value"], 1)
+        self.assertEqual(m["rush_attempts_faced"]["Value"], 2)
+        self.assertEqual(m["rush_attempts_faced"]["ConfirmedQBScrambleCount"], 1)
+        self.assertEqual(m["dropback_epa_per_play_allowed"]["Denominator"], 2)
+        self.assertEqual(m["dropback_epa_per_play_allowed"]["Value"], 0.75)
+        self.assertEqual(m["rush_epa_per_play_allowed"]["Denominator"], 2)
+        self.assertEqual(m["rush_epa_per_play_allowed"]["Value"], 0.0)
+
+    def test_unknown_spike_on_dropback_remains_unknown(self):
+        doc = self._metrics([_pbp_row(
+            play_id="1", qb_dropback="1", pass_attempt="1", qb_spike="",
+            sack="0", epa="1.0",
+        )])
+        self.assertEqual(doc["Excluded"]["UnknownQBSpike"], 1)
+        m = doc["ByDefenseTeam"][1]["Metrics"]
+        self.assertIsNone(m["offensive_dropbacks_faced"]["Value"])
+        self.assertEqual(m["offensive_dropbacks_faced"]["UnknownFlagCount"], 1)
+        self.assertIsNone(m["pass_attempts_faced"]["Value"])
+        self.assertEqual(m["pass_attempts_faced"]["UnknownFlagCount"], 1)
+        self.assertIsNone(m["dropback_epa_per_play_allowed"]["Value"])
+
     def test_missing_flags_remain_unknown_not_zero_or_false(self):
         doc = self._metrics([_pbp_row(
             play_id="1", pass_attempt="1", sack="", qb_spike="0",
@@ -1589,6 +1639,33 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
         self.assertEqual(value["AbsoluteP50"], 1)
         self.assertEqual(value["AbsoluteP90"], 7)
         self.assertEqual(value["AbsoluteP99"], 7)
+
+    def test_diagnostic_passing_yards_known_incompletion_vs_unknown_outcome(self):
+        def row(**kwargs):
+            return {"posteam": "ARI", "two_point_attempt": "0",
+                    "pass_attempt": "1", "sack": "0", "qb_spike": "0",
+                    **kwargs}
+
+        result = _source_yards([
+            row(complete_pass="0", passing_yards=""),
+            row(complete_pass="0", passing_yards="0"),
+            row(complete_pass="1", passing_yards="25"),
+            row(complete_pass="1", passing_yards=""),
+            row(complete_pass="", passing_yards="0"),
+            row(complete_pass="0", passing_yards="3"),
+            row(complete_pass="0", passing_yards="", qb_spike="1"),
+            row(complete_pass="0", passing_yards="", two_point_attempt="1"),
+            {**row(complete_pass="0", passing_yards=""), "posteam": "NO"},
+        ], "ARI")["passing_yards"]
+        self.assertEqual(result, {"Observed": 3, "Missing": 3, "Value": 25})
+        self.assertEqual(
+            _source_yards([row(complete_pass="0", passing_yards="")], "ARI")
+            ["passing_yards"], {"Observed": 1, "Missing": 0, "Value": 0},
+        )
+        self.assertEqual(
+            _source_yards([row(complete_pass="1", passing_yards="")], "ARI")
+            ["passing_yards"], {"Observed": 0, "Missing": 1, "Value": None},
+        )
 
     def test_unknown_source_eligibility_is_metric_specific(self):
         base = {"posteam": "ARI", "two_point_attempt": "0",
@@ -1670,7 +1747,7 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
                 rushing_yards="10", yards_gained="10", first_down="1"),
             row(3, "NO", "ARI", "pass", epa="-0.5", success="0",
                 pass_attempt="1", qb_dropback="1", complete_pass="0",
-                passing_yards="0", yards_gained="0"),
+                passing_yards="", yards_gained="0"),
         ]
         fields = sorted(set(_PBP_CSV_FIELDS) | {
             "sack", "qb_spike", "rush_attempt", "qb_scramble", "first_down",
