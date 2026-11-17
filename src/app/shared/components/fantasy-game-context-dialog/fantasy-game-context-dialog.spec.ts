@@ -8,7 +8,8 @@ import {
   resolveMatchupDisplayTeamIDs,
   starterProjectedPoints,
   starterProjectedRange,
-  teamProjectedFinalScore
+  teamProjectedFinalScore,
+  teamDisplayedProjectedScore
 } from './fantasy-game-context-dialog';
 
 describe('FantasyGameContext matchup display orientation', () => {
@@ -129,6 +130,25 @@ describe('FantasyGameContext matchup display orientation', () => {
     expect(teamProjectedFinalScore(projected, 10)).toBeNull();
     expect(teamProjectedFinalScore(projected, 99)).toBeNull();
     expect(teamProjectedFinalScore(matchup, 2)).toBeNull();
+
+    // Additive display fallback is selected only by the published generator.
+    const fallback = {
+      ...projected,
+      Projection: {
+        ...projected.Projection,
+        Teams: [
+          team(2, 95.5),
+          { ...team(10, null), BestBallEfficiencyFallback: {
+            Points: 187, Method: 'season-bestball-actual-efficiency-v1',
+            SourceThroughWeek: 10, ProjectedBestBallPoints: 220, ManagerEfficiencyPercent: 85
+          }, DisplayProjectedScore: 187, DisplayProjectionMethod: 'season-bestball-actual-efficiency-v1' }
+        ]
+      }
+    } satisfies FantasyGameContextMatchup;
+    expect(teamProjectedFinalScore(fallback, 10)).toBeNull();
+    expect(teamDisplayedProjectedScore(fallback, 10)).toBe(187);
+    expect(teamDisplayedProjectedScore(fallback, 2)).toBe(95.5);
+    expect(teamDisplayedProjectedScore(projected, 10)).toBeNull();
   });
 
   it('exposes the starter range of the display level only', () => {
