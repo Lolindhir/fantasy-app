@@ -367,8 +367,8 @@ def _v2_pilot_metric(
     observed = candidate["Observed"]
     missing = candidate["Missing"]
     status = (
-        "no-observed-source-evidence" if not observed
-        else "partial-unknown-eligibility" if unknown
+        "partial-unknown-eligibility" if unknown
+        else "no-observed-source-evidence" if not observed
         else "partial-missing-outcome" if missing
         else "candidate-observed"
     )
