@@ -313,6 +313,22 @@ futureGameDetailDirection:
         Revert new detail generator invocation and new scoped write allowance,
         preserve existing season index and historical detail files pending
         reviewed cleanup; do not delete authoritative Source.
+  pbpOpportunitySemantics:
+    decision: competitive-opportunities-not-official-attempts
+    decidedAt: 2026-11-17
+    canonicalDefinition: .ai-context/manual/nfl-games-pbp-metrics.yaml::competitiveOpportunitiesDecision
+    consumerContract: >-
+      GameDetail PBP metrics represent meaningful competitive scrimmage
+      opportunities with explicit per-metric eligibility and denominators,
+      not NFL official attempts/carries. Clock-management spikes/kneeldowns
+      are excluded; sacks and scrambles are treated according to the
+      pass-throw/dropback/rush metric definitions. PlayerStats attempts and
+      carries are diagnostic baselines only, not a parity gate.
+    activationBoundary: >-
+      This documents the approved metric semantics but does not itself
+      publish PBP-derived GameDetail v2, expand a writer scope, change
+      an existing index contract or certify upstream play completeness.
+      The future v2 pilot must test all relevant special-play exclusions.
   pbpDerivedMetricCatalog:
     path: .ai-context/manual/nfl-games-pbp-metrics.yaml
     catalogVersion: 1
