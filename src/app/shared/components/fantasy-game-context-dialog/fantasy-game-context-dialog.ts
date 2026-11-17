@@ -201,6 +201,7 @@ export interface WinChanceView {
   leftRaw?: number | null;
   rightRaw?: number | null;
   deterministic?: boolean;
+  estimated?: boolean;
   live: boolean;
   /** Short name of the team that won as an upset (pregame chance below 35 percent); null otherwise. */
   upsetTeam: string | null;
@@ -526,16 +527,24 @@ export class FantasyGameContextDialogComponent {
     if (matchup.CounterfactualState === 'unavailable-not-final') {
       const left = matchupProjectionTeam(matchup, leftID);
       const right = matchupProjectionTeam(matchup, rightID);
-      if (left?.WinProbability == null || right?.WinProbability == null) return null;
+      const leftChance = left?.DisplayWinProbability ?? left?.WinProbability;
+      const rightChance = right?.DisplayWinProbability ?? right?.WinProbability;
+      if (leftChance == null || rightChance == null || !left || !right) return null;
+      const estimated = left.DisplayWinProbabilityBasis === 'season-bestball-efficiency-estimate'
+        || right.DisplayWinProbabilityBasis === 'season-bestball-efficiency-estimate';
       return {
-        left: left.WinProbability,
-        right: right.WinProbability,
-        leftRaw: left.WinProbabilityRaw ?? null,
-        rightRaw: right.WinProbabilityRaw ?? null,
-        deterministic: left.WinProbabilityIsDeterministic === true && right.WinProbabilityIsDeterministic === true,
+        left: leftChance,
+        right: rightChance,
+        leftRaw: left.DisplayWinProbabilityRaw ?? left.WinProbabilityRaw ?? null,
+        rightRaw: right.DisplayWinProbabilityRaw ?? right.WinProbabilityRaw ?? null,
+        deterministic: (left.DisplayWinProbabilityIsDeterministic ?? left.WinProbabilityIsDeterministic) === true
+          && (right.DisplayWinProbabilityIsDeterministic ?? right.WinProbabilityIsDeterministic) === true,
         live: left.FinalStarterCount > 0 || right.FinalStarterCount > 0,
+        estimated,
         upsetTeam: null,
-        caption: 'Chance to win this matchup, based on the projected scores. It is adjusted after every finished NFL game.'
+        caption: estimated
+          ? 'Estimated win chance: season-to-date Best Ball × manager efficiency, with uncertainty estimated from past weekly scores. Not a calibrated weekly forecast.'
+          : 'Chance to win this matchup, based on the projected scores. It is adjusted after every finished NFL game.'
       };
     }
     const pregame = this.data.pregameWinProbabilities?.find(item => item.FantasyMatchupID === matchup.FantasyMatchupID);
