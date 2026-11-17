@@ -179,7 +179,9 @@ class GlobalNflGamesTests(unittest.TestCase):
 
 
 from derived_data_lib.nfl_game_detail import build_nfl_game_detail
-from derived_data_lib.nfl_game_detail_core import build_nfl_game_detail_core
+from derived_data_lib.nfl_game_detail_core import (
+    build_nfl_game_detail_core, build_nfl_game_detail_v2_pilot,
+)
 from nfl_game_detail_preview import preview
 
 
@@ -1620,6 +1622,214 @@ class NflPbpTeamMetricCandidateTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self._metrics([row])
 
+
+
+
+class NflGameDetailV2ReadOnlyPilotTests(unittest.TestCase):
+    """GameDetail-v2 is a pure, 2025-scoped pilot; never a Derived writer."""
+
+    @staticmethod
+    def plays():
+        shared = dict(posteam="HOU", defteam="JAX", two_point_attempt="0")
+        return [
+            _pbp_row(play_id="1", **shared, play_type="pass",
+                     pass_attempt="1", rush_attempt="0", qb_dropback="1",
+                     qb_spike="0", sack="0", complete_pass="1",
+                     passing_yards="25", epa="1.5", success="1"),
+            _pbp_row(play_id="2", **shared, play_type="pass",
+                     pass_attempt="1", rush_attempt="0", qb_dropback="1",
+                     qb_spike="0", sack="0", complete_pass="0",
+                     passing_yards="", epa="-0.5", success="0"),
+            _pbp_row(play_id="3", **shared, play_type="pass",
+                     pass_attempt="1", rush_attempt="0", qb_dropback="1",
+                     qb_spike="0", sack="1", complete_pass="0",
+                     passing_yards="", epa="-1", success="0"),
+            _pbp_row(play_id="4", **shared, play_type="run",
+                     pass_attempt="0", rush_attempt="1", qb_dropback="1",
+                     qb_scramble="1", qb_spike="0", sack="0",
+                     rushing_yards="11", epa="0.5", success="1"),
+            _pbp_row(play_id="5", **shared, play_type="run",
+                     pass_attempt="0", rush_attempt="1", qb_dropback="0",
+                     qb_scramble="0", qb_spike="0", sack="0",
+                     rushing_yards="2", epa="-0.1", success="0"),
+            _pbp_row(play_id="6", **shared, play_type="pass",
+                     pass_attempt="1", rush_attempt="0", qb_dropback="1",
+                     qb_spike="1", sack="0", complete_pass="0",
+                     epa="22", success="1"),
+            _pbp_row(play_id="7", **shared, play_type="run",
+                     pass_attempt="0", rush_attempt="1", qb_dropback="0",
+                     qb_kneel="1", qb_spike="0", epa="22", success="1"),
+            _pbp_row(play_id="8", **shared, play_type="no_play",
+                     pass_attempt="0", rush_attempt="0", qb_spike="0",
+                     epa="22", success="1"),
+        ]
+
+    def test_ten_competitive_metrics_are_compact_mirrored_and_reuse_core_v1(self):
+        index = build_nfl_games(*inputs())
+        stats, snaps = _week_stats(), _week_snaps()
+        core = build_nfl_game_detail_core(index, "2026_06_HOU_JAX", stats, snaps)
+        rows = self.plays()
+        doc = build_nfl_game_detail_v2_pilot(
+            index, "2026_06_HOU_JAX", stats, snaps,
+            pbp_rows=rows, pbp_asset_sha256="a" * 64,
+        )
+        self.assertEqual((doc["SchemaVersion"], doc["DetailDefinitionVersion"]), (2, 2))
+        for key in ("Game", "TeamStats", "SnapCounts"):
+            self.assertEqual(doc[key], core[key])
+        pbp = doc["PlayByPlayMetrics"]
+        self.assertEqual(pbp["Population"], "competitive-opportunities-not-official-attempts")
+        self.assertEqual(pbp["GameSourceRowsObserved"], 8)
+        self.assertEqual(pbp["CompetitiveScrimmageRowsObserved"], 5)
+        self.assertEqual(pbp["ExcludedGamePlayRows"]["QBSpike"], 1)
+        self.assertEqual(pbp["ExcludedGamePlayRows"]["QBKneel"], 1)
+        self.assertEqual(pbp["ExcludedGamePlayRows"]["NonScrimmage"], 1)
+        self.assertFalse(pbp["GameSourceCompletenessCertified"])
+        self.assertFalse(doc["Coverage"]["FullPlayByPlayAvailable"])
+        self.assertEqual(len(pbp["OffensePerspectives"]), 2)
+        hou, jax = pbp["OffensePerspectives"]
+        self.assertEqual((hou["OffenseTeam"], hou["DefenseTeam"]), ("HOU", "JAX"))
+        self.assertEqual((jax["OffenseTeam"], jax["DefenseTeam"]), ("JAX", "HOU"))
+        self.assertEqual(sum(map(len, (hou["Opportunities"], hou["Efficiency"],
+                                       hou["Success"], hou["ExplosivePlays"]))), 10)
+        self.assertEqual(hou["Opportunities"]["offensive_dropbacks_faced"]["Value"], 4)
+        self.assertEqual(hou["Opportunities"]["pass_attempts_faced"]["Value"], 2)
+        self.assertEqual(hou["Opportunities"]["rush_attempts_faced"]["Value"], 2)
+        self.assertEqual(hou["Efficiency"]["dropback_epa_per_play_allowed"]["Value"], 0.125)
+        self.assertEqual(hou["Efficiency"]["dropback_epa_per_play_allowed"]["Numerator"], 0.5)
+        self.assertEqual(hou["Efficiency"]["dropback_epa_per_play_allowed"]["Denominator"], 4)
+        self.assertEqual(hou["Success"]["dropback_success_rate_allowed"]["Value"], 0.5)
+        self.assertEqual(hou["ExplosivePlays"]["pass_explosive_20_rate_allowed"]["Numerator"], 1.0)
+        self.assertEqual(hou["ExplosivePlays"]["pass_explosive_20_rate_allowed"]["Denominator"], 2)
+        self.assertEqual(hou["ExplosivePlays"]["rush_explosive_10_rate_allowed"]["Value"], 0.5)
+        self.assertIsNone(jax["Opportunities"]["pass_attempts_faced"]["Value"])
+        self.assertEqual(jax["Opportunities"]["pass_attempts_faced"]["Status"],
+                         "no-observed-source-evidence")
+        text = json.dumps(doc)
+        self.assertNotIn('"SourceRow"', text)
+        self.assertNotIn('"Plays"', text)
+        self.assertNotIn('"CanonicalPlayerID"', text)
+        self.assertEqual(len(doc["Derivation"]["InputFingerprintSHA256"]), 64)
+        self.assertEqual(doc["Derivation"]["CoreV1InputFingerprintSHA256"],
+                         core["Derivation"]["InputFingerprintSHA256"])
+
+        reversed_rows = list(reversed(rows))
+        same = build_nfl_game_detail_v2_pilot(
+            index, "2026_06_HOU_JAX", stats, snaps,
+            pbp_rows=reversed_rows, pbp_asset_sha256="a" * 64,
+        )
+        self.assertEqual(doc, same)
+        irrelevant = copy.deepcopy(rows)
+        irrelevant[0]["future_provider_field"] = "changed-but-unused"
+        unchanged = build_nfl_game_detail_v2_pilot(
+            index, "2026_06_HOU_JAX", stats, snaps,
+            pbp_rows=irrelevant, pbp_asset_sha256="a" * 64,
+        )
+        self.assertEqual(unchanged, doc)
+        changed = copy.deepcopy(rows)
+        changed[0]["epa"] = "1.6"
+        updated = build_nfl_game_detail_v2_pilot(
+            index, "2026_06_HOU_JAX", stats, snaps,
+            pbp_rows=changed, pbp_asset_sha256="a" * 64,
+        )
+        self.assertNotEqual(updated["Derivation"]["InputFingerprintSHA256"],
+                            doc["Derivation"]["InputFingerprintSHA256"])
+
+    def test_absent_unknown_and_missing_do_not_become_zero(self):
+        index = build_nfl_games(*inputs())
+        empty = build_nfl_game_detail_v2_pilot(index, "2026_06_HOU_JAX")
+        self.assertEqual(empty["SchemaVersion"], 2)
+        self.assertEqual(empty["PlayByPlayMetrics"]["Status"], "unavailable")
+        self.assertIsNone(
+            empty["PlayByPlayMetrics"]["OffensePerspectives"][0]
+            ["Opportunities"]["pass_attempts_faced"]["Value"],
+        )
+        self.assertIsNone(empty["PlayByPlayMetrics"]["GameSourceRowsObserved"])
+        with self.assertRaisesRegex(ValueError, "without original PBP rows"):
+            build_nfl_game_detail_v2_pilot(
+                index, "2026_06_HOU_JAX", pbp_asset_sha256="a" * 64,
+            )
+        for row, expected in [
+            (dict(sack="", pass_attempt="1", qb_spike="0",
+                  qb_dropback="1"), "unknown-eligibility"),
+            (dict(sack="0", pass_attempt="1", qb_spike="0",
+                  qb_dropback="1", epa="", success="",
+                  complete_pass="0", passing_yards=""),
+             "candidate-observed"),
+        ]:
+            play = _pbp_row(play_id="1", rush_attempt="0", **row)
+            d = build_nfl_game_detail_v2_pilot(
+                index, "2026_06_HOU_JAX",
+                pbp_rows=[play], pbp_asset_sha256="b" * 64,
+            )
+            offense = d["PlayByPlayMetrics"]["OffensePerspectives"][0]
+            self.assertEqual(offense["Opportunities"]["pass_attempts_faced"]["Status"],
+                             expected)
+            if expected == "unknown-eligibility":
+                self.assertIsNone(offense["Opportunities"]["pass_attempts_faced"]["Value"])
+                self.assertEqual(
+                    offense["Opportunities"]["pass_attempts_faced"]["UnknownEligibilityFlagRows"], 1,
+                )
+            else:
+                self.assertEqual(offense["Opportunities"]["pass_attempts_faced"]["Value"], 1)
+                ep = offense["Efficiency"]["pass_epa_per_attempt_allowed"]
+                self.assertIsNone(ep["Value"])
+                self.assertEqual((ep["Eligible"], ep["Observed"], ep["Missing"]), (1, 0, 1))
+                explosive = offense["ExplosivePlays"]["pass_explosive_20_rate_allowed"]
+                self.assertEqual((explosive["Value"], explosive["Numerator"],
+                                  explosive["Denominator"]), (0.0, 0.0, 1))
+
+    def test_2025_cli_requires_accepted_original_digest_and_is_read_only(self):
+        game_id = "2025_01_ARI_NO"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            index = root / DATA_DERIVED_ROOT / "nfl-games/2025.json"
+            index.parent.mkdir(parents=True)
+            index.write_text(json.dumps({
+                "SchemaVersion": 1, "Season": 2025,
+                "Games": [{
+                    "GameID": game_id, "GameType": "REG", "Week": 1,
+                    "AwayTeam": "ARI", "HomeTeam": "NO", "Final": True,
+                }],
+            }), encoding="utf-8")
+            source = root / "play_by_play_2025.csv.gz"
+            row = _pbp_row(
+                game_id=game_id, season="2025", week="1",
+                home_team="NO", away_team="ARI", posteam="ARI", defteam="NO",
+                play_id="1", pass_attempt="1", rush_attempt="0",
+                sack="0", qb_spike="0", qb_dropback="1",
+                complete_pass="1", passing_yards="8",
+            )
+            fields = sorted(set(_PBP_CSV_FIELDS) | set(row))
+            _write_original_pbp_gzip(source, [row], fields=fields)
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()
+            manifest = root / DATA_SOURCE_ROOT / (
+                "providers/nflverse/play-by-play-original/metadata-2025.json"
+            )
+            manifest.parent.mkdir(parents=True)
+            manifest.write_text(json.dumps({
+                "Status": "accepted-original-byte-identity", "Season": 2025,
+                "SourceCompletenessCertified": False,
+                "UpstreamSHA256": digest, "CompressedBytes": source.stat().st_size,
+            }), encoding="utf-8")
+            before = {p.relative_to(root): p.read_bytes()
+                      for p in root.rglob("*") if p.is_file()}
+            result = preview(root, 2025, game_id, source, digest, v2_pilot=True)
+            self.assertEqual(result["SchemaVersion"], 2)
+            self.assertEqual(result["PlayByPlayMetrics"]["OriginalAssetSHA256"], digest)
+            self.assertEqual(result["Coverage"]["OriginalPBPSourceReadAudit"]
+                             ["GzipStreamReadToEOF"], True)
+            self.assertNotIn('"SourceRow"', json.dumps(result))
+            self.assertEqual(
+                before, {p.relative_to(root): p.read_bytes()
+                         for p in root.rglob("*") if p.is_file()},
+            )
+            with self.assertRaisesRegex(ValueError, "mismatch"):
+                preview(root, 2025, game_id, source, "f" * 64, v2_pilot=True)
+            with self.assertRaisesRegex(ValueError, "requires 2025"):
+                preview(root, 2025, game_id, None, None, v2_pilot=True)
+            with self.assertRaisesRegex(ValueError, "mutually exclusive"):
+                preview(root, 2025, game_id, source, digest,
+                        core_v1=True, v2_pilot=True)
 
 
 class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
