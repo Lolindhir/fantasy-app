@@ -311,18 +311,25 @@ export class LeagueMatchupsComponent {
   matchupProjection(
     matchup: LeagueMatchupView,
     context: FantasyGameContextReadModel | null
-  ): { left: string; right: string } | null {
+  ): { left: string; right: string; leftFallback: boolean; rightFallback: boolean } | null {
     if (matchup.completionState === 'final') return null;
     const teams = this.matchupContext(matchup, context)?.Projection?.Teams;
     if (!teams) return null;
 
-    const scoreOf = (teamID: string | number): number | null =>
-      teams.find(team => String(team.FantasyTeamID) === String(teamID))?.ProjectedFinalScore ?? null;
-    const left = scoreOf(matchup.left.team.TeamID);
-    const right = scoreOf(matchup.right.team.TeamID);
+    const teamOf = (teamID: string | number) =>
+      teams.find(team => String(team.FantasyTeamID) === String(teamID));
+    const leftTeam = teamOf(matchup.left.team.TeamID);
+    const rightTeam = teamOf(matchup.right.team.TeamID);
+    const left = leftTeam?.DisplayProjectedScore ?? leftTeam?.ProjectedFinalScore ?? null;
+    const right = rightTeam?.DisplayProjectedScore ?? rightTeam?.ProjectedFinalScore ?? null;
     if (left === null && right === null) return null;
 
-    return { left: formatProjectionPoints(left), right: formatProjectionPoints(right) };
+    const usesFallback = (team: typeof leftTeam) =>
+      team?.DisplayProjectionMethod === 'season-bestball-actual-efficiency-v1';
+    return {
+      left: formatProjectionPoints(left), right: formatProjectionPoints(right),
+      leftFallback: usesFallback(leftTeam), rightFallback: usesFallback(rightTeam)
+    };
   }
 
   /** Generated chance of an open matchup; raw fractions avoid mistaken 0/100 from rounded values. */

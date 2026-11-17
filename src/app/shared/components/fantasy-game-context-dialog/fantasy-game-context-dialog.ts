@@ -103,6 +103,14 @@ export function teamProjectedFinalScore(
   return matchupProjectionTeam(matchup, teamID)?.ProjectedFinalScore ?? null;
 }
 
+export function teamDisplayedProjectedScore(
+  matchup: FantasyGameContextMatchup,
+  teamID: string | number
+): number | null {
+  const team = matchupProjectionTeam(matchup, teamID);
+  return team?.DisplayProjectedScore ?? team?.ProjectedFinalScore ?? null;
+}
+
 export type MatchupDisplaySide = 'left' | 'right';
 export type MatchupDisplayTeamIDs = [string | number, string | number];
 
@@ -498,12 +506,17 @@ export class FantasyGameContextDialogComponent {
       .map(player => this.toPlayerDisplay(player, null));
   }
 
-  matchupProjection(matchup: FantasyGameContextMatchup): { left: string; right: string } | null {
+  matchupProjection(matchup: FantasyGameContextMatchup): { left: string; right: string; usesFallback: boolean } | null {
     if (matchup.CounterfactualState !== 'unavailable-not-final') return null;
-    const left = teamProjectedFinalScore(matchup, this.matchupTeamID(matchup, 'left'));
-    const right = teamProjectedFinalScore(matchup, this.matchupTeamID(matchup, 'right'));
+    const leftID = this.matchupTeamID(matchup, 'left');
+    const rightID = this.matchupTeamID(matchup, 'right');
+    const left = teamDisplayedProjectedScore(matchup, leftID);
+    const right = teamDisplayedProjectedScore(matchup, rightID);
     if (left === null && right === null) return null;
-    return { left: formatProjectionPoints(left), right: formatProjectionPoints(right) };
+    const usesFallback = [leftID, rightID].some(id =>
+      matchupProjectionTeam(matchup, id)?.DisplayProjectionMethod === 'season-bestball-actual-efficiency-v1'
+    );
+    return { left: formatProjectionPoints(left), right: formatProjectionPoints(right), usesFallback };
   }
 
   /** Win chance of the matchup as delivered: live for an open week, the pregame value (with the upset mark) for a final one. */
