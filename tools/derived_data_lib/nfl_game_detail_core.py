@@ -14,6 +14,7 @@ import math
 from typing import Any, Mapping
 
 from .nfl_game_detail import (
+    build_nfl_game_detail,
     _PLAYER_COUNT_FIELDS,
     _SNAP_FIELDS,
     _SNAPS_SOURCE,
@@ -295,3 +296,228 @@ def build_nfl_game_detail_core(
     if invalid_share_rows:
         result["SnapCounts"]["InvalidShareRows"] = invalid_share_rows
     return result
+
+
+# Contract pilot: one compact GameID detail using the existing NFL Games owner.
+# The original PBP reader is called only in memory; its raw SourceRows are
+# deliberately NOT emitted in the v2 data product.
+_V2_PBP_GROUPS = {
+    "Opportunities": (
+        "offensive_dropbacks_faced", "pass_attempts_faced", "rush_attempts_faced",
+    ),
+    "Efficiency": (
+        "dropback_epa_per_play_allowed", "pass_epa_per_attempt_allowed",
+        "rush_epa_per_play_allowed",
+    ),
+    "Success": (
+        "dropback_success_rate_allowed", "rush_success_rate_allowed",
+    ),
+    "ExplosivePlays": (
+        "pass_explosive_20_rate_allowed", "rush_explosive_10_rate_allowed",
+    ),
+}
+_V2_PBP_COUNT_IDS = frozenset(_V2_PBP_GROUPS["Opportunities"])
+_V2_PBP_DEFINITION_VERSION = 1
+_V2_PBP_SOURCE_FIELDS = (
+    "play_type", "posteam", "defteam", "two_point_attempt",
+    "qb_kneel", "qb_spike", "qb_dropback", "qb_scramble",
+    "pass_attempt", "rush_attempt", "sack", "epa", "success",
+    "complete_pass", "passing_yards", "rushing_yards",
+)
+
+
+def _v2_pilot_metric(
+    candidate: Mapping[str, Any] | None,
+    metric_id: str,
+    opportunity: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Adapt existing research metrics without inventing official parity."""
+    is_count = metric_id in _V2_PBP_COUNT_IDS
+    if candidate is None:
+        return {
+            "Status": "unavailable",
+            "Unit": "count" if is_count else ("epa-per-play" if "_epa_" in metric_id else "rate"),
+            "Value": None,
+            "Numerator": None, "Denominator": None,
+            "Eligible": None, "Observed": None, "Missing": None,
+            "UnknownEligibilityFlagRows": None,
+        }
+    if is_count:
+        unknown = candidate["UnknownFlagCount"]
+        known_positive = candidate["Value"]
+        # A confirmed subset cannot masquerade as the complete count when
+        # an unknown flag could add opportunities.
+        known_count = candidate["KnownPlayCount"]
+        value = known_positive if unknown == 0 else None
+        return {
+            "Status": ("unknown-eligibility" if unknown
+                       else "candidate-observed" if value is not None
+                       else "no-observed-source-evidence"),
+            "Unit": "count",
+            "Value": value, "Numerator": value, "Denominator": None,
+            "Eligible": known_count + unknown,
+            "Observed": known_count, "Missing": unknown,
+            "UnknownEligibilityFlagRows": unknown,
+            "ConfirmedPositiveCount": known_positive,
+            "DenominatorNotApplicable": True,
+        }
+    unknown = (
+        opportunity["UnknownFlagCount"] if opportunity is not None else 0
+    )
+    observed = candidate["Observed"]
+    missing = candidate["Missing"]
+    status = (
+        "no-observed-source-evidence" if not observed
+        else "partial-unknown-eligibility" if unknown
+        else "partial-missing-outcome" if missing
+        else "candidate-observed"
+    )
+    return {
+        "Status": status,
+        "Unit": "epa-per-play" if "_epa_" in metric_id else "rate",
+        "Value": candidate["Value"],
+        # Preserve the unrounded sufficient statistic for ratio-of-sums rollups.
+        "Numerator": candidate["UnroundedNumerator"],
+        "Denominator": candidate["Denominator"],
+        "Eligible": candidate["Eligible"],
+        "Observed": observed,
+        "Missing": missing,
+        "UnknownEligibilityFlagRows": unknown,
+        "SufficientStatisticsUnrounded": True,
+    }
+
+
+def build_nfl_game_detail_v2_pilot(
+    index: Mapping[str, Any], game_id: str,
+    player_stats: Mapping[str, Any] | None = None,
+    snap_counts: Mapping[str, Any] | None = None,
+    *,
+    pbp_rows: list[Mapping[str, str]] | None = None,
+    pbp_asset_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Read-only versioned candidate, never a PBP publisher.
+
+    The complete Game, TeamStats and SnapCounts groups are inherited unchanged
+    from the approved core v1 builder. PBP contains ten neutral team-game
+    competitive-opportunity facts, not original plays or fantasy judgements.
+    """
+    core = build_nfl_game_detail_core(index, game_id, player_stats, snap_counts)
+    game = core["Game"]
+    if pbp_rows is None:
+        if pbp_asset_sha256 is not None:
+            raise ValueError("PBP SHA supplied without original PBP rows")
+        source_rows: list[Mapping[str, Any]] = []
+        candidates = None
+    else:
+        if (
+            not isinstance(pbp_asset_sha256, str)
+            or len(pbp_asset_sha256) != 64
+            or any(c not in "0123456789abcdef" for c in pbp_asset_sha256)
+        ):
+            raise ValueError("v2 pilot needs a lowercase original-PBP SHA256")
+        preview = build_nfl_game_detail(
+            index, game_id, pbp_rows=pbp_rows,
+            pbp_asset_sha256=pbp_asset_sha256,
+        )
+        original = preview["PlayByPlay"]["OriginalPlays"]
+        source_rows = original["Plays"]
+        candidates = original["Analytics"]["CatalogTeamMetricCandidates"]
+        required = {m for group in _V2_PBP_GROUPS.values() for m in group}
+        if not required.issubset(candidates["CandidateIDs"]):
+            raise ValueError("PBP metric candidate catalog missing v2-pilot metric")
+
+    perspective_by_defense = (
+        {row["Team"]: row["Metrics"] for row in candidates["ByDefenseTeam"]}
+        if candidates is not None else {}
+    )
+    if candidates is not None and (
+        set(perspective_by_defense) != {game["AwayTeam"], game["HomeTeam"]}
+    ):
+        raise ValueError("PBP candidate defense-team perspectives incomplete")
+
+    observations = []
+    for offense in (game["AwayTeam"], game["HomeTeam"]):
+        defense = (
+            game["HomeTeam"] if offense == game["AwayTeam"]
+            else game["AwayTeam"]
+        )
+        metrics = perspective_by_defense.get(defense)
+        if candidates is not None and metrics is None:
+            raise ValueError("PBP missing opposing defense")
+        groups = {}
+        for group, metric_ids in _V2_PBP_GROUPS.items():
+            values = {}
+            for metric_id in metric_ids:
+                count_id = (
+                    "offensive_dropbacks_faced" if "dropback_" in metric_id
+                    else "pass_attempts_faced" if "pass_" in metric_id
+                    else "rush_attempts_faced"
+                )
+                if metrics is not None and metric_id not in metrics:
+                    raise ValueError("PBP missing metric " + metric_id)
+                values[metric_id] = _v2_pilot_metric(
+                    metrics[metric_id] if metrics is not None else None,
+                    metric_id,
+                    metrics[count_id] if metrics is not None else None,
+                )
+            groups[group] = values
+        observations.append({
+            "OffenseTeam": offense, "DefenseTeam": defense,
+            "Perspective": "offense-plays-also-defense-allowed",
+            **groups,
+        })
+
+    # A GameID-specific fingerprint: preserve full source asset SHA separately
+    # for lineage, and canonicalize only this game's formula-consumed PBP fields.
+    selected = sorted(
+        ({
+            "PlayID": p["PlayID"],
+            "Fields": {name: p["SourceRow"].get(name) for name in _V2_PBP_SOURCE_FIELDS},
+        } for p in source_rows),
+        key=lambda row: row["PlayID"],
+    )
+    fingerprint_input = {
+        "SchemaVersion": 2,
+        "PBPDefinitionVersion": _V2_PBP_DEFINITION_VERSION,
+        "CoreV1FingerprintSHA256": core["Derivation"]["InputFingerprintSHA256"],
+        "PBPSourceAssetSHA256": pbp_asset_sha256,
+        "SelectedPBP": selected if candidates is not None else None,
+    }
+    fingerprint = hashlib.sha256(
+        json.dumps(fingerprint_input, sort_keys=True, ensure_ascii=False,
+                   separators=(",", ":"), allow_nan=False).encode("utf-8")
+    ).hexdigest()
+
+    core["SchemaVersion"] = 2
+    core["DetailDefinitionVersion"] = 2
+    core["PlayByPlayMetrics"] = {
+        "Status": ("read-only-pilot-observed-unverified-completeness"
+                   if candidates is not None else "unavailable"),
+        "SourceDataset": "nflverse.play-by-play",
+        "OriginalAssetSHA256": pbp_asset_sha256,
+        "Population": "competitive-opportunities-not-official-attempts",
+        "MetricCatalogVersion": 1,
+        "MetricDefinitionVersion": _V2_PBP_DEFINITION_VERSION,
+        "GameSourceRowsObserved": len(source_rows) if candidates is not None else None,
+        "CompetitiveScrimmageRowsObserved": (
+            candidates["EligibleScrimmagePlayCount"] if candidates is not None else None
+        ),
+        "ExcludedGamePlayRows": candidates["Excluded"] if candidates is not None else None,
+        "GameSourceCompletenessCertified": False,
+        "OffensePerspectives": observations,
+        "UnverifiedPenaltySemantics": True,
+        "RatesAreObservedNumeratorOverObservedDenominator": True,
+    }
+    core["Coverage"]["PlayByPlay"] = (
+        "source-rows-observed-upstream-completeness-unverified"
+        if candidates is not None else "unavailable"
+    )
+    core["Coverage"]["PlayByPlayMetrics"] = core["PlayByPlayMetrics"]["Status"]
+    core["Coverage"]["FullPlayByPlayAvailable"] = False
+    core["Derivation"]["DefinitionVersion"] = 2
+    core["Derivation"]["CoreV1InputFingerprintSHA256"] = (
+        core["Derivation"]["InputFingerprintSHA256"]
+    )
+    core["Derivation"]["InputFingerprintSHA256"] = fingerprint
+    core["Derivation"]["PBPMetricDefinitionVersion"] = _V2_PBP_DEFINITION_VERSION
+    return core
