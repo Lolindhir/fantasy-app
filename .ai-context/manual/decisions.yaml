@@ -2080,6 +2080,43 @@ decisions:
         authorized implementation steps. Do not add a new scheduler or writer
         by implication. Related shared-platform guardrails remain with #1263.
 
+    competitiveOpportunityDecision20261117:
+      status: accepted
+      name: competitive-opportunities-not-official-attempts
+      context: >-
+        The 2025 original-PBP research in Issue #1077 observed systematic
+        PBP-minus-PlayerStats differences (-82 pass attempts and -452 carries
+        in 570 team-game comparisons). NFL box-score attempts can include
+        clock-management plays, whereas defensive analysis measures competitive
+        opportunities. Exact causes of every delta remain unproven row by row.
+      decision: >-
+        Build NFL Games PBP-based opportunity and efficiency metrics on
+        Competitive Opportunities rather than Official Attempts. Per-metric
+        eligible populations remain separate: throws exclude sacks/spikes;
+        dropbacks include eligible sacks/scrambles but exclude spikes; eligible
+        rushes may include QB scrambles but exclude QB kneels. Exclude other
+        non-competitive and two-point rows per the canonical catalog.
+        PlayerStats attempts/carries are diagnostic baselines, not parity
+        requirements. Persist explicit source provenance, coverage and
+        per-metric numerators/denominators in versioned Derived outputs;
+        consumers must not redefine these formulas.
+      contract: .ai-context/manual/nfl-games-pbp-metrics.yaml::competitiveOpportunitiesDecision
+      scope: >-
+        Approved architecture and metric semantics only. This does not
+        authorize new productive write destinations, change immutable Source
+        evidence, certify upstream play completeness or imply all edge cases
+        have already passed empirical regression tests.
+      rationale: >-
+        Clock-management attempts distort defensive efficiency interpretation;
+        separating analysis from official reconciliation preserves traceability.
+      consequences:
+        positive:
+          - Stable shared metric intent across consumers.
+          - Explicit per-metric denominators and special-play test requirements.
+        negative:
+          - Competitive metrics need not agree with official box scores.
+          - Special-play classification needs targeted verification in v2.
+
   - id: ADR-063
     title: Weekly team awards reuse the existing App WeeklyRecaps publisher
     status: accepted
