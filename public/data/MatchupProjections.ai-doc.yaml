@@ -12,7 +12,7 @@ source:
   inputs:
     - computed FantasyGameContext (tools/derived_data_lib/fantasy_game_context.py, ADR-075)
     - App adaptation of the data-derived/player-week-fantasy product (in memory, no public/data read)
-    - optional data-derived/season-statistics/<league>/<season>.json (season-to-date Best Ball and historical actual manager efficiency; source week strictly before target week)
+    - optional data-derived/season-statistics/<league>/<season>.json (season-to-date Best Ball, historical actual manager efficiency, and per-team actual weekly scores for estimated display uncertainty; only completed weeks strictly before the target)
   model: team-range-v1 (tools/derived_data_lib/models/team_range/v1.py, chosen per season in data-meta Models.TeamRange)
   scheduling: tools/player_week_fantasy_refresh.py inside the APP Data League workflow (about every 10 minutes)
   backtest: tools/historical_team_range_backtest.py
@@ -58,11 +58,16 @@ contract:
     WinProbability: whole-percent win chance of the matchup from win-prob-v1 (raw normal-difference of the two team projections, no calibration; both teams add up to 100); null unless both teams are available; adjusted with every finished NFL game because final games count real points (SchemaVersion 3, Issue #1443)
     WinProbabilityRaw: unrounded chance fraction (0..1) for this team, computed independently from the other side to preserve very small tails; null when the chance is unavailable (additive, Issue #1507)
     WinProbabilityIsDeterministic: true when both modeled standard deviations are zero, false when there is remaining modeled scoring variance, null when the chance is unavailable; frontend does not infer certainty from rounded 0/100
-    BestBallEfficiencyFallback: nullable separate estimate (Points = season-to-date mean ProjectedBestBallPoints multiplied by mean actual LineupEfficiencyActual / 100; Method season-bestball-actual-efficiency-v1, SourceThroughWeek and both inputs retained); no recalculation of the target week's Best Ball
+    DisplayWinProbability: whole-percent rendered chance; same as original WinProbability for complete lineups, else optionally estimated from the selected DisplayProjectedScore and per-side selected uncertainty
+    DisplayWinProbabilityRaw: independent raw probability per side; null when either selected score or uncertainty is unknown
+    DisplayWinProbabilityIsDeterministic: selected-input determinism; never true for a matchup with a positive season-score volatility estimate
+    DisplayWinProbabilityBasis: lineup for complete starter inputs, season-bestball-efficiency-estimate for a mixed or two-sided season fallback, null when unknown; original WinProbability fields are never overwritten
+    BestBallEfficiencyFallback: nullable separate estimate (Points = season-to-date mean ProjectedBestBallPoints multiplied by mean actual LineupEfficiencyActual / 100; Method season-bestball-actual-efficiency-v1, SourceThroughWeek and both inputs retained); no recalculation of the target week's Best Ball. Optional ScoreStandardDeviation is the sample SD of completed previous-week actual team scores from SeasonStatistics GameLog (>=3 distinct valid prior weeks, nonzero variance), with ScoreVolatilityGames and ScoreVolatilityMethod season-final-score-sample-sd-v1; does not pretend to be team-range-v1 or calibrated
     DisplayProjectedScore: chosen published display number; existing ProjectedFinalScore when complete, otherwise the season baseline before any starter game is final if valid; null when neither is available
     DisplayProjectionMethod: normal-independent-v1 when using complete starter projection, season-bestball-actual-efficiency-v1 for fallback, otherwise null
   rootAdditions:
     BestBallFallbackMethod: season-bestball-actual-efficiency-v1
+    BestBallFallbackVolatilityMethod: season-final-score-sample-sd-v1
 
 semantics: .ai-context/manual/player-week-fantasy.yaml
 
@@ -76,3 +81,5 @@ boundaries:
   - Live points are never used; a game that is not final counts its projection until Final.
   - Availability comes from DecisionWindows.json and is ignored when that file targets another Season or LineupWeek.
   - Ranges are estimates under an independence assumption; the backtest documents the observed coverage.
+  - The estimated display-only win chance combines the existing win-prob-v1 normal-difference function with empirical per-team historical score SD, not a calibrated prediction distribution. Never feed display chance into pregame recap/upset calculations, and never replace original team-range/WinProbability values.
+  - Missing or malformed prior weekly scores, fewer than three scored weeks or an unprojectable partial live lineup keep the estimated chance null. Display can still show the point baseline independently.
