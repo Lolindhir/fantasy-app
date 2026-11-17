@@ -105,6 +105,12 @@ winProbability:
     Existing whole-percent WinProbability, historical pregame chances, upset thresholds and win-prob-v1 remain unchanged.
     A leading team with outstanding starters is not automatically deterministic because fantasy points can decrease; this
     metadata does not assert a mathematical lock beyond the projection model. Frontend only formats published values.
+  displayFallbackAddendum:
+    scope: 'Issue #1526: current App delivery only; original win-prob-v1, historical pregame/upset values, team-range-v1 and registry choices are unchanged.'
+    rule: >
+      If original WinProbability is null only because one or both teams use the published season-bestball-actual-efficiency-v1 DisplayProjectedScore, derive a separate DisplayWinProbability from the exact existing win-prob-v1 normal-difference formula using selected display points and historical score sample SD from season-statistics GameLog (>=3 distinct past weeks, nonzero volatility). A complete projected lineup uses its original team-range StandardDeviation. The selected probability is never substituted into historical recap/upset logic.
+    metadata: 'DisplayWinProbability, DisplayWinProbabilityRaw, DisplayWinProbabilityIsDeterministic, DisplayWinProbabilityBasis (lineup | season-bestball-efficiency-estimate | null); independent original WinProbability stays null for incomplete lineups.'
+    display: 'Angular displays the published chance and shows EST. only for season-bestball-efficiency-estimate; Matchup detail explains historical volatility and that the estimate is not calibrated.'
 
 projectionModel:
   kind: team-range
