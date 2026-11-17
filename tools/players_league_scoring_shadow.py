@@ -57,7 +57,7 @@ GATE_MAX_ABS_DIFF = 2.0
 # of the canonical 5.9. Sleeper's published Hunter FAQ permits IDP scoring keys
 # even without IDP lineup positions: this is not evidence to subtract valid
 # canonical interceptions for all hybrid WR/DBs.
-# https://support.sleeper.com/en/articles/11166252-travis-hunter-s-dual-position-eligibility-what-you-need-to-know
+# Sleeper Support: Travis Hunter dual-position eligibility, updated April 9, 2026.
 AUDITED_PROVIDER_STAT_DIVERGENCES = {
     ("nfl-reise", 2026, 10, "NFLP-4a0f4e702e4782af409d"): {
         "Class": "provider-defensive-interception-disagreement",
