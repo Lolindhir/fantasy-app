@@ -157,7 +157,7 @@ describe('WeeksPageComponent', () => {
     expect(host.querySelectorAll('.schedule-played .schedule-week').length).toBe(2);
     expect(Array.from(host.querySelectorAll('.schedule-played .schedule-week-link'))
       .map(node => node.textContent?.trim())).toEqual(['Week 2', 'Week 1']);
-    expect(host.querySelector('.schedule-played .schedule-result')?.textContent).toContain('102');
+    expect(host.querySelector('.schedule-played .schedule-side--left .schedule-side-score')?.textContent).toContain('102');
   });
 
   it('uses dense schedule rows with a single group border, larger team identities and no open chips', async () => {
@@ -176,13 +176,72 @@ describe('WeeksPageComponent', () => {
     const host = await create({}, 'overview');
     (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
     fixture.detectChanges();
-    expect(host.querySelector('.schedule-played .schedule-result--final')?.textContent).toContain('102');
-    expect(host.querySelector('.schedule-played .schedule-result--final')?.textContent).toContain('90');
+    expect(host.querySelector('.schedule-played .schedule-side--left .schedule-side-score')?.textContent).toContain('102');
+    expect(host.querySelector('.schedule-played .schedule-side--right .schedule-side-score')?.textContent).toContain('90');
 
     (Array.from(host.querySelectorAll('.activity-tab')).find(tab => tab.textContent?.trim() === 'Week') as HTMLElement).click();
     fixture.detectChanges();
     expect(host.querySelector('.week-matchup')).not.toBeNull();
     expect(host.querySelector('.week-matchup-score')?.textContent).toContain('102');
+  });
+
+
+  it('tints only the authoritative winner side and associates each score with its team', async () => {
+    const season = matchups('2025', [
+      { week: 1, stage: 'regular-season', state: 'final' },
+      { week: 2, stage: 'regular-season', state: 'final' }
+    ]);
+    season.Weeks[0].Matchups[0].Result = { Type: 'win', WinnerTeamID: 2 };
+    season.Weeks[1].Matchups[0].Result = { Type: 'win', WinnerTeamID: 1 };
+    dataService.getPastMatchupsRaw.and.returnValue(of(season));
+
+    const host = await create({ season: '2025' }, 'overview');
+    const rows = Array.from(host.querySelectorAll('.schedule-played .schedule-matchup')) as HTMLButtonElement[];
+    expect(rows.length).toBe(2);
+
+    const leftWinner = rows[0]; // Week 2 (reverse chronological)
+    expect(leftWinner.querySelector('.schedule-side--left.schedule-side--winner')).not.toBeNull();
+    expect(leftWinner.querySelector('.schedule-side--right.schedule-side--winner')).toBeNull();
+    expect(leftWinner.querySelector('.schedule-side--left .schedule-side-score')?.textContent?.trim()).toBe('102');
+    expect(leftWinner.querySelector('.schedule-side--right .schedule-side-score')?.textContent?.trim()).toBe('90');
+    expect(leftWinner.querySelector('.schedule-result')?.textContent?.trim()).toBe(':');
+    expect(leftWinner.getAttribute('aria-label')).toContain('winner T1');
+
+    const rightWinner = rows[1]; // Week 1
+    expect(rightWinner.querySelector('.schedule-side--left.schedule-side--winner')).toBeNull();
+    expect(rightWinner.querySelector('.schedule-side--right.schedule-side--winner')).not.toBeNull();
+    expect(rightWinner.querySelector('.schedule-side--right .schedule-side-score')?.textContent?.trim()).toBe('90');
+    expect(rightWinner.getAttribute('aria-label')).toContain('winner T2');
+  });
+
+  it('does not invent a winner for a final tie, unknown state or open live scores', async () => {
+    const season = matchups('2026', [
+      { week: 1, stage: 'regular-season', state: 'final' },
+      { week: 2, stage: 'regular-season', state: 'open' },
+      { week: 3, stage: 'regular-season', state: 'open' }
+    ]);
+    season.Weeks[0].Matchups[0].Result = { Type: 'tie', WinnerTeamID: null };
+    season.Weeks[0].Matchups[0].Participants[1].Points = 101;
+    season.Weeks[1].Matchups[0].Participants[0].Points = 23.5;
+    season.Weeks[1].Matchups[0].Participants[1].Points = 14.2;
+    season.Weeks[2].CompletionState = 'unknown';
+    season.Weeks[2].Matchups[0].CompletionState = 'unknown';
+    dataService.getMatchups.and.returnValue(of(season));
+
+    const host = await create({}, 'overview');
+    const upcoming = Array.from(host.querySelectorAll('.schedule-upcoming .schedule-matchup')) as HTMLButtonElement[];
+    expect(upcoming.length).toBe(2);
+    expect(upcoming[0].querySelector('.schedule-side-score')?.textContent?.trim()).toBe('23.5');
+    expect(upcoming[0].querySelectorAll('.schedule-side--winner').length).toBe(0);
+    expect(upcoming[1].querySelector('.schedule-result-unknown')?.textContent?.trim()).toBe('?');
+    expect(upcoming[1].querySelectorAll('.schedule-side--winner').length).toBe(0);
+
+    (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const tie = host.querySelector('.schedule-played .schedule-matchup') as HTMLButtonElement;
+    expect(tie.querySelectorAll('.schedule-side--winner').length).toBe(0);
+    expect(tie.querySelectorAll('.schedule-side-score').length).toBe(2);
+    expect(tie.getAttribute('aria-label')).toContain('tie');
   });
 
   it('opens the original Week detail from a schedule group header', async () => {

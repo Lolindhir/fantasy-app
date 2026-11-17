@@ -285,7 +285,13 @@ export class WeeksPageComponent {
     const result = this.showScheduleScores(matchup)
       ? matchup.participants.map(participant => this.formatPoints(participant.points)).join(' to ')
       : matchup.state === 'unknown' ? 'unconfirmed' : 'versus';
-    return `${names[0] ?? 'Team'} ${result} ${names[1] ?? 'Team'}`;
+    const winnerIndex = matchup.state === 'final'
+      ? matchup.participants.findIndex(participant => participant.isWinner)
+      : -1;
+    const outcome = winnerIndex >= 0
+      ? `, winner ${names[winnerIndex]}`
+      : matchup.state === 'final' && matchup.isTie ? ', tie' : '';
+    return `${names[0] ?? 'Team'} ${result} ${names[1] ?? 'Team'}${outcome}`;
   }
 
   formatPoints(value: number | null | undefined): string {

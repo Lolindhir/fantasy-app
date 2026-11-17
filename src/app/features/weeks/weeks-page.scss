@@ -548,7 +548,7 @@
 }
 .schedule-matchup {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) 12px;
+  grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) 12px;
   align-items: center;
   gap: 8px;
   width: 100%;
@@ -575,9 +575,31 @@
   outline: 2px solid var(--lifecycle-active-fg, #2563eb);
   outline-offset: -2px;
 }
+.schedule-side {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 3px 4px;
+  border-radius: 8px;
+}
+.schedule-side--winner {
+  /* Match the Week tab's winner tint, not the lifecycle/finality colors. */
+  background: rgba(59, 130, 246, 0.09);
+}
 .schedule-team { min-width: 0; }
 .schedule-team--right { text-align: right; }
-.schedule-team--winner { font-weight: 850; }
+.schedule-side-score {
+  flex: 0 0 auto;
+  color: var(--weekly-text);
+  font-size: 0.89rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
 .schedule-team app-team-identity {
   --team-identity-avatar-size: 42px;
   --team-identity-gap: 7px;
@@ -587,10 +609,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  min-width: 36px;
+  min-width: 12px;
   font-size: 0.82rem;
-  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .schedule-result--final { font-weight: 850; }
@@ -601,6 +621,8 @@
 @media (max-width: 640px) {
   .schedule-week { padding: 9px 7px 10px; }
   .schedule-week-header { padding: 0 5px; }
-  .schedule-matchup { gap: 5px; padding: 5px 7px; min-height: 56px; }
+  .schedule-matchup { gap: 4px; padding: 5px 6px; min-height: 56px; }
+  .schedule-side { gap: 3px; padding: 3px 2px; }
+  .schedule-side-score { font-size: 0.82rem; }
   .schedule-team app-team-identity { --team-identity-avatar-size: 40px; --team-identity-gap: 5px; }
 }
