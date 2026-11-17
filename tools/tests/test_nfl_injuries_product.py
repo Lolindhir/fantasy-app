@@ -536,6 +536,111 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertFalse((root /
                 "data-source/providers/nflverse/injuries/metadata-2024.json").exists())
 
+    def test_weekly_intake_restores_deleted_full_or_partial_source_without_replacing_revision(self):
+        from nfl_injuries_history_reconcile import (
+            accepted_historical_injury_seasons, stage_next_verified_missing_injury_source,
+            reconcile_accepted_injury_history,
+        )
+        import hashlib
+        import json
+        import tempfile
+
+        original = asset(2024, [report(2024)])
+        original_sha = hashlib.sha256(original).hexdigest()
+        release = {"assets": [{
+            "name": "injuries_2024.csv", "id": 2024,
+            "updated_at": "2026-11-17T00:00:00Z", "size": len(original),
+            "digest": None,
+            "browser_download_url":
+                "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2024.csv",
+        }]}
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            league = root / "data-source/leagues/sample/manifest.json"
+            league.parent.mkdir(parents=True)
+            league.write_text(json.dumps({
+                "CurrentCanonicalLeagueSeasonID": "cur",
+                "Seasons": [{"Season": 2026, "CanonicalLeagueSeasonID": "cur"}],
+            }), encoding="utf-8")
+            players = root / "data-source/nfl/identities/players.json"
+            players.parent.mkdir(parents=True)
+            players.write_text(json.dumps(identities()), encoding="utf-8")
+            schedule = root / "data-source/nfl/schedules/2024.json"
+            schedule.parent.mkdir(parents=True)
+            schedule.write_text(json.dumps({"Season": 2024, "Games": [{
+                "Week": 5, "GameType": "REG",
+                "GameID": "2024_05_X_HOU", "HomeTeam": "HOU", "AwayTeam": "X",
+            }]}), encoding="utf-8")
+            raw_path = root / "data-source/providers/nflverse/injuries/raw-2024.csv"
+            meta_path = root / "data-source/providers/nflverse/injuries/metadata-2024.json"
+            def run(data=original):
+                return stage_next_verified_missing_injury_source(
+                    root, write=True, fetch_release=lambda: release,
+                    fetch_asset=lambda url: data)
+            initial = run()
+            self.assertEqual(2024, initial["Season"])
+            self.assertEqual(2, len(initial["NewRawPaths"]))
+            self.assertEqual([2024], accepted_historical_injury_seasons(root)[0])
+            first_metadata = meta_path.read_bytes()
+            reconcile_accepted_injury_history(root, phase="canonical", write=True)
+            canonical = (root / "data-source/nfl/injuries/2024/manifest.json").read_bytes()
+            self.assertIn(original_sha.encode(), canonical)
+
+            # Simulate losing ONLY the provider CSV: frozen metadata remains.
+            raw_path.unlink()
+            with self.assertRaisesRegex(ValueError, "Incomplete Injury Source"):
+                accepted_historical_injury_seasons(root)
+            repaired_csv = run()
+            self.assertEqual(["data-source/providers/nflverse/injuries/raw-2024.csv"],
+                             repaired_csv["NewRawPaths"])
+            self.assertEqual(first_metadata, meta_path.read_bytes())
+            self.assertEqual(original, raw_path.read_bytes())
+
+            # Simulate losing ONLY metadata: validate retained Raw vs official.
+            meta_path.unlink()
+            repaired_meta = run()
+            self.assertEqual(["data-source/providers/nflverse/injuries/metadata-2024.json"],
+                             repaired_meta["NewRawPaths"])
+            self.assertEqual(original, raw_path.read_bytes())
+            self.assertEqual(first_metadata, meta_path.read_bytes())
+
+            # Simulate losing BOTH parts: recurring inventory rediscovers year.
+            raw_path.unlink()
+            meta_path.unlink()
+            full_restore = run()
+            self.assertEqual(2, len(full_restore["NewRawPaths"]))
+            self.assertEqual(canonical,
+                (root / "data-source/nfl/injuries/2024/manifest.json").read_bytes())
+            self.assertEqual([], reconcile_accepted_injury_history(
+                root, phase="canonical", require_noop=True)["ChangedSeasons"])
+            self.assertEqual("no-eligible-missing-original", run()["Status"])
+
+            # Even without official SHA, do not restore a revised upstream asset
+            # over surviving frozen metadata, raw bytes or canonical provenance.
+            changed = original.replace(b"Knee", b"Hand")
+            self.assertNotEqual(original, changed)
+            self.assertEqual(len(original), len(changed))
+            release["assets"][0]["id"] = 3024
+            release["assets"][0]["updated_at"] = "2026-11-18T00:00:00Z"
+            raw_path.unlink()
+            with self.assertRaisesRegex(ValueError, "does not match frozen metadata"):
+                run(changed)
+            self.assertFalse(raw_path.exists())
+            self.assertEqual(first_metadata, meta_path.read_bytes())
+
+            raw_path.write_bytes(original)
+            meta_path.unlink()
+            with self.assertRaisesRegex(ValueError, "cannot replace frozen CSV"):
+                run(changed)
+            self.assertFalse(meta_path.exists())
+            self.assertEqual(original, raw_path.read_bytes())
+
+            raw_path.unlink()
+            with self.assertRaisesRegex(ValueError, "conflicts with frozen Canonical provenance"):
+                run(changed)
+            self.assertFalse(raw_path.exists())
+            self.assertFalse(meta_path.exists())
+
     def test_accepted_historical_replay_and_noop_across_discovered_seasons(self):
         from nfl_injuries_history_reconcile import reconcile_accepted_injury_history
         from nfl_source_data_lib.injury_product_plan import build_injury_raw_artifacts
