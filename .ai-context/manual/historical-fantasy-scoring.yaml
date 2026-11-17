@@ -469,6 +469,22 @@ playersLeagueScoringShadow:
       - a non-zero applicable scoring setting without canonical mapping
     knownResidualClasses:
       yardage-correction: residual smaller than the smallest discrete scoring weight and an exact multiple of a fractional yardage weight (provider stat correction)
+      provider-defensive-interception-disagreement: >
+        Exact source/provider disagreement only for nfl-reise 2026 Week 10,
+        NFLP-4a0f4e702e4782af409d (Travis Hunter). Canonical NFL game
+        2026_10_JAX_TEN credits one defensive interception; the active
+        IDP int setting is 2 points, and full canonical scorer yields 5.9
+        (3.9 offensive + 2.0 interception), whereas persisted Sleeper League
+        PlayerPoints is 3.9. Per Sleeper support (published 2026-04-09),
+        defensive scoring can be configured in non-IDP leagues even without
+        IDP roster slots; no evidence authorizes changing the canonical
+        interception or silently disabling the scoring key globally.
+        Classification is tied to exact league, season, week, canonical ID,
+        CB position, stat value, active int setting, scoring contribution and
+        both point totals; any changed evidence becomes unclassified again.
+        This is an explicit documented *disagreement*, not a corrected source
+        fact and not a general allowance for missing defensive statistics.
+        https://support.sleeper.com/en/articles/11166252-travis-hunter-s-dual-position-eligibility-what-you-need-to-know
     ciWiring: .github/workflows/build.yml step 'Run Players league-scoring shadow and Sleeper gate' (unit tests plus the gate command; approved by Robert 2026-10-04)
 
 playersLeagueScoring:
