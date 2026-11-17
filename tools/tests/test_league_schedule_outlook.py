@@ -73,6 +73,22 @@ class ScheduleOutlookV1Tests(unittest.TestCase):
         self.assertEqual(2, one["RemainingSoSRelativeStrengthRank"])
         self.assertEqual(1, two["RemainingSoSRelativeStrengthRank"])
 
+    def test_dynamic_team_ids_are_numerically_ordered(self):
+        result = v1.compute_regular_season(
+            teams=list(reversed(teams(12))),
+            pairings_by_week={},
+            strengths_by_roster={},
+            after_week=1,
+            regular_season_last_week=1,
+        )
+        self.assertEqual(list(range(1, 13)), [x["TeamID"] for x in result["Teams"]])
+        invalid = [{"TeamID": "1", "CanonicalLeagueRosterID": "r1"}, teams()[1]]
+        with self.assertRaisesRegex(v1.ScheduleOutlookError, "identity"):
+            v1.compute_regular_season(
+                teams=invalid, pairings_by_week={}, strengths_by_roster={},
+                after_week=1, regular_season_last_week=1,
+            )
+
     def test_week_zero_has_pairings_but_no_fake_strength(self):
         full = weeks()
         full.update({
