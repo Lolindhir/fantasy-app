@@ -21,6 +21,17 @@ export interface MatchupProjectionTeam {
   ScoredPoints: number;
   PregameProjectedScore: number | null;
   ProjectedFinalScore: number | null;
+  /** Optional season-to-date baseline, never a replacement for the complete-lineup forecast. */
+  BestBallEfficiencyFallback?: {
+    Points: number;
+    Method: string;
+    SourceThroughWeek: number;
+    ProjectedBestBallPoints: number;
+    ManagerEfficiencyPercent: number;
+  } | null;
+  /** Published display choice; unchanged legacy snapshots omit this additive field. */
+  DisplayProjectedScore?: number | null;
+  DisplayProjectionMethod?: string | null;
   StandardDeviation: number | null;
   Ranges: MatchupProjectionRange[];
   ByeStarterPlayerIDs: string[];
@@ -57,5 +68,6 @@ export interface MatchupProjectionsReadModel {
   DisplayLevel: number;
   Method: MatchupProjectionMethod;
   WinProbabilityModel?: string;
+  BestBallFallbackMethod?: string;
   Matchups: MatchupProjectionMatchup[];
 }
