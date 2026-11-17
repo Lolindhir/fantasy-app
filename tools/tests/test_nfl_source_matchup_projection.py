@@ -537,6 +537,25 @@ class PublicationTests(unittest.TestCase):
         self.assertIsNone(team["ProjectedFinalScore"])
         self.assertEqual(team["DisplayProjectedScore"], 187.0)
 
+    def test_publication_estimated_chance_is_persisted_and_idempotent(self) -> None:
+        root = Path(tempfile.mkdtemp())
+        context, player, stats = MatchupProjectionTests.display_win_test_fixture()
+        target = root / "data-derived/season-statistics/league-a/2026.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(stats), encoding="utf-8")
+
+        first = self._publish(root, context, player)
+        second = self._publish(root, context, player)
+        self.assertEqual(first["Status"], "published")
+        self.assertTrue(first["Changed"])
+        self.assertFalse(second["Changed"])
+        payload = self._payload(root)
+        self.assertEqual(payload["BestBallFallbackVolatilityMethod"], matchup_projection.FALLBACK_VOLATILITY_METHOD)
+        teams = payload["Matchups"][0]["Teams"]
+        self.assertIsNone(teams[0]["WinProbability"])
+        self.assertIsNotNone(teams[0]["DisplayWinProbability"])
+        self.assertEqual(sum(t["DisplayWinProbability"] for t in teams), 100)
+
     def test_publication_writes_once_and_is_a_semantic_no_op_afterwards(self) -> None:
         root = Path(tempfile.mkdtemp())
 
