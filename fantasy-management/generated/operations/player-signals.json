@@ -2,13 +2,13 @@
   "schema_version": 1,
   "dataset_id": "player-signals",
   "generated_at": "2026-11-17T04:21:46.359708Z",
-  "input_fingerprint": "ae39640dcfefcb504cf5af03ff6598db7a7db5053017860f75bc8738b9f202e9",
+  "input_fingerprint": "b83cf6348d420805a45f784b2241efad1874c251c7d23049b15e61c212415a2e",
   "managed_team": {
     "team_id": 1,
     "name": "Mighty Giants"
   },
   "population": {
-    "player_count": 958,
+    "player_count": 959,
     "positions": [
       "K",
       "QB",
@@ -18,15 +18,15 @@
     ],
     "inclusion_rule": "position is in configured fantasy positions and at least one population reason applies",
     "reason_counts": {
-      "canonical_nfl_membership": 734,
-      "canonical_nfl_recent_history": 958,
-      "league_owned": 206,
+      "canonical_nfl_membership": 672,
+      "canonical_nfl_recent_history": 959,
+      "league_owned": 204,
       "listed_in_external_source": 600,
       "present_in_external_signal": 137
     },
     "canonical_nfl_population_contract": {
       "season": 2026,
-      "latest_week": 10,
+      "latest_week": 11,
       "reasons": {
         "canonical_nfl_membership": "CanonicalPlayerID is on the latest materialized canonical weekly NFL roster",
         "canonical_nfl_recent_history": "CanonicalPlayerID is on the current-season canonical season roster or any current-season canonical weekly roster"
@@ -60,7 +60,7 @@
     {
       "id": "canonical_league_rosters",
       "path": "data-source/leagues/nfl-reise/seasons/2026/rosters.json",
-      "content_sha256": "2b7899a661cf03f9e488ed362641fb061e9d490468eef2bd490e9b2068d4476c",
+      "content_sha256": "2799cb6ec091c70484bc956919e6f1104a4c70b2dcf2d5633dca27469141a6fb",
       "source_timestamp": null
     },
     {
@@ -72,13 +72,13 @@
     {
       "id": "canonical_player_profiles",
       "path": "data-source/nfl/player-profiles/nflverse.json",
-      "content_sha256": "bb9dd1eddb722f7ff66c4a99964ad2755bf3250e089c3b54b124c739bc1246a7",
+      "content_sha256": "178dca7d74dd5963103b1044a3db5d2194c6ad7a942d7b0b1323d4aa9c998b5d",
       "source_timestamp": null
     },
     {
       "id": "canonical_nfl_rosters",
       "path": "data-source/nfl/rosters/2026.json",
-      "content_sha256": "f28c8d7e6d5a23688c58f434c8c0ffd56938231133702bc70a94ccb86599d15b",
+      "content_sha256": "1ef66e54134ff6eb2c5239b005294f5f3ca711918623a5a29feaccffcc085c5a",
       "source_timestamp": null
     },
     {
@@ -142,6 +142,12 @@
       "source_timestamp": null
     },
     {
+      "id": "canonical_nfl_weekly_rosters_11",
+      "path": "data-source/nfl/weekly-rosters/2026/11.json",
+      "content_sha256": "416413fac2edf1abbc736591d6052cd24d55361593a71c356968b032ef1d62ce",
+      "source_timestamp": null
+    },
+    {
       "id": "canonical_nfl_draft",
       "path": "data-source/nfl/draft/2026.json",
       "content_sha256": "1202865ff7a5e9648058c480b4f1f0c21977d938a5836dbaecc09bdee888cb34",
@@ -156,7 +162,7 @@
     {
       "id": "canonical_sleeper_players",
       "path": "data-source/nfl/platform/sleeper/players.json",
-      "content_sha256": "79d680e01ab0afd309cb7c1ec556a36a11ded0e395284b4faf7d99daddd60cef",
+      "content_sha256": "a79cec051bda64fd32e0a9ad8c14d6badf266881b7da2674effa43c97c7c2e86",
       "source_timestamp": null
     },
     {
@@ -168,7 +174,7 @@
     {
       "id": "external_signal_relevance",
       "path": "fantasy-management/generated/operations/external-signal-relevance.json",
-      "content_sha256": "d39d572d0dc2dc039b004277c4eb37e0e56fe343d42272d03507e5c516a15cd4",
+      "content_sha256": "2b8f8cbc238a82fd30a38cdd6feea1ec7ac96b6c39867a37059a034a82075b1f",
       "source_timestamp": "2026-11-17T04:21:45.278257Z"
     },
     {
@@ -342,7 +348,7 @@
     {
       "id": "canonical_nfl_season_roster",
       "path": "data-source/nfl/rosters/2026.json",
-      "content_sha256": "f28c8d7e6d5a23688c58f434c8c0ffd56938231133702bc70a94ccb86599d15b",
+      "content_sha256": "1ef66e54134ff6eb2c5239b005294f5f3ca711918623a5a29feaccffcc085c5a",
       "source_timestamp": null
     },
     {
@@ -406,6 +412,12 @@
       "source_timestamp": null
     },
     {
+      "id": "canonical_nfl_weekly_roster_11",
+      "path": "data-source/nfl/weekly-rosters/2026/11.json",
+      "content_sha256": "416413fac2edf1abbc736591d6052cd24d55361593a71c356968b032ef1d62ce",
+      "source_timestamp": null
+    },
+    {
       "id": "operations_source_catalog_extension_1",
       "path": "fantasy-management/_ai/operations-source-catalog-offense-projections.json",
       "content_sha256": "da4414c3e8dc27e69b9abc63138ee09e0c602059c5e765c34861d6f8f1e342cf",
@@ -420,7 +432,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -1191,7 +1202,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -3500,7 +3510,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -5052,7 +5061,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -5823,6 +5831,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -9688,6 +9697,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -17429,6 +17439,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -18199,7 +18210,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -18970,7 +18980,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -21286,7 +21295,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -24378,7 +24386,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -25929,7 +25936,6 @@
       "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -28246,21 +28252,11 @@
       "population_reasons": [
         "canonical_nfl_membership",
         "canonical_nfl_recent_history",
-        "league_owned",
         "listed_in_external_source"
       ],
       "ownership": {
-        "status": "opponent_rostered",
-        "teams": [
-          {
-            "team_id": 6,
-            "team_name": "Team TimpaBay",
-            "team_abbreviation": "TiB",
-            "roster_sections": [
-              "roster"
-            ]
-          }
-        ]
+        "status": "fantasy_free_agent",
+        "teams": []
       },
       "app_data": {
         "status": "Active",
@@ -29794,7 +29790,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -32130,6 +32125,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -33678,7 +33674,7 @@
       "player_id": "4233",
       "name": "Zane Gonzalez",
       "position": "K",
-      "nfl_team": "MIA",
+      "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
         "canonical_nfl_membership",
@@ -33694,7 +33690,7 @@
         "years_experience": 10,
         "salary": 2971719,
         "salary_projected": 3371339,
-        "is_free_agent_source_field": false,
+        "is_free_agent_source_field": true,
         "espn_id": "3043234"
       },
       "injury": {
@@ -35352,7 +35348,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -36975,7 +36970,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -40951,6 +40945,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -41850,7 +41845,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -42688,6 +42682,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -44321,6 +44316,7 @@
       "nfl_team": "LV",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -48698,6 +48694,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -49597,7 +49594,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -53795,6 +53791,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -55363,6 +55360,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -56932,6 +56930,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -60397,7 +60396,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -61288,7 +61286,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -62860,7 +62857,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -64506,7 +64502,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -65396,6 +65391,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -67867,6 +67863,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -74358,7 +74355,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -78388,6 +78384,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -79236,7 +79233,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -80022,6 +80018,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -82702,6 +82699,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -87969,6 +87967,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -89696,7 +89695,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -107770,7 +107768,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -108555,7 +108552,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -110241,7 +110237,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -111141,6 +111136,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -116176,7 +116172,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -117066,6 +117061,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -121044,7 +121040,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -123610,7 +123605,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -124448,6 +124442,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -125338,7 +125333,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -126909,7 +126903,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -129538,7 +129531,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -130428,7 +130420,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -133016,7 +133007,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -133906,6 +133896,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -138885,6 +138876,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -152728,7 +152720,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -153625,7 +153616,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -154523,7 +154513,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -157883,7 +157872,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -159552,6 +159540,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -161115,6 +161104,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -167713,7 +167703,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -168548,7 +168537,6 @@
       "nfl_team": "LV",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -172805,6 +172793,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -174368,7 +174357,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -175986,6 +175974,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -182590,7 +182579,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -193083,7 +193071,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -195597,6 +195584,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -197161,7 +197149,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -202128,7 +202115,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -204528,7 +204514,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -211006,6 +210991,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -213465,7 +213451,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -216762,7 +216747,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -218557,7 +218541,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -221905,6 +221888,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -222686,7 +222670,6 @@
       "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -226818,6 +226801,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -231116,7 +231100,6 @@
       "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -232733,6 +232716,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -238719,7 +238703,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -239501,7 +239484,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -240399,6 +240381,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -243748,7 +243731,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -250384,6 +250366,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -252063,7 +252046,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -254673,6 +254655,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -255570,7 +255553,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -256467,7 +256449,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -260537,7 +260518,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -262207,7 +262187,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -262989,7 +262968,6 @@
       "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -265449,7 +265427,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -273723,7 +273700,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -274507,7 +274483,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -276302,7 +276277,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -278911,7 +278885,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -279693,7 +279666,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -282271,6 +282243,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -283115,7 +283088,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -285515,7 +285487,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -286297,6 +286268,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -287965,6 +287937,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -289635,6 +289608,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -290531,6 +290505,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -294769,6 +294744,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -295655,7 +295631,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -299795,7 +299770,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -302310,7 +302284,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -306495,6 +306468,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -309832,7 +309806,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -310614,6 +310587,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -312397,7 +312371,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -314077,6 +314050,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -314858,6 +314832,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -315700,7 +315675,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -318072,7 +318046,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -318915,6 +318888,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -319724,7 +319698,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -322120,7 +322093,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -329426,6 +329398,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -331887,6 +331860,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -333438,7 +333412,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -334214,7 +334187,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -337386,7 +337358,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -340624,6 +340595,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -341399,7 +341371,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -342243,6 +342214,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -344604,6 +344576,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -345456,6 +345429,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -346309,6 +346283,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -348825,7 +348800,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -353762,7 +353736,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -357000,7 +356973,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -359429,7 +359401,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -360239,7 +360210,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -361059,6 +361029,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -361911,7 +361882,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -363564,7 +363534,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -365117,6 +365086,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -365959,7 +365929,6 @@
       "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -369985,6 +369954,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -372490,7 +372460,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -373338,12 +373307,789 @@
       }
     },
     {
+      "player_id": "6850",
+      "name": "Harrison Bryant",
+      "position": "TE",
+      "nfl_team": "IND",
+      "nfl_team_source": "canonical_sleeper_team",
+      "population_reasons": [
+        "canonical_nfl_membership",
+        "canonical_nfl_recent_history"
+      ],
+      "ownership": {
+        "status": "fantasy_free_agent",
+        "teams": []
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 28.6,
+        "years_experience": 7,
+        "salary": null,
+        "salary_projected": null,
+        "is_free_agent_source_field": false,
+        "espn_id": "4040774"
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "role": {
+        "sleeper_depth_chart_position": null,
+        "sleeper_depth_chart_order": null,
+        "coverage_status": "not_available",
+        "interpretation": "nominal_depth_chart_only_not_usage"
+      },
+      "source_signals": {
+        "fantasypros-dynasty-superflex-ppr": {
+          "source_id": "fantasypros-dynasty-superflex-ppr",
+          "source_kind": "expert_consensus",
+          "provider": "fantasypros",
+          "dataset_id": "dynasty-superflex-ppr",
+          "applicable": true,
+          "coverage_status": "not_listed",
+          "listed": false,
+          "join_method": "missing",
+          "signals": {
+            "overall_rank": null,
+            "percentile": null,
+            "position_rank": null,
+            "tier": null
+          },
+          "format_context": {
+            "horizon": "dynasty",
+            "scoring": "ppr",
+            "quarterback_mode": "superflex"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:42.564037Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fantasycalc-dynasty-superflex-ppr-8-team": {
+          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+          "source_kind": "market_value",
+          "provider": "fantasycalc",
+          "dataset_id": "dynasty-superflex-ppr-8-team",
+          "applicable": true,
+          "coverage_status": "not_listed",
+          "listed": false,
+          "join_method": "missing",
+          "signals": {
+            "overall_rank": null,
+            "percentile": null,
+            "position_rank": null,
+            "tier": null,
+            "value": null,
+            "trend_30_day": null,
+            "roster_percent": null,
+            "trade_frequency": null
+          },
+          "format_context": {
+            "horizon": "dynasty",
+            "scoring": "ppr",
+            "quarterback_mode": "superflex",
+            "team_count": 8
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:35.934185Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "ffc-redraft-ppr-8-team": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "source_kind": "adp",
+          "provider": "fantasy-football-calculator",
+          "dataset_id": "redraft-ppr-8-team",
+          "applicable": true,
+          "coverage_status": "not_listed",
+          "listed": false,
+          "join_method": "missing",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null
+          },
+          "format_context": {
+            "horizon": "redraft",
+            "scoring": "ppr",
+            "quarterback_mode": "one_qb",
+            "team_count": 8,
+            "actual_league_team_count": 6
+          },
+          "freshness": {
+            "source_timestamp": "2026-09-20T03:49:19.235854Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1392.54,
+            "status": "stale"
+          }
+        },
+        "ffc-redraft-2qb-10-team": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "source_kind": "adp",
+          "provider": "fantasy-football-calculator",
+          "dataset_id": "redraft-2qb-10-team",
+          "applicable": true,
+          "coverage_status": "not_listed",
+          "listed": false,
+          "join_method": "missing",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null
+          },
+          "format_context": {
+            "horizon": "redraft",
+            "scoring": "source_default",
+            "quarterback_mode": "two_qb",
+            "team_count": 10,
+            "actual_league_team_count": 6
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:44.443125Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fftoday-redraft-kicker-preseason": {
+          "source_id": "fftoday-redraft-kicker-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-kicker-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "bye": null,
+            "fgm": null,
+            "fga": null,
+            "fg_pct": null,
+            "epm": null,
+            "epa": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "K",
+            "scoring": "provider_default"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.383370Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 840.95,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-kicker-preseason": {
+          "source_id": "cbs-sports-redraft-kicker-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-kicker-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "games_played": null,
+            "fgm": null,
+            "fga": null,
+            "longest_field_goal": null,
+            "fg_1_19_made": null,
+            "fg_1_19_attempts": null,
+            "fg_20_29_made": null,
+            "fg_20_29_attempts": null,
+            "fg_30_39_made": null,
+            "fg_30_39_attempts": null,
+            "fg_40_49_made": null,
+            "fg_40_49_attempts": null,
+            "fg_50_plus_made": null,
+            "fg_50_plus_attempts": null,
+            "xpm": null,
+            "xpa": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "K",
+            "scoring": "provider_default",
+            "source_format": "nonppr"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:44.659771Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fftoday-redraft-qb-preseason": {
+          "source_id": "fftoday-redraft-qb-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-qb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "pass_completions": null,
+            "pass_attempts": null,
+            "pass_yards": null,
+            "pass_touchdowns": null,
+            "interceptions": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "QB",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 840.95,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-qb-preseason": {
+          "source_id": "cbs-sports-redraft-qb-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-qb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "pass_completions": null,
+            "pass_attempts": null,
+            "pass_yards": null,
+            "pass_touchdowns": null,
+            "interceptions": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "QB",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:46.359708Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fftoday-redraft-rb-preseason": {
+          "source_id": "fftoday-redraft-rb-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-rb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "RB",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 840.95,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-rb-preseason": {
+          "source_id": "cbs-sports-redraft-rb-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-rb-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "targets": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "RB",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:46.359708Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fftoday-redraft-wr-preseason": {
+          "source_id": "fftoday-redraft-wr-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-wr-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "WR",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 840.95,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-wr-preseason": {
+          "source_id": "cbs-sports-redraft-wr-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-wr-preseason",
+          "applicable": false,
+          "coverage_status": "not_applicable",
+          "listed": false,
+          "join_method": "not_applicable",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "targets": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "rush_attempts": null,
+            "rush_yards": null,
+            "rush_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "WR",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:46.359708Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fftoday-redraft-te-preseason": {
+          "source_id": "fftoday-redraft-te-preseason",
+          "source_kind": "projection",
+          "provider": "fftoday",
+          "dataset_id": "redraft-te-preseason",
+          "applicable": true,
+          "coverage_status": "not_listed",
+          "listed": false,
+          "join_method": "missing",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "TE",
+            "scoring": "provider_default",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-10-13T03:24:59.693367Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 840.95,
+            "status": "stale"
+          }
+        },
+        "cbs-sports-redraft-te-preseason": {
+          "source_id": "cbs-sports-redraft-te-preseason",
+          "source_kind": "projection",
+          "provider": "cbs-sports",
+          "dataset_id": "redraft-te-preseason",
+          "applicable": true,
+          "coverage_status": "not_listed",
+          "listed": false,
+          "join_method": "missing",
+          "signals": {
+            "rank": null,
+            "percentile": null,
+            "targets": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null
+          },
+          "format_context": {
+            "horizon": "season",
+            "position_scope": "TE",
+            "scoring": "provider_default",
+            "source_format": "nonppr",
+            "league_scoring_reconciliation": "derived_core_stats"
+          },
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:46.359708Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        }
+      },
+      "market": {
+        "fantasypros": {
+          "source_id": "fantasypros-dynasty-superflex-ppr",
+          "coverage_status": "not_listed",
+          "applicable": true,
+          "listed": false,
+          "join_method": "missing",
+          "overall_rank": null,
+          "percentile": null,
+          "position_rank": null,
+          "tier": null,
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:42.564037Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        },
+        "fantasycalc": {
+          "source_id": "fantasycalc-dynasty-superflex-ppr-8-team",
+          "coverage_status": "not_listed",
+          "applicable": true,
+          "listed": false,
+          "join_method": "missing",
+          "overall_rank": null,
+          "percentile": null,
+          "position_rank": null,
+          "tier": null,
+          "value": null,
+          "trend_30_day": null,
+          "roster_percent": null,
+          "trade_frequency": null,
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:35.934185Z",
+            "max_age_hours": 48,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        }
+      },
+      "redraft_adp": {
+        "primary_format": "ppr_8_team",
+        "primary_source_id": "ffc-redraft-ppr-8-team",
+        "primary_applicability": "applicable",
+        "primary_listed": false,
+        "primary": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "coverage_status": "not_listed",
+          "applicable": true,
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null,
+          "freshness": {
+            "source_timestamp": "2026-09-20T03:49:19.235854Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1392.54,
+            "status": "stale"
+          }
+        },
+        "formats": {
+          "ppr_8_team": {
+            "source_id": "ffc-redraft-ppr-8-team",
+            "coverage_status": "not_listed",
+            "applicable": true,
+            "listed": false,
+            "join_method": "missing",
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null,
+            "freshness": {
+              "source_timestamp": "2026-09-20T03:49:19.235854Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 1392.54,
+              "status": "stale"
+            }
+          },
+          "two_qb_10_team": {
+            "source_id": "ffc-redraft-2qb-10-team",
+            "coverage_status": "not_listed",
+            "applicable": true,
+            "listed": false,
+            "join_method": "missing",
+            "rank": null,
+            "percentile": null,
+            "adp": null,
+            "times_drafted": null,
+            "stdev": null,
+            "sample_total_drafts": null,
+            "sample_start_date": null,
+            "sample_end_date": null,
+            "freshness": {
+              "source_timestamp": "2026-11-17T04:21:44.443125Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 0.0,
+              "status": "current"
+            }
+          }
+        },
+        "format_gap": null,
+        "ppr_8_team": {
+          "source_id": "ffc-redraft-ppr-8-team",
+          "coverage_status": "not_listed",
+          "applicable": true,
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null,
+          "freshness": {
+            "source_timestamp": "2026-09-20T03:49:19.235854Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 1392.54,
+            "status": "stale"
+          }
+        },
+        "two_qb_10_team": {
+          "source_id": "ffc-redraft-2qb-10-team",
+          "coverage_status": "not_listed",
+          "applicable": true,
+          "listed": false,
+          "join_method": "missing",
+          "rank": null,
+          "percentile": null,
+          "adp": null,
+          "times_drafted": null,
+          "stdev": null,
+          "sample_total_drafts": null,
+          "sample_start_date": null,
+          "sample_end_date": null,
+          "freshness": {
+            "source_timestamp": "2026-11-17T04:21:44.443125Z",
+            "max_age_hours": 72,
+            "age_hours_at_materialization": 0.0,
+            "status": "current"
+          }
+        }
+      },
+      "projections": {
+        "providers": {
+          "fftoday": {
+            "source_id": "fftoday-redraft-te-preseason",
+            "coverage_status": "not_listed",
+            "applicable": true,
+            "listed": false,
+            "join_method": "missing",
+            "rank": null,
+            "percentile": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "projected_fantasy_points": null,
+            "source_updated_date": null,
+            "league_scoring": {
+              "status": "not_listed",
+              "core_points": null,
+              "policy": "no league score is inferred for an unlisted provider row",
+              "included_components": [],
+              "excluded_nonzero_components": []
+            },
+            "freshness": {
+              "source_timestamp": "2026-10-13T03:24:59.693367Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 840.95,
+              "status": "stale"
+            }
+          },
+          "cbs_sports": {
+            "source_id": "cbs-sports-redraft-te-preseason",
+            "coverage_status": "not_listed",
+            "applicable": true,
+            "listed": false,
+            "join_method": "missing",
+            "rank": null,
+            "percentile": null,
+            "targets": null,
+            "receptions": null,
+            "receiving_yards": null,
+            "receiving_touchdowns": null,
+            "fumbles_lost": null,
+            "projected_fantasy_points": null,
+            "projected_fantasy_points_per_game": null,
+            "league_scoring": {
+              "status": "not_listed",
+              "core_points": null,
+              "policy": "no league score is inferred for an unlisted provider row",
+              "included_components": [],
+              "excluded_nonzero_components": []
+            },
+            "freshness": {
+              "source_timestamp": "2026-11-17T04:21:46.359708Z",
+              "max_age_hours": 72,
+              "age_hours_at_materialization": 0.0,
+              "status": "current"
+            }
+          }
+        },
+        "summary": {
+          "applicable_provider_count": 2,
+          "listed_provider_count": 0,
+          "consensus_percentile": null,
+          "percentile_spread": null,
+          "provider_fantasy_points_policy": "kept_separate_not_averaged"
+        }
+      },
+      "activity": {
+        "source_id": "sleeper-trending",
+        "provider": "sleeper",
+        "dataset_id": "nfl-roster-activity-24h-top100",
+        "source_timestamp": "2026-11-17T04:21:45.278257Z",
+        "comparison": {
+          "baseline": false,
+          "comparable": true,
+          "reason": "same_configuration_previous_snapshot_available",
+          "previous_generated_at": "2026-11-16T04:21:43.099463+00:00",
+          "material_event_eligible": true,
+          "rolling_window_warning": "Count deltas compare two overlapping rolling windows and are not the number of new transactions since the previous fetch."
+        },
+        "coverage_status": "not_listed_in_current_union",
+        "listed": false,
+        "add": {
+          "status": "not_listed",
+          "rank": null,
+          "count": null
+        },
+        "drop": {
+          "status": "not_listed",
+          "rank": null,
+          "count": null
+        },
+        "absence_semantics": "not_listed means outside the provider top-N list, never zero activity"
+      }
+    },
+    {
       "player_id": "13712",
       "name": "Hayden Large",
       "position": "TE",
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -374929,7 +375675,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -392506,7 +393251,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -394902,7 +395646,6 @@
       "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -396455,6 +397198,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -397230,7 +397974,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -399660,7 +400403,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -402021,7 +402763,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -405271,7 +406012,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -408453,6 +409193,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -409228,7 +409969,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -412443,6 +413183,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -413994,7 +414735,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -416501,7 +417241,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -421290,7 +422029,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -429297,6 +430035,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -430916,7 +431655,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -431692,7 +432430,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -433312,6 +434049,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -439875,6 +440613,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -443045,7 +443784,6 @@
       "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -445450,6 +446188,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -448620,6 +449359,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -451024,7 +451764,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -451800,7 +452539,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -454973,7 +455711,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -459032,7 +459769,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -465461,7 +466197,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -467867,7 +468602,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -471217,6 +471951,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -473543,7 +474278,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -474319,7 +475053,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -478566,7 +479299,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -484376,7 +485108,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -488290,7 +489021,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -489855,7 +490585,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -496121,10 +496850,9 @@
       "player_id": "13011",
       "name": "Brennan Presley",
       "position": "WR",
-      "nfl_team": "LAR",
+      "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -496137,7 +496865,7 @@
         "years_experience": 2,
         "salary": 0,
         "salary_projected": 0,
-        "is_free_agent_source_field": false,
+        "is_free_agent_source_field": true,
         "espn_id": "4431342"
       },
       "injury": {
@@ -497751,6 +498479,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -512227,7 +512956,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -513006,7 +513734,7 @@
       "player_id": "10228",
       "name": "Charlie Jones",
       "position": "WR",
-      "nfl_team": "NYG",
+      "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
         "canonical_nfl_membership",
@@ -513022,7 +513750,7 @@
         "years_experience": 4,
         "salary": 72517,
         "salary_projected": 68759,
-        "is_free_agent_source_field": false,
+        "is_free_agent_source_field": true,
         "espn_id": "4257188"
       },
       "injury": {
@@ -516359,7 +517087,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -517935,6 +518662,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -522128,7 +522856,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -523025,7 +523752,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -526157,7 +526883,6 @@
       "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -526939,7 +527664,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -530950,6 +531674,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -535809,6 +536534,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -536591,7 +537317,6 @@
       "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -539718,6 +540443,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -542284,7 +543010,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -543966,6 +544691,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -546427,6 +547153,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -550454,23 +551181,12 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
-        "league_owned",
         "listed_in_external_source"
       ],
       "ownership": {
-        "status": "opponent_rostered",
-        "teams": [
-          {
-            "team_id": 6,
-            "team_name": "Team TimpaBay",
-            "team_abbreviation": "TiB",
-            "roster_sections": [
-              "roster"
-            ]
-          }
-        ]
+        "status": "fantasy_free_agent",
+        "teams": []
       },
       "app_data": {
         "status": "Active",
@@ -552132,7 +552848,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -556326,6 +557041,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -565222,6 +565938,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -566108,7 +566825,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -567840,7 +568556,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -569403,7 +570118,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -572636,6 +573350,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -574211,6 +574926,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -575107,7 +575823,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -575889,6 +576604,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -576671,6 +577387,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -579131,7 +579848,6 @@
       "nfl_team": null,
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -585619,7 +586335,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -587298,7 +588013,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -588916,7 +589630,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -591366,7 +592079,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -600252,7 +600964,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -601139,6 +601850,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -601973,7 +602685,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -606115,6 +606826,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -616619,6 +617331,7 @@
       "nfl_team": "TEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -618235,7 +618948,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -619926,7 +620638,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -620772,6 +621483,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -625631,7 +626343,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -628863,7 +629574,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -630429,6 +631139,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -635292,7 +636003,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -641157,6 +641867,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -646742,6 +647453,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -649087,6 +649799,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -649973,6 +650686,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -652486,7 +653200,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -664005,6 +664718,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -665567,7 +666281,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -666403,7 +667116,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -667185,7 +667897,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -673557,6 +674268,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -677467,6 +678179,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -678363,7 +679076,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -679250,6 +679962,7 @@
       "nfl_team": "PHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -680147,7 +680860,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -690869,6 +691581,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -692433,7 +693146,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -695675,6 +696387,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -701443,7 +702156,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -708599,7 +709311,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -712793,6 +713504,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -714462,7 +715174,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -715359,6 +716070,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -718591,7 +719303,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -721051,7 +721762,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -725236,7 +725946,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -727687,6 +728396,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -728584,7 +729294,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source",
@@ -731162,7 +731871,6 @@
       "nfl_team": "NE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -731944,6 +732652,7 @@
       "nfl_team": "IND",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -732725,7 +733434,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -733560,6 +734268,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -736742,7 +737451,6 @@
       "nfl_team": "GB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -744064,6 +744772,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "league_owned",
         "listed_in_external_source"
@@ -749164,6 +749873,7 @@
       "nfl_team": "TB",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -753128,7 +753838,6 @@
       "nfl_team": "SEA",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -760610,6 +761319,7 @@
       "nfl_team": "DEN",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -762225,7 +762935,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source",
         "present_in_external_signal"
@@ -763009,7 +763718,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -764573,7 +765281,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -768540,7 +769247,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -772566,6 +773272,7 @@
       "nfl_team": "NYG",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -773347,7 +774054,6 @@
       "nfl_team": "CLE",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history"
       ],
       "ownership": {
@@ -778197,7 +778903,6 @@
       "nfl_team": "LAR",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -780659,7 +781364,6 @@
       "nfl_team": "ATL",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
-        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -781494,6 +782198,7 @@
       "nfl_team": "CHI",
       "nfl_team_source": "canonical_sleeper_team",
       "population_reasons": [
+        "canonical_nfl_membership",
         "canonical_nfl_recent_history",
         "listed_in_external_source"
       ],
@@ -784006,91 +784711,91 @@
     "source_coverage": {
       "cbs-sports-redraft-kicker-preseason": {
         "listed": 33,
-        "not_applicable": 914,
+        "not_applicable": 915,
         "not_listed": 11
       },
       "cbs-sports-redraft-qb-preseason": {
         "listed": 64,
-        "not_applicable": 835,
+        "not_applicable": 836,
         "not_listed": 59
       },
       "cbs-sports-redraft-rb-preseason": {
         "listed": 94,
-        "not_applicable": 745,
+        "not_applicable": 746,
         "not_listed": 119
       },
       "cbs-sports-redraft-te-preseason": {
         "listed": 99,
         "not_applicable": 760,
-        "not_listed": 99
+        "not_listed": 100
       },
       "cbs-sports-redraft-wr-preseason": {
         "listed": 96,
-        "not_applicable": 578,
+        "not_applicable": 579,
         "not_listed": 284
       },
       "fantasycalc-dynasty-superflex-ppr-8-team": {
         "listed": 394,
         "not_applicable": 44,
-        "not_listed": 520
+        "not_listed": 521
       },
       "fantasypros-dynasty-superflex-ppr": {
         "listed": 508,
         "not_applicable": 44,
-        "not_listed": 406
+        "not_listed": 407
       },
       "ffc-redraft-2qb-10-team": {
         "listed": 123,
         "not_applicable": 44,
-        "not_listed": 791
+        "not_listed": 792
       },
       "ffc-redraft-ppr-8-team": {
         "listed": 58,
         "not_applicable": 44,
-        "not_listed": 856
+        "not_listed": 857
       },
       "fftoday-redraft-kicker-preseason": {
         "listed": 32,
-        "not_applicable": 914,
+        "not_applicable": 915,
         "not_listed": 12
       },
       "fftoday-redraft-qb-preseason": {
         "listed": 63,
-        "not_applicable": 835,
+        "not_applicable": 836,
         "not_listed": 60
       },
       "fftoday-redraft-rb-preseason": {
         "listed": 91,
-        "not_applicable": 745,
+        "not_applicable": 746,
         "not_listed": 122
       },
       "fftoday-redraft-te-preseason": {
         "listed": 65,
         "not_applicable": 760,
-        "not_listed": 133
+        "not_listed": 134
       },
       "fftoday-redraft-wr-preseason": {
         "listed": 125,
-        "not_applicable": 578,
+        "not_applicable": 579,
         "not_listed": 255
       }
     },
     "ownership": {
-      "fantasy_free_agent": 752,
+      "fantasy_free_agent": 755,
       "mighty_giants": 37,
-      "opponent_rostered": 169
+      "opponent_rostered": 167
     },
     "positions": {
       "K": 44,
       "QB": 123,
       "RB": 213,
-      "TE": 198,
+      "TE": 199,
       "WR": 380
     },
     "population_reasons": {
-      "canonical_nfl_membership": 734,
-      "canonical_nfl_recent_history": 958,
-      "league_owned": 206,
+      "canonical_nfl_membership": 672,
+      "canonical_nfl_recent_history": 959,
+      "league_owned": 204,
       "listed_in_external_source": 600,
       "present_in_external_signal": 137
     },
