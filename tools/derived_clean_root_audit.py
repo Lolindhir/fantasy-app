@@ -18,7 +18,10 @@ Per product (and league) the three-way comparison gives one status:
 * nondeterministic:  the second empty pass changed output (error).
 * blocked:           a source is not ready or a build failed (error).
 
-This is NOT a publisher; nothing in the repository is written.
+This is NOT a publisher; nothing in the repository is written. An explicit
+--schedule-outlook-candidate mode audits the proposed Outlook product entirely
+in memory after shadow-only PWF/TWP/SeasonStatistics rebuilds. It is not a
+production model selection or publication approval.
 """
 from __future__ import annotations
 
@@ -34,10 +37,13 @@ from typing import Any
 from data_roots import DATA_DERIVED_ROOT, DATA_META_ROOT, DATA_SOURCE_ROOT
 from derived_data import (
     LEAGUE_DRAFTS, LEAGUE_RIVALRY, LEAGUE_STANDINGS, LEAGUE_TRANSACTIONS, SEASON_STATISTICS,
-    materialize_league_history, materialize_league_rivalry, materialize_league_standings, materialize_player_valuation, materialize_season_statistics,
+    materialize_league_history, materialize_league_rivalry, materialize_league_standings, materialize_player_valuation, materialize_season_statistics, serialize,
 )
 from historical_pwf_batch import materialize_historical
-from league_metadata import list_league_ids
+from league_metadata import list_league_ids, load_league_metadata
+from league_schedule_outlook_preview import preview_all
+from derived_data_lib.league_schedule_outlook import assemble
+from derived_data_lib.models.registry import get_model
 from nfl_games_materialize import discover_seasons, materialize as materialize_nfl_games
 from nfl_injuries_phase import plan_injury_phase
 from team_week_performance_materialize import materialize_all_finalized
@@ -325,6 +331,87 @@ def audit(repo_root: Path, *, leagues: list[str] | None = None) -> dict[str, Any
     }
 
 
+def audit_schedule_outlook_candidate(
+    repo_root: Path, league_id: str, *, seasons: list[int] | None = None, selected_model_id: str,
+) -> dict[str, Any]:
+    """Probe I5b's *candidate* product in memory, never in a persisted output path.
+
+    Restores the existing PWF -> TWP -> season-statistics upstream in isolated
+    empty/normal shadows, then assembles every final as-of outlook. The second
+    empty pass checks upstream no-op and exact output digest stability. No
+    ScheduleOutlook metadata selection, production writer or file is introduced.
+    This is an explicit opt-in audit, not part of the routine restore gate.
+    """
+    source = repo_root.resolve()
+    if not isinstance(league_id, str) or not league_id.strip():
+        raise ValueError("Explicit canonical --league is required")
+    for name in (DATA_SOURCE_ROOT, DATA_META_ROOT):
+        if not (source / name).is_dir():
+            raise ValueError(f"Missing required canonical root: {name}")
+    if not isinstance(selected_model_id, str) or not selected_model_id:
+        raise ValueError("An explicit candidate --model-id is required (not a metadata selection)")
+    get_model(selected_model_id, kind="schedule-outlook")
+
+    metadata = load_league_metadata(league_id, source / DATA_META_ROOT)
+    configured = sorted(int(s) for s in metadata["Seasons"])
+    selected = sorted(set(configured if seasons is None else seasons))
+    if not selected or any(type(y) is not int or y not in configured for y in selected):
+        raise ValueError(f"Requested season is not configured for {league_id}: {selected}")
+
+    def build_once(shadow: Path) -> tuple[int, dict[str, str]]:
+        writes = 0
+        for product in (PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, SEASON_STATISTICS):
+            changed, _ = _build((product, league_id), shadow)
+            writes += changed
+        digests: dict[str, str] = {}
+        for year in selected:
+            replay = preview_all(shadow, league_id, year)
+            last = replay.get("LastLeagueScoredWeek")
+            snapshots = replay.get("Snapshots")
+            if type(last) is not int or last < 0 or not isinstance(snapshots, list) or len(snapshots) != last + 1:
+                raise ValueError(f"Incomplete Schedule Outlook replay for {year}")
+            for week, observation in enumerate(snapshots):
+                document = assemble(observation, selected_model_id=selected_model_id)
+                if document["AsOf"]["AfterWeek"] != week or document["Season"] != year:
+                    raise ValueError(f"Out-of-order Schedule Outlook cutoff {year}/{week}")
+                path = f"{year}/after-week-{week:02d}.json"
+                digests[path] = hashlib.sha256(serialize(document).encode("utf-8")).hexdigest()
+        if not digests:
+            raise ValueError("Schedule Outlook candidate replay produced no snapshots")
+        return writes, digests
+
+    with tempfile.TemporaryDirectory(prefix="outlook-source-only-") as empty_dir, tempfile.TemporaryDirectory(prefix="outlook-normal-") as normal_dir:
+        empty_root, normal_root = Path(empty_dir), Path(normal_dir)
+        _prepare(empty_root, source, published=False)
+        _prepare(normal_root, source, published=True)
+        first_writes, first = build_once(empty_root)
+        second_writes, second = build_once(empty_root)
+        normal_writes, normal = build_once(normal_root)
+
+    second_identical = first == second and second_writes == 0
+    roots_identical = first == normal
+    return {
+        "Mode": "schedule-outlook-candidate-source-only-restore",
+        "ReadOnly": True,
+        "Published": False,
+        "CandidateModelID": selected_model_id,
+        "ModelSelectedInDataMeta": False,
+        "CanonicalLeagueID": league_id,
+        "Seasons": selected,
+        "SnapshotCount": len(first),
+        "FirstPassUpstreamWrites": first_writes,
+        "SecondPassUpstreamWrites": second_writes,
+        "NormalPassUpstreamWrites": normal_writes,
+        "SecondPassByteIdentical": second_identical,
+        "EmptyAndNormalIdentical": roots_identical,
+        "DigestDifferences": _diff(first, normal) if not roots_identical else {},
+        "CandidatePass": second_identical and roots_identical,
+        "CompleteConfiguredSeasonCoverage": selected == configured,
+        "SourceRevisionVerified": False,
+        "ReadyForPublication": False,
+    }
+
+
 def render_summary(result: dict[str, Any]) -> str:
     """Markdown for the GitHub Job Summary: one row per unit, errors first, hints named."""
     failed = set(result["FailedProducts"])
@@ -352,7 +439,28 @@ def main() -> int:
     parser.add_argument("--league", action="append", help="CanonicalLeagueID (repeatable); default: every league in data-meta")
     parser.add_argument("--github-summary", action="store_true",
                         help="append a Markdown table to $GITHUB_STEP_SUMMARY (CI restore gate)")
+    parser.add_argument("--schedule-outlook-candidate", action="store_true",
+                        help="opt-in source-only, in-memory Schedule Outlook restore/replay (not a publisher)")
+    parser.add_argument("--season", action="append", type=int,
+                        help="candidate-only season selection; default all configured seasons")
+    parser.add_argument("--model-id",
+                        help="candidate-only explicit schedule-outlook model ID (no metadata default)")
     args = parser.parse_args()
+    if args.schedule_outlook_candidate:
+        if not args.league or len(args.league) != 1 or not args.model_id:
+            parser.exit(2, "Candidate replay requires exactly one --league and explicit --model-id\n")
+        if args.github_summary:
+            parser.exit(2, "--github-summary is not supported in candidate mode\n")
+        try:
+            result = audit_schedule_outlook_candidate(
+                args.repo_root, args.league[0], seasons=args.season, selected_model_id=args.model_id,
+            )
+        except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
+            parser.exit(2, f"Schedule Outlook candidate restore blocked: {exc}\n")
+        print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0 if result["CandidatePass"] else 2
+    if args.season is not None or args.model_id is not None:
+        parser.exit(2, "--season and --model-id require --schedule-outlook-candidate\n")
     try:
         result = audit(args.repo_root, leagues=args.league)
     except (OSError, ValueError) as exc:

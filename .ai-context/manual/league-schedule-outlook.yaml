@@ -159,6 +159,13 @@ validation:
   pureTests: tools/tests/test_league_schedule_outlook_document.py
   previewTests: tools/tests/test_league_schedule_outlook_preview.py
   restoreProbeRequired: tools/derived_clean_root_audit.py
+  candidateRestoreProbe: >
+    Explicit opt-in only: --schedule-outlook-candidate --league <ID>
+    --model-id schedule-outlook-v1 [--season YYYY]. Rebuilds PWF, TWP and
+    season-statistics in temporary empty/normal roots, then compares in-memory
+    outlook hashes for every final cutoff and a second no-op pass. The
+    candidate model argument is not productive data-meta selection, and
+    passing this probe is not writer authorization.
   acceptanceGates:
     - Complete source-only cold rebuild and byte-identical second pass
     - No reference to previous outlook outputs or public/data

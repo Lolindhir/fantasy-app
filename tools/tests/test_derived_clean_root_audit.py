@@ -361,5 +361,106 @@ class CleanRootProbeTests(unittest.TestCase):
             probe.audit(self.root)
 
 
+class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
+    """Candidate contract is tested without adding a live Derived writer."""
+
+    def setUp(self):
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        self.root = Path(temp.name)
+        (self.root / "data-source").mkdir()
+        (self.root / "data-meta" / LEAGUE).mkdir(parents=True)
+        (self.root / "data-meta" / LEAGUE / "metadata.json").write_text("{}")
+
+    def run_candidate(self, *, poisoned_snapshot=False, fake_second_write=False, seasons=None):
+        if poisoned_snapshot:
+            old = self.root / "data-derived/league-schedule-outlook" / LEAGUE / "2024/after-week-00.json"
+            old.parent.mkdir(parents=True, exist_ok=True)
+            old.write_text('{"stale":"poison"}')
+        else:
+            old = None
+
+        def build(unit, shadow):
+            product, league = unit
+            self.assertEqual(LEAGUE, league)
+            self.assertIn(product, ("player-week-fantasy", "team-week-performance", "season-statistics"))
+            target = shadow / "data-derived" / product / LEAGUE / "2024.json"
+            writes = emit(target, "fresh-from-source")
+            return (1 if fake_second_write else writes), 0
+
+        def preview(shadow, league, year):
+            self.assertEqual(LEAGUE, league)
+            self.assertEqual(2024, year)
+            self.assertTrue((shadow / "data-source").is_symlink())
+            self.assertTrue((shadow / "data-meta").is_symlink())
+            self.assertFalse((shadow / "public/data/Players.json").exists())
+            self.assertEqual(
+                "fresh-from-source",
+                (shadow / "data-derived/season-statistics" / LEAGUE / "2024.json").read_text(),
+            )
+            poisoned = (shadow / "data-derived/league-schedule-outlook" / LEAGUE
+                        / "2024/after-week-00.json").is_file()
+            return {"LastLeagueScoredWeek": 1,
+                    "Snapshots": [{"Season": year, "AsOf": {"AfterWeek": w},
+                                   "Poisoned": poisoned} for w in range(2)]}
+
+        def assemble(row, *, selected_model_id):
+            self.assertEqual("schedule-outlook-v1", selected_model_id)
+            return {"Season": row["Season"], "AsOf": row["AsOf"], "Poisoned": row["Poisoned"]}
+
+        with ExitStack() as stack:
+            stack.enter_context(patch.object(probe, "get_model", return_value=object()))
+            stack.enter_context(patch.object(probe, "load_league_metadata",
+                                             return_value={"Seasons": {"2024": {}, "2025": {}}}))
+            stack.enter_context(patch.object(probe, "_build", side_effect=build))
+            stack.enter_context(patch.object(probe, "preview_all", side_effect=preview))
+            stack.enter_context(patch.object(probe, "assemble", side_effect=assemble))
+            report = probe.audit_schedule_outlook_candidate(
+                self.root, LEAGUE, seasons=[2024] if seasons is None else seasons,
+                selected_model_id="schedule-outlook-v1")
+        return report, old
+
+    def test_source_only_rebuild_noop_and_canonical_repository_not_written(self):
+        report, old = self.run_candidate()
+        self.assertTrue(report["CandidatePass"])
+        self.assertEqual("schedule-outlook-candidate-source-only-restore", report["Mode"])
+        self.assertEqual(2, report["SnapshotCount"])
+        self.assertFalse(report["CompleteConfiguredSeasonCoverage"])
+        self.assertFalse(report["SourceRevisionVerified"])
+        self.assertFalse(report["ReadyForPublication"])
+        self.assertEqual(0, report["SecondPassUpstreamWrites"])
+        self.assertTrue(report["SecondPassByteIdentical"])
+        self.assertTrue(report["EmptyAndNormalIdentical"])
+        self.assertFalse(report["Published"])
+        self.assertFalse(report["ModelSelectedInDataMeta"])
+        self.assertIsNone(old)
+        self.assertFalse((self.root / "data-derived/league-schedule-outlook").exists())
+
+    def test_published_old_outlook_is_not_allowed_to_affect_candidate(self):
+        report, old = self.run_candidate(poisoned_snapshot=True)
+        self.assertFalse(report["CandidatePass"])
+        self.assertTrue(report["SecondPassByteIdentical"])
+        self.assertFalse(report["EmptyAndNormalIdentical"])
+        self.assertEqual(["2024/after-week-00.json", "2024/after-week-01.json"],
+                         report["DigestDifferences"]["Differing"])
+        self.assertEqual('{"stale":"poison"}', old.read_text())
+
+    def test_upstream_second_pass_write_denies_noop(self):
+        report, _ = self.run_candidate(fake_second_write=True)
+        self.assertFalse(report["CandidatePass"])
+        self.assertEqual(3, report["SecondPassUpstreamWrites"])
+        self.assertFalse(report["SecondPassByteIdentical"])
+
+    def test_unconfigured_season_and_missing_candidate_model_fail_closed(self):
+        with patch.object(probe, "get_model", return_value=object()), \
+             patch.object(probe, "load_league_metadata", return_value={"Seasons": {"2024": {}}}):
+            with self.assertRaisesRegex(ValueError, "not configured"):
+                probe.audit_schedule_outlook_candidate(
+                    self.root, LEAGUE, seasons=[2025], selected_model_id="schedule-outlook-v1")
+            with self.assertRaisesRegex(ValueError, "explicit candidate"):
+                probe.audit_schedule_outlook_candidate(
+                    self.root, LEAGUE, seasons=[2024], selected_model_id="")
+
+
 if __name__ == "__main__":
     unittest.main()
