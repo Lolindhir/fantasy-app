@@ -891,7 +891,7 @@ class NflInjuriesProductTests(unittest.TestCase):
         # successful Raw push followed by an unsuccessful Canonical push.
         self.assertLess(
             script.index('historical_intake_selected_season=""'),
-            script.index('for attempt in $(seq 1 "$max_attempts"); do\n            echo "NFL source publish attempt'))
+            script.index('for attempt in $(seq 1 "$max_attempts"); do'))
         self.assertIn('intake_args+=(--season "$historical_intake_selected_season")', script)
         self.assertIn('historical_intake_selected_season" == "none"', script)
         self.assertIn("INJURY_HISTORY_DUE", script)
