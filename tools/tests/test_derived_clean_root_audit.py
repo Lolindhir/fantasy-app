@@ -177,6 +177,65 @@ class CleanRootProbeTests(unittest.TestCase):
         self.assertEqual("stable", (self.root / f"data-derived/league-drafts/{LEAGUE}/2024.json").read_text())
         self.assertFalse((self.root / "public").exists())
 
+    def test_full_restore_advisory_reuses_existing_upstream_without_extra_writes(self):
+        self.publish_all_stable()
+        witness = {"RepositoryCommit": "a" * 40,
+                   "SourceTree": "b" * 40, "MetadataTree": "c" * 40}
+        with patch.object(probe, "load_league_metadata",
+                          return_value={"Seasons": {"2024": {}}}), \
+             patch.object(probe, "_schedule_outlook_source_witness", return_value=witness), \
+             patch.object(probe, "_schedule_outlook_candidate_digests",
+                          return_value={"2024/after-week-00.json": "digest"}) as digests:
+            result = self.run_audit(candidate_model_id="schedule-outlook-v1")
+        candidate = result["AdvisoryScheduleOutlookCandidate"][LEAGUE]
+        self.assertTrue(result["ReadyForFullRestore"])
+        self.assertEqual("verified-candidate", candidate["Status"])
+        self.assertTrue(candidate["VerifiedCandidatePass"])
+        self.assertEqual(1, candidate["SnapshotCount"])
+        self.assertFalse(candidate["ReadyForPublication"])
+        self.assertEqual(2, digests.call_count)  # reuse empty and normal restored roots
+        for product in ("player-week-fantasy", "team-week-performance", "season-statistics"):
+            self.assertEqual(3, self.calls.count((product, LEAGUE)))  # never rebuild upstream again
+        self.assertIn("advisory", probe.render_summary(result))
+        self.assertFalse((self.root / "data-derived/league-schedule-outlook").exists())
+
+    def test_advisory_detects_old_output_input_leak_without_blocking_existing_gate(self):
+        self.publish_all_stable()
+        old = self.root / "data-derived/league-schedule-outlook" / LEAGUE / "2024/after-week-00.json"
+        old.parent.mkdir(parents=True)
+        old.write_text("poison")
+        def digests(shadow, league, seasons, selected_model_id):
+            self.assertEqual(LEAGUE, league)
+            poisoned = (shadow / "data-derived/league-schedule-outlook" /
+                        LEAGUE / "2024/after-week-00.json").exists()
+            return {"2024/after-week-00.json": "poisoned" if poisoned else "fresh"}
+        with patch.object(probe, "load_league_metadata",
+                          return_value={"Seasons": {"2024": {}}}), \
+             patch.object(probe, "_schedule_outlook_source_witness",
+                          return_value={"RepositoryCommit": "a" * 40}), \
+             patch.object(probe, "_schedule_outlook_candidate_digests",
+                          side_effect=digests):
+            result = self.run_audit(candidate_model_id="schedule-outlook-v1")
+        candidate = result["AdvisoryScheduleOutlookCandidate"][LEAGUE]
+        self.assertTrue(result["ReadyForFullRestore"])
+        self.assertEqual("restore-defect", candidate["Status"])
+        self.assertEqual(["2024/after-week-00.json"], candidate["DigestDifferences"]["Differing"])
+        self.assertFalse(candidate["VerifiedCandidatePass"])
+        self.assertEqual("poison", old.read_text())
+
+    def test_advisory_failure_stays_explicit_and_does_not_claim_publication(self):
+        self.publish_all_stable()
+        with patch.object(probe, "load_league_metadata",
+                          return_value={"Seasons": {"2024": {}}}), \
+             patch.object(probe, "_schedule_outlook_candidate_digests",
+                          side_effect=ValueError("missing Week 6")):
+            result = self.run_audit(candidate_model_id="schedule-outlook-v1")
+        candidate = result["AdvisoryScheduleOutlookCandidate"][LEAGUE]
+        self.assertTrue(result["ReadyForFullRestore"])
+        self.assertEqual("blocked-candidate", candidate["Status"])
+        self.assertIn("missing Week 6", candidate["Reason"])
+        self.assertFalse(candidate["ReadyForPublication"])
+
     def test_published_behind_is_a_hint_not_a_failure(self):
         self.publish_all_stable()
         self.publish(f"player-valuation/{LEAGUE}/2024/week-00.json", "old")
