@@ -1,7 +1,7 @@
 {
-  "SchemaVersion": 1,
+  "SchemaVersion": 2,
   "Product": "nfl-games",
-  "DetailDefinitionVersion": 1,
+  "DetailDefinitionVersion": 2,
   "Season": 2025,
   "GameID": "2025_14_DAL_DET",
   "Game": {
@@ -155,11 +155,310 @@
     "GameIndex": "available",
     "TeamStats": "available",
     "TeamSnapCounts": "available",
-    "PlayByPlay": "not-in-core-v1",
-    "FullPlayByPlayAvailable": false
+    "PlayByPlay": "source-rows-observed-upstream-completeness-unverified",
+    "FullPlayByPlayAvailable": false,
+    "PlayByPlayMetrics": "candidate-observed-unverified-completeness"
   },
   "Derivation": {
-    "DefinitionVersion": 1,
-    "InputFingerprintSHA256": "69dcd6898417c16e9615d2704e5ca19787ba6840eb5ff80a094282de3066115f"
+    "DefinitionVersion": 2,
+    "InputFingerprintSHA256": "5f3652c145756a3c37fd3a468ff2515bd5c1bd7670b1d1606c5b7e079d1d5dd8",
+    "CoreV1InputFingerprintSHA256": "69dcd6898417c16e9615d2704e5ca19787ba6840eb5ff80a094282de3066115f",
+    "PBPMetricDefinitionVersion": 1
+  },
+  "PlayByPlayMetrics": {
+    "Status": "candidate-observed-unverified-completeness",
+    "SourceDataset": "nflverse.play-by-play",
+    "OriginalAssetSHA256": "2f135887790a013fd004e609e37096bb4816d5cc80b9f19122e1bad478961978",
+    "Population": "competitive-opportunities-not-official-attempts",
+    "MetricCatalogVersion": 1,
+    "MetricDefinitionVersion": 1,
+    "GameSourceRowsObserved": 192,
+    "CompetitiveScrimmageRowsObserved": 131,
+    "ExcludedGamePlayRows": {
+      "NonScrimmage": 58,
+      "QBKneel": 2,
+      "QBSpike": 0,
+      "UnknownQBSpike": 0,
+      "TwoPoint": 1,
+      "UnknownTwoPoint": 0,
+      "UnassignedTeams": 0
+    },
+    "GameSourceCompletenessCertified": false,
+    "OffensePerspectives": [
+      {
+        "OffenseTeam": "DAL",
+        "DefenseTeam": "DET",
+        "Perspective": "offense-plays-also-defense-allowed",
+        "Opportunities": {
+          "offensive_dropbacks_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 54,
+            "Numerator": 54,
+            "Denominator": null,
+            "Eligible": 76,
+            "Observed": 76,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 54,
+            "DenominatorNotApplicable": true
+          },
+          "pass_attempts_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 47,
+            "Numerator": 47,
+            "Denominator": null,
+            "Eligible": 76,
+            "Observed": 76,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 47,
+            "DenominatorNotApplicable": true
+          },
+          "rush_attempts_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 24,
+            "Numerator": 24,
+            "Denominator": null,
+            "Eligible": 76,
+            "Observed": 76,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 24,
+            "DenominatorNotApplicable": true
+          }
+        },
+        "Efficiency": {
+          "dropback_epa_per_play_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": -0.0419,
+            "Numerator": -2.265083514400555,
+            "Denominator": 54,
+            "Eligible": 54,
+            "Observed": 54,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "pass_epa_per_attempt_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": 0.1386,
+            "Numerator": 6.514702317719746,
+            "Denominator": 47,
+            "Eligible": 47,
+            "Observed": 47,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_epa_per_play_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": 0.0164,
+            "Numerator": 0.3928666433785123,
+            "Denominator": 24,
+            "Eligible": 24,
+            "Observed": 24,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        },
+        "Success": {
+          "dropback_success_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.4444,
+            "Numerator": 24.0,
+            "Denominator": 54,
+            "Eligible": 54,
+            "Observed": 54,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_success_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.375,
+            "Numerator": 9.0,
+            "Denominator": 24,
+            "Eligible": 24,
+            "Observed": 24,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        },
+        "ExplosivePlays": {
+          "pass_explosive_20_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.1277,
+            "Numerator": 6.0,
+            "Denominator": 47,
+            "Eligible": 47,
+            "Observed": 47,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_explosive_10_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.125,
+            "Numerator": 3.0,
+            "Denominator": 24,
+            "Eligible": 24,
+            "Observed": 24,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        }
+      },
+      {
+        "OffenseTeam": "DET",
+        "DefenseTeam": "DAL",
+        "Perspective": "offense-plays-also-defense-allowed",
+        "Opportunities": {
+          "offensive_dropbacks_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 35,
+            "Numerator": 35,
+            "Denominator": null,
+            "Eligible": 55,
+            "Observed": 55,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 35,
+            "DenominatorNotApplicable": true
+          },
+          "pass_attempts_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 34,
+            "Numerator": 34,
+            "Denominator": null,
+            "Eligible": 55,
+            "Observed": 55,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 34,
+            "DenominatorNotApplicable": true
+          },
+          "rush_attempts_faced": {
+            "Status": "candidate-observed",
+            "Unit": "count",
+            "Value": 20,
+            "Numerator": 20,
+            "Denominator": null,
+            "Eligible": 55,
+            "Observed": 55,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "ConfirmedPositiveCount": 20,
+            "DenominatorNotApplicable": true
+          }
+        },
+        "Efficiency": {
+          "dropback_epa_per_play_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": 0.3485,
+            "Numerator": 12.198009743105487,
+            "Denominator": 35,
+            "Eligible": 35,
+            "Observed": 35,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "pass_epa_per_attempt_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": 0.4109,
+            "Numerator": 13.969880917305787,
+            "Denominator": 34,
+            "Eligible": 34,
+            "Observed": 34,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_epa_per_play_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "epa-per-play",
+            "Value": 0.3065,
+            "Numerator": 6.130527636792982,
+            "Denominator": 20,
+            "Eligible": 20,
+            "Observed": 20,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        },
+        "Success": {
+          "dropback_success_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.4857,
+            "Numerator": 17.0,
+            "Denominator": 35,
+            "Eligible": 35,
+            "Observed": 35,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_success_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.5,
+            "Numerator": 10.0,
+            "Denominator": 20,
+            "Eligible": 20,
+            "Observed": 20,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        },
+        "ExplosivePlays": {
+          "pass_explosive_20_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.1471,
+            "Numerator": 5.0,
+            "Denominator": 34,
+            "Eligible": 34,
+            "Observed": 34,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          },
+          "rush_explosive_10_rate_allowed": {
+            "Status": "candidate-observed",
+            "Unit": "rate",
+            "Value": 0.2,
+            "Numerator": 4.0,
+            "Denominator": 20,
+            "Eligible": 20,
+            "Observed": 20,
+            "Missing": 0,
+            "UnknownEligibilityFlagRows": 0,
+            "SufficientStatisticsUnrounded": true
+          }
+        }
+      }
+    ],
+    "UnverifiedPenaltySemantics": true,
+    "RatesAreObservedNumeratorOverObservedDenominator": true
   }
 }
