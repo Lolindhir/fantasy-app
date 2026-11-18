@@ -196,6 +196,8 @@ def main() -> int:
     group.add_argument("--current-season", action="store_true")
     group.add_argument("--all-seasons", action="store_true")
     group.add_argument("--historical-seasons", action="store_true")
+    group.add_argument("--historical-v2-upgrade-needed", action="store_true",
+                       help="Read-only fast check for older stored GameDetail schemas")
     parser.add_argument("--write", action="store_true", help="Opt-in to per-GameID Derived writes")
     parser.add_argument("--check", action="store_true", help="Read-only; exit 3 when output differs")
     args = parser.parse_args()
@@ -203,6 +205,22 @@ def main() -> int:
         parser.error("--write and --check are mutually exclusive")
     try:
         root = args.repo_root.resolve()
+        if args.historical_v2_upgrade_needed:
+            if args.write or args.check or args.out_root is not None:
+                raise ValueError("Historical schema preflight is read-only and takes no output options")
+            current = current_source_season(root)
+            historical = [s for s in discover_seasons(root) if s < current]
+            base = root / DATA_DERIVED_ROOT / "nfl-games" / "details"
+            upgrade_needed = False
+            for season in historical:
+                files = sorted((base / str(season)).glob("*.json"))
+                if not files or any(
+                    _json(path).get("SchemaVersion") != 2 for path in files
+                ):
+                    upgrade_needed = True
+                    break
+            print("upgrade-needed" if upgrade_needed else "schema-current")
+            return 0
         if args.season:
             seasons = sorted(set(args.season))
         elif args.current_season:
