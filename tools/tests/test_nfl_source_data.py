@@ -11,6 +11,7 @@ sys.path.insert(0, str(TOOLS))
 
 from nfl_source_data_lib import common as common_mod
 import nfl_pbp_source_archive as pbp_archive
+import nfl_pbp_source_auto as pbp_auto
 import nfl_pbp_2025_quality_report as pbp_quality
 from nfl_source_data_lib.draft import classify_draft_status
 from nfl_source_data_lib.materialize import materialize
@@ -325,10 +326,8 @@ class NflPbpArchiveSourcePilotTests(unittest.TestCase):
             workflow,
         )
         self.assertIn("PBP_ARCHIVE_TOKEN: ${{ github.token }}", workflow)
-        self.assertIn(
-            "2025 original PBP pilot blocked; no source archive accepted",
-            workflow,
-        )
+        self.assertIn("tools/nfl_pbp_source_auto.py", workflow)
+        self.assertIn("Original PBP archive blocked:", workflow)
         self.assertIn("git add -- data-source/providers", workflow)
 
     def test_archive_asset_hash_mismatch_is_never_an_accepted_noop(self):
@@ -345,6 +344,142 @@ class NflPbpArchiveSourcePilotTests(unittest.TestCase):
             }))
             with self.assertRaisesRegex(ValueError, "digest/size/status mismatch"):
                 pbp_archive.run(Path(tmp), "Lolindhir/fantasy-app", "test-token", weekday=1)
+
+
+
+class NflPbpCurrentSourceTests(unittest.TestCase):
+    """Mocked regression of real Source boundaries; no network or binary commits."""
+
+    def _official(self, season, data):
+        import hashlib
+        return {
+            "id": 42, "name": f"play_by_play_{season}.csv.gz",
+            "size": len(data), "digest": "sha256:" + hashlib.sha256(data).hexdigest(),
+            "state": "uploaded", "updated_at": "2026-11-18T19:00:00Z",
+            "browser_download_url": (
+                "https://github.com/nflverse/nflverse-data/releases/download/"
+                f"pbp/play_by_play_{season}.csv.gz"
+            ),
+        }
+
+    def _archived(self, season, data):
+        import hashlib
+        sha = hashlib.sha256(data).hexdigest()
+        return {
+            "id": 62, "name": f"play_by_play_{season}.csv.gz",
+            "size": len(data), "digest": "sha256:" + sha,
+            "state": "uploaded",
+            "browser_download_url": pbp_auto._archive_url(season, sha),
+        }
+
+    def test_current_source_accepts_new_revisions_without_overwriting_old_bytes(self):
+        import hashlib
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            first, second = b"2026-source-snapshot-a", b"2026-source-snapshot-b"
+            versions = [first, second, second]
+            saved = {}
+            def release(_token, season, sha):
+                return {"assets": [saved[sha]]} if sha in saved else None
+            def upload(_token, _release, path, season, sha, size):
+                data = path.read_bytes()
+                self.assertEqual(hashlib.sha256(data).hexdigest(), sha)
+                asset = self._archived(season, data)
+                saved[sha] = asset
+                return asset
+            def download(_url, target):
+                target.write_bytes(versions[len(saved)])
+            def audit(_root, _season, _file, _digest):
+                return {"SourceRowCount": 100, "ObservedGameIDs": 1,
+                        "OriginalColumnCount": 372, "PBPMetricCandidateCount": 17,
+                        "PBPMetricMVPCount": 10}
+            upstream = [self._official(2026, data) for data in versions]
+            with patch.object(pbp_auto, "current_source_season", return_value=2026), \
+                 patch.object(pbp_auto, "upstream_asset", side_effect=upstream), \
+                 patch.object(pbp_auto, "_get_release", side_effect=release), \
+                 patch.object(pbp_auto, "_create_release",
+                              return_value={"upload_url": "https://uploads.github.com/repos/Lolindhir/fantasy-app/releases/111/assets{?name,label}"}), \
+                 patch.object(pbp_auto, "_upload", side_effect=upload), \
+                 patch.object(pbp_auto, "download", side_effect=download), \
+                 patch.object(pbp_auto, "_audit", side_effect=audit):
+                one = pbp_auto.run(root, "Lolindhir/fantasy-app", "token")
+                self.assertEqual(one["SnapshotRevision"], 1)
+                metadata = root / "data-source/providers/nflverse/play-by-play-original/metadata-2026.json"
+                self.assertFalse(list(root.rglob("*.gz")))
+                old = json.loads(metadata.read_text())
+                two = pbp_auto.run(root, "Lolindhir/fantasy-app", "token")
+                self.assertEqual(two["SnapshotRevision"], 2)
+                current = json.loads(metadata.read_text())
+                self.assertEqual(current["PreviousAcceptedSHA256"], old["UpstreamSHA256"])
+                self.assertNotEqual(current["UpstreamSHA256"], old["UpstreamSHA256"])
+                self.assertEqual(len(saved), 2)
+                stable = metadata.read_bytes()
+                third = pbp_auto.run(root, "Lolindhir/fantasy-app", "token")
+                self.assertEqual(third["Status"], "original-current-noop")
+                self.assertEqual(metadata.read_bytes(), stable)
+
+    def test_source_digest_mismatch_fails_before_any_release_or_manifest(self):
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.object(pbp_auto, "current_source_season", return_value=2026), \
+             patch.object(pbp_auto, "upstream_asset",
+                          return_value=self._official(2026, b"original")), \
+             patch.object(pbp_auto, "download",
+                          side_effect=lambda _url, path: path.write_bytes(b"forged!!")), \
+             patch.object(pbp_auto, "_create_release") as release:
+            with self.assertRaisesRegex(ValueError, "official asset SHA256/size"):
+                pbp_auto.run(Path(temp), "Lolindhir/fantasy-app", "token")
+            release.assert_not_called()
+            self.assertFalse(list(Path(temp).rglob("metadata-*.json")))
+
+    def test_frozen_season_does_not_enter_live_source_writes(self):
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.object(pbp_auto, "current_source_season", return_value=2026), \
+             patch.object(pbp_auto, "upstream_asset") as upstream:
+            with self.assertRaisesRegex(ValueError, "current Source season only"):
+                pbp_auto.run(Path(temp), "Lolindhir/fantasy-app", "token", season=2025)
+            upstream.assert_not_called()
+
+    def test_existing_source_missing_archive_blocks_before_upstream(self):
+        import hashlib
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.object(pbp_auto, "current_source_season", return_value=2026), \
+             patch.object(pbp_auto, "_get_release", return_value=None), \
+             patch.object(pbp_auto, "upstream_asset") as upstream:
+            root = Path(temp)
+            sha = hashlib.sha256(b"previous").hexdigest()
+            path = root / "data-source/providers/nflverse/play-by-play-original/metadata-2026.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            previous = {"Status": "accepted-original-byte-identity", "Season": 2026,
+                        "UpstreamSHA256": sha, "CompressedBytes": 8,
+                        "ArchiveURL": pbp_auto._archive_url(2026, sha)}
+            path.write_text(json.dumps(previous))
+            with self.assertRaisesRegex(ValueError, "archive is missing"):
+                pbp_auto.run(root, "Lolindhir/fantasy-app", "token")
+            self.assertEqual(json.loads(path.read_text()), previous)
+            upstream.assert_not_called()
+
+    def test_missing_source_stays_unknown_and_unsupported_digest_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temp, \
+             patch.object(pbp_auto, "current_source_season", return_value=2026), \
+             patch.object(pbp_auto, "upstream_asset", return_value=None):
+            result = pbp_auto.run(Path(temp), "Lolindhir/fantasy-app", "token")
+            self.assertEqual(result["Status"], "upstream-season-not-released")
+            self.assertFalse(result["Changed"])
+        with patch.object(pbp_auto, "api_json", side_effect=[
+            {"id": 1234}, [dict(self._official(2026, b"original"), digest=None)],
+        ]):
+            with self.assertRaisesRegex(ValueError, "trusted identity/SHA256"):
+                pbp_auto.upstream_asset("token", 2026)
+
+    def test_official_inventory_lookup_is_dynamic(self):
+        older = self._official(2025, b"old")
+        current = self._official(2026, b"current")
+        with patch.object(pbp_auto, "api_json", side_effect=[
+            {"id": 1234}, [older, current],
+        ]) as request:
+            self.assertEqual(pbp_auto.upstream_asset("token", 2026), current)
+            self.assertEqual(request.call_count, 2)
+
 
 
 class NflPbpOriginalResearchReportTests(unittest.TestCase):

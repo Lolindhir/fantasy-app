@@ -344,8 +344,12 @@ futureGameDetailDirection:
     sourceDiscovery: data-source/providers/nflverse/play-by-play-original/metadata-<season>.json
     sourcePolicy: >-
       Each indexed Season uses the same SchemaVersion=2 and DetailDefinitionVersion=2.
-      Discover an original PBP season only through an accepted immutable Source
-      manifest and verified release asset SHA256/size. Exactly one season
+      Discover PBP only through the accepted Source manifest for each season.
+      The manifest points to a SHA-addressed immutable release asset; during
+      the active season its pointer can advance to a separately audited new
+      original version without altering or deleting prior release assets.
+      After a season becomes historical its accepted original is frozen.
+      Verify the selected release SHA256/size. Exactly one season
       download and CSV replay per materialization; preserve source evidence in
       memory for the preflight and the write, not as Derived raw rows.
       Without an accepted source manifest, v2 PlayByPlayMetrics is unavailable
@@ -353,7 +357,9 @@ futureGameDetailDirection:
       A present accepted manifest with invalid/missing archive fails closed
       before writes rather than erasing previously observed PBP metrics.
       This manifest-driven consumer does not itself acquire new Source seasons;
-      upstream Source ingestion still has a separate established acceptance owner.
+      tools/nfl_pbp_source_auto.py in the established full Source publisher owns
+      dynamically discovered active-season intake and revisions, while the
+      pre-existing 2025 original remains frozen with its own contract.
     outputContract: >-
       Existing compact NFL Games season index remains SchemaVersion=1.
       The same per-GameID details path contains the full pre-existing
