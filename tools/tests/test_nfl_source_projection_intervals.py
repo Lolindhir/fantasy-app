@@ -111,10 +111,15 @@ class ProjectionIntervalCalibrationTests(unittest.TestCase):
         }
         print("V4_INTERVAL_SUMMARY=" + json.dumps(compact, sort_keys=True))
 
+        # Row counts follow the persisted real source and grow when identity or
+        # source fixes add player-weeks, so they are checked as invariants and
+        # not pinned to a data snapshot.
         self.assertEqual(2024, report["IntervalCalibration"]["Season"])
-        self.assertEqual(5637, report["IntervalCalibration"]["Rows"])
+        calibration_rows = report["IntervalCalibration"]["Rows"]
+        holdout_rows = report["Holdout"]["Rows"]
+        self.assertGreater(calibration_rows, 1000)
+        self.assertGreater(holdout_rows, 1000)
         self.assertEqual(2025, report["Holdout"]["Season"])
-        self.assertEqual(5724, report["Holdout"]["Rows"])
         self.assertEqual(64.0, report["PointModel"]["Ridge"])
         self.assertEqual(4.0, report["PointModel"]["Clip"])
 
@@ -122,12 +127,12 @@ class ProjectionIntervalCalibrationTests(unittest.TestCase):
             result = report["Strategies"][strategy]
             for level in INTERVAL_LEVELS:
                 metrics = result["Levels"][str(int(level * 100))]
-                self.assertEqual(5724, metrics["Count"])
+                self.assertEqual(holdout_rows, metrics["Count"])
                 self.assertGreater(metrics["MeanWidth"], 0.0)
                 self.assertGreaterEqual(metrics["CoveragePercent"], 0.0)
                 self.assertLessEqual(metrics["CoveragePercent"], 100.0)
                 self.assertEqual(
-                    5724,
+                    holdout_rows,
                     metrics["CoveredCount"]
                     + metrics["LowerMissCount"]
                     + metrics["UpperMissCount"],
@@ -139,47 +144,37 @@ class ProjectionIntervalCalibrationTests(unittest.TestCase):
         # interval, while the volatility-conditioned strategy trades a small
         # amount of width for player-specific floor/ceiling differentiation.
         projection_aware = report["Strategies"]["position-projection"]["Levels"]
-        self.assertEqual(51.7296, projection_aware["50"]["CoveragePercent"])
-        self.assertEqual(79.8043, projection_aware["80"]["CoveragePercent"])
-        self.assertEqual(90.3739, projection_aware["90"]["CoveragePercent"])
-        self.assertEqual(95.1258, projection_aware["95"]["CoveragePercent"])
-        self.assertEqual(19.2163, projection_aware["90"]["MeanWidth"])
-
         volatility_strategy = report["Strategies"][
             STRATEGY_POSITION_PROJECTION_VOLATILITY
         ]
-        expected_volatility_levels = {
-            "50": (51.6247, 7.4161),
-            "80": (80.2236, 14.7934),
-            "90": (90.601, 19.6548),
-            "95": (95.283, 24.0524),
-        }
-        for level, (coverage, width) in expected_volatility_levels.items():
-            self.assertEqual(
-                coverage,
-                volatility_strategy["Levels"][level]["CoveragePercent"],
+        # Calibrated intervals: empirical holdout coverage stays near nominal.
+        for strategy_levels in (projection_aware, volatility_strategy["Levels"]):
+            for level in INTERVAL_LEVELS:
+                nominal = level * 100
+                self.assertAlmostEqual(
+                    nominal,
+                    strategy_levels[str(int(nominal))]["CoveragePercent"],
+                    delta=3.0,
+                )
+        # The projection-aware 90% interval is sharper than the global and
+        # position-only strategies at comparable coverage.
+        for other in ("global", "position"):
+            self.assertLess(
+                projection_aware["90"]["MeanWidth"],
+                report["Strategies"][other]["Levels"]["90"]["MeanWidth"],
             )
-            self.assertEqual(
-                width,
-                volatility_strategy["Levels"][level]["MeanWidth"],
-            )
-
-        self.assertEqual(
-            7.6222,
+        # Player-specific volatility conditioning yields asymmetric floor/ceiling distances.
+        self.assertNotEqual(
             volatility_strategy["Levels"]["90"]["MeanLowerDistance"],
-        )
-        self.assertEqual(
-            12.0325,
             volatility_strategy["Levels"]["90"]["MeanUpperDistance"],
         )
 
         volatility = volatility_strategy["Width90ByVolatilityClass"]
-        self.assertEqual(2652, volatility["high"]["Count"])
-        self.assertEqual(2719, volatility["low"]["Count"])
-        self.assertEqual(90.8371, volatility["high"]["CoveragePercent"])
-        self.assertEqual(90.879, volatility["low"]["CoveragePercent"])
-        self.assertEqual(21.064, volatility["high"]["MeanWidth"])
-        self.assertEqual(18.6309, volatility["low"]["MeanWidth"])
+        for volatility_class in ("high", "low"):
+            self.assertGreater(volatility[volatility_class]["Count"], 0)
+            self.assertAlmostEqual(
+                90.0, volatility[volatility_class]["CoveragePercent"], delta=3.0,
+            )
         self.assertGreater(
             volatility["high"]["MeanWidth"],
             volatility["low"]["MeanWidth"],
@@ -188,8 +183,12 @@ class ProjectionIntervalCalibrationTests(unittest.TestCase):
         # Players without enough historical games for an individual volatility
         # estimate fall back to broader groups; this early-history subset remains
         # a known weaker calibration pocket and is kept visible rather than hidden.
-        self.assertEqual(353, volatility["unavailable"]["Count"])
-        self.assertEqual(86.6856, volatility["unavailable"]["CoveragePercent"])
+        self.assertGreater(volatility["unavailable"]["Count"], 0)
+        self.assertLess(volatility["unavailable"]["Count"], holdout_rows)
+        self.assertLess(
+            volatility["unavailable"]["CoveragePercent"],
+            volatility["high"]["CoveragePercent"],
+        )
 
 
 if __name__ == "__main__":
