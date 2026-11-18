@@ -6,7 +6,7 @@ historical after-week snapshot from accepted canonical pairing facts and the
 persisted, rebuildable season-statistics weekly progression. The future Source
 matchup payload is projected to pairing identity before it reaches the pure
 schedule-outlook-v1 model: points, starters and current/final roster data are
-never historical forecast inputs. Playoff paths are a separate checkpoint.
+never historical forecast inputs. Playoff paths are independently reconstructed from canonical routing with the same finality cutoff.
 
 Usage:
   python tools/league_schedule_outlook_preview.py --league nfl-reise --season 2025 --after-week 6
@@ -157,7 +157,18 @@ def preview(repo_root: Path, league_id: str, season: int, after_week: int) -> di
         teams=teams, pairings_by_week=by_week, strengths_by_roster=ratings,
         after_week=after_week, regular_season_last_week=regular_end,
     )
-    # Preview-only shape: deliberately NOT a complete or publishable V1 product.
+    # Canonical brackets contain final outcomes from historical seasons.
+    # The versioned model masks those outcomes until their complete round is
+    # final under the same `after_week <= LeagueScoredWeek` guarantee.
+    playoffs = model.compute_playoff_paths(
+        structure=week_structure,
+        winners_bracket=_document(season_dir / "winners-bracket.json"),
+        losers_bracket=_document(season_dir / "losers-bracket.json"),
+        canonical_roster_ids=roster_ids,
+        after_week=after_week,
+        regular_season_last_week=regular_end,
+    )
+    # Preview-only shape: no production model choice, publishing or contract yet.
     return {
         "PreviewOnly": True,
         "CanonicalLeagueID": league_id,
@@ -166,6 +177,7 @@ def preview(repo_root: Path, league_id: str, season: int, after_week: int) -> di
         "Models": {"ScheduleOutlook": MODEL_ID, "SeasonStats": stats.get("Models", {}).get("SeasonStats") if stats else None},
         "AsOf": {"AfterWeek": after_week, "RatingWeek": rating_week if rating_week else None},
         "RegularSeason": value,
+        "Playoffs": playoffs,
     }
 
 
