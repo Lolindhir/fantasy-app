@@ -19,7 +19,8 @@ from typing import Any
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from derived_data_lib.nfl_game_detail import _season_index
-from derived_data_lib.nfl_game_detail_core import build_nfl_game_detail_core
+from derived_data_lib.nfl_game_detail_core import build_nfl_game_detail_v2_pilot
+from derived_data_lib.nfl_pbp_accepted_season import AcceptedPBPSeasons
 from nfl_source_data_lib.common import current_source_season
 
 
@@ -78,7 +79,7 @@ def _game_evidence_ids(
 
 def plan_season(
     repo_root: Path, season: int, *, out_root: Path | None = None,
-    write: bool = False,
+    write: bool = False, pbp_store: AcceptedPBPSeasons | None = None,
 ) -> dict[str, Any]:
     """Build every eligible game and validate the entire season before writes."""
     derived = (out_root or (repo_root / DATA_DERIVED_ROOT))
@@ -89,6 +90,10 @@ def plan_season(
     source_season, games = _season_index(index)
     if source_season != season:
         raise ValueError(f"Index Season mismatch for {season}")
+    # Discover accepted original PBP evidence from Source manifests, not a
+    # hard-coded year. Absent evidence produces v2 with unavailable PBP.
+    pbp = (pbp_store or AcceptedPBPSeasons(repo_root)).get(season, games)
+    source_plays, source_sha = pbp if pbp is not None else ({}, None)
     src = repo_root / DATA_SOURCE_ROOT / "nfl"
     target = derived / "nfl-games" / "details" / str(season)
     by_week = defaultdict(list)
@@ -108,6 +113,7 @@ def plan_season(
     identity_holds = 0
     invalid_snap_share_rows = 0
     skipped = 0
+    pbp_observed = 0
     for week in sorted(by_week):
         stats = _week_partition(src, "player-stats", season, week, cache)
         snaps = _week_partition(src, "snap-counts", season, week, cache)
@@ -119,7 +125,12 @@ def plan_season(
             if game_id not in evidence:
                 skipped += 1
                 continue
-            detail = build_nfl_game_detail_core(index, game_id, stats, snaps)
+            plays = source_plays.get(game_id)
+            detail = build_nfl_game_detail_v2_pilot(
+                index, game_id, stats, snaps,
+                pbp_rows=plays, pbp_asset_sha256=source_sha if plays else None,
+            )
+            pbp_observed += plays is not None
             eligible_ids.add(game_id)
             if detail["TeamStats"]["Status"] == "unavailable":
                 stats_missing += 1
@@ -157,6 +168,10 @@ def plan_season(
         "WithMissingTeamSnaps": snaps_missing,
         "WithIdentityHolds": identity_holds,
         "WithInvalidSnapShareRows": invalid_snap_share_rows,
+        "AcceptedPBPSourceSeason": pbp is not None,
+        "PBPGamesWithOriginalRows": pbp_observed,
+        "PBPGamesWithoutOriginalRows": len(eligible_ids) - pbp_observed,
+        "DetailSchemaVersion": 2,
         "ExistingUnchanged": len(eligible_ids) - len(preflight),
         "ChangedOrNew": len(preflight),
         "Written": len(preflight) if write else 0,
@@ -199,10 +214,14 @@ def main() -> int:
                 seasons = [s for s in seasons if s < current]
         if not seasons:
             raise ValueError("No eligible NFL seasons")
+        # Accepted original PBP is downloaded/verified/replayed at most once per
+        # season per invocation; preflight and write share identical evidence.
+        pbp_store = AcceptedPBPSeasons(root)
         # Preflight all selected seasons; the writer is invoked only if all pass.
-        audit = [plan_season(root, season, out_root=args.out_root) for season in seasons]
+        audit = [plan_season(root, season, out_root=args.out_root, pbp_store=pbp_store)
+                 for season in seasons]
         if args.write:
-            results = [plan_season(root, season, out_root=args.out_root, write=True)
+            results = [plan_season(root, season, out_root=args.out_root, write=True, pbp_store=pbp_store)
                        for season in seasons]
         else:
             results = audit
