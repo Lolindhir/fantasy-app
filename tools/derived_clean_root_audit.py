@@ -405,7 +405,10 @@ def audit_schedule_outlook_candidate(
         "SecondPassByteIdentical": second_identical,
         "EmptyAndNormalIdentical": roots_identical,
         "DigestDifferences": _diff(first, normal) if not roots_identical else {},
-        "ReadyForWriterReview": second_identical and roots_identical,
+        "CandidatePass": second_identical and roots_identical,
+        "CompleteConfiguredSeasonCoverage": selected == configured,
+        "SourceRevisionVerified": False,
+        "ReadyForPublication": False,
     }
 
 
@@ -455,7 +458,7 @@ def main() -> int:
         except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
             parser.exit(2, f"Schedule Outlook candidate restore blocked: {exc}\n")
         print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
-        return 0 if result["ReadyForWriterReview"] else 2
+        return 0 if result["CandidatePass"] else 2
     if args.season is not None or args.model_id is not None:
         parser.exit(2, "--season and --model-id require --schedule-outlook-candidate\n")
     try:
