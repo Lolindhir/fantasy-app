@@ -287,7 +287,9 @@ def _prepare(shadow: Path, source: Path, *, published: bool) -> None:
                 shutil.copy2(source / "public/data" / name, shadow / "public/data" / name)
 
 
-def audit(repo_root: Path, *, leagues: list[str] | None = None) -> dict[str, Any]:
+def audit(
+    repo_root: Path, *, leagues: list[str] | None = None, candidate_model_id: str | None = None,
+) -> dict[str, Any]:
     """Rebuild every product with and without existing Derived/App files and compare with the published ones.
 
     Live repository data-derived, public/data and workflow state remain untouched.
@@ -299,6 +301,10 @@ def audit(repo_root: Path, *, leagues: list[str] | None = None) -> dict[str, Any
     league_ids = leagues or list_league_ids(source / DATA_META_ROOT)
     if not league_ids:
         raise ValueError("No league found in data-meta")
+    if candidate_model_id is not None:
+        get_model(candidate_model_id, kind="schedule-outlook")
+    source_before = _schedule_outlook_source_witness(source) if candidate_model_id is not None else None
+    advisory: dict[str, dict[str, Any]] = {}
     units: list[Unit] = [
         (product, None if product in GLOBAL_PRODUCTS else league)
         for product in PRODUCTS
@@ -311,6 +317,48 @@ def audit(repo_root: Path, *, leagues: list[str] | None = None) -> dict[str, Any
         _prepare(normal_root, source, published=True)
         empty = _run_variant(empty_root, units, passes=2)
         normal = _run_variant(normal_root, units, passes=1)
+        if candidate_model_id is not None:
+            # Reuse the already rebuilt roots: no second PWF/TWP/Stats pass.
+            source_after = _schedule_outlook_source_witness(source)
+            source_verified = source_before is not None and source_before == source_after
+            for league_id in league_ids:
+                try:
+                    upstream = [(product, league_id) for product in (
+                        PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, SEASON_STATISTICS)]
+                    for unit in upstream:
+                        first, other = empty[unit], normal[unit]
+                        if first["error"] or other["error"]:
+                            raise ValueError(f"Upstream {unit_key(unit)} blocked: "
+                                             f"{first['error'] or other['error']}")
+                        if (len(first["files"]) != 2 or first["writes"][1] != 0
+                                or first["files"][0] != first["files"][1]):
+                            raise ValueError(f"Upstream {unit_key(unit)} second-pass no-op failed")
+                    metadata = load_league_metadata(league_id, source / DATA_META_ROOT)
+                    seasons = sorted(int(year) for year in metadata["Seasons"])
+                    empty_digests = _schedule_outlook_candidate_digests(
+                        empty_root, league_id, seasons, candidate_model_id)
+                    normal_digests = _schedule_outlook_candidate_digests(
+                        normal_root, league_id, seasons, candidate_model_id)
+                    equal = empty_digests == normal_digests
+                    advisory[league_id] = {
+                        "Status": ("verified-candidate" if equal and source_verified else
+                                   "unverified-candidate" if equal else "restore-defect"),
+                        "CandidatePass": equal,
+                        "SourceRevisionVerified": source_verified,
+                        "VerifiedCandidatePass": equal and source_verified,
+                        "SourceRevisionWitness": source_before if source_verified else None,
+                        "SnapshotCount": len(empty_digests),
+                        "Seasons": seasons,
+                        "DigestDifferences": _diff(empty_digests, normal_digests) if not equal else {},
+                        "ProviderFreshnessVerified": False,
+                        "ReadyForPublication": False,
+                    }
+                except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
+                    advisory[league_id] = {
+                        "Status": "blocked-candidate", "CandidatePass": False,
+                        "VerifiedCandidatePass": False, "Reason": str(exc),
+                        "ProviderFreshnessVerified": False, "ReadyForPublication": False,
+                    }
     results: dict[str, dict[str, Any]] = {}
     for unit in units:
         product, league = unit
@@ -319,7 +367,7 @@ def audit(repo_root: Path, *, leagues: list[str] | None = None) -> dict[str, Any
             **_classify(empty[unit], normal[unit], _files(source, unit)),
         }
     failed = sorted(k for k, v in results.items() if v["Status"] in FAILING)
-    return {
+    report = {
         "Mode": "three-way-clean-root-probe",
         "Leagues": league_ids,
         "ReadOnly": True,
@@ -330,6 +378,10 @@ def audit(repo_root: Path, *, leagues: list[str] | None = None) -> dict[str, Any
         "HintProducts": {k: v["Status"] for k, v in sorted(results.items()) if v["Status"] in HINTS},
         "ReadyForFullRestore": not failed,
     }
+    if candidate_model_id is not None:
+        report["AdvisoryScheduleOutlookCandidate"] = advisory
+        report["CandidateModelID"] = candidate_model_id
+    return report
 
 
 def _schedule_outlook_source_witness(root: Path) -> dict[str, str] | None:
@@ -380,6 +432,28 @@ def _build_schedule_outlook_candidate_upstream(root: Path, league_id: str, seaso
     return int(pwf["ChangedCount"]) + int(twp["ChangedCount"]) + _written(stats)
 
 
+def _schedule_outlook_candidate_digests(
+    shadow: Path, league_id: str, seasons: list[int], selected_model_id: str,
+) -> dict[str, str]:
+    """All final cutoffs, in memory only, from existing reconstructed upstream."""
+    digests: dict[str, str] = {}
+    for year in seasons:
+        replay = preview_all(shadow, league_id, year)
+        last = replay.get("LastLeagueScoredWeek")
+        snapshots = replay.get("Snapshots")
+        if type(last) is not int or last < 0 or not isinstance(snapshots, list) or len(snapshots) != last + 1:
+            raise ValueError(f"Incomplete Schedule Outlook replay for {year}")
+        for week, observation in enumerate(snapshots):
+            document = assemble(observation, selected_model_id=selected_model_id)
+            if document["AsOf"]["AfterWeek"] != week or document["Season"] != year:
+                raise ValueError(f"Out-of-order Schedule Outlook cutoff {year}/{week}")
+            name = f"{year}/after-week-{week:02d}.json"
+            digests[name] = hashlib.sha256(serialize(document).encode("utf-8")).hexdigest()
+    if not digests:
+        raise ValueError("Schedule Outlook candidate replay produced no snapshots")
+    return digests
+
+
 def audit_schedule_outlook_candidate(
     repo_root: Path, league_id: str, *, seasons: list[int] | None = None, selected_model_id: str,
 ) -> dict[str, Any]:
@@ -409,22 +483,8 @@ def audit_schedule_outlook_candidate(
 
     def build_once(shadow: Path) -> tuple[int, dict[str, str]]:
         writes = _build_schedule_outlook_candidate_upstream(shadow, league_id, selected)
-        digests: dict[str, str] = {}
-        for year in selected:
-            replay = preview_all(shadow, league_id, year)
-            last = replay.get("LastLeagueScoredWeek")
-            snapshots = replay.get("Snapshots")
-            if type(last) is not int or last < 0 or not isinstance(snapshots, list) or len(snapshots) != last + 1:
-                raise ValueError(f"Incomplete Schedule Outlook replay for {year}")
-            for week, observation in enumerate(snapshots):
-                document = assemble(observation, selected_model_id=selected_model_id)
-                if document["AsOf"]["AfterWeek"] != week or document["Season"] != year:
-                    raise ValueError(f"Out-of-order Schedule Outlook cutoff {year}/{week}")
-                path = f"{year}/after-week-{week:02d}.json"
-                digests[path] = hashlib.sha256(serialize(document).encode("utf-8")).hexdigest()
-        if not digests:
-            raise ValueError("Schedule Outlook candidate replay produced no snapshots")
-        return writes, digests
+        return writes, _schedule_outlook_candidate_digests(
+            shadow, league_id, selected, selected_model_id)
 
     source_before = _schedule_outlook_source_witness(source)
     with tempfile.TemporaryDirectory(prefix="outlook-source-only-") as empty_dir, tempfile.TemporaryDirectory(prefix="outlook-normal-") as normal_dir:
@@ -482,6 +542,18 @@ def render_summary(result: dict[str, Any]) -> str:
     if result["HintProducts"]:
         lines += ["", "Hints (no failure): " + ", ".join(
             f"{k} = {v}" for k, v in result["HintProducts"].items())]
+    if "AdvisoryScheduleOutlookCandidate" in result:
+        lines += ["", "### League Schedule Outlook (read-only candidate; advisory)",
+                  "", "| League | Candidate status | Cutoffs | Evidence |",
+                  "|---|---|---:|---|"]
+        for league, candidate in sorted(result["AdvisoryScheduleOutlookCandidate"].items()):
+            reason = str(candidate.get("Reason") or
+                         ("clean committed Source roots" if candidate.get("SourceRevisionVerified")
+                          else "source revision not verified")).replace("|", "/").replace("\n", " ")
+            lines.append(f"| {league} | {candidate['Status']} | "
+                         f"{candidate.get('SnapshotCount', 0)} | {reason} |")
+        lines += ["", "Candidate findings do not alter the existing product restore gate. "
+                  "No Outlook snapshot has been published."]
     return "\n".join(lines) + "\n"
 
 
@@ -493,12 +565,16 @@ def main() -> int:
                         help="append a Markdown table to $GITHUB_STEP_SUMMARY (CI restore gate)")
     parser.add_argument("--schedule-outlook-candidate", action="store_true",
                         help="opt-in source-only, in-memory Schedule Outlook restore/replay (not a publisher)")
+    parser.add_argument("--include-schedule-outlook-candidate", action="store_true",
+                        help="advisory Outlook replay inside the existing full restore, reusing built shadows")
     parser.add_argument("--season", action="append", type=int,
                         help="candidate-only season selection; default all configured seasons")
     parser.add_argument("--model-id",
                         help="candidate-only explicit schedule-outlook model ID (no metadata default)")
     args = parser.parse_args()
     if args.schedule_outlook_candidate:
+        if args.include_schedule_outlook_candidate:
+            parser.exit(2, "Choose standalone or integrated candidate mode, not both\n")
         if not args.league or len(args.league) != 1 or not args.model_id:
             parser.exit(2, "Candidate replay requires exactly one --league and explicit --model-id\n")
         if args.github_summary:
@@ -511,10 +587,15 @@ def main() -> int:
             parser.exit(2, f"Schedule Outlook candidate restore blocked: {exc}\n")
         print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
         return 0 if result["VerifiedCandidatePass"] else 2
-    if args.season is not None or args.model_id is not None:
-        parser.exit(2, "--season and --model-id require --schedule-outlook-candidate\n")
+    if args.season is not None or (args.model_id is not None and not args.include_schedule_outlook_candidate):
+        parser.exit(2, "--season and --model-id require a candidate mode\n")
+    if args.include_schedule_outlook_candidate and not args.model_id:
+        parser.exit(2, "Integrated candidate audit requires an explicit --model-id\n")
     try:
-        result = audit(args.repo_root, leagues=args.league)
+        result = audit(
+            args.repo_root, leagues=args.league,
+            candidate_model_id=args.model_id if args.include_schedule_outlook_candidate else None,
+        )
     except (OSError, ValueError) as exc:
         parser.exit(2, f"Clean-root probe could not start: {exc}\n")
     print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
