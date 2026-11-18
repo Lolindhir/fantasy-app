@@ -1274,6 +1274,10 @@ consumerReadClassification:
         network: source-layer-acquisition
         provider:nflverse: source-layer-acquisition
       note: 'Issue #1077: 2025-only original nflverse play-by-play acquisition and immutable GitHub Release Source-evidence archive through the existing NFL Source workflow; no Fantasy/App/Derived model direct read, no new scheduler or independent branch writer.'
+    tools/nfl_pbp_source_auto.py:
+      reads:
+        network: source-layer-acquisition
+      note: 'Issue #1077: dynamically discover official nflverse current-season original-PBP assets and preserve SHA-addressed immutable revisions; existing full NFL Source writer owns the Source manifest pointer, no App/Fantasy consumer reads or new writer.'
     tools/nfl_source_data_lib/common.py:
       reads:
         network: source-layer-acquisition
