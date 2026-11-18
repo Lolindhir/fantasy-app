@@ -111,7 +111,7 @@ guards:
   - no-UI-or-fantasy-projection-consumer-in-this-issue
 futureGameDetailDirection:
   confirmedAt: 2026-11-14
-  status: approved-target-architecture-not-implemented
+  status: v2-dynamic-derived-writer-implementation-under-release-review
   ownership: extend-existing-nfl-games-product-not-a-second-game-product
   summary: >
     Keep the existing compact season/game index and evolve the same consumer-neutral
@@ -125,33 +125,35 @@ futureGameDetailDirection:
     - advanced-play-derived-metrics
     - data-coverage-and-provenance
   metricDerivationOwnership:
-    status: index-published-detail-read-only
+    status: versioned-game-detail-v2-production-publisher-wiring-in-review
     source: >-
       Raw/provider evidence and canonical NFL facts live under data-source/nfl.
-      Original full PBP acquisition and persistence still require source, rights,
-      identity and coverage approval; existing snap-counts and player-stats are
-      already canonical and can support detail preview independently of PBP.
+      Existing canonical schedule, player-stats and snap-counts remain independent.
+      The 2025 original PBP has accepted immutable Source-byte identity and
+      is available as explicitly unverified-upstream-completeness evidence.
+      Future accepted original seasons are discovered from Source manifests,
+      never a derived hard-coded season list.
     implementation: >-
       Consumer-neutral, versioned formulas belong under tools/derived_data_lib,
       not Angular, Fantasy Management, a workflow expression or generated JSON.
-      nfl_games.py owns the published season index; nfl_game_detail.py composes
-      only read-only detail groups, nfl_pbp_team_metrics.py computes experimental
-      PBP candidate metrics and nfl_team_snap_usage.py infers provisional team
-      snap totals from canonical player counts and rounded player percentages.
+      nfl_games.py owns the published season index; nfl_game_detail_core.py
+      retains pure v1 core groups and composes versioned v2 PBP candidates.
+      nfl_pbp_team_metrics.py owns the reusable candidate opportunity formulas,
+      nfl_pbp_accepted_season.py enforces accepted-source identity and
+      nfl_team_snap_usage.py infers qualified team snap totals.
     materialization: >-
-      The existing tools/nfl_games_materialize.py writes only approved SchemaVersion
-      1 season-index fields to data-derived/nfl-games/<season>.json. A separate
-      detail materialization mode within the same NFL-Games owner will require a
-      versioned output schema, per-GameID path, coverage/provenance, input-hash
-      invalidation and explicit writer approval before activation.
+      The existing tools/nfl_games_materialize.py retains the SchemaVersion 1
+      season index. The same NFL Games owner publishes versioned v2 GameDetails
+      through the pre-existing scoped Derived writer, preserving full v1 fact
+      groups plus candidate PBP evidence and explicit quality/provenance.
     orchestration: >-
       Reuse the classified sync-nfl-source-data.yml dependent nfl_games_derived
       workflow and the rebuild-and-retry scoped publisher, not one workflow per
-      metric. Existing index runs only after successful full Source sync or
-      schedule-odds refresh. Future details should run only when their relevant
-      canonical Source dependencies change; use targeted affected-GameID
-      rederivation, meaningful no-op and bounded historical reconciliation.
-      No new workflow, scheduling path or writer is activated by this design.
+      metric. Current details refresh after full Source sync or schedule-odds
+      refresh through the existing writer. Historical details reconcile on Monday,
+      with an initial schema-v2 upgrade on a full Source run when any stored
+      historic v1 details remain. Subsequent content-identical rebuilds are
+      no-ops; no new workflow, scheduler, destination or writer is created.
     consumerBoundary: >-
       Derived metric definitions, denominators, quality and provenance belong to
       Shared Derived; Angular, Operations, Management and V4-C may consume or
@@ -176,7 +178,7 @@ futureGameDetailDirection:
       Preview only until representative historical/ongoing source checks,
       output contract, restorable publishing and workflow/write-scope approval.
   coreDetailV1:
-    status: activated-source-dependent-producer-pending-first-successful-run
+    status: implemented-v1-core-used-unchanged-in-v2-and-rollback
     productOwner: existing-nfl-games
     version: 1
     identity: Season + canonical GameID + DetailSchemaVersion
@@ -325,10 +327,11 @@ futureGameDetailDirection:
       pass-throw/dropback/rush metric definitions. PlayerStats attempts and
       carries are diagnostic baselines only, not a parity gate.
     activationBoundary: >-
-      This documents the approved metric semantics but does not itself
-      publish PBP-derived GameDetail v2, expand a writer scope, change
-      an existing index contract or certify upstream play completeness.
-      The future v2 pilot must test all relevant special-play exclusions.
+      The approved metric semantics are implemented as provisional v2
+      GameDetail observations under the existing Derived writer. This does
+      not expand Source permissions, alter season-index SchemaVersion 1,
+      certify independent upstream completeness or permit arbitrary
+      Source repair. Remaining uncertain play eligibility is visible.
   gameDetailV2DynamicPublication:
     issue: 1077
     targetScope: all-canonical-indexed-seasons-no-hardcoded-years
@@ -397,7 +400,7 @@ futureGameDetailDirection:
     status: ten-mvp-metrics-in-versioned-derived-v2-candidate-publisher
     issue: 1077
     producer: existing-versioned-derived-nfl-games-not-a-new-product
-    sourceEvidence: original-nflverse-pbp-in-Source-layer-only-after-separate-gates
+    sourceEvidence: immutable-accepted-original-nflverse-pbp-seasons-only
     productRule: >-
       Future detailed nfl-games views publish only compact team, situation,
       usage and optional position-specific aggregates with coverage and versioned
