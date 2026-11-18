@@ -30,6 +30,7 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -331,6 +332,54 @@ def audit(repo_root: Path, *, leagues: list[str] | None = None) -> dict[str, Any
     }
 
 
+def _schedule_outlook_source_witness(root: Path) -> dict[str, str] | None:
+    """Best-effort exact Git revision witness for canonical input roots.
+
+    A revision witness proves the accepted committed input trees used in this
+    checkout; it does NOT prove real-time provider freshness, observed historical
+    snapshots or the future writer's ability to rebuild on a publication race.
+    Missing Git context and any tracked/untracked changes fail closed.
+    """
+    def git(*args: str) -> str | None:
+        try:
+            process = subprocess.run(
+                ["git", "-C", str(root), *args], capture_output=True, text=True,
+                check=False, timeout=25,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+        return process.stdout.strip() if process.returncode == 0 else None
+
+    commit = git("rev-parse", "--verify", "HEAD")
+    source_tree = git("rev-parse", "--verify", "HEAD:data-source")
+    metadata_tree = git("rev-parse", "--verify", "HEAD:data-meta")
+    status = git("status", "--porcelain", "--untracked-files=all", "--", "data-source", "data-meta")
+    if not all(isinstance(x, str) and len(x) == 40 and
+               all(ch in "0123456789abcdef" for ch in x)
+               for x in (commit, source_tree, metadata_tree)):
+        return None
+    if status is None or status:
+        return None
+    return {
+        "RepositoryCommit": commit,
+        "SourceTree": source_tree,
+        "MetadataTree": metadata_tree,
+    }
+
+
+def _build_schedule_outlook_candidate_upstream(root: Path, league_id: str, seasons: list[int]) -> int:
+    """Rebuild only selected seasons, in a temporary Derived root, in dependency order."""
+    pwf = materialize_historical(root, league_id=league_id, seasons=seasons, write=True)
+    if pwf["BlockedCount"]:
+        raise ValueError(f"PlayerWeekFantasy upstream blocked: {_blocked_reason(pwf)}")
+    twp = materialize_all_finalized(root, league_id=league_id, seasons=seasons,
+                                  write=True, require_pwf=False)
+    if twp["BlockedCount"]:
+        raise ValueError(f"TeamWeekPerformance upstream blocked: {_blocked_reason(twp)}")
+    stats = materialize_season_statistics(root, root / DATA_DERIVED_ROOT, league_id, seasons, False)
+    return int(pwf["ChangedCount"]) + int(twp["ChangedCount"]) + _written(stats)
+
+
 def audit_schedule_outlook_candidate(
     repo_root: Path, league_id: str, *, seasons: list[int] | None = None, selected_model_id: str,
 ) -> dict[str, Any]:
@@ -359,10 +408,7 @@ def audit_schedule_outlook_candidate(
         raise ValueError(f"Requested season is not configured for {league_id}: {selected}")
 
     def build_once(shadow: Path) -> tuple[int, dict[str, str]]:
-        writes = 0
-        for product in (PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, SEASON_STATISTICS):
-            changed, _ = _build((product, league_id), shadow)
-            writes += changed
+        writes = _build_schedule_outlook_candidate_upstream(shadow, league_id, selected)
         digests: dict[str, str] = {}
         for year in selected:
             replay = preview_all(shadow, league_id, year)
@@ -380,6 +426,7 @@ def audit_schedule_outlook_candidate(
             raise ValueError("Schedule Outlook candidate replay produced no snapshots")
         return writes, digests
 
+    source_before = _schedule_outlook_source_witness(source)
     with tempfile.TemporaryDirectory(prefix="outlook-source-only-") as empty_dir, tempfile.TemporaryDirectory(prefix="outlook-normal-") as normal_dir:
         empty_root, normal_root = Path(empty_dir), Path(normal_dir)
         _prepare(empty_root, source, published=False)
@@ -388,6 +435,8 @@ def audit_schedule_outlook_candidate(
         second_writes, second = build_once(empty_root)
         normal_writes, normal = build_once(normal_root)
 
+    source_after = _schedule_outlook_source_witness(source)
+    source_verified = source_before is not None and source_before == source_after
     second_identical = first == second and second_writes == 0
     roots_identical = first == normal
     return {
@@ -407,7 +456,9 @@ def audit_schedule_outlook_candidate(
         "DigestDifferences": _diff(first, normal) if not roots_identical else {},
         "CandidatePass": second_identical and roots_identical,
         "CompleteConfiguredSeasonCoverage": selected == configured,
-        "SourceRevisionVerified": False,
+        "SourceRevisionVerified": source_verified,
+        "SourceRevisionWitness": source_before if source_verified else None,
+        "ProviderFreshnessVerified": False,
         "ReadyForPublication": False,
     }
 
