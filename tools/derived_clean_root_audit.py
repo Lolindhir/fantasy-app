@@ -319,8 +319,6 @@ def audit(
         normal = _run_variant(normal_root, units, passes=1)
         if candidate_model_id is not None:
             # Reuse the already rebuilt roots: no second PWF/TWP/Stats pass.
-            source_after = _schedule_outlook_source_witness(source)
-            source_verified = source_before is not None and source_before == source_after
             for league_id in league_ids:
                 try:
                     upstream = [(product, league_id) for product in (
@@ -341,12 +339,8 @@ def audit(
                         normal_root, league_id, seasons, candidate_model_id)
                     equal = empty_digests == normal_digests
                     advisory[league_id] = {
-                        "Status": ("verified-candidate" if equal and source_verified else
-                                   "unverified-candidate" if equal else "restore-defect"),
+                        "Status": "candidate-pass" if equal else "restore-defect",
                         "CandidatePass": equal,
-                        "SourceRevisionVerified": source_verified,
-                        "VerifiedCandidatePass": equal and source_verified,
-                        "SourceRevisionWitness": source_before if source_verified else None,
                         "SnapshotCount": len(empty_digests),
                         "Seasons": seasons,
                         "DigestDifferences": _diff(empty_digests, normal_digests) if not equal else {},
@@ -359,6 +353,17 @@ def audit(
                         "VerifiedCandidatePass": False, "Reason": str(exc),
                         "ProviderFreshnessVerified": False, "ReadyForPublication": False,
                     }
+            # Verify the source trees only after all candidate preview reads,
+            # not just after the upstream materializers.
+            source_after = _schedule_outlook_source_witness(source)
+            source_verified = source_before is not None and source_before == source_after
+            for candidate in advisory.values():
+                candidate["SourceRevisionVerified"] = source_verified
+                candidate["SourceRevisionWitness"] = source_before if source_verified else None
+                candidate["VerifiedCandidatePass"] = bool(candidate["CandidatePass"] and source_verified)
+                if candidate["CandidatePass"]:
+                    candidate["Status"] = ("verified-candidate" if source_verified
+                                           else "unverified-candidate")
     results: dict[str, dict[str, Any]] = {}
     for unit in units:
         product, league = unit
