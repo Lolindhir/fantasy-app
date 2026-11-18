@@ -18,8 +18,7 @@ Per product (and league) the three-way comparison gives one status:
 * nondeterministic:  the second empty pass changed output (error).
 * blocked:           a source is not ready or a build failed (error).
 
-This is NOT a publisher; nothing in the repository is written.
-"""
+This is NOT a publisher; nothing in the repository is written. An explicit\n--schedule-outlook-candidate mode audits the proposed Outlook product entirely\nin memory after shadow-only PWF/TWP/SeasonStatistics rebuilds. It is not a\nproduction model selection or publication approval.\n"""
 from __future__ import annotations
 
 import argparse
