@@ -158,8 +158,7 @@ plannedMaterialization:
 validation:
   pureTests: tools/tests/test_league_schedule_outlook_document.py
   previewTests: tools/tests/test_league_schedule_outlook_preview.py
-  restoreProbeRequired: tools/derived_clean_root_audit.py
-  acceptanceGates:
+  restoreProbeRequired: tools/derived_clean_root_audit.py\n  candidateRestoreProbe: >\n    Explicit opt-in only: --schedule-outlook-candidate --league <ID>\n    --model-id schedule-outlook-v1 [--season YYYY]. Rebuilds PWF, TWP and\n    season-statistics in temporary empty/normal roots, then compares in-memory\n    outlook hashes for every final cutoff and a second no-op pass. The\n    candidate model argument is not productive data-meta selection, and\n    passing this probe is not writer authorization.\n  acceptanceGates:
     - Complete source-only cold rebuild and byte-identical second pass
     - No reference to previous outlook outputs or public/data
     - All valid 2024/2025/2026 Cutoffs and both playoff round styles
