@@ -115,6 +115,13 @@ class PreviewAdapterTests(unittest.TestCase):
                                     for item in snapshots))
                 self.assertEqual(0, snapshots[0]["AsOf"]["AfterWeek"])
 
+    def test_replay_rejects_unknown_finality_before_any_snapshot(self):
+        with mock.patch.object(preview, "resolve_week_finality", return_value={"LeagueScoredWeek": None}):
+            with mock.patch.object(preview, "preview") as build:
+                with self.assertRaisesRegex(preview.ScheduleOutlookSourceError, "Unknown LeagueScoredWeek"):
+                    preview.preview_all(TOOLS.parent, "nfl-reise", 2025)
+                build.assert_not_called()
+
     def test_replay_fails_closed_for_any_bad_cutoff_without_skipping(self):
         with mock.patch.object(preview, "resolve_week_finality", return_value={"LeagueScoredWeek": 3}):
             with mock.patch.object(preview, "preview", side_effect=lambda root, league, season, week:
