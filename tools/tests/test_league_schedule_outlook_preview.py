@@ -5,6 +5,7 @@ import copy
 import json
 import sys
 import unittest
+from unittest import mock
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parents[1]
@@ -93,6 +94,42 @@ class PreviewAdapterTests(unittest.TestCase):
         self.assertEqual(encoded(left), encoded(right))
         self.assertNotIn("GeneratedAt", left)
         self.assertNotIn("ObservedAt", left)
+
+    def test_replay_all_historical_cutoffs_2024_2025_2026(self):
+        # A full read-only history rebuild is deliberately separate from the
+        # cheap single-week preview path. Every supported Week must exist,
+        # including zero and each completed playoff leg, without a gap.
+        for season in (2024, 2025, 2026):
+            with self.subTest(season=season):
+                scored = preview.resolve_week_finality(TOOLS.parent, "nfl-reise", season)["LeagueScoredWeek"]
+                result = preview.preview_all(TOOLS.parent, "nfl-reise", season)
+                self.assertTrue(result["PreviewOnly"])
+                self.assertEqual(scored, result["LastLeagueScoredWeek"])
+                snapshots = result["Snapshots"]
+                self.assertEqual(scored + 1, len(snapshots))
+                self.assertEqual(list(range(scored + 1)),
+                                 [item["AsOf"]["AfterWeek"] for item in snapshots])
+                self.assertTrue(all(item["PreviewOnly"] for item in snapshots))
+                self.assertTrue(all(item["Season"] == season for item in snapshots))
+                self.assertTrue(all("RegularSeason" in item and "Playoffs" in item
+                                    for item in snapshots))
+                self.assertEqual(0, snapshots[0]["AsOf"]["AfterWeek"])
+
+    def test_replay_rejects_unknown_finality_before_any_snapshot(self):
+        with mock.patch.object(preview, "resolve_week_finality", return_value={"LeagueScoredWeek": None}):
+            with mock.patch.object(preview, "preview") as build:
+                with self.assertRaisesRegex(preview.ScheduleOutlookSourceError, "Unknown LeagueScoredWeek"):
+                    preview.preview_all(TOOLS.parent, "nfl-reise", 2025)
+                build.assert_not_called()
+
+    def test_replay_fails_closed_for_any_bad_cutoff_without_skipping(self):
+        with mock.patch.object(preview, "resolve_week_finality", return_value={"LeagueScoredWeek": 3}):
+            with mock.patch.object(preview, "preview", side_effect=lambda root, league, season, week:
+                                   {"AsOf": {"AfterWeek": week}} if week != 2 else
+                                   (_ for _ in ()).throw(preview.ScheduleOutlookSourceError("missing Week 2"))) as build:
+                with self.assertRaisesRegex(preview.ScheduleOutlookSourceError, "Week 2"):
+                    preview.preview_all(TOOLS.parent, "nfl-reise", 2025)
+                self.assertEqual(3, build.call_count)
 
     def test_repository_2025_after_week_6_has_seven_future_games_per_team(self):
         result = preview.preview(TOOLS.parent, "nfl-reise", 2025, 6)
