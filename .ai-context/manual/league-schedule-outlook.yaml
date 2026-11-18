@@ -1,0 +1,169 @@
+schemaVersion: 1
+status: proposed-contract-not-yet-published
+trackingIssue: 1519
+architectureDecision: pending
+implementationState: >
+  I1–I5a read-only as-of reconstruction merged and verified (2024–2026).
+  I5b introduces only pure versioned document assembly and its tests.
+  No league metadata selection, materializer writer, published snapshot,
+  publisher/permissions change or App consumer is enabled by this proposal.
+
+purpose: >
+  One reproducible, consumer-neutral shared data product for the remaining
+  regular-season schedule, two separately explained opponent-strength metrics,
+  and confirmed, provisional, conditional or unknown playoff paths for every
+  fully scored historical after-week cutoff. Does not contain future match
+  win, playoff-qualification or championship probabilities (follow-up #1536).
+
+architecture:
+  decisionBasis:
+    - ADR-037
+    - ADR-038
+    - ADR-054
+    - ADR-055
+    - ADR-071
+    - ADR-082
+  logicalLayer: Shared Derived Data
+  proposedStorage: data-derived/league-schedule-outlook/<CanonicalLeagueID>/<Season>/after-week-<NN>.json
+  existingInputs:
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/league.json
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/members.json
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/rosters.json
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/matchups/week-N.json
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/winners-bracket.json
+    - data-source/leagues/<CanonicalLeagueID>/seasons/<Season>/losers-bracket.json
+    - data-derived/season-statistics/<CanonicalLeagueID>/<Season>.json (rebuildable from accepted Source and upstream products)
+    - tools/derived_data_lib/week_finality.py (LeagueScoredWeek)
+    - central model registry schedule-outlook-v1
+    - data-meta/<CanonicalLeagueID>/metadata.json (future explicit Models.ScheduleOutlook selection; not yet enabled)
+  forbiddenInputs:
+    - public/data/** consumer read models
+    - any previously generated league-schedule-outlook snapshot
+    - future scores, starters, later rosters or results of unscored weeks
+    - finalized playoff winners before the entire applicable round is scored
+
+identity:
+  fileTuple:
+    - CanonicalLeagueID
+    - CanonicalLeagueSeasonID
+    - Season
+    - AsOf.AfterWeek
+    - SchemaVersion
+    - Models.ScheduleOutlook
+  teamKey: CanonicalLeagueRosterID
+  secondaryJoinKey: TeamID is season-local and not canonical identity
+  oneFilePerWeek: after-week-00 is pre-season; subsequent weeks are fully scored league weeks only
+
+temporalSemantics:
+  cutoff: AfterWeek is 0..LeagueScoredWeek from the central week-finality contract
+  regularSeasonEnd: PlayoffStartWeek minus one (never hardcode the season's week count)
+  sourcePairings: >
+    Only canonical team/matchup identities of future regular-season weeks are
+    used. Matchup scores and lineups from those source rows are ignored.
+  ratings: >
+    Use season-statistics.Weeks[min(AfterWeek,regularSeasonEnd)] for every
+    opponent, or null at Week 0. After the regular-season end the last
+    regular-season rating stays explicitly fixed while playoff paths update.
+  playoffPaths: >
+    Model the existing bracket's routing, one- or two-week rounds, byes,
+    placement/consolation and distinct participant certainty and round
+    completion. Never replay later winner or seeded-entrant observations
+    into earlier completed-week snapshots.
+  evidence: >
+    An AsOf snapshot is reconstructed from the currently accepted canonical
+    facts under the selected model; it does not assert the exact provider or
+    UI observation that historically existed at that clock instant.
+
+definitions:
+  RemainingSoSRelativeStrength: >
+    Mean of each remaining opponent's as-of RelativeScoringStrength, counting
+    repeated games repeatedly. Lower means an easier remaining schedule.
+  RemainingOpponentBestBallStrength: >
+    Mean of each remaining opponent's as-of ProjectedBestBallStrength in
+    fantasy points. These two metrics are not combined in V1.
+  ranking: >
+    Ascending competition ranking only with complete opponent coverage
+    across every team for that metric. A metric missing any opponent has
+    a null aggregate/rank and a clear coverage count.
+  noGames: >
+    Zero remaining games yields null difficulty and rank, never zero.
+  noEvidence: >
+    Unknown scores/ratings/participants stay null or unknown; never 50%,
+    zero or a fabricated schedule/opponent.
+
+contract:
+  version: 1
+  product: league-schedule-outlook
+  provisionalRootShape: |
+    {
+      "SchemaVersion": 1,
+      "Product": "league-schedule-outlook",
+      "CanonicalLeagueID": "<id>",
+      "CanonicalLeagueSeasonID": "<canonical season id>",
+      "Season": <int>,
+      "Models": {
+        "ScheduleOutlook": "schedule-outlook-v1",
+        "SeasonStats": "season-stats-v1" | null
+      },
+      "AsOf": { "AfterWeek": <int>, "RatingWeek": <int> | null },
+      "Provenance": { "Reconstruction": "reconstructed-from-accepted-sources" },
+      "RegularSeason": {
+        "AfterWeek": <int>,
+        "RatingWeek": <int> | null,
+        "UpcomingMatchups": [ { "Week", "CanonicalLeagueMatchupID",
+                                "Team1CanonicalLeagueRosterID", "Team2CanonicalLeagueRosterID" } ],
+        "Teams": [ { "TeamID", "CanonicalLeagueRosterID", "RemainingGames", "Upcoming",
+                     "KnownRelativeScoringStrengthGames", "KnownProjectedBestBallStrengthGames",
+                     "RemainingSoSRelativeStrength", "RemainingSoSRelativeStrengthRank",
+                     "RemainingOpponentBestBallStrength", "RemainingOpponentBestBallStrengthRank" } ]
+      },
+      "Playoffs": {
+        "Format": { "PlayoffStartWeek", "PlayoffTeams", "PlayoffRoundType", "RoundWeeks",
+                    "ObservedPlayoffFormat", "ProjectedPlayoffFormat", "FormatEvidence" },
+        "Paths": [ { "Bracket", "Match", "Round", "RoundWeeks", "RoundState",
+                     "Category", "Placement", "Participants", "ParticipantCertainty",
+                     "WinnerCanonicalLeagueRosterID", "LoserCanonicalLeagueRosterID" } ]
+      }
+    }
+  modelSelection: >
+    ScheduleOutlook is a mandatory explicit per-season data-meta model choice
+    before any productive materialization; no implicit version fallback.
+    Missing or unknown selections fail closed.
+  serialization: >
+    Deterministic compact UTF-8 JSON with no volatile build/clock timestamps.
+    No PreviewOnly field in persisted product documents.
+  sourceRevision: >
+    Input fingerprints and correction/republication semantics will be fixed
+    in the materializer/restore checkpoint before the first production write;
+    this provisional schema makes no unsupported ObservedAt claim.
+
+plannedMaterialization:
+  pureAssembler: tools/derived_data_lib/league_schedule_outlook.py::assemble
+  readOnlySourceAdapter: tools/league_schedule_outlook_preview.py
+  writeScope: not yet authorized
+  currentScope: >
+    After existing season-statistics refresh, calculate only necessary current
+    snapshots; no unbounded 10-minute replay.
+  historicalScope: >
+    Recalculate all accepted historical cutoffs on the existing weekly history
+    cadence and on authorized source corrections.
+  writerOwnersPendingApproval:
+    - .github/workflows/league-live.yml (existing rebuild-and-retry)
+    - .github/workflows/update-transactions.yml (existing rebuild-and-retry)
+  rollback: >
+    Remove in-scope generator calls and the newly approved Derived output
+    prefix only through reviewed changes. Do not force-delete historic
+    published snapshots as an automatic rollback action.
+
+validation:
+  pureTests: tools/tests/test_league_schedule_outlook_document.py
+  previewTests: tools/tests/test_league_schedule_outlook_preview.py
+  restoreProbeRequired: tools/derived_clean_root_audit.py
+  acceptanceGates:
+    - Complete source-only cold rebuild and byte-identical second pass
+    - No reference to previous outlook outputs or public/data
+    - All valid 2024/2025/2026 Cutoffs and both playoff round styles
+    - Correct null/unknown and future-leak regression tests
+    - Fail-closed unknown metadata model, source/cutoff gaps, late source revisions
+    - Bounded writer-scope, no-op and race/recovery tests
+    - Separate targeted approval for new productive Derived prefix
