@@ -204,5 +204,26 @@ class WorkflowPublicationContractTests(unittest.TestCase):
                 self.assertNotIn("HEAD:main", self.read(name))
 
 
+class SharedSourceWriterQueueTests(unittest.TestCase):
+    """G5 (Issue #1263): shared Source writer groups keep every waiting run instead of replacing the pending slot."""
+
+    GROUPS = {"sync-nfl-source-data.yml": "nfl-source-data-sync", "sync-league-source-data.yml": "league-source-data-sync"}
+
+    def test_shared_source_groups_queue_waiting_runs(self) -> None:
+        for name, group in self.GROUPS.items():
+            with self.subTest(workflow=name):
+                concurrency = load_yaml(WORKFLOWS / name)["concurrency"]
+                self.assertEqual(group, concurrency["group"])
+                self.assertIs(False, concurrency["cancel-in-progress"])
+                self.assertEqual("max", concurrency["queue"])
+
+    def test_callers_keep_their_own_single_pending_group(self) -> None:
+        for name in ("nfl-live.yml", "odds-refresh.yml", "league-live.yml"):
+            with self.subTest(workflow=name):
+                concurrency = load_yaml(WORKFLOWS / name)["concurrency"]
+                self.assertIs(False, concurrency["cancel-in-progress"])
+                self.assertNotIn("queue", concurrency)
+
+
 if __name__ == "__main__":
     unittest.main()
