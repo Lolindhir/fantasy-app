@@ -92,6 +92,10 @@ class NflGamesPublisherContractTests(unittest.TestCase):
         self.assertIn("inputs.materialization_scope == 'full'", historical["if"])
         self.assertIn("TZ=Europe/Berlin date +%u", historical["run"])
         self.assertIn('!= "1"', historical["run"])
+        self.assertIn("--historical-v2-upgrade-needed", historical["run"])
+        self.assertIn('reason="one-time-schema-v2-upgrade"', historical["run"])
+        self.assertIn("tools/nfl_game_details_materialize.py",
+                      workflow[True]["push"]["paths"])
         self.assertEqual(workflow["jobs"]["nfl_games_derived"]["timeout-minutes"], 20)
         contract = yaml.safe_load(
             (ROOT / ".ai-context/manual/nfl-games.yaml").read_text(encoding="utf-8")
@@ -101,6 +105,10 @@ class NflGamesPublisherContractTests(unittest.TestCase):
                          "data-derived/nfl-games/details/**")
         self.assertEqual(detail["publication"]["historicalAuditDay"], "Monday")
         self.assertEqual(detail["publication"]["noSeparateScheduler"], True)
+        v2 = contract["futureGameDetailDirection"]["gameDetailV2DynamicPublication"]
+        self.assertEqual(v2["targetScope"], "all-canonical-indexed-seasons-no-hardcoded-years")
+        self.assertEqual(v2["owner"], "existing-nfl-games")
+        self.assertIn("metadata-<season>.json", v2["sourceDiscovery"])
 
     def test_existing_shared_scheduler_keeps_original_cadence(self) -> None:
         import json

@@ -21,6 +21,7 @@ from derived_data_lib.nfl_team_snap_usage import infer_team_snap_volumes
 from derived_data_lib.nfl_franchise_aliases import reconcile_game_team
 from nfl_games_materialize import materialize, discover_seasons
 from nfl_game_details_materialize import plan_season as plan_game_details
+from derived_data_lib.nfl_pbp_accepted_season import AcceptedPBPSeasons
 from nfl_pbp_metric_field_audit import audit as audit_pbp_catalog_fields, reconcile_original_game_row
 from nfl_pbp_team_metric_reconcile import (
     reconcile as reconcile_pbp_team_season,
@@ -687,7 +688,8 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
             self.assertEqual(first["Written"], 1)
             output = json.loads(target.read_text(encoding="utf-8"))
             self.assertEqual(output["GameID"], "2026_06_HOU_JAX")
-            self.assertEqual(output["SchemaVersion"], 1)
+            self.assertEqual(output["SchemaVersion"], 2)
+            self.assertEqual(output["PlayByPlayMetrics"]["Status"], "unavailable")
             self.assertEqual(plan_game_details(root, 2026, write=True)["ChangedOrNew"], 0)
             first_bytes = target.read_bytes()
             # Source partition metadata outside the actual game evidence is irrelevant.
@@ -721,7 +723,14 @@ class NflGameDetailCanonicalWeekGroupsTests(unittest.TestCase):
         if not (root / DATA_DERIVED_ROOT / "nfl-games" / "2025.json").exists():
             self.skipTest("Canonical historical NFL Games index unavailable")
         with tempfile.TemporaryDirectory() as tmp:
-            result = plan_game_details(root, 2025, out_root=Path(tmp))
+            # This fixture tests canonical history without network requests.
+            # Accepted original bytes are exercised separately with local assets.
+            class NoOriginalAsset:
+                def get(self, season, games):
+                    return None
+
+            result = plan_game_details(root, 2025, out_root=Path(tmp),
+                                       pbp_store=NoOriginalAsset())
             self.assertGreater(result["EligibleGames"], 200)
             self.assertGreater(result["WithIdentityHolds"], 0)
             self.assertEqual(result["ChangedOrNew"], result["EligibleGames"])
@@ -1825,11 +1834,101 @@ class NflGameDetailV2ReadOnlyPilotTests(unittest.TestCase):
             )
             with self.assertRaisesRegex(ValueError, "mismatch"):
                 preview(root, 2025, game_id, source, "f" * 64, v2_pilot=True)
-            with self.assertRaisesRegex(ValueError, "requires 2025"):
+            with self.assertRaisesRegex(ValueError, "requires original PBP"):
                 preview(root, 2025, game_id, None, None, v2_pilot=True)
             with self.assertRaisesRegex(ValueError, "mutually exclusive"):
                 preview(root, 2025, game_id, source, digest,
                         core_v1=True, v2_pilot=True)
+
+
+
+class NflGameDetailV2AcceptedSeasonPublisherTests(unittest.TestCase):
+    def test_dynamic_manifest_source_and_noop_for_any_indexed_year(self):
+        game = "2026_06_HOU_JAX"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            docs = {
+                root / DATA_DERIVED_ROOT / "nfl-games/2026.json": build_nfl_games(*inputs()),
+                root / DATA_SOURCE_ROOT / "nfl/player-stats/2026/06.json": _week_stats(),
+                root / DATA_SOURCE_ROOT / "nfl/snap-counts/2026/06.json": _week_snaps(),
+            }
+            for path, payload in docs.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(payload), encoding="utf-8")
+            original = root / "accepted-original.csv.gz"
+            row = _pbp_row(
+                game_id=game, season="2026", week="6", play_id="33",
+                pass_attempt="1", rush_attempt="0", sack="0", qb_spike="0",
+                qb_dropback="1", complete_pass="1", passing_yards="25",
+            )
+            fields = sorted(set(_PBP_CSV_FIELDS) | set(row))
+            _write_original_pbp_gzip(original, [row], fields=fields)
+            digest = hashlib.sha256(original.read_bytes()).hexdigest()
+            manifest = root / DATA_SOURCE_ROOT / (
+                "providers/nflverse/play-by-play-original/metadata-2026.json"
+            )
+            manifest.parent.mkdir(parents=True, exist_ok=True)
+            manifest.write_text(json.dumps({
+                "SchemaVersion": 1, "Status": "accepted-original-byte-identity",
+                "Provider": "nflverse", "Season": 2026,
+                "UpstreamSHA256": digest, "CompressedBytes": original.stat().st_size,
+                "SourceCompletenessCertified": False,
+                "ArchiveURL": (
+                    "https://github.com/Lolindhir/fantasy-app/releases/download/"
+                    f"nfl-pbp-source-2026-{digest[:12]}/play_by_play_2026.csv.gz"
+                ),
+                "Audit": {"SourceRowCount": 1, "ObservedGameIDs": 1},
+            }), encoding="utf-8")
+            store = AcceptedPBPSeasons(root, local_assets={2026: original})
+            before = {p.relative_to(root): p.read_bytes()
+                      for p in root.rglob("*") if p.is_file()}
+            preflight = plan_game_details(root, 2026, pbp_store=store)
+            self.assertEqual(preflight["PBPGamesWithOriginalRows"], 1)
+            self.assertTrue(preflight["AcceptedPBPSourceSeason"])
+            self.assertEqual(preflight["Written"], 0)
+            self.assertEqual(
+                before, {p.relative_to(root): p.read_bytes()
+                         for p in root.rglob("*") if p.is_file()},
+            )
+            written = plan_game_details(root, 2026, write=True, pbp_store=store)
+            self.assertEqual(written["Written"], 1)
+            detail_path = (
+                root / DATA_DERIVED_ROOT / "nfl-games/details/2026" / (game + ".json")
+            )
+            published = json.loads(detail_path.read_text(encoding="utf-8"))
+            self.assertEqual(published["SchemaVersion"], 2)
+            self.assertEqual(published["PlayByPlayMetrics"]["OriginalAssetSHA256"], digest)
+            offense = published["PlayByPlayMetrics"]["OffensePerspectives"][0]
+            self.assertEqual(offense["Opportunities"]["pass_attempts_faced"]["Value"], 1)
+            self.assertEqual(offense["ExplosivePlays"]["pass_explosive_20_rate_allowed"]["Value"], 1.0)
+            self.assertFalse(published["PlayByPlayMetrics"]["GameSourceCompletenessCertified"])
+            self.assertEqual(plan_game_details(root, 2026, write=True, pbp_store=store)["Written"], 0)
+            # Tampered original fails closed before any existing output changes.
+            corrupted = original.read_bytes() + b"tampered"
+            original.write_bytes(corrupted)
+            fresh = AcceptedPBPSeasons(root, local_assets={2026: original})
+            unchanged = detail_path.read_bytes()
+            with self.assertRaisesRegex(ValueError, "accepted Source bytes"):
+                plan_game_details(root, 2026, write=True, pbp_store=fresh)
+            self.assertEqual(detail_path.read_bytes(), unchanged)
+
+    def test_accepted_manifest_requires_exact_archive_origin_and_existing_index(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / DATA_SOURCE_ROOT / (
+                "providers/nflverse/play-by-play-original/metadata-2028.json"
+            )
+            source.parent.mkdir(parents=True, exist_ok=True)
+            source.write_text(json.dumps({
+                "SchemaVersion": 1, "Status": "accepted-original-byte-identity",
+                "Provider": "nflverse", "Season": 2028,
+                "UpstreamSHA256": "a" * 64, "CompressedBytes": 10,
+                "SourceCompletenessCertified": False,
+                "ArchiveURL": "https://example.org/unsafe.csv.gz",
+            }), encoding="utf-8")
+            store = AcceptedPBPSeasons(root)
+            with self.assertRaisesRegex(ValueError, "Unsafe/mismatched"):
+                store.get(2028, {})
 
 
 class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):

@@ -590,22 +590,25 @@ nflGamesSharedDerivation:
     source:
       root: data-source/nfl/**
       responsibility: canonical schedule, finality, market, player-stats and snap-count facts;
-        original PBP remains a separate rights-and-source-coverage gate
+        original PBP requires separate immutable Source acceptance per season; compact
+        versioned PBP metrics consume only accepted evidence
     rules:
       root: tools/derived_data_lib/
       responsibility: pure, versioned and independently reusable team/game derivations
       examples:
         - nfl_games.py (published index)
         - nfl_game_detail.py (read-only detail preview)
-        - nfl_pbp_team_metrics.py (experimental 17 team-only candidates)
+        - nfl_pbp_team_metrics.py (17 team-only candidates; ten provisionally used by v2)
+        - nfl_pbp_accepted_season.py (accepted original-PBP Source manifest/asset reader)
         - nfl_team_snap_usage.py (read-only player-share team-total inference)
     materialization:
       runner: tools/nfl_games_materialize.py
       publishedIndex: data-derived/nfl-games/<season>.json
       detail: data-derived/nfl-games/details/<season>/<GameID>.json
-      detailStatus: core-v1-production-writer-activated-pending-first-successful-source-run
+      detailStatus: versioned-v2-dynamic-publication-pending-first-real-derived-write
       previewCli: tools/nfl_game_detail_preview.py --core-v1
       detailBuilder: tools/derived_data_lib/nfl_game_detail_core.py
+      originalPbpReader: tools/derived_data_lib/nfl_pbp_accepted_season.py
       responsibility: read canonical inputs, invoke pure rules, validate contract,
         persist only approved versioned shared outputs; no raw PBP play-list publication
     orchestration:
@@ -614,17 +617,21 @@ nflGamesSharedDerivation:
       activeScope: season index from schedules, game finality and schedule odds
       detailRefresh: current-season after full Source or scoped schedule-odds
       historicalRefresh: Monday full-Source run (Europe/Berlin), all accepted
-        indexed historical seasons recomputed with semantic per-GameID no-op
-      rule: existing classified rebuild-and-retry publisher; no per-metric
-        schedulers, unconditional PBP replays, extra permissions or parallel writers
+        indexed historical seasons recomputed with semantic per-GameID no-op;
+        one-time non-Monday v1-to-v2 schema upgrade on full Source if needed
+      rule: existing classified rebuild-and-retry publisher; accepted Source
+        PBP is downloaded once per season per run only when that season is
+        materialized; no per-metric schedulers, unrelated PBP replays, extra
+        permissions or parallel writers
   boundaries:
     - NBA/NFL provider row field names and raw play evidence are Source, not output rules
     - Team snap totals must not equal sum of player snaps or arbitrary sum divided by 11
     - Missing or ambiguous shares and unverified PBP play coverage must remain explicit
     - Angular and Fantasy Management consume shared metrics; they must not own their formulas
-    - Approved GameDetail v1 writes are limited to data-derived/nfl-games/details/**
-      through the existing NFL Games publisher; no extra Source, App, model, PBP
-      or player-identity repair authority is implied
+    - Approved GameDetail v2 writes are limited to data-derived/nfl-games/details/**
+      through the existing NFL Games publisher, retaining full v1 fact groups.
+      Missing original PBP is unavailable/null, not zero; raw source rows
+      and unrelated Source, App, model or player-identity repairs remain excluded.
 
 
 sharedDerivedPhysicalLayer:
