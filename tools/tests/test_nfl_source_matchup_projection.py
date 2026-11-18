@@ -763,22 +763,25 @@ class HybridExpectedPreviewTests(unittest.TestCase):
     def test_after_final_the_locked_player_uses_actual_points_and_not_live_score(self) -> None:
         context, player, windows, stats = self.fixture()
         windows["FantasyRelevance"]["Teams"][0]["Slots"][0]["State"] = "locked-active"
-        next(p for p in windows["FantasyRelevance"]["Teams"][0]["Players"] if p["PlayerID"] == "p1")["GameState"] = "locked-active"
+        members = windows["FantasyRelevance"]["Teams"][0]["Players"]
+        next(p for p in members if p["PlayerID"] == "p1")["GameState"] = "locked-active"
+        next(p for p in members if p["PlayerID"] == "p2")["GameState"] = "locked-active"
         running = copy.deepcopy(context)
         running["Games"][0]["Status"] = "In Progress"
         running["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 90.0
         before = self.preview(running, player, windows, stats)
         self.assertAlmostEqual(before["LockedProjectedPoints"], 10.0)
-        self.assertAlmostEqual(before["ExpectedPoints"], 89.2)  # p2 RB 99 still unlocked
+        self.assertAlmostEqual(before["ExpectedPoints"], 42.0)  # locked bench p2 cannot be reselected
 
         windows["FantasyRelevance"]["Teams"][0]["Slots"][0]["State"] = "completed"
-        next(p for p in windows["FantasyRelevance"]["Teams"][0]["Players"] if p["PlayerID"] == "p1")["GameState"] = "completed"
+        next(p for p in members if p["PlayerID"] == "p1")["GameState"] = "completed"
+        next(p for p in members if p["PlayerID"] == "p2")["GameState"] = "completed"
         running["Games"][0]["Status"] = "Final"
         running["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 18.0
         final = self.preview(running, player, windows, stats)
         self.assertEqual(final["LockedProjectedPoints"], 0.0)
         self.assertAlmostEqual(final["LockedActualPoints"], 18.0)
-        self.assertAlmostEqual(final["ExpectedPoints"], 97.2)
+        self.assertAlmostEqual(final["ExpectedPoints"], 50.0)
 
     def test_locked_flex_is_fixed_and_remaining_qb_can_be_optimized(self) -> None:
         context, player, windows, stats = self.fixture()
@@ -841,6 +844,37 @@ class HybridExpectedPreviewTests(unittest.TestCase):
         self.assertEqual(team["HybridExpected"]["Reason"], "missing-final-starter-points")
         self.assertEqual(team["ProjectedFinalScore"], 15.0)
         self.assertEqual(team["DisplayProjectedScore"], 15.0)
+
+    def test_all_slots_locked_use_only_actual_and_locked_projection_without_efficiency(self) -> None:
+        context, player, windows, stats = self.fixture()
+        slots = windows["FantasyRelevance"]["Teams"][0]["Slots"]
+        members = windows["FantasyRelevance"]["Teams"][0]["Players"]
+        slots[0]["State"] = "completed"
+        slots[1]["State"] = "locked-active"
+        next(p for p in members if p["PlayerID"] == "p1")["GameState"] = "completed"
+        next(p for p in members if p["PlayerID"] == "p2")["GameState"] = "completed"
+        next(p for p in members if p["PlayerID"] == "p4")["GameState"] = "locked-active"
+        context["Games"][0]["Status"] = "Final"
+        context["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 18.0
+        stats["AsOf"]["CompletedWeeks"] = 3  # invalid for historical efficiency, but no flexible slots
+        preview = self.preview(context, player, windows, stats)
+        self.assertEqual(preview["State"], "available")
+        self.assertEqual(preview["ExpectedPoints"], 23.0)
+        self.assertEqual(preview["RemainingBestBallPoints"], 0.0)
+        self.assertEqual(preview["LockedActualPoints"], 18.0)
+        self.assertEqual(preview["LockedProjectedPoints"], 5.0)
+
+    def test_missing_projection_uses_eligible_alternative_or_incomplete(self) -> None:
+        context, player, windows, stats = self.fixture()
+        # Preferred projected QB becomes unprojectable, but p1 remains selectable.
+        next(r for r in player["Records"] if r["PlayerID"] == "p6")["Projection"] = projection(
+            0, status="insufficient-history"
+        )
+        preview = self.preview(context, player, windows, stats)
+        self.assertEqual(preview["State"], "available")
+        self.assertEqual(set(preview["OptimalRemainingPlayerIDs"]), {"p1", "p2"})
+        self.assertAlmostEqual(preview["ExpectedPoints"], 87.2)
+        self.assertEqual(preview["ExcludedPlayerCounts"]["missing-projection"], 1)
 
     def test_publishing_preview_is_semantic_noop_when_clock_moves_without_new_lock(self) -> None:
         context, player, windows, stats = self.fixture()
