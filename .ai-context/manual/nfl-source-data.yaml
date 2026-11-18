@@ -478,7 +478,7 @@ teamRegistryContract:
 
 fullPlayByPlayTarget:
   confirmedAt: 2026-11-14
-  status: approved-source-retention-goal-not-active
+  status: dynamic-current-season-original-source-accepted-into-existing-publisher
   upstream: nflverse play-by-play season release csv.gz
   responsibility: >
     Full original play-level records must be persistently and reproducibly
@@ -497,7 +497,55 @@ fullPlayByPlayTarget:
     - incremental-refresh-publisher-and-race-safety
   downstreamOwner: data-derived/nfl-games
   currentSourceRegistryAndProjectionsUnchanged: true
-  productiveAcquisitionOrNewWriterAuthorized: false
+  productiveAcquisitionScope: current-season-original-pbp-only-in-existing-source-writer
+  newWriterOrSchedulerAuthorized: false
+  activeSeasonOriginalPbp:
+    issue: 1077
+    authorizedBy: user-request-to-continue-dynamic-original-pbp-ingestion-2026-11-18
+    sourceDiscovery: tools/nfl_source_data_lib/common.py::current_source_season
+    providerInventory: nflverse/nflverse-data release pbp, exact play_by_play_<season>.csv.gz
+    executable: tools/nfl_pbp_source_auto.py
+    activationBoundary: >-
+      Only full/unfiltered existing sync-nfl-source-data.yml Source Raw runs.
+      Discover the dynamically configured current NFL Source season; reject
+      attempts to mutate a different/frozen season, targeted Source refreshes
+      or game-finality/odds-only refreshes. Historical original PBP 2025 remains
+      frozen and its own legacy original audit remains independent.
+    immutableStorage: >-
+      Validate official Github release asset ID, URL, sha256 digest, size and
+      uploaded state, download full original compressed bytes, check identical
+      digest and byte length, then complete original CSV/identity/metric audit
+      against canonical game context before persisting. Each accepted revision
+      receives a separate immutable content-addressed private-repository GitHub
+      Release and is never overwritten. A per-season manifest under
+      data-source/providers/nflverse/play-by-play-original/metadata-<season>.json
+      advances only on accepted Source revisions, recording prior digest and
+      revision number. Previous release assets stay accessible. Git history
+      contains only small Source metadata.
+    sourceFreshness: >-
+      The existing full NFL Source cadence already checks official upstream
+      release metadata. Unchanged digest and intact previous archive is a
+      no-op with no download, audit or manifest commit. Source revisions
+      trigger full in-memory original/play/game audit. Missing official assets
+      remain unavailable rather than zero; inconsistency in any accepted
+      existing asset or new official digest fails closed for this intake.
+    downstream: >-
+      Existing nfl_games_derived job automatically sees newly accepted current
+      Source metadata on successful full Source Sync, retrieves the immutable
+      PBP asset and recomputes GameDetail v2 only for source-backed game records.
+      NFL Games season index stays SchemaVersion=1, and Derived writes stay
+      limited to data-derived/nfl-games/details/**.
+    failureIsolation: >-
+      Any failed current original PBP audit, GitHub read/release/upload or
+      checksum blocks only the new PBP Source manifest and emits explicit
+      warning. No Source facts are invented, no existing accepted original
+      is removed, and routine unrelated Source publication continues.
+    rollback: >-
+      Remove the current-season PBP invocation from the existing full Source
+      producer, reverting its script and docs without deleting immutable
+      prior Source snapshots or accepted per-season manifest. Restore the
+      latest accepted Source manifest revision if a regression is observed;
+      Derived v2 is regenerated through the same existing writer.
   original2025Pilot:
     issue: 1077
     authorizationDate: 2026-11-16
