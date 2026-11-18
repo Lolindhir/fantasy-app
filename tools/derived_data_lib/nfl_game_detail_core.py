@@ -298,7 +298,7 @@ def build_nfl_game_detail_core(
     return result
 
 
-# Contract pilot: one compact GameID detail using the existing NFL Games owner.
+# Versioned GameDetail-v2 facts owned by the existing NFL Games data product.
 # The original PBP reader is called only in memory; its raw SourceRows are
 # deliberately NOT emitted in the v2 data product.
 _V2_PBP_GROUPS = {
@@ -387,7 +387,7 @@ def _v2_pilot_metric(
     }
 
 
-def build_nfl_game_detail_v2_pilot(
+def build_nfl_game_detail_v2(
     index: Mapping[str, Any], game_id: str,
     player_stats: Mapping[str, Any] | None = None,
     snap_counts: Mapping[str, Any] | None = None,
@@ -395,7 +395,7 @@ def build_nfl_game_detail_v2_pilot(
     pbp_rows: list[Mapping[str, str]] | None = None,
     pbp_asset_sha256: str | None = None,
 ) -> dict[str, Any]:
-    """Read-only versioned candidate, never a PBP publisher.
+    """Pure versioned detail builder, used by the established publisher.
 
     The complete Game, TeamStats and SnapCounts groups are inherited unchanged
     from the approved core v1 builder. PBP contains ten neutral team-game
@@ -414,7 +414,7 @@ def build_nfl_game_detail_v2_pilot(
             or len(pbp_asset_sha256) != 64
             or any(c not in "0123456789abcdef" for c in pbp_asset_sha256)
         ):
-            raise ValueError("v2 pilot needs a lowercase original-PBP SHA256")
+            raise ValueError("GameDetail v2 requires lowercase original-PBP SHA256")
         preview = build_nfl_game_detail(
             index, game_id, pbp_rows=pbp_rows,
             pbp_asset_sha256=pbp_asset_sha256,
@@ -424,7 +424,7 @@ def build_nfl_game_detail_v2_pilot(
         candidates = original["Analytics"]["CatalogTeamMetricCandidates"]
         required = {m for group in _V2_PBP_GROUPS.values() for m in group}
         if not required.issubset(candidates["CandidateIDs"]):
-            raise ValueError("PBP metric candidate catalog missing v2-pilot metric")
+            raise ValueError("PBP metric candidate catalog missing v2 metric")
 
     perspective_by_defense = (
         {row["Team"]: row["Metrics"] for row in candidates["ByDefenseTeam"]}
@@ -491,7 +491,7 @@ def build_nfl_game_detail_v2_pilot(
     core["SchemaVersion"] = 2
     core["DetailDefinitionVersion"] = 2
     core["PlayByPlayMetrics"] = {
-        "Status": ("read-only-pilot-observed-unverified-completeness"
+        "Status": ("candidate-observed-unverified-completeness"
                    if candidates is not None else "unavailable"),
         "SourceDataset": "nflverse.play-by-play",
         "OriginalAssetSHA256": pbp_asset_sha256,
@@ -521,3 +521,8 @@ def build_nfl_game_detail_v2_pilot(
     core["Derivation"]["InputFingerprintSHA256"] = fingerprint
     core["Derivation"]["PBPMetricDefinitionVersion"] = _V2_PBP_DEFINITION_VERSION
     return core
+
+
+# Legacy read-only preview and regression entry point (PR #1544).
+# One implementation owns the v2 facts; the old name only preserves callers.
+build_nfl_game_detail_v2_pilot = build_nfl_game_detail_v2
