@@ -381,6 +381,91 @@ class NflInjuriesProductTests(unittest.TestCase):
         self.assertIn("no Raw commit", script)
         self.assertLess(script.index('actual_injury_sha="$(sha256sum'), script.index("git add -- data-source/providers"))
 
+    def test_2022_cancelled_buf_cin_game_reports_are_only_allowed_missing_links(self):
+        from nfl_injuries_history_reconcile import (
+            stage_next_verified_missing_injury_source, reconcile_accepted_injury_history,
+        )
+        import hashlib
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            league = root / "data-source/leagues/test/manifest.json"
+            league.parent.mkdir(parents=True)
+            league.write_text(json.dumps({
+                "CurrentCanonicalLeagueSeasonID": "now",
+                "Seasons": [{"CanonicalLeagueSeasonID": "now", "Season": 2026}],
+            }), encoding="utf-8")
+            identity = root / "data-source/nfl/identities/players.json"
+            identity.parent.mkdir(parents=True)
+            identity.write_text(json.dumps(identities()), encoding="utf-8")
+            schedule = root / "data-source/nfl/schedules/2022.json"
+            schedule.parent.mkdir(parents=True)
+            schedule.write_text(json.dumps({"Season": 2022, "Games": [
+                {"Week": 17, "GameType": "REG", "GameID": "2022_17_DAL_TEN",
+                 "HomeTeam": "TEN", "AwayTeam": "DAL"},
+            ]}), encoding="utf-8")
+            reports = [
+                report(2022, week="17", team="BUF"),
+                report(2022, week="17", team="CIN", gsis_id="00-0000001"),
+            ]
+            original = asset(2022, reports)
+
+            def intake(raw, *, write=False):
+                release = {"assets": [{
+                    "name": "injuries_2022.csv", "id": 22022,
+                    "updated_at": "2026-11-17T12:00:00Z",
+                    "size": len(raw), "digest": None,
+                    "browser_download_url":
+                        "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_2022.csv",
+                }]}
+                return stage_next_verified_missing_injury_source(
+                    root, write=write, fetch_release=lambda: release,
+                    fetch_asset=lambda _: raw,
+                )
+
+            allowed = intake(original)
+            self.assertEqual(2022, allowed["Season"])
+            self.assertEqual(2, allowed["KnownCancelledGameReports"])
+            self.assertEqual({"linked": 0, "not-found": 2, "ambiguous": 0,
+                              "not-evaluated": 0}, allowed["Quality"]["GameLinkCounts"])
+            # The known exception NEVER approves another missing team/week link.
+            for wrong in (
+                report(2022, week="17", team="HOU"),
+                report(2022, week="16", team="BUF"),
+            ):
+                with self.assertRaisesRegex(ValueError, "identity/game-link review"):
+                    intake(asset(2022, reports + [wrong]))
+            # Existing schedule evidence cannot be overridden by the exception.
+            schedule.write_text(json.dumps({"Season": 2022, "Games": [
+                {"Week": 17, "GameType": "REG", "GameID": "2022_17_BUF_CIN",
+                 "HomeTeam": "CIN", "AwayTeam": "BUF"},
+            ]}), encoding="utf-8")
+            linked = intake(original)
+            self.assertEqual(0, linked["KnownCancelledGameReports"])
+            self.assertEqual(2, linked["Quality"]["GameLinkCounts"]["linked"])
+            schedule.write_text(json.dumps({"Season": 2022, "Games": [
+                {"Week": 17, "GameType": "REG", "GameID": "2022_17_DAL_TEN",
+                 "HomeTeam": "TEN", "AwayTeam": "DAL"},
+            ]}), encoding="utf-8")
+
+            accepted = intake(original, write=True)
+            self.assertEqual("staged-missing-validated-source", accepted["Status"])
+            self.assertEqual(2, accepted["KnownCancelledGameReports"])
+            self.assertEqual(
+                hashlib.sha256(original).hexdigest(), accepted["SourceAssetSha256"])
+            replay = reconcile_accepted_injury_history(
+                root, phase="canonical", write=True)
+            self.assertEqual([2022], replay["ChangedSeasons"])
+            observations = json.loads(
+                (root / "data-source/nfl/injuries/2022/17.json").read_text()
+            )["Observations"]
+            self.assertEqual(["BUF", "CIN"], [r["SourceTeam"] for r in observations])
+            self.assertEqual([None, None], [r["GameID"] for r in observations])
+            self.assertEqual(["not-found", "not-found"],
+                             [r["GameLinkState"] for r in observations])
+
     def test_recurring_missing_original_intake_admits_digestless_history_without_year_list(self):
         from nfl_injuries_history_reconcile import (
             stage_next_verified_missing_injury_source, reconcile_accepted_injury_history,
@@ -451,6 +536,12 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertEqual("staged-missing-validated-source", accepted["Status"])
             self.assertEqual(2024, accepted["Season"])
             self.assertTrue(accepted["Staged"])
+            # A Canonical push race must not turn THIS run into another intake.
+            pinned = stage_next_verified_missing_injury_source(
+                root, pinned_season=2024, write=True, **kwargs)
+            self.assertEqual("pinned-original-already-accepted", pinned["Status"])
+            self.assertEqual(2024, pinned["Season"])
+            self.assertFalse(pinned["Staged"])
             self.assertEqual(2, len(accepted["NewRawPaths"]))
             self.assertEqual(originals[2024], (root /
                 "data-source/providers/nflverse/injuries/raw-2024.csv").read_bytes())
