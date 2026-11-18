@@ -71,31 +71,40 @@ there is no new Scheduler target and no odds-only cadence change.
 The 10-minute polling/Spread+Total delta gate activation remains owned by
 #471. Source snapshots do not provide historically proven pregame timestamps.
 
-## NFL GameDetail v1 (approved production writer; first real publish must be verified)
+## NFL GameDetail v2 (dynamic, same existing NFL Games owner)
 
-Issue #1077 specifies the future *same-product* GameDetail per canonical GameID at
-`data-derived/nfl-games/details/<season>/<GameID>.json`, without changing the
-existing `data-derived/nfl-games/<season>.json` index or adding a second product
-to this inventory. **Detail files are written only by the approved existing NFL Games writer after source validation.** The initial
-contract has canonical game facts, player-stats team aggregates when identities
-validate, and separately inferred Offense/Defense/Special Teams snap totals
-with explicit missingness. Player-level identity holds affect only identity-
-dependent groups; the team snap inference works on canonical count/share facts
-without guessing unresolved player IDs.
+Issue #1077 owns one versioned GameDetail per canonical GameID at
+`data-derived/nfl-games/details/<season>/<GameID>.json`. The independent
+compact season index `data-derived/nfl-games/<season>.json` stays
+`SchemaVersion=1`.
 
-Pure rules live under `tools/derived_data_lib/`. The writer
-`tools/nfl_game_details_materialize.py` is read-only by default and is called
-with `--write` exclusively inside the existing
-`sync-nfl-source-data.yml::nfl_games_derived` scoped rebuild-and-retry publisher.
-After accepted Source changes it refreshes source-backed games in the current
-NFL season; on Monday's full Source run it **rederives all supported historical
-seasons** against accepted canonical inputs, publishing only semantic changes.
-It does not overwrite historical Source facts or create a separate scheduler.
-The reader `tools/nfl_game_detail_preview.py --core-v1` remains independent.
-The 17 experimental PBP metrics and full original PBP acquisition are **not**
-activated. The first real publish, bounded source revision evidence, no-op,
-race recovery and rollback remain subject to the contract in
-`.ai-context/manual/nfl-games.yaml`.
+All indexed, source-backed seasons use the same `SchemaVersion=2` detail
+contract. The complete v1 `Game`, `TeamStats` and `SnapCounts` groups
+are retained, with a new `PlayByPlayMetrics` group containing up to ten
+provisional Competitive Opportunity, EPA, Success and Explosive facts. The
+metrics are observed only if the corresponding original PBP Source archive
+is accepted and its season-manifest SHA256/size matches; missing PBP history
+is explicitly unavailable/null, never fabricated as zero. Source completeness
+is never inferred from the existence of a gzip or final game score.
+
+Pure rules live in `tools/derived_data_lib`. The **existing**
+`tools/nfl_game_details_materialize.py` remains read-only by default; only
+its explicit `--write` mode inside
+`sync-nfl-source-data.yml::nfl_games_derived` persists Derived data via the
+same classified rebuild-and-retry publisher. Current-season refresh remains
+source-dependent. A single bounded historical schema-upgrade run occurs when
+existing historical detail files still use v1; thereafter historic updates
+run on the established Monday full-Source schedule. Existing source and index
+writers, publication destinations, scheduler targets and app consumers are
+unchanged. A separate Source acceptance process owns new original PBP seasons;
+the GameDetail consumer never guesses that an unsupported season has plays.
+
+The current GameDetail contract, source-availability semantics, release gates,
+rollback plan and publication evidence are in
+`.ai-context/manual/nfl-games.yaml`. The old `--core-v1` read-only preview
+remains available to check unchanged v1 groups. After the first production
+write, actual output/No-op verification is still required; tests do not
+replace published readback.
 
 ## PlayerWeekFantasy
 
