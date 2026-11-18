@@ -8,6 +8,9 @@ on:
       - ".github/workflows/sync-nfl-source-data.yml"
       - "tools/nfl_source_data.py"
       - "tools/nfl_source_data_lib/**"
+      - "tools/nfl_game_details_materialize.py"
+      - "tools/derived_data_lib/nfl_game_detail_core.py"
+      - "tools/derived_data_lib/nfl_pbp_accepted_season.py"
       - "tools/tests/test_nfl_source*.py"
   repository_dispatch:
     types:
@@ -1057,22 +1060,33 @@ jobs:
       - name: Reconcile and publish historical NFL GameDetails weekly
         # The centrally scheduled *full* NFL Source sync runs daily at 04:00
         # Europe/Berlin. Only Monday's full sync rederives accepted history.
-        # Do not replay all history on odds-only 10-minute refreshes or push
-        # events outside Monday. Existing rebuild-and-retry handles branch races.
+        # On a full Source run, additionally perform one needed SchemaVersion=2
+        # upgrade outside Monday; stable history returns to Monday-only audits.
+        # Scoped odds refresh never enters this historical step. Existing
+        # rebuild-and-retry handles branch races.
         if: ${{ !inputs.dataset && (inputs.materialization_scope == 'full' || !inputs.materialization_scope) }}
         shell: bash
         run: |
           set -euo pipefail
+          reason="weekly-Monday"
           if [[ "$(TZ=Europe/Berlin date +%u)" != "1" ]]; then
-            echo "Historical NFL GameDetail reconciliation: not Monday; no run" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+            status="$(python3 tools/nfl_game_details_materialize.py --historical-v2-upgrade-needed)"
+            if [[ "$status" == "schema-current" ]]; then
+              echo "Historical NFL GameDetail reconciliation: schema current; weekly audit remains Monday" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            if [[ "$status" != "upgrade-needed" ]]; then
+              echo "::error::Unrecognized GameDetail historical schema check: $status"
+              exit 1
+            fi
+            reason="one-time-schema-v2-upgrade"
           fi
           python3 tools/rebuild_and_publish.py \
             --scope nfl-games \
             --path data-derived/nfl-games/details \
             -- \
             python3 tools/nfl_game_details_materialize.py --historical-seasons --write
-          echo "Historical NFL GameDetail reconciliation: all accepted indexed seasons before current" >> "$GITHUB_STEP_SUMMARY"
+          echo "Historical NFL GameDetail reconciliation: completed ($reason), all accepted indexed seasons before current" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Summarize isolated Derived publication
         if: ${{ always() }}
