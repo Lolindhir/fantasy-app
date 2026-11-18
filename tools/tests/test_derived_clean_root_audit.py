@@ -422,9 +422,12 @@ class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
 
     def test_source_only_rebuild_noop_and_canonical_repository_not_written(self):
         report, old = self.run_candidate()
-        self.assertTrue(report["ReadyForWriterReview"])
+        self.assertTrue(report["CandidatePass"])
         self.assertEqual("schedule-outlook-candidate-source-only-restore", report["Mode"])
         self.assertEqual(2, report["SnapshotCount"])
+        self.assertFalse(report["CompleteConfiguredSeasonCoverage"])
+        self.assertFalse(report["SourceRevisionVerified"])
+        self.assertFalse(report["ReadyForPublication"])
         self.assertEqual(0, report["SecondPassUpstreamWrites"])
         self.assertTrue(report["SecondPassByteIdentical"])
         self.assertTrue(report["EmptyAndNormalIdentical"])
@@ -435,7 +438,7 @@ class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
 
     def test_published_old_outlook_is_not_allowed_to_affect_candidate(self):
         report, old = self.run_candidate(poisoned_snapshot=True)
-        self.assertFalse(report["ReadyForWriterReview"])
+        self.assertFalse(report["CandidatePass"])
         self.assertTrue(report["SecondPassByteIdentical"])
         self.assertFalse(report["EmptyAndNormalIdentical"])
         self.assertEqual(["2024/after-week-00.json", "2024/after-week-01.json"],
@@ -444,7 +447,7 @@ class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
 
     def test_upstream_second_pass_write_denies_noop(self):
         report, _ = self.run_candidate(fake_second_write=True)
-        self.assertFalse(report["ReadyForWriterReview"])
+        self.assertFalse(report["CandidatePass"])
         self.assertEqual(3, report["SecondPassUpstreamWrites"])
         self.assertFalse(report["SecondPassByteIdentical"])
 
