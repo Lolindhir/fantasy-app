@@ -112,6 +112,48 @@ def safe_current_roster_refresh(old: dict, new: dict) -> tuple[bool, int, int]:
     return True, filled, len(protected)
 
 
+def safe_current_weekly_observation_refresh(old: dict, new: dict) -> tuple[bool, int]:
+    """Mutable (not finalized) current-season observation partitions may gain or revise rows
+    between provider raw refresh and canonical publication, never change an existing owner.
+
+    Used for independently refreshed weekly observation datasets (QBR, long gains). An
+    existing (game, provider key, kind) row keeps its CanonicalPlayerID; finalized
+    partitions are never accepted here. Returns (safe, protected_owner_count).
+    """
+    for field in ("Season", "SchemaVersion", "SourceDataset"):
+        if old.get(field) != new.get(field) or old.get(field) in (None, ""):
+            return False, 0
+    if old.get("Finalized") is not False or new.get("Finalized") is not False:
+        return False, 0
+
+    def owners(payload: dict) -> dict[str, str | None] | None:
+        rows = payload.get("Records")
+        if not isinstance(rows, list):
+            return None
+        result: dict[str, str | None] = {}
+        for row in rows:
+            if not isinstance(row, dict) or not row.get("GameID"):
+                return None
+            source_ids = row.get("SourceIDs")
+            if not isinstance(source_ids, dict) or not source_ids:
+                return None
+            key = json.dumps(
+                [row["GameID"], row.get("GainType"), source_ids], sort_keys=True,
+            )
+            if key in result and result[key] != row.get("CanonicalPlayerID"):
+                return None
+            result[key] = row.get("CanonicalPlayerID")
+        return result
+
+    before, after = owners(old), owners(new)
+    if before is None or after is None:
+        return False, 0
+    protected = [key for key in before.keys() & after.keys() if before[key]]
+    if any(before[key] != after[key] for key in protected):
+        return False, len(protected)
+    return True, len(protected)
+
+
 def safe_weekly_roster_replay(old: dict, new: dict) -> tuple[bool, int, bool]:
     """Frozen weekly facts must match; mutable current-season weeks keep GSIS owners."""
     if old.get("Finalized") is True or new.get("Finalized") is True:
@@ -473,6 +515,34 @@ class MutableCurrentRosterRefreshTests(unittest.TestCase):
         self.assertEqual(safe_weekly_roster_replay(old, enriched), (True, 0, False))
 
 
+class LiveWeeklyObservationRefreshTests(unittest.TestCase):
+    @staticmethod
+    def payload(rows, finalized=False):
+        return {"Season": 2099, "SchemaVersion": 2, "SourceDataset": "x.obs",
+                "Finalized": finalized, "Records": rows}
+
+    @staticmethod
+    def row(game, gsis, owner, kind=None):
+        return {"GameID": game, "GainType": kind, "SourceIDs": {"GSIS": gsis},
+                "CanonicalPlayerID": owner}
+
+    def test_new_and_revised_rows_keep_existing_owners(self):
+        old = self.payload([self.row("g1", "a", "P1")])
+        new = self.payload([self.row("g1", "a", "P1"), self.row("g2", "b", "P2")])
+        self.assertEqual(safe_current_weekly_observation_refresh(old, new), (True, 1))
+
+    def test_owner_reassignment_finalized_and_contract_drift_are_rejected(self):
+        old = self.payload([self.row("g1", "a", "P1")])
+        self.assertFalse(safe_current_weekly_observation_refresh(
+            old, self.payload([self.row("g1", "a", "P9")]))[0])
+        self.assertFalse(safe_current_weekly_observation_refresh(
+            self.payload([self.row("g1", "a", "P1")], True), old)[0])
+        other = {**old, "SourceDataset": "y"}
+        self.assertFalse(safe_current_weekly_observation_refresh(old, other)[0])
+        unkeyed = self.payload([{"GameID": "g1", "CanonicalPlayerID": "P1"}])
+        self.assertFalse(safe_current_weekly_observation_refresh(old, unkeyed)[0])
+
+
 @deep_only("full real-source scratch replay (15-20 min)")
 class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
     @unittest.skipUnless(
@@ -578,6 +648,21 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
                     "Odds refresh changed schedule facts, not just market quotes",
                 )
                 fixed.add(live_odds)
+            for live_observation in (
+                "data-source/nfl/qbr-week/2026.json",
+                "data-source/nfl/player-game-long-gains/2026.json",
+            ):
+                if live_observation in changed:
+                    old_obs = json.loads((SOURCE / live_observation).read_text(encoding="utf-8"))
+                    new_obs = json.loads((root / live_observation).read_text(encoding="utf-8"))
+                    obs_safe, obs_owners = safe_current_weekly_observation_refresh(old_obs, new_obs)
+                    self.assertTrue(
+                        obs_safe,
+                        f"Live weekly observation refresh changed an existing owner: {live_observation}",
+                    )
+                    print(f"#1061 live weekly observation {live_observation}: preserved_owners={obs_owners}",
+                          flush=True)
+                    fixed.add(live_observation)
             live_sleeper = "data-source/nfl/platform/sleeper/players.json"
             if live_sleeper in changed:
                 old_sleeper = json.loads((SOURCE / live_sleeper).read_text(encoding="utf-8"))
