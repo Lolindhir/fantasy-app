@@ -68,9 +68,13 @@ on:
 permissions:
   contents: write
 
+# G5 (Issue #1263): queue: max keeps every waiting run in this shared Source writer group (FIFO, GitHub cap 100)
+# instead of replacing the single pending slot. Callers (live pipelines, Injury wrapper, Odds, manual and
+# scheduled syncs) no longer cancel each other while a long run holds the group; writer serialization is unchanged.
 concurrency:
   group: league-source-data-sync
   cancel-in-progress: false
+  queue: max
 
 jobs:
   validate:
