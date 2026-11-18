@@ -327,5 +327,5 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install "PyYAML>=6,<7"
       - name: Rebuild every Shared Derived product from an empty root (read-only)
-        run: python tools/derived_clean_root_audit.py --github-summary
+        run: python tools/derived_clean_root_audit.py --github-summary --include-schedule-outlook-candidate --model-id schedule-outlook-v1
 
