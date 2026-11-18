@@ -19,7 +19,7 @@ from typing import Any
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 from derived_data_lib.nfl_game_detail import _season_index
-from derived_data_lib.nfl_game_detail_core import build_nfl_game_detail_v2_pilot
+from derived_data_lib.nfl_game_detail_core import build_nfl_game_detail_v2
 from derived_data_lib.nfl_pbp_accepted_season import AcceptedPBPSeasons
 from nfl_source_data_lib.common import current_source_season
 
@@ -126,7 +126,7 @@ def plan_season(
                 skipped += 1
                 continue
             plays = source_plays.get(game_id)
-            detail = build_nfl_game_detail_v2_pilot(
+            detail = build_nfl_game_detail_v2(
                 index, game_id, stats, snaps,
                 pbp_rows=plays, pbp_asset_sha256=source_sha if plays else None,
             )
