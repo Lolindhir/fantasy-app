@@ -29,6 +29,40 @@ _METADATA_NAME = re.compile(r"^metadata-([0-9]{4})\.json$")
 _RAW_NAME = re.compile(r"^raw-([0-9]{4})\.csv$")
 _CANONICAL_SEASON_NAME = re.compile(r"^[0-9]{4}$")
 
+# The sole documented cancelled game omitted from the canonical nflverse schedule.
+# Same historical fact as tools/schedule_archive.py::SUPPLEMENTS. Do NOT add a
+# fabricated played game or change canonical NFL schedules to make this join pass.
+_CANCELLED_2022_GAME_ID = "2022_17_BUF_CIN"
+
+
+def _verified_cancelled_game_unlinked_reports(
+    season: int, artifacts: dict[str, bytes], schedule: dict[str, Any],
+) -> int:
+    """Count ONLY unmatched 2022 BUF/CIN week-17 cancelled-game observations.
+
+    Retain GameID=null and GameLinkState=not-found in Canonical. The exception
+    authorizes original-source admission, not an assertion that the game played.
+    Every other unlinked, ambiguous or unresolved observation remains blocking.
+    """
+    if season != 2022:
+        return 0
+    if any(game.get("GameID") == _CANCELLED_2022_GAME_ID
+           for game in schedule.get("Games", [])):
+        return 0
+    week_path = "data-source/nfl/injuries/2022/17.json"
+    if week_path not in artifacts:
+        return 0
+    partition = json.loads(artifacts[week_path])
+    return sum(
+        1 for row in partition["Observations"]
+        if row.get("Season") == 2022
+        and row.get("Week") == 17
+        and row.get("GameType") == "REG"
+        and row.get("SourceTeam") in {"BUF", "CIN"}
+        and row.get("GameLinkState") == "not-found"
+        and row.get("GameID") is None
+    )
+
 
 def _json(root: Path, relative: str) -> dict[str, Any]:
     path = _assert_bounded_path(root, relative)
@@ -97,6 +131,7 @@ def stage_next_verified_missing_injury_source(
     repo_root: Path, *, write: bool = False,
     fetch_release: Callable[[], dict[str, Any]] = release_api,
     fetch_asset: Callable[[str], bytes] = source_asset,
+    pinned_season: int | None = None,
 ) -> dict[str, Any]:
     """Recurring, bounded admission/recovery of ONE missing historical source.
 
@@ -141,6 +176,24 @@ def stage_next_verified_missing_injury_source(
         raise ValueError(
             f"Incomplete frozen Injury Source cannot be recovered from official "
             f"release and accepted schedule: {missing_orphan}")
+    if pinned_season is not None:
+        if (not valid_injury_season(pinned_season)
+                or pinned_season >= current):
+            raise ValueError("Pinned historical Injury season is invalid or current")
+        if pinned_season in accepted:
+            return {
+                "Phase": "intake", "Status": "pinned-original-already-accepted",
+                "Season": pinned_season, "CurrentSeason": current,
+                "AcceptedHistoricalSeasons": accepted,
+                "BlockedSeasons": inventory["BlockedSeasons"],
+                "PersistedMissingUpstream": inventory["PersistedMissingUpstream"],
+                "Staged": False, "PublicationPerformed": False,
+            }
+        if pinned_season not in candidates:
+            raise ValueError(
+                f"Pinned historical Injury season {pinned_season} is no longer "
+                "eligible for the originally selected admission")
+
     if not candidates:
         return {
             "Phase": "intake", "Status": "no-eligible-missing-original",
@@ -153,7 +206,8 @@ def stage_next_verified_missing_injury_source(
 
     # Prioritize recovery of a vanished half-pair over first-time history.
     # Exactly one season per invocation keeps the existing Source writer bounded.
-    season = max(incomplete) if incomplete else max(candidates)
+    season = (pinned_season if pinned_season is not None else
+              max(incomplete) if incomplete else max(candidates))
     if season >= current or season in accepted:
         raise ValueError("Historical Injury admission selected accepted/current Source")
     raw_name = f"data-source/providers/nflverse/injuries/raw-{season}.csv"
@@ -209,11 +263,14 @@ def stage_next_verified_missing_injury_source(
     count = manifest["SourceRowCount"]
     identities = quality["IdentityResolutionCounts"]
     links = quality["GameLinkCounts"]
+    cancelled_count = _verified_cancelled_game_unlinked_reports(
+        season, plan, schedule)
     if (count < 1 or identities.get("resolved-current-graph") != count
-            or links.get("linked") != count
+            or links.get("linked", 0) + cancelled_count != count
             or any(identities.get(state) for state in ("unresolved", "ambiguous"))
+            or links.get("not-found", 0) != cancelled_count
             or any(links.get(state) for state in
-                   ("ambiguous", "not-found", "not-evaluated"))):
+                   ("ambiguous", "not-evaluated"))):
         raise ValueError(
             "Historical Injury source admission needs identity/game-link review: "
             + json.dumps(quality, sort_keys=True))
@@ -241,6 +298,7 @@ def stage_next_verified_missing_injury_source(
         "Season": season, "CurrentSeason": current,
         "SourceAssetSha256": computed_digest,
         "SourceRowCount": count, "ObservedWeekCount": manifest["ObservedWeekCount"],
+        "KnownCancelledGameReports": cancelled_count,
         "Quality": quality, "NewRawPaths": sorted(expected_new),
         "BlockedSeasons": inventory["BlockedSeasons"],
         "AcceptedHistoricalSeasons": accepted,
@@ -406,6 +464,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--phase", choices=("intake", "canonical", "derived", "revisions"), required=True)
+    parser.add_argument("--season", type=int,
+                        help="Pin the single selected historical intake season across Git retries")
     parser.add_argument("--write", action="store_true",
                         help="Stage eligible missing Raw or accepted canonical/derived locally only")
     parser.add_argument("--require-noop", action="store_true",
@@ -413,6 +473,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--fail-on-review", action="store_true",
                         help="For upstream revisions only: return failure on changed/unverifiable frozen history")
     args = parser.parse_args(argv)
+    if args.season is not None and args.phase != "intake":
+        parser.error("--season is only valid for historical intake")
     try:
         if args.phase == "revisions":
             if args.write or args.require_noop:
@@ -422,7 +484,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.fail_on_review or args.require_noop:
                 parser.error("Intake has no revision-failure or replay-no-op mode")
             result = stage_next_verified_missing_injury_source(
-                args.repo_root, write=args.write)
+                args.repo_root, write=args.write, pinned_season=args.season)
         else:
             if args.fail_on_review:
                 parser.error("--fail-on-review requires --phase revisions")
