@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import sys
+import subprocess
 import tempfile
 import unittest
 from contextlib import ExitStack
@@ -380,13 +381,14 @@ class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
         else:
             old = None
 
-        def build(unit, shadow):
-            product, league = unit
+        def build(shadow, league, years):
             self.assertEqual(LEAGUE, league)
-            self.assertIn(product, ("player-week-fantasy", "team-week-performance", "season-statistics"))
-            target = shadow / "data-derived" / product / LEAGUE / "2024.json"
-            writes = emit(target, "fresh-from-source")
-            return (1 if fake_second_write else writes), 0
+            self.assertEqual([2024], years)
+            changed = 0
+            for product_name in ("player-week-fantasy", "team-week-performance", "season-statistics"):
+                target = shadow / "data-derived" / product_name / LEAGUE / "2024.json"
+                changed += emit(target, "fresh-from-source")
+            return 3 if fake_second_write else changed
 
         def preview(shadow, league, year):
             self.assertEqual(LEAGUE, league)
@@ -412,7 +414,7 @@ class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
             stack.enter_context(patch.object(probe, "get_model", return_value=object()))
             stack.enter_context(patch.object(probe, "load_league_metadata",
                                              return_value={"Seasons": {"2024": {}, "2025": {}}}))
-            stack.enter_context(patch.object(probe, "_build", side_effect=build))
+            stack.enter_context(patch.object(probe, "_build_schedule_outlook_candidate_upstream", side_effect=build))
             stack.enter_context(patch.object(probe, "preview_all", side_effect=preview))
             stack.enter_context(patch.object(probe, "assemble", side_effect=assemble))
             report = probe.audit_schedule_outlook_candidate(
@@ -450,6 +452,49 @@ class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
         self.assertFalse(report["CandidatePass"])
         self.assertEqual(3, report["SecondPassUpstreamWrites"])
         self.assertFalse(report["SecondPassByteIdentical"])
+
+    def test_candidate_upstream_only_materializes_selected_seasons_in_order(self):
+        with patch.object(probe, "materialize_historical",
+                          return_value={"BlockedCount": 0, "ChangedCount": 2}) as pwf, \
+             patch.object(probe, "materialize_all_finalized",
+                          return_value={"BlockedCount": 0, "ChangedCount": 3}) as twp, \
+             patch.object(probe, "materialize_season_statistics",
+                          return_value={"Seasons": [{"Written": 1}]}) as stats:
+            writes = probe._build_schedule_outlook_candidate_upstream(self.root, LEAGUE, [2025])
+        self.assertEqual(6, writes)
+        pwf.assert_called_once_with(self.root, league_id=LEAGUE, seasons=[2025], write=True)
+        twp.assert_called_once_with(self.root, league_id=LEAGUE, seasons=[2025],
+                                    write=True, require_pwf=False)
+        stats.assert_called_once_with(self.root, self.root / "data-derived", LEAGUE, [2025], False)
+
+    def test_missing_pwf_source_fails_closed_before_downstream(self):
+        with patch.object(probe, "materialize_historical",
+                          return_value={"BlockedCount": 1, "Weeks": [
+                              {"Status": "blocked", "Reason": "missing week"}]}) as pwf, \
+             patch.object(probe, "materialize_all_finalized") as twp:
+            with self.assertRaisesRegex(ValueError, "missing week"):
+                probe._build_schedule_outlook_candidate_upstream(self.root, LEAGUE, [2026])
+        pwf.assert_called_once()
+        twp.assert_not_called()
+
+    def test_git_witness_requires_committed_clean_source_and_metadata(self):
+        def git(*args):
+            return subprocess.run(["git", "-C", str(self.root), *args],
+                                  capture_output=True, text=True, check=True)
+        git("init", "-q")
+        (self.root / "data-source" / "sample.json").write_text("{}")
+        git("add", "data-source", "data-meta")
+        git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+            "commit", "-qm", "fixture")
+        witness = probe._schedule_outlook_source_witness(self.root)
+        self.assertIsNotNone(witness)
+        self.assertEqual(40, len(witness["SourceTree"]))
+        self.assertEqual(witness, probe._schedule_outlook_source_witness(self.root))
+        (self.root / "data-source" / "untracked.json").write_text("{}")
+        self.assertIsNone(probe._schedule_outlook_source_witness(self.root))
+        (self.root / "data-source" / "untracked.json").unlink()
+        (self.root / "data-meta" / LEAGUE / "metadata.json").write_text('{"changed":true}')
+        self.assertIsNone(probe._schedule_outlook_source_witness(self.root))
 
     def test_unconfigured_season_and_missing_candidate_model_fail_closed(self):
         with patch.object(probe, "get_model", return_value=object()), \
