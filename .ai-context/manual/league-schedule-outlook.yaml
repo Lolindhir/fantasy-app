@@ -168,8 +168,13 @@ validation:
     upstream materializers are restricted to selected seasons, and the report
     records clean committed Git data-source/data-meta tree revisions when
     available, with before/after equality. This is accepted-checkout identity,
-    not proof of live provider freshness or historical observation. Passing
-    the probe is not writer authorization.
+    not proof of live provider freshness or historical observation. The
+    existing weekly full Derived Restore Gate also runs this candidate as an
+    advisory read-only in-memory replay against its already-built empty and
+    normal shadows (no duplicate PWF/TWP/SeasonStats build). An Outlook
+    candidate failure is reported separately without weakening or blocking
+    the existing products' restore gate until the product contract is accepted.
+    Passing this probe is not writer authorization.
   acceptanceGates:
     - Complete source-only cold rebuild and byte-identical second pass
     - No reference to previous outlook outputs or public/data
