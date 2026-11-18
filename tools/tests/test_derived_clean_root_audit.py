@@ -373,7 +373,7 @@ class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
         (self.root / "data-meta" / LEAGUE).mkdir(parents=True)
         (self.root / "data-meta" / LEAGUE / "metadata.json").write_text("{}")
 
-    def run_candidate(self, *, poisoned_snapshot=False, fake_second_write=False, seasons=None):
+    def run_candidate(self, *, poisoned_snapshot=False, fake_second_write=False, seasons=None, clean_revision=False):
         if poisoned_snapshot:
             old = self.root / "data-derived/league-schedule-outlook" / LEAGUE / "2024/after-week-00.json"
             old.parent.mkdir(parents=True, exist_ok=True)
@@ -417,6 +417,11 @@ class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
             stack.enter_context(patch.object(probe, "_build_schedule_outlook_candidate_upstream", side_effect=build))
             stack.enter_context(patch.object(probe, "preview_all", side_effect=preview))
             stack.enter_context(patch.object(probe, "assemble", side_effect=assemble))
+            if clean_revision:
+                stack.enter_context(patch.object(
+                    probe, "_schedule_outlook_source_witness",
+                    return_value={"RepositoryCommit": "a" * 40,
+                                  "SourceTree": "b" * 40, "MetadataTree": "c" * 40}))
             report = probe.audit_schedule_outlook_candidate(
                 self.root, LEAGUE, seasons=[2024] if seasons is None else seasons,
                 selected_model_id="schedule-outlook-v1")
@@ -429,6 +434,7 @@ class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
         self.assertEqual(2, report["SnapshotCount"])
         self.assertFalse(report["CompleteConfiguredSeasonCoverage"])
         self.assertFalse(report["SourceRevisionVerified"])
+        self.assertFalse(report["VerifiedCandidatePass"])
         self.assertFalse(report["ReadyForPublication"])
         self.assertEqual(0, report["SecondPassUpstreamWrites"])
         self.assertTrue(report["SecondPassByteIdentical"])
@@ -437,6 +443,15 @@ class ScheduleOutlookCandidateRestoreTests(unittest.TestCase):
         self.assertFalse(report["ModelSelectedInDataMeta"])
         self.assertIsNone(old)
         self.assertFalse((self.root / "data-derived/league-schedule-outlook").exists())
+
+    def test_verified_candidate_requires_clean_source_revision_witness(self):
+        report, _ = self.run_candidate(clean_revision=True)
+        self.assertTrue(report["CandidatePass"])
+        self.assertTrue(report["SourceRevisionVerified"])
+        self.assertTrue(report["VerifiedCandidatePass"])
+        self.assertEqual("b" * 40, report["SourceRevisionWitness"]["SourceTree"])
+        self.assertFalse(report["ProviderFreshnessVerified"])
+        self.assertFalse(report["ReadyForPublication"])
 
     def test_published_old_outlook_is_not_allowed_to_affect_candidate(self):
         report, old = self.run_candidate(poisoned_snapshot=True)
