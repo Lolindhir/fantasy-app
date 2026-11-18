@@ -377,8 +377,7 @@ def audit_schedule_outlook_candidate(
             raise ValueError("Schedule Outlook candidate replay produced no snapshots")
         return writes, digests
 
-    with tempfile.TemporaryDirectory(prefix="outlook-source-only-") as empty_dir, \\
-         tempfile.TemporaryDirectory(prefix="outlook-normal-") as normal_dir:
+    with tempfile.TemporaryDirectory(prefix="outlook-source-only-") as empty_dir, tempfile.TemporaryDirectory(prefix="outlook-normal-") as normal_dir:
         empty_root, normal_root = Path(empty_dir), Path(normal_dir)
         _prepare(empty_root, source, published=False)
         _prepare(normal_root, source, published=True)
