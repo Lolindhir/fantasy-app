@@ -13,6 +13,7 @@ source:
     - computed FantasyGameContext (tools/derived_data_lib/fantasy_game_context.py, ADR-075)
     - App adaptation of the data-derived/player-week-fantasy product (in memory, no public/data read)
     - optional data-derived/season-statistics/<league>/<season>.json (season-to-date Best Ball, historical actual manager efficiency, and per-team actual weekly scores for estimated display uncertainty; only completed weeks strictly before the target)
+    - optional computed Decision Windows FantasyRelevance (slot definitions, per-player current roster placement, exact lock state and scoring availability; resolved once with supplied AtUtc, never re-read from public/data)
   model: team-range-v1 (tools/derived_data_lib/models/team_range/v1.py, chosen per season in data-meta Models.TeamRange)
   scheduling: tools/player_week_fantasy_refresh.py inside the APP Data League workflow (about every 10 minutes)
   backtest: tools/historical_team_range_backtest.py
@@ -65,6 +66,28 @@ contract:
     BestBallEfficiencyFallback: nullable separate estimate (Points = season-to-date mean ProjectedBestBallPoints multiplied by mean actual LineupEfficiencyActual / 100; Method season-bestball-actual-efficiency-v1, SourceThroughWeek and both inputs retained); no recalculation of the target week's Best Ball. Optional ScoreStandardDeviation is the sample SD of completed previous-week actual team scores from SeasonStatistics GameLog (>=3 distinct valid prior weeks, nonzero variance), with ScoreVolatilityGames and ScoreVolatilityMethod season-final-score-sample-sd-v1; does not pretend to be team-range-v1 or calibrated
     DisplayProjectedScore: chosen published display number; existing ProjectedFinalScore when complete, otherwise the season baseline before any starter game is final if valid; null when neither is available
     DisplayProjectionMethod: normal-independent-v1 when using complete starter projection, season-bestball-actual-efficiency-v1 for fallback, otherwise null
+    HybridExpected: >-
+      Optional, additive CP2 shadow-preview object (null if the computed Decision Windows are unavailable or target
+      a different week). Method weekly-hybrid-actual-efficiency-preview-v1. State available/incomplete/unavailable,
+      Reason, ExpectedPoints (null unless every required slot is resolvable), LockedProjectedPoints,
+      LockedActualPoints, RemainingBestBallPoints, LockedStarterPlayerIDs, OptimalRemainingPlayerIDs,
+      UnfilledSlotIDs, ExcludedPlayerCounts, ConditionalAvailabilityPlayerIDs, PoolBasis
+      active-roster-only, ParticipationBasis conditional-on-participation, SourceThroughWeek and
+      ManagerEfficiencyPercent. Before a player's NFL kickoff the active Starter/Bench roster is
+      globally optimized by week-specific PWF points and position eligibility; after kickoff locked
+      starters are fixed to their original slots, locked bench players cannot be chosen, and
+      completed locked starters contribute real final points. Only the remaining optimized
+      slot total is weighted by historical actual LineupEfficiencyActual from season-statistics.
+      Bye and confirmed-out candidates are excluded, uncertain/unknown availability among selected
+      candidates is explicitly identified. Taxi/IR are not treated as instantly activatable in
+      this first, conservative preview; their exclusion is not a permanent league eligibility rule.
+      A structurally incomplete lineup (such as only one eligible QB for two QB slots), missing
+      prior-week efficiency or contradictory final/lock evidence cannot produce a non-null
+      ExpectedPoints. This is not a calibrated model, a guaranteed manager lineup or a complete
+      prospective availability/roster transaction simulation. It is not consumed by the Angular
+      app and does not change existing displayed scores/chances. No ever-changing AsOfUtc field:
+      DecisionWindows receives explicit AtUtc and the deterministic preview changes only when
+      actual input facts/locks/points change.
   rootAdditions:
     BestBallFallbackMethod: season-bestball-actual-efficiency-v1
     BestBallFallbackVolatilityMethod: season-final-score-sample-sd-v1
@@ -83,3 +106,4 @@ boundaries:
   - Ranges are estimates under an independence assumption; the backtest documents the observed coverage.
   - The estimated display-only win chance combines the existing win-prob-v1 normal-difference function with empirical per-team historical score SD, not a calibrated prediction distribution. Never feed display chance into pregame recap/upset calculations, and never replace original team-range/WinProbability values.
   - Missing or malformed prior weekly scores, fewer than three scored weeks or an unprojectable partial live lineup keep the estimated chance null. Display can still show the point baseline independently.
+  - HybridExpected is an internal optional, read-only CP2 candidate only. It never overwrites ProjectedFinalScore, DisplayProjectedScore, StandardDeviation, WinProbability, DisplayWinProbability, pregame recap/upset figures or their versioned model choices. If HybridExpected is unavailable or incomplete, retain existing independent season BestBallEfficiencyFallback under its original method flag.
