@@ -17,7 +17,6 @@ from nfl_source_data_lib.materialize import materialize  # noqa: E402
 from nfl_source_data_lib.phase1 import _ODDS_FIELD_NAMES  # noqa: E402
 from nfl_source_data_lib.player_profiles import _PROFILE_FIELDS  # noqa: E402
 from nfl_source_data_lib.common import CANONICAL_SCHEMA_VERSION  # noqa: E402
-from historical_fantasy_scoring_parity import build_parity_report  # noqa: E402
 from player_week_fantasy_materialize import (  # noqa: E402
     _week_finality, build_player_week_fantasy_dataset,
     output_path as pwf_output_path, write_dataset,
@@ -839,40 +838,34 @@ class HistoricalIdentityIsolatedFullReplay(unittest.TestCase):
             )
             self.assertEqual(twp["TargetCount"], len(targets))
 
-            # Issue #698 / merged PR #733 independently established one
-            # provider-stat divergence: Caleb Williams, 2025 W06 (nflverse
-            # 20.38 vs Sleeper 19.88). Only the exact documented exception
-            # is accepted; every other divergence still fails closed.
-            known_provider = build_parity_report(
-                root, league_id="nfl-reise", nfl_season=2025,
-                scoring_season=2025, first_week=6, last_week=6,
+            # ADR-064: provider-vs-canonical scoring divergences are accepted only as
+            # exact, provenance-backed data-meta exceptions (no hard-wired players here).
+            # Every blocker must be absent, every exception inside the finalized target
+            # range must surface as an accepted-divergence week and nothing else may be
+            # unverified; stale exceptions already fail inside the TWP reconciliation.
+            policy = json.loads(
+                (root / "data-meta/nfl-reise/scoring-divergences.json").read_text(encoding="utf-8")
             )
-            self.assertFalse(known_provider["MissingNonZeroCanonicalStats"])
-            self.assertFalse(known_provider["UnsupportedPlayerWeeks"])
-            self.assertEqual(
-                len(known_provider["Mismatches"]), 1,
-                "Previously classified provider divergence changed; adjudicate anew",
+            target_weeks = {(year, week) for _, year, week in targets}
+            expected_unverified = sorted(
+                {
+                    (rule["Season"], rule["Week"])
+                    for rule in policy["Exceptions"]
+                    if (rule["Season"], rule["Week"]) in target_weeks
+                }
             )
-            divergence = known_provider["Mismatches"][0]
+            self.assertEqual(failed_parity, [], "Unexpected TWP blocker beyond documented exceptions")
             self.assertEqual(
-                (divergence["PlayerName"], divergence["Week"],
-                 divergence["DerivedPoints"], divergence["LeaguePoints"]),
-                ("Caleb Williams", 6, 20.38, 19.88),
-                "The #698 historical provider-stat discrepancy has changed",
-            )
-            self.assertEqual(failed_parity, [], "Unexpected TWP blocker with documented #698 exception")
-            self.assertEqual(
-                [(year, week) for year, week, _ in unverified], [(2025, 6)],
+                sorted((year, week) for year, week, _ in unverified), expected_unverified,
                 "Unexpected weeks lack verified PWF parity",
             )
+            for _year, _week, parity in unverified:
+                self.assertEqual(parity["State"], "accepted-divergence")
             self.assertEqual(twp["ReadyCount"], len(targets))
             self.assertEqual(twp["BlockedCount"], 0)
-            self.assertEqual(unverified[0][2]["State"], "accepted-divergence")
-            self.assertEqual(unverified[0][2]["AcceptedDivergences"], 1)
             print(
-                "#1061 downstream acceptance classification: 39/39 PWF source "
-                "builds pass; TWP 39/39 ready (38 strictly verified plus "
-                "one audited #698 provider-stat divergence in 2025 W06). "
+                f"#1061 downstream acceptance classification: {twp['ReadyCount']}/{len(targets)} "
+                f"TWP weeks ready, {len(unverified)} via audited data-meta divergence exceptions. "
                 "No blanket waiver or Derived production publication.",
                 flush=True,
             )
