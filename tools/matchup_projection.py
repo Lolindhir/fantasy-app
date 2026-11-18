@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from derived_data_lib.decision_windows import DecisionWindowsError, resolve as resolve_decision_windows
+from derived_data_lib.hybrid_expected import build_team_preview
 from derived_data_lib.league_lifecycle import LifecycleError
 from league_metadata import LeagueMetadataError, data_meta_root, load_league_metadata, model_for
 from derived_data_lib.models.registry import get_model
@@ -223,6 +224,7 @@ def build_matchup_projections(
     display_level: float = DISPLAY_INTERVAL_LEVEL,
     availability: Mapping[str, str] | None = None,
     season_statistics: Mapping[str, Any] | None = None,
+    decision_windows: Mapping[str, Any] | None = None,
     model: Any = team_range_v1,
     win_model: Any = win_prob_v1,
 ) -> dict[str, Any]:
@@ -244,6 +246,30 @@ def build_matchup_projections(
     fallback_by_team = _season_fallbacks(
         season_statistics, player_model.get("CanonicalLeagueID"), player_model["Season"], player_model["Week"]
     )
+    # Optional, read-only Decision-Windows preview. A missing, stale or malformed
+    # decision snapshot must not modify the existing team-range/win-prob fields.
+    relevance = None
+    if (isinstance(decision_windows, Mapping)
+            and str(decision_windows.get("Season")) == str(player_model["Season"])
+            and str(decision_windows.get("LineupWeek")) == str(player_model["Week"])):
+        candidate = decision_windows.get("FantasyRelevance")
+        if isinstance(candidate, Mapping):
+            relevance = candidate
+    definitions = relevance.get("SlotDefinitions") if relevance is not None else None
+    facts = relevance.get("Teams") if relevance is not None else None
+    teams_by_id: dict[str, Mapping[str, Any]] = {}
+    if isinstance(definitions, list) and isinstance(facts, list):
+        for item in facts:
+            if not isinstance(item, Mapping) or item.get("FantasyTeamID") is None:
+                teams_by_id.clear()
+                break
+            tid = str(item["FantasyTeamID"])
+            if tid in teams_by_id:
+                teams_by_id.clear()
+                break
+            teams_by_id[tid] = item
+    else:
+        definitions = None
 
     matchups: list[dict[str, Any]] = []
     for matchup in context.get("FantasyMatchups", []):
@@ -259,6 +285,16 @@ def build_matchup_projections(
         for team in teams:
             fallback = fallback_by_team.get(str(team["FantasyTeamID"]))
             team["BestBallEfficiencyFallback"] = fallback
+            fact = teams_by_id.get(str(team["FantasyTeamID"]))
+            team["HybridExpected"] = (
+                build_team_preview(
+                    fact, definitions, projections,
+                    starters_by_team.get(_team_key(matchup["FantasyMatchupID"], team["FantasyTeamID"]), {}),
+                    manager_efficiency_percent=fallback.get("ManagerEfficiencyPercent") if fallback else None,
+                    source_through_week=fallback.get("SourceThroughWeek") if fallback else None,
+                )
+                if fact is not None and isinstance(definitions, list) else None
+            )
             # Never replace ProjectedFinalScore: its complete-lineup semantics and
             # calibrated variance/win-probability inputs remain unchanged.
             use_fallback = team["ProjectedFinalScore"] is None and team["FinalStarterCount"] == 0 and fallback is not None
@@ -370,11 +406,9 @@ def _decision_windows(root: Path, league_id: str, season: int, at_utc: datetime)
         return None
 
 
-def _availability_by_player(root: Path, league_id: str, context: Mapping[str, Any], at_utc: datetime) -> dict[str, str]:
-    """Scoring availability per App PlayerID; empty when unavailable or the function targets another week."""
-
-    windows = _decision_windows(root, league_id, int(context["Season"]), at_utc)
-    if windows is None:
+def _availability_from_windows(windows: Mapping[str, Any] | None, context: Mapping[str, Any]) -> dict[str, str]:
+    """Scoring availability per App PlayerID; same-week evidence only."""
+    if not isinstance(windows, Mapping):
         return {}
     if str(windows.get("Season")) != str(context.get("Season")) or str(windows.get("LineupWeek")) != str(
         context.get("Week")
@@ -385,6 +419,13 @@ def _availability_by_player(root: Path, league_id: str, context: Mapping[str, An
         for item in windows.get("ScoringAvailabilityObservations") or []
         if item.get("PlayerID") is not None and isinstance(item.get("State"), str)
     }
+
+
+def _availability_by_player(root: Path, league_id: str, context: Mapping[str, Any], at_utc: datetime) -> dict[str, str]:
+    """Compatibility wrapper; the publisher resolves Decision Windows only once."""
+    return _availability_from_windows(
+        _decision_windows(root, league_id, int(context["Season"]), at_utc), context
+    )
 
 
 def publish_matchup_projections(
@@ -408,10 +449,12 @@ def publish_matchup_projections(
     metadata = load_league_metadata(league_id, data_meta_root(root))
     model = get_model(model_for(metadata, season, "TeamRange"), "team-range")
     win_model = get_model(model_for(metadata, season, "WinProb"), "win-prob")
+    windows = _decision_windows(root, league_id, season, at_utc)
     try:
         payload = build_matchup_projections(
-            context, player_model, availability=_availability_by_player(root, league_id, context, at_utc),
-            season_statistics=_read_season_statistics(root, league_id, season), model=model, win_model=win_model
+            context, player_model, availability=_availability_from_windows(windows, context),
+            season_statistics=_read_season_statistics(root, league_id, season),
+            decision_windows=windows, model=model, win_model=win_model
         )
     except ValueError as exc:
         if "target different weeks" in str(exc):
