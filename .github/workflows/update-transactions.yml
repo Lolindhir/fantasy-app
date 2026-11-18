@@ -29,12 +29,6 @@ jobs:
           fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
       - name: Rebuild and publish historical League Derived and Transaction data
         if: ${{ github.event_name != 'workflow_dispatch' || (inputs.mode != 'drafts' && inputs.mode != 'index') }}
         run: >-
