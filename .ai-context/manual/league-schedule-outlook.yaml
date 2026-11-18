@@ -164,8 +164,12 @@ validation:
     --model-id schedule-outlook-v1 [--season YYYY]. Rebuilds PWF, TWP and
     season-statistics in temporary empty/normal roots, then compares in-memory
     outlook hashes for every final cutoff and a second no-op pass. The
-    candidate model argument is not productive data-meta selection, and
-    passing this probe is not writer authorization.
+    candidate model argument is not productive data-meta selection. The
+    upstream materializers are restricted to selected seasons, and the report
+    records clean committed Git data-source/data-meta tree revisions when
+    available, with before/after equality. This is accepted-checkout identity,
+    not proof of live provider freshness or historical observation. Passing
+    the probe is not writer authorization.
   acceptanceGates:
     - Complete source-only cold rebuild and byte-identical second pass
     - No reference to previous outlook outputs or public/data
