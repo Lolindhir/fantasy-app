@@ -83,7 +83,8 @@ def build_team_preview(
     canonical_ids = [s.get("SlotID") for s in definitions if isinstance(s, Mapping)]
     if (len(slot_ids) != len(slots) or len(canonical_ids) != len(definitions)
             or len(set(slot_ids)) != len(slots) or slot_ids != canonical_ids
-            or any(not isinstance(s.get("SlotType"), str) for s in slots)):
+            or any(not isinstance(s.get("SlotType"), str) or s.get("SlotType") != definitions[i].get("SlotType")
+                   for i, s in enumerate(slots))):
         base["Reason"] = "inconsistent-slot-definitions"
         return base
 
@@ -136,7 +137,8 @@ def build_team_preview(
             if evidence.get("final") is True:
                 base["Reason"] = "contradictory-active-game-finality"
                 return base
-            if player.get("ScoringAvailability", {}).get("State") == "out":
+            status = player.get("ScoringAvailability")
+            if isinstance(status, Mapping) and status.get("State") == "out":
                 # A locked OUT starter is still irrevocably occupying his slot.
                 fixed_projected += 0.0
             else:
@@ -147,6 +149,14 @@ def build_team_preview(
                     base["Reason"] = "missing-locked-starter-projection"
                     return base
                 fixed_projected += points
+
+    # A locked starter cannot disappear from the fixed lineup because a slot
+    # association is missing or inconsistent.
+    if any(player.get("Placement") == "starter"
+           and player.get("GameState") in ("locked-active", "completed")
+           and pid not in fixed_ids for pid, player in by_id.items()):
+        base["Reason"] = "orphan-locked-starter"
+        return base
 
     base["LockedStarterPlayerIDs"] = sorted(fixed_ids)
     base["LockedActualPoints"] = round(fixed_actual, 4)
