@@ -652,5 +652,209 @@ class PublicationTests(unittest.TestCase):
         self.assertNotIn("public/data/PlayerWeek", Path(matchup_projection.__file__).read_text(encoding="utf-8"))
 
 
+
+class HybridExpectedPreviewTests(unittest.TestCase):
+    """CP2 additive shadow output; existing displayed scores/chances never change."""
+
+    @staticmethod
+    def fixture() -> tuple[dict, dict, dict, dict]:
+        context = default_context()
+        player = default_model()
+        player["Records"] += [
+            {"PlayerID": pid, "CanonicalPlayerID": f"NFLP-{pid}", "Projection": projection(points)}
+            for pid, points in (
+                ("p6", 30.0), ("p7", 40.0), ("p8", 200.0), ("p9", 150.0),
+                ("p10", 100.0), ("p11", 80.0), ("p12", 70.0),
+            )
+        ]
+        slots = [
+            {"SlotID": "QB-1", "SlotType": "QB", "CurrentStarterID": "p1", "State": "unlocked"},
+            {"SlotID": "FLEX-1", "SlotType": "FLEX", "CurrentStarterID": "p4", "State": "unlocked"},
+        ]
+
+        def member(pid: str, placement: str, position: str, *, game: str = "unlocked",
+                   availability: str = "available", slot: str | None = None) -> dict:
+            return {
+                "PlayerID": pid, "Placement": placement, "Position": position,
+                "GameState": game, "LineupSlotID": slot,
+                "ScoringAvailability": {"State": availability},
+            }
+
+        members = [
+            member("p1", "starter", "QB", slot="QB-1"),
+            member("p4", "starter", "TE", slot="FLEX-1"),
+            member("p2", "bench", "RB"),
+            member("p6", "bench", "QB"),
+            member("p7", "bench", "WR"),
+            member("p8", "taxi", "QB"),
+            member("p9", "ir", "RB"),
+            member("p10", "bench", "RB", game="bye"),
+            member("p11", "bench", "WR", availability="out"),
+            member("p12", "bench", "WR", game="unknown"),
+        ]
+        windows = {
+            "Season": "2026", "LineupWeek": 3,
+            "FantasyRelevance": {
+                "SlotDefinitions": [
+                    {"SlotID": item["SlotID"], "SlotType": item["SlotType"]} for item in slots
+                ],
+                "Teams": [{"FantasyTeamID": "1", "Slots": slots, "Players": members}],
+            },
+        }
+        stats = {
+            "CanonicalLeagueID": "league-a", "Season": 2026,
+            "AsOf": {"CompletedWeeks": 2},
+            "Teams": [
+                {"TeamID": 1, "ProjectedBestBallPoints": 220, "LineupEfficiencyActual": 80},
+                {"TeamID": 2, "ProjectedBestBallPoints": 180, "LineupEfficiencyActual": 75},
+            ],
+        }
+        return context, player, windows, stats
+
+    @staticmethod
+    def preview(context: dict, player: dict, windows: dict, stats: dict) -> dict:
+        result = build_matchup_projections(
+            context, player, decision_windows=windows, season_statistics=stats
+        )
+        return team_of(result, 1)["HybridExpected"]
+
+    def test_unlocked_lineup_uses_weekly_global_best_ball_not_current_starters(self) -> None:
+        context, player, windows, stats = self.fixture()
+        result = build_matchup_projections(
+            context, player, decision_windows=windows, season_statistics=stats
+        )
+        team = team_of(result, 1)
+        preview = team["HybridExpected"]
+        self.assertEqual(preview["State"], "available")
+        self.assertEqual(preview["Method"], "weekly-hybrid-actual-efficiency-preview-v1")
+        self.assertEqual(preview["PoolBasis"], "active-roster-only")
+        self.assertEqual(preview["SourceThroughWeek"], 2)
+        self.assertEqual(preview["ManagerEfficiencyPercent"], 80)
+        self.assertAlmostEqual(preview["RemainingBestBallPoints"], 129)
+        self.assertAlmostEqual(preview["ExpectedPoints"], 103.2)
+        self.assertEqual(set(preview["OptimalRemainingPlayerIDs"]), {"p6", "p2"})
+        self.assertEqual(preview["ExcludedPlayerCounts"]["taxi"], 1)
+        self.assertEqual(preview["ExcludedPlayerCounts"]["ir"], 1)
+        self.assertEqual(preview["ExcludedPlayerCounts"]["bye"], 1)
+        self.assertEqual(preview["ExcludedPlayerCounts"]["confirmed-out"], 1)
+        self.assertEqual(preview["ExcludedPlayerCounts"]["unknown-game"], 1)
+        self.assertEqual(team["ProjectedFinalScore"], 15.0)
+        self.assertEqual(team["DisplayProjectedScore"], 15.0)
+        self.assertEqual(team["DisplayWinProbability"], team["WinProbability"])
+        self.assertIsNone(team_of(result, 2)["HybridExpected"])
+
+    def test_thursday_locked_starter_and_locked_bench_are_not_reselected(self) -> None:
+        context, player, windows, stats = self.fixture()
+        windows["FantasyRelevance"]["Teams"][0]["Slots"][0]["State"] = "locked-active"
+        members = windows["FantasyRelevance"]["Teams"][0]["Players"]
+        next(p for p in members if p["PlayerID"] == "p1")["GameState"] = "locked-active"
+        next(p for p in members if p["PlayerID"] == "p2")["GameState"] = "locked-active"
+        preview = self.preview(context, player, windows, stats)
+
+        self.assertEqual(preview["State"], "available")
+        self.assertAlmostEqual(preview["LockedProjectedPoints"], 10.0)
+        self.assertEqual(preview["LockedActualPoints"], 0.0)
+        self.assertEqual(preview["LockedStarterPlayerIDs"], ["p1"])
+        self.assertEqual(preview["OptimalRemainingPlayerIDs"], ["p7"])
+        self.assertAlmostEqual(preview["RemainingBestBallPoints"], 40.0)
+        self.assertAlmostEqual(preview["ExpectedPoints"], 42.0)
+        self.assertEqual(preview["ExcludedPlayerCounts"]["locked-bench"], 1)
+
+    def test_after_final_the_locked_player_uses_actual_points_and_not_live_score(self) -> None:
+        context, player, windows, stats = self.fixture()
+        windows["FantasyRelevance"]["Teams"][0]["Slots"][0]["State"] = "locked-active"
+        next(p for p in windows["FantasyRelevance"]["Teams"][0]["Players"] if p["PlayerID"] == "p1")["GameState"] = "locked-active"
+        running = copy.deepcopy(context)
+        running["Games"][0]["Status"] = "In Progress"
+        running["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 90.0
+        before = self.preview(running, player, windows, stats)
+        self.assertAlmostEqual(before["LockedProjectedPoints"], 10.0)
+        self.assertAlmostEqual(before["ExpectedPoints"], 89.2)  # p2 RB 99 still unlocked
+
+        windows["FantasyRelevance"]["Teams"][0]["Slots"][0]["State"] = "completed"
+        next(p for p in windows["FantasyRelevance"]["Teams"][0]["Players"] if p["PlayerID"] == "p1")["GameState"] = "completed"
+        running["Games"][0]["Status"] = "Final"
+        running["Games"][0]["FantasyTeams"][0]["Players"][0]["Points"] = 18.0
+        final = self.preview(running, player, windows, stats)
+        self.assertEqual(final["LockedProjectedPoints"], 0.0)
+        self.assertAlmostEqual(final["LockedActualPoints"], 18.0)
+        self.assertAlmostEqual(final["ExpectedPoints"], 97.2)
+
+    def test_locked_flex_is_fixed_and_remaining_qb_can_be_optimized(self) -> None:
+        context, player, windows, stats = self.fixture()
+        windows["FantasyRelevance"]["Teams"][0]["Slots"][1]["State"] = "locked-active"
+        next(p for p in windows["FantasyRelevance"]["Teams"][0]["Players"] if p["PlayerID"] == "p4")["GameState"] = "locked-active"
+        preview = self.preview(context, player, windows, stats)
+        self.assertEqual(preview["LockedStarterPlayerIDs"], ["p4"])
+        self.assertEqual(preview["OptimalRemainingPlayerIDs"], ["p6"])
+        self.assertAlmostEqual(preview["ExpectedPoints"], 29.0)
+
+    def test_nonfillable_qb_slot_is_explicitly_incomplete_not_a_full_score(self) -> None:
+        context, player, windows, stats = self.fixture()
+        relevance = windows["FantasyRelevance"]
+        extra = {"SlotID": "QB-2", "SlotType": "QB", "CurrentStarterID": None, "State": "unlocked"}
+        relevance["SlotDefinitions"].insert(1, {"SlotID": "QB-2", "SlotType": "QB"})
+        relevance["Teams"][0]["Slots"].insert(1, extra)
+        next(p for p in relevance["Teams"][0]["Players"] if p["PlayerID"] == "p6")["GameState"] = "bye"
+        preview = self.preview(context, player, windows, stats)
+        self.assertEqual(preview["State"], "incomplete")
+        self.assertEqual(preview["Reason"], "unfilled-required-slots")
+        self.assertIsNone(preview["ExpectedPoints"])
+        self.assertEqual(preview["UnfilledSlotIDs"], ["QB-2"])
+        self.assertGreater(preview["RemainingBestBallPoints"], 0)
+
+    def test_out_and_uncertain_candidates_preserve_availability_semantics(self) -> None:
+        context, player, windows, stats = self.fixture()
+        members = windows["FantasyRelevance"]["Teams"][0]["Players"]
+        next(p for p in members if p["PlayerID"] == "p2")["ScoringAvailability"]["State"] = "out"
+        next(p for p in members if p["PlayerID"] == "p7")["ScoringAvailability"]["State"] = "uncertain"
+        preview = self.preview(context, player, windows, stats)
+        self.assertEqual(preview["State"], "available")
+        self.assertEqual(preview["OptimalRemainingPlayerIDs"], ["p6", "p7"])
+        self.assertAlmostEqual(preview["ExpectedPoints"], 56.0)
+        self.assertEqual(preview["ConditionalAvailabilityPlayerIDs"], ["p7"])
+        self.assertEqual(preview["ExcludedPlayerCounts"]["confirmed-out"], 2)
+
+    def test_mismatched_window_and_missing_efficiency_fail_closed(self) -> None:
+        context, player, windows, stats = self.fixture()
+        windows["LineupWeek"] = 2
+        result = build_matchup_projections(
+            context, player, decision_windows=windows, season_statistics=stats
+        )
+        self.assertIsNone(team_of(result, 1)["HybridExpected"])
+        windows["LineupWeek"] = 3
+        stats["AsOf"]["CompletedWeeks"] = 3  # current-week lookahead forbidden
+        preview = self.preview(context, player, windows, stats)
+        self.assertEqual(preview["State"], "unavailable")
+        self.assertEqual(preview["Reason"], "missing-or-invalid-historical-efficiency")
+        self.assertIsNone(preview["ExpectedPoints"])
+
+    def test_bad_lock_evidence_fails_closed_without_touching_primary_forecast(self) -> None:
+        context, player, windows, stats = self.fixture()
+        windows["FantasyRelevance"]["Teams"][0]["Slots"][0]["State"] = "completed"
+        next(p for p in windows["FantasyRelevance"]["Teams"][0]["Players"] if p["PlayerID"] == "p1")["GameState"] = "completed"
+        result = build_matchup_projections(
+            context, player, decision_windows=windows, season_statistics=stats
+        )
+        team = team_of(result, 1)
+        self.assertEqual(team["HybridExpected"]["State"], "unavailable")
+        self.assertEqual(team["HybridExpected"]["Reason"], "missing-final-starter-points")
+        self.assertEqual(team["ProjectedFinalScore"], 15.0)
+        self.assertEqual(team["DisplayProjectedScore"], 15.0)
+
+    def test_publishing_preview_is_semantic_noop_when_clock_moves_without_new_lock(self) -> None:
+        context, player, windows, stats = self.fixture()
+        root = Path(tempfile.mkdtemp())
+        target = root / "data-derived/season-statistics/league-a/2026.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(stats), encoding="utf-8")
+        publisher = PublicationTests()
+        first = publisher._publish(root, context, player, windows=windows)
+        second = publisher._publish(root, context, player, windows=windows)
+        self.assertTrue(first["Changed"])
+        self.assertFalse(second["Changed"])
+        payload = publisher._payload(root)
+        self.assertEqual(payload["Matchups"][0]["Teams"][0]["HybridExpected"]["State"], "available")
+
 if __name__ == "__main__":
     unittest.main()
