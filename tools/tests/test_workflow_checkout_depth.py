@@ -99,6 +99,22 @@ class LeagueJobHasNoNodeDependencyTest(unittest.TestCase):
         self.assertEqual([], offenders)
 
 
+class AppDataWorkflowsHaveNoNodeSetupTest(unittest.TestCase):
+    """G5 (Issue #1263): the App data workflows run only Python and pwsh; Node.js setup cost 10-15 s per run."""
+
+    WORKFLOWS = ("update-players.yml", "update-games.yml", "update-standings.yml", "update-teams.yml", "update-transactions.yml")
+
+    def test_no_setup_node_in_any_job(self) -> None:
+        for name in self.WORKFLOWS:
+            workflow = yaml.safe_load((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"))
+            for job_id, job in workflow["jobs"].items():
+                with self.subTest(workflow=name, job=job_id):
+                    uses = [str(step.get("uses", "")) for step in job.get("steps", [])]
+                    self.assertFalse([item for item in uses if item.startswith("actions/setup-node")])
+                    runs = "\n".join(str(step.get("run", "")) for step in job.get("steps", []))
+                    self.assertNotRegex(runs, r"\b(node|npm|npx)\b")
+
+
 if __name__ == "__main__":
     unittest.main()
 

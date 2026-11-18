@@ -17,11 +17,11 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOWS = ROOT / ".github" / "workflows"
 
-COMMON = ["package.json", "package-lock.json", "tools/rebuild_and_publish.py", ".github/workflows/x.yml",
+COMMON = ["tools/rebuild_and_publish.py", ".github/workflows/x.yml",
           "data-meta/l/metadata.json", "data-source/leagues/l/a.json", "data-source/nfl/schedules/2026.json",
           "data-source/nfl/game-finality/2026.json", "data-source/nfl/teams.json", "public/data/Timestamps.json",
           "public/data/backup/a.json"]
-ABSENT_BOTH = ["src/app/a.ts", "fantasy-management/f.md", "research/r.md", "data-source/market/m.json",
+ABSENT_BOTH = ["package.json", "package-lock.json", "src/app/a.ts", "fantasy-management/f.md", "research/r.md", "data-source/market/m.json",
                "data-source/providers/nflverse/raw.json", "data-source/nfl/player-stats/2019/1.json",
                "public/assets/a.png"]
 PLAYERS_ONLY = ["tools/players_app_publish.py", "data-derived/player-valuation/l/2026/week-01.json",
@@ -81,7 +81,7 @@ class PlayersGamesSparseProfileTest(unittest.TestCase):
                 self.assertIn("git sparse-checkout disable", verify["run"])
                 self.assertEqual(names.index(sparse_step(name)["name"]) + 1, names.index(verify["name"]))
                 self.assertIn("secrets.PAT_PUSH", sparse_step(name)["with"]["token"])
-                self.assertIn("package-lock.json", verify["run"])
+                self.assertNotIn("package-lock.json", verify["run"])
 
     def test_profile_keeps_inputs_and_drops_unrelated_trees(self) -> None:
         for name, only in self.CASES.items():

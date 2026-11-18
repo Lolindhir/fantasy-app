@@ -19,12 +19,6 @@ jobs:
           fetch-depth: 1
           token: ${{ secrets.PAT_PUSH }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
       - name: Rebuild and publish Team data
         run: >-
           python3 tools/rebuild_and_publish.py

@@ -27,8 +27,6 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /.github/
-            /package.json
-            /package-lock.json
             /tools/
             /public/requests/
             /public/data/
@@ -43,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           missing=0
-          for path in package-lock.json tools/rebuild_and_publish.py public/requests/RequestSchedule.ps1 data-meta data-source/leagues data-source/nfl/schedules data-source/nfl/game-finality data-source/nfl/teams.json public/data/Schedule.json public/data/Timestamps.json; do
+          for path in tools/rebuild_and_publish.py public/requests/RequestSchedule.ps1 data-meta data-source/leagues data-source/nfl/schedules data-source/nfl/game-finality data-source/nfl/teams.json public/data/Schedule.json public/data/Timestamps.json; do
             [[ -e "$path" ]] || { echo "::warning::Missing Games sparse input: $path"; missing=1; }
           done
           if (( missing != 0 )); then
@@ -52,12 +50,6 @@ jobs:
           else
             echo "- Games checkout: sparse/blobless profile verified (partialclonefilter=$(git config --get remote.origin.partialclonefilter || echo none))" >> "$GITHUB_STEP_SUMMARY"
           fi
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
 
       - name: Rebuild and publish Schedule data
         run: >-
