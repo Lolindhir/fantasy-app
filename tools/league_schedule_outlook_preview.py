@@ -10,6 +10,7 @@ never historical forecast inputs. Playoff paths are independently reconstructed 
 
 Usage:
   python tools/league_schedule_outlook_preview.py --league nfl-reise --season 2025 --after-week 6
+  python tools/league_schedule_outlook_preview.py --league nfl-reise --season 2025 --all-weeks
 """
 from __future__ import annotations
 
@@ -181,15 +182,43 @@ def preview(repo_root: Path, league_id: str, season: int, after_week: int) -> di
     }
 
 
+
+def preview_all(repo_root: Path, league_id: str, season: int) -> dict[str, Any]:
+    """Replay every accepted LeagueScored cutoff without writing a persisted Outlook.
+
+    Full replay is deliberately explicit (CLI --all-weeks); normal single-week
+    previews remain bounded. A missing or contradictory historical cutoff
+    aborts the whole replay rather than silently skipping a snapshot.
+    """
+    if not _nonempty(league_id) or type(season) is not int:
+        raise ScheduleOutlookSourceError("Invalid league/season selector")
+    finality = resolve_week_finality(repo_root, league_id, season)
+    scored = finality.get("LeagueScoredWeek")
+    if type(scored) is not int or scored < 0:
+        raise ScheduleOutlookSourceError("Unknown LeagueScoredWeek for historical replay")
+    snapshots = [preview(repo_root, league_id, season, after_week)
+                 for after_week in range(scored + 1)]
+    return {
+        "PreviewOnly": True,
+        "CanonicalLeagueID": league_id,
+        "Season": season,
+        "LastLeagueScoredWeek": scored,
+        "Snapshots": snapshots,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--league", required=True)
     parser.add_argument("--season", required=True, type=int)
-    parser.add_argument("--after-week", required=True, type=int)
+    selection = parser.add_mutually_exclusive_group(required=True)
+    selection.add_argument("--after-week", type=int)
+    selection.add_argument("--all-weeks", action="store_true")
     args = parser.parse_args()
     try:
-        result = preview(args.repo_root, args.league, args.season, args.after_week)
+        result = (preview_all(args.repo_root, args.league, args.season) if args.all_weeks else
+                  preview(args.repo_root, args.league, args.season, args.after_week))
     except (ScheduleOutlookSourceError, ValueError, OSError, KeyError) as exc:
         print(f"schedule outlook preview failed: {exc}", file=sys.stderr)
         return 1
