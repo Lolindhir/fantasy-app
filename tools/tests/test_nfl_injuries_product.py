@@ -887,6 +887,13 @@ class NflInjuriesProductTests(unittest.TestCase):
         script = next(s["run"] for s in jobs["sync"]["steps"] if s.get("name") == "Sync, validate and publish NFL source data")
         self.assertIn("--phase intake --write", script)
         self.assertLess(script.index("--phase intake --write"), script.index("git add -- data-source/providers"))
+        # The selection survives the entire 3-attempt loop, including a
+        # successful Raw push followed by an unsuccessful Canonical push.
+        self.assertLess(
+            script.index('historical_intake_selected_season=""'),
+            script.index('for attempt in $(seq 1 "$max_attempts"); do\n            echo "NFL source publish attempt'))
+        self.assertIn('intake_args+=(--season "$historical_intake_selected_season")', script)
+        self.assertIn('historical_intake_selected_season" == "none"', script)
         self.assertIn("INJURY_HISTORY_DUE", script)
         self.assertIn("--phase canonical --write", script)
         self.assertIn("--phase canonical --require-noop", script)
