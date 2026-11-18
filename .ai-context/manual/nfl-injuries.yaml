@@ -100,6 +100,8 @@ canonical:
   schedule:
     - Match known season/week/game-type and source team only with explicit evidence.
     - Reports for a cancelled or unmatched game remain valid source observations.
+    - The 2022 Week-17 BUF@CIN cancellation (2022_17_BUF_CIN, documented in tools/schedule_archive.py::SUPPLEMENTS) is omitted from canonical nflverse schedules. Its BUF/CIN REG injury reports retain GameID=null and GameLinkState=not-found; they are NOT played-game evidence.
+    - Only that explicitly documented team/week/game-type exception is allowed through historical Source admission with a missing GameID. Unknown unmatched team-weeks, ambiguous GameIDs and unresolved identities remain fail-closed; no canonical schedule repair, fabricated game or report dropping.
     - A team-week not observed in CSV is not a healthy team-week.
     - ScheduleGraphFingerprint is a versioned injury-game-link-v1 digest over
       the sorted GameID candidate sets for each observed report
@@ -169,7 +171,9 @@ materializationPlan:
     schedules, observed supported CSV headers, verified official download URL,
     release asset ID, updated time and byte size permit a bounded admission
     candidate. The complete downloaded original is self-hashed and all rows
-    must resolve to canonical player identities and GameIDs. When supplied,
+    must resolve to canonical player identities and uniquely linked GameIDs,
+    except 2022 BUF/CIN REG Week 17 reports for the documented cancelled game
+    (preserved with nullable GameID and not-found link state). When supplied,
     the upstream SHA-256 MUST match. When absent, label the persisted provenance
     as official-release/self-hash, NOT provider-digest-verified. Discovery never
     replaces accepted original bytes or skips validation. New or lost seasons
@@ -274,11 +278,17 @@ freshness:
         re-discovers missing official historical seasons from the complete upstream
         inventory, not a one-time backfill list. The existing Source Raw transaction
         may admit at most ONE eligible season per run: a fully absent Raw/metadata
-        pair or the missing file in an incomplete pair. Require official release
+        pair or the missing file in an incomplete pair. The first intake selection
+        (including "none") is pinned for the entire workflow run; Raw/Canonical
+        retries cannot admit the next missing year after a partial Raw success.
+        Require official release
         URL/asset ID/updated time/byte-size, available upstream SHA-256 equality,
         always compute and persist SHA-256 of exact downloaded bytes, and require
         all rows to parse and resolve their GSIS and GameIDs uniquely against
-        accepted canonical identities/schedules. Missing upstream SHA-256 is
+        accepted canonical identities/schedules, except 2022 BUF/CIN REG Week 17
+        reports for the documented cancelled game (nullable GameID, retained
+        original report and GameLinkState=not-found). The exception must not
+        approve any unrelated unmatched/ambiguous identity or GameID. Missing upstream SHA-256 is
         explicitly recorded, not represented as independently verified.
         If a prior Raw, metadata or Canonical manifest survives, downloaded
         bytes must agree with its frozen Source digest; recover ONLY missing
