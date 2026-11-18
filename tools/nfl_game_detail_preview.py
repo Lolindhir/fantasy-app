@@ -38,21 +38,21 @@ def preview(
     if core_v1 and v2_pilot:
         raise ValueError("--core-v1 and --v2-pilot are mutually exclusive")
     if v2_pilot:
-        if season != 2025 or pbp_csv_gz is None or expected_sha256 is None:
-            raise ValueError("--v2-pilot requires 2025, original PBP gzip and pinned SHA256")
+        if pbp_csv_gz is None or expected_sha256 is None:
+            raise ValueError("--v2 requires original PBP gzip and pinned SHA256")
         manifest_path = (
             repo_root / DATA_SOURCE_ROOT / "providers/nflverse"
-            / "play-by-play-original/metadata-2025.json"
+            / f"play-by-play-original/metadata-{season}.json"
         )
         if not manifest_path.is_file():
             raise ValueError("Missing accepted original PBP 2025 source manifest")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         if (manifest.get("Status") != "accepted-original-byte-identity"
-                or manifest.get("Season") != 2025
+                or manifest.get("Season") != season
                 or manifest.get("SourceCompletenessCertified") is not False
                 or manifest.get("UpstreamSHA256") != expected_sha256.lower()
                 or not isinstance(manifest.get("CompressedBytes"), int)):
-            raise ValueError("Unaccepted or mismatched 2025 original PBP provenance")
+            raise ValueError("Unaccepted or mismatched original PBP provenance")
     if core_v1:
         if pbp_csv_gz is not None or expected_sha256 is not None:
             raise ValueError("--core-v1 cannot be combined with original PBP flags")
@@ -79,7 +79,7 @@ def preview(
                 raise ValueError("Original PBP compressed asset changed during replay")
         if v2_pilot:
             if pbp_csv_gz.stat().st_size != manifest["CompressedBytes"]:
-                raise ValueError("2025 original PBP compressed size mismatches accepted manifest")
+                raise ValueError("Original PBP compressed size mismatches accepted manifest")
             nfl_source = repo_root / DATA_SOURCE_ROOT / "nfl"
             def optional_partition(name: str) -> dict | None:
                 path = nfl_source / name / f"{season}" / f"{week:02d}.json"
@@ -190,8 +190,8 @@ def main() -> int:
         help="Read-only versioned Shared Derived GameDetail core candidate; no writes",
     )
     parser.add_argument(
-        "--v2-pilot", action="store_true",
-        help="Read-only compact GameDetail-v2 2025 pilot using accepted pinned original PBP; no writes",
+        "--v2", "--v2-pilot", dest="v2_pilot", action="store_true",
+        help="Read-only compact GameDetail v2 from season-specific accepted original PBP; no writes",
     )
     parser.add_argument(
         "--summary", action="store_true",
@@ -200,7 +200,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         if args.summary and (args.pbp_csv_gz is None or args.core_v1 or args.v2_pilot):
-            raise ValueError("--summary requires --pbp-csv-gz without --core-v1/--v2-pilot")
+            raise ValueError("--summary requires --pbp-csv-gz without --core-v1/--v2")
         document = preview(
             args.repo_root.resolve(), args.season, args.game_id,
             args.pbp_csv_gz, args.expected_sha256,
