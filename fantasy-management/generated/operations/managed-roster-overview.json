@@ -2,12 +2,12 @@
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
   "generated_at": "2026-11-18T04:22:10.458153Z",
-  "input_fingerprint": "dd0f1e67b42ca9a205509779cfc8a9ce1d617a33fc4ca59345064583e9a9592a",
+  "input_fingerprint": "019e79df21a304f00ccd1ee74092ac91311ee542aedcd8c06533fbd3c89ba983",
   "sources": [
     {
       "id": "canonical_league_settings",
       "path": "data-source/leagues/nfl-reise/seasons/2026/league.json",
-      "content_sha256": "23227c343bbbeb77c026af41afdfd05a6a6a613f3eee2e1e36445bcf04d7e500"
+      "content_sha256": "b91710d549a88dddfad526b3ed4fe9e4d2981904dba5afa6b78335d5bbf33d01"
     },
     {
       "id": "canonical_league_members",
@@ -17,7 +17,7 @@
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "c72001b7a64efcf82c7239020ea8f441a043fef5c7f48b13b47cc8d19e176ab8"
+      "content_sha256": "d2de1f397938e5989e9a5722c61e429e39c3affd9f1bfebad95b3cb91aa71ff3"
     },
     {
       "id": "roster_evaluation_state",
@@ -47,7 +47,7 @@
       "boundary_priority"
     ],
     "user_override_count": 0,
-    "unclassified_count": 0,
+    "unclassified_count": 2,
     "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
   },
   "team": {
@@ -107,14 +107,14 @@
       },
       "QB": {
         "fixed_starter_requirement": 2,
-        "held_count": 5,
-        "current_active_count": 4,
-        "effective_prelock_or_locked_count": 4,
+        "held_count": 4,
+        "current_active_count": 3,
+        "effective_prelock_or_locked_count": 3,
         "startable_count": 3,
-        "backup_count": 1,
+        "backup_count": 0,
         "coverage_floor": 3,
         "preferred_coverage": 4,
-        "status": "preferred_met"
+        "status": "floor_met_below_preferred"
       },
       "RB": {
         "fixed_starter_requirement": 2,
@@ -140,11 +140,11 @@
       },
       "WR": {
         "fixed_starter_requirement": 2,
-        "held_count": 16,
-        "current_active_count": 11,
-        "effective_prelock_or_locked_count": 11,
+        "held_count": 17,
+        "current_active_count": 12,
+        "effective_prelock_or_locked_count": 12,
         "startable_count": 7,
-        "backup_count": 1,
+        "backup_count": 0,
         "coverage_floor": null,
         "preferred_coverage": null,
         "status": "pool_managed"
@@ -255,22 +255,13 @@
     "churn": {
       "target_general_slots": 2,
       "assignment_status": "current_locked_roster",
-      "decision_readiness": "ready",
-      "active_unclassified_count": 0,
-      "current_active_candidate_count": 5,
+      "decision_readiness": "review_required",
+      "active_unclassified_count": 2,
+      "current_active_candidate_count": 3,
       "current_active_general_churn_count": 0,
-      "candidate_pool_count": 5,
-      "guardrail_status": "below_target",
+      "candidate_pool_count": 3,
+      "guardrail_status": "review_required",
       "candidate_pool": [
-        {
-          "player_id": "5947",
-          "name": "Jakobi Meyers",
-          "position": "WR",
-          "security": "conditional",
-          "current_area": "active",
-          "boundary_priority": 10,
-          "counts_as_general_churn": false
-        },
         {
           "player_id": "12530",
           "name": "Travis Hunter",
@@ -278,15 +269,6 @@
           "security": "hold",
           "current_area": "active",
           "boundary_priority": 20,
-          "counts_as_general_churn": false
-        },
-        {
-          "player_id": "11559",
-          "name": "Michael Penix Jr.",
-          "position": "QB",
-          "security": "conditional",
-          "current_area": "active",
-          "boundary_priority": 30,
           "counts_as_general_churn": false
         },
         {
@@ -433,7 +415,7 @@
         "fantasycalc_value": 3607
       },
       "coverage_role": "positional_coverage",
-      "coverage_protected": false,
+      "coverage_protected": true,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
@@ -496,71 +478,8 @@
         "fantasycalc_value": 5689
       },
       "coverage_role": "fixed_starter_pool",
-      "coverage_protected": false,
+      "coverage_protected": true,
       "comparison_boundary_eligible": false,
-      "potential_comparison_boundary_after_taxi_reassignment": false,
-      "churn_eligible": false,
-      "potential_churn_after_taxi_reassignment": false
-    },
-    {
-      "player_id": "11559",
-      "name": "Michael Penix Jr.",
-      "position": "QB",
-      "nfl_team": "ATL",
-      "roster_area": "active",
-      "roster_sections": [
-        "roster"
-      ],
-      "is_current_active": true,
-      "is_current_taxi": false,
-      "is_current_reserve": false,
-      "roster_role": "backup",
-      "roster_security": "conditional",
-      "structural_function": "coverage_reserve",
-      "classification": {
-        "roster_role": "backup",
-        "roster_security": "conditional",
-        "boundary_priority": 30,
-        "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
-        "source_as_of": "2026-11-14",
-        "user_override": false,
-        "notes": [
-          "Atlanta-QB mit potenziell künftigem Starter-/Trade-Wert, aber ungesicherter langfristiger NFL-Rolle. Dynasty-Markt etwa QB25 (FantasyCalc) / QB29 (FantasyPros); als fünfter eigener QB im tiefen Zwei-QB-Format nur bedingt gegen Premium-Alternativen geschützt. Dart-IR ist kein Dauergrund."
-        ],
-        "evidence": [],
-        "review_status": "seeded_manual"
-      },
-      "app_data": {
-        "status": "Active",
-        "age": 26.5,
-        "years_experience": 3,
-        "salary": 6360556,
-        "salary_projected": 12673515,
-        "is_free_agent": false
-      },
-      "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "market": {
-        "fantasypros_overall_rank": 115,
-        "fantasypros_position_rank": "QB29",
-        "fantasycalc_overall_rank": 109,
-        "fantasycalc_value": 1983
-      },
-      "coverage_role": "positional_coverage",
-      "coverage_protected": false,
-      "comparison_boundary_eligible": true,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
@@ -622,7 +541,7 @@
         "fantasycalc_value": 5314
       },
       "coverage_role": "fixed_starter_pool",
-      "coverage_protected": false,
+      "coverage_protected": true,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
@@ -685,7 +604,7 @@
         "fantasycalc_value": 3304
       },
       "coverage_role": "fixed_starter_pool",
-      "coverage_protected": false,
+      "coverage_protected": true,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
@@ -1638,6 +1557,67 @@
       "potential_churn_after_taxi_reassignment": false
     },
     {
+      "player_id": "11625",
+      "name": "Adonai Mitchell",
+      "position": "WR",
+      "nfl_team": "NYJ",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 24.1,
+        "years_experience": 3,
+        "salary": 1957726,
+        "salary_projected": 4088608,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 126,
+        "fantasypros_position_rank": "WR53",
+        "fantasycalc_overall_rank": 150,
+        "fantasycalc_value": 1393
+      },
+      "coverage_role": "unclassified",
+      "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
       "player_id": "8142",
       "name": "Alec Pierce",
       "position": "WR",
@@ -2147,69 +2127,6 @@
       "potential_churn_after_taxi_reassignment": false
     },
     {
-      "player_id": "5947",
-      "name": "Jakobi Meyers",
-      "position": "WR",
-      "nfl_team": "JAX",
-      "roster_area": "active",
-      "roster_sections": [
-        "roster"
-      ],
-      "is_current_active": true,
-      "is_current_taxi": false,
-      "is_current_reserve": false,
-      "roster_role": "backup",
-      "roster_security": "conditional",
-      "structural_function": "coverage_reserve",
-      "classification": {
-        "roster_role": "backup",
-        "roster_security": "conditional",
-        "boundary_priority": 10,
-        "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
-        "source_as_of": "2026-11-14",
-        "user_override": false,
-        "notes": [
-          "30-jähriger Receiver mit brauchbarem Floor, aber geringerem mehrjährigem Elite-Upside und Trade-Wert als unsere Kernassets. Im sechs-Team-Format erster Opportunity-Cost-Vergleich, keine automatische Cut-Empfehlung."
-        ],
-        "evidence": [],
-        "review_status": "seeded_manual"
-      },
-      "app_data": {
-        "status": "Active",
-        "age": 30,
-        "years_experience": 8,
-        "salary": 18235767,
-        "salary_projected": 14783203,
-        "is_free_agent": false
-      },
-      "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
-        "reported_date": null,
-        "return_date": null,
-        "external_verification_priority": "routine",
-        "limitations": [
-          "A missing structured signal is not proof of full health.",
-          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
-        ]
-      },
-      "market": {
-        "fantasypros_overall_rank": 124,
-        "fantasypros_position_rank": "WR51",
-        "fantasycalc_overall_rank": 172,
-        "fantasycalc_value": 1269
-      },
-      "coverage_role": "positional_coverage",
-      "coverage_protected": false,
-      "comparison_boundary_eligible": true,
-      "potential_comparison_boundary_after_taxi_reassignment": false,
-      "churn_eligible": false,
-      "potential_churn_after_taxi_reassignment": false
-    },
-    {
       "player_id": "7526",
       "name": "Jaylen Waddle",
       "position": "WR",
@@ -2462,6 +2379,67 @@
       "potential_churn_after_taxi_reassignment": false
     },
     {
+      "player_id": "12492",
+      "name": "Pat Bryant",
+      "position": "WR",
+      "nfl_team": "DEN",
+      "roster_area": "active",
+      "roster_sections": [
+        "roster"
+      ],
+      "is_current_active": true,
+      "is_current_taxi": false,
+      "is_current_reserve": false,
+      "roster_role": null,
+      "roster_security": null,
+      "structural_function": "unclassified",
+      "classification": {
+        "roster_role": null,
+        "roster_security": null,
+        "boundary_priority": null,
+        "confidence": "unknown",
+        "source": "unclassified",
+        "source_as_of": null,
+        "user_override": false,
+        "notes": [],
+        "evidence": [],
+        "review_status": "needs_classification"
+      },
+      "app_data": {
+        "status": "Active",
+        "age": 23.9,
+        "years_experience": 2,
+        "salary": 1142568,
+        "salary_projected": 3388672,
+        "is_free_agent": false
+      },
+      "injury": {
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
+        "reported_date": null,
+        "return_date": null,
+        "external_verification_priority": "routine",
+        "limitations": [
+          "A missing structured signal is not proof of full health.",
+          "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
+        ]
+      },
+      "market": {
+        "fantasypros_overall_rank": 173,
+        "fantasypros_position_rank": "WR69",
+        "fantasycalc_overall_rank": 158,
+        "fantasycalc_value": 1339
+      },
+      "coverage_role": "unclassified",
+      "coverage_protected": false,
+      "comparison_boundary_eligible": false,
+      "potential_comparison_boundary_after_taxi_reassignment": false,
+      "churn_eligible": false,
+      "potential_churn_after_taxi_reassignment": false
+    },
+    {
       "player_id": "9493",
       "name": "Puka Nacua",
       "position": "WR",
@@ -2652,9 +2630,34 @@
     }
   ],
   "quality": {
-    "status": "ok",
-    "issue_count": 0,
-    "issues": [],
+    "status": "warning",
+    "issue_count": 4,
+    "issues": [
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "11625",
+        "name": "Adonai Mitchell"
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "11625",
+        "name": "Adonai Mitchell"
+      },
+      {
+        "severity": "warning",
+        "kind": "unclassified_managed_player",
+        "player_id": "12492",
+        "name": "Pat Bryant"
+      },
+      {
+        "severity": "warning",
+        "kind": "active_unclassified_boundary_review_required",
+        "player_id": "12492",
+        "name": "Pat Bryant"
+      }
+    ],
     "limitations": [
       "Role and security are hybrid evaluative fields in v1 and are not yet fully machine-derived.",
       "Pre-lock Taxi optimization is intentionally not automated yet; current Taxi placement is not treated as strategic truth.",

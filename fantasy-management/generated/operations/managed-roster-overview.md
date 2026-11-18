@@ -10,18 +10,18 @@ Taxi phase: `locked`
 - Taxi: **2 / 2**; binding: **yes**
 - Reserve: **5 / 5**
 - Startable Skill Pool: **18 / 10** (margin +8)
-- General churn target: **2**; active general churn: **0**; status: `below_target`
-- Comparison boundary candidates: **5**; decision readiness: `ready`
+- General churn target: **2**; active general churn: **0**; status: `review_required`
+- Comparison boundary candidates: **3**; decision readiness: `review_required`
 
 ## Position coverage
 
 | Pos | Held | Active | Fixed starters | Startable | Backup | Floor | Preferred | Status |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
 | K | 1 | 1 | 1 | 0 | 0 | 1 | 1 | preferred_met |
-| QB | 5 | 4 | 2 | 3 | 1 | 3 | 4 | preferred_met |
+| QB | 4 | 3 | 2 | 3 | 0 | 3 | 4 | floor_met_below_preferred |
 | RB | 11 | 10 | 2 | 7 | 3 | – | – | pool_managed |
 | TE | 4 | 4 | 2 | 4 | 0 | 3 | 4 | preferred_met |
-| WR | 16 | 11 | 2 | 7 | 1 | – | – | pool_managed |
+| WR | 17 | 12 | 2 | 7 | 0 | – | – | pool_managed |
 
 ## Players
 
@@ -30,7 +30,6 @@ Taxi phase: `locked`
 | K | Ka'imi Fairbairn | active | specialist | churn | specialist | specialist | no | no |
 | QB | Jaxson Dart | reserve | backup | strong_hold | coverage_reserve | positional_coverage | no | no |
 | QB | Jayden Daniels | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
-| QB | Michael Penix Jr. | active | backup | conditional | coverage_reserve | positional_coverage | yes | no |
 | QB | Patrick Mahomes | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | QB | Tyler Shough | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | RB | Breece Hall | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
@@ -48,6 +47,7 @@ Taxi phase: `locked`
 | TE | Harold Fannin Jr. | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | TE | Trey McBride | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | TE | Tyler Warren | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Adonai Mitchell | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | WR | Alec Pierce | reserve | backup | hold | coverage_reserve | positional_coverage | no | no |
 | WR | Antonio Williams | taxi | prospect | hold | development | development | no | no |
 | WR | Brian Thomas Jr. | active | prospect | hold | development | development | yes | no |
@@ -56,20 +56,18 @@ Taxi phase: `locked`
 | WR | De'Zhaun Stribling | reserve | prospect | strong_hold | development | development | no | no |
 | WR | George Pickens | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Germie Bernard | active | prospect | conditional | development | development | yes | no |
-| WR | Jakobi Meyers | active | backup | conditional | coverage_reserve | positional_coverage | yes | no |
 | WR | Jaylen Waddle | active | starter_rotation | hold | starter_core | fixed_starter_pool | no | no |
 | WR | Ladd McConkey | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Malik Nabers | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | WR | Marvin Harrison Jr. | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
+| WR | Pat Bryant | active | unclassified | unclassified | unclassified | unclassified | no | no |
 | WR | Puka Nacua | active | core_starter | locked | starter_core | fixed_starter_pool | no | no |
 | WR | Tetairoa McMillan | active | starter_rotation | strong_hold | starter_core | fixed_starter_pool | no | no |
 | WR | Travis Hunter | active | prospect | hold | development | development | yes | no |
 
 ## Comparison boundary pool
 
-- Jakobi Meyers (WR) — `conditional` — area `active` — priority `10` — general churn: `no`
 - Travis Hunter (WR) — `hold` — area `active` — priority `20` — general churn: `no`
-- Michael Penix Jr. (QB) — `conditional` — area `active` — priority `30` — general churn: `no`
 - Germie Bernard (WR) — `conditional` — area `active` — priority `40` — general churn: `no`
 - Brian Thomas Jr. (WR) — `hold` — area `active` — priority `50` — general churn: `no`
 
