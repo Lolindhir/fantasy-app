@@ -194,6 +194,28 @@ class HistoricalStyleTests(unittest.TestCase):
         stages = [w["Stage"] for w in self.fx.model()["Weeks"]]
         self.assertEqual(["regular-season", "playoffs"], stages)
 
+    def test_playoff_metadata_is_added_only_to_playoff_games_with_confirmed_bracket(self):
+        self.fx.league["WeekStructure"].update({"ExpectedLastLeagueWeek": 2, "PlayoffRoundCount": 1})
+        self.fx.league["Settings"]["leg"] = 2
+        self.fx.write_league()
+        self.fx.write(self.fx.season_dir / "winners-bracket.json", [
+            {"Round": 1, "Match": 1, "Placement": 1,
+             "Team1CanonicalLeagueRosterID": "clr-1", "Team2CanonicalLeagueRosterID": "clr-2"}
+        ])
+        weeks = self.fx.model()["Weeks"]
+        regular, playoff = weeks[0]["Matchups"][0], weeks[1]["Matchups"][0]
+        self.assertIsNone(regular["Bracket"])
+        self.assertNotIn("PlayoffRound", regular)
+        self.assertEqual({"Bracket": "championship", "PlayoffRound": 1, "PlayoffRoundCount": 1,
+                          "PlayoffPlacement": 1, "PlayoffRoundWeek": 1, "PlayoffRoundWeeks": 1},
+                         {key: playoff[key] for key in ("Bracket", "PlayoffRound", "PlayoffRoundCount",
+                                                       "PlayoffPlacement", "PlayoffRoundWeek", "PlayoffRoundWeeks")})
+        (self.fx.season_dir / "winners-bracket.json").unlink()
+        unknown = self.fx.model()["Weeks"][1]["Matchups"][0]
+        self.assertEqual("unclassified", unknown["Bracket"])
+        self.assertTrue(all(unknown[key] is None for key in ("PlayoffRound", "PlayoffRoundCount",
+                                                           "PlayoffPlacement", "PlayoffRoundWeek", "PlayoffRoundWeeks")))
+
     def test_a_tie_has_no_winner(self):
         self.fx.write_week(1, [row(1, "NFLP-1", 5.0), row(2, "NFLP-2", 5.0)])
         self.assertEqual({"Type": "tie", "WinnerTeamID": None}, self.fx.model()["Weeks"][0]["Matchups"][0]["Result"])

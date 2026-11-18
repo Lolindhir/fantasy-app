@@ -579,6 +579,54 @@ playerWeekFantasySharedDerived:
     - Physical materialization and scheduling require a later approved checkpoint; this contract foundation introduces neither.
 
 
+
+nflGamesSharedDerivation:
+  trackingIssue: 1077
+  domainContract: .ai-context/manual/nfl-games.yaml
+  pbpCatalog: .ai-context/manual/nfl-games-pbp-metrics.yaml
+  architectureDecisions: [ADR-037, ADR-038]
+  ownership: extend-existing-global-nfl-games-product-not-a-second-product
+  layers:
+    source:
+      root: data-source/nfl/**
+      responsibility: canonical schedule, finality, market, player-stats and snap-count facts;
+        original PBP remains a separate rights-and-source-coverage gate
+    rules:
+      root: tools/derived_data_lib/
+      responsibility: pure, versioned and independently reusable team/game derivations
+      examples:
+        - nfl_games.py (published index)
+        - nfl_game_detail.py (read-only detail preview)
+        - nfl_pbp_team_metrics.py (experimental 17 team-only candidates)
+        - nfl_team_snap_usage.py (read-only player-share team-total inference)
+    materialization:
+      runner: tools/nfl_games_materialize.py
+      publishedIndex: data-derived/nfl-games/<season>.json
+      detail: data-derived/nfl-games/details/<season>/<GameID>.json
+      detailStatus: core-v1-production-writer-activated-pending-first-successful-source-run
+      previewCli: tools/nfl_game_detail_preview.py --core-v1
+      detailBuilder: tools/derived_data_lib/nfl_game_detail_core.py
+      responsibility: read canonical inputs, invoke pure rules, validate contract,
+        persist only approved versioned shared outputs; no raw PBP play-list publication
+    orchestration:
+      existingWorkflow: .github/workflows/sync-nfl-source-data.yml
+      existingJob: nfl_games_derived
+      activeScope: season index from schedules, game finality and schedule odds
+      detailRefresh: current-season after full Source or scoped schedule-odds
+      historicalRefresh: Monday full-Source run (Europe/Berlin), all accepted
+        indexed historical seasons recomputed with semantic per-GameID no-op
+      rule: existing classified rebuild-and-retry publisher; no per-metric
+        schedulers, unconditional PBP replays, extra permissions or parallel writers
+  boundaries:
+    - NBA/NFL provider row field names and raw play evidence are Source, not output rules
+    - Team snap totals must not equal sum of player snaps or arbitrary sum divided by 11
+    - Missing or ambiguous shares and unverified PBP play coverage must remain explicit
+    - Angular and Fantasy Management consume shared metrics; they must not own their formulas
+    - Approved GameDetail v1 writes are limited to data-derived/nfl-games/details/**
+      through the existing NFL Games publisher; no extra Source, App, model, PBP
+      or player-identity repair authority is implied
+
+
 sharedDerivedPhysicalLayer:
   architectureDecision: ADR-038
   root: data-derived/**

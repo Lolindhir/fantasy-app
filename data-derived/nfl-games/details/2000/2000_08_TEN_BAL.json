@@ -1,0 +1,108 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2000,
+  "GameID": "2000_08_TEN_BAL",
+  "Game": {
+    "GameID": "2000_08_TEN_BAL",
+    "GameType": "REG",
+    "Week": 8,
+    "GameDay": "2000-10-22",
+    "GameTime": "13:00",
+    "AwayTeam": "TEN",
+    "HomeTeam": "BAL",
+    "AwayScore": 14,
+    "HomeScore": 6,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 1.0,
+      "TotalLine": 35.0,
+      "ImpliedAwayPoints": 17.0,
+      "ImpliedHomePoints": 18.0
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "TEN",
+        "Status": "available",
+        "PlayerRecordCount": 31,
+        "Stats": {
+          "attempts": 21,
+          "completions": 11,
+          "passing_yards": 101,
+          "passing_tds": 1,
+          "passing_interceptions": 1,
+          "carries": 26,
+          "rushing_yards": 90,
+          "rushing_tds": 0,
+          "targets": 20,
+          "receptions": 11,
+          "receiving_yards": 101,
+          "receiving_tds": 1,
+          "def_tackles_solo": 52,
+          "def_interceptions": 4,
+          "fg_att": 0,
+          "fg_made": 0,
+          "pat_att": 2,
+          "pat_made": 2
+        }
+      },
+      {
+        "Team": "BAL",
+        "Status": "available",
+        "PlayerRecordCount": 35,
+        "Stats": {
+          "attempts": 46,
+          "completions": 25,
+          "passing_yards": 290,
+          "passing_tds": 0,
+          "passing_interceptions": 4,
+          "carries": 29,
+          "rushing_yards": 113,
+          "rushing_tds": 0,
+          "targets": 43,
+          "receptions": 25,
+          "receiving_yards": 290,
+          "receiving_tds": 0,
+          "def_tackles_solo": 29,
+          "def_interceptions": 1,
+          "fg_att": 2,
+          "fg_made": 2,
+          "pat_att": 0,
+          "pat_made": 0
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "unavailable",
+    "SourceFinalized": null,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": null
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "unavailable",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "8f32af7f143ddb8401e1ed930f31a60089d0c785c46b7d48a8fc86c147652492"
+  }
+}

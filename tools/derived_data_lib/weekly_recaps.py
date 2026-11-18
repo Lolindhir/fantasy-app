@@ -500,8 +500,12 @@ def pregame_win_probabilities(
         ) if percentages else None
         scores = [float(team["FinalScore"]) for team in matchup["Teams"]]
         upset = None
+        level = None
         if first is not None and scores[0] != scores[1]:
-            upset = win_prob_model.is_upset(first if scores[0] > scores[1] else 1.0 - first)
+            winner_probability = first if scores[0] > scores[1] else 1.0 - first
+            upset = win_prob_model.is_upset(winner_probability)
+            level = win_prob_model.upset_level(winner_probability)
+        winner_index = 0 if scores[0] > scores[1] else 1
         result.append(
             {
                 "FantasyMatchupID": matchup["FantasyMatchupID"],
@@ -513,10 +517,129 @@ def pregame_win_probabilities(
                     for index, team in enumerate(matchup["Teams"])
                 ],
                 "Upset": upset,
-                "UpsetWinnerFantasyTeamID": team_values[_text(matchup["Teams"][0 if scores[0] > scores[1] else 1]["FantasyTeamID"])] if upset else None,
+                "UpsetWinnerFantasyTeamID": team_values[_text(matchup["Teams"][winner_index]["FantasyTeamID"])] if upset else None,
+                "UpsetLevel": level,
+                "UnderdogWinnerFantasyTeamID": team_values[_text(matchup["Teams"][winner_index]["FantasyTeamID"])] if level else None,
             }
         )
     return result
+
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Weekly player awards (Issue #499, weekly-recap-v2)
+
+
+def player_awards_for_week(
+    repo_root: Path,
+    season: int,
+    week: int,
+    rows: list[Any],
+    facts: list[dict[str, Any]],
+    team_values: dict[str, Any],
+    identity_map: dict[str, dict[str, dict[str, str]]],
+    roster_positions: list[Any],
+    recap_model: Any,
+) -> dict[str, Any]:
+    """The four player awards of one week from the paired matchup facts; incomplete evidence gives an unavailable week, never a guess."""
+    from team_week_performance_sources import WeekSourceNotReady, resolve_slots_from_league, resolve_week_positions
+
+    try:
+        positions = resolve_week_positions(repo_root, season, week, rows)
+        slots = resolve_slots_from_league(roster_positions, positions)
+    except (WeekSourceNotReady, ValueError):
+        return recap_model.unavailable()
+    matchups: list[dict[str, Any]] = []
+    for matchup in facts:
+        teams = []
+        for team in matchup["Teams"]:
+            players = []
+            for player in team["Players"]:
+                player_id = _text(player["PlayerID"])
+                known = identity_map["ByPlayer"].get(player_id, {})
+                canonical_id = _text(player.get("CanonicalPlayerID")) or _text(known.get("CanonicalPlayerID"))
+                position = positions.get(canonical_id) or _text(known.get("Position")) or ("DEF" if DEFENSE_ID.fullmatch(player_id.upper()) else "")
+                players.append(
+                    {
+                        "PlayerID": player_id,
+                        "CanonicalPlayerID": canonical_id or None,
+                        "Position": position,
+                        "Points": player["Points"] if player["HasPoints"] else None,
+                        "IsStarter": bool(player["IsStarter"]),
+                    }
+                )
+            teams.append({"FantasyTeamID": team_values[_text(team["FantasyTeamID"])], "Score": team["FinalScore"], "Players": players})
+        matchups.append({"FantasyMatchupID": matchup["FantasyMatchupID"], "Teams": teams})
+    try:
+        return recap_model.player_awards(matchups, slots)
+    except ValueError:
+        return recap_model.unavailable()
+
+
+PLAYER_AWARD_KEYS = ("MVP", "MatchupHero", "Heartbreaker", "UnsungHero")
+_IDENTITY_FIELDS = ("PlayerID", "CanonicalPlayerID", "Position")
+
+
+def player_award_history(models: dict[int, dict[str, Any]], refs: Callable[[str, int], dict[str, Any]]) -> dict[str, Any]:
+    """Player award counts and week lists across seasons from the season models (the frontend only displays it).
+
+    Only weeks whose ``PlayerAwards`` are available count; a week without awards (evidence gap) is absent from ``Seasons[].Weeks`` and from every
+    player. ``refs`` resolves a Sleeper player ID and season to the display reference (Name, Position, Picture, CanonicalPlayerID or null values).
+    """
+    players: dict[str, dict[str, Any]] = {}
+    seasons: list[dict[str, Any]] = []
+    for season in sorted(models):
+        covered: list[int] = []
+        for week in models[season].get("Weeks", []):
+            awards = week.get("PlayerAwards")
+            if not awards or awards.get("State") != "available":
+                continue
+            covered.append(int(week["Week"]))
+            for award in PLAYER_AWARD_KEYS:
+                for entry in awards.get(award, []):
+                    record = players.setdefault(
+                        entry["PlayerID"],
+                        {"PlayerID": entry["PlayerID"], "CanonicalPlayerID": entry.get("CanonicalPlayerID"), "Position": entry["Position"], "LastSeason": season, "Entries": []},
+                    )
+                    record["LastSeason"] = max(record["LastSeason"], season)
+                    record["Entries"].append(
+                        {
+                            "Season": season,
+                            "Week": int(week["Week"]),
+                            "Award": award,
+                            **{key: value for key, value in entry.items() if key not in _IDENTITY_FIELDS},
+                        }
+                    )
+        if covered:
+            seasons.append({"Season": season, "Weeks": covered})
+    result: list[dict[str, Any]] = []
+    for player_id, record in players.items():
+        ref = refs(player_id, record["LastSeason"])
+        counts = {award: sum(1 for item in record["Entries"] if item["Award"] == award) for award in PLAYER_AWARD_KEYS}
+        result.append(
+            {
+                "PlayerID": player_id,
+                "CanonicalPlayerID": ref.get("CanonicalPlayerID") or record["CanonicalPlayerID"],
+                "Name": ref.get("Name"),
+                "Position": ref.get("Position") or record["Position"],
+                "Picture": ref.get("Picture"),
+                "Counts": counts,
+                "Total": sum(counts.values()),
+                "Entries": record["Entries"],
+            }
+        )
+    result.sort(key=lambda p: (-p["Total"], p["PlayerID"]))
+    # All-time leaders per award (Hall of Fame): every player holding the highest count, ties shared; an award nobody won has no leaders.
+    leaders: dict[str, list[dict[str, Any]]] = {}
+    for award in PLAYER_AWARD_KEYS:
+        top = max((p["Counts"][award] for p in result), default=0)
+        leaders[award] = (
+            [
+                {"PlayerID": p["PlayerID"], "Name": p["Name"], "Position": p["Position"], "Count": top}
+                for p in result
+                if top > 0 and p["Counts"][award] == top
+            ]
+        )
+    return {"SchemaVersion": 1, "Awards": list(PLAYER_AWARD_KEYS), "Seasons": seasons, "Leaders": leaders, "Players": result}
 
 
 def upset_counts(weeks: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -609,6 +732,8 @@ def resolve_with_skips(repo_root: Path, league_id: str, season: int) -> tuple[di
     metadata = load_league_metadata(league_id, data_meta_root(repo_root))
     team_range_model = get_model(model_for(metadata, season, "TeamRange"), "team-range")
     win_prob_model = get_model(model_for(metadata, season, "WinProb"), "win-prob")
+    recap_model = get_model(model_for(metadata, season, "WeeklyRecap"), "weekly-recap")
+    roster_positions = _read(season_dir / "league.json", "Canonical league") .get("RosterPositions") if recap_model.PLAYER_AWARDS else []
 
     weeks: list[dict[str, Any]] = []
     skipped: list[tuple[int, str]] = []
@@ -641,6 +766,10 @@ def resolve_with_skips(repo_root: Path, league_id: str, season: int) -> tuple[di
         recap["WinProbabilities"] = pregame_win_probabilities(
             facts, team_values, identity_map, _pwf_projections(repo_root, league_id, season, week), team_range_model, win_prob_model
         )
+        if recap_model.PLAYER_AWARDS:
+            recap["PlayerAwards"] = player_awards_for_week(
+                repo_root, season, week, rows, facts, team_values, identity_map, roster_positions, recap_model
+            )
         weeks.append(recap)
     model = {
         "SchemaVersion": 1,

@@ -18,7 +18,7 @@
         </mat-panel-description>
       </mat-expansion-panel-header>
 
-      <a class="season-weeks-link" routerLink="/weeks" [queryParams]="{ season: season.season }">View weeks</a>
+      <a class="season-weeks-link" routerLink="/schedule" [queryParams]="{ season: season.season }">View schedule</a>
 
       <app-season-results
         [results]="playoffResultsViewModel(season)"
@@ -29,12 +29,11 @@
       <app-season-awards [awards]="season.awards"></app-season-awards>
 
       <section class="season-block regular-season-block">
-        <h3>Regular Season Standings</h3>
-
-        <app-regular-season-standings-list
+        <app-season-standings-table
           [standings]="season.regularSeasonStandings"
-          [showTitle]="false"
-        ></app-regular-season-standings-list>
+          [statistics]="statisticsByTeam(season)"
+          [idPrefix]="'season-' + season.season"
+        ></app-season-standings-table>
       </section>
     </mat-expansion-panel>
   </mat-accordion>

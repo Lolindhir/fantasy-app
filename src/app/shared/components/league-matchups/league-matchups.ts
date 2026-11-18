@@ -61,8 +61,7 @@ import { ChampionBadgeComponent } from '../champion-badge/champion-badge';
 import { WeekRecapContentComponent } from '../week-recap-content/week-recap-content';
 import { TeamIdentityComponent, type TeamIdentityElement } from '../team-identity/team-identity';
 import { findNflTeam } from '../../utils/nfl-team-key.util';
-import { TeamRivalryHistoryService } from '../../services/team-rivalry-history.service';
-import { buildHeadToHead, formatRivalryRecord, isPlayoffsComplete } from '../../utils/team-rivalry.util';
+import { TeamRivalryService, formatRivalryRecord } from '../../services/team-rivalry.service';
 
 type LeagueMatchupContextMode = 'current' | 'previous';
 
@@ -126,7 +125,7 @@ export class LeagueMatchupsComponent {
   private readonly dataService = inject(DataService);
   private readonly dialog = inject(MatDialog);
   private readonly teamDialog = inject(TeamDetailDialogService);
-  private readonly rivalryHistory = inject(TeamRivalryHistoryService);
+  private readonly rivalryService = inject(TeamRivalryService);
   private latestFantasyContextState: FantasyContextState | null = null;
 
   private readonly matchups$ = this.dataService.getMatchups().pipe(
@@ -135,12 +134,10 @@ export class LeagueMatchupsComponent {
   );
   private readonly matchupsReadModelSignal = toSignal(this.matchups$, { initialValue: null });
 
-  private readonly rivalrySeasonsSignal = toSignal(
-    this.rivalryHistory.getSeasons().pipe(catchError(() => of(null))),
+  private readonly rivalryLookupSignal = toSignal(
+    this.rivalryService.getLookup().pipe(catchError(() => of(null))),
     { initialValue: null }
   );
-  private readonly headToHeadCache = new Map<string, string | null>();
-  private readonly headToHeadToneCache = new Map<string, 'lead' | 'trail' | 'tie'>();
 
   private readonly weeklyRecaps$ = (this.dataService.getWeeklyRecaps?.() ?? of(null)).pipe(
     catchError(() => of(null)),
@@ -285,34 +282,17 @@ export class LeagueMatchupsComponent {
       .filter((matchup): matchup is LeagueMatchupView => !!matchup);
   }
 
-  /** All-time record of the left team against the right team ("3-2"); null without a counted game. */
+  /** All-time record of the left team against the right team ("3-2") from Rivalry.json; null without a counted game. */
   headToHead(matchup: LeagueMatchupView): string | null {
-    const seasons = this.rivalrySeasonsSignal();
-    if (!seasons) return null;
-    const key = `${matchup.left.team.TeamID}-${matchup.right.team.TeamID}-${seasons.length}`;
-    if (this.headToHeadCache.has(key)) return this.headToHeadCache.get(key) ?? null;
-
-    const record = buildHeadToHead(matchup.left.team.TeamID, matchup.right.team.TeamID, seasons, {
-      filter: 'all',
-      isSeasonComplete: season => isPlayoffsComplete(season, this.league.SeasonAsNumber, this.league.Status)
-    });
-    const label = record ? formatRivalryRecord(record) : null;
-    this.headToHeadCache.set(key, label);
-    if (record) {
-      this.headToHeadToneCache.set(
-        key,
-        record.wins > record.losses ? 'lead' : record.wins < record.losses ? 'trail' : 'tie'
-      );
-    }
-    return label;
+    const record = this.rivalryLookupSignal()?.headToHead(Number(matchup.left.team.TeamID), Number(matchup.right.team.TeamID));
+    return record ? formatRivalryRecord(record) : null;
   }
 
   /** Tone of the all-time record from the left team's view: lead (green), trail (red) or tie. */
   headToHeadTone(matchup: LeagueMatchupView): 'lead' | 'trail' | 'tie' | null {
-    if (!this.headToHead(matchup)) return null;
-    const seasons = this.rivalrySeasonsSignal();
-    const key = `${matchup.left.team.TeamID}-${matchup.right.team.TeamID}-${seasons?.length ?? 0}`;
-    return this.headToHeadToneCache.get(key) ?? null;
+    const record = this.rivalryLookupSignal()?.headToHead(Number(matchup.left.team.TeamID), Number(matchup.right.team.TeamID));
+    if (!record) return null;
+    return record.wins > record.losses ? 'lead' : record.wins < record.losses ? 'trail' : 'tie';
   }
 
   currentContext(context: FantasyGameContextReadModel | null): FantasyGameContextReadModel | null {
@@ -331,36 +311,51 @@ export class LeagueMatchupsComponent {
   matchupProjection(
     matchup: LeagueMatchupView,
     context: FantasyGameContextReadModel | null
-  ): { left: string; right: string } | null {
+  ): { left: string; right: string; leftFallback: boolean; rightFallback: boolean } | null {
     if (matchup.completionState === 'final') return null;
     const teams = this.matchupContext(matchup, context)?.Projection?.Teams;
     if (!teams) return null;
 
-    const scoreOf = (teamID: string | number): number | null =>
-      teams.find(team => String(team.FantasyTeamID) === String(teamID))?.ProjectedFinalScore ?? null;
-    const left = scoreOf(matchup.left.team.TeamID);
-    const right = scoreOf(matchup.right.team.TeamID);
+    const teamOf = (teamID: string | number) =>
+      teams.find(team => String(team.FantasyTeamID) === String(teamID));
+    const leftTeam = teamOf(matchup.left.team.TeamID);
+    const rightTeam = teamOf(matchup.right.team.TeamID);
+    const left = leftTeam?.DisplayProjectedScore ?? leftTeam?.ProjectedFinalScore ?? null;
+    const right = rightTeam?.DisplayProjectedScore ?? rightTeam?.ProjectedFinalScore ?? null;
     if (left === null && right === null) return null;
 
-    return { left: formatProjectionPoints(left), right: formatProjectionPoints(right) };
+    const usesFallback = (team: typeof leftTeam) =>
+      team?.DisplayProjectionMethod === 'season-bestball-actual-efficiency-v1';
+    return {
+      left: formatProjectionPoints(left), right: formatProjectionPoints(right),
+      leftFallback: usesFallback(leftTeam), rightFallback: usesFallback(rightTeam)
+    };
   }
 
-  /** Generated win chance of an open matchup (whole percents, left/right); null without a value. Live once an NFL game of a starter is final. */
+  /** Generated chance of an open matchup; raw fractions avoid mistaken 0/100 from rounded values. */
   winChance(
     matchup: LeagueMatchupView,
     context: FantasyGameContextReadModel | null
-  ): { left: number; right: number; live: boolean } | null {
+  ): { left: number; right: number; leftRaw: number | null; rightRaw: number | null; deterministic: boolean; live: boolean; estimated: boolean } | null {
     if (matchup.completionState === 'final') return null;
     const teams = this.matchupContext(matchup, context)?.Projection?.Teams;
     if (!teams) return null;
     const find = (teamID: string | number) => teams.find(team => String(team.FantasyTeamID) === String(teamID));
     const left = find(matchup.left.team.TeamID);
     const right = find(matchup.right.team.TeamID);
-    if (left?.WinProbability == null || right?.WinProbability == null) return null;
+    const leftChance = left?.DisplayWinProbability ?? left?.WinProbability;
+    const rightChance = right?.DisplayWinProbability ?? right?.WinProbability;
+    if (leftChance == null || rightChance == null || !left || !right) return null;
     return {
-      left: left.WinProbability,
-      right: right.WinProbability,
-      live: left.FinalStarterCount > 0 || right.FinalStarterCount > 0
+      left: leftChance,
+      right: rightChance,
+      leftRaw: left.DisplayWinProbabilityRaw ?? left.WinProbabilityRaw ?? null,
+      rightRaw: right.DisplayWinProbabilityRaw ?? right.WinProbabilityRaw ?? null,
+      deterministic: (left.DisplayWinProbabilityIsDeterministic ?? left.WinProbabilityIsDeterministic) === true
+        && (right.DisplayWinProbabilityIsDeterministic ?? right.WinProbabilityIsDeterministic) === true,
+      live: left.FinalStarterCount > 0 || right.FinalStarterCount > 0,
+      estimated: left.DisplayWinProbabilityBasis === 'season-bestball-efficiency-estimate'
+        || right.DisplayWinProbabilityBasis === 'season-bestball-efficiency-estimate'
     };
   }
 

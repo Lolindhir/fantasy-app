@@ -41,6 +41,18 @@ Verwende separat genau eine aktuelle Sicherheitsstufe:
 
 Roster Security ist dynamisch. Sie muss bei materiellen Änderungen neu abgeleitet werden und darf nicht aus einer alten Analyse fortgeschrieben werden.
 
+### Langfristiger Dynasty-Bewertungshorizont (verbindliche Abgrenzung)
+
+**Roster Role** und **Roster Security** bewerten den nachhaltigen Dynasty-Wert und die Kaderfunktion **über die kommenden Saisons** (insbesondere 2027 und Folgejahre). Der Spieltag selbst ist kein primärer Bewertungshorizont.
+
+- Als Grundlage zählen langfristige NFL-Rollenwahrscheinlichkeit, Talent, Alter, NFL-Draftkapital, belastbare mehrwöchige Usage-/Development-Trends, künftige Vertrags- und Teamlage, Markt-/Trade-Wert, langfristige Starter-/Flex-Utility, ligaeigener Replacement-Level und künftige Slot-Opportunity-Cost.
+- **Keine automatische Einstufungsänderung** allein wegen Bye Weeks, kurzfristigem Questionable/Out/IR, einem einzelnen schwachen oder starken Spiel oder aktueller Reserve-Belegung. Das sind separate **Weekly-Availability-/Lineup-/Coverage-Fakten**.
+- Verletzungen fließen nur bei fundiertem **längerfristigem** Risiko für Genesung, Karriere oder künftigen Workload ein. Nachhaltige Rollen-/Team-/Marktveränderungen können die Langfristwertung dagegen ändern.
+- Temporäre QB-/RB-Versicherung schafft keinen automatischen dauerhaften Strong Hold; temporäre Nichtverfügbarkeit macht ein wertvolles Dynasty-Asset nicht zum Churn-Kandidaten. Der Spielerwert muss weiterhin im Kontext der tiefen sechs-Team-Liga geprüft werden.
+- Die langfristige Role-/Security-Klassifikation und die verletzungsbereinigte Wochen-Coverage dürfen nicht als Ersatz füreinander gelten.
+
+
+
 ### 3.0 Comparison Boundary und General Churn strikt trennen
 
 Die **Comparison Boundary** beantwortet eine andere Frage als die Security-Stufe `churn`:

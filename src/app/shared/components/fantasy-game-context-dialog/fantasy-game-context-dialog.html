@@ -181,8 +181,10 @@
           </ng-container>
           <ng-template #matchupVsOnly><span>VS</span></ng-template>
           <strong>{{ matchupStateLabel(selectedMatchup) }}</strong>
-          <small *ngIf="matchupProjection(selectedMatchup) as projection" class="fgc-matchup-projection" aria-label="Projected final score">
-            Proj. {{ projection.left }} – {{ projection.right }}
+          <small *ngIf="matchupProjection(selectedMatchup) as projection" class="fgc-matchup-projection"
+                 [attr.aria-label]="projection.usesFallback ? 'Projected score with season Best Ball efficiency fallback' : 'Projected final score'"
+                 [attr.title]="projection.usesFallback ? 'Fallback: season-to-date Best Ball × historical manager efficiency' : null">
+            Proj. {{ projection.left }} – {{ projection.right }}<span *ngIf="projection.usesFallback"> · BB fallback</span>
           </small>
         </div>
 
@@ -200,15 +202,18 @@
         <app-win-chance-bar
           [left]="chance.left"
           [right]="chance.right"
+          [leftRaw]="chance.leftRaw"
+          [rightRaw]="chance.rightRaw"
+          [deterministic]="chance.deterministic === true"
+          [estimated]="chance.estimated === true"
           [leftName]="teamShortName(matchupTeamID(selectedMatchup, 'left'))"
           [rightName]="teamShortName(matchupTeamID(selectedMatchup, 'right'))"
         ></app-win-chance-bar>
         <p class="fgc-win-chance-caption">
-          <mat-icon
-            class="fgc-win-chance-info"
-            aria-hidden="true"
-            title="The chance is calculated from the projected scores of both starting lineups and their uncertainty. It is not adjusted by past results."
-          >info</mat-icon>
+          <a routerLink="/handbook" [queryParams]="{ section: 'Projections_Explanation' }"
+             class="fgc-win-chance-help" aria-label="How win chances are calculated" title="How win chances are calculated">
+            <mat-icon class="fgc-win-chance-info" aria-hidden="true">help_outline</mat-icon>
+          </a>
           <span>{{ chance.caption }}</span>
           <strong *ngIf="chance.upsetTeam" class="fgc-win-chance-upset">Upset · {{ chance.upsetTeam }} won</strong>
         </p>

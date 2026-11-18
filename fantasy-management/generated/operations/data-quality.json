@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "report_id": "fantasy-operations-data-quality",
-  "generated_at": "2026-11-13T04:21:58.940570Z",
-  "input_fingerprint": "bdeeda901a2fe68da62d7e988b0cc1167fae3d8ba7ab9a40ee89ba47f93d872c",
+  "generated_at": "2026-11-18T04:22:10.458153Z",
+  "input_fingerprint": "9613b66d74a205481e6d53572ed5405f941c92c6fbee880e093855c4470f22d8",
   "status": "warning",
   "coverage": {
     "managed_roster_ids": 37,
     "resolved_players": 37,
-    "players_with_current_injury_signal": 15,
+    "players_with_current_injury_signal": 13,
     "primary_adp_applicable": 5,
     "primary_adp_listed": 4,
     "sources": {
@@ -49,18 +49,19 @@
     },
     "external_signals": {
       "sleeper-trending": {
-        "row_count": 156,
-        "materialized_entity_count": 148,
-        "resolved_players": 148,
+        "row_count": 169,
+        "materialized_entity_count": 159,
+        "resolved_players": 159,
         "unresolved_players": 0,
         "excluded_non_player_entities": {
-          "count": 19,
+          "count": 22,
           "by_type": {
-            "team_defense": 19
+            "team_defense": 22
           },
           "entity_ids": [
             "BAL",
             "BUF",
+            "CAR",
             "CHI",
             "CLE",
             "DEN",
@@ -74,16 +75,18 @@
             "NE",
             "NO",
             "NYG",
+            "NYJ",
             "PIT",
+            "SEA",
             "SF",
             "TB",
             "WAS"
           ]
         },
         "ownership": {
-          "fantasy_free_agent": 68,
-          "mighty_giants": 11,
-          "opponent_rostered": 69
+          "fantasy_free_agent": 72,
+          "mighty_giants": 13,
+          "opponent_rostered": 74
         },
         "baseline": false,
         "material_event_eligible": true
@@ -98,10 +101,10 @@
       "details": {
         "dataset_id": "redraft-ppr-8-team",
         "coverage_status": "insufficient_coverage",
-        "observed_rows": 6,
+        "observed_rows": 5,
         "minimum_usable_rows": 50,
         "expected_minimum_rows": 50,
-        "checked_at": "2026-11-13T04:21:58.940570Z"
+        "checked_at": "2026-11-18T04:22:10.458153Z"
       }
     }
   ],
@@ -128,7 +131,7 @@
     },
     {
       "id": "player_valuation",
-      "path": "data-derived/player-valuation/nfl-reise/2026/week-09.json",
+      "path": "data-derived/player-valuation/nfl-reise/2026/week-10.json",
       "source_timestamp": null
     },
     {
@@ -192,6 +195,11 @@
       "source_timestamp": null
     },
     {
+      "id": "canonical_nfl_weekly_rosters_11",
+      "path": "data-source/nfl/weekly-rosters/2026/11.json",
+      "source_timestamp": null
+    },
+    {
       "id": "canonical_nfl_draft",
       "path": "data-source/nfl/draft/2026.json",
       "source_timestamp": null
@@ -214,42 +222,42 @@
     {
       "id": "ffc-redraft-ppr-8-team_observation",
       "path": "data-source/providers/fantasy-football-calculator/observation.json",
-      "source_timestamp": "2026-11-13T04:21:58.940570Z"
+      "source_timestamp": "2026-11-18T04:22:10.458153Z"
     },
     {
       "id": "ffc-redraft-2qb-10-team_observation",
       "path": "data-source/providers/fantasy-football-calculator/observation.json",
-      "source_timestamp": "2026-11-13T04:21:58.940570Z"
+      "source_timestamp": "2026-11-18T04:22:10.458153Z"
     },
     {
       "id": "fantasypros-dynasty-superflex-ppr_pointer",
       "path": "data-source/market/expert-consensus/fantasypros/dynasty-superflex-ppr/latest.json",
-      "source_timestamp": "2026-11-13T04:21:56.348053Z"
+      "source_timestamp": "2026-11-18T04:21:58.297247Z"
     },
     {
       "id": "fantasypros-dynasty-superflex-ppr_ranking",
-      "path": "data-source/market/expert-consensus/fantasypros/dynasty-superflex-ppr/snapshots/2026-11-13/ranking.csv",
-      "source_timestamp": "2026-11-13T04:21:56.348053Z"
+      "path": "data-source/market/expert-consensus/fantasypros/dynasty-superflex-ppr/snapshots/2026-11-18/ranking.csv",
+      "source_timestamp": "2026-11-18T04:21:58.297247Z"
     },
     {
       "id": "fantasycalc-dynasty-superflex-ppr-8-team_pointer",
       "path": "data-source/market/market-value/fantasycalc/dynasty-superflex-ppr-8-team/latest.json",
-      "source_timestamp": "2026-11-13T04:21:58.397202Z"
+      "source_timestamp": "2026-11-18T04:22:02.019655Z"
     },
     {
       "id": "fantasycalc-dynasty-superflex-ppr-8-team_ranking",
-      "path": "data-source/market/market-value/fantasycalc/dynasty-superflex-ppr-8-team/snapshots/2026-11-13/ranking.csv",
-      "source_timestamp": "2026-11-13T04:21:58.397202Z"
+      "path": "data-source/market/market-value/fantasycalc/dynasty-superflex-ppr-8-team/snapshots/2026-11-18/ranking.csv",
+      "source_timestamp": "2026-11-18T04:22:02.019655Z"
     },
     {
       "id": "ffc-redraft-2qb-10-team_pointer",
       "path": "data-source/market/adp/fantasy-football-calculator/redraft-2qb-10-team/latest.json",
-      "source_timestamp": "2026-11-13T04:21:58.940570Z"
+      "source_timestamp": "2026-11-18T04:22:10.458153Z"
     },
     {
       "id": "ffc-redraft-2qb-10-team_ranking",
       "path": "data-source/market/adp/fantasy-football-calculator/redraft-2qb-10-team/snapshots/2026-11-11/ranking.csv",
-      "source_timestamp": "2026-11-13T04:21:58.940570Z"
+      "source_timestamp": "2026-11-18T04:22:10.458153Z"
     },
     {
       "id": "fftoday-redraft-kicker-preseason_pointer",
@@ -264,17 +272,17 @@
     {
       "id": "cbs-sports-redraft-kicker-preseason_pointer",
       "path": "data-source/market/projection/cbs-sports/redraft-kicker-preseason/latest.json",
-      "source_timestamp": "2026-11-13T04:21:58.856336Z"
+      "source_timestamp": "2026-11-18T04:22:05.118753Z"
     },
     {
       "id": "cbs-sports-redraft-kicker-preseason_ranking",
-      "path": "data-source/market/projection/cbs-sports/redraft-kicker-preseason/snapshots/2026-11-13/ranking.csv",
-      "source_timestamp": "2026-11-13T04:21:58.856336Z"
+      "path": "data-source/market/projection/cbs-sports/redraft-kicker-preseason/snapshots/2026-11-18/ranking.csv",
+      "source_timestamp": "2026-11-18T04:22:05.118753Z"
     },
     {
       "id": "external_signal_sleeper-trending",
       "path": "data-source/market/roster-activity/sleeper/latest.json",
-      "source_timestamp": "2026-11-13T04:21:57.233330Z"
+      "source_timestamp": "2026-11-18T04:22:01.241237Z"
     }
   ],
   "interpretation_limits": [

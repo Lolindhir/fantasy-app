@@ -154,6 +154,20 @@
       ]
     },
     {
+      "id": "nfl-injuries",
+      "workflow": "sync-nfl-injuries.yml",
+      "path": ".github/workflows/sync-nfl-injuries.yml",
+      "eventType": "scheduler-sync-nfl-injuries",
+      "profile": "productive",
+      "timezone": "Europe/Berlin",
+      "cron": [
+        "30 9 * 9-12,1-2 *"
+      ],
+      "satisfyingEvents": [
+        "repository_dispatch"
+      ]
+    },
+    {
       "id": "nfl-live",
       "workflow": "nfl-live.yml",
       "path": ".github/workflows/nfl-live.yml",

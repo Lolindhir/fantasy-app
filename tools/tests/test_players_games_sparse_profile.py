@@ -1,4 +1,4 @@
-"""Players and Games workflows: the sparse/blobless checkout hides no input (Issue #1263, G5 AP5 candidates).
+"""Games workflow (Players profile reverted, no measured gain): the sparse/blobless checkout hides no input (Issue #1263, G5 AP5 candidates).
 
 The profile is parsed from each workflow and applied with real git in a throw-away repository; the Verify step must
 list inputs that the profile keeps and must fall back to a complete checkout. Read paths were proven by running the
@@ -70,7 +70,7 @@ def apply(name: str, files: list[str]) -> set[str]:
 
 
 class PlayersGamesSparseProfileTest(unittest.TestCase):
-    CASES = {"update-players.yml": PLAYERS_ONLY, "update-games.yml": GAMES_ONLY}
+    CASES = {"update-games.yml": GAMES_ONLY}
 
     def test_binding_verify_and_fallback(self) -> None:
         for name in self.CASES:

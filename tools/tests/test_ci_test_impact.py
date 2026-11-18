@@ -73,8 +73,31 @@ class RoutingTests(unittest.TestCase):
         selected = set(self.choose("tools/league_source_refresh_witness.py")["selected"])
         self.assertEqual({"nfl-identity-replay", "league-pwf-twp", "consumer-restore"}, selected)
 
+    def test_readonly_pbp_team_reconciliation_routes_to_derived_not_identity_or_market(self):
+        result = self.choose("tools/nfl_pbp_team_metric_reconcile.py")
+        self.assertEqual({"league-pwf-twp", "consumer-restore"}, set(result["selected"]))
+        self.assertFalse(result["uncertain"])
+        self.assertNotIn("nfl-identity-replay", result["selected"])
+
+    def test_nfl_game_detail_materializer_routes_to_derived_families(self):
+        for path in ("tools/nfl_game_details_materialize.py",
+                     "tools/nfl_game_detail_preview.py"):
+            with self.subTest(path=path):
+                result = self.choose(path)
+                self.assertEqual({"league-pwf-twp", "consumer-restore"},
+                                 set(result["selected"]))
+                self.assertFalse(result["uncertain"])
+
     def test_league_history_change_selects_derived_families_not_identity_or_market(self):
         selected = set(self.choose("tools/league_history_app_publish.py")["selected"])
+        self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
+
+    def test_historical_schedule_outlook_preview_selects_derived_families(self):
+        selected = set(self.choose("tools/league_schedule_outlook_preview.py")["selected"])
+        self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
+
+    def test_new_schedule_outlook_model_selects_derived_fast_families(self):
+        selected = set(self.choose("tools/derived_data_lib/models/schedule_outlook/v1.py")["selected"])
         self.assertEqual({"league-pwf-twp", "consumer-restore"}, selected)
 
     def test_league_standings_sources_select_derived_families(self):

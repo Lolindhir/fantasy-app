@@ -303,7 +303,7 @@ workflows:
     relevantEvents:
     - push
     - workflow_call
-    rationale: Main deployment failure can leave the published app behind repository state. The push trigger uses a positive path filter (src, public, Angular/npm/tsconfig build inputs, deploy_action.ps1, the workflow itself), so commits touching only data-source, data-derived or fantasy-management do not deploy; there is deliberately no debounce.
+    rationale: Main deployment failure can leave the published app behind repository state. The push trigger uses a positive path filter (src, public, Angular/npm/tsconfig build inputs, deploy_action.ps1, the workflow itself), so commits touching only data-source, data-derived or other fantasy-management paths do not deploy; the single canonical `fantasy-management/league-context/league-philosophy.md` is the explicit static-Handbook build-input exception; there is deliberately no debounce.
   .github/workflows/fantasy-management-validation.yml:
     category: critical
     relevantEvents:
@@ -315,6 +315,13 @@ workflows:
     - repository_dispatch
     staleAfterMinutes: 20
     rationale: Central five-minute scheduling layer woken automatically by the external Cloudflare cron for all migrated time-driven targets, including workflow health. It owns profile-driven bounded retries, fail-safe dispatch observation with fallback reads, isolated runtime coordination, Health observation-barrier decisions and debounced Project-field change detection; a scheduler failure or roughly 20 minutes without a successful external tick can prevent downstream refreshes and Project mirroring and is immediately actionable.
+  .github/workflows/sync-nfl-injuries.yml:
+    category: important
+    relevantEvents:
+    - repository_dispatch
+    - push
+    consecutiveFailures: 1
+    rationale: Scheduler-owned daily Sep-Feb Injury Report producer runs after nflverse release update; delegates to the existing protected two-phase NFL Source publisher and its isolated Derived job. A main-push change of the permanent wrapper also performs a read-only full-asset identity/game-link preflight and at most one historical missing verified pilot through the same existing writer; any blocked pilot fails closed with no data commits. One failed run leaves last good data but may miss a report correction; manual repair invocations are non-paging. No 10-minute polling and no staleness timer outside the seasonal window.
   .github/workflows/sync-nfl-source-data.yml:
     category: important
     relevantEvents:
@@ -323,7 +330,7 @@ workflows:
     - workflow_call
     consecutiveFailures: 1
     staleAfterMinutes: 1800
-    rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes, while failures or a missed daily cycle should surface promptly. Manual repair runs remain non-paging.
+    rationale: Daily persistent NFL Source sync dispatched by the central scheduler; main-push/called runs verify source-layer changes. Its Monday 04:00 Europe/Berlin unfiltered full sync first discovers all official historical Injury seasons, may admit at most one missing historical season or restore only a missing Raw/metadata half after pinned official asset/size, available SHA and full original self-hash/identity/game-link preflight through the same protected Source writer, then replays all accepted historical Injury Canonical and the existing Injury Derived publisher and audits frozen original revisions without replacing them. Official digestless historical originals are eligible after the tiered release-identity/byte-size/self-hash/full-content attestation; incomplete Source pairs are retried on every Monday and cannot silently replace surviving frozen evidence. Explicit manual workflow_dispatch with reconcile_injury_history=true and unfiltered full scope/force=false runs the same bounded historical path on any day, without a new writer/schedule; ordinary manual calls, pushes and targeted calls skip it. Manual invocations remain non-paging. Failures keep last good history but require review.
   .github/workflows/odds-refresh.yml:
     category: important
     relevantEvents:

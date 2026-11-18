@@ -22,16 +22,17 @@ persisted PlayerValuation snapshots (see Issue #1263 C8j).
 Third product: league-standings (league-standings.yaml, ADR-072, Issue #987), one file per league and season at
 <derived root>/league-standings/<CanonicalLeagueID>/<season>.json with the regular-season table, the weekly tables,
 playoffs, awards and the all-time standing through that season. The seasons are chained (Most Improved, all-time) and
-always rebuilt chronologically in one run; the models come from data-meta (standings-v1, awards-v1).
+always rebuilt chronologically in one run; the models come from data-meta (standings-v1, awards-v1, awards-v2 or awards-v3).
 
 Usage:
-  derived_data.py materialize --product player-valuation|league-transactions|league-drafts|league-standings [--league nfl-reise]
+  derived_data.py materialize --product player-valuation|league-transactions|league-drafts|league-standings|season-statistics|league-rivalry [--league nfl-reise]
                               [--season 2026 ...] [--out-root DIR] [--check]
 """
 from __future__ import annotations
 
 import argparse
 import json
+from datetime import datetime, timezone
 import sys
 from pathlib import Path
 from typing import Any
@@ -52,6 +53,8 @@ import player_valuation_sources as sources  # noqa: E402
 from derived_data_lib.league_history import build_history, drafts_document, transactions_document  # noqa: E402
 from league_history_sources import LeagueHistorySourceError, load_inputs  # noqa: E402
 from derived_data_lib.league_standings import build_season  # noqa: E402
+from derived_data_lib.season_statistics import resolve as resolve_season_statistics  # noqa: E402
+from derived_data_lib.rivalry import resolve as resolve_league_rivalry  # noqa: E402
 from derived_data_lib.models.registry import get_model  # noqa: E402
 import league_standings_sources as standings_sources  # noqa: E402
 from derived_data_lib.league_player_refs import LeaguePlayerReferenceResolver, provider_draft_names  # noqa: E402
@@ -59,7 +62,9 @@ from derived_data_lib.league_player_refs import LeaguePlayerReferenceResolver, p
 LEAGUE_TRANSACTIONS = "league-transactions"
 LEAGUE_DRAFTS = "league-drafts"
 LEAGUE_STANDINGS = "league-standings"
-PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS)
+SEASON_STATISTICS = "season-statistics"
+LEAGUE_RIVALRY = "league-rivalry"
+PRODUCTS = (sources.PRODUCT, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS, SEASON_STATISTICS, LEAGUE_RIVALRY)
 EXIT_CHANGED = 3  # --check found a snapshot that differs from disk
 
 
@@ -225,6 +230,15 @@ def materialize_league_history(
     return summary
 
 
+def read_season_statistics(out_root: Path, league_id: str, season: int) -> dict[str, Any] | None:
+    """The persisted season-statistics product of one season (input of awards-v2 and later), or None when it does not exist (unknown)."""
+    path = league_history_path(out_root, SEASON_STATISTICS, league_id, season)
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8")
+    return json.loads(text) if text.strip() else None
+
+
 def build_league_standings(repo_root: Path, league_id: str) -> dict[int, dict[str, Any]]:
     """Product documents of every manifest season, built chronologically (Most Improved and all-time chain on earlier seasons)."""
     manifest = standings_sources.manifest(repo_root, league_id)
@@ -238,7 +252,11 @@ def build_league_standings(repo_root: Path, league_id: str) -> dict[int, dict[st
         inputs = standings_sources.load_season_inputs(repo_root, league_id, season, current)
         standings_model = get_model(model_for(metadata, season, "Standings"), "standings")
         awards_model = get_model(model_for(metadata, season, "Awards"), "awards")
-        document = build_season(inputs, standings_model, awards_model, previous, completed_newest_first)
+        statistics = (
+            read_season_statistics(data_derived_dir(repo_root), league_id, season)
+            if getattr(awards_model, "NEEDS_SEASON_STATISTICS", False) else None
+        )
+        document = build_season(inputs, standings_model, awards_model, previous, completed_newest_first, statistics)
         documents[season] = document
         previous = document
         if document["IsCompleted"]:
@@ -278,6 +296,77 @@ def materialize_league_standings(
     return summary
 
 
+def build_season_statistics(repo_root: Path, league_id: str, seasons: list[int] | None = None) -> dict[int, dict[str, Any]]:
+    """Product documents of the manifest seasons (or only ``seasons``); each season stands alone, no earlier season is an input."""
+    manifest = standings_sources.manifest(repo_root, league_id)
+    metadata = load_league_metadata(league_id, data_meta_root(repo_root))
+    validate_against_manifest(metadata, manifest)
+    current = standings_sources.current_season(manifest)
+    available = standings_sources.manifest_seasons(manifest)
+    unknown = [s for s in (seasons or []) if s not in available]
+    if unknown:
+        raise standings_sources.StandingsSourceError(f"Seasons not in the league manifest: {unknown}; available: {available}")
+    documents: dict[int, dict[str, Any]] = {}
+    for season in (sorted(set(seasons)) if seasons else available):
+        inputs = standings_sources.load_season_inputs(repo_root, league_id, season, current)
+        documents[season] = resolve_season_statistics(
+            repo_root, league_id, season, inputs.teams, inputs.regular_season_games, inputs.is_completed)
+    return documents
+
+
+def materialize_season_statistics(
+    repo_root: Path, out_root: Path, league_id: str, seasons: list[int] | None, check_only: bool,
+) -> dict[str, Any]:
+    summary: dict[str, Any] = {"Product": SEASON_STATISTICS, "CanonicalLeagueID": league_id, "Seasons": []}
+    for season, document in sorted(build_season_statistics(repo_root, league_id, seasons).items()):
+        text = serialize(document)
+        path = league_history_path(out_root, SEASON_STATISTICS, league_id, season)
+        unchanged = path.is_file() and path.read_text(encoding="utf-8") == text
+        if not unchanged and not check_only:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        summary["Seasons"].append({
+            "Season": season,
+            "Models": document["Models"],
+            "CompletedWeeks": document["AsOf"]["CompletedWeeks"],
+            "Bytes": len(text.encode("utf-8")),
+            "Unchanged": 1 if unchanged else 0,
+            "Written" if not check_only else "WouldWrite": 0 if unchanged else 1,
+        })
+    return summary
+
+
+def league_rivalry_path(out_root: Path, league_id: str) -> Path:
+    """One file per league (all seasons): data-derived/league-rivalry/<CanonicalLeagueID>.json."""
+    return out_root / LEAGUE_RIVALRY / f"{league_id}.json"
+
+
+def materialize_league_rivalry(
+    repo_root: Path, out_root: Path, league_id: str, seasons: list[int] | None, check_only: bool, at_utc: datetime | None = None,
+) -> dict[str, Any]:
+    """The league-rivalry document covers every season of the league at once; ``seasons`` is not supported (one file per league)."""
+    if seasons:
+        raise ValueError("league-rivalry has one file per league covering all seasons; --season is not supported")
+    document = resolve_league_rivalry(repo_root, league_id, at_utc or datetime.now(timezone.utc))
+    text = serialize(document)
+    path = league_rivalry_path(out_root, league_id)
+    unchanged = path.is_file() and path.read_text(encoding="utf-8") == text
+    if not unchanged and not check_only:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
+    return {
+        "Product": LEAGUE_RIVALRY,
+        "CanonicalLeagueID": league_id,
+        "Seasons": [{
+            "Models": document["Models"],
+            "Records": len(document["Records"]),
+            "Bytes": len(text.encode("utf-8")),
+            "Unchanged": 1 if unchanged else 0,
+            "Written" if not check_only else "WouldWrite": 0 if unchanged else 1,
+        }],
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -299,6 +388,16 @@ def main() -> int:
         if args.product == LEAGUE_STANDINGS:
             results = [
                 materialize_league_standings(args.repo_root, out_root, league, args.season, args.check)
+                for league in leagues
+            ]
+        elif args.product == SEASON_STATISTICS:
+            results = [
+                materialize_season_statistics(args.repo_root, out_root, league, args.season, args.check)
+                for league in leagues
+            ]
+        elif args.product == LEAGUE_RIVALRY:
+            results = [
+                materialize_league_rivalry(args.repo_root, out_root, league, args.season, args.check)
                 for league in leagues
             ]
         elif args.product in (LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS):

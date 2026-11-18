@@ -1,0 +1,165 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2024,
+  "GameID": "2024_05_TB_ATL",
+  "Game": {
+    "GameID": "2024_05_TB_ATL",
+    "GameType": "REG",
+    "Week": 5,
+    "GameDay": "2024-10-03",
+    "GameTime": "20:15",
+    "AwayTeam": "TB",
+    "HomeTeam": "ATL",
+    "AwayScore": 30,
+    "HomeScore": 36,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 2.5,
+      "TotalLine": 44.0,
+      "ImpliedAwayPoints": 20.75,
+      "ImpliedHomePoints": 23.25
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "TB",
+        "Status": "available",
+        "PlayerRecordCount": 29,
+        "Stats": {
+          "attempts": 24,
+          "completions": 19,
+          "passing_yards": 180,
+          "passing_tds": 3,
+          "passing_interceptions": 0,
+          "carries": 26,
+          "rushing_yards": 160,
+          "rushing_tds": 0,
+          "targets": 24,
+          "receptions": 19,
+          "receiving_yards": 180,
+          "receiving_tds": 3,
+          "def_tackles_solo": 48,
+          "def_interceptions": 1,
+          "fg_att": 3,
+          "fg_made": 3,
+          "pat_att": 3,
+          "pat_made": 3
+        }
+      },
+      {
+        "Team": "ATL",
+        "Status": "available",
+        "PlayerRecordCount": 33,
+        "Stats": {
+          "attempts": 59,
+          "completions": 42,
+          "passing_yards": 509,
+          "passing_tds": 4,
+          "passing_interceptions": 1,
+          "carries": 18,
+          "rushing_yards": 73,
+          "rushing_tds": 0,
+          "targets": 54,
+          "receptions": 42,
+          "receiving_yards": 509,
+          "receiving_tds": 4,
+          "def_tackles_solo": 32,
+          "def_interceptions": 0,
+          "fg_att": 5,
+          "fg_made": 3,
+          "pat_att": 3,
+          "pat_made": 3
+        }
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "available",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": [
+      {
+        "Team": "TB",
+        "PlayerRows": 45,
+        "Offense": {
+          "TotalSnaps": 53,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 16,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 583,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 87,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 957,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": null,
+          "Status": "inconsistent-rounded-shares",
+          "PositiveParticipantRows": 35,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 351,
+          "PossibleTeamTotals": 0
+        }
+      },
+      {
+        "Team": "ATL",
+        "PlayerRows": 46,
+        "Offense": {
+          "TotalSnaps": 87,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 14,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 957,
+          "PossibleTeamTotals": 1
+        },
+        "Defense": {
+          "TotalSnaps": 53,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 20,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 583,
+          "PossibleTeamTotals": 1
+        },
+        "SpecialTeams": {
+          "TotalSnaps": 32,
+          "Status": "unique-rounded-share-denominator",
+          "PositiveParticipantRows": 34,
+          "MissingPlayerFields": 0,
+          "ObservedPlayerSnapSum": 352,
+          "PossibleTeamTotals": 1
+        }
+      }
+    ]
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "available",
+    "TeamSnapCounts": "available",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "56c7ec59804714dd95dcbcb2cfadc19c35e84a54570f653696f304775dc876c9"
+  }
+}

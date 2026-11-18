@@ -1,0 +1,19 @@
+schemaVersion: 1
+artifact: public/data/PlayerAwardHistory.json
+role: >
+  Weekly player award history (Week MVP, Matchup Hero, Heartbreaker, Unsung Hero) per player across all seasons, rendered from the season models of the weekly recap
+  function (Issue #499, ADR-086). Counts, totals and the week lists are computed by the generator; the frontend only displays them.
+generator: tools/weekly_recaps_app_publish.py (computed function tools/derived_data_lib/weekly_recaps.py, model weekly-recap-v2)
+contract: .ai-context/manual/weekly-recaps.yaml (playerAwards.historyFile)
+shape:
+  SchemaVersion: 1
+  Awards: award keys in display order
+  Seasons: '[{Season, Weeks}] weeks with available awards only; a week with an evidence gap is absent'
+  Leaders: '{Award: [{PlayerID, Name, Position, Count}]} all-time leader(s) per award, ties shared, empty when nobody won it (Hall of Fame)'
+  Players: >
+    [{PlayerID (Sleeper), CanonicalPlayerID, Name, Position, Picture, Counts{MVP, MatchupHero, Heartbreaker, UnsungHero}, Total,
+    Entries[{Season, Week, Award, FantasyTeamID, FantasyMatchupID, Points, Swing, Margin, Gain, ReplacedPlayerID}]}], sorted by Total descending then PlayerID
+rules:
+  - Name, Position and Picture come from the season-aware league-history PlayerRefs resolver; the frontend prefers Players.json for current players and never guesses a name.
+  - Written only on a semantic difference; Timestamps.json key PlayerAwardHistory.
+  - The current scope recomputes the current season and reads completed seasons from their published past_seasons WeeklyRecaps archive; the weekly history scope recomputes them.

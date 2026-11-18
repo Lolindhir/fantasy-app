@@ -30,10 +30,12 @@ import {
   compareDraftPicksByDraftThenOrder
 } from '../../shared/utils/draft-capital.util';
 import { getDraftRoundColor } from '../../shared/utils/draft-ui.util';
+import { buildOverviewCapCheck, buildOverviewCapRows } from '../../shared/utils/overview-cap.util';
 import { buildLastWaiverPickByTeam } from '../../shared/utils/waiver-last-pick.util';
 import {
   buildAllTimeStandings,
   buildCurrentStandings,
+  findBestRecordTeam,
   buildSeasonResults,
   getCurrentSeasonAwards,
   buildSeasonAwardItems,
@@ -58,13 +60,6 @@ interface DraftPickDisplayGroup {
 
 interface DeadlineDisplayInfo {
   displayText: string;
-}
-
-interface CapCheckSummary {
-  title: string;
-  summaryText: string;
-  detailText: string;
-  allCompliant: boolean;
 }
 
 interface DraftSeasonDraftRow {
@@ -95,10 +90,6 @@ interface DraftSeasonDashboard {
   drafts: DraftSeasonDraftRow[];
   nextPicks: DraftPickOverviewRow[];
   recentPicks: DraftPickOverviewRow[];
-}
-
-interface SalaryTeamSummary {
-  total: number;
 }
 
 interface SeasonPulseMetric {
@@ -173,55 +164,17 @@ export class OverviewComponent {
       const allTimeStandings = buildAllTimeStandings(teams);
       const allTime = allTimeStandings.map(row => row.team);
 
-      const salaryByTeam = teams.map(t => {
-
-        const playerCount = Math.min(
-          league.SalaryRelevantTeamSize,
-          t.Roster.length
-        );
-
-        const sortedSalary = this.sortPlayersBySalary(t.Roster, false);
-        const sortedProjected = this.sortPlayersBySalary(t.Roster, true);
-
-        const topPlayers = sortedSalary.slice(0, playerCount);
-        const topPlayersProjected = sortedProjected.slice(0, playerCount);
-
-        const total = topPlayers.reduce((sum, p) => sum + p.Salary, 0);
-        const totalProjected = topPlayersProjected.reduce((sum, p) => sum + p.SalaryProjected, 0);
-
-        const totalAll = sortedSalary.reduce((sum, p) => sum + p.Salary, 0);
-        const totalAllProjected = sortedProjected.reduce((sum, p) => sum + p.SalaryProjected, 0);
-
-        const top5Players = sortedSalary.slice(0, 5);
-        const top5PlayersProjected = sortedProjected.slice(0, 5);
-
-        const totalTop5 = top5Players.reduce((sum, p) => sum + p.Salary, 0);
-        const totalTop5Projected = top5PlayersProjected.reduce((sum, p) => sum + p.SalaryProjected, 0);
-
-        const currentSeasonDraftPickGroups = this.getCurrentSeasonDraftPickGroups(
-          t.DraftPicks ?? [],
+      const salaryByTeam = buildOverviewCapRows(teams).map(row => ({
+        ...row,
+        draftPickGroups: this.getCurrentSeasonDraftPickGroups(
+          row.team.DraftPicks ?? [],
           currentSeason,
           maxDisplayedDraftRound
-        );
-
-        return {
-          team: t,
-          total,
-          totalProjected,
-          totalAll,
-          totalAllProjected,
-          totalTop5,
-          totalTop5Projected,
-          topPlayers,
-          topPlayersProjected,
-          countedPlayers: playerCount,
-          draftPickGroups: currentSeasonDraftPickGroups
-        };
-
-      }).sort((a, b) => a.total - b.total);
+        )
+      }));
 
       const capCheckSummary = offSeason && league.Phase === 'Cap Check'
-        ? this.buildCapCheckSummary(league, salaryByTeam)
+        ? buildOverviewCapCheck(league, salaryByTeam, amount => this.formatSalaryDollars(amount, false, 1))
         : null;
 
       const draftSeasonDashboard = this.buildDraftSeasonDashboard(drafts, teams, players, currentSeason, draftSeason);
@@ -334,12 +287,10 @@ export class OverviewComponent {
       return [];
     }
 
-    const bestRecord = [...teams].sort((left, right) =>
-      right.Wins - left.Wins
-      || left.Losses - right.Losses
-      || right.Ties - left.Ties
-      || right.Points - left.Points
-    )[0];
+    const bestRecord = findBestRecordTeam(league, teams);
+    if (!bestRecord) {
+      return [];
+    }
     const pointsLeader = [...teams].sort((left, right) => right.Points - left.Points)[0];
     const streakLeader = teams
       .map(team => ({ team, wins: this.getWinningStreakLength(team.Streak) }))
@@ -420,33 +371,6 @@ export class OverviewComponent {
       .sort((left, right) => right.EffectiveAt - left.EffectiveAt
         || right.TransactionID.localeCompare(left.TransactionID))
       .slice(0, 4);
-  }
-
-  private buildCapCheckSummary(
-    league: League,
-    salaryByTeam: SalaryTeamSummary[]
-  ): CapCheckSummary {
-    const overCapTeams = salaryByTeam.filter(team => team.total > league.SalaryCap);
-    const compliantTeams = salaryByTeam.length - overCapTeams.length;
-
-    if (overCapTeams.length === 0) {
-      return {
-        title: '✅ Cap Check Passed',
-        summaryText: 'All teams are under the salary cap.',
-        detailText: `${compliantTeams} of ${salaryByTeam.length} teams compliant`,
-        allCompliant: true
-      };
-    }
-
-    const worstOverage = Math.max(...overCapTeams.map(team => team.total - league.SalaryCap));
-    const teamLabel = overCapTeams.length === 1 ? 'team still needs' : 'teams still need';
-
-    return {
-      title: '🚨 Cap Check Open',
-      summaryText: `${overCapTeams.length} ${teamLabel} to clear cap.`,
-      detailText: `${compliantTeams} compliant · largest overage ${this.formatSalaryDollars(worstOverage, false, 1)}`,
-      allCompliant: false
-    };
   }
 
   private buildDraftSeasonDashboard(
@@ -772,21 +696,6 @@ export class OverviewComponent {
     } else {
       return `- $${(-amount / 1_000_000).toFixed(afterPoint)} Mio.`;
     }
-  }
-
-  sortPlayersBySalary(players: Player[], useProjected: boolean): Player[] {
-    const sorted = [...players].sort((a, b) => {
-      if (useProjected) {
-        const diff = (b.SalaryProjected ?? 0) - (a.SalaryProjected ?? 0);
-        if (diff !== 0) return diff;
-        return (b.Salary ?? 0) - (a.Salary ?? 0);
-      } else {
-        const diff = (b.Salary ?? 0) - (a.Salary ?? 0);
-        if (diff !== 0) return diff;
-        return (b.SalaryProjected ?? 0) - (a.SalaryProjected ?? 0);
-      }
-    });
-    return sorted;
   }
 
 }

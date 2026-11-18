@@ -9,11 +9,12 @@ These rules replace chat-level Fantasy Management instructions for this reposito
 For any new Fantasy Management task:
 
 1. read `fantasy-management/AGENTS.md`
-2. read `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
-3. read this file
-4. read `fantasy-management/_ai/TRADE_DECISION_RECORDS.md` when the task creates, seals, reconstructs or reviews a Trade Decision Record
-5. read `fantasy-management/_ai/WORKFLOWS.md` when the task involves extraction, analysis storage or repeated workflow steps
-6. load current repo data when dynamic facts are needed
+2. for league-rule, format, Salary/Cap or strategy-design decisions, read the protected `fantasy-management/league-context/league-philosophy.md` as the six-goal north star (not as active mechanics)
+3. read `fantasy-management/_ai/FANTASY_MANAGEMENT_SOURCES.md`
+4. read this file
+5. read `fantasy-management/_ai/TRADE_DECISION_RECORDS.md` when the task creates, seals, reconstructs or reviews a Trade Decision Record
+6. read `fantasy-management/_ai/WORKFLOWS.md` when the task involves extraction, analysis storage or repeated workflow steps
+7. load current repo data when dynamic facts are needed
 
 Do not answer dynamic roster, trade, salary, draft or player questions from memory alone.
 

@@ -25,7 +25,9 @@ winProbability:
     before the week). Every starter counts with his PlayerWeekFantasy projection of that week (nothing final), recomputed from the product on every
     run and not frozen; the models are chosen per season in data-meta (Models.TeamRange, Models.WinProb). A starter without a usable projection or
     canonical identity makes the chance null (unknown, never 50) and the upset null. A tie has no upset. The season model also carries
-    WinProbabilityModel and UpsetCounts per team (Upsets, Weeks with a known chance); the frontend only displays them. The additive fields leave
+    WinProbabilityModel and UpsetCounts per team (Upsets, Weeks with a known chance); the frontend only displays them. Issue #1446 adds per matchup UpsetLevel (upset below 35 percent, underdog from 35 to below 50 percent, otherwise null; the thresholds belong to win-prob-v1) and
+    UnderdogWinnerFantasyTeamID (winner of a marked matchup); the Weeks page recap shows one wide row "Biggest Underdog Win" (the marked matchup with the lowest winner chance, team names, upset tag below 35 percent) below the team awards, or "All Favorites Won" when chances are known and no underdog won.
+    The season UpsetCounts keep counting only real upsets (below 35 percent). The additive fields leave
     SchemaVersion 1 unchanged. Historical seasons are written by the weekly update-transactions run, the current season by League Live.
   backtest: tools/historical_win_prob_backtest.py, research/win-probability/2026/
 
@@ -53,7 +55,10 @@ decisions:
     seasons the Matchups completion is unknown for most weeks (starter or game evidence gaps), so the published history only holds a few weeks (2024: none,
     2025: two). The function therefore also recaps those earlier weeks when their starter and game evidence is complete; every published week stays identical.
     A week with an evidence gap is left out and reported, never guessed.
-  R3: No model ID for the selection rules in v1. They are fixed, league-independent editorial semantics (below). A model weekly-recap-v2 with a registry entry and a data-meta key follows only with #499 (weekly fantasy awards) or a league that wants other rules.
+  R3: >-
+    No model ID for the selection rules of KeyPlayers, KeyGames and TeamAwards. They are fixed, league-independent editorial semantics (below). Issue #499 adds the model kind
+    weekly-recap (data-meta key Models.WeeklyRecap): weekly-recap-v1 is the baseline without player awards, weekly-recap-v2 adds PlayerAwards (section playerAwards). The
+    KeyPlayers, KeyGames and TeamAwards rules stay outside the model, so a league that wants other editorial rules still needs a new version.
   R4: All leagues of the league manifests are processed; the league is never hard-coded.
   R5: League Live writes only the current season; completed seasons are written by the weekly update-transactions run together with the matchup-context history.
   R6: After section 3, the remaining FantasyGameContext/Matchup PowerShell (WeeklyRecapMatchupFacts.psm1) is deleted together with the recap PowerShell.
@@ -100,17 +105,62 @@ inputs:
   - data-derived/league-standings/<CanonicalLeagueID>/<season>.json
   - data-derived/team-week-performance/<CanonicalLeagueID>/<season>/<WW>.json
   - tools/derived_data_lib/week_finality.py
-  - data-meta/<CanonicalLeagueID>/metadata.json (league manifest only)
+  - data-meta/<CanonicalLeagueID>/metadata.json (league manifest and the models TeamRange, WinProb and WeeklyRecap)
+  - data-source/nfl/weekly-rosters, data-source/nfl/rosters and data-source/leagues/<CanonicalLeagueID>/seasons/<season>/league.json (RosterPositions) for the PlayerAwards positions and slots (weekly-recap-v2)
 
 consumers:
   app: public/data/WeeklyRecaps.json and public/data/past_seasons/WeeklyRecaps/WeeklyRecaps_<season>.json via tools/weekly_recaps_app_publish.py (Angular reads them; no Fantasy Management reader)
   cadence: League Live (current season, every ten minutes, products before consumers) and the weekly update-transactions run (completed seasons)
 
+playerAwards:
+  issue: 499
+  model: weekly-recap-v2
+  summary: >-
+    Four fixed league-context player awards per league-scored week (Robert, 2026-11-14): Week MVP, Matchup Hero, Heartbreaker and Unsung Hero. They are computed inside
+    resolve_weekly_recaps by the model weekly-recap-v2 (tools/derived_data_lib/models/weekly_recap/v2.py, pure function player_awards(matchups, slots)), chosen per season
+    in data-meta (Models.WeeklyRecap, all seasons v2). No new product, writer, write prefix or permission. Carry Job and every negative award were dropped.
+  formulas:
+    MVP: the starter(s) with the most points of the week, league-wide, raw points. The frontend marks KeyPlayers entry 1 with the MVP badge; no second block.
+    MatchupHero: >-
+      For each starter of a winning team swing = his points minus the points of the best bench player of the same position (0 without one). A starter is decisive when
+      swing is larger than the matchup margin. The Hero is the decisive starter(s) with the largest swing; no decisive starter means no Hero.
+    Heartbreaker: the starter(s) with the most points in a lost matchup. It exists every week with a decided matchup and may equal the MVP.
+    UnsungHero: >-
+      A bench player of a losing team whose swap for one starter (or his addition to an empty slot) on a slot he is eligible for, FLEX and SUPER_FLEX included and with the
+      complete lineup legal (central slot rules of team_week_performance_sources.resolve_slots_from_league), gives strictly more points than the winner. The winner is the
+      player(s) with the largest gain; the reported swap is the one with the largest gain (an equal gain prefers a real starter over an empty slot, then the lower player ID).
+  rules:
+    - Ties share every award. A tied matchup has no winner and no loser, so it has no Hero, Heartbreaker or Unsung Hero (the MVP still counts its starters).
+    - Overlap is allowed. Hero only in a win, Heartbreaker only in a loss, an Unsung Hero is never a starter, so a player holds at most two awards in a week.
+    - Weeks are the recap weeks (up to LeagueScoredWeek, playoffs included). A matchup needs exactly two teams; weeks with unpaired teams are not recapped at all (existing rule).
+    - A bench player is every rostered player of the week who is not a starter. Historical matchups carry no Taxi or IR marker, so those players cannot be separated from the bench; the same roster population is the pool of the TeamWeekPerformance best ball.
+    - Fail closed on evidence gaps. A starter or bench player without points or a verified historical position, or without slot evidence, makes PlayerAwards.State unavailable with empty lists for that week; nothing is guessed.
+    - Positions come from resolve_week_positions (canonical weekly roster, same season, finalized rosters), never from current player profiles.
+  weekField: >-
+    Each recap week gets PlayerAwards: State (available or unavailable) and the lists MVP, MatchupHero, Heartbreaker and UnsungHero. An entry carries PlayerID (Sleeper ID of the
+    App contract), CanonicalPlayerID, FantasyTeamID, FantasyMatchupID, Position and Points plus the figures Swing and Margin (Hero), Margin (Heartbreaker) or Gain, Margin and
+    ReplacedPlayerID (Unsung Hero; null for an empty slot). The field is only present with weekly-recap-v2. Additive; SchemaVersion 1 stays.
+  historyFile:
+    path: public/data/PlayerAwardHistory.json
+    generator: tools/weekly_recaps_app_publish.py (League Live recomputes the current season; the weekly update-transactions run recomputes completed seasons)
+    shape: >-
+      SchemaVersion, Awards (award keys), Seasons[{Season, Weeks}] (weeks with available awards only), Leaders{Award: [{PlayerID, Name, Position, Count}]} (all-time leader(s) per award, ties shared, Hall of Fame), Players[{PlayerID, CanonicalPlayerID, Name, Position, Picture, Counts{MVP,
+      MatchupHero, Heartbreaker, UnsungHero}, Total, Entries[{Season, Week, Award, FantasyTeamID, FantasyMatchupID, Points, figures}]}] sorted by Total descending, then PlayerID.
+      The frontend only displays counts and lists; Name, Position and Picture come from the league-history PlayerRefs resolver (LeaguePlayerReferenceResolver, season-aware, never
+      guessed in the frontend) and are the fallback for players that Players.json no longer lists.
+    freshness: >-
+      The current scope takes completed seasons from their published past_seasons WeeklyRecaps archive (immutable once the season is complete) and recomputes only the current
+      season, so a League Live run never recomputes history; the weekly history scope recomputes all completed seasons. The file is written only on a semantic difference and
+      updates Timestamps.json PlayerAwardHistory.
+  history: >-
+    Seasons 2024, 2025 and the current season are produced by the existing writers: the weekly update-transactions run (completed seasons) and League Live (current season).
+    A week without complete evidence gets no awards. Part B (NFL-wide honors of pre-league seasons) is Issue #1484 and not part of this contract.
+
 nonGoals:
-  - New selection rules or awards (#499 stays separate).
-  - Changes to the WeeklyRecaps.json contract other than R2 at the edge and the additive lineupEfficiency fields (Issue #1408).
+  - New selection rules beyond the four player awards of Issue #499.
+  - Changes to the WeeklyRecaps.json contract other than R2 at the edge, the additive lineupEfficiency fields (Issue #1408) and the additive PlayerAwards field (Issue #499).
   - A persisted recap product.
-  - Frontend changes.
+  - Frontend counting or selection of awards (the frontend only displays).
 
 migration:
   steps:

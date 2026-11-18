@@ -279,13 +279,13 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
       'getMatchups',
       'getNflTeams',
       'getWeeklyRecaps',
-      'getPastSeasonsIndex'
+      'getRivalry'
     ]);
     dataService.getFantasyGameContext.and.returnValue(of(makeFantasyGameContext()));
     dataService.getDecisionWindows.and.returnValue(of(makeDecisionWindows()));
     dataService.getMatchups.and.returnValue(of(makeMatchups()));
-    // No archived seasons: the head-to-head line stays hidden in these specs.
-    dataService.getPastSeasonsIndex.and.returnValue(of({ Seasons: [] } as unknown as ReturnType<DataService['getPastSeasonsIndex']> extends import('rxjs').Observable<infer T> ? T : never));
+    // No rivalry records: the head-to-head line stays hidden in these specs.
+    dataService.getRivalry.and.returnValue(of({ SchemaVersion: 1, Product: 'league-rivalry', CanonicalLeagueID: 'test', Seasons: [], Records: [] }));
     dataService.getNflTeams.and.returnValue(of(makeNflTeams()));
     dataService.getWeeklyRecaps.and.returnValue(of(recap));
 
@@ -695,7 +695,9 @@ describe('LeagueMatchupsComponent #558 weekly overview polish', () => {
 
     expect(rows.length).toBe(3);
     expect(rows.map(row => row.querySelector('.weekly-recap-player-copy strong')?.textContent?.trim())).toEqual(['P2', 'P1', 'P3']);
-    expect(rows.map(row => row.querySelector('.weekly-recap-player-copy span')?.textContent?.trim())).toEqual(['WR · N2', 'WR · N1', 'WR · N3']);
+    // Common player identity line: NFL logo (alt = abbreviation; text fallback without a logo) plus the position chip.
+    expect(rows.map(row => row.querySelector('.weekly-recap-position-chip')?.textContent?.trim())).toEqual(['WR', 'WR', 'WR']);
+    expect(rows.map(row => row.querySelector('.weekly-recap-player-nfl')?.getAttribute('alt'))).toEqual(['N2', 'N1', 'N3']);
     expect(rows.map(row => row.querySelector('.weekly-recap-player-points')?.textContent?.trim())).toEqual(['15', '30', '10']);
     expect(rows.every(row => row.querySelector('.weekly-recap-player-nfl-logo') === null)).toBeTrue();
 

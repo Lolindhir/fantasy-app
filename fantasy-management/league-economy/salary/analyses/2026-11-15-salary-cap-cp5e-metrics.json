@@ -1,0 +1,1049 @@
+{
+  "schema_version": 1,
+  "analysis": "CP5e",
+  "date": "2026-11-15",
+  "issue": 1344,
+  "status": "hypothetical_nonactive_research",
+  "user_preference": "C-add primary research hypothesis, NOT a league rule",
+  "historical_input": {
+    "league_commit": "85e22feb064fdaf2257d6c3149c8d1655ada0908",
+    "players_blob": "21001d6c0819dbbcb3deff084d63fe377714541c",
+    "cp5d": "fantasy-management/league-economy/salary/analyses/2026-11-15-salary-cap-cp5d-metrics.json"
+  },
+  "assumptions": [
+    "Historical June prices and rosters, 14 documented cut-only events; no unseen manager choices.",
+    "Cadd adds retained salary even outside Top20 and only once until reset; aggregate resulting debt separate.",
+    "Two/three following ANNUAL checks, first due 2027 for 2026 booked debt; no actual future salaries known.",
+    "Mandatory due ceil(remaining balance / checks remaining), cannot pay due using fresh debt; no write-off or auto-cut.",
+    "Cut-only extra scenarios assume uniform percentage for all remaining players, not actual tenure.",
+    "Dec2025 to June2026 carry-in is a deliberately unhistorical non-deadline proxy.",
+    "2025/26 seven independent as-of samples are not a time series of legal debt."
+  ],
+  "cap_june": 434255984,
+  "players_june_count": 1410,
+  "teams": [
+    {
+      "team_id": 1,
+      "name": "Mighty Giants",
+      "cut_count": 0,
+      "top20_before_cuts": 428342743,
+      "top20_after_cuts": 428342743,
+      "top20_gross_relief": 0,
+      "retained": 0,
+      "net_cut_relief": 0,
+      "debt_C_add": 0,
+      "debt_C_virtual": 0,
+      "headroom_without_retained": 5913241
+    },
+    {
+      "team_id": 2,
+      "name": "Ruhr Valley Packers",
+      "cut_count": 4,
+      "top20_before_cuts": 458471246,
+      "top20_after_cuts": 428068769,
+      "top20_gross_relief": 30402477,
+      "retained": 10256124,
+      "net_cut_relief": 20146353,
+      "debt_C_add": 4068909,
+      "debt_C_virtual": 0,
+      "headroom_without_retained": 6187215
+    },
+    {
+      "team_id": 3,
+      "name": "Just Bill",
+      "cut_count": 8,
+      "top20_before_cuts": 547568190,
+      "top20_after_cuts": 427729579,
+      "top20_gross_relief": 119838611,
+      "retained": 37551933,
+      "net_cut_relief": 82286678,
+      "debt_C_add": 31025528,
+      "debt_C_virtual": 4941734,
+      "headroom_without_retained": 6526405
+    },
+    {
+      "team_id": 4,
+      "name": "Mammoth Marauders",
+      "cut_count": 2,
+      "top20_before_cuts": 454914438,
+      "top20_after_cuts": 417411588,
+      "top20_gross_relief": 37502850,
+      "retained": 7188323,
+      "net_cut_relief": 30314527,
+      "debt_C_add": 0,
+      "debt_C_virtual": 0,
+      "headroom_without_retained": 16844396
+    },
+    {
+      "team_id": 5,
+      "name": "Team DennisLACards",
+      "cut_count": 0,
+      "top20_before_cuts": 410698298,
+      "top20_after_cuts": 410698298,
+      "top20_gross_relief": 0,
+      "retained": 0,
+      "net_cut_relief": 0,
+      "debt_C_add": 0,
+      "debt_C_virtual": 0,
+      "headroom_without_retained": 23557686
+    },
+    {
+      "team_id": 6,
+      "name": "Team TimpaBay",
+      "cut_count": 0,
+      "top20_before_cuts": 430409346,
+      "top20_after_cuts": 430409346,
+      "top20_gross_relief": 0,
+      "retained": 0,
+      "net_cut_relief": 0,
+      "debt_C_add": 0,
+      "debt_C_virtual": 0,
+      "headroom_without_retained": 3846638
+    }
+  ],
+  "cut_steps": [
+    {
+      "event_id": "1374735850633445376",
+      "team_id": 2,
+      "player_id": "4137",
+      "name": "James Conner",
+      "at": "2026-06-22T10:44:37.449Z",
+      "rank_at_cut": 11,
+      "salary": 16999309,
+      "rate": 0.15,
+      "retained": 2549896,
+      "top20_before": 458471246,
+      "top20_after": 449461840,
+      "top20_relief": 9009406,
+      "net_cap_relief": 6459510,
+      "retention_cumulative": 2549896
+    },
+    {
+      "event_id": "1374736138207518720",
+      "team_id": 2,
+      "player_id": "5872",
+      "name": "Deebo Samuel",
+      "at": "2026-06-22T10:45:46.012Z",
+      "rank_at_cut": 13,
+      "salary": 12566756,
+      "rate": 0.15,
+      "retained": 1885013,
+      "top20_before": 449461840,
+      "top20_after": 443767862,
+      "top20_relief": 5693978,
+      "net_cap_relief": 3808965,
+      "retention_cumulative": 4434909
+    },
+    {
+      "event_id": "1374736175406776320",
+      "team_id": 2,
+      "player_id": "3257",
+      "name": "Jacoby Brissett",
+      "at": "2026-06-22T10:45:54.881Z",
+      "rank_at_cut": 12,
+      "salary": 13278422,
+      "rate": 0.3,
+      "retained": 3983527,
+      "top20_before": 443767862,
+      "top20_after": 436434941,
+      "top20_relief": 7332921,
+      "net_cap_relief": 3349394,
+      "retention_cumulative": 8418436
+    },
+    {
+      "event_id": "1374736210588631040",
+      "team_id": 2,
+      "player_id": "6783",
+      "name": "Jerry Jeudy",
+      "at": "2026-06-22T10:46:03.269Z",
+      "rank_at_cut": 12,
+      "salary": 12251250,
+      "rate": 0.15,
+      "retained": 1837688,
+      "top20_before": 436434941,
+      "top20_after": 428068769,
+      "top20_relief": 8366172,
+      "net_cap_relief": 6528484,
+      "retention_cumulative": 10256124
+    },
+    {
+      "event_id": "1370129974777880576",
+      "team_id": 3,
+      "player_id": "8183",
+      "name": "Brock Purdy",
+      "at": "2026-06-09T17:42:31.073Z",
+      "rank_at_cut": 4,
+      "salary": 41511235,
+      "rate": 0.3,
+      "retained": 12453371,
+      "top20_before": 547568190,
+      "top20_after": 517757658,
+      "top20_relief": 29810532,
+      "net_cap_relief": 17357161,
+      "retention_cumulative": 12453371
+    },
+    {
+      "event_id": "1370130002347053056",
+      "team_id": 3,
+      "player_id": "4035",
+      "name": "Alvin Kamara",
+      "at": "2026-06-09T17:42:37.645Z",
+      "rank_at_cut": 8,
+      "salary": 24366017,
+      "rate": 0.15,
+      "retained": 3654903,
+      "top20_before": 517757658,
+      "top20_after": 503780425,
+      "top20_relief": 13977233,
+      "net_cap_relief": 10322330,
+      "retention_cumulative": 16108274
+    },
+    {
+      "event_id": "1370130025235378176",
+      "team_id": 3,
+      "player_id": "7543",
+      "name": "Travis Etienne",
+      "at": "2026-06-09T17:42:43.102Z",
+      "rank_at_cut": 11,
+      "salary": 22831903,
+      "rate": 0.15,
+      "retained": 3424785,
+      "top20_before": 503780425,
+      "top20_after": 490540722,
+      "top20_relief": 13239703,
+      "net_cap_relief": 9814918,
+      "retention_cumulative": 19533059
+    },
+    {
+      "event_id": "1370130057451827200",
+      "team_id": 3,
+      "player_id": "4943",
+      "name": "Sam Darnold",
+      "at": "2026-06-09T17:42:50.783Z",
+      "rank_at_cut": 8,
+      "salary": 24155999,
+      "rate": 0.3,
+      "retained": 7246800,
+      "top20_before": 490540722,
+      "top20_after": 475967800,
+      "top20_relief": 14572922,
+      "net_cap_relief": 7326122,
+      "retention_cumulative": 26779859
+    },
+    {
+      "event_id": "1370130086715478016",
+      "team_id": 3,
+      "player_id": "7588",
+      "name": "Javonte Williams",
+      "at": "2026-06-09T17:42:57.760Z",
+      "rank_at_cut": 13,
+      "salary": 16950753,
+      "rate": 0.15,
+      "retained": 2542613,
+      "top20_before": 475967800,
+      "top20_after": 467063782,
+      "top20_relief": 8904018,
+      "net_cap_relief": 6361405,
+      "retention_cumulative": 29322472
+    },
+    {
+      "event_id": "1370130129509941248",
+      "team_id": 3,
+      "player_id": "4217",
+      "name": "George Kittle",
+      "at": "2026-06-09T17:43:07.964Z",
+      "rank_at_cut": 9,
+      "salary": 23012459,
+      "rate": 0.15,
+      "retained": 3451869,
+      "top20_before": 467063782,
+      "top20_after": 451348160,
+      "top20_relief": 15715622,
+      "net_cap_relief": 12263753,
+      "retention_cumulative": 32774341
+    },
+    {
+      "event_id": "1370130165908140032",
+      "team_id": 3,
+      "player_id": "8121",
+      "name": "Romeo Doubs",
+      "at": "2026-06-09T17:43:16.641Z",
+      "rank_at_cut": 14,
+      "salary": 12877813,
+      "rate": 0.15,
+      "retained": 1931672,
+      "top20_before": 451348160,
+      "top20_after": 442685019,
+      "top20_relief": 8663141,
+      "net_cap_relief": 6731469,
+      "retention_cumulative": 34706013
+    },
+    {
+      "event_id": "1370130244865900544",
+      "team_id": 3,
+      "player_id": "5927",
+      "name": "Terry McLaurin",
+      "at": "2026-06-09T17:43:35.467Z",
+      "rank_at_cut": 10,
+      "salary": 18972800,
+      "rate": 0.15,
+      "retained": 2845920,
+      "top20_before": 442685019,
+      "top20_after": 427729579,
+      "top20_relief": 14955440,
+      "net_cap_relief": 12109520,
+      "retention_cumulative": 37551933
+    },
+    {
+      "event_id": "1374481448332980224",
+      "team_id": 4,
+      "player_id": "3163",
+      "name": "Jared Goff",
+      "at": "2026-06-21T17:53:43.214Z",
+      "rank_at_cut": 3,
+      "salary": 44274050,
+      "rate": 0.15,
+      "retained": 6641108,
+      "top20_before": 454914438,
+      "top20_after": 417411588,
+      "top20_relief": 37502850,
+      "net_cap_relief": 30861742,
+      "retention_cumulative": 6641108
+    },
+    {
+      "event_id": "1374481543627554816",
+      "team_id": 4,
+      "player_id": "12476",
+      "name": "Devin Neal",
+      "at": "2026-06-21T17:54:05.935Z",
+      "rank_at_cut": 28,
+      "salary": 1824050,
+      "rate": 0.3,
+      "retained": 547215,
+      "top20_before": 417411588,
+      "top20_after": 417411588,
+      "top20_relief": 0,
+      "net_cap_relief": -547215,
+      "retention_cumulative": 7188323
+    }
+  ],
+  "amortization": [
+    {
+      "team_id": 2,
+      "term_followup_checks": 2,
+      "debt_booked_2026": 4068909,
+      "first_due_year": 2027,
+      "last_due_year": 2028,
+      "first_minimum_due": 2034455,
+      "frozen_cap_headroom": 6187215,
+      "extra_required_first_check": 0
+    },
+    {
+      "team_id": 2,
+      "term_followup_checks": 3,
+      "debt_booked_2026": 4068909,
+      "first_due_year": 2027,
+      "last_due_year": 2029,
+      "first_minimum_due": 1356303,
+      "frozen_cap_headroom": 6187215,
+      "extra_required_first_check": 0
+    },
+    {
+      "team_id": 3,
+      "term_followup_checks": 2,
+      "debt_booked_2026": 31025528,
+      "first_due_year": 2027,
+      "last_due_year": 2028,
+      "first_minimum_due": 15512764,
+      "frozen_cap_headroom": 6526405,
+      "extra_required_first_check": 8986359
+    },
+    {
+      "team_id": 3,
+      "term_followup_checks": 3,
+      "debt_booked_2026": 31025528,
+      "first_due_year": 2027,
+      "last_due_year": 2029,
+      "first_minimum_due": 10341843,
+      "frozen_cap_headroom": 6526405,
+      "extra_required_first_check": 3815438
+    }
+  ],
+  "credit_limits": [
+    {
+      "percent": 5,
+      "limit_june": 21712799,
+      "june_Cadd_overshoot": [
+        {
+          "team_id": 3,
+          "excess": 9312729
+        }
+      ]
+    },
+    {
+      "percent": 10,
+      "limit_june": 43425598,
+      "june_Cadd_overshoot": []
+    },
+    {
+      "percent": 15,
+      "limit_june": 65138397,
+      "june_Cadd_overshoot": []
+    },
+    {
+      "percent": 25,
+      "limit_june": 108563996,
+      "june_Cadd_overshoot": []
+    }
+  ],
+  "independent_snapshots": [
+    {
+      "date": "2025-11-05",
+      "cap": 581658383,
+      "independent_historical_asof_not_legal_debt_deadline": true,
+      "limits": [
+        {
+          "percent": 5,
+          "exceeding_teams": [
+            {
+              "team_id": 2,
+              "excess": 10398845
+            },
+            {
+              "team_id": 3,
+              "excess": 1230767
+            }
+          ]
+        },
+        {
+          "percent": 10,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 15,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 25,
+          "exceeding_teams": []
+        }
+      ]
+    },
+    {
+      "date": "2025-12-05",
+      "cap": 581658383,
+      "independent_historical_asof_not_legal_debt_deadline": true,
+      "limits": [
+        {
+          "percent": 5,
+          "exceeding_teams": [
+            {
+              "team_id": 3,
+              "excess": 3492838
+            }
+          ]
+        },
+        {
+          "percent": 10,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 15,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 25,
+          "exceeding_teams": []
+        }
+      ]
+    },
+    {
+      "date": "2025-12-21",
+      "cap": 581658383,
+      "independent_historical_asof_not_legal_debt_deadline": true,
+      "limits": [
+        {
+          "percent": 5,
+          "exceeding_teams": [
+            {
+              "team_id": 3,
+              "excess": 3492838
+            }
+          ]
+        },
+        {
+          "percent": 10,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 15,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 25,
+          "exceeding_teams": []
+        }
+      ]
+    },
+    {
+      "date": "2026-06-29",
+      "cap": 434255984,
+      "independent_historical_asof_not_legal_debt_deadline": true,
+      "limits": [
+        {
+          "percent": 5,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 10,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 15,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 25,
+          "exceeding_teams": []
+        }
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "cap": 434255984,
+      "independent_historical_asof_not_legal_debt_deadline": true,
+      "limits": [
+        {
+          "percent": 5,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 10,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 15,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 25,
+          "exceeding_teams": []
+        }
+      ]
+    },
+    {
+      "date": "2026-09-09",
+      "cap": 434255984,
+      "independent_historical_asof_not_legal_debt_deadline": true,
+      "limits": [
+        {
+          "percent": 5,
+          "exceeding_teams": [
+            {
+              "team_id": 2,
+              "excess": 5773308
+            },
+            {
+              "team_id": 4,
+              "excess": 20050938
+            },
+            {
+              "team_id": 6,
+              "excess": 24197593
+            }
+          ]
+        },
+        {
+          "percent": 10,
+          "exceeding_teams": [
+            {
+              "team_id": 6,
+              "excess": 2484794
+            }
+          ]
+        },
+        {
+          "percent": 15,
+          "exceeding_teams": []
+        },
+        {
+          "percent": 25,
+          "exceeding_teams": []
+        }
+      ]
+    },
+    {
+      "date": "2026-11-05",
+      "cap": 427653631,
+      "independent_historical_asof_not_legal_debt_deadline": true,
+      "limits": [
+        {
+          "percent": 5,
+          "exceeding_teams": [
+            {
+              "team_id": 2,
+              "excess": 11048264
+            },
+            {
+              "team_id": 3,
+              "excess": 61835625
+            },
+            {
+              "team_id": 4,
+              "excess": 35272021
+            },
+            {
+              "team_id": 6,
+              "excess": 11467840
+            }
+          ]
+        },
+        {
+          "percent": 10,
+          "exceeding_teams": [
+            {
+              "team_id": 3,
+              "excess": 40452943
+            },
+            {
+              "team_id": 4,
+              "excess": 13889339
+            }
+          ]
+        },
+        {
+          "percent": 15,
+          "exceeding_teams": [
+            {
+              "team_id": 3,
+              "excess": 19070262
+            }
+          ]
+        },
+        {
+          "percent": 25,
+          "exceeding_teams": []
+        }
+      ]
+    }
+  ],
+  "one_extra_cut_sensitivity": [
+    {
+      "team_id": 2,
+      "uniform_cut_retention_percent": 5,
+      "warning": "hypothetical uniform rate, not actually reconstructed tenure of still-owned players",
+      "can_full_clear_original_debt": [
+        {
+          "name": "Dalton Kincaid",
+          "relief": 4875647
+        },
+        {
+          "name": "Rome Odunze",
+          "relief": 4870726
+        },
+        {
+          "name": "Tyrone Tracy",
+          "relief": 4305069
+        },
+        {
+          "name": "Travis Kelce",
+          "relief": 16094735
+        },
+        {
+          "name": "Derrick Henry",
+          "relief": 29912221
+        },
+        {
+          "name": "Hunter Henry",
+          "relief": 6783877
+        },
+        {
+          "name": "Baker Mayfield",
+          "relief": 39749029
+        },
+        {
+          "name": "Josh Allen",
+          "relief": 63341327
+        },
+        {
+          "name": "DK Metcalf",
+          "relief": 16267047
+        },
+        {
+          "name": "A.J. Brown",
+          "relief": 26509701
+        },
+        {
+          "name": "Nico Collins",
+          "relief": 23226002
+        },
+        {
+          "name": "Rachaad White",
+          "relief": 15452873
+        },
+        {
+          "name": "Jameson Williams",
+          "relief": 10522944
+        },
+        {
+          "name": "Christian Watson",
+          "relief": 6099722
+        },
+        {
+          "name": "De'Von Achane",
+          "relief": 32832901
+        },
+        {
+          "name": "Jaxon Smith-Njigba",
+          "relief": 27076672
+        },
+        {
+          "name": "Zach Charbonnet",
+          "relief": 7025882
+        }
+      ]
+    },
+    {
+      "team_id": 2,
+      "uniform_cut_retention_percent": 15,
+      "warning": "hypothetical uniform rate, not actually reconstructed tenure of still-owned players",
+      "can_full_clear_original_debt": [
+        {
+          "name": "Travis Kelce",
+          "relief": 14054727
+        },
+        {
+          "name": "Derrick Henry",
+          "relief": 26417741
+        },
+        {
+          "name": "Hunter Henry",
+          "relief": 5723960
+        },
+        {
+          "name": "Baker Mayfield",
+          "relief": 35219096
+        },
+        {
+          "name": "Josh Allen",
+          "relief": 56327994
+        },
+        {
+          "name": "DK Metcalf",
+          "relief": 14208901
+        },
+        {
+          "name": "A.J. Brown",
+          "relief": 23373381
+        },
+        {
+          "name": "Nico Collins",
+          "relief": 20435335
+        },
+        {
+          "name": "Rachaad White",
+          "relief": 13480430
+        },
+        {
+          "name": "Jameson Williams",
+          "relief": 9069441
+        },
+        {
+          "name": "Christian Watson",
+          "relief": 5111821
+        },
+        {
+          "name": "De'Von Achane",
+          "relief": 29030981
+        },
+        {
+          "name": "Jaxon Smith-Njigba",
+          "relief": 23880671
+        },
+        {
+          "name": "Zach Charbonnet",
+          "relief": 5940490
+        }
+      ]
+    },
+    {
+      "team_id": 2,
+      "uniform_cut_retention_percent": 30,
+      "warning": "hypothetical uniform rate, not actually reconstructed tenure of still-owned players",
+      "can_full_clear_original_debt": [
+        {
+          "name": "Travis Kelce",
+          "relief": 10994716
+        },
+        {
+          "name": "Derrick Henry",
+          "relief": 21176021
+        },
+        {
+          "name": "Hunter Henry",
+          "relief": 4134083
+        },
+        {
+          "name": "Baker Mayfield",
+          "relief": 28424195
+        },
+        {
+          "name": "Josh Allen",
+          "relief": 45807994
+        },
+        {
+          "name": "DK Metcalf",
+          "relief": 11121682
+        },
+        {
+          "name": "A.J. Brown",
+          "relief": 18668901
+        },
+        {
+          "name": "Nico Collins",
+          "relief": 16249333
+        },
+        {
+          "name": "Rachaad White",
+          "relief": 10521765
+        },
+        {
+          "name": "Jameson Williams",
+          "relief": 6889185
+        },
+        {
+          "name": "De'Von Achane",
+          "relief": 23328101
+        },
+        {
+          "name": "Jaxon Smith-Njigba",
+          "relief": 19086669
+        },
+        {
+          "name": "Zach Charbonnet",
+          "relief": 4312403
+        }
+      ]
+    },
+    {
+      "team_id": 2,
+      "uniform_cut_retention_percent": 50,
+      "warning": "hypothetical uniform rate, not actually reconstructed tenure of still-owned players",
+      "can_full_clear_original_debt": [
+        {
+          "name": "Travis Kelce",
+          "relief": 6914700
+        },
+        {
+          "name": "Derrick Henry",
+          "relief": 14187061
+        },
+        {
+          "name": "Baker Mayfield",
+          "relief": 19364328
+        },
+        {
+          "name": "Josh Allen",
+          "relief": 31781327
+        },
+        {
+          "name": "DK Metcalf",
+          "relief": 7005390
+        },
+        {
+          "name": "A.J. Brown",
+          "relief": 12396261
+        },
+        {
+          "name": "Nico Collins",
+          "relief": 10667998
+        },
+        {
+          "name": "Rachaad White",
+          "relief": 6576878
+        },
+        {
+          "name": "De'Von Achane",
+          "relief": 15724261
+        },
+        {
+          "name": "Jaxon Smith-Njigba",
+          "relief": 12694667
+        }
+      ]
+    },
+    {
+      "team_id": 3,
+      "uniform_cut_retention_percent": 5,
+      "warning": "hypothetical uniform rate, not actually reconstructed tenure of still-owned players",
+      "can_full_clear_original_debt": [
+        {
+          "name": "Dak Prescott",
+          "relief": 35118003
+        },
+        {
+          "name": "Lamar Jackson",
+          "relief": 49988472
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "relief": 42102885
+        },
+        {
+          "name": "James Cook",
+          "relief": 31460068
+        },
+        {
+          "name": "Bijan Robinson",
+          "relief": 40506780
+        }
+      ]
+    },
+    {
+      "team_id": 3,
+      "uniform_cut_retention_percent": 15,
+      "warning": "hypothetical uniform rate, not actually reconstructed tenure of still-owned players",
+      "can_full_clear_original_debt": [
+        {
+          "name": "Dak Prescott",
+          "relief": 31289149
+        },
+        {
+          "name": "Lamar Jackson",
+          "relief": 44594305
+        },
+        {
+          "name": "Amon-Ra St. Brown",
+          "relief": 37538780
+        },
+        {
+          "name": "Bijan Robinson",
+          "relief": 36110686
+        }
+      ]
+    },
+    {
+      "team_id": 3,
+      "uniform_cut_retention_percent": 30,
+      "warning": "hypothetical uniform rate, not actually reconstructed tenure of still-owned players",
+      "can_full_clear_original_debt": [
+        {
+          "name": "Lamar Jackson",
+          "relief": 36503055
+        }
+      ]
+    },
+    {
+      "team_id": 3,
+      "uniform_cut_retention_percent": 50,
+      "warning": "hypothetical uniform rate, not actually reconstructed tenure of still-owned players",
+      "can_full_clear_original_debt": []
+    }
+  ],
+  "dec25_to_june26_unhistorical_proxy": [
+    {
+      "team_id": 1,
+      "seed_dec2025_pseudo": 0,
+      "B": 0,
+      "C_add": 0,
+      "C_virtual": 0
+    },
+    {
+      "team_id": 2,
+      "seed_dec2025_pseudo": 16674498,
+      "B": 10487283,
+      "C_add": 20743407,
+      "C_virtual": 10585732
+    },
+    {
+      "team_id": 3,
+      "seed_dec2025_pseudo": 32575757,
+      "B": 26049352,
+      "C_add": 63601285,
+      "C_virtual": 37517491
+    },
+    {
+      "team_id": 4,
+      "seed_dec2025_pseudo": 2099301,
+      "B": 0,
+      "C_add": 0,
+      "C_virtual": 0
+    },
+    {
+      "team_id": 5,
+      "seed_dec2025_pseudo": 0,
+      "B": 0,
+      "C_add": 0,
+      "C_virtual": 0
+    },
+    {
+      "team_id": 6,
+      "seed_dec2025_pseudo": 0,
+      "B": 0,
+      "C_add": 0,
+      "C_virtual": 0
+    }
+  ],
+  "qa_checks": [
+    "6-teams",
+    "14-historical-cuts",
+    "14-IDs-unique",
+    "cap-original",
+    "14-original-salaries",
+    "14-tenure-rates-round-half-up",
+    "team1-n",
+    "team1-top20",
+    "team1-retained",
+    "team1-cadd",
+    "team2-n",
+    "cut-exists-4137",
+    "cut-exists-5872",
+    "cut-exists-3257",
+    "cut-exists-6783",
+    "team2-top20",
+    "team2-retained",
+    "team2-cadd",
+    "team3-n",
+    "cut-exists-8183",
+    "cut-exists-4035",
+    "cut-exists-7543",
+    "cut-exists-4943",
+    "cut-exists-7588",
+    "cut-exists-4217",
+    "cut-exists-8121",
+    "cut-exists-5927",
+    "team3-top20",
+    "team3-retained",
+    "team3-cadd",
+    "team4-n",
+    "cut-exists-3163",
+    "cut-exists-12476",
+    "team4-top20",
+    "team4-retained",
+    "team4-cadd",
+    "team5-n",
+    "team5-top20",
+    "team5-retained",
+    "team5-cadd",
+    "team6-n",
+    "team6-top20",
+    "team6-retained",
+    "team6-cadd",
+    "total-gross-relief",
+    "total-net-relief",
+    "total-retained",
+    "total-cadd-debt",
+    "13-cuts-net-positive",
+    "one-negative-Neal",
+    "only-non-top20",
+    "flo-gross",
+    "flo-net",
+    "H2-flo-gap",
+    "H3-flo-gap",
+    "5percent-flo-excess",
+    "7-independent-snapshots",
+    "flo-15percent-four",
+    "flo-30percent-only-Lamar",
+    "flo-50percent-none"
+  ]
+}

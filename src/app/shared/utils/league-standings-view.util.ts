@@ -175,6 +175,14 @@ export function buildCurrentStandings(league: League, teams: FantasyTeam[]): Cur
   }));
 }
 
+/**
+ * "Best Record" is the official regular-season table leader of the shared
+ * standings product (standings-v1); the frontend does not sort records itself.
+ */
+export function findBestRecordTeam(league: League, teams: FantasyTeam[]): FantasyTeam | undefined {
+  return buildCurrentStandings(league, teams)[0]?.team;
+}
+
 export function buildSeasonResults(teams: FantasyTeam[], league?: League): SeasonResultsViewModel {
   const seasonStanding = league?.Standings?.find(standing => standing.Season === league.Season);
   // A completed playoff result is required before a seasonal achievement is awarded.

@@ -30,13 +30,16 @@ KNOWN_MODEL_IDS: dict[str, frozenset[str]] = {
     "SalaryCap": frozenset({"salary-cap-v1"}),
     "Grading": frozenset({"grading-v1"}),
     "Standings": frozenset({"standings-v1"}),
-    "Awards": frozenset({"awards-v1"}),
+    "Awards": frozenset({"awards-v1", "awards-v2", "awards-v3"}),
     "Lifecycle": frozenset({"lifecycle-v1"}),
     "Repairability": frozenset({"repairability-v1"}),
     "TeamRange": frozenset({"team-range-v1"}),
     "WinProb": frozenset({"win-prob-v1"}),
     "RosterCap": frozenset({"roster-cap-v1"}),
     "AutoCut": frozenset({"auto-cut-v1"}),
+    "SeasonStats": frozenset({"season-stats-v1"}),
+    "Rivalry": frozenset({"rivalry-v1", "rivalry-v2"}),
+    "WeeklyRecap": frozenset({"weekly-recap-v1", "weekly-recap-v2"}),
 }
 
 TOP_LEVEL_KEYS = {

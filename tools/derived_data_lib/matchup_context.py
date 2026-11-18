@@ -22,6 +22,8 @@ from zoneinfo import ZoneInfo
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
 
+from .playoff_brackets import load_season_brackets
+
 UTC = timezone.utc
 EASTERN = ZoneInfo("America/New_York")
 NON_STARTER_POSITIONS = ("BN", "IR", "TAXI", "RESERVE")
@@ -687,6 +689,7 @@ def build_matchups_model(
     playoff_start = to_int(value_of(structure, "PlayoffStartWeek"))
     if playoff_start <= 0:
         playoff_start = to_int(value_of(settings, "playoff_week_start"))
+    brackets = load_season_brackets(season_dir, league_source)
 
     decision_season = _text(value_of(decision_facts, "Season"))
     active_week = to_int(value_of(decision_facts, "LineupWeek")) if decision_facts is not None and decision_season == str(season) else 0
@@ -733,12 +736,19 @@ def build_matchups_model(
             if completion == "final" and any(p["Points"] is None for p in pairing["Participants"]):
                 completion = "unknown"
             participants = [{"TeamID": p["TeamID"], "Points": p["Points"], "ScoreKind": p["ScoreKind"]} for p in pairing["Participants"]]
+            playoff_details = (
+                brackets.describe(week, tuple(_text(value_of(p["SourceRow"], "CanonicalLeagueRosterID")) for p in pairing["Participants"]))
+                if playoff_start > 0 and week >= playoff_start else None
+            )
             view: dict[str, Any] = {
                 "FantasyMatchupID": pairing["FantasyMatchupID"],
                 "Participants": participants,
                 "CompletionState": completion,
                 "Result": None,
+                "Bracket": playoff_details["Bracket"] if playoff_details is not None else None,
             }
+            if playoff_details is not None:
+                view.update({key: value for key, value in playoff_details.items() if key != "Bracket"})
             if completion == "final":
                 left, right = participants
                 if float(left["Points"]) == float(right["Points"]):

@@ -22,6 +22,8 @@ This repository contains two separated agent working contexts:
 
 For application, frontend, data generation, generated JSON contract, routing or app architecture work, use the existing `.ai-context` reading order below.
 
+**League-design north star (normative design goals, not active mechanics):** Before any league-wide rule, format, Salary/Cap, strategy or league-specific product decision, read `fantasy-management/league-context/league-philosophy.md` in full. Its six goals are the protected evaluation baseline. Semantic changes require documented consultation with all six managers and explicit league approval; verify its ratification status. Do not duplicate the principles in agent instructions.
+
 For any NFL Dynasty, Fantasy Football, Mighty Giants, roster, trade, draft, player evaluation, podcast, StonedLack, Relevant Players, free-agent analysis or source-processing task, agents must use:
 
 `fantasy-management/AGENTS.md`
@@ -44,6 +46,7 @@ Before making architecture, data model, generation or frontend changes, these fi
 8. @.ai-context/manual/domain.yaml
 9. @.ai-context/manual/data-sources.yaml
 10. @.ai-context/manual/decisions.yaml
+11. @.ai-context/manual/handbook.yaml
 
 For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/frontend-design/index.yaml` and follow its internal reading order before analysis or mutation.
 
@@ -62,6 +65,7 @@ For frontend/UI/UX or design-system work, additionally read `.ai-context/manual/
 - `AGENTS.md` is the first file agents must read before making repository changes.
 - `.ai-context` is the canonical root for application AI context documentation.
 - `.ai-context/manual/frontend-design/index.yaml` is the canonical entry point for app-wide frontend design governance and routes design principles, architecture, standards and decisions.
+- `.ai-context/manual/handbook.yaml` owns Handbook content, overview synchronization, public copy and reviewer checks; read it for every Handbook or Handbook-link change.
 - `fantasy-management/AGENTS.md` is the canonical root for isolated Fantasy Management agent documentation.
 - Human-maintained application AI context belongs in `.ai-context/manual`.
 - Generated application AI context belongs in `.ai-context/generated` and must not be edited manually.

@@ -308,15 +308,19 @@
         </div>
 
         <div class="cap-space-stat"
+            *ngIf="t.total !== null; else capUnavailable"
             [ngClass]="{
               'positive-diff': t.total > vm.league.SalaryCap,
               'negative-diff': t.total < vm.league.SalaryCap
             }">
           {{ formatSalaryDollars(vm.league.SalaryCap - t.total, false, 1) }}
         </div>
+        <ng-template #capUnavailable>
+          <div class="cap-space-stat">n/a</div>
+        </ng-template>
 
         <div class="cap-space-projection">
-          {{ vm.league.SalaryCapProjected < t.totalProjected ? "🔴" : "🟢" }}
+          {{ t.totalProjected === null ? "⚪" : vm.league.SalaryCapProjected < t.totalProjected ? "🔴" : "🟢" }}
         </div>
 
       </div>
@@ -326,21 +330,22 @@
 
         <div>
           <span class="label">{{ vm.league.IsFinished ? "⏮️" : "📌"}} {{ vm.league.SeasonAsNumber }} Salary:</span>
-          <span class="stat">{{ formatSalaryDollars(t.total, false, 1) }}</span>
+          <span class="stat">{{ t.total === null ? 'n/a' : formatSalaryDollars(t.total, false, 1) }}</span>
         </div>
 
         <div>
           <span class="label">{{ vm.league.IsFinished ? "📊" : "🔮"}} {{ vm.league.SeasonAsNumber + 1 }} Salary:</span>
-          <span class="stat">{{ formatSalaryDollars(t.totalProjected, false, 1) }}</span>
+          <span class="stat">{{ t.totalProjected === null ? 'n/a' : formatSalaryDollars(t.totalProjected, false, 1) }}</span>
         </div>
 
         <div>
           <span class="label">💀 {{ vm.league.IsFinished ? "Next" : "Proj."}} Cap Space:</span>
-          <span class="stat"
+          <span class="stat" *ngIf="t.total !== null && t.totalProjected !== null; else projUnavailable"
             [ngClass]="{
               'positive-diff': t.totalProjected > vm.league.SalaryCapProjected,
               'negative-diff': t.totalProjected < vm.league.SalaryCapProjected
             }">{{ formatSalaryDollars(vm.league.SalaryCapProjected - t.totalProjected, false, 1) }} {{ vm.league.SalaryCap - t.total < vm.league.SalaryCapProjected - t.totalProjected ? "📈" : "📉" }}</span>
+          <ng-template #projUnavailable><span class="stat">n/a</span></ng-template>
         </div>
 
         <div>
@@ -348,17 +353,17 @@
           <span class="stat">{{ t.team.Roster.length }}</span>
         </div>
 
-        <div>
+        <div *ngIf="t.topPlayer as top">
           <span class="label">💎 Top Salary:</span>
-          <span class="stat">{{ formatSalaryDollars(t.topPlayers[0].Salary, false, 1)}} ({{t.topPlayers[0].NameShort}})</span>
+          <span class="stat">{{ formatSalaryDollars(top.Salary, false, 1)}} ({{top.NameShort}})</span>
         </div>
 
-        <div>
+        <div *ngIf="t.totalAll > 0">
           <span class="label">⭐ Top 5:</span>
           <span class="stat">{{ formatSalaryDollars(t.totalTop5, false, 1)}} ({{t.totalTop5/t.totalAll * 100 | number:'1.0-0' }}% of total cap)</span>
         </div>
 
-        <div>
+        <div *ngIf="t.team.Roster.length > 0">
           <span class="label">⚖️ Avg Salary:</span>
           <span class="stat">{{ formatSalaryDollars(t.totalAll / t.team.Roster.length, false, 1)}}</span>
         </div>

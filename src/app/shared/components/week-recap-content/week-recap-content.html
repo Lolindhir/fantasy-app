@@ -35,11 +35,53 @@
             <span *ngIf="!recapPlayerPicture(player)">{{ player.Position }}</span>
           </span>
           <span class="weekly-recap-player-copy">
-            <strong>{{ recapPlayerName(player) }}</strong>
-            <span>{{ player.Position }} · {{ nflAbbr(player.NFLTeamID) }}</span>
+            <strong>{{ recapPlayerName(player) }}<mat-icon *ngIf="isWeekMvp(player)" class="weekly-recap-mvp-badge" aria-label="Week MVP" title="Week MVP">emoji_events</mat-icon></strong>
+            <span class="weekly-recap-position-chip" [ngStyle]="player.Position | positionStyle">{{ player.Position }}</span>
           </span>
-          <strong class="weekly-recap-player-points">{{ formatFantasyPoints(player.Points) }}</strong>
+          <span class="weekly-recap-player-foot">
+            <span class="weekly-recap-player-nflteam">
+              <img *ngIf="nflLogo(player.NFLTeamID) as logo" class="weekly-recap-player-nfl" [src]="logo" [alt]="nflAbbr(player.NFLTeamID)" loading="lazy" decoding="async" />
+              <span *ngIf="!nflLogo(player.NFLTeamID)" class="weekly-recap-player-fteam">{{ nflAbbr(player.NFLTeamID) }}</span>
+            </span>
+            <strong class="weekly-recap-player-points">{{ formatFantasyPoints(player.Points) }}</strong>
+            <span class="weekly-recap-player-owner" [attr.title]="teamLabel(player.FantasyTeamID)">
+              <img *ngIf="teamLogo(player.FantasyTeamID) as ownerLogo" class="weekly-recap-player-owner-logo" [src]="ownerLogo" alt="" loading="lazy" decoding="async" />
+              <span>{{ teamAbbr(player.FantasyTeamID) }}</span>
+            </span>
+          </span>
         </button>
+      </div>
+    </div>
+
+    <div *ngIf="playerAwardChips().length > 0" class="weekly-recap-group weekly-recap-group--awards">
+      <h3>Weekly Player Awards</h3>
+      <div class="weekly-recap-player-awards">
+        <article *ngFor="let chip of playerAwardChips()" class="weekly-recap-player-award" [attr.aria-label]="chip.label + ' award'" [title]="chip.hint">
+          <h4 class="weekly-recap-award-title"><mat-icon aria-hidden="true">{{ chip.icon }}</mat-icon>{{ chip.label }}</h4>
+          <button *ngFor="let entry of chip.entries" type="button" class="weekly-recap-player-award-winner"
+            [disabled]="awardPlayer(entry) === null"
+            [attr.aria-label]="'Open ' + awardPlayerName(entry) + ' player details'"
+            (click)="openAwardPlayerDetail(entry)">
+            <span class="weekly-recap-player-picture">
+              <img loading="lazy" decoding="async" *ngIf="awardPlayerPicture(entry) as picture" class="weekly-recap-player-portrait" [src]="picture" alt="" />
+              <span *ngIf="!awardPlayerPicture(entry)">{{ entry.Position }}</span>
+            </span>
+            <span class="weekly-recap-player-copy">
+              <strong>{{ awardPlayerName(entry) }}</strong>
+              <span class="weekly-recap-position-chip" [ngStyle]="entry.Position | positionStyle">{{ entry.Position }}</span>
+            </span>
+            <span class="weekly-recap-player-foot">
+              <span class="weekly-recap-player-nflteam">
+                <img *ngIf="awardPlayerNflLogo(entry) as logo" class="weekly-recap-player-nfl" [src]="logo" alt="" loading="lazy" decoding="async" />
+              </span>
+              <strong class="weekly-recap-player-points">{{ formatFantasyPoints(entry.Points) }}</strong>
+              <span class="weekly-recap-player-owner" [attr.title]="teamLabel(entry.FantasyTeamID)">
+                <img *ngIf="teamLogo(entry.FantasyTeamID) as ownerLogo" class="weekly-recap-player-owner-logo" [src]="ownerLogo" alt="" loading="lazy" decoding="async" />
+                <span>{{ teamAbbr(entry.FantasyTeamID) }}</span>
+              </span>
+            </span>
+          </button>
+        </article>
       </div>
     </div>
 
@@ -89,6 +131,34 @@
           </div>
           <div *ngIf="awards.BestManager.length === 0" class="weekly-recap-award-empty">No eligible winner</div>
         </article>
+      </div>
+    </div>
+    <div *ngIf="selection.underdog as upset" class="weekly-recap-group weekly-recap-group--awards weekly-recap-group--upsets">
+      <article class="weekly-recap-underdog" [class.weekly-recap-underdog--upset]="upset.level === 'upset'" [attr.aria-label]="upsetAriaLabel(upset)">
+        <h4 class="weekly-recap-underdog-title">
+          <mat-icon aria-hidden="true">{{ upset.level === 'upset' ? 'bolt' : 'trending_up' }}</mat-icon>Biggest Underdog Win
+          <span *ngIf="upset.level === 'upset'" class="weekly-recap-underdog-tag">Upset</span>
+        </h4>
+        <div class="weekly-recap-underdog-body">
+          <button type="button" class="weekly-recap-underdog-winner" [disabled]="!awardTeamExists(upset.winnerTeamID)"
+            [attr.aria-label]="'Open ' + teamLabel(upset.winnerTeamID) + ' team details'" (click)="openAwardTeamDetails(upset.winnerTeamID)">
+            <span class="weekly-recap-underdog-logo"><img *ngIf="teamLogo(upset.winnerTeamID) as logo" [src]="logo" alt="" loading="lazy" decoding="async" /></span>
+            <strong>{{ teamLabel(upset.winnerTeamID) }}</strong>
+            <span *ngIf="upset.winnerChance !== null" class="weekly-recap-underdog-chance">{{ upset.winnerChance }} %</span>
+          </button>
+          <span class="weekly-recap-underdog-beat">beat</span>
+          <button *ngIf="upset.loserTeamID !== null" type="button" class="weekly-recap-underdog-loser" [disabled]="!awardTeamExists(upset.loserTeamID)"
+            [attr.aria-label]="'Open ' + teamLabel(upset.loserTeamID) + ' team details'" (click)="openAwardTeamDetails(upset.loserTeamID)">
+            <span class="weekly-recap-underdog-logo"><img *ngIf="teamLogo(upset.loserTeamID) as logo" [src]="logo" alt="" loading="lazy" decoding="async" /></span>
+            <span>{{ teamLabel(upset.loserTeamID) }}</span>
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <div *ngIf="selection.allFavoritesWon" class="weekly-recap-group weekly-recap-group--awards weekly-recap-group--upsets">
+      <div class="weekly-recap-underdog weekly-recap-underdog--none">
+        <h4 class="weekly-recap-underdog-title"><mat-icon aria-hidden="true">check_circle</mat-icon>All Favorites Won</h4>
       </div>
     </div>
   </div>

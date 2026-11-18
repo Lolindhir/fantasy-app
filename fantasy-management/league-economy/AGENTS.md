@@ -12,7 +12,9 @@ The eventual league-facing synthesis must connect these layers without turning o
 
 ## Required reading
 
-For any task about league-economy redesign, long-term roster economics, franchise windows, Rebuild/Reload design, salary-system interaction or the shared Offseason paper, read:
+For any task about league-economy redesign, long-term roster economics, franchise windows, Rebuild/Reload design, salary-system interaction or the shared Offseason paper, first read the **protected six-goal north star** `fantasy-management/league-context/league-philosophy.md` in full, then the following topic sources. Do not change or silently reinterpret the north-star goals; they are evaluation criteria, not active game mechanics.
+
+Read:
 
 1. `fantasy-management/AGENTS.md`
 2. this file
@@ -121,6 +123,20 @@ Compare every major design direction across at least:
 - NFL resemblance versus fantasy-specific suitability.
 
 Do not call an option better merely because it increases realism in one dimension.
+
+### Mandatory five-axis cap-economy disclosure (user-confirmed research standard, 2026-11-15)
+
+For every Salary-Cap, Debt/Dead-Cap, checkpoint, Cut/Trade or settlement **research alternative**, disclose the following in the same dated price/cap/roster world, or explicitly record `not observed / not modeled` instead of silently implying feasibility:
+
+1. **Seller relief:** gross Top-N salary reduction, retained cut obligation, debt extinguished or newly incurred, and resulting net capacity; never equate a cut with a trade.
+2. **Buyer burden:** complete marginal Top-N salary and all assumed retained/debt effects, for the *whole transaction bundle* and for every affected buyer; distinguish real offers from hypothetical buyer assignments.
+3. **Roster capacity:** actual regular slots plus verified Taxi/Reserve eligibility/occupancy and required simultaneous drops; separate an arithmetic cap-compatible acquisition from an executable roster move.
+4. **League-wide debt:** pre/post total, by-team and vintage concentration, debt shifted between counterparties, and whether buyer borrowing increases aggregate exposure; do not optimize only the seller's balance.
+5. **Future repayment feasibility:** payment deadline, annual minimum due, available cap headroom, additional relief necessary, and whether new debt would be improperly used to refinance an installment; price-freeze counterfactuals must not be labeled future forecasts.
+
+**Cross-cutting controls:** identify historical source/ref and as-of date; distinguish active rule, confirmed concept, user-preferred hypothesis and not-yet-ratified proposal; enforce the same scope and comparison denominators for all alternatives; flag unavailable market prices, accepted trade offers, manager consent, operator minutes and 2027+ salary as unknown. Include the six protected north-star goals and the operational hard-failure branch without inventing sanctions or automatic cuts. For cut-only or no-trade scenarios, mark buyer costs and market execution as **not applicable / unobserved**, never infer that buyers are cost-free. Do not mix an annual Salary reprice or Dead-Cap reset into an added cap checkpoint.
+
+This is a **mandatory research/analysis reporting discipline**, not a new binding fantasy-league mechanic, Salary formula, credit facility, trade veto or implementation authorization. Its operative research progress is tracked in [Issue #1344](https://github.com/Lolindhir/fantasy-app/issues/1344).
 
 ## Canonical document roles
 

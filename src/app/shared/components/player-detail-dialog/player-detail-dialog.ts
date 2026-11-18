@@ -12,11 +12,14 @@ import type { ChartConfiguration, ChartOptions } from 'chart.js';
 
 import type { Player, PointHistorySeason, PlayerStats } from '../../../core/models/fantasy.models';
 import { PositionStylePipe } from '../../pipes/position-style.pipe';
+import { RouterLink } from '@angular/router';
 import { DataService } from '../../../core/services/data.service';
 import { formatPlayerPositionDepth } from '../../utils/player-sort.util';
 import { buildPlayerJourney, type PlayerJourney, type PlayerJourneyEvent } from '../../utils/player-journey.util';
 import { matchupPointsForPlayer, resolveWeekResult, type PlayerWeekProjectionView, type PlayerWeekResultView } from '../../utils/player-week-projection.util';
 import { PlayerProjectionComponent } from '../projection-range/player-projection';
+import type { PlayerAwardHistoryPlayer } from '../../../core/models/player-award-history.models';
+import { findPlayerAwards, groupPlayerAwardEntries, PLAYER_AWARD_DISPLAY, type PlayerAwardSeasonGroup } from '../../utils/player-award-view.util';
 import { SalaryHistoryChartComponent } from '../salary-history-chart/salary-history-chart';
 
 // Registrierung
@@ -36,6 +39,7 @@ Chart.register(LineController, Filler, LineElement, PointElement, LinearScale, C
     MatIconModule,
     PositionStylePipe,
     PlayerProjectionComponent,
+    RouterLink,
     SalaryHistoryChartComponent
   ],
   templateUrl: './player-detail-dialog.html',
@@ -63,6 +67,10 @@ export class PlayerDetailDialogComponent implements OnInit {
   weekProjection: PlayerWeekProjectionView | null = null;
   /** Real points of that week: published Actual, else Game Log entry, else the matchup context points. */
   weekResult: PlayerWeekResultView | null = null;
+  /** Weekly award record of this player; null when the history is unavailable or the player never won one. */
+  weeklyAwards: PlayerAwardHistoryPlayer | null = null;
+  weeklyAwardGroups: PlayerAwardSeasonGroup[] = [];
+  readonly awardDisplay = PLAYER_AWARD_DISPLAY;
   journey: PlayerJourney | null = null;
   journeyState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
 
@@ -73,6 +81,10 @@ export class PlayerDetailDialogComponent implements OnInit {
 
   ngOnInit(): void {
     this.prepareChart();
+    this.dataService.getPlayerAwardHistory().subscribe(history => {
+      this.weeklyAwards = findPlayerAwards(history, this.player.ID);
+      this.weeklyAwardGroups = this.weeklyAwards ? groupPlayerAwardEntries(this.weeklyAwards.Entries) : [];
+    });
     forkJoin({
       projections: this.dataService.getPlayerWeekProjections(),
       context: this.dataService.getFantasyGameContext().pipe(catchError(() => of(null)))

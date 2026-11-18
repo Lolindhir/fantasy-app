@@ -73,6 +73,13 @@ export interface WeeklyRecapWinProbability {
   /** True when the winner had less than 35 percent before the week; null when unknown or tied. */
   Upset: boolean | null;
   UpsetWinnerFantasyTeamID: string | number | null;
+  /**
+   * Generator mark of the winner: `upset` below 35 percent, `underdog` from 35 up to 50 percent before the week, otherwise null
+   * (also unknown chance and ties). The thresholds belong to win-prob-v1; absent in older files.
+   */
+  UpsetLevel?: 'upset' | 'underdog' | null;
+  /** The winner of a matchup with an UpsetLevel; absent in older files. */
+  UnderdogWinnerFantasyTeamID?: string | number | null;
 }
 
 /** Upsets of one team over the weeks with a known pregame chance (generator values). */
@@ -80,6 +87,31 @@ export interface WeeklyRecapUpsetCount {
   FantasyTeamID: string | number;
   Upsets: number;
   Weeks: number;
+}
+
+/** One winner of a weekly player award (generator values; Swing/Margin/Gain only on the awards that define them). */
+export interface WeeklyRecapPlayerAwardEntry {
+  PlayerID: string | null;
+  CanonicalPlayerID: string | null;
+  FantasyTeamID: string | number;
+  FantasyMatchupID: string;
+  Position: string;
+  Points: number;
+  Swing?: number;
+  Margin?: number;
+  Gain?: number;
+  ReplacedPlayerID?: string | null;
+}
+
+export type WeeklyPlayerAwardKey = 'MVP' | 'MatchupHero' | 'Heartbreaker' | 'UnsungHero';
+
+/** Weekly player awards of weekly-recap-v2; an award without a winner is an empty list. */
+export interface WeeklyRecapPlayerAwards {
+  State: 'available' | 'unavailable';
+  MVP: WeeklyRecapPlayerAwardEntry[];
+  MatchupHero: WeeklyRecapPlayerAwardEntry[];
+  Heartbreaker: WeeklyRecapPlayerAwardEntry[];
+  UnsungHero: WeeklyRecapPlayerAwardEntry[];
 }
 
 export interface WeeklyRecapWeek {
@@ -92,6 +124,8 @@ export interface WeeklyRecapWeek {
   TeamPerformance?: WeeklyRecapTeamPerformance[] | null;
   /** Pregame win chance and upset flag per matchup; absent in older files. */
   WinProbabilities?: WeeklyRecapWinProbability[];
+  /** Weekly player awards (weekly-recap-v2); absent in older files. */
+  PlayerAwards?: WeeklyRecapPlayerAwards;
 }
 
 export interface WeeklyRecapsReadModel {

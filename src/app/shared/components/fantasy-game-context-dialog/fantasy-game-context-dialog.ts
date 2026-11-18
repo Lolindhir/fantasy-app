@@ -3,6 +3,7 @@ import { Component, Inject, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { RouterLink } from '@angular/router';
 import { WinChanceBarComponent } from '../win-chance-bar/win-chance-bar';
 
 import type {
@@ -102,6 +103,14 @@ export function teamProjectedFinalScore(
   return matchupProjectionTeam(matchup, teamID)?.ProjectedFinalScore ?? null;
 }
 
+export function teamDisplayedProjectedScore(
+  matchup: FantasyGameContextMatchup,
+  teamID: string | number
+): number | null {
+  const team = matchupProjectionTeam(matchup, teamID);
+  return team?.DisplayProjectedScore ?? team?.ProjectedFinalScore ?? null;
+}
+
 export type MatchupDisplaySide = 'left' | 'right';
 export type MatchupDisplayTeamIDs = [string | number, string | number];
 
@@ -188,6 +197,11 @@ export function orientMatchupScore(
 export interface WinChanceView {
   left: number;
   right: number;
+  /** Additive raw chance fractions for current matchups; absent from historical pregame records. */
+  leftRaw?: number | null;
+  rightRaw?: number | null;
+  deterministic?: boolean;
+  estimated?: boolean;
   live: boolean;
   /** Short name of the team that won as an upset (pregame chance below 35 percent); null otherwise. */
   upsetTeam: string | null;
@@ -220,6 +234,7 @@ export interface FantasyGameContextDialogData {
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     MatDialogModule,
     MatButtonModule,
     MatIconModule,
@@ -492,12 +507,17 @@ export class FantasyGameContextDialogComponent {
       .map(player => this.toPlayerDisplay(player, null));
   }
 
-  matchupProjection(matchup: FantasyGameContextMatchup): { left: string; right: string } | null {
+  matchupProjection(matchup: FantasyGameContextMatchup): { left: string; right: string; usesFallback: boolean } | null {
     if (matchup.CounterfactualState !== 'unavailable-not-final') return null;
-    const left = teamProjectedFinalScore(matchup, this.matchupTeamID(matchup, 'left'));
-    const right = teamProjectedFinalScore(matchup, this.matchupTeamID(matchup, 'right'));
+    const leftID = this.matchupTeamID(matchup, 'left');
+    const rightID = this.matchupTeamID(matchup, 'right');
+    const left = teamDisplayedProjectedScore(matchup, leftID);
+    const right = teamDisplayedProjectedScore(matchup, rightID);
     if (left === null && right === null) return null;
-    return { left: formatProjectionPoints(left), right: formatProjectionPoints(right) };
+    const usesFallback = [leftID, rightID].some(id =>
+      matchupProjectionTeam(matchup, id)?.DisplayProjectionMethod === 'season-bestball-actual-efficiency-v1'
+    );
+    return { left: formatProjectionPoints(left), right: formatProjectionPoints(right), usesFallback };
   }
 
   /** Win chance of the matchup as delivered: live for an open week, the pregame value (with the upset mark) for a final one. */
@@ -507,13 +527,24 @@ export class FantasyGameContextDialogComponent {
     if (matchup.CounterfactualState === 'unavailable-not-final') {
       const left = matchupProjectionTeam(matchup, leftID);
       const right = matchupProjectionTeam(matchup, rightID);
-      if (left?.WinProbability == null || right?.WinProbability == null) return null;
+      const leftChance = left?.DisplayWinProbability ?? left?.WinProbability;
+      const rightChance = right?.DisplayWinProbability ?? right?.WinProbability;
+      if (leftChance == null || rightChance == null || !left || !right) return null;
+      const estimated = left.DisplayWinProbabilityBasis === 'season-bestball-efficiency-estimate'
+        || right.DisplayWinProbabilityBasis === 'season-bestball-efficiency-estimate';
       return {
-        left: left.WinProbability,
-        right: right.WinProbability,
+        left: leftChance,
+        right: rightChance,
+        leftRaw: left.DisplayWinProbabilityRaw ?? left.WinProbabilityRaw ?? null,
+        rightRaw: right.DisplayWinProbabilityRaw ?? right.WinProbabilityRaw ?? null,
+        deterministic: (left.DisplayWinProbabilityIsDeterministic ?? left.WinProbabilityIsDeterministic) === true
+          && (right.DisplayWinProbabilityIsDeterministic ?? right.WinProbabilityIsDeterministic) === true,
         live: left.FinalStarterCount > 0 || right.FinalStarterCount > 0,
+        estimated,
         upsetTeam: null,
-        caption: 'Chance to win this matchup, based on the projected scores. It is adjusted after every finished NFL game.'
+        caption: estimated
+          ? 'Estimated win chance: season-to-date Best Ball × manager efficiency, with uncertainty estimated from past weekly scores. Not a calibrated weekly forecast.'
+          : 'Chance to win this matchup, based on the projected scores. It is adjusted after every finished NFL game.'
       };
     }
     const pregame = this.data.pregameWinProbabilities?.find(item => item.FantasyMatchupID === matchup.FantasyMatchupID);

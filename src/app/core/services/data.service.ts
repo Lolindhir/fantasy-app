@@ -26,7 +26,10 @@ import type {
   TopPlayersSalaryResult
 } from '../models/player.models';
 import type { RawTransaction, Transaction } from '../models/transaction.models';
+import type { RivalryReadModel } from '../models/rivalry.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
+import type { PlayerAwardHistoryReadModel } from '../models/player-award-history.models';
+import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
 import { mergeCompletedRawTransactions } from '../utils/transaction-history.util';
 import { buildPlayerWeekProjections, type PlayerWeekProjectionView } from '../../shared/utils/player-week-projection.util';
 import { sortPlayers } from '../../shared/utils/player-sort.util';
@@ -291,6 +294,10 @@ export class DataService {
     );
   }
 
+  getRivalry(): Observable<RivalryReadModel> {
+    return this.dataApiService.getRivalryRaw();
+  }
+
   getWeeklyRecaps(): Observable<WeeklyRecapsReadModel> {
     return this.dataApiService.getWeeklyRecapsRaw();
   }
@@ -326,6 +333,19 @@ export class DataService {
         );
       })
     );
+  }
+
+  /** Weekly player award history; null when the file is unavailable so callers hide the feature. */
+  getPlayerAwardHistory(): Observable<PlayerAwardHistoryReadModel | null> {
+    return this.dataApiService.getPlayerAwardHistoryRaw().pipe(catchError(() => of(null)));
+  }
+
+  getSeasonStatistics(): Observable<SeasonStatisticsReadModel> {
+    return this.dataApiService.getSeasonStatisticsRaw();
+  }
+
+  getPastSeasonStatisticsRaw(path: string): Observable<SeasonStatisticsReadModel> {
+    return this.dataApiService.getPastSeasonStatisticsRaw(path);
   }
 
   getPastSeasonsIndex(): Observable<PastSeasonsIndex> {

@@ -1,0 +1,317 @@
+{
+  "schema_version": "1.0",
+  "artifact_type": "league_economy_research_metrics",
+  "issue_number": 1344,
+  "checkpoint": "CP4",
+  "research_date": "2026-11-14",
+  "status": "counterfactual_mechanics_only",
+  "canonical_design_goal_source": "fantasy-management/league-context/league-philosophy.md",
+  "active_rule_change": false,
+  "notes": [
+    "These figures do not imply permanent-cap compliance existed in historical league play.",
+    "No historical FY2024/FY2025 salary-cap anchor was established for the new contract model; proxy anchors are used.",
+    "Dead-cap and settlement semantics are separate unapproved test parameters.",
+    "Combined rookie/Minimum overlay is cohort-only, not a complete all-NFL-player contract model."
+  ],
+  "freeze": {
+    "november_commit": "799be2a25203f18face8185303f32b31be3d40a7",
+    "november_players_blob": "6459aef56b661eb9f3f83ac6c2516577d328cf93",
+    "june_7_commit": "5b4ed63172deae79759e7150f8511bd2ea3edb4e",
+    "june_9_commit": "7ece134fec39741aba8e82bda554f8f13e8bead4",
+    "june_29_commit": "85e22feb064fdaf2257d6c3149c8d1655ada0908",
+    "june_29_players_blob": "21001d6c0819dbbcb3deff084d63fe377714541c",
+    "scenario_anchor_cap_dollars": 434255984,
+    "november_actual_cap_dollars": 427653631,
+    "june_actual_cap_dollars": 434255984,
+    "june_cap_deadline_utc": "2026-06-30T23:59:59Z"
+  },
+  "methods": {
+    "current_cap": "round_half_up(0.9 * sum(largest_120_market_player_salaries) / 6)",
+    "team_usage": "sum(largest_20_salary_values_for_unique_team_roster_player_ids)",
+    "minimum_years": "Only Player.Year >= 4, max(P, round_half_up(M + 0.5*P)); M=round_half_up(proxy_previous_cap*minimum_pct_by_player_year)",
+    "minimum_percent_by_year": {
+      "4": 0.4,
+      "5-7": 0.45,
+      "8+": 0.5
+    },
+    "rookie_y1_percent": "0.65*fantasy_draft_curve_percent + 0.35*nfl_draft_curve_percent",
+    "draft_curve": "0.30% + 3.20% * (1 - (rank-1)/(pool_size-1))^3.5",
+    "rookie_y2": "max(round_half_up(1.25*rounded_Y1), round_half_up(proxy_previous_cap*0.003))",
+    "rookie_y3": "max(round_half_up(1.50*rounded_Y1), round_half_up(proxy_previous_cap*0.0035))",
+    "deadcap": "round_half_up(active_salary_at_cut * rate_for_current_uninterrupted_team_tenure)",
+    "deadcap_additive_usage": "team_top20_active_roster_salary + sum(all_deadcap_obligations)",
+    "deadcap_top20_virtual_usage": "sum(top20(active_roster_salaries + deadcap_obligation_slots))",
+    "buyer_market": "all 256 subsets of eight candidate players per buyer, top20 recomputed per subset, disjoint player assignment across five buyers; one buyer's headroom is not reused"
+  },
+  "november_2026": {
+    "total_player_population": 955,
+    "minimum": {
+      "eligible_veterans": 483,
+      "increased_salaries": 292,
+      "total_full_market_salary_increase_dollars": 455300913,
+      "affected_original_market_top120": 0,
+      "affected_original_team_top20": 0
+    },
+    "rookie_overlay": {
+      "sample_drafted_2025": 30,
+      "sample_drafted_2026": 30,
+      "sample_joined": 60,
+      "missing_ids": 0,
+      "non_rostered_players": 13,
+      "held_by_other_than_draft_team": 10,
+      "positive_salary_diffs_vs_actual": 54,
+      "negative_salary_diffs_vs_actual": 6,
+      "nfl_draft_qb_rb_wr_te_population": {
+        "2025": 86,
+        "2026": 80
+      }
+    },
+    "scenario_caps": [
+      {
+        "code": "A",
+        "cap_dollars": 427653631,
+        "overcap_teams": 5
+      },
+      {
+        "code": "MIN",
+        "cap_dollars": 427653631,
+        "overcap_teams": 5
+      },
+      {
+        "code": "R60",
+        "cap_dollars": 431964895,
+        "overcap_teams": 5
+      },
+      {
+        "code": "R60_MIN",
+        "cap_dollars": 431964895,
+        "overcap_teams": 5
+      }
+    ],
+    "team_top20_usage": [
+      {
+        "team_id": 1,
+        "name": "Mighty Giants",
+        "actual_dollars": 440459453,
+        "rookie_overlay_dollars": 451208644
+      },
+      {
+        "team_id": 2,
+        "name": "Ruhr Valley Packers",
+        "actual_dollars": 460084576,
+        "rookie_overlay_dollars": 461399565
+      },
+      {
+        "team_id": 3,
+        "name": "Just Bill",
+        "actual_dollars": 510871937,
+        "rookie_overlay_dollars": 514467503
+      },
+      {
+        "team_id": 4,
+        "name": "Mammoth Marauders",
+        "actual_dollars": 484308333,
+        "rookie_overlay_dollars": 492213615
+      },
+      {
+        "team_id": 5,
+        "name": "DennisLACards",
+        "actual_dollars": 348171004,
+        "rookie_overlay_dollars": 366508268
+      },
+      {
+        "team_id": 6,
+        "name": "TimpaBay",
+        "actual_dollars": 460504152,
+        "rookie_overlay_dollars": 472963739
+      }
+    ],
+    "proxy_anchor_sensitivity": [
+      {
+        "proxy_cap_dollars": 390830386,
+        "rookie_overlay_cap_dollars": 429923602,
+        "minimum_alone_cap_dollars": 427653631,
+        "rookie_only_original_owner_cap_dollars": 429969770
+      },
+      {
+        "proxy_cap_dollars": 434255984,
+        "rookie_overlay_cap_dollars": 431964895,
+        "minimum_alone_cap_dollars": 427653631,
+        "rookie_only_original_owner_cap_dollars": 431520270
+      },
+      {
+        "proxy_cap_dollars": 477681582,
+        "rookie_overlay_cap_dollars": 434233085,
+        "minimum_alone_cap_dollars": 427653631,
+        "rookie_only_original_owner_cap_dollars": 433209550
+      }
+    ],
+    "rookie_examples": [
+      {
+        "player_id": "12527",
+        "name": "Ashton Jeanty",
+        "class_year": 2025,
+        "pick": "1.01",
+        "y1_salary": 14810064,
+        "y2_salary": 18512580,
+        "y3_salary": 22215096,
+        "actual_nov_salary": 11745089
+      },
+      {
+        "player_id": "12490",
+        "name": "Bhayshul Tuten",
+        "class_year": 2025,
+        "pick": "3.02",
+        "y1_salary": 3360569,
+        "y2_salary": 4200711,
+        "y3_salary": 5040854,
+        "actual_nov_salary": 1608022
+      },
+      {
+        "player_id": "12508",
+        "name": "Jaxson Dart",
+        "class_year": 2025,
+        "pick": "4.03",
+        "y1_salary": 4740518,
+        "y2_salary": 5925648,
+        "y3_salary": 7110777,
+        "actual_nov_salary": 13816272
+      },
+      {
+        "player_id": "13279",
+        "name": "Carnell Tate",
+        "class_year": 2026,
+        "pick": "1.01",
+        "y1_salary": 14781467,
+        "y2_salary": 18476834,
+        "y3_salary": 22172201,
+        "actual_nov_salary": 0
+      }
+    ]
+  },
+  "june_2026": {
+    "flo_team_id": 3,
+    "roster_usage_june7_dollars": 547568190,
+    "roster_usage_june9_dollars": 427729579,
+    "cap_relief_from_eight_cuts_dollars": 119838611,
+    "eight_cut_salary_sum_dollars": 184678979,
+    "hypothetical_deadcap_sum_dollars": 37551933,
+    "hypothetical_deadcap_items": [
+      {
+        "player_id": "4035",
+        "name": "Alvin Kamara",
+        "salary": 24366017,
+        "tenure": 2,
+        "rate_pct": 15,
+        "deadcap": 3654903,
+        "new_active_salary": 20711114
+      },
+      {
+        "player_id": "4217",
+        "name": "George Kittle",
+        "salary": 23012459,
+        "tenure": 2,
+        "rate_pct": 15,
+        "deadcap": 3451869,
+        "new_active_salary": 19560590
+      },
+      {
+        "player_id": "4943",
+        "name": "Sam Darnold",
+        "salary": 24155999,
+        "tenure": 1,
+        "rate_pct": 30,
+        "deadcap": 7246800,
+        "new_active_salary": 16909199
+      },
+      {
+        "player_id": "5927",
+        "name": "Terry McLaurin",
+        "salary": 18972800,
+        "tenure": 2,
+        "rate_pct": 15,
+        "deadcap": 2845920,
+        "new_active_salary": 16126880
+      },
+      {
+        "player_id": "7543",
+        "name": "Travis Etienne",
+        "salary": 22831903,
+        "tenure": 2,
+        "rate_pct": 15,
+        "deadcap": 3424785,
+        "new_active_salary": 19407118
+      },
+      {
+        "player_id": "7588",
+        "name": "Javonte Williams",
+        "salary": 16950753,
+        "tenure": 2,
+        "rate_pct": 15,
+        "deadcap": 2542613,
+        "new_active_salary": 14408140
+      },
+      {
+        "player_id": "8121",
+        "name": "Romeo Doubs",
+        "salary": 12877813,
+        "tenure": 2,
+        "rate_pct": 15,
+        "deadcap": 1931672,
+        "new_active_salary": 10946141
+      },
+      {
+        "player_id": "8183",
+        "name": "Brock Purdy",
+        "salary": 41511235,
+        "tenure": 1,
+        "rate_pct": 30,
+        "deadcap": 12453371,
+        "new_active_salary": 29057864
+      }
+    ],
+    "deadline_semantics": [
+      {
+        "code": "BEFORE_RESET_NO_DEADCAP",
+        "counted_usage_dollars": 427729579,
+        "overcap_dollars": -6526405
+      },
+      {
+        "code": "BEFORE_RESET_DEADCAP_ADDITIVE",
+        "counted_usage_dollars": 465281512,
+        "overcap_dollars": 31025528
+      },
+      {
+        "code": "BEFORE_RESET_DEADCAP_VIRTUAL_TOP20",
+        "counted_usage_dollars": 439197718,
+        "overcap_dollars": 4941734
+      },
+      {
+        "code": "RESET_BEFORE_ONLY_COMPLIANCE_SAME_PRICES_PROXY",
+        "counted_usage_dollars": 427729579,
+        "overcap_dollars": -6526405
+      }
+    ],
+    "buyer_market": {
+      "candidate_buyers": 5,
+      "candidate_players": 8,
+      "original_salary_direct_pairs": 13,
+      "after_cut_active_salary_direct_pairs": 16,
+      "original_salary_max_joint_no_buyer_cuts": 4,
+      "after_cut_active_salary_max_joint_no_buyer_cuts": 5,
+      "purdy_original_direct_buyers": 0,
+      "purdy_after_cut_direct_buyers": 1,
+      "restriction": "hypothetical before 2026-06-30 reset; not Aug FA-draft eligibility"
+    }
+  },
+  "unresolved_gates": [
+    "yearly salary and cap anchors for rookie cohort backfills",
+    "full 2024 startup and undrafted rookie populations",
+    "rookie contract continuation after cut/trade and reacquisition",
+    "Dead Cap topN accounting",
+    "cap compliance relative to Dead Cap reset and salary repricing",
+    "draft, trade, waiver, Taxi/IR and grace atomic settlement",
+    "behavior and true future competitiveness",
+    "operational enforcement cost"
+  ]
+}

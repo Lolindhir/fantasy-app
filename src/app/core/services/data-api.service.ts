@@ -13,7 +13,10 @@ import type { PlayerWeekFantasyReadModel } from '../models/player-week-fantasy.m
 import type { RawNFLTeam, RawPlayer } from '../models/player.models';
 import type { TeamCapOutlookReadModel } from '../models/team-cap-outlook.models';
 import type { RawTransaction } from '../models/transaction.models';
+import type { RivalryReadModel } from '../models/rivalry.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
+import type { PlayerAwardHistoryReadModel } from '../models/player-award-history.models';
+import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
 
 export interface LeagueDataLoadResult {
   leagueRaw: RawLeague;
@@ -48,6 +51,7 @@ export interface PastSeasonIndexEntry {
     Matchups?: PastSeasonResourceIndex;
     FantasyGameContext?: PastSeasonResourceIndex;
     WeeklyRecaps?: PastSeasonResourceIndex;
+    SeasonStatistics?: PastSeasonResourceIndex;
   };
 }
 
@@ -110,8 +114,24 @@ export class DataApiService {
     return this.http.get<MatchupProjectionsReadModel>('data/MatchupProjections.json');
   }
 
+  getRivalryRaw(): Observable<RivalryReadModel> {
+    return this.http.get<RivalryReadModel>('data/Rivalry.json');
+  }
+
   getWeeklyRecapsRaw(): Observable<WeeklyRecapsReadModel> {
     return this.http.get<WeeklyRecapsReadModel>('data/WeeklyRecaps.json');
+  }
+
+  getPlayerAwardHistoryRaw(): Observable<PlayerAwardHistoryReadModel> {
+    return this.http.get<PlayerAwardHistoryReadModel>('data/PlayerAwardHistory.json');
+  }
+
+  getSeasonStatisticsRaw(): Observable<SeasonStatisticsReadModel> {
+    return this.http.get<SeasonStatisticsReadModel>('data/SeasonStatistics.json');
+  }
+
+  getPastSeasonStatisticsRaw(path: string): Observable<SeasonStatisticsReadModel> {
+    return this.http.get<SeasonStatisticsReadModel>(this.normalizeDataPath(path));
   }
 
   getPastSeasonsIndex(): Observable<PastSeasonsIndex> {

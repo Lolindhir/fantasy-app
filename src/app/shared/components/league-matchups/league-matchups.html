@@ -144,12 +144,14 @@
                   <ng-container *ngIf="matchupProjection(matchup, projectionState.context) as projection">
                     <span
                       class="matchup-projection-value matchup-score-value--left"
-                      [attr.aria-label]="'Projected final score ' + projection.left"
+                      [attr.aria-label]="(projection.leftFallback ? 'Season Best Ball efficiency estimate ' : 'Projected final score ') + projection.left"
+                      [attr.title]="projection.leftFallback ? 'Season-to-date Best Ball × historical manager efficiency (fallback)' : null"
                     >{{ projection.left }}</span>
-                    <span class="matchup-vs">PROJ.</span>
+                    <span class="matchup-vs" [attr.title]="projection.leftFallback || projection.rightFallback ? 'Partial matchup projections use season-to-date Best Ball × historical manager efficiency' : null">PROJ.</span>
                     <span
                       class="matchup-projection-value matchup-projection-value--right"
-                      [attr.aria-label]="'Projected final score ' + projection.right"
+                      [attr.aria-label]="(projection.rightFallback ? 'Season Best Ball efficiency estimate ' : 'Projected final score ') + projection.right"
+                      [attr.title]="projection.rightFallback ? 'Season-to-date Best Ball × historical manager efficiency (fallback)' : null"
                     >{{ projection.right }}</span>
                   </ng-container>
                 </ng-container>
@@ -186,6 +188,11 @@
                 class="matchup-win-chance"
                 [left]="chance.left"
                 [right]="chance.right"
+                [leftRaw]="chance.leftRaw"
+                [rightRaw]="chance.rightRaw"
+                [deterministic]="chance.deterministic"
+                [estimated]="chance.estimated"
+                [attr.title]="chance.estimated ? 'Estimated chance from seasonal Best Ball and past score variability' : null"
                 [compact]="true"
                 [leftName]="teamShortName(matchup.left.team)"
                 [rightName]="teamShortName(matchup.right.team)"
@@ -480,7 +487,7 @@
       </div>
       <span class="weekly-recap-heading-actions">
         <span *ngIf="compact" class="weekly-recap-density">Quick look</span>
-        <a class="weekly-recap-all-weeks" routerLink="/weeks">All weeks</a>
+        <a class="weekly-recap-all-weeks" routerLink="/schedule">Schedule</a>
       </span>
     </div>
 

@@ -1,0 +1,315 @@
+{
+  "schema_version": 1,
+  "artifact_type": "league_economy_cp5c_cap_window_and_deadcap_carry_research",
+  "research_date": "2026-11-14",
+  "issue_number": 1344,
+  "checkpoint": "CP5c",
+  "active_rule_change": false,
+  "confirmed_concept_override": false,
+  "cp5_complete": false,
+  "sources": {
+    "cp4_metrics": "2026-11-14-salary-cap-cp4-metrics.json",
+    "cp5b_metrics": "2026-11-14-salary-cap-cp5b-metrics.json",
+    "sep_roster_ref": "b40956172a704ff616008d7835f527b86f128063",
+    "sep_players_blob": "f8cc9a97cbe19eed6907a7630da053052a35e577",
+    "transactions_blob": "0aa85766a962a9d499fe5610a269771dd3b02ce1",
+    "official_nfl_contract_terms": "https://operations.nfl.com/calendar-events/nfl-free-agency/contract-language"
+  },
+  "replay": {
+    "start_after_utc": "2026-09-09T20:33:55Z",
+    "end_utc": "2026-11-05T23:59:59Z",
+    "original_events": 54,
+    "events_by_type": {
+      "waiver": 43,
+      "free_agent": 8,
+      "trade": 3
+    },
+    "cap_dollars": 434255984,
+    "initial_hypothetical_cuts": 7,
+    "assumptions": [
+      "After legal Sep start, historical events are static counterfactual requests, not observed manager choices",
+      "Salary 2026 Sep frozen through Nov; no Criticality/Rookie/Minimum/DeadCap additive overlay",
+      "At Oct checks only Sep-9 starter IDs protected: no as-of Oct starter evidence; expensive protected assets can still be lost",
+      "Whole bundle discarded when changed ownership makes historical drop/add impossible; no invented alternatives",
+      "Positive overhang integrated continuously between event EffectiveAt timestamps in UTC; check after events at same timestamp",
+      "Million-dollar-days = integral max(0,team top20 - cap) / 1e6 across teams; not actual expenditure or sport results"
+    ],
+    "scenarios": [
+      {
+        "code": "F2",
+        "check_date": null,
+        "accepted": 50,
+        "incompatible": 4,
+        "team_days_over": 66.681,
+        "million_dollar_days": 661.19,
+        "check_over_dollars": null,
+        "check_over_teams": [],
+        "hypothetical_check_cuts": [],
+        "terminal_over_dollars": 46512001,
+        "terminal_over_teams": [
+          1,
+          2,
+          3
+        ]
+      },
+      {
+        "code": "F3_OCT01",
+        "check_date": "2026-10-01T23:59:59Z",
+        "accepted": 50,
+        "incompatible": 4,
+        "team_days_over": 31.681,
+        "million_dollar_days": 352.94,
+        "check_over_dollars": 8165477,
+        "check_over_teams": [
+          2
+        ],
+        "hypothetical_check_cuts": [
+          {
+            "team_id": 2,
+            "player": "Travis Kelce"
+          }
+        ],
+        "terminal_over_dollars": 38346524,
+        "terminal_over_teams": [
+          1,
+          3
+        ]
+      },
+      {
+        "code": "F3_OCT15",
+        "check_date": "2026-10-15T23:59:59Z",
+        "accepted": 49,
+        "incompatible": 5,
+        "team_days_over": 43.832,
+        "million_dollar_days": 461.19,
+        "check_over_dollars": 22704918,
+        "check_over_teams": [
+          2,
+          3
+        ],
+        "hypothetical_check_cuts": [
+          {
+            "team_id": 2,
+            "player": "Travis Kelce"
+          },
+          {
+            "team_id": 3,
+            "player": "Tyreek Hill"
+          }
+        ],
+        "terminal_over_dollars": 38346524,
+        "terminal_over_teams": [
+          1,
+          3
+        ]
+      },
+      {
+        "code": "F3_NOV05",
+        "check_date": "2026-11-05T23:59:59Z",
+        "accepted": 50,
+        "incompatible": 4,
+        "team_days_over": 66.681,
+        "million_dollar_days": 661.19,
+        "check_over_dollars": 46512001,
+        "check_over_teams": [
+          1,
+          2,
+          3
+        ],
+        "hypothetical_check_cuts": [
+          {
+            "team_id": 1,
+            "player": "Patrick Mahomes"
+          },
+          {
+            "team_id": 2,
+            "player": "Travis Kelce"
+          },
+          {
+            "team_id": 3,
+            "player": "Christian McCaffrey"
+          }
+        ],
+        "terminal_over_dollars": 0,
+        "terminal_over_teams": []
+      }
+    ],
+    "strict_B_reference": {
+      "accepted": 43,
+      "rejected_cap": 3,
+      "incompatible": 8,
+      "overcap_after_accepted_events": 0
+    }
+  },
+  "deadcap": {
+    "basis": "CP4 historical Flo 2026-06-09 eight cuts, old salaries and reconstructed team tenure; isolated mechanics only",
+    "cap_2026_proxy_dollars": 434255984,
+    "cut_date": "2026-06-09",
+    "deadline_2026": "2026-06-30T23:59:59Z",
+    "source_team_id": 3,
+    "cut_count": 8,
+    "tenure_counts": {
+      "1": 2,
+      "2": 6
+    },
+    "original_deadcap_dollars": 37551933,
+    "original_one_cycle_additive_overcap_dollars": 31025528,
+    "original_one_cycle_virtual_top20_overcap_dollars": 4941734,
+    "schedules": [
+      {
+        "code": "D0_CONFIRMED_ONE_CYCLE",
+        "description": "50/30/15/5% retained salary only in cut salary cycle; reset at regular next salary check",
+        "years_by_tenure": {
+          "0": 1,
+          "1": 1,
+          "2": 1,
+          "3+": 1
+        },
+        "period_dollars": [
+          37551933,
+          0,
+          0,
+          0
+        ],
+        "cumulative_dollars": 37551933
+      },
+      {
+        "code": "D1_MODERATE_FIXED_ANNUAL",
+        "description": "Hypothetical fixed nominal future obligation at cut rate for 3/2/1/1 salary cycles, not zero-sum retained salary after repricing",
+        "years_by_tenure": {
+          "0": 3,
+          "1": 2,
+          "2": 1,
+          "3+": 1
+        },
+        "period_dollars": [
+          37551933,
+          19700171,
+          0,
+          0
+        ],
+        "cumulative_dollars": 57252104
+      },
+      {
+        "code": "D2_EXTENDED_FIXED_ANNUAL",
+        "description": "User-suggested illustrative 4/3/2/1 salary cycles, same locked nominal amount in each counted cycle; a NEW multiyear guarantee, not just amortization",
+        "years_by_tenure": {
+          "0": 4,
+          "1": 3,
+          "2": 2,
+          "3+": 1
+        },
+        "period_dollars": [
+          37551933,
+          37551933,
+          19700171,
+          0
+        ],
+        "cumulative_dollars": 94804037
+      },
+      {
+        "code": "D3_EXTENDED_FIXED_TOTAL_POOL",
+        "description": "Same total original deadcap pool distributed across 4/3/2/1 salary cycles with deterministic final-year remainder, non-equivalent immediate retained salary and buyer discount",
+        "years_by_tenure": {
+          "0": 4,
+          "1": 3,
+          "2": 2,
+          "3+": 1
+        },
+        "period_dollars": [
+          15492602,
+          15492606,
+          6566725,
+          0
+        ],
+        "cumulative_dollars": 37551933
+      }
+    ],
+    "cut_items": [
+      {
+        "player_id": "4035",
+        "player_name": "Alvin Kamara",
+        "tenure": 2,
+        "cut_salary_dollars": 24366017,
+        "original_deadcap_dollars": 3654903,
+        "d1_cycles": 1,
+        "d2_cycles": 2
+      },
+      {
+        "player_id": "4217",
+        "player_name": "George Kittle",
+        "tenure": 2,
+        "cut_salary_dollars": 23012459,
+        "original_deadcap_dollars": 3451869,
+        "d1_cycles": 1,
+        "d2_cycles": 2
+      },
+      {
+        "player_id": "4943",
+        "player_name": "Sam Darnold",
+        "tenure": 1,
+        "cut_salary_dollars": 24155999,
+        "original_deadcap_dollars": 7246800,
+        "d1_cycles": 2,
+        "d2_cycles": 3
+      },
+      {
+        "player_id": "5927",
+        "player_name": "Terry McLaurin",
+        "tenure": 2,
+        "cut_salary_dollars": 18972800,
+        "original_deadcap_dollars": 2845920,
+        "d1_cycles": 1,
+        "d2_cycles": 2
+      },
+      {
+        "player_id": "7543",
+        "player_name": "Travis Etienne",
+        "tenure": 2,
+        "cut_salary_dollars": 22831903,
+        "original_deadcap_dollars": 3424785,
+        "d1_cycles": 1,
+        "d2_cycles": 2
+      },
+      {
+        "player_id": "7588",
+        "player_name": "Javonte Williams",
+        "tenure": 2,
+        "cut_salary_dollars": 16950753,
+        "original_deadcap_dollars": 2542613,
+        "d1_cycles": 1,
+        "d2_cycles": 2
+      },
+      {
+        "player_id": "8121",
+        "player_name": "Romeo Doubs",
+        "tenure": 2,
+        "cut_salary_dollars": 12877813,
+        "original_deadcap_dollars": 1931672,
+        "d1_cycles": 1,
+        "d2_cycles": 2
+      },
+      {
+        "player_id": "8183",
+        "player_name": "Brock Purdy",
+        "tenure": 1,
+        "cut_salary_dollars": 41511235,
+        "original_deadcap_dollars": 12453371,
+        "d1_cycles": 2,
+        "d2_cycles": 3
+      }
+    ],
+    "note": "Period 0 is the ongoing partial salary cycle before 2026-06-30 reset; periods 1-3 are subsequent cycles, NOT full calendar/league years. Subsequent years' caps and player repricings are unknown. Normalizations use frozen 2026 cap only as illustration.",
+    "prospective_other_cases": "Rookie Y1-3 contract contains fixed dollar schedule but veterans have NO approved contract term; Team Tenure does not equal remaining contract duration."
+  },
+  "outstanding": [
+    "No observed manager responses to changed window deadlines or alternative cuts",
+    "2025 late snaps no legally connected salary history across 2024-26",
+    "No observed real operator minutes or production-grade Sleeper write gate",
+    "Dead Cap additive versus virtual top20 semantics unresolved",
+    "No chosen behavior for repriced Salary and multiyear old-team obligation, minimum Salary and multiple cuts/reacquisition",
+    "No defined veteran guaranteed-contract term; tenure-based cycle count is a hypothetical proxy not NFL contract length",
+    "No aligned actual-year duration when cut occurs shortly before salary reset",
+    "No league decision or existing concept change"
+  ]
+}

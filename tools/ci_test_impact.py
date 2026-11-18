@@ -237,6 +237,8 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
         return ALL.copy(), "CI-or-policy:fail-closed"
     if path.startswith((".ai-context/manual/", ".ai-context/ai-context.yaml")):
         return ALL.copy(), "canonical-contract:fail-closed"
+    if path.startswith("tools/derived_data_lib/models/schedule_outlook/"):
+        return {"league-pwf-twp", "consumer-restore"}, "Schedule-outlook-derivation"
     if path.startswith(("data-meta/", "tools/data_roots.py", "tools/derived_data_lib/")):
         return ALL.copy(), "shared-state-or-model"
     if path.startswith(("data-source/nfl/identities/", "data-source/nfl/providers/",
@@ -264,9 +266,11 @@ def affected(path: str, tests: dict[str, dict]) -> tuple[set[str], str]:
     if path.startswith(("tools/external_source/", "tools/market_observations",
                         "tools/odds_")):
         return {"market-restore", "consumer-restore"}, "Market-source-implementation"
-    if path.startswith(("tools/nfl_games", "tools/derived_data", "tools/derived_clean_root_audit", "tools/player_valuation",
+    if path == "tools/nfl_pbp_team_metric_reconcile.py":
+        return {"league-pwf-twp", "consumer-restore"}, "Derived-consumer-implementation"
+    if path.startswith(("tools/nfl_games", "tools/nfl_game_details", "tools/nfl_game_detail_preview", "tools/derived_data", "tools/derived_clean_root_audit", "tools/player_valuation",
                         "tools/decision_windows", "tools/matchup_context", "tools/league_history", "tools/league_lifecycle", "tools/league_standings", "tools/league_live_derived", "tools/league_live_shadow_gate", "tools/league_live_output_revision_audit", "tools/league_live_run_receipt_audit",
-                        "tools/schedule_archive", "tools/weekly_recaps", "tools/players_read_model", "tools/players_app_publish", "tools/team_cap_outlook_app_publish")):
+                        "tools/schedule_archive", "tools/weekly_recaps", "tools/season_statistics", "tools/league_schedule_outlook", "tools/rivalry", "tools/players_read_model", "tools/players_app_publish", "tools/team_cap_outlook_app_publish")):
         return {"league-pwf-twp", "consumer-restore"}, "Derived-consumer-implementation"
     if path.startswith("public/requests/") and path.endswith((".ps1", ".psm1")):
         return ALL.copy(), "PowerShell-generator-shared"

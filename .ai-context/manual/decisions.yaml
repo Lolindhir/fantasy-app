@@ -2053,6 +2053,70 @@ decisions:
         - A new derived output and future scheduler adapter require explicit safety validation.
         - Historical latest-line market values must not be reused as ex-ante pregame evidence.
 
+    futureDirection20261114:
+      authorization: architecture-target-and-documentation-only
+      context: >
+        Robert confirmed that full play-by-play data must be durably available
+        in the canonical NFL Source layer, while the long-term consumer-facing
+        domain is one extensible NFL Game product rather than a second mandatory
+        raw play-by-play product.
+      decision: >
+        Extend the existing #1077 global NFL Games ownership over time from a
+        compact season game index to individually addressable, detailed game
+        statistics with team, player, usage, situational, game-flow and advanced
+        metrics, including explicit quality and source provenance. App NFL game
+        pages, Fantasy Operations, Fantasy Management, AI chats and research
+        consume the same shared domain product. Full original play-level NFL
+        evidence must be durably retained and reproducible in Source; individual
+        play records are not required as a payload in the Derived game-detail
+        product. Derived may combine that PBP evidence with other canonical
+        NFL stats and schedule sources and must version its computed metrics.
+      compatibilityAndScope: >
+        This is a forward-looking architectural decision, not a change to the
+        current V1 three-source NFL Games schema, Raw PBP acquisition, existing
+        source projections or production workflows. Choose full-PBP retention
+        format, rights, versioning, historical gaps, timestamps, per-game detail
+        partitions, invalidation and write scopes in separately reviewed,
+        authorized implementation steps. Do not add a new scheduler or writer
+        by implication. Related shared-platform guardrails remain with #1263.
+
+    competitiveOpportunityDecision20261117:
+      status: accepted
+      name: competitive-opportunities-not-official-attempts
+      context: >-
+        The 2025 original-PBP research in Issue #1077 observed systematic
+        PBP-minus-PlayerStats differences (-82 pass attempts and -452 carries
+        in 570 team-game comparisons). NFL box-score attempts can include
+        clock-management plays, whereas defensive analysis measures competitive
+        opportunities. Exact causes of every delta remain unproven row by row.
+      decision: >-
+        Build NFL Games PBP-based opportunity and efficiency metrics on
+        Competitive Opportunities rather than Official Attempts. Per-metric
+        eligible populations remain separate: throws exclude sacks/spikes;
+        dropbacks include eligible sacks/scrambles but exclude spikes; eligible
+        rushes may include QB scrambles but exclude QB kneels. Exclude other
+        non-competitive and two-point rows per the canonical catalog.
+        PlayerStats attempts/carries are diagnostic baselines, not parity
+        requirements. Persist explicit source provenance, coverage and
+        per-metric numerators/denominators in versioned Derived outputs;
+        consumers must not redefine these formulas.
+      contract: .ai-context/manual/nfl-games-pbp-metrics.yaml::competitiveOpportunitiesDecision
+      scope: >-
+        Approved architecture and metric semantics only. This does not
+        authorize new productive write destinations, change immutable Source
+        evidence, certify upstream play completeness or imply all edge cases
+        have already passed empirical regression tests.
+      rationale: >-
+        Clock-management attempts distort defensive efficiency interpretation;
+        separating analysis from official reconciliation preserves traceability.
+      consequences:
+        positive:
+          - Stable shared metric intent across consumers.
+          - Explicit per-metric denominators and special-play test requirements.
+        negative:
+          - Competitive metrics need not agree with official box scores.
+          - Special-play classification needs targeted verification in v2.
+
   - id: ADR-063
     title: Weekly team awards reuse the existing App WeeklyRecaps publisher
     status: accepted
@@ -2818,3 +2882,221 @@ decisions:
       negative:
         - Above 80 percent and in single bands the raw chance deviates from the observed rate on a small sample; the backtest is renewed when the projection model changes.
         - The pregame chance of historical weeks follows the stored PlayerWeekFantasy partitions and changes when they are rebuilt.
+
+  - id: ADR-082
+    title: Season statistics are a Shared Derived product with the central model season-stats-v1
+    status: accepted
+    amends: [ADR-055, ADR-081]
+    context: >-
+      Standings show records but not whether a record was earned or lucky. Expected Wins from all-play, strength of schedule, opponent timing,
+      the result against the own pregame projection and upsets exist nowhere as a reproducible figure, and the awards Overperformer and Brick Wall
+      use proxies (point difference, points against). Several consumers (App Standings and Season Archive, Hall of Fame, Fantasy Management,
+      awards-v2) need the same numbers (Issue #506, measured 2026-11-12).
+    decision: >-
+      Robert decided on 2026-11-13 (Issue #506): a stored Shared Derived product data-derived/season-statistics/<CanonicalLeagueID>/<season>.json
+      with every available figure (full content on purpose, so later analyses do not need a new product), including the weekly progression and
+      the values per game. The formulas are the central, league-independent, versioned model season-stats-v1 (tools/derived_data_lib/models/season_stats/v1.py),
+      chosen per season in data-meta (Models.SeasonStats). Inputs are only data-source, the player-week-fantasy product (pregame projections through
+      team-range and win-prob), week finality and data-meta; every season stands alone. The consumer generator tools/season_statistics_app_publish.py renders
+      SeasonStatistics.json and the past_seasons files and chooses the all-time biggest upset (a win with a pregame chance below 35 percent, lowest chance wins)
+      so the frontend only displays. Strength of schedule is stored but not displayed (six teams, spread 0.98 to 1.03). The elevated effect (new write prefix
+      data-derived/season-statistics for the existing writers league-live.yml, current season, and update-transactions.yml, all seasons) was approved by Robert
+      on 2026-11-13; no new workflow, credential or permission. awards-v2 (Overperformer, Brick Wall) follows in the same Issue as a separate model version
+      and reuses these formulas. Amendment (PR 2, Robert 2026-11-13): awards-v2 reads the persisted season-statistics product (no second computation); all seasons choose it in data-meta; the Standings job adds data-derived/season-statistics to its sparse checkout (read only); current-season awards may lag one tick. Amendment (Issue #1460, Robert 2026-11-13): awards-v3 keeps both rankings but measures the Overperformer against the league mean of the projection difference (the projection model was biased for the whole league, 2025 -5.0 and 2026 -8.6 points per game) and shows three English figures per award; all seasons choose it. Contract: .ai-context/manual/season-statistics.yaml.
+    rationale: >-
+      One implementation per figure serves every consumer; a stored product keeps the history reproducible and cheap to read; a model version per season keeps
+      old seasons stable when the formulas improve (for example with a better projection model).
+    consequences:
+      positive:
+        - Luck, Expected Wins, projection delta and upsets are available to App, Fantasy Management and awards-v2 from one file.
+        - The frontend does no calculation and no selection.
+      negative:
+        - The product depends on PlayerWeekFantasy partitions for the projection figures; weeks without a projection stay null.
+        - The ten-minute League Live run gains one fail-soft step (runtime to be measured after the G5 AP5 measurement).
+        - The pregame chance of historical weeks follows the stored PlayerWeekFantasy partitions and changes when they are rebuilt.
+
+  - id: ADR-083
+    title: The rivalry statistic is a Shared Derived product with the central model rivalry-v1 and a bracket label in the matchup context
+    status: accepted
+    amends: [ADR-075]
+    context: >-
+      Head-to-head records (wins, losses, ties, points, biggest win, closest loss) were counted in Angular (team-rivalry.util.ts) from the published
+      Matchups of every season. The Matchups carry only the stage of a week, so the util guessed the consolation tournament from the teams of the last
+      playoff week and needed its own season-complete rule. That is a domain rule in the frontend (Issue #1455, central audit 2026-11-13, finding D).
+    decision: >-
+      Robert decided on 2026-11-13 (Issue #1455): a persisted Shared Derived product data-derived/league-rivalry/<CanonicalLeagueID>.json, one file per
+      league over all seasons with the records per team, opponent and filter (all, regular, playoffs) and the single games, so that chat and agent consumers
+      read it as a file without Python. The bracket becomes a fact of the matchup context: Matchups carries an additive field Bracket (championship, placement,
+      consolation, unclassified, null for the regular season) derived from the canonical winners-bracket.json and losers-bracket.json plus league.json
+      WeekStructure; a matchup that cannot be assigned to exactly one bracket game is unclassified and never counted (amendment of ADR-075, fixed provider-neutral
+      semantics without a model ID). The counting rules are the central, league-independent, versioned model rivalry-v1 (tools/derived_data_lib/models/rivalry/v1.py),
+      chosen per season in data-meta (Models.Rivalry). E1: winners-bracket placement games count as playoff duels, only the losers bracket is the consolation
+      tournament; E2: playoff games of a running season count only after the season is complete (a later model version may count them at once). The pure
+      function tools/derived_data_lib/rivalry.py, the materializer in tools/derived_data.py and the consumer generator tools/rivalry_app_publish.py (public/data/Rivalry.json,
+      the product document unchanged) follow the pattern of ADR-082. The elevated effect (new write prefix data-derived/league-rivalry for the existing writers
+      league-live.yml, fail-soft, and update-transactions.yml) was approved by Robert on 2026-11-13; no new workflow, credential or permission. Angular displays the
+      values and counts and classifies nothing. Exactness was proven against a golden dump of the former util: all records equal except the one E1 game
+      (2024 week 16, placement game of Team 4 against Team 5). Contract: .ai-context/manual/league-rivalry.yaml.
+    rationale: >-
+      The bracket is a fact of the canonical source, not something to guess from participants; one implementation serves every consumer, a stored file is
+      readable without Python, and a model version per season keeps the numbers stable when a rule changes.
+    consequences:
+      positive:
+        - Angular contains no head-to-head or consolation logic; the Matchups history is no longer loaded for the rivalry views.
+        - Rivalry numbers are available to App, Fantasy Management and chat consumers from one file.
+        - Placement games of the championship bracket are no longer lost.
+      negative:
+        - Team identity across seasons stays the provider roster ID (owner changes of a roster are not represented), like All-Time Standings.
+        - Matchups.json gains the field Bracket (additive); the product needs the matchup context of every season and adds a few seconds to the ten-minute League Live run (measured in Issue #1455).
+        - The product file is directional and repeats games per filter (about 120 KB).
+
+  - id: ADR-084
+    title: Publish the league philosophy as a single human-maintained Markdown source in the Handbook
+    status: accepted
+    context: >-
+      Robert established a protected six-goal league-design north star on 2026-11-14; the six goals must
+      govern Fantasy Management and league-specific app design without creating a competing content copy.
+      The existing Angular Handbook serves Markdown from public/docs, while Fantasy Management design
+      and decision documentation is canonically owned under fantasy-management. Generic
+      fantasy-management/** changes intentionally do not trigger Pages deployment.
+    decision: >-
+      Issue #1464: the single normative league philosophy resides in
+      fantasy-management/league-context/league-philosophy.md (version, goal meanings,
+      consensus/ratification state, amendment procedure). Root and Fantasy agent entrypoints
+      route league-level choices to this file. Angular copies the same Markdown directly
+      as a static build asset to docs/league-philosophy.md and the Handbook displays it as
+      the default tab. The existing APP Deploy main-push positive path filter gains only this
+      exact Markdown file; the deploy build verifies byte-identical output by SHA256.
+      This is the user-authorized narrow exception for rendering an FM-owned human
+      documentation input in the App. No runtime FM pipeline or generated-app data
+      becomes a producer dependency, no new writer, permission or workflow is introduced,
+      and no league Salary/Cap/Trade mechanism is activated.
+    rationale: >-
+      A single editable source with an automated read-only publication path prevents
+      drift between users, agents and the Handbook while preserving the Fantasy
+      Management/App responsibility boundary. A narrow trigger and content-hash check
+      prevent stale or divergent Handbook copies without redeploying on unrelated
+      Fantasy Management operations.
+    consequences:
+      positive:
+        - League-design agents and human Handbook readers consult the same six goals and amendments.
+        - Later semantic changes are visible, versioned and subject to documented all-manager consultation
+          and an explicit league approval; the current document does not falsely claim full ratification.
+        - A documentation-only edit of the canonical philosophy can reach Pages through existing deployment.
+      negative:
+        - The app build now depends on presence of one FM-owned Markdown file; missing or mismatched
+          content fails the build instead of publishing stale philosophy.
+        - Handbook publication remains tied to successful main deployment; no runtime auto-sync outside that process.
+
+  - id: ADR-085
+    title: Rivalry-v2 includes every final fantasy matchup regardless of playoff bracket, and counts final games immediately
+    status: accepted
+    amends: [ADR-083]
+    context: >-
+      The original rivalry-v1 consciously excluded the Losers Bracket as consolation and delayed all playoff results
+      until the season finished. Robert clarified on 2026-11-14 (Issue #1470) that even the Lucky Loser bracket
+      determines consequential draft outcomes, so every completed duel belongs in head-to-head rivalry history.
+    decision: >-
+      Keep rivalry-v1 immutable. Register rivalry-v2 and explicitly select it for every season in data-meta.
+      For a matchup with CompletionState final, a valid Result and exactly two participants, count both
+      regular season and playoffs regardless of Bracket (championship, placement, consolation, unclassified or null);
+      playoff games of the running season count as soon as final. Bracket is retained as descriptive canonical
+      evidence, never reclassified or invented for counting. App and other consumers read the same shared
+      league-rivalry product; published files and Timestamps.Rivalry are updated by the existing generator
+      on a semantic difference, not edited by hand. The old v1 initial publication lacked the timestamp because
+      its first workflow run was a no-op. The v2 migration creates a genuine semantic change and initializes the key.
+      This is a rivalry statistic rule, not a change to Sleeper or the league's draft order.
+    rationale: >-
+      Every completed head-to-head matchup has a meaningful winner, including the bracket whose result shapes
+      future draft order. A single versioned derived rule avoids deleting valid historical duels and
+      restores the expected all-games semantics without changing original v1 historical reproducibility.
+    consequences:
+      positive:
+        - Final Losers-Bracket and unclassified playoff games appear in the all and playoffs rivalry filters.
+        - Already-final playoff duels count before the season ends.
+        - All consumers receive identical versioned results from one central owner, no Angular counting.
+      negative:
+        - Rivalry-v2 historical records intentionally differ from v1; generated Derived/App snapshots must refresh together.
+        - Input data completeness and provider corrections still govern what can truthfully be considered final.
+
+  - id: ADR-086
+    title: Weekly player awards are the central model weekly-recap-v2 inside the existing recap function, with a small award history file
+    status: accepted
+    amends: [ADR-063]
+    context: >-
+      The Weekly Recaps show KeyPlayers, KeyGames and the team awards, but no recognition of the individual player stories of a week (the best player, the player who
+      carried a team to a win, the player who lost despite a great week, the bench player who would have decided a lost game). Issue #499 collected these ideas; Robert
+      reduced them to four awards on 2026-11-14 and authorized implementation.
+    decision: >-
+      Robert decided on 2026-11-14 (Issue #499): four league-context player awards per league-scored week, Week MVP, Matchup Hero, Heartbreaker and Unsung Hero; Carry Job and every
+      negative award are dropped; ties share an award; playoffs count; weeks with an evidence gap get no awards. The rules are the central, league-independent, versioned model
+      weekly-recap-v2 (tools/derived_data_lib/models/weekly_recap/v2.py, baseline weekly-recap-v1 without awards), chosen per season in data-meta (Models.WeeklyRecap, all seasons
+      v2). They are computed inside the weekly-recaps function (ADR-063, pattern of ADR-071 to ADR-083) and delivered additively as PlayerAwards per week in WeeklyRecaps.json and the
+      past_seasons archives plus a new small App file PlayerAwardHistory.json (counts and week lists per player across all seasons) written by the existing consumer generator
+      tools/weekly_recaps_app_publish.py. No data product (F4), no new writer, write prefix, workflow or permission. Angular only displays; player display uses the App Sleeper ID, and
+      the generator supplies Name, Position and Picture from the league-history PlayerRefs resolver for players that Players.json no longer lists. Part B (NFL-wide honors) is Issue #1484.
+      Contract: .ai-context/manual/weekly-recaps.yaml (playerAwards).
+    rationale: >-
+      One implementation per formula serves every consumer; a model version per season keeps old seasons stable when a rule changes; reusing the recap function and its publisher
+      avoids a second writer and keeps the recap weeks and the awards identical by construction.
+    consequences:
+      positive:
+        - Player stories of a week become visible and accumulate as player history in the App without a new product.
+        - Fast tests with constructed weeks pin every formula; the model is immutable once productive.
+      negative:
+        - Historical matchups carry no Taxi or IR marker, so those players cannot be separated from the bench for the Unsung Hero.
+        - The current scope of PlayerAwardHistory.json takes completed seasons from their published archive, so history refreshes with the weekly update-transactions run.
+
+
+  - id: ADR-087
+    title: Historical NFL injury reports are an isolated versioned Source and Shared Derived product
+    status: accepted
+    context: >-
+      Issue #1421: A current ESPN status snapshot and Sleeper App injury fields
+      cannot reconstruct historical player-level NFL injury reports. The
+      nflverse injuries annual CSV has a different cadence and evolving
+      retrospective evidence. Existing NFL Source already publishes Raw then
+      Canonical with protected retry semantics, and Shared Derived uses a
+      separate rebuild-and-retry publisher.
+    decision: >-
+      Use nflverse.injuries as a league-independent season-partitioned Source
+      dataset, excluded from the 04:00 full NFL Source sync. The permanently
+      registered scheduler wrapper sync-nfl-injuries.yml delegates one daily
+      09:30 Europe/Berlin Sep-Feb run to the existing sync-nfl-source-data.yml
+      publication loop under its original concurrency group. Raw and
+      provenance (official release SHA and original bytes) publish first.
+      Canonical stores every observed report without medical availability
+      inference, joins a current canonical GSIS identity and optional NFL game,
+      and records an integrity hash for every week partition in a manifest.
+      A separate dependent rebuild-and-retry job publishes nfl-injuries-v1
+      under data-derived/nfl-injuries/<season>.json only after successful
+      Canonical publication. Manual historical single-season imports use
+      the same writer; prior imported seasons are frozen without explicitly
+      reviewed repair. Future seasons are accepted only while their exact
+      CSV header matches the audited 2025+ family. Scheduler target and
+      Source/Derived write scopes are bounded, versioned and reversible.
+      ESPN player availability remains on its existing ten-minute cadence,
+      and no Salary, League, App or Fantasy Management consumer is activated.
+      Data publication begins only after PR validation and independent
+      architecture review; no evidence is invented for a missing upstream
+      season asset. Source, implementation, review and rollback contract:
+      .ai-context/manual/nfl-injuries.yaml (Issue #1421).
+    rationale: >-
+      Reusing the existing Source publisher and a separate Derived generator
+      preserves provenance, prevents competing writers, and allows consumers
+      to distinguish observed historical reports from current availability
+      and pregame knowledge.
+    consequences:
+      positive:
+        - Durable reproducible report evidence is shared without coupling
+          the ten-minute current-status pipeline to retrospective imports.
+        - SHA-verified Raw, full Canonical week manifests and downstream
+          rebuilds expose incomplete or mixed-revision data as failures.
+        - Existing publication race handling and source attribution are reused.
+      negative:
+        - Annual provider corrections change full-asset observation keys
+          and can re-attest unchanged week partitions.
+        - Historic pregame availability and games missed cannot be inferred
+          reliably from observed reports alone.
+        - New bounded Source and Derived files and one daily workflow require
+          monitoring and a reviewed rollback path.

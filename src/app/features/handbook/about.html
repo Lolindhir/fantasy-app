@@ -1,43 +1,60 @@
-<div class="tabs" style="display: flex; flex-wrap: wrap; gap: 8px;">
-  <button 
-    style="flex: 1 1 auto;"
-    (click)="selectTab('Overview')"
-    [style.background]="selectedTab === 'Overview' ? '#1976d2' : null"
-    [style.color]="selectedTab === 'Overview' ? 'white' : null">
-    Übersicht
-  </button>
+<div class="handbook-layout">
+  <div class="handbook-mobile-nav" (keydown.escape)="closeMenu()">
+    <button
+      type="button"
+      class="handbook-home"
+      [class.is-current]="selectedTab === 'Overview'"
+      [attr.aria-current]="selectedTab === 'Overview' ? 'page' : null"
+      (click)="selectTab('Overview')">
+      <mat-icon aria-hidden="true">home</mat-icon>
+      <span>Übersicht</span>
+    </button>
 
-  <button 
-    style="flex: 1 1 auto;"
-    (click)="selectTab('Salary_Explanation')"
-    [style.background]="selectedTab === 'Salary_Explanation' ? '#1976d2' : null"
-    [style.color]="selectedTab === 'Salary_Explanation' ? 'white' : null">
-    Salary Cap Berechnung
-  </button>
+    <div class="handbook-picker">
+      <button
+        type="button"
+        class="handbook-picker-button"
+        aria-controls="handbook-mobile-menu"
+        [attr.aria-expanded]="menuOpen"
+        [title]="mobileSelectionLabel"
+        (click)="toggleMenu()">
+        <span class="handbook-picker-label">{{ mobileSelectionLabel }}</span>
+        <mat-icon aria-hidden="true">{{ menuOpen ? 'expand_less' : 'expand_more' }}</mat-icon>
+      </button>
 
-  <button 
-    style="flex: 1 1 auto;"
-    (click)="selectTab('Offseason_Flow')"
-    [style.background]="selectedTab === 'Offseason_Flow' ? '#1976d2' : null"
-    [style.color]="selectedTab === 'Offseason_Flow' ? 'white' : null">
-    Offseason Infografik
-  </button>
+      <nav *ngIf="menuOpen" id="handbook-mobile-menu" class="handbook-mobile-menu" aria-label="Handbook-Inhaltsverzeichnis">
+        <button
+          *ngFor="let page of tabs"
+          type="button"
+          class="handbook-nav-item"
+          [class.is-current]="selectedTab === page.id"
+          [attr.aria-current]="selectedTab === page.id ? 'page' : null"
+          (click)="selectTab(page.id)">
+          {{ page.label }}
+          <mat-icon *ngIf="selectedTab === page.id" aria-hidden="true">check</mat-icon>
+        </button>
+      </nav>
+    </div>
+    <button *ngIf="menuOpen" type="button" class="handbook-menu-dismiss"
+      aria-label="Handbook-Menü schließen" (click)="closeMenu()"></button>
+  </div>
 
-  <button 
-    style="flex: 1 1 auto;"
-    (click)="selectTab('Offseason_Schedule')"
-    [style.background]="selectedTab === 'Offseason_Schedule' ? '#1976d2' : null"
-    [style.color]="selectedTab === 'Offseason_Schedule' ? 'white' : null">
-    Offseason Regeln
-  </button>
+  <aside class="handbook-sidebar" aria-label="Handbook-Inhaltsverzeichnis">
+    <h2 class="handbook-sidebar-heading">Inhalt</h2>
+    <nav>
+      <button
+        *ngFor="let page of tabs"
+        type="button"
+        class="handbook-nav-item"
+        [class.is-current]="selectedTab === page.id"
+        [attr.aria-current]="selectedTab === page.id ? 'page' : null"
+        (click)="selectTab(page.id)">
+        {{ page.label }}
+      </button>
+    </nav>
+  </aside>
 
-  <button 
-    style="flex: 1 1 auto;"
-    (click)="selectTab('Draft_Waiver_Order')"
-    [style.background]="selectedTab === 'Draft_Waiver_Order' ? '#1976d2' : null"
-    [style.color]="selectedTab === 'Draft_Waiver_Order' ? 'white' : null">
-    Draft & Waiver Regeln
-  </button>
+  <main class="handbook-content">
+    <markdown class="markdown" [data]="markdownText"></markdown>
+  </main>
 </div>
-
-<markdown class="markdown" [data]="markdownText"></markdown>

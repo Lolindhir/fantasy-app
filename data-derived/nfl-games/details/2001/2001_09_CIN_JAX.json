@@ -1,0 +1,89 @@
+{
+  "SchemaVersion": 1,
+  "Product": "nfl-games",
+  "DetailDefinitionVersion": 1,
+  "Season": 2001,
+  "GameID": "2001_09_CIN_JAX",
+  "Game": {
+    "GameID": "2001_09_CIN_JAX",
+    "GameType": "REG",
+    "Week": 9,
+    "GameDay": "2001-11-11",
+    "GameTime": "13:00",
+    "AwayTeam": "CIN",
+    "HomeTeam": "JAX",
+    "AwayScore": 13,
+    "HomeScore": 30,
+    "Final": true,
+    "Market": {
+      "SourceDataset": "nflverse.schedule-odds",
+      "SpreadLine": 4.0,
+      "TotalLine": 39.5,
+      "ImpliedAwayPoints": 17.75,
+      "ImpliedHomePoints": 21.75
+    }
+  },
+  "TeamStats": {
+    "SourceDataset": "nflverse.player-stats",
+    "Status": "partial",
+    "SourceFinalized": true,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "MissingTeamContextRows": 0,
+    "Method": "sum-of-valid-canonical-player-counting-stats-not-official-boxscore",
+    "Teams": [
+      {
+        "Team": "CIN",
+        "Status": "available",
+        "PlayerRecordCount": 69,
+        "Stats": {
+          "attempts": 80,
+          "completions": 48,
+          "passing_yards": 492,
+          "passing_tds": 2,
+          "passing_interceptions": 1,
+          "carries": 48,
+          "rushing_yards": 170,
+          "rushing_tds": 3,
+          "targets": 80,
+          "receptions": 48,
+          "receiving_yards": 492,
+          "receiving_tds": 2,
+          "def_tackles_solo": 103,
+          "def_interceptions": 1,
+          "fg_att": 2,
+          "fg_made": 2,
+          "pat_att": 5,
+          "pat_made": 5
+        }
+      },
+      {
+        "Team": "JAX",
+        "Status": "unavailable",
+        "PlayerRecordCount": null,
+        "Stats": null
+      }
+    ]
+  },
+  "SnapCounts": {
+    "SourceDataset": "nflverse.snap-counts",
+    "Status": "unavailable",
+    "SourceFinalized": null,
+    "UnresolvedPlayerIdentityRows": 0,
+    "HistoricalFranchiseAliasRows": 0,
+    "Method": "unique-integer-denominator-from-rounded-player-percentages",
+    "TeamTotalsOfficiallyVerified": false,
+    "Teams": null
+  },
+  "Coverage": {
+    "GameIndex": "available",
+    "TeamStats": "partial",
+    "TeamSnapCounts": "unavailable",
+    "PlayByPlay": "not-in-core-v1",
+    "FullPlayByPlayAvailable": false
+  },
+  "Derivation": {
+    "DefinitionVersion": 1,
+    "InputFingerprintSHA256": "ab5a240161f61938011d533574da64eaed25f9d74ea65c4be85e28f0ae5f13b6"
+  }
+}

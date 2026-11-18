@@ -69,6 +69,39 @@ class NflGamesPublisherContractTests(unittest.TestCase):
         self.assertEqual(contract["writers"][".github/workflows/sync-nfl-source-data.yml"],
                          "rebuild-and-retry")
 
+    def test_approved_detail_publisher_reuses_owner_and_weekly_full_source(self) -> None:
+        workflow = yaml.safe_load(
+            (ROOT / ".github/workflows/sync-nfl-source-data.yml").read_text(encoding="utf-8")
+        )
+        steps = workflow["jobs"]["nfl_games_derived"]["steps"]
+        current = next(step for step in steps
+                       if step["name"] == "Rebuild and publish current-season NFL GameDetails")
+        historical = next(step for step in steps
+                          if step["name"] == "Reconcile and publish historical NFL GameDetails weekly")
+        for step in (current, historical):
+            self.assertIn("tools/rebuild_and_publish.py", step["run"])
+            self.assertIn("--scope nfl-games", step["run"])
+            self.assertIn("--path data-derived/nfl-games/details", step["run"])
+            self.assertNotIn("--path public/data", step["run"])
+            self.assertNotIn("--path data-source", step["run"])
+            self.assertIn("--write", step["run"])
+        self.assertIn("tools/nfl_game_details_materialize.py --current-season --write",
+                      current["run"])
+        self.assertIn("--historical-seasons --write", historical["run"])
+        self.assertIn("!inputs.dataset", historical["if"])
+        self.assertIn("inputs.materialization_scope == 'full'", historical["if"])
+        self.assertIn("TZ=Europe/Berlin date +%u", historical["run"])
+        self.assertIn('!= "1"', historical["run"])
+        self.assertEqual(workflow["jobs"]["nfl_games_derived"]["timeout-minutes"], 20)
+        contract = yaml.safe_load(
+            (ROOT / ".ai-context/manual/nfl-games.yaml").read_text(encoding="utf-8")
+        )
+        detail = contract["futureGameDetailDirection"]["coreDetailV1"]
+        self.assertEqual(detail["publication"]["writeScope"],
+                         "data-derived/nfl-games/details/**")
+        self.assertEqual(detail["publication"]["historicalAuditDay"], "Monday")
+        self.assertEqual(detail["publication"]["noSeparateScheduler"], True)
+
     def test_existing_shared_scheduler_keeps_original_cadence(self) -> None:
         import json
         config = json.loads(

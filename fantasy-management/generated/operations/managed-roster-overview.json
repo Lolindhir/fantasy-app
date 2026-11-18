@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "dataset_id": "managed-roster-overview",
-  "generated_at": "2026-11-13T04:21:58.940570Z",
-  "input_fingerprint": "52d2c573ce6d9bcc5f7b9adf144b7a43ce55fdf1cca6f69420f42a5f37199eae",
+  "generated_at": "2026-11-18T04:22:10.458153Z",
+  "input_fingerprint": "9d3ab7077ae3b4ad6fcc75f388300c3c153eb703448b81c5b8f5e82d41989da5",
   "sources": [
     {
       "id": "canonical_league_settings",
       "path": "data-source/leagues/nfl-reise/seasons/2026/league.json",
-      "content_sha256": "0ecf7954931ad7b84ed25f28789a70c8d71036eb78de9c715f66933fe15838fd"
+      "content_sha256": "23227c343bbbeb77c026af41afdfd05a6a6a613f3eee2e1e36445bcf04d7e500"
     },
     {
       "id": "canonical_league_members",
@@ -17,18 +17,18 @@
     {
       "id": "managed_roster_signals",
       "path": "fantasy-management/generated/operations/managed-roster-signals.json",
-      "content_sha256": "55cf9fcba20f173c659cd7d00ef198d9be36746ffe836423f0874d223dd1b563"
+      "content_sha256": "3562173a356fa48bbb8c7a174c6dad8762c9856e6909198d4299a3dab4a30d7b"
     },
     {
       "id": "roster_evaluation_state",
       "path": "fantasy-management/automation/roster-evaluation-state.json",
-      "content_sha256": "0669424f055a1290237473c033d2467529196baf187e1281164959b6b7e41ac0"
+      "content_sha256": "5b43854044f83a9607ac845364c3a35a547dd820ad9ae176b11bf8cffb994f8d"
     }
   ],
   "evaluation": {
     "mode": "hybrid_manual_v1",
-    "seed_as_of": "2026-09-19",
-    "classification_age_days": 55,
+    "seed_as_of": "2026-11-14",
+    "classification_age_days": 4,
     "automatic_fields": [
       "roster_membership",
       "roster_area",
@@ -47,7 +47,7 @@
       "boundary_priority"
     ],
     "user_override_count": 0,
-    "unclassified_count": 7,
+    "unclassified_count": 0,
     "target_state": "fully_automated_with_explainable_criteria_and_user_overrides"
   },
   "team": {
@@ -110,7 +110,7 @@
         "held_count": 5,
         "current_active_count": 4,
         "effective_prelock_or_locked_count": 4,
-        "startable_count": 2,
+        "startable_count": 3,
         "backup_count": 1,
         "coverage_floor": 3,
         "preferred_coverage": 4,
@@ -121,8 +121,8 @@
         "held_count": 11,
         "current_active_count": 10,
         "effective_prelock_or_locked_count": 10,
-        "startable_count": 6,
-        "backup_count": 1,
+        "startable_count": 7,
+        "backup_count": 3,
         "coverage_floor": null,
         "preferred_coverage": null,
         "status": "pool_managed"
@@ -132,8 +132,8 @@
         "held_count": 4,
         "current_active_count": 4,
         "effective_prelock_or_locked_count": 4,
-        "startable_count": 3,
-        "backup_count": 1,
+        "startable_count": 4,
+        "backup_count": 0,
         "coverage_floor": 3,
         "preferred_coverage": 4,
         "status": "preferred_met"
@@ -157,12 +157,17 @@
         "TE"
       ],
       "required_skill_lineup_slots": 10,
-      "startable_skill_pool": 16,
-      "skill_pool_margin": 6,
+      "startable_skill_pool": 18,
+      "skill_pool_margin": 8,
       "startable_players": [
         {
           "player_id": "4866",
           "name": "Saquon Barkley",
+          "position": "RB"
+        },
+        {
+          "player_id": "6790",
+          "name": "D'Andre Swift",
           "position": "RB"
         },
         {
@@ -221,6 +226,11 @@
           "position": "RB"
         },
         {
+          "player_id": "12506",
+          "name": "Harold Fannin Jr.",
+          "position": "TE"
+        },
+        {
           "player_id": "12517",
           "name": "Colston Loveland",
           "position": "TE"
@@ -245,20 +255,56 @@
     "churn": {
       "target_general_slots": 2,
       "assignment_status": "current_locked_roster",
-      "decision_readiness": "review_required",
-      "active_unclassified_count": 7,
-      "current_active_candidate_count": 1,
+      "decision_readiness": "ready",
+      "active_unclassified_count": 0,
+      "current_active_candidate_count": 5,
       "current_active_general_churn_count": 0,
-      "candidate_pool_count": 1,
-      "guardrail_status": "review_required",
+      "candidate_pool_count": 5,
+      "guardrail_status": "below_target",
       "candidate_pool": [
         {
-          "player_id": "12469",
-          "name": "Dylan Sampson",
-          "position": "RB",
+          "player_id": "5947",
+          "name": "Jakobi Meyers",
+          "position": "WR",
+          "security": "conditional",
+          "current_area": "active",
+          "boundary_priority": 10,
+          "counts_as_general_churn": false
+        },
+        {
+          "player_id": "12530",
+          "name": "Travis Hunter",
+          "position": "WR",
+          "security": "hold",
+          "current_area": "active",
+          "boundary_priority": 20,
+          "counts_as_general_churn": false
+        },
+        {
+          "player_id": "11559",
+          "name": "Michael Penix Jr.",
+          "position": "QB",
           "security": "conditional",
           "current_area": "active",
           "boundary_priority": 30,
+          "counts_as_general_churn": false
+        },
+        {
+          "player_id": "13274",
+          "name": "Germie Bernard",
+          "position": "WR",
+          "security": "conditional",
+          "current_area": "active",
+          "boundary_priority": 40,
+          "counts_as_general_churn": false
+        },
+        {
+          "player_id": "11631",
+          "name": "Brian Thomas Jr.",
+          "position": "WR",
+          "security": "hold",
+          "current_area": "active",
+          "boundary_priority": 50,
           "counts_as_general_churn": false
         }
       ],
@@ -278,27 +324,29 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "specialist",
+      "roster_security": "churn",
+      "structural_function": "specialist",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
+        "roster_role": "specialist",
+        "roster_security": "churn",
         "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Verlässlicher aktueller Kicker; Spezialplatz, kein allgemeiner Churn-Slot."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
         "age": 32.8,
         "years_experience": 11,
         "salary": 12041778,
-        "salary_projected": 14955892,
+        "salary_projected": 14503600,
         "is_free_agent": false
       },
       "injury": {
@@ -320,7 +368,7 @@
         "fantasycalc_overall_rank": null,
         "fantasycalc_value": null
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "specialist",
       "coverage_protected": true,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -347,11 +395,13 @@
         "roster_role": "backup",
         "roster_security": "strong_hold",
         "boundary_priority": null,
-        "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Junger QB mit glaubhafter mehrjähriger NFL-Starter- und Tradeoption. Im Zwei-QB-Format ist der zukünftige Asset-Wert entscheidend, nicht die gegenwärtige Reserve-Belegung."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -360,7 +410,7 @@
         "age": 23.5,
         "years_experience": 2,
         "salary": 13816272,
-        "salary_projected": 12114765,
+        "salary_projected": 11959392,
         "is_free_agent": false
       },
       "injury": {
@@ -377,10 +427,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 39,
-        "fantasypros_position_rank": "QB16",
-        "fantasycalc_overall_rank": 48,
-        "fantasycalc_value": 3769
+        "fantasypros_overall_rank": 38,
+        "fantasypros_position_rank": "QB15",
+        "fantasycalc_overall_rank": 50,
+        "fantasycalc_value": 3607
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
@@ -409,10 +459,12 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Hochwertiger langfristiger QB-Kern."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -421,7 +473,7 @@
         "age": 25.9,
         "years_experience": 3,
         "salary": 24521238,
-        "salary_projected": 36665339,
+        "salary_projected": 37700139,
         "is_free_agent": false
       },
       "injury": {
@@ -441,7 +493,7 @@
         "fantasypros_overall_rank": 10,
         "fantasypros_position_rank": "QB5",
         "fantasycalc_overall_rank": 19,
-        "fantasycalc_value": 5278
+        "fantasycalc_value": 5689
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -462,27 +514,29 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "backup",
+      "roster_security": "conditional",
+      "structural_function": "coverage_reserve",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
-        "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "roster_role": "backup",
+        "roster_security": "conditional",
+        "boundary_priority": 30,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Atlanta-QB mit potenziell künftigem Starter-/Trade-Wert, aber ungesicherter langfristiger NFL-Rolle. Dynasty-Markt etwa QB25 (FantasyCalc) / QB29 (FantasyPros); als fünfter eigener QB im tiefen Zwei-QB-Format nur bedingt gegen Premium-Alternativen geschützt. Dart-IR ist kein Dauergrund."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
         "age": 26.5,
         "years_experience": 3,
         "salary": 6360556,
-        "salary_projected": 12648354,
+        "salary_projected": 12673515,
         "is_free_agent": false
       },
       "injury": {
@@ -499,14 +553,14 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 117,
+        "fantasypros_overall_rank": 115,
         "fantasypros_position_rank": "QB29",
-        "fantasycalc_overall_rank": 101,
-        "fantasycalc_value": 2085
+        "fantasycalc_overall_rank": 109,
+        "fantasycalc_value": 1983
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "positional_coverage",
       "coverage_protected": false,
-      "comparison_boundary_eligible": false,
+      "comparison_boundary_eligible": true,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
@@ -531,10 +585,12 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Elite-2QB-Starter, Cap-Last unabhängig von Spielerqualität beurteilen."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -543,7 +599,7 @@
         "age": 31.2,
         "years_experience": 10,
         "salary": 44548934,
-        "salary_projected": 44328959,
+        "salary_projected": 47377000,
         "is_free_agent": false
       },
       "injury": {
@@ -562,8 +618,8 @@
       "market": {
         "fantasypros_overall_rank": 17,
         "fantasypros_position_rank": "QB9",
-        "fantasycalc_overall_rank": 24,
-        "fantasycalc_value": 4981
+        "fantasycalc_overall_rank": 20,
+        "fantasycalc_value": 5314
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -584,18 +640,20 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": "backup",
+      "roster_role": "starter_rotation",
       "roster_security": "strong_hold",
-      "structural_function": "coverage_reserve",
+      "structural_function": "starter_core",
       "classification": {
-        "roster_role": "backup",
+        "roster_role": "starter_rotation",
         "roster_security": "strong_hold",
         "boundary_priority": null,
-        "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "New-Orleans-QB mit eigenständigem mehrjährigem NFL-Starterpfad. Dynasty-Markt etwa QB13 (FantasyCalc) / QB18 (FantasyPros); künftige Startwahrscheinlichkeit und Entwicklung statt einzelner Passing-/Rushing-Spiele bewerten."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -604,7 +662,7 @@
         "age": 27.1,
         "years_experience": 2,
         "salary": 7308939,
-        "salary_projected": 22105709,
+        "salary_projected": 20667092,
         "is_free_agent": false
       },
       "injury": {
@@ -621,12 +679,12 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 48,
+        "fantasypros_overall_rank": 46,
         "fantasypros_position_rank": "QB18",
-        "fantasycalc_overall_rank": 51,
-        "fantasycalc_value": 3616
+        "fantasycalc_overall_rank": 56,
+        "fantasycalc_value": 3304
       },
-      "coverage_role": "positional_coverage",
+      "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -653,10 +711,12 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Dynasty-Kern und Starter; jüngste Ausfallhistorie separat bei Availability berücksichtigen."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -665,7 +725,7 @@
         "age": 25.5,
         "years_experience": 5,
         "salary": 26529542,
-        "salary_projected": 19168368,
+        "salary_projected": 19755850,
         "is_free_agent": false
       },
       "injury": {
@@ -682,10 +742,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 46,
+        "fantasypros_overall_rank": 47,
         "fantasypros_position_rank": "RB9",
-        "fantasycalc_overall_rank": 60,
-        "fantasycalc_value": 3193
+        "fantasycalc_overall_rank": 64,
+        "fantasycalc_value": 3179
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -713,11 +773,13 @@
         "roster_role": "starter_rotation",
         "roster_security": "strong_hold",
         "boundary_priority": null,
-        "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Junger RB mit nachgewiesener Starter-/Flex-Qualität und weiterem Entwicklungspotenzial. Strong Hold wegen Talent, künftiger Backfield-Rolle und Dynasty-Wert statt kurzfristiger Verletzungsmeldung."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -726,7 +788,7 @@
         "age": 24.8,
         "years_experience": 2,
         "salary": 7960050,
-        "salary_projected": 8925383,
+        "salary_projected": 10457765,
         "is_free_agent": false
       },
       "injury": {
@@ -743,10 +805,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 93,
-        "fantasypros_position_rank": "RB23",
-        "fantasycalc_overall_rank": 91,
-        "fantasycalc_value": 2272
+        "fantasypros_overall_rank": 95,
+        "fantasypros_position_rank": "RB22",
+        "fantasycalc_overall_rank": 73,
+        "fantasycalc_value": 2783
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -775,19 +837,21 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Startbarer RB mit verlässlichem Flex-Einsatzpfad."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
-        "age": 26.6,
+        "age": 26.7,
         "years_experience": 4,
         "salary": 22961606,
-        "salary_projected": 28250139,
+        "salary_projected": 30459012,
         "is_free_agent": false
       },
       "injury": {
@@ -804,10 +868,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 61,
-        "fantasypros_position_rank": "RB13",
-        "fantasycalc_overall_rank": 70,
-        "fantasycalc_value": 2890
+        "fantasypros_overall_rank": 58,
+        "fantasypros_position_rank": "RB11",
+        "fantasycalc_overall_rank": 66,
+        "fantasycalc_value": 3089
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -828,20 +892,22 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "starter_rotation",
+      "roster_security": "strong_hold",
+      "structural_function": "starter_core",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
+        "roster_role": "starter_rotation",
+        "roster_security": "strong_hold",
         "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Etablierter Bears-Lead-Back mit verbleibender Starterproduktion und mittelfristigem Trade-Wert. Nachhaltige NFL-Rolle und Alters-/Konkurrenzrisiko begründen Strong Hold unabhängig von Bye Weeks."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
@@ -868,9 +934,9 @@
         "fantasypros_overall_rank": 78,
         "fantasypros_position_rank": "RB18",
         "fantasycalc_overall_rank": 61,
-        "fantasycalc_value": 3161
+        "fantasycalc_value": 3217
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -889,19 +955,19 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": "prospect",
-      "roster_security": "conditional",
-      "structural_function": "development",
+      "roster_role": "backup",
+      "roster_security": "hold",
+      "structural_function": "coverage_reserve",
       "classification": {
-        "roster_role": "prospect",
-        "roster_security": "conditional",
-        "boundary_priority": 30,
-        "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "roster_role": "backup",
+        "roster_security": "hold",
+        "boundary_priority": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
         "notes": [
-          "Currently on Reserve/IR; reclassify on activation before treating boundary priority as actionable."
+          "Aktuelle Receiving-/Change-of-Pace-Nutzung der Browns, eigenständiger Weekly- und zusätzlicher Contingency-Pfad; nicht länger bloß theoretischer Prospect."
         ],
         "evidence": [],
         "review_status": "seeded_manual"
@@ -911,7 +977,7 @@
         "age": 22.2,
         "years_experience": 2,
         "salary": 1644089,
-        "salary_projected": 3515668,
+        "salary_projected": 3423472,
         "is_free_agent": false
       },
       "injury": {
@@ -928,14 +994,14 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 170,
+        "fantasypros_overall_rank": 172,
         "fantasypros_position_rank": "RB48",
-        "fantasycalc_overall_rank": 167,
-        "fantasycalc_value": 1327
+        "fantasycalc_overall_rank": 182,
+        "fantasycalc_value": 1218
       },
-      "coverage_role": "development",
+      "coverage_role": "positional_coverage",
       "coverage_protected": false,
-      "comparison_boundary_eligible": true,
+      "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
@@ -960,10 +1026,12 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Hochwertiges junges RB-Talent mit langfristigem Dynasty-Core-Potenzial. Kurzfristige Ausfälle betreffen nur Availability; erst dauerhaft beeinträchtigte Karriere-/Workload-Chancen würden Locked neu infrage stellen."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -972,7 +1040,7 @@
         "age": 21.5,
         "years_experience": 1,
         "salary": 0,
-        "salary_projected": 3054568,
+        "salary_projected": 2816356,
         "is_free_agent": false
       },
       "injury": {
@@ -989,10 +1057,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 21,
+        "fantasypros_overall_rank": 19,
         "fantasypros_position_rank": "RB3",
-        "fantasycalc_overall_rank": 28,
-        "fantasycalc_value": 4777
+        "fantasycalc_overall_rank": 26,
+        "fantasycalc_value": 4838
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1015,18 +1083,18 @@
       "is_current_taxi": false,
       "is_current_reserve": true,
       "roster_role": "prospect",
-      "roster_security": "hold",
+      "roster_security": "conditional",
       "structural_function": "development",
       "classification": {
         "roster_role": "prospect",
-        "roster_security": "hold",
+        "roster_security": "conditional",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
         "notes": [
-          "Young comeback asset remains above ordinary churn despite limited current role."
+          "Junger RB mit verbliebenem Talentpotenzial, aber ernsthafter mehrjähriger Recovery-/Verletzungs- und Rollenunsicherheit. Conditional wegen nachhaltiger Karriereprognose und späterer Roster-Opportunity-Cost, nicht wegen einer einzelnen IR-Woche."
         ],
         "evidence": [],
         "review_status": "seeded_manual"
@@ -1036,7 +1104,7 @@
         "age": 23.3,
         "years_experience": 3,
         "salary": 84399,
-        "salary_projected": 474095,
+        "salary_projected": 458403,
         "is_free_agent": false
       },
       "injury": {
@@ -1053,10 +1121,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 162,
-        "fantasypros_position_rank": "RB46",
-        "fantasycalc_overall_rank": 164,
-        "fantasycalc_value": 1344
+        "fantasypros_overall_rank": 163,
+        "fantasypros_position_rank": "RB44",
+        "fantasycalc_overall_rank": 159,
+        "fantasycalc_value": 1335
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -1077,18 +1145,20 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": "starter_rotation",
-      "roster_security": "strong_hold",
+      "roster_role": "core_starter",
+      "roster_security": "locked",
       "structural_function": "starter_core",
       "classification": {
-        "roster_role": "starter_rotation",
-        "roster_security": "strong_hold",
+        "roster_role": "core_starter",
+        "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "26-jähriger Kansas-City-Premium-RB, Dynasty-Markt FantasyPros RB4 und FantasyCalc RB3. Locked aufgrund von mehrjähriger Starterrolle, Leistungspotenzial und Trade-Wert, nicht wegen eines Einzelspiels oder vorübergehender Groin-Problematik."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1097,17 +1167,17 @@
         "age": 26.1,
         "years_experience": 5,
         "salary": 19578153,
-        "salary_projected": 35729422,
+        "salary_projected": 32902948,
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "no_current_injury_signal",
-        "is_injured": false,
-        "designation": null,
-        "description": null,
+        "coverage_status": "current_injury_signal",
+        "is_injured": true,
+        "designation": "Out",
+        "description": "Groin",
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "routine",
+        "external_verification_priority": "high",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
@@ -1116,8 +1186,8 @@
       "market": {
         "fantasypros_overall_rank": 22,
         "fantasypros_position_rank": "RB4",
-        "fantasycalc_overall_rank": 9,
-        "fantasycalc_value": 7046
+        "fantasycalc_overall_rank": 11,
+        "fantasycalc_value": 6714
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1139,25 +1209,25 @@
       "is_current_taxi": false,
       "is_current_reserve": false,
       "roster_role": "backup",
-      "roster_security": "strong_hold",
+      "roster_security": "hold",
       "structural_function": "coverage_reserve",
       "classification": {
         "roster_role": "backup",
-        "roster_security": "strong_hold",
+        "roster_security": "hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
         "notes": [
-          "Week-1 regular-season usage confirms meaningful current utility; retain above churn boundary."
+          "24-jähriger RB mit eigenem Dynasty-/Contingent-Potenzial (FantasyCalc ungefähr RB32) hinter dem ebenfalls gehaltenen Swift. Hold wegen des begrenzten langfristigen Zusatznutzens eines eigenen Handcuffs und offenem Starterpfad, nicht wegen eines aktuellen Out-Status."
         ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
-        "age": 24.4,
+        "age": 24.5,
         "years_experience": 2,
         "salary": 4302222,
         "salary_projected": 8581879,
@@ -1177,10 +1247,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 121,
+        "fantasypros_overall_rank": 122,
         "fantasypros_position_rank": "RB30",
-        "fantasycalc_overall_rank": 109,
-        "fantasycalc_value": 1975
+        "fantasycalc_overall_rank": 120,
+        "fantasycalc_value": 1788
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
@@ -1209,10 +1279,12 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Win-now-Produktion mit zunehmendem Alters-, Verletzungs- und Cap-Risiko; kein unantastbarer Dynasty-Core."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1238,10 +1310,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 79,
+        "fantasypros_overall_rank": 81,
         "fantasypros_position_rank": "RB19",
-        "fantasycalc_overall_rank": 89,
-        "fantasycalc_value": 2300
+        "fantasycalc_overall_rank": 87,
+        "fantasycalc_value": 2368
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1262,27 +1334,29 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "backup",
+      "roster_security": "hold",
+      "structural_function": "coverage_reserve",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
+        "roster_role": "backup",
+        "roster_security": "hold",
         "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Produktive Colts-RB2-Rolle hinter Jonathan Taylor, stärkeres Usage-/Contingency-Profil als hypothetischer reiner Stash."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
         "age": 25.1,
         "years_experience": 1,
         "salary": 0,
-        "salary_projected": 732050,
+        "salary_projected": 1196089,
         "is_free_agent": false
       },
       "injury": {
@@ -1299,12 +1373,12 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 225,
-        "fantasypros_position_rank": "RB65",
-        "fantasycalc_overall_rank": 194,
-        "fantasycalc_value": 1153
+        "fantasypros_overall_rank": 220,
+        "fantasypros_position_rank": "RB63",
+        "fantasycalc_overall_rank": 196,
+        "fantasycalc_value": 1159
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "positional_coverage",
       "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -1331,10 +1405,12 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Young-TE mit substanziellem Volumen und Premium-Marktwert; in Liga mit 2 Pflicht-TEs klarer Starter."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1360,10 +1436,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 43,
+        "fantasypros_overall_rank": 45,
         "fantasypros_position_rank": "TE3",
         "fantasycalc_overall_rank": 40,
-        "fantasycalc_value": 3988
+        "fantasycalc_value": 3972
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1384,18 +1460,20 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": "backup",
+      "roster_role": "starter_rotation",
       "roster_security": "strong_hold",
-      "structural_function": "coverage_reserve",
+      "structural_function": "starter_core",
       "classification": {
-        "roster_role": "backup",
+        "roster_role": "starter_rotation",
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Browns-TE mit substantieller Regular-Season-Usage; bei zwei festen TE-Spots relevante Starterrotation."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1404,29 +1482,29 @@
         "age": 22.3,
         "years_experience": 2,
         "salary": 7540139,
-        "salary_projected": 10023630,
+        "salary_projected": 12013168,
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Questionable",
-        "description": "Groin",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "high",
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 72,
+        "fantasypros_overall_rank": 71,
         "fantasypros_position_rank": "TE6",
-        "fantasycalc_overall_rank": 63,
-        "fantasycalc_value": 3068
+        "fantasycalc_overall_rank": 59,
+        "fantasycalc_value": 3267
       },
-      "coverage_role": "positional_coverage",
+      "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
       "comparison_boundary_eligible": false,
       "potential_comparison_boundary_after_taxi_reassignment": false,
@@ -1453,10 +1531,12 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Hochwertiger TE-Kern bei zwei festen TE-Spots."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1465,7 +1545,7 @@
         "age": 27,
         "years_experience": 5,
         "salary": 27306050,
-        "salary_projected": 37353606,
+        "salary_projected": 36011756,
         "is_free_agent": false
       },
       "injury": {
@@ -1482,10 +1562,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 27,
+        "fantasypros_overall_rank": 28,
         "fantasypros_position_rank": "TE2",
-        "fantasycalc_overall_rank": 15,
-        "fantasycalc_value": 6652
+        "fantasycalc_overall_rank": 13,
+        "fantasycalc_value": 6505
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1514,10 +1594,12 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Junger hochrangiger Starter/Flex-TE; vierte TE-Option ist in diesem Ligaformat wertvoll."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1526,7 +1608,7 @@
         "age": 24.5,
         "years_experience": 2,
         "salary": 7106450,
-        "salary_projected": 9185827,
+        "salary_projected": 8523151,
         "is_free_agent": false
       },
       "injury": {
@@ -1545,8 +1627,8 @@
       "market": {
         "fantasypros_overall_rank": 54,
         "fantasypros_position_rank": "TE4",
-        "fantasycalc_overall_rank": 52,
-        "fantasycalc_value": 3586
+        "fantasycalc_overall_rank": 54,
+        "fantasycalc_value": 3381
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1576,10 +1658,12 @@
         "roster_security": "hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Receiver mit künftiger NFL-Return-/Trade-Option, aber begrenztem langfristigem Elite-Starterpfad im tiefen sechs-Team-Markt. Hold folgt aus Perspektive und Slot-Opportunity-Cost, nicht der heutigen Reserve-Belegung."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1588,7 +1672,7 @@
         "age": 26.5,
         "years_experience": 5,
         "salary": 9259339,
-        "salary_projected": 7729001,
+        "salary_projected": 7683200,
         "is_free_agent": false
       },
       "injury": {
@@ -1607,8 +1691,8 @@
       "market": {
         "fantasypros_overall_rank": 103,
         "fantasypros_position_rank": "WR40",
-        "fantasycalc_overall_rank": 129,
-        "fantasycalc_value": 1669
+        "fantasycalc_overall_rank": 126,
+        "fantasycalc_value": 1700
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
@@ -1638,11 +1722,11 @@
         "roster_security": "hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
         "notes": [
-          "Taxi locked; development asset, not active churn capacity."
+          "Taxi locked; Receiving-Upside nach Ausfall vor ihm, aber noch kein gesicherter weekly Starter."
         ],
         "evidence": [],
         "review_status": "seeded_manual"
@@ -1652,7 +1736,7 @@
         "age": 22.3,
         "years_experience": 1,
         "salary": 0,
-        "salary_projected": 3166806,
+        "salary_projected": 3618050,
         "is_free_agent": false
       },
       "injury": {
@@ -1669,10 +1753,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 109,
+        "fantasypros_overall_rank": 108,
         "fantasypros_position_rank": "WR43",
-        "fantasycalc_overall_rank": 135,
-        "fantasycalc_value": 1603
+        "fantasycalc_overall_rank": 136,
+        "fantasycalc_value": 1561
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -1693,27 +1777,29 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "prospect",
+      "roster_security": "hold",
+      "structural_function": "development",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
-        "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "roster_role": "prospect",
+        "roster_security": "hold",
+        "boundary_priority": 50,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "24-jähriger WR mit hohem Talent- und Draftkapitalprofil; 2026 über die Saison unsichere Jaguars-Receiving-Rolle belastet die mehrjährige Entwicklungserwartung. Dynasty-Markt FantasyPros WR34 / FantasyCalc WR43. Prospect/Hold mit Rebound- und Trade-Upside statt Einspiel-Rückschluss."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
         "age": 24.1,
         "years_experience": 3,
         "salary": 13603415,
-        "salary_projected": 12504167,
+        "salary_projected": 12663028,
         "is_free_agent": false
       },
       "injury": {
@@ -1731,13 +1817,13 @@
       },
       "market": {
         "fantasypros_overall_rank": 90,
-        "fantasypros_position_rank": "WR35",
+        "fantasypros_position_rank": "WR34",
         "fantasycalc_overall_rank": 131,
-        "fantasycalc_value": 1665
+        "fantasycalc_value": 1639
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "development",
       "coverage_protected": false,
-      "comparison_boundary_eligible": false,
+      "comparison_boundary_eligible": true,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
@@ -1763,11 +1849,11 @@
         "roster_security": "hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
         "notes": [
-          "Taxi locked; development asset, not active churn capacity."
+          "Taxi locked; geringe aktuelle Dolphins-Produktion, Entwicklungshorizont und nächste Offseason entscheidend."
         ],
         "evidence": [],
         "review_status": "seeded_manual"
@@ -1777,13 +1863,13 @@
         "age": 22.4,
         "years_experience": 1,
         "salary": 0,
-        "salary_projected": 740139,
+        "salary_projected": 659335,
         "is_free_agent": false
       },
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Questionable",
+        "designation": "Out",
         "description": "Knee",
         "reported_date": null,
         "return_date": null,
@@ -1796,8 +1882,8 @@
       "market": {
         "fantasypros_overall_rank": 125,
         "fantasypros_position_rank": "WR52",
-        "fantasycalc_overall_rank": 184,
-        "fantasycalc_value": 1248
+        "fantasycalc_overall_rank": 179,
+        "fantasycalc_value": 1224
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -1826,12 +1912,12 @@
         "roster_role": "starter_rotation",
         "roster_security": "hold",
         "boundary_priority": null,
-        "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
         "notes": [
-          "Productive win-now asset; consolidation/trade candidate rather than cut candidate."
+          "Veteran mit relevantem Win-now-/Trade-Wert, aber begrenztem langfristigem Karrierehorizont. Alter, nachhaltige NFL-Rolle und künftige Salary-/Retention-Kosten zählen mehr als die gegenwärtige Reserve-Belegung."
         ],
         "evidence": [],
         "review_status": "seeded_manual"
@@ -1841,7 +1927,7 @@
         "age": 33.9,
         "years_experience": 13,
         "salary": 29267625,
-        "salary_projected": 27454050,
+        "salary_projected": 26760709,
         "is_free_agent": false
       },
       "injury": {
@@ -1858,10 +1944,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 115,
-        "fantasypros_position_rank": "WR47",
-        "fantasycalc_overall_rank": 107,
-        "fantasycalc_value": 2019
+        "fantasypros_overall_rank": 118,
+        "fantasypros_position_rank": "WR49",
+        "fantasycalc_overall_rank": 114,
+        "fantasycalc_value": 1886
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -1891,11 +1977,11 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
         "notes": [
-          "Reserve status removes active slot cost; young asset remains protected."
+          "Junger WR mit Entwicklungspotenzial und NFL-Investment; geschützte längerfristige Rollen-/Dynasty-Option. Ein temporärer Reserve-Platz mindert nicht automatisch seinen Asset-Wert."
         ],
         "evidence": [],
         "review_status": "seeded_manual"
@@ -1922,10 +2008,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 122,
-        "fantasypros_position_rank": "WR50",
-        "fantasycalc_overall_rank": 133,
-        "fantasycalc_value": 1641
+        "fantasypros_overall_rank": 116,
+        "fantasypros_position_rank": "WR47",
+        "fantasycalc_overall_rank": 132,
+        "fantasycalc_value": 1635
       },
       "coverage_role": "development",
       "coverage_protected": false,
@@ -1954,10 +2040,12 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Dallas-WR mit mehrjähriger Starter-, Receiving- und Dynasty-Trade-Perspektive. Strong Hold folgt aus nachhaltiger NFL-Rolle und Upside statt kurzfristigem Injury- oder Game-Status."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -1966,27 +2054,27 @@
         "age": 25.7,
         "years_experience": 5,
         "salary": 25134050,
-        "salary_projected": 24296259,
+        "salary_projected": 28262668,
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Questionable",
-        "description": "Hamstring",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "high",
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 36,
+        "fantasypros_overall_rank": 37,
         "fantasypros_position_rank": "WR13",
-        "fantasycalc_overall_rank": 54,
-        "fantasycalc_value": 3510
+        "fantasycalc_overall_rank": 45,
+        "fantasycalc_value": 3781
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2007,27 +2095,29 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "prospect",
+      "roster_security": "conditional",
+      "structural_function": "development",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
-        "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "roster_role": "prospect",
+        "roster_security": "conditional",
+        "boundary_priority": 40,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Pittsburgh-Rookie mit realer Rolle; im tiefen sechs-Team-Format weiterhin unter der Premium-Lineup-Schwelle."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
-        "age": 22.9,
+        "age": 23,
         "years_experience": 1,
         "salary": 0,
-        "salary_projected": 3873472,
+        "salary_projected": 3150050,
         "is_free_agent": false
       },
       "injury": {
@@ -2044,14 +2134,14 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 140,
+        "fantasypros_overall_rank": 139,
         "fantasypros_position_rank": "WR61",
-        "fantasycalc_overall_rank": 119,
-        "fantasycalc_value": 1813
+        "fantasycalc_overall_rank": 129,
+        "fantasycalc_value": 1654
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "development",
       "coverage_protected": false,
-      "comparison_boundary_eligible": false,
+      "comparison_boundary_eligible": true,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
@@ -2069,17 +2159,19 @@
       "is_current_taxi": false,
       "is_current_reserve": false,
       "roster_role": "backup",
-      "roster_security": "hold",
+      "roster_security": "conditional",
       "structural_function": "coverage_reserve",
       "classification": {
         "roster_role": "backup",
-        "roster_security": "hold",
-        "boundary_priority": null,
-        "confidence": "medium",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "roster_security": "conditional",
+        "boundary_priority": 10,
+        "confidence": "high",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "30-jähriger Receiver mit brauchbarem Floor, aber geringerem mehrjährigem Elite-Upside und Trade-Wert als unsere Kernassets. Im sechs-Team-Format erster Opportunity-Cost-Vergleich, keine automatische Cut-Empfehlung."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -2088,31 +2180,31 @@
         "age": 30,
         "years_experience": 8,
         "salary": 18235767,
-        "salary_projected": 15092934,
+        "salary_projected": 14783203,
         "is_free_agent": false
       },
       "injury": {
-        "coverage_status": "current_injury_signal",
-        "is_injured": true,
-        "designation": "Questionable",
-        "description": "Ankle",
+        "coverage_status": "no_current_injury_signal",
+        "is_injured": false,
+        "designation": null,
+        "description": null,
         "reported_date": null,
         "return_date": null,
-        "external_verification_priority": "high",
+        "external_verification_priority": "routine",
         "limitations": [
           "A missing structured signal is not proof of full health.",
           "Descriptions and designations are secondary-source inputs and require external verification when decision-relevant."
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 123,
+        "fantasypros_overall_rank": 124,
         "fantasypros_position_rank": "WR51",
-        "fantasycalc_overall_rank": 175,
-        "fantasycalc_value": 1294
+        "fantasycalc_overall_rank": 172,
+        "fantasycalc_value": 1269
       },
       "coverage_role": "positional_coverage",
       "coverage_protected": false,
-      "comparison_boundary_eligible": false,
+      "comparison_boundary_eligible": true,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
@@ -2130,17 +2222,19 @@
       "is_current_taxi": false,
       "is_current_reserve": false,
       "roster_role": "starter_rotation",
-      "roster_security": "strong_hold",
+      "roster_security": "hold",
       "structural_function": "starter_core",
       "classification": {
         "roster_role": "starter_rotation",
-        "roster_security": "strong_hold",
+        "roster_security": "hold",
         "boundary_priority": null,
-        "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "28-jähriger Denver-WR mit noch relevantem Dynasty-/Trade-Wert, aber unsicherer mehrjähriger Receiving-Rolle und rückläufigem Markt (FantasyPros WR31, FantasyCalc WR38). Hold wegen nachhaltiger Rollen-/Marktunsicherheit, ausdrücklich nicht wegen einer kurzfristigen Concussion."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -2168,8 +2262,8 @@
       "market": {
         "fantasypros_overall_rank": 75,
         "fantasypros_position_rank": "WR31",
-        "fantasycalc_overall_rank": 116,
-        "fantasycalc_value": 1875
+        "fantasycalc_overall_rank": 111,
+        "fantasycalc_value": 1925
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2198,10 +2292,12 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Junger Chargers-WR mit plausibler mehrjähriger Receiving-/Starter-Upside und Trade-Wert. Strong Hold ist unabhängig von kurzfristigem Questionable-Status."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -2210,14 +2306,14 @@
         "age": 25,
         "years_experience": 3,
         "salary": 12989450,
-        "salary_projected": 15424384,
+        "salary_projected": 15092934,
         "is_free_agent": false
       },
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Questionable",
-        "description": "Back",
+        "designation": "Out",
+        "description": "Spasms",
         "reported_date": null,
         "return_date": null,
         "external_verification_priority": "high",
@@ -2227,10 +2323,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 55,
+        "fantasypros_overall_rank": 57,
         "fantasypros_position_rank": "WR23",
-        "fantasycalc_overall_rank": 90,
-        "fantasycalc_value": 2286
+        "fantasycalc_overall_rank": 86,
+        "fantasycalc_value": 2408
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2259,10 +2355,12 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Hochrangiger WR-Core mit nachhaltiger Ziel-/Dynasty-Rolle."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -2271,7 +2369,7 @@
         "age": 23.3,
         "years_experience": 3,
         "salary": 13993064,
-        "salary_projected": 24863001,
+        "salary_projected": 23713089,
         "is_free_agent": false
       },
       "injury": {
@@ -2291,7 +2389,7 @@
         "fantasypros_overall_rank": 15,
         "fantasypros_position_rank": "WR5",
         "fantasycalc_overall_rank": 14,
-        "fantasycalc_value": 6774
+        "fantasycalc_value": 6276
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2319,11 +2417,13 @@
         "roster_role": "starter_rotation",
         "roster_security": "strong_hold",
         "boundary_priority": null,
-        "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Junger Texans-WR mit hohem Draftkapital, Talentprofil und mehrjährigem Receiving-/Dynasty-Potenzial. Strong Hold wird nicht durch eine einzelne Verletzungswoche relativiert."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -2332,13 +2432,13 @@
         "age": 24.3,
         "years_experience": 3,
         "salary": 8144648,
-        "salary_projected": 9063153,
+        "salary_projected": 8879600,
         "is_free_agent": false
       },
       "injury": {
         "coverage_status": "current_injury_signal",
         "is_injured": true,
-        "designation": "Questionable",
+        "designation": "Out",
         "description": "Hamstring",
         "reported_date": null,
         "return_date": null,
@@ -2349,10 +2449,10 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 95,
+        "fantasypros_overall_rank": 96,
         "fantasypros_position_rank": "WR37",
-        "fantasycalc_overall_rank": 126,
-        "fantasycalc_value": 1706
+        "fantasycalc_overall_rank": 121,
+        "fantasycalc_value": 1776
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2381,10 +2481,12 @@
         "roster_security": "locked",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "Premium-Dynasty-WR mit langfristiger Top-Starter- und Trade-Perspektive. Locked bleibt auch bei temporärem IR bestehen; erst belegte dauerhafte Karriere-/Rollenrisiken könnten die mehrjährige Einstufung ändern."
+        ],
         "evidence": [],
         "review_status": "seeded_manual"
       },
@@ -2393,7 +2495,7 @@
         "age": 25.5,
         "years_experience": 4,
         "salary": 43797000,
-        "salary_projected": 50716667,
+        "salary_projected": 49112309,
         "is_free_agent": false
       },
       "injury": {
@@ -2412,8 +2514,8 @@
       "market": {
         "fantasypros_overall_rank": 9,
         "fantasypros_position_rank": "WR3",
-        "fantasycalc_overall_rank": 7,
-        "fantasycalc_value": 7274
+        "fantasycalc_overall_rank": 8,
+        "fantasycalc_value": 7210
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2442,11 +2544,11 @@
         "roster_security": "strong_hold",
         "boundary_priority": null,
         "confidence": "high",
-        "source": "fantasy-management/analyses/2026/roster/2026-09-19-roster-role-security-recheck.md",
-        "source_as_of": "2026-09-19",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
         "notes": [
-          "Current dynasty value and weekly role are clearly above the active boundary."
+          "Young-Premium-Dynasty-WR mit klarem Starterpotenzial."
         ],
         "evidence": [],
         "review_status": "seeded_manual"
@@ -2456,7 +2558,7 @@
         "age": 23.6,
         "years_experience": 2,
         "salary": 8764089,
-        "salary_projected": 17900139,
+        "salary_projected": 16435556,
         "is_free_agent": false
       },
       "injury": {
@@ -2475,8 +2577,8 @@
       "market": {
         "fantasypros_overall_rank": 26,
         "fantasypros_position_rank": "WR9",
-        "fantasycalc_overall_rank": 38,
-        "fantasycalc_value": 4257
+        "fantasycalc_overall_rank": 37,
+        "fantasycalc_value": 4253
       },
       "coverage_role": "fixed_starter_pool",
       "coverage_protected": false,
@@ -2497,27 +2599,29 @@
       "is_current_active": true,
       "is_current_taxi": false,
       "is_current_reserve": false,
-      "roster_role": null,
-      "roster_security": null,
-      "structural_function": "unclassified",
+      "roster_role": "prospect",
+      "roster_security": "hold",
+      "structural_function": "development",
       "classification": {
-        "roster_role": null,
-        "roster_security": null,
-        "boundary_priority": null,
-        "confidence": "unknown",
-        "source": "unclassified",
-        "source_as_of": null,
+        "roster_role": "prospect",
+        "roster_security": "hold",
+        "boundary_priority": 20,
+        "confidence": "medium",
+        "source": "fantasy-management/analyses/2026/roster/2026-11-14-roster-role-security-recheck.md",
+        "source_as_of": "2026-11-14",
         "user_override": false,
-        "notes": [],
+        "notes": [
+          "23-jähriger Top-Draft-Prospect mit außergewöhnlichem Ceiling; die über viele Wochen dominante CB-Nutzung reduziert aber den nachhaltig erwartbaren WR-Target-Pfad. Prospect/Hold ist eine mehrjährige Upside-Wette, keine Reaktion auf ein schwaches Einzelspiel."
+        ],
         "evidence": [],
-        "review_status": "needs_classification"
+        "review_status": "seeded_manual"
       },
       "app_data": {
         "status": "Active",
         "age": 23.5,
         "years_experience": 2,
         "salary": 2383472,
-        "salary_projected": 1944228,
+        "salary_projected": 2052507,
         "is_free_agent": false
       },
       "injury": {
@@ -2534,108 +2638,23 @@
         ]
       },
       "market": {
-        "fantasypros_overall_rank": 164,
-        "fantasypros_position_rank": "WR66",
-        "fantasycalc_overall_rank": 215,
-        "fantasycalc_value": 1033
+        "fantasypros_overall_rank": 166,
+        "fantasypros_position_rank": "WR67",
+        "fantasycalc_overall_rank": 245,
+        "fantasycalc_value": 814
       },
-      "coverage_role": "unclassified",
+      "coverage_role": "development",
       "coverage_protected": false,
-      "comparison_boundary_eligible": false,
+      "comparison_boundary_eligible": true,
       "potential_comparison_boundary_after_taxi_reassignment": false,
       "churn_eligible": false,
       "potential_churn_after_taxi_reassignment": false
     }
   ],
   "quality": {
-    "status": "warning",
-    "issue_count": 14,
-    "issues": [
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "3451",
-        "name": "Ka'imi Fairbairn"
-      },
-      {
-        "severity": "warning",
-        "kind": "active_unclassified_boundary_review_required",
-        "player_id": "3451",
-        "name": "Ka'imi Fairbairn"
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "6790",
-        "name": "D'Andre Swift"
-      },
-      {
-        "severity": "warning",
-        "kind": "active_unclassified_boundary_review_required",
-        "player_id": "6790",
-        "name": "D'Andre Swift"
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "11559",
-        "name": "Michael Penix Jr."
-      },
-      {
-        "severity": "warning",
-        "kind": "active_unclassified_boundary_review_required",
-        "player_id": "11559",
-        "name": "Michael Penix Jr."
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "11631",
-        "name": "Brian Thomas Jr."
-      },
-      {
-        "severity": "warning",
-        "kind": "active_unclassified_boundary_review_required",
-        "player_id": "11631",
-        "name": "Brian Thomas Jr."
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "12530",
-        "name": "Travis Hunter"
-      },
-      {
-        "severity": "warning",
-        "kind": "active_unclassified_boundary_review_required",
-        "player_id": "12530",
-        "name": "Travis Hunter"
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "13274",
-        "name": "Germie Bernard"
-      },
-      {
-        "severity": "warning",
-        "kind": "active_unclassified_boundary_review_required",
-        "player_id": "13274",
-        "name": "Germie Bernard"
-      },
-      {
-        "severity": "warning",
-        "kind": "unclassified_managed_player",
-        "player_id": "13424",
-        "name": "Seth McGowan"
-      },
-      {
-        "severity": "warning",
-        "kind": "active_unclassified_boundary_review_required",
-        "player_id": "13424",
-        "name": "Seth McGowan"
-      }
-    ],
+    "status": "ok",
+    "issue_count": 0,
+    "issues": [],
     "limitations": [
       "Role and security are hybrid evaluative fields in v1 and are not yet fully machine-derived.",
       "Pre-lock Taxi optimization is intentionally not automated yet; current Taxi placement is not treated as strategic truth.",

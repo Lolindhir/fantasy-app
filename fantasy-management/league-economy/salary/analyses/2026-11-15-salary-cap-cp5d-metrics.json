@@ -1,0 +1,760 @@
+{
+  "schema_version": 1,
+  "artifact_type": "league_economy_cp5d_annual_debt_counterfactual",
+  "date": "2026-11-15",
+  "issue": 1344,
+  "status": "counterfactual_mechanics_only",
+  "active_rule_change": false,
+  "sources": {
+    "jun_pre_roster": "5b4ed63172deae79759e7150f8511bd2ea3edb4e",
+    "jun_roster_and_cap": "85e22feb064fdaf2257d6c3149c8d1655ada0908",
+    "jun_player_blob": "21001d6c0819dbbcb3deff084d63fe377714541c",
+    "transaction_blob": "0aa85766a962a9d499fe5610a269771dd3b02ce1",
+    "tenure_old": "data-source/leagues/nfl-reise/seasons/2024/rosters.json;2025/rosters.json + 2025 transaction archive at 799be2a2…",
+    "flo_tenure": "CP4 metrics",
+    "historical_snapshots": "CP5a metrics"
+  },
+  "assumptions": [
+    "2026 June cut-only complete events after 2026-06-07 12:00 UTC; Cooper Kupp June7 early cut already absent pre-roster; no whole-year inventory claim",
+    "Team 1/6 June player swaps are trades, NOT cuts",
+    "Each retained slice 50/30/15/5 percent by verified 2026 tenure, rounded half-up; no live rule, no minimum-floor overlay",
+    "June historical team Top20 from June29 roster and June29 actual Salary; 2026 June cap 434255984",
+    "C debt computed before one-cycle retention resets, but locked debt remains after; a new and unapproved timing assumption",
+    "2025 Dec snapshot NOT official settled 2025 deadline; cross-year seed is illustrative only",
+    "2027-2036 no actual salary / cap / manager information; trajectories freeze 2026 June salary/top20 and cap",
+    "No cap limit is clamped, forgiven or auto-settled on the manager's behalf"
+  ],
+  "formulas": {
+    "A": "Current rule: annual cap obligation only; no historic debt",
+    "B": "D_next = max(0,D_prior+Top20(roster)-cap)",
+    "C_add": "D_next = max(0,D_prior+Top20(roster)+SUM(retained_cut_entries)-cap)",
+    "C_virtual": "D_next = max(0,D_prior+Top20(roster_salary_entries UNION retained_cut_entries)-cap)",
+    "limit": "D_next>floor(alpha*cap) is an infeasible settlement, not cancellation of debt"
+  },
+  "cap_june": 434255984,
+  "cuts": [
+    {
+      "id": "4137",
+      "team_id": 2,
+      "player_name": "James Conner",
+      "salary_at_cut": 16999309,
+      "tenure": 2,
+      "rate": 0.15,
+      "retained_salary": 2549896,
+      "event_id": "1374735850633445376",
+      "date": "2026-06-22T10:44:37.449Z"
+    },
+    {
+      "id": "5872",
+      "team_id": 2,
+      "player_name": "Deebo Samuel",
+      "salary_at_cut": 12566756,
+      "tenure": 2,
+      "rate": 0.15,
+      "retained_salary": 1885013,
+      "event_id": "1374736138207518720",
+      "date": "2026-06-22T10:45:46.012Z"
+    },
+    {
+      "id": "3257",
+      "team_id": 2,
+      "player_name": "Jacoby Brissett",
+      "salary_at_cut": 13278422,
+      "tenure": 1,
+      "rate": 0.3,
+      "retained_salary": 3983527,
+      "event_id": "1374736175406776320",
+      "date": "2026-06-22T10:45:54.881Z"
+    },
+    {
+      "id": "6783",
+      "team_id": 2,
+      "player_name": "Jerry Jeudy",
+      "salary_at_cut": 12251250,
+      "tenure": 2,
+      "rate": 0.15,
+      "retained_salary": 1837688,
+      "event_id": "1374736210588631040",
+      "date": "2026-06-22T10:46:03.269Z"
+    },
+    {
+      "id": "8183",
+      "team_id": 3,
+      "player_name": "Brock Purdy",
+      "salary_at_cut": 41511235,
+      "tenure": 1,
+      "rate": 0.3,
+      "retained_salary": 12453371,
+      "event_id": "1370129974777880576",
+      "date": "2026-06-09T17:42:31.073Z"
+    },
+    {
+      "id": "4035",
+      "team_id": 3,
+      "player_name": "Alvin Kamara",
+      "salary_at_cut": 24366017,
+      "tenure": 2,
+      "rate": 0.15,
+      "retained_salary": 3654903,
+      "event_id": "1370130002347053056",
+      "date": "2026-06-09T17:42:37.645Z"
+    },
+    {
+      "id": "7543",
+      "team_id": 3,
+      "player_name": "Travis Etienne",
+      "salary_at_cut": 22831903,
+      "tenure": 2,
+      "rate": 0.15,
+      "retained_salary": 3424785,
+      "event_id": "1370130025235378176",
+      "date": "2026-06-09T17:42:43.102Z"
+    },
+    {
+      "id": "4943",
+      "team_id": 3,
+      "player_name": "Sam Darnold",
+      "salary_at_cut": 24155999,
+      "tenure": 1,
+      "rate": 0.3,
+      "retained_salary": 7246800,
+      "event_id": "1370130057451827200",
+      "date": "2026-06-09T17:42:50.783Z"
+    },
+    {
+      "id": "7588",
+      "team_id": 3,
+      "player_name": "Javonte Williams",
+      "salary_at_cut": 16950753,
+      "tenure": 2,
+      "rate": 0.15,
+      "retained_salary": 2542613,
+      "event_id": "1370130086715478016",
+      "date": "2026-06-09T17:42:57.760Z"
+    },
+    {
+      "id": "4217",
+      "team_id": 3,
+      "player_name": "George Kittle",
+      "salary_at_cut": 23012459,
+      "tenure": 2,
+      "rate": 0.15,
+      "retained_salary": 3451869,
+      "event_id": "1370130129509941248",
+      "date": "2026-06-09T17:43:07.964Z"
+    },
+    {
+      "id": "8121",
+      "team_id": 3,
+      "player_name": "Romeo Doubs",
+      "salary_at_cut": 12877813,
+      "tenure": 2,
+      "rate": 0.15,
+      "retained_salary": 1931672,
+      "event_id": "1370130165908140032",
+      "date": "2026-06-09T17:43:16.641Z"
+    },
+    {
+      "id": "5927",
+      "team_id": 3,
+      "player_name": "Terry McLaurin",
+      "salary_at_cut": 18972800,
+      "tenure": 2,
+      "rate": 0.15,
+      "retained_salary": 2845920,
+      "event_id": "1370130244865900544",
+      "date": "2026-06-09T17:43:35.467Z"
+    },
+    {
+      "id": "3163",
+      "team_id": 4,
+      "player_name": "Jared Goff",
+      "salary_at_cut": 44274050,
+      "tenure": 2,
+      "rate": 0.15,
+      "retained_salary": 6641108,
+      "event_id": "1374481448332980224",
+      "date": "2026-06-21T17:53:43.214Z"
+    },
+    {
+      "id": "12476",
+      "team_id": 4,
+      "player_name": "Devin Neal",
+      "salary_at_cut": 1824050,
+      "tenure": 1,
+      "rate": 0.3,
+      "retained_salary": 547215,
+      "event_id": "1374481543627554816",
+      "date": "2026-06-21T17:54:05.935Z"
+    }
+  ],
+  "team_june": [
+    {
+      "team_id": 1,
+      "team_name": "Mighty Giants",
+      "roster_count": 31,
+      "cuts": 0,
+      "top20": 428342743,
+      "headroom": 5913241,
+      "retained": 0,
+      "virtual_usage": 428342743,
+      "additive_usage": 428342743,
+      "debt_B": 0,
+      "debt_C_additive": 0,
+      "debt_C_virtual": 0,
+      "full_salary_extreme_debt": 0,
+      "full_cut_nominal": 0,
+      "virtual_marginal": 0
+    },
+    {
+      "team_id": 2,
+      "team_name": "Ruhr Valley Packers",
+      "roster_count": 25,
+      "cuts": 4,
+      "top20": 428068769,
+      "headroom": 6187215,
+      "retained": 10256124,
+      "virtual_usage": 428167218,
+      "additive_usage": 438324893,
+      "debt_B": 0,
+      "debt_C_additive": 4068909,
+      "debt_C_virtual": 0,
+      "full_salary_extreme_debt": 48908522,
+      "full_cut_nominal": 55095737,
+      "virtual_marginal": 98449
+    },
+    {
+      "team_id": 3,
+      "team_name": "Just Bill",
+      "roster_count": 23,
+      "cuts": 8,
+      "top20": 427729579,
+      "headroom": 6526405,
+      "retained": 37551933,
+      "virtual_usage": 439197718,
+      "additive_usage": 465281512,
+      "debt_B": 0,
+      "debt_C_additive": 31025528,
+      "debt_C_virtual": 4941734,
+      "full_salary_extreme_debt": 178152574,
+      "full_cut_nominal": 184678979,
+      "virtual_marginal": 11468139
+    },
+    {
+      "team_id": 4,
+      "team_name": "Mammoth Marauders",
+      "roster_count": 29,
+      "cuts": 2,
+      "top20": 417411588,
+      "headroom": 16844396,
+      "retained": 7188323,
+      "virtual_usage": 417411588,
+      "additive_usage": 424599911,
+      "debt_B": 0,
+      "debt_C_additive": 0,
+      "debt_C_virtual": 0,
+      "full_salary_extreme_debt": 29253704,
+      "full_cut_nominal": 46098100,
+      "virtual_marginal": 0
+    },
+    {
+      "team_id": 5,
+      "team_name": "Team DennisLACards",
+      "roster_count": 27,
+      "cuts": 0,
+      "top20": 410698298,
+      "headroom": 23557686,
+      "retained": 0,
+      "virtual_usage": 410698298,
+      "additive_usage": 410698298,
+      "debt_B": 0,
+      "debt_C_additive": 0,
+      "debt_C_virtual": 0,
+      "full_salary_extreme_debt": 0,
+      "full_cut_nominal": 0,
+      "virtual_marginal": 0
+    },
+    {
+      "team_id": 6,
+      "team_name": "Team TimpaBay",
+      "roster_count": 26,
+      "cuts": 0,
+      "top20": 430409346,
+      "headroom": 3846638,
+      "retained": 0,
+      "virtual_usage": 430409346,
+      "additive_usage": 430409346,
+      "debt_B": 0,
+      "debt_C_additive": 0,
+      "debt_C_virtual": 0,
+      "full_salary_extreme_debt": 0,
+      "full_cut_nominal": 0,
+      "virtual_marginal": 0
+    }
+  ],
+  "independent_snapshots": [
+    {
+      "date": "2025-11-05",
+      "price_model": "2025: SalaryDollars, top120/6",
+      "cap": 581658383,
+      "over_by_team": {
+        "1": 0,
+        "2": 39481764,
+        "3": 30313686,
+        "4": 5323334,
+        "5": 0,
+        "6": 0
+      },
+      "total_positive": 75118784,
+      "largest_positive": 39481764,
+      "limits": {
+        "10": {
+          "amount": 58165838,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "25": {
+          "amount": 145414595,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "50": {
+          "amount": 290829191,
+          "exceeding_teams": [],
+          "overflow": 0
+        }
+      }
+    },
+    {
+      "date": "2025-12-05",
+      "price_model": "2025: SalaryDollars, top120/6",
+      "cap": 581658383,
+      "over_by_team": {
+        "1": 0,
+        "2": 29034264,
+        "3": 32575757,
+        "4": 2099301,
+        "5": 0,
+        "6": 0
+      },
+      "total_positive": 63709322,
+      "largest_positive": 32575757,
+      "limits": {
+        "10": {
+          "amount": 58165838,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "25": {
+          "amount": 145414595,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "50": {
+          "amount": 290829191,
+          "exceeding_teams": [],
+          "overflow": 0
+        }
+      }
+    },
+    {
+      "date": "2025-12-21",
+      "price_model": "2025: SalaryDollars, top120/6",
+      "cap": 581658383,
+      "over_by_team": {
+        "1": 0,
+        "2": 16674498,
+        "3": 32575757,
+        "4": 2099301,
+        "5": 0,
+        "6": 0
+      },
+      "total_positive": 51349556,
+      "largest_positive": 32575757,
+      "limits": {
+        "10": {
+          "amount": 58165838,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "25": {
+          "amount": 145414595,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "50": {
+          "amount": 290829191,
+          "exceeding_teams": [],
+          "overflow": 0
+        }
+      }
+    },
+    {
+      "date": "2026-06-29",
+      "price_model": "2026: Salary, 0.9*top120/6",
+      "cap": 434255984,
+      "over_by_team": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0
+      },
+      "total_positive": 0,
+      "largest_positive": 0,
+      "limits": {
+        "10": {
+          "amount": 43425598,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "25": {
+          "amount": 108563996,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "50": {
+          "amount": 217127992,
+          "exceeding_teams": [],
+          "overflow": 0
+        }
+      }
+    },
+    {
+      "date": "2026-08-25",
+      "price_model": "2026: Salary, 0.9*top120/6",
+      "cap": 434255984,
+      "over_by_team": {
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 0
+      },
+      "total_positive": 0,
+      "largest_positive": 0,
+      "limits": {
+        "10": {
+          "amount": 43425598,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "25": {
+          "amount": 108563996,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "50": {
+          "amount": 217127992,
+          "exceeding_teams": [],
+          "overflow": 0
+        }
+      }
+    },
+    {
+      "date": "2026-09-09",
+      "price_model": "2026: Salary, 0.9*top120/6",
+      "cap": 434255984,
+      "over_by_team": {
+        "1": 0,
+        "2": 27486107,
+        "3": 7406779,
+        "4": 41763737,
+        "5": 0,
+        "6": 45910392
+      },
+      "total_positive": 122567015,
+      "largest_positive": 45910392,
+      "limits": {
+        "10": {
+          "amount": 43425598,
+          "exceeding_teams": [
+            6
+          ],
+          "overflow": 2484794
+        },
+        "25": {
+          "amount": 108563996,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "50": {
+          "amount": 217127992,
+          "exceeding_teams": [],
+          "overflow": 0
+        }
+      }
+    },
+    {
+      "date": "2026-11-05",
+      "price_model": "2026: Salary, 0.9*top120/6",
+      "cap": 427653631,
+      "over_by_team": {
+        "1": 12805822,
+        "2": 32430945,
+        "3": 83218306,
+        "4": 56654702,
+        "5": 0,
+        "6": 32850521
+      },
+      "total_positive": 217960296,
+      "largest_positive": 83218306,
+      "limits": {
+        "10": {
+          "amount": 42765363,
+          "exceeding_teams": [
+            3,
+            4
+          ],
+          "overflow": 54342282
+        },
+        "25": {
+          "amount": 106913407,
+          "exceeding_teams": [],
+          "overflow": 0
+        },
+        "50": {
+          "amount": 213826815,
+          "exceeding_teams": [],
+          "overflow": 0
+        }
+      }
+    }
+  ],
+  "independent_nov_sep_frozen": {
+    "date": "2026-11-05",
+    "salary_ref": "2026-09-09",
+    "cap": 434255984,
+    "top20": {
+      "1": 438138684,
+      "2": 456130142,
+      "3": 507891177,
+      "4": 480905255,
+      "5": 347057259,
+      "6": 465172704
+    }
+  },
+  "proxy_bridge_dec2025_to_jun2026": {
+    "warning": "NOT a historical legally enforceable year-end debt; date is late 2025 snapshot only",
+    "by_team": [
+      {
+        "team_id": 1,
+        "seed_dec2025_pseudo": 0,
+        "B": 0,
+        "C_add": 0,
+        "C_virtual": 0
+      },
+      {
+        "team_id": 2,
+        "seed_dec2025_pseudo": 16674498,
+        "B": 10487283,
+        "C_add": 20743407,
+        "C_virtual": 10585732
+      },
+      {
+        "team_id": 3,
+        "seed_dec2025_pseudo": 32575757,
+        "B": 26049352,
+        "C_add": 63601285,
+        "C_virtual": 37517491
+      },
+      {
+        "team_id": 4,
+        "seed_dec2025_pseudo": 2099301,
+        "B": 0,
+        "C_add": 0,
+        "C_virtual": 0
+      },
+      {
+        "team_id": 5,
+        "seed_dec2025_pseudo": 0,
+        "B": 0,
+        "C_add": 0,
+        "C_virtual": 0
+      },
+      {
+        "team_id": 6,
+        "seed_dec2025_pseudo": 0,
+        "B": 0,
+        "C_add": 0,
+        "C_virtual": 0
+      }
+    ]
+  },
+  "frozen_future": {
+    "assumption": "June 2026 payroll and cap unchanged after June debt booked, June dead-cap entries expire after settlement, no new transactions",
+    "paths": {
+      "flo_add_no_prior": [
+        {
+          "year": 2026,
+          "remaining": 31025528
+        },
+        {
+          "year": 2027,
+          "remaining": 24499123
+        },
+        {
+          "year": 2028,
+          "remaining": 17972718
+        },
+        {
+          "year": 2029,
+          "remaining": 11446313
+        },
+        {
+          "year": 2030,
+          "remaining": 4919908
+        },
+        {
+          "year": 2031,
+          "remaining": 0
+        },
+        {
+          "year": 2032,
+          "remaining": 0
+        },
+        {
+          "year": 2033,
+          "remaining": 0
+        },
+        {
+          "year": 2034,
+          "remaining": 0
+        },
+        {
+          "year": 2035,
+          "remaining": 0
+        },
+        {
+          "year": 2036,
+          "remaining": 0
+        }
+      ],
+      "flo_add_with_dec2025_proxy": [
+        {
+          "year": 2026,
+          "remaining": 63601285
+        },
+        {
+          "year": 2027,
+          "remaining": 57074880
+        },
+        {
+          "year": 2028,
+          "remaining": 50548475
+        },
+        {
+          "year": 2029,
+          "remaining": 44022070
+        },
+        {
+          "year": 2030,
+          "remaining": 37495665
+        },
+        {
+          "year": 2031,
+          "remaining": 30969260
+        },
+        {
+          "year": 2032,
+          "remaining": 24442855
+        },
+        {
+          "year": 2033,
+          "remaining": 17916450
+        },
+        {
+          "year": 2034,
+          "remaining": 11390045
+        },
+        {
+          "year": 2035,
+          "remaining": 4863640
+        },
+        {
+          "year": 2036,
+          "remaining": 0
+        }
+      ],
+      "packers_add_no_prior": [
+        {
+          "year": 2026,
+          "remaining": 4068909
+        },
+        {
+          "year": 2027,
+          "remaining": 0
+        },
+        {
+          "year": 2028,
+          "remaining": 0
+        },
+        {
+          "year": 2029,
+          "remaining": 0
+        },
+        {
+          "year": 2030,
+          "remaining": 0
+        },
+        {
+          "year": 2031,
+          "remaining": 0
+        },
+        {
+          "year": 2032,
+          "remaining": 0
+        },
+        {
+          "year": 2033,
+          "remaining": 0
+        },
+        {
+          "year": 2034,
+          "remaining": 0
+        },
+        {
+          "year": 2035,
+          "remaining": 0
+        },
+        {
+          "year": 2036,
+          "remaining": 0
+        }
+      ]
+    }
+  },
+  "validations": {
+    "june_six_teams": true,
+    "cut14": true,
+    "cut_count_by_team": true,
+    "cut_unique": true,
+    "original_flo_deadcap": true,
+    "cp4_add": true,
+    "cp4_virtual": true,
+    "total_deadcap": true,
+    "total_add_debt": true,
+    "total_virtual_debt": true,
+    "cap_debt_B_zero": true,
+    "historical_snapshots": true,
+    "sep_reconciled": true,
+    "nov_reconciled": true,
+    "dec25_reconciled": true,
+    "no_25_binding_in_independent_snapshots": true,
+    "flo_frozen_clears_2031": true,
+    "flo_proxy_clears_2036": true,
+    "all_cuts_before_deadline": true,
+    "all_roster_salaries": true
+  },
+  "uncertainties": [
+    "No actual 2025 debt deadline or legally linked 2024-26 historical ledger",
+    "No 2027 actual prices, caps, roster paths or team decisions",
+    "No proof of more trades, paid bids or championship parity",
+    "Additive vs virtual top20 dead-cap counting unapproved; non-top20 cut penalties ambiguous",
+    "Debts must never be silently written off at cap ceiling; rule for settlement failure not chosen",
+    "Only 14 events in bounded June cut window; not all historical cuts",
+    "No real commissioner effort measured"
+  ]
+}

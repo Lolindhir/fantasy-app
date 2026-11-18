@@ -6,9 +6,9 @@ import type {
   MatchupWeekReadModel,
   MatchupsReadModel
 } from '../../core/models/matchup.models';
-import type { WeeklyRecapsReadModel } from '../../core/models/weekly-recap.models';
+import type { WeeklyRecapsReadModel, WeeklyRecapWinProbability } from '../../core/models/weekly-recap.models';
 import type { PastSeasonsIndex } from '../../core/services/data-api.service';
-import type { WeekRecapContent } from '../components/week-recap-content/week-recap-content';
+import type { WeekRecapContent, WeekRecapUpset } from '../components/week-recap-content/week-recap-content';
 import { buildNeutralFantasyTeamOrderIndex } from './fantasy-team-order.util';
 
 /**
@@ -44,7 +44,22 @@ export interface WeekScoreboardMatchup {
   matchupID: string;
   state: MatchupCompletionState;
   isTie: boolean;
+  /** Presentation-only text from authoritative playoff bracket metadata; null for legacy/unknown data. */
+  playoffLabel: string | null;
   participants: WeekScoreboardParticipant[];
+}
+
+/** One known fantasy week and its actual pairings, without inferred future opponents. */
+export interface ScheduleOverviewWeek {
+  week: number;
+  isPlayoff: boolean;
+  state: MatchupCompletionState;
+  matchups: WeekScoreboardMatchup[];
+}
+
+export interface ScheduleOverview {
+  upcoming: ScheduleOverviewWeek[];
+  played: ScheduleOverviewWeek[];
 }
 
 export type SeasonGridOutcome = 'win' | 'loss' | 'tie';
@@ -170,9 +185,103 @@ function isWinner(matchup: FantasyMatchupReadModel, teamID: number): boolean {
   return matchup.Result?.Type === 'win' && Number(matchup.Result.WinnerTeamID) === teamID;
 }
 
+/** Labels use published bracket provenance only; never infer playoff position from points or standings. */
+export function playoffMatchupLabel(matchup: FantasyMatchupReadModel): string | null {
+  const round = matchup.PlayoffRound;
+  const total = matchup.PlayoffRoundCount;
+  const place = matchup.PlayoffPlacement;
+  let label: string | null = null;
+
+  if (matchup.Bracket === 'consolation') {
+    label = 'Consolation';
+  } else if (matchup.Bracket === 'placement') {
+    if (place != null && Number.isInteger(place) && place > 1) {
+      const suffix = place % 100 >= 11 && place % 100 <= 13 ? 'th'
+        : place % 10 === 1 ? 'st' : place % 10 === 2 ? 'nd' : place % 10 === 3 ? 'rd' : 'th';
+      label = `${place}${suffix} place`;
+    }
+  } else if (matchup.Bracket === 'championship') {
+    if (round != null && total != null && Number.isInteger(round) && Number.isInteger(total)
+        && round >= 1 && total >= round) {
+      const remaining = total - round;
+      label = remaining === 0 ? 'Final'
+        : remaining === 1 ? 'Semifinal'
+        : remaining === 2 ? 'Quarterfinal'
+        : `Playoff round ${round}`;
+    }
+  }
+
+  // A round's leg is shown only when the canonical format proves it spans multiple weeks.
+  const leg = matchup.PlayoffRoundWeek;
+  const legs = matchup.PlayoffRoundWeeks;
+  if (label && leg != null && legs != null && Number.isInteger(leg) && Number.isInteger(legs)
+      && legs > 1 && leg >= 1 && leg <= legs) {
+    return `${label} · ${leg}/${legs}`;
+  }
+  return label;
+}
+
+/** Assign display-only Roman ordinals to repeated playoff fixtures, not bracket seeds.
+ * First observed fixture order is stable across legs because identity uses the unordered team pair.
+ * Missing/ambiguous team pairs are never numbered.
+ */
+export function buildPlayoffDisplayLabels(model: MatchupsReadModel | null | undefined): ReadonlyMap<string, string> {
+  const groups = new Map<string, Map<string, number>>();
+  const entries: Array<{ key: string; group: string; pair: string | null; label: string }> = [];
+
+  for (const week of [...(model?.Weeks ?? [])].sort((a, b) => a.Week - b.Week)) {
+    if (week.Stage !== 'playoffs') continue;
+    for (const matchup of week.Matchups) {
+      const label = playoffMatchupLabel(matchup);
+      if (!label) continue;
+
+      const baseLabel = label.split(' · ')[0];
+      const group = `${matchup.Bracket}:${matchup.PlayoffRound ?? 'unknown'}:${matchup.PlayoffRoundCount ?? 'unknown'}:${matchup.PlayoffPlacement ?? 'none'}:${baseLabel}`;
+      const ids = matchup.Participants.map(participant => Number(participant.TeamID));
+      const pair = ids.length === 2 && ids.every(id => Number.isSafeInteger(id) && id > 0) && ids[0] !== ids[1]
+        ? [...ids].sort((a, b) => a - b).join(':')
+        : null;
+      // No ordinal without an authoritative round; unknowns still keep their base label.
+      if (pair !== null && Number.isSafeInteger(matchup.PlayoffRound) && (matchup.PlayoffRound ?? 0) > 0) {
+        const known = groups.get(group) ?? new Map<string, number>();
+        if (!known.has(pair)) known.set(pair, known.size + 1);
+        groups.set(group, known);
+      }
+      entries.push({ key: `${week.Week}:${matchup.FantasyMatchupID}`, group, pair, label });
+    }
+  }
+
+  const toRoman = (number: number): string => {
+    const parts: string[] = [];
+    for (const [value, numeral] of [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']] as const) {
+      while (number >= value) {
+        parts.push(numeral);
+        number -= value;
+      }
+    }
+    return parts.join('');
+  };
+
+  const result = new Map<string, string>();
+  for (const entry of entries) {
+    const group = groups.get(entry.group);
+    const ordinal = entry.pair === null ? null : group?.get(entry.pair);
+    if (ordinal !== undefined && ordinal !== null && group && group.size > 1) {
+      const separator = entry.label.indexOf(' · ');
+      const base = separator < 0 ? entry.label : entry.label.slice(0, separator);
+      const leg = separator < 0 ? '' : entry.label.slice(separator);
+      result.set(entry.key, `${base} ${toRoman(ordinal)}${leg}`);
+    } else {
+      result.set(entry.key, entry.label);
+    }
+  }
+  return result;
+}
+
 export function buildWeekScoreboard(
   week: MatchupWeekReadModel | null | undefined,
-  teams: readonly FantasyTeam[]
+  teams: readonly FantasyTeam[],
+  displayLabels?: ReadonlyMap<string, string>
 ): WeekScoreboardMatchup[] {
   if (!week) return [];
   const teamByID = indexTeams(teams);
@@ -181,6 +290,7 @@ export function buildWeekScoreboard(
     matchupID: matchup.FantasyMatchupID,
     state: matchup.CompletionState,
     isTie: matchup.Result?.Type === 'tie',
+    playoffLabel: displayLabels?.get(`${week.Week}:${matchup.FantasyMatchupID}`) ?? playoffMatchupLabel(matchup),
     participants: matchup.Participants.map(participant => ({
       teamID: Number(participant.TeamID),
       team: teamByID.get(Number(participant.TeamID)) ?? null,
@@ -188,6 +298,58 @@ export function buildWeekScoreboard(
       isWinner: isWinner(matchup, Number(participant.TeamID))
     }))
   }));
+}
+
+/**
+ * Full-league schedule: upcoming weeks nearest first, finished weeks newest first.
+ * Historical seasons are entirely retrospective, even when some old finality evidence
+ * is unknown. We keep the underlying unknown states visible instead of inventing results.
+ */
+export function buildScheduleOverview(
+  model: MatchupsReadModel | null | undefined,
+  teams: readonly FantasyTeam[],
+  isCurrentSeason: boolean,
+  displayLabels: ReadonlyMap<string, string> = buildPlayoffDisplayLabels(model)
+): ScheduleOverview {
+  const upcoming: ScheduleOverviewWeek[] = [];
+  const played: ScheduleOverviewWeek[] = [];
+
+  for (const week of [...(model?.Weeks ?? [])].sort((a, b) => a.Week - b.Week)) {
+    const row: ScheduleOverviewWeek = {
+      week: week.Week,
+      isPlayoff: week.Stage === 'playoffs',
+      state: week.CompletionState,
+      matchups: buildWeekScoreboard(week, teams, displayLabels)
+    };
+    (isCurrentSeason && !weekIsSettled(week) ? upcoming : played).push(row);
+  }
+  return { upcoming, played: played.reverse() };
+}
+
+/** Underdog winners of a week exactly as marked by the generator (no threshold or chance is derived here); upsets come first. */
+export function selectRecapUpsets(winProbabilities: readonly WeeklyRecapWinProbability[] | null | undefined): WeekRecapUpset[] {
+  const result: WeekRecapUpset[] = [];
+  for (const matchup of winProbabilities ?? []) {
+    const winnerTeamID = matchup.UnderdogWinnerFantasyTeamID;
+    if (!matchup.UpsetLevel || winnerTeamID === null || winnerTeamID === undefined) continue;
+    const winner = matchup.Teams.find(team => String(team.FantasyTeamID) === String(winnerTeamID));
+    const loser = matchup.Teams.find(team => String(team.FantasyTeamID) !== String(winnerTeamID));
+    result.push({
+      matchupID: matchup.FantasyMatchupID,
+      level: matchup.UpsetLevel,
+      winnerTeamID,
+      loserTeamID: loser?.FantasyTeamID ?? null,
+      winnerChance: winner?.PregameWinProbability ?? null
+    });
+  }
+  return result.sort((left, right) =>
+    (left.level === right.level ? 0 : left.level === 'upset' ? -1 : 1) || (left.winnerChance ?? 100) - (right.winnerChance ?? 100));
+}
+
+/** True when the generator knows the pregame chances of the week and marked no underdog win (never guessed from missing data). */
+export function allFavoritesWon(winProbabilities: readonly WeeklyRecapWinProbability[] | null | undefined): boolean {
+  const known = (winProbabilities ?? []).filter(matchup => matchup.Teams.every(team => team.PregameWinProbability !== null));
+  return known.length > 0 && known.every(matchup => !matchup.UpsetLevel);
 }
 
 /** Recap of one week; a missing recap is a visible state, never an error or an invented value. */
@@ -208,7 +370,10 @@ export function selectWeekRecap(
       content: {
         games: recap.KeyGames,
         players: recap.KeyPlayers,
-        awards: recap.TeamAwards?.State === 'available' ? recap.TeamAwards : null
+        awards: recap.TeamAwards?.State === 'available' ? recap.TeamAwards : null,
+        playerAwards: recap.PlayerAwards?.State === 'available' ? recap.PlayerAwards : null,
+        underdog: selectRecapUpsets(recap.WinProbabilities)[0] ?? null,
+        allFavoritesWon: allFavoritesWon(recap.WinProbabilities)
       }
     };
   }

@@ -2,6 +2,10 @@
 
 Purpose: this file defines the source map for Fantasy Management work. It replaces external chat-level source notes for this repository area.
 
+## Canonical league-design philosophy
+
+`fantasy-management/league-context/league-philosophy.md` is the **sole normative source** for the protected six-goal league-design north star: long-term competitive opportunity, reward for management, prevention of permanent structural advantages, economic opportunity costs, strategic freedom and operational enforceability. Read it for league-level research and proposals. The same file is delivered in the Handbook as a static build asset. It is **not** a source of active Sleeper settings or enacted Salary/Trade rules; the document records its ratification status. Never create a second editable copy.
+
 ## Canonical technical app sources
 
 The repository `Lolindhir/fantasy-app` remains the canonical source for current league and app data.
@@ -121,6 +125,8 @@ Checkpoint 6V moves the Free-Agent Movement consumer's league-scoring input from
 Checkpoint 6W removes the direct `public/data/Players.json` dependency from `external-signal-relevance.json`. Sleeper signal IDs resolve through the active `IDs.Sleeper` bridge in `data-source/nfl/identities/players.json`; player names come from that Canonical Identity contract, while fantasy-relevant position and current NFL team come from `data-source/nfl/platform/sleeper/players.json`. Position prefers the first provider-ordered QB/RB/WR/TE/K entry from `FantasyPositions` and falls back to raw `Position` when no such fantasy role exists (so dual-role players such as Travis Hunter remain WR rather than inheriting Sleeper's raw DB primary position). Duplicate active Sleeper identity links, duplicate platform Sleeper IDs and cross-source CanonicalPlayerID disagreement fail closed. Checkpoint 6Y later applies the same Canonical Identity/`FantasyPositions` contract to selected non-team player-signal fields; App-owned Salary/SalaryProjected/Grading and `RequestPlayers.ps1` remain outside that cutover.
 
 This is **not** a wholesale Fantasy Management source cutover. `free-agent-signals.json` is already downstream of canonical-active `player-signals` and therefore inherits canonical fantasy ownership without its own direct League read. Draft metadata, Transactions, Salary/Grading and other unmigrated source domains retain their currently documented contracts until separately migrated.
+
+The salary simulation `fantasy-management/league-economy/salary/simulation/salary_simulation.py` is the one deliberate exception that still reads published read models (`League.json`, `Transactions.json`, `past_seasons/{Drafts,Transactions}`): it is a dated analysis snapshot (2026-10-05, output `league-economy/salary/analyses/2026-10-05-salary-simulation.json`, classified `analysis-snapshot-input`), not a pipeline consumer and not a source of truth. No workflow, generator, automation or frontend may call it; it moves to the Shared Derived products (league-transactions, league-drafts, player-valuation) only at the next necessary update of that analysis. Registry and guard: `.ai-context/manual/source-of-truth-matrix.yaml` (`analysisSnapshotPolicy`, Issue #1453).
 
 
 ## Metadata source rules

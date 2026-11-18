@@ -1,0 +1,281 @@
+{
+  "schema_version": 1,
+  "artifact_type": "league_economy_cp5b_counterfactual_legal_start_settlement",
+  "date": "2026-11-14",
+  "issue": 1344,
+  "status": "bounded_counterfactual_mechanics_only",
+  "active_rule_change": false,
+  "cp5_completed": false,
+  "source": {
+    "sep2026_roster_ref": "b40956172a704ff616008d7835f527b86f128063",
+    "aug2026_roster_ref": "539aae40da3de444000805cea3170a116fae129d",
+    "nov2026_roster_ref": "799be2a25203f18face8185303f32b31be3d40a7",
+    "sep_players_blob": "f8cc9a97cbe19eed6907a7630da053052a35e577",
+    "transactions_blob": "0aa85766a962a9d499fe5610a269771dd3b02ce1",
+    "nov2025_ref": "ea9d7666ad655ccf9a45dafb3463046cb0c49908",
+    "dec5_2025_ref": "e7afd83ab8f141397d05d151362a1f64409c153f",
+    "dec21_2025_ref": "0ede4b63ab6f424bd854112ca7f2c551b68af0d7"
+  },
+  "assumptions": [
+    "Current 2026 published September Salary values frozen through November replay",
+    "No C criticality, R60 rookie overlay, veteran minimum or new Dead Cap in base cases",
+    "Initial nonstarter cuts hypothetical, salary-sorted minimum count, protected observed September starters",
+    "Historical events treated as attempted static requests after counterfactual start; invalid preconditions skip whole bundle",
+    "Trade moves atomic, drops before adds, no duplicate ownership",
+    "Incoming player protection used only in B-offset sensitivity, does not authorize manager cuts",
+    "No actual bid/manager decision/commissioner time inferred"
+  ],
+  "cap_2026": 434255984,
+  "legal_aug25": {
+    "overcap_teams": 0
+  },
+  "sep9": {
+    "overcap_teams": [
+      2,
+      3,
+      4,
+      6
+    ],
+    "positive_overhang_dollars": 122567015,
+    "starter_protected_min_cuts_total": 7,
+    "by_team": [
+      {
+        "team_id": 1,
+        "over_dollars": 0,
+        "cuts": []
+      },
+      {
+        "team_id": 2,
+        "over_dollars": 27486107,
+        "cuts": [
+          {
+            "id": "4943",
+            "name": "Sam Darnold"
+          },
+          {
+            "id": "5846",
+            "name": "DK Metcalf"
+          }
+        ]
+      },
+      {
+        "team_id": 3,
+        "over_dollars": 7406779,
+        "cuts": [
+          {
+            "id": "5850",
+            "name": "Josh Jacobs"
+          }
+        ]
+      },
+      {
+        "team_id": 4,
+        "over_dollars": 41763737,
+        "cuts": [
+          {
+            "id": "8183",
+            "name": "Brock Purdy"
+          },
+          {
+            "id": "7523",
+            "name": "Trevor Lawrence"
+          }
+        ]
+      },
+      {
+        "team_id": 5,
+        "over_dollars": 0,
+        "cuts": []
+      },
+      {
+        "team_id": 6,
+        "over_dollars": 45910392,
+        "cuts": [
+          {
+            "id": "3163",
+            "name": "Jared Goff"
+          },
+          {
+            "id": "6804",
+            "name": "Jordan Love"
+          }
+        ]
+      }
+    ],
+    "protected_starters_and_top10_salary": {
+      "cut_counts": {
+        "2": 4,
+        "3": 1,
+        "4": 6,
+        "6": 10
+      },
+      "total_cuts": 21,
+      "all_teams_feasible": true
+    }
+  },
+  "observed_nov_on_sep_freeze": {
+    "overcap_teams": [
+      1,
+      2,
+      3,
+      4,
+      6
+    ],
+    "positive_overhang_dollars": 176958042,
+    "team3_top10_starters_protected_cut_test": {
+      "all_eligible_cut": 17,
+      "still_over_dollars": 9476589
+    }
+  },
+  "events": {
+    "start_after_utc": "2026-09-09T20:33:55Z",
+    "total": 54,
+    "waiver": 43,
+    "free_agent": 8,
+    "trade": 3,
+    "original_replay_missing": 0,
+    "original_final_roster_diff_count_all_teams": 0
+  },
+  "f2_no_running_gate": {
+    "accepted": 50,
+    "incompatible": 4,
+    "pre_nov_over_dollars_by_team": {
+      "1": 3882700,
+      "2": 8165477,
+      "3": 34463824,
+      "4": 0,
+      "5": 0,
+      "6": 0
+    },
+    "nov_extra_starter_protected_cut_count": 3,
+    "nov_extra_cuts": [
+      {
+        "team_id": 1,
+        "name": "Davante Adams"
+      },
+      {
+        "team_id": 2,
+        "name": "De'Von Achane"
+      },
+      {
+        "team_id": 3,
+        "name": "Lamar Jackson"
+      }
+    ]
+  },
+  "b_strict_no_offset": {
+    "accepted": 43,
+    "incompatible": 8,
+    "rejected_cap": 3,
+    "rejected_waiver": 2,
+    "rejected_trade": 1,
+    "rejected_ids": [
+      "1405479092563783680",
+      "1411429516626120704",
+      "1423460033521283072"
+    ],
+    "all_post_accepted_cap_legal": true
+  },
+  "b_offset_protect_incoming": {
+    "accepted": 50,
+    "incompatible": 4,
+    "needs_offset_bundles": 4,
+    "feasible_offset_bundles": 4,
+    "additional_hypothetical_cuts": 4,
+    "offsets": [
+      {
+        "date": "2026-09-16",
+        "type": "waiver",
+        "team_id": 2,
+        "added": "Bryce Young",
+        "cut": "Travis Kelce"
+      },
+      {
+        "date": "2026-10-04",
+        "type": "waiver",
+        "team_id": 3,
+        "added": "Tyreek Hill",
+        "cut": "Kyler Murray"
+      },
+      {
+        "date": "2026-11-03",
+        "type": "trade",
+        "team_id": 3,
+        "added": "Christian McCaffrey",
+        "cut": "Kirk Cousins"
+      },
+      {
+        "date": "2026-11-05",
+        "type": "trade",
+        "team_id": 1,
+        "added": "D'Andre Swift",
+        "cut": "Patrick Mahomes"
+      }
+    ]
+  },
+  "historic_2025_conditional_independent_snapshots": [
+    {
+      "date": "2025-11-05",
+      "cap": 581658383,
+      "overcap_teams": [
+        2,
+        3,
+        4
+      ],
+      "starter_protected_min_cuts_total": 5,
+      "by_team": {
+        "2": 2,
+        "3": 2,
+        "4": 1
+      }
+    },
+    {
+      "date": "2025-12-05",
+      "cap": 581658383,
+      "overcap_teams": [
+        2,
+        3,
+        4
+      ],
+      "starter_protected_min_cuts_total": 5,
+      "by_team": {
+        "2": 2,
+        "3": 2,
+        "4": 1
+      }
+    },
+    {
+      "date": "2025-12-21",
+      "cap": 581658383,
+      "overcap_teams": [
+        2,
+        3,
+        4
+      ],
+      "starter_protected_min_cuts_total": 4,
+      "by_team": {
+        "2": 1,
+        "3": 2,
+        "4": 1
+      }
+    }
+  ],
+  "ops": {
+    "f2_checks_per_cycle": 2,
+    "f3_checks_per_cycle": 3,
+    "teams_per_check": 6,
+    "observed_event_candidates": 54,
+    "observed_events_with_adds_cp5a": 46,
+    "sleeper_public_api": "read_only",
+    "operator_time_measured": false
+  },
+  "limitations": [
+    "2025 late archival snapshots not a legal continuous start from annual deadline",
+    "2024 startup and 2027/28 rookie Y4 not reconstructed",
+    "Counterfactual changes future ownership; never infer actual blocked trades or team motivations",
+    "Starter-preserved cuts may remove very valuable backups and roster protection assets",
+    "B offset does not imply manager consent to sacrificing listed player",
+    "No completed behavioral or multi-year competitiveness causal test",
+    "No actual production enforcement capability or operator cost proven"
+  ]
+}

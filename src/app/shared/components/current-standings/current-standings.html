@@ -130,6 +130,32 @@
           <span>Points Against per Game</span>
           <strong>{{ pointsAgainstPerGame(row) | number:'1.2-2':'en-US' }}</strong>
         </div>
+        <ng-container *ngIf="teamStatistics(row) as stats">
+          <div class="standing-detailed-stat">
+            <span>Expected Record</span>
+            <strong>{{ formatExpectedRecord(stats) }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>Luck</span>
+            <strong class="standing-detailed-luck" [ngClass]="'standing-detailed-luck--' + signClass(stats.Luck)">{{ formatSigned(stats.Luck) }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>Opponent Timing</span>
+            <strong>{{ formatSigned(stats.OpponentTiming) }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>Underdog Wins</span>
+            <strong>{{ stats.UnderdogWins }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>Upset Losses</span>
+            <strong>{{ stats.UpsetLosses }}</strong>
+          </div>
+          <div class="standing-detailed-stat">
+            <span>All-Play Record</span>
+            <strong>{{ formatAllPlay(stats) }}</strong>
+          </div>
+        </ng-container>
         <ng-container *ngIf="placementTrend(row, rows.length) as trend; else placementTrendUnavailable">
           <div class="standing-detailed-trend">
             <div class="standing-detailed-trend-heading">
@@ -143,8 +169,11 @@
               [attr.aria-label]="trend.description"
               preserveAspectRatio="xMidYMid meet"
             >
-              <line class="standing-detailed-trend-guide" x1="24" y1="20" x2="276" y2="20"></line>
-              <line class="standing-detailed-trend-guide" x1="24" y1="75" x2="276" y2="75"></line>
+              <line
+                *ngFor="let guide of trend.guides"
+                class="standing-detailed-trend-guide"
+                x1="24" [attr.y1]="guide.y" x2="276" [attr.y2]="guide.y"
+              ></line>
               <text class="standing-detailed-trend-axis" x="8" y="24">1</text>
               <text class="standing-detailed-trend-axis" x="8" y="79">{{ trend.teamCount }}</text>
               <polyline class="standing-detailed-trend-line" [attr.points]="trend.polyline"></polyline>

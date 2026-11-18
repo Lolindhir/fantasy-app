@@ -11,7 +11,8 @@ import { AboutComponent } from './features/handbook/about';
 
 export const routes: Routes = [
   { path: '', component: OverviewComponent },
-  { path: 'weeks', component: WeeksPageComponent },
+  { path: 'schedule', component: WeeksPageComponent },
+  { path: 'weeks', redirectTo: 'schedule', pathMatch: 'full' },
   { path: 'teams', loadComponent: () => import('./features/teams/teams-page/teams-page').then(m => m.TeamsPageComponent) },
   { path: 'teams/legacy', component: TeamListComponent },
   { path: 'standings', component: StandingsPageComponent },

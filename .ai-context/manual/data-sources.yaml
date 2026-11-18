@@ -1,5 +1,64 @@
 schemaVersion: 1
 
+historicalReconciliationStandard:
+  status: normative-for-new-and-changed-historical-data-products
+  principle: >-
+    Historical Source Evidence, Canonical/Normalized and Shared Derived products
+    must remain reproducible from accepted inputs. Fast current-season refresh
+    and bounded, recurring historical reconciliation are complementary, not
+    substitutes; a historical product must not silently become stale just
+    because a past season has ended.
+  currentRefresh: >-
+    Keep frequent operations limited to current or newly relevant partitions
+    and downstream products according to their actual freshness needs.
+  historicalCadence: >-
+    Default to a weekly reconciliation across all supported historical
+    partitions. Product contracts must name the existing scheduled owner,
+    coverage and exact cadence; a less frequent, event-only or omitted historical
+    check requires an explicit evidence-based exception and owning Issue.
+    This standard does not by itself activate a new scheduled workflow or writer.
+  sourceEvidenceCheck:
+    - Discover missing seasons/partitions and check the upstream revision or
+      manifest (digest, size, ETag or equivalent) where available.
+    - Reuse verified persisted original bytes on unchanged revisions; do not
+      redownload every historical asset merely to prove a no-op.
+    - Detect and report revised upstream assets even when a historical partition
+      is frozen; never silently replace authoritative historical originals.
+    - Missing, unavailable, inconsistent or unverified input stays unknown or
+      blocked, never fabricated as an empty or zero-valued successful partition.
+  historicalRecomputation:
+    - Rebuild every supported historical Derived partition from accepted
+      persisted Canonical/Normalized inputs in the periodic historical pass,
+      including periods whose original Source bytes have not changed.
+    - Track changes to source revisions, canonical identity and schedule,
+      manual league settings, model/algorithm versions, schema and producer
+      dependencies as invalidation inputs; allow targeted recomputation when
+      relevant changes arrive between weekly runs.
+    - Treat generated historical products as reproducible outputs, never as
+      authoritative inputs to their own subsequent rebuild.
+    - Preserve exact artifact bytes and skip publication when accepted inputs,
+      dependencies and semantics yield no change; a check timestamp alone
+      must not dirty a generated product.
+  frozenHistoryAndRepair: >-
+    Immutable or finalized Source partitions retain their published provenance,
+    identity and historical time meaning. An upstream correction to a frozen
+    partition is review evidence, not permission for automatic overwrite.
+    Replacing historical Source/Canonical facts follows the dataset's explicit
+    repair authorization and migration policy; Derived may be recalculated from
+    the still-accepted historical Source without replacing it.
+  implementationRequirements:
+    - Each historical dataset or product declares supported coverage,
+      source revision/discovery policy, current and historical cadence,
+      invalidation dependencies, freeze/repair policy and publisher owner.
+    - Verify representative historical reruns, source-changed and
+      model-changed invalidation, full supported coverage, semantic no-op,
+      race-safe scoped publication and recovery from an incomplete run.
+    - Reuse classified scheduler, Source and Derived publishers rather than
+      creating per-product competing branch writers.
+    - Existing products missing this periodic path must document the gap
+      and implementation handoff in their owning Issue; documenting the rule
+      never grants an otherwise unauthorized historical repair or writer scope.
+
 dataSources:
   leagueMetadata:
     path: data-meta/<CanonicalLeagueID>/metadata.json
@@ -547,6 +606,28 @@ dataSources:
       last file and warns. The ten-minute League refresh no longer touches these files, so a newly completed season
       gets its files with the next weekly run. The neutral team order of the Matchups history still reads
       Standings.json until Issue #987 moves that consumer to the league-standings product.
+
+  weeklyRecaps:
+    path: public/data/WeeklyRecaps.json and public/data/past_seasons/WeeklyRecaps/WeeklyRecaps_<season>.json
+    generator: tools/weekly_recaps_app_publish.py (computed function tools/derived_data_lib/weekly_recaps.py, ADR-063)
+    localDocumentation: public/data/WeeklyRecaps.ai-doc.yaml
+    contract: .ai-context/manual/weekly-recaps.yaml
+    category: generated-output
+    role: Weekly recap read model (KeyPlayers, KeyGames, TeamAwards, lineup efficiency, win probability marks and, with weekly-recap-v2, PlayerAwards)
+    description: >
+      Consumer delivery of the computed recap function; additive PlayerAwards per recap week since Issue #499 (ADR-086). Written only on a semantic difference by League Live (current
+      season) and the weekly update-transactions run (completed seasons).
+
+  playerAwardHistory:
+    path: public/data/PlayerAwardHistory.json
+    generator: tools/weekly_recaps_app_publish.py
+    localDocumentation: public/data/PlayerAwardHistory.ai-doc.yaml
+    contract: .ai-context/manual/weekly-recaps.yaml (playerAwards.historyFile)
+    category: generated-output
+    role: Weekly player award counts and week lists per player across all seasons
+    description: >
+      Rendered from the season recap models (Issue #499, ADR-086): Players[] with Counts, Total and Entries per award, Seasons[] with the weeks that have awards. Name, Position and
+      Picture come from the league-history PlayerRefs resolver. Timestamps.json key PlayerAwardHistory; written only on a semantic difference.
 
   externalMarketSources:
     path: data-source/external-registry.json

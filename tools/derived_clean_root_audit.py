@@ -33,25 +33,27 @@ from typing import Any
 
 from data_roots import DATA_DERIVED_ROOT, DATA_META_ROOT, DATA_SOURCE_ROOT
 from derived_data import (
-    LEAGUE_DRAFTS, LEAGUE_STANDINGS, LEAGUE_TRANSACTIONS,
-    materialize_league_history, materialize_league_standings, materialize_player_valuation,
+    LEAGUE_DRAFTS, LEAGUE_RIVALRY, LEAGUE_STANDINGS, LEAGUE_TRANSACTIONS, SEASON_STATISTICS,
+    materialize_league_history, materialize_league_rivalry, materialize_league_standings, materialize_player_valuation, materialize_season_statistics,
 )
 from historical_pwf_batch import materialize_historical
 from league_metadata import list_league_ids
 from nfl_games_materialize import discover_seasons, materialize as materialize_nfl_games
+from nfl_injuries_phase import plan_injury_phase
 from team_week_performance_materialize import materialize_all_finalized
 
 PLAYER_VALUATION = "player-valuation"
 PLAYER_WEEK_FANTASY = "player-week-fantasy"
 TEAM_WEEK_PERFORMANCE = "team-week-performance"
 NFL_GAMES = "nfl-games"
+NFL_INJURIES = "nfl-injuries"
 
 # Stable report order; official TeamWeekPerformance is independent of PWF score parity.
 PRODUCTS = (
     PLAYER_VALUATION, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS,
-    PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES,
+    PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, NFL_INJURIES, SEASON_STATISTICS, LEAGUE_RIVALRY,
 )
-GLOBAL_PRODUCTS = frozenset({NFL_GAMES})
+GLOBAL_PRODUCTS = frozenset({NFL_GAMES, NFL_INJURIES})
 
 FAILING = frozenset({"blocked", "nondeterministic", "restore-defect"})
 HINTS = frozenset({"stale-published", "latent-blocker"})
@@ -74,6 +76,9 @@ def _files(root: Path, unit: Unit) -> dict[str, str]:
     product, league = unit
     directory = root / DATA_DERIVED_ROOT / product
     if league is not None:
+        single = directory / f"{league}.json"
+        if single.is_file():  # one file per league (league-rivalry), no league directory
+            return {single.name: hashlib.sha256(single.read_bytes()).hexdigest()}
         directory = directory / league
     if not directory.is_dir():
         return {}
@@ -96,6 +101,45 @@ def _blocked_reason(report: dict[str, Any]) -> str:
     return f"{report['BlockedCount']} blocked weeks, first: {reasons[:2]}"
 
 
+def discover_injury_seasons(root: Path) -> list[int]:
+    """Use canonical Source season directories, never published Derived output, for coverage."""
+    folder = root / DATA_SOURCE_ROOT / "nfl" / "injuries"
+    if not folder.is_dir():
+        raise ValueError("Canonical NFL injuries Source directory is missing")
+    seasons = sorted(
+        int(p.name) for p in folder.iterdir()
+        if p.is_dir() and len(p.name) == 4 and p.name.isdigit()
+    )
+    if not seasons:
+        raise ValueError("No canonical NFL injuries seasons to restore")
+    return seasons
+
+
+def _build_nfl_injuries(root: Path) -> int:
+    """Build into the isolated shadow from the *real* canonical Source root.
+
+    The shadow intentionally symlinks its read-only data-source directory to the
+    real repository. The Injury production reader prohibits symlinked ancestors,
+    so resolve that existing audit-owned Source link before reading; Derived
+    output always stays inside the shadow, never in the real repository.
+    """
+    source_root = (root / DATA_SOURCE_ROOT).resolve().parent
+    written = 0
+    for season in discover_injury_seasons(root):
+        relative = f"{DATA_DERIVED_ROOT}/{NFL_INJURIES}/{season}.json"
+        artifacts = plan_injury_phase(source_root, season, "derived")
+        if set(artifacts) != {relative} or not isinstance(artifacts[relative], bytes):
+            raise ValueError(f"Unexpected NFL injuries Derived output for {season}")
+        target = root / relative
+        candidate = artifacts[relative]
+        if target.is_file() and target.read_bytes() == candidate:
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(candidate)
+        written += 1
+    return written
+
+
 def _build(unit: Unit, root: Path) -> tuple[int, int]:
     """Run the productive generator of one unit in `root`; return (writes, held rows)."""
     product, league = unit
@@ -107,6 +151,10 @@ def _build(unit: Unit, root: Path) -> tuple[int, int]:
         return _written(materialize_league_history(root, output, league, product, None, False)), 0
     if product == LEAGUE_STANDINGS:
         return _written(materialize_league_standings(root, output, league, None, False)), 0
+    if product == LEAGUE_RIVALRY:
+        return _written(materialize_league_rivalry(root, output, league, None, False)), 0
+    if product == SEASON_STATISTICS:
+        return _written(materialize_season_statistics(root, output, league, None, False)), 0
     if product == PLAYER_WEEK_FANTASY:
         report = materialize_historical(root, league_id=league, write=True)
         if report["BlockedCount"]:
@@ -122,6 +170,8 @@ def _build(unit: Unit, root: Path) -> tuple[int, int]:
             int(materialize_nfl_games(root, season, write=True)["Written"])
             for season in discover_seasons(root)
         ), 0
+    if product == NFL_INJURIES:
+        return _build_nfl_injuries(root), 0
     raise ValueError(f"Unknown product: {product}")
 
 

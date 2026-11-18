@@ -9,14 +9,18 @@ import type {
 import type { WeeklyRecapsReadModel } from '../../core/models/weekly-recap.models';
 import type { PastSeasonsIndex } from '../../core/services/data-api.service';
 import {
+  buildPlayoffDisplayLabels,
+  buildScheduleOverview,
   buildSeasonGrid,
   buildWeekScoreboard,
   buildWeekTabs,
   buildWeeksSeasonOptions,
   parseWeekParam,
+  playoffMatchupLabel,
   resolveDefaultWeek,
   resolveSelectedWeek,
   resolveWeeksSeason,
+  selectRecapUpsets,
   selectWeekRecap
 } from './weeks-view.util';
 
@@ -153,6 +157,125 @@ describe('weeks view util', () => {
     });
   });
 
+
+  describe('league schedule overview', () => {
+    const weeks = model([
+      week(13, 'regular-season', 'open', [matchup('future', [1, null], [2, null], 'open')]),
+      week(10, 'regular-season', 'final', [matchup('done', [1, 112], [2, 105], 'final', 1)]),
+      week(12, 'regular-season', 'unknown', [matchup('unconfirmed', [1, null], [2, null], 'unknown')]),
+      week(11, 'regular-season', 'unknown', [matchup('recovered', [1, 99], [2, 90], 'final', 1)]),
+      week(14, 'playoffs', 'open', [])
+    ]);
+
+    it('groups all upcoming known pairings by week without inventing playoff opponents', () => {
+      const schedule = buildScheduleOverview(weeks, [team(1), team(2)], true);
+      expect(schedule.upcoming.map(w => w.week)).toEqual([12, 13, 14]);
+      expect(schedule.played.map(w => w.week)).toEqual([11, 10]);
+      expect(schedule.upcoming[0].state).toBe('unknown');
+      expect(schedule.upcoming[1].matchups[0].participants.map(p => [p.teamID, p.points]))
+        .toEqual([[1, null], [2, null]]);
+      expect(schedule.upcoming[2].isPlayoff).toBeTrue();
+      expect(schedule.upcoming[2].matchups).toEqual([]);
+      expect(schedule.played[1].matchups[0].participants[0].isWinner).toBeTrue();
+    });
+
+    it('shows all archived weeks retrospectively without presenting unknown scores as final', () => {
+      const schedule = buildScheduleOverview(weeks, [team(1), team(2)], false);
+      expect(schedule.upcoming).toEqual([]);
+      expect(schedule.played.map(w => w.week)).toEqual([14, 13, 12, 11, 10]);
+      expect(schedule.played[2].matchups[0].state).toBe('unknown');
+      expect(schedule.played[2].matchups[0].participants[0].points).toBeNull();
+    });
+
+    it('handles a missing season without synthesizing fixtures', () => {
+      expect(buildScheduleOverview(null, [], true)).toEqual({ upcoming: [], played: [] });
+    });
+  });
+
+  describe('playoff matchup labels', () => {
+    const playoff = (bracket: string | null, round: number | null, total: number | null, placement: number | null,
+                     leg = 1, legs = 1): FantasyMatchupReadModel => ({
+      ...matchup('p', [1, 100], [2, 90]),
+      Bracket: bracket, PlayoffRound: round, PlayoffRoundCount: total, PlayoffPlacement: placement,
+      PlayoffRoundWeek: leg, PlayoffRoundWeeks: legs
+    });
+
+    it('distinguishes finals, placement, semifinal and quarterfinal across configured round counts', () => {
+      expect(playoffMatchupLabel(playoff('championship', 2, 2, 1, 1, 2))).toBe('Final · 1/2');
+      expect(playoffMatchupLabel(playoff('championship', 2, 2, 1, 2, 2))).toBe('Final · 2/2');
+      expect(playoffMatchupLabel(playoff('placement', 2, 2, 3, 2, 2))).toBe('3rd place · 2/2');
+      expect(playoffMatchupLabel(playoff('placement', 2, 3, 5))).toBe('5th place');
+      expect(playoffMatchupLabel(playoff('championship', 1, 2, null))).toBe('Semifinal');
+      expect(playoffMatchupLabel(playoff('championship', 1, 3, null))).toBe('Quarterfinal');
+      expect(playoffMatchupLabel(playoff('championship', 2, 3, null))).toBe('Semifinal');
+      expect(playoffMatchupLabel(playoff('consolation', 1, 2, 1))).toBe('Consolation');
+    });
+
+    it('never guesses a label from absent or inconsistent playoff provenance', () => {
+      expect(playoffMatchupLabel(matchup('legacy', [1, 100], [2, 90]))).toBeNull();
+      expect(playoffMatchupLabel(playoff('unclassified', null, null, null))).toBeNull();
+      expect(playoffMatchupLabel(playoff('placement', 2, 2, null))).toBeNull();
+      expect(playoffMatchupLabel(playoff('championship', 1, null, null))).toBeNull();
+      expect(playoffMatchupLabel(playoff('championship', 3, 2, null))).toBeNull();
+    });
+  });
+
+  describe('stable playoff fixture ordinals', () => {
+    const semifinal = (id: string, a: number, b: number, leg: number): FantasyMatchupReadModel => ({
+      ...matchup(id, [a, 100], [b, 90], 'final', a),
+      Bracket: 'championship', PlayoffRound: 1, PlayoffRoundCount: 2,
+      PlayoffPlacement: null, PlayoffRoundWeek: leg, PlayoffRoundWeeks: 2
+    });
+
+    it('numbers distinct semifinals by first known fixture order and preserves their identity in leg two', () => {
+      const season = model([
+        week(14, 'playoffs', 'final', [
+          semifinal('first-leg-a', 2, 4, 1),
+          semifinal('first-leg-b', 3, 1, 1)
+        ]),
+        week(15, 'playoffs', 'final', [
+          semifinal('second-leg-b', 1, 3, 2),
+          semifinal('second-leg-a', 4, 2, 2)
+        ])
+      ]);
+      const labels = buildPlayoffDisplayLabels(season);
+      expect(labels.get('14:first-leg-a')).toBe('Semifinal I · 1/2');
+      expect(labels.get('14:first-leg-b')).toBe('Semifinal II · 1/2');
+      expect(labels.get('15:second-leg-b')).toBe('Semifinal II · 2/2');
+      expect(labels.get('15:second-leg-a')).toBe('Semifinal I · 2/2');
+      const overview = buildScheduleOverview(season, [], false);
+      expect(overview.played[0].matchups.map(m => m.playoffLabel)).toEqual([
+        'Semifinal II · 2/2', 'Semifinal I · 2/2'
+      ]);
+      expect(buildWeekScoreboard(season.Weeks[1], [], labels).map(m => m.playoffLabel))
+        .toEqual(overview.played[0].matchups.map(m => m.playoffLabel));
+    });
+
+    it('does not number a single two-week fixture or invent labels for unknown pairings', () => {
+      const known = semifinal('one', 1, 2, 1);
+      const secondLeg = semifinal('two', 2, 1, 2);
+      const unknown = { ...semifinal('unknown', 0, 0, 1), Bracket: 'unclassified' };
+      const missingPair = semifinal('missing-pair', 3, 0, 1);
+      const season = model([
+        week(14, 'playoffs', 'final', [known, unknown, missingPair]),
+        week(15, 'playoffs', 'final', [secondLeg])
+      ]);
+      const labels = buildPlayoffDisplayLabels(season);
+      expect(labels.get('14:one')).toBe('Semifinal · 1/2');
+      expect(labels.get('15:two')).toBe('Semifinal · 2/2');
+      expect(labels.get('14:unknown')).toBeUndefined();
+      expect(labels.get('14:missing-pair')).toBe('Semifinal · 1/2');
+    });
+
+    it('does not conflate distinct bracket types or playoff rounds', () => {
+      const final = { ...semifinal('final', 1, 2, 1), PlayoffRound: 2, PlayoffPlacement: 1 };
+      const third = { ...semifinal('third', 3, 4, 1), Bracket: 'placement', PlayoffRound: 2, PlayoffPlacement: 3 };
+      const labels = buildPlayoffDisplayLabels(model([week(16, 'playoffs', 'final', [final, third])]));
+      expect(labels.get('16:final')).toBe('Final · 1/2');
+      expect(labels.get('16:third')).toBe('3rd place · 1/2');
+    });
+  });
+
   describe('scoreboard', () => {
     it('keeps nullable scores, resolves teams and flags the winner only for decided matchups', () => {
       const board = buildWeekScoreboard(
@@ -190,6 +313,48 @@ describe('weeks view util', () => {
       expect(selectWeekRecap(recaps, '2025', final(2)).content?.awards).toBeNull();
       expect(selectWeekRecap(recaps, '2025', final(3)).content?.awards).toBeNull();
       expect(selectWeekRecap(recaps, '2025', final(1)).status).toBe('available');
+    });
+
+    it('lists only generator-marked underdog winners, upsets first, and shows nothing when every favorite won', () => {
+      const mark = (id: string, winner: number, loserChance: number, winnerChance: number, level: 'upset' | 'underdog' | null) => ({
+        FantasyMatchupID: id,
+        Teams: [{ FantasyTeamID: winner, PregameWinProbability: winnerChance }, { FantasyTeamID: winner + 1, PregameWinProbability: loserChance }],
+        Upset: level === 'upset',
+        UpsetWinnerFantasyTeamID: level === 'upset' ? winner : null,
+        UpsetLevel: level,
+        UnderdogWinnerFantasyTeamID: level ? winner : null
+      });
+      const upsets = selectRecapUpsets([
+        mark('a', 1, 55, 45, 'underdog'),
+        mark('b', 3, 70, 30, 'upset'),
+        mark('c', 5, 20, 80, null)
+      ]);
+      expect(upsets.map(upset => [upset.matchupID, upset.level, upset.winnerChance, upset.loserTeamID])).toEqual([
+        ['b', 'upset', 30, 4],
+        ['a', 'underdog', 45, 2]
+      ]);
+      expect(selectRecapUpsets([mark('c', 5, 20, 80, null)])).toEqual([]);
+      expect(selectRecapUpsets(undefined)).toEqual([]);
+      const withUpsets: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [{ Week: 1, KeyGames: [], KeyPlayers: [], WinProbabilities: [mark('b', 3, 70, 30, 'upset')] }] };
+      expect(selectWeekRecap(withUpsets, '2025', final(1)).content?.underdog?.matchupID).toBe('b');
+      expect(selectWeekRecap(withUpsets, '2025', final(1)).content?.allFavoritesWon).toBeFalse();
+      const none: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [{ Week: 1, KeyGames: [], KeyPlayers: [], WinProbabilities: [mark('c', 5, 20, 80, null)] }, { Week: 2, KeyGames: [], KeyPlayers: [] }] };
+      expect(selectWeekRecap(none, '2025', final(1)).content?.allFavoritesWon).toBeTrue();
+      expect(selectWeekRecap(none, '2025', final(1)).content?.underdog).toBeNull();
+      expect(selectWeekRecap(none, '2025', final(2)).content?.allFavoritesWon).toBeFalse();
+    });
+
+    it('passes weekly player awards through only when available', () => {
+      const entry = { PlayerID: 'p1', CanonicalPlayerID: null, FantasyTeamID: 1, FantasyMatchupID: 'x', Position: 'RB', Points: 30 };
+      const awards = { State: 'available' as const, MVP: [entry], MatchupHero: [], Heartbreaker: [], UnsungHero: [] };
+      const withAwards: WeeklyRecapsReadModel = { SchemaVersion: 1, Season: '2025', Weeks: [
+        { Week: 1, KeyGames: [], KeyPlayers: [], PlayerAwards: awards },
+        { Week: 2, KeyGames: [], KeyPlayers: [], PlayerAwards: { ...awards, State: 'unavailable' } },
+        { Week: 3, KeyGames: [], KeyPlayers: [] }
+      ] };
+      expect(selectWeekRecap(withAwards, '2025', final(1)).content?.playerAwards?.MVP.length).toBe(1);
+      expect(selectWeekRecap(withAwards, '2025', final(2)).content?.playerAwards).toBeNull();
+      expect(selectWeekRecap(withAwards, '2025', final(3)).content?.playerAwards).toBeNull();
     });
 
     it('reports a missing recap for a settled week and a pending recap for an open week', () => {

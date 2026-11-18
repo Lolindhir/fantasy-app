@@ -26,6 +26,7 @@ guidance:
     - 'Before proposing a new artifact or mechanism, perform the Architecture Review existing-first check: inspect whether a suitable contract, dataset, helper, service, publisher, workflow or Issue already owns the concern and prefer coherent extension over parallel architecture.'
     - Explicitly check whether variable behavior is configuration/settings-driven or accidentally hard-coded, including league, season, scoring-profile and other relevant dimensions. State which future changes require reconfiguration/re-derivation versus code changes.
     - For derived or cached state, identify its complete identity, dependencies, invalidation/recompute triggers and compatibility behavior when inputs/settings change.
+    - For any new or changed historical Source, Canonical or Shared Derived product, apply `.ai-context/manual/data-sources.yaml::historicalReconciliationStandard`: declare a bounded fast/current path, weekly historical source-revision checks and complete historical rederivation (or an explicit justified exception), invalidation, frozen-history repair gates and semantic no-op proofs. Documentation alone does not authorize new writers or bypass source repair protections.
     - Keep the normal agent self-review lightweight but mandatory when the contract applies; surface material unresolved findings before implementation rather than waiting for the user to ask recurring architecture-check questions.
     - When acting as an independent Architecture Reviewer, operate read-only by default, challenge the proposal independently, use the contract's review-output shape and record durable findings in the owning Issue. Do not implement fixes unless separately authorized.
     - Reuse `status:review` for an architecture-review handoff; do not invent a `review:architecture` label in v1. The requested review type, reviewed basis and result belong in the Issue body.
@@ -113,6 +114,7 @@ guidance:
     - When changing generated data contracts, regenerate generated context documentation.
     - Do not create separate todo lists in .ai-context or elsewhere; operative repository work belongs in GitHub Issues.
     - Use .ai-context/manual/work-tracking.yaml as the canonical contract for Issue lifecycle, label semantics, priority rules, handoff and work-tracking drift governance.
+    - Before implementing or reviewing Handbook topics, their navigation or in-app Handbook links, read .ai-context/manual/handbook.yaml and check Overview synchronization, public-copy hygiene and source accuracy.
 
   workflowObservability:
     - 'When creating, renaming or materially repurposing a GitHub Actions workflow, or when adding or materially changing a scheduler-integrated decision path, review the operator-observability surfaces in the same authorized change: workflow-monitoring classification/contract where applicable, the human-readable GitHub Job Summary, machine-readable decisions/logs, and regression coverage.'
@@ -152,7 +154,7 @@ guidance:
   ciDeployment:
     - After commits to main, check the deploy/result commit status for the committed SHA whenever possible.
     - Treat deploy/result as the primary machine-readable deployed-build result when workflow runs are not directly listable through the available tools.
-    - The deploy workflow only starts on a main push that touches build or delivered files (src/**, public/**, angular.json, package*.json, tsconfig*.json, deploy_action.ps1, deploy.yml). Commits touching only data-source/**, data-derived/** or fantasy-management/** do not deploy, so no deploy/result status exists for that SHA; this is expected and not a failure.
+    - The deploy workflow only starts on a main push that touches build or delivered files (src/**, public/**, angular.json, package*.json, tsconfig*.json, deploy_action.ps1, deploy.yml). Commits touching only data-source/**, data-derived/** or other fantasy-management/** paths do not deploy, so no deploy/result status exists for that SHA; the precise exception `fantasy-management/league-context/league-philosophy.md` is a Handbook build input and DOES trigger deployment.
     - Prefer machine-readable diagnostics from .ai-workflow/workflow-result.json, .ai-workflow/deploy-script-result.json and build.log when they are available through CI artifacts.
     - If CI status or diagnostics cannot be read through the available tools, state that limitation explicitly in the visible post-commit check.
     - Do not commit local .ai-workflow diagnostics; they are transient CI/helper output.

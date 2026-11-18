@@ -39,7 +39,7 @@
               <span class="rival-last">
                 <span class="rival-meta">Last meeting</span>
                 <span class="rival-last-line">
-                  <span class="rival-outcome" [ngClass]="'rival-outcome--' + view.record.lastGame.outcome">{{ outcomeLetter(view.record.lastGame) }}</span>
+                  <span class="rival-outcome" [ngClass]="'rival-outcome--' + view.record.lastGame.Outcome">{{ outcomeLetter(view.record.lastGame) }}</span>
                   {{ gameLabel(view.record.lastGame) }}
                 </span>
               </span>
@@ -51,20 +51,20 @@
             <ul class="rival-games" [id]="'rival-games-' + view.record.opponentId">
               @for (game of gamesNewestFirst(view); track trackGame($index, game)) {
                 <li class="rival-game">
-                  <span class="rival-outcome" [ngClass]="'rival-outcome--' + game.outcome">{{ outcomeLetter(game) }}</span>
+                  <span class="rival-outcome" [ngClass]="'rival-outcome--' + game.Outcome">{{ outcomeLetter(game) }}</span>
                   <span class="rival-game-when">{{ gameLabel(game) }}</span>
-                  <span class="rival-game-score" [ngClass]="'rival-game-score--' + game.outcome">
-                    @if (game.teamPoints !== null && game.opponentPoints !== null) {
-                      <strong class="rival-score-own">{{ points(game.teamPoints) }}</strong>
+                  <span class="rival-game-score" [ngClass]="'rival-game-score--' + game.Outcome">
+                    @if (game.TeamPoints !== null && game.OpponentPoints !== null) {
+                      <strong class="rival-score-own">{{ points(game.TeamPoints) }}</strong>
                       <span class="rival-score-sep" aria-hidden="true">–</span>
-                      <span class="rival-score-opp">{{ points(game.opponentPoints) }}</span>
+                      <span class="rival-score-opp">{{ points(game.OpponentPoints) }}</span>
                     } @else { – }
                   </span>
                   @if (gameMargin(game); as margin) {
-                    <span class="rival-margin" [ngClass]="'rival-tone--' + game.outcome">{{ margin }}</span>
+                    <span class="rival-margin" [ngClass]="'rival-tone--' + game.Outcome">{{ margin }}</span>
                   }
                   <span class="rival-game-tags">
-                    @if (game.stage === 'playoffs') { <span class="rival-tag rival-tag--playoffs">Playoffs</span> }
+                    @if (game.Stage === 'playoffs') { <span class="rival-tag rival-tag--playoffs">Playoffs</span> }
                     @if (isBiggestWin(view, game)) { <span class="rival-tag rival-tag--win">Biggest win</span> }
                     @if (isClosestLoss(view, game)) { <span class="rival-tag rival-tag--loss">Closest loss</span> }
                   </span>

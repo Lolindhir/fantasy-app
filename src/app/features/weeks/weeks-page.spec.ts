@@ -74,7 +74,7 @@ describe('WeeksPageComponent', () => {
   let fixture: ComponentFixture<WeeksPageComponent>;
   let dataService: jasmine.SpyObj<DataService>;
 
-  async function create(query: Record<string, string> = {}): Promise<HTMLElement> {
+  async function create(query: Record<string, string> = {}, view: 'week' | 'overview' = 'week'): Promise<HTMLElement> {
     await TestBed.configureTestingModule({
       imports: [WeeksPageComponent],
       providers: [
@@ -90,7 +90,14 @@ describe('WeeksPageComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
-    return fixture.nativeElement as HTMLElement;
+    const host = fixture.nativeElement as HTMLElement;
+    if (view === 'week') {
+      const weekTab = Array.from(host.querySelectorAll('.activity-tab'))
+        .find(tab => tab.textContent?.trim() === 'Week') as HTMLElement | undefined;
+      weekTab?.click();
+      fixture.detectChanges();
+    }
+    return host;
   }
 
   beforeEach(() => {
@@ -126,6 +133,235 @@ describe('WeeksPageComponent', () => {
     dataService.getFantasyGameContext.and.returnValue(throwError(() => new Error('missing')));
     dataService.getFantasyGameContextHistory.and.returnValue(throwError(() => new Error('missing')));
     dataService.getPastFantasyGameContextRaw.and.returnValue(throwError(() => new Error('missing')));
+  });
+
+
+  it('starts on the league schedule overview and shows every future week in order', async () => {
+    dataService.getMatchups.and.returnValue(of(matchups('2026', [
+      { week: 1, stage: 'regular-season', state: 'final' },
+      { week: 2, stage: 'regular-season', state: 'final' },
+      { week: 3, stage: 'regular-season', state: 'open' },
+      { week: 4, stage: 'regular-season', state: 'open' }
+    ])));
+    const host = await create({}, 'overview');
+
+    expect(host.querySelectorAll('.schedule-upcoming .schedule-week').length).toBe(2);
+    expect(Array.from(host.querySelectorAll('.schedule-upcoming .schedule-week-link'))
+      .map(node => node.textContent?.trim())).toEqual(['Week 3', 'Week 4']);
+    expect(host.querySelectorAll('.schedule-upcoming .week-matchup').length).toBe(2);
+    expect(host.querySelector('.week-title')).toBeNull();
+    expect(host.querySelector('.schedule-played')).toBeNull();
+
+    (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(host.querySelectorAll('.schedule-played .schedule-week').length).toBe(2);
+    expect(Array.from(host.querySelectorAll('.schedule-played .schedule-week-link'))
+      .map(node => node.textContent?.trim())).toEqual(['Week 2', 'Week 1']);
+    expect(host.querySelector('.schedule-played .week-matchup-side:not(.week-matchup-side--right) .week-matchup-score')?.textContent).toContain('102');
+  });
+
+  it('reuses the Week card renderer as separate cards in the Overview, including open state', async () => {
+    const host = await create({}, 'overview');
+    const row = host.querySelector('.schedule-upcoming .week-matchup') as HTMLButtonElement;
+    expect(row).not.toBeNull();
+    expect(row.classList.contains('week-matchup--schedule')).toBeTrue();
+    expect(row.querySelectorAll('app-team-identity').length).toBe(4); // desktop/mobile identities
+    expect(row.querySelector('.week-matchup-state--open')?.textContent).toContain('Open');
+    expect(row.querySelector('.week-matchup-score')?.textContent?.trim()).toBe('–');
+    expect(host.querySelectorAll('.schedule-upcoming .schedule-scoreboards > .week-matchup').length).toBe(1);
+    expect(host.querySelector('.schedule-upcoming .schedule-scoreboards')).not.toBeNull();
+  });
+
+  it('preserves final scores in played rows and detailed Week cards', async () => {
+    const host = await create({}, 'overview');
+    (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(host.querySelector('.schedule-played .week-matchup-side:not(.week-matchup-side--right) .week-matchup-score')?.textContent).toContain('102');
+    expect(host.querySelector('.schedule-played .week-matchup-side--right .week-matchup-score')?.textContent).toContain('90');
+
+    (Array.from(host.querySelectorAll('.activity-tab')).find(tab => tab.textContent?.trim() === 'Week') as HTMLElement).click();
+    fixture.detectChanges();
+    expect(host.querySelector('.week-matchup')).not.toBeNull();
+    expect(host.querySelector('.week-matchup-score')?.textContent).toContain('102');
+  });
+
+
+  it('tints only the authoritative winner side and associates each score with its team', async () => {
+    const season = matchups('2025', [
+      { week: 1, stage: 'regular-season', state: 'final' },
+      { week: 2, stage: 'regular-season', state: 'final' }
+    ]);
+    season.Weeks[0].Matchups[0].Result = { Type: 'win', WinnerTeamID: 2 };
+    season.Weeks[1].Matchups[0].Result = { Type: 'win', WinnerTeamID: 1 };
+    dataService.getPastMatchupsRaw.and.returnValue(of(season));
+
+    const host = await create({ season: '2025' }, 'overview');
+    const rows = Array.from(host.querySelectorAll('.schedule-played .week-matchup')) as HTMLButtonElement[];
+    expect(rows.length).toBe(2);
+
+    const leftWinner = rows[0]; // Week 2 (reverse chronological)
+    expect(leftWinner.querySelector('.week-matchup-side:not(.week-matchup-side--right).week-matchup-side--winner')).not.toBeNull();
+    expect(leftWinner.querySelector('.week-matchup-side--right.week-matchup-side--winner')).toBeNull();
+    expect(leftWinner.querySelector('.week-matchup-side:not(.week-matchup-side--right) .week-matchup-score')?.textContent?.trim()).toBe('102');
+    expect(leftWinner.querySelector('.week-matchup-side--right .week-matchup-score')?.textContent?.trim()).toBe('90');
+    expect(leftWinner.getAttribute('aria-label')).toContain('winner T1');
+
+    const rightWinner = rows[1]; // Week 1
+    expect(rightWinner.querySelector('.week-matchup-side:not(.week-matchup-side--right).week-matchup-side--winner')).toBeNull();
+    expect(rightWinner.querySelector('.week-matchup-side--right.week-matchup-side--winner')).not.toBeNull();
+    expect(rightWinner.querySelector('.week-matchup-side--right .week-matchup-score')?.textContent?.trim()).toBe('90');
+    expect(rightWinner.getAttribute('aria-label')).toContain('winner T2');
+  });
+
+  it('does not invent a winner for a final tie, unknown state or open live scores', async () => {
+    const season = matchups('2026', [
+      { week: 1, stage: 'regular-season', state: 'final' },
+      { week: 2, stage: 'regular-season', state: 'open' },
+      { week: 3, stage: 'regular-season', state: 'open' }
+    ]);
+    season.Weeks[0].Matchups[0].Result = { Type: 'tie', WinnerTeamID: null };
+    season.Weeks[0].Matchups[0].Participants[1].Points = 101;
+    season.Weeks[1].Matchups[0].Participants[0].Points = 23.5;
+    season.Weeks[1].Matchups[0].Participants[1].Points = 14.2;
+    season.Weeks[2].CompletionState = 'unknown';
+    season.Weeks[2].Matchups[0].CompletionState = 'unknown';
+    dataService.getMatchups.and.returnValue(of(season));
+
+    const host = await create({}, 'overview');
+    const upcoming = Array.from(host.querySelectorAll('.schedule-upcoming .week-matchup')) as HTMLButtonElement[];
+    expect(upcoming.length).toBe(2);
+    expect(upcoming[0].querySelector('.week-matchup-score')?.textContent?.trim()).toBe('23.5');
+    expect(upcoming[0].querySelectorAll('.week-matchup-side--winner').length).toBe(0);
+    expect(upcoming[1].querySelector('.week-matchup-state--unknown')?.textContent).toContain('Unconfirmed');
+    expect(upcoming[1].querySelectorAll('.week-matchup-side--winner').length).toBe(0);
+
+    (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    const tie = host.querySelector('.schedule-played .week-matchup') as HTMLButtonElement;
+    expect(tie.querySelectorAll('.week-matchup-side--winner').length).toBe(0);
+    expect(tie.querySelectorAll('.week-matchup-score').length).toBe(2);
+    expect(tie.getAttribute('aria-label')).toContain('tie');
+  });
+
+  it('opens the original Week detail from a schedule group header', async () => {
+    const host = await create({}, 'overview');
+    (host.querySelector('.schedule-upcoming .schedule-week-link') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.week-title')?.textContent).toContain('Week 3');
+    expect(host.querySelector('.week-recap .weekly-recap-empty')).not.toBeNull();
+  });
+
+  it('shows verified playoff fixture labels above each card and in accessible names', async () => {
+    const season = matchups('2025', [
+      { week: 14, stage: 'playoffs', state: 'final' },
+      { week: 15, stage: 'playoffs', state: 'final' },
+      { week: 16, stage: 'playoffs', state: 'final' },
+      { week: 17, stage: 'playoffs', state: 'final' }
+    ]);
+    for (const week of season.Weeks) {
+      const fixture = week.Matchups[0];
+      fixture.Bracket = 'championship';
+      fixture.PlayoffRound = week.Week <= 15 ? 1 : 2;
+      fixture.PlayoffRoundCount = 2;
+      fixture.PlayoffPlacement = week.Week <= 15 ? null : 1;
+      fixture.PlayoffRoundWeek = week.Week % 2 === 0 ? 1 : 2;
+      fixture.PlayoffRoundWeeks = 2;
+    }
+    dataService.getPastMatchupsRaw.and.returnValue(of(season));
+    const host = await create({ season: '2025' }, 'overview');
+    const labels = Array.from(host.querySelectorAll('.schedule-played .week-matchup-playoff-label'))
+      .map(node => node.textContent?.trim());
+    expect(labels).toEqual(['Final · 2/2', 'Final · 1/2', 'Semifinal · 2/2', 'Semifinal · 1/2']);
+    expect((host.querySelector('.schedule-played .week-matchup') as HTMLButtonElement).getAttribute('aria-label'))
+      .toContain('Final · 2/2');
+    expect(host.querySelectorAll('.schedule-played .week-matchup-side--winner').length).toBe(4);
+    expect(host.querySelectorAll('.schedule-played .week-matchup--schedule').length).toBe(4);
+    expect(host.querySelector('.schedule-played .week-matchup-playoff-label')?.parentElement?.classList.contains('week-matchup')).toBeTrue();
+
+    (Array.from(host.querySelectorAll('.activity-tab')).find(tab => tab.textContent?.trim() === 'Week') as HTMLElement).click();
+    fixture.detectChanges();
+    const weekLabel = host.querySelector('.week-section .week-matchup-playoff-label')?.textContent?.trim();
+    expect(weekLabel).toBe('Final · 2/2');
+  });
+
+  it('keeps Semifinal I and II stable across two legs in Overview and Week despite shuffled fixture order', async () => {
+    const season = matchups('2025', [
+      { week: 14, stage: 'playoffs', state: 'final' },
+      { week: 15, stage: 'playoffs', state: 'final' }
+    ]);
+    for (const [index, week] of season.Weeks.entries()) {
+      const first = week.Matchups[0];
+      Object.assign(first, {
+        Bracket: 'championship', PlayoffRound: 1, PlayoffRoundCount: 2, PlayoffPlacement: null,
+        PlayoffRoundWeek: index + 1, PlayoffRoundWeeks: 2
+      });
+      const second = {
+        ...first,
+        FantasyMatchupID: `other-${week.Week}`,
+        Participants: [
+          { TeamID: 3, Points: 150, ScoreKind: 'standard' as const },
+          { TeamID: 4, Points: 140, ScoreKind: 'standard' as const }
+        ],
+        Result: { Type: 'win' as const, WinnerTeamID: 3 }
+      };
+      week.Matchups = index === 0 ? [first, second] : [second, first];
+    }
+    dataService.getPastMatchupsRaw.and.returnValue(of(season));
+    const host = await create({ season: '2025' }, 'overview');
+    const weeks = Array.from(host.querySelectorAll('.schedule-played .schedule-week'));
+    expect(weeks.map(node => Array.from(node.querySelectorAll('.week-matchup-playoff-label'))
+      .map(label => label.textContent?.trim()))).toEqual([
+      ['Semifinal II · 2/2', 'Semifinal I · 2/2'],
+      ['Semifinal I · 1/2', 'Semifinal II · 1/2']
+    ]);
+    expect(weeks[0].querySelectorAll('.week-matchup').length).toBe(2);
+
+    (weeks[0].querySelector('.schedule-week-link') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(Array.from(host.querySelectorAll('.week-section .week-matchup-playoff-label'))
+      .map(node => node.textContent?.trim())).toEqual(['Semifinal II · 2/2', 'Semifinal I · 2/2']);
+  });
+
+  it('does not display an exact playoff label for legacy or unclassified evidence', async () => {
+    const season = matchups('2025', [
+      { week: 14, stage: 'playoffs', state: 'final' },
+      { week: 15, stage: 'playoffs', state: 'final' }
+    ]);
+    season.Weeks[0].Matchups[0].Bracket = 'unclassified';
+    season.Weeks[1].Matchups[0].Bracket = 'championship'; // legacy label without exact round facts
+    dataService.getPastMatchupsRaw.and.returnValue(of(season));
+    const host = await create({ season: '2025' }, 'overview');
+    expect(host.querySelectorAll('.week-matchup-playoff-label').length).toBe(0);
+    expect(host.querySelectorAll('.schedule-played .week-matchup').length).toBe(2);
+  });
+
+  it('shows all known archived weeks without hiding playoffs or inventing unavailable results', async () => {
+    const host = await create({ season: '2025' }, 'overview');
+    expect(host.querySelector('.schedule-upcoming')).toBeNull();
+    expect(host.querySelector('.schedule-played-toggle')).toBeNull();
+    expect(host.querySelectorAll('.schedule-played .schedule-week').length).toBe(2);
+    expect(host.querySelector('.schedule-played .week-stage')?.textContent).toContain('Playoffs');
+  });
+
+  it('uses the old ?week= deep link to open the detailed Week tab', async () => {
+    const host = await create({ week: '3' }, 'overview');
+    expect(host.querySelector('.week-title')?.textContent).toContain('Week 3');
+    expect(host.querySelector('.schedule-upcoming')).toBeNull();
+  });
+
+  it('opens schedule matchups only when that particular week has context', async () => {
+    const context = (week: number) => ({
+      Season: '2026', Week: week, FantasyMatchups: [{ FantasyMatchupID: `2026-${week}` }]
+    }) as unknown as FantasyGameContextReadModel;
+    dataService.getFantasyGameContext.and.returnValue(of(context(3)));
+    dataService.getFantasyGameContextHistory.and.returnValue(of({ Weeks: [context(2)] } as unknown as HistoricalFantasyGameContextSeason));
+    const host = await create({}, 'overview');
+
+    expect((host.querySelector('.schedule-upcoming .week-matchup') as HTMLButtonElement).disabled).toBeFalse();
+    (host.querySelector('.schedule-played-toggle') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect((host.querySelector('.schedule-played .week-matchup') as HTMLButtonElement).disabled).toBeFalse();
   });
 
   it('opens the last completed week of the current season with scores and a recap', async () => {
@@ -240,6 +476,24 @@ describe('WeeksPageComponent', () => {
 
     expect(host.querySelector('.week-title')?.textContent).toContain('Week 2');
   });
+  it('shows the biggest underdog win in the recap when the generator marked an underdog win', async () => {
+    const marked = recaps('2026', [1, 2]);
+    marked.Weeks[1].WinProbabilities = [{
+      FantasyMatchupID: '2026-2',
+      Teams: [{ FantasyTeamID: 1, PregameWinProbability: 28 }, { FantasyTeamID: 2, PregameWinProbability: 72 }],
+      Upset: true,
+      UpsetWinnerFantasyTeamID: 1,
+      UpsetLevel: 'upset',
+      UnderdogWinnerFantasyTeamID: 1
+    }];
+    dataService.getWeeklyRecaps.and.returnValue(of(marked));
+    const host = await create();
+
+    expect(host.querySelector('.weekly-recap-underdog')?.textContent).toContain('Biggest Underdog Win');
+    expect(host.querySelector('.weekly-recap-underdog')?.textContent).toContain('Upset');
+    expect(host.querySelector('.weekly-recap-underdog')?.textContent).toContain('28');
+  });
+
   it('does not show pregame chances or upsets in the week list and the season grid', async () => {
     const withChance = recaps('2026', [1, 2]);
     withChance.Weeks[1].WinProbabilities = [{

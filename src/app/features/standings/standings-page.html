@@ -1,6 +1,6 @@
 <div class="standings-page" *ngIf="vm$ | async as vm">
   <app-league-legacy-summary
-    [highlights]="vm.legacy.highlights"
+    [highlights]="vm.highlights"
   ></app-league-legacy-summary>
 
   <app-all-time-overview
@@ -11,10 +11,12 @@
   <app-current-standings
     variant="detailed"
     [playoffTeams]="vm.playoffTeams"
+    [statistics]="vm.currentStatistics"
     [standings]="vm.currentStandings"
   ></app-current-standings>
 
   <app-season-archive
     [history]="vm.seasonHistory"
+    [statistics]="vm.seasonStatistics"
   ></app-season-archive>
 </div>

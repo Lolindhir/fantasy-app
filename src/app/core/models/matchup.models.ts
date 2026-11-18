@@ -19,6 +19,14 @@ export interface FantasyMatchupReadModel {
   Participants: MatchupParticipant[];
   CompletionState: MatchupCompletionState;
   Result: MatchupResult | null;
+  /** Playoff bracket label from the generator (championship, placement, consolation, unclassified); null in the regular season. */
+  Bracket?: string | null;
+  /** Canonical bracket provenance, populated only for playoff matchups. Null when the pairing is unclassified. */
+  PlayoffRound?: number | null;
+  PlayoffRoundCount?: number | null;
+  PlayoffPlacement?: number | null;
+  PlayoffRoundWeek?: number | null;
+  PlayoffRoundWeeks?: number | null;
 }
 
 export interface MatchupWeekReadModel {
