@@ -92,6 +92,32 @@ guidance:
       - Every created, renamed or materially repurposed workflow remains subject to workflow-monitoring classification, workflow-publication writer semantics, tests and observability review in the same change.
       - Apply the same contract to ChatGPT, Claude, other agents and human-assisted agent runners; no actor-specific exemption.
 
+  internalDataProductDelivery:
+    principle: >-
+      Prefer early, clearly versioned internal publication with truthful source,
+      coverage, eligibility and uncertainty metadata over repeated pilots and
+      research gates when the remaining uncertainty is about the precision of
+      a measured candidate, not its technical integrity. A published internal
+      candidate may be revised after observing real persisted results; it must
+      never be represented as independently complete or externally certified.
+    scope: >-
+      Applies only to controlled internal, consumer-neutral data products whose
+      ownership, read paths, consumers, acceptable limitations and recovery
+      have been inspected. It does not grant publication or schema migration
+      permission, expand a writer scope, or waive safety checks.
+    execution:
+      - Start from the desired published output and use existing producers, CI and versioned contracts; do not create research workflows, one-off migration jobs or repeated pilot branches without a specific unresolved technical blocker.
+      - Prefer source-driven season and dataset discovery over hard-coded years; use explicit unavailable/null for absent accepted source evidence, never invented zeros, fabricated plays or implicit completeness claims.
+      - Distinguish technical release gates (schema compatibility, source identity, valid output, consumer impact, deterministic no-op, race-safe publication and rollback) from iterative scientific/model-quality assessment (plausibility, coverage limits, explanatory deltas, empirical calibration).
+      - Assess model uncertainty proportionally to the product's actual users and consequences; label unverified observed metrics as provisional and retain enough denominators and provenance for audit and later improvement.
+      - After a concrete end-to-end delivery is approved, keep small reversible code checkpoints but evaluate progress by successful productive materialization and post-publication health rather than by numbers of pilot or research PRs.
+    protectedBoundaries: >-
+      Preserve authorizationAndRisk standard/elevated/critical classification,
+      source ownership, source-byte retention, provenance, existing consumers,
+      workflow/CI and merge protections, bounded publication scope, and rollback
+      requirements. Source availability and technical validity may block a
+      particular metric or season without blocking independent valid groups.
+
   sourceOfTruth:
     - Do not infer source-of-truth domain ownership from Angular components alone.
     - Do not put league-specific rules into ConfigUtils.psm1 when they belong in the league metadata (data-meta/<CanonicalLeagueID>/metadata.json).
