@@ -1,0 +1,276 @@
+#!/usr/bin/env python3
+"""Bounded, deterministic materializer of the league-schedule-outlook Shared Derived product (Issue #1519, I6).
+
+Not yet a productive writer. It exists, is tested and can write into an EXPLICIT scratch ``--out-root``,
+but refuses the repository's productive ``data-derived`` root until a separately approved change flips
+``PRODUCTIVE_WRITE_ENABLED`` and wires an already classified publisher (league-live / update-transactions).
+The model is an explicit ``--model-id``; the data-meta ``Models.ScheduleOutlook`` selection does not exist yet.
+
+Layout (per league and season; one file per fully scored after-week cutoff plus a completeness index):
+  <out-root>/league-schedule-outlook/<CanonicalLeagueID>/<Season>/after-week-NN.json
+  <out-root>/league-schedule-outlook/<CanonicalLeagueID>/<Season>/index.json   (written LAST)
+
+Modes:
+  incremental  recompute only cutoffs whose input fingerprint differs from the persisted document
+               (or whose file is missing/unreadable). The persisted file only decides *whether* to
+               recompute; content never depends on it. Bounded current-season mode for League Live.
+  full         recompute every cutoff and compare bytes (weekly history pass / drift detection).
+
+Consistency: all documents of a season are built in memory, the season inputs are re-read and their
+fingerprints re-computed (a change during the run aborts the season), then files are replaced atomically
+and the index is written last. Any error leaves the season untouched. Orphan snapshot files are reported
+and never deleted automatically.
+
+Usage:
+  league_schedule_outlook_materialize.py --league ID --model-id schedule-outlook-v1 --out-root DIR
+      [--scope current|all] [--season YYYY ...] [--mode incremental|full] [--check]
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import sys
+import tempfile
+from pathlib import Path
+from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from data_roots import data_derived_dir  # noqa: E402
+from derived_data_lib.league_schedule_outlook import PRODUCT, SCHEMA_VERSION, assemble  # noqa: E402
+from derived_data_lib.models.registry import get_model  # noqa: E402
+from derived_data_lib.playoff_brackets import round_windows  # noqa: E402
+import league_schedule_outlook_preview as source  # noqa: E402
+from league_schedule_outlook_preview import ScheduleOutlookSourceError, SeasonInputs  # noqa: E402
+
+FINGERPRINT_VERSION = 1
+INDEX_PRODUCT = "league-schedule-outlook-index"
+INDEX_NAME = "index.json"
+MODES = ("incremental", "full")
+# Elevated effect: flipped only by a separately approved change (new Derived prefix for existing writers).
+PRODUCTIVE_WRITE_ENABLED = False
+
+
+class ScheduleOutlookMaterializeError(ValueError):
+    """Unsafe, inconsistent or unauthorized materialization; nothing was written for the season."""
+
+
+def snapshot_name(after_week: int) -> str:
+    return f"after-week-{after_week:02d}.json"
+
+
+def product_dir(out_root: Path, league_id: str, season: int) -> Path:
+    return out_root / PRODUCT / league_id / str(season)
+
+
+def serialize(document: dict[str, Any]) -> str:
+    """Deterministic compact JSON; the same bytes the restore candidate digests."""
+    return json.dumps(document, ensure_ascii=False, separators=(",", ":")) + "\n"
+
+
+def _digest(value: Any) -> str:
+    text = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _bracket_projection(rows: Any, windows: list[tuple[int, ...]] | None, *, after_week: int, regular_end: int) -> Any:
+    """Exactly the bracket facts schedule-outlook-v1 can read at this cutoff.
+
+    Direct seeds count only from the regular-season end; Winner/Loser only once the whole round is
+    scored. Everything the model masks is excluded so a later playoff result does not invalidate the
+    earlier cutoffs. If the format or rows are malformed the raw payload is used (the model fails closed).
+    """
+    if windows is None or not isinstance(rows, list) or not all(isinstance(r, dict) for r in rows):
+        return rows
+    projected = []
+    for row in sorted(rows, key=lambda r: (str(r.get("Match")), str(r.get("Round")))):
+        round_no = row.get("Round")
+        item: dict[str, Any] = {k: row.get(k) for k in ("Match", "Round", "Placement", "Team1Source", "Team2Source")}
+        if after_week >= regular_end:
+            for slot in (1, 2):
+                if row.get(f"Team{slot}Source") is None:
+                    item[f"Team{slot}CanonicalLeagueRosterID"] = row.get(f"Team{slot}CanonicalLeagueRosterID")
+        if type(round_no) is int and 1 <= round_no <= len(windows) and after_week >= windows[round_no - 1][-1]:
+            item["WinnerCanonicalLeagueRosterID"] = row.get("WinnerCanonicalLeagueRosterID")
+            item["LoserCanonicalLeagueRosterID"] = row.get("LoserCanonicalLeagueRosterID")
+        projected.append(item)
+    return projected
+
+
+def input_fingerprint(inputs: SeasonInputs, after_week: int, model_id: str) -> str:
+    """SHA-256 over exactly the accepted facts and versions this cutoff depends on.
+
+    Included: schema/fingerprint/model versions, identities, week structure, team identity, the future
+    regular-season pairings, the ratings of the cutoff's rating week only, and the cutoff-visible
+    bracket facts. Excluded (by design): scores, lineups, later ratings, masked bracket results.
+    """
+    rating_week = source.rating_week_for(inputs, after_week)
+    stats = inputs.stats() if rating_week else {}
+    ratings = source.ratings_for_week(stats, inputs.teams, rating_week=rating_week)
+    winners, losers = inputs.brackets()
+    windows = round_windows(inputs.week_structure)
+    kwargs = {"after_week": after_week, "regular_end": inputs.regular_end}
+    return _digest({
+        "FingerprintVersion": FINGERPRINT_VERSION,
+        "SchemaVersion": SCHEMA_VERSION,
+        "ModelID": model_id,
+        "League": [inputs.league_id, inputs.season_id, inputs.season],
+        "AfterWeek": after_week,
+        "RatingWeek": rating_week or None,
+        "WeekStructure": inputs.week_structure,
+        "Teams": sorted((t["TeamID"], t["CanonicalLeagueRosterID"]) for t in inputs.teams),
+        "Pairings": {str(w): inputs.pairings(w) for w in range(max(1, after_week + 1), inputs.regular_end + 1)},
+        "SeasonStatsModel": stats.get("Models", {}).get("SeasonStats") if stats else None,
+        "Ratings": {k: ratings[k] for k in sorted(ratings)},
+        "Winners": _bracket_projection(winners, windows, **kwargs),
+        "Losers": _bracket_projection(losers, windows, **kwargs),
+    })
+
+
+def build_document(inputs: SeasonInputs, after_week: int, model_id: str, fingerprint: str) -> dict[str, Any]:
+    return assemble(source.snapshot(inputs, after_week), selected_model_id=model_id, input_fingerprint=fingerprint)
+
+
+def _read_existing(path: Path) -> tuple[str, dict[str, Any] | None]:
+    try:
+        text = path.read_text(encoding="utf-8")
+        data = json.loads(text)
+    except (OSError, ValueError):
+        return "", None
+    return text, data if isinstance(data, dict) else None
+
+
+def _atomic_write(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    handle, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+    try:
+        with os.fdopen(handle, "w", encoding="utf-8", newline="") as stream:
+            stream.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
+def _guard_out_root(repo_root: Path, out_root: Path, write: bool) -> None:
+    if write and not PRODUCTIVE_WRITE_ENABLED:
+        if out_root.resolve() == data_derived_dir(repo_root).resolve():
+            raise ScheduleOutlookMaterializeError(
+                "Productive league-schedule-outlook writes are not authorized; use a scratch --out-root")
+
+
+def materialize_season(
+    repo_root: Path, out_root: Path, league_id: str, season: int, model_id: str,
+    *, mode: str = "incremental", check_only: bool = False,
+) -> dict[str, Any]:
+    if mode not in MODES:
+        raise ScheduleOutlookMaterializeError(f"Unknown mode {mode!r}")
+    _guard_out_root(repo_root, out_root, write=not check_only)
+    get_model(model_id, kind="schedule-outlook")
+    folder = product_dir(out_root, league_id, season)
+
+    inputs = source.load_season_inputs(repo_root, league_id, season)
+    scored = inputs.scored
+    if type(scored) is not int or scored < 0:
+        raise ScheduleOutlookMaterializeError("Unknown LeagueScoredWeek")
+    weeks = list(range(scored + 1))
+    fingerprints = {w: input_fingerprint(inputs, w, model_id) for w in weeks}
+
+    texts: dict[int, str] = {}
+    unchanged = recomputed = 0
+    writes: list[int] = []
+    for week in weeks:
+        existing_text, existing = _read_existing(folder / snapshot_name(week))
+        current = (existing is not None and mode == "incremental"
+                   and existing.get("Provenance", {}).get("InputFingerprint") == fingerprints[week]
+                   and existing.get("AsOf", {}).get("AfterWeek") == week
+                   and existing.get("Models", {}).get("ScheduleOutlook") == model_id
+                   and existing.get("SchemaVersion") == SCHEMA_VERSION)
+        if current:
+            texts[week] = existing_text
+            unchanged += 1
+            continue
+        text = serialize(build_document(inputs, week, model_id, fingerprints[week]))
+        recomputed += 1
+        texts[week] = text
+        if text != existing_text:
+            writes.append(week)
+
+    # Source-change guard: re-read everything; any fingerprint movement aborts the season untouched.
+    fresh = source.load_season_inputs(repo_root, league_id, season)
+    if fresh.scored != scored or any(input_fingerprint(fresh, w, model_id) != fingerprints[w] for w in weeks):
+        raise ScheduleOutlookMaterializeError(f"Season {season}: inputs changed during the run; nothing written")
+
+    index = {
+        "SchemaVersion": SCHEMA_VERSION, "Product": INDEX_PRODUCT, "CanonicalLeagueID": league_id,
+        "CanonicalLeagueSeasonID": inputs.season_id, "Season": season,
+        "Models": {"ScheduleOutlook": model_id}, "LeagueScoredWeek": scored,
+        "Snapshots": [{"AfterWeek": w, "File": snapshot_name(w), "InputFingerprint": fingerprints[w],
+                       "Sha256": hashlib.sha256(texts[w].encode("utf-8")).hexdigest()} for w in weeks],
+    }
+    index_text = serialize(index)
+    index_changed = _read_existing(folder / INDEX_NAME)[0] != index_text
+    expected = {snapshot_name(w) for w in weeks} | {INDEX_NAME}
+    orphans = sorted(p.name for p in folder.glob("after-week-*.json") if p.name not in expected) if folder.is_dir() else []
+
+    if not check_only:
+        for week in writes:
+            _atomic_write(folder / snapshot_name(week), texts[week])
+        if index_changed or writes:
+            _atomic_write(folder / INDEX_NAME, index_text)  # last: a present index implies a complete set
+    return {
+        "Season": season, "CanonicalLeagueID": league_id, "Mode": mode, "LeagueScoredWeek": scored,
+        "Snapshots": len(weeks), "Unchanged": unchanged, "Recomputed": recomputed,
+        "Written" if not check_only else "WouldWrite": len(writes) + (1 if index_changed else 0),
+        "Orphans": orphans,
+    }
+
+
+def seasons_for_scope(repo_root: Path, league_id: str, scope: str, explicit: list[int] | None) -> list[int]:
+    import league_standings_sources as standings
+    manifest = standings.manifest(repo_root, league_id)
+    available = standings.manifest_seasons(manifest)
+    if explicit:
+        unknown = [s for s in explicit if s not in available]
+        if unknown:
+            raise ScheduleOutlookMaterializeError(f"Seasons not in the league manifest: {unknown}; available: {available}")
+        return sorted(set(explicit))
+    return [standings.current_season(manifest)] if scope == "current" else available
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--league", required=True)
+    parser.add_argument("--model-id", required=True)
+    parser.add_argument("--out-root", type=Path, required=True)
+    parser.add_argument("--scope", choices=("current", "all"), default="current")
+    parser.add_argument("--season", type=int, action="append")
+    parser.add_argument("--mode", choices=MODES, default="incremental")
+    parser.add_argument("--check", action="store_true", help="dry run; exit 1 when a write or orphan would remain")
+    args = parser.parse_args()
+    failures = 0
+    pending = 0
+    try:
+        seasons = seasons_for_scope(args.repo_root, args.league, args.scope, args.season)
+    except (ScheduleOutlookMaterializeError, ScheduleOutlookSourceError, ValueError, OSError, KeyError) as exc:
+        print(f"schedule outlook materialization failed: {exc}", file=sys.stderr)
+        return 1
+    for season in seasons:
+        try:
+            summary = materialize_season(args.repo_root, args.out_root, args.league, season, args.model_id,
+                                         mode=args.mode, check_only=args.check)
+        except (ScheduleOutlookMaterializeError, ScheduleOutlookSourceError, ValueError, OSError, KeyError) as exc:
+            failures += 1
+            print(f"::warning::schedule outlook season {season} not materialized: {exc}", file=sys.stderr)
+            continue
+        pending += summary.get("WouldWrite", 0) + len(summary["Orphans"])
+        print(json.dumps(summary, sort_keys=True))
+    return 1 if failures or (args.check and pending) else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

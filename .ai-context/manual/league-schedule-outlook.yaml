@@ -3,10 +3,12 @@ status: proposed-contract-not-yet-published
 trackingIssue: 1519
 architectureDecision: pending
 implementationState: >
-  I1–I5a read-only as-of reconstruction merged and verified (2024–2026).
-  I5b introduces only pure versioned document assembly and its tests.
-  No league metadata selection, materializer writer, published snapshot,
-  publisher/permissions change or App consumer is enabled by this proposal.
+  I1–I5b.2c merged; the full historical replay (47 cutoffs 2024–2026) passed in the weekly Full Audit
+  (run 44523559168, 2026-11-19: VerifiedCandidatePass, SourceRevisionVerified, no digest differences).
+  I6 adds the bounded, fingerprinted, recoverable materializer tools/league_schedule_outlook_materialize.py,
+  tested against synthetic seasons and the repository. It can write ONLY into an explicit scratch out-root:
+  PRODUCTIVE_WRITE_ENABLED is False and the productive data-derived root is refused. No data-meta model
+  selection, workflow call, published snapshot, publisher/permission change or App consumer is enabled.
 
 purpose: >
   One reproducible, consumer-neutral shared data product for the remaining
@@ -139,21 +141,66 @@ contract:
 
 plannedMaterialization:
   pureAssembler: tools/derived_data_lib/league_schedule_outlook.py::assemble
-  readOnlySourceAdapter: tools/league_schedule_outlook_preview.py
-  writeScope: not yet authorized
+  readOnlySourceAdapter: tools/league_schedule_outlook_preview.py (SeasonInputs, load_season_inputs, snapshot)
+  materializer: tools/league_schedule_outlook_materialize.py
+  writeScope: not yet authorized (guarded by PRODUCTIVE_WRITE_ENABLED)
+  layout: >
+    data-derived/league-schedule-outlook/<CanonicalLeagueID>/<Season>/after-week-NN.json (one per fully
+    scored cutoff 0..LeagueScoredWeek) plus index.json in the same folder, always written last.
+  indexShape: >
+    {SchemaVersion, Product "league-schedule-outlook-index", CanonicalLeagueID, CanonicalLeagueSeasonID,
+    Season, Models.ScheduleOutlook, LeagueScoredWeek, Snapshots[{AfterWeek, File, InputFingerprint, Sha256}]}.
+    A present index implies a complete, hash-verifiable set 0..LeagueScoredWeek; consumers read the index
+    first and must treat a missing or inconsistent index as unavailable, never as an empty outlook.
+  inputFingerprint: >
+    Provenance.InputFingerprint = SHA-256 over exactly the accepted facts a cutoff depends on: fingerprint,
+    schema and model versions, identities, WeekStructure, team identity, the FUTURE regular-season pairings
+    (identity only), the ratings of that cutoff's rating week only, the SeasonStats model id and the
+    bracket facts visible at the cutoff (direct seeds from the regular-season end, Winner/Loser only after
+    the whole round is scored). Scores, lineups, later ratings and masked bracket results are excluded, so a
+    new week or a playoff result dirties only the cutoffs it can change. Soundness (content change implies
+    fingerprint change) is pinned by a perturbation test. Any change to the model, assembler or what they
+    read requires bumping FINGERPRINT_VERSION or a new model version.
+  modes:
+    incremental: >
+      Recompute only cutoffs whose fingerprint differs from the persisted document or whose file is
+      missing or unreadable; unchanged input is a true no-op. The persisted file decides only whether to
+      recompute, never the content. Intended for League Live (current season, every tick).
+    full: >
+      Recompute every cutoff and compare bytes (weekly historical pass, tamper/drift detection and
+      explicit repair), as required by data-sources.yaml historicalReconciliationStandard.
+  consistency: >
+    A season is built entirely in memory, its inputs are re-read and all fingerprints recomputed (any
+    change aborts that season with nothing written), snapshots are replaced atomically and the index is
+    written last. A season error never touches its files and never blocks other seasons (exit code 1,
+    warning annotation). Orphan snapshot files (for example after a finality rollback) are reported and
+    never deleted automatically. Upstream order: season-statistics of the season must be current through
+    the rating week (otherwise the season fails closed and keeps its last good set).
+  performance: >
+    Measured 2026-11-19: all 47 historical cutoffs (2024–2026) in about 2.8 s and about 1 MB in a single
+    process; incremental no-op about 2.6 s (dominated by reading inputs and week finality). The expensive
+    part of the earlier restore replay is the upstream PWF/TWP/SeasonStats rebuild, which production
+    never repeats because the materializer reads the persisted season-statistics product. No further
+    optimisation is needed.
   currentScope: >
-    After existing season-statistics refresh, calculate only necessary current
-    snapshots; no unbounded 10-minute replay.
+    League Live: --scope current --mode incremental after the season-statistics refresh of the same
+    publication (fail-soft like season-statistics).
   historicalScope: >
-    Recalculate all accepted historical cutoffs on the existing weekly history
-    cadence and on authorized source corrections.
+    update-transactions (weekly): --scope all --mode full after season-statistics --scope all and before
+    the Past Seasons index.
   writerOwnersPendingApproval:
-    - .github/workflows/league-live.yml (existing rebuild-and-retry)
-    - .github/workflows/update-transactions.yml (existing rebuild-and-retry)
+    - .github/workflows/league-live.yml (existing rebuild-and-retry, new --path data-derived/league-schedule-outlook)
+    - .github/workflows/update-transactions.yml (existing rebuild-and-retry, same new --path)
+  activationChangeSet: >
+    One reviewed change after approval: (1) data-meta Models.ScheduleOutlook per season together with the
+    league_metadata KNOWN_MODEL_IDS entry (Models must name exactly the catalogue, so the catalogue entry
+    and every league season edit land together), (2) the model id read from data-meta instead of
+    --model-id, (3) PRODUCTIVE_WRITE_ENABLED, (4) the two workflow calls and --path prefix,
+    (5) workflow-publication.yaml note, (6) data-derived README product row, (7) ADR in decisions.yaml.
   rollback: >
-    Remove in-scope generator calls and the newly approved Derived output
-    prefix only through reviewed changes. Do not force-delete historic
-    published snapshots as an automatic rollback action.
+    Remove the two generator calls and the newly approved Derived output prefix only through reviewed
+    changes and set PRODUCTIVE_WRITE_ENABLED back to False. Do not force-delete published snapshots as an
+    automatic rollback action; consumers fall back to unavailable.
 
 validation:
   pureTests: tools/tests/test_league_schedule_outlook_document.py
@@ -175,11 +222,12 @@ validation:
     candidate failure is reported separately without weakening or blocking
     the existing products' restore gate until the product contract is accepted.
     Passing this probe is not writer authorization.
+  materializerTests: tools/tests/test_league_schedule_outlook_materialize.py
   acceptanceGates:
-    - Complete source-only cold rebuild and byte-identical second pass
-    - No reference to previous outlook outputs or public/data
-    - All valid 2024/2025/2026 Cutoffs and both playoff round styles
-    - Correct null/unknown and future-leak regression tests
-    - Fail-closed unknown metadata model, source/cutoff gaps, late source revisions
-    - Bounded writer-scope, no-op and race/recovery tests
-    - Separate targeted approval for new productive Derived prefix
+    - Complete source-only cold rebuild and byte-identical second pass (done: I5b.2c audit, I6 tests)
+    - No reference to previous outlook outputs or public/data (done)
+    - All valid 2024/2025/2026 Cutoffs and both playoff round styles (done)
+    - Correct null/unknown and future-leak regression tests (done)
+    - Fail-closed unknown metadata model, source/cutoff gaps, late source revisions (done for explicit model; data-meta selection pending approval)
+    - Bounded writer-scope, no-op and race/recovery tests (materializer side done in I6; workflow integration pending approval)
+    - Separate targeted approval for new productive Derived prefix (pending)
