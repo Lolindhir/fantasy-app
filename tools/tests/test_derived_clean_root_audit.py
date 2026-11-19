@@ -158,6 +158,13 @@ class CleanRootProbeTests(unittest.TestCase):
             self.publish(relative, "stable")
 
     # --- tests ---------------------------------------------------------------
+    def test_build_order_puts_upstream_products_before_their_readers(self):
+        order = list(probe.PRODUCTS)
+        # awards-v2/v3 of league-standings read the persisted season-statistics product,
+        # which reads PlayerWeekFantasy; a clean root must build them in that order.
+        self.assertLess(order.index(probe.PLAYER_WEEK_FANTASY), order.index(probe.SEASON_STATISTICS))
+        self.assertLess(order.index(probe.SEASON_STATISTICS), order.index(probe.LEAGUE_STANDINGS))
+
     def test_all_products_ready_and_repository_untouched(self):
         self.publish_all_stable()
         result = self.run_audit()
