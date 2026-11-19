@@ -27,6 +27,55 @@ catch {
 # 3. Funktionen
 # ===========================================================================
 
+# Key-order-independent, array-order-preserving canonical form of a parsed or in-memory JSON value. In-memory
+# hashtables enumerate in a process-dependent order, so a plain serialization would differ between runs.
+function ConvertTo-CanonicalJsonValue {
+    param([AllowNull()]$Value)
+
+    if ($null -eq $Value) { return $null }
+    if ($Value -is [string] -or $Value -is [char] -or $Value -is [bool] -or $Value -is [ValueType]) { return $Value }
+
+    if ($Value -is [System.Collections.IDictionary]) {
+        $ordered = [ordered]@{}
+        foreach ($key in @($Value.Keys | ForEach-Object { [string]$_ } | Sort-Object { $_ } -CaseSensitive)) {
+            $ordered[$key] = ConvertTo-CanonicalJsonValue -Value $Value[$key]
+        }
+        return [PSCustomObject]$ordered
+    }
+
+    if ($Value -is [pscustomobject]) {
+        $ordered = [ordered]@{}
+        foreach ($name in @($Value.PSObject.Properties.Name | Sort-Object { $_ } -CaseSensitive)) {
+            $ordered[$name] = ConvertTo-CanonicalJsonValue -Value $Value.$name
+        }
+        return [PSCustomObject]$ordered
+    }
+
+    if ($Value -is [System.Collections.IEnumerable]) {
+        return , @($Value | ForEach-Object { ConvertTo-CanonicalJsonValue -Value $_ })
+    }
+
+    return $Value
+}
+
+# Change detection for a published JSON file: compares the complete content the file would hold, not a hand-picked
+# field list (Issue #1572, L7). The new data is round-tripped through the same serialization Save-JsonFile writes, so
+# both sides are parsed file content; object key order is ignored, array order is content. No old data means changed.
+function Test-JsonContentChanged {
+    param(
+        [AllowNull()]$OldData,
+        [AllowNull()]$NewData,
+        [int]$Depth = 10
+    )
+
+    if ($null -eq $OldData) { return $true }
+
+    $newParsed = $NewData | ConvertTo-Json -Depth $Depth | ConvertFrom-Json
+    $oldJson = ConvertTo-CanonicalJsonValue -Value $OldData | ConvertTo-Json -Depth ($Depth + 2) -Compress
+    $newJson = ConvertTo-CanonicalJsonValue -Value $newParsed | ConvertTo-Json -Depth ($Depth + 2) -Compress
+    return $oldJson -cne $newJson
+}
+
 function Save-JsonFile {
     param(
         [string]$TargetFile,
