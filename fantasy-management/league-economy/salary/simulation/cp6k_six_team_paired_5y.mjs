@@ -341,13 +341,14 @@ function cloneStart(source,seed){
 function simulateOne(start,seed,supply,regime){
  const {world,teams}=cloneStart(start,seed);
  teams[0].passive=regime==='passive';
- let cap=capFor(world),prevCap=ANCHOR,lastScores=teams.map(t=>lineup(t.players,world).score);
+ let cap=capFor(world),prevCap=start.cap,lastScores=teams.map(t=>lineup(t.players,world).score);
  const years=[],failures=[];
  const ops={mandatoryCuts:0,repairSwaps:0,optionalSwaps:0,retirementExits:0,emergencyAdds:0};
  for(let season=1;season<=5;season++){
-  if(season>1){applyDynamicSalary(world,prevCap);cap=capFor(world);}
-  const salaryCap=cap;
+  if(season>1)applyDynamicSalary(world,prevCap);
   const rookie=newRookies(world,seed,season,supply,prevCap);
+  cap=capFor(world); // include all new Rookie salary in the Top120 price market before annual lock
+  const salaryCap=cap;
   draft(teams,world,rookie.draftable,lastScores,seed,season);
   // During draft a team can temporarily be above the cap; every team must pass the annual settlement.
   for(const team of teams){
@@ -367,12 +368,15 @@ function simulateOne(start,seed,supply,regime){
   const predictedScores=pre.details.map(d=>d.index);
   // Exogenous observed season outcomes are the same by player and year in both regimes.
   seasonalDevelopment(world,seed,season);
-  const observedScores=teams.map(team=>lineup(team.players,world,'realized').score);
+  const observedScores=teams.map(team=>lineup(team.players,world,'known').score);
+  // Same three-year smoothed quality definition as the October archive, not raw one-season points.
+  const allstar=lineup([...world.values()].filter(p=>p.active).map(p=>p.id),world).score;
   const topOpponent=Math.max(...observedScores.slice(1));
   years.push({year:2026+season,cap_m:salaryCap/1e6,preLegal:pre.allLegal,
    index:+observedScores[0].toFixed(3),predicted:+predictedScores[0].toFixed(3),
    bestOpponent:+topOpponent.toFixed(3),gapToBest:+(observedScores[0]-topOpponent).toFixed(3),
-   relativeAllstar:null,roster:teams[0].players.length,capUse_m:heldCost(teams[0].players,world)/1e6,
+   relativeAllstar:allstar>0?+(observedScores[0]/allstar).toFixed(5):null,
+   allstar:+allstar.toFixed(3),roster:teams[0].players.length,capUse_m:pre.details[0].capUsed/1e6,
    leagueScores:observedScores.map(v=>+v.toFixed(3))});
   lastScores=observedScores;
   prevCap=cap;
