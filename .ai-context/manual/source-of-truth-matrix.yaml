@@ -1672,6 +1672,31 @@ productiveEdgeAudit: {
       "unavailable": "Incomplete member/roster mapping is not proof of free agency; fail closed on ambiguity"
     },
     {
+      "id": "fm-fa-board-league-drafts-product",
+      "type": "consumer-adapter",
+      "status": "verified",
+      "source": "data-derived/league-drafts/<LeagueID>/<Season>.json",
+      "owner": "tools/derived_data_lib/league_history.py",
+      "product": "FA board current Free-Agent-Draft resolution (DraftType, status labels and pick ownership come from the product; the adapter only validates identity and adds the DisplayPick presentation label)",
+      "consumers": [
+        "fantasy-management/_ai/scripts/canonical_league_drafts.py",
+        "fantasy-management/_ai/scripts/build_fa_board_readmodel.py"
+      ],
+      "identity": [
+        "CanonicalLeagueID",
+        "Season",
+        "DraftKey",
+        "PickKey",
+        "CurrentOwnerRosterID"
+      ],
+      "evidenceFiles": [
+        "fantasy-management/_ai/scripts/canonical_league_drafts.py",
+        "fantasy-management/_ai/scripts/build_fa_board_readmodel.py",
+        "fantasy-management/_ai/scripts/tests/test_build_fa_board_readmodel.py"
+      ],
+      "unavailable": "Missing, wrong-identity or unsupported-ContractVersion product resolves the draft state to unknown (fail closed); no raw drafts.json read and no second DraftType classification in Fantasy Management"
+    },
+    {
       "id": "fm-canonical-member-display",
       "type": "display-only",
       "status": "verified",
@@ -2315,7 +2340,8 @@ sourceFamilyCoverageAudit: {
       "edgeIds": [
         "fm-canonical-league-ownership",
         "fm-age-evaluation-reference",
-        "fm-fa-board-lifecycle-evaluation"
+        "fm-fa-board-lifecycle-evaluation",
+        "fm-fa-board-league-drafts-product"
       ],
       "evidenceFiles": [
         "fantasy-management/_ai/scripts/build_fantasy_operations_inputs.py",

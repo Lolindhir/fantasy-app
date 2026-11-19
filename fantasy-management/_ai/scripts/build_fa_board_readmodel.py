@@ -663,7 +663,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
     metadata_path = root / sources["league_metadata"]
 
     player_signals = validate_player_signals(load_json(player_signals_path))
-    metadata = load_json(metadata_path)
 
     managed_team_id = str((config.get("managed_team") or {}).get("team_id"))
     canonical_config = config.get("canonical_league") or {}
@@ -727,8 +726,6 @@ def build(root: Path, config_path: Path) -> dict[str, Any]:
             root,
             canonical_league_id=canonical_league_id,
             season=canonical_season,
-            ownership_teams=ownership_teams,
-            metadata=metadata,
         )
         draft_load_issue = None
     except CanonicalDraftError as exc:
