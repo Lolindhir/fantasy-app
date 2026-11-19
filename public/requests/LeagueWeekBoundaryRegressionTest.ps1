@@ -18,28 +18,6 @@ $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("league-week-boundary-"
 New-Item -ItemType Directory -Path $tempRoot -Force | Out-Null
 
 try {
-    $activeSourceFile = Join-Path $tempRoot 'active-league.json'
-    [PSCustomObject][ordered]@{
-        WeekStructure = [PSCustomObject][ordered]@{
-            ExpectedLastLeagueWeek = 17
-            FinalLeagueWeek = $null
-        }
-    } | ConvertTo-Json -Depth 5 | Set-Content $activeSourceFile -Encoding UTF8
-
-    $activeLeague = [PSCustomObject][ordered]@{
-        settings = [PSCustomObject][ordered]@{
-            last_scored_leg = 1
-        }
-    }
-
-    $activeState = Resolve-LeagueWeekState `
-        -League $activeLeague `
-        -CanonicalLeagueSourceFile $activeSourceFile
-
-    Assert-Equal -Expected 1 -Actual $activeState.LastScoredLeg -Message 'Latest scored leg must remain progression evidence.'
-    Assert-Equal -Expected 17 -Actual $activeState.LastLeagueWeek -Message 'Structural last league week must not collapse to last_scored_leg.'
-    Assert-Equal -Expected 'ExpectedLastLeagueWeek' -Actual $activeState.BoundarySource -Message 'Active seasons must use the projected canonical boundary.'
-
     $rolloverDecisionWindows = [PSCustomObject][ordered]@{
         LineupWeek = 2
     }
@@ -53,43 +31,6 @@ try {
         -LastLeagueWeek 17 `
         -LeagueComplete $true
     Assert-Equal -Expected 0 -Actual $completedMatchupWeek -Message 'Completed leagues must not request a current fantasy matchup week.'
-
-    $completedSourceFile = Join-Path $tempRoot 'completed-league.json'
-    [PSCustomObject][ordered]@{
-        WeekStructure = [PSCustomObject][ordered]@{
-            ExpectedLastLeagueWeek = $null
-            FinalLeagueWeek = 17
-        }
-    } | ConvertTo-Json -Depth 5 | Set-Content $completedSourceFile -Encoding UTF8
-
-    $completedLeague = [PSCustomObject][ordered]@{
-        settings = [PSCustomObject][ordered]@{
-            last_scored_leg = 17
-        }
-    }
-
-    $completedState = Resolve-LeagueWeekState `
-        -League $completedLeague `
-        -CanonicalLeagueSourceFile $completedSourceFile
-
-    Assert-Equal -Expected 17 -Actual $completedState.LastScoredLeg -Message 'Completed-season scored leg must remain intact.'
-    Assert-Equal -Expected 17 -Actual $completedState.LastLeagueWeek -Message 'Completed season must fall back to canonical FinalLeagueWeek.'
-    Assert-Equal -Expected 'FinalLeagueWeek' -Actual $completedState.BoundarySource -Message 'Completed-season fallback source mismatch.'
-
-    $invalidLeague = [PSCustomObject][ordered]@{
-        settings = [PSCustomObject][ordered]@{
-            last_scored_leg = 18
-        }
-    }
-
-    $threw = $false
-    try {
-        Resolve-LeagueWeekState -League $invalidLeague -CanonicalLeagueSourceFile $activeSourceFile | Out-Null
-    }
-    catch {
-        $threw = $true
-    }
-    Assert-Equal -Expected $true -Actual $threw -Message 'Scored leg beyond the structural boundary must fail closed.'
 
     $scoredWeek = Get-LeagueScoredWeek -CanonicalLeagueID 'nfl-reise' -Season 2026 -RepoRoot (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
     Assert-Equal -Expected $true -Actual ($scoredWeek -ge 0 -and $scoredWeek -le 18) -Message 'Shared LeagueScoredWeek must be a valid week number.'

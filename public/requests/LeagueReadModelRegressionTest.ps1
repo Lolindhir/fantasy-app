@@ -92,73 +92,41 @@ foreach ($consumerName in @("RequestLeague.ps1")) {
     Assert-True -Condition (-not $consumerText.Contains("StandingsFile")) -Message "$consumerName still reads the rendered Standings.json."
 }
 
-$avatarCompareOld = [PSCustomObject]@{
-    Place = 1; TeamID = 3; Owner = "FloDHL99"; OwnerAvatar = "owner.png"; TeamName = "Just Bill"; TeamAvatar = "historical.png";
-    PlaceType = "Winner"; PlaceOrdinal = "1st"; PlaceCumulative = $null; PlaceAverage = $null; Championships = $null; RunnerUps = $null; Thirds = $null
-}
-$avatarCompareNew = $avatarCompareOld.PSObject.Copy()
-$avatarCompareNew.TeamAvatar = "changed.png"
-Assert-True -Condition (Compare-PlayoffStandings -oldPlayoffs @($avatarCompareOld) -newPlayoffs @($avatarCompareNew)) -Message "Playoff change detection ignores historical TeamAvatar changes."
-Assert-True -Condition $requestLeague.Contains("'LeagueIDPrevious'") -Message "RequestLeague change detection does not track LeagueIDPrevious."
-Assert-True -Condition $requestLeague.Contains("@('Settings','ScoringType','Playoffs')") -Message "RequestLeague change detection does not track canonical Settings, ScoringType and Playoffs structurally."
-Assert-True -Condition $requestLeague.Contains("ConvertTo-Json -Depth 10 -Compress") -Message "RequestLeague canonical structured comparison is not structural."
-Assert-True -Condition $requestLeague.Contains('Compare-CurrentStandingWeeks') -Message "League change detection must use the tested central Weeks comparator."
-Assert-True -Condition $requestLeague.Contains('Compare-AllTimeStandingExtensions') -Message "League change detection must compare centrally generated AllTime extensions."
+# League.json change detection covers the complete published content (Issue #1572, L7): no hand-maintained field list.
+Import-Module "$PSScriptRoot\utils\general\FileUtils.psm1" -Force
+Assert-True -Condition $requestLeague.Contains('Test-JsonContentChanged') -Message "RequestLeague must detect changes with the whole-content comparator."
+Assert-True -Condition (-not $requestLeague.Contains('function Get-Compare')) -Message "RequestLeague must not carry a fixed-field comparator."
+Assert-True -Condition (-not $requestLeague.Contains("'LeagueIDPrevious'")) -Message "RequestLeague must not carry a fixed field list."
+Assert-True -Condition (-not $requestLeague.Contains('Resolve-LeagueWeekState')) -Message "RequestLeague must take week boundaries from the lifecycle result."
+Assert-True -Condition (-not $requestLeague.Contains('playoff_week_start')) -Message "RequestLeague must not re-derive PlayoffStartWeek from provider settings."
 
-# Runtime coverage: a second identical publication must stay a no-op, while
-# the initial Weeks[] exposure, a revised streak and an additional completed
-# week must all trigger League.json's semantic update.
-$week1 = [PSCustomObject]@{ Week = 1; Teams = @([PSCustomObject]@{
-    TeamID = 1; Place = 1; Wins = 1; Losses = 0; Ties = 0; Points = 120.5; PointsAgainst = 91.1; Streak = '1W'
-}) }
-$oldStandings = [PSCustomObject]@{
-    Season = '2026'
-    Standings = @([PSCustomObject]@{ Season = '2026'; RegularSeason = @() })
+$publishedLike = [PSCustomObject]@{
+    Season = '2026'; Status = 'In-Season'
+    Teams = @([PSCustomObject]@{ TeamID = 1; Roster = @('a', 'b'); Placements = [PSCustomObject]@{ Current = [PSCustomObject]@{ Place = 1; Points = 120.5 } } })
+    Standings = @([PSCustomObject]@{ Season = '2026'; Weeks = @([PSCustomObject]@{ Week = 1; Teams = @([PSCustomObject]@{ TeamID = 1; Streak = '1W' }) }) })
 }
-$newStandings = [PSCustomObject]@{
-    Season = '2026'
-    Standings = @([PSCustomObject]@{ Season = '2026'; RegularSeason = @(); Weeks = @($week1) })
+$oldFileData = $publishedLike | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+
+# Identical content, and a different key order in memory (hashtables enumerate in process-dependent order), is a no-op.
+$sameInMemory = @{
+    Standings = @(@{ Weeks = @(@{ Teams = @(@{ Streak = '1W'; TeamID = 1 }); Week = 1 }); Season = '2026' })
+    Teams = @(@{ Placements = @{ Current = @{ Points = 120.5; Place = 1 } }; Roster = @('a', 'b'); TeamID = 1 })
+    Status = 'In-Season'; Season = '2026'
 }
-Assert-True -Condition (Compare-CurrentStandingWeeks -OldLeague $oldStandings -NewLeague $newStandings) -Message "Missing old Weeks must force publication."
-$unchangedStandings = $newStandings | ConvertTo-Json -Depth 12 | ConvertFrom-Json
-Assert-True -Condition (-not (Compare-CurrentStandingWeeks -OldLeague $newStandings -NewLeague $unchangedStandings)) -Message "Semantically identical Weeks must be a no-op."
-$unchangedStandings.Standings[0].Weeks[0].Teams[0].Streak = '2W'
-Assert-True -Condition (Compare-CurrentStandingWeeks -OldLeague $newStandings -NewLeague $unchangedStandings) -Message "Updated weekly streak must force publication."
-$unchangedStandings = $newStandings | ConvertTo-Json -Depth 12 | ConvertFrom-Json
-$unchangedStandings.Standings[0].Weeks = @($week1, [PSCustomObject]@{ Week = 2; Teams = @() })
-Assert-True -Condition (Compare-CurrentStandingWeeks -OldLeague $newStandings -NewLeague $unchangedStandings) -Message "New completed week must force publication."
+Assert-True -Condition (-not (Test-JsonContentChanged -OldData $oldFileData -NewData $sameInMemory)) -Message "Identical content must be a semantic no-op regardless of key order."
+Assert-True -Condition (-not (Test-JsonContentChanged -OldData $oldFileData -NewData $publishedLike)) -Message "Parsed copy of the same content must be a no-op."
 
-
-
-# AllTime-only generated consumer extensions must be compared separately: a
-# new AwardLegend alone must publish League.json; same inputs remain a no-op.
-$extensionOld = [PSCustomObject]@{
-    Season = "2026"
-    Standings = @([PSCustomObject]@{
-        Season = "AllTime"
-        LegacyHighlights = @([PSCustomObject]@{ Key = "PodiumMachine"; TeamID = 3; Count = 2 })
-    })
-}
-$extensionCopy = $extensionOld | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-Assert-True -Condition (-not (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy)) -Message "Identical AllTime extensions must be a semantic no-op."
-$extensionCopy.Standings[0] | Add-Member -NotePropertyName "AwardLegend" -NotePropertyValue @(
-    [PSCustomObject]@{ Key = "RegularSeason"; Occurrences = 14 }
-)
-Assert-True -Condition (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy) -Message "New AllTime AwardLegend must force League publication."
-$extensionOld = $extensionCopy | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-$extensionCopy = $extensionOld | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-Assert-True -Condition (-not (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy)) -Message "Unchanged AllTime AwardLegend must not republish League."
-$extensionCopy.Standings[0].AwardLegend[0].Occurrences = 15
-Assert-True -Condition (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy) -Message "Changed historical award occurrence must republish League."
-$extensionCopy = $extensionOld | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-$extensionCopy.Standings[0].LegacyHighlights[0].Count = 3
-Assert-True -Condition (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy) -Message "Changed podium count must republish League."
-$extensionCopy = $extensionOld | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-$extensionCopy.Standings[0].LegacyHighlights = @()
-Assert-True -Condition (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy) -Message "Removing AllTime highlight must republish League."
-$extensionCopy = $extensionOld | ConvertTo-Json -Depth 10 | ConvertFrom-Json
-$extensionCopy.Standings[0].AwardLegend = @()
-Assert-True -Condition (Compare-AllTimeStandingExtensions -OldLeague $extensionOld -NewLeague $extensionCopy) -Message "Removing AllTime award legend must republish League."
+# Any content change, including a field no list ever named, must publish.
+$changed = $publishedLike | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+$changed.Standings[0].Weeks[0].Teams[0].Streak = '2W'
+Assert-True -Condition (Test-JsonContentChanged -OldData $oldFileData -NewData $changed) -Message "Nested value change must publish."
+$withNewField = $publishedLike | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+$withNewField | Add-Member -NotePropertyName 'BrandNewField' -NotePropertyValue 7
+Assert-True -Condition (Test-JsonContentChanged -OldData $oldFileData -NewData $withNewField) -Message "A newly added field must publish."
+$reordered = $publishedLike | ConvertTo-Json -Depth 12 | ConvertFrom-Json
+$reordered.Teams[0].Roster = @('b', 'a')
+Assert-True -Condition (Test-JsonContentChanged -OldData $oldFileData -NewData $reordered) -Message "Array order is content and must publish."
+Assert-True -Condition (Test-JsonContentChanged -OldData $null -NewData $publishedLike) -Message "Missing old file must publish."
 
 function ConvertTo-StandingsComparableValue {
     param([AllowNull()]$Value)

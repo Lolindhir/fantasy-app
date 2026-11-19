@@ -157,7 +157,7 @@ shadow:
 
 consumers:
   app:
-    - public/requests/RequestLeague.ps1 (step 4) renders the League.json fields from the CLI result and adds the MetaText.
+    - public/requests/RequestLeague.ps1 (step 4) renders the League.json fields from the CLI result and adds the MetaText. Since Issue #1572 (L7) PlayoffStartWeek and LastLeagueWeek also come only from that result (no second derivation from provider settings or the canonical league file), and League.json change detection compares the complete published content (FileUtils.psm1::Test-JsonContentChanged, key-order-independent, array order significant) instead of a fixed field list.
   fantasyManagement:
     - fantasy-management/_ai/scripts/build_fa_board_readmodel.py takes Status, Phase, SeasonKickoff and CurrentWeek from the function at the signals timestamp (step 5, done; unresolvable lifecycle is the error issue league_lifecycle_unavailable)
     - fantasy-management/_ai/scripts/build_managed_roster_overview.py::_derive_taxi_phase uses Status, Phase and FinalScoredWeek of the function (step 5, done; "In-Season" is now recognised, fixing the casefold defect; an unresolvable lifecycle raises RosterOverviewError)

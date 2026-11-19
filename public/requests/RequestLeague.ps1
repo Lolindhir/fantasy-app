@@ -40,62 +40,7 @@ $LeagueTimeZone = $config.LeagueTimeZone
 $CapDeadlineBufferDays = $config.CapDeadlineBufferDays
 
 # ===========================================================================
-# 3. Funktionen
-# ===========================================================================
-
-function Get-Compare {
-    return {
-        param($oldLeague, $newLeague)
-
-        if (-not $oldLeague) { return $true }
-
-        $propsToCheck = @(
-            'LeagueID','Name','Avatar','Season','SeasonType','Status','Phase',
-            'FinalScoredWeek','CurrentWeek','LastLeagueWeek','PlayoffStartWeek','PlayoffStart', 'TradeDeadlineWeek', 'TradeReviewDays', 'TotalTeams',
-            'SalaryCap','SalaryCapProjected','SalaryCapFantasy','SalaryCapProjectedFantasy', 'CapDeadline', 'SeasonKickoff', 'LeagueTimeZone', 'SalaryRelevantTeamSize',
-            'WaiversOpen', 'WaiversMetaText', 'NextWaiverRun', 'TradesOpen', 'TradesMetaText', 'CutsAllowed', 'CutsMetaText', 'LeagueIDPrevious'
-        )
-
-        foreach ($prop in $propsToCheck) {
-            if ($oldLeague.$prop -ne $newLeague.$prop) {
-                Write-Host "League property '$prop' changed: '$($oldLeague.$prop)' -> '$($newLeague.$prop)'"
-                return $true
-            }
-        }
-
-        foreach ($prop in @('RosterSize')) {
-            if (-not (Compare-Arrays $oldLeague.$prop $newLeague.$prop $prop "League")) {
-                return $true
-            }
-        }
-
-        foreach ($prop in @('Settings','ScoringType','Playoffs')) {
-            $oldValue = $oldLeague.$prop | ConvertTo-Json -Depth 10 -Compress
-            $newValue = $newLeague.$prop | ConvertTo-Json -Depth 10 -Compress
-            if ($oldValue -ne $newValue) {
-                Write-Host "League property '$prop' changed."
-                return $true
-            }
-        }
-
-        if (Compare-Teams $oldLeague.Teams $newLeague.Teams) { return $true }
-        if (Compare-PlayoffStandings -oldPlayoffs $oldLeague.Standings.Playoffs -newPlayoffs $newLeague.Standings.Playoffs) { return $true }
-        if (Compare-RegularSeasonStandings -oldRegularSeason $oldLeague.Standings.RegularSeason -newRegularSeason $newLeague.Standings.RegularSeason) { return $true }
-        if (Compare-Awards -oldAwards $oldLeague.Standings.Awards -newAwards $newLeague.Standings.Awards) { return $true }
-
-        # AllTime-only consumer extensions are not included in the legacy scalar
-        # standings comparison; they must independently invalidate League.json.
-        if (Compare-AllTimeStandingExtensions -OldLeague $oldLeague -NewLeague $newLeague) { return $true }
-
-        # Scalar season standings comparison does not inspect canonical Weeks[].
-        if (Compare-CurrentStandingWeeks -OldLeague $oldLeague -NewLeague $newLeague) { return $true }
-
-        return $false
-    }
-}
-
-# ===========================================================================
-# 4. Logik
+# 3. Logik
 # ===========================================================================
 
 try {
@@ -166,22 +111,6 @@ try {
     Write-Host "Salary Cap (current): $($salaryCapTotal.ToString("N0")) from $($valuationSnapshot.Models.SalaryCap) snapshot week $($valuationSnapshot.AsOfFinalScoredWeek)" -ForegroundColor Yellow
     Write-Host "Salary Cap (projected): $($salaryCapProjected.ToString("N0"))" -ForegroundColor Yellow
 
-    $playoffStart = $league.settings.playoff_week_start
-    Write-Host "Playoff start week: Week $playoffStart" -ForegroundColor Yellow
-
-    $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
-    $currentLeagueSourceFile = Join-Path (Get-DataSourceRoot -RepoRoot $repoRoot) "leagues\$CanonicalLeagueID\seasons\$currentSeason\league.json"
-    $leagueWeekState = Resolve-LeagueWeekState `
-        -League $league `
-        -CanonicalLeagueSourceFile $currentLeagueSourceFile
-    $lastScoredLeg = [int]$leagueWeekState.LastScoredLeg
-    $lastWeek = [int]$leagueWeekState.LastLeagueWeek
-    Write-Host "Last scored leg in league: Week $lastScoredLeg" -ForegroundColor Yellow
-    Write-Host "Last structural league week: Week $lastWeek ($($leagueWeekState.BoundarySource))" -ForegroundColor Yellow
-
-    $currentWeek = 0
-    $finalWeek = 0
-
     # Lifecycle and Decision Windows validate canonical NFL schedule/finality inputs
     # themselves. The published Schedule read model is another App delivery, not
     # their source. It must not gate the League generator.
@@ -208,6 +137,12 @@ try {
     } else {
         Write-Host "Could not determine current week." -ForegroundColor DarkYellow
     }
+
+    # The structural week bounds are lifecycle facts too (canonical WeekStructure and the provider playoff start setting);
+    # RequestLeague derives none of them itself.
+    $lastWeek = [int]$lifecycle.LastLeagueWeek
+    $playoffStart = $lifecycle.PlayoffStartWeek
+    Write-Host "Playoff start week: Week $playoffStart | Last league week: Week $lastWeek" -ForegroundColor Yellow
 
     $seasonKickoff = $lifecycle.SeasonKickoff
     $playoffStartAt = $lifecycle.PlayoffStart
@@ -288,8 +223,13 @@ try {
     }
     Save-JsonFile -Type "DecisionWindows" -Data $decisionWindowsAsJson -CompareScript $decisionCompare -UpdateTimestamp
 
-    $compare = & Get-Compare
-    Save-JsonFile -Type "League" -Data $leagueAsJson -CompareScript $compare -CreateBackup -UpdateTimestamp
+    # Change detection covers the complete published content (Issue #1572, L7): no hand-maintained field list that a
+    # new League.json field could silently escape. An unchanged run stays a semantic no-op and keeps the timestamp.
+    $leagueCompare = {
+        param($oldLeague, $newLeague)
+        return Test-JsonContentChanged -OldData $oldLeague -NewData $newLeague
+    }
+    Save-JsonFile -Type "League" -Data $leagueAsJson -CompareScript $leagueCompare -CreateBackup -UpdateTimestamp
 
     # Historical Matchups and FantasyGameContext files are regenerated by the weekly update-transactions run
     # (tools/matchup_context_app_publish.py write --history), not by the ten-minute League refresh.
