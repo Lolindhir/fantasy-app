@@ -26,7 +26,9 @@ jobs:
           --path public/data
           --path data-derived/league-standings
           --
-          python3 tools/league_standings_app_publish.py write
+          bash -euo pipefail -c
+          'python3 tools/derived_data.py materialize --product league-standings > /dev/null &&
+          python3 tools/league_standings_app_publish.py write'
 
   # Run the same weekly scheduler tick as Standings, but in a separate job
   # so historical PWF failures never suppress the original App Standings build.

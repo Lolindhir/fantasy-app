@@ -26,4 +26,6 @@ jobs:
           --path public/data
           --path data-derived/player-valuation
           --
-          python3 tools/players_app_publish.py write
+          bash -euo pipefail -c
+          'python3 tools/derived_data.py materialize --product player-valuation > /dev/null &&
+          python3 tools/players_app_publish.py write'

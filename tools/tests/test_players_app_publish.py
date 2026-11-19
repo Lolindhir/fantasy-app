@@ -98,7 +98,7 @@ class WriteTests(unittest.TestCase):
         stamps = json.loads((self.data / "Timestamps.json").read_text(encoding="utf-8"))
         self.assertEqual(stamps, {"Players": "2026-11-01T05:17:30Z", "Other": "x"})
         self.assertFalse((self.data / "backup").exists())
-        self.materialize.assert_called_once()
+        self.materialize.assert_not_called()  # the product is materialized beforehand (Issue #1571 L4)
 
     def test_unchanged_content_writes_nothing(self):
         self.run_write([player("1")])

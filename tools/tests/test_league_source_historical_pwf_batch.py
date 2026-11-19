@@ -203,7 +203,7 @@ class WeeklyHistoricalPWFPublicationTests(unittest.TestCase):
         self.assertNotIn("--scope historical-pwf", workflow)
         self.assertIn("--path data-derived/player-week-fantasy", workflow)
         self.assertIn("python3 tools/historical_pwf_batch.py --write", workflow)
-        self.assertNotIn("tools/derived_data.py", workflow)
+        self.assertIn("derived_data.py materialize --product league-standings", workflow)  # materialization is its own step before the consumer generator (Issue #1571 L4)
         self.assertIn("python3 tools/league_standings_app_publish.py write", workflow)
         self.assertNotIn("RequestStandings.ps1", workflow)
         self.assertIn("--path public/data", workflow)

@@ -851,8 +851,7 @@ sharedDerivedData:
       - week bounds (resolve_league_week_bounds)
       - model choice (data-meta, #986)
     note: >
-      Since Issue #1226 (ADR-076), tools/players_app_publish.py write materializes the PlayerValuation
-      product and renders Salary, SalaryProjected, Ranking and Rank grading into Players.json
+      Since Issue #1226 (ADR-076), tools/players_app_publish.py write renders Salary, SalaryProjected, Ranking and Rank grading from the PlayerValuation product (persisted beforehand by derived_data.py materialize --product player-valuation, Issue #1571 L4) into Players.json
       through the Python players_read_model. RequestLeague.ps1 reads SalaryCap, SalaryCapProjected
       and SalaryRelevantTeamSize from the newest season snapshot through the trimmed read-only
       PlayerValuationUtils.psm1 adapter (Issue #1238). The update-players workflow publishes
