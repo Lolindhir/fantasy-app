@@ -7,6 +7,8 @@ AWAY-team spread; positive spread favors home.
 from __future__ import annotations
 
 import math
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Mapping
 
@@ -14,6 +16,28 @@ SCHEMA_VERSION = 1
 ODDS_SOURCE = "nflverse.schedule-odds"
 SCHEDULE_SOURCE = "nflverse.schedules"
 FINALITY_SOURCE = "nflverse.game-finality"
+# Canonical GameTime is Eastern wall-clock time (nflverse gametime, ADR/Issue #347 G1).
+SOURCE_TIME_ZONE = ZoneInfo("America/New_York")
+
+
+def kickoff_utc(game_id: str, game_day: str, game_time: str | None) -> str | None:
+    """Absolute kickoff instant (``yyyy-MM-ddTHH:mm:ssZ``) of a canonical GameDay plus Eastern GameTime.
+
+    The single conversion owner for all consumers (Issue #1572). Unknown GameTime gives None, never an
+    invented instant; a malformed, nonexistent or ambiguous Eastern wall-clock time fails closed.
+    """
+    if game_time is None:
+        return None
+    try:
+        local = datetime.strptime(f"{game_day.strip()} {game_time.strip()}", "%Y-%m-%d %H:%M")
+    except ValueError as exc:
+        raise ValueError(f"{game_id}: GameDay/GameTime is not yyyy-MM-dd HH:mm") from exc
+    first = local.replace(tzinfo=SOURCE_TIME_ZONE, fold=0)
+    second = local.replace(tzinfo=SOURCE_TIME_ZONE, fold=1)
+    roundtrip = datetime.fromtimestamp(first.timestamp(), SOURCE_TIME_ZONE).replace(tzinfo=None)
+    if first.utcoffset() != second.utcoffset() or roundtrip != local:
+        raise ValueError(f"{game_id}: kickoff is ambiguous or does not exist in Eastern time")
+    return first.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _index(payload: Mapping[str, Any], *, season: int, dataset: str) -> dict[str, Mapping[str, Any]]:
@@ -116,6 +140,7 @@ def build_nfl_games(
             "Week": source["Week"],
             "GameDay": source["GameDay"],
             "GameTime": source["GameTime"],
+            "KickoffUtc": kickoff_utc(game_id, source["GameDay"], game_time),
             "AwayTeam": source["AwayTeam"],
             "HomeTeam": source["HomeTeam"],
             "AwayScore": away,

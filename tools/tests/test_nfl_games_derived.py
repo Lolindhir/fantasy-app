@@ -16,7 +16,9 @@ if str(TOOLS) not in sys.path:
     sys.path.insert(0, str(TOOLS))
 
 from data_roots import DATA_DERIVED_ROOT, DATA_SOURCE_ROOT
-from derived_data_lib.nfl_games import build_nfl_games
+from derived_data_lib.nfl_games import build_nfl_games, kickoff_utc
+from derived_data_lib.matchup_context import kickoff_utc as matchup_kickoff_utc
+from schedule_archive import kickoff_epoch as archive_kickoff_epoch
 from derived_data_lib.nfl_team_snap_usage import infer_team_snap_volumes
 from derived_data_lib.nfl_franchise_aliases import reconcile_game_team
 from nfl_games_materialize import materialize, discover_seasons
@@ -2176,6 +2178,53 @@ class NflPbpOriginalSeasonReconciliationTests(unittest.TestCase):
             digest = hashlib.sha256(source.read_bytes()).hexdigest()
             with self.assertRaisesRegex(ValueError, "does not reconcile"):
                 reconcile_pbp_team_season(root, source, 2025, digest)
+
+class KickoffUtcTests(unittest.TestCase):
+    def test_product_carries_kickoff_utc_and_null_without_game_time(self):
+        rows = inputs()
+        game = build_nfl_games(*rows)["Games"][0]
+        self.assertEqual("2026-10-18T13:30:00Z", game["KickoffUtc"])  # 09:30 EDT
+        rows[0]["Games"][0]["GameTime"] = None
+        self.assertIsNone(build_nfl_games(*rows)["Games"][0]["KickoffUtc"])
+
+    def test_dst_boundaries_and_fail_closed_times(self):
+        self.assertEqual("2030-11-02T00:15:00Z", kickoff_utc("g", "2030-11-01", "20:15"))  # EDT
+        self.assertEqual("2030-11-03T18:00:00Z", kickoff_utc("g", "2030-11-03", "13:00"))  # EST after DST end
+        self.assertEqual("2030-03-10T17:00:00Z", kickoff_utc("g", "2030-03-10", "13:00"))  # EDT after DST start
+        with self.assertRaisesRegex(ValueError, "ambiguous"):
+            kickoff_utc("g", "2030-11-03", "01:30")
+        with self.assertRaisesRegex(ValueError, "does not exist"):
+            kickoff_utc("g", "2030-03-10", "02:30")
+        with self.assertRaisesRegex(ValueError, "not yyyy-MM-dd"):
+            kickoff_utc("g", "2030-03-10", "25:00")
+
+    def test_parity_with_existing_conversions_for_all_canonical_seasons(self):
+        base = TOOLS.parent / DATA_SOURCE_ROOT / "nfl" / "schedules"
+        seasons = sorted(int(p.stem) for p in base.glob("*.json") if p.stem.isdigit())
+        self.assertTrue(seasons)
+        compared = 0
+        for season in seasons:
+            for game in json.loads((base / f"{season}.json").read_text(encoding="utf-8"))["Games"]:
+                gid, day, time = game["GameID"], game["GameDay"], game.get("GameTime")
+                try:
+                    new = kickoff_utc(gid, day, time)
+                except ValueError:
+                    # Fail-closed here must also be fail-closed in the schedule archive conversion.
+                    with self.assertRaises(Exception):
+                        archive_kickoff_epoch(day, time)
+                    continue
+                epoch = archive_kickoff_epoch(day, time)
+                if time is None or not str(time).strip():
+                    self.assertIsNone(new, gid)
+                    self.assertIsNone(epoch, gid)
+                    continue
+                from datetime import datetime, timezone
+                self.assertEqual(
+                    datetime.fromtimestamp(int(float(epoch)), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), new, gid)
+                self.assertEqual(matchup_kickoff_utc(game), new, gid)
+                compared += 1
+        self.assertGreater(compared, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

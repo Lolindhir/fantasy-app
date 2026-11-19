@@ -56,6 +56,7 @@ Contract: `.ai-context/manual/nfl-games.yaml`.
 The product joins `data-source/nfl/schedules`, `game-finality`, and
 `schedule-odds` by canonical GameID. It exposes football scores/finality and
 market-implied expected team points from **only SpreadLine and TotalLine**.
+Each game also carries the additive `KickoffUtc` (canonical GameDay plus Eastern GameTime as a UTC instant, null when GameTime is unknown); it is the one central kickoff conversion for consumers.
 Moneyline and bookmaker price changes do not enter the product or invalidate
 it. A missing entire odds partition is unavailable evidence; nullable fields
 are preserved as null.
