@@ -13,8 +13,9 @@ import derived_clean_root_audit  # noqa: E402
 DERIVED = ROOT / "data-derived"
 README = DERIVED / "README.md"
 WORKFLOWS = ROOT / ".github" / "workflows"
-# Own materializer with consistency guard and its own tests; not part of the restore probe (Issue #1519).
-OUTSIDE_RESTORE_PROBE = frozenset({"league-schedule-outlook"})
+# Own materializer with consistency guard and its own tests; not part of the restore probe (Issue #1519; team-cap-outlook is a
+# current-season snapshot of the live rosters, Issue #1571).
+OUTSIDE_RESTORE_PROBE = frozenset({"league-schedule-outlook", "team-cap-outlook"})
 # Documented before the first productive fill created the directory (Issue #1571).
 NOT_YET_FILLED = OUTSIDE_RESTORE_PROBE | frozenset({"matchup-context", "weekly-recaps"})
 

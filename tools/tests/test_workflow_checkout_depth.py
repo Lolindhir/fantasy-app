@@ -83,6 +83,7 @@ class LeagueJobHasNoNodeDependencyTest(unittest.TestCase):
         "tools/weekly_recaps_materialize.py",
         "tools/weekly_recaps_app_publish.py",
         "tools/team_cap_outlook_app_publish.py",
+        "tools/team_cap_outlook_materialize.py",
         ".github/scripts/Invoke-GeneratedDataCommit.ps1",
     )
 

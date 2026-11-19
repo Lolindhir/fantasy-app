@@ -222,6 +222,7 @@ jobs:
           --path data-derived/league-schedule-outlook
           --path data-derived/matchup-context
           --path data-derived/weekly-recaps
+          --path data-derived/team-cap-outlook
           --
           bash -euo pipefail -c
           'python3 tools/league_live_derived_refresh.py &&
@@ -235,4 +236,5 @@ jobs:
           python3 tools/league_schedule_outlook_materialize.py --scope current --mode incremental &&
           python3 tools/rivalry_app_publish.py write &&
           pwsh ./public/requests/RequestLeaguePublication.ps1 &&
+          python3 tools/team_cap_outlook_materialize.py &&
           python3 tools/team_cap_outlook_app_publish.py write'
