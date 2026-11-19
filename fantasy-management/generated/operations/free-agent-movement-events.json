@@ -2,12 +2,12 @@
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
   "generated_at": "2026-11-19T04:21:36.726562Z",
-  "input_fingerprint": "7882290f5d7da5a8d65e8ecfe5ede036db95903f8053702c333c7d11fdcbc756",
+  "input_fingerprint": "cf5a58e67dc9797e9ec6f44e8ba97551cea8e61e31a193a9777960afe1f527a0",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "a71cfee79d0ed4aa2c41fc2a6bcfb5608687ce032cb1143df99542b817f32522"
+      "input_fingerprint": "fbfeffdf5c35315457c01b9b5e53b2a26822a7293aadf6ce15386f31342fe0e4"
     },
     "previous_movement_signals": {
       "status": "available",
@@ -23,26 +23,141 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 257,
+    "current_discovery_count": 259,
     "previous_discovery_count": 257,
-    "event_count": 0,
-    "event_type_counts": {},
-    "event_priority_counts": {},
+    "event_count": 3,
+    "event_type_counts": {
+      "changed": 1,
+      "new": 2
+    },
+    "event_priority_counts": {
+      "high": 3
+    },
     "baseline_mode": "comparison"
   },
   "contract_migration": {
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "402cf3d1c00b66767b61d8eb865ac769ae82add79bde372afffc2cfd846aef3b",
+    "current_evidence_fingerprint": "cc02f7afce9c9609a87a30cb0f95cc61bfe07c65393b8ff76a31e8008b11f440",
     "previous_evidence_fingerprint": "402cf3d1c00b66767b61d8eb865ac769ae82add79bde372afffc2cfd846aef3b",
     "contract_changed": false,
-    "evidence_changed": false,
-    "comparison_event_count_before_suppression": 0,
+    "evidence_changed": true,
+    "comparison_event_count_before_suppression": 3,
     "suppressed_event_count": 0,
     "suppressed_event_type_counts": {}
   },
-  "events": [],
+  "events": [
+    {
+      "player_id": "13580",
+      "name": "Carsen Ryan",
+      "position": "TE",
+      "event_type": "new",
+      "event_priority": "high",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "team_transaction"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "team_transaction",
+          "kind": "nfl_team_change",
+          "severity": "high",
+          "from": null,
+          "to": "CLE"
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "6920",
+      "name": "Isaiah Hodgins",
+      "position": "WR",
+      "event_type": "new",
+      "event_priority": "high",
+      "current_research_priority": "medium",
+      "previous_research_priority": null,
+      "current_state_hash": "596e094c67d6ed9d08d668eaff5c2ab7ed064e8d2036b54186dcb23a98bc016a",
+      "previous_state_hash": null,
+      "changed_dimensions": [
+        "new_discovery",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "team_transaction"
+      ],
+      "previous_material_families": [],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "team_transaction",
+          "kind": "nfl_team_change",
+          "severity": "high",
+          "from": "PIT",
+          "to": null
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11623",
+      "name": "Jordan Whittington",
+      "position": "WR",
+      "event_type": "changed",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "medium",
+      "current_state_hash": "7e1364c5819d913dc9c4919be2f7e6ba90244bee8b24a42a8ec45a8beb76c7c0",
+      "previous_state_hash": "47e2e30d18882ee99db537dac4b5ae804bf4c45438bd3e9315b3c25c0e7d4d7a",
+      "changed_dimensions": [
+        "research_priority",
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "role_opportunity"
+      ],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
+      "current_replacement_classification": "below_rostered_boundary",
+      "previous_replacement_classification": "below_rostered_boundary",
+      "threshold_summary": [
+        {
+          "family": "dynasty_market",
+          "kind": "tier_change",
+          "severity": "high",
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
+        {
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 9,
+          "to": 10
+        }
+      ],
+      "final_roster_recommendation": null
+    }
+  ],
   "quality": {
     "status": "warning",
     "movement_quality_status": "warning",
