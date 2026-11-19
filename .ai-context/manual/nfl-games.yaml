@@ -33,6 +33,7 @@ schema:
       - Week
       - GameDay
       - GameTime
+      - KickoffUtc
       - AwayTeam
       - HomeTeam
       - AwayScore
@@ -59,6 +60,16 @@ temporal:
     (1999 schedules have unknown times) and is preserved as null; no invented
     kickoff instant/timezone or observation timestamp.
   gameTime: nullable-canonical-source-string
+  kickoffUtc: >
+    KickoffUtc (Issue #1572, additive, SchemaVersion stays 1) is the single central conversion of
+    canonical GameDay plus Eastern GameTime (America/New_York) to an absolute UTC instant in the form
+    yyyy-MM-ddTHH:mm:ssZ (derived_data_lib/nfl_games.py::kickoff_utc). GameTime null gives KickoffUtc null,
+    never an invented instant; a malformed, nonexistent or ambiguous Eastern wall-clock time fails the build
+    closed. Consumers (Schedule archive, matchup context, Fantasy Management) read this field instead of
+    converting themselves. Exceptions that keep their own conversion because they run before or independent
+    of this product: the scheduler game window (tools/nfl-game-window.cjs, source schedule, fail-closed
+    scheduling must not wait for a derived refresh) and the odds observation buffer
+    (tools/odds_observation_buffer.py, source-side input of the product itself, circular otherwise).
   finality: canonical-nflverse.game-finality-only
   historicalMarketCaveat: latest-line-not-proven-original-pregame-line
   noInventedObservationTimestamp: true
