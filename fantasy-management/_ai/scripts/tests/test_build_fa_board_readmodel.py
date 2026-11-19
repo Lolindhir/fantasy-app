@@ -120,24 +120,24 @@ def draft(picks: list[dict] | None = None) -> list[dict]:
     return [{"DraftKey": "2026_Free_Agent", "Season": "2026", "DraftType": "Free_Agent", "Status": "Drafting", "SleeperStatus": "drafting", "Picks": list(picks or [])}]
 
 
-def canonical_draft(legacy: dict, *, teams: int = 2, draft_format: str = "linear", name: str = "Free Agent Draft") -> dict:
-    """Canonical-shaped draft from the legacy test shape (owner N sits in slot N)."""
+def product_draft(legacy: dict) -> dict:
+    """league-drafts product draft (ADR-057) from the legacy test shape; the product carries Round/PositionInRound, no DisplayPick."""
     picks = []
     for p in legacy.get("Picks") or []:
-        picks.append({
-            "CanonicalLeagueRosterID": f"roster-{p['CurrentOwnerRosterID']}",
-            "PickNo": p["OverallPick"],
-            "Player": Fixture.canonical_player(p["PlayerID"]),
-        })
+        rnd, pos = (int(part) for part in p["DisplayPick"].split("."))
+        item = {k: v for k, v in p.items() if k != "DisplayPick"}
+        item.update({"Round": rnd, "PositionInRound": pos})
+        picks.append(item)
+    return {**legacy, "Picks": picks}
+
+
+def product_document(drafts: list[dict], *, contract_version: int = 2) -> dict:
     return {
+        "ContractVersion": contract_version,
+        "CanonicalLeagueID": "test-league",
         "Season": 2026,
-        "Status": legacy.get("SleeperStatus") or "drafting",
-        "Type": draft_format,
-        "Metadata": {"name": name},
-        "Settings": {"teams": teams, "reversal_round": 0},
-        "ProviderMappings": [{"Provider": "Sleeper", "ProviderDraftID": "fa-1"}],
-        "SlotToRoster": [{"CanonicalLeagueRosterID": f"roster-{i}", "Slot": str(i)} for i in range(1, teams + 1)],
-        "Picks": picks,
+        "PlayerRefs": {},
+        "Drafts": drafts,
     }
 
 
@@ -150,8 +150,7 @@ class Fixture:
         draft_data: list[dict],
         *,
         canonical_membership: dict | None = None,
-        draft_binding: dict | None = None,
-        canonical_drafts: list | None = None,
+        drafts_product: dict | None = None,
     ):
         self.root = root
         self.config = root / "fantasy-management/automation/fa-board-materialization.json"
@@ -161,7 +160,7 @@ class Fixture:
             "data-meta/test-league/metadata.json",
             {"Drafts": {"Types": [
                 {"DraftType": "Rookie", "DraftInstance": 1, "DraftNo": 1, "Rounds": 5},
-                {"DraftType": "Free_Agent", "DraftInstance": 1, "DraftNo": 2, "Rounds": 5, **(draft_binding or {})},
+                {"DraftType": "Free_Agent", "DraftInstance": 1, "DraftNo": 2, "Rounds": 5},
             ]}},
         )
         self.write("public/data/Timestamps.json", {"League": NOW, "Players": NOW})
@@ -171,8 +170,8 @@ class Fixture:
         )
         self.write_canonical_league(canonical_membership or league_data)
         self.write(
-            "data-source/leagues/test-league/seasons/2026/drafts.json",
-            canonical_drafts if canonical_drafts is not None else [canonical_draft(d) for d in draft_data],
+            "data-derived/league-drafts/test-league/2026.json",
+            drafts_product if drafts_product is not None else product_document([product_draft(d) for d in draft_data]),
         )
         self.write(
             "fantasy-management/automation/fa-board-materialization.json",
@@ -517,49 +516,35 @@ class FaBoardReadmodelTests(unittest.TestCase):
         self.assertEqual("unknown", row(result, "unknown")["availability_status"])
         self.assertEqual("unknown", result["current_fa_draft"]["resolution_status"])
 
-    def test_unbound_draft_is_classified_by_name_and_binding_is_authoritative(self) -> None:
+    def test_draft_classification_comes_from_the_product(self) -> None:
         picks = [pick("picked", 2)]
         result = self.run_fixture([player("picked", "Picked")], league(), draft(picks))
         self.assertEqual("2026_Free_Agent", result["current_fa_draft"]["draft_key"])
         self.assertEqual("drafted", row(result, "picked")["availability_status"])
-        bound = self.run_fixture(
-            [player("picked", "Picked")], league(), draft(picks),
-            draft_binding={"SleeperDraftIDs": {"2026": "fa-1"}},
-            canonical_drafts=[canonical_draft(draft(picks)[0], name="NFL Reise")],
-        )
-        self.assertEqual("2026_Free_Agent", bound["current_fa_draft"]["draft_key"])
-        self.assertEqual("drafted", row(bound, "picked")["availability_status"])
 
-    def test_unclassifiable_open_draft_fails_closed(self) -> None:
-        result = self.run_fixture(
-            [player("free", "Free")], league(), draft(),
-            canonical_drafts=[canonical_draft(draft()[0], name="NFL Reise")],
-        )
+    def test_unclassified_open_product_draft_fails_closed(self) -> None:
+        unclassified = {**draft()[0], "DraftType": None}
+        result = self.run_fixture([player("free", "Free")], league(), [unclassified])
         self.assertEqual("unknown", result["current_fa_draft"]["resolution_status"])
         self.assertEqual("unknown", row(result, "free")["availability_status"])
 
-    def test_missing_canonical_drafts_file_fails_closed(self) -> None:
+    def test_missing_drafts_product_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             fixture = Fixture(Path(tmp), [player("free", "Free")], league(), draft())
-            (Path(tmp) / "data-source/leagues/test-league/seasons/2026/drafts.json").unlink()
+            (Path(tmp) / "data-derived/league-drafts/test-league/2026.json").unlink()
             result = fixture.build()
         self.assertEqual("unknown", result["current_fa_draft"]["resolution_status"])
         self.assertEqual("unknown", row(result, "free")["availability_status"])
 
-    def test_unmapped_pick_roster_fails_closed(self) -> None:
-        bad = canonical_draft(draft([pick("picked", 2)])[0])
-        bad["Picks"][0]["CanonicalLeagueRosterID"] = "roster-unknown"
-        result = self.run_fixture([player("picked", "Picked")], league(), [], canonical_drafts=[bad])
+    def test_unsupported_product_contract_version_fails_closed(self) -> None:
+        product = product_document([product_draft(draft([pick("picked", 2)])[0])], contract_version=99)
+        result = self.run_fixture([player("picked", "Picked")], league(), [], drafts_product=product)
         self.assertEqual("unknown", result["current_fa_draft"]["resolution_status"])
+        self.assertEqual("unknown", row(result, "picked")["availability_status"])
 
-    def test_snake_order_reverses_original_owner_in_even_rounds(self) -> None:
-        legacy = draft([pick("a", 2, 3)])[0]  # overall 3 = round 2, position 1 in a 2-team draft
-        result = self.run_fixture(
-            [player("a", "A")], league(), [],
-            canonical_drafts=[canonical_draft(legacy, draft_format="snake")],
-        )
-        self.assertEqual("2026_Free_Agent_R2_OO2", row(result, "a")["current_fa_draft_pick"]["pick_key"])
-        self.assertEqual("2.01", row(result, "a")["current_fa_draft_pick"]["display_pick"])
+    def test_display_pick_is_derived_from_round_and_position(self) -> None:
+        result = self.run_fixture([player("a", "A")], league(), draft([pick("a", 2, 3)]))
+        self.assertEqual("1.03", row(result, "a")["current_fa_draft_pick"]["display_pick"])
 
     def test_repository_current_fa_board_semantics_match_canonical_cutover(self) -> None:
         root = Path(__file__).resolve().parents[4]

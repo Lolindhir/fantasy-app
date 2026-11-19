@@ -17,10 +17,10 @@ CORE_INPUT_PATHS = {
 }
 # Player Salary/Ranking/Grading come from the shared player-valuation product (ADR-055, Issue #1226), not from the App file.
 PLAYER_VALUATION_PREFIX = "data-derived/player-valuation/"
-# Hand-maintained league metadata (ADR-054) feeds the draft type classification of the FA board.
+# Hand-maintained league metadata (ADR-054) is hashed into the FA board sources.
 LEAGUE_METADATA_PATTERN = re.compile(r"^data-meta/[^/]+/metadata\.json$")
-# Current-season Canonical League drafts feed the FA board (build_fa_board_readmodel.py).
-CANONICAL_LEAGUE_DRAFTS_PATTERN = re.compile(r"^data-source/leagues/[^/]+/seasons/[^/]+/drafts\.json$")
+# The league-drafts Shared Derived product (ADR-057) feeds the FA board (build_fa_board_readmodel.py).
+CANONICAL_LEAGUE_DRAFTS_PATTERN = re.compile(r"^data-derived/league-drafts/[^/]+/[^/]+\.json$")
 MATERIALIZATION_DEFINITION_PREFIXES = (
     "fantasy-management/automation/",
     "fantasy-management/_ai/scripts/",
