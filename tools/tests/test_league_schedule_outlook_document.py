@@ -43,6 +43,14 @@ class ScheduleOutlookV1DocumentTests(unittest.TestCase):
         self.assertNotIn("ObservedAt", row)
         self.assertNotIn("GeneratedAt", row)
 
+    def test_input_fingerprint_is_optional_deterministic_provenance_only(self):
+        digest = "a" * 64
+        row = product.assemble(sample(), selected_model_id="schedule-outlook-v1", input_fingerprint=digest)
+        self.assertEqual({"Reconstruction": "reconstructed-from-accepted-sources", "InputFingerprint": digest}, row["Provenance"])
+        for bad in ("", "A" * 64, "a" * 63, "g" * 64, 7):
+            with self.subTest(value=bad), self.assertRaises(product.LeagueScheduleOutlookError):
+                product.assemble(sample(), selected_model_id="schedule-outlook-v1", input_fingerprint=bad)
+
     def test_week_zero_has_no_fake_historical_team_strength(self):
         row = product.assemble(sample(0), selected_model_id="schedule-outlook-v1")
         self.assertIsNone(row["AsOf"]["RatingWeek"])

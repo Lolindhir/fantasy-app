@@ -113,10 +113,50 @@ def ratings_for_week(stats: dict[str, Any], teams: list[dict[str, Any]], *, rati
     return {t["CanonicalLeagueRosterID"]: by_id[t["TeamID"]] for t in teams}
 
 
-def preview(repo_root: Path, league_id: str, season: int, after_week: int) -> dict[str, Any]:
-    """Derive a single as-of RS preview; no output file and no future result inputs."""
-    if not _nonempty(league_id) or type(season) is not int or type(after_week) is not int or after_week < 0:
-        raise ScheduleOutlookSourceError("Invalid league/season/as-of selector")
+class SeasonInputs:
+    """Accepted canonical facts of one season, read once and reused for every after-week cutoff.
+
+    Week pairings, season statistics and brackets are loaded lazily and memoized so a cutoff
+    never reads (or fails on) a document it does not need; none of them is an Outlook output.
+    """
+
+    def __init__(self, repo_root: Path, league_id: str, season: int, season_dir: Path, season_id: str,
+                 week_structure: dict[str, Any], regular_end: int, teams: list[dict[str, Any]],
+                 scored: int) -> None:
+        self.repo_root, self.league_id, self.season, self.season_dir = repo_root, league_id, season, season_dir
+        self.season_id, self.week_structure, self.regular_end = season_id, week_structure, regular_end
+        self.teams, self.scored = teams, scored
+        self.roster_ids = {team["CanonicalLeagueRosterID"] for team in teams}
+        self._pairings: dict[int, list[dict[str, str]]] = {}
+        self._stats: dict[str, Any] | None = None
+        self._brackets: tuple[Any, Any] | None = None
+
+    def pairings(self, week: int) -> list[dict[str, str]]:
+        if week not in self._pairings:
+            raw = _document(self.season_dir / "matchups" / f"week-{week}.json")
+            self._pairings[week] = normalize_week_pairings(raw, week=week, canonical_rosters=self.roster_ids)
+        return self._pairings[week]
+
+    def stats(self) -> dict[str, Any]:
+        if self._stats is None:
+            stats = _document(data_derived_dir(self.repo_root) / "season-statistics" / self.league_id / f"{self.season}.json")
+            if (not isinstance(stats, dict) or stats.get("Product") != "season-statistics"
+                    or stats.get("CanonicalLeagueID") != self.league_id or stats.get("Season") != self.season):
+                raise ScheduleOutlookSourceError("Season-statistics product identity mismatch")
+            self._stats = stats
+        return self._stats
+
+    def brackets(self) -> tuple[Any, Any]:
+        if self._brackets is None:
+            self._brackets = (_document(self.season_dir / "winners-bracket.json"),
+                              _document(self.season_dir / "losers-bracket.json"))
+        return self._brackets
+
+
+def load_season_inputs(repo_root: Path, league_id: str, season: int) -> SeasonInputs:
+    """Read and validate the season-level canonical facts (identity, teams, week structure, finality)."""
+    if not _nonempty(league_id) or type(season) is not int:
+        raise ScheduleOutlookSourceError("Invalid league/season selector")
     season_dir = data_source_dir(repo_root) / "leagues" / league_id / "seasons" / str(season)
     league = _document(season_dir / "league.json")
     if not isinstance(league, dict) or league.get("CanonicalLeagueID") != league_id or league.get("Season") != season:
@@ -128,7 +168,6 @@ def preview(repo_root: Path, league_id: str, season: int, after_week: int) -> di
     start = week_structure.get("PlayoffStartWeek")
     if type(start) is not int or start <= 1:
         raise ScheduleOutlookSourceError("Invalid canonical PlayoffStartWeek")
-    regular_end = start - 1
 
     members = _document(season_dir / "members.json")
     rosters = _document(season_dir / "rosters.json")
@@ -138,49 +177,61 @@ def preview(repo_root: Path, league_id: str, season: int, after_week: int) -> di
     roster_ids = {team["CanonicalLeagueRosterID"] for team in teams}
     if len(roster_ids) != len(teams) or len(teams) < 2:
         raise ScheduleOutlookSourceError("Missing or duplicate canonical teams")
+    scored = resolve_week_finality(repo_root, league_id, season).get("LeagueScoredWeek")
+    return SeasonInputs(repo_root, league_id, season, season_dir, season_id, week_structure,
+                        start - 1, teams, scored)
 
-    finality = resolve_week_finality(repo_root, league_id, season)
-    scored = finality.get("LeagueScoredWeek")
-    if type(scored) is not int or after_week > scored:
-        raise ScheduleOutlookSourceError(f"As-of Week {after_week} is not LeagueScored final ({scored})")
-    rating_week = min(after_week, regular_end)
-    stats = _document(data_derived_dir(repo_root) / "season-statistics" / league_id / f"{season}.json") if rating_week else {}
-    if rating_week and (stats.get("Product") != "season-statistics" or stats.get("CanonicalLeagueID") != league_id or stats.get("Season") != season):
-        raise ScheduleOutlookSourceError("Season-statistics product identity mismatch")
-    ratings = ratings_for_week(stats, teams, rating_week=rating_week)
-    by_week: dict[int, list[dict[str, str]]] = {}
-    for week in range(max(1, after_week + 1), regular_end + 1):
-        raw = _document(season_dir / "matchups" / f"week-{week}.json")
-        by_week[week] = normalize_week_pairings(raw, week=week, canonical_rosters=roster_ids)
+
+def rating_week_for(inputs: SeasonInputs, after_week: int) -> int:
+    if type(after_week) is not int or after_week < 0:
+        raise ScheduleOutlookSourceError("Invalid league/season/as-of selector")
+    if type(inputs.scored) is not int or after_week > inputs.scored:
+        raise ScheduleOutlookSourceError(f"As-of Week {after_week} is not LeagueScored final ({inputs.scored})")
+    return min(after_week, inputs.regular_end)
+
+
+def snapshot(inputs: SeasonInputs, after_week: int) -> dict[str, Any]:
+    """Derive a single as-of preview from already loaded season inputs; no future result inputs."""
+    rating_week = rating_week_for(inputs, after_week)
+    stats = inputs.stats() if rating_week else {}
+    ratings = ratings_for_week(stats, inputs.teams, rating_week=rating_week)
+    by_week = {week: inputs.pairings(week) for week in range(max(1, after_week + 1), inputs.regular_end + 1)}
 
     model = get_model(MODEL_ID, kind="schedule-outlook")
     value = model.compute_regular_season(
-        teams=teams, pairings_by_week=by_week, strengths_by_roster=ratings,
-        after_week=after_week, regular_season_last_week=regular_end,
+        teams=inputs.teams, pairings_by_week=by_week, strengths_by_roster=ratings,
+        after_week=after_week, regular_season_last_week=inputs.regular_end,
     )
     # Canonical brackets contain final outcomes from historical seasons.
     # The versioned model masks those outcomes until their complete round is
     # final under the same `after_week <= LeagueScoredWeek` guarantee.
+    winners, losers = inputs.brackets()
     playoffs = model.compute_playoff_paths(
-        structure=week_structure,
-        winners_bracket=_document(season_dir / "winners-bracket.json"),
-        losers_bracket=_document(season_dir / "losers-bracket.json"),
-        canonical_roster_ids=roster_ids,
+        structure=inputs.week_structure,
+        winners_bracket=winners,
+        losers_bracket=losers,
+        canonical_roster_ids=inputs.roster_ids,
         after_week=after_week,
-        regular_season_last_week=regular_end,
+        regular_season_last_week=inputs.regular_end,
     )
     # Preview-only shape: no production model choice, publishing or contract yet.
     return {
         "PreviewOnly": True,
-        "CanonicalLeagueID": league_id,
-        "CanonicalLeagueSeasonID": season_id,
-        "Season": season,
+        "CanonicalLeagueID": inputs.league_id,
+        "CanonicalLeagueSeasonID": inputs.season_id,
+        "Season": inputs.season,
         "Models": {"ScheduleOutlook": MODEL_ID, "SeasonStats": stats.get("Models", {}).get("SeasonStats") if stats else None},
         "AsOf": {"AfterWeek": after_week, "RatingWeek": rating_week if rating_week else None},
         "RegularSeason": value,
         "Playoffs": playoffs,
     }
 
+
+def preview(repo_root: Path, league_id: str, season: int, after_week: int) -> dict[str, Any]:
+    """Derive a single as-of RS preview; no output file and no future result inputs."""
+    if not _nonempty(league_id) or type(season) is not int or type(after_week) is not int or after_week < 0:
+        raise ScheduleOutlookSourceError("Invalid league/season/as-of selector")
+    return snapshot(load_season_inputs(repo_root, league_id, season), after_week)
 
 
 def preview_all(repo_root: Path, league_id: str, season: int) -> dict[str, Any]:

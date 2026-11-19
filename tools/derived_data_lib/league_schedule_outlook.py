@@ -22,12 +22,16 @@ class LeagueScheduleOutlookError(ValueError):
     """Incomplete, inconsistent or wrongly versioned schedule-outlook input."""
 
 
-def assemble(preview: Mapping[str, Any], *, selected_model_id: str) -> dict[str, Any]:
+def assemble(preview: Mapping[str, Any], *, selected_model_id: str, input_fingerprint: str | None = None) -> dict[str, Any]:
     """Build a deterministic V1 Shared-Derived document from a verified as-of preview.
 
     Model selection is an explicit input. The caller must load it from the
     hand-maintained metadata for the selected league/season; no default or
     silent fallback is allowed. This helper intentionally cannot write files.
+
+    ``input_fingerprint`` (optional, lowercase SHA-256 hex) is the materializer's digest of
+    exactly the accepted inputs the cutoff depends on. It is deterministic provenance, never
+    a clock value; without it the document keeps the I5b shape used by the restore candidate.
     """
     if not isinstance(preview, Mapping) or preview.get("PreviewOnly") is not True:
         raise LeagueScheduleOutlookError("Expected a validated read-only Outlook preview")
@@ -64,6 +68,11 @@ def assemble(preview: Mapping[str, Any], *, selected_model_id: str) -> dict[str,
         raise LeagueScheduleOutlookError("Missing reconstructed playoff format/paths")
     if type(playoffs["Format"].get("PlayoffStartWeek")) is not int:
         raise LeagueScheduleOutlookError("Missing canonical playoff start week")
+    if input_fingerprint is not None and (
+        not isinstance(input_fingerprint, str) or len(input_fingerprint) != 64
+        or any(ch not in "0123456789abcdef" for ch in input_fingerprint)
+    ):
+        raise LeagueScheduleOutlookError("Input fingerprint must be a lowercase SHA-256 hex digest")
     if any(key in preview for key in ("ObservedAt", "GeneratedAt")):
         raise LeagueScheduleOutlookError("Volatile observation/build timestamps are not historical inputs")
 
@@ -75,7 +84,8 @@ def assemble(preview: Mapping[str, Any], *, selected_model_id: str) -> dict[str,
         "Season": season,
         "Models": {"ScheduleOutlook": selected_model_id, "SeasonStats": season_stats},
         "AsOf": {"AfterWeek": week, "RatingWeek": rating_week},
-        "Provenance": {"Reconstruction": RECONSTRUCTION},
+        "Provenance": ({"Reconstruction": RECONSTRUCTION} if input_fingerprint is None else
+                       {"Reconstruction": RECONSTRUCTION, "InputFingerprint": input_fingerprint}),
         "RegularSeason": dict(regular),
         "Playoffs": dict(playoffs),
     }
