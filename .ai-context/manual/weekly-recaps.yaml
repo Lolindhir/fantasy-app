@@ -14,7 +14,7 @@ purpose: >-
   Define the Weekly Recaps (KeyPlayers, KeyGames and the TeamAwards projection per final league week) as one pure function of
   canonical facts, products and data-meta. It replaces public/requests/RequestWeeklyRecaps.ps1 and
   public/requests/utils/league/WeeklyRecapUtils.psm1, which read the consumer files Matchups.json and Schedule.json. The result is
-  computed, never persisted (pattern of week-finality.yaml, league-lifecycle.yaml, decision-windows.yaml and matchup-context.yaml).
+  computed (pattern of week-finality.yaml, league-lifecycle.yaml, decision-windows.yaml and matchup-context.yaml); since ADR-089 (Issue #1571) additionally persisted as the product data-derived/weekly-recaps.
   public/data/WeeklyRecaps.json and past_seasons/WeeklyRecaps/WeeklyRecaps_<season>.json stay App deliveries with unchanged contracts.
 
 winProbability:
@@ -34,7 +34,13 @@ winProbability:
 architecture:
   decisionBasis: [ADR-037, ADR-054, ADR-063, ADR-071, ADR-075]
   logicalLayer: Shared Derived Data (editorial product semantics, computed)
-  persistence: none (no product file, no writer, no write prefix; the App files are written by a consumer generator)
+  persistence: >-
+    ADR-089 (Issue #1571): data-derived/weekly-recaps/<CanonicalLeagueID>/<Season>.json holds the season model (incl. PlayerAwards), written by
+    tools/weekly_recaps_materialize.py only on a byte difference (no clock inside). Identity: CanonicalLeagueID + Season + the selected weekly-recap model
+    (data-meta). Invalidation: canonical league matchups and weekly rosters, the products league-standings, team-week-performance and player-week-fantasy,
+    nfl-games, model versions. Every season is a pure function of those inputs and covered by the restore probe. Writers: league-live.yml (current) and
+    update-transactions.yml (all completed seasons). The App files WeeklyRecaps.json, past_seasons archives and PlayerAwardHistory.json are rendered from the
+    product by tools/weekly_recaps_app_publish.py; no published archive is an input (L3).
   owner:
     function: tools/derived_data_lib/weekly_recaps.py
     cli: tools/weekly_recaps.py
@@ -48,7 +54,7 @@ architecture:
     - The WeeklyRecaps.json contract (SchemaVersion 1) is unchanged.
 
 decisions:
-  R1: Computed, not persisted. resolve(CanonicalLeagueID, Season) returns the season model; tools/weekly_recaps_app_publish.py writes the App files only on a semantic difference. No new writer, write prefix or product directory.
+  R1: Computed function plus persisted product (amended by ADR-089). resolve(CanonicalLeagueID, Season) returns the season model; tools/weekly_recaps_materialize.py persists it, tools/weekly_recaps_app_publish.py renders the App files from it only on a semantic difference.
   R2: >-
     The week basis is LeagueScoredWeek (ADR-071) instead of Matchups CompletionState = final, so the recap and its TeamAwards (which follow the
     team-week-performance partition and thus LeagueScoredWeek) cover the same week. Shadow finding (step 2): the current season is identical, but in completed
@@ -149,9 +155,8 @@ playerAwards:
       The frontend only displays counts and lists; Name, Position and Picture come from the league-history PlayerRefs resolver (LeaguePlayerReferenceResolver, season-aware, never
       guessed in the frontend) and are the fallback for players that Players.json no longer lists.
     freshness: >-
-      The current scope takes completed seasons from their published past_seasons WeeklyRecaps archive (immutable once the season is complete) and recomputes only the current
-      season, so a League Live run never recomputes history; the weekly history scope recomputes all completed seasons. The file is written only on a semantic difference and
-      updates Timestamps.json PlayerAwardHistory.
+      Since ADR-089 the file is rendered from the persisted weekly-recaps product of every season (no published archive is an input); League Live materializes only the
+      current season, the weekly history scope all completed seasons. The file is written only on a semantic difference and updates Timestamps.json PlayerAwardHistory.
   history: >-
     Seasons 2024, 2025 and the current season are produced by the existing writers: the weekly update-transactions run (completed seasons) and League Live (current season).
     A week without complete evidence gets no awards. Part B (NFL-wide honors of pre-league seasons) is Issue #1484 and not part of this contract.
@@ -159,7 +164,6 @@ playerAwards:
 nonGoals:
   - New selection rules beyond the four player awards of Issue #499.
   - Changes to the WeeklyRecaps.json contract other than R2 at the edge, the additive lineupEfficiency fields (Issue #1408) and the additive PlayerAwards field (Issue #499).
-  - A persisted recap product.
   - Frontend counting or selection of awards (the frontend only displays).
 
 migration:

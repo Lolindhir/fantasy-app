@@ -1,4 +1,4 @@
-"""Tests for the WeeklyRecaps consumer generator (ADR-063, Issue #1199 section 4 step 4); constructed repositories only."""
+"""Tests for the WeeklyRecaps consumer generator (ADR-063, ADR-089): rendering from the persisted product; constructed repositories only."""
 from __future__ import annotations
 
 import json
@@ -37,41 +37,51 @@ class PublishCase(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
+    def product(self, season: int, model) -> None:
+        write_json(self.root / "data-derived" / "weekly-recaps" / LEAGUE / f"{season}.json", model)
+
     def stamps(self):
         return json.loads((self.data / "Timestamps.json").read_text(encoding="utf-8"))
 
 
 class WriteTests(PublishCase):
     def test_current_is_written_and_stamped(self):
-        with mock.patch.object(publish, "resolve_weekly_recaps", return_value={"Season": "2026", "Weeks": []}):
-            writer = publish.Writer(self.root, NOW)
-            publish.write_current(self.root, LEAGUE, writer)
-            changed = writer.finish()
+        self.product(2026, {"Season": "2026", "Weeks": []})
+        writer = publish.Writer(self.root, NOW)
+        publish.write_current(self.root, LEAGUE, writer)
+        changed = writer.finish()
         self.assertIn("public/data/WeeklyRecaps.json", changed)
         self.assertEqual("2026-10-30T12:00:00Z", self.stamps()["WeeklyRecaps"])
         self.assertEqual("keep", self.stamps()["League"])
 
     def test_semantic_no_op_keeps_file_and_timestamp(self):
         write_json(self.data / "WeeklyRecaps.json", {"Season": "2026", "Weeks": [{"Week": 1, "Points": 3}]})
-        with mock.patch.object(publish, "resolve_weekly_recaps", return_value={"Season": "2026", "Weeks": [{"Week": 1, "Points": 3.0}]}):
-            writer = publish.Writer(self.root, NOW)
-            publish.write_current(self.root, LEAGUE, writer)
-            self.assertEqual([], writer.finish())
+        self.product(2026, {"Season": "2026", "Weeks": [{"Week": 1, "Points": 3.0}]})
+        writer = publish.Writer(self.root, NOW)
+        publish.write_current(self.root, LEAGUE, writer)
+        self.assertEqual([], writer.finish())
         self.assertEqual("old", self.stamps()["WeeklyRecaps"])
 
-    def test_history_writes_each_season_without_timestamp_and_skips_broken_one(self):
-        def fake(root, league, season):
-            if season == 2024:
-                raise WeeklyRecapsError("contradiction")
-            return {"Season": str(season), "Weeks": []}
-
-        with mock.patch.object(publish, "history_matchup_seasons", return_value=[2024, 2025]), \
-                mock.patch.object(publish, "resolve_weekly_recaps", side_effect=fake):
+    def test_history_writes_each_season_without_timestamp_and_skips_missing_one(self):
+        self.product(2025, {"Season": "2025", "Weeks": []})
+        with mock.patch.object(publish, "history_matchup_seasons", return_value=[2024, 2025]):
             writer = publish.Writer(self.root, NOW)
             publish.write_history(self.root, LEAGUE, writer)
             changed = writer.finish()
         self.assertEqual(["public/data/past_seasons/WeeklyRecaps/WeeklyRecaps_2025.json"], changed)
         self.assertEqual("old", self.stamps()["WeeklyRecaps"])
+
+    def test_award_history_reads_products_never_the_published_archive(self):
+        archive = self.data / "past_seasons" / "WeeklyRecaps" / "WeeklyRecaps_2025.json"
+        write_json(archive, {"Season": "2025", "Weeks": [{"Week": 1, "PlayerAwards": {"State": "available"}}]})
+        self.product(2025, {"Season": "2025", "Weeks": []})
+        with mock.patch.object(publish, "manifest_seasons", return_value=[2025]):
+            models = publish.product_models(self.root, LEAGUE)
+            writer = publish.Writer(self.root, NOW)
+            publish.write_award_history(self.root, LEAGUE, writer)
+        self.assertEqual({2025: {"Season": "2025", "Weeks": []}}, models)
+        self.assertEqual([], writer.finish())
+        self.assertFalse((self.data / "PlayerAwardHistory.json").exists())
 
 
 class RunTests(PublishCase):
@@ -79,9 +89,8 @@ class RunTests(PublishCase):
         return publish.parse_args(["--repo-root", str(self.root), "write", "--league", LEAGUE, *extra])
 
     def test_current_error_exit_code_depends_on_flag(self):
-        with mock.patch.object(publish, "resolve_weekly_recaps", side_effect=WeeklyRecapsError("bad")):
-            self.assertEqual(0, publish.run_write(self.args()))
-            self.assertEqual(1, publish.run_write(self.args("--fail-on-error")))
+        self.assertEqual(0, publish.run_write(self.args()))
+        self.assertEqual(1, publish.run_write(self.args("--fail-on-error")))
         self.assertFalse((self.data / "WeeklyRecaps.json").exists())
 
     def test_without_league_exactly_one_league_is_required(self):

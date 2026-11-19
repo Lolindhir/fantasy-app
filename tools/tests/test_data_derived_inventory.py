@@ -16,7 +16,7 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 # Own materializer with consistency guard and its own tests; not part of the restore probe (Issue #1519).
 OUTSIDE_RESTORE_PROBE = frozenset({"league-schedule-outlook"})
 # Documented before the first productive fill created the directory (Issue #1571).
-NOT_YET_FILLED = OUTSIDE_RESTORE_PROBE | frozenset({"matchup-context"})
+NOT_YET_FILLED = OUTSIDE_RESTORE_PROBE | frozenset({"matchup-context", "weekly-recaps"})
 
 
 def _readme_rows() -> dict[str, tuple[str, str, list[str]]]:

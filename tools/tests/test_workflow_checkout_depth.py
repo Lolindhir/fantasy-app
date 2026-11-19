@@ -80,6 +80,7 @@ class LeagueJobHasNoNodeDependencyTest(unittest.TestCase):
         "tools/player_week_fantasy_refresh.py",
         "tools/matchup_context_app_publish.py",
         "tools/league_history_app_publish.py",
+        "tools/weekly_recaps_materialize.py",
         "tools/weekly_recaps_app_publish.py",
         "tools/team_cap_outlook_app_publish.py",
         ".github/scripts/Invoke-GeneratedDataCommit.ps1",
