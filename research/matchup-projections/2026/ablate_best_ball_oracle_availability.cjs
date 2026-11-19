@@ -143,6 +143,9 @@ function runYear(season,weeks,draws,seed,block){
         const oracleProjected=optimize(formation,oracle,'mean');
         const rawCandidateActual=optimize(formation,players,'actual');
         const oracleCandidateActual=optimize(formation,oracle,'actual');
+        if (oracleProjected.points > rawProjected.points + 1e-8) {
+          throw Error('Oracle projected score exceeds full-pool optimum '+season+' W'+week+'/'+rosterID);
+        }
         const rawComplete=rawProjected.unfilled===0;
         const oracleComplete=oracleProjected.unfilled===0;
         let rawSim=null,oracleSim=null,rawP10=null,rawP90=null,oracleP10=null,oracleP90=null;
@@ -150,8 +153,13 @@ function runYear(season,weeks,draws,seed,block){
           const rawScores=[],oracleScores=[];
           for(let i=0;i<draws;i++){
             for(const p of players)p.draw=p.mean+p.sigma*normal();
-            rawScores.push(optimize(formation,players,'draw').points);
-            if(oracleComplete)oracleScores.push(optimize(formation,oracle,'draw').points);
+            const rawScore=optimize(formation,players,'draw').points;
+            rawScores.push(rawScore);
+            if(oracleComplete){
+              const oracleScore=optimize(formation,oracle,'draw').points;
+              if(oracleScore > rawScore + 1e-8) throw Error('Oracle draw exceeds raw draw');
+              oracleScores.push(oracleScore);
+            }
           }
           rawScores.sort((a,b)=>a-b);
           rawSim=mean(rawScores);
