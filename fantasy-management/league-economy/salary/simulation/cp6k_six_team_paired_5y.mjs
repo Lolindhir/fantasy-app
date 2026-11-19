@@ -319,7 +319,9 @@ function settleRetired(teams,world,cap,ops){
   const have=Object.fromEntries(POS.map(pos=>[pos,team.players.filter(id=>world.get(id).pos===pos).length]));
   let missing=POS.find(pos=>have[pos]<BENCH[pos]);
   const ps=missing?free.filter(p=>p.pos===missing):free.filter(p=>FLEX.has(p.pos));
-  const p=ps.find(p=>heldCost(team.players,world)+p.price<=cap+1);
+  // A temporary over-cap repair is allowed before the *same* annual settlement;
+  // final full-salary compliance is checked after legal compensating cuts/swaps.
+  const p=ps[0];
   if(!p)return false;
   team.players.push(p.id);ops.emergencyAdds++;
  }
