@@ -2,16 +2,16 @@
   "schema_version": 1,
   "dataset_id": "free-agent-movement-events",
   "generated_at": "2026-11-19T04:21:36.726562Z",
-  "input_fingerprint": "87c466d67ae3860ef7fbc36989602595dc81a956b0b8282ffcec957e7e4633f4",
+  "input_fingerprint": "c3d19a2dc3d330dbf8cee7964fcb8e4fa14be1316561beb1e1d50451d522edb9",
   "source": {
     "movement_signals": {
       "path": "fantasy-management/generated/operations/free-agent-movement-signals.json",
       "dataset_id": "free-agent-movement-signals",
-      "input_fingerprint": "de11c15e98bb5ff27513328872d08f29cc04b8c104b5c420a4b697238a0c667e"
+      "input_fingerprint": "2dc42b3ee5464f58310ae655e5854eaa2b93eccc6c0dca7f9bd57ab2bf4fa445"
     },
     "previous_movement_signals": {
       "status": "available",
-      "input_fingerprint": "0e7831cbe6b128041b54be3dcfb348e4a8e90bb6a3339a335e0006755a0378a5"
+      "input_fingerprint": "de11c15e98bb5ff27513328872d08f29cc04b8c104b5c420a4b697238a0c667e"
     },
     "comparison_policy": "stable material state ignores window churn; pure materiality-contract migrations with identical evidence are silently rebaselined; contract plus evidence changes fail open"
   },
@@ -23,12 +23,13 @@
       "TE",
       "WR"
     ],
-    "current_discovery_count": 257,
-    "previous_discovery_count": 256,
+    "current_discovery_count": 260,
+    "previous_discovery_count": 257,
     "event_count": 5,
     "event_type_counts": {
-      "changed": 4,
-      "new": 1
+      "changed": 1,
+      "new": 3,
+      "structural_change": 1
     },
     "event_priority_counts": {
       "high": 2,
@@ -40,8 +41,8 @@
     "status": "not_needed",
     "current_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
     "previous_materiality_contract_fingerprint": "5c461db18f84748236b293201b5ee20daf7731daa1c1f1db6140ec8f7bd3c8db",
-    "current_evidence_fingerprint": "666b1bb5e3d23c57b72ddd4dfc3d69d86dcaab9666614a186b4a20cde49972ba",
-    "previous_evidence_fingerprint": "b48a4f01393d069ad2a03528d2541f8b834f89ad15570168b2d3e0f0a584b9ce",
+    "current_evidence_fingerprint": "724acd4fdc041ee3088aabe4c4bbbb818898a4a2b5bb7d4713343098f11798f0",
+    "previous_evidence_fingerprint": "666b1bb5e3d23c57b72ddd4dfc3d69d86dcaab9666614a186b4a20cde49972ba",
     "contract_changed": false,
     "evidence_changed": true,
     "comparison_event_count_before_suppression": 5,
@@ -50,49 +51,84 @@
   },
   "events": [
     {
-      "player_id": "13150",
-      "name": "Darius Cooper",
-      "position": "WR",
-      "event_type": "new",
+      "player_id": "11600",
+      "name": "Ja'Tavion Sanders",
+      "position": "TE",
+      "event_type": "changed",
       "event_priority": "high",
       "current_research_priority": "high",
-      "previous_research_priority": null,
-      "current_state_hash": "101b7ba2cde26043315f61c52f04fdfafa5013fcc9b1e4eb590c79b8cdfd05b1",
-      "previous_state_hash": null,
+      "previous_research_priority": "medium",
+      "current_state_hash": "f10414039b565764a0429f72a51d5896be1aaad3a13c43cea1e8ba39c02cf554",
+      "previous_state_hash": "d51a7170d8301c6bf1dc9028e4c4a4a6fb06fb8b1532ce45e8fe91e891c909a4",
       "changed_dimensions": [
-        "new_discovery"
+        "research_priority",
+        "structural_change"
       ],
       "current_material_families": [
         "dynasty_market",
-        "season_projection"
+        "role_opportunity"
       ],
-      "previous_material_families": [],
+      "previous_material_families": [
+        "dynasty_market"
+      ],
       "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": null,
+      "previous_replacement_classification": "below_rostered_boundary",
       "threshold_summary": [
         {
           "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
+          "kind": "tier_change",
           "severity": "high",
-          "direction": "down"
-        },
+          "direction": null
+        }
+      ],
+      "cross_signal_summary": [],
+      "structural_changes": [
         {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_value_movement",
-          "severity": "high",
-          "direction": "down"
-        },
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 5,
+          "to": 4
+        }
+      ],
+      "final_roster_recommendation": null
+    },
+    {
+      "player_id": "11630",
+      "name": "Roman Wilson",
+      "position": "WR",
+      "event_type": "structural_change",
+      "event_priority": "high",
+      "current_research_priority": "high",
+      "previous_research_priority": "high",
+      "current_state_hash": "e3fe3eda73c62a7420fb39bf3954478e5da0f573db7f2d0009ead2e02e9a0046",
+      "previous_state_hash": "e3fe3eda73c62a7420fb39bf3954478e5da0f573db7f2d0009ead2e02e9a0046",
+      "changed_dimensions": [
+        "structural_change"
+      ],
+      "current_material_families": [
+        "dynasty_market",
+        "role_opportunity",
+        "season_projection"
+      ],
+      "previous_material_families": [
+        "dynasty_market",
+        "season_projection"
+      ],
+      "current_replacement_classification": "near_rostered_boundary",
+      "previous_replacement_classification": "near_rostered_boundary",
+      "threshold_summary": [
         {
           "family": "dynasty_market",
           "kind": "overall_rank_movement",
           "severity": "medium",
-          "direction": "up"
+          "direction": "down"
         },
         {
           "family": "dynasty_market",
           "kind": "position_rank_movement",
           "severity": "medium",
-          "direction": "up"
+          "direction": "down"
         },
         {
           "family": "dynasty_market",
@@ -108,158 +144,114 @@
         }
       ],
       "cross_signal_summary": [],
-      "structural_changes": [],
-      "final_roster_recommendation": null
-    },
-    {
-      "player_id": "9486",
-      "name": "Dontayvion Wicks",
-      "position": "WR",
-      "event_type": "changed",
-      "event_priority": "high",
-      "current_research_priority": "high",
-      "previous_research_priority": "high",
-      "current_state_hash": "6cef7489c4081e8761dbfdf929e90be00b2c0acfb3bc350a26ac451406b36ca1",
-      "previous_state_hash": "713a9a09d2e8b5b4a6978a46b3e76637b22ccf0fce67015b8cf4f24b04a871ad",
-      "changed_dimensions": [
-        "replacement_classification"
-      ],
-      "current_material_families": [
-        "dynasty_market"
-      ],
-      "previous_material_families": [
-        "dynasty_market"
-      ],
-      "current_replacement_classification": "near_rostered_boundary",
-      "previous_replacement_classification": "at_or_above_rostered_boundary",
-      "threshold_summary": [
+      "structural_changes": [
         {
-          "family": "dynasty_market",
-          "kind": "tier_change",
-          "severity": "high",
-          "direction": null
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
+          "severity": "medium",
+          "from": 10,
+          "to": 9
         }
       ],
-      "cross_signal_summary": [],
-      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
-      "player_id": "6149",
-      "name": "Darius Slayton",
-      "position": "WR",
-      "event_type": "changed",
+      "player_id": "7531",
+      "name": "Feleipe Franks",
+      "position": "TE",
+      "event_type": "new",
       "event_priority": "medium",
       "current_research_priority": "medium",
-      "previous_research_priority": "medium",
-      "current_state_hash": "367785f95c7822c541981a6ed254dacb7af810d791c89f499d71b13ddf9d4c09",
-      "previous_state_hash": "4f80bc99c7f7835ab16ef38ca1d5721995ccb3a37d85e2684403aff34f6ed8c9",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
       "changed_dimensions": [
-        "replacement_classification"
+        "new_discovery",
+        "structural_change"
       ],
       "current_material_families": [
-        "dynasty_market"
+        "role_opportunity"
       ],
-      "previous_material_families": [
-        "dynasty_market"
-      ],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": "near_rostered_boundary",
-      "threshold_summary": [
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
         {
-          "family": "dynasty_market",
-          "kind": "overall_rank_movement",
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
           "severity": "medium",
-          "direction": "down"
+          "from": 4,
+          "to": 5
         }
       ],
-      "cross_signal_summary": [],
-      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
-      "player_id": "12718",
-      "name": "Konata Mumpfield",
+      "player_id": "12210",
+      "name": "Cole Burgess",
       "position": "WR",
-      "event_type": "changed",
+      "event_type": "new",
       "event_priority": "medium",
       "current_research_priority": "medium",
-      "previous_research_priority": "high",
-      "current_state_hash": "ffd58bd09e75ee996c309bf98b9209a5f72a23aced37f9c41744062d111e588e",
-      "previous_state_hash": "456517b68876e6c9877a7fee9c968bfd23e64c440083c6321e6a76ed64767ada",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
       "changed_dimensions": [
-        "replacement_classification",
-        "research_priority"
+        "new_discovery",
+        "structural_change"
       ],
       "current_material_families": [
-        "dynasty_market"
+        "role_opportunity"
       ],
-      "previous_material_families": [
-        "dynasty_market"
-      ],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": "near_rostered_boundary",
-      "threshold_summary": [
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
         {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_percentile_movement",
-          "severity": "high",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "fantasycalc_value_movement",
-          "severity": "high",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "position_rank_movement",
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
           "severity": "medium",
-          "direction": "down"
+          "from": 11,
+          "to": 10
         }
       ],
-      "cross_signal_summary": [],
-      "structural_changes": [],
       "final_roster_recommendation": null
     },
     {
-      "player_id": "6271",
-      "name": "Olamide Zaccheaus",
+      "player_id": "13200",
+      "name": "Max Hurleman",
       "position": "WR",
-      "event_type": "changed",
+      "event_type": "new",
       "event_priority": "medium",
       "current_research_priority": "medium",
-      "previous_research_priority": "medium",
-      "current_state_hash": "21df67e5ba911d58d77faef1470892c6201ffb93b64bb13b3f241a9e5953a9a2",
-      "previous_state_hash": "ddda8710ed4d5114bdeab84aa1075826679d33362c0c32835ac30b3347934070",
+      "previous_research_priority": null,
+      "current_state_hash": "9554882cda149498f621141e011db1f46a3eb016bc1bda825d38c728d99db19f",
+      "previous_state_hash": null,
       "changed_dimensions": [
-        "replacement_classification"
+        "new_discovery",
+        "structural_change"
       ],
       "current_material_families": [
-        "dynasty_market"
+        "role_opportunity"
       ],
-      "previous_material_families": [
-        "dynasty_market"
-      ],
-      "current_replacement_classification": "below_rostered_boundary",
-      "previous_replacement_classification": "near_rostered_boundary",
-      "threshold_summary": [
+      "previous_material_families": [],
+      "current_replacement_classification": "unknown",
+      "previous_replacement_classification": null,
+      "threshold_summary": [],
+      "cross_signal_summary": [],
+      "structural_changes": [
         {
-          "family": "dynasty_market",
-          "kind": "overall_rank_movement",
+          "family": "role_opportunity",
+          "kind": "depth_chart_order_change",
           "severity": "medium",
-          "direction": "up"
-        },
-        {
-          "family": "dynasty_market",
-          "kind": "position_rank_movement",
-          "severity": "medium",
-          "direction": "up"
+          "from": 12,
+          "to": 11
         }
       ],
-      "cross_signal_summary": [],
-      "structural_changes": [],
       "final_roster_recommendation": null
     }
   ],
