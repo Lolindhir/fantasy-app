@@ -577,6 +577,113 @@ class NflInjuriesProductTests(unittest.TestCase):
             self.assertTrue(any("injuries_2024.csv" in u for u in fetched))
             self.assertTrue(any("injuries_2010.csv" in u for u in fetched))
 
+    def test_full_history_batch_preflights_all_seasons_and_pins_retries(self):
+        from nfl_injuries_history_reconcile import (
+            stage_all_verified_missing_injury_sources,
+            reconcile_accepted_injury_history,
+        )
+        from nfl_source_data_lib.injury_product_plan import build_injury_raw_artifacts
+        import hashlib
+        import json
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            league = root / "data-source/leagues/test/manifest.json"
+            league.parent.mkdir(parents=True)
+            league.write_text(json.dumps({
+                "CurrentCanonicalLeagueSeasonID": "now",
+                "Seasons": [{"CanonicalLeagueSeasonID": "now", "Season": 2026}],
+            }), encoding="utf-8")
+            identity = root / "data-source/nfl/identities/players.json"
+            identity.parent.mkdir(parents=True)
+            identity.write_text(json.dumps(identities()), encoding="utf-8")
+            originals = {
+                year: asset(year, [report(year)]) for year in (2010, 2024, 2025)
+            }
+            for year in originals:
+                schedule = root / f"data-source/nfl/schedules/{year}.json"
+                schedule.parent.mkdir(parents=True, exist_ok=True)
+                schedule.write_text(json.dumps({"Season": year, "Games": [{
+                    "Week": 5, "GameType": "REG",
+                    "GameID": f"{year}_05_X_HOU",
+                    "HomeTeam": "HOU", "AwayTeam": "X",
+                }]}), encoding="utf-8")
+            prior = build_injury_raw_artifacts(
+                season=2025, source_csv=originals[2025],
+                expected_source_sha256=hashlib.sha256(originals[2025]).hexdigest())
+            for name, contents in prior.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(contents)
+
+            def make_release(*, corrupt_2010=False):
+                return {"assets": [{
+                    "name": f"injuries_{year}.csv", "id": year,
+                    "updated_at": "2026-11-19T00:00:00Z",
+                    "size": len(original), "digest": (
+                        "sha256:" + ("f" * 64) if corrupt_2010 and year == 2010
+                        else "sha256:" + hashlib.sha256(original).hexdigest()
+                        if year != 2010 else None),
+                    "browser_download_url": (
+                        "https://github.com/nflverse/nflverse-data/releases/"
+                        f"download/injuries/injuries_{year}.csv"),
+                } for year, original in originals.items()]}
+
+            def download(url):
+                year = int(url.rsplit("_", 1)[-1].removesuffix(".csv"))
+                return originals[year]
+
+            def run(release, *, write=True, pin=None):
+                return stage_all_verified_missing_injury_sources(
+                    root, write=write, pinned_seasons=pin,
+                    fetch_release=lambda: release, fetch_asset=download)
+
+            # The newest candidate validates first; an older bad original
+            # must still prevent publication of every file from the batch.
+            with self.assertRaisesRegex(ValueError, "official SHA-256/size"):
+                run(make_release(corrupt_2010=True))
+            self.assertFalse((root /
+                "data-source/providers/nflverse/injuries/raw-2024.csv").exists())
+            self.assertFalse((root /
+                "data-source/providers/nflverse/injuries/raw-2010.csv").exists())
+
+            release = make_release()
+            preview = run(release, write=False)
+            self.assertEqual([2024, 2010], preview["Seasons"])
+            self.assertEqual([], preview["StagedSeasons"])
+            self.assertFalse((root /
+                "data-source/providers/nflverse/injuries/raw-2024.csv").exists())
+            first = run(release)
+            self.assertEqual([2024, 2010], first["Seasons"])
+            self.assertEqual([2024, 2010], first["StagedSeasons"])
+            self.assertEqual(4, len(first["NewRawPaths"]))
+            self.assertEqual(
+                [2010, 2024, 2025],
+                reconcile_accepted_injury_history(
+                    root, phase="canonical", write=True)["ChangedSeasons"],
+            )
+            self.assertEqual([], reconcile_accepted_injury_history(
+                root, phase="canonical", require_noop=True)["ChangedSeasons"])
+            # Raw was published; the retry may not discover another season.
+            originals[2011] = asset(2011, [report(2011)])
+            schedule = root / "data-source/nfl/schedules/2011.json"
+            schedule.write_text(json.dumps({"Season": 2011, "Games": [{
+                "Week": 5, "GameType": "REG", "GameID": "2011_05_X_HOU",
+                "HomeTeam": "HOU", "AwayTeam": "X",
+            }]}), encoding="utf-8")
+            release = make_release()
+            pinned = run(release, pin=[2024, 2010])
+            self.assertEqual([], pinned["StagedSeasons"])
+            self.assertEqual([2024, 2010], pinned["NoOpSeasons"])
+            self.assertFalse((root /
+                "data-source/providers/nflverse/injuries/raw-2011.csv").exists())
+            next_pass = run(release)
+            self.assertEqual([2011], next_pass["StagedSeasons"])
+            self.assertEqual("no-eligible-missing-original", run(release)["Status"])
+            with self.assertRaisesRegex(ValueError, "Invalid pinned"):
+                run(release, pin=[2024, 2024])
+
     def test_recurring_missing_original_intake_fails_closed_before_raw_write(self):
         from nfl_injuries_history_reconcile import stage_next_verified_missing_injury_source
         import hashlib
@@ -890,10 +997,13 @@ class NflInjuriesProductTests(unittest.TestCase):
         # The selection survives the entire 3-attempt loop, including a
         # successful Raw push followed by an unsuccessful Canonical push.
         self.assertLess(
-            script.index('historical_intake_selected_season=""'),
+            script.index('historical_intake_selected_seasons=""'),
             script.index('for attempt in $(seq 1 "$max_attempts"); do'))
-        self.assertIn('intake_args+=(--season "$historical_intake_selected_season")', script)
-        self.assertIn('historical_intake_selected_season" == "none"', script)
+        self.assertIn('intake_args=(--phase intake --write --all-missing)', script)
+        self.assertIn('intake_args+=(--seasons "$historical_intake_selected_seasons")', script)
+        self.assertIn('historical_intake_selected_seasons" == "none"', script)
+        self.assertIn('["Seasons"]', script)
+        self.assertNotIn('intake_args+=(--season ', script)
         self.assertIn("INJURY_HISTORY_DUE", script)
         self.assertIn("--phase canonical --write", script)
         self.assertIn("--phase canonical --require-noop", script)

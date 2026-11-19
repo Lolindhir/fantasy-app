@@ -263,8 +263,8 @@ freshness:
       standard: .ai-context/manual/data-sources.yaml::historicalReconciliationStandard
       target: >-
         Permanently discover all official season assets every Monday or upon an
-        explicit manual history-reconciliation request, admit at most one entirely
-        missing historical Source season (complete pair or missing half) after
+        explicit manual history-reconciliation request, preflight and admit all dynamically discovered
+        missing historical Source seasons as a single fail-closed batch (complete pairs or missing halves) after
         official asset/byte-size and available SHA-256 checks plus full original
         self-hash/schema/identity/game-link preflight, compare accepted
         historical source revisions, and rederive every accepted Canonical and
@@ -277,10 +277,13 @@ freshness:
         Every scheduled Monday or explicit full unfiltered manual history pass
         re-discovers missing official historical seasons from the complete upstream
         inventory, not a one-time backfill list. The existing Source Raw transaction
-        may admit at most ONE eligible season per run: a fully absent Raw/metadata
-        pair or the missing file in an incomplete pair. The first intake selection
-        (including "none") is pinned for the entire workflow run; Raw/Canonical
-        retries cannot admit the next missing year after a partial Raw success.
+        may admit ALL eligible missing seasons per run: fully absent Raw/metadata
+        pairs and missing halves of incomplete pairs. Every candidate passes
+        original-byte, schema, identity and GameID preflight before the first
+        Raw file is staged; any failure blocks the entire batch without partial
+        publication. The complete first-attempt selection (including an empty
+        set) is pinned for the entire workflow run; Raw/Canonical retries cannot
+        admit additional years after a Raw push.
         Require official release
         URL/asset ID/updated time/byte-size, available upstream SHA-256 equality,
         always compute and persist SHA-256 of exact downloaded bytes, and require
