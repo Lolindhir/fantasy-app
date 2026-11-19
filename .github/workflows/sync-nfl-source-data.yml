@@ -299,9 +299,9 @@ jobs:
           PAT_PUSH: ${{ secrets.PAT_PUSH }}
           # Existing contents:write token for immutable original-PBP Source evidence.
           PBP_ARCHIVE_TOKEN: ${{ github.token }}
-          # The built-in token also reads official nflverse release metadata.
-          # The built-in token is only used to read official nflverse release metadata.
-          NFLVERSE_RELEASE_API_TOKEN: ${{ inputs.materialization_scope == 'injuries' && github.token || '' }}
+          # Authenticate official injury release metadata in both scoped Injury
+          # runs and explicitly due historical full runs; never forward to assets.
+          NFLVERSE_RELEASE_API_TOKEN: ${{ (inputs.materialization_scope == 'injuries' || steps.injury_history_due.outputs.due == 'true') && github.token || '' }}
         run: |
           set -euo pipefail
 
