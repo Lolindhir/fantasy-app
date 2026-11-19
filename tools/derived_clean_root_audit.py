@@ -45,6 +45,9 @@ from league_metadata import list_league_ids, load_league_metadata
 from league_schedule_outlook_preview import preview_all
 from derived_data_lib.league_schedule_outlook import assemble
 from derived_data_lib.models.registry import get_model
+from league_standings_sources import current_season, manifest
+from matchup_context_materialize import EXPECTED_ERRORS as MATCHUP_CONTEXT_ERRORS, PRODUCT as MATCHUP_CONTEXT, materialize as materialize_matchup_context
+from datetime import datetime, timezone
 from nfl_games_materialize import discover_seasons, materialize as materialize_nfl_games
 from nfl_injuries_phase import plan_injury_phase
 from team_week_performance_materialize import materialize_all_finalized
@@ -62,7 +65,7 @@ NFL_INJURIES = "nfl-injuries"
 PRODUCTS = (
     PLAYER_VALUATION, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS,
     PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, NFL_INJURIES, SEASON_STATISTICS,
-    LEAGUE_STANDINGS, LEAGUE_RIVALRY,
+    LEAGUE_STANDINGS, LEAGUE_RIVALRY, MATCHUP_CONTEXT,
 )
 GLOBAL_PRODUCTS = frozenset({NFL_GAMES, NFL_INJURIES})
 
@@ -93,9 +96,15 @@ def _files(root: Path, unit: Unit) -> dict[str, str]:
         directory = directory / league
     if not directory.is_dir():
         return {}
+    skip: Path | None = None
+    if product == MATCHUP_CONTEXT:
+        # The running season's documents depend on the clock through the Decision Windows (ADR-089): a current snapshot,
+        # not byte-reproducible from a clean root. Every completed season is covered.
+        skip = directory / str(current_season(manifest(root, league)))
     return {
         p.relative_to(directory).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
         for p in sorted(directory.rglob("*.json"))
+        if skip is None or skip not in p.parents
     }
 
 
@@ -183,6 +192,12 @@ def _build(unit: Unit, root: Path) -> tuple[int, int]:
         ), 0
     if product == NFL_INJURIES:
         return _build_nfl_injuries(root), 0
+    if product == MATCHUP_CONTEXT:
+        try:
+            summaries = materialize_matchup_context(root, output, league, "history", datetime.now(timezone.utc))
+        except MATCHUP_CONTEXT_ERRORS as error:
+            raise ValueError(f"{type(error).__name__}: {error}") from error
+        return sum(int(x["Written"]) for x in summaries), 0
     raise ValueError(f"Unknown product: {product}")
 
 

@@ -1,24 +1,26 @@
 #!/usr/bin/env python3
-"""Consumer generator: App Matchups and FantasyGameContext files from the matchup-context function (ADR-075, Issue #1199 section 3).
+"""Consumer generator: App Matchups, FantasyGameContext and MatchupProjections files from the matchup-context product (ADR-075, ADR-089).
 
-Renders exactly the files the App reads from the computed matchup context (tools/derived_data_lib/matchup_context.py and
-fantasy_game_context.py); nothing is read from public/data:
+Renders exactly the files the App reads from the persisted documents of data-derived/matchup-context (materialized by
+tools/matchup_context_materialize.py, which calls the pure function tools/derived_data_lib/matchup_context.py); nothing is
+read from public/data and no computation happens here:
 
   public/data/Matchups.json                                   season Matchups model of the current season
   public/data/FantasyGameContext.json                         FantasyGameContext of the current lineup week
   public/data/FantasyGameContextHistory.json                  finished weeks of the current season (ScoringState partial)
+  public/data/MatchupProjections.json                         team projections of the lineup week (WinProbability, HybridExpected)
   public/data/past_seasons/Matchups/Matchups_<season>.json    completed earlier seasons
   public/data/past_seasons/FantasyGameContext/FantasyGameContext_<season>.json   history of earlier seasons
 
-The team projection file stays with the PlayerWeekFantasy refresh (tools/player_week_fantasy_refresh.py).
+The documents come from the product, so the materializer runs first (products before consumers).
 
 Usage:
   matchup_context_app_publish.py write [--league nfl-reise] [--scope current|history|all] [--fail-on-error]
 
 `write` writes a file only on a semantic difference and updates Timestamps.json[Matchups|FantasyGameContext] for the current
-files only. A season whose canonical evidence is incomplete keeps its last file and raises a GitHub warning annotation; the
-current Matchups model is required (WeeklyRecaps reads it) and fails the run. FantasyGameContext keeps its previous file when
-no current matchup week is loadable.
+files only. A season whose product document is missing keeps its last file and raises a GitHub warning annotation; the
+current Matchups document is required and fails the run. FantasyGameContext and MatchupProjections keep their previous file when
+the product holds no current matchup week.
 """
 from __future__ import annotations
 
@@ -27,21 +29,19 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from league_metadata import data_meta_root, default_league_id  # noqa: E402
 
-from data_roots import DATA_SOURCE_ROOT  # noqa: E402
-from derived_data_lib.fantasy_game_context import resolve_current_context, resolve_current_season_history, resolve_historical_season  # noqa: E402
-from derived_data_lib.league_lifecycle import LifecycleError  # noqa: E402
-from derived_data_lib.matchup_context import MatchupContextError, resolve_matchups  # noqa: E402
-from league_standings_sources import StandingsSourceError, current_season, manifest  # noqa: E402
+from data_roots import DATA_SOURCE_ROOT, data_derived_dir  # noqa: E402
+from derived_data_lib.matchup_context import MatchupContextError  # noqa: E402
+from league_standings_sources import current_season, manifest  # noqa: E402
 from matchup_context import diff_values  # noqa: E402
+from matchup_context_materialize import CONTEXT_HISTORY, CURRENT, EXPECTED_ERRORS, MATCHUPS, read_document  # noqa: E402
 
 FIRST_CONTEXT_HISTORY_SEASON = 2022
-EXPECTED_ERRORS = (MatchupContextError, LifecycleError, StandingsSourceError)
 
 
 def _load(path: Path) -> Any:
@@ -110,39 +110,45 @@ class Writer:
         return self.changed
 
 
-def _guarded(label: str, build: Callable[[], Any]) -> Any | None:
-    """Result of ``build`` or None after a warning when the canonical evidence is incomplete (last file stays)."""
-    try:
-        return build()
-    except EXPECTED_ERRORS as error:
-        _warn(f"{label} not published", f"{type(error).__name__}: {error}")
-        return None
+def _product(repo_root: Path, league_id: str, season: int, name: str) -> Any | None:
+    return read_document(data_derived_dir(repo_root), league_id, season, name)
 
 
-def write_current(repo_root: Path, league_id: str, writer: Writer, at_utc: datetime) -> None:
+def write_current(repo_root: Path, league_id: str, writer: Writer, at_utc: datetime | None = None) -> None:
+    """Render the current App files from the persisted matchup-context documents (products before consumers, ADR-089)."""
     season = current_season(manifest(repo_root, league_id))
-    writer.put("Matchups.json", resolve_matchups(repo_root, league_id, season, at_utc), "Matchups")
-    context = _guarded("FantasyGameContext", lambda: resolve_current_context(repo_root, league_id, season, at_utc))
-    if context is not None:
-        writer.put("FantasyGameContext.json", context, "FantasyGameContext")
+    matchups = _product(repo_root, league_id, season, MATCHUPS)
+    if matchups is None:
+        raise MatchupContextError(f"matchup-context product {season}/{MATCHUPS} is not materialized")
+    writer.put("Matchups.json", matchups, "Matchups")
+    current = _product(repo_root, league_id, season, CURRENT) or {}
+    # No loadable current matchup week (or no projections of that week): the previous App file stays.
+    if current.get("FantasyGameContext") is not None:
+        writer.put("FantasyGameContext.json", current["FantasyGameContext"], "FantasyGameContext")
+    if current.get("MatchupProjections") is not None:
+        writer.put("MatchupProjections.json", current["MatchupProjections"])
     # Not under past_seasons: that tree is cached long-term, while this file changes with every finished week.
-    finished = _guarded(
-        "FantasyGameContextHistory", lambda: resolve_current_season_history(repo_root, league_id, season, at_utc)
-    )
-    if finished is not None:
+    finished = _product(repo_root, league_id, season, CONTEXT_HISTORY)
+    if finished is None:
+        _warn("FantasyGameContextHistory not published", f"matchup-context product {season}/{CONTEXT_HISTORY} is not materialized")
+    else:
         writer.put("FantasyGameContextHistory.json", finished)
 
 
-def write_history(repo_root: Path, league_id: str, writer: Writer, at_utc: datetime) -> None:
+def write_history(repo_root: Path, league_id: str, writer: Writer, at_utc: datetime | None = None) -> None:
     current = current_season(manifest(repo_root, league_id))
     for season in history_matchup_seasons(repo_root, league_id, current):
-        model = _guarded(f"Historical Matchups {season}", lambda s=season: resolve_matchups(repo_root, league_id, s, at_utc))
-        if model is not None:
-            writer.put(f"past_seasons/Matchups/Matchups_{season}.json", model)
+        model = _product(repo_root, league_id, season, MATCHUPS)
+        if model is None:
+            _warn(f"Historical Matchups {season} not published", "matchup-context product document is not materialized")
+            continue
+        writer.put(f"past_seasons/Matchups/Matchups_{season}.json", model)
     for season in history_context_seasons(repo_root, current):
-        model = _guarded(f"Historical FantasyGameContext {season}", lambda s=season: resolve_historical_season(repo_root, league_id, s))
-        if model is not None:
-            writer.put(f"past_seasons/FantasyGameContext/FantasyGameContext_{season}.json", model)
+        model = _product(repo_root, league_id, season, CONTEXT_HISTORY)
+        if model is None:
+            _warn(f"Historical FantasyGameContext {season} not published", "matchup-context product document is not materialized")
+            continue
+        writer.put(f"past_seasons/FantasyGameContext/FantasyGameContext_{season}.json", model)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

@@ -13,20 +13,29 @@ purpose: >-
   completed seasons and the team projections) as one pure function of canonical facts, products and data-meta. It replaces the
   PowerShell derivation of public/requests (MatchupReadModelCore, FantasyGameContextCore, FantasyGameContextUtils,
   FantasyMatchupPreviewUtils, FantasyWeeklyWatchUtils, FantasyRelevanceV2Utils context part, CanonicalMatchupUtils,
-  FantasyTeamOrderUtils) and the file-reading tools/matchup_projection.py. The result is computed, never persisted (pattern of
-  league-lifecycle.yaml, decision-windows.yaml and week-finality.yaml). The App files stay deliveries with unchanged contracts.
+  FantasyTeamOrderUtils) and the file-reading tools/matchup_projection.py. The function stays computed; since ADR-089 (Issue #1571) its
+  result is additionally persisted as the Shared Derived product data-derived/matchup-context by tools/matchup_context_materialize.py. The App files stay deliveries with unchanged contracts.
 
 architecture:
-  decisionBasis: [ADR-036, ADR-037, ADR-054, ADR-055, ADR-071, ADR-073, ADR-074, ADR-075]
+  decisionBasis: [ADR-036, ADR-037, ADR-054, ADR-055, ADR-071, ADR-073, ADR-074, ADR-075, ADR-089]
   logicalLayer: Shared Derived Data (product semantics, computed)
-  persistence: none (no product file, no writer, no write prefix; the App deliveries are written by a consumer generator)
+  persistence: >-
+    ADR-089 (Issue #1571): data-derived/matchup-context/<CanonicalLeagueID>/<Season>/ holds matchups.json (season Matchups model),
+    fantasy-game-context.json (finished weeks, from 2022; the running season too) and, for the running season only, current.json
+    (FantasyGameContext of the lineup week and MatchupProjections incl. WinProbability and HybridExpected). Documents are written only on a byte
+    difference, without AsOfUtc inside. Identity: CanonicalLeagueID + Season + selected model IDs (data-meta). Invalidation: canonical sources,
+    the products standings, player-week-fantasy and season-statistics, nfl-games, model versions. The running season's documents depend on the clock
+    through the Decision Windows and are a current snapshot, excluded from the clean-root equality check of the restore probe; completed seasons are
+    fully reproducible and covered. Writers: league-live.yml (current) and update-transactions.yml (history), the existing writers, new prefix only.
+    The App files are rendered from these documents by tools/matchup_context_app_publish.py (products before consumers).
   owner:
     function: tools/derived_data_lib/matchup_context.py
     cli: tools/matchup_context.py
     cliCommand: python3 tools/matchup_context.py resolve --league <CanonicalLeagueID> --season <Season> [--at <AtUtc>]
     consumerGenerator: tools/matchup_context_app_publish.py write
+    materializer: tools/matchup_context_materialize.py
     projectionModel: tools/derived_data_lib/models/team_range/v1.py
-    tests: tools/tests/test_matchup_context.py
+    tests: [tools/tests/test_matchup_context.py, tools/tests/test_matchup_context_materialize.py]
   rules:
     - The result is a pure function of explicit inputs. The clock is an input (AtUtc), never read inside the function or the model; the result echoes it as AsOfUtc.
     - Facts come only from data-source, the products nfl-games, league-standings and player-week-fantasy, the lifecycle, Decision Windows and week-finality functions and data-meta. public/data is never an input; it is a consumer output.
@@ -35,7 +44,7 @@ architecture:
     - Weekly Recaps reading Matchups.json and Schedule.json is section 4 of Issue #1199, not part of this contract.
 
 decisions:
-  M1: Computed, not persisted. resolve(CanonicalLeagueID, Season, AtUtc) returns the season Matchups model, the FantasyGameContext of the matchup week and the team projections; completed seasons return the history. No product directory.
+  M1: Computed, not persisted. resolve(CanonicalLeagueID, Season, AtUtc) returns the season Matchups model, the FantasyGameContext of the matchup week and the team projections; completed seasons return the history. Amended by ADR-089 (persisted as a product, see architecture.persistence).
   M2: >-
     The FantasyGameContext counterfactual ("would the matchup have ended differently without this game") uses WeekIsFinal = week <= LeagueScoredWeek (ADR-071,
     week-finality.yaml) instead of Sleeper last_scored_leg. It is the only allowed value difference in the shadow. Normally both agree because Sleeper scores

@@ -497,7 +497,7 @@ class ModelStateMemoTests(unittest.TestCase):
 
     def test_refresh_runs_inside_the_memo_scope(self):
         seen = []
-        with mock.patch.object(refresh, "_refresh", lambda root, at: seen.append(self.materialize._MODEL_STATE_MEMO is not None) or {}):
+        with mock.patch.object(refresh, "_refresh", lambda root, at, **kwargs: seen.append(self.materialize._MODEL_STATE_MEMO is not None) or {}):
             refresh.refresh(Path("."), datetime(2026, 1, 1, tzinfo=timezone.utc))
         self.assertEqual([True], seen)
         self.assertIsNone(self.materialize._MODEL_STATE_MEMO)

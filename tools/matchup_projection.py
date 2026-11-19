@@ -428,6 +428,39 @@ def _availability_by_player(root: Path, league_id: str, context: Mapping[str, An
     )
 
 
+def compute_matchup_projections(
+    repo_root: Path,
+    context: Mapping[str, Any],
+    player_model: Mapping[str, Any],
+    *,
+    league_id: str,
+    at_utc: datetime,
+) -> dict[str, Any] | None:
+    """The MatchupProjections document of the context week, or None when context and players describe different weeks.
+
+    Pure computation (no write): the context is the computed matchup-context result (ADR-075) and the player model is the
+    in-memory App adaptation of the Shared Derived PlayerWeekFantasy product. The method is the team-range model chosen for the
+    season in data-meta (Models.TeamRange). Nothing is read from public/data.
+    """
+
+    root = repo_root.resolve()
+    season = int(context["Season"])
+    metadata = load_league_metadata(league_id, data_meta_root(root))
+    model = get_model(model_for(metadata, season, "TeamRange"), "team-range")
+    win_model = get_model(model_for(metadata, season, "WinProb"), "win-prob")
+    windows = _decision_windows(root, league_id, season, at_utc)
+    try:
+        return build_matchup_projections(
+            context, player_model, availability=_availability_from_windows(windows, context),
+            season_statistics=_read_season_statistics(root, league_id, season),
+            decision_windows=windows, model=model, win_model=win_model
+        )
+    except ValueError as exc:
+        if "target different weeks" in str(exc):
+            return None
+        raise
+
+
 def publish_matchup_projections(
     repo_root: Path,
     context: Mapping[str, Any],
@@ -438,28 +471,15 @@ def publish_matchup_projections(
 ) -> dict[str, Any]:
     """Build from the FantasyGameContext function result and the PlayerWeekFantasy App model and write on change.
 
-    Neither input is read from public/data: the context is the computed matchup-context result (ADR-075) and the player model is
-    the in-memory App adaptation of the Shared Derived PlayerWeekFantasy product. The method is the team-range model chosen
-    for the season in data-meta (Models.TeamRange). A context/player-model week mismatch skips publication and keeps the
-    existing file: the consumer ignores a snapshot that targets another week.
+    A context/player-model week mismatch skips publication and keeps the existing file: the consumer ignores a snapshot that
+    targets another week. Since Issue #1571 the productive path is the matchup-context product (tools/matchup_context_materialize.py)
+    rendered by tools/matchup_context_app_publish.py; this direct writer remains for tests and manual repair.
     """
 
     root = repo_root.resolve()
-    season = int(context["Season"])
-    metadata = load_league_metadata(league_id, data_meta_root(root))
-    model = get_model(model_for(metadata, season, "TeamRange"), "team-range")
-    win_model = get_model(model_for(metadata, season, "WinProb"), "win-prob")
-    windows = _decision_windows(root, league_id, season, at_utc)
-    try:
-        payload = build_matchup_projections(
-            context, player_model, availability=_availability_from_windows(windows, context),
-            season_statistics=_read_season_statistics(root, league_id, season),
-            decision_windows=windows, model=model, win_model=win_model
-        )
-    except ValueError as exc:
-        if "target different weeks" in str(exc):
-            return {"Status": "skipped-week-mismatch", "Detail": str(exc)}
-        raise
+    payload = compute_matchup_projections(root, context, player_model, league_id=league_id, at_utc=at_utc)
+    if payload is None:
+        return {"Status": "skipped-week-mismatch", "Detail": "FantasyGameContext and PlayerWeekFantasy target different weeks"}
     changed = write_json_if_changed(root / OUTPUT_PATH, payload)
     teams = [team for matchup in payload["Matchups"] for team in matchup["Teams"]]
     return {

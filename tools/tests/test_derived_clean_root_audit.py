@@ -97,6 +97,15 @@ class CleanRootProbeTests(unittest.TestCase):
         written = emit(target, self.body("league-rivalry", root, existing))
         return {"Seasons": [{"Written": written}]}
 
+    def fake_matchup_context(self, root, out_root, league, scope, at_utc):
+        self.check_isolation(root)
+        self.assertEqual("history", scope)  # the running season is a clock-dependent snapshot, never probed
+        self.calls.append(("matchup-context", league))
+        target = out_root / "matchup-context" / league / "2024" / "matchups.json"
+        existing = target.read_text() if target.is_file() else None
+        written = emit(target, self.body("matchup-context", root, existing))
+        return [{"Season": 2024, "Written": written}]
+
     def fake_pwf(self, root, *, league_id, write):
         self.calls.append(("player-week-fantasy", league_id))
         target = root / "data-derived/player-week-fantasy" / league_id / "2024/01.json"
@@ -139,6 +148,7 @@ class CleanRootProbeTests(unittest.TestCase):
                 ("materialize_league_standings", self.fake_standings),
                 ("materialize_season_statistics", self.fake_season_statistics),
                 ("materialize_league_rivalry", self.fake_league_rivalry),
+                ("materialize_matchup_context", self.fake_matchup_context),
                 ("materialize_historical", self.fake_pwf),
                 ("materialize_all_finalized", self.fake_twp),
                 ("materialize_nfl_games", self.fake_nfl_games),
@@ -147,12 +157,14 @@ class CleanRootProbeTests(unittest.TestCase):
                 stack.enter_context(patch.object(probe, name, side_effect=fake))
             stack.enter_context(patch.object(probe, "discover_seasons", return_value=[2024]))
             stack.enter_context(patch.object(probe, "discover_injury_seasons", return_value=[2024]))
+            stack.enter_context(patch.object(probe, "manifest", return_value={}))
+            stack.enter_context(patch.object(probe, "current_season", return_value=2026))
             return probe.audit(self.root, **kwargs)
 
     def publish_all_stable(self):
         for relative in (
             f"player-valuation/{LEAGUE}/2024/week-00.json", f"league-transactions/{LEAGUE}/2024.json",
-            f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"season-statistics/{LEAGUE}/2024.json", f"league-rivalry/{LEAGUE}.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
+            f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"season-statistics/{LEAGUE}/2024.json", f"league-rivalry/{LEAGUE}.json", f"matchup-context/{LEAGUE}/2024/matchups.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
             f"team-week-performance/{LEAGUE}/2024/01.json", "nfl-games/2024.json", "nfl-injuries/2024.json",
         ):
             self.publish(relative, "stable")
@@ -263,6 +275,14 @@ class CleanRootProbeTests(unittest.TestCase):
         self.assertEqual(1, result["Products"]["nfl-games"]["MissingInPublishedCount"])
         self.assertEqual(1, result["Products"][f"league-transactions/{LEAGUE}"]["OrphanedPublishedCount"])
         self.assertEqual("old", (self.root / f"data-derived/player-valuation/{LEAGUE}/2024/week-00.json").read_text())
+
+    def test_running_season_matchup_context_is_not_compared(self):
+        """ADR-089: the running season's snapshot is clock-dependent; published files there are neither orphans nor drift."""
+        self.publish_all_stable()
+        self.publish(f"matchup-context/{LEAGUE}/2026/current.json", "live snapshot")
+        result = self.run_audit()
+        self.assertTrue(result["ReadyForFullRestore"])
+        self.assertNotIn(f"matchup-context/{LEAGUE}", result["HintProducts"])
 
     def test_hidden_dependency_on_existing_output_is_a_restore_defect(self):
         self.publish_all_stable()
