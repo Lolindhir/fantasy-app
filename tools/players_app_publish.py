@@ -5,7 +5,7 @@ Usage:
   players_app_publish.py compare [--league ID] [--as-of YYYY-MM-DD] [--report-dir DIR]
   players_app_publish.py write   [--league ID] [--as-of YYYY-MM-DD]
 
-``write`` (cutover, step 5) materializes the player-valuation product into data-derived, resolves the Players rows for the
+``write`` (cutover, step 5) resolves from the persisted player-valuation product (materialized beforehand, Issue #1571 L4), the Players rows for the
 run date in the league time zone and writes the published file only when the content differs (published form, like
 Compare-Players): backup copy under public/data/backup, the file itself and Timestamps.json[Players]. The previously
 published file is read only for the change comparison, never as an input of the rows (Q3).
@@ -33,7 +33,6 @@ from zoneinfo import ZoneInfo
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import derived_data  # noqa: E402
-from data_roots import data_derived_dir  # noqa: E402
 import player_valuation_sources as sources  # noqa: E402
 from derived_data_lib.players_read_model import (  # noqa: E402
     PlayersReadModelError, players_differ, resolve, serialize_players,
@@ -125,7 +124,7 @@ def write(repo_root: Path, league_id: str, as_of_text: str | None, now: datetime
     as_of = date.fromisoformat(as_of_text) if as_of_text else moment.astimezone(ZoneInfo(metadata["LeagueTimeZone"])).date()
     season = sources.current_season(sources.league_manifest(repo_root, league_id))
 
-    derived_data.materialize_player_valuation(repo_root, data_derived_dir(repo_root), league_id, None, False)
+    # the player-valuation product is materialized beforehand (`derived_data.py materialize --product player-valuation`, Issue #1571 L4)
     result = resolve(repo_root, league_id, season, as_of)
 
     old = None

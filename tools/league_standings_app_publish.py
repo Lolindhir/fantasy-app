@@ -275,23 +275,18 @@ def _dump(payload: Any) -> str:
 
 
 def write_standings(repo_root: Path, league_id: str, now: datetime | None = None) -> list[str]:
-    """Materialize the product and render Standings.json; return the changed repository-relative paths.
+    """Render Standings.json from the persisted league-standings product; return the changed repository-relative paths.
 
-    The product is written first; Standings.json only changes on a semantic difference, in which case
+    The product is materialized beforehand (`derived_data.py materialize --product league-standings`, Issue #1571 L4); a missing
+    document fails closed. Standings.json only changes on a semantic difference, in which case
     Timestamps.json[Standings] is stamped (the writer owns its freshness timestamp, never an input).
     """
-    # App outputs are not a source for the active season. Validate the canonical
-    # identity and render before publishing either product or App files.
     league_year = standings_sources.current_season(standings_sources.manifest(repo_root, league_id))
-    documents = build_league_standings(repo_root, league_id)
+    documents = load_product_documents(repo_root, league_id)
     if league_year not in documents:
         raise ValueError(f"Current league season {league_year} missing from league-standings documents for {league_id}")
     rendered = render_standings(documents, league_year)
-    summary = materialize_league_standings(repo_root, repo_root / "data-derived", league_id, None, False)
-    changed = [
-        f"data-derived/league-standings/{league_id}/{item['Season']}.json"
-        for item in summary["Seasons"] if item.get("Written")
-    ]
+    changed: list[str] = []
     data = repo_root / "public" / "data"
     path = data / "Standings.json"
     if path.is_file() and not difference(rendered, _load(path)):
@@ -358,7 +353,7 @@ def main() -> int:
     compare = sub.add_parser("compare", help="compare the rendered product with the published Standings.json and League.json")
     compare.add_argument("--league", help="CanonicalLeagueID (default: every league in data-meta)")
     compare.set_defaults(func=run_compare)
-    write = sub.add_parser("write", help="materialize the product and render Standings.json (semantic no-op)")
+    write = sub.add_parser("write", help="render Standings.json from the persisted product (semantic no-op)")
     write.add_argument("--league", default=None, help="CanonicalLeagueID (default: the only league in data-meta)")
     write.set_defaults(func=run_write)
     render = sub.add_parser("render", help="print the App-shaped standings rendered from the persisted product as JSON")

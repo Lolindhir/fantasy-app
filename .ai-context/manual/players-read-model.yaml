@@ -6,7 +6,7 @@ architectureDecision: ADR-076
 implementationState: >-
   Issue #1226 step 5: the function tools/derived_data_lib/players_read_model.py, the CLI tools/players_read_model.py and the
   consumer generator tools/players_app_publish.py (compare = shadow, write = productive) exist. Since the cutover
-  update-players.yml runs players_app_publish.py write (materializes the player-valuation product, then writes the file on
+  update-players.yml runs `derived_data.py materialize --product player-valuation` and then players_app_publish.py write (renders from the persisted product, writes the file on
   a content change with backup and the Players timestamp); the PV hold seed is no longer passed. RequestPlayers.ps1 and the
   PowerShell Players modules are removed (step 6, done); the point-path guard is tools/tests/test_players_point_paths_parity.py.
 

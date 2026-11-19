@@ -208,7 +208,7 @@ class DifferenceTests(unittest.TestCase):
 
 
 class WriteTests(unittest.TestCase):
-    """write: product first, Standings.json only on a semantic difference, Timestamps stamped then."""
+    """write: renders from the persisted product (materialized beforehand), Standings.json only on a semantic difference, Timestamps stamped then."""
 
     def setUp(self):
         import tempfile
@@ -224,9 +224,7 @@ class WriteTests(unittest.TestCase):
         self.now = datetime(2026, 10, 29, 12, 0, 0, tzinfo=timezone.utc)
         patcher = patch.multiple(
             app,
-            build_league_standings=lambda root, league: self.documents,
-            materialize_league_standings=lambda root, out, league, seasons, check: {
-                "Seasons": [{"Season": 2025, "Written": 1}, {"Season": 2024, "Written": 0}]},
+            load_product_documents=lambda root, league: self.documents,
         )
         patcher.start()
         self.addCleanup(patcher.stop)
@@ -258,7 +256,7 @@ class WriteTests(unittest.TestCase):
     def test_missing_manifest_fails_before_any_publication(self):
         from unittest.mock import patch
         with patch.object(app.standings_sources, "manifest", side_effect=FileNotFoundError("manifest missing")):
-            with patch.object(app, "materialize_league_standings", side_effect=AssertionError("must not materialize")):
+            with patch.object(app, "load_product_documents", side_effect=AssertionError("must not render")):
                 with self.assertRaises(FileNotFoundError):
                     app.write_standings(self.root, "league-a", self.now)
         self.assertFalse((self.root / "public/data/Standings.json").exists())
@@ -266,20 +264,19 @@ class WriteTests(unittest.TestCase):
     def test_inconsistent_current_season_fails_before_any_publication(self):
         from unittest.mock import patch
         with patch.object(app.standings_sources, "current_season", return_value=2026):
-            with patch.object(app, "materialize_league_standings", side_effect=AssertionError("must not materialize")):
-                with self.assertRaisesRegex(ValueError, "2026 missing"):
-                    app.write_standings(self.root, "league-a", self.now)
+            with self.assertRaisesRegex(ValueError, "2026 missing"):
+                app.write_standings(self.root, "league-a", self.now)
         self.assertFalse((self.root / "public/data/Standings.json").exists())
 
     def test_first_write_creates_file_and_timestamp_second_is_noop(self):
         changed = app.write_standings(self.root, "league-a", self.now)
-        self.assertEqual(["data-derived/league-standings/league-a/2025.json", "public/data/Standings.json", "public/data/Timestamps.json"], changed)
+        self.assertEqual(["public/data/Standings.json", "public/data/Timestamps.json"], changed)
         import json
         stamps = json.loads((self.root / "public/data/Timestamps.json").read_text())
         self.assertEqual("2026-10-29T12:00:00Z", stamps["Standings"])
         text = (self.root / "public/data/Standings.json").read_text()
         self.assertTrue(text.endswith("}\n]\n"))
-        self.assertEqual(["data-derived/league-standings/league-a/2025.json"], app.write_standings(self.root, "league-a", self.now))
+        self.assertEqual([], app.write_standings(self.root, "league-a", self.now))
         self.assertEqual(text, (self.root / "public/data/Standings.json").read_text())
 
     def test_change_rewrites_and_keeps_other_timestamps(self):

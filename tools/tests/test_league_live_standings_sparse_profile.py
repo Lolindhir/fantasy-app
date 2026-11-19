@@ -70,6 +70,12 @@ def regenerate(tree: Path) -> dict[str, str]:
     for rel in HASHED:
         path = tree / rel
         shutil.rmtree(path) if path.is_dir() else path.unlink(missing_ok=True)
+    materialized = subprocess.run(  # the product is materialized before the renderer (Issue #1571 L4)
+        [sys.executable, str(ROOT / "tools" / "derived_data.py"), "--repo-root", str(tree), "materialize", "--product", "league-standings"],
+        capture_output=True, text=True, check=False,
+    )
+    if materialized.returncode != 0:
+        raise AssertionError(materialized.stderr[-1500:])
     result = subprocess.run(
         [sys.executable, str(ROOT / "tools" / "league_standings_app_publish.py"), "--repo-root", str(tree), "write"],
         capture_output=True, text=True, check=False,

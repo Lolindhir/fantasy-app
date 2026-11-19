@@ -39,7 +39,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from data_roots import data_derived_dir  # noqa: E402
+from data_roots import DATA_SOURCE_ROOT, data_derived_dir  # noqa: E402
 from derived_data_lib.player_valuation import MODEL_KINDS, SnapshotContext, build_snapshot  # noqa: E402
 from league_metadata import (  # noqa: E402
     LeagueMetadataError,
@@ -375,9 +375,25 @@ def parse_args() -> argparse.Namespace:
     mat.add_argument("--product", required=True, choices=PRODUCTS)
     mat.add_argument("--league", help="CanonicalLeagueID (default: every league in data-meta)")
     mat.add_argument("--season", type=int, action="append", help="only this season (repeatable); default: all manifest seasons")
+    mat.add_argument("--scope", choices=("current", "history", "all"), help="season selection by lifecycle: current season, completed earlier seasons or both (exclusive with --season; league-rivalry covers all seasons and ignores it)")
     mat.add_argument("--out-root", type=Path, help="derived data root (default: the repository's derived root)")
     mat.add_argument("--check", action="store_true", help="write nothing; exit 3 when any snapshot would change")
     return parser.parse_args()
+
+
+def seasons_for_scope(repo_root: Path, league_id: str, scope: str) -> list[int]:
+    """Season list of a lifecycle scope: the current season, earlier seasons whose league source is complete, or both."""
+    manifest = standings_sources.manifest(repo_root, league_id)
+    current = standings_sources.current_season(manifest)
+    available = set(standings_sources.manifest_seasons(manifest))
+    root = repo_root / DATA_SOURCE_ROOT / "leagues" / league_id / "seasons"
+    history: list[int] = []
+    for folder in sorted(root.iterdir()) if root.is_dir() else []:
+        league_file = folder / "league.json"
+        if (folder.name.isdigit() and int(folder.name) < current and int(folder.name) in available and league_file.is_file()
+                and json.loads(league_file.read_text(encoding="utf-8-sig")).get("Status") == "complete"):
+            history.append(int(folder.name))
+    return {"current": [current], "history": history, "all": history + [current]}[scope]
 
 
 def main() -> int:
@@ -385,14 +401,22 @@ def main() -> int:
     out_root = args.out_root or data_derived_dir(args.repo_root)
     try:
         leagues = [args.league] if args.league else list_league_ids(data_meta_root(args.repo_root))
+        if args.scope and args.season:
+            raise ValueError("--scope and --season are exclusive")
+        if args.scope and args.product != LEAGUE_RIVALRY:
+            # per league because the current season differs by league; a scope maps to one season list per league
+            per_league = {league: seasons_for_scope(args.repo_root, league, args.scope) for league in leagues}
+            leagues = [league for league in leagues if per_league[league]]  # an empty list would mean all seasons
+        else:
+            per_league = {league: args.season for league in leagues}
         if args.product == LEAGUE_STANDINGS:
             results = [
-                materialize_league_standings(args.repo_root, out_root, league, args.season, args.check)
+                materialize_league_standings(args.repo_root, out_root, league, per_league[league], args.check)
                 for league in leagues
             ]
         elif args.product == SEASON_STATISTICS:
             results = [
-                materialize_season_statistics(args.repo_root, out_root, league, args.season, args.check)
+                materialize_season_statistics(args.repo_root, out_root, league, per_league[league], args.check)
                 for league in leagues
             ]
         elif args.product == LEAGUE_RIVALRY:
@@ -402,12 +426,12 @@ def main() -> int:
             ]
         elif args.product in (LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS):
             results = [
-                materialize_league_history(args.repo_root, out_root, league, args.product, args.season, args.check)
+                materialize_league_history(args.repo_root, out_root, league, args.product, per_league[league], args.check)
                 for league in leagues
             ]
         else:
             results = [
-                materialize_player_valuation(args.repo_root, out_root, league, args.season, args.check)
+                materialize_player_valuation(args.repo_root, out_root, league, per_league[league], args.check)
                 for league in leagues
             ]
     except (sources.SourceError, LeagueMetadataError, LeagueHistorySourceError, standings_sources.StandingsSourceError,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Consumer generator: materializes the league-rivalry product and renders the App file (Issue #1455).
+"""Consumer generator: renders the App file from the persisted league-rivalry product (Issue #1455; materialized separately, Issue #1571 L4).
 
   data-derived/league-rivalry/<CanonicalLeagueID>.json   Shared Derived product, one file per league over every season (written only on a difference)
   public/data/Rivalry.json                               the product document unchanged (App delivery, Angular only displays it)
@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import data_derived_dir  # noqa: E402
-from derived_data import league_rivalry_path, materialize_league_rivalry  # noqa: E402
+from derived_data import league_rivalry_path  # noqa: E402
 from derived_data_lib.league_lifecycle import LifecycleError  # noqa: E402
 from derived_data_lib.matchup_context import MatchupContextError  # noqa: E402
 from derived_data_lib.rivalry import RivalryError  # noqa: E402
@@ -43,15 +43,17 @@ def leagues(requested: str | None) -> list[str]:
 
 def publish(repo_root: Path, league_id: str, now: datetime, writer: Writer) -> None:
     out_root = data_derived_dir(repo_root)
-    materialize_league_rivalry(repo_root, out_root, league_id, None, False, now)
-    writer.put("Rivalry.json", _load(league_rivalry_path(out_root, league_id)), "Rivalry")
+    path = league_rivalry_path(out_root, league_id)
+    if not path.is_file():
+        raise RivalryError(f"league-rivalry product missing for {league_id}; materialize it first")
+    writer.put("Rivalry.json", _load(path), "Rivalry")
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     sub = parser.add_subparsers(dest="command", required=True)
-    write = sub.add_parser("write", help="materialize the product and write the App file (semantic no-op)")
+    write = sub.add_parser("write", help="render the App file from the persisted product (semantic no-op)")
     write.add_argument("--league", default=None)
     write.add_argument("--fail-on-error", action="store_true", help="exit 1 when the product cannot be built")
     return parser.parse_args(argv)
