@@ -275,7 +275,17 @@ function draft(teams,world,draftable,previousScores,seed,season){
   });
   const p=choices[0];if(!p)throw Error('Not enough draftable rookies');
   team.players.push(p.id);available.delete(p.id);
-  if(team.players.length>40)throw Error('Research capacity exceeded during draft');
+  if(team.players.length>40){
+   // Explicit same-draft-slot cut; never receive a free 41st regular slot.
+   // The pick itself can be lost if no other legal capacity cut exists.
+   const full=team.players.slice();
+   const options=full.map((id,i)=>({id,i,remaining:full.filter((_,k)=>k!==i)}))
+      .filter(x=>coverage(x.remaining,world));
+   if(!options.length)throw Error('No legal capacity cut for draft pick');
+   options.sort((a,b)=>scoreObjective(b.remaining,world,team.style)-scoreObjective(a.remaining,world,team.style)
+      ||world.get(b.id).price-world.get(a.id).price);
+   team.players=options[0].remaining;
+  }
  }
  if(available.size!==0)throw Error('Not all 30 rookie picks allocated');
 }
