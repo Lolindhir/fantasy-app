@@ -1,14 +1,16 @@
 schemaVersion: 1
-status: proposed-contract-not-yet-published
+status: active-derived-product-no-app-consumer-yet
 trackingIssue: 1519
-architectureDecision: pending
+architectureDecision: ADR-088
 implementationState: >
   I1–I5b.2c merged; the full historical replay (47 cutoffs 2024–2026) passed in the weekly Full Audit
   (run 44523559168, 2026-11-19: VerifiedCandidatePass, SourceRevisionVerified, no digest differences).
-  I6 adds the bounded, fingerprinted, recoverable materializer tools/league_schedule_outlook_materialize.py,
-  tested against synthetic seasons and the repository. It can write ONLY into an explicit scratch out-root:
-  PRODUCTIVE_WRITE_ENABLED is False and the productive data-derived root is refused. No data-meta model
-  selection, workflow call, published snapshot, publisher/permission change or App consumer is enabled.
+  I6 added the bounded, fingerprinted, recoverable materializer tools/league_schedule_outlook_materialize.py.
+  Activated by Robert's approval of 2026-11-19 (ADR-088): data-meta Models.ScheduleOutlook selects
+  schedule-outlook-v1 for every season, and the existing writers league-live.yml (current season, incremental,
+  fail-soft) and update-transactions.yml (all seasons, full) publish data-derived/league-schedule-outlook.
+  The initial fill comes from a normal update-transactions run. No App file and no Angular consumer exist yet;
+  they need a separate approved step (tools/league_schedule_outlook_app_publish.py, public/data/ScheduleOutlook.json).
 
 purpose: >
   One reproducible, consumer-neutral shared data product for the remaining
@@ -143,7 +145,7 @@ plannedMaterialization:
   pureAssembler: tools/derived_data_lib/league_schedule_outlook.py::assemble
   readOnlySourceAdapter: tools/league_schedule_outlook_preview.py (SeasonInputs, load_season_inputs, snapshot)
   materializer: tools/league_schedule_outlook_materialize.py
-  writeScope: not yet authorized (guarded by PRODUCTIVE_WRITE_ENABLED)
+  writeScope: data-derived/league-schedule-outlook/** by the two existing writers below (approved 2026-11-19)
   layout: >
     data-derived/league-schedule-outlook/<CanonicalLeagueID>/<Season>/after-week-NN.json (one per fully
     scored cutoff 0..LeagueScoredWeek) plus index.json in the same folder, always written last.
@@ -188,7 +190,7 @@ plannedMaterialization:
   historicalScope: >
     update-transactions (weekly): --scope all --mode full after season-statistics --scope all and before
     the Past Seasons index.
-  writerOwnersPendingApproval:
+  writerOwners:
     - .github/workflows/league-live.yml (existing rebuild-and-retry, new --path data-derived/league-schedule-outlook)
     - .github/workflows/update-transactions.yml (existing rebuild-and-retry, same new --path)
   activationChangeSet: >
@@ -198,8 +200,7 @@ plannedMaterialization:
     --model-id, (3) PRODUCTIVE_WRITE_ENABLED, (4) the two workflow calls and --path prefix,
     (5) workflow-publication.yaml note, (6) data-derived README product row, (7) ADR in decisions.yaml.
   rollback: >
-    Remove the two generator calls and the newly approved Derived output prefix only through reviewed
-    changes and set PRODUCTIVE_WRITE_ENABLED back to False. Do not force-delete published snapshots as an
+    Remove the two generator calls and the --path prefix from both workflows through a reviewed change. Do not force-delete published snapshots as an
     automatic rollback action; consumers fall back to unavailable.
 
 validation:

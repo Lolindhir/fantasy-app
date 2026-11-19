@@ -3048,6 +3048,25 @@ decisions:
         - The current scope of PlayerAwardHistory.json takes completed seasons from their published archive, so history refreshes with the weekly update-transactions run.
 
 
+  - id: ADR-088
+    title: League Schedule Outlook is a Shared Derived product written by the existing league writers with a data-meta model choice
+    status: accepted
+    context: >-
+      Issue #1519 prepared a reconstructable schedule outlook (remaining schedule, opponent strength, strength of schedule, playoff paths)
+      as the central model schedule-outlook-v1 with a bounded, fingerprinted materializer. The full historical replay passed in the weekly audit.
+    decision: >-
+      Robert approved on 2026-11-19 (elevated effect). The product lives at data-derived/league-schedule-outlook/<CanonicalLeagueID>/<Season>/after-week-NN.json
+      plus index.json (written last). The model is chosen per season in data-meta Models.ScheduleOutlook (no default). The existing rebuild-and-retry writers
+      league-live.yml (current season, incremental by input fingerprint, fail-soft) and update-transactions.yml (all seasons, full byte comparison, fail-closed)
+      call tools/league_schedule_outlook_materialize.py after season-statistics. No new workflow, credential or permission; the initial fill is a normal
+      update-transactions run. The restore probe does not include the product (own consistency guard and tests). An App file and Angular view are a separate step.
+    consequences:
+      positive:
+        - One reproducible product for App, Fantasy Management and chat consumers; unchanged inputs write nothing.
+      negative:
+        - league-live gains a fail-soft step (runtime to be measured after activation).
+        - Ratings depend on the persisted season-statistics product, so cutoffs lag it by one tick.
+
   - id: ADR-087
     title: Historical NFL injury reports are an isolated versioned Source and Shared Derived product
     status: accepted

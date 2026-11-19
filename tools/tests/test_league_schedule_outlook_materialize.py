@@ -244,12 +244,15 @@ class ConsistencyTests(Harness):
         with self.assertRaises(mat.ScheduleOutlookMaterializeError):
             self.run_season(mode="bogus")
 
-    def test_productive_root_is_refused_until_explicitly_authorized(self):
-        productive = mat.data_derived_dir(self.root)
-        with self.assertRaisesRegex(mat.ScheduleOutlookMaterializeError, "not authorized"):
-            mat.materialize_season(self.root, productive, LEAGUE, SEASON, MODEL)
-        self.assertFalse(mat.PRODUCTIVE_WRITE_ENABLED)
-        mat.materialize_season(self.root, productive, LEAGUE, SEASON, MODEL, check_only=True)  # dry run is allowed
+    def test_model_comes_from_data_meta_and_fails_closed(self):
+        repo = TOOLS.parent
+        league = "nfl-reise"
+        self.assertEqual(MODEL, mat.selected_model_id(repo, league, 2025))
+        self.assertEqual(MODEL, mat.selected_model_id(repo, league, 2025, asserted=MODEL))
+        with self.assertRaisesRegex(mat.ScheduleOutlookMaterializeError, "not the asserted"):
+            mat.selected_model_id(repo, league, 2025, asserted="schedule-outlook-v0")
+        with self.assertRaisesRegex(mat.ScheduleOutlookMaterializeError, "No usable"):
+            mat.selected_model_id(repo, league, 1999)
 
 
 class RepositorySmokeTests(unittest.TestCase):

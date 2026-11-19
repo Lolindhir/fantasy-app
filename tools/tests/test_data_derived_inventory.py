@@ -13,6 +13,9 @@ import derived_clean_root_audit  # noqa: E402
 DERIVED = ROOT / "data-derived"
 README = DERIVED / "README.md"
 WORKFLOWS = ROOT / ".github" / "workflows"
+# Own materializer with consistency guard and its own tests; not part of the restore probe (Issue #1519).
+OUTSIDE_RESTORE_PROBE = frozenset({"league-schedule-outlook"})
+NOT_YET_FILLED = OUTSIDE_RESTORE_PROBE
 
 
 def _readme_rows() -> dict[str, tuple[str, str, list[str]]]:
@@ -30,7 +33,10 @@ def _readme_rows() -> dict[str, tuple[str, str, list[str]]]:
 class DataDerivedInventoryTests(unittest.TestCase):
     def test_every_product_directory_is_in_readme(self):
         dirs = {p.name for p in DERIVED.iterdir() if p.is_dir()}
-        self.assertEqual(dirs, set(_readme_rows()))
+        rows = set(_readme_rows())
+        self.assertFalse(dirs - rows)
+        # A product may be documented before its first productive fill created the directory.
+        self.assertFalse(rows - dirs - NOT_YET_FILLED)
 
     def test_contract_materializer_and_writer_workflows_exist(self):
         for product, (contract, materializer, writers) in _readme_rows().items():
@@ -42,7 +48,7 @@ class DataDerivedInventoryTests(unittest.TestCase):
                     self.assertTrue((WORKFLOWS / w).is_file(), w)
 
     def test_every_product_is_in_restore_probe(self):
-        self.assertEqual(set(_readme_rows()), set(derived_clean_root_audit.PRODUCTS))
+        self.assertEqual(set(_readme_rows()) - OUTSIDE_RESTORE_PROBE, set(derived_clean_root_audit.PRODUCTS))
 
 
 if __name__ == "__main__":
