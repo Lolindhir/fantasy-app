@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Bounded, deterministic materializer of the league-schedule-outlook Shared Derived product (Issue #1519, I6).
 
-Not yet a productive writer. It exists, is tested and can write into an EXPLICIT scratch ``--out-root``,
-but refuses the repository's productive ``data-derived`` root until a separately approved change flips
-``PRODUCTIVE_WRITE_ENABLED`` and wires an already classified publisher (league-live / update-transactions).
-The model is an explicit ``--model-id``; the data-meta ``Models.ScheduleOutlook`` selection does not exist yet.
+Productive since the approved activation of Issue #1519 (Robert, 2026-11-19): league-live (current season,
+incremental) and update-transactions (all seasons, full) call it inside their existing rebuild-and-retry
+publications. The model per season comes from data-meta ``Models.ScheduleOutlook`` (no default or fallback);
+``--model-id`` is an optional assertion that must equal the selection.
 
 Layout (per league and season; one file per fully scored after-week cutoff plus a completeness index):
   <out-root>/league-schedule-outlook/<CanonicalLeagueID>/<Season>/after-week-NN.json
@@ -22,8 +22,8 @@ and the index is written last. Any error leaves the season untouched. Orphan sna
 and never deleted automatically.
 
 Usage:
-  league_schedule_outlook_materialize.py --league ID --model-id schedule-outlook-v1 --out-root DIR
-      [--scope current|all] [--season YYYY ...] [--mode incremental|full] [--check]
+  league_schedule_outlook_materialize.py --league ID [--out-root DIR] [--scope current|all] [--season YYYY ...]
+      [--mode incremental|full] [--check] [--fail-on-error] [--model-id ASSERTED]
 """
 from __future__ import annotations
 
@@ -39,6 +39,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import data_derived_dir  # noqa: E402
+from league_metadata import LeagueMetadataError, list_league_ids, data_meta_root, load_league_metadata, model_for  # noqa: E402
 from derived_data_lib.league_schedule_outlook import PRODUCT, SCHEMA_VERSION, assemble  # noqa: E402
 from derived_data_lib.models.registry import get_model  # noqa: E402
 from derived_data_lib.playoff_brackets import round_windows  # noqa: E402
@@ -49,8 +50,6 @@ FINGERPRINT_VERSION = 1
 INDEX_PRODUCT = "league-schedule-outlook-index"
 INDEX_NAME = "index.json"
 MODES = ("incremental", "full")
-# Elevated effect: flipped only by a separately approved change (new Derived prefix for existing writers).
-PRODUCTIVE_WRITE_ENABLED = False
 
 
 class ScheduleOutlookMaterializeError(ValueError):
@@ -155,11 +154,17 @@ def _atomic_write(path: Path, text: str) -> None:
         raise
 
 
-def _guard_out_root(repo_root: Path, out_root: Path, write: bool) -> None:
-    if write and not PRODUCTIVE_WRITE_ENABLED:
-        if out_root.resolve() == data_derived_dir(repo_root).resolve():
-            raise ScheduleOutlookMaterializeError(
-                "Productive league-schedule-outlook writes are not authorized; use a scratch --out-root")
+def selected_model_id(repo_root: Path, league_id: str, season: int, asserted: str | None = None) -> str:
+    """The data-meta model choice of one season; missing or unknown selections fail closed."""
+    try:
+        metadata = load_league_metadata(league_id, data_meta_root(repo_root))
+        model_id = model_for(metadata, season, "ScheduleOutlook")
+    except LeagueMetadataError as exc:
+        raise ScheduleOutlookMaterializeError(f"No usable ScheduleOutlook model selection for {season}: {exc}") from exc
+    if asserted is not None and asserted != model_id:
+        raise ScheduleOutlookMaterializeError(
+            f"Season {season}: data-meta selects {model_id}, not the asserted {asserted}")
+    return model_id
 
 
 def materialize_season(
@@ -168,7 +173,6 @@ def materialize_season(
 ) -> dict[str, Any]:
     if mode not in MODES:
         raise ScheduleOutlookMaterializeError(f"Unknown mode {mode!r}")
-    _guard_out_root(repo_root, out_root, write=not check_only)
     get_model(model_id, kind="schedule-outlook")
     folder = product_dir(out_root, league_id, season)
 
@@ -244,32 +248,42 @@ def seasons_for_scope(repo_root: Path, league_id: str, scope: str, explicit: lis
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--league", required=True)
-    parser.add_argument("--model-id", required=True)
-    parser.add_argument("--out-root", type=Path, required=True)
+    parser.add_argument("--league", default=None, help="default: every configured league (data-meta)")
+    parser.add_argument("--model-id", help="optional assertion; the model always comes from data-meta Models.ScheduleOutlook")
+    parser.add_argument("--out-root", type=Path, default=None, help="default: the repository data-derived root")
     parser.add_argument("--scope", choices=("current", "all"), default="current")
     parser.add_argument("--season", type=int, action="append")
     parser.add_argument("--mode", choices=MODES, default="incremental")
     parser.add_argument("--check", action="store_true", help="dry run; exit 1 when a write or orphan would remain")
+    parser.add_argument("--fail-on-error", action="store_true",
+                        help="exit 1 when a season cannot be materialized (default: warn and keep the last good set)")
     args = parser.parse_args()
+    out_root = args.out_root if args.out_root is not None else data_derived_dir(args.repo_root)
     failures = 0
     pending = 0
     try:
-        seasons = seasons_for_scope(args.repo_root, args.league, args.scope, args.season)
-    except (ScheduleOutlookMaterializeError, ScheduleOutlookSourceError, ValueError, OSError, KeyError) as exc:
+        league_ids = [args.league] if args.league else list(list_league_ids())
+    except (LeagueMetadataError, OSError) as exc:
         print(f"schedule outlook materialization failed: {exc}", file=sys.stderr)
         return 1
-    for season in seasons:
+    for league_id in league_ids:
         try:
-            summary = materialize_season(args.repo_root, args.out_root, args.league, season, args.model_id,
-                                         mode=args.mode, check_only=args.check)
+            seasons = seasons_for_scope(args.repo_root, league_id, args.scope, args.season)
         except (ScheduleOutlookMaterializeError, ScheduleOutlookSourceError, ValueError, OSError, KeyError) as exc:
-            failures += 1
-            print(f"::warning::schedule outlook season {season} not materialized: {exc}", file=sys.stderr)
-            continue
-        pending += summary.get("WouldWrite", 0) + len(summary["Orphans"])
-        print(json.dumps(summary, sort_keys=True))
-    return 1 if failures or (args.check and pending) else 0
+            print(f"schedule outlook materialization failed: {exc}", file=sys.stderr)
+            return 1
+        for season in seasons:
+            try:
+                summary = materialize_season(args.repo_root, out_root, league_id, season,
+                                             selected_model_id(args.repo_root, league_id, season, args.model_id),
+                                             mode=args.mode, check_only=args.check)
+            except (ScheduleOutlookMaterializeError, ScheduleOutlookSourceError, ValueError, OSError, KeyError) as exc:
+                failures += 1
+                print(f"::warning::schedule outlook {league_id} season {season} not materialized: {exc}", file=sys.stderr)
+                continue
+            pending += summary.get("WouldWrite", 0) + len(summary["Orphans"])
+            print(json.dumps(summary, sort_keys=True))
+    return 1 if (failures and (args.fail_on_error or args.check)) or (args.check and pending) else 0
 
 
 if __name__ == "__main__":
