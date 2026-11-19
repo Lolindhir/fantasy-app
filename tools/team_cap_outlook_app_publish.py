@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Generate the L10 TeamCapOutlook App read model from canonical league rosters and PlayerValuation.
+"""TeamCapOutlook: pure model builder and App delivery renderer (L10 #1237, persisted product ADR-089 / Issue #1571).
 
-One read model for the league's current season. This is an App consumer delivery contract,
-not a source or an independent persisted derived-data product. The existing League Live
-rebuild/publish owner publishes it. Current and projected lenses use the same versioned
-central models. InputRoster is a salary witness for client-side stale checking only.
+build()/load() derive the current-season outlook from canonical league rosters and PlayerValuation. The Shared Derived product
+data-derived/team-cap-outlook/<CanonicalLeagueID>/<Season>.json is persisted by tools/team_cap_outlook_materialize.py; the `write`
+command renders public/data/TeamCapOutlook.json from that persisted product with an unchanged App contract (no recomputation).
+Current and projected lenses use the same versioned central models. InputRoster is a salary witness for client-side stale checking only.
 """
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ from league_standings_sources import _sleeper_value, current_season, manifest  #
 
 CONTRACT_VERSION = 1
 OUTPUT_NAME = "TeamCapOutlook.json"
+PRODUCT = "team-cap-outlook"
 
 
 class OutlookError(ValueError):
@@ -171,11 +172,27 @@ def load(repo_root: Path, league_id: str) -> dict[str, Any]:
     return build(league_id, season, rosters, snapshot, metadata)
 
 
+def product_path(repo_root: Path, league_id: str, season: int) -> Path:
+    return data_derived_dir(repo_root) / PRODUCT / league_id / f"{season}.json"
+
+
+def serialize(document: dict[str, Any]) -> str:
+    return json.dumps(document, ensure_ascii=False, indent=2) + "\n"
+
+
+def read_product(repo_root: Path, league_id: str) -> dict[str, Any]:
+    """The persisted current-season product document (ADR-089); never recomputed here."""
+    season = current_season(manifest(repo_root, league_id))
+    path = product_path(repo_root, league_id, season)
+    if not path.is_file():
+        raise OutlookError(f"TeamCapOutlook product missing for {league_id}/{season}")
+    return _json(path)
+
+
 def write(repo_root: Path, league_id: str) -> bool:
-    result = load(repo_root, league_id)
+    serialized = serialize(read_product(repo_root, league_id))
     data_dir = repo_root / "public" / "data"
     target = data_dir / OUTPUT_NAME
-    serialized = json.dumps(result, ensure_ascii=False, indent=2) + "\n"
     if target.is_file() and target.read_text(encoding="utf-8") == serialized:
         return False
     data_dir.mkdir(parents=True, exist_ok=True)
@@ -192,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         league_id = args.league or default_league_id(data_meta_root(args.repo_root))
         if args.command == "check":
-            result = load(args.repo_root, league_id)
+            result = read_product(args.repo_root, league_id)
             print(f"TeamCapOutlook check: {len(result['Teams'])} teams, "
                   f"{sum(t['Status'] == 'ready' for t in result['Teams'])} ready")
         else:

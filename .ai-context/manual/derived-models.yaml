@@ -409,7 +409,7 @@ l10Delivery:
   models: [roster-cap-v1, auto-cut-v1]
   principles:
     - The league selects model IDs in data-meta for each season; input values are canonical roster facts and player-valuation.
-    - One current-season App read model; no additional data-derived product and no new workflow.
-    - The producer writes only on semantic changes in the existing League Live publisher.
+    - Since ADR-089 (Issue #1571) the current-season model is persisted as the Shared Derived product data-derived/team-cap-outlook/<CanonicalLeagueID>/<Season>.json by tools/team_cap_outlook_materialize.py (current season only, no history; outside the restore probe because it snapshots the live rosters); the App file is rendered from it unchanged. No new workflow.
+    - Both steps write only on semantic changes in the existing League Live publisher.
     - The input-roster salary witness is used by Angular only for freshness validation, never domain recomputation.
     - A missing, stale or unknown result must not be interpreted as zero salary or no cut requirement.

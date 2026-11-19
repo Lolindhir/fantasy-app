@@ -72,16 +72,27 @@ class TeamCapOutlookTests(unittest.TestCase):
     def test_live_write_fail_soft_and_explicit_check_fails_closed(self):
         with mock.patch.object(pub, "write", side_effect=pub.OutlookError("source unavailable")):
             self.assertEqual(0, pub.main(["write", "--league", "league"]))
-        with mock.patch.object(pub, "load", side_effect=pub.OutlookError("source unavailable")):
+        with mock.patch.object(pub, "read_product", side_effect=pub.OutlookError("product missing")):
             self.assertEqual(1, pub.main(["check", "--league", "league"]))
 
-    def test_published_file_semantic_noop_and_stale_detection_witness(self):
+    def test_product_materialized_then_app_file_rendered_unchanged(self):
+        import team_cap_outlook_materialize as mat
+
+        document = pub.build("league", 2026, rosters(), valuation(), metadata())
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            with mock.patch.object(pub, "load", return_value=pub.build("league", 2026, rosters(), valuation(), metadata())):
+            with mock.patch.object(mat, "load", return_value=document), \
+                    mock.patch.object(pub, "current_season", return_value=2026), \
+                    mock.patch.object(pub, "manifest", return_value={}):
+                with self.assertRaises(pub.OutlookError):  # no product yet: never recomputed here
+                    pub.write(root, "league")
+                self.assertTrue(mat.materialize(root, "league"))
+                self.assertFalse(mat.materialize(root, "league"))  # semantic no-op
+                self.assertTrue((root / "data-derived/team-cap-outlook/league/2026.json").is_file())
                 self.assertTrue(pub.write(root, "league"))
                 self.assertFalse(pub.write(root, "league"))
                 output = json.loads((root / "public/data/TeamCapOutlook.json").read_text())
+                self.assertEqual(output, document)
                 self.assertEqual(output["Models"], {"RosterCap": "roster-cap-v1", "AutoCut": "auto-cut-v1"})
                 self.assertEqual(len(output["Teams"][0]["InputRoster"]), 7)
 
