@@ -106,6 +106,6 @@ Ein valider passiv/aktiv gepaarter Vergleich benötigt dieselbe initiale sechs-T
 
 ## 6. Abnahme- und Unsicherheitsregister
 
-- **Durchgeführt:** initiale äquivalente JS-Ausführung auf dem 1.268-Zeilen-Archiv; alle in Tabelle genannten Team-Summen/ID-/Cap-/Positionsbedingungen wurden dort geprüft; ursprüngliche 13er CP6i-Werte reproduziert.
+- **Durchgeführt:** initiale äquivalente JS-Ausführung auf dem 1.268-Zeilen-Archiv und **erneute Ausführung des exakt im PR gespeicherten CP6j-Sourcecodes** (Blob `b1e52a72cc33c27ecfdfc475ed9a9f4ee7d4e498`) in der verbundenen V8-Laufzeit mit einzigem Adapter für `node:fs`/CLI-Argumente. Alle P/K/KF-Indexzahlen, Team-Summen/ID-/Cap-/Positionsprüfungen und 13er-CP6i-Referenzwerte bestätigt. **Dies ist kein unabhängiger nativer Node-CLI-Lauf im Repository.**
 - **Noch nicht durchgeführt:** unabhängiger **Node-CLI-Lauf** des im PR gespeicherten Moduls; CI, Peer-Review, globale Solver-Optimalität, prospektives 2027er Scoring, vollständige reale Rookie-Minimum-Vintage-Kette, disjunkter Markt und gepaarte mehrjährige Simulation.
 - **Vermeidung von Überbehauptung:** Alle 13+Bank-Resultate sind *gefundene feasible lower bounds*, die tatsächlichen Maxima können höher sein. Der absolute 13er-All-Star-Index 235,280 bleibt lediglich die unbeschränkte sportliche Oberreferenz dieser historischen Indexwelt.
