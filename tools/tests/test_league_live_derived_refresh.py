@@ -165,6 +165,7 @@ class LeagueLiveStepOrderTests(unittest.TestCase):
             "python3 tools/matchup_context_app_publish.py write",
             "python3 tools/league_history_app_publish.py write",
             # WeeklyRecaps are computed from the fresh TeamWeekPerformance product (ADR-063, Issue #1199 section 4)
+            "python3 tools/weekly_recaps_materialize.py",
             "python3 tools/weekly_recaps_app_publish.py write",
             "pwsh ./public/requests/RequestLeaguePublication.ps1",
         ]

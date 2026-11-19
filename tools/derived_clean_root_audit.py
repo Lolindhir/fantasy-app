@@ -48,6 +48,7 @@ from derived_data_lib.models.registry import get_model
 from league_standings_sources import current_season, manifest
 from matchup_context_materialize import EXPECTED_ERRORS as MATCHUP_CONTEXT_ERRORS, PRODUCT as MATCHUP_CONTEXT, materialize as materialize_matchup_context
 from datetime import datetime, timezone
+from weekly_recaps_materialize import EXPECTED_ERRORS as WEEKLY_RECAPS_ERRORS, PRODUCT as WEEKLY_RECAPS, materialize as materialize_weekly_recaps
 from nfl_games_materialize import discover_seasons, materialize as materialize_nfl_games
 from nfl_injuries_phase import plan_injury_phase
 from team_week_performance_materialize import materialize_all_finalized
@@ -65,7 +66,7 @@ NFL_INJURIES = "nfl-injuries"
 PRODUCTS = (
     PLAYER_VALUATION, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS,
     PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, NFL_INJURIES, SEASON_STATISTICS,
-    LEAGUE_STANDINGS, LEAGUE_RIVALRY, MATCHUP_CONTEXT,
+    LEAGUE_STANDINGS, LEAGUE_RIVALRY, MATCHUP_CONTEXT, WEEKLY_RECAPS,
 )
 GLOBAL_PRODUCTS = frozenset({NFL_GAMES, NFL_INJURIES})
 
@@ -196,6 +197,13 @@ def _build(unit: Unit, root: Path) -> tuple[int, int]:
         try:
             summaries = materialize_matchup_context(root, output, league, "history", datetime.now(timezone.utc))
         except MATCHUP_CONTEXT_ERRORS as error:
+            raise ValueError(f"{type(error).__name__}: {error}") from error
+        return sum(int(x["Written"]) for x in summaries), 0
+    if product == WEEKLY_RECAPS:
+        # Pure function of canonical facts and the products built before it (team-week-performance, league-standings): every season is covered.
+        try:
+            summaries = materialize_weekly_recaps(root, output, league, "all")
+        except WEEKLY_RECAPS_ERRORS as error:
             raise ValueError(f"{type(error).__name__}: {error}") from error
         return sum(int(x["Written"]) for x in summaries), 0
     raise ValueError(f"Unknown product: {product}")
