@@ -55,10 +55,14 @@ TEAM_WEEK_PERFORMANCE = "team-week-performance"
 NFL_GAMES = "nfl-games"
 NFL_INJURIES = "nfl-injuries"
 
-# Stable report order; official TeamWeekPerformance is independent of PWF score parity.
+# Stable build and report order, upstream before downstream; official TeamWeekPerformance is independent of PWF score
+# parity. The clean-root variant starts empty, so a product that reads another persisted product (awards-v2/v3 of
+# league-standings read season-statistics, which reads PlayerWeekFantasy) must be built after it, exactly like the
+# productive-like variant where the published products are already visible.
 PRODUCTS = (
-    PLAYER_VALUATION, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS, LEAGUE_STANDINGS,
-    PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, NFL_INJURIES, SEASON_STATISTICS, LEAGUE_RIVALRY,
+    PLAYER_VALUATION, LEAGUE_TRANSACTIONS, LEAGUE_DRAFTS,
+    PLAYER_WEEK_FANTASY, TEAM_WEEK_PERFORMANCE, NFL_GAMES, NFL_INJURIES, SEASON_STATISTICS,
+    LEAGUE_STANDINGS, LEAGUE_RIVALRY,
 )
 GLOBAL_PRODUCTS = frozenset({NFL_GAMES, NFL_INJURIES})
 
