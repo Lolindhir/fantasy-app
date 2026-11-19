@@ -1984,10 +1984,29 @@ class NflInjuriesProductTests(unittest.TestCase):
             s for s in workflow["jobs"]["sync"]["steps"]
             if s.get("name") == "Sync, validate and publish NFL source data"
         ]
+        # The 2022 history replay runs in FULL scope, not scoped injuries.
+        # Both paths need the official release-API token, while ordinary full
+        # or other scoped runs must not gain this token.
         self.assertEqual(
-            "${{ inputs.materialization_scope == 'injuries' && github.token || '' }}",
+            "${{ (inputs.materialization_scope == 'injuries' || "
+            "steps.injury_history_due.outputs.due == 'true') && github.token || '' }}",
             step["env"]["NFLVERSE_RELEASE_API_TOKEN"],
         )
+        select, = [
+            s for s in workflow["jobs"]["sync"]["steps"]
+            if s.get("name") == "Select scheduled or explicitly requested Injury history reconciliation"
+        ]
+        self.assertLess(
+            workflow["jobs"]["sync"]["steps"].index(select),
+            workflow["jobs"]["sync"]["steps"].index(step),
+        )
+        self.assertEqual("injury_history_due", select["id"])
+        self.assertEqual(
+            "${{ steps.injury_history_due.outputs.due }}",
+            step["env"]["INJURY_HISTORY_DUE"],
+        )
+        self.assertIn('echo "due=$due" >> "$GITHUB_OUTPUT"', select["run"])
+        self.assertIn('if [[ "${INJURY_HISTORY_DUE:-false}" == "true" ]]', step["run"])
         self.assertNotIn("NFLVERSE_RELEASE_API_TOKEN", workflow["jobs"]["sync"].get("env", {}))
 
     def test_future_season_can_use_2025_plus_header_without_silent_format_fallback(self):
