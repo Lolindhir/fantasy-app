@@ -3119,3 +3119,52 @@ decisions:
           reliably from observed reports alone.
         - New bounded Source and Derived files and one daily workflow require
           monitoring and a reviewed rollback path.
+
+  - id: ADR-089
+    title: Matchup context, Weekly Recaps and TeamCapOutlook become persisted Shared Derived products
+    status: accepted
+    amends: [ADR-063, ADR-075, ADR-079, ADR-086]
+    context: >-
+      ADR-063/086 (Weekly Recaps incl. PlayerAwards), ADR-075 (matchup context incl. MatchupProjections, win probability and the
+      HybridExpected preview of Issue #1451) and ADR-079 (TeamCapOutlook) chose "computed, not persisted" and deliver only App
+      files. Those files carry display fields and no league dimension, cover only the current week or season, and
+      PlayerAwardHistory.json even reads the published past_seasons archives of its own delivery as input (Issue #1571 L3). Chat
+      analyses, Fantasy Management and future consumers cannot read these values neutrally per league with history, and the
+      materialization of the neighbouring products (player-valuation, league-standings, season-statistics, rivalry) still runs
+      inside the *_app_publish.py consumer generators (L4). Robert's target picture of 2026-11-13 is: provide as much as possible as a
+      data product. ADR-073 (lifecycle) and ADR-074 (Decision Windows) stay computed: they depend on the clock and a history of
+      them has hardly any value.
+    decision: >-
+      Robert decided on 2026-11-19 (Issue #1571, all recommendations including the elevated effects). Three persisted Shared Derived
+      products: data-derived/matchup-context/<CanonicalLeagueID>/<Season>/ (Matchups, FantasyGameContext history, and for the running
+      season the current game context and MatchupProjections incl. WinProbability and HybridExpected),
+      data-derived/weekly-recaps/<CanonicalLeagueID>/<Season>.json (incl. PlayerAwards) and
+      data-derived/team-cap-outlook/<CanonicalLeagueID>/<Season>.json. The computed functions stay the single implementation; a
+      product materializer calls them and writes the documents only on a semantic difference (no AsOfUtc inside the files, no
+      timestamp churn). The App files are rendered from the products by the existing consumer generators with an unchanged App
+      contract; an App generator reads no public/data and no own archive as input for a value. The materialization of
+      player-valuation, league-standings, season-statistics, rivalry and the new products is its own step before the consumer
+      generators in the existing workflow chain (products before consumers). Identity is CanonicalLeagueID + Season (+ Week where a
+      file is week-scoped) + the selected model IDs; the models stay chosen per season in data-meta. A document of the running
+      season depends on the clock through the Decision Windows (kickoffs, locks); it is therefore a current snapshot that changes
+      only when an input or a lock boundary changes and is excluded from the clean-root equality check of the restore probe, while
+      every document of a completed season is fully reproducible and is covered by it. Invalidation: any change of the canonical
+      sources, the upstream products (standings, player-week-fantasy, team-week-performance, season-statistics, player-valuation,
+      nfl-games), data-meta model choices or the model versions; the periodic historical pass is the weekly update-transactions run,
+      the current pass is League Live. New write prefixes (data-derived/matchup-context, data-derived/weekly-recaps,
+      data-derived/team-cap-outlook) are added only to the existing writers league-live.yml (current season, fail-soft where the
+      App file already tolerates it) and update-transactions.yml (history); no new workflow, scheduler target, credential or
+      permission. Rollback: remove the prefix and the materializer call; the App files fall back to the computed functions.
+    rationale: >-
+      A persisted product gives every consumer the same neutral values per league with history, removes the feedback loop of
+      PlayerAwardHistory on its own archives and makes the pipeline order explicit (materialize products, then render consumers).
+      Keeping one implementation in the pure functions avoids a second derivation.
+    consequences:
+      positive:
+        - Chat analyses and Fantasy Management read matchup, recap and cap values neutrally per league with history.
+        - No App generator reads its own output as an input for a value.
+        - HybridExpected (Issue #1451) is part of the product, not only of an App file.
+      negative:
+        - Three more data-derived prefixes in the League Live commit; runtime is measured and documented in Issue #1571.
+        - The running-season documents are current snapshots and not byte-reproducible from a clean root.
+        - Until each step is merged the computed function and the App generator stay the productive path.
