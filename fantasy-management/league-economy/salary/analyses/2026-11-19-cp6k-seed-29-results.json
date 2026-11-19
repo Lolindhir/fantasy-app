@@ -1,0 +1,931 @@
+{
+  "schema": "cp6k-v0",
+  "seed": 29,
+  "status": "synthetic feasibility prototype; not validated equilibrium or upper bound",
+  "source_csv_sha": "96ef8deac5930ffc3dc84dbf12cbbf4719c58489",
+  "simulator_sha": "8156fa0fdc7f8786ec78b27bc666e5ed94f72b8c",
+  "assumptions": {
+    "passive": "normal 5 round rookie picks, public scout ranking, only mandatory cap/retirement action; no proactive FA swaps",
+    "active": "same draft assets and exogenous futures, public scout/value ranking plus <=8 proactive FA swaps/year; other five managers <=2",
+    "exclusions": "no real future NFL results, no actual 2026 owner claims, no inter-team trades or buyer consent, no dead-cap/debt/IR/taxi, no realistic weekly injuries/bye, no exact MILP",
+    "futurePrices": "Year2+ annual 3Y salary repricing using fixed 2023–25 DMLI rank curve (rank dynamic, curve frozen); rookie 65/35 Year1, 125/150% Year2/3, sliding minimum at Year4+ and top120/6 cap every year",
+    "ownership": "6 disjoint teams; only truly unowned free agents accessible; no automatic free acquisition of another team’s players",
+    "criterion": "H5 = minimum of five realized seasonal 13-slot 3Y-quality lineups; NOT global max H5"
+  },
+  "pairs": [
+    {
+      "seed": 29,
+      "supply": 0,
+      "legalBoth": true,
+      "passiveH5": 166.393,
+      "activeH5": 175.309,
+      "deltaH5": 8.916,
+      "passiveGapMin": -6.797,
+      "activeGapMin": 3.377,
+      "passiveActions": {
+        "mandatoryCuts": 12,
+        "repairSwaps": 0,
+        "optionalSwaps": 9,
+        "retirementExits": 11,
+        "emergencyAdds": 3
+      },
+      "activeActions": {
+        "mandatoryCuts": 11,
+        "repairSwaps": 0,
+        "optionalSwaps": 9,
+        "retirementExits": 11,
+        "emergencyAdds": 2
+      },
+      "passiveYears": [
+        196.317,
+        190.731,
+        187.539,
+        170.8,
+        166.393
+      ],
+      "activeYears": [
+        197.449,
+        187.836,
+        190.528,
+        187.133,
+        175.309
+      ],
+      "passiveIllegal": [],
+      "activeIllegal": []
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "legalBoth": true,
+      "passiveH5": 166.393,
+      "activeH5": 178.15,
+      "deltaH5": 11.757,
+      "passiveGapMin": -10.623,
+      "activeGapMin": 1.597,
+      "passiveActions": {
+        "mandatoryCuts": 12,
+        "repairSwaps": 0,
+        "optionalSwaps": 32,
+        "retirementExits": 10,
+        "emergencyAdds": 3
+      },
+      "activeActions": {
+        "mandatoryCuts": 12,
+        "repairSwaps": 0,
+        "optionalSwaps": 36,
+        "retirementExits": 11,
+        "emergencyAdds": 2
+      },
+      "passiveYears": [
+        196.317,
+        190.731,
+        187.539,
+        170.8,
+        166.393
+      ],
+      "activeYears": [
+        197.449,
+        187.836,
+        190.528,
+        187.133,
+        178.15
+      ],
+      "passiveIllegal": [],
+      "activeIllegal": []
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "legalBoth": true,
+      "passiveH5": 166.393,
+      "activeH5": 179.932,
+      "deltaH5": 13.539,
+      "passiveGapMin": -12.175,
+      "activeGapMin": 3.378,
+      "passiveActions": {
+        "mandatoryCuts": 11,
+        "repairSwaps": 0,
+        "optionalSwaps": 43,
+        "retirementExits": 10,
+        "emergencyAdds": 3
+      },
+      "activeActions": {
+        "mandatoryCuts": 10,
+        "repairSwaps": 1,
+        "optionalSwaps": 53,
+        "retirementExits": 10,
+        "emergencyAdds": 2
+      },
+      "passiveYears": [
+        196.317,
+        190.731,
+        187.539,
+        170.8,
+        166.393
+      ],
+      "activeYears": [
+        197.449,
+        187.836,
+        190.528,
+        187.133,
+        179.932
+      ],
+      "passiveIllegal": [],
+      "activeIllegal": []
+    }
+  ],
+  "runs": [
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "passive",
+      "initialCap_m": 489.862209,
+      "initialScores": [
+        208.667,
+        199.38,
+        196.868,
+        186.319,
+        167.785,
+        160.562
+      ],
+      "legalAll": true,
+      "failures": [],
+      "years": [
+        {
+          "year": 2027,
+          "cap_m": 491.810911,
+          "preLegal": true,
+          "index": 196.317,
+          "predicted": 203.8,
+          "bestOpponent": 191.411,
+          "gapToBest": 4.906,
+          "relativeAllstar": 0.84248,
+          "allstar": 233.022,
+          "roster": 24,
+          "capUse_m": 453.914231,
+          "leagueScores": [
+            196.317,
+            186.366,
+            191.411,
+            180.292,
+            169.024,
+            156.862
+          ]
+        },
+        {
+          "year": 2028,
+          "cap_m": 494.665269,
+          "preLegal": true,
+          "index": 190.731,
+          "predicted": 194.421,
+          "bestOpponent": 181.898,
+          "gapToBest": 8.833,
+          "relativeAllstar": 0.82279,
+          "allstar": 231.811,
+          "roster": 28,
+          "capUse_m": 460.299347,
+          "leagueScores": [
+            190.731,
+            181.898,
+            176.746,
+            172.164,
+            168.754,
+            155.991
+          ]
+        },
+        {
+          "year": 2029,
+          "cap_m": 493.852931,
+          "preLegal": true,
+          "index": 187.539,
+          "predicted": 189.133,
+          "bestOpponent": 179.532,
+          "gapToBest": 8.007,
+          "relativeAllstar": 0.82382,
+          "allstar": 227.646,
+          "roster": 32,
+          "capUse_m": 486.223941,
+          "leagueScores": [
+            187.539,
+            179.532,
+            178.442,
+            172.181,
+            171.346,
+            154.385
+          ]
+        },
+        {
+          "year": 2030,
+          "cap_m": 482.696807,
+          "preLegal": true,
+          "index": 170.8,
+          "predicted": 170.256,
+          "bestOpponent": 177.597,
+          "gapToBest": -6.797,
+          "relativeAllstar": 0.75326,
+          "allstar": 226.747,
+          "roster": 35,
+          "capUse_m": 443.056478,
+          "leagueScores": [
+            170.8,
+            177.597,
+            169.696,
+            172.411,
+            165.831,
+            157.529
+          ]
+        },
+        {
+          "year": 2031,
+          "cap_m": 486.430167,
+          "preLegal": true,
+          "index": 166.393,
+          "predicted": 170.759,
+          "bestOpponent": 172.053,
+          "gapToBest": -5.66,
+          "relativeAllstar": 0.74236,
+          "allstar": 224.14,
+          "roster": 39,
+          "capUse_m": 482.162178,
+          "leagueScores": [
+            166.393,
+            172.053,
+            159.725,
+            166.301,
+            167.952,
+            154.785
+          ]
+        }
+      ],
+      "h5": 166.393,
+      "gapMin": -6.797,
+      "ops": {
+        "mandatoryCuts": 12,
+        "repairSwaps": 0,
+        "optionalSwaps": 9,
+        "retirementExits": 11,
+        "emergencyAdds": 3
+      }
+    },
+    {
+      "seed": 29,
+      "supply": 0,
+      "regime": "active",
+      "initialCap_m": 489.862209,
+      "initialScores": [
+        208.667,
+        199.38,
+        196.868,
+        186.319,
+        167.785,
+        160.562
+      ],
+      "legalAll": true,
+      "failures": [],
+      "years": [
+        {
+          "year": 2027,
+          "cap_m": 491.810911,
+          "preLegal": true,
+          "index": 197.449,
+          "predicted": 200.973,
+          "bestOpponent": 186.366,
+          "gapToBest": 11.083,
+          "relativeAllstar": 0.84734,
+          "allstar": 233.022,
+          "roster": 24,
+          "capUse_m": 438.730202,
+          "leagueScores": [
+            197.449,
+            186.366,
+            180.158,
+            179.278,
+            169.024,
+            156.808
+          ]
+        },
+        {
+          "year": 2028,
+          "cap_m": 494.665269,
+          "preLegal": true,
+          "index": 187.836,
+          "predicted": 193.005,
+          "bestOpponent": 180.327,
+          "gapToBest": 7.51,
+          "relativeAllstar": 0.8103,
+          "allstar": 231.811,
+          "roster": 28,
+          "capUse_m": 429.717803,
+          "leagueScores": [
+            187.836,
+            180.327,
+            178.819,
+            171.942,
+            168.754,
+            155.75
+          ]
+        },
+        {
+          "year": 2029,
+          "cap_m": 493.852931,
+          "preLegal": true,
+          "index": 190.528,
+          "predicted": 193.308,
+          "bestOpponent": 179.085,
+          "gapToBest": 11.443,
+          "relativeAllstar": 0.83695,
+          "allstar": 227.646,
+          "roster": 32,
+          "capUse_m": 477.726249,
+          "leagueScores": [
+            190.528,
+            179.085,
+            172.56,
+            170.133,
+            171.822,
+            153.584
+          ]
+        },
+        {
+          "year": 2030,
+          "cap_m": 482.696807,
+          "preLegal": true,
+          "index": 187.133,
+          "predicted": 183.81,
+          "bestOpponent": 175.584,
+          "gapToBest": 11.549,
+          "relativeAllstar": 0.8253,
+          "allstar": 226.747,
+          "roster": 36,
+          "capUse_m": 468.570747,
+          "leagueScores": [
+            187.133,
+            175.584,
+            165.05,
+            172.424,
+            162.194,
+            154.952
+          ]
+        },
+        {
+          "year": 2031,
+          "cap_m": 486.430167,
+          "preLegal": true,
+          "index": 175.309,
+          "predicted": 177.794,
+          "bestOpponent": 171.932,
+          "gapToBest": 3.377,
+          "relativeAllstar": 0.78214,
+          "allstar": 224.14,
+          "roster": 39,
+          "capUse_m": 469.887479,
+          "leagueScores": [
+            175.309,
+            171.932,
+            166.128,
+            168.467,
+            164.467,
+            157.311
+          ]
+        }
+      ],
+      "h5": 175.309,
+      "gapMin": 3.377,
+      "ops": {
+        "mandatoryCuts": 11,
+        "repairSwaps": 0,
+        "optionalSwaps": 9,
+        "retirementExits": 11,
+        "emergencyAdds": 2
+      }
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "passive",
+      "initialCap_m": 489.862209,
+      "initialScores": [
+        208.667,
+        199.38,
+        196.868,
+        186.319,
+        167.785,
+        160.562
+      ],
+      "legalAll": true,
+      "failures": [],
+      "years": [
+        {
+          "year": 2027,
+          "cap_m": 491.810911,
+          "preLegal": true,
+          "index": 196.317,
+          "predicted": 203.8,
+          "bestOpponent": 191.411,
+          "gapToBest": 4.906,
+          "relativeAllstar": 0.84248,
+          "allstar": 233.022,
+          "roster": 24,
+          "capUse_m": 453.914231,
+          "leagueScores": [
+            196.317,
+            186.366,
+            191.411,
+            180.292,
+            169.024,
+            156.862
+          ]
+        },
+        {
+          "year": 2028,
+          "cap_m": 494.665269,
+          "preLegal": true,
+          "index": 190.731,
+          "predicted": 194.421,
+          "bestOpponent": 181.898,
+          "gapToBest": 8.833,
+          "relativeAllstar": 0.82279,
+          "allstar": 231.811,
+          "roster": 28,
+          "capUse_m": 460.299347,
+          "leagueScores": [
+            190.731,
+            181.898,
+            176.746,
+            172.164,
+            168.754,
+            155.991
+          ]
+        },
+        {
+          "year": 2029,
+          "cap_m": 493.852931,
+          "preLegal": true,
+          "index": 187.539,
+          "predicted": 189.133,
+          "bestOpponent": 179.532,
+          "gapToBest": 8.007,
+          "relativeAllstar": 0.82382,
+          "allstar": 227.646,
+          "roster": 32,
+          "capUse_m": 485.729276,
+          "leagueScores": [
+            187.539,
+            179.532,
+            177.631,
+            172.181,
+            171.346,
+            154.385
+          ]
+        },
+        {
+          "year": 2030,
+          "cap_m": 483.417169,
+          "preLegal": true,
+          "index": 170.8,
+          "predicted": 170.256,
+          "bestOpponent": 181.423,
+          "gapToBest": -10.623,
+          "relativeAllstar": 0.75003,
+          "allstar": 227.725,
+          "roster": 35,
+          "capUse_m": 442.276069,
+          "leagueScores": [
+            170.8,
+            181.423,
+            169.495,
+            172.411,
+            165.831,
+            155.58
+          ]
+        },
+        {
+          "year": 2031,
+          "cap_m": 487.663027,
+          "preLegal": true,
+          "index": 166.393,
+          "predicted": 170.759,
+          "bestOpponent": 176.675,
+          "gapToBest": -10.282,
+          "relativeAllstar": 0.73795,
+          "allstar": 225.479,
+          "roster": 39,
+          "capUse_m": 480.339949,
+          "leagueScores": [
+            166.393,
+            176.675,
+            161.62,
+            163.708,
+            167.952,
+            153.807
+          ]
+        }
+      ],
+      "h5": 166.393,
+      "gapMin": -10.623,
+      "ops": {
+        "mandatoryCuts": 12,
+        "repairSwaps": 0,
+        "optionalSwaps": 32,
+        "retirementExits": 10,
+        "emergencyAdds": 3
+      }
+    },
+    {
+      "seed": 29,
+      "supply": 30,
+      "regime": "active",
+      "initialCap_m": 489.862209,
+      "initialScores": [
+        208.667,
+        199.38,
+        196.868,
+        186.319,
+        167.785,
+        160.562
+      ],
+      "legalAll": true,
+      "failures": [],
+      "years": [
+        {
+          "year": 2027,
+          "cap_m": 491.810911,
+          "preLegal": true,
+          "index": 197.449,
+          "predicted": 200.973,
+          "bestOpponent": 186.366,
+          "gapToBest": 11.083,
+          "relativeAllstar": 0.84734,
+          "allstar": 233.022,
+          "roster": 24,
+          "capUse_m": 438.730202,
+          "leagueScores": [
+            197.449,
+            186.366,
+            180.158,
+            179.278,
+            169.024,
+            156.808
+          ]
+        },
+        {
+          "year": 2028,
+          "cap_m": 494.665269,
+          "preLegal": true,
+          "index": 187.836,
+          "predicted": 193.005,
+          "bestOpponent": 180.327,
+          "gapToBest": 7.51,
+          "relativeAllstar": 0.8103,
+          "allstar": 231.811,
+          "roster": 28,
+          "capUse_m": 429.717803,
+          "leagueScores": [
+            187.836,
+            180.327,
+            178.819,
+            171.942,
+            168.754,
+            155.75
+          ]
+        },
+        {
+          "year": 2029,
+          "cap_m": 493.852931,
+          "preLegal": true,
+          "index": 190.528,
+          "predicted": 193.308,
+          "bestOpponent": 179.085,
+          "gapToBest": 11.443,
+          "relativeAllstar": 0.83695,
+          "allstar": 227.646,
+          "roster": 32,
+          "capUse_m": 467.232332,
+          "leagueScores": [
+            190.528,
+            179.085,
+            171.749,
+            170.889,
+            171.822,
+            151.43
+          ]
+        },
+        {
+          "year": 2030,
+          "cap_m": 483.417169,
+          "preLegal": true,
+          "index": 187.133,
+          "predicted": 183.81,
+          "bestOpponent": 179.41,
+          "gapToBest": 7.723,
+          "relativeAllstar": 0.82175,
+          "allstar": 227.725,
+          "roster": 36,
+          "capUse_m": 456.331549,
+          "leagueScores": [
+            187.133,
+            179.41,
+            163.313,
+            172.424,
+            162.194,
+            154.646
+          ]
+        },
+        {
+          "year": 2031,
+          "cap_m": 487.663027,
+          "preLegal": true,
+          "index": 178.15,
+          "predicted": 182.185,
+          "bestOpponent": 176.554,
+          "gapToBest": 1.597,
+          "relativeAllstar": 0.7901,
+          "allstar": 225.479,
+          "roster": 39,
+          "capUse_m": 471.863107,
+          "leagueScores": [
+            178.15,
+            176.554,
+            163.628,
+            159.683,
+            164.482,
+            156.334
+          ]
+        }
+      ],
+      "h5": 178.15,
+      "gapMin": 1.597,
+      "ops": {
+        "mandatoryCuts": 12,
+        "repairSwaps": 0,
+        "optionalSwaps": 36,
+        "retirementExits": 11,
+        "emergencyAdds": 2
+      }
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "passive",
+      "initialCap_m": 489.862209,
+      "initialScores": [
+        208.667,
+        199.38,
+        196.868,
+        186.319,
+        167.785,
+        160.562
+      ],
+      "legalAll": true,
+      "failures": [],
+      "years": [
+        {
+          "year": 2027,
+          "cap_m": 491.810911,
+          "preLegal": true,
+          "index": 196.317,
+          "predicted": 203.8,
+          "bestOpponent": 191.411,
+          "gapToBest": 4.906,
+          "relativeAllstar": 0.84248,
+          "allstar": 233.022,
+          "roster": 24,
+          "capUse_m": 453.914231,
+          "leagueScores": [
+            196.317,
+            186.366,
+            191.411,
+            180.292,
+            169.024,
+            156.862
+          ]
+        },
+        {
+          "year": 2028,
+          "cap_m": 494.665269,
+          "preLegal": true,
+          "index": 190.731,
+          "predicted": 194.421,
+          "bestOpponent": 181.898,
+          "gapToBest": 8.833,
+          "relativeAllstar": 0.82279,
+          "allstar": 231.811,
+          "roster": 28,
+          "capUse_m": 460.299347,
+          "leagueScores": [
+            190.731,
+            181.898,
+            176.746,
+            172.164,
+            168.48,
+            155.991
+          ]
+        },
+        {
+          "year": 2029,
+          "cap_m": 493.852931,
+          "preLegal": true,
+          "index": 187.539,
+          "predicted": 189.133,
+          "bestOpponent": 179.532,
+          "gapToBest": 8.007,
+          "relativeAllstar": 0.82382,
+          "allstar": 227.646,
+          "roster": 32,
+          "capUse_m": 485.729276,
+          "leagueScores": [
+            187.539,
+            179.532,
+            177.631,
+            172.181,
+            171.3,
+            154.385
+          ]
+        },
+        {
+          "year": 2030,
+          "cap_m": 483.417169,
+          "preLegal": true,
+          "index": 170.8,
+          "predicted": 170.256,
+          "bestOpponent": 177.597,
+          "gapToBest": -6.797,
+          "relativeAllstar": 0.75003,
+          "allstar": 227.725,
+          "roster": 35,
+          "capUse_m": 442.276069,
+          "leagueScores": [
+            170.8,
+            177.597,
+            174.275,
+            172.411,
+            161.706,
+            155.623
+          ]
+        },
+        {
+          "year": 2031,
+          "cap_m": 487.660135,
+          "preLegal": true,
+          "index": 166.393,
+          "predicted": 168.733,
+          "bestOpponent": 178.568,
+          "gapToBest": -12.175,
+          "relativeAllstar": 0.73795,
+          "allstar": 225.479,
+          "roster": 39,
+          "capUse_m": 479.916941,
+          "leagueScores": [
+            166.393,
+            178.568,
+            168.267,
+            162.995,
+            167.739,
+            155.42
+          ]
+        }
+      ],
+      "h5": 166.393,
+      "gapMin": -12.175,
+      "ops": {
+        "mandatoryCuts": 11,
+        "repairSwaps": 0,
+        "optionalSwaps": 43,
+        "retirementExits": 10,
+        "emergencyAdds": 3
+      }
+    },
+    {
+      "seed": 29,
+      "supply": 50,
+      "regime": "active",
+      "initialCap_m": 489.862209,
+      "initialScores": [
+        208.667,
+        199.38,
+        196.868,
+        186.319,
+        167.785,
+        160.562
+      ],
+      "legalAll": true,
+      "failures": [],
+      "years": [
+        {
+          "year": 2027,
+          "cap_m": 491.810911,
+          "preLegal": true,
+          "index": 197.449,
+          "predicted": 200.973,
+          "bestOpponent": 186.366,
+          "gapToBest": 11.083,
+          "relativeAllstar": 0.84734,
+          "allstar": 233.022,
+          "roster": 24,
+          "capUse_m": 438.730202,
+          "leagueScores": [
+            197.449,
+            186.366,
+            180.158,
+            179.278,
+            169.024,
+            156.808
+          ]
+        },
+        {
+          "year": 2028,
+          "cap_m": 494.665269,
+          "preLegal": true,
+          "index": 187.836,
+          "predicted": 193.005,
+          "bestOpponent": 180.327,
+          "gapToBest": 7.51,
+          "relativeAllstar": 0.8103,
+          "allstar": 231.811,
+          "roster": 28,
+          "capUse_m": 429.717803,
+          "leagueScores": [
+            187.836,
+            180.327,
+            178.819,
+            171.942,
+            168.48,
+            155.75
+          ]
+        },
+        {
+          "year": 2029,
+          "cap_m": 493.852931,
+          "preLegal": true,
+          "index": 190.528,
+          "predicted": 193.308,
+          "bestOpponent": 179.085,
+          "gapToBest": 11.443,
+          "relativeAllstar": 0.83695,
+          "allstar": 227.646,
+          "roster": 32,
+          "capUse_m": 465.269291,
+          "leagueScores": [
+            190.528,
+            179.085,
+            171.749,
+            170.133,
+            171.822,
+            154.578
+          ]
+        },
+        {
+          "year": 2030,
+          "cap_m": 483.417169,
+          "preLegal": true,
+          "index": 187.133,
+          "predicted": 183.81,
+          "bestOpponent": 179.41,
+          "gapToBest": 7.723,
+          "relativeAllstar": 0.82175,
+          "allstar": 227.725,
+          "roster": 36,
+          "capUse_m": 436.211957,
+          "leagueScores": [
+            187.133,
+            179.41,
+            163.313,
+            172.424,
+            162.194,
+            157.733
+          ]
+        },
+        {
+          "year": 2031,
+          "cap_m": 487.660135,
+          "preLegal": true,
+          "index": 179.932,
+          "predicted": 182.741,
+          "bestOpponent": 176.554,
+          "gapToBest": 3.378,
+          "relativeAllstar": 0.798,
+          "allstar": 225.479,
+          "roster": 39,
+          "capUse_m": 430.343774,
+          "leagueScores": [
+            179.932,
+            176.554,
+            163.628,
+            168.524,
+            164.482,
+            159.21
+          ]
+        }
+      ],
+      "h5": 179.932,
+      "gapMin": 3.378,
+      "ops": {
+        "mandatoryCuts": 10,
+        "repairSwaps": 1,
+        "optionalSwaps": 53,
+        "retirementExits": 10,
+        "emergencyAdds": 2
+      }
+    }
+  ]
+}
