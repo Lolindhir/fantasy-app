@@ -279,11 +279,14 @@ function draft(teams,world,draftable,previousScores,seed,season){
    // Explicit same-draft-slot cut; never receive a free 41st regular slot.
    // The pick itself can be lost if no other legal capacity cut exists.
    const full=team.players.slice();
-   const options=full.map((id,i)=>({id,i,remaining:full.filter((_,k)=>k!==i)}))
-      .filter(x=>coverage(x.remaining,world));
-   if(!options.length)throw Error('No legal capacity cut for draft pick');
-   options.sort((a,b)=>scoreObjective(b.remaining,world,team.style)-scoreObjective(a.remaining,world,team.style)
-      ||world.get(b.id).price-world.get(a.id).price);
+   const options=full.map((id,i)=>({id,i,remaining:full.filter((_,k)=>k!==i)}));
+   const shortfall=ids=>{
+     const cnt=Object.fromEntries(POS.map(pos=>[pos,ids.filter(id=>world.get(id).active&&world.get(id).pos===pos).length]));
+     return POS.reduce((sum,pos)=>sum+Math.max(0,BENCH[pos]-cnt[pos]),0)+Math.max(0,13-cnt.RB-cnt.WR-cnt.TE);
+   };
+   options.sort((a,b)=>shortfall(a.remaining)-shortfall(b.remaining)||
+     scoreObjective(b.remaining,world,team.style)-scoreObjective(a.remaining,world,team.style)||
+     world.get(b.id).price-world.get(a.id).price);
    team.players=options[0].remaining;
   }
  }
@@ -349,6 +352,10 @@ function simulateOne(start,seed,supply,regime){
   const rookie=newRookies(world,seed,season,supply,prevCap);
   cap=capFor(world); // include all new Rookie salary in the Top120 price market before annual lock
   const salaryCap=cap;
+  // Offseason removals of already-retired NFL players precede the five-round Rookie Draft.
+  // Missing coverage may be repaired before the picks, even if cap settlement is later.
+  const preDraftReady=settleRetired(teams,world,cap,ops);
+  if(!preDraftReady)failures.push({season,kind:'pre-draft-retirement-cover-failed'});
   draft(teams,world,rookie.draftable,lastScores,seed,season);
   // During draft a team can temporarily be above the cap; every team must pass the annual settlement.
   for(const team of teams){
@@ -411,7 +418,9 @@ export function simulate(csv,{seeds=[11,29,47],supplies=[0,30,50]}={}){
  for(const seed of seeds){
   const initial=startWorld(csv,seed);
   for(const supply of supplies)for(const regime of ['passive','active']){
-   all.push(simulateOne(initial,seed,supply,regime));
+   try{all.push(simulateOne(initial,seed,supply,regime));}
+   catch(err){all.push({seed,supply,regime,legalAll:false,failures:[{kind:'uncaught-model-error',error:String(err)}],
+      years:[],h5:null,gapMin:null,ops:null,initialScores:initial.teams.map(t=>+lineup(t.players,initial.world).score.toFixed(3))});}
   }
  }
  return {schema:'cp6k-v0',status:'synthetic feasibility prototype; not validated equilibrium or upper bound',
