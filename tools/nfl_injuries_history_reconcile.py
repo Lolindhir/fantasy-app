@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Recurring NFL Injury source admission and historical reconciliation (#1421).
 
-No year lists, Git commits, pushes, permissions or schedules. Bounded initial
-Raw admission downloads ONLY official SHA-verified missing originals; accepted
+No year lists, Git commits, pushes, permissions or schedules. Historical
+batch Raw admission preflights all missing official originals before staging; accepted
 historical originals remain frozen. Canonical consumes persisted Raw; Derived
 consumes persisted Canonical. --write only stages files in the existing writer.
 """
@@ -308,6 +308,87 @@ def stage_next_verified_missing_injury_source(
 
 
 
+
+def stage_all_verified_missing_injury_sources(
+    repo_root: Path, *, write: bool = False,
+    fetch_release: Callable[[], dict[str, Any]] = release_api,
+    fetch_asset: Callable[[str], bytes] = source_asset,
+    pinned_seasons: list[int] | None = None,
+) -> dict[str, Any]:
+    """Preflight ALL missing originals before staging any Raw files.
+
+    The exact selection is pinned across the Source workflow's publication
+    retries. An accepted pinned season becomes a no-op, never a reason to
+    discover and import a different year during the same invocation.
+    """
+    accepted, current = accepted_historical_injury_seasons(
+        repo_root, allow_incomplete=True)
+    release = fetch_release()
+    inventory = discover_injury_history(
+        repo_root=repo_root, fetch_release=lambda: release,
+        allow_incomplete=True)
+    if inventory["CurrentSeason"] != current:
+        raise ValueError("Historical Injury current season changed during batch discovery")
+    candidates = set(inventory["CandidateSeasons"])
+    if pinned_seasons is None:
+        selected = sorted(candidates, reverse=True)
+    else:
+        selected = list(pinned_seasons)
+        if (len(selected) != len(set(selected))
+                or any(not valid_injury_season(year) or year >= current
+                       for year in selected)):
+            raise ValueError("Invalid pinned historical Injury batch")
+        if any(year not in candidates and year not in accepted for year in selected):
+            raise ValueError("Pinned historical Injury batch includes ineligible Source")
+    # This remains an all-or-nothing Source admission: a bad original, a
+    # mismatched frozen half-pair, or a failed player/game join prevents every
+    # new Raw file in the batch from being staged/published.
+    cache: dict[str, bytes] = {}
+
+    def cached_asset(url: str) -> bytes:
+        if url not in cache:
+            cache[url] = fetch_asset(url)
+        return cache[url]
+
+    pending = [year for year in selected if year not in accepted]
+    common = {"fetch_release": lambda: release, "fetch_asset": cached_asset}
+    previews = {}
+    for year in pending:
+        previews[year] = stage_next_verified_missing_injury_source(
+            repo_root, pinned_season=year, write=False, **common)
+    new_paths = sorted(
+        path for year in pending for path in previews[year]["NewRawPaths"])
+    per_season = []
+    for year in selected:
+        if year in accepted:
+            per_season.append({"Season": year, "Status": "pinned-original-already-accepted",
+                               "Staged": False})
+            continue
+        result = (stage_next_verified_missing_injury_source(
+            repo_root, pinned_season=year, write=True, **common)
+            if write else previews[year])
+        per_season.append({"Season": year, "Status": result["Status"],
+                           "Staged": result["Staged"],
+                           "SourceAssetSha256": result["SourceAssetSha256"],
+                           "SourceRowCount": result["SourceRowCount"]})
+    staged = [entry["Season"] for entry in per_season if entry["Staged"]]
+    return {
+        "Phase": "intake", "Status": (
+            "staged-validated-history-batch" if staged else
+            "validated-missing-history-batch-dry-run" if pending else
+            "no-eligible-missing-original"),
+        "Seasons": selected, "CurrentSeason": current,
+        "AcceptedHistoricalSeasons": accepted,
+        "StagedSeasons": staged,
+        "NoOpSeasons": [year for year in selected if year in accepted],
+        "NewRawPaths": new_paths if write else [],
+        "BlockedSeasons": inventory["BlockedSeasons"],
+        "PersistedMissingUpstream": inventory["PersistedMissingUpstream"],
+        "PerSeason": per_season,
+        "Staged": bool(staged), "PublicationPerformed": False,
+    }
+
+
 def accepted_canonical_injury_seasons(repo_root: Path) -> list[int]:
     """Discover Derived partitions only from published Canonical manifests.
 
@@ -465,7 +546,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--phase", choices=("intake", "canonical", "derived", "revisions"), required=True)
     parser.add_argument("--season", type=int,
-                        help="Pin the single selected historical intake season across Git retries")
+                        help="Pin one historical intake season (legacy single-source mode)")
+    parser.add_argument("--all-missing", action="store_true",
+                        help="Preflight and stage every eligible missing original in one batch")
+    parser.add_argument("--seasons", type=str,
+                        help="Comma-separated pinned batch; never discover extra seasons on retry")
     parser.add_argument("--write", action="store_true",
                         help="Stage eligible missing Raw or accepted canonical/derived locally only")
     parser.add_argument("--require-noop", action="store_true",
@@ -475,6 +560,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.season is not None and args.phase != "intake":
         parser.error("--season is only valid for historical intake")
+    if (args.all_missing or args.seasons is not None) and args.phase != "intake":
+        parser.error("--all-missing/--seasons require historical intake")
+    if args.season is not None and (args.all_missing or args.seasons is not None):
+        parser.error("--season cannot be combined with batch intake")
+    if args.seasons is not None and not re.fullmatch(r"[0-9]{4}(,[0-9]{4})*", args.seasons):
+        parser.error("--seasons requires comma-separated four-digit seasons")
     try:
         if args.phase == "revisions":
             if args.write or args.require_noop:
@@ -483,8 +574,14 @@ def main(argv: list[str] | None = None) -> int:
         elif args.phase == "intake":
             if args.fail_on_review or args.require_noop:
                 parser.error("Intake has no revision-failure or replay-no-op mode")
-            result = stage_next_verified_missing_injury_source(
-                args.repo_root, write=args.write, pinned_season=args.season)
+            if args.all_missing or args.seasons is not None:
+                selected = ([int(value) for value in args.seasons.split(",")]
+                            if args.seasons is not None else None)
+                result = stage_all_verified_missing_injury_sources(
+                    args.repo_root, write=args.write, pinned_seasons=selected)
+            else:
+                result = stage_next_verified_missing_injury_source(
+                    args.repo_root, write=args.write, pinned_season=args.season)
         else:
             if args.fail_on_review:
                 parser.error("--fail-on-review requires --phase revisions")
