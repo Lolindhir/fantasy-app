@@ -665,10 +665,10 @@ jobs:
             return 1
           }
 
-          # A single workflow run may admit at most ONE historical season even
-          # when Raw was pushed but a later Canonical commit raced with main.
-          # Never rediscover the next missing season on a retry.
-          historical_intake_selected_season=""
+          # Pin the complete dynamic historical intake batch for the entire
+          # Source invocation, including successful Raw push / Canonical races.
+          # Never discover additional seasons after the first attempt.
+          historical_intake_selected_seasons=""
           for attempt in $(seq 1 "$max_attempts"); do
             echo "NFL source publish attempt $attempt/$max_attempts"
             reset_to_main
@@ -702,39 +702,39 @@ jobs:
               exit "$raw_status"
             fi
 
-            # Historical intake selection is sticky across the OUTER publication
-            # retry loop, including a successful Raw push followed by a Canonical
-            # push race. A no-candidate first attempt must also remain a no-op.
+            # The first attempt pins ALL eligible historical Source seasons.
+            # Later attempts may only revalidate that same batch. If none were
+            # eligible, retries must remain empty even if new history appears.
             if [[ "${INJURY_HISTORY_DUE:-false}" == "true" ]]; then
-              if [[ "$historical_intake_selected_season" == "none" ]]; then
-                echo "- Historical Injury intake: no candidate on first attempt; retry cannot admit another season" >> "$GITHUB_STEP_SUMMARY"
+              if [[ "$historical_intake_selected_seasons" == "none" ]]; then
+                echo "- Historical Injury intake: first-attempt empty batch remains empty across retries" >> "$GITHUB_STEP_SUMMARY"
               else
                 intake_log="$(mktemp)"
-                intake_args=(--phase intake --write)
-                if [[ -n "$historical_intake_selected_season" ]]; then
-                  intake_args+=(--season "$historical_intake_selected_season")
+                intake_args=(--phase intake --write --all-missing)
+                if [[ -n "$historical_intake_selected_seasons" ]]; then
+                  intake_args+=(--seasons "$historical_intake_selected_seasons")
                 fi
                 set +e
                 python3 tools/nfl_injuries_history_reconcile.py "${intake_args[@]}" 2>&1 | tee "$intake_log"
                 intake_status=${PIPESTATUS[0]}
                 set -e
                 if (( intake_status != 0 )); then
-                  echo "Historical NFL Injury source admission blocked; no new Raw commit." >&2
+                  echo "Historical NFL Injury batch admission blocked; no new Raw commit." >&2
                   write_failure_diagnostic "historical-injury-source-intake" "$intake_status" "$intake_log"
                   exit "$intake_status"
                 fi
-                if [[ -z "$historical_intake_selected_season" ]]; then
-                  historical_intake_selected_season="$(python3 - "$intake_log" <<'PY'
+                if [[ -z "$historical_intake_selected_seasons" ]]; then
+                  historical_intake_selected_seasons="$(python3 - "$intake_log" <<'PY'
           import json
           import sys
           from pathlib import Path
 
-          season = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))["Season"]
-          print(season if season is not None else "none")
+          seasons = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))["Seasons"]
+          print(",".join(str(year) for year in seasons) if seasons else "none")
           PY
                   )"
                 fi
-                echo "- Historical Injury Source: pinned intake season $historical_intake_selected_season across all publication retries" >> "$GITHUB_STEP_SUMMARY"
+                echo "- Historical Injury Source: pinned batch $historical_intake_selected_seasons across all publication retries" >> "$GITHUB_STEP_SUMMARY"
               fi
             fi
 
