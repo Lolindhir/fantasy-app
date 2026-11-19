@@ -260,14 +260,13 @@ def write_json_if_changed(path: Path, payload: Mapping[str, Any]) -> bool:
     return True
 
 
-def materialize_app_player_week_fantasy(
+def load_app_player_week_fantasy(
     repo_root: Path,
     canonical_league_id: str,
     season: int,
     week: int,
-    *,
-    output_path: Path | None = None,
-) -> tuple[dict[str, Any], bool]:
+) -> dict[str, Any]:
+    """In-memory App adaptation of the persisted PlayerWeekFantasy product of one week; writes nothing."""
     canonical_league_id = _text(canonical_league_id, "CanonicalLeagueID")
     season = _positive_int(season, "Season")
     week = _positive_int(week, "Week")
@@ -282,7 +281,6 @@ def materialize_app_player_week_fantasy(
     )
     identity_path = repo_root / DATA_SOURCE_ROOT / "nfl" / "identities" / "players.json"
     sleeper_path = repo_root / DATA_SOURCE_ROOT / "nfl" / "platform" / "sleeper" / "players.json"
-    target_path = output_path or (repo_root / "public" / "data" / "PlayerWeekFantasy.json")
 
     payload = build_app_player_week_fantasy_read_model(
         _read_json(source_path),
@@ -299,7 +297,19 @@ def materialize_app_player_week_fantasy(
             "PlayerWeekFantasy publication target mismatch: "
             f"requested={season}/W{week} source={payload['Season']}/W{payload['Week']}"
         )
+    return payload
 
+
+def materialize_app_player_week_fantasy(
+    repo_root: Path,
+    canonical_league_id: str,
+    season: int,
+    week: int,
+    *,
+    output_path: Path | None = None,
+) -> tuple[dict[str, Any], bool]:
+    payload = load_app_player_week_fantasy(repo_root, canonical_league_id, season, week)
+    target_path = output_path or (repo_root / "public" / "data" / "PlayerWeekFantasy.json")
     changed = write_json_if_changed(target_path, payload)
     return payload, changed
 

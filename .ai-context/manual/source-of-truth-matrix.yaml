@@ -1179,7 +1179,12 @@ consumerReadClassification:
         legacy:FantasyGameContextHistory: app-output-owner
         legacy:Matchups: app-output-owner
         legacy:Timestamps: app-output-owner
-      note: 'Consumer generator of the matchup context (ADR-075, Issue #1199 section 3 step 7). write renders Matchups.json, FantasyGameContext.json and the past_seasons Matchups and FantasyGameContext files from the computed matchup context (data-source, products, lifecycle and Decision Windows functions, data-meta) and publishes them only on a semantic difference. It reads the existing App files only to detect that difference and to list the FantasyGameContext history seasons, and updates the Matchups and FantasyGameContext keys of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
+        legacy:MatchupProjections: app-output-owner
+      note: 'Consumer generator of the matchup context (ADR-075, ADR-089, Issue #1571). write renders Matchups.json, FantasyGameContext.json, MatchupProjections.json and the past_seasons Matchups and FantasyGameContext files from the persisted data-derived/matchup-context documents (products before consumers) and publishes them only on a semantic difference. It computes nothing and reads the existing App files only to detect that difference and to list the FantasyGameContext history seasons, and updates the Matchups and FantasyGameContext keys of Timestamps.json (app-output-owner: the writer owns its own output and freshness timestamp, never an input).'
+    tools/matchup_context_materialize.py:
+      reads:
+        legacy:past_seasons: app-output-owner
+      note: 'Materializer of the Shared Derived product data-derived/matchup-context (ADR-089, Issue #1571). It calls the computed matchup-context function and the team-range projection and reads no App file; the only past_seasons mention is its documentation of the App files rendered from the product.'
     tools/matchup_context.py:
       reads:
         legacy:past_seasons: validation-shadow
@@ -2498,7 +2503,7 @@ sourceFamilyCoverageAudit: {
       "evidence": [
         {
           "file": ".github/workflows/league-live.yml",
-          "contains": "python3 tools/player_week_fantasy_refresh.py &&"
+          "contains": "python3 tools/matchup_context_materialize.py --scope current --fail-on-error &&"
         },
         {
           "file": ".github/workflows/league-live.yml",
@@ -2510,11 +2515,11 @@ sourceFamilyCoverageAudit: {
         },
         {
           "file": "tools/matchup_context_app_publish.py",
-          "contains": "writer.put(\"Matchups.json\", resolve_matchups("
+          "contains": "writer.put(\"Matchups.json\", matchups"
         },
         {
           "file": "tools/matchup_context_app_publish.py",
-          "contains": "writer.put(\"FantasyGameContext.json\", context"
+          "contains": "writer.put(\"FantasyGameContext.json\", current["
         },
         {
           "file": "src/app/core/services/data-api.service.ts",
@@ -2537,19 +2542,19 @@ sourceFamilyCoverageAudit: {
       "evidence": [
         {
           "file": ".github/workflows/league-live.yml",
-          "contains": "python3 tools/player_week_fantasy_refresh.py &&"
+          "contains": "python3 tools/matchup_context_materialize.py --scope current --fail-on-error &&"
         },
         {
           "file": ".github/workflows/league-live.yml",
           "contains": "--path public/data"
         },
         {
-          "file": "tools/player_week_fantasy_refresh.py",
-          "contains": "context = resolve_current_context("
+          "file": "tools/matchup_context_materialize.py",
+          "contains": "compute_matchup_projections("
         },
         {
-          "file": "tools/player_week_fantasy_refresh.py",
-          "contains": "publish_matchup_projections("
+          "file": "tools/matchup_context_app_publish.py",
+          "contains": "writer.put(\"MatchupProjections.json\""
         },
         {
           "file": "tools/matchup_projection.py",

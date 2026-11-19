@@ -134,14 +134,14 @@ def refresh_previous_scored_week(
             "RecordCount": len(candidate["Records"])}
 
 
-def refresh(repo_root: Path, at_utc: datetime | None = None) -> dict[str, Any]:
+def refresh(repo_root: Path, at_utc: datetime | None = None, *, publish_projections: bool = True) -> dict[str, Any]:
     # G5 E3 (Issue #1263): the current-week build and the previous-week repair use identical model
     # inputs; compute the calibrated model state once per process (no persisted cache).
     with memoized_model_state():
-        return _refresh(repo_root, at_utc)
+        return _refresh(repo_root, at_utc, publish_projections=publish_projections)
 
 
-def _refresh(repo_root: Path, at_utc: datetime | None = None) -> dict[str, Any]:
+def _refresh(repo_root: Path, at_utc: datetime | None = None, *, publish_projections: bool = True) -> dict[str, Any]:
     root = repo_root.resolve()
     at_utc = at_utc or datetime.now(timezone.utc)
     league_id, season, week = resolve_target(root, at_utc)
@@ -164,8 +164,11 @@ def _refresh(repo_root: Path, at_utc: datetime | None = None) -> dict[str, Any]:
         output_path(root, league_id=league_id, season=season, week=week), payload
     )
     published, app_changed = materialize_app_player_week_fantasy(root, league_id, season, week)
-    context = resolve_current_context(root, league_id, season, at_utc)
-    if context is None:
+    context = resolve_current_context(root, league_id, season, at_utc) if publish_projections else None
+    if not publish_projections:
+        # Issue #1571: the projections are a section of the matchup-context product and rendered by the App publisher.
+        matchup_projections = {"Status": "delegated-to-matchup-context-product"}
+    elif context is None:
         matchup_projections = {"Status": "skipped-no-matchup-context"}
     else:
         matchup_projections = publish_matchup_projections(
@@ -190,8 +193,10 @@ def _refresh(repo_root: Path, at_utc: datetime | None = None) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-root", type=Path, default=TOOLS.parent)
+    parser.add_argument("--skip-matchup-projections", action="store_true",
+                        help="do not write MatchupProjections.json (the matchup-context product materializer owns it, Issue #1571)")
     args = parser.parse_args(argv)
-    print(json.dumps(refresh(args.repo_root), indent=2, sort_keys=True))
+    print(json.dumps(refresh(args.repo_root, publish_projections=not args.skip_matchup_projections), indent=2, sort_keys=True))
     return 0
 
 
