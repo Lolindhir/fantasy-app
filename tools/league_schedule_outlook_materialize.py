@@ -39,7 +39,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from data_roots import data_derived_dir  # noqa: E402
-from league_metadata import LeagueMetadataError, data_meta_root, load_league_metadata, model_for  # noqa: E402
+from league_metadata import LeagueMetadataError, list_league_ids, data_meta_root, load_league_metadata, model_for  # noqa: E402
 from derived_data_lib.league_schedule_outlook import PRODUCT, SCHEMA_VERSION, assemble  # noqa: E402
 from derived_data_lib.models.registry import get_model  # noqa: E402
 from derived_data_lib.playoff_brackets import round_windows  # noqa: E402
@@ -248,7 +248,7 @@ def seasons_for_scope(repo_root: Path, league_id: str, scope: str, explicit: lis
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--league", required=True)
+    parser.add_argument("--league", default=None, help="default: every configured league (data-meta)")
     parser.add_argument("--model-id", help="optional assertion; the model always comes from data-meta Models.ScheduleOutlook")
     parser.add_argument("--out-root", type=Path, default=None, help="default: the repository data-derived root")
     parser.add_argument("--scope", choices=("current", "all"), default="current")
@@ -262,21 +262,27 @@ def main() -> int:
     failures = 0
     pending = 0
     try:
-        seasons = seasons_for_scope(args.repo_root, args.league, args.scope, args.season)
-    except (ScheduleOutlookMaterializeError, ScheduleOutlookSourceError, ValueError, OSError, KeyError) as exc:
+        league_ids = [args.league] if args.league else list(list_league_ids())
+    except (LeagueMetadataError, OSError) as exc:
         print(f"schedule outlook materialization failed: {exc}", file=sys.stderr)
         return 1
-    for season in seasons:
+    for league_id in league_ids:
         try:
-            summary = materialize_season(args.repo_root, out_root, args.league, season,
-                                         selected_model_id(args.repo_root, args.league, season, args.model_id),
-                                         mode=args.mode, check_only=args.check)
+            seasons = seasons_for_scope(args.repo_root, league_id, args.scope, args.season)
         except (ScheduleOutlookMaterializeError, ScheduleOutlookSourceError, ValueError, OSError, KeyError) as exc:
-            failures += 1
-            print(f"::warning::schedule outlook season {season} not materialized: {exc}", file=sys.stderr)
-            continue
-        pending += summary.get("WouldWrite", 0) + len(summary["Orphans"])
-        print(json.dumps(summary, sort_keys=True))
+            print(f"schedule outlook materialization failed: {exc}", file=sys.stderr)
+            return 1
+        for season in seasons:
+            try:
+                summary = materialize_season(args.repo_root, out_root, league_id, season,
+                                             selected_model_id(args.repo_root, league_id, season, args.model_id),
+                                             mode=args.mode, check_only=args.check)
+            except (ScheduleOutlookMaterializeError, ScheduleOutlookSourceError, ValueError, OSError, KeyError) as exc:
+                failures += 1
+                print(f"::warning::schedule outlook {league_id} season {season} not materialized: {exc}", file=sys.stderr)
+                continue
+            pending += summary.get("WouldWrite", 0) + len(summary["Orphans"])
+            print(json.dumps(summary, sort_keys=True))
     return 1 if (failures and (args.fail_on_error or args.check)) or (args.check and pending) else 0
 
 
