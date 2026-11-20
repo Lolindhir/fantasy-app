@@ -1,0 +1,16 @@
+schemaVersion: 1
+artifact: public/data/PlayerInjuryHistory.json
+role: >
+  Per-player weekly injury and availability history for the player-detail Injury tab (History), a pure reshaping of the Shared Derived
+  product nfl-player-availability (Issue #1590, ADR-092). The current injury status stays with Players.json (Sleeper).
+generator: tools/player_injury_history_app_publish.py (product tools/derived_data_lib/nfl_player_availability.py)
+contract: .ai-context/manual/nfl-player-availability.yaml
+shape:
+  ContractVersion: 1
+  Product: product version of the source documents (nfl-player-availability-v1)
+  Coverage: '[{Season, ReportsAvailable, RosterStatusAvailable, SnapCountsAvailable}] which evidence exists per season'
+  Players: '[{ID (Sleeper), Seasons[{Season, Weeks[{Week, GameType, Team, State, Participation, Report[{Game, Practice, Reasons[]}] | null, Roster{Status, Code} | null}]}]}]'
+rules:
+  - Only players listed in Players.json are published; Sleeper ID to CanonicalPlayerID through the canonical identity index.
+  - State and evidence are copied from the product; the generator and the frontend derive nothing and never treat unknown as healthy.
+  - Compact JSON, loaded lazily; written only on a semantic difference; Timestamps.json key PlayerInjuryHistory.

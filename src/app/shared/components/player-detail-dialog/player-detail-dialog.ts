@@ -20,6 +20,7 @@ import { matchupPointsForPlayer, resolveWeekResult, type PlayerWeekProjectionVie
 import { PlayerProjectionComponent } from '../projection-range/player-projection';
 import type { PlayerAwardHistoryPlayer } from '../../../core/models/player-award-history.models';
 import { findPlayerAwards, groupPlayerAwardEntries, PLAYER_AWARD_DISPLAY, type PlayerAwardSeasonGroup } from '../../utils/player-award-view.util';
+import { buildInjuryHistoryView, findPlayerInjuryHistory, type InjuryHistorySeasonView } from '../../utils/player-injury-history-view.util';
 import { SalaryHistoryChartComponent } from '../salary-history-chart/salary-history-chart';
 
 // Registrierung
@@ -71,6 +72,8 @@ export class PlayerDetailDialogComponent implements OnInit {
   weeklyAwards: PlayerAwardHistoryPlayer | null = null;
   weeklyAwardGroups: PlayerAwardSeasonGroup[] = [];
   readonly awardDisplay = PLAYER_AWARD_DISPLAY;
+  injuryHistory: InjuryHistorySeasonView[] = [];
+  injuryHistoryState: 'idle' | 'loading' | 'ready' | 'unavailable' = 'idle';
   journey: PlayerJourney | null = null;
   journeyState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
 
@@ -99,6 +102,16 @@ export class PlayerDetailDialogComponent implements OnInit {
 
   onTabChange(event: MatTabChangeEvent): void {
     if (event.tab.textLabel === 'Moves') this.loadJourney();
+    if (event.tab.textLabel === 'Injury') this.loadInjuryHistory();
+  }
+
+  private loadInjuryHistory(): void {
+    if (this.injuryHistoryState !== 'idle') return;
+    this.injuryHistoryState = 'loading';
+    this.dataService.getPlayerInjuryHistory().subscribe(history => {
+      this.injuryHistory = buildInjuryHistoryView(findPlayerInjuryHistory(history, this.player.ID));
+      this.injuryHistoryState = history ? 'ready' : 'unavailable';
+    });
   }
 
   private loadJourney(): void {

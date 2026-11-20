@@ -3221,3 +3221,35 @@ decisions:
       negative:
         - Documents of all seasons are rewritten once by the next full run (model switch); the documented v1 rank fields are gone for v2.
         - Previous-season matching by TeamID assumes stable provider roster IDs across seasons (same convention as all-time standings).
+
+  - id: ADR-092
+    title: NFL Player Availability is a global Shared Derived product, written by the existing Injury Derived job, with a slim App history file
+    status: accepted
+    amends: [ADR-087]
+    context: >-
+      The player-detail Injury tab showed only the current Sleeper status and only for injured players. The historical report product
+      nfl-injuries-v1 (ADR-087, Issue #1421) had no consumer and misses reserve-list periods (in Issue #1584 CP1, 164 player-weeks of the
+      2026 league rosters had NFL reserve status without a report row). A history based on reports alone would mislead, and
+      Fantasy Injury Impact (Issue #1584) needs the same availability evidence per player and week.
+    decision: >-
+      Robert approved on 2026-11-20 (Issue #1590, following the recommendation of the #1584 thread, including the elevated effect of one new
+      Shared Derived write prefix through an existing writer). One consumer-neutral product data-derived/nfl-player-availability/<season>.json,
+      key Season + Week + CanonicalPlayerID, keeps separate evidence fields (observed report from nfl-injuries-v1, NFL roster status and code,
+      participation from snap counts and player stats, game, bye and finality) plus a documented State taxonomy; missing evidence is unknown,
+      never healthy. The population is a report row or roster status RES or PUP. Current status stays exclusively with Sleeper. The product
+      is written by the existing nfl_injuries_derived rebuild-and-retry job (new prefix data-derived/nfl-player-availability, scope
+      nfl-availability-derived); no new workflow, scheduler target, credential or permission. The App file public/data/PlayerInjuryHistory.json
+      is a pure reshaping by tools/player_injury_history_app_publish.py in the existing update-players.yml run (fail-soft, semantic no-op).
+      Consumers read only the product (or the App file), never data-source for this history. Contract: .ai-context/manual/nfl-player-availability.yaml.
+      Rollback: remove the workflow step and the generator call; the product and App file stay as last published or are deleted by a normal commit.
+    rationale: >-
+      Reports, roster status and participation answer different questions; keeping them as separate evidence fields in one shared product
+      serves the player history, Fantasy Injury Impact and chat analyses without a second derivation.
+    consequences:
+      positive:
+        - One availability layer for App, Fantasy Operations and Fantasy Management, reproducible from persisted inputs.
+        - Reserve periods without a report become visible; unknown stays unknown.
+      negative:
+        - The product adds about 44 MB for 2009 to 2026 and a rewritten season file only on a byte difference.
+        - Roster status code meanings are partly unverified and documented with their confidence; the UI shows no label for unknown codes.
+        - Not-played claims need snap coverage (2013 onward) and identity-complete team snap rows, so some games stay unknown.

@@ -138,6 +138,12 @@ class CleanRootProbeTests(unittest.TestCase):
         existing = target.read_text() if target.is_file() else None
         return {"Written": bool(emit(target, self.body("nfl-games", root, existing)))}
 
+    def fake_availability(self, root, season, *, out_root, write):
+        self.calls.append(("nfl-player-availability", None))
+        target = out_root / "nfl-player-availability" / f"{season}.json"
+        existing = target.read_text() if target.is_file() else None
+        return {"Written": bool(emit(target, self.body("nfl-player-availability", root, existing)))}
+
     def fake_injuries(self, source_root, season, phase):
         # The canonical producer is called against the real Source root, not
         # against a shadow symlink or a previously published Derived product.
@@ -163,10 +169,12 @@ class CleanRootProbeTests(unittest.TestCase):
                 ("materialize_all_finalized", self.fake_twp),
                 ("materialize_nfl_games", self.fake_nfl_games),
                 ("plan_injury_phase", self.fake_injuries),
+                ("materialize_nfl_availability", self.fake_availability),
             ):
                 stack.enter_context(patch.object(probe, name, side_effect=fake))
             stack.enter_context(patch.object(probe, "discover_seasons", return_value=[2024]))
             stack.enter_context(patch.object(probe, "discover_injury_seasons", return_value=[2024]))
+            stack.enter_context(patch.object(probe, "discover_availability_seasons", return_value=[2024]))
             stack.enter_context(patch.object(probe, "manifest", return_value={}))
             stack.enter_context(patch.object(probe, "current_season", return_value=2026))
             return probe.audit(self.root, **kwargs)
@@ -175,7 +183,7 @@ class CleanRootProbeTests(unittest.TestCase):
         for relative in (
             f"player-valuation/{LEAGUE}/2024/week-00.json", f"league-transactions/{LEAGUE}/2024.json",
             f"league-drafts/{LEAGUE}/2024.json", f"league-standings/{LEAGUE}/2024.json", f"season-statistics/{LEAGUE}/2024.json", f"league-rivalry/{LEAGUE}.json", f"matchup-context/{LEAGUE}/2024/matchups.json", f"weekly-recaps/{LEAGUE}/2024.json", f"player-week-fantasy/{LEAGUE}/2024/01.json",
-            f"team-week-performance/{LEAGUE}/2024/01.json", "nfl-games/2024.json", "nfl-injuries/2024.json",
+            f"team-week-performance/{LEAGUE}/2024/01.json", "nfl-games/2024.json", "nfl-injuries/2024.json", "nfl-player-availability/2024.json",
         ):
             self.publish(relative, "stable")
 
@@ -196,7 +204,7 @@ class CleanRootProbeTests(unittest.TestCase):
         self.assertEqual([], result["FailedProducts"])
         self.assertEqual({}, result["HintProducts"])
         self.assertEqual(
-            {f"{p}/{LEAGUE}" for p in probe.PRODUCTS if p not in probe.GLOBAL_PRODUCTS} | {"nfl-games", "nfl-injuries"},
+            {f"{p}/{LEAGUE}" for p in probe.PRODUCTS if p not in probe.GLOBAL_PRODUCTS} | {"nfl-games", "nfl-injuries", "nfl-player-availability"},
             set(result["Products"]),
         )
         for entry in result["Products"].values():

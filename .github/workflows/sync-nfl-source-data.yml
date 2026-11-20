@@ -1178,6 +1178,14 @@ jobs:
           --
           python3 tools/nfl_injuries_history_reconcile.py --phase derived --write
 
+      - name: Rebuild and publish NFL Player Availability Derived (Issue #1590)
+        run: >-
+          python3 tools/rebuild_and_publish.py
+          --scope nfl-availability-derived
+          --path data-derived/nfl-player-availability
+          --
+          python3 tools/nfl_player_availability_materialize.py --all-seasons --write
+
       - name: Audit frozen original Injury release revisions without repair
         if: ${{ needs.sync.outputs.injury_history_due == 'true' }}
         env:

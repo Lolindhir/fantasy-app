@@ -359,11 +359,42 @@
     </mat-tab>
 
     <!-- 🩹 Injury Tab -->
-    <mat-tab *ngIf="player.Injured && player.InjuryDetails" label="Injury">
+    <mat-tab label="Injury">
       <div class="dialog-injury">
-        <p *ngIf="player.InjuryDetails.Description"><strong>{{ player.InjuryDetails.Description }}</strong></p>
-        <p *ngIf="player.InjuryDetails.Designation"><strong>Designation:</strong> {{ player.InjuryDetails.Designation }}</p>
-        <p *ngIf="player.InjuryDetails.ReturnDate"><strong>Expected Return Date:</strong> {{ player.InjuryDetails.ReturnDate | date }}</p>
+        <h4 class="injury-heading">Current</h4>
+        @if (player.Injured && player.InjuryDetails) {
+          <p *ngIf="player.InjuryDetails.Description"><strong>{{ player.InjuryDetails.Description }}</strong></p>
+          <p *ngIf="player.InjuryDetails.Designation"><strong>Designation:</strong> {{ player.InjuryDetails.Designation }}</p>
+          <p *ngIf="player.InjuryDetails.ReturnDate"><strong>Expected Return Date:</strong> {{ player.InjuryDetails.ReturnDate | date }}</p>
+        } @else {
+          <p class="injury-muted">No current injury status.</p>
+        }
+
+        <h4 class="injury-heading">History</h4>
+        @switch (injuryHistoryState) {
+          @case ('loading') { <p class="injury-muted">Loading injury history…</p> }
+          @case ('unavailable') { <p class="injury-muted">Injury history is currently unavailable.</p> }
+          @default {
+            @if (injuryHistory.length === 0) {
+              <p class="injury-muted">No injuries or missed games on record.</p>
+            }
+            @for (season of injuryHistory; track season.season; let first = $first) {
+              <details class="injury-season" [open]="first">
+                <summary>{{ season.season }} <span class="injury-muted">· {{ season.affectedWeeks }} game(s) missed</span></summary>
+                <div class="injury-rows">
+                  @for (row of season.rows; track row.week) {
+                    <div class="injury-row">
+                      <span class="injury-week">{{ row.postseason ? 'PO ' : 'W' }}{{ row.week }}</span>
+                      <span class="injury-state injury-state--{{ row.stateClass }}">{{ row.stateLabel }}</span>
+                      <span class="injury-report">{{ row.report }}</span>
+                    </div>
+                  }
+                </div>
+              </details>
+            }
+            <p class="injury-muted injury-note">Listed are weeks with an injury report or a missed game. Result pending or unknown means the outcome is not available yet or the evidence is missing, not that the player was healthy.</p>
+          }
+        }
       </div>
     </mat-tab>
 

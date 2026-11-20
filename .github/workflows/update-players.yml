@@ -28,4 +28,5 @@ jobs:
           --
           bash -euo pipefail -c
           'python3 tools/derived_data.py materialize --product player-valuation > /dev/null &&
-          python3 tools/players_app_publish.py write'
+          python3 tools/players_app_publish.py write &&
+          python3 tools/player_injury_history_app_publish.py write'

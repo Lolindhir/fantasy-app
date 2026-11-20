@@ -1167,6 +1167,11 @@ consumerReadClassification:
         legacy:Players: app-output-owner
         legacy:Timestamps: app-output-owner
       note: 'Consumer generator of the published Players file (ADR-076, Issue #1226). write resolves the players read model for the run date in the league time zone and writes the file only on a content change (published form, like the former Compare-Players), with a backup copy and the Players key of Timestamps.json (app-output-owner: the writer owns its own freshness timestamp and reads its previous file only to detect a change, never as an input of the rows, Q3). compare is the shadow of the cutover: it resolves with a scratch player-valuation product and compares exactly with the published file (read-only, never an input).'
+    tools/player_injury_history_app_publish.py:
+      reads:
+        legacy:PlayerInjuryHistory: app-output-owner
+        legacy:Players: app-config-path-owner
+      note: 'Consumer generator of PlayerInjuryHistory.json (ADR-092, Issue #1590). Rows come only from the Shared Derived product data-derived/nfl-player-availability; Players.json is read only to limit the file to players the app lists (population filter, no value is taken from it) and the identity bridge comes from the canonical identities. The writer owns its previous file and the PlayerInjuryHistory key of Timestamps.json only to detect a change.'
     tools/decision_windows.py:
       reads:
         legacy:DecisionWindows: validation-shadow

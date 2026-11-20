@@ -223,7 +223,28 @@ host {
 .dialog-injury {
   word-wrap: break-word;
   line-height: 1.5;
-  text-align: center;
+  text-align: left;
+}
+
+.injury-heading { margin: 12px 0 4px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .055em; color: #6b7280; }
+.injury-muted { color: #64748b; font-size: 13px; }
+.injury-note { margin-top: 10px; font-size: 12px; }
+.injury-season { margin: 6px 0; summary { cursor: pointer; font-weight: 700; } }
+.injury-rows { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+.injury-row {
+  display: grid; grid-template-columns: 42px minmax(120px, 170px) 1fr; gap: 4px 8px;
+  align-items: center; font-size: 13px; padding: 3px 0; border-bottom: 1px solid #f1f5f9;
+}
+.injury-week { font-weight: 700; color: #475569; }
+.injury-state { font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 999px; border: 1px solid #e5e7eb; width: fit-content; }
+.injury-state--played { background: #fefce8; border-color: #fde68a; color: #a16207; }
+.injury-state--out { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.injury-state--bye { background: #f8fafc; color: #64748b; }
+.injury-state--unknown { background: #fffbeb; border: 1px dashed var(--lifecycle-review); color: var(--lifecycle-review-fg); }
+@media (max-width: 600px) {
+  .injury-row { grid-template-columns: auto auto 1fr; gap: 0 8px; padding: 3px 0; }
+  .injury-week { white-space: nowrap; min-width: 30px; }
+  .injury-report { grid-column: 3; grid-row: 1; font-size: 12px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 }
 
 /* ---------- Links ---------- */

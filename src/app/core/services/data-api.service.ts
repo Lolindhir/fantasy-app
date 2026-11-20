@@ -16,6 +16,7 @@ import type { RawTransaction } from '../models/transaction.models';
 import type { RivalryReadModel } from '../models/rivalry.models';
 import type { WeeklyRecapsReadModel } from '../models/weekly-recap.models';
 import type { PlayerAwardHistoryReadModel } from '../models/player-award-history.models';
+import type { PlayerInjuryHistoryReadModel } from '../models/player-injury-history.models';
 import type { SeasonStatisticsReadModel } from '../models/season-statistics.models';
 
 export interface LeagueDataLoadResult {
@@ -124,6 +125,10 @@ export class DataApiService {
 
   getPlayerAwardHistoryRaw(): Observable<PlayerAwardHistoryReadModel> {
     return this.http.get<PlayerAwardHistoryReadModel>('data/PlayerAwardHistory.json');
+  }
+
+  getPlayerInjuryHistoryRaw(): Observable<PlayerInjuryHistoryReadModel> {
+    return this.http.get<PlayerInjuryHistoryReadModel>('data/PlayerInjuryHistory.json');
   }
 
   getSeasonStatisticsRaw(): Observable<SeasonStatisticsReadModel> {

@@ -1,0 +1,147 @@
+schemaVersion: 1
+status: active-product-v1
+trackingIssue: 1590
+architectureDecision: ADR-092
+purpose: >
+  Global, league-independent Shared Derived product NFL Player Availability (nfl-player-availability-v1): per player and week the
+  separate evidence for an observed injury report, the NFL roster status, participation and the game/bye situation, plus a documented
+  derived State. It is the availability layer for the player-detail injury history and for Fantasy Injury Impact (Issue #1584).
+  It makes no medical, onset, return-date, games-missed, probability or pre-kickoff claim.
+
+ownership:
+  product: data-derived/nfl-player-availability/<season>.json
+  materializer: tools/nfl_player_availability_materialize.py
+  pureFunction: tools/derived_data_lib/nfl_player_availability.py
+  appDelivery: public/data/PlayerInjuryHistory.json
+  appGenerator: tools/player_injury_history_app_publish.py
+  currentInjuryStatus: >
+    Unchanged: the latest status stays exclusively with Sleeper state (Players.json Injured/InjuryDetails,
+    nfl-injuries.yaml). This product is retrospective evidence per week; it never replaces or merges the current status.
+
+identity:
+  key: Season + Week + CanonicalPlayerID
+  note: Team and GameID are attributes of the record, not part of the key. A player with several teams in one week keeps the roster team.
+  unresolvedIdentity: >
+    A report observation without CanonicalPlayerID is not recorded and counted in Quality.ReportObservationsWithoutIdentity.
+    No name fallback.
+
+inputs:
+  - data-derived/nfl-injuries/<season>.json (nfl-injuries-v1, never re-derived from Canonical)
+  - data-source/nfl/weekly-rosters/<season>/<week>.json (Status, StatusDescription, Team, GameType)
+  - data-source/nfl/snap-counts/<season>/<week>.json (from 2013)
+  - data-source/nfl/player-stats/<season>/<week>.json (from 1999, used as participation fallback)
+  - data-source/nfl/schedules/<season>.json and game-finality/<season>.json
+inputRules:
+    - Consumers (App generator, Fantasy Injury Impact) read only the product, never these inputs for the history.
+    - Seasons are discovered, not listed (injury product seasons plus roster seasons whose Status column is populated).
+
+population:
+  rule: >
+    A player-week is recorded when the player has an observed report row (any status) OR the NFL roster status is RES or PUP.
+    INA (game-day inactive) alone is deliberately not a signal: it is dominated by healthy scratches and would multiply the size.
+    A postseason week in which the team has no game produces no record (it is not a bye).
+  sizeMeasured: about 3 to 4 MB per season from 2016 (roster status exists), about 1.5 MB before; about 44 MB for 2009 to 2026.
+
+evidenceFields:
+  Report: >
+    List of distinct observed report entries {Game, Practice, Reasons[]} taken from nfl-injuries-v1 (null when the week has no
+    observed report). Blank statuses are null, not healthy. Multiple entries are kept, not ordered.
+  Roster: >
+    {Status, Code} of the NFL weekly roster row (null when the week has no roster row for the player). Status is null before 2016
+    (the source has no status column then); it stays null, never inferred.
+  Participation: >
+    {State: played | not-played | unknown | no-game, Evidence}. Evidence is snap-counts, player-stats, snap-counts-identity-gap,
+    game-not-final, cancelled-game, team-unresolved or bye; null when no evidence source covers the game.
+  Team: roster team, else the first report source team; normalized to the schedule abbreviation of that season (franchise aliases).
+  GameID: canonical schedule game of the team in that week, null for bye, cancelled or unresolved team.
+
+participationRules:
+  played: a snap-counts row with more than zero snaps, or a player-stats row of that game (stats rows exist only for players who took part).
+  not-played: the game is covered by snap counts (any row of the GameID), the player has neither snaps nor a stats row, and no snap row of the
+    same team and game lacks a CanonicalPlayerID (such a row could be this player).
+  unknown: game not final; no snap coverage and no stats row (always the case for a missing stats row before 2013); snap-counts identity gap of the team.
+  cancelled: the 2022 week 17 BUF@CIN game is absent from the canonical schedule and never counts as played (state unknown, evidence cancelled-game).
+
+state:
+  taxonomy:
+    played: Participation played (a report row may exist, for example Questionable and played).
+    not-played-reported: final game, not played, a report row exists. The report is the recorded reason, the roster status is shown next to it.
+    not-played-reserve: final game, not played, no report row, roster status RES or PUP.
+    not-played-unexplained: final game, not played, no report row, no reserve status. Reachable only through a future wider population; v1 population cannot produce it.
+    bye: a regular-season week without a game of the team (a report or reserve row exists for that week).
+    unknown: missing evidence (see participation unknown). Never healthy, never available.
+  note: State is a derivation for display and for downstream consumers; the evidence fields are the facts.
+
+rosterStatusCodes:
+  source: nflverse weekly rosters (Status and StatusDescription). Meanings below are the repository's documentation; confidence is stated.
+  status:
+    ACT: Active roster. Confidence high.
+    INA: Game-day inactive (active roster, not dressed). Confidence high. Not a population signal in v1.
+    RES: Reserve list (includes injured reserve). Confidence high. Population signal, state not-played-reserve.
+    PUP: Physically unable to perform list. Confidence high. Population signal, state not-played-reserve.
+    DEV: Practice or development squad. Confidence high.
+    CUT: Released. Confidence high.
+    RET: Retired. Confidence high.
+    SUS: Suspended. Confidence medium. Not an injury signal, not in the population.
+    NWT, RSN, RSR, EXE, TRC, TRD, TRT, UFA, RFA, UDF, E01, E14: other transaction or reserve variants. Meaning unverified; recorded as seen, never interpreted, not in the population.
+    "null": the season has no status column (before 2016).
+  descriptionCodes:
+    A01: Active. Confidence medium.
+    I01, I02: Inactive variants. Confidence low, shown raw.
+    R01: Injured Reserve. Confidence high (as named by the issue and observed with RES).
+    R48: Injured Reserve with return marker (designated to return). Confidence medium.
+    R04: PUP reserve. Confidence medium.
+    other R-codes (R02, R05, R06, R23, R27, R30, R40, R59, R62 and so on): meaning unverified; the UI shows only the status group, not the code.
+    P-codes (P01 to P12), W03, E02: development, waiver and exempt variants. Meaning unverified.
+  rules:
+    - Contradicting pairs exist (for example RES with A01). They are stored as seen; the product never corrects them.
+    - The code table is documentation; no behavior except the RES/PUP population and state rule depends on a code.
+    - Only a status or code that appears with a documented confidence may be shown with a label in a consumer; unknown codes are shown raw or not at all.
+
+quality:
+  perSeason:
+    - RecordCount and StateCounts
+    - ReportObservationsWithoutIdentity
+    - WeekCoverage[] per week: Games, FinalGames, GamesWithSnapCounts, RosterPartition
+    - Inputs.RosterStatusAvailable, SnapCountsAvailable, PlayerStatsAvailable, InjuryProduct (null when no report product exists)
+  coverageNotes:
+    - Snap counts exist from 2013; earlier seasons can only prove played (stats row), never not-played (unknown).
+    - Roster status exists from 2016; earlier seasons have report rows only.
+    - Weekly roster partitions list only teams that play; a bye-week reserve player has no roster row and therefore no record.
+    - The roster Status is a weekly snapshot, not a transaction date.
+
+dependencyInvalidation:
+  dependsOn: nfl-injuries-v1 product, weekly rosters, snap counts, player stats, schedule, game finality, the product version.
+  recompute: every run rebuilds all seasons from persisted inputs and writes a season file only on a byte difference (semantic no-op, no timestamps).
+  versioning: ProductVersion nfl-player-availability-v1. A rule change is a new ProductVersion and a regenerated product.
+
+publication:
+  writer: >
+    The existing nfl_injuries_derived job of sync-nfl-source-data.yml (rebuild-and-retry, scope nfl-availability-derived, prefix
+    data-derived/nfl-player-availability). It runs after every Injury Source update (daily in September to February) and on the Monday
+    historical reconciliation, so the product follows the roster, snap and stats inputs of the daily NFL Source sync with at most the lag
+    of the next injury run (current season) or the next Monday (outside the injury window). Historical rederivation is the Monday run
+    (data-sources.yaml historicalReconciliationStandard). No new workflow, schedule or credential.
+  appFile: >
+    The existing update-players.yml writer renders PlayerInjuryHistory.json (prefix public/data, already declared) after Players.json,
+    fail-soft, only on a semantic difference, Timestamps.json key PlayerInjuryHistory.
+  restoreProbe: tools/derived_clean_root_audit.py builds the product after nfl-injuries from clean-root data (global product).
+
+appDelivery:
+  file: public/data/PlayerInjuryHistory.json
+  shape: >
+    {ContractVersion 1, Product, Coverage[{Season, ReportsAvailable, RosterStatusAvailable, SnapCountsAvailable}],
+    Players[{ID (Sleeper), Seasons[{Season, Weeks[{Week, GameType, Team, State, Participation, Report, Roster}]}]}]}
+  rules:
+    - Pure reshaping of the product; no derivation in the generator.
+    - Only players listed in Players.json are published; Sleeper ID to CanonicalPlayerID through data-source/nfl/identities/players.json (the canonical identity owner).
+    - The file is loaded lazily by the player-detail Injury tab (History).
+
+notInScope:
+  - Fantasy or league calculations (Fantasy Injury Impact is Issue #1584 and reads this product).
+  - Current injury status (Sleeper) and ESPN scoring availability (Issue #669).
+  - Diagnosis, onset, return date, games missed, start probability, pre-kickoff knowledge.
+
+validation:
+  tests: tools/tests/test_nfl_player_availability.py, tools/tests/test_player_injury_history_app_publish.py
+  cases: Out played/not played, Questionable played, reserve without report, inactive without report, bye, missing roster row, cancelled 2022 game, player without identity, game not final, no snap coverage, stats fallback, snap identity gap, postseason week without game, determinism and semantic no-op.
