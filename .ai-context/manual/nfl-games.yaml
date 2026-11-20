@@ -65,8 +65,11 @@ temporal:
     canonical GameDay plus Eastern GameTime (America/New_York) to an absolute UTC instant in the form
     yyyy-MM-ddTHH:mm:ssZ (derived_data_lib/nfl_games.py::kickoff_utc). GameTime null gives KickoffUtc null,
     never an invented instant; a malformed, nonexistent or ambiguous Eastern wall-clock time fails the build
-    closed. Consumers (Schedule archive, matchup context, Fantasy Management) read this field instead of
-    converting themselves. Exceptions that keep their own conversion because they run before or independent
+    closed. Consumers do not convert themselves: the Python consumers (Schedule archive, matchup context,
+    Fantasy Management kicker plan) call the same module function (kickoff_utc/kickoff_epoch) and
+    PowerShell (CanonicalScheduleUtils.psm1) reaches it through tools/nfl_kickoff_times.py. They deliberately do
+    not read the persisted product file: the finality run refreshes the canonical schedule snapshot but not
+    this product, so a file read could lag a flexed kickoff. Exceptions that keep their own conversion because they run before or independent
     of this product: the scheduler game window (tools/nfl-game-window.cjs, source schedule, fail-closed
     scheduling must not wait for a derived refresh) and the odds observation buffer
     (tools/odds_observation_buffer.py, source-side input of the product itself, circular otherwise).
