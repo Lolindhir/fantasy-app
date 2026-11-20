@@ -363,11 +363,17 @@
       <div class="dialog-injury">
         <h4 class="injury-heading">Current</h4>
         @if (player.Injured && player.InjuryDetails) {
-          <p *ngIf="player.InjuryDetails.Description"><strong>{{ player.InjuryDetails.Description }}</strong></p>
-          <p *ngIf="player.InjuryDetails.Designation"><strong>Designation:</strong> {{ player.InjuryDetails.Designation }}</p>
-          <p *ngIf="player.InjuryDetails.ReturnDate"><strong>Expected Return Date:</strong> {{ player.InjuryDetails.ReturnDate | date }}</p>
+          <div class="injury-current">
+            @if (player.InjuryDetails.Designation) {
+              <span class="injury-status-chip injury-status-chip--{{ injuryChipKind(player.InjuryDetails.Designation) }}">{{ player.InjuryDetails.Designation }}</span>
+            }
+            <span class="injury-current-text">{{ player.InjuryDetails.Description || 'Injury status' }}</span>
+            @if (player.InjuryDetails.ReturnDate) {
+              <span class="injury-muted">· Return {{ player.InjuryDetails.ReturnDate | date }}</span>
+            }
+          </div>
         } @else {
-          <p class="injury-muted">No current injury status.</p>
+          <p class="injury-current injury-current--none">No current injury status.</p>
         }
 
         <h4 class="injury-heading">History</h4>
@@ -378,8 +384,8 @@
             @if (injuryHistory.length === 0) {
               <p class="injury-muted">No injuries or missed games on record.</p>
             }
-            @for (season of injuryHistory; track season.season; let first = $first) {
-              <details class="injury-season" [open]="first">
+            @for (season of injuryHistory; track season.season) {
+              <details class="injury-season" [open]="season.season === injuryCurrentSeason">
                 <summary>{{ season.season }} <span class="injury-muted">· {{ season.affectedWeeks }} game(s) missed</span></summary>
                 <div class="injury-rows">
                   @for (row of season.rows; track row.week) {

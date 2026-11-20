@@ -227,6 +227,14 @@ host {
 }
 
 .injury-heading { margin: 12px 0 4px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .055em; color: #6b7280; }
+/* Current status on one line: coloured chip (same colours as the team injury report) plus description. */
+.injury-current { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 4px 0 8px; padding: 8px 12px; border-radius: 10px; background: #fff; border: 1px solid rgba(148, 163, 184, .32); box-shadow: 0 1px 4px rgba(15, 23, 42, .04); }
+.injury-current--none { color: #64748b; font-size: 13px; }
+.injury-current-text { font-weight: 600; font-size: 14px; }
+.injury-status-chip { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; border: 1px solid #e5e7eb; font-size: 12px; font-weight: 700; white-space: nowrap; background: #f8fafc; color: #475569; }
+.injury-status-chip--out, .injury-status-chip--ir, .injury-status-chip--pup { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.injury-status-chip--doubtful { background: #fff1f2; border-color: #fda4af; color: #be123c; }
+.injury-status-chip--questionable { background: #fefce8; border-color: #fef08a; color: #a16207; }
 .injury-muted { color: #64748b; font-size: 13px; }
 .injury-note { margin-top: 10px; font-size: 12px; }
 .injury-season { margin: 6px 0; summary { cursor: pointer; font-weight: 700; } }
